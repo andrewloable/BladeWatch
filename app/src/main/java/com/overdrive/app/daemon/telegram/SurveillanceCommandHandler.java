@@ -34,8 +34,8 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
     private void handleStart(long chatId, CommandContext ctx) {
         JSONObject response = sendSurveillanceCommand("START", ctx);
         if (response != null && response.optBoolean("success", false)) {
-            String[][][] buttons = {{{"🔴 Stop", "cmd:/stop"}, {"📊 Status", "cmd:/status"}}};
-            ctx.sendMessageWithButtons(chatId, "🟢 Surveillance started", buttons);
+            String[][][] buttons = {{{"⛔ Stop", "cmd:/stop"}, {"📊 Status", "cmd:/status"}}};
+            ctx.sendMessageWithButtons(chatId, "✅ Surveillance started", buttons);
         } else {
             ctx.sendMessage(chatId, "⚠️ Failed to start surveillance");
         }
@@ -44,8 +44,8 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
     private void handleStop(long chatId, CommandContext ctx) {
         JSONObject response = sendSurveillanceCommand("STOP", ctx);
         if (response != null && response.optBoolean("success", false)) {
-            String[][][] buttons = {{{"🟢 Start", "cmd:/start"}, {"📊 Status", "cmd:/status"}}};
-            ctx.sendMessageWithButtons(chatId, "🔴 Surveillance stopped", buttons);
+            String[][][] buttons = {{{"✅ Start", "cmd:/start"}, {"📊 Status", "cmd:/status"}}};
+            ctx.sendMessageWithButtons(chatId, "⛔ Surveillance stopped", buttons);
         } else {
             ctx.sendMessage(chatId, "⚠️ Failed to stop surveillance");
         }
@@ -58,7 +58,7 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
         // Surveillance status
         JSONObject survStatus = sendSurveillanceCommand("STATUS", ctx);
         boolean survEnabled = survStatus != null && survStatus.optBoolean("enabled", false);
-        sb.append("*Surveillance:* ").append(survEnabled ? "🟢 Active" : "🔴 Inactive").append("\n");
+        sb.append("*Surveillance:* ").append(survEnabled ? "✅ Active" : "⛔ Inactive").append("\n");
         
         // Temperature
         sb.append("*Temp:* ").append(getTemperature(ctx)).append("\n\n");
@@ -79,7 +79,7 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
         int runningCount = 0;
         for (String[] d : allDaemons) {
             if (isDaemonRunning(d[0], ctx)) {
-                sb.append("🟢 ").append(d[1]).append("\n");
+                sb.append("✅ ").append(d[1]).append("\n");
                 runningCount++;
             }
         }
@@ -91,9 +91,9 @@ public class SurveillanceCommandHandler implements TelegramCommandHandler {
         // Buttons
         String[][][] buttons;
         if (survEnabled) {
-            buttons = new String[][][]{{{"🔴 Stop Surveillance", "cmd:/stop"}, {"📹 Events", "cmd:/events"}}};
+            buttons = new String[][][]{{{"⛔ Stop Surveillance", "cmd:/stop"}, {"📹 Events", "cmd:/events"}}};
         } else {
-            buttons = new String[][][]{{{"🟢 Start Surveillance", "cmd:/start"}, {"📹 Events", "cmd:/events"}}};
+            buttons = new String[][][]{{{"✅ Start Surveillance", "cmd:/start"}, {"📹 Events", "cmd:/events"}}};
         }
         
         ctx.sendMessageWithButtons(chatId, sb.toString(), buttons);

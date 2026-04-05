@@ -56,6 +56,11 @@ public class TelegramBotDaemon {
     
     private static final int IPC_PORT = 19878;  // Telegram IPC (19877 is used by Surveillance)
     
+    // Singleton lock (same pattern as CameraDaemon / AccSentryDaemon)
+    private static final String LOCK_FILE = "/data/local/tmp/telegram_bot_daemon.lock";
+    private static java.io.RandomAccessFile lockFileHandle;
+    private static java.nio.channels.FileLock fileLock;
+    
     private static volatile boolean running = true;
     private static final AtomicBoolean polling = new AtomicBoolean(false);
     
@@ -93,8 +98,15 @@ public class TelegramBotDaemon {
         log("UID: " + myUid + " (expected: 2000 shell)");
         log("PID: " + myPid);
         
-        // Kill any other instances of this daemon (prevent duplicates)
-        killOtherInstances(myPid);
+        // Kill any old instances using pkill -f (same pattern as DaemonLauncher.kt)
+        killOldInstances(myPid);
+        
+        // CRITICAL: Acquire singleton lock - exit if another instance survived
+        if (!acquireSingletonLock()) {
+            log("ERROR: Another TelegramBotDaemon instance is already running. Exiting.");
+            System.exit(1);
+            return;
+        }
         
         if (Looper.myLooper() == null) {
             Looper.prepare();
@@ -120,31 +132,90 @@ public class TelegramBotDaemon {
         }
     }
     
+    // ==================== DUPLICATE INSTANCE CLEANUP ====================
+    
     /**
-     * Kill any other instances of TelegramBotDaemon to prevent duplicate message processing.
-     * Uses same approach as DaemonCommandHandler - simple killall.
+     * Kill old daemon instances using pkill (same approach as DaemonLauncher.kt).
+     * Excludes our own PID to avoid killing ourselves.
+     * Also cleans up stale lock file left by SIGKILL'd processes.
      */
-    private static void killOtherInstances(int myPid) {
+    private static void killOldInstances(int myPid) {
         try {
-            log("Killing other TelegramBotDaemon instances (my PID: " + myPid + ")");
-            
-            // Simple killall - same as UI daemon controllers use
-            execShellStatic("killall -9 TelegramBotDaemon 2>/dev/null");
+            // Find and kill other telegram_bot_daemon processes, excluding our own PID.
+            // pkill -9 -f would match our own process too (command line contains the pattern),
+            // so we use ps + grep + awk to filter by PID instead.
+            String killCmd = "ps -A -o PID,ARGS | grep -F telegram_bot_daemon | grep -v grep | awk '{print $1}' | while read pid; do " +
+                    "if [ \"$pid\" != \"" + myPid + "\" ]; then kill -9 $pid 2>/dev/null; fi; done";
+            execShell(killCmd);
             Thread.sleep(500);
             
-            log("Duplicate instance cleanup complete");
+            // Clean up stale lock file (SIGKILL doesn't trigger shutdown hooks)
+            new java.io.File(LOCK_FILE).delete();
+            
+            log("Old instance cleanup complete (my PID: " + myPid + ")");
         } catch (Exception e) {
-            log("Error killing duplicates: " + e.getMessage());
+            log("Error killing old instances: " + e.getMessage());
         }
     }
     
-    private static String execShellStatic(String command) {
+    // ==================== SINGLETON LOCK ====================
+    
+    /**
+     * Acquire a file lock to ensure only one daemon instance runs at a time.
+     * Same pattern as CameraDaemon / AccSentryDaemon.
+     */
+    private static boolean acquireSingletonLock() {
         try {
-            Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", command});
-            p.waitFor();
-            return "";
+            java.io.File lockFileObj = new java.io.File(LOCK_FILE);
+            lockFileHandle = new java.io.RandomAccessFile(lockFileObj, "rw");
+            java.nio.channels.FileChannel channel = lockFileHandle.getChannel();
+            
+            // Try to acquire exclusive lock (non-blocking)
+            fileLock = channel.tryLock();
+            
+            if (fileLock == null) {
+                lockFileHandle.close();
+                return false;
+            }
+            
+            // Write our PID to the lock file for debugging
+            lockFileHandle.setLength(0);
+            lockFileHandle.writeBytes(String.valueOf(android.os.Process.myPid()));
+            
+            log("Acquired singleton lock (PID: " + android.os.Process.myPid() + ")");
+            
+            // Register shutdown hook to release lock on process termination
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                releaseSingletonLock();
+            }));
+            
+            return true;
+            
+        } catch (java.nio.channels.OverlappingFileLockException e) {
+            log("Lock already held by this process");
+            return false;
         } catch (Exception e) {
-            return null;
+            log("Failed to acquire singleton lock: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Release the singleton lock on shutdown.
+     */
+    private static void releaseSingletonLock() {
+        try {
+            if (fileLock != null) {
+                fileLock.release();
+                fileLock = null;
+            }
+            if (lockFileHandle != null) {
+                lockFileHandle.close();
+                lockFileHandle = null;
+            }
+            new java.io.File(LOCK_FILE).delete();
+        } catch (Exception e) {
+            log("Error releasing singleton lock: " + e.getMessage());
         }
     }
     

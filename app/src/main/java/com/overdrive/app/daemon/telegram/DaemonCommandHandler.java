@@ -120,7 +120,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
                         // Clear stopped state - daemon was started via Telegram
                         saveDaemonState(name, true, ctx);
                     }
-                    ctx.sendMessage(chatId, ok ? "🟢 " + displayName + " started." : "⚠️ Failed to start " + displayName);
+                    ctx.sendMessage(chatId, ok ? "✅ " + displayName + " started." : "⚠️ Failed to start " + displayName);
                 }
                 break;
                 
@@ -133,12 +133,12 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
                         // Mark as stopped via Telegram - health check should NOT auto-restart
                         saveDaemonState(name, false, ctx);
                     }
-                    ctx.sendMessage(chatId, ok ? "🔴 " + displayName + " stopped." : "⚠️ Failed to stop " + displayName);
+                    ctx.sendMessage(chatId, ok ? "⛔ " + displayName + " stopped." : "⚠️ Failed to stop " + displayName);
                 }
                 break;
                 
             case "status":
-                ctx.sendMessage(chatId, displayName + ": " + (isRunning ? "🟢 Running" : "🔴 Stopped"));
+                ctx.sendMessage(chatId, displayName + ": " + (isRunning ? "✅ Running" : "⛔ Stopped"));
                 break;
                 
             default:
@@ -176,8 +176,12 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
             ctx.execShell("rm -f /data/local/tmp/start_cam_daemon.sh 2>/dev/null");
         }
         
-        // Use killall -9 like the UI does
-        ctx.execShell("killall -9 " + processName + " 2>/dev/null");
+        // Use pkill -9 -f to match full command line (same as DaemonLauncher.kt)
+        // killall only matches process name which may differ for app_process daemons
+        ctx.execShell("pkill -9 -f " + processName + " 2>/dev/null");
+        
+        // Clean up lock file (SIGKILL doesn't trigger shutdown hooks)
+        ctx.execShell("rm -f /data/local/tmp/" + processName + ".lock 2>/dev/null");
         
         // Wait and verify
         try { Thread.sleep(500); } catch (InterruptedException ignored) {}
@@ -186,8 +190,8 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         ctx.log("Daemon " + (stopped ? "stopped" : "STILL RUNNING") + ": " + processName);
         
         if (!stopped) {
-            // Retry with pkill
-            ctx.execShell("pkill -9 -f " + processName + " 2>/dev/null");
+            // Retry with killall as fallback
+            ctx.execShell("killall -9 " + processName + " 2>/dev/null");
             try { Thread.sleep(500); } catch (InterruptedException ignored) {}
             stopped = !isDaemonRunning(processName, ctx);
         }
@@ -274,7 +278,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
                         "HTTP_PROXY=socks5://127.0.0.1:8119 " +
                         "HTTPS_PROXY=socks5://127.0.0.1:8119 " +
                         "NO_PROXY=localhost,127.0.0.1 " +
-                        "/data/local/tmp/zrok enable YOUR_ZROK_TOKEN --headless 2>&1";
+                        "/data/local/tmp/zrok enable 0QBZzB74VgX7 --headless 2>&1";
                     String enableResult = ctx.execShell(enableCmd);
                     ctx.log("Enable result: " + enableResult);
                     try { Thread.sleep(1000); } catch (InterruptedException ignored) {}

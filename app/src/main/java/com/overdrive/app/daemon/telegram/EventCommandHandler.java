@@ -150,7 +150,7 @@ public class EventCommandHandler implements TelegramCommandHandler {
             // Status indicator
             String status;
             if (isFileStillWriting(f)) {
-                status = "🔴";
+                status = "⏺️";
             } else if (f.length() > MAX_VIDEO_SIZE_BYTES) {
                 status = "⚠️";
             } else {
@@ -178,7 +178,7 @@ public class EventCommandHandler implements TelegramCommandHandler {
             }
         }
         
-        sb.append("🔴 Recording  ⚠️ >50MB  📥 Ready");
+        sb.append("⏺️ Recording  ⚠️ >50MB  📥 Ready");
         
         // Convert to array
         String[][][] buttons = buttonRows.toArray(new String[0][][]);

@@ -64,20 +64,20 @@ public class SystemCommandHandler implements TelegramCommandHandler {
             boolean running = isDaemonRunning(processName, ctx);
             
             if (running) {
-                sb.append("🟢 ").append(displayName).append("\n");
+                sb.append("✅ ").append(displayName).append("\n");
                 runningCount++;
                 
                 // Add stop button if allowed
                 if (canStop) {
-                    buttonRows.add(new String[][]{{"🔴 Stop " + displayName, "dm:" + cmdName + ":stop"}});
+                    buttonRows.add(new String[][]{{"⛔ Stop " + displayName, "dm:" + cmdName + ":stop"}});
                 }
             } else {
-                sb.append("🔴 ").append(displayName).append("\n");
+                sb.append("⛔ ").append(displayName).append("\n");
                 stoppedCount++;
                 
                 // Add start button for startable daemons
                 if (canStart) {
-                    buttonRows.add(new String[][]{{"🟢 Start " + displayName, "dm:" + cmdName + ":start"}});
+                    buttonRows.add(new String[][]{{"✅ Start " + displayName, "dm:" + cmdName + ":start"}});
                 }
             }
         }
@@ -161,7 +161,7 @@ public class SystemCommandHandler implements TelegramCommandHandler {
         
         String[][][] buttons = {
             {{"📊 Status", "cmd:/status"}, {"📹 Events", "cmd:/events"}},
-            {{"🟢 Start Surveillance", "cmd:/start"}, {"🔴 Stop Surveillance", "cmd:/stop"}},
+            {{"✅ Start Surveillance", "cmd:/start"}, {"⛔ Stop Surveillance", "cmd:/stop"}},
             {{"🤖 Daemons", "cmd:/daemons"}, {"🌐 Tunnel URL", "cmd:/url"}}
         };
         

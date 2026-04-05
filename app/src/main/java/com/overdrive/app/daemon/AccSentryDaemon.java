@@ -1949,7 +1949,8 @@ public class AccSentryDaemon {
         }
         
         log("Stopping Telegram daemon (vehicle on)...");
-        execShell("killall -9 " + TELEGRAM_DAEMON_PROCESS + " 2>/dev/null");
+        execShell("pkill -9 -f " + TELEGRAM_DAEMON_PROCESS + " 2>/dev/null");
+        execShell("rm -f /data/local/tmp/telegram_bot_daemon.lock 2>/dev/null");
         log("Telegram daemon stopped");
     }
 

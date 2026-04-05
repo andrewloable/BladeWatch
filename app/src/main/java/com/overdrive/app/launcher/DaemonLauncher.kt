@@ -1011,7 +1011,7 @@ class DaemonLauncher(
         callback.onLog("Stopping TelegramBotDaemon...")
         
         adbShellExecutor.execute(
-            command = "pkill -f $TELEGRAM_DAEMON_PROCESS",
+            command = "pkill -9 -f $TELEGRAM_DAEMON_PROCESS 2>/dev/null; rm -f /data/local/tmp/telegram_bot_daemon.lock 2>/dev/null; echo done",
             callback = object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
                     logManager.info(TAG, "TelegramBotDaemon stopped")
