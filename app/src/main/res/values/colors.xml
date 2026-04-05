@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Legacy colors (keep for compatibility) -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- ========================================== -->
+    <!-- BYD Champ Design System (matching web UI) -->
+    <!-- ========================================== -->
+    
+    <!-- Brand Colors -->
+    <color name="brand_primary">#00D4AA</color>
+    <color name="brand_secondary">#0EA5E9</color>
+    <color name="brand_cyan">@color/brand_primary</color>
+    <color name="brand_cyan_glow">#33D4AA</color>
+    
+    <!-- Background Colors -->
+    <color name="bg_base">#0F0F12</color>
+    <color name="bg_surface">#16161A</color>
+    <color name="bg_elevated">#1E1E24</color>
+    <color name="bg_hover">#26262E</color>
+    
+    <!-- Legacy background aliases -->
+    <color name="background_dark">@color/bg_base</color>
+    <color name="background_gradient_start">@color/bg_base</color>
+    <color name="background_gradient_end">@color/bg_surface</color>
+    <color name="surface_dark">@color/bg_surface</color>
+    <color name="surface_variant">@color/bg_elevated</color>
+    <color name="surface_elevated">@color/bg_elevated</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#A1A1AA</color>
+    <color name="text_muted">#71717A</color>
+    <color name="text_hint">@color/text_muted</color>
+    <color name="text_accent">@color/brand_primary</color>
+    
+    <!-- Border Colors -->
+    <color name="border_subtle">#0F0F0F0F</color>
+    <color name="border_default">#1AFFFFFF</color>
+    
+    <!-- Status Colors -->
+    <color name="status_success">#22C55E</color>
+    <color name="status_warning">#F59E0B</color>
+    <color name="status_danger">#EF4444</color>
+    <color name="status_running">@color/status_success</color>
+    <color name="status_running_glow">#69F0AE</color>
+    <color name="status_stopped">@color/text_muted</color>
+    <color name="status_error">@color/status_danger</color>
+    <color name="status_error_glow">#FF8A80</color>
+    <color name="status_starting">@color/status_warning</color>
+    <color name="status_starting_glow">#FFD180</color>
+    
+    <!-- Accent Colors (legacy aliases) -->
+    <color name="accent_purple">#7C4DFF</color>
+    <color name="accent_blue">@color/brand_secondary</color>
+    <color name="accent_cyan">@color/brand_primary</color>
+    <color name="accent_orange">@color/status_warning</color>
+    <color name="accent_green">@color/status_success</color>
+    <color name="accent_red">@color/status_danger</color>
+    
+    <!-- Legacy brand colors (aliases) -->
+    <color name="brand_blue_dark">#1A3A5C</color>
+    <color name="brand_blue">@color/brand_secondary</color>
+    <color name="brand_blue_light">#4A9FD4</color>
+    <color name="brand_silver">#C0C8D0</color>
+    <color name="brand_red">@color/status_danger</color>
+    <color name="brand_red_glow">#FF5252</color>
+    
+    <!-- Log Level Colors -->
+    <color name="log_debug">#71717A</color>
+    <color name="log_info">@color/status_success</color>
+    <color name="log_warn">@color/status_warning</color>
+    <color name="log_error">@color/status_danger</color>
+    
+    <!-- Card Colors -->
+    <color name="card_background">@color/bg_surface</color>
+    <color name="card_border">#1AFFFFFF</color>
+    <color name="card_border_glow">@color/brand_primary</color>
+    
+    <!-- Divider -->
+    <color name="divider">#1AFFFFFF</color>
+    
+    <!-- Switch/Toggle Colors -->
+    <color name="switch_track_on">@color/brand_primary</color>
+    <color name="switch_thumb_on">@color/white</color>
+    <color name="switch_track_off">@color/bg_hover</color>
+    <color name="switch_thumb_off">@color/text_muted</color>
+    
+    <!-- Button Colors -->
+    <color name="button_primary">@color/brand_primary</color>
+    <color name="button_primary_pressed">#33FFD4</color>
+    <color name="button_danger">@color/status_danger</color>
+    <color name="button_danger_pressed">#FF5252</color>
+    
+    <!-- Gradient Overlays -->
+    <color name="gradient_blue_start">#1A3A5C</color>
+    <color name="gradient_blue_end">@color/bg_base</color>
+</resources>

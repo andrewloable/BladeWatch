@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Performance - OverDrive</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        /* Performance Dashboard Specific Styles */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .metric-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--brand-gradient);
+            opacity: 0.6;
+        }
+        
+        .metric-card.warning::before { background: var(--warning); opacity: 1; }
+        .metric-card.danger::before { background: var(--danger); opacity: 1; }
+        
+        .metric-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .metric-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-title svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--brand-primary);
+        }
+        
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+        
+        .metric-value .unit {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
+        
+        .metric-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        
+        .metric-bar {
+            height: 8px;
+            background: var(--bg-elevated);
+            border-radius: 4px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+        
+        .metric-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: var(--brand-gradient);
+            transition: width 0.3s ease;
+        }
+        
+        .metric-bar-fill.warning { background: var(--warning); }
+        .metric-bar-fill.danger { background: var(--danger); }
+        .metric-bar-fill.ev-battery { background: linear-gradient(90deg, var(--success), #22d3ee); }
+        
+        /* Chart Container */
+        .chart-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+        }
+        
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .legend-dot.system { background: var(--brand-primary); }
+        .legend-dot.app { background: var(--brand-secondary); }
+        .legend-dot.gpu { background: #a855f7; }
+        
+        .chart-container {
+            position: relative;
+            height: 200px;
+            width: 100%;
+        }
+        
+        .chart-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        
+        /* Interactive chart hint */
+        .chart-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+        
+        /* Stats Grid */
+        .stats-row {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* App Memory Breakdown */
+        .memory-breakdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .breakdown-item {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .breakdown-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .breakdown-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        /* Monitoring Status */
+        .monitoring-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-full);
+            font-size: 13px;
+        }
+        
+        .monitoring-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        .monitoring-dot.inactive {
+            background: var(--text-muted);
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* SOC Chart Card */
+        .soc-chart-card {
+            background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(0, 212, 170, 0.05) 100%);
+            border: 1px solid rgba(0, 212, 170, 0.2);
+        }
+        
+        .soc-chart-card .chart-title {
+            display: flex;
+            align-items: center;
+        }
+        
+        .soc-stats-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-sm);
+        }
+        
+        .soc-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+        }
+        
+        .soc-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .soc-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        
+        .soc-time-selector {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-elevated);
+            padding: 4px;
+            border-radius: var(--radius-sm);
+        }
+        
+        .time-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .time-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-surface);
+        }
+        
+        .time-btn.active {
+            color: var(--brand-primary);
+            background: var(--bg-surface);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .metric-value {
+                font-size: 28px;
+            }
+            .memory-breakdown {
+                grid-template-columns: 1fr;
+            }
+            .soc-stats-row {
+                justify-content: space-between;
+            }
+            .soc-stat {
+                min-width: 50px;
+            }
+            .soc-stat-value {
+                font-size: 16px;
+            }
+            .soc-time-selector {
+                flex-wrap: wrap;
+            }
+        }
+        
+        /* GPU Health Indicator Styles */
+        .gpu-status-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .gpu-status-badge.efficient {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        .gpu-status-badge.optimal {
+            background: rgba(0, 212, 170, 0.2);
+            color: #00D4AA;
+        }
+        
+        .gpu-status-badge.heavy {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+        
+        .gpu-status-badge.critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .gpu-health-hint {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.5;
+        }
+        
+        .gpu-health-hint .hint-icon {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            margin-top: 1px;
+        }
+        
+        .gpu-health-hint.efficient {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .gpu-health-hint.efficient .hint-icon {
+            background: rgba(34, 197, 94, 0.2);
+        }
+        .gpu-health-hint.efficient .hint-icon::before {
+            content: '✓';
+            color: #22c55e;
+        }
+        
+        .gpu-health-hint.optimal .hint-icon {
+            background: rgba(0, 212, 170, 0.2);
+        }
+        .gpu-health-hint.optimal .hint-icon::before {
+            content: '●';
+            color: #00D4AA;
+        }
+        
+        .gpu-health-hint.heavy .hint-icon {
+            background: rgba(251, 191, 36, 0.2);
+        }
+        .gpu-health-hint.heavy .hint-icon::before {
+            content: '!';
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .gpu-health-hint.critical {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .gpu-health-hint.critical .hint-icon {
+            background: rgba(239, 68, 68, 0.2);
+        }
+        .gpu-health-hint.critical .hint-icon::before {
+            content: '⚠';
+            color: #ef4444;
+        }
+        
+        .gpu-health-hint .hint-text {
+            color: var(--text-secondary);
+        }
+        
+        .gpu-health-hint.efficient .hint-text {
+            color: #86efac;
+        }
+        
+        .gpu-health-hint.critical .hint-text {
+            color: #fca5a5;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-logo"><img src="../shared/app-icon.webp" alt="OverDrive"></div>
+                    <div class="brand-text">
+                        <span class="brand-name">OverDrive</span>
+                        <span class="brand-tagline">Sentry System</span>
+                    </div>
+                </div>
+                <button class="sidebar-close" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/>
+                        <path d="M2 12a9 9 0 0 0 8 8"/><circle cx="2" cy="12" r="2"/>
+                    </svg>
+                    <span>Live View</span>
+                </a>
+                <a href="events.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Events</span>
+                </a>
+                <a href="surveillance.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Surveillance</span>
+                </a>
+                <a href="recording.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>
+                    </svg>
+                    <span>Recordings</span>
+                </a>
+                <a href="performance.html" class="nav-link active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    <span>Performance</span>
+                </a>
+                <a href="abrp.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6"/>
+                        <circle cx="18" cy="12" r="3"/>
+                        <circle cx="6" cy="6" r="3"/>
+                        <circle cx="6" cy="18" r="3"/>
+                    </svg>
+                    <span>ABRP</span>
+                </a>
+                <a href="trips.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 17h2v-7l4 4 4-4 4 4 4-4v7h2"/>
+                        <path d="M4 5h16"/>
+                    </svg>
+                    <span>Trips</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-card">
+                    <div class="status-row">
+                        <span class="status-label"><span class="status-dot" id="connDot"></span>Device</span>
+                        <span class="status-value" id="deviceId">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">ACC</span>
+                        <span class="status-value" id="accValue">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">
+                            <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="6" y="7" width="12" height="10" rx="1"/><path d="M6 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/>
+                            </svg>12V
+                        </span>
+                        <span class="status-value" id="batteryValue">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Sentry</span>
+                        <span class="status-value" id="survStatus">OFF</span>
+                    </div>
+                </div>
+                <!-- EV Battery & Charging Card -->
+                <div class="status-card ev-card" id="evCard">
+                    <div class="ev-header-row">
+                        <span class="ev-title">Vehicle Status</span>
+                        <span class="ev-percent-text" id="evPercentValue">--%</span>
+                    </div>
+                    <div class="ev-svg-container">
+                        <svg viewBox="0 0 320 130" class="ev-car-svg">
+                            <defs>
+                                <linearGradient id="ceramicBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#ffffff"/>
+                                    <stop offset="60%" stop-color="#f8fafc"/>
+                                    <stop offset="100%" stop-color="#e2e8f0"/>
+                                </linearGradient>
+                                <linearGradient id="glassTint" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#020617"/>
+                                    <stop offset="100%" stop-color="#1e293b"/>
+                                </linearGradient>
+                                <linearGradient id="batteryFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#2dd4bf" class="grad-start"/>
+                                    <stop offset="50%" stop-color="#06b6d4" class="grad-mid"/>
+                                    <stop offset="100%" stop-color="#3b82f6" class="grad-end"/>
+                                </linearGradient>
+                                <pattern id="chargeFlowPattern" x="0" y="0" width="20" height="10" patternUnits="userSpaceOnUse">
+                                    <rect x="0" y="0" width="10" height="16" fill="rgba(255,255,255,0.4)"/>
+                                </pattern>
+                                <linearGradient id="chromeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#e2e8f0"/>
+                                    <stop offset="50%" stop-color="#ffffff"/>
+                                    <stop offset="100%" stop-color="#94a3b8"/>
+                                </linearGradient>
+                                <filter id="liquidDepth">
+                                    <feInnerShadow dx="0" dy="2" stdDeviation="1" flood-color="rgba(0,0,0,0.1)"/>
+                                </filter>
+                            </defs>
+                            <g transform="translate(0, -3)">
+                                <circle cx="70" cy="90" r="19" fill="#050505"/>
+                                <circle cx="250" cy="90" r="19" fill="#050505"/>
+                            </g>
+                            <path d="M10,65 Q15,50 30,45 L60,38 L100,20 C130,10 180,10 210,22 L260,40 Q280,44 295,52 L310,62 Q315,68 312,78 L275,78 Q250,50 225,78 L95,78 Q70,50 45,78 L15,78 Q5,78 5,68 Q5,62 10,65 Z" fill="url(#ceramicBody)" filter="drop-shadow(0 8px 16px rgba(0,0,0,0.3))"/>
+                            <path d="M95,78 L225,78 L225,98 L95,98 Z" fill="url(#ceramicBody)"/>
+                            <g>
+                                <path d="M100,24 L210,26 L240,42 L200,42 L100,40 Z" fill="none" stroke="url(#chromeGrad)" stroke-width="1.5"/>
+                                <path d="M102,26 L208,28 L235,41 L200,41 L102,39 Z" fill="url(#glassTint)"/>
+                                <path d="M155,27 L160,28 L160,41 L155,40 Z" fill="#020617"/>
+                            </g>
+                            <rect id="evBatteryFill" x="100" y="80" width="0" height="16" rx="2" fill="url(#batteryFlow)" class="battery-bar" filter="url(#liquidDepth)"/>
+                            <rect id="evChargeFlow" x="100" y="80" width="0" height="16" rx="2" fill="url(#chargeFlowPattern)" class="charge-flow" opacity="0"/>
+                            <g transform="translate(70, 90)">
+                                <circle r="19" fill="#050505"/>
+                                <circle r="14" fill="#ffffff"/>
+                                <circle r="14" fill="url(#ceramicBody)" opacity="0.8"/>
+                                <circle r="14" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                                <path d="M0,-14 L0,14 M-12,-7 L12,7 M-12,7 L12,-7" stroke="#cbd5e1" stroke-width="2"/>
+                                <circle r="4" fill="#1e293b"/>
+                            </g>
+                            <g transform="translate(250, 90)">
+                                <circle r="19" fill="#050505"/>
+                                <circle r="14" fill="#ffffff"/>
+                                <circle r="14" fill="url(#ceramicBody)" opacity="0.8"/>
+                                <circle r="14" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                                <path d="M0,-14 L0,14 M-12,-7 L12,7 M-12,7 L12,-7" stroke="#cbd5e1" stroke-width="2"/>
+                                <circle r="4" fill="#1e293b"/>
+                            </g>
+                            <path d="M290,55 L302,53 L298,60 Z" fill="#fff" filter="drop-shadow(0 0 3px cyan)"/>
+                            <path d="M12,58 L18,55 L18,62 Z" fill="#ef4444" opacity="0.9"/>
+                            <g id="svgChargeIcon" transform="translate(160, 5) scale(0)" style="transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                                <circle r="12" fill="#00D4AA" stroke="#fff" stroke-width="2"/>
+                                <path d="M-2,-6 L-4,1 L0,1 L-2,7 L5,-1 L1,-1 Z" fill="#fff"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="ev-info-row">
+                        <div class="ev-range">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M2 12h20"/>
+                            </svg>
+                            <span id="evRange">-- km</span>
+                        </div>
+                        <div class="ev-power-status">
+                            <span class="ev-power-val" id="evPower">-- kW</span>
+                        </div>
+                    </div>
+                    <div class="ev-personalized-range" id="evPersonalizedRow" style="display:none;">
+                        <span class="ev-personalized-label">⚡ Personalized</span>
+                        <span class="ev-personalized-val" id="evPersonalizedRange">-- km</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <span style="font-weight:600;">Performance</span>
+                <div style="width:40px;"></div>
+            </div>
+
+            <header class="page-header">
+                <h1 class="page-title">Performance Monitor</h1>
+                <div class="header-actions">
+                    <div class="monitoring-status">
+                        <span class="monitoring-dot" id="monitoringDot"></span>
+                        <span id="monitoringText">Monitoring</span>
+                    </div>
+                    <div class="header-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span id="currentTime">--:--</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-body">
+                <!-- Quick Stats Grid -->
+                <div class="metrics-grid">
+                    <!-- CPU Card -->
+                    <div class="metric-card" id="cpuCard">
+                        <div class="metric-header">
+                            <div class="metric-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/>
+                                    <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>
+                                </svg>
+                                CPU
+                            </div>
+                        </div>
+                        <div class="metric-value"><span id="cpuValue">--</span><span class="unit">%</span></div>
+                        <div class="metric-subtitle">App: <span id="cpuAppValue">--</span>%</div>
+                        <div class="metric-bar"><div class="metric-bar-fill" id="cpuBar" style="width: 0%"></div></div>
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <span class="stat-label">Frequency</span>
+                                <span class="stat-value" id="cpuFreq">-- MHz</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Temperature</span>
+                                <span class="stat-value" id="cpuTemp">--°C</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Memory Card -->
+                    <div class="metric-card" id="memCard">
+                        <div class="metric-header">
+                            <div class="metric-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M6 8v-3M10 8v-3M14 8v-3M18 8v-3"/>
+                                    <rect x="2" y="8" width="20" height="8" rx="1"/>
+                                </svg>
+                                Memory
+                            </div>
+                        </div>
+                        <div class="metric-value"><span id="memValue">--</span><span class="unit">%</span></div>
+                        <div class="metric-subtitle"><span id="memUsed">--</span> / <span id="memTotal">--</span> MB</div>
+                        <div class="metric-bar"><div class="metric-bar-fill" id="memBar" style="width: 0%"></div></div>
+                        <div class="memory-breakdown">
+                            <div class="breakdown-item">
+                                <div class="breakdown-value" id="appMemTotal">--</div>
+                                <div class="breakdown-label">App Total</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-value" id="appMemNative">--</div>
+                                <div class="breakdown-label">Native</div>
+                            </div>
+                            <div class="breakdown-item">
+                                <div class="breakdown-value" id="appMemJava">--</div>
+                                <div class="breakdown-label">Java Heap</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GPU Card -->
+                    <div class="metric-card" id="gpuCard">
+                        <div class="metric-header">
+                            <div class="metric-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="6" width="20" height="12" rx="2"/>
+                                    <path d="M6 10h4v4H6zM14 10h4v4h-4z"/>
+                                </svg>
+                                GPU
+                            </div>
+                            <span class="gpu-status-badge" id="gpuStatusBadge" style="display:none;"></span>
+                        </div>
+                        <div class="metric-value"><span id="gpuValue">--</span><span class="unit">%</span></div>
+                        <div class="metric-subtitle" id="gpuSubtitle">Graphics Processing</div>
+                        <div class="metric-bar"><div class="metric-bar-fill" id="gpuBar" style="width: 0%"></div></div>
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <span class="stat-label">Frequency</span>
+                                <span class="stat-value" id="gpuFreq">-- MHz</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Temperature</span>
+                                <span class="stat-value" id="gpuTemp">--°C</span>
+                            </div>
+                        </div>
+                        <!-- GPU Health Indicator -->
+                        <div class="gpu-health-hint" id="gpuHealthHint" style="display:none;">
+                            <span class="hint-icon"></span>
+                            <span class="hint-text" id="gpuHintText"></span>
+                        </div>
+                    </div>
+
+                    <!-- App Stats Card -->
+                    <div class="metric-card" id="appCard">
+                        <div class="metric-header">
+                            <div class="metric-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                                </svg>
+                                App Stats
+                            </div>
+                        </div>
+                        <div class="metric-value"><span id="threadCount">--</span><span class="unit">threads</span></div>
+                        <div class="metric-subtitle">Active Threads</div>
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <span class="stat-label">Open FDs</span>
+                                <span class="stat-value" id="openFds">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">GC Count</span>
+                                <span class="stat-value" id="gcCount">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EV Battery Card -->
+                    <div class="metric-card" id="evBatteryCard">
+                        <div class="metric-header">
+                            <div class="metric-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="6" y="7" width="12" height="10" rx="1"/>
+                                    <path d="M6 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2"/>
+                                    <path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/>
+                                    <line x1="10" y1="10" x2="10" y2="14"/>
+                                    <line x1="14" y1="10" x2="14" y2="14"/>
+                                </svg>
+                                EV Battery
+                            </div>
+                        </div>
+                        <div class="metric-value"><span id="evSocValue">--</span><span class="unit">%</span></div>
+                        <div class="metric-subtitle"><span id="evKwhValue">--</span> kWh remaining</div>
+                        <div class="metric-bar"><div class="metric-bar-fill ev-battery" id="evSocBar" style="width: 0%"></div></div>
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <span class="stat-label">Range</span>
+                                <span class="stat-value" id="evRangeValue">-- km</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Status</span>
+                                <span class="stat-value" id="evChargingStatus">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CPU Usage Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">CPU Usage History (60s)</div>
+                        <div class="chart-legend">
+                            <div class="legend-item"><span class="legend-dot system"></span>System</div>
+                            <div class="legend-item"><span class="legend-dot app"></span>App</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="cpuChart" class="chart-canvas"></canvas>
+                    </div>
+                    <div class="chart-hint">Touch or hover to see values</div>
+                </div>
+
+                <!-- Memory Usage Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">Memory Usage History (60s)</div>
+                        <div class="chart-legend">
+                            <div class="legend-item"><span class="legend-dot system"></span>System</div>
+                            <div class="legend-item"><span class="legend-dot app"></span>App</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="memChart" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- GPU Usage Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">GPU Usage History (60s)</div>
+                        <div class="chart-legend">
+                            <div class="legend-item"><span class="legend-dot gpu"></span>GPU Load</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="gpuChart" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- SOC History Chart (Persistent - 3 days) -->
+                <div class="chart-card soc-chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;margin-right:8px;stroke:var(--success);">
+                                <rect x="6" y="7" width="12" height="10" rx="1"/><path d="M6 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/>
+                            </svg>
+                            Battery SOC History
+                        </div>
+                        <div class="soc-time-selector">
+                            <button class="time-btn" data-hours="24" onclick="BYD.performance.setSocTimeRange(24)">24h</button>
+                            <button class="time-btn active" data-hours="72" onclick="BYD.performance.setSocTimeRange(72)">3 Days</button>
+                            <button class="time-btn" data-hours="168" onclick="BYD.performance.setSocTimeRange(168)">7 Days</button>
+                        </div>
+                    </div>
+                    <div class="soc-stats-row">
+                        <div class="soc-stat">
+                            <span class="soc-stat-value" id="socCurrent">--%</span>
+                            <span class="soc-stat-label">Current</span>
+                        </div>
+                        <div class="soc-stat">
+                            <span class="soc-stat-value" id="socKwh">-- kWh</span>
+                            <span class="soc-stat-label">Energy</span>
+                        </div>
+                        <div class="soc-stat">
+                            <span class="soc-stat-value" id="socMin">--%</span>
+                            <span class="soc-stat-label">Min</span>
+                        </div>
+                        <div class="soc-stat">
+                            <span class="soc-stat-value" id="socMax">--%</span>
+                            <span class="soc-stat-label">Max</span>
+                        </div>
+                        <div class="soc-stat">
+                            <span class="soc-stat-value" id="socAvg">--%</span>
+                            <span class="soc-stat-label">Avg</span>
+                        </div>
+                        <div class="soc-stat">
+                            <span class="soc-stat-value" id="chargingSessions">--</span>
+                            <span class="soc-stat-label">Charges</span>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="socChart" class="chart-canvas"></canvas>
+                    </div>
+                    <div class="chart-legend" style="margin-top:12px;justify-content:center;">
+                        <div class="legend-item"><span class="legend-dot" style="background:var(--success);"></span>SOC %</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:var(--brand-secondary);"></span>Charging</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/core.js"></script>
+    <script src="../shared/performance.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+        BYD.core.init();
+        BYD.performance.init();
+    </script>
+</body>
+</html>

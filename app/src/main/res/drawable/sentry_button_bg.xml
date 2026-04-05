@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Checked/ON state - Brand Primary -->
+    <item android:state_checked="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/brand_primary"/>
+            <corners android:radius="12dp"/>
+            <stroke android:width="2dp" android:color="@color/brand_cyan_glow"/>
+        </shape>
+    </item>
+    <!-- Unchecked/OFF state - Elevated surface -->
+    <item android:state_checked="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bg_elevated"/>
+            <corners android:radius="12dp"/>
+            <stroke android:width="1dp" android:color="@color/card_border"/>
+        </shape>
+    </item>
+</selector>

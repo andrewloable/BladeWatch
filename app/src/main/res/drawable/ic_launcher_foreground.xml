@@ -1,0 +1,55 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Background circle with gradient effect -->
+    <path
+        android:fillColor="#0A1628"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
+    
+    <!-- Outer ring - cyan glow -->
+    <path
+        android:fillColor="#00D4FF"
+        android:pathData="M54,54m-36,0a36,36 0,1 1,72 0a36,36 0,1 1,-72 0"
+        android:strokeWidth="2"
+        android:strokeColor="#00D4FF"/>
+    
+    <!-- Inner dark circle -->
+    <path
+        android:fillColor="#0D2137"
+        android:pathData="M54,54m-32,0a32,32 0,1 1,64 0a32,32 0,1 1,-64 0"/>
+    
+    <!-- Camera lens outer -->
+    <path
+        android:fillColor="#1A3A5C"
+        android:pathData="M54,54m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0"/>
+    
+    <!-- Camera lens middle -->
+    <path
+        android:fillColor="#0D2137"
+        android:pathData="M54,54m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0"/>
+    
+    <!-- Camera lens inner - cyan accent -->
+    <path
+        android:fillColor="#00D4FF"
+        android:pathData="M54,54m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0"/>
+    
+    <!-- Camera lens center dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,54m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"/>
+    
+    <!-- Recording indicator - red dot -->
+    <path
+        android:fillColor="#FF3B5C"
+        android:pathData="M72,36m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+    
+    <!-- Lens reflection highlight -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.3"
+        android:pathData="M46,46 Q50,42 58,44 Q52,48 46,46"/>
+    
+</vector>

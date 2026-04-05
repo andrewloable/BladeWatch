@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - OverDrive</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-primary: #00D4AA;
+            --brand-secondary: #0EA5E9;
+            --bg-base: #0F0F12;
+            --bg-surface: #16161A;
+            --bg-elevated: #1E1E24;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A1A1AA;
+            --text-muted: #71717A;
+            --danger: #EF4444;
+            --success: #22C55E;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-default: rgba(255, 255, 255, 0.1);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 40px 32px;
+            text-align: center;
+        }
+        
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .brand-logo img {
+            width: 150%;
+            height: 150%;
+            object-fit: contain;
+            margin: -25%;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.05em;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-default);
+            border-radius: 10px;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        .form-input:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+        }
+        
+        .form-input.error {
+            border-color: var(--danger);
+        }
+        
+        .form-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        
+        .form-error {
+            font-size: 12px;
+            color: var(--danger);
+            margin-top: 8px;
+            display: none;
+        }
+        
+        .form-error.visible {
+            display: block;
+        }
+        
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+            color: #000;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Status Messages */
+        .status-message {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status-message.visible {
+            display: block;
+        }
+        
+        .status-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+        
+        .status-message.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--success);
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Footer */
+        .login-footer {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        /* Device ID display */
+        .device-info {
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .device-info-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .device-info-value {
+            font-size: 13px;
+            color: var(--brand-primary);
+            font-family: monospace;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="brand-logo">
+                <img src="../shared/app-icon.webp" alt="OverDrive">
+            </div>
+            <h1 class="login-title">OverDrive</h1>
+            <p class="login-subtitle">Enter your device token to access</p>
+            
+            <div id="deviceInfo" class="device-info">
+                <div class="device-info-label">Device ID</div>
+                <div class="device-info-value" id="deviceIdDisplay">Loading...</div>
+            </div>
+            
+            <div id="statusMessage" class="status-message"></div>
+            
+            <div class="form-group">
+                <label class="form-label">Access Code</label>
+                <input type="text" 
+                       id="tokenInput" 
+                       class="form-input" 
+                       placeholder="xxxxxxxx"
+                       autocomplete="off"
+                       spellcheck="false"
+                       maxlength="8"
+                       style="text-align: center; font-size: 20px; letter-spacing: 0.2em;">
+                <p class="form-hint">Find this in your OverDrive app → Dashboard → Access Code</p>
+                <p class="form-error" id="tokenError"></p>
+            </div>
+            
+            <button class="btn btn-primary" id="loginBtn" onclick="login()">
+                <span id="loginBtnText">Login</span>
+                <div class="spinner" id="loginSpinner" style="display:none;"></div>
+            </button>
+            
+            <div class="login-footer">
+                <p>Your data stays on your device.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parse redirect URL from query string
+        let redirectUrl = '/';
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('redirect')) {
+            redirectUrl = decodeURIComponent(urlParams.get('redirect'));
+        }
+        
+        // Store device ID for token construction
+        let deviceId = '';
+        
+        // Check device info on load
+        async function checkDevice() {
+            try {
+                const response = await fetch('/auth/status');
+                const data = await response.json();
+                
+                if (data.deviceId && data.deviceId !== 'unknown') {
+                    deviceId = data.deviceId;
+                    document.getElementById('deviceIdDisplay').textContent = data.deviceId;
+                } else {
+                    document.getElementById('deviceIdDisplay').textContent = 'Unknown device';
+                }
+            } catch (e) {
+                console.error('Failed to check device:', e);
+                document.getElementById('deviceIdDisplay').textContent = 'Connection error';
+            }
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            const el = document.getElementById('statusMessage');
+            el.textContent = message;
+            el.className = 'status-message visible ' + type;
+        }
+        
+        function hideStatus() {
+            document.getElementById('statusMessage').className = 'status-message';
+        }
+        
+        // Login with access code
+        async function login() {
+            const accessCode = document.getElementById('tokenInput').value.trim().toLowerCase();
+            const btn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('loginBtnText');
+            const spinner = document.getElementById('loginSpinner');
+            const errorEl = document.getElementById('tokenError');
+            
+            if (!accessCode) {
+                errorEl.textContent = 'Please enter your access code';
+                errorEl.classList.add('visible');
+                document.getElementById('tokenInput').classList.add('error');
+                return;
+            }
+            
+            if (accessCode.length !== 8) {
+                errorEl.textContent = 'Access code must be 8 characters';
+                errorEl.classList.add('visible');
+                document.getElementById('tokenInput').classList.add('error');
+                return;
+            }
+            
+            if (!deviceId) {
+                showStatus('Device ID not loaded. Please refresh.', 'error');
+                return;
+            }
+            
+            // Combine device ID + access code to form full token
+            const fullToken = deviceId + '-' + accessCode;
+            
+            // Clear errors
+            errorEl.classList.remove('visible');
+            document.getElementById('tokenInput').classList.remove('error');
+            hideStatus();
+            
+            // Show loading
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+            
+            try {
+                const response = await fetch('/auth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: fullToken })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store JWT in cookie AND localStorage (localStorage is more reliable through tunnels)
+                    const maxAge = data.expiresIn || (365 * 24 * 60 * 60);
+                    const isSecure = window.location.protocol === 'https:';
+                    const sameSite = isSecure ? 'Lax; Secure' : 'Lax';
+                    document.cookie = `byd_session=${data.jwt}; path=/; max-age=${maxAge}; SameSite=${sameSite}`;
+                    
+                    // Also store in localStorage as backup (tunnels can drop cookies)
+                    try {
+                        localStorage.setItem('byd_jwt', data.jwt);
+                    } catch (e) {
+                        console.warn('Could not save to localStorage:', e);
+                    }
+                    
+                    showStatus('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect after short delay
+                    setTimeout(() => {
+                        window.location.href = redirectUrl;
+                    }, 500);
+                } else {
+                    errorEl.textContent = data.error || 'Invalid access code';
+                    errorEl.classList.add('visible');
+                    document.getElementById('tokenInput').classList.add('error');
+                }
+            } catch (e) {
+                showStatus('Connection error. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.style.display = 'inline';
+                spinner.style.display = 'none';
+            }
+        }
+        
+        // Enter key handler
+        document.getElementById('tokenInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        // Initialize
+        checkDevice();
+    </script>
+</body>
+</html>

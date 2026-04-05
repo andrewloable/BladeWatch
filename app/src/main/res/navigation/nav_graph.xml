@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/dashboardFragment">
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="com.overdrive.app.ui.fragment.DashboardFragment"
+        android:label="Dashboard"
+        tools:layout="@layout/fragment_dashboard" />
+
+    <fragment
+        android:id="@+id/daemonsFragment"
+        android:name="com.overdrive.app.ui.fragment.DaemonsFragment"
+        android:label="Daemons"
+        tools:layout="@layout/fragment_daemons" />
+
+    <fragment
+        android:id="@+id/recordingFragment"
+        android:name="com.overdrive.app.ui.fragment.WebViewFragment"
+        android:label="Recording"
+        tools:layout="@layout/fragment_webview">
+        <argument
+            android:name="page_path"
+            app:argType="string"
+            android:defaultValue="/recording" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adbConsoleFragment"
+        android:name="com.overdrive.app.ui.fragment.AdbConsoleFragment"
+        android:label="ADB Console"
+        tools:layout="@layout/fragment_adb_console" />
+
+    <fragment
+        android:id="@+id/sentryConfigFragment"
+        android:name="com.overdrive.app.ui.fragment.WebViewFragment"
+        android:label="Surveillance"
+        tools:layout="@layout/fragment_webview">
+        <argument
+            android:name="page_path"
+            app:argType="string"
+            android:defaultValue="/surveillance" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/eventsFragment"
+        android:name="com.overdrive.app.ui.fragment.RecordingLibraryFragment"
+        android:label="Events"
+        tools:layout="@layout/fragment_recording_library" />
+
+    <fragment
+        android:id="@+id/videoPlayerFragment"
+        android:name="com.overdrive.app.ui.fragment.VideoPlayerFragment"
+        android:label="Video Player"
+        tools:layout="@layout/fragment_video_player">
+        <argument
+            android:name="video_path"
+            app:argType="string" />
+        <argument
+            android:name="video_title"
+            app:argType="string"
+            android:defaultValue="" />
+    </fragment>
+
+    <!-- Global action so any fragment can navigate to video player -->
+    <action
+        android:id="@+id/action_global_videoPlayer"
+        app:destination="@id/videoPlayerFragment" />
+
+    <fragment
+        android:id="@+id/telegramSettingsFragment"
+        android:name="com.overdrive.app.ui.fragment.TelegramSettingsFragment"
+        android:label="Telegram"
+        tools:layout="@layout/fragment_telegram_settings" />
+
+    <fragment
+        android:id="@+id/abrpSettingsFragment"
+        android:name="com.overdrive.app.ui.fragment.WebViewFragment"
+        android:label="ABRP"
+        tools:layout="@layout/fragment_webview">
+        <argument
+            android:name="page_path"
+            app:argType="string"
+            android:defaultValue="/abrp" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/tripsFragment"
+        android:name="com.overdrive.app.ui.fragment.WebViewFragment"
+        android:label="Trips"
+        tools:layout="@layout/fragment_webview">
+        <argument
+            android:name="page_path"
+            app:argType="string"
+            android:defaultValue="/trips" />
+    </fragment>
+
+</navigation>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/dashboardFragment"
+            android:icon="@drawable/ic_dashboard"
+            android:title="Dashboard" />
+
+        <item
+            android:id="@+id/daemonsFragment"
+            android:icon="@drawable/ic_daemons"
+            android:title="Daemons" />
+
+        <item
+            android:id="@+id/eventsFragment"
+            android:icon="@drawable/ic_events"
+            android:title="Events" />
+
+        <item
+            android:id="@+id/recordingFragment"
+            android:icon="@drawable/ic_recording"
+            android:title="Recording" />
+
+        <item
+            android:id="@+id/sentryConfigFragment"
+            android:icon="@drawable/ic_sentry"
+            android:title="Surveillance" />
+
+        <item
+            android:id="@+id/adbConsoleFragment"
+            android:icon="@drawable/ic_console"
+            android:title="ADB Console" />
+
+        <item
+            android:id="@+id/telegramSettingsFragment"
+            android:icon="@drawable/ic_telegram"
+            android:title="Telegram" />
+
+        <item
+            android:id="@+id/abrpSettingsFragment"
+            android:icon="@drawable/ic_route"
+            android:title="ABRP" />
+
+        <item
+            android:id="@+id/tripsFragment"
+            android:icon="@drawable/ic_trips"
+            android:title="Trips" />
+
+        <item
+            android:id="@+id/nav_check_update"
+            android:icon="@drawable/ic_update"
+            android:title="Check for Updates" />
+    </group>
+
+</menu>

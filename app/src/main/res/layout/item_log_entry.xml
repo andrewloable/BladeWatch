@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="3dp">
+
+    <!-- Timestamp -->
+    <TextView
+        android:id="@+id/tvTimestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:text="12:34:56"
+        android:textColor="@color/text_muted"
+        android:textSize="10sp" />
+
+    <!-- Level indicator -->
+    <View
+        android:id="@+id/levelIndicator"
+        android:layout_width="3dp"
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="8dp"
+        android:background="@color/status_success" />
+
+    <!-- Tag -->
+    <TextView
+        android:id="@+id/tvTag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:maxWidth="80dp"
+        android:singleLine="true"
+        android:text="[TAG]"
+        android:textColor="@color/brand_secondary"
+        android:textSize="10sp" />
+
+    <!-- Message -->
+    <TextView
+        android:id="@+id/tvMessage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:fontFamily="monospace"
+        android:text="Log message here"
+        android:textColor="@color/text_primary"
+        android:textSize="10sp" />
+
+</LinearLayout>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OverDrive</string>
+    
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_description">Keeps Overdrive vehicle monitoring active in the background. This service does not read or interact with screen content.</string>
+    
+    <!-- Recording Mode Labels -->
+    <string name="recording_mode_title">Recording Mode (ACC ON)</string>
+    <string name="recording_mode_subtitle">Choose when to record while driving</string>
+    
+    <string name="recording_mode_none_title">None (Default)</string>
+    <string name="recording_mode_none_desc">No recording - saves battery and resources</string>
+    <string name="recording_mode_none_full">🚫 None (Default)\nNo recording - saves battery and resources</string>
+    
+    <string name="recording_mode_continuous_title">Continuous Recording</string>
+    <string name="recording_mode_continuous_desc">Record all the time when cameras are active</string>
+    <string name="recording_mode_continuous_full">📹 Continuous Recording\nRecord all the time when cameras are active</string>
+    
+    <string name="recording_mode_drive_title">Drive Mode Recording</string>
+    <string name="recording_mode_drive_desc">Record only when driving (D/R/S/M gear)</string>
+    <string name="recording_mode_drive_full">🚗 Drive Mode Recording\nRecord only when driving (D/R/S/M gear)</string>
+    
+    <string name="recording_mode_proximity_title">Proximity Guard</string>
+    <string name="recording_mode_proximity_desc">Record when objects approach the vehicle</string>
+    <string name="recording_mode_proximity_full">🛡️ Proximity Guard\nRecord when objects approach the vehicle</string>
+    
+    <!-- Proximity Guard Settings Labels -->
+    <string name="proximity_settings_title">Proximity Guard Settings</string>
+    
+    <string name="proximity_trigger_label">Trigger Sensitivity</string>
+    <string name="proximity_trigger_red_only">Close Only (0–0.5m)</string>
+    <string name="proximity_trigger_yellow_red">Medium + Close (0–0.8m)</string>
+    
+    <string name="proximity_pre_buffer_label">Pre-event Buffer</string>
+    <string name="proximity_pre_buffer_desc">Seconds captured before event</string>
+    <string name="proximity_pre_buffer_value">%d seconds</string>
+    
+    <string name="proximity_post_buffer_label">Post-event Buffer</string>
+    <string name="proximity_post_buffer_desc">Seconds captured after radar clears</string>
+    <string name="proximity_post_buffer_value">%d seconds</string>
+    
+    <string name="proximity_continuation_info">ℹ️ Recording continues if radar triggers again within post-buffer time</string>
+    
+    <!-- Quality Settings Labels -->
+    <string name="quality_settings_title">Quality Settings</string>
+    <string name="quality_label">Recording Quality</string>
+    <string name="bitrate_label">Recording Bitrate</string>
+    <string name="codec_label">Video Codec (H.265 = 50%% smaller)</string>
+    
+    <!-- Storage Labels -->
+    <string name="storage_title">Recording Storage</string>
+    <string name="storage_usage_label">Storage Usage</string>
+    <string name="storage_path_info">Recordings saved to Overdrive/recordings</string>
+    <string name="storage_limit_label">Storage Limit</string>
+    <string name="storage_limit_desc">Auto-delete oldest when limit reached</string>
+    <string name="storage_used_format">%s used</string>
+    <string name="storage_limit_format">%s limit</string>
+    
+    <!-- Recording Status Labels -->
+    <string name="recording_status_idle">Not Recording</string>
+    <string name="recording_status_active">Recording</string>
+    <string name="recording_status_monitoring">Monitoring</string>
+    
+    <!-- Event Types -->
+    <string name="event_type_normal">Normal</string>
+    <string name="event_type_sentry">Sentry</string>
+    <string name="event_type_proximity">Proximity</string>
+    
+    <!-- Filter Labels -->
+    <string name="filter_all">All</string>
+    <string name="filter_sentry">Sentry</string>
+    <string name="filter_normal">Normal</string>
+    <string name="filter_proximity">Proximity</string>
+    
+    <!-- Storage Breakdown -->
+    <string name="storage_count_normal">%d Normal</string>
+    <string name="storage_count_sentry">%d Sentry</string>
+    <string name="storage_count_proximity">%d Proximity</string>
+    
+    <!-- Recording Controls -->
+    <string name="recording_start">Start</string>
+    <string name="recording_stop">Stop</string>
+    <string name="recording_apply">Apply Settings</string>
+    
+    <!-- Slider Range Labels -->
+    <string name="slider_min_2s">2s</string>
+    <string name="slider_max_15s">15s</string>
+    <string name="slider_min_5s">5s</string>
+    <string name="slider_max_30s">30s</string>
+    <string name="slider_min_100mb">100MB</string>
+    <string name="slider_max_1000mb">1000MB</string>
+</resources>

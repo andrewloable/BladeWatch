@@ -1,0 +1,192 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- SOTA: Required for Android 11+ to see files created by other UIDs (daemon) -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    
+    <!-- Location permissions for GPS tracking -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    
+    <!-- BYD-specific permissions (essential for camera and sentry mode) -->
+    <!-- Bodywork (power, ACC state, 12V battery voltage level) -->
+    <uses-permission android:name="android.permission.BYDAUTO_BODYWORK_COMMON" />
+    <uses-permission android:name="android.permission.BYDAUTO_BODYWORK_GET" />
+    <uses-permission android:name="android.permission.BYDAUTO_BODYWORK_SET" />
+    <!-- Charging (charging state and power) -->
+    <uses-permission android:name="android.permission.BYDAUTO_CHARGING_GET" />
+    <!-- OTA (battery power voltage) -->
+    <uses-permission android:name="android.permission.BYDAUTO_OTA_GET" />
+    <!-- Radar (parking sensors - for sentry motion detection) -->
+    <uses-permission android:name="android.permission.BYDAUTO_RADAR_GET" />
+    <uses-permission android:name="android.permission.BYDAUTO_RADAR_COMMON" />
+    <!-- Gearbox (for Drive Mode recording) -->
+    <uses-permission android:name="android.permission.BYDAUTO_GEARBOX_GET" />
+    <!-- Panorama camera -->
+    <uses-permission android:name="android.permission.BYDAUTO_PANORAMA_COMMON" />
+    <uses-permission android:name="android.permission.BYDAUTO_PANORAMA_GET" />
+    <uses-permission android:name="android.permission.BYDAUTO_PANORAMA_SET" />
+    <!-- Power -->
+    <uses-permission android:name="android.permission.BYDAUTO_POWER_GET" />
+    <uses-permission android:name="android.permission.BYDAUTO_POWER_SET" />
+    <!-- Generic BYD -->
+    <uses-permission android:name="android.permission.BYD" />
+    <uses-permission android:name="android.permission.DEVICE_ACC" />
+    <uses-permission android:name="android.permission.DEVICE_POWER" />
+    <!-- Data cache (for ACC whitelist) -->
+    <uses-permission android:name="android.permission.ACCESS_APPOPSDATA" />
+
+    <application
+        android:name="com.overdrive.app.OverdriveApplication"
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:extractNativeLibs="true"
+        android:theme="@style/Theme.Overdrive"
+        android:icon="@mipmap/ic_launcher_foreground"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true">
+
+        <!-- New Modern UI Activity -->
+        <activity 
+            android:name="com.overdrive.app.ui.MainActivity"
+            android:exported="true"
+            android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.overdrive.app.START_LOCATION_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+
+
+        <!-- Blocker Activity for Sentry Mode (transparent click blocker) -->
+        <activity
+            android:name="com.overdrive.app.BlockerActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <!-- Location Starter Activity - Transparent, starts Location service and finishes immediately -->
+        <!-- Used by SentryDaemon to restart Location service without bringing app to foreground -->
+        <activity
+            android:name="com.overdrive.app.ui.LocationStarterActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="com.overdrive.app.START_LOCATION_SILENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name="com.overdrive.app.receiver.BootReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="true">
+            <intent-filter android:priority="1000">
+                <!-- Standard boot -->
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <!-- Screen/power events for ACC mode wake -->
+                <action android:name="android.intent.action.SCREEN_ON" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="android.intent.action.USER_UNLOCKED" />
+                <!-- Power connection events -->
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <!-- BYD-specific ACC mode events -->
+                <action android:name="com.byd.action.ACC_ON" />
+                <action android:name="com.byd.action.ACC_OFF" />
+                <action android:name="com.byd.action.IGN_ON" />
+                <action android:name="com.byd.accmode.ACC_MODE_CHANGED" />
+                <!-- Network state changes (WiFi reconnect) -->
+                <action android:name="android.net.wifi.STATE_CHANGE" />
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Location Boot Receiver - Auto-start Location service after device reboot -->
+        <receiver
+            android:name="com.overdrive.app.receiver.LocationBootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Location Sidecar Service - Writes GPS to shared file for daemon -->
+        <service
+            android:name="com.overdrive.app.services.LocationSidecarService"
+            android:foregroundServiceType="location|dataSync"
+            android:exported="true" />
+
+        <!-- Daemon Keepalive Service - Keeps app alive and monitors SCREEN_OFF -->
+        <service
+            android:name="com.overdrive.app.services.DaemonKeepaliveService"
+            android:foregroundServiceType="specialUse|dataSync"
+            android:exported="false" />
+
+        <!-- AccessibilityService Keep-Alive - Highest process priority protection.
+             Prevents BYD firmware from killing the app after 24 hours.
+             Enable via: settings put secure enabled_accessibility_services com.overdrive.app/com.overdrive.app.services.KeepAliveAccessibilityService
+                         settings put secure accessibility_enabled 1 -->
+        <service
+            android:name="com.overdrive.app.services.KeepAliveAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- FileProvider for sharing video files -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+</manifest>

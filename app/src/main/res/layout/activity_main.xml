@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/bg_base">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BYD Champ"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/brand_primary"
+            android:gravity="center"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Camera Selection Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/bg_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Camera Selection"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <ToggleButton
+                        android:id="@+id/btnCam1"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="48dp"
+                        android:layout_margin="4dp"
+                        android:textOn="CAM1 ✓"
+                        android:textOff="CAM1"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_primary"
+                        android:background="@drawable/camera_button_bg"/>
+
+                    <ToggleButton
+                        android:id="@+id/btnCam2"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="48dp"
+                        android:layout_margin="4dp"
+                        android:textOn="CAM2 ✓"
+                        android:textOff="CAM2"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_primary"
+                        android:background="@drawable/camera_button_bg"/>
+
+                    <ToggleButton
+                        android:id="@+id/btnCam3"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="48dp"
+                        android:layout_margin="4dp"
+                        android:textOn="CAM3 ✓"
+                        android:textOff="CAM3"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_primary"
+                        android:background="@drawable/camera_button_bg"/>
+
+                    <ToggleButton
+                        android:id="@+id/btnCam4"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="48dp"
+                        android:layout_margin="4dp"
+                        android:textOn="CAM4 ✓"
+                        android:textOff="CAM4"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_primary"
+                        android:background="@drawable/camera_button_bg"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Recording Controls Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/bg_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnStartRecording"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="START REC"
+                    android:textSize="12sp"
+                    app:backgroundTint="@color/status_success"
+                    android:textColor="@color/bg_base"
+                    app:cornerRadius="12dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnStopRecording"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:text="STOP REC"
+                    android:textSize="12sp"
+                    app:backgroundTint="@color/status_danger"
+                    android:textColor="@color/white"
+                    android:enabled="false"
+                    app:cornerRadius="12dp"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Status Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/bg_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Status"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Status: Idle"
+                    android:textSize="13sp"
+                    android:textColor="@color/status_warning"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/tvStreamStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📡 Stream: Starting..."
+                    android:textSize="13sp"
+                    android:textColor="@color/brand_secondary"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/tvDeviceId"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔑 ID: ..."
+                    android:textSize="13sp"
+                    android:textColor="@color/brand_secondary"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/tvTunnelUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🌐 Tunnel: Not connected"
+                    android:textSize="12sp"
+                    android:textColor="@color/brand_primary"
+                    android:textIsSelectable="true"
+                    android:fontFamily="monospace"
+                    android:layout_marginBottom="6dp"/>
+
+                <TextView
+                    android:id="@+id/tvBatteryVoltage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔋 Battery: --V"
+                    android:textSize="13sp"
+                    android:textColor="@color/status_success"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Control Buttons Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/bg_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Services"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Row 1: Tunnel + Proxy -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStartTunnel"
+                        style="@style/Widget.Overdrive.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="TUNNEL"
+                        android:textSize="10sp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStopTunnel"
+                        style="@style/Widget.Overdrive.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="STOP TUN"
+                        android:textSize="10sp"
+                        android:enabled="false"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStartProxy"
+                        style="@style/Widget.Overdrive.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="PROXY"
+                        android:textSize="10sp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStopProxy"
+                        style="@style/Widget.Overdrive.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:text="STOP PRX"
+                        android:textSize="10sp"/>
+                </LinearLayout>
+
+                <!-- Row 2: Sentry + Camera Daemon -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStartSentryDaemon"
+                        style="@style/Widget.Overdrive.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="SENTRY"
+                        android:textSize="10sp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStopSentryDaemon"
+                        style="@style/Widget.Overdrive.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="STOP SNT"
+                        android:textSize="10sp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStartCamDaemon"
+                        style="@style/Widget.Overdrive.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="CAM"
+                        android:textSize="10sp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStopCamDaemon"
+                        style="@style/Widget.Overdrive.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="40dp"
+                        android:text="STOP CAM"
+                        android:textSize="10sp"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Toggle Buttons Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/bg_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <ToggleButton
+                    android:id="@+id/btnSentryMode"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:textOn="🛡️ SENTRY"
+                    android:textOff="🛡️ SENTRY"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_primary"
+                    android:background="@drawable/sentry_button_bg"/>
+
+                <ToggleButton
+                    android:id="@+id/btnVpn"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:textOn="🔒 VPN"
+                    android:textOff="🔓 VPN"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_primary"
+                    android:background="@drawable/sentry_button_bg"/>
+
+                <ToggleButton
+                    android:id="@+id/btnStreamMode"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:textOn="🌐 PUBLIC"
+                    android:textOff="🔒 PRIVATE"
+                    android:textSize="11sp"
+                    android:textColor="@color/text_primary"
+                    android:background="@drawable/stream_mode_button_bg"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Stop Service Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStopDaemon"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="STOP SERVICE"
+            android:textSize="12sp"
+            app:backgroundTint="@color/status_danger"
+            android:textColor="@color/white"
+            app:cornerRadius="12dp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Logs Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/bg_surface"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📋 Logs"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp"/>
+
+                <ScrollView
+                    android:id="@+id/scrollLogs"
+                    android:layout_width="match_parent"
+                    android:layout_height="160dp"
+                    android:background="@color/bg_base"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/tvLogs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="> Ready. Select cameras to begin."
+                        android:fontFamily="monospace"
+                        android:textColor="@color/brand_primary"
+                        android:textSize="11sp"/>
+                </ScrollView>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</ScrollView>

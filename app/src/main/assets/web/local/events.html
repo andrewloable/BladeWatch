@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Events - OverDrive</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        /* Events Page Specific Styles */
+        .events-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 16px;
+            min-height: calc(100vh - var(--header-height) - 32px);
+        }
+        
+        /* Top Bar with Calendar Toggle & Filters */
+        .events-top-bar {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 600px) {
+            .events-top-bar {
+                flex-direction: row;
+                align-items: center;
+                gap: 12px;
+            }
+        }
+        
+        /* Calendar Toggle Button */
+        .calendar-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        @media (min-width: 600px) {
+            .calendar-toggle {
+                justify-content: flex-start;
+            }
+        }
+        
+        .calendar-toggle:hover {
+            background: var(--bg-elevated);
+            border-color: var(--brand-primary);
+        }
+        
+        .calendar-toggle.has-date {
+            background: var(--brand-primary);
+            color: var(--bg-base);
+            border-color: var(--brand-primary);
+        }
+        
+        .calendar-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .clear-date-btn {
+            margin-left: 4px;
+            padding: 2px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .clear-date-btn:hover {
+            background: rgba(0,0,0,0.4);
+        }
+        
+        /* Calendar Popup */
+        .calendar-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 500;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+        }
+        
+        .calendar-popup.active {
+            display: flex;
+        }
+        
+        .calendar-panel {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            width: 100%;
+            max-width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @media (min-width: 480px) {
+            .calendar-popup {
+                align-items: center;
+                padding: 20px;
+            }
+            
+            .calendar-panel {
+                border-radius: var(--radius-lg);
+                max-width: 340px;
+                max-height: none;
+                padding-bottom: 20px;
+                animation: popIn 0.2s ease;
+            }
+        }
+        
+        @keyframes popIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .calendar-nav button {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .calendar-nav button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        
+        .calendar-weekday {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 8px 0;
+            text-transform: uppercase;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            min-height: 40px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .calendar-day:hover {
+            background: var(--bg-hover);
+        }
+        
+        .calendar-day:active {
+            background: var(--bg-elevated);
+            transform: scale(0.95);
+        }
+        
+        .calendar-day.other-month {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+        
+        .calendar-day.today {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .calendar-day.selected {
+            background: var(--brand-primary);
+            color: var(--bg-base);
+        }
+        
+        .calendar-day.has-recordings::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--brand-secondary);
+        }
+        
+        .calendar-day.has-sentry::after {
+            background: var(--danger);
+            width: 6px;
+            height: 6px;
+        }
+        
+        .calendar-day.disabled {
+            color: var(--text-muted);
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .calendar-close {
+            margin-top: 8px;
+            padding: 10px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .calendar-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        
+        /* Filter Tabs - Inline */
+        .filter-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 4px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            flex: 1;
+            min-width: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .filter-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .filter-tab {
+            flex: 0 0 auto;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-align: center;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        @media (min-width: 480px) {
+            .filter-tab {
+                flex: 1;
+            }
+        }
+        
+        .filter-tab:hover {
+            color: var(--text-primary);
+        }
+        
+        .filter-tab.active {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        /* Storage Stats - Compact inline */
+        .storage-stats {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 14px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+        
+        @media (min-width: 600px) {
+            .storage-stats {
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+            }
+        }
+        
+        .storage-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .storage-value {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+        
+        .storage-bar-mini {
+            width: 60px;
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .storage-fill {
+            height: 100%;
+            background: var(--brand-gradient);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .storage-breakdown {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .storage-breakdown {
+                display: flex;
+                gap: 12px;
+            }
+        }
+        
+        .storage-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+        }
+        
+        .storage-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        
+        .storage-dot.normal { background: var(--brand-secondary); }
+        .storage-dot.sentry { background: var(--danger); }
+        .storage-dot.proximity { background: #fb923c; }
+        
+        /* Recordings List Panel */
+        .recordings-panel {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex: 1;
+        }
+        
+        .recordings-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .recordings-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .recordings-count {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        
+        .recordings-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        
+        /* Recording Card with Thumbnail */
+        .recording-card {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .recording-card:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-default);
+        }
+        
+        .recording-card:active {
+            transform: scale(0.99);
+        }
+        
+        .recording-thumbnail {
+            width: 100px;
+            height: 60px;
+            background: var(--bg-base);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        @media (min-width: 480px) {
+            .recording-thumbnail {
+                width: 140px;
+                height: 80px;
+            }
+        }
+        
+        .recording-thumbnail img,
+        .recording-thumbnail video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .recording-thumbnail .thumb-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 10px;
+            gap: 4px;
+        }
+        
+        .recording-thumbnail .thumb-placeholder svg {
+            width: 24px;
+            height: 24px;
+            opacity: 0.5;
+        }
+        
+        .recording-thumbnail .play-icon {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .recording-card:hover .play-icon {
+            opacity: 1;
+        }
+        
+        .recording-thumbnail .duration-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .recording-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 6px;
+            min-width: 0;
+        }
+        
+        .recording-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .recording-badge {
+            font-size: 9px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        
+        .recording-badge.sentry {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        .recording-badge.normal {
+            background: rgba(14, 165, 233, 0.2);
+            color: var(--brand-secondary);
+        }
+        
+        .recording-badge.proximity {
+            background: rgba(251, 146, 60, 0.2);
+            color: #fb923c;
+        }
+        
+        .recording-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .recording-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-base);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: var(--brand-primary);
+            color: var(--bg-base);
+        }
+        
+        .action-btn.delete:hover {
+            background: var(--danger);
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .pagination-btn {
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .pagination-info {
+            font-size: 13px;
+            color: var(--text-muted);
+            padding: 0 12px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .empty-text {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        /* Video Modal */
+        .video-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .video-modal.active {
+            display: flex;
+        }
+        
+        .video-container {
+            max-width: 1200px;
+            width: 100%;
+            max-height: 100vh;
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 768px) {
+            .video-modal {
+                align-items: center;
+                padding: 20px;
+            }
+            
+            .video-container {
+                border-radius: var(--radius-lg);
+                max-height: calc(100vh - 40px);
+            }
+        }
+        
+        .video-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .video-close {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .video-close:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: black;
+        }
+        
+        .video-player video {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .video-details {
+            padding: 12px 16px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        
+        .video-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        @media (min-width: 480px) {
+            .video-details {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 20px;
+            }
+            
+            .video-meta {
+                gap: 20px;
+                font-size: 13px;
+            }
+        }
+        
+        .video-meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--brand-gradient);
+            color: white;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            width: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        @media (min-width: 480px) {
+            .download-btn {
+                width: auto;
+            }
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .download-btn:active {
+            transform: scale(0.98);
+        }
+        
+        /* Loading Spinner */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--bg-elevated);
+            border-top-color: var(--brand-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* SOTA: Event Timeline Scrubber */
+        .timeline-scrubber {
+            position: relative;
+            width: 100%;
+            height: 12px;
+            background: #1a1a2e;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .timeline-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            min-width: 2px;
+            border-radius: 1px;
+            pointer-events: none;
+        }
+        
+        .timeline-marker.type-motion {
+            background: rgba(148, 163, 184, 0.6);
+        }
+        
+        .timeline-marker.type-person {
+            background: rgba(239, 68, 68, 0.85);
+        }
+        
+        .timeline-marker.type-car {
+            background: rgba(59, 130, 246, 0.85);
+        }
+        
+        .timeline-marker.type-bike {
+            background: rgba(251, 146, 60, 0.85);
+        }
+        
+        .timeline-playhead {
+            position: absolute;
+            top: -1px;
+            bottom: -1px;
+            width: 2px;
+            background: white;
+            border-radius: 1px;
+            pointer-events: none;
+            z-index: 2;
+            box-shadow: 0 0 4px rgba(255,255,255,0.5);
+            transition: left 0.1s linear;
+        }
+        
+        .timeline-legend {
+            display: flex;
+            gap: 12px;
+            padding: 4px 8px;
+            background: #1a1a2e;
+            justify-content: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+        
+        .legend-motion { background: rgba(148, 163, 184, 0.6); }
+        .legend-person { background: rgba(239, 68, 68, 0.85); }
+        .legend-car { background: rgba(59, 130, 246, 0.85); }
+        .legend-bike { background: rgba(251, 146, 60, 0.85); }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-logo">
+                        <img src="../shared/app-icon.webp" alt="OverDrive">
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-name">OverDrive</span>
+                        <span class="brand-tagline">Sentry System</span>
+                    </div>
+                </div>
+                <button class="sidebar-close" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/>
+                        <path d="M2 12a9 9 0 0 0 8 8"/><circle cx="2" cy="12" r="2"/>
+                    </svg>
+                    <span>Live View</span>
+                </a>
+                <a href="events.html" class="nav-link active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Events</span>
+                </a>
+                <a href="surveillance.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Surveillance</span>
+                </a>
+                <a href="recording.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m22 8-6 4 6 4V8Z"/>
+                        <rect width="14" height="12" x="2" y="6" rx="2"/>
+                    </svg>
+                    <span>Recordings</span>
+                </a>
+                <a href="performance.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    <span>Performance</span>
+                </a>
+                <a href="abrp.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6"/>
+                        <circle cx="18" cy="12" r="3"/>
+                        <circle cx="6" cy="6" r="3"/>
+                        <circle cx="6" cy="18" r="3"/>
+                    </svg>
+                    <span>ABRP</span>
+                </a>
+                <a href="trips.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 17h2v-7l4 4 4-4 4 4 4-4v7h2"/>
+                        <path d="M4 5h16"/>
+                    </svg>
+                    <span>Trips</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-card">
+                    <div class="status-row">
+                        <span class="status-label">
+                            <span class="status-dot" id="connDot"></span>
+                            Device
+                        </span>
+                        <span class="status-value" id="deviceId">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">ACC</span>
+                        <span class="status-value" id="accValue">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">
+                            <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="6" y="7" width="12" height="10" rx="1"/><path d="M6 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/>
+                            </svg>
+                            12V
+                        </span>
+                        <span class="status-value" id="batteryValue">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Sentry</span>
+                        <span class="status-value" id="survStatus">OFF</span>
+                    </div>
+                </div>
+                <!-- EV Battery & Charging Card -->
+                <div class="status-card ev-card" id="evCard">
+                    <div class="ev-header-row">
+                        <span class="ev-title">Vehicle Status</span>
+                        <span class="ev-percent-text" id="evPercentValue">--%</span>
+                    </div>
+                    <div class="ev-svg-container">
+                        <svg viewBox="0 0 320 130" class="ev-car-svg">
+                            <defs>
+                                <linearGradient id="ceramicBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#ffffff"/>
+                                    <stop offset="60%" stop-color="#f8fafc"/>
+                                    <stop offset="100%" stop-color="#e2e8f0"/>
+                                </linearGradient>
+                                <linearGradient id="glassTint" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#020617"/>
+                                    <stop offset="100%" stop-color="#1e293b"/>
+                                </linearGradient>
+                                <linearGradient id="batteryFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#2dd4bf" class="grad-start"/>
+                                    <stop offset="50%" stop-color="#06b6d4" class="grad-mid"/>
+                                    <stop offset="100%" stop-color="#3b82f6" class="grad-end"/>
+                                </linearGradient>
+                                <pattern id="chargeFlowPattern" x="0" y="0" width="20" height="10" patternUnits="userSpaceOnUse">
+                                    <rect x="0" y="0" width="10" height="16" fill="rgba(255,255,255,0.4)"/>
+                                </pattern>
+                                <linearGradient id="chromeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#e2e8f0"/>
+                                    <stop offset="50%" stop-color="#ffffff"/>
+                                    <stop offset="100%" stop-color="#94a3b8"/>
+                                </linearGradient>
+                                <filter id="liquidDepth">
+                                    <feInnerShadow dx="0" dy="2" stdDeviation="1" flood-color="rgba(0,0,0,0.1)"/>
+                                </filter>
+                            </defs>
+                            <g transform="translate(0, -3)">
+                                <circle cx="70" cy="90" r="19" fill="#050505"/>
+                                <circle cx="250" cy="90" r="19" fill="#050505"/>
+                            </g>
+                            <path d="M10,65 Q15,50 30,45 L60,38 L100,20 C130,10 180,10 210,22 L260,40 Q280,44 295,52 L310,62 Q315,68 312,78 L275,78 Q250,50 225,78 L95,78 Q70,50 45,78 L15,78 Q5,78 5,68 Q5,62 10,65 Z" fill="url(#ceramicBody)" filter="drop-shadow(0 8px 16px rgba(0,0,0,0.3))"/>
+                            <path d="M95,78 L225,78 L225,98 L95,98 Z" fill="url(#ceramicBody)"/>
+                            <g>
+                                <path d="M100,24 L210,26 L240,42 L200,42 L100,40 Z" fill="none" stroke="url(#chromeGrad)" stroke-width="1.5"/>
+                                <path d="M102,26 L208,28 L235,41 L200,41 L102,39 Z" fill="url(#glassTint)"/>
+                                <path d="M155,27 L160,28 L160,41 L155,40 Z" fill="#020617"/>
+                            </g>
+                            <rect id="evBatteryFill" x="100" y="80" width="0" height="16" rx="2" fill="url(#batteryFlow)" class="battery-bar" filter="url(#liquidDepth)"/>
+                            <rect id="evChargeFlow" x="100" y="80" width="0" height="16" rx="2" fill="url(#chargeFlowPattern)" class="charge-flow" opacity="0"/>
+                            <g transform="translate(70, 90)">
+                                <circle r="19" fill="#050505"/>
+                                <circle r="14" fill="#ffffff"/>
+                                <circle r="14" fill="url(#ceramicBody)" opacity="0.8"/>
+                                <circle r="14" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                                <path d="M0,-14 L0,14 M-12,-7 L12,7 M-12,7 L12,-7" stroke="#cbd5e1" stroke-width="2"/>
+                                <circle r="4" fill="#1e293b"/>
+                            </g>
+                            <g transform="translate(250, 90)">
+                                <circle r="19" fill="#050505"/>
+                                <circle r="14" fill="#ffffff"/>
+                                <circle r="14" fill="url(#ceramicBody)" opacity="0.8"/>
+                                <circle r="14" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                                <path d="M0,-14 L0,14 M-12,-7 L12,7 M-12,7 L12,-7" stroke="#cbd5e1" stroke-width="2"/>
+                                <circle r="4" fill="#1e293b"/>
+                            </g>
+                            <path d="M290,55 L302,53 L298,60 Z" fill="#fff" filter="drop-shadow(0 0 3px cyan)"/>
+                            <path d="M12,58 L18,55 L18,62 Z" fill="#ef4444" opacity="0.9"/>
+                            <g id="svgChargeIcon" transform="translate(160, 5) scale(0)" style="transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                                <circle r="12" fill="#00D4AA" stroke="#fff" stroke-width="2"/>
+                                <path d="M-2,-6 L-4,1 L0,1 L-2,7 L5,-1 L1,-1 Z" fill="#fff"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="ev-info-row">
+                        <div class="ev-range">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M2 12h20"/>
+                            </svg>
+                            <span id="evRange">-- km</span>
+                        </div>
+                        <div class="ev-power-status">
+                            <span class="ev-power-val" id="evPower">-- kW</span>
+                        </div>
+                    </div>
+                    <div class="ev-personalized-range" id="evPersonalizedRow" style="display:none;">
+                        <span class="ev-personalized-label">⚡ Personalized</span>
+                        <span class="ev-personalized-val" id="evPersonalizedRange">-- km</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+                <span style="font-weight:600;">Events</span>
+                <div style="width:40px;"></div>
+            </div>
+            <div class="events-container">
+                <!-- Top Bar: Calendar Toggle + Filters + Storage -->
+                <div class="events-top-bar">
+                    <button class="calendar-toggle" id="calendarToggle" onclick="BYD.events.toggleCalendar()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span id="calendarBtnText">Select Date</span>
+                    </button>
+                    
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all" onclick="BYD.events.setFilter('all')">All</button>
+                        <button class="filter-tab" data-filter="sentry" onclick="BYD.events.setFilter('sentry')">Sentry</button>
+                        <button class="filter-tab" data-filter="normal" onclick="BYD.events.setFilter('normal')">Normal</button>
+                        <button class="filter-tab" data-filter="proximity" onclick="BYD.events.setFilter('proximity')">Proximity</button>
+                    </div>
+                    
+                    <div class="storage-stats" id="storageStats">
+                        <div class="storage-info">
+                            <span class="storage-value" id="storageUsed">--</span>
+                            <div class="storage-bar-mini">
+                                <div class="storage-fill" id="storageFill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="storage-breakdown">
+                            <div class="storage-item">
+                                <span class="storage-dot normal"></span>
+                                <span id="normalCount">0</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-dot sentry"></span>
+                                <span id="sentryCount">0</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-dot proximity"></span>
+                                <span id="proximityCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recordings List -->
+                <div class="recordings-panel">
+                    <div class="recordings-header">
+                        <span class="recordings-title" id="recordingsTitle">All Recordings</span>
+                        <span class="recordings-count" id="recordingsCount">0 videos</span>
+                    </div>
+                    <div class="recordings-list" id="recordingsList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                    <div class="pagination" id="pagination" style="display: none;">
+                        <button class="pagination-btn" id="prevPageBtn" onclick="BYD.events.prevPage()" disabled>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                            Prev
+                        </button>
+                        <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+                        <button class="pagination-btn" id="nextPageBtn" onclick="BYD.events.nextPage()" disabled>
+                            Next
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Video Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-container">
+            <div class="video-header">
+                <span class="video-title" id="videoTitle">Recording</span>
+                <button class="video-close" onclick="BYD.events.closeVideo()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="video-player">
+                <video id="videoPlayer" controls autoplay muted playsinline webkit-playsinline preload="auto"></video>
+                <!-- SOTA: Event Timeline Scrubber -->
+                <div class="timeline-scrubber" id="timelineScrubber" style="display:none;">
+                    <div class="timeline-track" id="timelineTrack"></div>
+                    <div class="timeline-playhead" id="timelinePlayhead"></div>
+                </div>
+                <div class="timeline-legend" id="timelineLegend" style="display:none;">
+                    <span class="legend-item"><span class="legend-dot legend-motion"></span>Motion</span>
+                    <span class="legend-item"><span class="legend-dot legend-person"></span>Person</span>
+                    <span class="legend-item"><span class="legend-dot legend-car"></span>Vehicle</span>
+                    <span class="legend-item"><span class="legend-dot legend-bike"></span>Bike</span>
+                </div>
+            </div>
+            <div class="video-details">
+                <div class="video-meta">
+                    <span id="videoDate">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        --
+                    </span>
+                    <span id="videoTime">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        --
+                    </span>
+                    <span id="videoSize">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        --
+                    </span>
+                </div>
+                <a class="download-btn" id="downloadBtn" href="#" download>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calendar Popup -->
+    <div class="calendar-popup" id="calendarPopup">
+        <div class="calendar-panel">
+            <div class="calendar-header">
+                <span class="calendar-title" id="calendarTitle">January 2026</span>
+                <div class="calendar-nav">
+                    <button onclick="BYD.events.prevMonth()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <button onclick="BYD.events.nextMonth()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Calendar days will be rendered here -->
+            </div>
+            <button class="calendar-close" onclick="BYD.events.closeCalendar()">Close</button>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/core.js"></script>
+    <script src="../shared/pip.js"></script>
+    <script src="../shared/events.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            BYD.core.init();
+            BYD.pip.init();
+            BYD.events.init();
+        });
+    </script>
+</body>
+</html>

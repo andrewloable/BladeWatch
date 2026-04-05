@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="32dp">
+
+    <!-- Day container -->
+    <FrameLayout
+        android:id="@+id/dayContainer"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="center">
+
+        <!-- Day number -->
+        <TextView
+            android:id="@+id/tvDay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
+            tools:text="15" />
+
+        <!-- Recording indicator dot (single) -->
+        <View
+            android:id="@+id/indicatorDot1"
+            android:layout_width="4dp"
+            android:layout_height="4dp"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="1dp"
+            android:background="@drawable/recording_indicator_dot"
+            android:visibility="gone" />
+
+        <!-- Hidden indicators for compatibility -->
+        <LinearLayout
+            android:id="@+id/indicatorContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <View
+                android:id="@+id/indicatorDot2"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/indicatorDot3"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>
