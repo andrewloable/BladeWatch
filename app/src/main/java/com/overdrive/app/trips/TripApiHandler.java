@@ -39,6 +39,8 @@ public class TripApiHandler {
     // URI patterns for extracting trip IDs
     private static final Pattern TRIP_ID_PATTERN = Pattern.compile("^/api/trips/(\\d+)$");
     private static final Pattern TRIP_TELEMETRY_PATTERN = Pattern.compile("^/api/trips/(\\d+)/telemetry$");
+    private static final Pattern TRIP_SIMILAR_PATTERN = Pattern.compile("^/api/trips/(\\d+)/similar$");
+    private static final Pattern TRIP_GPS_PATTERN = Pattern.compile("^/api/trips/(\\d+)/gps$");
 
     private final TripAnalyticsManager manager;
 
@@ -100,6 +102,20 @@ public class TripApiHandler {
             if (telemetryMatcher.matches() && "GET".equals(method)) {
                 long tripId = Long.parseLong(telemetryMatcher.group(1));
                 return handleGetTelemetry(tripId);
+            }
+
+            // Route: GET /api/trips/{id}/similar
+            Matcher similarMatcher = TRIP_SIMILAR_PATTERN.matcher(path);
+            if (similarMatcher.matches() && "GET".equals(method)) {
+                long tripId = Long.parseLong(similarMatcher.group(1));
+                return handleGetSimilarTrips(tripId);
+            }
+
+            // Route: GET /api/trips/{id}/gps
+            Matcher gpsMatcher = TRIP_GPS_PATTERN.matcher(path);
+            if (gpsMatcher.matches() && "GET".equals(method)) {
+                long tripId = Long.parseLong(gpsMatcher.group(1));
+                return handleGetGpsTrace(tripId);
             }
 
             // Route: GET/DELETE /api/trips/{id}
@@ -542,6 +558,148 @@ public class TripApiHandler {
             logger.error("Error setting storage: " + e.getMessage());
             return errorResponse("Invalid request body: " + e.getMessage(), 400);
         }
+    }
+
+    // ==================== ROUTE COMPARISON ENDPOINTS ====================
+
+    /**
+     * GET /api/trips/{id}/similar — find trips on the same route.
+     * Matches: start/end within ~1.1km (0.01°), distance ±25%.
+     */
+    private JSONObject handleGetSimilarTrips(long tripId) {
+        TripDatabase db = manager.getDatabase();
+        if (db == null) return errorResponse("Trip database not available", 500);
+
+        TripRecord trip = db.getTrip(tripId);
+        if (trip == null) return errorResponse("Trip not found", 404);
+
+        double startLat = trip.startLat, startLon = trip.startLon;
+        double endLat = trip.endLat, endLon = trip.endLon;
+        double dist = trip.distanceKm;
+
+        if (startLat == 0 && startLon == 0) {
+            return errorResponse("Trip has no GPS data", 400);
+        }
+
+        // Fast path: use route_id index if available
+        List<TripRecord> candidates;
+        boolean usingRouteFastPath = false;
+        if (trip.routeId > 0) {
+            candidates = db.getTripsByRoute(trip.routeId, 100);
+            // If route only has this trip, fall back to full scan
+            // (backfill may have split similar trips into different routes)
+            if (candidates.size() <= 1) {
+                candidates = db.getTrips(365, 500);
+            } else {
+                usingRouteFastPath = true;
+            }
+        } else {
+            candidates = db.getTrips(365, 500);
+        }
+
+        JSONArray similar = new JSONArray();
+        double bestEff = Double.MAX_VALUE;
+        double worstEff = 0;
+        long bestId = -1, worstId = -1;
+        double sumEff = 0;
+        int sumScore = 0, sumDuration = 0;
+        double sumSpeed = 0, sumCost = 0;
+        int count = 0;
+
+        for (TripRecord t : candidates) {
+            if (t.id == tripId) continue;
+
+            // Apply geofence filter when doing full scan (not using route fast path)
+            if (!usingRouteFastPath) {
+                double sLat = t.startLat, sLon = t.startLon;
+                double eLat = t.endLat, eLon = t.endLon;
+                if (Math.abs(sLat - startLat) > 0.01 || Math.abs(sLon - startLon) > 0.01) continue;
+                if (Math.abs(eLat - endLat) > 0.01 || Math.abs(eLon - endLon) > 0.01) continue;
+            }
+
+            double eff = t.efficiencySocPerKm;
+            similar.put(t.toSummaryJson());
+            sumEff += eff;
+            sumScore += t.getOverallScore();
+            sumDuration += t.durationSeconds;
+            sumSpeed += t.avgSpeedKmh;
+            sumCost += t.tripCost;
+            count++;
+            if (eff > 0 && eff < bestEff) { bestEff = eff; bestId = t.id; }
+            if (eff > worstEff) { worstEff = eff; worstId = t.id; }
+        }
+
+        JSONObject response = new JSONObject();
+        try {
+            response.put("success", true);
+            response.put("similar", similar);
+            response.put("count", count);
+            // Debug info
+            response.put("_debug_routeId", trip.routeId);
+            response.put("_debug_startLat", startLat);
+            response.put("_debug_endLat", endLat);
+            response.put("_debug_candidatesScanned", candidates.size());
+            if (count > 0) {
+                JSONObject stats = new JSONObject();
+                stats.put("avgEfficiency", sumEff / count);
+                stats.put("avgScore", sumScore / count);
+                stats.put("avgDurationSeconds", sumDuration / count);
+                stats.put("avgSpeedKmh", sumSpeed / count);
+                stats.put("avgCost", sumCost / count);
+                stats.put("bestTripId", bestId);
+                stats.put("bestEfficiency", bestEff == Double.MAX_VALUE ? 0 : bestEff);
+                stats.put("worstTripId", worstId);
+                stats.put("worstEfficiency", worstEff);
+                response.put("stats", stats);
+            }
+        } catch (Exception e) {
+            logger.error("Error building similar trips response", e);
+        }
+        return response;
+    }
+
+    /**
+     * GET /api/trips/{id}/gps — lightweight GPS-only trace for map overlay.
+     * Returns [[lat,lon], ...] array — much smaller than full telemetry.
+     */
+    private JSONObject handleGetGpsTrace(long tripId) {
+        TripDatabase db = manager.getDatabase();
+        if (db == null) return errorResponse("Trip database not available", 500);
+
+        TripRecord trip = db.getTrip(tripId);
+        if (trip == null) return errorResponse("Trip not found", 404);
+
+        String filePath = trip.telemetryFilePath;
+        if (filePath == null || filePath.isEmpty()) {
+            return errorResponse("Telemetry data unavailable", 410);
+        }
+
+        File telemetryFile = new File(filePath);
+        if (!telemetryFile.exists()) {
+            return errorResponse("Telemetry data unavailable", 410);
+        }
+
+        List<TelemetrySample> samples = TelemetryStore.readFromFile(telemetryFile);
+        JSONArray gps = new JSONArray();
+        for (TelemetrySample s : samples) {
+            if (s.lat != 0 && s.lon != 0) {
+                try {
+                    JSONArray point = new JSONArray();
+                    point.put(s.lat);
+                    point.put(s.lon);
+                    gps.put(point);
+                } catch (Exception ignored) {}
+            }
+        }
+
+        JSONObject response = new JSONObject();
+        try {
+            response.put("success", true);
+            response.put("gps", gps);
+        } catch (Exception e) {
+            logger.error("Error building GPS trace response", e);
+        }
+        return response;
     }
 
     // ==================== UTILITY METHODS ====================

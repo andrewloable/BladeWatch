@@ -838,7 +838,14 @@ const TRIPS = {
             dataDiv.style.display = 'block';
             this.setEl('costPerKmValue', this.currency + costPerKm.toFixed(2));
             this.setEl('costPerKmUnit', '/km');
-            this.setEl('costPerKwhInfo', kwhPerKm.toFixed(3) + ' kWh/km × ' + this.currency + this.electricityRate + '/kWh');
+            // Formula capsule below circle (single source of truth — no duplicate text)
+            const formulaCapsule = document.getElementById('costFormulaCapsule');
+            if (formulaCapsule) {
+                formulaCapsule.textContent = kwhPerKm.toFixed(3) + ' kWh/km × ' + this.currency + this.electricityRate + '/kWh';
+                formulaCapsule.style.display = '';
+            }
+            const infoEl = document.getElementById('costPerKwhInfo');
+            if (infoEl) infoEl.style.display = 'none';
             // Gauge: lower cost = better. Map 0-5 ₹/km to 100-0%
             const pct = Math.max(0, Math.min(100, (1 - costPerKm / 5) * 100));
             this.renderCircleGauge('costCircleCanvasActive', pct, '#F59E0B');
@@ -847,6 +854,10 @@ const TRIPS = {
             dataDiv.style.display = 'block';
             this.setEl('costPerKmValue', '--');
             this.setEl('costPerKwhInfo', 'Drive more trips to calculate');
+            const infoEl = document.getElementById('costPerKwhInfo');
+            if (infoEl) infoEl.style.display = '';
+            const formulaCapsule = document.getElementById('costFormulaCapsule');
+            if (formulaCapsule) formulaCapsule.style.display = 'none';
             this.renderCircleGauge('costCircleCanvasActive', 0, 'rgba(245,158,11,0.2)');
         }
     },
@@ -912,25 +923,65 @@ const TRIPS = {
                 const upper = Math.round(r.upperBoundKm || r.upper_bound_km || 0);
                 const builtIn = Math.round(r.builtInRangeKm || r.built_in_range_km || 0);
 
-                let html = '<div class="range-hero-confidence">' + lower + ' – ' + upper + ' km range</div>';
+                content.innerHTML = '';
 
                 // Update circle value
                 this.setEl('rangeCircleValue', predicted);
-                // Render range circle gauge (% of 500km max)
                 const rangePct = Math.min(100, (predicted / 500) * 100);
                 this.renderCircleGauge('rangeCircleCanvas', rangePct, '#0EA5E9');
 
-                if (builtIn > 0) {
+                // Delta capsule below circle — shows personalized vs built-in
+                const capsule = document.getElementById('rangeDeltaCapsule');
+                if (capsule && builtIn > 0) {
                     const delta = predicted - builtIn;
-                    const deltaAbs = Math.abs(delta);
-                    const deltaClass = delta >= 0 ? 'better' : 'worse';
-                    const deltaText = delta >= 0 ? '+' + deltaAbs + ' km' : '-' + deltaAbs + ' km';
-                    html += '<div class="range-hero-comparison"><div style="flex:1"><div class="range-hero-builtin-label">Built-in estimate</div><div class="range-hero-builtin-value">' + builtIn + ' km</div></div><span class="range-hero-delta ' + deltaClass + '">' + deltaText + '</span></div>';
+                    const deltaSign = delta >= 0 ? '+' : '';
+                    capsule.innerHTML = predicted + ' vs ' + builtIn + ' km <span style="opacity:0.7;margin-left:2px;">(' + deltaSign + delta + ')</span>';
+                    capsule.className = 'range-delta-capsule ' + (delta >= 0 ? 'better' : 'worse');
+                    capsule.style.display = '';
+                } else if (capsule) {
+                    capsule.textContent = lower + ' – ' + upper + ' km range';
+                    capsule.className = 'range-delta-capsule neutral';
+                    capsule.style.display = '';
                 }
-                content.innerHTML = html;
+
+                // Build hover tooltip matching score-hero-tooltip design
+                const tooltip = document.getElementById('rangeHeroTooltip');
+                if (tooltip) {
+                    tooltip.style.display = '';
+                    let tt = '<div class="range-tooltip-title">Range Details</div>';
+
+                    tt += '<div class="range-tooltip-row"><span class="range-tooltip-label">Confidence</span><span class="range-tooltip-value">' + lower + ' – ' + upper + ' km</span></div>';
+
+                    // Conditions pills
+                    const bucketKey = r.bucketKey || r.bucket_key || '';
+                    const samples = r.sampleCount || r.sample_count || 0;
+                    if (bucketKey) {
+                        const parts = bucketKey.split('_');
+                        const speedLabels = { city: 'City', suburban: 'Suburban', highway: 'Highway' };
+                        const tempLabels = { cold: 'Cold', mild: 'Mild', hot: 'Hot' };
+                        const styleLabels = { low: 'Calm', mid: 'Balanced', high: 'Spirited' };
+                        const speedColors = { city: 'rgba(99,102,241,0.15);color:#6366F1', suburban: 'rgba(0,212,170,0.15);color:var(--brand-primary)', highway: 'rgba(245,158,11,0.15);color:var(--warning)' };
+                        const tempColors = { cold: 'rgba(14,165,233,0.15);color:#0EA5E9', mild: 'rgba(34,197,94,0.15);color:#22C55E', hot: 'rgba(239,68,68,0.15);color:var(--danger)' };
+                        const styleColors = { low: 'rgba(34,197,94,0.15);color:#22C55E', mid: 'rgba(245,158,11,0.15);color:var(--warning)', high: 'rgba(239,68,68,0.15);color:var(--danger)' };
+
+                        tt += '<div class="range-tooltip-conditions">';
+                        tt += '<div class="range-tooltip-conditions-label">Current conditions</div>';
+                        tt += '<div class="range-tooltip-pills">';
+                        tt += '<span class="range-tooltip-pill" style="background:' + (speedColors[parts[0]] || speedColors.suburban) + ';">' + (speedLabels[parts[0]] || parts[0]) + '</span>';
+                        tt += '<span class="range-tooltip-pill" style="background:' + (tempColors[parts[1]] || tempColors.mild) + ';">' + (tempLabels[parts[1]] || parts[1]) + '</span>';
+                        tt += '<span class="range-tooltip-pill" style="background:' + (styleColors[parts[2]] || styleColors.mid) + ';">' + (styleLabels[parts[2]] || parts[2]) + '</span>';
+                        tt += '</div>';
+                        tt += '<div class="range-tooltip-samples">Based on ' + samples + ' trips in similar conditions</div>';
+                        tt += '</div>';
+                    }
+
+                    tooltip.innerHTML = tt;
+                }
             } else {
                 content.innerHTML = '<div class="range-hero-no-data"><div>Drive more trips to unlock personalized range</div></div>';
                 this.renderCircleGauge('rangeCircleCanvas', 0, 'rgba(14,165,233,0.2)');
+                const capsule = document.getElementById('rangeDeltaCapsule');
+                if (capsule) capsule.style.display = 'none';
             }
         } catch (e) {
             console.warn('[Trips] Range load failed:', e);
@@ -1084,9 +1135,32 @@ const TRIPS = {
             this.setEl('sliderSoc', socAtIdx.toFixed(1));
         }
 
-        // 2. Sync Map Marker
+        // 2. Sync Map Marker with heading rotation
         if (this.leafletMap && this.sliderMarker && s.la && s.lo) {
             this.sliderMarker.setLatLng([s.la, s.lo]);
+            // Compute heading using a lookback window for stability
+            var telSamples = this.telemetryCache || [];
+            var heading = null;
+            // Look back up to 10 samples to find a point with enough separation
+            for (var hi = 1; hi <= Math.min(10, idx); hi++) {
+                var prev = telSamples[idx - hi];
+                if (prev && prev.la && prev.lo && (Math.abs(prev.la - s.la) > 0.00003 || Math.abs(prev.lo - s.lo) > 0.00003)) {
+                    var dLon = (s.lo - prev.lo) * Math.PI / 180;
+                    var lat1 = prev.la * Math.PI / 180;
+                    var lat2 = s.la * Math.PI / 180;
+                    var y = Math.sin(dLon) * Math.cos(lat2);
+                    var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+                    heading = Math.atan2(y, x) * 180 / Math.PI;
+                    break;
+                }
+            }
+            if (heading !== null) {
+                var wrapper = this.sliderMarker.getElement();
+                if (wrapper) {
+                    var img = wrapper.querySelector('.car-icon-wrapper');
+                    if (img) img.style.transform = 'rotate(' + heading + 'deg)';
+                }
+            }
         }
 
         // 3. Sync Timeline chart scrubber
@@ -1110,81 +1184,244 @@ const TRIPS = {
         if (!card || !content) return;
 
         const startLat = trip.startLat || trip.start_lat || 0;
-        const startLon = trip.startLon || trip.start_lon || 0;
-        const endLat = trip.endLat || trip.end_lat || 0;
-        const endLon = trip.endLon || trip.end_lon || 0;
-
-        if (startLat === 0 && startLon === 0) { card.style.display = 'none'; return; }
+        if (startLat === 0) { card.style.display = 'none'; return; }
 
         try {
-            const resp = await fetch('/api/trips?days=365&limit=100');
+            const tripId = trip.id;
+            const resp = await fetch('/api/trips/' + tripId + '/similar');
             const data = await resp.json();
-            if (!data.success || !data.trips) { card.style.display = 'none'; return; }
+            if (!data.success || data.count === 0) { card.style.display = 'none'; return; }
 
-            const currentId = trip.id;
-            const threshold = 0.005;
-            const similar = data.trips.filter(t => {
-                if (t.id === currentId) return false;
-                const sLat = t.startLat || t.start_lat || 0;
-                const sLon = t.startLon || t.start_lon || 0;
-                const eLat = t.endLat || t.end_lat || 0;
-                const eLon = t.endLon || t.end_lon || 0;
-                return Math.abs(sLat - startLat) < threshold && Math.abs(sLon - startLon) < threshold &&
-                       Math.abs(eLat - endLat) < threshold && Math.abs(eLon - endLon) < threshold;
-            });
-
-            if (similar.length === 0) { card.style.display = 'none'; return; }
             card.style.display = 'block';
+            const stats = data.stats;
+            const similar = data.similar || [];
+            const tripEnergy = trip.energyUsedKwh || trip.energy_used_kwh || 0;
+            const tripCost = trip.tripCost || trip.trip_cost || 0;
+            const avgCost = stats.avgCost || 0;
+            const currency = trip.currency || '₹';
+            const tripDur = trip.durationSeconds || trip.duration_seconds || 0;
+            const avgDur = stats.avgDurationSeconds || 0;
+            const tripDist = trip.distanceKm || trip.distance_km || 0;
 
-            const currentEff = trip.efficiencySocPerKm || trip.efficiency_soc_per_km || 0;
-            const currentScore = this.getAvgScore(trip);
-            const avgEff = similar.reduce((s, t) => s + (t.efficiencySocPerKm || t.efficiency_soc_per_km || 0), 0) / similar.length;
-            const avgScore = Math.round(similar.reduce((s, t) => s + this.getAvgScore(t), 0) / similar.length);
-            const bestTrip = similar.reduce((best, t) => {
-                const eff = t.efficiencySocPerKm || t.efficiency_soc_per_km || 999;
-                return eff < (best.efficiencySocPerKm || best.efficiency_soc_per_km || 999) ? t : best;
-            }, similar[0]);
-            const bestEff = bestTrip.efficiencySocPerKm || bestTrip.efficiency_soc_per_km || 0;
+            // Compute avg energy from similar trips
+            var sumEnergy = 0, energyCount = 0;
+            similar.forEach(function(t) {
+                var e = t.energyUsedKwh || t.energy_used_kwh || 0;
+                if (e > 0) { sumEnergy += e; energyCount++; }
+            });
+            var avgEnergy = energyCount > 0 ? sumEnergy / energyCount : 0;
+
+            // Route rank
+            var rank = 1;
+            var currentEff = trip.efficiencySocPerKm || trip.efficiency_soc_per_km || 0;
+            similar.forEach(function(t) {
+                if ((t.efficiencySocPerKm || t.efficiency_soc_per_km || 999) < currentEff) rank++;
+            });
+            var totalOnRoute = data.count + 1;
 
             let html = '';
-            const effDeltaVsAvg = currentEff - avgEff;
-            const effPctChange = avgEff > 0 ? Math.abs(effDeltaVsAvg / avgEff * 100).toFixed(0) : 0;
-            const isBetterThanAvg = effDeltaVsAvg < 0;
-            const scoreDelta = currentScore - avgScore;
 
-            if (isBetterThanAvg) {
-                html += '<div style="padding:14px 16px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:12px;margin-bottom:12px;">';
-                html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:20px;">🎉</span><span style="font-size:15px;font-weight:600;color:#22C55E;">' + effPctChange + '% more efficient than route average</span></div>';
-                if (scoreDelta > 0) html += '<div style="font-size:12px;color:var(--text-secondary);">Driver score +' + scoreDelta + ' above usual ' + avgScore + '</div>';
-                if (currentEff <= bestEff) html += '<div style="font-size:12px;color:var(--brand-primary);margin-top:4px;font-weight:600;">🏆 New personal best!</div>';
-                html += '</div>';
-            } else if (effDeltaVsAvg > 0) {
-                html += '<div style="padding:14px 16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;margin-bottom:12px;">';
-                html += '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:20px;">📊</span><span style="font-size:15px;font-weight:600;color:var(--warning);">' + effPctChange + '% less efficient than route average</span></div>';
-                html += '</div>';
+            // Summary banner
+            var energyDelta = tripEnergy - avgEnergy;
+            var energyPct = avgEnergy > 0 ? Math.abs(energyDelta / avgEnergy * 100).toFixed(0) : 0;
+            var isBetter = energyDelta < 0;
+
+            if (avgEnergy > 0 && tripEnergy > 0) {
+                if (isBetter) {
+                    html += '<div style="padding:12px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:12px;margin-bottom:12px;">';
+                    html += '<div style="font-size:14px;font-weight:600;color:#22C55E;">🎉 Used ' + energyPct + '% less energy than usual</div>';
+                    html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">#' + rank + ' of ' + totalOnRoute + ' trips on this route</div>';
+                    html += '</div>';
+                } else {
+                    html += '<div style="padding:12px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;margin-bottom:12px;">';
+                    html += '<div style="font-size:14px;font-weight:600;color:var(--warning);">📊 Used ' + energyPct + '% more energy than usual</div>';
+                    html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">#' + rank + ' of ' + totalOnRoute + ' trips on this route</div>';
+                    html += '</div>';
+                }
             }
 
-            html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">';
-            html += '<div style="text-align:center;padding:10px;background:var(--bg-elevated);border-radius:8px;"><div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:var(--text-primary);">' + currentEff.toFixed(2) + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">This trip</div></div>';
-            html += '<div style="text-align:center;padding:10px;background:var(--bg-elevated);border-radius:8px;"><div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:var(--text-secondary);">' + avgEff.toFixed(2) + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Route avg</div></div>';
-            html += '<div style="text-align:center;padding:10px;background:var(--bg-elevated);border-radius:8px;"><div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:var(--brand-primary);">' + bestEff.toFixed(2) + '</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Best ever</div></div>';
+            // Modern comparison cards — this trip vs route avg
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">';
+            // This trip
+            html += '<div style="padding:12px;background:var(--bg-elevated);border-radius:10px;border:1px solid var(--border-subtle);">';
+            html += '<div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">This trip</div>';
+            if (tripEnergy > 0) html += '<div style="font-size:13px;color:var(--text-primary);margin-bottom:4px;">⚡ ' + tripEnergy.toFixed(1) + ' kWh</div>';
+            html += '<div style="font-size:13px;color:var(--text-primary);margin-bottom:4px;">⏱ ' + Math.round(tripDur/60) + ' min</div>';
+            if (tripCost > 0) html += '<div style="font-size:13px;color:var(--text-primary);">💰 ' + currency + tripCost.toFixed(1) + '</div>';
+            html += '</div>';
+            // Route avg
+            html += '<div style="padding:12px;background:var(--bg-elevated);border-radius:10px;border:1px solid var(--border-subtle);">';
+            html += '<div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Route average</div>';
+            if (avgEnergy > 0) html += '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">⚡ ' + avgEnergy.toFixed(1) + ' kWh</div>';
+            html += '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">⏱ ' + Math.round(avgDur/60) + ' min</div>';
+            if (avgCost > 0) html += '<div style="font-size:13px;color:var(--text-secondary);">💰 ' + currency + avgCost.toFixed(1) + '</div>';
+            html += '</div>';
             html += '</div>';
 
-            html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Recent trips on this route</div>';
-            similar.slice(0, 5).forEach(t => {
-                const date = new Date(t.startTime || t.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const eff = (t.efficiencySocPerKm || t.efficiency_soc_per_km || 0).toFixed(2);
-                const delta = currentEff - (t.efficiencySocPerKm || t.efficiency_soc_per_km || 0);
-                const deltaAbs = Math.abs(delta).toFixed(2);
-                const isBetter = delta < 0;
-                html += '<div class="route-comparison-item"><span class="route-comparison-date">' + date + '</span><span class="route-comparison-eff">' + eff + ' %/km</span><span class="route-comparison-delta ' + (isBetter ? 'better' : 'worse') + '">' + (isBetter ? '-' : '+') + deltaAbs + '</span></div>';
+            // Sparkline
+            if (similar.length >= 2) {
+                html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Energy trend (oldest → newest)</div>';
+                html += '<canvas id="routeSparkline" class="sparkline-container" style="width:100%;height:40px;"></canvas>';
+            }
+
+            // Compare on Map button
+            if (stats.bestTripId > 0) {
+                html += '<button onclick="TRIPS.showRouteMapComparison(' + tripId + ',' + stats.bestTripId + ',' + (stats.worstTripId > 0 ? stats.worstTripId : -1) + ')" style="width:100%;padding:10px;margin:8px 0;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:8px;color:var(--brand-primary);font-size:13px;font-weight:600;cursor:pointer;">🗺️ Compare on Map</button>';
+            }
+
+            // Recent trips — clickable links
+            html += '<div style="font-size:11px;color:var(--text-muted);margin:8px 0 6px;text-transform:uppercase;letter-spacing:0.5px;">Trips on this route (' + data.count + ')</div>';
+            similar.slice(0, 5).forEach(function(t) {
+                var date = new Date(t.startTime || t.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                var energy = (t.energyUsedKwh || t.energy_used_kwh || 0);
+                var cost = t.tripCost || t.trip_cost || 0;
+                var isBest = t.id === stats.bestTripId;
+                html += '<div class="route-comparison-item" style="cursor:pointer;" onclick="TRIPS.showDetail(' + t.id + ')">';
+                html += '<span class="route-comparison-date">' + date + (isBest ? ' 🏆' : '') + '</span>';
+                html += '<span class="route-comparison-eff">' + (energy > 0 ? energy.toFixed(1) + ' kWh' : '--') + (cost > 0 ? ' · ' + currency + cost.toFixed(0) : '') + '</span>';
+                html += '<span style="color:var(--brand-primary);font-size:12px;">→</span>';
+                html += '</div>';
             });
+
             content.innerHTML = html;
+
+            // Draw sparkline (energy-based)
+            if (similar.length >= 2) {
+                var energyPoints = similar.slice().reverse().map(function(t) { return t.energyUsedKwh || t.energy_used_kwh || 0; });
+                energyPoints.push(tripEnergy);
+                setTimeout(function() { TRIPS.drawRouteSparkline(energyPoints); }, 50);
+            }
         } catch (e) {
             console.warn('[Trips] Route comparison error:', e);
             card.style.display = 'none';
         }
     },
+
+    drawRouteSparkline(points) {
+        const canvas = document.getElementById('routeSparkline');
+        if (!canvas || points.length < 2) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = 40 * dpr;
+        ctx.scale(dpr, dpr);
+        const w = canvas.offsetWidth, h = 40;
+
+        const min = Math.min.apply(null, points) * 0.9;
+        const max = Math.max.apply(null, points) * 1.1;
+        const range = max - min || 1;
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(99,102,241,0.6)';
+        ctx.lineWidth = 2;
+        points.forEach(function(v, i) {
+            var x = (i / (points.length - 1)) * (w - 8) + 4;
+            var y = h - 4 - ((v - min) / range) * (h - 8);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Highlight current trip (last point)
+        var lastVal = points[points.length - 1];
+        var lastX = w - 4;
+        var lastY = h - 4 - ((lastVal - min) / range) * (h - 8);
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+        ctx.fillStyle = 'var(--brand-primary)';
+        ctx.fill();
+    },
+
+    routeCompareMapInstance: null,
+
+    async showRouteMapComparison(currentId, bestId, worstId) {
+        const overlay = document.getElementById('routeMapOverlay');
+        const mapDiv = document.getElementById('routeCompareMap');
+        const legend = document.getElementById('routeMapLegend');
+        if (!overlay || !mapDiv) return;
+
+        // Destroy previous map instance
+        if (this.routeCompareMapInstance) {
+            this.routeCompareMapInstance.remove();
+            this.routeCompareMapInstance = null;
+        }
+
+        overlay.style.display = 'block';
+        mapDiv.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">Loading routes...</div>';
+
+        try {
+            // Fetch GPS traces in parallel
+            const fetches = [fetch('/api/trips/' + currentId + '/gps')];
+            if (bestId > 0) fetches.push(fetch('/api/trips/' + bestId + '/gps'));
+            if (worstId > 0 && worstId !== bestId) fetches.push(fetch('/api/trips/' + worstId + '/gps'));
+
+            const responses = await Promise.all(fetches);
+            const data = await Promise.all(responses.map(function(r) { return r.json(); }));
+
+            const currentGps = data[0].success ? data[0].gps : [];
+            const bestGps = data[1] && data[1].success ? data[1].gps : [];
+            const worstGps = data[2] && data[2].success ? data[2].gps : [];
+
+            if (currentGps.length === 0) {
+                mapDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No GPS data available</div>';
+                return;
+            }
+
+            // Create Leaflet map
+            mapDiv.innerHTML = '';
+            const map = L.map(mapDiv, { zoomControl: false, attributionControl: false });
+            this.routeCompareMapInstance = map;
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+            const bounds = L.latLngBounds();
+
+            // Draw worst first (bottom layer)
+            if (worstGps.length > 0) {
+                var worstLine = L.polyline(worstGps, { color: '#EF4444', weight: 5, opacity: 0.5, dashArray: '10,8' }).addTo(map);
+                bounds.extend(worstLine.getBounds());
+            }
+            // Best
+            if (bestGps.length > 0) {
+                var bestLine = L.polyline(bestGps, { color: '#22C55E', weight: 5, opacity: 0.7 }).addTo(map);
+                bounds.extend(bestLine.getBounds());
+            }
+            // Current on top
+            var currentLine = L.polyline(currentGps, { color: '#6366F1', weight: 5, opacity: 1.0 }).addTo(map);
+            bounds.extend(currentLine.getBounds());
+
+            // Start marker (same as trip detail)
+            var startPoint = currentGps[0];
+            var startIcon = L.divIcon({
+                className: '',
+                html: '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#22C55E;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><svg viewBox="0 0 24 24" fill="#fff" width="16" height="16"><polygon points="5,3 19,12 5,21"/></svg></div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+            L.marker(startPoint, { icon: startIcon }).bindTooltip('Start', { permanent: false, direction: 'top' }).addTo(map);
+
+            // End marker (same as trip detail)
+            var endPoint = currentGps[currentGps.length - 1];
+            var endIcon = L.divIcon({
+                className: '',
+                html: '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#EF4444;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+            L.marker(endPoint, { icon: endIcon }).bindTooltip('End', { permanent: false, direction: 'top' }).addTo(map);
+
+            map.fitBounds(bounds, { padding: [20, 20] });
+
+            // Legend
+            legend.innerHTML = '<span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:4px;background:#6366F1;border-radius:2px;"></span>Current</span>' +
+                '<span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:4px;background:#22C55E;border-radius:2px;"></span>Best</span>' +
+                (worstGps.length > 0 ? '<span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:4px;background:#EF4444;border-radius:2px;"></span>Worst</span>' : '');
+
+        } catch (e) {
+            console.warn('[Trips] Route map error:', e);
+            mapDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Failed to load routes</div>';
+        }
+    },
+
+    // ==================== TRIP BREAKDOWN ====================
 
     renderScoreBar(fillId, valId, score) {
         const fill = document.getElementById(fillId);
@@ -1933,7 +2170,7 @@ const TRIPS = {
             this.leafletMap.setView([points[0].la, points[0].lo], 14);
         }
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }).addTo(this.leafletMap);
 
@@ -1947,25 +2184,66 @@ const TRIPS = {
         }).addTo(this.leafletMap);
 
         // Start marker
-        L.circleMarker([points[0].la, points[0].lo], {
-            radius: 7, fillColor: this.colors.brand, fillOpacity: 1,
-            color: '#fff', weight: 2
-        }).addTo(this.leafletMap).bindPopup('<b>Start</b>');
+        var startIcon = L.divIcon({
+            className: '',
+            html: '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#22C55E;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><svg viewBox="0 0 24 24" fill="#fff" width="16" height="16"><polygon points="5,3 19,12 5,21"/></svg></div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        });
+        L.marker([points[0].la, points[0].lo], { icon: startIcon }).addTo(this.leafletMap).bindPopup('<b>Start</b>');
 
         // End marker
-        L.circleMarker([points[points.length - 1].la, points[points.length - 1].lo], {
-            radius: 7, fillColor: this.colors.danger, fillOpacity: 1,
-            color: '#fff', weight: 2
-        }).addTo(this.leafletMap).bindPopup('<b>End</b>');
-
-        // Slider marker — car icon
-        const carIcon = L.divIcon({
+        var endIcon = L.divIcon({
             className: '',
-            html: '<div style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(0,212,170,0.9);border-radius:50%;border:2px solid #fff;box-shadow:0 0 12px rgba(0,212,170,0.5);"><svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" width="16" height="16"><path d="M5 17h14v-5l-2-5H7L5 12v5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></div>',
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
+            html: '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#EF4444;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);"><svg viewBox="0 0 24 24" fill="#fff" width="14" height="14"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        });
+        L.marker([points[points.length - 1].la, points[points.length - 1].lo], { icon: endIcon }).addTo(this.leafletMap).bindPopup('<b>End</b>');
+
+        // Slider marker — car icon (same as live view map)
+        const carIcon = L.divIcon({
+            className: 'car-map-marker',
+            html: '<div class="car-icon-wrapper"><img src="../shared/car-icon-map.webp" class="car-icon-img" alt="Car"></div>',
+            iconSize: [24, 50],
+            iconAnchor: [12, 25]
         });
         this.sliderMarker = L.marker([points[0].la, points[0].lo], { icon: carIcon }).addTo(this.leafletMap);
+
+        // Set initial heading from first GPS points with meaningful distance
+        if (points.length >= 2) {
+            // Find the first pair of points with enough separation for a reliable heading
+            var initHeading = null;
+            for (var hi = 1; hi < Math.min(points.length, 20); hi++) {
+                var dLat = points[hi].la - points[0].la;
+                var dLonRaw = points[hi].lo - points[0].lo;
+                // Rough distance check — need at least ~10m separation
+                if (Math.abs(dLat) > 0.00005 || Math.abs(dLonRaw) > 0.00005) {
+                    var dLon = dLonRaw * Math.PI / 180;
+                    var lat1 = points[0].la * Math.PI / 180;
+                    var lat2 = points[hi].la * Math.PI / 180;
+                    var y = Math.sin(dLon) * Math.cos(lat2);
+                    var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+                    initHeading = Math.atan2(y, x) * 180 / Math.PI;
+                    break;
+                }
+            }
+            // Fallback to first two points if no good pair found
+            if (initHeading === null && points[1]) {
+                var dLon = (points[1].lo - points[0].lo) * Math.PI / 180;
+                var lat1 = points[0].la * Math.PI / 180;
+                var lat2 = points[1].la * Math.PI / 180;
+                var y = Math.sin(dLon) * Math.cos(lat2);
+                var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+                initHeading = Math.atan2(y, x) * 180 / Math.PI;
+            }
+            if (initHeading !== null) {
+                setTimeout(function() {
+                    var el = document.querySelector('.car-icon-wrapper');
+                    if (el) el.style.transform = 'rotate(' + initHeading + 'deg)';
+                }, 100);
+            }
+        }
 
         // Click/tap on map to jump to nearest point
         const self = this;

@@ -214,6 +214,29 @@ public class TripDatabase {
                 logger.debug("kWh column migration: " + e.getMessage());
             }
 
+            // Routes table for O(1) similar-trip lookups
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS routes (" +
+                "id IDENTITY PRIMARY KEY," +
+                "start_lat REAL NOT NULL," +
+                "start_lon REAL NOT NULL," +
+                "end_lat REAL NOT NULL," +
+                "end_lon REAL NOT NULL," +
+                "avg_distance_km REAL DEFAULT 0," +
+                "trip_count INTEGER DEFAULT 0" +
+                ")"
+            );
+
+            // Migration: add route_id to trips
+            try {
+                stmt.execute("ALTER TABLE trips ADD COLUMN IF NOT EXISTS route_id BIGINT DEFAULT NULL");
+                stmt.execute("CREATE INDEX IF NOT EXISTS idx_trips_route ON trips(route_id)");
+                // Clean up any sentinel rows from previous migrations
+                stmt.execute("DELETE FROM routes WHERE trip_count < 0");
+            } catch (Exception e) {
+                logger.debug("route_id migration: " + e.getMessage());
+            }
+
             // Weekly rollups
             stmt.execute(
                 "CREATE TABLE IF NOT EXISTS weekly_rollups (" +
@@ -314,12 +337,14 @@ public class TripDatabase {
                 "electricity_rate=?, currency=?, trip_cost=?, kinematic_state=?, efficiency_soc_per_km=?, " +
                 "start_lat=?, start_lon=?, end_lat=?, end_lon=?, ext_temp_c=?, " +
                 "anticipation_score=?, smoothness_score=?, speed_discipline_score=?, " +
-                "efficiency_score=?, consistency_score=?, micro_moments_json=?, telemetry_file_path=? " +
+                "efficiency_score=?, consistency_score=?, micro_moments_json=?, telemetry_file_path=?, " +
+                "route_id=? " +
                 "WHERE id=?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             setTripParams(pstmt, trip);
-            pstmt.setLong(29, trip.id);
+            pstmt.setObject(29, trip.routeId > 0 ? trip.routeId : null);
+            pstmt.setLong(30, trip.id);
             pstmt.executeUpdate();
             logger.debug("Updated trip id=" + trip.id);
         } catch (Exception e) {
@@ -413,6 +438,135 @@ public class TripDatabase {
             reconnect();
         }
         return 0;
+    }
+
+    // ==================== ROUTE MATCHING ====================
+
+    /**
+     * Find or create a route for the given trip coordinates.
+     * Scans the routes table (small — typically 10-30 routes) for a match.
+     * Returns the route_id.
+     */
+    public long findOrCreateRoute(double startLat, double startLon, double endLat, double endLon, double distanceKm) {
+        if (!ensureConnection()) return -1;
+
+        try {
+            // Scan routes table for a match (geofence 0.01° ≈ 1.1km)
+            String sql = "SELECT id, avg_distance_km, trip_count FROM routes " +
+                    "WHERE ABS(start_lat - ?) < 0.01 AND ABS(start_lon - ?) < 0.01 " +
+                    "AND ABS(end_lat - ?) < 0.01 AND ABS(end_lon - ?) < 0.01";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setDouble(1, startLat);
+                pstmt.setDouble(2, startLon);
+                pstmt.setDouble(3, endLat);
+                pstmt.setDouble(4, endLon);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        double avgDist = rs.getDouble("avg_distance_km");
+                        // Match found — update stats (running average for coordinates and distance)
+                        long routeId = rs.getLong("id");
+                        int count = rs.getInt("trip_count");
+                        double newAvgDist = (avgDist * count + distanceKm) / (count + 1);
+                        String update = "UPDATE routes SET trip_count = trip_count + 1, " +
+                                "avg_distance_km = ?, " +
+                                "start_lat = (start_lat * trip_count + ?) / (trip_count + 1), " +
+                                "start_lon = (start_lon * trip_count + ?) / (trip_count + 1), " +
+                                "end_lat = (end_lat * trip_count + ?) / (trip_count + 1), " +
+                                "end_lon = (end_lon * trip_count + ?) / (trip_count + 1) " +
+                                "WHERE id = ?";
+                        try (PreparedStatement upd = connection.prepareStatement(update)) {
+                            upd.setDouble(1, newAvgDist);
+                            upd.setDouble(2, startLat);
+                            upd.setDouble(3, startLon);
+                            upd.setDouble(4, endLat);
+                            upd.setDouble(5, endLon);
+                            upd.setLong(6, routeId);
+                            upd.executeUpdate();
+                        }
+                        return routeId;
+                    }
+                }
+            }
+
+            // No match — create new route
+            String insert = "INSERT INTO routes (start_lat, start_lon, end_lat, end_lon, avg_distance_km, trip_count) " +
+                    "VALUES (?, ?, ?, ?, ?, 1)";
+            try (PreparedStatement pstmt = connection.prepareStatement(insert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                pstmt.setDouble(1, startLat);
+                pstmt.setDouble(2, startLon);
+                pstmt.setDouble(3, endLat);
+                pstmt.setDouble(4, endLon);
+                pstmt.setDouble(5, distanceKm);
+                pstmt.executeUpdate();
+                try (ResultSet keys = pstmt.getGeneratedKeys()) {
+                    if (keys.next()) return keys.getLong(1);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to find/create route", e);
+        }
+        return -1;
+    }
+
+    /**
+     * Get trips by route_id — O(1) indexed lookup.
+     */
+    public java.util.List<TripRecord> getTripsByRoute(long routeId, int limit) {
+        java.util.List<TripRecord> trips = new java.util.ArrayList<>();
+        if (!ensureConnection()) return trips;
+
+        String sql = "SELECT * FROM trips WHERE route_id = ? ORDER BY start_time DESC LIMIT ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setLong(1, routeId);
+            pstmt.setInt(2, limit);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    trips.add(readTripFromResultSet(rs));
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to get trips by route", e);
+        }
+        return trips;
+    }
+
+    /**
+     * Backfill route_id for all existing trips that don't have one.
+     * Called once after migration. Scans trips without route_id and assigns them.
+     */
+    public void backfillRouteIds() {
+        if (!ensureConnection()) return;
+
+        String sql = "SELECT id, start_lat, start_lon, end_lat, end_lon, distance_km FROM trips " +
+                "WHERE route_id IS NULL AND start_lat != 0 ORDER BY start_time ASC";
+        int assigned = 0;
+        try (PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                long id = rs.getLong("id");
+                double sLat = rs.getDouble("start_lat");
+                double sLon = rs.getDouble("start_lon");
+                double eLat = rs.getDouble("end_lat");
+                double eLon = rs.getDouble("end_lon");
+                double dist = rs.getDouble("distance_km");
+
+                long routeId = findOrCreateRoute(sLat, sLon, eLat, eLon, dist);
+                if (routeId > 0) {
+                    try (PreparedStatement upd = connection.prepareStatement(
+                            "UPDATE trips SET route_id = ? WHERE id = ?")) {
+                        upd.setLong(1, routeId);
+                        upd.setLong(2, id);
+                        upd.executeUpdate();
+                        assigned++;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to backfill route IDs", e);
+        }
+        if (assigned > 0) {
+            logger.info("Backfilled route_id for " + assigned + " existing trips");
+        }
     }
 
     // ==================== ROLLUPS (Task 7.3) ====================
@@ -801,6 +955,7 @@ public class TripDatabase {
         trip.consistencyScore = rs.getInt("consistency_score");
         trip.microMomentsJson = rs.getString("micro_moments_json");
         trip.telemetryFilePath = rs.getString("telemetry_file_path");
+        try { trip.routeId = rs.getLong("route_id"); } catch (Exception e) { trip.routeId = -1; }
         return trip;
     }
 

@@ -72,6 +72,11 @@ public class RangeEstimator {
     public RangeEstimate estimate(double currentSocPercent, double currentSpeedKmh,
                                   int extTempC, int dnaOverallScore) {
         double nominalCapacityKwh = sohEstimator.getNominalCapacityKwh();
+        
+        // Use nominal capacity for range estimation.
+        // SoH-adjusted capacity is NOT used here because the consumption buckets
+        // already implicitly account for degradation — they store actual kWh/km
+        // from real trips, which naturally reflects the battery's true capacity.
         double remainingEnergyKwh = currentSocPercent / 100.0 * nominalCapacityKwh;
 
         String bucketKey = computeBucketKey(currentSpeedKmh, extTempC, dnaOverallScore);
@@ -82,8 +87,8 @@ public class RangeEstimator {
             bucket = database.getOverallAverage();
         }
 
-        // Not enough data yet — need at least 10 total trip samples
-        if (bucket == null || bucket.sampleCount < 10) {
+        // Not enough data yet — need at least 3 total trip samples for a basic estimate
+        if (bucket == null || bucket.sampleCount < 3) {
             logger.debug("Not enough consumption data for range estimate (samples: " +
                     (bucket != null ? bucket.sampleCount : 0) + ")");
             return null;
@@ -99,7 +104,9 @@ public class RangeEstimator {
 
         double predictedRange = remainingEnergyKwh / mean;
         double lowerBound = remainingEnergyKwh / (mean + stddev);
-        double upperBound = remainingEnergyKwh / Math.max(0.01, mean - stddev);
+        // Cap upper bound: don't let it exceed 2x predicted (prevents infinity with high variance)
+        double upperDivisor = Math.max(mean * 0.5, mean - stddev);
+        double upperBound = Math.min(predictedRange * 2.0, remainingEnergyKwh / upperDivisor);
 
         RangeEstimate estimate = new RangeEstimate();
         estimate.predictedRangeKm = predictedRange;

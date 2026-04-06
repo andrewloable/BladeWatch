@@ -214,6 +214,9 @@ public class TripAnalyticsManager {
         // Database
         database = new TripDatabase();
         database.init();
+        
+        // Backfill route_id for existing trips (idempotent — skips already-assigned trips)
+        database.backfillRouteIds();
 
         // Detector
         detector = new TripDetector();
@@ -363,6 +366,17 @@ public class TripAnalyticsManager {
                 // 5. Update rollups
                 database.updateWeeklyRollup(trip);
                 database.updateMonthlyRollup(trip);
+
+                // 6. Assign route_id for O(1) similar-trip lookups
+                if (trip.startLat != 0 && trip.startLon != 0) {
+                    long routeId = database.findOrCreateRoute(
+                            trip.startLat, trip.startLon, trip.endLat, trip.endLon, trip.distanceKm);
+                    if (routeId > 0) {
+                        trip.routeId = routeId;
+                        database.updateTrip(trip);
+                        logger.info("Trip assigned to route " + routeId);
+                    }
+                }
 
                 logger.info("Trip saved — id=" + dbId
                         + " scores=[A=" + trip.anticipationScore

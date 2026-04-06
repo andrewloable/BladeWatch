@@ -39,6 +39,7 @@ public class TripRecord {
 
     public String microMomentsJson;    // JSON blob
     public String telemetryFilePath;   // Path to .jsonl.gz
+    public long routeId = -1;          // Route cluster ID for O(1) similar-trip lookups
 
     /**
      * Compute the overall Driving DNA score as the average of all 5 axis scores.

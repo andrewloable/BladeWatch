@@ -234,6 +234,96 @@
         }
         .range-hero-no-data svg { width: 32px; height: 32px; opacity: 0.5; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
 
+        /* Range hero tooltip — matches score-hero-tooltip exactly */
+        .range-hero-tooltip {
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            background: rgba(10,10,15,0.96);
+            border: 1px solid var(--brand-secondary);
+            border-radius: 12px;
+            padding: 16px 18px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .range-hero-card:hover .range-hero-tooltip {
+            opacity: 1;
+        }
+        .range-tooltip-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .range-tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .range-tooltip-row:last-child { border-bottom: none; }
+        .range-tooltip-label { color: var(--text-muted); font-size: 12px; }
+        .range-tooltip-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text-primary); font-size: 12px; }
+        .range-tooltip-conditions {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .range-tooltip-conditions-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .range-tooltip-pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+        .range-tooltip-pill {
+            padding: 3px 8px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .range-tooltip-samples {
+            font-size: 11px;
+            color: var(--brand-secondary);
+            line-height: 1.4;
+        }
+        /* Range capsule label below circle */
+        .range-delta-capsule {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .range-delta-capsule.better { background: rgba(34,197,94,0.15); color: #22C55E; }
+        .range-delta-capsule.worse { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .range-delta-capsule.neutral { background: rgba(14,165,233,0.15); color: #0EA5E9; }
+        /* Cost formula capsule below circle */
+        .cost-formula-capsule {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(245,158,11,0.12);
+            color: var(--warning);
+            margin-top: 8px;
+        }
+
         /* ===== DRIVING DNA - Full labels + Tooltips ===== */
         .top-row {
             display: flex;
@@ -1000,6 +1090,18 @@
         .route-comparison-delta.better { background: rgba(34,197,94,0.15); color: #22C55E; }
         .route-comparison-delta.worse { background: rgba(239,68,68,0.15); color: var(--danger); }
 
+        /* Trip Breakdown */
+        .breakdown-bar { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+        .breakdown-bar-label { width:80px; font-size:12px; color:var(--text-secondary); flex-shrink:0; }
+        .breakdown-bar-track { flex:1; height:20px; background:var(--bg-elevated); border-radius:10px; overflow:hidden; position:relative; }
+        .breakdown-bar-fill { height:100%; border-radius:10px; transition:width 0.5s ease; }
+        .breakdown-bar-value { width:40px; font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--text-primary); text-align:right; }
+        .breakdown-stat { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; border-bottom:1px solid var(--border-subtle); }
+        .breakdown-stat:last-child { border-bottom:none; }
+        .breakdown-stat-label { color:var(--text-secondary); }
+        .breakdown-stat-value { font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--text-primary); }
+        .sparkline-container { height:40px; margin:8px 0; }
+
         /* Load More / Empty / Delete / Skeleton */
         .load-more-btn {
             display: block;
@@ -1240,12 +1342,14 @@
                                     <span style="font-size:12px;color:var(--text-muted);margin-top:2px;">km</span>
                                 </div>
                             </div>
+                            <div id="rangeDeltaCapsule" class="range-delta-capsule neutral" style="display:none;"></div>
                             <div id="rangeHeroContent">
                                 <div class="range-hero-no-data">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                                     <div>Drive more trips to unlock personalized range estimates</div>
                                 </div>
                             </div>
+                            <div class="range-hero-tooltip" id="rangeHeroTooltip" style="display:none;"></div>
                         </div>
 
                         <!-- Cost per km Card -->
@@ -1277,6 +1381,7 @@
                                     </div>
                                 </div>
                                 <div id="costPerKwhInfo" style="font-size:12px;color:var(--text-muted);text-align:center;">-- kWh/km avg</div>
+                                <div id="costFormulaCapsule" class="cost-formula-capsule" style="display:none;"></div>
                             </div>
                         </div>
                     </div>
@@ -1645,6 +1750,10 @@
                             Route Comparison
                         </div>
                         <div id="routeComparisonContent"></div>
+                        <div id="routeMapOverlay" style="display:none;margin-top:12px;">
+                            <div id="routeCompareMap" style="height:300px;border-radius:12px;overflow:hidden;"></div>
+                            <div id="routeMapLegend" style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text-muted);"></div>
+                        </div>
                     </div>
 
                     <!-- Driving DNA Breakdown (at bottom for deep-dive) -->
