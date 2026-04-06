@@ -194,6 +194,7 @@ object UnifiedConfigManager {
         if (!surveillance.has("blockSize")) surveillance.put("blockSize", 32)
         if (!surveillance.has("requiredBlocks")) surveillance.put("requiredBlocks", 3)
         if (!surveillance.has("sensitivity")) surveillance.put("sensitivity", 0.04)
+        if (!surveillance.has("surveillanceEnabled")) surveillance.put("surveillanceEnabled", false)
         
         // Recording defaults
         if (!recording.has("mode")) recording.put("mode", "NONE")  // Default: no recording
@@ -479,6 +480,22 @@ object UnifiedConfigManager {
     @JvmStatic
     fun getProximityGuardValue(key: String, default: Any): Any {
         return getProximityGuard().opt(key) ?: default
+    }
+    
+    /**
+     * Check if surveillance is enabled in config (user preference for ACC OFF auto-start).
+     */
+    @JvmStatic
+    fun isSurveillanceEnabled(): Boolean {
+        return getSurveillance().optBoolean("surveillanceEnabled", false)
+    }
+    
+    /**
+     * Set surveillance enabled state in config.
+     */
+    @JvmStatic
+    fun setSurveillanceEnabled(enabled: Boolean): Boolean {
+        return updateValues("surveillance", mapOf("surveillanceEnabled" to enabled))
     }
     
     // ==================== LISTENERS ====================

@@ -1687,6 +1687,19 @@ public class AccSentryDaemon {
     private static void enableSurveillance() {
         if (surveillanceEnabled) return;
 
+        // Check if user has enabled surveillance in config
+        // If not enabled, skip — don't auto-start on ACC OFF
+        try {
+            boolean userEnabled = com.overdrive.app.config.UnifiedConfigManager.isSurveillanceEnabled();
+            if (!userEnabled) {
+                log("Surveillance NOT enabled in config — skipping auto-start on ACC OFF");
+                return;
+            }
+        } catch (Exception e) {
+            log("WARN: Could not read surveillance config: " + e.getMessage() + " — skipping auto-start");
+            return;
+        }
+
         log("Enabling surveillance...");
 
         // Retry with backoff — CameraDaemon may not be up yet after boot

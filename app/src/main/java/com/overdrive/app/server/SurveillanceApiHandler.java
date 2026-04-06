@@ -445,11 +445,13 @@ public class SurveillanceApiHandler {
     
     private static void handleEnable(OutputStream out) throws Exception {
         CameraDaemon.enableSurveillance();
+        com.overdrive.app.config.UnifiedConfigManager.setSurveillanceEnabled(true);
         HttpResponse.sendJsonSuccess(out);
     }
     
     private static void handleDisable(OutputStream out) throws Exception {
         CameraDaemon.disableSurveillance();
+        com.overdrive.app.config.UnifiedConfigManager.setSurveillanceEnabled(false);
         HttpResponse.sendJsonSuccess(out);
     }
 }

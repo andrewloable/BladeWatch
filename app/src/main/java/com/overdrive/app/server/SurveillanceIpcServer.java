@@ -96,6 +96,7 @@ public class SurveillanceIpcServer implements Runnable {
                 case "START":
                     // Start surveillance (from Telegram /start command)
                     CameraDaemon.enableSurveillance();
+                    com.overdrive.app.config.UnifiedConfigManager.setSurveillanceEnabled(true);
                     logger.info("Surveillance started via Telegram IPC");
                     response.put("success", true);
                     response.put("enabled", true);
@@ -105,6 +106,7 @@ public class SurveillanceIpcServer implements Runnable {
                 case "STOP":
                     // Stop surveillance (from Telegram /stop command)
                     CameraDaemon.disableSurveillance();
+                    com.overdrive.app.config.UnifiedConfigManager.setSurveillanceEnabled(false);
                     logger.info("Surveillance stopped via Telegram IPC");
                     response.put("success", true);
                     response.put("enabled", false);
@@ -125,6 +127,23 @@ public class SurveillanceIpcServer implements Runnable {
                 
                 // ==================== APP UI COMMANDS ====================
                 // These commands are sent by the app UI for configuration
+                
+                case "ENABLE_SURVEILLANCE":
+                    // Persist preference only — surveillance will auto-start on next ACC OFF
+                    com.overdrive.app.config.UnifiedConfigManager.setSurveillanceEnabled(true);
+                    logger.info("Surveillance preference set to ENABLED (will activate on ACC OFF)");
+                    response.put("success", true);
+                    response.put("enabled", true);
+                    break;
+                    
+                case "DISABLE_SURVEILLANCE":
+                    // Persist preference and stop if currently running
+                    com.overdrive.app.config.UnifiedConfigManager.setSurveillanceEnabled(false);
+                    CameraDaemon.disableSurveillance();
+                    logger.info("Surveillance preference set to DISABLED and stopped");
+                    response.put("success", true);
+                    response.put("enabled", false);
+                    break;
                 
                 case "GET_CONFIG":
                     response.put("success", true);
@@ -401,6 +420,8 @@ public class SurveillanceIpcServer implements Runnable {
             // Check if enabled state changed
             if (config.has("enabled")) {
                 boolean enabled = config.getBoolean("enabled");
+                // Persist to unified config so ACC OFF respects user preference
+                com.overdrive.app.config.UnifiedConfigManager.setSurveillanceEnabled(enabled);
                 if (enabled) {
                     CameraDaemon.enableSurveillance();
                     logger.info("Surveillance enabled via IPC");
@@ -759,8 +780,8 @@ public class SurveillanceIpcServer implements Runnable {
     private JSONObject getDefaultConfig() throws Exception {
         JSONObject config = new JSONObject();
         
-        // Get actual surveillance status
-        boolean enabled = CameraDaemon.isSurveillanceEnabled();
+        // Read persisted preference (not runtime state) for the UI toggle
+        boolean enabled = com.overdrive.app.config.UnifiedConfigManager.isSurveillanceEnabled();
         
         config.put("enabled", enabled);
         config.put("noiseThreshold", 0.0001);

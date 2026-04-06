@@ -846,6 +846,24 @@ public class CameraDaemon {
             
             // ACC OFF - Start pipeline for sentry mode
             try {
+                // Check if user has enabled surveillance in config
+                boolean userEnabled = com.overdrive.app.config.UnifiedConfigManager.isSurveillanceEnabled();
+                if (!userEnabled) {
+                    log("Surveillance NOT enabled in config — skipping auto-start on ACC OFF");
+                    return;
+                }
+                
+                // Safe zone check — don't start surveillance if parked at home/work
+                com.overdrive.app.surveillance.SafeLocationManager safeMgr =
+                    com.overdrive.app.surveillance.SafeLocationManager.getInstance();
+                if (safeMgr.isInSafeZone()) {
+                    log("SAFE ZONE: Surveillance suppressed on ACC OFF — " + safeMgr.getCurrentZoneName()
+                        + " (dist=" + Math.round(safeMgr.getDistanceToNearestZone()) + "m)");
+                    surveillanceEnabled = true;   // Mark intent so it auto-starts when leaving zone
+                    safeZoneSuppressed = true;
+                    return;
+                }
+                
                 // CRITICAL: FORCE remount SD card when ACC goes off
                 // Android/BYD system unmounts SD card when ACC is off, so we MUST force remount
                 com.overdrive.app.storage.StorageManager storage = 
