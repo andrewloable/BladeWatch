@@ -276,6 +276,25 @@ class WebViewFragment : Fragment() {
                     view: WebView?, request: WebResourceRequest?
                 ): Boolean {
                     val url = request?.url?.toString() ?: return false
+                    
+                    // Intercept events page links — use native RecordingLibraryFragment
+                    // which has reliable video playback via VideoView
+                    if (url.contains("/events.html") || url.endsWith("/events")) {
+                        try {
+                            // Extract filter param if present (e.g., events.html?filter=sentry)
+                            val uri = android.net.Uri.parse(url)
+                            val filter = uri.getQueryParameter("filter")
+                            val bundle = android.os.Bundle().apply {
+                                if (filter != null) putString("filter", filter)
+                            }
+                            androidx.navigation.fragment.NavHostFragment.findNavController(this@WebViewFragment)
+                                .navigate(R.id.eventsFragment, bundle)
+                        } catch (e: Exception) {
+                            android.util.Log.e("WebView", "Failed to navigate to events: ${e.message}")
+                        }
+                        return true
+                    }
+                    
                     if (url.startsWith("http://127.0.0.1:") || url.startsWith("http://localhost:")) {
                         return false
                     }
@@ -452,7 +471,14 @@ class WebViewFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        webView?.destroy()
+        webView?.let { wv ->
+            // Stop any media playback and clear content before destroying
+            wv.loadUrl("about:blank")
+            wv.stopLoading()
+            // Remove from parent to prevent leaked window
+            (wv.parent as? ViewGroup)?.removeView(wv)
+            wv.destroy()
+        }
         webView = null
         super.onDestroyView()
     }

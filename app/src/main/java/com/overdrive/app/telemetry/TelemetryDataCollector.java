@@ -47,6 +47,11 @@ public class TelemetryDataCollector {
     // Polling
     private ScheduledExecutorService executor;
     private volatile TelemetrySnapshot latestSnapshot;
+    
+    // Reference counting: polling stays alive as long as any consumer needs it
+    // (pipeline overlay, trip recorder, etc.)
+    private final java.util.concurrent.atomic.AtomicInteger pollingRefCount = 
+        new java.util.concurrent.atomic.AtomicInteger(0);
 
     // Last-known-good values (used as fallback when a device call fails)
     private int lastSpeedKmh = 0;
@@ -139,10 +144,13 @@ public class TelemetryDataCollector {
 
     /**
      * Start polling BYD device APIs at 5 Hz on a background thread.
+     * Uses reference counting — multiple callers can request polling,
+     * and it only stops when ALL callers have called stopPolling().
      */
     public void startPolling() {
+        int refs = pollingRefCount.incrementAndGet();
         if (executor != null && !executor.isShutdown()) {
-            logger.warn("Polling already started");
+            logger.info("Polling already running (refCount=" + refs + ")");
             return;
         }
         executor = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -151,17 +159,39 @@ public class TelemetryDataCollector {
             return t;
         });
         executor.scheduleAtFixedRate(this::poll, 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS);
-        logger.info("Telemetry polling started at 5 Hz");
+        logger.info("Telemetry polling started at 5 Hz (refCount=" + refs + ")");
     }
 
     /**
-     * Stop polling and shutdown the executor.
+     * Request to stop polling. Only actually stops when all consumers have released.
      */
     public void stopPolling() {
+        int refs = pollingRefCount.decrementAndGet();
+        if (refs < 0) {
+            pollingRefCount.set(0);
+            refs = 0;
+        }
+        if (refs > 0) {
+            logger.info("Polling stop requested but still needed (refCount=" + refs + ")");
+            return;
+        }
         if (executor != null) {
             executor.shutdown();
             executor = null;
-            logger.info("Telemetry polling stopped");
+            logger.info("Telemetry polling stopped (refCount=0)");
+        }
+    }
+    
+    /**
+     * Force stop polling regardless of reference count.
+     * Used during daemon shutdown.
+     */
+    public void forceStopPolling() {
+        pollingRefCount.set(0);
+        if (executor != null) {
+            executor.shutdown();
+            executor = null;
+            logger.info("Telemetry polling force-stopped");
         }
     }
 
@@ -223,7 +253,15 @@ public class TelemetryDataCollector {
             }
             // If any read failed, try to re-obtain the device reference
             if (deviceFailed) {
-                tryReconnectSpeedDevice();
+                boolean reconnected = tryReconnectSpeedDevice();
+                if (reconnected) {
+                    // Reconnect succeeded and verified — use the fresh values it obtained
+                    speedKmh = lastSpeedKmh;
+                    accelPercent = lastAccelPercent;
+                    brakePercent = lastBrakePercent;
+                }
+                // If reconnect failed, values stay at whatever was read (partial success)
+                // or at last-known-good from the top of pollInner()
             }
 
             // Staleness detection: if speed value is identical for 10+ seconds, force reconnect
@@ -231,8 +269,15 @@ public class TelemetryDataCollector {
                 staleSpeedCount++;
                 if (staleSpeedCount >= STALE_THRESHOLD) {
                     logger.warn("Speed device appears stale (same value " + speedKmh + " for " + (staleSpeedCount / 5) + "s), reconnecting");
-                    tryReconnectSpeedDevice();
+                    boolean reconnected = tryReconnectSpeedDevice();
+                    if (reconnected) {
+                        // Use fresh values from reconnect
+                        speedKmh = lastSpeedKmh;
+                        accelPercent = lastAccelPercent;
+                        brakePercent = lastBrakePercent;
+                    }
                     staleSpeedCount = 0;
+                    prevSpeedForStaleCheck = -1;
                 }
             } else {
                 staleSpeedCount = 0;
@@ -327,20 +372,32 @@ public class TelemetryDataCollector {
     }
 
     /**
-     * Try to re-obtain the BYDAutoSpeedDevice reference if it went stale.
+     * Try to re-obtain the BYDAutoSpeedDevice reference and verify it returns fresh data.
      * This can happen if the BYD service restarts between trips.
+     * Returns true if reconnect succeeded and fresh data was obtained.
      */
-    private void tryReconnectSpeedDevice() {
+    private boolean tryReconnectSpeedDevice() {
         try {
             Class<?> cls = Class.forName("android.hardware.bydauto.speed.BYDAutoSpeedDevice");
             Method getInstance = cls.getMethod("getInstance", Context.class);
             Object newDevice = getInstance.invoke(null, savedContext);
-            if (newDevice != null) {
-                speedDevice = newDevice;
-                logger.info("Re-obtained BYDAutoSpeedDevice reference");
-            }
+            if (newDevice == null) return false;
+            
+            // Verify the new device actually returns data by doing a test read
+            double testSpeed = (double) getCurrentSpeedMethod.invoke(newDevice);
+            int testAccel = (int) getAccelerateDeepnessMethod.invoke(newDevice);
+            int testBrake = (int) getBrakeDeepnessMethod.invoke(newDevice);
+            
+            // If we get here without exception, the device is alive
+            speedDevice = newDevice;
+            lastSpeedKmh = (int) testSpeed;
+            lastAccelPercent = testAccel;
+            lastBrakePercent = testBrake;
+            logger.info("Re-obtained BYDAutoSpeedDevice — verified working (speed=" + lastSpeedKmh + ")");
+            return true;
         } catch (Exception e) {
-            // Silent — will retry on next poll failure
+            logger.warn("Speed device reconnect failed: " + e.getMessage());
+            return false;
         }
     }
 

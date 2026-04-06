@@ -292,6 +292,11 @@ public class TripAnalyticsManager {
         logger.info("Trip ended — duration=" + trip.durationSeconds + "s, distance="
                 + trip.distanceKm + "km");
 
+        // Release telemetry polling ref (acquired in handleTripStarted)
+        if (telemetryDataCollector != null) {
+            telemetryDataCollector.stopPolling();
+        }
+
         String telemetryPath = null;
 
         // 1. Stop recorder, get samples
@@ -380,6 +385,11 @@ public class TripAnalyticsManager {
      */
     private void handleTripDiscarded(TripRecord trip, String reason) {
         logger.info("Trip discarded: " + reason);
+
+        // Release telemetry polling ref (acquired in handleTripStarted)
+        if (telemetryDataCollector != null) {
+            telemetryDataCollector.stopPolling();
+        }
 
         if (recorder != null) {
             String telemetryPath = recorder.stopRecording();

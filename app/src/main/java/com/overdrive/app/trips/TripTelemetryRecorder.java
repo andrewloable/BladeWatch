@@ -243,10 +243,20 @@ public class TripTelemetryRecorder {
             int brakePedal = 0;
             boolean brakePedalPressed = false;
             if (snapshot != null) {
-                speedKmh = snapshot.speedKmh;
-                accelPedal = snapshot.accelPedalPercent;
-                brakePedal = snapshot.brakePedalPercent;
-                brakePedalPressed = snapshot.brakePedalPressed;
+                // Check if snapshot is stale (older than 2 seconds means poller may have died)
+                long snapshotAge = now - snapshot.timestampMs;
+                if (snapshotAge < 2000) {
+                    speedKmh = snapshot.speedKmh;
+                    accelPedal = snapshot.accelPedalPercent;
+                    brakePedal = snapshot.brakePedalPercent;
+                    brakePedalPressed = snapshot.brakePedalPressed;
+                } else {
+                    // Stale snapshot — record zeros instead of frozen values
+                    if (snapshotAge < 5000) {
+                        // Only log once per staleness episode (within first 5s)
+                        logger.warn("Telemetry snapshot stale (" + snapshotAge + "ms old), recording zeros");
+                    }
+                }
             }
 
             // Read GPS from GpsMonitor
