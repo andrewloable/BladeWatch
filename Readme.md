@@ -12,9 +12,16 @@
   <a href="#quick-start-use-pre-built-apk">Setup Guide</a>
 </p>
 
+Free, open-source dashcam and sentry mode app built specifically for BYD vehicles with DiLink v3. All data stays on your device — no cloud, no accounts, no subscriptions.
+
 ---
 
-Free, open-source dashcam and sentry mode app built specifically for BYD vehicles with DiLink v3. All data stays on your device — no cloud, no accounts, no subscriptions.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/d5faeb2a-96dd-4737-86f4-2e87af52ec4c" width="100%" alt="Overdrive Demo">
+</p>
+
+---
+
 
 ## Quick Start (Use Pre-built APK)
 
