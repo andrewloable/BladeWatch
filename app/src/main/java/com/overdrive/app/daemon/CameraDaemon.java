@@ -214,18 +214,19 @@ public class CameraDaemon {
                 log("GPU init delay interrupted");
                 return;
             }
-            log("GPU pipeline init delay complete, initializing now...");
-            initSurveillance();
-            
-            // Apply persisted settings to GPU pipeline (for runtime changes)
-            applyPersistedSettings();
-            
-            // Apply any pending ACC OFF state that arrived during the delay
-            if (pendingAccOff && gpuPipeline != null) {
-                log("Applying pending ACC OFF surveillance request...");
-                pendingAccOff = false;
-                onAccStateChanged(true);  // true = ACC is off
-            }
+            log("GPU pipeline init delay complete, posting to main thread...");
+            // CRITICAL: Must run on main thread (which has a Looper) because
+            // EGL context creation and camera open may need Handler callbacks
+            mainHandler.post(() -> {
+                initSurveillance();
+                applyPersistedSettings();
+                
+                if (pendingAccOff && gpuPipeline != null) {
+                    log("Applying pending ACC OFF surveillance request...");
+                    pendingAccOff = false;
+                    onAccStateChanged(true);
+                }
+            });
         }, "GpuInitDelay").start();
         
         new Thread(tcpServer::start, "TcpServer").start();
