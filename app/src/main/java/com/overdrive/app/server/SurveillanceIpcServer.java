@@ -115,12 +115,13 @@ public class SurveillanceIpcServer implements Runnable {
                     
                 case "STATUS": {
                     // Get surveillance status (from Telegram /status command)
-                    boolean enabled = CameraDaemon.isSurveillanceEnabled();
+                    // Read from persisted config (not in-memory flag which can get stale)
+                    boolean enabled = com.overdrive.app.config.UnifiedConfigManager.isSurveillanceEnabled();
                     boolean active = CameraDaemon.isSurveillanceActive();
                     response.put("success", true);
                     response.put("enabled", enabled);
                     response.put("active", active);
-                    response.put("recording", active);  // Simplified: active = recording
+                    response.put("recording", active);
                     logger.info("Status requested via Telegram IPC: enabled=" + enabled + ", active=" + active);
                     break;
                 }
@@ -884,12 +885,13 @@ public class SurveillanceIpcServer implements Runnable {
     private JSONObject getSurveillanceStatus() throws Exception {
         JSONObject status = new JSONObject();
         
-        boolean enabled = CameraDaemon.isSurveillanceEnabled();
+        // Read from persisted config (not in-memory flag)
+        boolean enabled = com.overdrive.app.config.UnifiedConfigManager.isSurveillanceEnabled();
         boolean active = CameraDaemon.isSurveillanceActive();
         
         status.put("enabled", enabled);
         status.put("active", active);
-        status.put("recording", false);  // Would need to check if sentry is recording
+        status.put("recording", false);
         
         return status;
     }

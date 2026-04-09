@@ -241,6 +241,29 @@ input, select { font-family: inherit; }
 .status-value.off { color: var(--text-muted); }
 .status-value.stale { color: var(--warning); font-size: 0.85em; }
 
+/* Network info - stacked SSID + IP in sidebar */
+.status-value.net-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    line-height: 1.2;
+}
+.net-ssid {
+    font-size: 0.82em;
+    color: var(--success);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+.net-ip {
+    font-size: 0.7em;
+    color: var(--text-muted);
+    opacity: 0.8;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
 .stale {
     color: var(--warning) !important;
     opacity: 0.8;

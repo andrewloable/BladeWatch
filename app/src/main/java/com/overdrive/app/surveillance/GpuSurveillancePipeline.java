@@ -111,18 +111,10 @@ public class GpuSurveillancePipeline {
      */
     public void setStreamingQuality(GpuPipelineConfig.StreamingQuality quality) {
         config.setStreamingQuality(quality);
-        
-        // If streaming is enabled, restart with new quality
-        if (streamingEnabled && running) {
-            try {
-                disableStreaming();
-                enableStreaming(quality.width, quality.height, quality.fps, quality.bitrate);
-                logger.info(String.format("Streaming quality: %s (%dx%d @ %dfps)",
-                        quality, quality.width, quality.height, quality.fps));
-            } catch (Exception e) {
-                logger.error("Failed to change streaming quality", e);
-            }
-        }
+        // Quality is saved — it will be applied on next stream start.
+        // Don't restart the active stream to avoid disrupting the live view.
+        logger.info(String.format("Streaming quality saved: %s (%dx%d @ %dfps)",
+                quality, quality.width, quality.height, quality.fps));
     }
     
     /**
@@ -476,23 +468,53 @@ public class GpuSurveillancePipeline {
         camera = new PanoramicCameraGpu(cameraWidth, cameraHeight);
         camera.setConsumers(recorder, downscaler, sentry);
         
-        // Auto-detect camera ID based on BYD model
-        // Dolphin/Atto 1 has 6 AVMCamera IDs — probe to find the one with actual image data
-        // Seal uses ID 1 (default), other models may differ
+        // Camera config: saved config → or first-launch probe (ID 0 then ID 1, no cycling).
+        // Both Seal (ID 1) and Atto 3 (ID 0) output a 4-camera strip at 5120x960 with surfaceMode 0.
+        // CRITICAL: Never close/reopen the camera after opening — the Atto 3 HAL needs the
+        // camera to stay open for all 4 cameras to initialize in the strip.
+        logger.info("Vehicle model: " + getVehicleModel());
+        
+        boolean configured = false;
         try {
-            String carType = (String) Class.forName("android.os.SystemProperties")
-                .getMethod("get", String.class, String.class)
-                .invoke(null, "ro.product.model", "");
-            if (carType != null) {
-                String ct = carType.toUpperCase();
-                if (ct.contains("DOLPHIN") || ct.contains("EA1") || ct.contains("ATTO 1")) {
-                    logger.info("Dolphin/Atto 1 detected (" + carType + ") - probing all camera IDs...");
-                    camera.setCameraId(0);  // Start probing from ID 0
-                    camera.setAutoProbeCameras(true);
-                }
+            org.json.JSONObject cameraConfig = com.overdrive.app.config.UnifiedConfigManager
+                .loadConfig().optJSONObject("camera");
+            int savedId = cameraConfig != null ? cameraConfig.optInt("probedCameraId", -1) : -1;
+            int savedMode = cameraConfig != null ? cameraConfig.optInt("probedSurfaceMode", -1) : -1;
+            
+            if (savedId >= 0 && savedMode >= 0) {
+                logger.info("Using saved camera config: id=" + savedId + ", surfaceMode=" + savedMode);
+                camera.setCameraId(savedId);
+                camera.setCameraSurfaceMode(savedMode);
+                configured = true;
+                // No probing — saved config is trusted
             }
         } catch (Exception e) {
-            logger.warn("Could not detect car model for camera ID: " + e.getMessage());
+            logger.warn("Failed to load saved camera config: " + e.getMessage());
+        }
+        
+        if (!configured) {
+            // First launch: try ID 0 (Atto 3), probe will try ID 1 (Seal) if BLACK, then save
+            logger.info("No saved config — starting with id=0, surfaceMode=0 (probe enabled)");
+            camera.setCameraId(0);
+            camera.setCameraSurfaceMode(0);
+            camera.setAutoProbeCameras(true);
+            camera.setCameraProbeCallback((cameraId, surfaceMode) -> {
+                logger.info("Probe found working camera: id=" + cameraId + ", surfaceMode=" + surfaceMode);
+                try {
+                    org.json.JSONObject camCfg = new org.json.JSONObject();
+                    camCfg.put("probedCameraId", cameraId);
+                    camCfg.put("probedSurfaceMode", surfaceMode);
+                    com.overdrive.app.config.UnifiedConfigManager.updateSection("camera", camCfg);
+                    logger.info("Saved camera config for next launch");
+                } catch (Exception ex) {
+                    logger.warn("Failed to save camera config: " + ex.getMessage());
+                }
+            });
+        }
+        
+        // Always 4-camera mosaic — both devices output the same strip format
+        if (recorder != null) {
+            recorder.setCameraLayout(0);
         }
         
         // 6. Create adaptive bitrate controller
@@ -870,6 +892,9 @@ public class GpuSurveillancePipeline {
         logger.info("Creating stream scaler...");
         streamScaler = new com.overdrive.app.streaming.GpuStreamScaler(streamWidth, streamHeight);
         
+        // Always 4-camera mosaic for streaming
+        streamScaler.setCameraLayout(0);
+        
         // Initialize on GL thread and WAIT for completion
         // This ensures the scaler is ready before we set streaming components
         final Object initLock = new Object();
@@ -1065,6 +1090,16 @@ public class GpuSurveillancePipeline {
      */
     public boolean isInitialized() {
         return initialized;
+    }
+    
+    private static String getVehicleModel() {
+        try {
+            return (String) Class.forName("android.os.SystemProperties")
+                .getMethod("get", String.class, String.class)
+                .invoke(null, "ro.product.model", "unknown");
+        } catch (Exception e) {
+            return "unknown";
+        }
     }
     
     /**

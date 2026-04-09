@@ -656,6 +656,8 @@ BYD.stream = {
             if (data.success) {
                 const displayName = data.displayName || quality;
                 if (BYD.utils && BYD.utils.toast) BYD.utils.toast('Quality: ' + displayName, 'info');
+                // Server restarts encoder with new resolution — the existing WebSocket
+                // connection will receive new SPS/PPS and the decoder handles it automatically
             }
         } catch (e) {
             console.error('[Stream] Set quality error:', e);

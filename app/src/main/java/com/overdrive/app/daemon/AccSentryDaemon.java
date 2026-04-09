@@ -633,6 +633,14 @@ public class AccSentryDaemon {
             } else if (level >= POWER_LEVEL_ON && lastPowerLevel < POWER_LEVEL_ON) {
                 log("ACC ON detected");
                 exitSentryMode();
+            } else if (level == POWER_LEVEL_ACC && lastPowerLevel >= POWER_LEVEL_ON) {
+                // BYD app scenario: car was ON (level 2+) and dropped to ACC (level 1)
+                // This is a "turning off" transition — treat as ACC OFF for sentry purposes.
+                // Without this, a brief BYD app wake (OFF→ON→ACC→OFF) leaves AccMonitor
+                // stuck showing ACC ON because exitSentryMode fired but enterSentryMode
+                // only triggers on level 0.
+                log("ACC level dropped from ON to ACC — treating as ACC OFF (BYD app shutdown)");
+                enterSentryMode();
             }
 
             lastPowerLevel = level;
@@ -758,6 +766,12 @@ public class AccSentryDaemon {
         }
 
         log("=== EXITING SENTRY MODE ===");
+
+        // CRITICAL: Always notify CameraDaemon that ACC is ON, regardless of surveillance state.
+        // disableSurveillance() may skip IPC if surveillanceEnabled is already false
+        // (e.g. user had surveillance disabled, or safe zone suppressed it),
+        // which would leave AccMonitor stuck showing ACC OFF.
+        notifyAccState(false);  // accOff=false → ACC is ON
 
         // Disable surveillance
         disableSurveillance();

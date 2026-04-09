@@ -36,11 +36,13 @@ public class GpuStreamScaler {
     private int programId;
     private int uCameraTexLocation;
     private int uViewModeLocation;
+    private int uApaModeLocation;
     private int aPositionLocation;
     private int aTexCoordLocation;
     
-    // View mode: 0=Mosaic, 1=Front, 2=Right, 3=Rear, 4=Left
+    // View mode: 0=Mosaic, 1=Front, 2=Right, 3=Rear, 4=Left, 5=Raw
     private volatile int currentViewMode = 0;
+    private volatile int cameraLayout = 0;  // 0=4-cam, 1=APA, 2=3-cam
     
     // Vertex data
     private FloatBuffer vertexBuffer;
@@ -76,33 +78,50 @@ public class GpuStreamScaler {
         "    vTexCoord = aTexCoord;\n" +
         "}\n";
     
-    // Fragment shader - supports mosaic (2x2) or single camera view
-    // uViewMode: 0=Mosaic, 1=Front(cam4), 2=Right(cam3), 3=Rear(cam1), 4=Left(cam2)
-    // Strip layout: cam1(Rear)=0.00, cam2(Left)=0.25, cam3(Right)=0.50, cam4(Front)=0.75
-    // Grid layout: TL=Front, TR=Right, BL=Rear, BR=Left
+    // Fragment shader - supports 4-cam mosaic, 3-cam mosaic, APA passthrough, single view, raw strip
+    // uViewMode: 0=Mosaic, 1=Front, 2=Right, 3=Rear, 4=Left, 5=Raw strip
+    // uApaMode: 0.0=4-camera, 1.0=APA passthrough, 2.0=3-camera mosaic
     private static final String FRAGMENT_SHADER =
         "#extension GL_OES_EGL_image_external : require\n" +
         "precision mediump float;\n" +
         "uniform samplerExternalOES uCameraTex;\n" +
         "uniform int uViewMode;\n" +
+        "uniform float uApaMode;\n" +
         "varying vec2 vTexCoord;\n" +
         "void main() {\n" +
         "    vec2 samplePos;\n" +
-        "    if (uViewMode == 0) {\n" +
-        "        // Mosaic 2x2 grid mapping: TL=Front, TR=Right, BL=Rear, BR=Left\n" +
+        "    if (uViewMode == 5) {\n" +
+        "        samplePos = vTexCoord;\n" +
+        "    } else if (uApaMode > 1.5) {\n" +
+        "        // 3-camera: TL=Front, BL=Rear, Right=Side\n" +
+        "        if (uViewMode == 1) { samplePos = vec2(0.75 + vTexCoord.x * 0.25, vTexCoord.y); }\n" +  // Front
+        "        else if (uViewMode == 3) { samplePos = vec2(vTexCoord.x * 0.25, vTexCoord.y); }\n" +     // Rear
+        "        else if (uViewMode == 2 || uViewMode == 4) { samplePos = vec2(0.25 + vTexCoord.x * 0.5, vTexCoord.y); }\n" + // Side
+        "        else {\n" +
+        "            // Mosaic for 3-cam\n" +
+        "            if (vTexCoord.x < 0.5) {\n" +
+        "                float lx = vTexCoord.x * 0.5;\n" +
+        "                float ly = mod(vTexCoord.y, 0.5) * 2.0;\n" +
+        "                if (vTexCoord.y < 0.5) { samplePos = vec2(lx + 0.75, ly); }\n" +
+        "                else { samplePos = vec2(lx, ly); }\n" +
+        "            } else {\n" +
+        "                samplePos = vec2(0.25 + (vTexCoord.x - 0.5) * 1.0 * 0.5, vTexCoord.y);\n" +
+        "            }\n" +
+        "        }\n" +
+        "    } else if (uApaMode > 0.5) {\n" +
+        "        samplePos = vTexCoord;\n" +
+        "    } else if (uViewMode == 0) {\n" +
         "        vec2 gridPos = step(0.5, vTexCoord);\n" +
         "        float stripOffsetX = 0.75 - (gridPos.x * 0.25) - (gridPos.y * 0.75) + (gridPos.x * gridPos.y * 0.50);\n" +
         "        float localX = mod(vTexCoord.x, 0.5) * 0.5;\n" +
         "        float localY = mod(vTexCoord.y, 0.5) * 2.0;\n" +
         "        samplePos = vec2(localX + stripOffsetX, localY);\n" +
         "    } else {\n" +
-        "        // Single camera view - map mode to correct strip\n" +
-        "        // Mode 1=Front(cam4,strip3), 2=Right(cam3,strip2), 3=Rear(cam1,strip0), 4=Left(cam2,strip1)\n" +
         "        float stripIndex;\n" +
-        "        if (uViewMode == 1) stripIndex = 3.0;\n" +      // Front = cam4 = strip 3 (0.75)
-        "        else if (uViewMode == 2) stripIndex = 2.0;\n" + // Right = cam3 = strip 2 (0.50)
-        "        else if (uViewMode == 3) stripIndex = 0.0;\n" + // Rear = cam1 = strip 0 (0.00)
-        "        else stripIndex = 1.0;\n" +                     // Left = cam2 = strip 1 (0.25)
+        "        if (uViewMode == 1) stripIndex = 3.0;\n" +
+        "        else if (uViewMode == 2) stripIndex = 2.0;\n" +
+        "        else if (uViewMode == 3) stripIndex = 0.0;\n" +
+        "        else stripIndex = 1.0;\n" +
         "        float startX = stripIndex * 0.25;\n" +
         "        samplePos = vec2(startX + (vTexCoord.x * 0.25), vTexCoord.y);\n" +
         "    }\n" +
@@ -143,6 +162,7 @@ public class GpuStreamScaler {
         aTexCoordLocation = GLES20.glGetAttribLocation(programId, "aTexCoord");
         uCameraTexLocation = GLES20.glGetUniformLocation(programId, "uCameraTex");
         uViewModeLocation = GLES20.glGetUniformLocation(programId, "uViewMode");
+        uApaModeLocation = GLES20.glGetUniformLocation(programId, "uApaMode");
         
         GlUtil.checkGlError("glGetLocation");
         
@@ -179,8 +199,9 @@ public class GpuStreamScaler {
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTextureId);
         GLES20.glUniform1i(uCameraTexLocation, 0);
         
-        // Set view mode (0=Mosaic, 1-4=Single camera)
+        // Set view mode (0=Mosaic, 1-4=Single camera, 5=Raw)
         GLES20.glUniform1i(uViewModeLocation, currentViewMode);
+        GLES20.glUniform1f(uApaModeLocation, (float) cameraLayout);
         GlUtil.checkGlError("glBindTexture");
         
         // Set up vertex attributes
@@ -207,12 +228,12 @@ public class GpuStreamScaler {
     /**
      * Sets the view mode for streaming.
      * 
-     * @param mode 0=Mosaic (2x2 grid), 1=Front(cam4), 2=Right(cam3), 3=Rear(cam1), 4=Left(cam2)
+     * @param mode 0=Mosaic (2x2 grid), 1=Front(cam4), 2=Right(cam3), 3=Rear(cam1), 4=Left(cam2), 5=Raw strip
      */
     public void setViewMode(int mode) {
-        if (mode >= 0 && mode <= 4) {
+        if (mode >= 0 && mode <= 5) {
             this.currentViewMode = mode;
-            String[] modeNames = {"Mosaic", "Front", "Right", "Rear", "Left"};
+            String[] modeNames = {"Mosaic", "Front", "Right", "Rear", "Left", "Raw"};
             logger.info("Stream view mode set to " + mode + " (" + modeNames[mode] + ")");
         }
     }
@@ -222,6 +243,18 @@ public class GpuStreamScaler {
      */
     public int getViewMode() {
         return currentViewMode;
+    }
+    
+    /**
+     * Sets APA mode / camera layout.
+     * 0=4-camera, 1=APA passthrough, 2=3-camera
+     */
+    public void setApaMode(boolean apa) {
+        this.cameraLayout = apa ? 1 : 0;
+    }
+    
+    public void setCameraLayout(int layout) {
+        this.cameraLayout = layout;
     }
     
     /**

@@ -40,6 +40,7 @@ public class GpuMosaicRecorder {
     // OpenGL program and locations
     private int programId;
     private int uCameraTexLocation;
+    private int uApaModeLocation;
     private int aPositionLocation;
     private int aTexCoordLocation;
     
@@ -52,6 +53,8 @@ public class GpuMosaicRecorder {
     
     // State
     private boolean recording = false;
+    private volatile boolean apaMode = false;  // APA mode: passthrough instead of mosaic split
+    private volatile int cameraLayout = 0;  // 0=4-cam, 1=APA passthrough, 2=3-cam
     private long lastFrameTime = 0;
     private long frameCount = 0;
     
@@ -111,24 +114,47 @@ public class GpuMosaicRecorder {
         "    vTexCoord = aTexCoord;\n" +
         "}\n";
     
-    // Fragment shader - Branchless version (SOTA - eliminates GPU branch divergence)
-    // Maps 5120x960 strip to 2560x1920 grid using math instead of if/else
-    // Grid layout: TL=Front, TR=Right, BL=Rear, BR=Left
-    // Strip layout: cam1(Rear)=0.00, cam2(Left)=0.25, cam3(Right)=0.50, cam4(Front)=0.75
+    // Fragment shader - supports 4-camera mosaic, 3-camera mosaic, and APA passthrough.
+    // uApaMode: 0.0 = 4-camera mosaic (Seal: pano_h/pano_l with surfaceMode=0)
+    //           1.0 = APA passthrough (single pre-composited image)
+    //           2.0 = 3-camera mosaic (Atto 3 default: Rear=0-25%, Side=25-75%, Front=75-100%)
+    // 4-cam strip: cam1(Rear)=0.00, cam2(Left)=0.25, cam3(Right)=0.50, cam4(Front)=0.75
+    // 3-cam strip: Rear=0.00-0.25, Left+Right=0.25-0.75, Front=0.75-1.00
     private static final String FRAGMENT_SHADER =
         "#extension GL_OES_EGL_image_external : require\n" +
         "precision mediump float;\n" +
         "uniform samplerExternalOES uCameraTex;\n" +
+        "uniform float uApaMode;\n" +
         "varying vec2 vTexCoord;\n" +
         "void main() {\n" +
-        "    // Identify quadrant (0 or 1 for each axis)\n" +
-        "    vec2 gridPos = step(0.5, vTexCoord);\n" +
-        "    // Calculate strip offset: TL=Front(0.75), TR=Right(0.50), BL=Rear(0.00), BR=Left(0.25)\n" +
-        "    float stripOffsetX = 0.75 - (gridPos.x * 0.25) - (gridPos.y * 0.75) + (gridPos.x * gridPos.y * 0.50);\n" +
-        "    // Map local coords: 0.0-0.5 (grid) -> 0.0-0.25 (strip)\n" +
-        "    float localX = mod(vTexCoord.x, 0.5) * 0.5;\n" +
-        "    float localY = mod(vTexCoord.y, 0.5) * 2.0;\n" +
-        "    vec2 samplePos = vec2(localX + stripOffsetX, localY);\n" +
+        "    vec2 samplePos;\n" +
+        "    if (uApaMode > 1.5) {\n" +
+        "        // 3-camera mosaic: TL=Front, BL=Rear, Right=Side(Left+Right)\n" +
+        "        if (vTexCoord.x < 0.5) {\n" +
+        "            // Left column: top=Front(0.75-1.0), bottom=Rear(0.0-0.25)\n" +
+        "            float localX = vTexCoord.x * 0.5;\n" +  // 0-0.5 -> 0-0.25
+        "            float localY = mod(vTexCoord.y, 0.5) * 2.0;\n" +
+        "            if (vTexCoord.y < 0.5) {\n" +
+        "                samplePos = vec2(localX + 0.75, localY);\n" +  // Front
+        "            } else {\n" +
+        "                samplePos = vec2(localX, localY);\n" +  // Rear
+        "            }\n" +
+        "        } else {\n" +
+        "            // Right column: Side view (0.25-0.75, full height)\n" +
+        "            float localX = (vTexCoord.x - 0.5) * 1.0;\n" +  // 0.5-1.0 -> 0-0.5
+        "            samplePos = vec2(0.25 + localX * 0.5, vTexCoord.y);\n" +
+        "        }\n" +
+        "    } else if (uApaMode > 0.5) {\n" +
+        "        // APA passthrough\n" +
+        "        samplePos = vTexCoord;\n" +
+        "    } else {\n" +
+        "        // 4-camera mosaic (Seal default)\n" +
+        "        vec2 gridPos = step(0.5, vTexCoord);\n" +
+        "        float stripOffsetX = 0.75 - (gridPos.x * 0.25) - (gridPos.y * 0.75) + (gridPos.x * gridPos.y * 0.50);\n" +
+        "        float localX = mod(vTexCoord.x, 0.5) * 0.5;\n" +
+        "        float localY = mod(vTexCoord.y, 0.5) * 2.0;\n" +
+        "        samplePos = vec2(localX + stripOffsetX, localY);\n" +
+        "    }\n" +
         "    gl_FragColor = texture2D(uCameraTex, samplePos);\n" +
         "}\n";
     
@@ -216,6 +242,7 @@ public class GpuMosaicRecorder {
         aPositionLocation = GLES20.glGetAttribLocation(programId, "aPosition");
         aTexCoordLocation = GLES20.glGetAttribLocation(programId, "aTexCoord");
         uCameraTexLocation = GLES20.glGetUniformLocation(programId, "uCameraTex");
+        uApaModeLocation = GLES20.glGetUniformLocation(programId, "uApaMode");
         
         GlUtil.checkGlError("glGetLocation");
         
@@ -337,6 +364,7 @@ public class GpuMosaicRecorder {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTextureId);
         GLES20.glUniform1i(uCameraTexLocation, 0);
+        GLES20.glUniform1f(uApaModeLocation, (float) cameraLayout);
         GlUtil.checkGlError("glBindTexture");
 
         // Set up vertex attributes
@@ -636,6 +664,23 @@ public class GpuMosaicRecorder {
     
     public void setOverlayEnabled(boolean enabled) {
         this.overlayEnabled = enabled;
+    }
+    
+    /**
+     * Sets the camera layout mode for the mosaic shader.
+     * 0 = 4-camera mosaic (Seal: pano_h/pano_l, surfaceMode=0)
+     * 1 = APA passthrough (single pre-composited image, surfaceMode=1 with apa/byd_apa tag)
+     * 2 = 3-camera mosaic (Atto 3 default: Rear, Side, Front)
+     */
+    public void setCameraLayout(int layout) {
+        this.apaMode = (layout == 1);
+        this.cameraLayout = layout;
+        String[] names = {"4-camera mosaic", "APA passthrough", "3-camera mosaic"};
+        logger.info("Camera layout: " + (layout < names.length ? names[layout] : "unknown(" + layout + ")"));
+    }
+    
+    public void setApaMode(boolean apa) {
+        setCameraLayout(apa ? 1 : 0);
     }
 
     public boolean isOverlayEnabled() {

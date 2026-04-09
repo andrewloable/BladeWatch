@@ -125,8 +125,27 @@
                 return;
             }
 
-            // Capture SPS/PPS
-            if (nalType === 7) { this.sps = data; return; }
+            // Capture SPS/PPS — reconfigure decoder if SPS changes (quality switch)
+            if (nalType === 7) {
+                if (this.sps && !this.arraysEqual(this.sps, data)) {
+                    // SPS changed (quality/resolution change) — reset decoder state
+                    this.sps = data;
+                    this.hasReceivedKeyframe = false;
+                    if (this.decoder) {
+                        try {
+                            this.decoder.reset();
+                            this.decoder.configure({
+                                codec: "avc1.64001F",
+                                hardwareAcceleration: "prefer-hardware",
+                                optimizeForLatency: true
+                            });
+                        } catch (e) {}
+                    }
+                    return;
+                }
+                this.sps = data;
+                return;
+            }
             if (nalType === 8) { this.pps = data; return; }
 
             // Handle video frames
@@ -210,6 +229,14 @@
         }
 
         isRunning() { return this.running; }
+
+        arraysEqual(a, b) {
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] !== b[i]) return false;
+            }
+            return true;
+        }
     }
 
     if (typeof module !== 'undefined' && module.exports) module.exports = SotaPlayer;

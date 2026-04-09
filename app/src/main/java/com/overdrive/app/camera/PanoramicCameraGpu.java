@@ -33,6 +33,7 @@ public class PanoramicCameraGpu {
     private static final String TAG = "PanoramicCameraGpu";
     private static final DaemonLogger logger = DaemonLogger.getInstance(TAG);
     private static final int PHYSICAL_CAMERA_ID = 1;
+    private static final int MAX_SURFACE_MODE = 5;  // Probe surface modes 0-5
     
     // AVMCamera surface mode — 0 works on Seal, Atto 1 may need different value
     // Set via setCameraSurfaceMode() before start() for per-model override
@@ -43,6 +44,13 @@ public class PanoramicCameraGpu {
     
     // Auto-probe mode — tries all camera IDs to find one with actual image data
     private boolean autoProbeCameras = false;
+    private int probeStartId = -1;  // Tracks where probe started for wrap-around detection
+    
+    // Callback when auto-probe discovers a working camera config
+    public interface CameraProbeCallback {
+        void onCameraFound(int cameraId, int surfaceMode);
+    }
+    private CameraProbeCallback probeCallback;
     
     // Camera dimensions
     private final int width;
@@ -340,7 +348,7 @@ public class PanoramicCameraGpu {
             frameCounter++;
             lastFrameTime = System.currentTimeMillis();
             
-            // AUTO-PROBE: After 15 frames, check if current camera has image data.
+            // AUTO-PROBE: After 15 frames (~2 sec), check if current camera has image data.
             // If blank and auto-probe is enabled, try next camera ID.
             if (frameCounter == 15 && downscaler != null) {
                 try {
@@ -364,17 +372,20 @@ public class PanoramicCameraGpu {
                         logger.info("Auto-probe: SELECTED camera ID " + currentId + 
                             " (panoramic, has image data, surfaceMode=" + cameraSurfaceMode + ")");
                         autoProbeCameras = false;
+                        probeStartId = -1;
+                        // Notify pipeline to persist this config
+                        if (probeCallback != null) {
+                            probeCallback.onCameraFound(currentId, cameraSurfaceMode);
+                        }
                     } else if (autoProbeCameras) {
-                        String reason = !hasData ? "blank" : "single-view (need panoramic)";
-                        // Try next camera ID sequentially (0, 1, 2, 3, 4, 5)
-                        int nextId = currentId + 1;
-                        
-                        if (nextId <= 5) {
-                            logger.info("Auto-probe: camera ID " + currentId + " " + reason + ", trying ID " + nextId + "...");
-                            cameraIdOverride = nextId;
-                            frameCounter = 0;  // Reset to re-probe
-                            
-                            // Close current camera and reopen with new ID
+                        // Only try ID 0 and ID 1 with surfaceMode 0 — no cycling
+                        // Atto 3 works on ID 0, Seal works on ID 1
+                        if (currentId == 0) {
+                            logger.info("Auto-probe: camera ID 0 " + 
+                                (!hasData ? "blank" : "not panoramic") + ", trying ID 1...");
+                            cameraIdOverride = 1;
+                            frameCounter = 0;
+                            lastGlThreadHeartbeat = System.currentTimeMillis();
                             try {
                                 Class<?> avmClass = Class.forName("android.hardware.AVMCamera");
                                 Method mStop = avmClass.getDeclaredMethod("stopPreview");
@@ -386,28 +397,12 @@ public class PanoramicCameraGpu {
                             } catch (Exception closeEx) {
                                 logger.warn("Error closing camera for probe: " + closeEx.getMessage());
                             }
-                            startCamera();
-                        } else if (cameraSurfaceMode == 0) {
-                            // All IDs blank with mode 0 — retry from ID 0 with surface mode 1
-                            logger.info("Auto-probe: all IDs blank with surfaceMode=0, retrying with surfaceMode=1...");
-                            cameraSurfaceMode = 1;
-                            cameraIdOverride = 0;
-                            frameCounter = 0;
-                            try {
-                                Class<?> avmClass = Class.forName("android.hardware.AVMCamera");
-                                Method mStop = avmClass.getDeclaredMethod("stopPreview");
-                                mStop.setAccessible(true);
-                                mStop.invoke(cameraObj);
-                                Method mClose = avmClass.getDeclaredMethod("close");
-                                mClose.setAccessible(true);
-                                mClose.invoke(cameraObj);
-                            } catch (Exception closeEx) {
-                                logger.warn("Error closing camera for mode probe: " + closeEx.getMessage());
-                            }
+                            lastGlThreadHeartbeat = System.currentTimeMillis();
                             startCamera();
                         } else {
-                            logger.error("Auto-probe: all camera IDs (0-5) with surfaceMode 0 and 1 returned blank");
+                            logger.warn("Auto-probe: camera ID 0 and 1 both failed — giving up");
                             autoProbeCameras = false;
+                            probeStartId = -1;
                         }
                     }
                 } catch (Exception e) {
@@ -419,18 +414,20 @@ public class PanoramicCameraGpu {
 
             // PASS 1: Recording (Zero-Copy GPU Path)
             // SOTA: Always render to encoder (for pre-record circular buffer)
-            if (recorder != null) {
-                recorder.drawFrame(cameraTextureId);
+            GpuMosaicRecorder localRecorder = recorder;
+            HardwareEventRecorderGpu localEncoder = encoder;
+            if (localRecorder != null) {
+                localRecorder.drawFrame(cameraTextureId);
 
                 // CRITICAL: Drain encoder immediately after frame submission
                 // This prevents eglSwapBuffers from blocking when encoder buffers fill up
-                if (encoder != null) {
-                    encoder.drainEncoder();
+                if (localEncoder != null) {
+                    localEncoder.drainEncoder();
                 }
                 
                 // RECOVERY: If encoder surface died (EGL_BAD_SURFACE after prolonged use),
                 // reinitialize the encoder and reconnect the recorder
-                if (recorder.needsReinit() && encoder != null) {
+                if (localRecorder.needsReinit() && localEncoder != null) {
                     logger.warn("Encoder surface lost - reinitializing encoder...");
                     try {
                         recorder.releaseEncoderSurface();
@@ -451,9 +448,12 @@ public class PanoramicCameraGpu {
 
             // PASS 1B: Streaming (Parallel Zero-Copy GPU Path)
             // Only runs if streaming is enabled - uses separate encoder at lower resolution
-            if (streamScaler != null && streamEncoder != null) {
-                streamScaler.drawFrame(cameraTextureId);
-                streamEncoder.drainEncoder();
+            // Capture local refs to avoid NPE from concurrent pipeline shutdown
+            com.overdrive.app.streaming.GpuStreamScaler localStreamScaler = streamScaler;
+            HardwareEventRecorderGpu localStreamEncoder = streamEncoder;
+            if (localStreamScaler != null && localStreamEncoder != null) {
+                localStreamScaler.drawFrame(cameraTextureId);
+                localStreamEncoder.drainEncoder();
             }
 
             // PASS 2: AI Lane (Downscale & Readback at 2 FPS)
@@ -734,6 +734,13 @@ public class PanoramicCameraGpu {
     }
     
     /**
+     * Gets the current camera surface mode.
+     */
+    public int getCameraSurfaceMode() {
+        return cameraSurfaceMode;
+    }
+    
+    /**
      * Sets the AVMCamera ID to use.
      * Must be called before start(). Default is 1 (works on Seal).
      * Dolphin/Atto 1 may need ID 0.
@@ -752,6 +759,14 @@ public class PanoramicCameraGpu {
     public void setAutoProbeCameras(boolean enabled) {
         this.autoProbeCameras = enabled;
         logger.info("Camera auto-probe: " + (enabled ? "ENABLED" : "DISABLED"));
+    }
+    
+    /**
+     * Sets a callback to be notified when auto-probe discovers a working camera.
+     * The pipeline can use this to persist the result for faster restarts.
+     */
+    public void setCameraProbeCallback(CameraProbeCallback callback) {
+        this.probeCallback = callback;
     }
     
     /**

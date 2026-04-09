@@ -22,7 +22,7 @@ public class WebSocketStreamServer extends WebSocketServer
     private static final String TAG = "WSStreamServer";
     private static final DaemonLogger logger = DaemonLogger.getInstance(TAG);
     private static final int PORT = 8887;
-    private static final long IDLE_TIMEOUT_MS = 15_000;
+    private static final long IDLE_TIMEOUT_MS = 30_000;
 
     private volatile byte[] cachedSpsPps = null;
     private final Set<WebSocket> clients = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -163,7 +163,7 @@ public class WebSocketStreamServer extends WebSocketServer
         }
     }
 
-    private void checkIdleTimeout() {
+    private synchronized void checkIdleTimeout() {
         if (!clients.isEmpty() || externalClientCount > 0) {
             cancelIdleTimer();
             return;

@@ -201,18 +201,28 @@ public class SafeLocationManager {
     // ========================================================================
 
     private void onEnteredSafeZone(String zoneName) {
-        CameraDaemon.log(TAG + ": ENTERED safe zone '" + zoneName + "' — stopping surveillance");
-        if (CameraDaemon.isSurveillanceEnabled()) {
-            CameraDaemon.disableSurveillance();
+        CameraDaemon.log(TAG + ": ENTERED safe zone '" + zoneName + "' — suppressing surveillance");
+        // Don't call disableSurveillance() — that clears the user's preference.
+        // Just stop the pipeline and mark as suppressed. The preference stays enabled
+        // so surveillance auto-restarts when leaving the zone or on next ACC OFF.
+        if (CameraDaemon.isSurveillanceActive()) {
+            com.overdrive.app.surveillance.GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
+            if (pipeline != null) {
+                pipeline.disableSurveillance();
+                pipeline.stop();
+            }
             CameraDaemon.setSafeZoneSuppressed(true);
         }
     }
 
     private void onLeftSafeZone() {
-        CameraDaemon.log(TAG + ": LEFT safe zone — starting deferred surveillance");
+        CameraDaemon.log(TAG + ": LEFT safe zone — resuming surveillance");
         if (CameraDaemon.isSafeZoneSuppressed()) {
             CameraDaemon.setSafeZoneSuppressed(false);
-            CameraDaemon.enableSurveillance();
+            // Check persisted config — only restart if user actually wants surveillance
+            if (com.overdrive.app.config.UnifiedConfigManager.isSurveillanceEnabled()) {
+                CameraDaemon.enableSurveillance();
+            }
         }
     }
 

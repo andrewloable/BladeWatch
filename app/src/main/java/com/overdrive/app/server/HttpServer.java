@@ -547,6 +547,9 @@ public class HttpServer {
         com.overdrive.app.monitor.GpsMonitor gps = com.overdrive.app.monitor.GpsMonitor.getInstance();
         status.put("gps", gps.getLocationJson());
         
+        // Network info (WiFi SSID + IP or Mobile Data)
+        status.put("network", com.overdrive.app.monitor.NetworkMonitor.getNetworkInfo());
+        
         HttpResponse.sendJson(out, status.toString());
     }
 

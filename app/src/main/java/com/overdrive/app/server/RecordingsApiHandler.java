@@ -271,34 +271,34 @@ public class RecordingsApiHandler {
     private static File findVideoFile(String filename) {
         // Check new recordings location
         File normalFile = new File(getRecordingsDir(), filename);
-        if (normalFile.exists()) return normalFile;
+        if (normalFile.exists() && normalFile.canRead() && normalFile.length() > 0) return normalFile;
         
         // Check new sentry location
         File sentryFile = new File(getSentryDir(), filename);
-        if (sentryFile.exists()) return sentryFile;
+        if (sentryFile.exists() && sentryFile.canRead() && sentryFile.length() > 0) return sentryFile;
         
         // Check proximity location
         File proximityFile = new File(StorageManager.getInstance().getProximityPath(), filename);
-        if (proximityFile.exists()) return proximityFile;
+        if (proximityFile.exists() && proximityFile.canRead() && proximityFile.length() > 0) return proximityFile;
         
         // Check the OTHER storage location (files may be in internal when active is SD, or vice versa)
         StorageManager sm = StorageManager.getInstance();
         if (sm.isSdCardAvailable() && sm.getSdCardPath() != null) {
             for (String subdir : new String[]{"recordings", "surveillance", "proximity"}) {
                 File sdFile = new File(sm.getSdCardPath(), "Overdrive/" + subdir + "/" + filename);
-                if (sdFile.exists()) return sdFile;
+                if (sdFile.exists() && sdFile.canRead() && sdFile.length() > 0) return sdFile;
                 File intFile = new File("/storage/emulated/0/Overdrive/" + subdir + "/" + filename);
-                if (intFile.exists()) return intFile;
+                if (intFile.exists() && intFile.canRead() && intFile.length() > 0) return intFile;
             }
         }
         
         // Check legacy recordings location
         File legacyFile = new File(LEGACY_RECORDINGS_DIR, filename);
-        if (legacyFile.exists()) return legacyFile;
+        if (legacyFile.exists() && legacyFile.canRead() && legacyFile.length() > 0) return legacyFile;
         
         // Check legacy sentry location
         File legacySentryFile = new File(LEGACY_SENTRY_DIR, filename);
-        if (legacySentryFile.exists()) return legacySentryFile;
+        if (legacySentryFile.exists() && legacySentryFile.canRead() && legacySentryFile.length() > 0) return legacySentryFile;
         
         return null;
     }
@@ -386,6 +386,16 @@ public class RecordingsApiHandler {
             a.optLong("timestamp", 0)
         ));
         
+        // Deduplicate by filename — same file may appear from multiple scan locations
+        // (e.g., SD card + internal storage fallback). Keep the first occurrence (largest/newest).
+        Set<String> seenFilenames = new HashSet<>();
+        recordings.removeIf(rec -> {
+            String name = rec.optString("filename", "");
+            if (seenFilenames.contains(name)) return true;
+            seenFilenames.add(name);
+            return false;
+        });
+        
         // Pagination
         int totalCount = recordings.size();
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
@@ -415,6 +425,9 @@ public class RecordingsApiHandler {
     private static void scanDirectory(File dir, String type, List<JSONObject> recordings, String dateFilter) {
         if (!dir.exists() || !dir.isDirectory()) return;
         
+        // Verify directory is actually readable (catches unmounted SD card ghost paths)
+        if (!dir.canRead()) return;
+        
         File[] files = dir.listFiles((d, name) -> name.endsWith(".mp4"));
         if (files == null) return;
         
@@ -435,6 +448,10 @@ public class RecordingsApiHandler {
         }
         
         for (File file : files) {
+            // Skip ghost files: must be readable and have actual content
+            // On BYD, unmounted SD card can leave stale directory entries with 0-byte ghosts
+            if (!file.canRead() || file.length() <= 0) continue;
+            
             JSONObject recording = parseRecording(file, type);
             if (recording != null) {
                 // Apply date filter if specified
@@ -542,7 +559,7 @@ public class RecordingsApiHandler {
     
     private static void scanDatesInDirectory(File dir, boolean isSentry, Set<String> dates, 
             Map<String, Integer> countByDate, Map<String, Boolean> hasSentryByDate) {
-        if (!dir.exists() || !dir.isDirectory()) return;
+        if (!dir.exists() || !dir.isDirectory() || !dir.canRead()) return;
         
         File[] files = dir.listFiles((d, name) -> name.endsWith(".mp4"));
         if (files == null) return;
@@ -550,6 +567,9 @@ public class RecordingsApiHandler {
         Pattern pattern = isSentry ? EVENT_PATTERN : CAM_PATTERN;
         
         for (File file : files) {
+            // Skip ghost files from unmounted SD card
+            if (!file.canRead() || file.length() <= 0) continue;
+            
             Matcher m = pattern.matcher(file.getName());
             if (m.matches()) {
                 String dateStr = isSentry ? m.group(1) : m.group(2);
@@ -586,10 +606,11 @@ public class RecordingsApiHandler {
         
         // Normal recordings (new location)
         File recordingsDir = new File(getRecordingsDir());
-        if (recordingsDir.exists()) {
+        if (recordingsDir.exists() && recordingsDir.canRead()) {
             File[] files = recordingsDir.listFiles((d, name) -> name.endsWith(".mp4"));
             if (files != null) {
                 for (File f : files) {
+                    if (!f.canRead() || f.length() <= 0) continue;
                     normalSize += f.length();
                     normalCount++;
                     // Check if file is from today
@@ -602,10 +623,11 @@ public class RecordingsApiHandler {
         
         // Also count legacy location
         File legacyDir = new File(LEGACY_RECORDINGS_DIR);
-        if (legacyDir.exists() && !legacyDir.getAbsolutePath().equals(recordingsDir.getAbsolutePath())) {
+        if (legacyDir.exists() && legacyDir.canRead() && !legacyDir.getAbsolutePath().equals(recordingsDir.getAbsolutePath())) {
             File[] files = legacyDir.listFiles((d, name) -> name.endsWith(".mp4"));
             if (files != null) {
                 for (File f : files) {
+                    if (!f.canRead() || f.length() <= 0) continue;
                     normalSize += f.length();
                     normalCount++;
                     if (isFileFromToday(f.getName(), todayStr, CAM_PATTERN, 2)) {
@@ -617,10 +639,11 @@ public class RecordingsApiHandler {
         
         // Sentry events (new location)
         File sentryDir = new File(getSentryDir());
-        if (sentryDir.exists()) {
+        if (sentryDir.exists() && sentryDir.canRead()) {
             File[] files = sentryDir.listFiles((d, name) -> name.endsWith(".mp4"));
             if (files != null) {
                 for (File f : files) {
+                    if (!f.canRead() || f.length() <= 0) continue;
                     sentrySize += f.length();
                     sentryCount++;
                     if (isFileFromToday(f.getName(), todayStr, EVENT_PATTERN, 1)) {
@@ -632,10 +655,11 @@ public class RecordingsApiHandler {
         
         // Also count legacy location
         File legacySentryDir = new File(LEGACY_SENTRY_DIR);
-        if (legacySentryDir.exists() && !legacySentryDir.getAbsolutePath().equals(sentryDir.getAbsolutePath())) {
+        if (legacySentryDir.exists() && legacySentryDir.canRead() && !legacySentryDir.getAbsolutePath().equals(sentryDir.getAbsolutePath())) {
             File[] files = legacySentryDir.listFiles((d, name) -> name.endsWith(".mp4"));
             if (files != null) {
                 for (File f : files) {
+                    if (!f.canRead() || f.length() <= 0) continue;
                     sentrySize += f.length();
                     sentryCount++;
                     if (isFileFromToday(f.getName(), todayStr, EVENT_PATTERN, 1)) {
@@ -647,10 +671,11 @@ public class RecordingsApiHandler {
         
         // Proximity events
         File proximityDir = new File(storage.getProximityPath());
-        if (proximityDir.exists()) {
+        if (proximityDir.exists() && proximityDir.canRead()) {
             File[] files = proximityDir.listFiles((d, name) -> name.endsWith(".mp4"));
             if (files != null) {
                 for (File f : files) {
+                    if (!f.canRead() || f.length() <= 0) continue;
                     proximitySize += f.length();
                     proximityCount++;
                     if (isFileFromToday(f.getName(), todayStr, PROXIMITY_PATTERN, 1)) {

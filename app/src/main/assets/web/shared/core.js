@@ -82,6 +82,9 @@ BYD.core = {
                 survEl.className = 'status-value ' + (active ? 'on' : 'off');
             }
 
+            // Network status (WiFi SSID + IP or Mobile Data)
+            this.updateNetworkStatus(status);
+
             // Connection dot
             const connDot = document.getElementById('connDot');
             if (connDot) {
@@ -244,6 +247,62 @@ BYD.core = {
 
         // Personalized range from trip analytics
         this.updatePersonalizedRange();
+    },
+
+    /**
+     * Update network status indicator in sidebar.
+     * Shows WiFi SSID + IP, or "Mobile Data", or "No Network".
+     */
+    updateNetworkStatus(status) {
+        const netEl = document.getElementById('networkValue');
+        const netIcon = document.getElementById('networkIcon');
+        if (!netEl) return;
+
+        const net = status.network;
+        if (!net) {
+            netEl.textContent = '--';
+            netEl.className = 'status-value';
+            if (netIcon) netIcon.innerHTML = this._wifiSvg();
+            return;
+        }
+
+        if (net.type === 'wifi') {
+            const ssid = net.ssid || 'WiFi';
+            const ip = net.ip || '';
+            // Show SSID on first line, IP smaller below
+            netEl.innerHTML = '<span class="net-ssid">' + this._esc(ssid) + '</span>' +
+                (ip ? '<span class="net-ip">' + this._esc(ip) + '</span>' : '');
+            netEl.className = 'status-value on net-info';
+            if (netIcon) netIcon.innerHTML = this._wifiSvg();
+        } else if (net.type === 'cellular') {
+            const ip = net.ip || '';
+            netEl.innerHTML = '<span class="net-ssid">Mobile Data</span>' +
+                (ip ? '<span class="net-ip">' + this._esc(ip) + '</span>' : '');
+            netEl.className = 'status-value on net-info';
+            if (netIcon) netIcon.innerHTML = this._cellSvg();
+        } else {
+            netEl.textContent = 'No Network';
+            netEl.className = 'status-value off';
+            if (netIcon) netIcon.innerHTML = this._wifiOffSvg();
+        }
+    },
+
+    /** Escape HTML */
+    _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; },
+
+    /** WiFi SVG icon */
+    _wifiSvg() {
+        return '<svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>';
+    },
+
+    /** Cellular SVG icon */
+    _cellSvg() {
+        return '<svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="17" width="4" height="5"/><rect x="7" y="12" width="4" height="10"/><rect x="12" y="7" width="4" height="15"/><rect x="17" y="2" width="4" height="20"/></svg>';
+    },
+
+    /** WiFi-off SVG icon */
+    _wifiOffSvg() {
+        return '<svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>';
     },
 
     /**
