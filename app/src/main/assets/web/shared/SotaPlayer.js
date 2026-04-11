@@ -54,6 +54,12 @@
 
         connectWebSocket() {
             if (!this.url) return;
+            
+            // Reset decoder state for fresh start
+            this.sps = null;
+            this.pps = null;
+            this.hasReceivedKeyframe = false;
+            
             this.ws = new WebSocket(this.url);
             this.ws.binaryType = "arraybuffer";
 
@@ -63,8 +69,13 @@
             };
             this.ws.onmessage = (e) => this.ingest(new Uint8Array(e.data));
             this.ws.onclose = () => {
-                this.running = false;
                 if (this.onDisconnected) this.onDisconnected();
+                // SOTA: Auto-reconnect after 2 seconds if still running
+                if (this.running) {
+                    setTimeout(() => {
+                        if (this.running) this.connectWebSocket();
+                    }, 2000);
+                }
             };
             this.ws.onerror = () => { this.running = false; };
         }
@@ -75,8 +86,11 @@
                 output: this.handleFrame,
                 error: this.handleError
             });
+            // SOTA: Use Baseline profile codec string to match server encoder
+            // Server sends H.264 Baseline/Level 3.1 for iOS compatibility
+            // Will be reconfigured from SPS if profile differs
             this.decoder.configure({
-                codec: "avc1.64001F",
+                codec: "avc1.42C01F",
                 hardwareAcceleration: "prefer-hardware",
                 optimizeForLatency: true
             });
@@ -135,7 +149,7 @@
                         try {
                             this.decoder.reset();
                             this.decoder.configure({
-                                codec: "avc1.64001F",
+                                codec: this.extractCodecFromSPS(data),
                                 hardwareAcceleration: "prefer-hardware",
                                 optimizeForLatency: true
                             });
@@ -209,7 +223,7 @@
                 try {
                     this.decoder.reset();
                     this.decoder.configure({
-                        codec: "avc1.64001F",
+                        codec: this.sps ? this.extractCodecFromSPS(this.sps) : "avc1.42C01F",
                         hardwareAcceleration: "prefer-hardware",
                         optimizeForLatency: true
                     });
@@ -236,6 +250,34 @@
                 if (a[i] !== b[i]) return false;
             }
             return true;
+        }
+
+        /**
+         * SOTA: Extract avc1 codec string from SPS NAL unit.
+         * Format: avc1.PPCCLL where PP=profile_idc, CC=constraint_flags, LL=level_idc
+         * This ensures the WebCodecs decoder is configured to match the actual stream.
+         */
+        extractCodecFromSPS(spsData) {
+            try {
+                // Find the SPS byte after start code (00 00 00 01 67 or 00 00 01 67)
+                let offset = 0;
+                if (spsData[0] === 0 && spsData[1] === 0 && spsData[2] === 0 && spsData[3] === 1) {
+                    offset = 5;  // Skip start code + NAL header
+                } else if (spsData[0] === 0 && spsData[1] === 0 && spsData[2] === 1) {
+                    offset = 4;  // Skip start code + NAL header
+                } else {
+                    offset = 1;  // Raw NAL, skip header
+                }
+                
+                if (offset + 2 < spsData.length) {
+                    const profileIdc = spsData[offset];
+                    const constraintFlags = spsData[offset + 1];
+                    const levelIdc = spsData[offset + 2];
+                    const hex = (v) => v.toString(16).padStart(2, '0').toUpperCase();
+                    return `avc1.${hex(profileIdc)}${hex(constraintFlags)}${hex(levelIdc)}`;
+                }
+            } catch (e) {}
+            return "avc1.42C01F";  // Fallback: Baseline Profile Level 3.1
         }
     }
 

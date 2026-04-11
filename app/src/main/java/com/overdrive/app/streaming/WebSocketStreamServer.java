@@ -25,6 +25,10 @@ public class WebSocketStreamServer extends WebSocketServer
     private static final long IDLE_TIMEOUT_MS = 30_000;
 
     private volatile byte[] cachedSpsPps = null;
+    
+    /** Returns cached SPS/PPS for late-joining clients. */
+    public byte[] getCachedSpsPps() { return cachedSpsPps; }
+    
     private final Set<WebSocket> clients = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private Timer idleTimer;
     private volatile long lastClientDisconnectTime = 0;

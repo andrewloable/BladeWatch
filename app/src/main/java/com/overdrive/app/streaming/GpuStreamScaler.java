@@ -133,6 +133,9 @@ public class GpuStreamScaler {
         this.outputHeight = outputHeight;
     }
     
+    public int getWidth() { return outputWidth; }
+    public int getHeight() { return outputHeight; }
+    
     /**
      * Initializes the stream scaler.
      * 

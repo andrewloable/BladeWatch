@@ -121,6 +121,31 @@ public class SohEstimator {
         logger.warn("Capacity detection failed. Using default: " + nominalCapacityKwh + " KWh");
     }
 
+    /**
+     * Seed the initial SOH estimate immediately after capacity detection.
+     * Called once after autoDetectCarModel() so the web UI has a value
+     * before the first SocHistoryDatabase tick (2 min) or ABRP upload (5 sec).
+     */
+    public void seedInitialEstimate() {
+        if (hasEstimate()) return;  // Already have an estimate from persisted file
+
+        try {
+            VehicleDataMonitor vdm = VehicleDataMonitor.getInstance();
+            double remainingKwh = vdm.getBatteryRemainPowerKwh();
+            BatterySocData socData = vdm.getBatterySoc();
+            if (remainingKwh > 0 && socData != null && socData.socPercent > 0) {
+                updateFromInstantaneous(remainingKwh, socData.socPercent);
+                if (hasEstimate()) {
+                    logger.info("Seeded initial SOH: " + String.format("%.1f", currentSoh) + 
+                        "% (from " + String.format("%.1f", remainingKwh) + " kWh / " + 
+                        String.format("%.1f", socData.socPercent) + "% SOC)");
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Initial SOH seed failed: " + e.getMessage());
+        }
+    }
+
     // ==================== LIFECYCLE ====================
 
     public void init() {

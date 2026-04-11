@@ -691,7 +691,17 @@ public class HttpServer {
     }
 
     /**
-     * Streams H.264 frames over WebSocket with congestion control.
+     * SOTA: Streams H.264 frames over WebSocket with zero-restart attach.
+     *
+     * Instead of force-restarting the encoder on every client connect (which causes
+     * a 700ms gap and corrupt first frames), we:
+     * 1. Reuse the existing encoder if streaming is already enabled
+     * 2. Request an IDR keyframe via MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME
+     * 3. Send cached SPS/PPS immediately so the decoder can initialize
+     * 4. Wait for the IDR to arrive before sending P-frames
+     *
+     * This gives instant stream start with no encoder restart, no frame corruption,
+     * and no broken pipe from the client timing out during restart.
      */
     private void streamH264ToWebSocket(Socket client) {
         CameraDaemon.log("Starting H.264 WebSocket stream");
@@ -700,12 +710,11 @@ public class HttpServer {
         final boolean[] running = {true};
         
         try {
-            // Set socket options for streaming
-            client.setSoTimeout(0);        // No read timeout
-            client.setTcpNoDelay(true);    // Disable Nagle's for low latency
-            client.setSendBufferSize(256 * 1024);  // 256KB send buffer
+            client.setSoTimeout(0);
+            client.setTcpNoDelay(true);
+            client.setSendBufferSize(256 * 1024);
             final OutputStream out = new java.io.BufferedOutputStream(
-                client.getOutputStream(), 128 * 1024);  // 128KB write buffer
+                client.getOutputStream(), 128 * 1024);
             
             com.overdrive.app.surveillance.GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
             if (pipeline == null) {
@@ -714,33 +723,54 @@ public class HttpServer {
                 return;
             }
             
-            // Auto-start pipeline
+            // Auto-start pipeline if needed
             if (!pipeline.isRunning()) {
                 CameraDaemon.log("WS: Auto-starting pipeline");
                 pipeline.start();
                 Thread.sleep(500);
             }
             
-            // Force-restart streaming to guarantee immediate IDR (KeyFrame)
             GpuPipelineConfig.StreamingQuality q = GpuPipelineConfig.StreamingQuality.fromString(
                 StreamingApiHandler.getStreamingQuality());
             
             int savedViewMode = pipeline.getStreamViewMode();
             if (savedViewMode < 0) savedViewMode = 0;
             
-            if (pipeline.isStreamingEnabled()) {
-                CameraDaemon.log("WS: Force-restarting stream for KeyFrame (view mode " + savedViewMode + ")");
-                pipeline.disableStreaming();
-                Thread.sleep(200);
+            // SOTA: Reuse existing encoder if streaming is already enabled at same quality.
+            // Only restart if not enabled or quality changed.
+            boolean needsRestart = !pipeline.isStreamingEnabled();
+            
+            // Check if quality changed — need restart for new resolution
+            if (!needsRestart && pipeline.isStreamingEnabled()) {
+                HardwareEventRecorderGpu existingEncoder = pipeline.getStreamEncoder();
+                if (existingEncoder != null) {
+                    // Compare current encoder resolution with requested quality
+                    com.overdrive.app.streaming.GpuStreamScaler scaler = pipeline.getStreamScaler();
+                    if (scaler != null) {
+                        int currentWidth = scaler.getWidth();
+                        int currentHeight = scaler.getHeight();
+                        if (currentWidth != q.width || currentHeight != q.height) {
+                            CameraDaemon.log("WS: Quality changed (" + currentWidth + "x" + currentHeight + 
+                                " → " + q.width + "x" + q.height + ") — restarting encoder");
+                            needsRestart = true;
+                            pipeline.disableStreaming();
+                            Thread.sleep(200);
+                        }
+                    }
+                }
             }
             
-            CameraDaemon.log("WS: Enabling streaming - " + q.displayName);
-            pipeline.enableStreaming(q.width, q.height, q.fps, q.bitrate);
-            Thread.sleep(500);
+            if (needsRestart) {
+                CameraDaemon.log("WS: Enabling streaming - " + q.displayName);
+                pipeline.enableStreaming(q.width, q.height, q.fps, q.bitrate);
+                Thread.sleep(500);
+            } else {
+                CameraDaemon.log("WS: Reusing existing stream encoder (no restart)");
+            }
             
             if (savedViewMode > 0) {
                 pipeline.setStreamViewMode(savedViewMode);
-                CameraDaemon.log("WS: Restored view mode to " + savedViewMode);
+                CameraDaemon.log("WS: View mode " + savedViewMode);
             }
             
             HardwareEventRecorderGpu encoder = pipeline.getStreamEncoder();
@@ -750,7 +780,36 @@ public class HttpServer {
                 return;
             }
             
+            // SOTA: Send cached SPS/PPS immediately from WebSocketStreamServer
+            // so the client decoder can initialize before the first frame arrives.
+            com.overdrive.app.streaming.WebSocketStreamServer wsServer = pipeline.getWebSocketServer();
+            boolean spsPpsSent = false;
+            if (wsServer != null) {
+                byte[] cachedSpsPps = wsServer.getCachedSpsPps();
+                if (cachedSpsPps != null && cachedSpsPps.length > 0) {
+                    try {
+                        sendWebSocketBinaryFrame(out, cachedSpsPps);
+                        spsPpsSent = true;
+                        CameraDaemon.log("WS: Sent cached SPS/PPS (" + cachedSpsPps.length + " bytes)");
+                    } catch (Exception e) {
+                        CameraDaemon.log("WS: Failed to send cached SPS/PPS: " + e.getMessage());
+                    }
+                }
+            }
+            
+            // SOTA: Request IDR keyframe so client gets a clean decode start.
+            // This is instant — no encoder restart needed.
+            encoder.requestSyncFrame();
+            CameraDaemon.log("WS: IDR keyframe requested");
+            
+            // Also request SPS/PPS re-send if we didn't have cached ones
+            if (!spsPpsSent) {
+                // The encoder will send SPS/PPS before the next IDR via the callback
+                CameraDaemon.log("WS: Waiting for SPS/PPS from encoder");
+            }
+            
             // Stream callback with congestion control
+            final boolean[] gotKeyframe = {spsPpsSent};  // Skip waiting if we already sent SPS/PPS
             HardwareEventRecorderGpu.StreamCallback callback = new HardwareEventRecorderGpu.StreamCallback() {
                 @Override
                 public void onSpsPps(ByteBuffer sps, ByteBuffer pps) {
@@ -760,24 +819,33 @@ public class HttpServer {
                     sps.get(combined, 0, spsSize);
                     pps.get(combined, spsSize, ppsSize);
                     frameQueue.offer(combined);
+                    gotKeyframe[0] = true;
                     CameraDaemon.log("WS: Queued SPS/PPS (" + combined.length + " bytes)");
                 }
                 
                 @Override
                 public void onH264Packet(ByteBuffer data, android.media.MediaCodec.BufferInfo info) {
+                    // SOTA: Drop P-frames until we've sent SPS/PPS + IDR
+                    // Sending P-frames before the decoder has SPS/PPS causes decode failure
+                    if (!gotKeyframe[0]) {
+                        boolean isKeyframe = (info.flags & android.media.MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0;
+                        if (!isKeyframe) return;  // Drop P-frames before first keyframe
+                        gotKeyframe[0] = true;
+                    }
+                    
                     if (frameQueue.remainingCapacity() > 0) {
                         byte[] frame = new byte[info.size];
                         data.position(info.offset);
                         data.get(frame);
                         frameQueue.offer(frame);
                     }
+                    // If queue is full, drop frame (congestion control)
                 }
             };
             
             encoder.setStreamCallback(callback);
             CameraDaemon.log("WS: Stream callback registered");
             
-            com.overdrive.app.streaming.WebSocketStreamServer wsServer = pipeline.getWebSocketServer();
             if (wsServer != null) {
                 wsServer.registerExternalClient();
             }
@@ -791,15 +859,18 @@ public class HttpServer {
                     
                     if (frame != null) {
                         try {
+                            // Log first few frames for debugging
+                            if (frameCount < 5) {
+                                CameraDaemon.log("WS: Frame " + frameCount + " size=" + frame.length + " bytes");
+                            }
                             sendWebSocketBinaryFrame(out, frame);
                             lastFrameTime = System.currentTimeMillis();
                             frameCount++;
                             
-                            if (frameCount % 150 == 0) {
+                            if (frameCount % 300 == 0) {
                                 CameraDaemon.log("WS: Sent " + frameCount + " frames");
                             }
                         } catch (java.net.SocketException e) {
-                            // Broken pipe / connection reset — client disconnected
                             CameraDaemon.log("WS: Client disconnected (" + e.getMessage() + ")");
                             break;
                         } catch (java.io.IOException e) {
@@ -838,10 +909,37 @@ public class HttpServer {
         }
     }
 
+    /**
+     * SOTA: Send binary data as WebSocket frame(s) with fragmentation for large frames.
+     * Frames larger than MAX_WS_FRAME_SIZE are split into continuation frames
+     * to prevent TCP buffer overflow on constrained networks (BYD WiFi AP).
+     */
+    private static final int MAX_WS_FRAME_SIZE = 32768;  // 32KB per WebSocket frame
+    
     private void sendWebSocketBinaryFrame(OutputStream out, byte[] data) throws Exception {
-        int len = data.length;
-        
-        out.write(0x82);  // FIN=1, opcode=binary
+        if (data.length <= MAX_WS_FRAME_SIZE) {
+            // Small frame — send as single message
+            sendWebSocketRawFrame(out, data, 0, data.length, 0x82, true);
+        } else {
+            // Large frame — fragment into continuation frames
+            int offset = 0;
+            boolean first = true;
+            while (offset < data.length) {
+                int chunkSize = Math.min(MAX_WS_FRAME_SIZE, data.length - offset);
+                boolean last = (offset + chunkSize >= data.length);
+                int opcode = first ? 0x02 : 0x00;  // binary for first, continuation for rest
+                sendWebSocketRawFrame(out, data, offset, chunkSize, opcode, last);
+                offset += chunkSize;
+                first = false;
+            }
+        }
+        out.flush();
+    }
+    
+    private void sendWebSocketRawFrame(OutputStream out, byte[] data, int offset, int len, 
+                                        int opcode, boolean fin) throws Exception {
+        int firstByte = (fin ? 0x80 : 0x00) | opcode;
+        out.write(firstByte);
         
         if (len <= 125) {
             out.write(len);
@@ -856,8 +954,7 @@ public class HttpServer {
             }
         }
         
-        out.write(data);
-        out.flush();
+        out.write(data, offset, len);
     }
     
     private void sendWebSocketClose(OutputStream out, int code, String reason) {

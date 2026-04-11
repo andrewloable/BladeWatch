@@ -174,7 +174,10 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         if ("byd_cam_daemon".equals(processName)) {
             // Kill watchdog FIRST so it doesn't respawn the daemon
             ctx.execShell("pkill -9 -f 'start_cam_daemon' 2>/dev/null");
+            // Also kill via PID file
+            ctx.execShell("if [ -f /data/local/tmp/cam_watchdog.pid ]; then kill -9 $(cat /data/local/tmp/cam_watchdog.pid) 2>/dev/null; fi");
             ctx.execShell("rm -f /data/local/tmp/start_cam_daemon.sh 2>/dev/null");
+            ctx.execShell("rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null");
             // Wait for watchdog to fully die before killing daemon
             try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
             ctx.execShell("rm -f /data/local/tmp/camera_daemon.lock 2>/dev/null");
@@ -299,12 +302,15 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         // Use multiple kill patterns to catch all variants
         ctx.execShell("pkill -9 -f 'start_cam_daemon' 2>/dev/null");
         ctx.execShell("pkill -9 -f 'start_cam_daemon.sh' 2>/dev/null");
+        // Also kill via PID file
+        ctx.execShell("if [ -f /data/local/tmp/cam_watchdog.pid ]; then kill -9 $(cat /data/local/tmp/cam_watchdog.pid) 2>/dev/null; fi");
         try { Thread.sleep(500); } catch (InterruptedException ignored) {}
         // Now kill the daemon itself
         ctx.execShell("pkill -9 -f '" + processName + "' 2>/dev/null");
         ctx.execShell("killall -9 " + processName + " 2>/dev/null");
         ctx.execShell("rm -f " + scriptPath + " 2>/dev/null");
         ctx.execShell("rm -f /data/local/tmp/camera_daemon.lock 2>/dev/null");
+        ctx.execShell("rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null");
         // Wait for everything to fully die
         try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
         
@@ -329,6 +335,17 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         ctx.execShell("echo '#!/system/bin/sh' > " + scriptPath);
         ctx.execShell("echo '# CameraDaemon Watchdog Script' >> " + scriptPath);
         ctx.execShell("echo 'LOG_FILE=\"" + logFile + "\"' >> " + scriptPath);
+        ctx.execShell("echo 'PIDFILE=/data/local/tmp/cam_watchdog.pid' >> " + scriptPath);
+        ctx.execShell("echo '' >> " + scriptPath);
+        // Kill any existing watchdog using PID file
+        ctx.execShell("echo 'if [ -f \"$PIDFILE\" ]; then' >> " + scriptPath);
+        ctx.execShell("echo '  OLDPID=$(cat \"$PIDFILE\")' >> " + scriptPath);
+        ctx.execShell("echo '  if [ -d \"/proc/$OLDPID\" ]; then' >> " + scriptPath);
+        ctx.execShell("echo '    kill -9 $OLDPID 2>/dev/null' >> " + scriptPath);
+        ctx.execShell("echo '    sleep 1' >> " + scriptPath);
+        ctx.execShell("echo '  fi' >> " + scriptPath);
+        ctx.execShell("echo 'fi' >> " + scriptPath);
+        ctx.execShell("echo 'echo $$ > \"$PIDFILE\"' >> " + scriptPath);
         ctx.execShell("echo '' >> " + scriptPath);
         ctx.execShell("echo 'while true; do' >> " + scriptPath);
         ctx.execShell("echo '  echo \"[$(date)] Starting CameraDaemon...\" >> \"$LOG_FILE\"' >> " + scriptPath);
