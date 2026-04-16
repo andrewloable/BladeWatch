@@ -193,10 +193,10 @@ tasks.register("extractWebAssets") {
 android {
     signingConfigs {
         create("release") {
-            storeFile = file("/Users/yashsriv/champ.jks")
-            storePassword = "SriPass123!@#"
-            keyPassword = "SriPass123!@#"
-            keyAlias = "key0"
+            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "release.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: "key0"
         }
     }
     namespace = "com.overdrive.app"
