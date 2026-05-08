@@ -282,7 +282,7 @@ class DaemonStartupManager(
             // Do real-time check if already running before starting
             vm.tailscaleController.isRunning { isRunning ->
                 if (isRunning) {
-                    log.info(TAG, "Zrok already running, skipping start")
+                    log.info(TAG, "Tailscale already running, skipping start")
                 } else {
                     log.info(TAG, "Starting Tailscale (user enabled)...")
                     handler.post { vm.startDaemon(DaemonType.TAILSCALE_TUNNEL) }

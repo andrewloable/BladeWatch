@@ -61,17 +61,17 @@ Download the latest APK from [GitHub Releases](https://github.com/yash-srivastav
 
 ## Why OverDrive?
 
-| Feature | OverDrive                                     | Other Apps |
+| Feature | OverDrive | Other Apps |
 |---|---|---|
-| CPU Usage | **<28%**                                      | 70–90% |
-| Proximity Recording | ✅ Market First                                | ❌ |
-| Real-time Performance Monitor | ✅ Built-in                                    | ❌ |
-| ISP Blocklist Bypass | ✅ Via BYD SIM                                 | ❌ Requires WiFi Hotspot |
+| CPU Usage | **<28%** | 70–90% |
+| Proximity Recording | ✅ Market First | ❌ |
+| Real-time Performance Monitor | ✅ Built-in | ❌ |
+| ISP Blocklist Bypass | ✅ Via BYD SIM | ❌ Requires WiFi Hotspot |
 | Remote Access | 4 methods (LAN, Cloudflared, Zrok, Tailscale) | Usually 1 (if any) |
-| ADB Shell Runner | ✅                                             | ❌ |
-| Telegram Notifications | ✅ Free                                        | Paid or None |
-| Data Privacy | 100% On-Device                                | Often Cloud-Required |
-| Price | **Free Forever**                              | $5–50/month |
+| ADB Shell Runner | ✅ | ❌ |
+| Telegram Notifications | ✅ Free | Paid or None |
+| Data Privacy | 100% On-Device | Often Cloud-Required |
+| Price | **Free Forever** | $5–50/month |
 
 ## Features
 
@@ -104,7 +104,7 @@ Free, open-source tunneling with no bandwidth limits at `https://<your-share>.sh
 4. Done — tunnel URL is auto-generated
 
 ### Tailscale Tunnel
-Free, with no bandwidth limits at from any device connected to tailscale.
+Free, with no bandwidth limits. Connect from any device connected to tailscale.
 
 **Quick Tailscale setup:**
 1. Sign up at [tailscale.com](https://tailscale.com/)
