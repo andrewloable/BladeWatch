@@ -690,16 +690,31 @@ class MainActivity : AppCompatActivity() {
             }
             updateUrlDisplay()
         }
+
+        // Observe tunnel URL from tailscale controller
+        daemonsViewModel.tailscaleController.tunnelUrl.observe(this) { url ->
+            if (!daemonsViewModel.cloudflaredController.tunnelUrl.value.isNullOrEmpty()
+                || !daemonsViewModel.zrokController.tunnelUrl.value.isNullOrEmpty()) {
+                if (!url.isNullOrEmpty()) {
+                    mainViewModel.setTunnelUrl(url)
+                }
+            }
+            updateUrlDisplay()
+        }
         
-        // Observe daemon states for tunnel status (cloudflared or zrok)
+        // Observe daemon states for tunnel status (cloudflared, zrok or tailscale)
         daemonsViewModel.daemonStates.observe(this) { states ->
             val cloudflaredState = states[DaemonType.CLOUDFLARED_TUNNEL]
             val zrokState = states[DaemonType.ZROK_TUNNEL]
+            val tailscaleState = states[DaemonType.TAILSCALE_TUNNEL]
             // Show online if either tunnel is running
             val tunnelStatus = when {
                 zrokState?.status == DaemonStatus.RUNNING -> DaemonStatus.RUNNING
                 cloudflaredState?.status == DaemonStatus.RUNNING -> DaemonStatus.RUNNING
-                zrokState?.status == DaemonStatus.STARTING || cloudflaredState?.status == DaemonStatus.STARTING -> DaemonStatus.STARTING
+                tailscaleState?.status == DaemonStatus.RUNNING -> DaemonStatus.RUNNING
+                zrokState?.status == DaemonStatus.STARTING -> DaemonStatus.STARTING
+                cloudflaredState?.status == DaemonStatus.STARTING -> DaemonStatus.STARTING
+                tailscaleState?.status == DaemonStatus.STARTING -> DaemonStatus.STARTING
                 else -> DaemonStatus.STOPPED
             }
             updateStatusIndicator(tunnelStatus)
@@ -711,7 +726,8 @@ class MainActivity : AppCompatActivity() {
         // Check both tunnel URLs - prefer zrok if available
         val zrokUrl = daemonsViewModel.zrokController.tunnelUrl.value
         val cloudflaredUrl = daemonsViewModel.cloudflaredController.tunnelUrl.value
-        val tunnelUrl = zrokUrl?.takeIf { it.isNotEmpty() } ?: cloudflaredUrl
+        val tailscaleUrl = daemonsViewModel.tailscaleController.tunnelUrl.value
+        val tunnelUrl = zrokUrl?.takeIf { it.isNotEmpty() } ?: cloudflaredUrl?.takeIf { it.isNotEmpty() } ?: tailscaleUrl
         
         // Both modes now use tunnel URL
         if (tunnelUrl.isNullOrEmpty()) {
@@ -719,10 +735,14 @@ class MainActivity : AppCompatActivity() {
             val states = daemonsViewModel.daemonStates.value
             val cfState = states?.get(DaemonType.CLOUDFLARED_TUNNEL)
             val zrokState = states?.get(DaemonType.ZROK_TUNNEL)
+            val tailscaleState = states?.get(DaemonType.TAILSCALE_TUNNEL)
             val message = when {
                 zrokState?.status == DaemonStatus.STARTING -> "Starting Zrok tunnel..."
                 cfState?.status == DaemonStatus.STARTING -> "Starting Cloudflared tunnel..."
-                zrokState?.status == DaemonStatus.RUNNING || cfState?.status == DaemonStatus.RUNNING -> "Waiting for tunnel URL..."
+                tailscaleState?.status == DaemonStatus.STARTING -> "Starting Tailscale tunnel..."
+                zrokState?.status == DaemonStatus.RUNNING -> "Waiting for tunnel URL..."
+                cfState?.status == DaemonStatus.RUNNING -> "Waiting for tunnel URL..."
+                tailscaleState?.status == DaemonStatus.RUNNING -> "Waiting for tailscale URL..."
                 else -> "No tunnel running"
             }
             tvCurrentUrl.text = message

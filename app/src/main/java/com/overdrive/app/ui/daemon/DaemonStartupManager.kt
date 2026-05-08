@@ -6,6 +6,7 @@ import android.os.Looper
 import com.overdrive.app.launcher.AdbDaemonLauncher
 import com.overdrive.app.launcher.AdbShellExecutor
 import com.overdrive.app.launcher.ZrokLauncher
+import com.overdrive.app.launcher.TailscaleLauncher
 import com.overdrive.app.logging.LogManager
 import com.overdrive.app.ui.model.AccessMode
 import com.overdrive.app.ui.model.DaemonType
@@ -34,6 +35,7 @@ class DaemonStartupManager(
             DaemonType.SINGBOX_PROXY,
             DaemonType.CLOUDFLARED_TUNNEL,
             DaemonType.ZROK_TUNNEL,
+            DaemonType.TAILSCALE_TUNNEL,
             DaemonType.TELEGRAM_DAEMON,
         )
 
@@ -255,6 +257,7 @@ class DaemonStartupManager(
     private fun startTunnelFromPreferences(vm: DaemonsViewModel) {
         val cloudflaredEnabled = PreferencesManager.isDaemonEnabled(DaemonType.CLOUDFLARED_TUNNEL)
         val zrokEnabled = PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)
+        val tailscaleEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)
         if (cloudflaredEnabled) {
             // Do real-time check if already running before starting
             vm.cloudflaredController.isRunning { isRunning ->
@@ -273,6 +276,16 @@ class DaemonStartupManager(
                 } else {
                     log.info(TAG, "Starting Zrok (user enabled)...")
                     handler.post { vm.startDaemon(DaemonType.ZROK_TUNNEL) }
+                }
+            }
+        } else if (tailscaleEnabled) {
+            // Do real-time check if already running before starting
+            vm.tailscaleController.isRunning { isRunning ->
+                if (isRunning) {
+                    log.info(TAG, "Zrok already running, skipping start")
+                } else {
+                    log.info(TAG, "Starting Tailscale (user enabled)...")
+                    handler.post { vm.startDaemon(DaemonType.TAILSCALE_TUNNEL) }
                 }
             }
         } else {
@@ -308,6 +321,9 @@ class DaemonStartupManager(
                 } else if (PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)) {
                     log.info(TAG, "Boot: Starting Zrok...")
                     startZrokOnBoot()
+                } else if (PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)) {
+                    log.info(TAG, "Boot: Starting Tailscale...")
+                    startTailscaleOnBoot()
                 }
             }, tunnelDelay)
             
@@ -341,6 +357,28 @@ class DaemonStartupManager(
             
             override fun onError(error: String) {
                 log.error(TAG, "Boot: Zrok error: $error")
+            }
+        })
+    }
+
+    /**
+     * Start Tailscale tunnel on boot using TailscaleLauncher directly.
+     */
+    private fun startTailscaleOnBoot() {
+        val adbShellExecutor = AdbShellExecutor(context)
+        val tailscaleLauncher = TailscaleLauncher(context, adbShellExecutor, log)
+
+        tailscaleLauncher.launchTailscale(object : TailscaleLauncher.TailscaleCallback {
+            override fun onLog(message: String) {
+                log.debug(TAG, "[Tailscale Boot] $message")
+            }
+
+            override fun onTunnelUrl(url: String?) {
+                log.info(TAG, "Boot: Tailscale URL: $url")
+            }
+
+            override fun onError(error: String) {
+                log.error(TAG, "Boot: Tailscale error: $error")
             }
         })
     }
@@ -401,6 +439,7 @@ class DaemonStartupManager(
     private fun restartTunnelIfEnabled(vm: DaemonsViewModel, forceRestart: Boolean = false) {
         val cloudflaredEnabled = PreferencesManager.isDaemonEnabled(DaemonType.CLOUDFLARED_TUNNEL)
         val zrokEnabled = PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)
+        val tailscaleEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)
         
         if (cloudflaredEnabled) {
             vm.cloudflaredController.isRunning { isRunning ->
@@ -438,6 +477,25 @@ class DaemonStartupManager(
                     handler.post { vm.startDaemon(DaemonType.ZROK_TUNNEL) }
                 } else {
                     log.info(TAG, "Zrok already running, no restart needed")
+                }
+            }
+        } else if (tailscaleEnabled) {
+            vm.tailscaleController.isRunning { isRunning ->
+                if (isRunning && forceRestart) {
+                    log.info(TAG, "Restarting Tailscale to apply new proxy settings...")
+                    handler.post {
+                        vm.stopDaemon(DaemonType.TAILSCALE_TUNNEL)
+                        // Wait for stop, then start
+                        handler.postDelayed({
+                            log.info(TAG, "Starting Tailscale with new settings")
+                            vm.startDaemon(DaemonType.TAILSCALE_TUNNEL)
+                        }, 2000)
+                    }
+                } else if (!isRunning) {
+                    log.info(TAG, "Starting Tailscale (user enabled)")
+                    handler.post { vm.startDaemon(DaemonType.TAILSCALE_TUNNEL) }
+                } else {
+                    log.info(TAG, "Tailscale already running, no restart needed")
                 }
             }
         }
@@ -540,6 +598,7 @@ class DaemonStartupManager(
             DaemonType.TELEGRAM_DAEMON -> "telegram"
             DaemonType.CLOUDFLARED_TUNNEL -> "cloudflared"
             DaemonType.ZROK_TUNNEL -> "zrok"
+            DaemonType.TAILSCALE_TUNNEL -> "tailscale"
             DaemonType.SINGBOX_PROXY -> "singbox"
         }
         return try {

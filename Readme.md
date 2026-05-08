@@ -45,12 +45,12 @@ Download the latest APK from [GitHub Releases](https://github.com/yash-srivastav
 
 **Option A: Dedicated Wi-Fi Hotspot (Recommended)**
 - Keep the Sing-box Proxy disabled.
-- Directly enable your preferred tunnel (Zrok or Cloudflared).
+- Directly enable your preferred tunnel (Zrok, Cloudflared or Tailscale).
 
 **Option B: Public / BYD SIM**
 - Toggle the **"Public"** switch at the top right of the dashboard.
 - Go to Daemon View and verify the Sing-box Proxy Daemon is running.
-- Once verified, enable your preferred tunnel (Zrok or Cloudflared).
+- Once verified, enable your preferred tunnel (Zrok, Cloudflared or Tailscale).
 
 ### Telegram Notifications Setup
 1. Message [@BotFather](https://t.me/BotFather) on Telegram → `/newbot` → follow prompts → get your bot token
@@ -61,17 +61,17 @@ Download the latest APK from [GitHub Releases](https://github.com/yash-srivastav
 
 ## Why OverDrive?
 
-| Feature | OverDrive | Other Apps |
+| Feature | OverDrive                                     | Other Apps |
 |---|---|---|
-| CPU Usage | **<28%** | 70–90% |
-| Proximity Recording | ✅ Market First | ❌ |
-| Real-time Performance Monitor | ✅ Built-in | ❌ |
-| ISP Blocklist Bypass | ✅ Via BYD SIM | ❌ Requires WiFi Hotspot |
-| Remote Access | 3 methods (LAN, Cloudflared, Zrok) | Usually 1 (if any) |
-| ADB Shell Runner | ✅ | ❌ |
-| Telegram Notifications | ✅ Free | Paid or None |
-| Data Privacy | 100% On-Device | Often Cloud-Required |
-| Price | **Free Forever** | $5–50/month |
+| CPU Usage | **<28%**                                      | 70–90% |
+| Proximity Recording | ✅ Market First                                | ❌ |
+| Real-time Performance Monitor | ✅ Built-in                                    | ❌ |
+| ISP Blocklist Bypass | ✅ Via BYD SIM                                 | ❌ Requires WiFi Hotspot |
+| Remote Access | 4 methods (LAN, Cloudflared, Zrok, Tailscale) | Usually 1 (if any) |
+| ADB Shell Runner | ✅                                             | ❌ |
+| Telegram Notifications | ✅ Free                                        | Paid or None |
+| Data Privacy | 100% On-Device                                | Often Cloud-Required |
+| Price | **Free Forever**                              | $5–50/month |
 
 ## Features
 
@@ -102,6 +102,15 @@ Free, open-source tunneling with no bandwidth limits at `https://<your-share>.sh
 2. Get your invite token from email
 3. Enter token in OverDrive settings
 4. Done — tunnel URL is auto-generated
+
+### Tailscale Tunnel
+Free, with no bandwidth limits at from any device connected to tailscale.
+
+**Quick Tailscale setup:**
+1. Sign up at [tailscale.com](https://tailscale.com/)
+2. Open tailscale settings in Overdrive
+3. Generate a login URL and login
+4. Optionally, disable key expiry in tailscale if you would not like to log in every 6 months
 
 ## Tech Specs
 
