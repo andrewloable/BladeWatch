@@ -709,11 +709,11 @@ class MainActivity : AppCompatActivity() {
 
         // Observe tunnel URL from tailscale controller
         daemonsViewModel.tailscaleController.tunnelUrl.observe(this) { url ->
-            if (!daemonsViewModel.cloudflaredController.tunnelUrl.value.isNullOrEmpty()
-                || !daemonsViewModel.zrokController.tunnelUrl.value.isNullOrEmpty()) {
-                if (!url.isNullOrEmpty()) {
-                    mainViewModel.setTunnelUrl(url)
-                }
+            // Tailscale is lowest priority — only adopt its URL when no higher-priority tunnel has one
+            val zrokUrl = daemonsViewModel.zrokController.tunnelUrl.value
+            val cloudflaredUrl = daemonsViewModel.cloudflaredController.tunnelUrl.value
+            if (zrokUrl.isNullOrEmpty() && cloudflaredUrl.isNullOrEmpty() && !url.isNullOrEmpty()) {
+                mainViewModel.setTunnelUrl(url)
             }
             updateUrlDisplay()
         }

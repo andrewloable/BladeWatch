@@ -581,7 +581,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
                 tailscaleCmd.append("' > /data/local/tmp/.tailscale/tailscaled.log 2>&1 &");
 
                 cmd = tailscaleCmd.toString();
-                processName = "cloudflared";
+                processName = "tailscaled";
                 break;
 
             case "singbox":
