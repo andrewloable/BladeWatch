@@ -197,12 +197,15 @@ class DashboardFragment : Fragment() {
         val states = daemonsViewModel.daemonStates.value ?: return "No tunnel running"
         val cfState = states[DaemonType.CLOUDFLARED_TUNNEL]
         val zrokState = states[DaemonType.ZROK_TUNNEL]
+        val tailscaleState = states[DaemonType.TAILSCALE_TUNNEL]
         
         return when {
             zrokState?.status == DaemonStatus.STARTING -> "Starting Zrok tunnel..."
             cfState?.status == DaemonStatus.STARTING -> "Starting Cloudflared tunnel..."
+            tailscaleState?.status == DaemonStatus.STARTING -> "Starting Tailscale tunnel..."
             zrokState?.status == DaemonStatus.RUNNING -> "Waiting for tunnel URL..."
             cfState?.status == DaemonStatus.RUNNING -> "Waiting for tunnel URL..."
+            tailscaleState?.status == DaemonStatus.RUNNING -> "Waiting for tunnel URL..."
             else -> "No tunnel running"
         }
     }

@@ -12,5 +12,6 @@ enum class DaemonType(val displayName: String, val processName: String) {
     SINGBOX_PROXY("Sing-box Proxy", "sing-box"),
     CLOUDFLARED_TUNNEL("Cloudflared Tunnel", "cloudflared"),
     ZROK_TUNNEL("Zrok Tunnel", "zrok"),
+    TAILSCALE_TUNNEL("Tailscale Tunnel", "tailscaled"),
     TELEGRAM_DAEMON("Telegram Bot", "telegram_bot_daemon")
 }

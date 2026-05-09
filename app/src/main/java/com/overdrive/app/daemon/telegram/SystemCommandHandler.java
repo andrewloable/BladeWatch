@@ -47,6 +47,7 @@ public class SystemCommandHandler implements TelegramCommandHandler {
             {"telegram", "telegram_bot_daemon", "Telegram", "no", "no"},
             {"cloudflared", "cloudflared", "Cloudflare Tunnel", "yes", "yes"},
             {"zrok", "zrok", "Zrok Tunnel", "yes", "yes"},
+            {"tailscale", "tailscaled", "Tailscale Tunnel", "yes", "yes"},
             {"singbox", "sing-box", "Sing-Box", "yes", "no"}
         };
         
@@ -94,12 +95,14 @@ public class SystemCommandHandler implements TelegramCommandHandler {
             // Check which tunnel is running and get its URL
             String cloudflaredRunning = ctx.execShell("pgrep -f cloudflared");
             String zrokRunning = ctx.execShell("pgrep -f zrok");
+            String tailscaleRunning = ctx.execShell("pgrep -f tailscaled");
             
             boolean cfUp = cloudflaredRunning != null && !cloudflaredRunning.trim().isEmpty();
             boolean zrokUp = zrokRunning != null && !zrokRunning.trim().isEmpty();
+            boolean tailscaleUp = tailscaleRunning != null && !tailscaleRunning.trim().isEmpty();
             
-            if (!cfUp && !zrokUp) {
-                ctx.sendMessage(chatId, "⚠️ No tunnel running\n\nStart one with:\n`/daemon cloudflared start`\n`/daemon zrok start`");
+            if (!cfUp && !zrokUp && !tailscaleUp) {
+                ctx.sendMessage(chatId, "⚠️ No tunnel running\n\nStart one with:\n`/daemon cloudflared start`\n`/daemon zrok start`\n`/daemon tailscale start`");
                 return;
             }
             
@@ -120,6 +123,12 @@ public class SystemCommandHandler implements TelegramCommandHandler {
                 String grepResult = ctx.execShell("grep -o 'https://[a-z0-9]*\\.share\\.zrok\\.io' /data/local/tmp/zrok.log 2>/dev/null | head -1");
                 if (grepResult != null && grepResult.startsWith("https://")) {
                     url = grepResult.trim();
+                }
+            } else if (tailscaleUp) {
+                tunnelType = "Tailscale";
+                String getIpResult = ctx.execShell("/data/local/tmp/.tailscale/tailscale --socket 127.0.0.1:8532 ip --1");
+                if (getIpResult != null) {
+                    url = "http://" + getIpResult.trim() + ":8080";
                 }
             }
             

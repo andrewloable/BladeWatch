@@ -1,12 +1,16 @@
 package com.overdrive.app.ui.fragment
 
-import android.app.AlertDialog
+import androidx.appcompat.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,8 +18,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.overdrive.app.ui.adapter.DaemonAdapter
 import com.overdrive.app.ui.viewmodel.DaemonsViewModel
 import com.overdrive.app.ui.model.DaemonType
-import com.overdrive.app.ui.model.DaemonState
 import com.overdrive.app.R
+import com.overdrive.app.ui.util.QrCodeGenerator
 
 /**
  * Fragment for managing background daemons.
@@ -101,6 +105,7 @@ class DaemonsFragment : Fragment() {
     private fun onDaemonConfigureClicked(type: DaemonType) {
         when (type) {
             DaemonType.ZROK_TUNNEL -> showZrokTokenDialog()
+            DaemonType.TAILSCALE_TUNNEL -> showTailscaleSettingsDialog()
             else -> {
                 // Other daemons don't need configuration yet
                 Toast.makeText(context, "No configuration needed for ${type.displayName}", Toast.LENGTH_SHORT).show()
@@ -123,7 +128,7 @@ class DaemonsFragment : Fragment() {
                 // Pre-fill with current token if exists
                 currentToken?.let { editToken.setText(it) }
                 
-                val dialog = AlertDialog.Builder(context)
+                val dialog = AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
                     .setTitle("🌐 Zrok Tunnel Token")
                     .setMessage("Enter your Zrok enable token.\nGet one at: zrok.io")
                     .setView(dialogView)
@@ -151,6 +156,65 @@ class DaemonsFragment : Fragment() {
             }
         }
     }
+
+    /**
+     * Show dialog to configure and login to Tailscale.
+     */
+    private fun showTailscaleSettingsDialog() {
+        val context = context ?: return
+        var loginGenerated = false
+
+        activity?.runOnUiThread {
+            val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_tailscale_settings, null)
+            val loginGenerateButton = dialogView.findViewById<TextView>(R.id.generateLoginUrlBtn)
+            val qrCodeContainer = dialogView.findViewById<LinearLayout>(R.id.qrCodeContainer)
+            val qrCodeText = dialogView.findViewById<TextView>(R.id.qrCodeURL)
+            val qrCodeImage = dialogView.findViewById<ImageView>(R.id.qrCodeImage)
+
+            loginGenerateButton.setOnClickListener {
+                if (!loginGenerated) {
+                    loginGenerated = true
+                    qrCodeContainer.visibility = View.VISIBLE
+                    daemonsViewModel.tailscaleController.generateLoginUrl { url ->
+                        activity?.runOnUiThread {
+                            if (url != null) {
+                                val qrBitmap = QrCodeGenerator.generate(url, 400)
+                                qrCodeImage.setImageBitmap(qrBitmap)
+                                qrCodeText.text = url
+                                qrCodeText.setTextColor(ContextCompat.getColor(context, R.color.brand_primary))
+                            } else {
+                                qrCodeText.text = "Failed to generate login url"
+                                qrCodeText.setTextColor(ContextCompat.getColor(context, R.color.status_danger))
+                                loginGenerated = false
+                            }
+                        }
+                    }
+                }
+            }
+
+            daemonsViewModel.tailscaleController.tunnelUrl.observe(viewLifecycleOwner) { url ->
+                if (loginGenerated && !url.isNullOrEmpty()) {
+                    activity?.runOnUiThread {
+                        qrCodeContainer.visibility = View.GONE
+                        loginGenerated = false
+                        loginGenerateButton.text = "Logged in. Click to login to a different account"
+                    }
+                }
+            }
+
+            val dialog = AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+                .setTitle("📡 Tailscale Tunnel Settings")
+                .setMessage("Configure tailscale")
+                .setView(dialogView)
+                .setNegativeButton("Cancel", null)
+                .setNeutralButton("Delete") { _, _ ->
+                    confirmResetTailscaleEnvironment()
+                }
+                .create()
+
+            dialog.show()
+        }
+    }
     
     /**
      * Show confirmation dialog before resetting zrok environment.
@@ -158,7 +222,7 @@ class DaemonsFragment : Fragment() {
     private fun confirmResetZrokEnvironment() {
         val context = context ?: return
         
-        AlertDialog.Builder(context)
+        AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
             .setTitle("⚠️ Reset Zrok Environment")
             .setMessage(
                 "This will:\n" +
@@ -209,6 +273,51 @@ class DaemonsFragment : Fragment() {
                         daemonsViewModel.updateZrokNeedsConfig("No token configured. Tap to set up.")
                     }
                 }
+            }
+        })
+    }
+
+    /**
+     * Show confirmation dialog before resetting tailscale environment.
+     */
+    private fun confirmResetTailscaleEnvironment() {
+        val context = context ?: return
+
+        AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+            .setTitle("⚠️ Reset Tailscale Environment")
+            .setMessage(
+                "This will:\n" +
+                "• Stop the tailscale tunnel if running\n" +
+                "• Remove the tailscale environment from this device\n" +
+                "• You will still need to remove the device from the tailscale console\n\n" +
+                "You will need to log in again.\n\n" +
+                "Are you sure?"
+            )
+            .setPositiveButton("Reset") { _, _ ->
+                resetTailscaleEnvironment()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Reset tailscale environment: stop tunnel, disable environment.
+     */
+    private fun resetTailscaleEnvironment() {
+        val context = context ?: return
+        Toast.makeText(context, "Resetting tailscale environment...", Toast.LENGTH_SHORT).show()
+
+        // First stop the tunnel if running
+        daemonsViewModel.stopDaemon(DaemonType.TAILSCALE_TUNNEL)
+
+        // Then disable the environment (removes environment.json and reserved tokens)
+        daemonsViewModel.tailscaleController.disableEnvironment(object : com.overdrive.app.ui.daemon.DaemonCallback {
+            override fun onStatusChanged(status: com.overdrive.app.ui.model.DaemonStatus, message: String) {
+                Toast.makeText(context, "✅ Tailscale environment reset. Login to set up again.", Toast.LENGTH_LONG).show()
+            }
+
+            override fun onError(error: String) {
+                Toast.makeText(context, "Tailscale environment reset (with warnings: $error)", Toast.LENGTH_LONG).show()
             }
         })
     }

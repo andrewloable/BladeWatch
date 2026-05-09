@@ -35,7 +35,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         {"singbox", "sing-box", "shell", "Sing-Box", "yes"},
     };
     
-    private static final String AVAILABLE_DAEMONS = "camera, acc, sentry, cloudflared, zrok, singbox";
+    private static final String AVAILABLE_DAEMONS = "camera, acc, sentry, cloudflared, zrok, tailscale, singbox";
     
     @Override
     public boolean canHandle(String command) {
@@ -455,14 +455,13 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         
         String cmd;
         String processName;
-        
+
+        // Check if sing-box proxy is running
+        String singboxCheck = ctx.execShell("pgrep -f sing-box");
+        boolean useProxy = singboxCheck != null && !singboxCheck.trim().isEmpty();
         switch (name) {
             case "cloudflared":
                 // Cloudflared tunnel - match UI version (TunnelLauncher.kt)
-                // Check if sing-box proxy is running
-                String singboxCheck = ctx.execShell("pgrep -f sing-box");
-                boolean useProxy = singboxCheck != null && !singboxCheck.trim().isEmpty();
-                
                 StringBuilder cfCmd = new StringBuilder();
                 cfCmd.append("nohup sh -c '");
                 
@@ -555,14 +554,43 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
                 }
                 processName = "zrok";
                 break;
-                
+
+            case "tailscale":
+                // Tailscale tunnel - match UI version (TailscaleLauncher.kt)
+                // Check if sing-box proxy is running
+                StringBuilder tailscaleCmd = new StringBuilder();
+                tailscaleCmd.append("nohup sh -c '");
+
+                if (useProxy) {
+                    ctx.log("Using sing-box proxy for tailscale...");
+                    String proxyUrl = "http://127.0.0.1:8119";
+                    tailscaleCmd.append("export http_proxy=").append(proxyUrl).append(" && ");
+                    tailscaleCmd.append("export https_proxy=").append(proxyUrl).append(" && ");
+                    tailscaleCmd.append("export HTTP_PROXY=").append(proxyUrl).append(" && ");
+                    tailscaleCmd.append("export HTTPS_PROXY=").append(proxyUrl).append(" && ");
+                    tailscaleCmd.append("export no_proxy=\"localhost,127.0.0.1,::1\" && ");
+                    tailscaleCmd.append("export NO_PROXY=\"localhost,127.0.0.1,::1\" && ");
+                } else {
+                    ctx.log("Direct connection (no proxy)...");
+                }
+
+                // Same flags as UI version
+                tailscaleCmd.append("/data/local/tmp/.tailscale/tailscaled --tun userspace-networking ");
+                tailscaleCmd.append("--statedir /data/local/tmp/.tailscale ");
+                tailscaleCmd.append("--socket 127.0.0.1:8532");
+                tailscaleCmd.append("' > /data/local/tmp/.tailscale/tailscaled.log 2>&1 &");
+
+                cmd = tailscaleCmd.toString();
+                processName = "cloudflared";
+                break;
+
             case "singbox":
                 // Sing-box proxy
                 cmd = "nohup /data/local/tmp/sing-box run -c /data/local/tmp/singbox_config.json " +
                       "> /data/local/tmp/singbox.log 2>&1 &";
                 processName = "sing-box";
                 break;
-                
+
             default:
                 ctx.log("Unknown shell daemon: " + name);
                 return false;
@@ -640,6 +668,16 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
                     return false;
                 }
                 ctx.log("Zrok started but URL not yet available");
+            }
+        }
+
+        // For tailscale get the URL
+        if (started && "tailscale".equals(name)) {
+            String getIpResult = ctx.execShell("/data/local/tmp/.tailscale/tailscale --socket 127.0.0.1:8532 ip --1");
+            if (getIpResult != null) {
+                String tailscaleUrl = "http://" + getIpResult.trim() + ":8080";
+                ctx.log("Tailscale URL: " + tailscaleUrl);
+                saveTunnelUrl(tailscaleUrl, ctx);
             }
         }
         

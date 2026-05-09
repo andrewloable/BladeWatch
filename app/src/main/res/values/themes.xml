@@ -193,13 +193,19 @@
         <item name="android:windowBackground">@color/bg_surface</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
-        <item name="buttonBarPositiveButtonStyle">@style/Widget.Overdrive.DialogButton</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Overdrive.PositiveDialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Overdrive.NeutralDialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.Overdrive.NeutralDialogButton</item>
     </style>
-    
-    <style name="Widget.Overdrive.DialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+
+    <style name="Widget.Overdrive.PositiveDialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
         <item name="android:textColor">@color/brand_primary</item>
     </style>
-    
+
+    <style name="Widget.Overdrive.NeutralDialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/text_muted</item>
+    </style>
+
     <!-- Time Picker Dialog Theme -->
     <style name="Theme.Overdrive.TimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
         <item name="colorPrimary">@color/brand_primary</item>
