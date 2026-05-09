@@ -1987,27 +1987,37 @@ public class StorageManager {
         
         cleanupScheduler.scheduleAtFixedRate(() -> {
             try {
-                if (recordingActive.get()) {
-                    synchronized (cleanupLock) {
-                        long currentSize = getRecordingsSize();
-                        long limitBytes = recordingsLimitMb * 1024 * 1024;
-                        if (currentSize > limitBytes * 0.9) {  // 90% threshold
-                            logInfo("Periodic cleanup: recordings at " + 
-                                formatSize(currentSize) + "/" + formatSize(limitBytes));
-                            ensureRecordingsSpace(50 * 1024 * 1024);  // Reserve 50MB
-                        }
+                // Run unconditionally — not gated on active recording. This catches
+                // dirs that grew past the limit while the daemon was offline (crash
+                // mid-recording, or user lowering the limit) and keeps the user's
+                // configured limit honored even when nothing is currently writing.
+                synchronized (cleanupLock) {
+                    long currentSize = getRecordingsSize();
+                    long limitBytes = recordingsLimitMb * 1024 * 1024;
+                    if (currentSize > limitBytes * 0.9) {  // 90% threshold
+                        logInfo("Periodic cleanup: recordings at " +
+                            formatSize(currentSize) + "/" + formatSize(limitBytes));
+                        ensureRecordingsSpace(50 * 1024 * 1024);  // Reserve 50MB
                     }
                 }
-                
-                if (surveillanceActive.get()) {
-                    synchronized (cleanupLock) {
-                        long currentSize = getSurveillanceSize();
-                        long limitBytes = surveillanceLimitMb * 1024 * 1024;
-                        if (currentSize > limitBytes * 0.9) {  // 90% threshold
-                            logInfo("Periodic cleanup: surveillance at " + 
-                                formatSize(currentSize) + "/" + formatSize(limitBytes));
-                            ensureSurveillanceSpace(50 * 1024 * 1024);  // Reserve 50MB
-                        }
+
+                synchronized (cleanupLock) {
+                    long currentSize = getSurveillanceSize();
+                    long limitBytes = surveillanceLimitMb * 1024 * 1024;
+                    if (currentSize > limitBytes * 0.9) {  // 90% threshold
+                        logInfo("Periodic cleanup: surveillance at " +
+                            formatSize(currentSize) + "/" + formatSize(limitBytes));
+                        ensureSurveillanceSpace(50 * 1024 * 1024);  // Reserve 50MB
+                    }
+                }
+
+                synchronized (cleanupLock) {
+                    long currentSize = getTripsSize();
+                    long limitBytes = tripsLimitMb * 1024 * 1024;
+                    if (currentSize > limitBytes * 0.9) {  // 90% threshold
+                        logInfo("Periodic cleanup: trips at " +
+                            formatSize(currentSize) + "/" + formatSize(limitBytes));
+                        ensureTripsSpace(50 * 1024 * 1024);  // Reserve 50MB
                     }
                 }
             } catch (Exception e) {
@@ -2136,27 +2146,20 @@ public class StorageManager {
     }
     
     /**
-     * Set recording active state (for periodic cleanup).
+     * Set recording active state. Periodic cleanup runs continuously regardless
+     * (started at daemon boot via {@link #startPeriodicCleanup()}); this flag
+     * is kept for callers that may consult {@link #isRecordingActive()}.
      */
     public void setRecordingActive(boolean active) {
-        boolean wasActive = recordingActive.getAndSet(active);
-        if (active && !wasActive) {
-            startPeriodicCleanup();
-        } else if (!active && wasActive && !surveillanceActive.get()) {
-            stopPeriodicCleanup();
-        }
+        recordingActive.set(active);
     }
-    
+
     /**
-     * Set surveillance active state (for periodic cleanup).
+     * Set surveillance active state. See {@link #setRecordingActive(boolean)}
+     * for periodic-cleanup lifetime semantics.
      */
     public void setSurveillanceActive(boolean active) {
-        boolean wasActive = surveillanceActive.getAndSet(active);
-        if (active && !wasActive) {
-            startPeriodicCleanup();
-        } else if (!active && wasActive && !recordingActive.get()) {
-            stopPeriodicCleanup();
-        }
+        surveillanceActive.set(active);
     }
     
     /**
@@ -2173,6 +2176,63 @@ public class StorageManager {
         return surveillanceActive.get();
     }
     
+    /**
+     * Wipes every media file (and JSON sidecars) for the given category from
+     * all known storage locations — active dir, internal fallback, and SD-card
+     * mirror — plus thumbnails for that category.
+     *
+     * Used by the user-initiated "Reset Data" feature. Holds {@link #cleanupLock}
+     * so it cannot race with periodic cleanup or any in-flight delete.
+     *
+     * @param category one of "recordings", "surveillance", "proximity", "trips"
+     * @return number of files deleted, or -1 on unknown category
+     */
+    public long wipeMediaCategory(String category) {
+        if (category == null) return -1;
+        List<File> dirs;
+        switch (category) {
+            case "recordings":  dirs = getAllRecordingsDirs(); break;
+            case "surveillance": dirs = getAllSurveillanceDirs(); break;
+            case "proximity":   dirs = getAllProximityDirs(); break;
+            case "trips":       dirs = getAllTripsDirs(); break;
+            default: return -1;
+        }
+
+        long deleted = 0;
+        synchronized (cleanupLock) {
+            for (File dir : dirs) {
+                if (dir == null || !dir.exists() || !dir.isDirectory()) continue;
+                File[] files = dir.listFiles();
+                if (files == null) continue;
+                for (File f : files) {
+                    if (f.isFile() && f.delete()) deleted++;
+                }
+            }
+
+            // Best-effort thumbnail cleanup. Thumbnails live alongside the
+            // active dir's parent in a "thumbs" subfolder; nuking the whole
+            // dir would also kill any other category's thumbs, so we limit
+            // to those derived from the just-wiped filenames. Cheaper to
+            // just blow away the whole thumbs dir on a media wipe.
+            try {
+                File baseDir = (dirs.isEmpty() || dirs.get(0).getParentFile() == null)
+                    ? null : dirs.get(0).getParentFile();
+                if (baseDir != null) {
+                    File thumbs = new File(baseDir, "thumbs");
+                    if (thumbs.exists() && thumbs.isDirectory()) {
+                        File[] thumbFiles = thumbs.listFiles();
+                        if (thumbFiles != null) {
+                            for (File t : thumbFiles) if (t.isFile()) t.delete();
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        logInfo("wipeMediaCategory(" + category + ") deleted " + deleted + " files");
+        return deleted;
+    }
+
     /**
      * Shutdown all background threads.
      * Call this when the app is terminating.

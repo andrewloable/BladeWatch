@@ -282,6 +282,101 @@ public final class BydDeviceHelper {
         return false;
     }
 
+    /**
+     * Register a typed (device-specific) listener using a hand-rolled concrete
+     * subclass of an abstract listener class. The BYD framework provides the
+     * actual abstract class at runtime via the system classloader, and our
+     * subclass extends it transparently.
+     *
+     * Why not Proxy.newProxyInstance: java.lang.reflect.Proxy only works with
+     * interfaces, but AbsBYDAutoBodyworkListener / AbsBYDAutoDoorLockListener
+     * are abstract classes — Proxy throws "is not an interface" at runtime.
+     *
+     * Two specialized helpers below cover the two known typed-listener cases.
+     * Returns true on successful registration.
+     */
+
+    /**
+     * Register a typed bodywork listener. Captures door state, window state,
+     * and window-open percent callbacks.
+     */
+    public static boolean registerBodyworkListener(Object device, ListenerCallback callback) {
+        if (device == null) return false;
+        try {
+            android.hardware.bydauto.bodywork.AbsBYDAutoBodyworkListener listener =
+                new android.hardware.bydauto.bodywork.AbsBYDAutoBodyworkListener() {
+                    @Override
+                    public void onDoorStateChanged(int area, int state) {
+                        invokeCallback(callback, "onDoorStateChanged", new Object[]{area, state});
+                    }
+                    @Override
+                    public void onWindowStateChanged(int area, int state) {
+                        invokeCallback(callback, "onWindowStateChanged", new Object[]{area, state});
+                    }
+                    @Override
+                    public void onWindowOpenPercentChanged(int area, int percent) {
+                        invokeCallback(callback, "onWindowOpenPercentChanged", new Object[]{area, percent});
+                    }
+                    @Override
+                    public void onPowerLevelChanged(int level) {
+                        invokeCallback(callback, "onPowerLevelChanged", new Object[]{level});
+                    }
+                };
+            Method register = findRegisterMethod(device.getClass(),
+                android.hardware.bydauto.bodywork.AbsBYDAutoBodyworkListener.class);
+            if (register != null) {
+                register.invoke(device, listener);
+                return true;
+            }
+            logger.debug("registerBodyworkListener: no registerListener method on "
+                + device.getClass().getName());
+        } catch (NoClassDefFoundError e) {
+            logger.debug("registerBodyworkListener: class not available on this firmware");
+        } catch (Exception e) {
+            logger.debug("registerBodyworkListener failed: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Register a typed door-lock listener. Captures the canonical
+     * onDoorLockStatusChanged(area, state) event the BMS emits when the gun is
+     * connected and the lock state transitions.
+     */
+    public static boolean registerDoorLockListener(Object device, ListenerCallback callback) {
+        if (device == null) return false;
+        try {
+            android.hardware.bydauto.doorlock.AbsBYDAutoDoorLockListener listener =
+                new android.hardware.bydauto.doorlock.AbsBYDAutoDoorLockListener() {
+                    @Override
+                    public void onDoorLockStatusChanged(int area, int state) {
+                        invokeCallback(callback, "onDoorLockStatusChanged", new Object[]{area, state});
+                    }
+                };
+            Method register = findRegisterMethod(device.getClass(),
+                android.hardware.bydauto.doorlock.AbsBYDAutoDoorLockListener.class);
+            if (register != null) {
+                register.invoke(device, listener);
+                return true;
+            }
+            logger.debug("registerDoorLockListener: no registerListener method on "
+                + device.getClass().getName());
+        } catch (NoClassDefFoundError e) {
+            logger.debug("registerDoorLockListener: class not available on this firmware");
+        } catch (Exception e) {
+            logger.debug("registerDoorLockListener failed: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private static void invokeCallback(ListenerCallback callback, String method, Object[] args) {
+        try {
+            callback.onCallback(method, args);
+        } catch (Exception e) {
+            logger.debug("Typed listener callback error: " + method + " — " + e.getMessage());
+        }
+    }
+
     // ==================== EXTENDED GETTER METHODS ====================
 
     /**

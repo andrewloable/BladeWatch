@@ -199,9 +199,22 @@ public class ExternalStorageApiHandler {
      */
     private static void triggerCleanup(String body, OutputStream out) throws Exception {
         ExternalStorageCleaner cleaner = ExternalStorageCleaner.getInstance();
-        
+
+        // Refuse to force-delete OEM dashcam files when the feature is disabled.
+        // Previously this endpoint silently bypassed the user's opt-out; an empty
+        // POST or any caller could nuke 500MB+ of OEM recordings even when the
+        // user had cleanup off.
+        if (!cleaner.isEnabled()) {
+            JSONObject err = new JSONObject();
+            err.put("success", false);
+            err.put("error", "External storage cleanup is disabled in config");
+            err.put("hint", "Enable cleanup first via POST /api/storage/external/config");
+            sendJson(out, 403, err);
+            return;
+        }
+
         ExternalStorageCleaner.CleanupResult result;
-        
+
         if (body != null && !body.isEmpty()) {
             try {
                 JSONObject params = new JSONObject(body);
@@ -215,8 +228,11 @@ public class ExternalStorageApiHandler {
                 result = cleaner.ensureReservedSpace();
             }
         } else {
-            // Force cleanup to free at least 500MB
-            result = cleaner.forceCleanup(500 * 1024 * 1024);
+            // Empty body → run reserved-space-driven cleanup, not a hardcoded
+            // 500MB force-delete. The previous default was a footgun: an
+            // accidental empty POST silently deleted 500MB of OEM files even
+            // when the SD card had plenty of free space.
+            result = cleaner.ensureReservedSpace();
         }
         
         JSONObject response = new JSONObject();

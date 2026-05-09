@@ -374,11 +374,15 @@ BYD.surveillance = {
                     cdrPath: data.cdrPath,
                     cdrUsage: data.cdrUsageFormatted,
                     cdrFileCount: data.cdrFileCount,
+                    cdrProtected: data.cdrProtectedFormatted,
                     cdrDeletable: data.cdrDeletableFormatted,
                     totalFreed: data.totalBytesFreedFormatted,
-                    totalDeleted: data.totalFilesDeleted
+                    totalDeleted: data.totalFilesDeleted,
+                    monitoringActive: !!data.monitoringActive,
+                    lastCleanupTime: data.lastCleanupTime || 0,
+                    recommendAutoCleanup: !!data.recommendAutoCleanup
                 };
-                
+
                 this.updateCdrUI();
             }
         } catch (e) {
@@ -431,22 +435,55 @@ BYD.surveillance = {
         if (this.cdrInfo) {
             const pathEl = document.getElementById('cdrPath');
             if (pathEl) pathEl.textContent = this.cdrInfo.cdrPath || 'Not found';
-            
+
             const usageEl = document.getElementById('cdrUsage');
             if (usageEl) usageEl.textContent = this.cdrInfo.cdrUsage || '--';
-            
+
             const countEl = document.getElementById('cdrFileCount');
             if (countEl) countEl.textContent = this.cdrInfo.cdrFileCount || '0';
-            
+
+            const protEl = document.getElementById('cdrProtected');
+            if (protEl) protEl.textContent = this.cdrInfo.cdrProtected || '--';
+
             const deletableEl = document.getElementById('cdrDeletable');
             if (deletableEl) deletableEl.textContent = this.cdrInfo.cdrDeletable || '--';
-            
+
+            const monEl = document.getElementById('cdrMonitoring');
+            if (monEl) {
+                if (!this.cdrConfig.enabled) {
+                    monEl.textContent = 'Disabled';
+                    monEl.style.color = '';
+                } else if (this.cdrInfo.monitoringActive) {
+                    monEl.textContent = 'Running';
+                    monEl.style.color = '#22c55e';
+                } else {
+                    monEl.textContent = 'Idle';
+                    monEl.style.color = '#94a3b8';
+                }
+            }
+
+            const lastEl = document.getElementById('cdrLastCleanup');
+            if (lastEl) lastEl.textContent = this._formatRelativeTime(this.cdrInfo.lastCleanupTime);
+
+            const banner = document.getElementById('cdrRecommendBanner');
+            if (banner) banner.style.display = this.cdrInfo.recommendAutoCleanup ? 'block' : 'none';
+
             const freedEl = document.getElementById('cdrTotalFreed');
             if (freedEl) freedEl.textContent = this.cdrInfo.totalFreed || '0 B';
-            
+
             const deletedEl = document.getElementById('cdrTotalDeleted');
             if (deletedEl) deletedEl.textContent = this.cdrInfo.totalDeleted || '0';
         }
+    },
+
+    _formatRelativeTime(ts) {
+        if (!ts || ts <= 0) return 'Never';
+        const diffSec = Math.floor((Date.now() - ts) / 1000);
+        if (diffSec < 0) return 'Just now';
+        if (diffSec < 60) return diffSec + 's ago';
+        if (diffSec < 3600) return Math.floor(diffSec / 60) + ' min ago';
+        if (diffSec < 86400) return Math.floor(diffSec / 3600) + 'h ago';
+        return Math.floor(diffSec / 86400) + 'd ago';
     },
     
     async toggleCdrCleanup() {

@@ -287,15 +287,35 @@ object UnifiedConfigManager {
         return try {
             val configFile = File(CONFIG_PATH)
             configFile.parentFile?.mkdirs()
-            
-            FileWriter(configFile).use { writer ->
+
+            // Atomic write: write to a sibling .tmp file, then rename. The rename
+            // is a single inode swap on the filesystem, so power loss either
+            // leaves the old file intact or fully promotes the new one — never
+            // a half-written corrupt config that would wipe user settings (FPS,
+            // surveillance prefs, etc.) on next boot.
+            val tmpFile = File(configFile.parentFile, configFile.name + ".tmp")
+            FileWriter(tmpFile).use { writer ->
                 writer.write(config.toString(2))
             }
-            
-            // Make world-readable/writable for cross-UID access
-            configFile.setReadable(true, false)
-            configFile.setWritable(true, false)
-            
+
+            // World-readable AND world-writable: this file is shared across
+            // UID 2000 (CameraDaemon, AccSentryDaemon) and UID 10xxx (app UI
+            // process). Tightening to owner-only would prevent cross-UID
+            // writes — whichever UID creates the file first becomes the
+            // owner, and all other processes lose write access.
+            tmpFile.setReadable(true, false)
+            tmpFile.setWritable(true, false)
+
+            if (!tmpFile.renameTo(configFile)) {
+                Log.e(TAG, "Atomic rename failed; falling back to direct write")
+                FileWriter(configFile).use { writer ->
+                    writer.write(config.toString(2))
+                }
+                configFile.setReadable(true, false)
+                configFile.setWritable(true, false)
+                tmpFile.delete()
+            }
+
             Log.i(TAG, "Config saved to $CONFIG_PATH")
             true
         } catch (e: Exception) {

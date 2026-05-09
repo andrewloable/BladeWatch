@@ -128,9 +128,14 @@ class BootReceiver : BroadcastReceiver() {
         try {
             // Start DaemonKeepaliveService (foreground + sticky + wakelock)
             DaemonKeepaliveService.start(context.applicationContext)
-            
+
             // Also start daemons directly via DaemonStartupManager
             DaemonStartupManager.startOnBoot(context.applicationContext)
+
+            // (Re-)seed out-of-process revival watchdog. Self-heals the alarm
+            // chain if it was ever broken (force-stop, reboot, app data clear).
+            ProcessRevivalReceiver.schedule(context.applicationContext)
+
             Log.d(TAG, "Daemon startup initiated successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start daemons: ${e.message}")

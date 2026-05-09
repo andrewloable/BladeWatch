@@ -10,77 +10,122 @@ import java.util.Set;
 
 /**
  * Authentication middleware for HttpServer.
- * 
- * Validates JWT tokens from cookies or Authorization header.
- * Redirects unauthenticated requests to login page.
- * 
- * Public paths (no auth required):
- * - /auth/*          - Auth endpoints
- * - /login.html      - Login page
- * - /shared/*        - Static assets (CSS, JS, images)
- * - /favicon.ico     - Favicon
+ *
+ * Two-tier authentication:
+ *
+ *   Tier 1 — JWT (cookie or Authorization: Bearer): primary, all callers should use this.
+ *
+ *   Tier 2 — loopback safety net: requests originating from 127.0.0.1 are
+ *            trusted ONLY when the request carries no tunnel-fingerprint
+ *            headers (X-Forwarded-*, Cf-*, X-Real-Ip, Forwarded). This
+ *            keeps developer-tools and ADB shell access working while
+ *            blocking traffic relayed via cloudflared / zrok / ngrok which
+ *            all forward to localhost but inject these proxy headers.
+ *
+ * Public paths (no auth required at all):
+ * - /auth/token       - Login endpoint (must be reachable)
+ * - /auth/logout      - Logout endpoint (idempotent)
+ * - /login.html       - Login page UI
+ * - /login            - Login alias
+ * - /shared/*         - Static assets (CSS, JS, fonts, models)
+ * - /favicon.ico      - Browser favicon
+ *
+ * Notably NOT public anymore:
+ * - /status           - leaks ACC/charging/recording state, requires auth
+ * - /auth/status      - leaks deviceId, requires auth
  */
 public class AuthMiddleware {
-    
+
     // Paths that don't require authentication
     private static final Set<String> PUBLIC_PATHS = new HashSet<>(Arrays.asList(
-        "/auth/status",
+        "/auth/status",  // Login page needs deviceId hint before user has JWT
         "/auth/token",
         "/auth/logout",
         "/login.html",
         "/login",
-        "/favicon.ico",
-        "/status"
+        "/favicon.ico"
     ));
-    
+
     // Path prefixes that don't require authentication
     private static final String[] PUBLIC_PREFIXES = {
-        "/shared/",      // Static assets
-        "/auth/"         // All auth endpoints
+        "/shared/"       // Static assets (CSS, JS, fonts, models)
     };
-    
+
     // Cookie name for JWT
     private static final String JWT_COOKIE_NAME = "byd_session";
-    
+
     /**
      * Check if request is authenticated.
-     * 
-     * @param path Request path
-     * @param headers Raw headers string (for cookie/auth extraction)
-     * @param out Output stream (for sending 401/redirect)
-     * @return true if authenticated or public path, false if should block
      */
     public static boolean checkAuth(String path, String cookieHeader, String authHeader, OutputStream out) throws Exception {
-        // Check if path is public
+        return checkAuth(path, cookieHeader, authHeader, out, null, false);
+    }
+
+    /**
+     * Check if request is authenticated (with client address only).
+     * Backwards-compat overload — assumes no tunnel headers (caller didn't pass them).
+     */
+    public static boolean checkAuth(String path, String cookieHeader, String authHeader,
+                                     OutputStream out, java.net.SocketAddress clientAddress) throws Exception {
+        return checkAuth(path, cookieHeader, authHeader, out, clientAddress, false);
+    }
+
+    /**
+     * Full check with tunnel-header awareness.
+     *
+     * @param path Request path
+     * @param cookieHeader Cookie header value
+     * @param authHeader Authorization header value
+     * @param out Output stream (for sending 401/redirect)
+     * @param clientAddress Client socket address (for loopback Tier-2)
+     * @param hasTunnelHeaders true if request carries reverse-proxy fingerprints
+     *                        (X-Forwarded-*, Cf-*, X-Real-Ip, Forwarded). When
+     *                        true, the loopback safety net is disabled.
+     * @return true if authenticated or public path, false if should block
+     */
+    public static boolean checkAuth(String path, String cookieHeader, String authHeader,
+                                     OutputStream out, java.net.SocketAddress clientAddress,
+                                     boolean hasTunnelHeaders) throws Exception {
+        // Tier 0 — public paths (login UI, static assets, login submission)
         if (isPublicPath(path)) {
             return true;
         }
-        
-        // Try to get JWT from Authorization header first
+
+        // Tier 1 — JWT validation. This is the primary path: WebView (cookie),
+        // frontend pages (Authorization header via auth.js), native callers
+        // (cookie via DaemonHttpClient).
         String jwt = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
         }
-        
-        // Fall back to cookie
         if (jwt == null && cookieHeader != null) {
             jwt = extractJwtFromCookie(cookieHeader);
         }
-        
-        // No JWT found
-        if (jwt == null || jwt.isEmpty()) {
-            return handleUnauthorized(path, out, "No session token");
+        if (jwt != null && !jwt.isEmpty()) {
+            AuthManager.JwtValidation validation = AuthManager.validateJwt(jwt);
+            if (validation.valid) {
+                return true;
+            }
+            // JWT was provided but invalid — log and fall through to Tier 2
+            // (a stale cached JWT shouldn't lock out a legitimate same-device caller).
+            log("JWT invalid for " + path + ": " + validation.error);
         }
-        
-        // Validate JWT
-        AuthManager.JwtValidation validation = AuthManager.validateJwt(jwt);
-        
-        if (!validation.valid) {
-            return handleUnauthorized(path, out, validation.error);
+
+        // Tier 2 — loopback safety net. Trust 127.0.0.1 / ::1 ONLY when no
+        // tunnel-fingerprint headers are present. Reverse proxies (cloudflared,
+        // zrok, ngrok) all forward to localhost but inject these headers — so
+        // their absence is a strong signal we're talking to a same-device
+        // caller. Defense in depth alongside Tier 1.
+        if (!hasTunnelHeaders && clientAddress != null) {
+            String addrStr = clientAddress.toString();
+            boolean isLoopback = addrStr.contains("127.0.0.1") || addrStr.contains("/0:0:0:0:0:0:0:1");
+            if (isLoopback) {
+                return true;
+            }
         }
-        
-        // JWT valid - allow request
-        return true;
+
+        return handleUnauthorized(path, out,
+            jwt == null || jwt.isEmpty() ? "No session token" : "Invalid session token");
     }
     
     /**

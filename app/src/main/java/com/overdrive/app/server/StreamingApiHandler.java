@@ -74,9 +74,14 @@ public class StreamingApiHandler {
             return;
         }
         
-        // Auto-start pipeline if not running
+        // Auto-start pipeline if not running.
+        // Warm com.byd.avc first so a cold camera HAL doesn't deliver black
+        // frames — see handleStreamViewMode for the same rationale.
         if (!pipeline.isRunning()) {
             try {
+                CameraDaemon.log("handleEnableStreaming: warming up AVC HAL before pipeline cold start");
+                com.overdrive.app.camera.AvcHalWarmup warmup = new com.overdrive.app.camera.AvcHalWarmup();
+                warmup.warmupAndWait();
                 CameraDaemon.log("handleEnableStreaming: auto-starting pipeline for streaming");
                 pipeline.start();
                 Thread.sleep(500);
@@ -211,9 +216,21 @@ public class StreamingApiHandler {
             return;
         }
         
-        // Auto-start pipeline if not running
+        // Auto-start pipeline if not running.
+        //
+        // CRITICAL: warm up com.byd.avc BEFORE opening the camera. On DiLink5,
+        // a cold camera HAL (e.g. user opens the stream while ACC is OFF and
+        // surveillance is disabled, so com.byd.avc was never launched this
+        // session) returns valid handles but delivers black frames. The
+        // warmup launches com.byd.avc/.MainActivity silently which initializes
+        // the multi-consumer HAL. Same fix used by RecordingModeManager during
+        // cold start. Skip when pipeline is already running — camera is open
+        // and com.byd.avc must already be alive.
         if (!pipeline.isRunning()) {
             try {
+                CameraDaemon.log("handleStreamViewMode: warming up AVC HAL before pipeline cold start");
+                com.overdrive.app.camera.AvcHalWarmup warmup = new com.overdrive.app.camera.AvcHalWarmup();
+                warmup.warmupAndWait();   // Blocks ~4s; safe — runs on the HTTP worker thread
                 CameraDaemon.log("handleStreamViewMode: auto-starting pipeline");
                 pipeline.start();
                 Thread.sleep(500);

@@ -29,7 +29,6 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,7 +53,6 @@ public class StatusOverlayService extends Service {
     private static final int NOTIFICATION_ID = 9001;
     private static final long POLL_INTERVAL_MS = 3000;
     private static final long POLL_INTERVAL_ACC_OFF_MS = 10000; // Slower polling when ACC is off
-    private static final String STATUS_URL = "http://127.0.0.1:8080/status";
 
     // Persisted overlay position
     private static final String PREFS_NAME = "status_overlay_prefs";
@@ -359,11 +357,8 @@ public class StatusOverlayService extends Service {
     private JSONObject fetchStatus() {
         HttpURLConnection conn = null;
         try {
-            URL url = new URL(STATUS_URL);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(2000);
-            conn.setReadTimeout(2000);
-            conn.setRequestMethod("GET");
+            conn = com.overdrive.app.util.DaemonHttpClient.open(
+                "/status", "GET", 2000, 2000);
             if (conn.getResponseCode() == 200) {
                 BufferedReader reader = new BufferedReader(
                         new InputStreamReader(conn.getInputStream()));
@@ -664,7 +659,6 @@ public class StatusOverlayService extends Service {
      */
     private void restartTripDetection() {
         executor.execute(() -> {
-            HttpURLConnection conn = null;
             try {
                 // Toggle off then on to force re-init
                 postTripConfig(false);
@@ -680,11 +674,8 @@ public class StatusOverlayService extends Service {
     private void postTripConfig(boolean enabled) {
         HttpURLConnection conn = null;
         try {
-            URL url = new URL("http://127.0.0.1:8080/api/trips/config");
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(2000);
-            conn.setReadTimeout(2000);
-            conn.setRequestMethod("POST");
+            conn = com.overdrive.app.util.DaemonHttpClient.open(
+                "/api/trips/config", "POST", 2000, 2000);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
             JSONObject body = new JSONObject();

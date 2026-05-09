@@ -234,24 +234,42 @@ public class SurveillanceApiHandler {
                     }
                     roiObj.put(qKeys[q], polyArr);
                 }
-                // Per-quadrant enabled flag
-                config.put("roiEnabled_" + qKeys[q], sentryConfig.isRoiEnabled(q));
-                // Per-quadrant block mask (if stored in unified config)
+                // Per-quadrant block mask and enabled flag from unified config (source of truth)
                 try {
                     org.json.JSONObject survCfg = com.overdrive.app.config.UnifiedConfigManager.getSurveillance();
                     org.json.JSONArray blocks = survCfg.optJSONArray("roiBlocks_" + qKeys[q]);
                     if (blocks != null) config.put("roiBlocks_" + qKeys[q], blocks);
-                } catch (Exception ignored) {}
+                    // Read enabled flag from persisted config, not in-memory sentryConfig
+                    if (survCfg.has("roiEnabled_" + qKeys[q])) {
+                        config.put("roiEnabled_" + qKeys[q], survCfg.optBoolean("roiEnabled_" + qKeys[q], false));
+                    } else {
+                        config.put("roiEnabled_" + qKeys[q], sentryConfig.isRoiEnabled(q));
+                    }
+                } catch (Exception ignored) {
+                    config.put("roiEnabled_" + qKeys[q], sentryConfig.isRoiEnabled(q));
+                }
             }
             config.put("roiPolygons", roiObj);
             
-            // Schedule
-            config.put("scheduleEnabled", sentryConfig.getSchedule().isEnabled());
-            org.json.JSONArray schedRules = new org.json.JSONArray();
-            for (com.overdrive.app.surveillance.SurveillanceSchedule.Rule rule : sentryConfig.getSchedule().getRules()) {
-                schedRules.put(rule.toJson());
+            // Schedule — read from persisted config file (source of truth)
+            try {
+                org.json.JSONObject survCfg = com.overdrive.app.config.UnifiedConfigManager.getSurveillance();
+                config.put("scheduleEnabled", survCfg.optBoolean("scheduleEnabled", false));
+                org.json.JSONArray persistedRules = survCfg.optJSONArray("scheduleRules");
+                if (persistedRules != null) {
+                    config.put("scheduleRules", persistedRules);
+                } else {
+                    config.put("scheduleRules", new org.json.JSONArray());
+                }
+            } catch (Exception e) {
+                // Fallback to in-memory if file read fails
+                config.put("scheduleEnabled", sentryConfig.getSchedule().isEnabled());
+                org.json.JSONArray schedRules = new org.json.JSONArray();
+                for (com.overdrive.app.surveillance.SurveillanceSchedule.Rule rule : sentryConfig.getSchedule().getRules()) {
+                    schedRules.put(rule.toJson());
+                }
+                config.put("scheduleRules", schedRules);
             }
-            config.put("scheduleRules", schedRules);
             
             // Camera ID info
             try {
@@ -772,11 +790,10 @@ public class SurveillanceApiHandler {
             
             if (configChanged) {
                 try {
-                    SurveillanceConfigManager configManager = new SurveillanceConfigManager();
-                    configManager.saveConfig(sentryConfig);
+                    // Apply config to the running surveillance engine
                     if (sentry != null) sentry.setConfig(sentryConfig);
                 } catch (Exception e) {
-                    CameraDaemon.log("Failed to save config: " + e.getMessage());
+                    CameraDaemon.log("Failed to apply config: " + e.getMessage());
                 }
             }
             

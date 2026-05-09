@@ -1,5 +1,7 @@
 package com.overdrive.app.logging;
 
+import com.overdrive.app.BuildConfig;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -159,7 +161,7 @@ public final class DaemonLogConfig {
     public static final boolean ABRP_CONFIG = false;
     
     /** SohEstimator - battery SOH estimation */
-    public static final boolean SOH_ESTIMATOR = true;
+    public static final boolean SOH_ESTIMATOR = BuildConfig.DEBUG;
     
     /** TelemetryDataCollector - telemetry data collection */
     public static final boolean TELEMETRY_DATA_COLLECTOR = false;

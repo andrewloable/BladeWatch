@@ -29,6 +29,7 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
     private static final int BACKOFF_BASE_SECONDS = 5;
     private static final int BACKOFF_CAP_SECONDS = 300;
     private static final long SESSION_REFRESH_MS = 25 * 60 * 1000; // 25 min (before 30 min expiry)
+    private static final long REAUTH_COOLDOWN_MS = 60 * 1000; // matches pyBYD _MQTT_REAUTH_COOLDOWN_S
 
     private final BydCloudClient client;
     private final BydCloudDataProvider dataProvider;
@@ -39,6 +40,7 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
     private volatile boolean running = false;
     private volatile int consecutiveFailures = 0;
     private volatile long lastConnectAttemptMs = 0;
+    private volatile long lastReauthAtMs = 0;
 
     private final AtomicBoolean connecting = new AtomicBoolean(false);
     private ScheduledExecutorService scheduler;
@@ -184,12 +186,45 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
         try {
             logger.info("Refreshing BYD cloud session...");
             disconnectQuietly();
-            client.ensureSession();
+            // Force a fresh login — ensureSession() is a no-op while the
+            // current 30-min session hasn't expired, so the encryToken
+            // (and therefore decryptKey) would never rotate.
+            client.login();
             connectAndSubscribe();
         } catch (Exception e) {
             logger.warn("Session refresh failed: " + e.getMessage());
             scheduleReconnect();
         }
+    }
+
+    /**
+     * Triggered when message decryption fails repeatedly — assume the
+     * server-side key rotated and force a full re-login + reconnect.
+     * Rate-limited to avoid login storms on truly malformed traffic.
+     */
+    private void scheduleReauth() {
+        if (!running) return;
+        long now = System.currentTimeMillis();
+        if (now - lastReauthAtMs < REAUTH_COOLDOWN_MS) return;
+        lastReauthAtMs = now;
+
+        ScheduledExecutorService s = scheduler;
+        if (s == null || s.isShutdown()) return;
+
+        logger.info("MQTT decrypt failed — scheduling re-authentication");
+        try {
+            s.execute(() -> {
+                if (!running) return;
+                try {
+                    disconnectQuietly();
+                    client.login();
+                    connectAndSubscribe();
+                } catch (Exception e) {
+                    logger.warn("MQTT re-auth failed: " + e.getMessage());
+                    scheduleReconnect();
+                }
+            });
+        } catch (Exception ignored) {}
     }
 
     private void disconnectQuietly() {
@@ -220,27 +255,56 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
 
     @Override
     public void messageArrived(String topic, MqttMessage message) {
+        byte[] payload = message.getPayload();
+        if (payload == null || payload.length == 0) return;
+
+        String encrypted = new String(payload, java.nio.charset.StandardCharsets.UTF_8).trim();
+        if (encrypted.isEmpty()) return;
+
+        // ── Decrypt ─────────────────────────────────────────────────────
+        String decrypted;
         try {
-            byte[] payload = message.getPayload();
-            if (payload == null || payload.length == 0) return;
-
-            String encrypted = new String(payload, java.nio.charset.StandardCharsets.UTF_8).trim();
-            if (encrypted.isEmpty()) return;
-
-            // Decrypt with content key
-            String decrypted = BydCryptoUtils.aesDecryptUtf8(encrypted, decryptKey);
-            JSONObject json = new JSONObject(decrypted);
-
-            // The push message may contain vehicleInfo at the top level or nested
-            JSONObject vehicleInfo = json.has("vehicleInfo")
-                    ? json.optJSONObject("vehicleInfo") : json;
-
-            JSONObject hvac = json.has("hvac") ? json.optJSONObject("hvac") : null;
-
-            dataProvider.updateFromVehicleInfo(vehicleInfo, hvac);
-
+            decrypted = BydCryptoUtils.aesDecryptUtf8(encrypted, decryptKey);
         } catch (Exception e) {
-            logger.debug("Message parse error: " + e.getMessage());
+            // AES failure (BadPadding) or wrong key producing garbage UTF-8.
+            // Treat as stale-key — schedule a forced re-login.
+            logger.debug("MQTT decrypt failed: " + e.getMessage());
+            scheduleReauth();
+            return;
+        }
+
+        JSONObject envelope;
+        try {
+            envelope = new JSONObject(decrypted);
+        } catch (Exception e) {
+            // Decrypted but not valid JSON — also a key-mismatch symptom
+            // (random bytes happened to satisfy PKCS#7 padding).
+            logger.debug("MQTT JSON parse failed: " + e.getMessage());
+            scheduleReauth();
+            return;
+        }
+
+        // ── Unwrap envelope ─────────────────────────────────────────────
+        // BYD MQTT push shape: { event, vin, data: { uuid, respondData: {...} } }
+        // (matches pyBYD _on_mqtt_event)
+        String event = envelope.optString("event", "");
+        JSONObject data = envelope.optJSONObject("data");
+        JSONObject respondData = data != null ? data.optJSONObject("respondData") : null;
+        if (respondData == null) respondData = envelope; // legacy / unwrapped fallback
+
+        try {
+            switch (event) {
+                case "vehicleInfo":
+                    dataProvider.updateFromVehicleInfo(respondData, null);
+                    break;
+                // Other event types (smartCharge, energyConsumption,
+                // remoteControl) currently have no consumer — ignore quietly.
+                default:
+                    logger.debug("MQTT event ignored: event=" + event);
+                    break;
+            }
+        } catch (Exception e) {
+            logger.warn("MQTT dispatch failed: " + e.getMessage());
         }
     }
 

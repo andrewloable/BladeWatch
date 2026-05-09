@@ -66,18 +66,31 @@ public class OverlayBitmapRenderer {
         labelPaint = mp(0xFFCCCCCC, Paint.Style.FILL, 13);
         timePaint = mp(Color.WHITE, Paint.Style.FILL, 20);
 
-        // Typeface initialization can fail on rapid daemon restarts when the
-        // Android font cache is in a corrupted state (SystemFonts throws
-        // "Failed to create internal object. maybe invalid font data.").
-        // Catch and fall back to default paint — no custom fonts is better
-        // than crashing the daemon with SIGABRT on the second restart.
+        // Typeface initialization can fail in daemon mode on automotive BSPs
+        // where the font system isn't fully initialized (no Activity context).
+        // Typeface.create() may return null on DiLink 5, causing NPE when
+        // setTypeface() tries to read the internal mStyle field.
+        // Fall back to default paint — no custom fonts is better than crashing.
         try {
-            speedPaint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
-            speedPaint.setShadowLayer(4f, 0f, 0f, 0xAAFFFFFF);
-            gearPaint.setTypeface(Typeface.DEFAULT_BOLD);
-            gearPaint.setShadowLayer(6f, 0f, 0f, 0xAAFFFFFF);
-            labelPaint.setTypeface(Typeface.DEFAULT_BOLD);
-            timePaint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
+            Typeface mono = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD);
+            if (mono != null) {
+                speedPaint.setTypeface(mono);
+                speedPaint.setShadowLayer(4f, 0f, 0f, 0xAAFFFFFF);
+            }
+            
+            Typeface bold = Typeface.DEFAULT_BOLD;
+            if (bold != null) {
+                gearPaint.setTypeface(bold);
+                gearPaint.setShadowLayer(6f, 0f, 0f, 0xAAFFFFFF);
+                labelPaint.setTypeface(bold);
+            }
+            
+            Typeface timeMono = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD);
+            if (timeMono != null) {
+                timePaint.setTypeface(timeMono);
+            }
+            
+            logger.info("Font init OK");
         } catch (Throwable t) {
             // Catches both Exception and Error (RuntimeException from native font init)
             logger.warn("Font init failed (will use defaults): " + t.getMessage());

@@ -122,11 +122,12 @@ public class SurveillanceSchedule {
      * Check if surveillance should be active right now based on the schedule.
      * Returns true if:
      * - Schedule is disabled (always active), OR
+     * - Schedule is enabled but no rules configured (always active — treat as "no restrictions"), OR
      * - Current day/time matches at least one rule
      */
     public boolean isActiveNow() {
         if (!enabled) return true;  // Schedule disabled = always active
-        if (rules.isEmpty()) return false;  // Enabled but no rules = always inactive
+        if (rules.isEmpty()) return true;  // Enabled but no rules = always active (no restrictions configured)
 
         Calendar cal = Calendar.getInstance();
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK) - 1;  // Calendar.SUNDAY=1 → 0
@@ -176,7 +177,7 @@ public class SurveillanceSchedule {
      */
     public String getSummary() {
         if (!enabled) return "Disabled (always active)";
-        if (rules.isEmpty()) return "Enabled but no rules (always inactive)";
+        if (rules.isEmpty()) return "Enabled, no restrictions (always active)";
 
         StringBuilder sb = new StringBuilder();
         String[] dayNames = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};

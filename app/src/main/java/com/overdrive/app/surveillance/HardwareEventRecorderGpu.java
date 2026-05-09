@@ -175,9 +175,17 @@ public class HardwareEventRecorderGpu {
     }
     
     /**
+     * Returns the configured frame rate (KEY_FRAME_RATE on the encoder format).
+     * Used by the pipeline to detect FPS config drift.
+     */
+    public int getFps() {
+        return fps;
+    }
+
+    /**
      * Sets the codec MIME type before initialization.
      * Must be called before init().
-     * 
+     *
      * @param mimeType MIMETYPE_VIDEO_AVC (H.264) or MIMETYPE_VIDEO_HEVC (H.265)
      */
     public void setCodecMimeType(String mimeType) {
@@ -495,11 +503,35 @@ public class HardwareEventRecorderGpu {
     
     /**
      * Checks if the encoder format (SPS/PPS) is available.
-     * 
+     *
      * @return true if format is available, false otherwise
      */
     public boolean isFormatAvailable() {
         return savedFormat != null;
+    }
+
+    /**
+     * One-shot listener invoked the first time the encoder publishes its
+     * output format (SPS/PPS available). Set by GpuSurveillancePipeline so
+     * deferred recordings can start as soon as the format is ready, without
+     * waiting for the camera-probe callback that doesn't fire when probe
+     * is disabled (validated camera config path on cold start).
+     */
+    public interface FormatAvailableListener {
+        void onFormatAvailable();
+    }
+
+    private volatile FormatAvailableListener formatAvailableListener = null;
+
+    public void setFormatAvailableListener(FormatAvailableListener listener) {
+        this.formatAvailableListener = listener;
+        // If format is already available when the listener is registered,
+        // fire immediately so callers don't miss the edge.
+        if (listener != null && savedFormat != null) {
+            try { listener.onFormatAvailable(); }
+            catch (Exception e) { logger.warn("FormatAvailableListener error: " + e.getMessage()); }
+            this.formatAvailableListener = null;
+        }
     }
     
     /**
@@ -1056,6 +1088,16 @@ public class HardwareEventRecorderGpu {
         if (diskWriterRunning) return;
         
         diskWriterRunning = true;
+        // SD-unmount detection: if writes start failing repeatedly, the underlying
+        // file descriptor is dead (typical when BYD/Android unmounts the SD card
+        // mid-recording). The MP4's moov atom is written only on stopRecording, so
+        // continuing to drain into a broken FD produces an unrecoverable corrupt
+        // file. Track consecutive write failures and abort the recording cleanly
+        // once we cross a threshold — at least the MP4 prefix on disk has the
+        // partial frames already written, and the user gets a clear log instead
+        // of a silent corruption.
+        final int[] consecutiveWriteFailures = {0};
+        final int writeFailureAbortThreshold = 5;
         diskWriterThread = new Thread(() -> {
             logger.info("Disk writer thread started");
             while (diskWriterRunning || !muxerWriteQueue.isEmpty()) {
@@ -1067,6 +1109,7 @@ public class HardwareEventRecorderGpu {
                             if (firstFramePtsUs < 0) firstFramePtsUs = packet.info.presentationTimeUs;
                             lastFramePtsUs = packet.info.presentationTimeUs;
                             recordedFrames++;
+                            consecutiveWriteFailures[0] = 0;
                         }
                     } else {
                         // Queue empty — sleep briefly to avoid busy-waiting
@@ -1089,7 +1132,23 @@ public class HardwareEventRecorderGpu {
                     }
                     break;
                 } catch (Exception e) {
-                    logger.error("Disk writer error: " + e.getMessage());
+                    consecutiveWriteFailures[0]++;
+                    logger.error("Disk writer error (#" + consecutiveWriteFailures[0]
+                        + "): " + e.getMessage());
+                    if (consecutiveWriteFailures[0] >= writeFailureAbortThreshold) {
+                        logger.error("Aborting recording: " + writeFailureAbortThreshold
+                            + " consecutive write failures (likely SD card unmounted). "
+                            + "Partial file at " + (tempFile != null ? tempFile.getAbsolutePath() : "unknown")
+                            + " will not be playable.");
+                        // Clear queue so the writer loop exits promptly
+                        muxerWriteQueue.clear();
+                        diskWriterRunning = false;
+                        // Don't call stopRecording() from here — that's a heavyweight
+                        // operation that touches state owned by other threads. Just
+                        // exit the writer; the main pipeline's existing watchdog or
+                        // the next user action will trigger cleanup.
+                        break;
+                    }
                 }
             }
             logger.info("Disk writer thread stopped");
@@ -1188,8 +1247,17 @@ public class HardwareEventRecorderGpu {
                 if (savedFormat == null) {
                     savedFormat = format;
                     String mime = format.getString(MediaFormat.KEY_MIME);
-                    logger.info("Saved encoder format for reuse (codec=" + 
+                    logger.info("Saved encoder format for reuse (codec=" +
                         (mime != null && mime.contains("hevc") ? "H.265" : "H.264") + ")");
+
+                    // Notify any waiter (one-shot). This is the canonical
+                    // moment isFormatAvailable() flips false→true.
+                    FormatAvailableListener l = formatAvailableListener;
+                    if (l != null) {
+                        formatAvailableListener = null;
+                        try { l.onFormatAvailable(); }
+                        catch (Exception e) { logger.warn("FormatAvailableListener error: " + e.getMessage()); }
+                    }
                 }
                 
                 if (recording && !muxerStarted) {

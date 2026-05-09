@@ -229,6 +229,58 @@
         android:layout_height="1dp"
         android:background="@color/divider" />
 
+    <!-- Multi-Select Toolbar (hidden by default) -->
+    <LinearLayout
+        android:id="@+id/selectToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:background="@color/bg_elevated"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvSelectedCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/brand_primary"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:text="0 selected" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSelectAll"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="All"
+            android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeleteSelected"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Delete"
+            android:textSize="12sp"
+            android:textColor="@color/status_danger"
+            app:icon="@drawable/ic_delete"
+            app:iconTint="@color/status_danger"
+            app:iconSize="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelSelect"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Cancel"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
     <!-- Recordings List (takes remaining space) -->
     <FrameLayout
         android:layout_width="match_parent"

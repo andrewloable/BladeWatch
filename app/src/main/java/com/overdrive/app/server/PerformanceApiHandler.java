@@ -113,7 +113,12 @@ public class PerformanceApiHandler {
         if (path.equals("/api/performance/soh/source") && method.equals("POST")) {
             return handleSohSetSource(body, out);
         }
-        
+
+        // POST /api/performance/reset - Bulk reset of selected categories
+        if (path.equals("/api/performance/reset") && method.equals("POST")) {
+            return handleResetCategories(body, out);
+        }
+
         return false;
     }
     
@@ -472,6 +477,8 @@ public class PerformanceApiHandler {
     /**
      * POST /api/performance/soh/reset - Reset SOH estimation.
      * Clears all persisted SOH data and forces re-estimation from scratch.
+     * Re-runs capacity detection and initial seeding immediately so the user
+     * doesn't need to restart the daemon.
      */
     private static boolean handleSohReset(OutputStream out) throws Exception {
         try {
@@ -480,9 +487,18 @@ public class PerformanceApiHandler {
 
             if (sohEst != null) {
                 sohEst.reset();
+
+                // Re-run capacity detection and seed immediately from live data
+                sohEst.autoDetectCarModel(null);
+                sohEst.seedInitialEstimate();
+
                 JSONObject response = new JSONObject();
                 response.put("success", true);
-                response.put("message", "SOH estimation reset. Will re-seed from next available data source.");
+                response.put("message", "SOH estimation reset and re-seeded.");
+                if (sohEst.hasEstimate()) {
+                    response.put("newSoh", sohEst.getCurrentSoh());
+                    response.put("nominalCapacityKwh", sohEst.getNominalCapacityKwh());
+                }
                 HttpResponse.sendJson(out, response.toString());
             } else {
                 JSONObject response = new JSONObject();
@@ -496,6 +512,160 @@ public class PerformanceApiHandler {
             HttpResponse.sendJson(out, "{\"success\":false,\"error\":\"" + e.getMessage() + "\"}");
             return true;
         }
+    }
+
+    /**
+     * POST /api/performance/reset — bulk reset of user-selected data categories.
+     *
+     * Body: {"categories": ["trips","socHistory","soh","abrpToken",
+     *                       "bydCloud","mediaRecordings","mediaSurveillance",
+     *                       "mediaProximity","mediaTrips"]}
+     *
+     * Each requested category runs independently — a partial failure on one
+     * does not abort the others. Response includes per-category result so the
+     * UI can show which wipes succeeded.
+     */
+    private static boolean handleResetCategories(String body, OutputStream out) throws Exception {
+        JSONObject response = new JSONObject();
+        JSONObject results = new JSONObject();
+        try {
+            JSONObject req = (body == null || body.isEmpty())
+                ? new JSONObject()
+                : new JSONObject(body);
+            org.json.JSONArray cats = req.optJSONArray("categories");
+            if (cats == null || cats.length() == 0) {
+                response.put("success", false);
+                response.put("error", "No categories specified");
+                HttpResponse.sendJson(out, response.toString());
+                return true;
+            }
+
+            for (int i = 0; i < cats.length(); i++) {
+                String cat = cats.optString(i, "");
+                JSONObject r = new JSONObject();
+                try {
+                    switch (cat) {
+                        case "trips": {
+                            com.overdrive.app.trips.TripAnalyticsManager mgr =
+                                com.overdrive.app.daemon.CameraDaemon.getTripAnalyticsManager();
+                            // Refuse if a trip is being recorded right now —
+                            // wiping mid-trip would leave the in-memory
+                            // TripBuilder writing to a freshly-empty DB and
+                            // create a phantom one-row history. User can
+                            // turn the car off and try again.
+                            if (mgr != null && mgr.isTripActive()) {
+                                r.put("success", false);
+                                r.put("error", "Trip in progress — turn ACC off first");
+                                break;
+                            }
+                            com.overdrive.app.trips.TripDatabase db =
+                                (mgr != null) ? mgr.getDatabase() : null;
+                            long n = (db != null) ? db.resetAll() : -1;
+                            r.put("success", n >= 0);
+                            r.put("rowsDeleted", n);
+                            break;
+                        }
+                        case "socHistory": {
+                            long n = SocHistoryDatabase.getInstance().resetAll();
+                            r.put("success", n >= 0);
+                            r.put("rowsDeleted", n);
+                            break;
+                        }
+                        case "soh": {
+                            com.overdrive.app.abrp.SohEstimator sohEst =
+                                SocHistoryDatabase.getInstance().getSohEstimator();
+                            if (sohEst != null) {
+                                sohEst.reset();
+                                sohEst.autoDetectCarModel(null);
+                                sohEst.seedInitialEstimate();
+                                r.put("success", true);
+                            } else {
+                                r.put("success", false);
+                                r.put("error", "SohEstimator not initialized");
+                            }
+                            break;
+                        }
+                        case "abrpToken": {
+                            // Use the shared singleton + service references held by
+                            // SurveillanceIpcServer. Constructing a fresh AbrpConfig
+                            // here would only modify a throwaway in-memory copy and
+                            // leave the running service still using its cached
+                            // token until the daemon restarted.
+                            boolean ok = SurveillanceIpcServer.resetAbrpForBulkWipe();
+                            r.put("success", ok);
+                            if (!ok) r.put("error", "ABRP not initialized");
+                            break;
+                        }
+                        case "bydCloud": {
+                            com.overdrive.app.byd.cloud.BydCloudConfig.clearCredentials();
+                            r.put("success", true);
+                            break;
+                        }
+                        case "mediaRecordings": {
+                            com.overdrive.app.storage.StorageManager sm =
+                                com.overdrive.app.storage.StorageManager.getInstance();
+                            // Don't wipe the dir while the encoder is writing
+                            // to it — at best you'd delete the still-open file
+                            // descriptor; at worst, corrupt the active MP4.
+                            if (sm.isRecordingActive()) {
+                                r.put("success", false);
+                                r.put("error", "Recording in progress — stop recording first");
+                                break;
+                            }
+                            long n = sm.wipeMediaCategory("recordings");
+                            r.put("success", n >= 0);
+                            r.put("filesDeleted", n);
+                            break;
+                        }
+                        case "mediaSurveillance": {
+                            com.overdrive.app.storage.StorageManager sm =
+                                com.overdrive.app.storage.StorageManager.getInstance();
+                            if (sm.isSurveillanceActive()) {
+                                r.put("success", false);
+                                r.put("error", "Surveillance recording in progress — wait for it to stop");
+                                break;
+                            }
+                            long n = sm.wipeMediaCategory("surveillance");
+                            r.put("success", n >= 0);
+                            r.put("filesDeleted", n);
+                            break;
+                        }
+                        case "mediaProximity": {
+                            long n = com.overdrive.app.storage.StorageManager.getInstance()
+                                .wipeMediaCategory("proximity");
+                            r.put("success", n >= 0);
+                            r.put("filesDeleted", n);
+                            break;
+                        }
+                        case "mediaTrips": {
+                            long n = com.overdrive.app.storage.StorageManager.getInstance()
+                                .wipeMediaCategory("trips");
+                            r.put("success", n >= 0);
+                            r.put("filesDeleted", n);
+                            break;
+                        }
+                        default:
+                            r.put("success", false);
+                            r.put("error", "Unknown category");
+                    }
+                } catch (Exception inner) {
+                    r.put("success", false);
+                    r.put("error", inner.getMessage());
+                    logger.warn("Reset category " + cat + " failed: " + inner.getMessage());
+                }
+                results.put(cat, r);
+            }
+
+            response.put("success", true);
+            response.put("results", results);
+            HttpResponse.sendJson(out, response.toString());
+        } catch (Exception e) {
+            logger.error("Reset request failed", e);
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            HttpResponse.sendJson(out, response.toString());
+        }
+        return true;
     }
 
     /**

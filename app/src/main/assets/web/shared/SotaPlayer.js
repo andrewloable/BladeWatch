@@ -216,6 +216,7 @@
             this.ctx.drawImage(frame, 0, 0, this.canvas.width, this.canvas.height);
             frame.close();
             this.frameCount++;
+            if (this.onFrame) this.onFrame(this.frameCount);
         }
 
         handleError(e) {

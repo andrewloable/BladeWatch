@@ -102,7 +102,7 @@ BYD.performance = {
         
         // SOH detail polling (every 2 minutes)
         this.sohPollInterval = setInterval(() => this.fetchSohStatus(), this.SOC_UPDATE_INTERVAL);
-        
+
         // Handle resize
         window.addEventListener('resize', () => this.resizeCharts());
         
@@ -2246,6 +2246,74 @@ BYD.performance = {
             } else {
                 alert('Reset failed: ' + (data.error || 'Unknown error'));
             }
+        } catch (e) {
+            alert('Reset failed: ' + e.message);
+        }
+    },
+
+    toggleAllResetCategories(checked) {
+        const boxes = document.querySelectorAll('#resetCategoriesList input[type=checkbox]');
+        boxes.forEach(b => { b.checked = checked; });
+    },
+
+    async runReset() {
+        const boxes = document.querySelectorAll('#resetCategoriesList input[type=checkbox]:checked');
+        const categories = Array.from(boxes).map(b => b.dataset.cat);
+        if (categories.length === 0) {
+            alert('Select at least one category to reset.');
+            return;
+        }
+
+        const labelLookup = {
+            trips: 'Trips',
+            socHistory: 'SoC + 12V history',
+            soh: 'SoH calibration',
+            abrpToken: 'ABRP token',
+            bydCloud: 'BYD Cloud credentials',
+            mediaRecordings: 'Recordings',
+            mediaSurveillance: 'Sentry events',
+            mediaProximity: 'Proximity recordings',
+            mediaTrips: 'Trip telemetry files'
+        };
+        const list = categories.map(c => '• ' + (labelLookup[c] || c)).join('\n');
+        const confirmMsg = 'Reset the following? This cannot be undone.\n\n' + list;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const resp = await fetch('/api/performance/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categories })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                alert('Reset failed: ' + (data.error || 'Unknown error'));
+                return;
+            }
+
+            // Build a per-category summary from the response
+            const lines = [];
+            for (const cat of categories) {
+                const r = (data.results || {})[cat] || {};
+                const label = labelLookup[cat] || cat;
+                if (r.success) {
+                    let detail = '';
+                    if (r.rowsDeleted !== undefined) detail = ' (' + r.rowsDeleted + ' rows)';
+                    else if (r.filesDeleted !== undefined) detail = ' (' + r.filesDeleted + ' files)';
+                    lines.push('✓ ' + label + detail);
+                } else {
+                    lines.push('✗ ' + label + ': ' + (r.error || 'failed'));
+                }
+            }
+
+            if (BYD.utils && BYD.utils.toast) {
+                BYD.utils.toast('Reset complete', 'success');
+            }
+            alert(lines.join('\n'));
+
+            // Clear checkboxes; refresh visible cards
+            this.toggleAllResetCategories(false);
+            try { this.fetchSohStatus(); } catch (_) {}
         } catch (e) {
             alert('Reset failed: ' + e.message);
         }

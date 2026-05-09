@@ -22,6 +22,7 @@ import java.io.OutputStream;
  *   POST /api/vehicle/window      — window control (local HAL)
  *   POST /api/vehicle/flash       — flash lights via BYD Cloud
  *   GET  /api/vehicle/cloud-status — BYD Cloud connection status
+ *   GET  /api/vehicle/cloud-lock   — cached cloud lock state, refreshes via REST if stale
  */
 public class VehicleControlApiHandler {
 
@@ -39,6 +40,12 @@ public class VehicleControlApiHandler {
         // GET /api/vehicle/cloud-status
         if (cleanPath.equals("/api/vehicle/cloud-status") && method.equals("GET")) {
             handleCloudStatus(out);
+            return true;
+        }
+
+        // GET /api/vehicle/cloud-lock
+        if (cleanPath.equals("/api/vehicle/cloud-lock") && method.equals("GET")) {
+            handleCloudLock(out);
             return true;
         }
 
@@ -105,8 +112,8 @@ public class VehicleControlApiHandler {
 
         response.put("success", true);
 
-        // Door lock status [1-7]: 1=locked, 2=unlocked, -1=unknown
-        // Index: 0=LF, 1=RF, 2=LR, 3=RR, 4=trunk, 5=hood, 6=overall
+        // Door lock status: 1=locked, 2=unlocked, -1=unknown
+        // Index: 0=LF, 1=RF, 2=LR, 3=RR, 4=trunk, 5=unused, 6=overall(derived)
         JSONObject doors = new JSONObject();
         if (data.doorLockStatus != null && data.doorLockStatus.length >= 7) {
             doors.put("lf", data.doorLockStatus[0]);
@@ -165,11 +172,16 @@ public class VehicleControlApiHandler {
         lights.put("hazard", data.hazard);
         response.put("lights", lights);
 
-        // Climate
+        // Climate — only report AC state if vehicle power is on (powerLevel >= 2)
+        // Otherwise stale cached data shows AC on when car is actually off
         JSONObject climate = new JSONObject();
-        if (data.acStartState != BydVehicleData.UNAVAILABLE) climate.put("acOn", data.acStartState == 1);
+        boolean vehiclePoweredOn = (data.powerLevel != BydVehicleData.UNAVAILABLE && data.powerLevel >= 2);
+        if (data.acStartState != BydVehicleData.UNAVAILABLE) {
+            climate.put("acOn", vehiclePoweredOn && data.acStartState == 1);
+        }
         if (!Double.isNaN(data.insideTempC)) climate.put("insideTempC", data.insideTempC);
         if (data.acWindMode != BydVehicleData.UNAVAILABLE) climate.put("windMode", data.acWindMode);
+        if (data.acFanLevel != BydVehicleData.UNAVAILABLE && vehiclePoweredOn) climate.put("fanLevel", data.acFanLevel);
         response.put("climate", climate);
 
         response.put("timestamp", data.timestamp);
@@ -190,6 +202,26 @@ public class VehicleControlApiHandler {
     }
 
     /**
+     * Returns the cloud-derived lock state. Triggers a one-shot REST refresh
+     * on the data-provider thread if MQTT data is stale or unavailable.
+     * The refresh is rate-limited inside the provider to protect BYD's API.
+     */
+    private static void handleCloudLock(OutputStream out) throws Exception {
+        com.overdrive.app.byd.cloud.BydCloudDataProvider provider =
+                com.overdrive.app.byd.cloud.BydCloudDataProvider.getInstance();
+
+        // Kick off the refresh in the background — don't block the HTTP
+        // response on a BYD round-trip (REST + login can take seconds).
+        // The provider applies its own staleness check + cooldown.
+        new Thread(provider::refreshLockStateIfStale, "CloudLockRefresh").start();
+
+        JSONObject response = new JSONObject();
+        response.put("success", true);
+        response.put("status", provider.getStatusJson());
+        HttpResponse.sendJson(out, response.toString());
+    }
+
+    /**
      * Lock the car via BYD Cloud API.
      */
     private static void handleLock(OutputStream out) throws Exception {
@@ -197,6 +229,7 @@ public class VehicleControlApiHandler {
         try {
             BydCloudClient client = getCloudClient();
             boolean success = client.lock(getVin());
+            logger.info("Lock: cloud lock result=" + success);
             response.put("success", true);
             response.put("commandSuccess", success);
             response.put("action", "lock");
@@ -216,6 +249,7 @@ public class VehicleControlApiHandler {
         try {
             BydCloudClient client = getCloudClient();
             boolean success = client.unlock(getVin());
+            logger.info("Unlock: cloud unlock result=" + success);
             response.put("success", true);
             response.put("commandSuccess", success);
             response.put("action", "unlock");
@@ -246,41 +280,48 @@ public class VehicleControlApiHandler {
             boolean success;
             switch (action) {
                 case "close":
-                    // Close trunk via local HAL first (direct motor command)
-                    // Then lock the car via cloud as a secondary step
+                    // Close trunk via local HAL (direct motor command)
                     success = collector.closeTailgate();
                     logger.info("Trunk close: local HAL closeTailgate result=" + success);
-                    
-                    // Also lock the car via cloud (belt-and-suspenders approach)
-                    // Some models close trunk on lock, others need the HAL command above
-                    try {
-                        BydCloudClient client = getCloudClient();
-                        boolean locked = client.lock(getVin());
-                        logger.info("Trunk close: cloud lock result=" + locked);
-                        response.put("locked", locked);
-                    } catch (Exception e) {
-                        logger.debug("Trunk close: cloud lock skipped: " + e.getMessage());
-                        // Not critical — local HAL close is the primary mechanism
-                    }
                     break;
                 case "stop":
                     success = collector.stopTailgate();
                     break;
                 case "open":
                 default:
-                    // Unlock car first to avoid alarm, then open trunk
+                    // ALWAYS unlock before opening trunk. The CAN bus lock status is unreliable
+                    // (often returns -1/unknown), so we cannot trust it to skip the unlock step.
+                    // Sending unlock when already unlocked is harmless on most BYD models —
+                    // the cloud API returns success and the body controller ignores the redundant command.
+                    // The alternative (skipping unlock and triggering the alarm) is far worse.
                     response.put("step", "unlocking");
+                    boolean unlockSuccess = false;
                     try {
                         BydCloudClient client = getCloudClient();
-                        boolean unlocked = client.unlock(getVin());
-                        logger.info("Trunk open: unlocked car via cloud, result=" + unlocked);
-                        response.put("unlocked", unlocked);
-                        // Wait for unlock to take effect before opening trunk
-                        Thread.sleep(2000);
+                        unlockSuccess = client.unlock(getVin());
+                        logger.info("Trunk open: cloud unlock result=" + unlockSuccess);
+                        response.put("unlocked", unlockSuccess);
+                        if (unlockSuccess) {
+                            // Wait for unlock to take effect before opening trunk
+                            Thread.sleep(2000);
+                        }
                     } catch (Exception e) {
-                        logger.warn("Trunk open: cloud unlock failed (proceeding anyway): " + e.getMessage());
+                        logger.warn("Trunk open: cloud unlock failed: " + e.getMessage());
                         response.put("unlockError", e.getMessage());
+                        unlockSuccess = false;
                     }
+
+                    // SAFETY: Do NOT open trunk if unlock failed — this triggers the alarm.
+                    // The car may still be locked; opening the tailgate motor while locked
+                    // causes the body controller to fire the anti-theft alarm.
+                    if (!unlockSuccess) {
+                        response.put("success", false);
+                        response.put("error", "Cannot open trunk: unlock failed. Car may still be locked.");
+                        response.put("action", action);
+                        HttpResponse.sendJson(out, response.toString());
+                        return;
+                    }
+
                     response.put("step", "opening");
                     success = collector.openTailgate();
                     break;
@@ -299,22 +340,49 @@ public class VehicleControlApiHandler {
 
     /**
      * Window control via local HAL (BydDataCollector).
-     * Body: { "area": 1-4 (LF/RF/LR/RR) or 0 for all, "command": 1=open, 2=close, 3=stop }
+     * Body: one of:
+     *   { "area": 1-4 (LF/RF/LR/RR) or 0 for all, "command": 1=open, 2=close, 3=stop }
+     *   { "area": 1-4,                              "targetPercent": 0..100 }
+     *
+     * targetPercent triggers closed-loop positioning: backend drives the
+     * window and auto-stops at the target. Returns immediately; the motion
+     * continues on a background thread.
      */
     private static void handleWindow(OutputStream out, String body) throws Exception {
         JSONObject response = new JSONObject();
         try {
             JSONObject req = new JSONObject(body);
             int area = req.optInt("area", 0);
-            int command = req.optInt("command", 2); // default close
-
             BydDataCollector collector = BydDataCollector.getInstance();
+
+            if (req.has("targetPercent")) {
+                if (area < 1 || area > 4) {
+                    response.put("success", false);
+                    response.put("error", "targetPercent requires a specific area (1-4)");
+                    HttpResponse.sendJson(out, response.toString());
+                    return;
+                }
+                int target = req.getInt("targetPercent");
+                boolean scheduled = collector.moveWindowToPercent(area, target);
+                logger.info("Window: area=" + areaName(area) + " target=" + target
+                    + "% scheduled=" + scheduled);
+                response.put("success", true);
+                response.put("scheduled", scheduled);
+                response.put("area", area);
+                response.put("targetPercent", target);
+                HttpResponse.sendJson(out, response.toString());
+                return;
+            }
+
+            int command = req.optInt("command", 2); // default close
             boolean success;
             if (area == 0) {
                 success = collector.setAllWindowsCommand(command);
             } else {
                 success = collector.setWindowCommand(area, command);
             }
+            logger.info("Window: area=" + areaName(area) + " cmd=" + windowCmdName(command)
+                + " result=" + success);
 
             response.put("success", true);
             response.put("commandSuccess", success);
@@ -336,6 +404,7 @@ public class VehicleControlApiHandler {
         try {
             BydCloudClient client = getCloudClient();
             boolean success = client.flashLightsNoWait(getVin());
+            logger.info("Flash: cloud flashLights dispatched=" + success);
             response.put("success", true);
             response.put("commandSuccess", success);
             response.put("action", "flash");
@@ -360,28 +429,35 @@ public class VehicleControlApiHandler {
             BydDataCollector collector = BydDataCollector.getInstance();
             boolean success = false;
 
+            String detail;
             switch (action) {
                 case "power_on":
                     success = collector.setAcPower(true);
+                    detail = "";
                     break;
                 case "power_off":
                     success = collector.setAcPower(false);
+                    detail = "";
                     break;
                 case "set_temp":
                     int zone = req.optInt("zone", 1);
                     double temp = req.optDouble("temp", 22);
                     success = collector.setAcTemperature(zone, temp);
+                    detail = " zone=" + zone + " temp=" + temp + "°C";
                     break;
                 case "set_fan":
                     int fan = req.optInt("fan", 3);
                     success = collector.setAcFanLevel(fan);
+                    detail = " fan=" + fan;
                     break;
                 default:
+                    logger.warn("Climate: unknown action '" + action + "'");
                     response.put("success", false);
                     response.put("error", "Unknown action: " + action);
                     HttpResponse.sendJson(out, response.toString());
                     return;
             }
+            logger.info("Climate: action=" + action + detail + " result=" + success);
 
             response.put("success", true);
             response.put("commandSuccess", success);
@@ -415,6 +491,8 @@ public class VehicleControlApiHandler {
             } else {
                 success = collector.setSeatHeating(position, level);
             }
+            logger.info("Seat: action=" + action + " pos=" + seatPosName(position)
+                + " level=" + level + " result=" + success);
 
             response.put("success", true);
             response.put("commandSuccess", success);
@@ -427,6 +505,38 @@ public class VehicleControlApiHandler {
             response.put("error", e.getMessage());
         }
         HttpResponse.sendJson(out, response.toString());
+    }
+
+    // ==================== LOG HELPERS ====================
+
+    private static String areaName(int area) {
+        switch (area) {
+            case 0: return "all";
+            case 1: return "LF";
+            case 2: return "RF";
+            case 3: return "LR";
+            case 4: return "RR";
+            default: return "?(" + area + ")";
+        }
+    }
+
+    private static String windowCmdName(int cmd) {
+        switch (cmd) {
+            case 1: return "open";
+            case 2: return "close";
+            case 3: return "stop";
+            default: return "?(" + cmd + ")";
+        }
+    }
+
+    private static String seatPosName(int pos) {
+        switch (pos) {
+            case 1: return "driver";
+            case 2: return "passenger";
+            case 3: return "rear-left";
+            case 4: return "rear-right";
+            default: return "?(" + pos + ")";
+        }
     }
 
     // ==================== HELPERS ====================

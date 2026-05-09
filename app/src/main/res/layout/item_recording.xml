@@ -20,6 +20,15 @@
         android:orientation="horizontal"
         android:padding="12dp">
 
+        <!-- Selection Checkbox (hidden by default, shown in select mode) -->
+        <CheckBox
+            android:id="@+id/cbSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone"
+            android:buttonTint="@color/brand_primary" />
+
         <!-- Video Thumbnail with Play Overlay -->
         <FrameLayout
             android:layout_width="80dp"

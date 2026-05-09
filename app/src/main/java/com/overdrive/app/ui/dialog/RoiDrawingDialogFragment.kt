@@ -22,7 +22,6 @@ import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.*
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.URL
 
 /**
  * Dialog for drawing ROI (Region of Interest) polygons on camera preview.
@@ -263,11 +262,10 @@ class RoiDrawingDialogFragment : DialogFragment() {
             
             // First try to load live snapshot from HTTP server
             try {
-                val url = URL("http://127.0.0.1:8080/snapshot/$cameraId")
-                val connection = url.openConnection()
-                connection.connectTimeout = 2000
-                connection.readTimeout = 2000
-                bitmap = BitmapFactory.decodeStream(connection.getInputStream())
+                val connection = com.overdrive.app.util.DaemonHttpClient.open(
+                    "/snapshot/$cameraId", "GET", 2000, 2000)
+                bitmap = BitmapFactory.decodeStream(connection.inputStream)
+                connection.disconnect()
             } catch (e: Exception) {
                 // Live snapshot not available, try dummy image
             }

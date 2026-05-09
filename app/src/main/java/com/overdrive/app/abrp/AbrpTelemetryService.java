@@ -202,14 +202,40 @@ public class AbrpTelemetryService {
                     powerSet = true;
                 }
                 if (!powerSet) {
-                    // For charging power, prefer externalChargingPowerKw (InstrumentDevice)
-                    // which is the real charger-reported power. ChargingDevice values are unreliable.
-                    // Threshold 0.15 kW filters phantom 0.1 kW readings when charger is unplugged.
+                    // For charging power, we have two sources:
+                    // - externalChargingPowerKw (InstrumentDevice): charger-reported power
+                    // - chargingPowerKw (ChargingDevice): BMS-reported power
+                    //
+                    // On BEVs, externalChargingPower is preferred (more accurate, real-time).
+                    // On PHEVs, externalChargingPower often reports the AC INPUT power (from wall)
+                    // which is higher than the actual DC battery charging power due to conversion
+                    // losses in the onboard charger. The ChargingDevice value is the battery-side power.
+                    //
+                    // Strategy: if both sources report > 0, use the LOWER value (battery-side).
+                    // If only one source is available, use it.
                     double chargingPower = 0;
-                    if (vd != null && !Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0.15) {
-                        chargingPower = vd.externalChargingPowerKw;
-                    } else if (vd != null && !Double.isNaN(vd.chargingPowerKw) && vd.chargingPowerKw > 0.15) {
-                        chargingPower = vd.chargingPowerKw;
+                    double extPower = (vd != null && !Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0.15)
+                            ? vd.externalChargingPowerKw : 0;
+                    double chgDevPower = (vd != null && !Double.isNaN(vd.chargingPowerKw) && vd.chargingPowerKw > 0.15)
+                            ? vd.chargingPowerKw : 0;
+                    
+                    if (extPower > 0 && chgDevPower > 0) {
+                        // Both available — use the lower value (battery-side DC power).
+                        // The higher value is likely the AC input power (includes charger losses).
+                        // Exception: if they're within 15% of each other, prefer externalPower
+                        // (it's more real-time on BEVs where both report the same thing).
+                        double ratio = Math.min(extPower, chgDevPower) / Math.max(extPower, chgDevPower);
+                        if (ratio > 0.85) {
+                            // Close enough — prefer external (InstrumentDevice, more responsive)
+                            chargingPower = extPower;
+                        } else {
+                            // Significant difference — use the lower one (battery-side)
+                            chargingPower = Math.min(extPower, chgDevPower);
+                        }
+                    } else if (extPower > 0) {
+                        chargingPower = extPower;
+                    } else if (chgDevPower > 0) {
+                        chargingPower = chgDevPower;
                     }
                     
                     // Check charging state
@@ -241,12 +267,19 @@ public class AbrpTelemetryService {
             boolean isCharging = chargingState != null && chargingState.status == ChargingStateData.ChargingStatus.CHARGING;
             // Fallback: detect AC charging even if BMS state is stale (reports READY/IDLE)
             // but the gun is connected (state 2=AC, 3=DC) and power is flowing.
+            // Also detect charging purely from power flow — on some PHEVs the gun state
+            // never transitions to 2/3 during AC charging, but power IS reported.
             if (!isCharging && vd != null) {
                 boolean gunConnected = vd.chargingGunState == 2 || vd.chargingGunState == 3;
                 boolean powerFlowing = (!Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0.15)
                         || (!Double.isNaN(vd.chargingPowerKw) && vd.chargingPowerKw > 0.15);
-                if (gunConnected && powerFlowing) {
+                // Power flowing alone is sufficient evidence of charging — don't require gun state.
+                // On PHEVs, gun state may report 0/1 even while actively AC charging.
+                if (powerFlowing) {
                     isCharging = true;
+                } else if (gunConnected) {
+                    // Gun connected but no power yet — BMS may be in pre-charge negotiation.
+                    // Don't mark as charging yet (avoids false positives during plug-in).
                 }
             }
             payload.put("is_charging", isCharging ? 1 : 0);

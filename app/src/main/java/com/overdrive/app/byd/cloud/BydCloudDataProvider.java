@@ -190,6 +190,10 @@ public final class BydCloudDataProvider {
     private volatile java.util.concurrent.ScheduledExecutorService realtimePoller;
     private static final long POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
+    // ── On-demand refresh (page-load fallback) ──────────────────────────
+    private volatile long lastOnDemandRefreshMs = 0;
+    private static final long ON_DEMAND_REFRESH_COOLDOWN_MS = 30 * 1000;
+
     /**
      * Start or stop the REST realtime poller based on the cloudDataMerge toggle.
      * Called on toggle change and on subscriber start.
@@ -245,6 +249,59 @@ public final class BydCloudDataProvider {
             realtimePoller = null;
             logger.info("REST realtime poller stopped");
         }
+    }
+
+    /**
+     * On-demand REST poll triggered by the UI (e.g., when the vehicle-control
+     * page loads). Only fires if our cached lock state is stale or missing,
+     * and is globally rate-limited so opening the page rapidly can't hammer
+     * the cloud API.
+     *
+     * Returns true if a fresh fetch was actually performed.
+     */
+    public boolean refreshLockStateIfStale() {
+        long now = System.currentTimeMillis();
+
+        // Already fresh? Nothing to do.
+        VehicleCloudSnapshot s = snapshot.get();
+        if (s != null && s.isLockStateFresh() && s.hasValidLockState()) {
+            return false;
+        }
+
+        // Cooldown — don't let a navigation loop spam BYD's cloud.
+        if (now - lastOnDemandRefreshMs < ON_DEMAND_REFRESH_COOLDOWN_MS) {
+            return false;
+        }
+        lastOnDemandRefreshMs = now;
+
+        try {
+            BydCloudConfig config = BydCloudConfig.fromUnifiedConfig();
+            if (!config.isVerified() || config.vin == null || config.vin.isEmpty()) {
+                return false;
+            }
+
+            BydCloudClient client = getOrCreateClient();
+            if (client == null) return false;
+
+            JSONObject vehicleInfo = client.fetchVehicleRealtime(config.vin);
+            if (vehicleInfo != null) {
+                // Diagnostic: log door/lock fields so we can confirm the
+                // poll actually delivered them.  pyBYD/BYD-re reports the
+                // field names as leftFrontDoorLock, rightFrontDoorLock etc.
+                // with values 1=UNLOCKED 2=LOCKED.
+                logger.info("Realtime locks: lf=" + vehicleInfo.opt("leftFrontDoorLock")
+                    + " rf=" + vehicleInfo.opt("rightFrontDoorLock")
+                    + " lr=" + vehicleInfo.opt("leftRearDoorLock")
+                    + " rr=" + vehicleInfo.opt("rightRearDoorLock")
+                    + " online=" + vehicleInfo.opt("onlineState"));
+                updateFromVehicleInfo(vehicleInfo);
+                logger.info("On-demand lock-state refresh: data updated");
+                return true;
+            }
+        } catch (Exception e) {
+            logger.warn("On-demand lock-state refresh failed: " + e.getMessage());
+        }
+        return false;
     }
 
     private BydCloudClient getOrCreateClient() {

@@ -37,6 +37,7 @@ public class NetworkMonitor {
     private static volatile int signalPercent = -1;
     private static volatile long lastUpdate = 0;
     private static volatile Context appContext;
+    private static volatile boolean shellFallbackLogged = false;
 
     public static void init(Context context) {
         appContext = context;
@@ -70,13 +71,12 @@ public class NetworkMonitor {
 
             Network activeNetwork = cm.getActiveNetwork();
             if (activeNetwork == null) {
-                CameraDaemon.log("NetworkMonitor: getActiveNetwork() returned null");
+                // Silent fallback — common when running as UID 2000 (shell daemon)
                 return false;
             }
 
             NetworkCapabilities caps = cm.getNetworkCapabilities(activeNetwork);
             if (caps == null) {
-                CameraDaemon.log("NetworkMonitor: getNetworkCapabilities() returned null");
                 return false;
             }
 
@@ -94,7 +94,7 @@ public class NetworkMonitor {
                     }
                 }
             } catch (Exception e) {
-                CameraDaemon.log("NetworkMonitor: LinkProperties error: " + e.getMessage());
+                // LinkProperties may fail under UID 2000 — not critical, IP from shell
             }
 
             if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
@@ -120,8 +120,21 @@ public class NetworkMonitor {
             }
 
             return false;
+        } catch (SecurityException e) {
+            // UID 2000 (shell) cannot access package manager APIs on some devices.
+            // "Package android does not belong to 2000" — expected on DiLink 5.
+            // Silent fallback to shell commands which work fine under UID 2000.
+            if (!shellFallbackLogged) {
+                CameraDaemon.log("NetworkMonitor: Android APIs unavailable (UID 2000), using shell fallback");
+                shellFallbackLogged = true;
+            }
+            return false;
         } catch (Exception e) {
-            CameraDaemon.log("NetworkMonitor: Android API error: " + e.getMessage());
+            // Other unexpected errors — log once then go silent
+            if (!shellFallbackLogged) {
+                CameraDaemon.log("NetworkMonitor: Android API error: " + e.getMessage() + " — using shell fallback");
+                shellFallbackLogged = true;
+            }
             return false;
         }
     }

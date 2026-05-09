@@ -58,6 +58,19 @@ public class RecordingModeManager {
     private volatile Mode currentMode = Mode.NONE;  // Default: no recording
     private volatile boolean accIsOn = false;  // Default: ACC OFF — wait for AccSentryDaemon to confirm
     private volatile int currentGear = GEAR_P;  // Default: Park
+
+    // True once we've received at least one real ACC state change IPC (vs. only
+    // the constructor's hardware probe). Used to keep the "wasOn=" log field
+    // honest: on the first IPC after boot, accIsOn may already be true from the
+    // probe, but there was no prior IPC, so reporting "wasOn=true" is misleading.
+    private volatile boolean accIpcSeen = false;
+
+    // True if the current mode's pipeline/recording state is actually live.
+    // Used to distinguish "ACC is on AND mode is running" from "ACC was set to
+    // on but activation failed silently (pipeline init threw, etc.)".
+    // Without this, a duplicate-event guard keyed only on accIsOn locks us out
+    // of retrying activation on the next ACC ON IPC.
+    private volatile boolean modeActive = false;
     
     public RecordingModeManager(Context context, GpuSurveillancePipeline pipeline) {
         this.context = context;
@@ -76,23 +89,183 @@ public class RecordingModeManager {
             accIsOn = true;
             logger.info("ACC state from hardware: ON");
         }
-        
-        // Activate the loaded mode if conditions are met
+
+        // Sync gear from GearMonitor if it has already started polling. Without
+        // this the field stays at the GEAR_P default, and DRIVE_MODE /
+        // PROXIMITY_GUARD auto-activate below silently no-ops if the daemon
+        // restarted while the car was already in a driving gear. (GearMonitor
+        // is started later in CameraDaemon init, so on cold start this often
+        // returns GEAR_P regardless — that's fine; onGearChanged() will
+        // activate the mode when GearMonitor delivers its first real gear.)
+        try {
+            com.overdrive.app.monitor.GearMonitor gm =
+                com.overdrive.app.monitor.GearMonitor.getInstance();
+            if (gm.isRunning()) {
+                int gearNow = gm.getCurrentGear();
+                if (gearNow != currentGear) {
+                    logger.info("Constructor gear sync from GearMonitor: "
+                        + gearToString(currentGear) + " -> " + gearToString(gearNow));
+                    currentGear = gearNow;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Constructor GearMonitor sync skipped: " + e.getMessage());
+        }
+
+        // Activate the loaded mode if conditions are met.
         // CONTINUOUS: activate immediately (accIsOn defaults to true)
         // DRIVE_MODE: activate if in driving gear
         // PROXIMITY_GUARD: activate if gear != P
         // NONE: no action needed
+        //
+        // CRITICAL: route through activateModeWithWarmup() instead of calling
+        // activateMode() directly. After a hard reboot the BYD camera HAL has
+        // not been poked by com.byd.avc yet, so opening the camera before
+        // warmup leaves it in a wedged state where pipeline.start() fails
+        // silently. The result was that CONTINUOUS recording never started
+        // until the user cycled ACC OFF → ON (the IPC path runs warmup).
         if (currentMode == Mode.CONTINUOUS && accIsOn) {
             logger.info("Auto-activating CONTINUOUS mode on startup");
-            activateMode(currentMode);
-        } else if (currentMode == Mode.DRIVE_MODE && isDrivingGear(currentGear)) {
+            activateModeWithWarmup(currentMode, "boot-auto-activate");
+        } else if (currentMode == Mode.DRIVE_MODE && isDrivingGear(currentGear) && accIsOn) {
             logger.info("Auto-activating DRIVE_MODE on startup (gear=" + gearToString(currentGear) + ")");
-            activateMode(currentMode);
-        } else if (currentMode == Mode.PROXIMITY_GUARD && currentGear != GEAR_P) {
+            activateModeWithWarmup(currentMode, "boot-auto-activate");
+        } else if (currentMode == Mode.PROXIMITY_GUARD && currentGear != GEAR_P && accIsOn) {
             logger.info("Auto-activating PROXIMITY_GUARD on startup (gear=" + gearToString(currentGear) + ")");
-            activateMode(currentMode);
+            activateModeWithWarmup(currentMode, "boot-auto-activate");
+        }
+
+        // Belt-and-suspenders re-sync. Catches all the cold-start failure
+        // modes uniformly: GearMonitor not yet running, AccSentryDaemon hasn't
+        // pushed initial state yet, pipeline init still in flight, IPC server
+        // not yet listening when AccSentryDaemon tried to push, etc. Runs once
+        // a few seconds after construction; idempotent if mode is already
+        // active (modeActive guard in onAccStateChanged + onGearChanged).
+        scheduleColdStartResync();
+    }
+
+    private void scheduleColdStartResync() {
+        new Thread(() -> {
+            try {
+                Thread.sleep(COLD_START_RESYNC_DELAY_MS);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            try {
+                resyncFromHardware("cold-start");
+            } catch (Exception e) {
+                logger.warn("Cold-start re-sync error: " + e.getMessage());
+            }
+        }, "RecordingModeResync").start();
+    }
+
+    /**
+     * Re-query authoritative ACC + gear from hardware/monitors and re-drive
+     * mode activation if state has drifted from what we currently believe.
+     * Used both for cold-start re-sync and for any later resync hook.
+     */
+    public synchronized void resyncFromHardware(String reason) {
+        boolean hwAcc = queryAccStateFromHardware();
+        int hwGear = currentGear;
+        try {
+            com.overdrive.app.monitor.GearMonitor gm =
+                com.overdrive.app.monitor.GearMonitor.getInstance();
+            if (gm.isRunning()) {
+                hwGear = gm.getCurrentGear();
+            }
+        } catch (Exception ignored) {
+            // GearMonitor unavailable — keep our current value
+        }
+
+        boolean accChanged = hwAcc != accIsOn;
+        boolean gearChanged = hwGear != currentGear;
+        logger.info("Re-sync (" + reason + "): hwAcc=" + hwAcc + " accIsOn=" + accIsOn
+            + ", hwGear=" + gearToString(hwGear) + " currentGear=" + gearToString(currentGear)
+            + ", mode=" + currentMode + ", modeActive=" + modeActive);
+
+        if (gearChanged) {
+            // Route through the public handler so existing
+            // activate/deactivate logic and modeActive bookkeeping run.
+            onGearChanged(hwGear);
+        }
+        if (accChanged) {
+            onAccStateChanged(hwAcc);
+            return;
+        }
+
+        // ACC state unchanged but mode might have failed to start at construction.
+        // Retry activation if conditions are met and modeActive is false. Use
+        // the warmup path so a retried activation that follows a failed
+        // cold-start (camera HAL wedged, pipeline.start() returned with
+        // isRunning()==false) actually pokes com.byd.avc this time around.
+        if (accIsOn && !modeActive) {
+            if (currentMode == Mode.CONTINUOUS) {
+                logger.info("Re-sync retry: activating CONTINUOUS");
+                activateModeWithWarmup(currentMode, "resync-retry");
+            } else if (currentMode == Mode.DRIVE_MODE && isDrivingGear(currentGear)) {
+                logger.info("Re-sync retry: activating DRIVE_MODE (gear=" + gearToString(currentGear) + ")");
+                activateModeWithWarmup(currentMode, "resync-retry");
+            } else if (currentMode == Mode.PROXIMITY_GUARD && currentGear != GEAR_P) {
+                logger.info("Re-sync retry: activating PROXIMITY_GUARD (gear=" + gearToString(currentGear) + ")");
+                activateModeWithWarmup(currentMode, "resync-retry");
+            }
         }
     }
+
+    /**
+     * Run the AVC HAL warmup on a background thread and then call
+     * activateMode(mode) under the manager lock. Mirrors the warmup-then-
+     * activate path used by onAccStateChanged() so cold-start auto-activation
+     * doesn't race with com.byd.avc's HAL initialization.
+     *
+     * Skips warmup if the pipeline is already running (camera is open, no
+     * need to poke com.byd.avc) — same heuristic the IPC path uses.
+     */
+    private void activateModeWithWarmup(final Mode mode, final String reason) {
+        if (mode == Mode.NONE) {
+            return;
+        }
+        new Thread(() -> {
+            // Only warmup if pipeline isn't already running.
+            if (!pipeline.isRunning()) {
+                if (!avcWarmup.warmupAndWait()) {
+                    logger.warn("AVC warmup interrupted (" + reason + ") — skipping mode activation");
+                    return;
+                }
+            }
+            synchronized (RecordingModeManager.this) {
+                if (!accIsOn) {
+                    logger.info("ACC turned OFF during warmup (" + reason + ") — skipping mode activation");
+                    return;
+                }
+                int gearNow = currentGear;
+                // Re-check gear gates against the live value, in case it changed
+                // during the 4s warmup sleep.
+                if (mode == Mode.DRIVE_MODE && !isDrivingGear(gearNow)) {
+                    logger.info("DRIVE_MODE waiting for driving gear (current="
+                        + gearToString(gearNow) + ") — " + reason);
+                    return;
+                }
+                if (mode == Mode.PROXIMITY_GUARD && gearNow == GEAR_P) {
+                    logger.info("PROXIMITY_GUARD waiting for gear != P — " + reason);
+                    return;
+                }
+                if (modeActive && pipeline.isRunning() && pipeline.isNormalRecordingMode()) {
+                    logger.info("Mode " + mode + " already active — skipping re-activation ("
+                        + reason + ")");
+                    return;
+                }
+                activateMode(mode);
+            }
+        }, "ModeWarmup-" + reason).start();
+    }
+
+    // 8s gives the constructor's warmup-then-activate (≈4s warmup + ~2s pipeline
+    // init) time to finish before the resync second-guesses it. With the prior
+    // 5s value the resync would frequently fire while warmup was still sleeping,
+    // see modeActive=false, and queue a redundant retry.
+    private static final long COLD_START_RESYNC_DELAY_MS = 8_000L;
     
     /**
      * Set recording mode.
@@ -174,19 +347,34 @@ public class RecordingModeManager {
      * Activates/deactivates modes that depend on ACC state.
      */
     public synchronized void onAccStateChanged(boolean isOn) {
-        logger.info("ACC state changed: " + (isOn ? "ON" : "OFF") + " (mode=" + currentMode + ", wasOn=" + accIsOn + ")");
-        
-        boolean wasOn = accIsOn;
+        // wasOn reflects "was ACC observed ON via a *prior IPC*?" — not the
+        // hardware probe value seeded in the constructor. Without this guard,
+        // the very first ACC IPC after boot logs "wasOn=true" (because the
+        // probe set it) and triggers the "retrying activation" path, which is
+        // misleading: there was no prior activation to retry.
+        boolean wasOn = accIpcSeen && accIsOn;
+        boolean firstIpc = !accIpcSeen;
+        accIpcSeen = true;
+
+        logger.info("ACC state changed: " + (isOn ? "ON" : "OFF") + " (mode=" + currentMode
+            + ", wasOn=" + wasOn + (firstIpc ? " [first IPC after boot]" : "")
+            + ", modeActive=" + modeActive + ")");
+
         accIsOn = isOn;
-        
+
         if (isOn) {
-            if (wasOn) {
-                // Duplicate notification — ACC was already ON, skip re-activation.
-                // The IPC layer can deliver the same state change multiple times within
-                // milliseconds, causing a race where the second activation stops the
-                // recording that the first activation just started.
-                logger.debug("ACC already ON, ignoring duplicate notification");
+            // Suppress only if the mode is genuinely already running. Keying
+            // the guard purely on `wasOn` was wrong: if a prior activation
+            // failed silently (constructor auto-activate threw, pipeline
+            // wasn't ready, etc.), accIsOn was still true and the next real
+            // ACC ON IPC was discarded as a "duplicate," leaving the user
+            // with no recording until the next ACC OFF/ON cycle.
+            if (wasOn && modeActive) {
+                logger.debug("ACC already ON and mode active, ignoring duplicate notification");
                 return;
+            }
+            if (wasOn && !modeActive) {
+                logger.info("ACC was already ON but mode not active — retrying activation");
             }
             
             // ACC is ON — if pipeline is already running, keep it running.
@@ -223,9 +411,14 @@ public class RecordingModeManager {
                     } else if (modeToActivate == Mode.PROXIMITY_GUARD && gearNow == GEAR_P) {
                         logger.info("PROXIMITY_GUARD waiting for gear != P");
                     } else if (modeToActivate != Mode.NONE) {
-                        // Check if gear change already activated the mode during the delay
-                        if (pipeline.isRunning() && pipeline.isRecording()) {
-                            logger.info("Mode already activated by gear change during delay — skipping");
+                        // Skip only if the desired mode's recording is genuinely
+                        // already running. Previously this checked
+                        // pipeline.isRecording() alone, which returns true for
+                        // SURVEILLANCE recordings still finalizing at the moment
+                        // of ACC ON — causing CONTINUOUS/DRIVE_MODE to be skipped
+                        // and never started until the next state transition.
+                        if (modeActive && pipeline.isRunning() && pipeline.isNormalRecordingMode()) {
+                            logger.info("Mode " + modeToActivate + " already active — skipping re-activation");
                         } else {
                             activateMode(modeToActivate);
                         }
@@ -233,10 +426,12 @@ public class RecordingModeManager {
                 }
             }, "AccOnReacquire").start();
             
-        } else if (!isOn && wasOn) {
+        } else if (!isOn) {
             // ACC turned OFF — always stop the pipeline regardless of mode.
             // Recording modes only operate when ACC is ON. Surveillance (if enabled)
             // will be started separately by CameraDaemon.onAccStateChanged.
+            // pipeline.isRunning() guards against duplicate OFF events doing
+            // unnecessary teardown work.
             CameraDaemon.stopAvcKeepAlive();
             if (pipeline.isRunning()) {
                 pipeline.stopRecording();
@@ -253,12 +448,20 @@ public class RecordingModeManager {
      * @param gear The new gear position (GEAR_P, GEAR_R, GEAR_N, GEAR_D, etc.)
      */
     public synchronized void onGearChanged(int gear) {
+        // Suppress no-op notifications — GearMonitor.start() calls onGearChanged()
+        // once with the initial gear so the rest of the system gets primed, but
+        // for RecordingModeManager that often matches the constructor default
+        // and there's nothing to do. Logging it as a "P -> P" change is just noise.
+        if (gear == currentGear) {
+            return;
+        }
+
         String gearName = gearToString(gear);
         logger.info("Gear changed: " + gearToString(currentGear) + " -> " + gearName + " (mode=" + currentMode + ")");
-        
+
         int previousGear = currentGear;
         currentGear = gear;
-        
+
         // Only DRIVE_MODE and PROXIMITY_GUARD respond to gear changes
         if (currentMode != Mode.DRIVE_MODE && currentMode != Mode.PROXIMITY_GUARD) {
             logger.debug("Mode " + currentMode + " does not respond to gear changes");
@@ -269,11 +472,22 @@ public class RecordingModeManager {
             // DRIVE_MODE: record when driving (D/R/S/M) AND ACC is ON
             boolean wasDriving = isDrivingGear(previousGear);
             boolean nowDriving = isDrivingGear(gear);
-            
-            if (nowDriving && !wasDriving && accIsOn) {
-                logger.info("Shifted to driving gear - activating DRIVE_MODE recording");
-                activateMode(Mode.DRIVE_MODE);
-            } else if (!nowDriving && wasDriving) {
+
+            // Use modeActive (not just gear edge) so cold-start — where
+            // GearMonitor's first real reading arrives after construction with
+            // currentGear default GEAR_P — also activates DRIVE_MODE on the
+            // first delivered driving gear, even though the "edge" condition
+            // (wasDriving=false → nowDriving=true) only fires once.
+            if (nowDriving && accIsOn && !modeActive) {
+                logger.info("Driving gear with mode not yet active - activating DRIVE_MODE recording");
+                // Route through warmup. If the user shifts D within the 4s
+                // AVC warmup window after ACC ON, calling activateMode()
+                // directly would open the camera before com.byd.avc finished
+                // initializing the HAL → wedged camera, no recording. The
+                // warmup helper short-circuits when the pipeline is already
+                // running, so it's a no-op cost when not needed.
+                activateModeWithWarmup(Mode.DRIVE_MODE, "gear-to-driving");
+            } else if (!nowDriving && (wasDriving || modeActive)) {
                 logger.info("Shifted to parked gear - deactivating DRIVE_MODE recording");
                 deactivateMode(Mode.DRIVE_MODE);
             } else if (nowDriving && !accIsOn) {
@@ -283,11 +497,13 @@ public class RecordingModeManager {
             // PROXIMITY_GUARD: active in all gears except P, only when ACC is ON
             boolean wasInP = (previousGear == GEAR_P);
             boolean nowInP = (gear == GEAR_P);
-            
-            if (!nowInP && wasInP && accIsOn) {
-                logger.info("Shifted out of P - activating PROXIMITY_GUARD");
-                activateMode(Mode.PROXIMITY_GUARD);
-            } else if (nowInP && !wasInP) {
+
+            if (!nowInP && accIsOn && !modeActive) {
+                logger.info("Out of P with mode not yet active - activating PROXIMITY_GUARD");
+                // Same rationale as DRIVE_MODE above — protect against the
+                // user shifting out of P before the AVC HAL is warmed up.
+                activateModeWithWarmup(Mode.PROXIMITY_GUARD, "gear-out-of-P");
+            } else if (nowInP && (!wasInP || modeActive)) {
                 logger.info("Shifted to P - deactivating PROXIMITY_GUARD");
                 deactivateMode(Mode.PROXIMITY_GUARD);
             } else if (!nowInP && !accIsOn) {
@@ -348,14 +564,29 @@ public class RecordingModeManager {
     
     private void activateMode(Mode mode) {
         logger.info("Activating mode: " + mode);
-        
+
         // SOTA: Stop any manual recording before activating a mode
         // This ensures mode-managed recording takes precedence over manual recording
         if (pipeline.isNormalRecordingMode()) {
             logger.info("Stopping manual recording before activating mode: " + mode);
             pipeline.stopRecording();
         }
-        
+
+        // If user changed cameraFps in config since the encoder was built, force
+        // a clean stop here so the per-mode start() below runs through init() and
+        // picks up the new FPS via loadTargetFps(). Without this, FPS changes
+        // applied while the pipeline stayed alive across ACC OFF (sentry mode)
+        // wouldn't reach the encoder until the next full app restart.
+        //
+        // Safe at this exact moment: ACC has just turned ON, surveillance was
+        // already disabled by CameraDaemon.onAccOn() before this thread runs,
+        // and CONTINUOUS/DRIVE_MODE recording hasn't started yet — there is no
+        // active recording state to lose.
+        if (mode != Mode.NONE && pipeline.isFpsConfigStale()) {
+            logger.info("Camera FPS config changed — restarting pipeline to apply");
+            pipeline.stop();
+        }
+
         switch (mode) {
             case NONE:
                 // Stop pipeline to save resources
@@ -364,6 +595,7 @@ public class RecordingModeManager {
                     pipeline.stop();
                     CameraDaemon.stopAvcKeepAlive();
                 }
+                modeActive = false;
                 break;
                 
             case CONTINUOUS:
@@ -379,8 +611,10 @@ public class RecordingModeManager {
                     }
                     // Start AVC keep-alive (pipeline is now running with ACC ON)
                     CameraDaemon.startAvcKeepAliveIfNeeded();
+                    modeActive = pipeline.isRunning();
                 } catch (Exception e) {
                     logger.error("Failed to start CONTINUOUS mode: " + e.getMessage());
+                    modeActive = false;
                 }
                 break;
                 
@@ -398,11 +632,13 @@ public class RecordingModeManager {
                     }
                     // Start AVC keep-alive (pipeline is now running with ACC ON)
                     CameraDaemon.startAvcKeepAliveIfNeeded();
+                    modeActive = pipeline.isRunning();
                 } catch (Exception e) {
                     logger.error("Failed to start DRIVE_MODE: " + e.getMessage());
+                    modeActive = false;
                 }
                 break;
-                
+
             case PROXIMITY_GUARD:
                 // Start pipeline (without recording) and proximity controller
                 try {
@@ -413,8 +649,10 @@ public class RecordingModeManager {
                     proximityController.start();
                     // Start AVC keep-alive (pipeline is now running with ACC ON)
                     CameraDaemon.startAvcKeepAliveIfNeeded();
+                    modeActive = pipeline.isRunning();
                 } catch (Exception e) {
                     logger.error("Failed to start PROXIMITY_GUARD mode: " + e.getMessage());
+                    modeActive = false;
                 }
                 break;
         }
@@ -422,7 +660,11 @@ public class RecordingModeManager {
     
     private void deactivateMode(Mode mode) {
         logger.info("Deactivating mode: " + mode);
-        
+
+        // Whatever was active is no longer active. Set this up front so the
+        // duplicate-event guard in onAccStateChanged() will allow re-activation.
+        modeActive = false;
+
         // Check if surveillance should be preserved — don't stop pipeline during ACC OFF
         // (surveillance/sentry mode needs the pipeline running)
         boolean keepPipelineRunning = !accIsOn;

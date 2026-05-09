@@ -18,7 +18,11 @@ public final class AvmCameraHelper {
     private static final String BMM_CAMERA_INFO_CLASS = "android.hardware.BmmCameraInfo";
 
     /** Panoramic camera tags to try, in priority order. */
-    private static final String[] PANO_TAGS = {"pano_h", "pano_l", "byd_apa", "apa"};
+    // Order matches DiPlus C3941c.java:122-147: pano_h → pano_l → apa → byd_apa.
+    // On dual-named DiLink builds, `apa` is the canonical name and `byd_apa` is a
+    // legacy alias — preferring the canonical name avoids breaking when BYD retires
+    // the alias.
+    private static final String[] PANO_TAGS = {"pano_h", "pano_l", "apa", "byd_apa"};
 
     private AvmCameraHelper() {}
 
@@ -34,7 +38,7 @@ public final class AvmCameraHelper {
     public static int discoverPanoCameraId() {
         try {
             Class<?> bmmClass = Class.forName(BMM_CAMERA_INFO_CLASS);
-            
+
             // Dump raw system property for debugging
             try {
                 Class<?> sp = Class.forName("android.os.SystemProperties");

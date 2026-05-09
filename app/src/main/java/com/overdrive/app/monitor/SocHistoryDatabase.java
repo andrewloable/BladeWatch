@@ -350,13 +350,41 @@ public class SocHistoryDatabase {
                 logger.debug("Failed to get remaining kWh: " + e.getMessage());
             }
             
-            // SOTA: Update SOH estimate from instantaneous readings
-            // This ensures SOH is calculated even if ABRP is not enabled
+            // SOTA: Update SOH estimate from energy readings.
+            //
+            // Rest-state gating: only treat the reading as authoritative
+            // (eligible to seed currentSoh) when the car is genuinely at
+            // rest — speed=0, gear=P, AC off, not charging, low cell-spread.
+            // Otherwise we still compute rawEnergySoh for the "Energy" tile
+            // on the dashboard but don't let HVAC/accessory load skew the
+            // active SOH downward.
             if (remainingKwh > 0 && soc > 0) {
                 try {
                     com.overdrive.app.abrp.SohEstimator sohEst = getSohEstimator();
                     if (sohEst != null) {
-                        sohEst.updateFromInstantaneous(remainingKwh, soc);
+                        // If capacity was cleared (e.g., after SOH reset), re-detect it
+                        // so the periodic tick can re-seed SOH without a daemon restart.
+                        if (sohEst.getNominalCapacityKwh() <= 0) {
+                            sohEst.autoDetectCarModel(null);
+                        }
+                        // If we now have capacity but no estimate, seed it
+                        if (sohEst.getNominalCapacityKwh() > 0 && !sohEst.hasEstimate()) {
+                            sohEst.seedInitialEstimate();
+                        }
+
+                        boolean atRest = isVehicleAtRest();
+                        double highCellV = Double.NaN;
+                        try {
+                            com.overdrive.app.byd.BydDataCollector col = com.overdrive.app.byd.BydDataCollector.getInstance();
+                            if (col != null && col.isInitialized()) {
+                                com.overdrive.app.byd.BydVehicleData vd = col.getData();
+                                if (vd != null && !Double.isNaN(vd.highCellVoltage)) {
+                                    highCellV = vd.highCellVoltage;
+                                }
+                            }
+                        } catch (Exception ignored) { /* keep highCellV = NaN */ }
+
+                        sohEst.updateFromEnergy(remainingKwh, soc, highCellV, atRest);
                     }
                 } catch (Exception e) {
                     logger.debug("SOH update failed: " + e.getMessage());
@@ -397,7 +425,7 @@ public class SocHistoryDatabase {
                 com.overdrive.app.abrp.SohEstimator sohEst = getSohEstimator();
                 if (sohEst != null && sohEst.hasEstimate()) {
                     sohPercent = sohEst.getCurrentSoh();
-                    logger.debug("SOH from estimator: " + sohPercent + "%");
+                    logger.debug("SOH from estimator: " + String.format("%.1f", sohPercent) + "%");
                 } else {
                     // Fallback: read from persisted file
                     logger.info("SOH estimator " + (sohEst == null ? "is null" : "has no estimate") + ", trying persisted file fallback");
@@ -410,7 +438,7 @@ public class SocHistoryDatabase {
                         String sohStr = props.getProperty("soh_percent");
                         if (sohStr != null) {
                             double soh = Double.parseDouble(sohStr);
-                            if (soh > 0 && soh <= 110) {
+                            if (soh > 0 && soh <= 100) {
                                 sohPercent = soh;
                                 logger.info("SOH from persisted file fallback: " + soh + "%");
                             }
@@ -528,9 +556,16 @@ public class SocHistoryDatabase {
                 double nominalKwh = sohEst != null ? sohEst.getNominalCapacityKwh() : 0;
                 
                 if (nominalKwh > 0 && socDelta > 0) {
-                    // Use nominal capacity for energy estimate: socDelta% × nominalKwh
-                    // Apply display-to-absolute correction (BYD hides ~5% total)
-                    energyAdded = (socDelta * 0.95 / 100.0) * nominalKwh;
+                    // Energy added ≈ socDelta% × nominalKwh.
+                    //
+                    // The previous version applied a 0.95 multiplier "to
+                    // account for BYD hiding ~5% display reserve." That's an
+                    // NMC convention; on BYD Blade LFP packs the displayed
+                    // 0–100% range maps to ~100% of nominal usable energy,
+                    // so the correction is double-counting and biased every
+                    // calibration ~5% optimistic. updateFromCalibration() now
+                    // applies the correct chemistry-aware scale internally.
+                    energyAdded = (socDelta / 100.0) * nominalKwh;
                 } else {
                     energyAdded = socDelta * 0.6; // Rough fallback
                 }
@@ -566,10 +601,23 @@ public class SocHistoryDatabase {
                     (isAcCharge ? "AC" : "DC") + ", " +
                     String.format("%.0f", packTemp) + "°C)");
                 
-                // Feed calibration data to SohEstimator for ongoing SOH tracking
+                // Feed calibration data to SohEstimator for ongoing SOH tracking.
+                // Pass the highest cell voltage observed at session end so
+                // updateFromCalibration() can pick LFP vs NMC chemistry scale.
                 if (sohEst != null && socDelta > 0 && energyAdded > 0) {
+                    double highCellV = Double.NaN;
                     try {
-                        sohEst.updateFromCalibration(energyAdded, socDelta, packTemp, isAcCharge);
+                        com.overdrive.app.byd.BydDataCollector col =
+                            com.overdrive.app.byd.BydDataCollector.getInstance();
+                        if (col != null && col.isInitialized()) {
+                            com.overdrive.app.byd.BydVehicleData vd = col.getData();
+                            if (vd != null && !Double.isNaN(vd.highCellVoltage)) {
+                                highCellV = vd.highCellVoltage;
+                            }
+                        }
+                    } catch (Exception ignored) { /* keep NaN → defaults to LFP */ }
+                    try {
+                        sohEst.updateFromCalibration(energyAdded, socDelta, packTemp, isAcCharge, highCellV);
                     } catch (Exception e) {
                         logger.debug("SOH calibration update failed: " + e.getMessage());
                     }
@@ -862,6 +910,59 @@ public class SocHistoryDatabase {
     public com.overdrive.app.abrp.SohEstimator getSohEstimator() {
         return sohEstimator;
     }
+
+    /**
+     * Conservative rest-state check used to gate the energy-based SOH source.
+     *
+     * "At rest" means: speed=0, gear in P, AC compressor off, not charging,
+     * and (when available) cell voltage spread within 30 mV. Each individual
+     * sample is OK to be missing; we treat missing data as "fail-safe not at
+     * rest" because populating an active SOH from an indeterminate state is
+     * worse than waiting for the next 2-minute tick to give us a clean read.
+     *
+     * Returns false if BydDataCollector isn't initialized or any of the
+     * checks fail. Returns true only when every required signal positively
+     * indicates rest.
+     */
+    private boolean isVehicleAtRest() {
+        try {
+            com.overdrive.app.byd.BydDataCollector col =
+                com.overdrive.app.byd.BydDataCollector.getInstance();
+            if (col == null || !col.isInitialized()) return false;
+
+            com.overdrive.app.byd.BydVehicleData vd = col.getData();
+            if (vd == null) return false;
+
+            // Speed must be reported and effectively zero.
+            if (Double.isNaN(vd.speedKmh) || vd.speedKmh > 0.5) return false;
+
+            // Gear must be Park (1). UNAVAILABLE counts as "not confirmed."
+            if (vd.gearMode != 1) return false;
+
+            // Charging would inflate remainingKwh as the pack absorbs current.
+            // chargingState convention: 0/1=idle/disconnected, 2+=charging.
+            if (vd.chargingState >= 2) return false;
+
+            // AC compressor on → measurable accessory load → reading drifts low.
+            // acStartState: 1=on, 0=off, UNAVAILABLE=unknown. Treat unknown as off
+            // (the BMS already accounts for the always-on 12V DC-DC drain).
+            if (vd.acStartState == 1) return false;
+
+            // Cell spread > 30 mV usually means the BMS is mid-balancing and
+            // SOC isn't trustworthy. Skip the check if we don't have both
+            // values — most BYD firmwares only expose min/max sample cells,
+            // not a true pack-wide spread.
+            if (!Double.isNaN(vd.highCellVoltage) && !Double.isNaN(vd.lowCellVoltage)) {
+                double spread = vd.highCellVoltage - vd.lowCellVoltage;
+                if (spread > 0.030) return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            logger.debug("isVehicleAtRest: probe failed (" + e.getMessage() + ")");
+            return false;
+        }
+    }
     
     // ==================== BATTERY HEALTH QUERIES ====================
     
@@ -1009,7 +1110,7 @@ public class SocHistoryDatabase {
                         String sohStr = props.getProperty("soh_percent");
                         if (sohStr != null) {
                             double soh = Double.parseDouble(sohStr);
-                            if (soh > 0 && soh <= 110) {
+                            if (soh > 0 && soh <= 100) {
                                 current.put("soh", Math.round(soh * 10) / 10.0);
                                 logger.info("SOH from persisted file fallback (health report): " + soh + "%");
                             }
@@ -1085,7 +1186,29 @@ public class SocHistoryDatabase {
     }
     
     // ==================== MAINTENANCE ====================
-    
+
+    /**
+     * Wipes every row from soc_history and charging_sessions. Used by the
+     * user-initiated "Reset Data" feature to clear SOC graphs and 12V history.
+     * Returns total rows deleted, or -1 on failure. Tables remain so inserts
+     * continue to work.
+     */
+    public long resetAll() {
+        if (!isInitialized || connection == null) return -1;
+        long total = 0;
+        try (Statement stmt = connection.createStatement()) {
+            int n1 = stmt.executeUpdate("DELETE FROM " + TABLE_SOC);
+            int n2 = stmt.executeUpdate("DELETE FROM " + TABLE_CHARGING);
+            total = n1 + n2;
+            logger.info("resetAll: cleared " + n1 + " from " + TABLE_SOC
+                + " and " + n2 + " from " + TABLE_CHARGING);
+            return total;
+        } catch (Exception e) {
+            logger.error("resetAll failed", e);
+            return -1;
+        }
+    }
+
     private void cleanupOldData() {
         if (!isInitialized || connection == null) return;
         

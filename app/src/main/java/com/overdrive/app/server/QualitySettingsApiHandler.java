@@ -678,51 +678,26 @@ public class QualitySettingsApiHandler {
     }
     
     /**
-     * Persists current settings to unified config file.
+     * Persists current settings to unified config file via UnifiedConfigManager.
+     *
+     * Routing through UCM (instead of doing direct file I/O) acquires the
+     * UCM lock, gets the atomic-rename write semantics, and prevents this
+     * write from racing with concurrent updateSection calls (e.g. a camera
+     * probe persisting its findings at the same time the user clicks Save).
      */
     public static void persistSettings() {
         try {
-            File unifiedFile = new File(UNIFIED_CONFIG_FILE);
-            JSONObject unified;
-            
-            if (unifiedFile.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(unifiedFile));
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
-                }
-                reader.close();
-                unified = new JSONObject(sb.toString());
-            } else {
-                unified = new JSONObject();
-                unified.put("version", 1);
-            }
-            
-            // Update recording section
-            JSONObject recording = unified.optJSONObject("recording");
-            if (recording == null) recording = new JSONObject();
+            org.json.JSONObject recording = new org.json.JSONObject();
             recording.put("bitrate", recordingBitrate);
             recording.put("codec", recordingCodec);
             recording.put("quality", recordingQuality);
-            unified.put("recording", recording);
-            
-            // Update streaming section
-            JSONObject streaming = unified.optJSONObject("streaming");
-            if (streaming == null) streaming = new JSONObject();
+            com.overdrive.app.config.UnifiedConfigManager.updateSection("recording", recording);
+
+            org.json.JSONObject streaming = new org.json.JSONObject();
             streaming.put("quality", StreamingApiHandler.getStreamingQuality());
-            unified.put("streaming", streaming);
-            
-            unified.put("lastModified", System.currentTimeMillis());
-            
-            FileWriter writer = new FileWriter(unifiedFile);
-            writer.write(unified.toString(2));
-            writer.close();
-            
-            unifiedFile.setReadable(true, false);
-            unifiedFile.setWritable(true, false);
-            
-            CameraDaemon.log("Settings persisted to unified config: " + UNIFIED_CONFIG_FILE);
+            com.overdrive.app.config.UnifiedConfigManager.updateSection("streaming", streaming);
+
+            CameraDaemon.log("Settings persisted via UnifiedConfigManager");
         } catch (Exception e) {
             CameraDaemon.log("Could not persist settings: " + e.getMessage());
         }

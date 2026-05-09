@@ -548,9 +548,26 @@ public class TripApiHandler {
                 sm.setTripsStorageType(type);
             }
 
+            boolean limitChanged = false;
             if (bodyJson.has("storageLimitMb")) {
                 long limitMb = bodyJson.getLong("storageLimitMb");
                 sm.setTripsLimitMb(limitMb);
+                limitChanged = true;
+            }
+
+            // Mirror the recordings/surveillance handler: enforce the new limit
+            // immediately so the user sees usage drop within seconds, instead of
+            // waiting for the 30s periodic sweep. Async to keep the HTTP response
+            // fast.
+            if (limitChanged) {
+                final StorageManager smFinal = sm;
+                new Thread(() -> {
+                    try {
+                        smFinal.ensureTripsSpace(0);
+                    } catch (Exception ex) {
+                        logger.warn("Async trips cleanup after limit change failed: " + ex.getMessage());
+                    }
+                }, "TripsLimitCleanup").start();
             }
 
             JSONObject response = new JSONObject();

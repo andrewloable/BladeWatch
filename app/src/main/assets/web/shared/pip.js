@@ -293,15 +293,21 @@ BYD.pip = {
         canvas.style.display = 'block';
         document.getElementById('pipPlaceholder').style.display = 'none';
         
-        // Build WebSocket URL
+        // Build WebSocket URL. Append JWT as ?token= so tunnels work — the
+        // browser WebSocket API can't set headers, and SameSite policies
+        // through reverse proxies routinely strip the byd_session cookie.
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const url = `${protocol}//${window.location.host}/ws`;
-        
+        let url = `${protocol}//${window.location.host}/ws`;
+        if (typeof BYDAuth !== 'undefined') {
+            const wsToken = BYDAuth.getToken();
+            if (wsToken) url += `?token=${encodeURIComponent(wsToken)}`;
+        }
+
         // Create and start SotaPlayer
         if (this.sotaPlayer) {
             this.sotaPlayer.stop();
         }
-        
+
         this.sotaPlayer = new SotaPlayer(canvas, url);
         this.sotaPlayer.onConnected = () => {
             document.getElementById('pipDot').classList.add('live');
@@ -447,10 +453,14 @@ BYD.pip = {
      */
     connectLegacyWebSocket() {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
-        
+
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws`;
-        
+        let wsUrl = `${protocol}//${window.location.host}/ws`;
+        if (typeof BYDAuth !== 'undefined') {
+            const wsToken = BYDAuth.getToken();
+            if (wsToken) wsUrl += `?token=${encodeURIComponent(wsToken)}`;
+        }
+
         try {
             this.ws = new WebSocket(wsUrl);
             this.ws.binaryType = 'arraybuffer';

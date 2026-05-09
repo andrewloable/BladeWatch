@@ -1002,12 +1002,22 @@
                                 </label>
                             </div>
                         </div>
+                        <!-- Recommend banner (shown only when API says recommendAutoCleanup) -->
+                        <div class="info-box" id="cdrRecommendBanner" style="display:none;background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.3);">
+                            <div class="info-row" style="color:#ffc107;">
+                                <span class="label">⚠️ Recommended</span>
+                                <span class="value">Overdrive uses SD — enable cleanup to keep space free</span>
+                            </div>
+                        </div>
                         <!-- CDR Status -->
                         <div class="info-box" id="cdrInfoBox">
                             <div class="info-row"><span class="label">Dashcam Path</span><span class="value" id="cdrPath">--</span></div>
                             <div class="info-row"><span class="label">Dashcam Usage</span><span class="value" id="cdrUsage">--</span></div>
                             <div class="info-row"><span class="label">Files</span><span class="value" id="cdrFileCount">--</span></div>
+                            <div class="info-row"><span class="label">Protected</span><span class="value" id="cdrProtected">--</span></div>
                             <div class="info-row"><span class="label">Deletable</span><span class="value" id="cdrDeletable">--</span></div>
+                            <div class="info-row"><span class="label">Background monitor</span><span class="value" id="cdrMonitoring">--</span></div>
+                            <div class="info-row"><span class="label">Last cleanup</span><span class="value" id="cdrLastCleanup">--</span></div>
                         </div>
                         <div class="setting-row" style="margin-top:12px;">
                             <div class="setting-info">
@@ -1017,7 +1027,7 @@
                             <div class="setting-control">
                                 <div class="slider-control">
                                     <span class="slider-value" id="cdrReservedValue">2 GB</span>
-                                    <input type="range" class="slider" id="cdrReservedSlider" min="500" max="10000" step="500" value="2000" oninput="SurvSettings.updateCdrReserved(this.value)">
+                                    <input type="range" class="slider" id="cdrReservedSlider" min="100" max="20000" step="100" value="2000" oninput="SurvSettings.updateCdrReserved(this.value)">
                                 </div>
                             </div>
                         </div>

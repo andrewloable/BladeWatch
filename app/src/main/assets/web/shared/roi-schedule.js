@@ -161,18 +161,17 @@ var RoiEditor = (function() {
         var en = roiEnabledFlags[currentQuadrant];
         var qk = ['Q0', 'Q1', 'Q2', 'Q3'];
         var payload = {};
-        if (en) {
-            payload['roiBlocks_' + qk[currentQuadrant]] = blocks[currentQuadrant].slice();
-            payload['roiEnabled_' + qk[currentQuadrant]] = true;
-        } else {
-            payload['roiEnabled_' + qk[currentQuadrant]] = false;
-        }
+        // Always send blocks (even when disabling) so they persist for re-enable
+        payload['roiBlocks_' + qk[currentQuadrant]] = blocks[currentQuadrant].slice();
+        payload['roiEnabled_' + qk[currentQuadrant]] = en;
         fetch('/api/surveillance/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
             .then(function(r) { return r.json(); }).then(function() {
                 savedBlocks[currentQuadrant] = blocks[currentQuadrant].slice();
                 savedEnabled[currentQuadrant] = roiEnabledFlags[currentQuadrant];
                 updateUnsaved();
                 msg(qNames[currentQuadrant] + (en ? ' zone saved' : ' ROI disabled'), 'success');
+                // Re-read config to confirm persistence (catches backend issues early)
+                loadConfig();
             }).catch(function() { msg('Failed to save', 'error'); });
     }
 
@@ -191,10 +190,11 @@ var RoiEditor = (function() {
 
     function loadConfig() {
         fetch('/api/surveillance/config').then(function(r) { return r.json(); }).then(function(d) {
+            var cfg = (d && d.config) ? d.config : d;  // Unwrap {config: ...} envelope
             var qk = ['Q0', 'Q1', 'Q2', 'Q3'];
             for (var q = 0; q < 4; q++) {
-                if (d['roiEnabled_' + qk[q]] !== undefined) roiEnabledFlags[q] = !!d['roiEnabled_' + qk[q]];
-                var ba = d['roiBlocks_' + qk[q]];
+                if (cfg['roiEnabled_' + qk[q]] !== undefined) roiEnabledFlags[q] = !!cfg['roiEnabled_' + qk[q]];
+                var ba = cfg['roiBlocks_' + qk[q]];
                 if (ba && ba.length === TOTAL) {
                     blocks[q] = []; for (var i = 0; i < TOTAL; i++) blocks[q][i] = ba[i] ? 1 : 0;
                 } else { initBlocks(q); }

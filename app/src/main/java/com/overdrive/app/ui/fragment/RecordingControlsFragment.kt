@@ -403,7 +403,7 @@ class RecordingControlsFragment : Fragment() {
                     val snappedReserved = ((reservedMb + 250) / 500 * 500).coerceIn(500, 5000)
                     sliderCdrReserved?.value = snappedReserved.toFloat()
                     tvCdrReservedValue?.text = if (snappedReserved >= 1000) "${snappedReserved / 1000} GB" else "$snappedReserved MB"
-                    
+
                     sliderCdrProtected?.value = protectedHours.toFloat().coerceIn(1f, 72f)
                     tvCdrProtectedValue?.text = "${protectedHours}h"
                     

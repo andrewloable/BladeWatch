@@ -487,6 +487,18 @@ public final class BydCloudClient {
     private boolean isRealtimeReady(JSONObject vi) {
         if (vi == null) return false;
         if (vi.optInt("onlineState", -1) == 2) return false;
+        // Lock fields are the highest-value signal for our use case — only
+        // consider the response "ready" once at least one lock field is
+        // populated.  Without this, an early response with telemetry but
+        // no lock state would short-circuit the poll loop and we'd miss
+        // the lock data that arrives ~1.5 s later.
+        int lfLock = vi.optInt("leftFrontDoorLock", -1);
+        int rfLock = vi.optInt("rightFrontDoorLock", -1);
+        int lrLock = vi.optInt("leftRearDoorLock", -1);
+        int rrLock = vi.optInt("rightRearDoorLock", -1);
+        boolean hasLock = lfLock > 0 || rfLock > 0 || lrLock > 0 || rrLock > 0;
+        if (!hasLock) return false;
+        // Plus a sanity check that telemetry has also landed.
         if (vi.optDouble("leftFrontTirepressure", 0) > 0) return true;
         if (vi.optDouble("rightFrontTirepressure", 0) > 0) return true;
         if (vi.optLong("time", 0) > 0) return true;

@@ -238,7 +238,12 @@ public class HttpServer {
             String rangeHeader = null;
             String cookieHeader = null;
             String authHeader = null;
-            
+            // Reverse-proxy fingerprints — used by AuthMiddleware to disable
+            // the loopback safety net when a tunnel relayed the request.
+            // Cloudflared injects Cf-*, zrok / ngrok injects X-Forwarded-*.
+            boolean hasTunnelHeaders = false;
+            String forwardedFor = null;
+
             while ((line = reader.readLine()) != null && !line.isEmpty()) {
                 String lower = line.toLowerCase();
                 if (lower.startsWith("content-length:")) {
@@ -253,6 +258,17 @@ public class HttpServer {
                     cookieHeader = line.substring(7).trim();
                 } else if (lower.startsWith("authorization:")) {
                     authHeader = line.substring(14).trim();
+                } else if (lower.startsWith("x-forwarded-for:")) {
+                    hasTunnelHeaders = true;
+                    forwardedFor = line.substring(16).trim();
+                } else if (lower.startsWith("x-forwarded-proto:")
+                        || lower.startsWith("x-forwarded-host:")
+                        || lower.startsWith("x-real-ip:")
+                        || lower.startsWith("forwarded:")
+                        || lower.startsWith("cf-connecting-ip:")
+                        || lower.startsWith("cf-ray:")
+                        || lower.startsWith("cf-visitor:")) {
+                    hasTunnelHeaders = true;
                 }
             }
             
@@ -287,20 +303,47 @@ public class HttpServer {
                 client.setSoTimeout(60000);
             }
             
-            // WebSocket upgrade on /ws path (check auth first for non-public paths)
-            if (path.equals("/ws") && websocketKey != null && "websocket".equalsIgnoreCase(upgradeHeader)) {
-                // Check auth for WebSocket
-                if (!AuthMiddleware.checkAuth(path, cookieHeader, authHeader, out)) {
+            // WebSocket upgrade on /ws path (check auth first for non-public paths).
+            // Match /ws and /ws?... (query params allow JWT-as-?token= since browser
+            // WebSocket clients can't set arbitrary headers — cookies may be dropped
+            // through tunnels' SameSite policies).
+            String wsPathOnly = path.contains("?") ? path.substring(0, path.indexOf("?")) : path;
+            if (wsPathOnly.equals("/ws") && websocketKey != null && "websocket".equalsIgnoreCase(upgradeHeader)) {
+                // Promote ?token= query param into a synthetic Authorization header
+                // so AuthMiddleware's existing Bearer-token path handles it.
+                String wsAuthHeader = authHeader;
+                if (wsAuthHeader == null && path.contains("?")) {
+                    String query = path.substring(path.indexOf("?") + 1);
+                    for (String param : query.split("&")) {
+                        int eq = param.indexOf('=');
+                        if (eq > 0 && "token".equals(param.substring(0, eq))) {
+                            wsAuthHeader = "Bearer " + java.net.URLDecoder.decode(
+                                param.substring(eq + 1), "UTF-8");
+                            break;
+                        }
+                    }
+                }
+                if (!AuthMiddleware.checkAuth(wsPathOnly, cookieHeader, wsAuthHeader, out,
+                        client.getRemoteSocketAddress(), hasTunnelHeaders)) {
                     client.close();
                     return;
                 }
                 handleWebSocketUpgrade(client, websocketKey);
                 return;
             }
-            
-            // Route auth endpoints first (before auth check - they're public)
+
+            // Route auth endpoints (all public). The /auth/token endpoint is
+            // rate-limited by client identity (real IP via X-Forwarded-For if
+            // present, else socket) to slow brute-force attempts via tunnels.
             if (path.startsWith("/auth/")) {
-                AuthApiHandler.handle(method, path, body, out);
+                String identity;
+                if (forwardedFor != null && !forwardedFor.isEmpty()) {
+                    int comma = forwardedFor.indexOf(',');
+                    identity = (comma > 0 ? forwardedFor.substring(0, comma) : forwardedFor).trim();
+                } else {
+                    identity = String.valueOf(client.getRemoteSocketAddress());
+                }
+                AuthApiHandler.handle(method, path, body, out, identity);
                 client.close();
                 return;
             }
@@ -326,7 +369,8 @@ public class HttpServer {
             }
             
             // Check authentication for all other paths
-            if (!AuthMiddleware.checkAuth(path, cookieHeader, authHeader, out)) {
+            if (!AuthMiddleware.checkAuth(path, cookieHeader, authHeader, out,
+                    client.getRemoteSocketAddress(), hasTunnelHeaders)) {
                 client.close();
                 return;
             }
@@ -374,7 +418,13 @@ public class HttpServer {
                     HttpResponse.sendError(out, 404, "vehicle-control.html not found");
                 }
             } else if (path.startsWith("/shared/") || path.startsWith("/local/")) {
+                // Strip ?query and #fragment so cache-busting versions like
+                // ?v=12 resolve to the same file on disk.
                 String filePath = path.substring(1);
+                int q = filePath.indexOf('?');
+                if (q >= 0) filePath = filePath.substring(0, q);
+                int h = filePath.indexOf('#');
+                if (h >= 0) filePath = filePath.substring(0, h);
                 if (!serveStaticFile(out, filePath)) {
                     HttpResponse.sendError(out, 404, "Not Found: " + path);
                 }
@@ -444,7 +494,7 @@ public class HttpServer {
         // Recordings API (with Range header support for video seeking) + thumbnails + event timelines
         if (path.startsWith("/api/recordings") || path.startsWith("/video/") || 
             path.startsWith("/thumb/") || path.startsWith("/api/events/")) {
-            return RecordingsApiHandler.handleWithRange(method, path, rangeHeader, out);
+            return RecordingsApiHandler.handleWithRange(method, path, body, rangeHeader, out);
         }
         
         // Surveillance API
@@ -598,6 +648,9 @@ public class HttpServer {
                 charging.put("chargingPowerKW", chargingState.chargingPowerKW);
                 charging.put("isDischarging", chargingState.isDischarging);
                 charging.put("isError", chargingState.isError);
+                // Surface the "estimated from SOC rate" flag so the UI can show
+                // a "~" prefix on the kW value (core.js already reads this).
+                charging.put("isEstimated", chargingState.isEstimated);
                 status.put("charging", charging);
             }
             
@@ -620,6 +673,12 @@ public class HttpServer {
                 range.put("isLow", rangeData.isLow);
                 range.put("isCritical", rangeData.isCritical);
                 range.put("status", rangeData.getStatus());
+                // Only emit fuelPercent for PHEVs — BEVs leave fuelPercent NaN
+                // upstream (BydDataCollector gates on nominal capacity < 30 kWh),
+                // so the web UI's `if (fuelPct > 0)` guard hides the fuel card.
+                if (rangeData.hasFuelPercent()) {
+                    range.put("fuelPercent", rangeData.fuelPercent);
+                }
                 status.put("range", range);
             }
         } catch (Exception e) {

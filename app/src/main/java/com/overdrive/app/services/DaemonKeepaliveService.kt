@@ -13,6 +13,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import com.overdrive.app.R
+import com.overdrive.app.receiver.ProcessRevivalReceiver
 import com.overdrive.app.receiver.ScreenOffReceiver
 import com.overdrive.app.ui.MainActivity
 import com.overdrive.app.ui.daemon.DaemonStartupManager
@@ -58,6 +59,14 @@ class DaemonKeepaliveService : Service() {
         startForegroundWithNotification()
         acquireWakeLock()
         registerScreenOffReceiver()
+
+        // Seed out-of-process revival watchdog. If this service was started
+        // by the watchdog itself, this just re-arms the next alarm.
+        try {
+            ProcessRevivalReceiver.schedule(applicationContext)
+        } catch (e: Exception) {
+            Log.w(TAG, "ProcessRevivalReceiver.schedule failed: ${e.message}")
+        }
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

@@ -111,6 +111,12 @@ public class RecordingsApiHandler {
             return true;
         }
         
+        // Batch delete recordings
+        if (path.equals("/api/recordings/batch-delete") && method.equals("POST")) {
+            batchDeleteRecordings(out, body);
+            return true;
+        }
+        
         // Delete recording
         if (path.startsWith("/api/recordings/") && method.equals("DELETE")) {
             String filename = path.substring(16);
@@ -140,13 +146,13 @@ public class RecordingsApiHandler {
     /**
      * Handle with Range header support for video seeking.
      */
-    public static boolean handleWithRange(String method, String path, String rangeHeader, OutputStream out) throws Exception {
+    public static boolean handleWithRange(String method, String path, String body, String rangeHeader, OutputStream out) throws Exception {
         if (path.startsWith("/video/")) {
             String filename = path.substring(7);
             streamVideo(out, filename, rangeHeader);
             return true;
         }
-        return handle(method, path, null, out);
+        return handle(method, path, body, out);
     }
     
     // Background thumbnail generator
@@ -239,9 +245,9 @@ public class RecordingsApiHandler {
                 return null;
             }
             
-            // Scale down to thumbnail size (160x90 for 16:9 aspect)
-            int targetWidth = 160;
-            int targetHeight = 90;
+            // Scale down to thumbnail size (320x180 for 16:9 aspect)
+            int targetWidth = 320;
+            int targetHeight = 180;
             Bitmap scaled = Bitmap.createScaledBitmap(frame, targetWidth, targetHeight, true);
             
             // Compress to JPEG
@@ -836,6 +842,100 @@ public class RecordingsApiHandler {
         response.put("success", deleted);
         if (!deleted) {
             response.put("error", "Failed to delete file");
+        }
+        
+        HttpResponse.sendJson(out, response.toString());
+    }
+    
+    /**
+     * Batch delete multiple recordings at once.
+     * Accepts JSON body: { "filenames": ["file1.mp4", "file2.mp4", ...] }
+     * Returns: { "success": true, "deleted": N, "failed": N, "errors": [...] }
+     */
+    private static void batchDeleteRecordings(OutputStream out, String body) throws Exception {
+        JSONObject response = new JSONObject();
+        
+        if (body == null || body.isEmpty()) {
+            response.put("success", false);
+            response.put("error", "Request body is required");
+            HttpResponse.sendJson(out, response.toString());
+            return;
+        }
+        
+        try {
+            JSONObject request = new JSONObject(body);
+            JSONArray filenames = request.optJSONArray("filenames");
+            
+            if (filenames == null || filenames.length() == 0) {
+                response.put("success", false);
+                response.put("error", "No filenames provided");
+                HttpResponse.sendJson(out, response.toString());
+                return;
+            }
+            
+            // Limit batch size to prevent abuse
+            int maxBatch = 100;
+            if (filenames.length() > maxBatch) {
+                response.put("success", false);
+                response.put("error", "Maximum batch size is " + maxBatch);
+                HttpResponse.sendJson(out, response.toString());
+                return;
+            }
+            
+            int deleted = 0;
+            int failed = 0;
+            JSONArray errors = new JSONArray();
+            
+            for (int i = 0; i < filenames.length(); i++) {
+                String filename = filenames.getString(i);
+                
+                // Security: prevent path traversal
+                if (filename.contains("..") || filename.contains("/")) {
+                    failed++;
+                    errors.put(filename + ": invalid filename");
+                    continue;
+                }
+                
+                File file = findVideoFile(filename);
+                if (file == null) {
+                    failed++;
+                    errors.put(filename + ": not found");
+                    continue;
+                }
+                
+                boolean success = file.delete();
+                if (success) {
+                    deleted++;
+                    
+                    // Also delete JSON sidecar if it exists
+                    String jsonName = filename.replace(".mp4", ".json");
+                    File jsonFile = new File(file.getParentFile(), jsonName);
+                    if (jsonFile.exists()) {
+                        jsonFile.delete();
+                    }
+                    
+                    // Delete cached thumbnail
+                    String thumbName = filename.replace(".mp4", ".jpg");
+                    File thumbFile = new File(getThumbnailCacheDir(), thumbName);
+                    if (thumbFile.exists()) {
+                        thumbFile.delete();
+                    }
+                } else {
+                    failed++;
+                    errors.put(filename + ": delete failed");
+                }
+            }
+            
+            response.put("success", true);
+            response.put("deleted", deleted);
+            response.put("failed", failed);
+            if (errors.length() > 0) {
+                response.put("errors", errors);
+            }
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", "Invalid request: " + e.getMessage());
         }
         
         HttpResponse.sendJson(out, response.toString());

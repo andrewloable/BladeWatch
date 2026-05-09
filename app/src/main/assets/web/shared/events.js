@@ -16,6 +16,10 @@ BYD.events = {
     pageSize: 12,
     totalPages: 1,
     
+    // Multi-select state
+    selectMode: false,
+    selectedFiles: new Set(),
+    
     async init() {
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam = urlParams.get('filter');
@@ -308,9 +312,20 @@ BYD.events = {
             const thumbId = 'thumb-' + rec.filename.replace(/[^a-zA-Z0-9]/g, '_');
             const badge = rec.type === 'sentry' ? 'Sentry' : rec.type === 'proximity' ? 'Proximity' : 'Normal';
             const fname = rec.filename.length > 28 ? rec.filename.substring(0, 25) + '...' : rec.filename;
+            const isSelected = this.selectedFiles.has(rec.filename);
             
-            // Start with placeholder, load thumbnail async
-            return '<div class="recording-card" onclick="BYD.events.playVideo(\'' + rec.filename + '\')">' +
+            // Checkbox for select mode
+            const checkbox = this.selectMode 
+                ? '<label class="select-checkbox-wrap" onclick="event.stopPropagation()"><input type="checkbox" class="select-checkbox" ' + (isSelected ? 'checked' : '') + ' onchange="BYD.events.toggleFileSelection(\'' + rec.filename + '\', event)"></label>'
+                : '';
+            
+            // Card click handler depends on mode
+            const cardClick = this.selectMode 
+                ? 'BYD.events.toggleFileSelection(\'' + rec.filename + '\')'
+                : 'BYD.events.playVideo(\'' + rec.filename + '\')';
+            
+            return '<div class="recording-card' + (isSelected ? ' selected' : '') + '" data-filename="' + rec.filename + '" onclick="' + cardClick + '">' +
+                checkbox +
                 '<div class="recording-thumbnail" id="' + thumbId + '" data-thumb="' + (rec.thumbnailUrl || '') + '">' +
                 '<div class="thumb-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg></div>' +
                 '<div class="play-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>' +
@@ -320,10 +335,12 @@ BYD.events = {
                 '<div class="recording-name"><span class="recording-badge ' + rec.type + '">' + badge + '</span>' + fname + '</div>' +
                 '<div class="recording-meta"><span>' + rec.dateFormatted + '</span><span>' + rec.timeFormatted + '</span><span>' + rec.sizeFormatted + '</span></div>' +
                 '</div>' +
+                (this.selectMode ? '' : 
                 '<div class="recording-actions">' +
                 '<button class="action-btn" onclick="event.stopPropagation(); BYD.events.downloadVideo(\'' + rec.filename + '\')" title="Download"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>' +
                 '<button class="action-btn delete" onclick="event.stopPropagation(); BYD.events.deleteRecording(\'' + rec.filename + '\')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
-                '</div></div>';
+                '</div>') +
+                '</div>';
         }).join('');
         
         // Load thumbnails async after render
@@ -342,14 +359,22 @@ BYD.events = {
     
     // Load single thumbnail with retry on 202
     loadSingleThumbnail(container, url, retryCount) {
-        if (retryCount > 5) return; // Max 5 retries
+        if (retryCount > 8) {
+            // After max retries, show "no preview" state
+            const placeholder = container.querySelector('.thumb-placeholder');
+            if (placeholder) {
+                placeholder.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg><span>No preview</span>';
+            }
+            return;
+        }
         
         fetch(url).then(res => {
             if (res.status === 200) {
                 return res.blob();
             } else if (res.status === 202) {
-                // Generating, retry after delay
-                setTimeout(() => this.loadSingleThumbnail(container, url, retryCount + 1), 1500);
+                // Generating, retry with exponential backoff
+                const delay = Math.min(1000 * Math.pow(1.5, retryCount), 5000);
+                setTimeout(() => this.loadSingleThumbnail(container, url, retryCount + 1), delay);
                 return null;
             }
             return null;
@@ -362,11 +387,20 @@ BYD.events = {
                     img.src = imgUrl;
                     img.alt = 'Thumbnail';
                     img.onload = () => placeholder.remove();
-                    img.onerror = () => URL.revokeObjectURL(imgUrl);
+                    img.onerror = () => {
+                        URL.revokeObjectURL(imgUrl);
+                        placeholder.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg><span>No preview</span>';
+                    };
                     container.insertBefore(img, container.firstChild);
                 }
             }
-        }).catch(() => {});
+        }).catch(() => {
+            // Network error - show fallback
+            const placeholder = container.querySelector('.thumb-placeholder');
+            if (placeholder) {
+                placeholder.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg><span>No preview</span>';
+            }
+        });
     },
     
     onThumbError(el) {
@@ -440,6 +474,106 @@ BYD.events = {
         } catch (e) {
             console.error('Delete failed:', e);
             alert('Failed to delete recording');
+        }
+    },
+    
+    // ========================================================================
+    // Multi-Select & Batch Delete
+    // ========================================================================
+    
+    toggleSelectMode() {
+        this.selectMode = !this.selectMode;
+        this.selectedFiles.clear();
+        this.updateSelectUI();
+        this.renderRecordings();
+    },
+    
+    exitSelectMode() {
+        this.selectMode = false;
+        this.selectedFiles.clear();
+        this.updateSelectUI();
+        this.renderRecordings();
+    },
+    
+    toggleFileSelection(filename, event) {
+        if (event) event.stopPropagation();
+        
+        if (this.selectedFiles.has(filename)) {
+            this.selectedFiles.delete(filename);
+        } else {
+            this.selectedFiles.add(filename);
+        }
+        this.updateSelectUI();
+        this.updateCardSelection(filename);
+    },
+    
+    selectAll() {
+        this.recordings.forEach(rec => this.selectedFiles.add(rec.filename));
+        this.updateSelectUI();
+        this.renderRecordings();
+    },
+    
+    deselectAll() {
+        this.selectedFiles.clear();
+        this.updateSelectUI();
+        this.renderRecordings();
+    },
+    
+    updateCardSelection(filename) {
+        const card = document.querySelector('[data-filename="' + filename + '"]');
+        if (card) {
+            card.classList.toggle('selected', this.selectedFiles.has(filename));
+            const checkbox = card.querySelector('.select-checkbox');
+            if (checkbox) checkbox.checked = this.selectedFiles.has(filename);
+        }
+    },
+    
+    updateSelectUI() {
+        const toolbar = document.getElementById('selectToolbar');
+        const selectBtn = document.getElementById('selectModeBtn');
+        const count = document.getElementById('selectedCount');
+        
+        if (this.selectMode) {
+            if (toolbar) toolbar.style.display = 'flex';
+            if (selectBtn) selectBtn.classList.add('active');
+            if (count) count.textContent = this.selectedFiles.size + ' selected';
+        } else {
+            if (toolbar) toolbar.style.display = 'none';
+            if (selectBtn) selectBtn.classList.remove('active');
+        }
+    },
+    
+    async batchDelete() {
+        const count = this.selectedFiles.size;
+        if (count === 0) return;
+        
+        if (!confirm('Delete ' + count + ' recording' + (count > 1 ? 's' : '') + '? This cannot be undone.')) return;
+        
+        const filenames = Array.from(this.selectedFiles);
+        
+        try {
+            const res = await fetch('/api/recordings/batch-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filenames: filenames })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                const msg = data.deleted + ' deleted' + (data.failed > 0 ? ', ' + data.failed + ' failed' : '');
+                if (BYD.core && BYD.core.showToast) {
+                    BYD.core.showToast(msg, data.failed > 0 ? 'warning' : 'success');
+                }
+                this.exitSelectMode();
+                await this.loadDatesWithRecordings();
+                await this.loadStorageStats();
+                await this.loadRecordings();
+            } else {
+                alert('Batch delete failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            console.error('Batch delete failed:', e);
+            alert('Failed to delete recordings');
         }
     },
     

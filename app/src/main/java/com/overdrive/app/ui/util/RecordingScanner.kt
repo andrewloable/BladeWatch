@@ -116,7 +116,7 @@ object RecordingScanner {
     }
     
     /**
-     * Delete a recording file and its JSON sidecar (event timeline) if present.
+     * Delete a recording file, its JSON sidecar (event timeline), and cached thumbnail.
      */
     fun deleteRecording(recording: RecordingFile): Boolean {
         val deleted = recording.file.delete()
@@ -126,6 +126,18 @@ object RecordingScanner {
             if (jsonFile.exists()) {
                 jsonFile.delete()
             }
+            
+            // Delete cached thumbnail from the thumbs directory
+            val sm = com.overdrive.app.storage.StorageManager.getInstance()
+            val recordingsDir = sm.recordingsDir
+            val baseDir = recordingsDir.parentFile
+            if (baseDir != null) {
+                val thumbFile = File(File(baseDir, "thumbs"), recording.file.name.replace(".mp4", ".jpg"))
+                if (thumbFile.exists()) {
+                    thumbFile.delete()
+                }
+            }
+            
             invalidateCache()
         }
         return deleted

@@ -908,6 +908,33 @@ public class TripDatabase {
     }
 
     /**
+     * Wipes every row from every trips table. Used by the user-initiated
+     * "Reset Data" feature. Returns the total number of rows deleted across
+     * all tables, or -1 on failure. Schema is left intact — DDL stays so
+     * inserts continue to work without a reconnect.
+     */
+    public long resetAll() {
+        if (!ensureConnection()) return -1;
+        long total = 0;
+        // Order matters only weakly here (no FK constraints in the schema),
+        // but child-like tables before parent feels right and matches the
+        // create-order idiom used elsewhere in this file.
+        String[] tables = {"consumption_buckets", "monthly_rollups",
+                           "weekly_rollups", "routes", "trips"};
+        try (Statement stmt = connection.createStatement()) {
+            for (String t : tables) {
+                int n = stmt.executeUpdate("DELETE FROM " + t);
+                total += n;
+                logger.info("resetAll: cleared " + n + " rows from " + t);
+            }
+            return total;
+        } catch (Exception e) {
+            logger.error("resetAll failed", e);
+            return -1;
+        }
+    }
+
+    /**
      * Clear all consumption buckets. Called when nominal capacity changes
      * significantly (e.g., wrong capacity was detected previously) to prevent
      * poisoned consumption rates from corrupting range estimates.

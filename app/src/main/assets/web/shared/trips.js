@@ -355,9 +355,31 @@ const TRIPS = {
             this.setEl('tripCdrPath', data.cdrPath || '--');
             this.setEl('tripCdrUsage', data.cdrUsageFormatted || '--');
             this.setEl('tripCdrFileCount', data.cdrFileCount || '--');
+            this.setEl('tripCdrProtected', data.cdrProtectedFormatted || '--');
             this.setEl('tripCdrDeletable', data.cdrDeletableFormatted || '--');
             this.setEl('tripCdrTotalFreed', data.totalBytesFreedFormatted || '--');
             this.setEl('tripCdrTotalDeleted', data.totalFilesDeleted || '--');
+
+            // Background monitor + last cleanup + recommend banner
+            const monEl = document.getElementById('tripCdrMonitoring');
+            if (monEl) {
+                if (!data.cleanupEnabled) {
+                    monEl.textContent = 'Disabled';
+                    monEl.style.color = '';
+                } else if (data.monitoringActive) {
+                    monEl.textContent = 'Running';
+                    monEl.style.color = '#22c55e';
+                } else {
+                    monEl.textContent = 'Idle';
+                    monEl.style.color = '#94a3b8';
+                }
+            }
+
+            const lastEl = document.getElementById('tripCdrLastCleanup');
+            if (lastEl) lastEl.textContent = this._formatCdrRelativeTime(data.lastCleanupTime || 0);
+
+            const banner = document.getElementById('tripCdrRecommendBanner');
+            if (banner) banner.style.display = data.recommendAutoCleanup ? 'block' : 'none';
 
             // Config
             const cdrEnabled = document.getElementById('tripCdrEnabled');
@@ -1306,7 +1328,7 @@ const TRIPS = {
             const tripEnergy = trip.energyUsedKwh || trip.energy_used_kwh || 0;
             const tripCost = trip.tripCost || trip.trip_cost || 0;
             const avgCost = stats.avgCost || 0;
-            const currency = trip.currency || '₹';
+            const currency = trip.currency || this.currency || '$';
             const tripDur = trip.durationSeconds || trip.duration_seconds || 0;
             const avgDur = stats.avgDurationSeconds || 0;
             const tripDist = trip.distanceKm || trip.distance_km || 0;
@@ -2461,6 +2483,16 @@ const TRIPS = {
     setEl(id, val) {
         const el = document.getElementById(id);
         if (el) el.textContent = val;
+    },
+
+    _formatCdrRelativeTime(ts) {
+        if (!ts || ts <= 0) return 'Never';
+        const diffSec = Math.floor((Date.now() - ts) / 1000);
+        if (diffSec < 0) return 'Just now';
+        if (diffSec < 60) return diffSec + 's ago';
+        if (diffSec < 3600) return Math.floor(diffSec / 60) + ' min ago';
+        if (diffSec < 86400) return Math.floor(diffSec / 3600) + 'h ago';
+        return Math.floor(diffSec / 86400) + 'd ago';
     },
 
     getAvgScore(trip) {

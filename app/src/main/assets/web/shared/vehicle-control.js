@@ -1,6 +1,6 @@
 /**
- * Vehicle Control — Cyberpunk VFX Engine
- * Three.js wireframe car with GSAP energy-based animations
+ * Vehicle Control — VFX Engine
+ * Three.js car with GSAP energy-based animations
  * State sync with BYD vehicle APIs
  *
  * Compatibility: Chrome 58+ (BYD DiLink Android 7.1 WebView)
@@ -18,8 +18,6 @@ var VC = {
 
     // Materials (initialized in initThreeJS())
     baseColor: null,
-    wireframeMaterial: null,
-    edgeLines: [],
     bodyPaintMeshes: [],
 
     // State
@@ -43,10 +41,7 @@ var VC = {
     stateGlows: {},  // persistent glow lights keyed by position name
     _3dViewActive: false,
     _skySphere: null,
-    _videoEl: null,
     _videoTexture: null,
-    _jmuxer: null,
-    _streamWs: null,
 
     // Color presets — realistic car paint colors
     colorPresets: [
@@ -69,6 +64,8 @@ var VC = {
         this.bindControls();
         this.startStateSync();
         this.checkCloudStatus();
+        this.requestCloudLockRefresh();
+        this.startCloudLockSync();
         this.animate();
         this.init3dButton();
         this.initCloudModal();
@@ -79,10 +76,13 @@ var VC = {
 
         this.scene = new THREE.Scene();
 
+        // Adjust camera for mobile portrait — closer zoom on narrow screens
+        var isMobile = window.innerWidth < 768;
+        var fov = isMobile ? 42 : 50;
         this.camera = new THREE.PerspectiveCamera(
-            50, window.innerWidth / window.innerHeight, 0.1, 1000
+            fov, window.innerWidth / window.innerHeight, 0.1, 1000
         );
-        this.camera.position.set(4, 2.5, 5);
+        this.camera.position.set(isMobile ? 3.5 : 4, isMobile ? 2.2 : 2.5, isMobile ? 4.5 : 5);
 
         this.renderer = new THREE.WebGLRenderer({
             canvas: document.getElementById('vehicleCanvas'),
@@ -90,7 +90,7 @@ var VC = {
             alpha: true
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3));
         this.renderer.setClearColor(0x0F0F12, 1);
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -110,14 +110,6 @@ var VC = {
 
         this.controls.addEventListener('start', function() {
             self.controls.autoRotate = false;
-        });
-
-        // Wireframe overlay material — glowing edges on top of the real car
-        this.wireframeMaterial = new THREE.LineBasicMaterial({
-            color: this.baseColor,
-            linewidth: 2,
-            transparent: true,
-            opacity: 0.7
         });
 
         // Scene lighting — enhance the model's own materials
@@ -157,33 +149,51 @@ var VC = {
     addGroundGrid: function() {
         var gridHelper = new THREE.GridHelper(20, 40, 0x1a1a2e, 0x1a1a2e);
         gridHelper.position.y = -0.01;
-        gridHelper.material.opacity = 0.3;
+        gridHelper.material.opacity = 0.15;
         gridHelper.material.transparent = true;
         this.scene.add(gridHelper);
+        this._groundGrid = gridHelper;
     },
 
     loadModel: function() {
         var self = this;
+
+        // Sanity check — if Three.js failed to load (e.g. local extraction failed),
+        // bail with a clear message instead of throwing in the loader constructor.
+        if (typeof THREE === 'undefined' || !THREE.GLTFLoader) {
+            this._showModelError('3D engine failed to load. Tap Retry to reload.');
+            return;
+        }
+
         var loader = new THREE.GLTFLoader();
 
-        // Draco decoder — the GLB uses Draco mesh compression
-        // Use the gltf/ subdirectory which has the smaller decoder optimized for glTF
+        // Draco decoder — the GLB uses Draco mesh compression.
+        // Local path: assets/web/shared/vendor/draco/ (extracted to /data/local/tmp/web/shared/vendor/draco/).
+        // We force the JS decoder (no WASM) for Chrome 58 compatibility and to avoid the
+        // wasm MIME quirks on some BYD WebViews.
         var dracoLoader = new THREE.DRACOLoader();
-        dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/libs/draco/gltf/');
-        dracoLoader.setDecoderConfig({ type: 'js' }); // Force JS decoder (no WASM) for Chrome 58 compat
+        dracoLoader.setDecoderPath('../shared/vendor/draco/');
+        dracoLoader.setDecoderConfig({ type: 'js' });
         loader.setDRACOLoader(dracoLoader);
 
-        var loadingEl = document.getElementById('vcLoading');
-
-        // Model path: assets/web/shared/models/byd_seal_optimized.glb
-        // Extracted to /data/local/tmp/web/shared/models/byd_seal_optimized.glb by HttpServer.extractWebAssets()
         var modelPath = '../shared/models/byd_seal_optimized.glb';
+
+        // Track whether load completed; arm a hard timeout so the spinner can never spin forever.
+        // BYD AVN networks can stall mid-download with no error event; without this the UI hangs.
+        this._modelLoadComplete = false;
+        if (this._modelLoadTimeout) clearTimeout(this._modelLoadTimeout);
+        this._modelLoadTimeout = setTimeout(function() {
+            if (!self._modelLoadComplete) {
+                self._showModelError('Model load timed out. Tap Retry.');
+            }
+        }, 20000);  // 20s — generous for slow head-unit storage
 
         loader.load(
             modelPath,
             function(gltf) {
+                self._modelLoadComplete = true;
+                if (self._modelLoadTimeout) { clearTimeout(self._modelLoadTimeout); self._modelLoadTimeout = null; }
                 self.carModel = gltf.scene;
-                self.edgeLines = [];
 
                 self.carModel.traverse(function(node) {
                     if (node.isMesh) {
@@ -226,12 +236,6 @@ var VC = {
                             mat.envMapIntensity = 1.0;
                             mat.needsUpdate = true;
                         }
-
-                        // Add wireframe edge overlay
-                        var edges = new THREE.EdgesGeometry(node.geometry, 20);
-                        var line = new THREE.LineSegments(edges, self.wireframeMaterial);
-                        node.add(line);
-                        self.edgeLines.push(line);
                     }
                 });
 
@@ -240,8 +244,16 @@ var VC = {
                 self.carModel.position.sub(center);
                 self.carModel.position.y += 0.1;
 
+                // The Android WebView on the BYD head unit renders at a
+                // smaller effective canvas than mobile browsers, so the car
+                // looks tiny. Bump the model scale when running embedded.
+                if (window.AndroidBridge) {
+                    self.carModel.scale.multiplyScalar(1.35);
+                }
+
                 self.scene.add(self.carModel);
 
+                var loadingEl = document.getElementById('vcLoading');
                 if (loadingEl) loadingEl.classList.add('hidden');
                 self.triggerIdlePulse();
             },
@@ -254,20 +266,45 @@ var VC = {
             },
             function(error) {
                 console.error('Model load error:', error);
-                var textEl = document.querySelector('.vc-loading-text');
-                if (textEl) {
-                    textEl.innerHTML = 'Model not found.<br>Expected <b>byd_seal_optimized.glb</b> in<br>assets/web/shared/models/';
-                    textEl.style.textAlign = 'center';
-                    textEl.style.lineHeight = '1.6';
-                }
-                // Hide spinner on error
-                var spinner = document.querySelector('.vc-loading-spinner');
-                if (spinner) spinner.style.display = 'none';
+                self._modelLoadComplete = true;  // Don't fire timeout error after this.
+                if (self._modelLoadTimeout) { clearTimeout(self._modelLoadTimeout); self._modelLoadTimeout = null; }
+                self._showModelError('Model not found. Tap Retry to try again.');
             }
         );
     },
 
+    /**
+     * Surface a user-actionable error in the loading overlay with a Retry button.
+     * Idempotent: safe to call from timeout, error callback, or precondition guards.
+     */
+    _showModelError: function(msg) {
+        var loadingEl = document.getElementById('vcLoading');
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        var textEl = document.querySelector('.vc-loading-text');
+        if (textEl) {
+            textEl.textContent = msg || 'Model load failed.';
+            textEl.style.textAlign = 'center';
+            textEl.style.lineHeight = '1.6';
+        }
+        var spinner = document.querySelector('.vc-loading-spinner');
+        if (spinner) spinner.style.display = 'none';
+        var retryBtn = document.getElementById('vcLoadingRetry');
+        if (retryBtn) {
+            retryBtn.style.display = 'inline-block';
+            // Re-bind defensively (avoid stacking listeners across retries)
+            var self = this;
+            retryBtn.onclick = function() {
+                retryBtn.style.display = 'none';
+                if (spinner) spinner.style.display = '';
+                if (textEl) textEl.textContent = 'Loading model...';
+                self.loadModel();
+            };
+        }
+    },
+
     onResize: function() {
+        var isMobile = window.innerWidth < 768;
+        this.camera.fov = isMobile ? 42 : 50;
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -277,8 +314,8 @@ var VC = {
         var self = this;
         requestAnimationFrame(function() { self.animate(); });
         if (this.controls) this.controls.update();
-        // Update canvas texture for WebCodecs mode (CanvasTexture doesn't auto-update like VideoTexture)
-        if (this._3dViewActive && this._3dDecoderMode === 'webcodecs' && this._videoTexture) {
+        // Update canvas texture each frame when 3D view is active
+        if (this._3dViewActive && this._videoTexture) {
             this._videoTexture.needsUpdate = true;
         }
         if (this.renderer && this.scene && this.camera) {
@@ -312,31 +349,15 @@ var VC = {
                         // Restore original color
                         self.bodyPaintMeshes[idx].material.color.copy(origColors[idx]);
                         self.bodyPaintMeshes[idx].material.needsUpdate = true;
+                        if (idx === self.bodyPaintMeshes.length - 1 && callback) callback();
                     };
                 })(j)
-            });
-        }
-
-        // Also flash wireframe
-        if (this.wireframeMaterial) {
-            var wireOrig = this.wireframeMaterial.color.clone();
-            gsap.to(this.wireframeMaterial.color, {
-                r: flashColor.r, g: flashColor.g, b: flashColor.b,
-                duration: duration || 0.15,
-                yoyo: true,
-                repeat: repeats || 1,
-                ease: 'power2.out',
-                onComplete: function() {
-                    self.wireframeMaterial.color.copy(wireOrig);
-                    if (callback) callback();
-                }
             });
         }
     },
 
     triggerIdlePulse: function() {
-        // No-op — idle pulse on wireframe was barely visible with real materials
-        // The car looks good static
+        // No-op — car looks good static with clean materials
     },
 
     triggerUnlockVFX: function() {
@@ -577,12 +598,6 @@ var VC = {
             }
         }
 
-        // Update wireframe to match
-        if (this.wireframeMaterial) {
-            gsap.killTweensOf(this.wireframeMaterial.color);
-            this.wireframeMaterial.color.set(hex);
-        }
-
         // Update rim light color
         if (this.rimLight) {
             this.rimLight.color.set(hex);
@@ -605,7 +620,6 @@ var VC = {
             var saved = localStorage.getItem('vc_color');
             if (saved) {
                 this.baseColor.set(saved);
-                if (this.wireframeMaterial) this.wireframeMaterial.color.set(saved);
                 if (this.rimLight) this.rimLight.color.set(saved);
                 
                 // Apply to body paint meshes if model already loaded
@@ -631,6 +645,69 @@ var VC = {
                 }, 100);
             }
         } catch(e) {}
+    },
+
+    // ==================== PANEL TOGGLE (Tabbed Controls) ====================
+
+    _activePanel: null,
+
+    togglePanel: function(panelId, tabEl) {
+        var panel = document.getElementById('vcPanel');
+        var allPanels = panel.querySelectorAll('.vc-panel-row');
+        var allTabs = document.querySelectorAll('.vc-tab');
+        var target = document.getElementById(panelId);
+
+        // If tapping the already-active tab, collapse
+        if (this._activePanel === panelId) {
+            panel.classList.remove('open');
+            panel.classList.remove('vc-panel-tall');
+            this._activePanel = null;
+            for (var i = 0; i < allTabs.length; i++) allTabs[i].classList.remove('active');
+            for (var j = 0; j < allPanels.length; j++) allPanels[j].style.display = 'none';
+            return;
+        }
+
+        // Hide all panels, show target
+        for (var k = 0; k < allPanels.length; k++) allPanels[k].style.display = 'none';
+        if (target) target.style.display = 'flex';
+
+        // Update tab active state
+        for (var m = 0; m < allTabs.length; m++) allTabs[m].classList.remove('active');
+        if (tabEl) tabEl.classList.add('active');
+
+        // Open the panel container — Windows needs extra vertical space for
+        // the per-window preset rows.
+        panel.classList.add('open');
+        if (panelId === 'panelWindows') panel.classList.add('vc-panel-tall');
+        else panel.classList.remove('vc-panel-tall');
+        this._activePanel = panelId;
+    },
+
+    /** Update tab dot indicators based on vehicle state */
+    updateTabIndicators: function() {
+        var tabs = document.querySelectorAll('.vc-tab');
+        if (!tabs.length) return;
+
+        // Security tab — has-active if locked (null = unknown, don't show)
+        var secTab = tabs[0];
+        if (secTab) {
+            if (this.vehicleState.locked === true) secTab.classList.add('has-active');
+            else secTab.classList.remove('has-active');
+        }
+
+        // Trunk tab — has-active if trunk open
+        var trunkTab = tabs[1];
+        if (trunkTab) {
+            if (this.vehicleState.trunkOpen === true) trunkTab.classList.add('has-active');
+            else trunkTab.classList.remove('has-active');
+        }
+
+        // Climate tab — has-active if AC on (only if explicitly true, not undefined/null)
+        var climateTab = tabs[2];
+        if (climateTab) {
+            if (this.vehicleState.acOn === true) climateTab.classList.add('has-active');
+            else climateTab.classList.remove('has-active');
+        }
     },
 
     // ==================== CONTROL BINDINGS ====================
@@ -713,22 +790,41 @@ var VC = {
             });
         });
 
-        // Window controls (open/close per area)
+        // Per-window preset levels — backend runs closed-loop to drive the
+        // window to the target % and auto-stops. UI just sends the target.
         var areas = ['lf', 'rf', 'lr', 'rr'];
-        for (var i = 0; i < areas.length; i++) {
-            (function(area, areaNum) {
-                self.bindBtn('btnWin' + area.toUpperCase() + 'Open', function() {
-                    self.triggerWindowVFX(area, true);
-                    self.apiPost('/api/vehicle/window', { area: areaNum, command: 1 });
-                });
-                self.bindBtn('btnWin' + area.toUpperCase() + 'Close', function() {
-                    self.triggerWindowVFX(area, false);
-                    self.apiPost('/api/vehicle/window', { area: areaNum, command: 2 });
-                });
-            })(areas[i], i + 1);
+        var rows = document.querySelectorAll('#panelWindows .vc-window-row[data-area]');
+        for (var ri = 0; ri < rows.length; ri++) {
+            (function(row) {
+                var area = row.getAttribute('data-area');
+                var areaNum = parseInt(row.getAttribute('data-area-num'), 10);
+                var presets = row.querySelectorAll('.vc-preset');
+                for (var pi = 0; pi < presets.length; pi++) {
+                    (function(btn) {
+                        btn.addEventListener('click', function() {
+                            var target = parseInt(btn.getAttribute('data-preset'), 10);
+                            var current = self.vehicleState.windows[area];
+                            // VFX: only show direction if we know the current
+                            // position; otherwise skip the animation (target
+                            // alone doesn't tell us which way it'll move).
+                            if (typeof current === 'number' && current >= 0) {
+                                if (Math.abs(current - target) > 5) {
+                                    self.triggerWindowVFX(area, target > current);
+                                }
+                            }
+                            // Visually mark the chosen preset; live position
+                            // tracking will reconcile this on the next state poll.
+                            self.markWindowPreset(area, target);
+                            self.apiPost('/api/vehicle/window',
+                                { area: areaNum, targetPercent: target });
+                        });
+                    })(presets[pi]);
+                }
+            })(rows[ri]);
         }
 
-        // All windows
+        // All windows — only fully-open / fully-closed makes sense for "all"
+        // (per-window % requires per-window polling, no SDK batch primitive).
         this.bindBtn('btnWinAllOpen', function() {
             for (var j = 0; j < areas.length; j++) self.triggerWindowVFX(areas[j], true);
             self.apiPost('/api/vehicle/window', { area: 0, command: 1 });
@@ -747,13 +843,15 @@ var VC = {
             self.triggerSonarVFX(0, 0.6, -0.2, new THREE.Color(0x38BDF8));
             self.flashBodyColor(new THREE.Color(0x38BDF8), 0.1, 2, null);
             self.apiPost('/api/vehicle/climate', { action: 'power_on' }).then(function(r) {
-                if (r.success) { self.vehicleState.acOn = true; self.updateClimateUI(); self.toast('AC On', 'success'); }
+                if (r.success && r.commandSuccess !== false) { self.vehicleState.acOn = true; self.updateClimateUI(); self.toast('AC On', 'success'); }
+                else { self.toast(r.error || 'AC command failed', 'error'); }
             });
         });
         this.bindBtn('btnAcOff', function() {
             self.flashBodyColor(new THREE.Color(0x71717A), 0.15, 1, null);
             self.apiPost('/api/vehicle/climate', { action: 'power_off' }).then(function(r) {
-                if (r.success) { self.vehicleState.acOn = false; self.updateClimateUI(); self.toast('AC Off', 'info'); }
+                if (r.success && r.commandSuccess !== false) { self.vehicleState.acOn = false; self.updateClimateUI(); self.toast('AC Off', 'info'); }
+                else { self.toast(r.error || 'AC command failed', 'error'); }
             });
         });
         this.bindBtn('btnTempUp', function() {
@@ -847,7 +945,25 @@ var VC = {
 
     bindBtn: function(id, handler) {
         var el = document.getElementById(id);
-        if (el) el.addEventListener('click', handler);
+        if (!el) return;
+        // Android 7.1 WebView occasionally drops `click` after a touch sequence
+        // (long-press cancellation, fast taps, gesture conflicts). Bind both and
+        // de-duplicate via a 500ms guard so only one fire per real interaction.
+        var lastFire = 0;
+        function fire(e) {
+            var now = Date.now();
+            if (now - lastFire < 500) return;
+            lastFire = now;
+            try { handler.call(el, e); }
+            catch (err) { console.error('[VC] handler error for #' + id + ':', err); }
+        }
+        el.addEventListener('click', fire);
+        el.addEventListener('touchend', function(e) {
+            // Suppress the synthetic click that follows touchend on Android,
+            // and prevent double-fire from the dedupe window.
+            e.preventDefault();
+            fire(e);
+        }, { passive: false });
     },
 
     setPending: function(id, pending) {
@@ -891,7 +1007,10 @@ var VC = {
                 } else if (overall === 2) {
                     self.vehicleState.locked = false;
                 } else {
-                    self.vehicleState.locked = null; // unknown
+                    // Unknown from CAN bus — keep last known state if we had one
+                    // Only set to null if we never received a valid state
+                    if (wasLocked === null) self.vehicleState.locked = null;
+                    // else keep wasLocked (persist last known)
                 }
             }
 
@@ -915,6 +1034,9 @@ var VC = {
             // Climate
             if (data.climate) {
                 if (data.climate.acOn !== undefined) self.vehicleState.acOn = data.climate.acOn;
+                if (data.climate.fanLevel !== undefined && data.climate.fanLevel >= 1 && data.climate.fanLevel <= 7) {
+                    self.vehicleState.acFan = data.climate.fanLevel;
+                }
                 if (data.climate.insideTempC !== undefined && data.climate.insideTempC > 0) {
                     // Use inside temp as display reference (actual set temp not available from state)
                 }
@@ -928,6 +1050,7 @@ var VC = {
             self.updateWindowGlows();
             self.updateClimateUI();
             self.updateSeatGlows();
+            self.updateTabIndicators();
 
         }).catch(function(e) {
             console.warn('[VC] State fetch error:', e);
@@ -944,6 +1067,53 @@ var VC = {
         }).catch(function(e) {
             console.warn('[VC] Cloud status error:', e);
         });
+    },
+
+    // Polls the cloud lock state. The server endpoint:
+    //   - returns the cached MQTT-derived lock state immediately,
+    //   - kicks off a one-shot REST refresh in the background if the cache
+    //     is stale (rate-limited server-side, so this is cheap to call).
+    // Used as a fallback for the lock-state UI: the CAN bus often returns
+    // "unknown" while the car is sleeping; the cloud knows the answer.
+    requestCloudLockRefresh: function() {
+        var self = this;
+        fetch('/api/vehicle/cloud-lock').then(function(resp) {
+            return resp.json();
+        }).then(function(data) {
+            if (!data || !data.success || !data.status) return;
+            var s = data.status;
+            // Prefer cloud lock state when CAN bus didn't give us a valid one.
+            // CAN bus sets self.vehicleState.locked = true/false; null = no
+            // valid reading yet. We only override null — if CAN said locked
+            // or unlocked, trust it (it's a few hundred ms fresh vs MQTT's
+            // potentially-minutes-old snapshot).
+            if (self.vehicleState.locked === null || self.vehicleState.locked === undefined) {
+                if (s.lockState === 'locked') {
+                    self.vehicleState.locked = true;
+                    self.updateHUD();
+                    self.updateDoorIndicators();
+                    self.updateTabIndicators();
+                } else if (s.lockState === 'unlocked') {
+                    self.vehicleState.locked = false;
+                    self.updateHUD();
+                    self.updateDoorIndicators();
+                    self.updateTabIndicators();
+                }
+            }
+        }).catch(function(e) {
+            console.warn('[VC] Cloud lock refresh error:', e);
+        });
+    },
+
+    // Background poller for the cloud lock state. The cloud snapshot is the
+    // authoritative source while the car is sleeping (CAN returns -1 in
+    // that mode). 30s is plenty — MQTT pushes events the moment the car
+    // moves, this is just a heartbeat for the cold-cache case.
+    startCloudLockSync: function() {
+        var self = this;
+        this.cloudLockInterval = setInterval(function() {
+            self.requestCloudLockRefresh();
+        }, 30 * 1000);
     },
 
     // ==================== CLOUD MODAL ====================
@@ -1022,10 +1192,45 @@ var VC = {
             var area = areas[i];
             var fill = document.getElementById('winFill_' + area);
             var pct = document.getElementById('winPct_' + area);
-            var val = this.vehicleState.windows[area] || 0;
-            if (fill) fill.style.width = val + '%';
-            if (pct) pct.textContent = val + '%';
+            var label = document.getElementById('winLabel_' + area);
+            var val = this.vehicleState.windows[area];
+            var hasReading = (typeof val === 'number' && val >= 0);
+            var display = hasReading ? val : 0;
+            if (fill) fill.style.width = display + '%';
+            if (pct) pct.textContent = display + '%';
+            if (label) label.textContent = hasReading ? (val + '%') : '--%';
+            // Reconcile the highlighted preset with the live position. Pick
+            // the closest preset within the same ±5% tolerance the backend
+            // uses to stop.
+            if (hasReading) this.markWindowPresetFromActual(area, val);
         }
+    },
+
+    /** Visually mark one preset as the active target for a window. */
+    markWindowPreset: function(area, target) {
+        var row = document.querySelector('#panelWindows .vc-window-row[data-area="' + area + '"]');
+        if (!row) return;
+        var presets = row.querySelectorAll('.vc-preset');
+        for (var i = 0; i < presets.length; i++) {
+            var v = parseInt(presets[i].getAttribute('data-preset'), 10);
+            if (v === target) presets[i].classList.add('active');
+            else presets[i].classList.remove('active');
+        }
+    },
+
+    /** Pick the closest preset to the live percentage and mark it active. */
+    markWindowPresetFromActual: function(area, actual) {
+        var presets = [0, 25, 50, 75, 100];
+        var closest = presets[0];
+        var bestDelta = Math.abs(actual - presets[0]);
+        for (var i = 1; i < presets.length; i++) {
+            var d = Math.abs(actual - presets[i]);
+            if (d < bestDelta) { bestDelta = d; closest = presets[i]; }
+        }
+        // Only highlight if we're meaningfully near a preset (±10% of it)
+        // — avoids confusingly lighting up "50" when window is at 35%.
+        if (bestDelta <= 10) this.markWindowPreset(area, closest);
+        else this.markWindowPreset(area, -1);
     },
 
     updateDoorIndicators: function() {
@@ -1164,8 +1369,13 @@ var VC = {
         var fanEl = document.getElementById('acFan');
         if (fanEl) fanEl.textContent = this.vehicleState.acFan;
 
+        // AC On button highlights when AC is on; AC Off button highlights when AC
+        // is off. Both stay visible \u2014 neither hides \u2014 so the user can always tap
+        // the opposite state regardless of where the live state currently is.
         var btnOn = document.getElementById('btnAcOn');
+        var btnOff = document.getElementById('btnAcOff');
         if (btnOn) { if (this.vehicleState.acOn) btnOn.classList.add('on'); else btnOn.classList.remove('on'); }
+        if (btnOff) { if (!this.vehicleState.acOn) btnOff.classList.add('on'); else btnOff.classList.remove('on'); }
 
         if (this.vehicleState.acOn) {
             this.setStateGlow('ac', { x: 0, y: 0.5, z: 0.3 }, 0x38BDF8);
@@ -1318,16 +1528,40 @@ var VC = {
         var self = this;
         this._3dViewActive = true;
         this._3dDecoderMode = null;  // 'webcodecs' or 'jmuxer'
+        this._3dStreamConnected = false;
         var btn = document.getElementById('btn3dView');
         if (btn) btn.classList.add('on');
 
-        try {
-            // Decoder selection: WebCodecs (iOS/modern) → JMuxer (Android/Chrome with MSE)
-            var hasWebCodecs = ('VideoDecoder' in window) && ('EncodedVideoChunk' in window) && (typeof SotaPlayer !== 'undefined');
-            var hasJMuxer = (typeof JMuxer !== 'undefined') && (!!window.MediaSource);
+        // Timeout: if no stream data arrives within 8 seconds, show error and stop
+        this._3dTimeout = setTimeout(function() {
+            if (self._3dViewActive && !self._3dStreamConnected) {
+                self.toast('No camera stream available', 'error');
+                self.stop3dView();
+            }
+        }, 8000);
 
-            if (hasWebCodecs) {
-                // WebCodecs path — renders to canvas, use CanvasTexture for Three.js
+        // Set stream to mosaic view mode (0) and high quality before connecting
+        // This ensures we get the full 4-camera mosaic, same as the live view page
+        Promise.all([
+            fetch('/api/stream/view/0'),
+            fetch('/api/stream/quality/HIGH', { method: 'POST' })
+        ]).then(function() {
+            self._start3dStream();
+        }).catch(function() {
+            // Even if quality/view set fails, try to connect anyway
+            self._start3dStream();
+        });
+    },
+
+    _start3dStream: function() {
+        var self = this;
+
+        try {
+            // Use SotaPlayer (WebCodecs) — same decoder as the live view page
+            var hasSotaPlayer = (typeof SotaPlayer !== 'undefined') && SotaPlayer.isSupported();
+
+            if (hasSotaPlayer) {
+                // SotaPlayer path — renders to canvas, use CanvasTexture for Three.js
                 this._3dDecoderMode = 'webcodecs';
                 this._3dCanvas = document.createElement('canvas');
                 this._3dCanvas.width = 1280;
@@ -1337,63 +1571,59 @@ var VC = {
 
                 var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 var wsUrl = protocol + '//' + window.location.host + '/ws';
+                // Append JWT as ?token= so tunnels work (cookies stripped by
+                // SameSite; browser WS API can't set Authorization header).
+                if (typeof BYDAuth !== 'undefined') {
+                    var wsToken = BYDAuth.getToken();
+                    if (wsToken) wsUrl += '?token=' + encodeURIComponent(wsToken);
+                }
 
                 this._sotaPlayer = new SotaPlayer(this._3dCanvas, wsUrl);
                 this._sotaPlayer.onConnected = function() {
                     console.log('[VC] 3D WebCodecs stream connected');
+                    self._3dStreamConnected = true;
+                    if (self._3dTimeout) { clearTimeout(self._3dTimeout); self._3dTimeout = null; }
+                    self.toast('3D stream connected', 'success');
+                };
+                this._sotaPlayer.onFrame = function() {
+                    // Mark texture as needing update on each decoded frame
+                    if (self._videoTexture) self._videoTexture.needsUpdate = true;
                 };
                 this._sotaPlayer.onDisconnected = function() {
                     console.log('[VC] 3D WebCodecs stream disconnected');
-                    if (self._3dViewActive && self._sotaPlayer) {
-                        // SotaPlayer auto-reconnects internally
-                    }
                 };
                 this._sotaPlayer.onError = function(e) {
                     console.error('[VC] 3D WebCodecs error:', e);
                 };
                 this._sotaPlayer.start();
 
-                // Create sky sphere with canvas texture
-                this._createSkySphere();
+                // Build the bowl mesh + contact shadow
+                this._createSurroundBowl();
+                this._createContactShadow();
 
-            } else if (hasJMuxer) {
-                // JMuxer path — renders to video element, use VideoTexture for Three.js
-                this._3dDecoderMode = 'jmuxer';
-                this._videoEl = document.createElement('video');
-                this._videoEl.id = 'vc3d_stream_video';
-                this._videoEl.setAttribute('autoplay', '');
-                this._videoEl.setAttribute('muted', '');
-                this._videoEl.setAttribute('playsinline', '');
-                this._videoEl.style.display = 'none';
-                document.body.appendChild(this._videoEl);
+                // Hide ground grid — it conflicts with the surround view
+                if (this._groundGrid) this._groundGrid.visible = false;
 
-                this._jmuxer = new JMuxer({
-                    node: 'vc3d_stream_video',
-                    mode: 'video',
-                    fps: 15,
-                    flushingTime: 0,
-                    debug: false,
-                    onReady: function() {
-                        console.log('[VC] JMuxer ready for 3D view');
-                        self._videoEl.play().catch(function(e) {
-                            console.warn('[VC] Autoplay blocked:', e.message);
-                        });
-                    },
-                    onError: function(e) {
-                        console.error('[VC] JMuxer error:', e);
-                    }
-                });
-
-                // Connect WebSocket and feed JMuxer
-                this._connectStream();
-
-                // Create sky sphere with video texture
-                this._createSkySphere();
+                // Camera lives well inside the bowl (R=8) so the surround
+                // wraps around the user. Polar stays just above horizon so we
+                // never look up at the cap or down through the floor.
+                if (this.controls) {
+                    this._savedPolarMin = this.controls.minPolarAngle;
+                    this._savedPolarMax = this.controls.maxPolarAngle;
+                    this._savedMinDistance = this.controls.minDistance;
+                    this._savedMaxDistance = this.controls.maxDistance;
+                    this.controls.minPolarAngle = Math.PI * 0.28;
+                    this.controls.maxPolarAngle = Math.PI * 0.52;
+                    this.controls.minDistance = 3.2;
+                    this.controls.maxDistance = 6.5;
+                    this.controls.autoRotate = false;
+                }
 
             } else {
-                console.error('[VC] No H.264 decoder available (need WebCodecs or MediaSource)');
-                this.toast('No video decoder available', 'error');
+                console.error('[VC] No H.264 decoder available (need SotaPlayer + WebCodecs)');
+                this.toast('3D view requires WebCodecs support', 'error');
                 this._3dViewActive = false;
+                var btn = document.getElementById('btn3dView');
                 if (btn) btn.classList.remove('on');
                 return;
             }
@@ -1405,109 +1635,78 @@ var VC = {
         this.toast('3D Surround View active', 'info');
     },
 
-    /**
-     * Connect (or reconnect) the WebSocket stream for 3D surround view (JMuxer mode only).
-     * Uses the same /ws endpoint as the live view stream.
-     */
-    _connectStream: function() {
-        var self = this;
-        if (!this._3dViewActive || this._3dDecoderMode !== 'jmuxer') return;
+    /** Soft contact-shadow plane under the car. Tiny dark blob; gives the
+     *  model "weight" so it doesn't look like it's floating above the bowl. */
+    _createContactShadow: function() {
+        if (!this.scene) return;
+        // Procedural radial-gradient texture — no asset round-trip.
+        var size = 256;
+        var c = document.createElement('canvas');
+        c.width = c.height = size;
+        var cg = c.getContext('2d');
+        var grad = cg.createRadialGradient(size/2, size/2, size*0.08, size/2, size/2, size*0.5);
+        grad.addColorStop(0, 'rgba(0, 0, 0, 0.55)');
+        grad.addColorStop(0.55, 'rgba(0, 0, 0, 0.18)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        cg.fillStyle = grad;
+        cg.fillRect(0, 0, size, size);
+        var tex = new THREE.CanvasTexture(c);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
 
-        // Close existing connection if any
-        if (this._streamWs) {
-            this._streamWs.onclose = null;
-            this._streamWs.onerror = null;
-            this._streamWs.close();
-            this._streamWs = null;
-        }
-
-        var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        var wsUrl = protocol + '//' + window.location.host + '/ws';
-        console.log('[VC] 3D stream connecting:', wsUrl);
-
-        try {
-            this._streamWs = new WebSocket(wsUrl);
-            this._streamWs.binaryType = 'arraybuffer';
-
-            this._streamWs.onopen = function() {
-                console.log('[VC] 3D stream connected');
-            };
-
-            this._streamWs.onmessage = function(evt) {
-                if (self._jmuxer && evt.data instanceof ArrayBuffer) {
-                    self._jmuxer.feed({ video: new Uint8Array(evt.data) });
-                }
-            };
-
-            this._streamWs.onerror = function(e) {
-                console.warn('[VC] 3D stream WebSocket error:', e);
-            };
-
-            this._streamWs.onclose = function() {
-                console.log('[VC] 3D stream disconnected');
-                if (self._3dViewActive) {
-                    setTimeout(function() {
-                        if (self._3dViewActive) {
-                            self._connectStream();
-                        }
-                    }, 3000);
-                }
-            };
-        } catch(e) {
-            console.error('[VC] WebSocket connection failed:', e);
-            if (this._3dViewActive) {
-                setTimeout(function() {
-                    if (self._3dViewActive) self._connectStream();
-                }, 3000);
-            }
-        }
+        var mat = new THREE.MeshBasicMaterial({
+            map: tex,
+            transparent: true,
+            depthWrite: false
+        });
+        // Roughly car-shaped footprint: a bit wider lateral than longitudinal.
+        var geo = new THREE.PlaneGeometry(2.6, 4.2);
+        var mesh = new THREE.Mesh(geo, mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.y = -0.39;
+        mesh.renderOrder = -1;
+        this.scene.add(mesh);
+        this._contactShadow = mesh;
     },
 
     stop3dView: function() {
         this._3dViewActive = false;
+        this._3dStreamConnected = false;
+        if (this._3dTimeout) { clearTimeout(this._3dTimeout); this._3dTimeout = null; }
         var btn = document.getElementById('btn3dView');
         if (btn) btn.classList.remove('on');
 
-        // Stop WebCodecs (SotaPlayer) if active
+        // Stop SotaPlayer
         if (this._sotaPlayer) {
             this._sotaPlayer.stop();
             this._sotaPlayer = null;
         }
 
-        // Remove WebCodecs canvas
+        // Remove canvas
         if (this._3dCanvas) {
             if (this._3dCanvas.parentNode) this._3dCanvas.parentNode.removeChild(this._3dCanvas);
             this._3dCanvas = null;
         }
 
-        // Close JMuxer WebSocket (disable reconnect first)
-        if (this._streamWs) {
-            this._streamWs.onclose = null;
-            this._streamWs.onerror = null;
-            this._streamWs.close();
-            this._streamWs = null;
-        }
-
-        // Destroy JMuxer
-        if (this._jmuxer) {
-            try { this._jmuxer.destroy(); } catch(e) {}
-            this._jmuxer = null;
-        }
-
-        // Remove video element
-        if (this._videoEl) {
-            this._videoEl.pause();
-            this._videoEl.src = '';
-            if (this._videoEl.parentNode) this._videoEl.parentNode.removeChild(this._videoEl);
-            this._videoEl = null;
-        }
-
-        // Remove sky sphere
+        // Remove bowl mesh, legacy ground disc (no-op now), contact shadow.
         if (this._skySphere && this.scene) {
             this.scene.remove(this._skySphere);
             this._skySphere.geometry.dispose();
             this._skySphere.material.dispose();
             this._skySphere = null;
+        }
+        if (this._groundDisc && this.scene) {
+            this.scene.remove(this._groundDisc);
+            this._groundDisc.geometry.dispose();
+            this._groundDisc.material.dispose();
+            this._groundDisc = null;
+        }
+        if (this._contactShadow && this.scene) {
+            this.scene.remove(this._contactShadow);
+            this._contactShadow.geometry.dispose();
+            if (this._contactShadow.material.map) this._contactShadow.material.map.dispose();
+            this._contactShadow.material.dispose();
+            this._contactShadow = null;
         }
 
         if (this._videoTexture) {
@@ -1516,113 +1715,375 @@ var VC = {
         }
 
         this._3dDecoderMode = null;
+
+        // Restore ground grid
+        if (this._groundGrid) this._groundGrid.visible = true;
+
+        // Restore orbit constraints
+        if (this.controls && this._savedPolarMin !== undefined) {
+            this.controls.minPolarAngle = this._savedPolarMin;
+            this.controls.maxPolarAngle = this._savedPolarMax;
+            if (this._savedMinDistance !== undefined) {
+                this.controls.minDistance = this._savedMinDistance;
+            }
+            if (this._savedMaxDistance !== undefined) {
+                this.controls.maxDistance = this._savedMaxDistance;
+            }
+            this.controls.autoRotate = true;
+        }
+
+        // Restore stream quality to LOW (default for remote viewing)
+        fetch('/api/stream/quality/LOW', { method: 'POST' }).catch(function() {});
+
         this.toast('3D View off', 'info');
     },
 
-    _createSkySphere: function() {
+    /**
+     * Surround geometry: a single curved bowl mesh (LatheGeometry) that
+     * flows from under the car up to the horizon, with a fake-homography
+     * ground projection on the lower bowl and a linear sky-fade on the
+     * upper bowl. One mesh, one shader — no wall/floor seam.
+     *
+     * Mosaic layout (after THREE.CanvasTexture flipY=true):
+     *   tex space    canvas    camera
+     *   (0.0, 0.0)   BL        Front
+     *   (0.5, 0.0)   BR        Right
+     *   (0.0, 0.5)   TL        Rear
+     *   (0.5, 0.5)   TR        Left
+     *
+     * Bearing: atan2(x, -z) → 0=front (-Z), +π/2=right (+X),
+     *                          ±π=rear (+Z), -π/2=left (-X).
+     *
+     * Runtime knobs (set on VC and call stop3dView();start3dView(); to apply):
+     *   _3dRotate        0..3   rotate camera assignment by 90° steps
+     *   _3dSwapLR        bool   swap Left/Right cams
+     *   _3dSwapFR        bool   swap Front/Rear cams
+     *   _3dSideMirror    bool   horizontally flip side-camera images
+     *   _3dRearMirror    bool   horizontally flip rear-camera image
+     *   _3dFeather       0..0.5 seam blend half-width (fraction of one quadrant)
+     *   _3dCropBottom    0..0.5 hide bottom N% of each cam (car body/wheel)
+     *   _3dCropTop       0..0.5 hide top N% of each cam (warped sky)
+     *   _3dFishStrength  0..1   fisheye-undistort strength (0 = none)
+     */
+    _createSurroundBowl: function() {
         if (!this.scene) return;
 
-        // Choose texture source based on active decoder mode
-        if (this._3dDecoderMode === 'webcodecs' && this._3dCanvas) {
-            // WebCodecs renders to canvas — use CanvasTexture (must be updated each frame)
+        if (this._3dCanvas) {
             this._videoTexture = new THREE.CanvasTexture(this._3dCanvas);
             this._videoTexture.minFilter = THREE.LinearFilter;
             this._videoTexture.magFilter = THREE.LinearFilter;
-        } else if (this._3dDecoderMode === 'jmuxer' && this._videoEl) {
-            // JMuxer renders to video element — use VideoTexture (auto-updates)
-            this._videoTexture = new THREE.VideoTexture(this._videoEl);
-            this._videoTexture.minFilter = THREE.LinearFilter;
-            this._videoTexture.magFilter = THREE.LinearFilter;
         } else {
-            console.error('[VC] No texture source available for sky sphere');
+            console.error('[VC] No canvas available for surround view');
             return;
         }
 
-        // Custom shader material for fisheye undistortion
-        // The mosaic is 2x2 (front=TL, right=TR, rear=BL, left=BR)
-        // Each quadrant is a fisheye image covering ~190° FOV
-        var vertexShader = [
-            'varying vec3 vWorldDir;',
-            'void main() {',
-            '    vec4 worldPos = modelMatrix * vec4(position, 1.0);',
-            '    vWorldDir = normalize(worldPos.xyz);',
-            '    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-            '}'
-        ].join('\n');
+        // Defaults preserve the original production mapping (no flip / no swap).
+        // Toggle these in the console + call VC.stop3dView();VC.start3dView();
+        // to verify against the BYD camera-mount convention on your model.
+        //   _3dRotate   0..3   rotate the world-bearing → camera mapping in 90° steps
+        //   _3dSwapLR   bool   swap the Left and Right cameras
+        //   _3dSwapFR   bool   swap the Front and Rear cameras
+        //   _3dSideMirror  bool   horizontally flip both side-camera images
+        //   _3dRearMirror  bool   horizontally flip the rear-camera image
+        //   _3dFeather  0..0.5 seam blend half-width as a fraction of one quadrant
+        if (this._3dSideMirror === undefined) this._3dSideMirror = false;
+        if (this._3dRearMirror === undefined) this._3dRearMirror = false;
+        // Default rotation 0: world bearing maps directly to camera index
+        // with no offset (front-of-world → front cam).  The earlier
+        // "everything looks swapped" symptom turned out to be a projection
+        // artifact from the bowl + homography path, not a real swap.
+        if (this._3dRotate     === undefined) this._3dRotate = 0;
+        if (this._3dSwapLR     === undefined) this._3dSwapLR = false;
+        if (this._3dSwapFR     === undefined) this._3dSwapFR = false;
+        if (this._3dFeather    === undefined) this._3dFeather = 0.30;
+        // Hide a thin sliver at the bottom (car body / wheel arch) and top
+        // (warped sky).  Conservative defaults — raise per BYD model if
+        // needed via VC._3dCropBottom / VC._3dCropTop.
+        if (this._3dCropBottom === undefined) this._3dCropBottom = 0.15;
+        if (this._3dCropTop    === undefined) this._3dCropTop = 0.08;
+        // Generic radial fisheye undistortion strength — 0 = no undistort
+        // (cheaper, what we had), 1 = full atan-style remap (visibly
+        // straightens lane lines).  Default 0.6 hits a usable middle.
+        if (this._3dFishStrength === undefined) this._3dFishStrength = 0.6;
 
-        var fragmentShader = [
-            'uniform sampler2D mosaic;',
-            'varying vec3 vWorldDir;',
+        var WALL_RADIUS = 8.0;
+        var WALL_HEIGHT = 5.0;
+        var WALL_BOTTOM = -0.4;
+
+        // GLSL fragment-shader fragment shared by wall + disc.  Defines
+        // sampleSurround(bearing, vSample) and the helpers it needs.
+        // Returns a vec4 where .a < 1.0 indicates the sample lies in the
+        // cropped top/bottom of the cam (used to fade those areas out).
+        var SHARED_GLSL = [
+            'uniform sampler2D uTexture;',
+            'uniform float uMirrorSides;',
+            'uniform float uMirrorRear;',
+            'uniform float uFeather;',
+            'uniform int   uRotate;',
+            'uniform float uSwapLR;',
+            'uniform float uSwapFR;',
+            'uniform float uCropBottom;',
+            'uniform float uCropTop;',
+            'uniform float uFishStrength;',
             '',
-            'const float PI = 3.14159265359;',
-            'const float FOV = 3.3; // ~190 degrees in radians',
-            '',
-            '// Fisheye equidistant projection: pixel radius = f * theta',
-            'vec2 fisheyeProject(vec3 dir, float fov) {',
-            '    float theta = acos(clamp(dir.z, -1.0, 1.0));',
-            '    if (theta > fov * 0.5) return vec2(-1.0);',
-            '    float phi = atan(dir.y, dir.x);',
-            '    float r = theta / (fov * 0.5);',
-            '    return vec2(0.5 + r * cos(phi) * 0.5, 0.5 + r * sin(phi) * 0.5);',
+            'vec2 quadOrigin(int idx) {',
+            '    if (idx == 0) return vec2(0.0, 0.0);',  // Front
+            '    if (idx == 1) return vec2(0.5, 0.0);',  // Right
+            '    if (idx == 2) return vec2(0.0, 0.5);',  // Rear
+            '    return vec2(0.5, 0.5);',                // Left
             '}',
             '',
-            'void main() {',
-            '    vec3 dir = normalize(vWorldDir);',
-            '    vec2 uv = vec2(-1.0);',
-            '    vec2 offset = vec2(0.0);',
-            '',
-            '    // Determine which camera sees this direction',
-            '    // Front camera: +Z direction',
-            '    vec3 frontDir = vec3(dir.x, dir.y, dir.z);',
-            '    vec2 frontUV = fisheyeProject(frontDir, FOV);',
-            '    if (frontUV.x >= 0.0 && dir.z > 0.0) {',
-            '        uv = frontUV * 0.5; // top-left quadrant',
+            'int remapIdx(int worldIdx) {',
+            '    int idx = int(mod(float(worldIdx) + float(uRotate), 4.0));',
+            '    if (uSwapLR > 0.5) {',
+            '        if (idx == 1) idx = 3;',
+            '        else if (idx == 3) idx = 1;',
             '    }',
-            '',
-            '    // Right camera: +X direction',
-            '    vec3 rightDir = vec3(-dir.z, dir.y, dir.x);',
-            '    vec2 rightUV = fisheyeProject(rightDir, FOV);',
-            '    if (rightUV.x >= 0.0 && dir.x > 0.0 && uv.x < 0.0) {',
-            '        uv = rightUV * 0.5 + vec2(0.5, 0.0); // top-right quadrant',
+            '    if (uSwapFR > 0.5) {',
+            '        if (idx == 0) idx = 2;',
+            '        else if (idx == 2) idx = 0;',
             '    }',
+            '    return idx;',
+            '}',
             '',
-            '    // Rear camera: -Z direction',
-            '    vec3 rearDir = vec3(-dir.x, dir.y, -dir.z);',
-            '    vec2 rearUV = fisheyeProject(rearDir, FOV);',
-            '    if (rearUV.x >= 0.0 && dir.z < 0.0 && uv.x < 0.0) {',
-            '        uv = rearUV * 0.5 + vec2(0.0, 0.5); // bottom-left quadrant',
-            '    }',
+            '// Generic radial fisheye undistortion. Treats the cam frame',
+            '// as a normalised (-1,-1)..(+1,+1) plane, computes the polar',
+            '// radius r, and remaps it through an atan-style curve so',
+            '// straight world lines (lane markings) come out straighter.',
+            '// uFishStrength = 0 disables (returns input unchanged).',
+            'vec2 undistort(vec2 xy) {',
+            '    float r = length(xy);',
+            '    if (r < 1e-4 || uFishStrength < 0.001) return xy;',
+            '    // Approx fisheye half-FOV ~95° → tan(0.95) ≈ 1.40.',
+            '    float k = 1.40;',
+            '    // r_undist = tan(r * atan(k)) / k  — pulls peripheral',
+            '    // pixels inward, straightening barrel curvature.',
+            '    float rUndist = tan(r * atan(k)) / k;',
+            '    float scale = mix(1.0, rUndist / r, uFishStrength);',
+            '    return xy * scale;',
+            '}',
             '',
-            '    // Left camera: -X direction',
-            '    vec3 leftDir = vec3(dir.z, dir.y, -dir.x);',
-            '    vec2 leftUV = fisheyeProject(leftDir, FOV);',
-            '    if (leftUV.x >= 0.0 && dir.x < 0.0 && uv.x < 0.0) {',
-            '        uv = leftUV * 0.5 + vec2(0.5, 0.5); // bottom-right quadrant',
-            '    }',
+            '// Returns the sampled cam color in .rgb plus a "valid" weight',
+            '// in .a — 1.0 fully visible, fading to 0 at the cropped edges so',
+            '// the caller can smoothly blend to the bowl background colour.',
+            '// Crucially, even inside the crop band we still SAMPLE THE TEXTURE',
+            '// (clamped to the kept range) — so the cropped strip reads as',
+            '// "dimmed continuation of the cam image" rather than a hard black',
+            '// rectangle.',
+            'vec4 sampleAt(int worldIdx, float centeredOffset, float vSample) {',
+            '    int idx = remapIdx(worldIdx);',
+            '    vec2 qo = quadOrigin(idx);',
+            '    float c = centeredOffset;',
+            '    if (idx == 2 && uMirrorRear  > 0.5) c = -c;',
+            '    if ((idx == 1 || idx == 3) && uMirrorSides > 0.5) c = -c;',
             '',
-            '    if (uv.x < 0.0) {',
-            '        gl_FragColor = vec4(0.06, 0.06, 0.07, 1.0); // dark fill for blind spots',
-            '    } else {',
-            '        gl_FragColor = texture2D(mosaic, uv);',
+            '    // Build a normalised (-1,-1)..(+1,+1) coord inside this',
+            '    // cam frame so undistort() can operate on a circular',
+            '    // domain. After undistortion convert back to (u,v) in',
+            '    // [0,1] within the quadrant.',
+            '    vec2 nxy = vec2(c, vSample * 2.0 - 1.0);',
+            '    nxy = undistort(nxy);',
+            '    float localU = 0.5 + 0.5 * nxy.x;',
+            '    float localV = 0.5 + 0.5 * nxy.y;',
+            '',
+            '    // Crop band: skip uCropBottom of the bottom (car body) and',
+            '    // uCropTop of the top (warped sky).  We CLAMP the V into the',
+            '    // kept range when sampling so the texture continues visually',
+            '    // into the cropped edge (no abrupt black band), but emit an',
+            '    // alpha that fades over a soft band so the caller can blend',
+            '    // smoothly to the bowl background.',
+            '    float vMin = uCropBottom;',
+            '    float vMax = 1.0 - uCropTop;',
+            '    // Sampling V — clamp into the visible band so cropped pixels',
+            '    // read from the nearest valid row of the cam image.',
+            '    float vSamp = clamp(localV, vMin, vMax);',
+            '',
+            '    // Alpha — soft fade across an inset band inside the crop edge',
+            '    // so the transition into bg is gradual.  fadePx defines the',
+            '    // soft-edge thickness inside both the bottom and top crops.',
+            '    float fadePx = 0.06;',
+            '    float bottomFade = smoothstep(vMin - fadePx, vMin + fadePx, localV);',
+            '    float topFade    = smoothstep(vMax + fadePx, vMax - fadePx, localV);',
+            '    float vMask = bottomFade * topFade;',
+            '',
+            '    // Reject samples fully outside the frame after undistortion.',
+            '    float xMask = step(0.0, localU) * step(localU, 1.0);',
+            '    float yMask = step(-fadePx, localV) * step(localV, 1.0 + fadePx);',
+            '    float mask = vMask * xMask * yMask;',
+            '',
+            '    vec2 uv = vec2(qo.x + clamp(localU, 0.0, 1.0) * 0.5,',
+            '                   qo.y + vSamp * 0.5);',
+            '    vec4 col = texture2D(uTexture, uv);',
+            '    col.a = mask;',
+            '    return col;',
+            '}',
+            '',
+            'vec4 sampleSurround(float bearing, float vSample) {',
+            '    // Shift bearing by +π/4 so quadrants are CENTRED on the cardinal',
+            '    // directions: bearing 0 (= world front) lands in the middle of',
+            '    // the Front quadrant, +π/2 in the middle of Right, etc.',
+            '    float b = mod(bearing + 0.78540, 6.28318);',
+            '    if (b < 0.0) b += 6.28318;',
+            '    float virtIdx = b / 1.5708;',           // 0..4
+            '    float idxFloor = floor(virtIdx);',
+            '    float frac = virtIdx - idxFloor;',       // 0..1 across one quadrant
+            '    float centered = frac * 2.0 - 1.0;',     // -1..+1 across assigned quadrant
+            '    float feather = uFeather;',
+            '',
+            '    int idxA = int(mod(idxFloor, 4.0));',
+            '    vec4 colA = sampleAt(idxA, centered, vSample);',
+            '',
+            '    if (feather > 0.001 && frac < feather) {',
+            '        int idxB = int(mod(idxFloor + 3.0, 4.0));',
+            '        float centeredB = 1.0 + frac;',
+            '        vec4 colB = sampleAt(idxB, centeredB, vSample);',
+            '        float w = smoothstep(0.0, feather, frac);',
+            '        return mix(colB, colA, w);',
+            '    } else if (feather > 0.001 && frac > 1.0 - feather) {',
+            '        int idxB = int(mod(idxFloor + 1.0, 4.0));',
+            '        float centeredB = -1.0 + (frac - 1.0);',
+            '        vec4 colB = sampleAt(idxB, centeredB, vSample);',
+            '        float w = smoothstep(1.0, 1.0 - feather, frac);',
+            '        return mix(colB, colA, w);',
             '    }',
+            '    return colA;',
+            '}',
+            '',
+            '// Helper: compose the surround sample against a dark background',
+            '// so cropped/out-of-frame pixels fade smoothly to the bowl colour',
+            '// instead of showing whatever happens to be in the texture there.',
+            'vec3 composeSurround(vec3 surround_rgb, float alpha, vec3 bg) {',
+            '    return mix(bg, surround_rgb, alpha);',
             '}'
         ].join('\n');
 
-        var sphereGeo = new THREE.SphereGeometry(40, 64, 32);
-        // Flip normals inward so we see the inside
-        sphereGeo.scale(-1, 1, 1);
+        var sharedUniforms = function() {
+            return {
+                uTexture:       { value: this._videoTexture },
+                uMirrorSides:   { value: this._3dSideMirror ? 1.0 : 0.0 },
+                uMirrorRear:    { value: this._3dRearMirror ? 1.0 : 0.0 },
+                uFeather:       { value: this._3dFeather },
+                uRotate:        { value: (this._3dRotate | 0) },
+                uSwapLR:        { value: this._3dSwapLR ? 1.0 : 0.0 },
+                uSwapFR:        { value: this._3dSwapFR ? 1.0 : 0.0 },
+                uCropBottom:    { value: this._3dCropBottom },
+                uCropTop:       { value: this._3dCropTop },
+                uFishStrength:  { value: this._3dFishStrength }
+            };
+        }.bind(this);
 
-        var sphereMat = new THREE.ShaderMaterial({
-            uniforms: {
-                mosaic: { value: this._videoTexture }
-            },
-            vertexShader: vertexShader,
-            fragmentShader: fragmentShader,
-            side: THREE.BackSide
+        // ── Cylindrical wall ────────────────────────────────────────────
+        var wallGeo = new THREE.CylinderGeometry(
+            WALL_RADIUS, WALL_RADIUS, WALL_HEIGHT, 96, 1, true);
+        wallGeo.translate(0, WALL_BOTTOM + WALL_HEIGHT / 2, 0);
+
+        var wallMat = new THREE.ShaderMaterial({
+            uniforms: sharedUniforms(),
+            vertexShader: [
+                'varying vec3 vWorldPos;',
+                'varying float vYNorm;',
+                'void main() {',
+                '    vec4 wp = modelMatrix * vec4(position, 1.0);',
+                '    vWorldPos = wp.xyz;',
+                '    vYNorm = clamp((position.y - (' + WALL_BOTTOM.toFixed(2) + ')) / ' + WALL_HEIGHT.toFixed(2) + ', 0.0, 1.0);',
+                '    gl_Position = projectionMatrix * viewMatrix * wp;',
+                '}'
+            ].join('\n'),
+            fragmentShader: [
+                'precision mediump float;',
+                SHARED_GLSL,
+                'varying vec3 vWorldPos;',
+                'varying float vYNorm;',
+                'void main() {',
+                '    float bearing = atan(vWorldPos.x, -vWorldPos.z);',
+                '    vec4 cam = sampleSurround(bearing, vYNorm);',
+                '',
+                '    // Build the local sky/bowl color used as the background.',
+                '    vec3 horizon = vec3(0.04, 0.10, 0.11);',
+                '    vec3 zenith  = vec3(0.01, 0.02, 0.03);',
+                '    vec3 sky = mix(horizon, zenith, smoothstep(0.75, 1.0, vYNorm));',
+                '    vec3 baseBg = mix(vec3(0.04, 0.04, 0.05), sky,',
+                '                      smoothstep(0.0, 0.4, vYNorm));',
+                '',
+                '    // Cropped/out-of-frame fade — instead of mixing into a',
+                '    // flat plate, blend toward a *darkened* version of the',
+                '    // cam itself so the cropped strip reads as a softly',
+                '    // dimmed continuation of the image rather than a black',
+                '    // band.  cam.a → 0 at the crop edge, so we fade smoothly',
+                '    // from full-bright cam to dim cam to bg.',
+                '    vec3 dimmedCam = cam.rgb * 0.35;',
+                '    vec3 fadeColor = mix(baseBg, dimmedCam, 0.6);',
+                '    vec3 rgb = composeSurround(cam.rgb, cam.a, fadeColor);',
+                '',
+                '    // Normal sky fade — the upper bowl always dissolves to',
+                '    // the gradient regardless of whether the cam is cropped.',
+                '    float skyFade = smoothstep(0.65, 0.95, vYNorm);',
+                '    rgb = mix(rgb, sky, skyFade);',
+                '',
+                '    float horizonGlow = smoothstep(0.55, 0.62, vYNorm) *',
+                '                        smoothstep(0.72, 0.62, vYNorm);',
+                '    rgb += vec3(0.0, 0.06, 0.05) * horizonGlow * 0.25;',
+                '',
+                '    float groundFade = smoothstep(0.05, 0.0, vYNorm);',
+                '    rgb = mix(rgb, vec3(0.04, 0.04, 0.05), groundFade * 0.6);',
+                '',
+                '    gl_FragColor = vec4(rgb, 1.0);',
+                '}'
+            ].join('\n'),
+            side: THREE.BackSide,
+            depthWrite: false
         });
+        var wall = new THREE.Mesh(wallGeo, wallMat);
+        wall.renderOrder = -2;
+        this.scene.add(wall);
+        this._skySphere = wall;
 
-        this._skySphere = new THREE.Mesh(sphereGeo, sphereMat);
-        this.scene.add(this._skySphere);
+        // ── Ground disc ─────────────────────────────────────────────────
+        var groundGeo = new THREE.CircleGeometry(WALL_RADIUS * 0.95, 96);
+        var groundMat = new THREE.ShaderMaterial({
+            uniforms: sharedUniforms(),
+            vertexShader: [
+                'varying vec2 vLocal;',
+                'void main() {',
+                '    vLocal = position.xy;',
+                '    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+                '}'
+            ].join('\n'),
+            fragmentShader: [
+                'precision mediump float;',
+                SHARED_GLSL,
+                'varying vec2 vLocal;',
+                'void main() {',
+                '    float worldX = vLocal.x;',
+                '    float worldZ = -vLocal.y;',
+                '    float bearing = atan(worldX, -worldZ);',
+                '    float r = length(vLocal) / ' + (WALL_RADIUS * 0.95).toFixed(2) + ';',
+                '    float vSample = clamp(r * 0.5, 0.0, 0.5);',
+                '    vec4 cam = sampleSurround(bearing, vSample);',
+                '',
+                '    // Same soft-fade strategy as the wall: cropped pixels',
+                '    // ease into a darkened version of the cam itself.',
+                '    vec3 baseBg = vec3(0.04, 0.04, 0.05);',
+                '    vec3 dimmedCam = cam.rgb * 0.35;',
+                '    vec3 fadeColor = mix(baseBg, dimmedCam, 0.6);',
+                '    vec3 rgb = composeSurround(cam.rgb, cam.a, fadeColor);',
+                '',
+                '    float innerFade = smoothstep(0.05, 0.18, r);',
+                '    float outerFade = smoothstep(1.0, 0.85, r);',
+                '    float a = innerFade * outerFade;',
+                '    rgb = mix(bg, rgb, a);',
+                '    gl_FragColor = vec4(rgb, 1.0);',
+                '}'
+            ].join('\n'),
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        var disc = new THREE.Mesh(groundGeo, groundMat);
+        disc.rotation.x = -Math.PI / 2;
+        disc.position.y = WALL_BOTTOM;
+        disc.renderOrder = -1;
+        this.scene.add(disc);
+        this._groundDisc = disc;
     },
 
     // ==================== API HELPERS ====================

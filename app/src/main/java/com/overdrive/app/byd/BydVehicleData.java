@@ -102,6 +102,7 @@ public class BydVehicleData {
     public final int acStartState;
     public final int acCycleMode;
     public final int acWindMode;
+    public final int acFanLevel;
     public final int tempUnit;
 
     // ==================== SENSOR ====================
@@ -231,6 +232,7 @@ public class BydVehicleData {
         this.acStartState = b.acStartState;
         this.acCycleMode = b.acCycleMode;
         this.acWindMode = b.acWindMode;
+        this.acFanLevel = b.acFanLevel;
         this.tempUnit = b.tempUnit;
         this.slopeDegrees = b.slopeDegrees;
         this.powerLevel = b.powerLevel;
@@ -425,6 +427,7 @@ public class BydVehicleData {
             if (acStartState != UNAVAILABLE) clim.put("acOn", acStartState);
             if (acCycleMode != UNAVAILABLE) clim.put("cycleMode", acCycleMode);
             if (acWindMode != UNAVAILABLE) clim.put("windMode", acWindMode);
+            if (acFanLevel != UNAVAILABLE) clim.put("fanLevel", acFanLevel);
             if (tempUnit != UNAVAILABLE) clim.put("tempUnit", tempUnit);
             j.put("climate", clim);
 
@@ -568,7 +571,7 @@ public class BydVehicleData {
         b.rightTurnState = rightTurnState; b.lowBeam = lowBeam; b.highBeam = highBeam;
         b.rearFog = rearFog; b.frontFog = frontFog; b.hazard = hazard;
         b.dayTimeLight = dayTimeLight; b.seatbeltStatus = seatbeltStatus;
-        b.acStartState = acStartState; b.acCycleMode = acCycleMode; b.acWindMode = acWindMode;
+        b.acStartState = acStartState; b.acCycleMode = acCycleMode; b.acWindMode = acWindMode; b.acFanLevel = acFanLevel;
         b.tempUnit = tempUnit; b.slopeDegrees = slopeDegrees; b.powerLevel = powerLevel;
         b.mcuStatus = mcuStatus; b.emergencyAlarmState = emergencyAlarmState;
         b.radarDistances = radarDistances; b.timestamp = timestamp;
@@ -620,7 +623,7 @@ public class BydVehicleData {
         int[] tyrePressure, doorLockStatus, windowOpenPercent, seatbeltStatus, radarDistances;
         int leftTurnState = UNAVAILABLE, rightTurnState = UNAVAILABLE;
         boolean lowBeam, highBeam, rearFog, frontFog, hazard; int dayTimeLight = UNAVAILABLE;
-        int acStartState = UNAVAILABLE, acCycleMode = UNAVAILABLE, acWindMode = UNAVAILABLE, tempUnit = UNAVAILABLE;
+        int acStartState = UNAVAILABLE, acCycleMode = UNAVAILABLE, acWindMode = UNAVAILABLE, acFanLevel = UNAVAILABLE, tempUnit = UNAVAILABLE;
         double slopeDegrees = NaN;
         int powerLevel = UNAVAILABLE, mcuStatus = UNAVAILABLE, emergencyAlarmState = UNAVAILABLE;
         long timestamp = System.currentTimeMillis();
@@ -716,6 +719,7 @@ public class BydVehicleData {
         public Builder acStartState(int v) { acStartState = v; return this; }
         public Builder acCycleMode(int v) { acCycleMode = v; return this; }
         public Builder acWindMode(int v) { acWindMode = v; return this; }
+        public Builder acFanLevel(int v) { acFanLevel = v; return this; }
         public Builder tempUnit(int v) { tempUnit = v; return this; }
         public Builder slopeDegrees(double v) { slopeDegrees = v; return this; }
         public Builder powerLevel(int v) { powerLevel = v; return this; }

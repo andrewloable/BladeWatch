@@ -150,6 +150,13 @@ public class ExternalStorageCleaner {
     private ExternalStorageCleaner() {
         discoverPaths();
         loadConfig();
+
+        // Restore monitoring across daemon restarts. Without this, the user has
+        // to re-toggle the UI switch after every reboot to resume background
+        // OEM-dashcam cleanup, even though `enabled=true` is persisted to disk.
+        if (enabled && sdCardAvailable) {
+            startMonitoring();
+        }
     }
     
     public static synchronized ExternalStorageCleaner getInstance() {
@@ -718,20 +725,30 @@ public class ExternalStorageCleaner {
     
     /**
      * Force cleanup to free specified amount of space.
-     * Ignores the enabled flag - use for manual cleanup.
-     * 
+     *
+     * Gated on the {@code enabled} flag. This was previously documented as
+     * "ignores the enabled flag" — that turned the manual-cleanup path into a
+     * footgun where any caller (UI tap, HTTP POST, Telegram bot) could delete
+     * OEM dashcam files even when the user had explicitly disabled the
+     * feature in config. Honoring the flag here is the single source of
+     * truth; callers should surface the rejection to the user.
+     *
      * @param bytesToFree Minimum bytes to free
-     * @return CleanupResult with details
+     * @return CleanupResult with details, or an error result if disabled
      */
     public CleanupResult forceCleanup(long bytesToFree) {
         synchronized (cleanupLock) {
+            if (!enabled) {
+                return new CleanupResult("External storage cleanup is disabled");
+            }
+
             if (sdCardPath == null || cdrPath == null) {
                 discoverPaths();
                 if (cdrPath == null) {
                     return new CleanupResult("No CDR directory found");
                 }
             }
-            
+
             return performCleanup(bytesToFree);
         }
     }

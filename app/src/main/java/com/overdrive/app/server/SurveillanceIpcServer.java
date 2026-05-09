@@ -40,6 +40,24 @@ public class SurveillanceIpcServer implements Runnable {
         abrpService = service;
     }
 
+    /**
+     * Reset path used by the bulk Reset Data feature: deletes the ABRP token,
+     * persists the change, and stops the running telemetry service so cached
+     * RAM credentials don't keep uploading after the user wiped them.
+     * Mirrors the proven sequence in {@link #handleDeleteAbrpToken}.
+     *
+     * @return true if the reset ran (token cleared + persisted)
+     */
+    public static boolean resetAbrpForBulkWipe() {
+        if (abrpConfig == null) return false;
+        abrpConfig.deleteToken();
+        abrpConfig.save();
+        if (abrpService != null && abrpService.isRunning()) {
+            abrpService.stop();
+        }
+        return true;
+    }
+
     // MQTT integration reference (set by CameraDaemon)
     private static volatile com.overdrive.app.mqtt.MqttConnectionManager mqttManager;
 
@@ -1146,6 +1164,9 @@ public class SurveillanceIpcServer implements Runnable {
         json.put("isCritical", data.isCritical);
         json.put("status", data.getStatus());
         json.put("isPureEV", data.isPureEV());
+        if (data.hasFuelPercent()) {
+            json.put("fuelPercent", data.fuelPercent);
+        }
         json.put("timestamp", data.timestamp);
         return json;
     }

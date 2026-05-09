@@ -16,28 +16,41 @@ public class DrivingRangeData {
     public final int totalRangeKm;     // Combined range
     public final boolean isLow;        // true if total range < 50km
     public final boolean isCritical;   // true if total range < 20km
+    public final double fuelPercent;   // Fuel tank level % (PHEV only). NaN for BEVs / unknown.
     public final long timestamp;
-    
+
     /**
      * Create range data from electric range only (pure EV).
      * @param elecRangeKm Electric driving range in km
      */
     public DrivingRangeData(int elecRangeKm) {
-        this(elecRangeKm, 0);
+        this(elecRangeKm, 0, Double.NaN);
     }
-    
-    /**
-     * Create range data from both electric and fuel range (hybrid).
-     * @param elecRangeKm Electric driving range in km
-     * @param fuelRangeKm Fuel driving range in km
-     */
+
     public DrivingRangeData(int elecRangeKm, int fuelRangeKm) {
+        this(elecRangeKm, fuelRangeKm, Double.NaN);
+    }
+
+    /**
+     * Create range data including PHEV fuel tank level.
+     * @param elecRangeKm Electric driving range in km
+     * @param fuelRangeKm Fuel driving range in km (0 if not available)
+     * @param fuelPercent Fuel tank level % (NaN if not a PHEV / unavailable)
+     */
+    public DrivingRangeData(int elecRangeKm, int fuelRangeKm, double fuelPercent) {
         this.elecRangeKm = Math.max(0, elecRangeKm);
         this.fuelRangeKm = Math.max(0, fuelRangeKm);
         this.totalRangeKm = this.elecRangeKm + this.fuelRangeKm;
         this.isCritical = (this.totalRangeKm < CRITICAL_RANGE_THRESHOLD);
         this.isLow = (this.totalRangeKm < LOW_RANGE_THRESHOLD);
+        // Only accept realistic fuel percentages; sentinel values (e.g. 255)
+        // are filtered upstream in BydDataCollector but defend in depth.
+        this.fuelPercent = (fuelPercent >= 0 && fuelPercent <= 100) ? fuelPercent : Double.NaN;
         this.timestamp = System.currentTimeMillis();
+    }
+
+    public boolean hasFuelPercent() {
+        return !Double.isNaN(fuelPercent);
     }
     
     /**

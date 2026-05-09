@@ -78,28 +78,32 @@ public class SohEstimator {
     }
 
     /**
-     * Detect capacity directly from pack voltage and cell voltage.
-     * Called from BydDataCollector when the first HV pack voltage event arrives.
-     * This always overrides any previous detection (SOC heuristic is unreliable).
+     * Detect capacity from pack voltage (called by BydDataCollector on first HV voltage event).
+     * 
+     * IMPORTANT: This method only sets capacity if no capacity has been detected yet.
+     * It does NOT override a previously detected capacity because pack voltage is unreliable
+     * on some BYD models (e.g., Atto 3 reports 500V instead of expected 384V).
+     * The SOC heuristic (remainKwh / SOC%) is more reliable and runs first in autoDetectCarModel().
      */
     public void autoDetectFromPackVoltage(double packVoltage, BydVehicleData vd) {
         if (packVoltage < 200 || packVoltage > 900) return;
         
-        double cellVoltage = 3.2;
-        if (vd != null && !Double.isNaN(vd.highCellVoltage) && vd.highCellVoltage > 2.5 && vd.highCellVoltage < 3.7) {
-            cellVoltage = vd.highCellVoltage;
-        } else if (vd != null && !Double.isNaN(vd.lowCellVoltage) && vd.lowCellVoltage > 2.5 && vd.lowCellVoltage < 3.7) {
-            cellVoltage = vd.lowCellVoltage;
+        // Only use pack voltage if we haven't detected capacity yet via a more reliable method
+        if (nominalCapacityKwh > 0) {
+            logger.debug("Pack voltage " + String.format("%.1f", packVoltage) + 
+                "V ignored — capacity already detected: " + nominalCapacityKwh + " kWh");
+            return;
         }
         
+        double cellVoltage = 3.2;
         int cellCount = (int) Math.round(packVoltage / cellVoltage);
         double capacity = mapCellCountToCapacity(cellCount);
         
         if (capacity > 0) {
             setNominalCapacityKwh(capacity);
             logger.info("Pack Voltage Capacity: " + capacity + " kWh (voltage=" +
-                String.format("%.1f", packVoltage) + "V, cellV=" + String.format("%.3f", cellVoltage) +
-                "V, cells≈" + cellCount + "s)");
+                String.format("%.1f", packVoltage) + "V, nominal cellV=3.2V" +
+                ", cells≈" + cellCount + "s)");
         } else {
             logger.debug("Pack voltage " + String.format("%.1f", packVoltage) + "V → " + 
                 cellCount + " cells — no matching BYD pack");
@@ -115,104 +119,330 @@ public class SohEstimator {
      * 1. SOC heuristic: remainKwh / SOC → snap to nearest known pack.
      *    Works on every vehicle that reports both values. At high SOC (>95%),
      *    remainKwh ≈ nominal capacity directly.
-     * 2. BMS direct: getBatteryCapacity() Ah → mapAhToKwh() lookup.
+     * 2. Model string: ro.product.model → table lookup.
+     * 3. BMS direct: getBatteryCapacity() Ah → mapAhToKwh() lookup.
      *    Fallback for vehicles where remainKwh isn't available.
-     * 3. Model string: ro.product.model → table lookup. Last resort.
+     * 4. Pack voltage: derive cell count (least reliable).
      */
-    public void autoDetectCarModel(android.content.Context context) {
-        // Priority order:
-        // 0. Pack voltage: derive cell count from HV voltage → map to known BYD pack
-        // 1. BMS direct: getBatteryCapacity() Ah -> mapAhToKwh() lookup
-        // 2. SOC heuristic: remainKwh / SOC -> snap to nearest known pack
-        // 3. Model string: ro.product.model -> table lookup
-        // 4. Persisted capacity from previous successful detection
 
-        // Method 0: Pack voltage → cell count → capacity lookup
-        // BYD Blade cells are LFP. Use actual cell voltage from BMS if available,
-        // otherwise fall back to 3.2V nominal. Using the real cell voltage gives
-        // accurate cell count regardless of SOC (e.g., 496V at 3.31V/cell = 150s Seal,
-        // not 155s which would wrongly match the Han EV).
-        try {
-            VehicleDataMonitor vdm = VehicleDataMonitor.getInstance();
-            BydVehicleData vd = vdm != null ? vdm.getVd() : null;
-            if (vd != null && !Double.isNaN(vd.hvPackVoltage) && vd.hvPackVoltage > 200) {
-                double voltage = vd.hvPackVoltage;
-                // Use actual cell voltage from BMS for accurate cell count
-                double cellVoltage = 3.2;  // default nominal
-                if (!Double.isNaN(vd.highCellVoltage) && vd.highCellVoltage > 2.5 && vd.highCellVoltage < 3.7) {
-                    cellVoltage = vd.highCellVoltage;
-                } else if (!Double.isNaN(vd.lowCellVoltage) && vd.lowCellVoltage > 2.5 && vd.lowCellVoltage < 3.7) {
-                    cellVoltage = vd.lowCellVoltage;
-                }
-                int cellCount = (int) Math.round(voltage / cellVoltage);
-                double capacity = mapCellCountToCapacity(cellCount);
-                if (capacity > 0) {
-                    setNominalCapacityKwh(capacity);
-                    logger.info("Pack Voltage Capacity: " + capacity + " kWh (voltage=" + 
-                        String.format("%.1f", voltage) + "V, cellV=" + String.format("%.3f", cellVoltage) + 
-                        "V, cells≈" + cellCount + "s)");
-                    return;
-                }
-            }
-        } catch (Exception e) {
-            logger.debug("Pack voltage capacity lookup failed: " + e.getMessage());
+    /** True if v looks like a CAN/HAL "value unavailable" sentinel for an int field. */
+    private static boolean isSentinelInt(int v) {
+        return v == 255 || v == 254
+            || v == 511 || v == 1023
+            || v == 2046 || v == 2047
+            || v == 4095
+            || v == 65534 || v == 65535;
+    }
+    private static boolean isSentinelInt(Object o) {
+        return (o instanceof Number) && isSentinelInt(((Number) o).intValue());
+    }
+
+    /** Render an exception for log: prefer message, fall back to class name so we never log "[]". */
+    private static String describeException(Throwable e) {
+        if (e == null) return "null";
+        String msg = e.getMessage();
+        if (msg != null && !msg.trim().isEmpty()) {
+            return e.getClass().getSimpleName() + ": " + msg;
         }
+        Throwable cause = e.getCause();
+        if (cause != null && cause.getMessage() != null && !cause.getMessage().trim().isEmpty()) {
+            return e.getClass().getSimpleName() + " (cause: "
+                + cause.getClass().getSimpleName() + ": " + cause.getMessage() + ")";
+        }
+        return e.getClass().getSimpleName() + " (no message)";
+    }
 
-        // Method 1: BMS direct
-        if (context != null) {
+    private void dumpPhevDiagnostics(android.content.Context context) {
+        try {
+            logger.info("=== POWERTRAIN DIAGNOSTICS ===");
+
+            // ro.product.model — head-unit model string
             try {
-                Class<?> cls = Class.forName("android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice");
-                Object device = cls.getMethod("getInstance", android.content.Context.class).invoke(null, context);
-                if (device != null) {
-                    Method getBatteryCapacity = cls.getMethod("getBatteryCapacity");
-                    Number capNum = (Number) getBatteryCapacity.invoke(device);
-                    int capacityRaw = capNum != null ? capNum.intValue() : 0;
-                    if (capacityRaw > 0) {
-                        double capacityKwh = 0;
-                        if (capacityRaw > 1000) {
-                            capacityKwh = capacityRaw / 1000.0;
-                        } else {
-                            double fromAh = mapAhToKwh(capacityRaw);
-                            if (fromAh > 0) {
-                                capacityKwh = fromAh;
-                            } else if (capacityRaw >= 10 && capacityRaw <= 120) {
-                                capacityKwh = capacityRaw;
-                            }
-                        }
-                        if (capacityKwh > 10 && capacityKwh < 200) {
-                            setNominalCapacityKwh(capacityKwh);
-                            logger.info("BMS Capacity: " + capacityKwh + " kWh (raw=" + capacityRaw + ")");
-                            return;
-                        }
+                String model = (String) Class.forName("android.os.SystemProperties")
+                    .getMethod("get", String.class, String.class)
+                    .invoke(null, "ro.product.model", "");
+                logger.info("[diag] ro.product.model = \"" + model + "\"");
+            } catch (Exception e) {
+                logger.info("[diag] ro.product.model: failed (" + describeException(e) + ")");
+            }
+
+            if (context == null) {
+                logger.info("[diag] context==null — skipping HAL probes");
+                logger.info("=== POWERTRAIN DIAGNOSTICS END ===");
+                return;
+            }
+
+            // BYDAutoEnergyDevice — getEnergyMode + getOperationMode.
+            // NOTE: codes vary across firmware. 1==EV, 3==HEV is the common mapping
+            // but NOT universal — observed BEV (Atto 3) returning 3 and PHEV
+            // (Sealion 6 DM-i) returning 0. This signal alone is unreliable for
+            // PHEV detection; we use it only as a hint.
+            try {
+                Class<?> energyCls = Class.forName("android.hardware.bydauto.energy.BYDAutoEnergyDevice");
+                Object energyDev = energyCls.getMethod("getInstance", android.content.Context.class)
+                    .invoke(null, context);
+                if (energyDev != null) {
+                    try {
+                        Object em = energyCls.getMethod("getEnergyMode").invoke(energyDev);
+                        String hint;
+                        if (Integer.valueOf(1).equals(em)) hint = " (commonly EV — not authoritative)";
+                        else if (Integer.valueOf(3).equals(em)) hint = " (commonly HEV — not authoritative; observed on BEV too)";
+                        else hint = " (unknown code)";
+                        logger.info("[diag] BYDAutoEnergyDevice.getEnergyMode = " + em + hint);
+                    } catch (Exception e) {
+                        logger.info("[diag] getEnergyMode failed: " + describeException(e));
+                    }
+                    try {
+                        Object om = energyCls.getMethod("getOperationMode").invoke(energyDev);
+                        logger.info("[diag] BYDAutoEnergyDevice.getOperationMode = " + om);
+                    } catch (Exception e) {
+                        logger.info("[diag] getOperationMode failed: " + describeException(e));
+                    }
+                } else {
+                    logger.info("[diag] BYDAutoEnergyDevice getInstance returned null");
+                }
+            } catch (ClassNotFoundException e) {
+                logger.info("[diag] BYDAutoEnergyDevice not on this firmware");
+            } catch (Exception e) {
+                logger.info("[diag] BYDAutoEnergyDevice probe failed: " + describeException(e));
+            }
+
+            // BYDAutoChargingDevice — Commander uses getChargingCapacity, we don't.
+            // Probed values across different vehicles all read 0.0; treat as not useful.
+            try {
+                Class<?> chargingCls = Class.forName("android.hardware.bydauto.charging.BYDAutoChargingDevice");
+                Object chargingDev = chargingCls.getMethod("getInstance", android.content.Context.class)
+                    .invoke(null, context);
+                if (chargingDev != null) {
+                    try {
+                        Object cc = chargingCls.getMethod("getChargingCapacity").invoke(chargingDev);
+                        logger.info("[diag] BYDAutoChargingDevice.getChargingCapacity = " + cc
+                            + " (not used — observed 0.0 on every probed vehicle)");
+                    } catch (Exception e) {
+                        logger.info("[diag] getChargingCapacity failed: " + describeException(e));
+                    }
+                    try {
+                        Object ct = chargingCls.getMethod("getChargingType").invoke(chargingDev);
+                        logger.info("[diag] BYDAutoChargingDevice.getChargingType = " + ct);
+                    } catch (Exception e) {
+                        logger.info("[diag] getChargingType failed: " + describeException(e));
+                    }
+                } else {
+                    logger.info("[diag] BYDAutoChargingDevice getInstance returned null");
+                }
+            } catch (ClassNotFoundException e) {
+                logger.info("[diag] BYDAutoChargingDevice not on this firmware");
+            } catch (Exception e) {
+                logger.info("[diag] BYDAutoChargingDevice probe failed: " + describeException(e));
+            }
+
+            // BYDAutoStatisticDevice — getFuelPercentageValue is the most reliable
+            // PHEV signal IF you filter sentinels. BEVs return 255 (unavailable);
+            // PHEVs return 0..100 actual fuel level. Same for getFuelDrivingRangeValue
+            // (BEVs return 2046/2047, PHEVs return real km).
+            try {
+                Class<?> statCls = Class.forName("android.hardware.bydauto.statistic.BYDAutoStatisticDevice");
+                Object statDev = statCls.getMethod("getInstance", android.content.Context.class)
+                    .invoke(null, context);
+                if (statDev != null) {
+                    try {
+                        Object fp = statCls.getMethod("getFuelPercentageValue").invoke(statDev);
+                        String hint;
+                        if (isSentinelInt(fp)) hint = " (sentinel — BEV / fuel unavailable)";
+                        else if (fp instanceof Number) {
+                            int v = ((Number) fp).intValue();
+                            if (v >= 0 && v <= 100) hint = " (in 0..100 range — PHEV fuel level)";
+                            else hint = " (out of expected 0..100 range — ignore)";
+                        } else hint = "";
+                        logger.info("[diag] BYDAutoStatisticDevice.getFuelPercentageValue = " + fp + hint);
+                    } catch (Exception e) {
+                        logger.info("[diag] getFuelPercentageValue failed: " + describeException(e));
+                    }
+                    try {
+                        Object fr = statCls.getMethod("getFuelDrivingRangeValue").invoke(statDev);
+                        String hint;
+                        if (isSentinelInt(fr)) hint = " (sentinel — BEV / range unavailable)";
+                        else if (fr instanceof Number) {
+                            int v = ((Number) fr).intValue();
+                            if (v > 0 && v < 1500) hint = " km (real PHEV fuel range)";
+                            else hint = " (out of expected 0..1500 km range)";
+                        } else hint = "";
+                        logger.info("[diag] BYDAutoStatisticDevice.getFuelDrivingRangeValue = " + fr + hint);
+                    } catch (Exception e) {
+                        logger.info("[diag] getFuelDrivingRangeValue failed: " + describeException(e));
+                    }
+                    try {
+                        Object sohi = statCls.getMethod("getStatisticBatteryHealthyIndex").invoke(statDev);
+                        logger.info("[diag] BYDAutoStatisticDevice.getStatisticBatteryHealthyIndex = " + sohi);
+                    } catch (Exception e) {
+                        logger.info("[diag] getStatisticBatteryHealthyIndex failed: " + describeException(e));
+                    }
+                    try {
+                        Object remPwr = statCls.getMethod("getRemainingBatteryPower").invoke(statDev);
+                        logger.info("[diag] BYDAutoStatisticDevice.getRemainingBatteryPower = " + remPwr
+                            + " (raw — divide by 10 if reported in 0.1 kWh units)");
+                    } catch (Exception e) {
+                        logger.info("[diag] getRemainingBatteryPower failed: " + describeException(e));
+                    }
+                } else {
+                    logger.info("[diag] BYDAutoStatisticDevice getInstance returned null");
+                }
+            } catch (ClassNotFoundException e) {
+                logger.info("[diag] BYDAutoStatisticDevice not on this firmware");
+            } catch (Exception e) {
+                logger.info("[diag] BYDAutoStatisticDevice probe failed: " + describeException(e));
+            }
+
+            // BYDAutoBodyworkDevice — getBatteryCapacity (we use this) + getBatteryPowerHEV
+            try {
+                Class<?> bodyCls = Class.forName("android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice");
+                Object bodyDev = bodyCls.getMethod("getInstance", android.content.Context.class)
+                    .invoke(null, context);
+                if (bodyDev != null) {
+                    try {
+                        Object cap = bodyCls.getMethod("getBatteryCapacity").invoke(bodyDev);
+                        int rawCap = (cap instanceof Number) ? ((Number) cap).intValue() : -1;
+                        String semHint;
+                        if (isSentinelInt(rawCap)) semHint = " (sentinel — unavailable)";
+                        else if (rawCap >= 50 && rawCap <= 350) semHint = " (likely Ah rating)";
+                        else if (rawCap > 350 && rawCap < 60000) semHint = " (likely 0.1 kWh units → " + (rawCap / 10.0) + " kWh)";
+                        else semHint = " (unknown semantics)";
+                        logger.info("[diag] BYDAutoBodyworkDevice.getBatteryCapacity = " + cap + semHint);
+                    } catch (Exception e) {
+                        logger.info("[diag] getBatteryCapacity failed: " + describeException(e));
+                    }
+                    try {
+                        Object hev = bodyCls.getMethod("getBatteryPowerHEV").invoke(bodyDev);
+                        String hevHint;
+                        if (hev instanceof Number) {
+                            double v = ((Number) hev).doubleValue();
+                            if (v == 65535.0 || v == 65534.0 || v == 255.0) hevHint = " (sentinel — unavailable)";
+                            else hevHint = " (BEVs: kWh remaining; PHEVs: typically SOC%)";
+                        } else hevHint = "";
+                        logger.info("[diag] BYDAutoBodyworkDevice.getBatteryPowerHEV = " + hev + hevHint);
+                    } catch (Exception e) {
+                        logger.info("[diag] getBatteryPowerHEV failed: " + describeException(e));
                     }
                 }
+            } catch (ClassNotFoundException e) {
+                logger.info("[diag] BYDAutoBodyworkDevice not on this firmware");
             } catch (Exception e) {
-                logger.debug("BMS capacity lookup failed: " + e.getMessage());
+                logger.info("[diag] BYDAutoBodyworkDevice probe failed: " + describeException(e));
             }
-        }
 
-        // Method 2: SOC heuristic (fallback when BMS unavailable)
+            // BYDAutoPowerDevice — getBatteryRemainPowerEV (we use this)
+            try {
+                Class<?> pwrCls = Class.forName("android.hardware.bydauto.power.BYDAutoPowerDevice");
+                Object pwrDev = pwrCls.getMethod("getInstance", android.content.Context.class)
+                    .invoke(null, context);
+                if (pwrDev != null) {
+                    try {
+                        Object rp = pwrCls.getMethod("getBatteryRemainPowerEV").invoke(pwrDev);
+                        logger.info("[diag] BYDAutoPowerDevice.getBatteryRemainPowerEV = " + rp);
+                    } catch (Exception e) {
+                        logger.info("[diag] getBatteryRemainPowerEV failed: " + describeException(e));
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                logger.info("[diag] BYDAutoPowerDevice not on this firmware");
+            } catch (Exception e) {
+                logger.info("[diag] BYDAutoPowerDevice probe failed: " + describeException(e));
+            }
+
+            // Current snapshot context — what our internal pipeline already has
+            try {
+                VehicleDataMonitor vdm = VehicleDataMonitor.getInstance();
+                BydVehicleData vd = vdm != null ? vdm.getVd() : null;
+                BatterySocData socData = vdm != null ? vdm.getBatterySoc() : null;
+                double remKwh = vdm != null ? vdm.getBatteryRemainPowerKwh() : 0;
+                logger.info("[diag] internal: socPercent="
+                    + (socData != null ? socData.socPercent : "null")
+                    + ", getBatteryRemainPowerKwh=" + remKwh
+                    + ", vd.remainKwh=" + (vd != null ? vd.remainKwh : "null")
+                    + ", vd.hvPackVoltage=" + (vd != null ? vd.hvPackVoltage : "null")
+                    + ", vd.fuelPercent=" + (vd != null ? vd.fuelPercent : "null")
+                    + ", currentNominalKwh=" + nominalCapacityKwh);
+            } catch (Exception e) {
+                logger.info("[diag] internal snapshot probe failed: " + describeException(e));
+            }
+
+            logger.info("=== POWERTRAIN DIAGNOSTICS END ===");
+        } catch (Throwable t) {
+            // Diagnostic must never throw into the caller's flow
+            logger.warn("dumpPhevDiagnostics: unexpected error: " + describeException(t));
+        }
+    }
+
+    public void autoDetectCarModel(android.content.Context context) {
+        // Diagnostic dump — read-only, no behaviour change. Logs HAL values that
+        // are useful for diagnosing PHEV capacity-detection failures, including
+        // sources we currently ignore (getChargingCapacity, getEnergyMode,
+        // getFuelPercentage). Safe to leave on; runs once per autoDetect call.
+        dumpPhevDiagnostics(context);
+
+        // Priority order:
+        // 1. SOC heuristic: remainKwh / SOC → snap to nearest known pack (most reliable auto-detect)
+        // 2. Model string: ro.product.model → table lookup
+        // 3. BMS direct: getBatteryCapacity() Ah → mapAhToKwh() (often returns 0xFFFF sentinel)
+        // 4. Pack voltage: derive cell count (unreliable — some models report wrong voltage)
+        // 5. Persisted capacity from previous successful detection
+
+        // Method 1: SOC heuristic — most reliable auto-detection method.
+        // Uses actual energy readings (remainKwh / SOC%) which are proven accurate.
         try {
             VehicleDataMonitor vdm = VehicleDataMonitor.getInstance();
             double remainingKwh = vdm.getBatteryRemainPowerKwh();
             BatterySocData socData = vdm.getBatterySoc();
             if (remainingKwh > 5 && socData != null && socData.socPercent > 20) {
                 double estimatedCapacity = remainingKwh / (socData.socPercent / 100.0);
-                // Detect BYD PHEV firmware bug: BMS returns SOC% value as kWh
-                // (e.g. 50% SOC → getBatteryRemainPowerKwh() returns 50.0 kWh).
-                // In this case the two numbers are numerically almost equal.
-                if (Math.abs(remainingKwh - socData.socPercent) < 3.0) {
+                // Detect BYD PHEV firmware bug: BMS returns SOC% value as kWh.
+                // Widened threshold from 3.0 to 5.0 — on PHEVs the values can drift
+                // slightly apart (e.g., SOC=53%, remainKwh=56) but still indicate the bug.
+                // Also detect when remainKwh is impossibly large for a PHEV pack
+                // (e.g., remainKwh=56 on an 18 kWh pack means it's clearly SOC-as-kWh).
+                boolean likelyPhevKwhBug = Math.abs(remainingKwh - socData.socPercent) < 5.0;
+                // Additional heuristic: if remainKwh > 40 but estimated capacity snaps to
+                // a known small PHEV pack (<30 kWh), the BMS is lying about remainKwh.
+                //
+                // CAUTION: a 1:1 ratio also occurs naturally on ~100 kWh BEVs at any SOC
+                // (e.g. Tang at 70% SOC: remain≈70 kWh, ratio=1.0). To avoid false-flagging
+                // those as the PHEV firmware bug, only run the ratio check before any
+                // nominal capacity has been detected — once we know the pack is, say,
+                // 108.8 kWh nominal, we already have the answer.
+                if (!likelyPhevKwhBug && remainingKwh > 40 && estimatedCapacity > 40
+                        && nominalCapacityKwh <= 0) {
+                    double socKwhRatio = remainingKwh / socData.socPercent;
+                    if (socKwhRatio > 0.85 && socKwhRatio < 1.15) {
+                        likelyPhevKwhBug = true;
+                    }
+                }
+                if (likelyPhevKwhBug) {
                     logger.info("SOC heuristic skipped: remainKwh (" +
                         String.format("%.1f", remainingKwh) + ") ≈ socPercent (" +
                         String.format("%.1f", socData.socPercent) + ") — likely SOC-as-kWh firmware bug");
+                } else if (nominalCapacityKwh > 0 && nominalCapacityKwh < 30 && estimatedCapacity > 40) {
+                    // Already detected as a small PHEV pack via another method (BMS Ah, config, etc.)
+                    // but SOC heuristic is computing a wildly different capacity — BMS remainKwh is lying
+                    logger.info("SOC heuristic skipped: estimated " + String.format("%.1f", estimatedCapacity) +
+                        " kWh but nominal already detected as " + String.format("%.1f", nominalCapacityKwh) +
+                        " kWh — PHEV remainKwh unreliable");
                 } else {
                     double matched = matchNearestCapacity(estimatedCapacity);
                     if (matched > 0) {
                         setNominalCapacityKwh(matched);
-                        logger.info("SOC-Estimated Capacity: " + String.format("%.1f", estimatedCapacity)
-                            + " kWh, matched to " + matched + " kWh"
-                            + " (SOC=" + String.format("%.1f", socData.socPercent) + "%, remain="
-                            + String.format("%.1f", remainingKwh) + " kWh)");
+                        // Only show "matched to X" when the snap actually moved
+                        // the value. SOC granularity is whole percent, so an
+                        // estimate of 60.0 matching nominal 60.48 is *expected*
+                        // rounding, not a discrepancy worth flagging.
+                        double snapDelta = Math.abs(estimatedCapacity - matched);
+                        boolean snapped = snapDelta > 0.5;
+                        logger.info("SOC-derived nominal capacity: " + matched + " kWh"
+                            + (snapped
+                                ? " (estimated " + String.format("%.1f", estimatedCapacity)
+                                  + " kWh, snapped to nearest known pack)"
+                                : "")
+                            + " [SOC=" + String.format("%.1f", socData.socPercent) + "%, remain="
+                            + String.format("%.1f", remainingKwh) + " kWh]");
                         return;
                     }
                 }
@@ -220,7 +450,8 @@ public class SohEstimator {
         } catch (Exception e) {
             logger.debug("SOC heuristic failed: " + e.getMessage());
         }
-        // Method 3: System property model string — last resort
+
+        // Method 2: System property model string
         try {
             String carType = (String) Class.forName("android.os.SystemProperties")
                 .getMethod("get", String.class, String.class)
@@ -234,6 +465,65 @@ public class SohEstimator {
                 }
             }
         } catch (Exception e) { /* ignore */ }
+
+        // Method 3: BMS direct — getBatteryCapacity() Ah
+        // WARNING: Often returns 0xFFFF (65535) sentinel on many BYD models.
+        if (context != null) {
+            try {
+                Class<?> cls = Class.forName("android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice");
+                Object device = cls.getMethod("getInstance", android.content.Context.class).invoke(null, context);
+                if (device != null) {
+                    Method getBatteryCapacity = cls.getMethod("getBatteryCapacity");
+                    Number capNum = (Number) getBatteryCapacity.invoke(device);
+                    int capacityRaw = capNum != null ? capNum.intValue() : 0;
+                    // Filter CAN bus sentinel values
+                    if (capacityRaw > 0 && capacityRaw != 255 && capacityRaw != 65534 && capacityRaw != 65535) {
+                        double capacityKwh = 0;
+                        if (capacityRaw > 1000 && capacityRaw < 60000) {
+                            capacityKwh = capacityRaw / 1000.0;
+                        } else if (capacityRaw <= 1000) {
+                            double fromAh = mapAhToKwh(capacityRaw);
+                            if (fromAh > 0) {
+                                capacityKwh = fromAh;
+                            } else if (capacityRaw >= 10 && capacityRaw <= 350) {
+                                capacityKwh = capacityRaw;
+                            }
+                        }
+                        if (capacityKwh > 10 && capacityKwh < 150) {
+                            setNominalCapacityKwh(capacityKwh);
+                            logger.info("BMS Capacity: " + capacityKwh + " kWh (raw=" + capacityRaw + ")");
+                            return;
+                        }
+                    }
+                    if (capacityRaw == 65535 || capacityRaw == 65534 || capacityRaw == 255) {
+                        logger.debug("BMS capacity returned sentinel value " + capacityRaw + " — skipping");
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug("BMS capacity lookup failed: " + e.getMessage());
+            }
+        }
+
+        // Method 4: Pack voltage → cell count (least reliable — some models report wrong voltage)
+        try {
+            VehicleDataMonitor vdm = VehicleDataMonitor.getInstance();
+            BydVehicleData vd = vdm != null ? vdm.getVd() : null;
+            if (vd != null && !Double.isNaN(vd.hvPackVoltage) && vd.hvPackVoltage > 200) {
+                double voltage = vd.hvPackVoltage;
+                double cellVoltage = 3.2;
+                int cellCount = (int) Math.round(voltage / cellVoltage);
+                double capacity = mapCellCountToCapacity(cellCount);
+                if (capacity > 0) {
+                    setNominalCapacityKwh(capacity);
+                    logger.info("Pack Voltage Capacity: " + capacity + " kWh (voltage=" + 
+                        String.format("%.1f", voltage) + "V, nominal cellV=3.2V" + 
+                        ", cells≈" + cellCount + "s)");
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Pack voltage capacity lookup failed: " + e.getMessage());
+        }
 
         logger.warn("Capacity detection failed" + 
             (nominalCapacityKwh > 0 ? " — using previously saved capacity: " + nominalCapacityKwh + " kWh" 
@@ -253,32 +543,62 @@ public class SohEstimator {
             VehicleDataMonitor vdm = VehicleDataMonitor.getInstance();
             double remainingKwh = vdm.getBatteryRemainPowerKwh();
             BatterySocData socData = vdm.getBatterySoc();
-            if (socData != null && socData.socPercent > 20 && socData.socPercent <= 100) {
-                // Detect PHEV firmware bug: BMS returns SOC% value as kWh
-                // (e.g. 90% SOC → getBatteryRemainPowerKwh() returns 90.0 kWh).
-                boolean isPhevKwhBug = Math.abs(remainingKwh - socData.socPercent) < 3.0;
-                
-                // Try raw kWh first (only if not the PHEV bug and SOC is in reliable range)
+            if (socData == null || socData.socPercent <= 20 || socData.socPercent > 100) {
+                // SOC too low/high or unavailable — fall through to 100% baseline below.
+            } else {
+                // PHEV firmware bug: BMS reports SOC% in the kWh field. Catch
+                // the easy case (numerically equal) first.
+                boolean isPhevKwhBug = Math.abs(remainingKwh - socData.socPercent) < 5.0;
+                // Ratio sanity check is only useful BEFORE we know the pack
+                // size — once nominalCapacityKwh is set, a pack near 100 kWh
+                // legitimately produces a 1:1 SOC%/kWh ratio at any SOC.
+                if (!isPhevKwhBug && remainingKwh > 0 && socData.socPercent > 0
+                        && nominalCapacityKwh <= 0) {
+                    double socKwhRatio = remainingKwh / socData.socPercent;
+                    if (socKwhRatio > 0.85 && socKwhRatio < 1.15) {
+                        isPhevKwhBug = true;
+                    }
+                }
+
+                // Read the highest cell voltage so the chemistry-aware scale
+                // can decide LFP vs NMC.
+                double highCellV = Double.NaN;
+                BydVehicleData vd = vdm.getVd();
+                if (vd != null && !Double.isNaN(vd.highCellVoltage)) {
+                    highCellV = vd.highCellVoltage;
+                }
+
+                // Boot-time seed is treated as "at rest" — the daemon usually
+                // boots either while parked or right after ACC ON, before any
+                // significant accessory load has stabilized. The data we use
+                // here was sampled within seconds of construction and hasn't
+                // had time to drift. updateFromEnergy still validates the
+                // implied capacity is within 50–150% of nominal, so a stale
+                // PHEV kWh field can't seed a wrong value.
                 if (!isPhevKwhBug && remainingKwh > 0 && socData.socPercent <= 85) {
-                    updateFromInstantaneous(remainingKwh, socData.socPercent);
+                    updateFromEnergy(remainingKwh, socData.socPercent, highCellV, /*atRest=*/true);
                 }
-                
-                // If raw kWh didn't produce an estimate (stale/stuck value on PHEVs,
-                // SOC too high, or PHEV firmware bug), seed directly from SOC × nominal.
-                // This gives SOH = 100% as a starting point, which is reasonable for
-                // a new install — calibration charges will refine it over time.
-                if (!hasEstimate()) {
-                    logger.info("Seeding SOH at 100% baseline" +
-                        (isPhevKwhBug ? " (PHEV kWh=SOC firmware bug detected)" : 
-                         socData.socPercent > 85 ? " (SOC " + String.format("%.0f", socData.socPercent) + "% above instantaneous threshold)" :
-                         " (instantaneous method gave no result)") +
-                        " — nominal=" + String.format("%.1f", nominalCapacityKwh) + " kWh");
-                    currentSoh = 100.0;
-                    sampleCount = 1;
-                    estimationMethod = METHOD_INSTANTANEOUS;
-                    persistEstimate();
-                    logger.info("SOH seeded at 100% (nominal baseline — will refine from charge calibration)");
+            }
+
+            // If energy seed didn't fire (PHEV bug, SOC out of range, etc.),
+            // start at 100% — calibration / capacity-Ah will refine it.
+            if (!hasEstimate()) {
+                String why;
+                if (socData == null) {
+                    why = "no SOC data";
+                } else if (socData.socPercent <= 20) {
+                    why = "SOC " + String.format("%.0f", socData.socPercent) + "% below seed threshold";
+                } else if (socData.socPercent > 85) {
+                    why = "SOC " + String.format("%.0f", socData.socPercent) + "% above seed threshold";
+                } else {
+                    why = "energy reading unreliable";
                 }
+                logger.info("Seeding SOH at 100% baseline (" + why + ") — nominal="
+                    + String.format("%.2f", nominalCapacityKwh) + " kWh");
+                currentSoh = 100.0;
+                sampleCount = 1;
+                estimationMethod = METHOD_INSTANTANEOUS;
+                persistEstimate();
             }
         } catch (Exception e) {
             logger.debug("Initial SOH seed failed: " + e.getMessage());
@@ -346,13 +666,35 @@ public class SohEstimator {
     // ==================== SOTA SOH UPDATES ====================
 
     /**
-     * BYD Display SOC correction factor.
-     * BYD hides ~2.5% at bottom and ~2.5% at top for battery protection.
-     * Display 0-100% maps to approximately Absolute 2.5-97.5%.
-     * absoluteSoc ≈ displaySoc * 0.95 + 2.5
+     * Chemistry-aware display→absolute SOC scale.
+     *
+     * The previous implementation hard-coded `displaySoc * 0.95 + 2.5`, which
+     * is the NMC convention (hide ~2.5% at top and bottom for cycling
+     * protection). BYD Blade is LFP, which has a flat voltage curve and
+     * minimal hidden reserve — the displayed range is essentially the usable
+     * range. Empirically, on Atto 3 with SOC=28% and remainKwh=16.8 kWh, the
+     * implied capacity is exactly 60.0 kWh against a 60.48 kWh nameplate,
+     * meaning display 0..100% ≈ usable 0..100%. Applying *0.95+2.5 here was
+     * causing a ~4% phantom SOH degradation on a brand-new pack.
+     *
+     * The chemistry of every pack we know about (Atto 3, Seal, Han, Tang,
+     * Dolphin, Sealion 6/7) is BYD Blade LFP, so we default to 1:1. The hook
+     * is left in place so an NMC-equipped variant can be detected later (e.g.
+     * by checking if cell.maxV > 3.7V, which LFP cells never reach).
      */
-    private static double correctDisplaySoc(double displaySoc) {
-        return displaySoc * 0.95 + 2.5;
+    private static double displayToAbsoluteSocScale(double highCellVoltage) {
+        // LFP fully-charged cell V ≈ 3.40V, hot at 3.55V. NMC fully-charged
+        // cell V ≈ 4.10–4.20V. If we see a high cell ≥ 3.75V, it's NMC.
+        if (!Double.isNaN(highCellVoltage) && highCellVoltage >= 3.75) {
+            return 0.95;  // NMC convention
+        }
+        return 1.0;       // LFP: display range == usable range
+    }
+
+    /** Apply scale to display SOC. Offset is intentionally 0 for LFP. */
+    private static double scaleDisplaySoc(double displaySoc, double scale) {
+        if (scale >= 0.999) return displaySoc;       // LFP: identity
+        return displaySoc * scale + (1.0 - scale) / 2.0 * 100.0;  // NMC: hide reserve symmetrically
     }
 
     /**
@@ -382,21 +724,32 @@ public class SohEstimator {
     }
 
     /**
-     * Update SOH from instantaneous remainingKwh / SOC readings.
+     * Compute and record an "energy-based" SOH from current SOC + remaining
+     * kWh, BUT distinguish two cases via the rest-state hints:
      *
-     * This method is ONLY used for the initial seed when no SOH estimate
-     * exists yet. Once we have an estimate (from this seed or from calibration),
-     * further instantaneous readings are ignored — they're too noisy for a value
-     * that changes 1-2% per year. Ongoing SOH updates come exclusively from
-     * charge session calibration (updateFromCalibration).
+     *  - If atRest is true (parked, AC off, not charging, low cell spread)
+     *    the reading is trustworthy enough to seed (when no estimate exists)
+     *    and to update rawEnergySoh for display.
+     *  - If atRest is false the reading is still computed for rawEnergySoh
+     *    so the UI can show "live energy-based estimate," but is NEVER used
+     *    to seed currentSoh and is NEVER fed into the EMA. Instantaneous
+     *    discharge readings drift up to 5% with HVAC / accessory load and
+     *    would otherwise pollute the active SOH.
      *
-     * However, the raw energy-based SOH is ALWAYS tracked for UI display,
-     * regardless of whether it's used for the active estimate.
+     * The chemistry-aware SOC scale fixes the long-standing ~4% phantom
+     * degradation: BYD Blade is LFP and the displayed range is the usable
+     * range, so display 0..100% maps to absolute 0..100% (not 2.5..97.5%).
      *
-     * @param remainingKwh Battery remaining energy from BMS
+     * @param remainingKwh      Battery remaining energy from BMS (kWh)
      * @param displaySocPercent Display SOC from dashboard (0-100)
+     * @param highCellVoltage   Highest cell voltage in V, or NaN. Used only
+     *                          to detect chemistry (LFP vs NMC).
+     * @param atRest            True if rest-state gates are satisfied. False
+     *                          forces this reading into UI-only display
+     *                          (rawEnergySoh) without affecting currentSoh.
      */
-    public void updateFromInstantaneous(double remainingKwh, double displaySocPercent) {
+    public void updateFromEnergy(double remainingKwh, double displaySocPercent,
+                                 double highCellVoltage, boolean atRest) {
         // Need nominal capacity to compute SOH — skip if not yet detected
         if (nominalCapacityKwh <= 0) return;
 
@@ -411,21 +764,22 @@ public class SohEstimator {
         // Sanity check: implied capacity must be in a plausible range
         double impliedCapacity = remainingKwh / (displaySocPercent / 100.0);
         if (impliedCapacity < 10.0 || impliedCapacity > 120.0) {
-            logger.debug("Rejecting seed: implied capacity " + String.format("%.1f", impliedCapacity) +
-                " kWh outside BYD range (10-120 kWh)");
+            logger.debug("Energy SOH rejected: implied capacity "
+                + String.format("%.1f", impliedCapacity) + " kWh outside BYD range (10-120)");
             return;
         }
-        if (nominalCapacityKwh > 0) {
-            double ratio = impliedCapacity / nominalCapacityKwh;
-            if (ratio < 0.5 || ratio > 1.5) {
-                logger.debug("Rejecting seed: implied capacity " + String.format("%.1f", impliedCapacity) +
-                    " kWh is " + String.format("%.0f", ratio * 100) + "% of nominal " +
-                    String.format("%.1f", nominalCapacityKwh) + " kWh — likely bad remainKwh reading");
-                return;
-            }
+        double ratio = impliedCapacity / nominalCapacityKwh;
+        if (ratio < 0.5 || ratio > 1.5) {
+            logger.debug("Energy SOH rejected: implied capacity "
+                + String.format("%.1f", impliedCapacity) + " kWh is "
+                + String.format("%.0f", ratio * 100) + "% of nominal "
+                + String.format("%.2f", nominalCapacityKwh)
+                + " kWh — likely bad remainKwh reading");
+            return;
         }
 
-        double absSoc = correctDisplaySoc(displaySocPercent);
+        double scale = displayToAbsoluteSocScale(highCellVoltage);
+        double absSoc = scaleDisplaySoc(displaySocPercent, scale);
         double currentTotalCap = remainingKwh / (absSoc / 100.0);
         double instantaneousSoh = (currentTotalCap / nominalCapacityKwh) * 100.0;
 
@@ -434,19 +788,38 @@ public class SohEstimator {
         // Always track raw value for UI display
         rawEnergySoh = instantaneousSoh;
 
-        // Once we have an estimate, stop accepting instantaneous readings for the active SOH.
-        // SOH should only change from calibration/OEM/capacity-Ah data.
+        // Driving / HVAC-on readings are noisy. Track them for display only.
+        if (!atRest) {
+            return;
+        }
+
+        // Rest-state reading is trustworthy. Seed if we don't have an estimate
+        // yet; otherwise let calibration / capacity-Ah continue to dominate.
         if (hasEstimate()) return;
 
-        // Accept as initial seed
         currentSoh = instantaneousSoh;
         sampleCount = 1;
         estimationMethod = METHOD_INSTANTANEOUS;
+        sohSource = "energy";
         persistEstimate();
-        logger.info("SOH seeded: " + String.format("%.1f", currentSoh) + "% (from " +
-            String.format("%.1f", remainingKwh) + " kWh / " +
-            String.format("%.1f", displaySocPercent) + "% SOC, implied cap=" +
-            String.format("%.1f", impliedCapacity) + " kWh)");
+        logger.info("SOH seeded from rest-state energy: "
+            + String.format("%.1f", currentSoh) + "% (remain="
+            + String.format("%.1f", remainingKwh) + " kWh, SOC="
+            + String.format("%.1f", displaySocPercent) + "%, implied cap="
+            + String.format("%.1f", impliedCapacity) + " kWh, scale="
+            + String.format("%.2f", scale) + ")");
+    }
+
+    /**
+     * Backward-compatible wrapper. Treats the reading as not-at-rest, so it
+     * only updates the UI-facing rawEnergySoh and never seeds currentSoh.
+     * Existing schedulers (AbrpTelemetryService, SocHistoryDatabase) call this
+     * on every periodic tick — most of those ticks are mid-discharge and
+     * shouldn't pollute the active estimate. Callers that have rest-state
+     * info should call updateFromEnergy(...) directly.
+     */
+    public void updateFromInstantaneous(double remainingKwh, double displaySocPercent) {
+        updateFromEnergy(remainingKwh, displaySocPercent, Double.NaN, /*atRest=*/false);
     }
 
     /**
@@ -464,6 +837,17 @@ public class SohEstimator {
      */
     public void updateFromCalibration(double energyEnteredBatteryKwh, double socDelta,
                                       double packTempCelsius, boolean isAcCharge) {
+        updateFromCalibration(energyEnteredBatteryKwh, socDelta, packTempCelsius, isAcCharge, Double.NaN);
+    }
+
+    /**
+     * Same as the 4-arg form, plus the highest cell voltage observed during
+     * the charge window. Used to pick the chemistry-aware display→absolute
+     * scale (LFP = identity, NMC = 0.95).
+     */
+    public void updateFromCalibration(double energyEnteredBatteryKwh, double socDelta,
+                                      double packTempCelsius, boolean isAcCharge,
+                                      double highCellVoltage) {
         // Need nominal capacity to compute SOH
         if (nominalCapacityKwh <= 0) {
             logger.debug("Calibration rejected: nominal capacity not yet detected");
@@ -492,9 +876,12 @@ public class SohEstimator {
             return;
         }
 
-        // Correct the SOC delta from Display to Absolute scale
-        // A 50% display delta ≈ 47.5% absolute delta (0.95 factor)
-        double absSocDelta = socDelta * 0.95;
+        // Chemistry-aware scale. LFP (every BYD Blade pack we know about) =
+        // 1.0 → display delta == absolute delta. NMC variants would use 0.95.
+        // The previous unconditional 0.95 made every calibration ~5% optimistic,
+        // pushing SOH > 100% on healthy packs and into the 110% rejection band.
+        double scale = displayToAbsoluteSocScale(highCellVoltage);
+        double absSocDelta = socDelta * scale;
 
         double actualCapacity = energyEnteredBatteryKwh / (absSocDelta / 100.0);
         double calibratedSoh = (actualCapacity / nominalCapacityKwh) * 100.0;
@@ -517,7 +904,8 @@ public class SohEstimator {
 
         logger.info("Calibration SOH: " + String.format("%.1f", calibratedSoh) + "% " +
             "(weight=" + String.format("%.2f", confidenceWeight) + ", temp=" +
-            String.format("%.1f", packTempCelsius) + "°C) " +
+            String.format("%.1f", packTempCelsius) + "°C, scale=" +
+            String.format("%.2f", scale) + ") " +
             "[" + String.format("%.1f", energyEnteredBatteryKwh) + " kWh / " +
             String.format("%.1f", socDelta) + "% display delta → " +
             String.format("%.1f", absSocDelta) + "% absolute]");
@@ -550,9 +938,23 @@ public class SohEstimator {
     private static final double BYD_BLADE_REFERENCE_CELL_VOLTAGE = 3.2; // LFP nominal voltage
     private double lastCapacityAhReading = -1; // Dedup: skip if same reading
 
+    // "Stuck-at-nameplate" detector. Some firmwares return the static factory
+    // Ah rating instead of a live coulomb-counted value, which would make the
+    // capacity-Ah path always read 100% SOH. If we see the reported Ah within
+    // ±0.5 of the derived nominal Ah for STUCK_AT_NAMEPLATE_TRIPS consecutive
+    // readings, mark this BMS as not coulomb-counting and stop using the source.
+    private int nameplateMatchCount = 0;
+    private boolean capacityAhDisabled = false;
+    private static final int STUCK_AT_NAMEPLATE_TRIPS = 5;
+    private static final double STUCK_AT_NAMEPLATE_TOLERANCE_AH = 0.5;
+
     public void updateFromCapacityAh(double bodyworkBatteryCapacityAh, int cellCount) {
         if (nominalCapacityKwh <= 0) {
             logger.debug("Capacity-Ah SOH rejected: nominal capacity not yet detected");
+            return;
+        }
+        if (capacityAhDisabled) {
+            // Source already disqualified for this session — would always read 100%.
             return;
         }
         if (bodyworkBatteryCapacityAh <= 0 || cellCount <= 0) return;
@@ -570,6 +972,24 @@ public class SohEstimator {
             logger.debug("Capacity-Ah SOH rejected: derived nominal " +
                 String.format("%.1f", nominalCapacityAh) + " Ah outside expected range");
             return;
+        }
+
+        // Stuck-at-nameplate detector
+        if (Math.abs(bodyworkBatteryCapacityAh - nominalCapacityAh) <= STUCK_AT_NAMEPLATE_TOLERANCE_AH) {
+            nameplateMatchCount++;
+            if (nameplateMatchCount >= STUCK_AT_NAMEPLATE_TRIPS) {
+                capacityAhDisabled = true;
+                logger.warn("Capacity-Ah source disabled: BMS-reported Ah ("
+                    + String.format("%.1f", bodyworkBatteryCapacityAh)
+                    + ") matches nameplate (" + String.format("%.1f", nominalCapacityAh)
+                    + ") for " + nameplateMatchCount
+                    + " consecutive readings — likely returning static rating, not live capacity");
+            }
+            // Don't feed nameplate-match readings into the EMA — they would
+            // bias SOH toward 100% and mask real degradation.
+            return;
+        } else {
+            nameplateMatchCount = 0;  // Reset on any non-matching reading
         }
 
         double sohFromAh = (bodyworkBatteryCapacityAh / nominalCapacityAh) * 100.0;
@@ -593,6 +1013,26 @@ public class SohEstimator {
     }
 
     // ==================== OEM SOH ====================
+
+    // Latched once the OEM SOH method/feature has been confirmed missing on
+    // this firmware. Polling it on every cycle was wasting reflection calls
+    // and emitting "[diag] getStatisticBatteryHealthyIndex failed: ..." spam.
+    // Set by markOemSohUnavailable() from the data-collection path.
+    private volatile boolean oemSohUnavailable = false;
+
+    /** True if the OEM SOH index is known to be unsupported on this firmware. */
+    public boolean isOemSohUnavailable() {
+        return oemSohUnavailable;
+    }
+
+    /** Latch OEM SOH as unavailable. Idempotent. */
+    public void markOemSohUnavailable() {
+        if (!oemSohUnavailable) {
+            oemSohUnavailable = true;
+            logger.info("OEM SOH (StatisticBatteryHealthyIndex) marked unavailable on this firmware "
+                + "— will rely on capacity_ah / calibration / energy sources");
+        }
+    }
 
     /**
      * Update SOH directly from the OEM battery health index (STATISTIC_BATTERY_HEALTHY_INDEX).
@@ -699,12 +1139,17 @@ public class SohEstimator {
     public void reset() {
         currentSoh = -1;
         sampleCount = 0;
+        nominalCapacityKwh = 0;  // Clear capacity — forces re-detection on next autoDetect cycle
         sohSource = "instantaneous";
         estimationMethod = METHOD_INSTANTANEOUS;
         rawOemSoh = -1;
         rawCapacityAhSoh = -1;
         rawCalibrationSoh = -1;
         rawEnergySoh = -1;
+        lastCapacityAhReading = -1;
+        nameplateMatchCount = 0;
+        capacityAhDisabled = false;
+        oemSohUnavailable = false;
         // Keep preferredSource — user's choice survives reset
 
         // Delete persisted file
@@ -877,18 +1322,19 @@ public class SohEstimator {
      * - 192s: ~614V nominal → Tang 108.8 kWh
      */
     private static double mapCellCountToCapacity(int cellCount) {
-        // Allow ±3 cells tolerance (voltage measurement noise, SOC-dependent cell voltage)
+        // Allow ±3 cells tolerance (voltage measurement noise at 3.2V nominal)
+        // Ranges must NOT overlap — each cell count maps to exactly one pack.
         if (cellCount >= 80 && cellCount <= 86) return 26.6;     // Sealion 6 DM-i large (83s ~266V)
         if (cellCount >= 93 && cellCount <= 99) return 30.08;    // Seagull 30 / Atto 1
         if (cellCount >= 101 && cellCount <= 107) return 44.9;   // Dolphin Standard
-        if (cellCount >= 117 && cellCount <= 123) return 60.48;  // Atto 3 / Dolphin Extended
-        if (cellCount >= 123 && cellCount <= 129) return 61.44;  // Seal Dynamic RWD
-        if (cellCount >= 135 && cellCount <= 141) return 71.8;   // Seal U / Song Plus EV
-        if (cellCount >= 147 && cellCount <= 153) return 82.56;  // Seal
-        if (cellCount >= 153 && cellCount <= 159) return 85.44;  // Han EV
-        if (cellCount >= 163 && cellCount <= 169) return 87.0;   // Seal U 87 kWh
-        if (cellCount >= 167 && cellCount <= 173) return 91.3;   // Sealion 7
-        if (cellCount >= 189 && cellCount <= 195) return 108.8;  // Tang
+        if (cellCount >= 117 && cellCount <= 122) return 60.48;  // Atto 3 / Dolphin Extended (120s)
+        if (cellCount >= 123 && cellCount <= 129) return 61.44;  // Seal Dynamic RWD (126s)
+        if (cellCount >= 135 && cellCount <= 141) return 71.8;   // Seal U / Song Plus EV (138s)
+        if (cellCount >= 147 && cellCount <= 152) return 82.56;  // Seal (150s)
+        if (cellCount >= 153 && cellCount <= 159) return 85.44;  // Han EV (156s)
+        if (cellCount >= 163 && cellCount <= 166) return 87.0;   // Seal U 87 kWh (166s)
+        if (cellCount >= 167 && cellCount <= 173) return 91.3;   // Sealion 7 (170s)
+        if (cellCount >= 189 && cellCount <= 195) return 108.8;  // Tang (192s)
         return 0;
     }
 

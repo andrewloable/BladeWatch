@@ -51,6 +51,13 @@ class RecordingLibraryFragment : Fragment() {
     private var chipFilterSentry: Chip? = null
     private var chipFilterProximity: Chip? = null
     
+    // Multi-select toolbar
+    private var selectToolbar: LinearLayout? = null
+    private var tvSelectedCount: TextView? = null
+    private var btnSelectAll: View? = null
+    private var btnDeleteSelected: View? = null
+    private var btnCancelSelect: View? = null
+    
     private val calendarAdapter = CalendarAdapter { day -> onDaySelected(day) }
     private lateinit var recordingAdapter: RecordingAdapter
     
@@ -170,6 +177,17 @@ class RecordingLibraryFragment : Fragment() {
         tvEmptyState = view.findViewById(R.id.tvEmptyState)
         emptyStateContainer = view.findViewById(R.id.emptyStateContainer)
         
+        // Multi-select toolbar
+        selectToolbar = view.findViewById(R.id.selectToolbar)
+        tvSelectedCount = view.findViewById(R.id.tvSelectedCount)
+        btnSelectAll = view.findViewById(R.id.btnSelectAll)
+        btnDeleteSelected = view.findViewById(R.id.btnDeleteSelected)
+        btnCancelSelect = view.findViewById(R.id.btnCancelSelect)
+        
+        btnSelectAll?.setOnClickListener { recordingAdapter.selectAll() }
+        btnDeleteSelected?.setOnClickListener { confirmBatchDelete() }
+        btnCancelSelect?.setOnClickListener { exitSelectMode() }
+        
         // Filter chips - modern design
         try {
             chipFilterAll = view.findViewById(R.id.btnFilterAll)
@@ -230,12 +248,20 @@ class RecordingLibraryFragment : Fragment() {
     private fun setupRecordingsList() {
         recordingAdapter = RecordingAdapter(
             onPlay = { recording -> playRecording(recording) },
-            onDelete = { recording -> confirmDelete(recording) }
+            onDelete = { recording -> confirmDelete(recording) },
+            onSelectionChanged = { count -> onSelectionChanged(count) }
         )
         
         recyclerRecordings.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = recordingAdapter
+        }
+    }
+    
+    private fun onSelectionChanged(count: Int) {
+        tvSelectedCount?.text = "$count selected"
+        if (recordingAdapter.selectMode && selectToolbar?.visibility != View.VISIBLE) {
+            selectToolbar?.visibility = View.VISIBLE
         }
     }
     
@@ -445,6 +471,56 @@ class RecordingLibraryFragment : Fragment() {
         } else {
             Toast.makeText(context, "Failed to delete recording", Toast.LENGTH_SHORT).show()
         }
+    }
+    
+    private fun confirmBatchDelete() {
+        val selected = recordingAdapter.getSelectedRecordings()
+        if (selected.isEmpty()) return
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Delete ${selected.size} Recording${if (selected.size > 1) "s" else ""}")
+            .setMessage("This will permanently delete ${selected.size} recording${if (selected.size > 1) "s" else ""}. This cannot be undone.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Delete") { _, _ ->
+                batchDeleteRecordings(selected)
+            }
+            .show()
+    }
+    
+    private fun batchDeleteRecordings(recordings: List<RecordingFile>) {
+        if (scanExecutor.isShutdown) return
+        
+        scanExecutor.submit {
+            var deleted = 0
+            var failed = 0
+            
+            for (recording in recordings) {
+                if (RecordingScanner.deleteRecording(recording)) {
+                    deleted++
+                } else {
+                    failed++
+                }
+            }
+            
+            activity?.runOnUiThread {
+                if (isAdded) {
+                    val msg = if (failed > 0) {
+                        "$deleted deleted, $failed failed"
+                    } else {
+                        "$deleted recording${if (deleted > 1) "s" else ""} deleted"
+                    }
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    exitSelectMode()
+                    loadRecordingsForSelectedDate()
+                    updateCalendar()
+                }
+            }
+        }
+    }
+    
+    private fun exitSelectMode() {
+        recordingAdapter.exitSelectMode()
+        selectToolbar?.visibility = View.GONE
     }
     
     override fun onResume() {

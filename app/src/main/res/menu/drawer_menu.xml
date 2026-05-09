@@ -73,6 +73,12 @@
             android:id="@+id/nav_check_update"
             android:icon="@drawable/ic_update"
             android:title="Check for Updates" />
+
+        <item
+            android:id="@+id/nav_reset_data"
+            android:icon="@drawable/ic_delete"
+            android:title="Reset Data"
+            android:checkable="false" />
     </group>
 
     <!-- Utilities -->

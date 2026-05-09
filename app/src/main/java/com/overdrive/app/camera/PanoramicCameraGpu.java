@@ -14,6 +14,7 @@ import com.overdrive.app.surveillance.SurveillanceEngineGpu;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * PanoramicCameraGpu - GPU Edition with Zero-Copy Pipeline.
@@ -112,6 +113,7 @@ public class PanoramicCameraGpu {
     private int aiFrameSkip = 1;  // Start at 1, recalculated from actual FPS
     private static final float TARGET_AI_FPS = 10.0f;
     private long lastFrameTime = 0;
+    private volatile long lastCameraStartTime = 0;
     private long startTime = 0;
     
     // Watchdog for GL thread hang detection
@@ -157,14 +159,7 @@ public class PanoramicCameraGpu {
     private long lastStatsTime = 0;
     private static final long STATS_INTERVAL_MS = 120000;  // Every 2 minutes
     
-    // BINDER CAMERA BACKEND: Experimental — opens camera through bydcameramanager
-    // service. Tested on Seal: camera opens but TX codes don't match firmware
-    // (IBYDCameraService has user management only, no camera control).
-    // AVMCamera is the correct path for camera control on current firmware.
-    // Keep code for future firmware versions that may have different service API.
-    private boolean useBinderBackend = false;
-    private BinderCameraBackend binderBackend;
-    private int targetFps = 15;  // Desired frame rate for binder backend
+    private int targetFps = 15;  // Desired frame rate for camera
     
     /**
      * Creates a GPU-based panoramic camera.
@@ -256,7 +251,17 @@ public class PanoramicCameraGpu {
 
                 @Override
                 public void onCameraError(int eventType) {
-                    // Camera HAL error — trigger full restart cycle
+                    // Camera HAL error — but only restart if frames have actually stopped.
+                    // On DiLink5.0, event 8 fires immediately after camera open (after event 1004)
+                    // as a benign HAL lifecycle notification. Restarting on it causes an infinite loop.
+                    // Guard: ignore error events within 3 seconds of camera start — the HAL is still
+                    // settling. If it's a real error, the frame stall watchdog will catch it.
+                    long timeSinceStart = System.currentTimeMillis() - lastCameraStartTime;
+                    if (timeSinceStart < 3000) {
+                        logger.warn("CAMERA ERROR: event=" + eventType + " — IGNORED (camera started " + 
+                            timeSinceStart + "ms ago, waiting for frame stall watchdog)");
+                        return;
+                    }
                     logger.error("CAMERA ERROR: event=" + eventType + " — restarting camera");
                     if (glHandler != null) {
                         glHandler.post(() -> restartCameraAfterError());
@@ -450,9 +455,8 @@ public class PanoramicCameraGpu {
     }
     
     /**
-     * Starts the BYD camera.
-     * Uses binder backend (bydcameramanager service) when useBinderBackend is true,
-     * otherwise falls back to direct AVMCamera reflection.
+     * Starts the BYD camera via AVMCamera reflection with multi-strategy fallback.
+     * Tries constructor path first, then static factory for firmware compatibility.
      */
     private void startCamera() throws Exception {
         // GATE: Don't open camera if yielded to native app via IBYDCameraUser callback
@@ -464,16 +468,12 @@ public class PanoramicCameraGpu {
 
         int cameraId = cameraIdOverride >= 0 ? cameraIdOverride : PHYSICAL_CAMERA_ID;
 
-        if (useBinderBackend) {
-            startCameraViaBinderService(cameraId);
-        } else {
-            startCameraViaAvmReflection(cameraId);
-        }
+        startCameraViaAvmReflection(cameraId);
 
         cameraYielded = false;
+        lastCameraStartTime = System.currentTimeMillis();
         logger.info("Camera started (" + width + "x" + height + 
-            ", id=" + cameraId + ", surfaceMode=" + cameraSurfaceMode + 
-            ", backend=" + (useBinderBackend ? "binder" : "avmcamera") + ")");
+            ", id=" + cameraId + ", surfaceMode=" + cameraSurfaceMode + ")");
         
         // Update coordinator with actual camera ID
         if (cameraCoordinator != null) {
@@ -482,39 +482,16 @@ public class PanoramicCameraGpu {
     }
 
     /**
-     * Opens camera through bydcameramanager/bmmcameraserver binder service.
-     * The service manages buffer sharing with native apps, preventing glitches.
-     * Also supports frame rate control via SET_FRAME_RATE transaction.
-     */
-    private void startCameraViaBinderService(int cameraId) throws Exception {
-        if (binderBackend == null) {
-            binderBackend = new BinderCameraBackend();
-        }
-
-        boolean started = binderBackend.startCamera(
-            cameraId, cameraSurface, width, height, targetFps);
-
-        if (!started) {
-            logger.warn("Binder backend failed — falling back to AVMCamera reflection");
-            startCameraViaAvmReflection(cameraId);
-            return;
-        }
-
-        // No cameraObj in binder mode — the service owns the camera session
-        cameraObj = null;
-        logger.info("Camera opened via binder service (fps=" + targetFps + ")");
-    }
-
-    /**
-     * Opens camera via direct AVMCamera reflection (original approach).
+     * Opens camera via AVMCamera reflection with multi-strategy fallback.
+     * 
+     * Strategy (mirrors DiPlus C4051a.m4446d() approach):
+     *   1. Constructor: new AVMCamera(int) + .open() — works on Seal, Atto 3
+     *   2. Static factory: AVMCamera.open(int) — works on DiLink5.0 and newer firmware
+     * 
+     * After either path succeeds, addPreviewSurface + startPreview are called.
+     *
      * Notifies IBYDCameraService before opening so the service can arbitrate
      * with native apps (reverse camera, dashcam, AVM parking view).
-     *
-     * The BYD AVMCamera HAL supports multiple consumers simultaneously —
-     * both our daemon and the native DVR can call open() + startPreview()
-     * on the same camera. The key is timing: the AVC HAL warmup (launching
-     * com.byd.avc before we open) ensures the HAL is initialized in
-     * multi-consumer mode before we attach.
      */
     private void startCameraViaAvmReflection(int cameraId) throws Exception {
         // Notify camera service we're about to open
@@ -523,24 +500,74 @@ public class PanoramicCameraGpu {
         }
 
         Class<?> avmClass = Class.forName("android.hardware.AVMCamera");
-        Constructor<?> constructor = avmClass.getDeclaredConstructor(int.class);
-        constructor.setAccessible(true);
-        cameraObj = constructor.newInstance(cameraId);
         
-        Method mOpen = avmClass.getDeclaredMethod("open");
-        mOpen.setAccessible(true);
-        if (!(boolean) mOpen.invoke(cameraObj)) {
-            throw new RuntimeException("Failed to open panoramic camera (id=" + cameraId + ")");
+        // === ATTEMPT 1: Constructor new AVMCamera(int) + .open() ===
+        // This is the known-working path for Seal and other deployed models.
+        try {
+            Constructor<?> constructor = avmClass.getDeclaredConstructor(int.class);
+            constructor.setAccessible(true);
+            cameraObj = constructor.newInstance(cameraId);
+            
+            Method mOpen = avmClass.getDeclaredMethod("open");
+            mOpen.setAccessible(true);
+            if (!(boolean) mOpen.invoke(cameraObj)) {
+                throw new RuntimeException("AVMCamera.open() returned false (id=" + cameraId + ")");
+            }
+            logger.info("Camera opened via constructor path (id=" + cameraId + ")");
+        } catch (NoSuchMethodException e) {
+            // Constructor with int param doesn't exist on this firmware — try static factory
+            logger.info("AVMCamera(int) constructor not found — trying static factory");
+            cameraObj = null;
+            
+            // === ATTEMPT 2: Static factory AVMCamera.open(cameraId) ===
+            // Used by DiLink5.0 and newer firmware versions.
+            try {
+                Method mStaticOpen = avmClass.getDeclaredMethod("open", int.class);
+                mStaticOpen.setAccessible(true);
+                
+                // Try the requested camera ID first
+                cameraObj = mStaticOpen.invoke(null, cameraId);
+                if (cameraObj != null) {
+                    logger.info("Camera opened via static factory (id=" + cameraId + ")");
+                } else {
+                    // Requested ID returned null — iterate 0-5 to find a working one.
+                    // This handles fresh installs where BmmCameraInfo is empty and
+                    // the default ID doesn't match this vehicle's firmware.
+                    logger.info("AVMCamera.open(" + cameraId + ") returned null — trying IDs 0-5");
+                    for (int tryId = 0; tryId <= 5; tryId++) {
+                        if (tryId == cameraId) continue; // already tried
+                        cameraObj = mStaticOpen.invoke(null, tryId);
+                        if (cameraObj != null) {
+                            logger.info("Camera opened via static factory probe (id=" + tryId + ")");
+                            // Update the override so the rest of the pipeline uses the correct ID
+                            cameraIdOverride = tryId;
+                            break;
+                        }
+                    }
+                }
+                
+                if (cameraObj == null) {
+                    throw new RuntimeException("AVMCamera.open() returned null for all IDs 0-5");
+                }
+            } catch (NoSuchMethodException e2) {
+                throw new RuntimeException(
+                    "AVMCamera API not compatible: no constructor(int) and no static open(int). " +
+                    "Available constructors: " + Arrays.toString(avmClass.getDeclaredConstructors()) +
+                    ", methods: " + Arrays.toString(avmClass.getDeclaredMethods()), e2);
+            }
         }
         
+        // Set FPS BEFORE addPreviewSurface. On DiLink 3.x firmware the HAL
+        // rejects setCameraFps once a preview surface is attached — even before
+        // startPreview. Order must be open → setCameraFps → addPreviewSurface →
+        // startPreview to match the BYD HAL state machine.
+        AvmCameraHelper.setCameraFps(cameraObj, targetFps);
+
         // Connect surface — mode 0 works on Seal, other models may need different mode
         Method mAddSurface = avmClass.getDeclaredMethod("addPreviewSurface", Surface.class, int.class);
         mAddSurface.setAccessible(true);
         mAddSurface.invoke(cameraObj, cameraSurface, cameraSurfaceMode);
-        
-        // Set FPS (may return false on some HAL versions — non-fatal)
-        AvmCameraHelper.setCameraFps(cameraObj, targetFps);
-        
+
         // Start preview — required for real frame data on BYD Seal HAL.
         // The HAL supports multiple consumers calling startPreview simultaneously.
         // The AVC warmup (com.byd.avc launch + 4s delay) ensures the native DVR
@@ -548,7 +575,7 @@ public class PanoramicCameraGpu {
         Method mStart = avmClass.getDeclaredMethod("startPreview");
         mStart.setAccessible(true);
         mStart.invoke(cameraObj);
-        logger.info("Camera opened (id=" + cameraId + ", targetFps=" + targetFps + ")");
+        logger.info("Camera started (id=" + cameraId + ", targetFps=" + targetFps + ")");
     }
     
     /**
@@ -694,15 +721,28 @@ public class PanoramicCameraGpu {
                     } else {
                         // Camera has non-black data at frame 50 — it's working.
                         // Persist as validated so next restart skips all frame checks.
+                        // BUT: don't overwrite if user has a manual override set — they may have
+                        // changed the camera ID in the UI and it hasn't taken effect yet.
                         int currentId = cameraIdOverride >= 0 ? cameraIdOverride : PHYSICAL_CAMERA_ID;
                         logger.info("Frame 50 recheck: camera ID " + currentId + " confirmed working");
                         probeComplete = true;
                         try {
-                            org.json.JSONObject camCfg = new org.json.JSONObject();
-                            camCfg.put("probedCameraId", currentId);
-                            camCfg.put("probedSurfaceMode", cameraSurfaceMode);
-                            camCfg.put("probedAndValidated", true);
-                            com.overdrive.app.config.UnifiedConfigManager.updateSection("camera", camCfg);
+                            org.json.JSONObject existingCam = com.overdrive.app.config.UnifiedConfigManager
+                                .loadConfig().optJSONObject("camera");
+                            boolean hasManualOverride = existingCam != null && existingCam.optBoolean("manualOverride", false);
+                            int savedId = existingCam != null ? existingCam.optInt("probedCameraId", -1) : -1;
+                            
+                            // Only write back if there's no manual override, or if the manual override
+                            // matches what we're currently running (user's choice is already applied)
+                            if (!hasManualOverride || savedId == currentId) {
+                                org.json.JSONObject camCfg = new org.json.JSONObject();
+                                camCfg.put("probedCameraId", currentId);
+                                camCfg.put("probedSurfaceMode", cameraSurfaceMode);
+                                camCfg.put("probedAndValidated", true);
+                                com.overdrive.app.config.UnifiedConfigManager.updateSection("camera", camCfg);
+                            } else {
+                                logger.info("Skipping config write — manual override exists (saved=" + savedId + ", running=" + currentId + ")");
+                            }
                         } catch (Exception ignored) {}
                     }
                 } catch (Exception e) {
@@ -918,11 +958,6 @@ public class PanoramicCameraGpu {
                 logger.warn("Error closing camera for probe: " + closeEx.getMessage());
             }
             cameraObj = null;
-            if (cameraCoordinator != null) {
-                cameraCoordinator.resetEventCallbackState();
-            }
-        } else if (binderBackend != null && binderBackend.isCameraOpen()) {
-            binderBackend.stopCamera();
             if (cameraCoordinator != null) {
                 cameraCoordinator.resetEventCallbackState();
             }
@@ -1196,13 +1231,6 @@ public class PanoramicCameraGpu {
                 cameraCoordinator.notifyPosCloseCamera();
             }
             logger.info("Camera yielded — GL pipeline idle, waiting for onCloseCamera");
-        } else if (binderBackend != null && binderBackend.isCameraOpen()) {
-            binderBackend.stopCamera();
-            if (cameraCoordinator != null) {
-                cameraCoordinator.resetEventCallbackState();
-                cameraCoordinator.notifyPosCloseCamera();
-            }
-            logger.info("Camera yielded (binder) — GL pipeline idle, waiting for onCloseCamera");
         }
         
         // Restart drainer threads after camera is closed (for pre-record buffer)
@@ -1251,12 +1279,6 @@ public class PanoramicCameraGpu {
             if (cameraObj != null) {
                 BydCameraCoordinator.closeCamera(cameraObj, cameraSurfaceMode);
                 cameraObj = null;
-                if (cameraCoordinator != null) {
-                    cameraCoordinator.resetEventCallbackState();
-                    cameraCoordinator.notifyPosCloseCamera();
-                }
-            } else if (binderBackend != null && binderBackend.isCameraOpen()) {
-                binderBackend.stopCamera();
                 if (cameraCoordinator != null) {
                     cameraCoordinator.resetEventCallbackState();
                     cameraCoordinator.notifyPosCloseCamera();
@@ -1382,11 +1404,6 @@ public class PanoramicCameraGpu {
             if (cameraCoordinator != null) {
                 cameraCoordinator.notifyPosCloseCamera();
             }
-        }
-        
-        // Binder backend cleanup
-        if (binderBackend != null) {
-            binderBackend.stopCamera();
         }
         
         // Unregister from IBYDCameraService AFTER notifying posCloseCamera.
@@ -1645,25 +1662,6 @@ public class PanoramicCameraGpu {
     }
     
     /**
-     * Enables the binder camera backend (bydcameramanager service).
-     * When enabled, camera is opened through the system service instead of
-     * direct AVMCamera reflection. This prevents glitching native camera apps
-     * and enables frame rate control.
-     * Must be called before start().
-     */
-    public void setUseBinderBackend(boolean enabled) {
-        this.useBinderBackend = enabled;
-        logger.info("Binder camera backend: " + (enabled ? "ENABLED" : "DISABLED"));
-    }
-    
-    /**
-     * Whether the binder camera backend is enabled.
-     */
-    public boolean isUseBinderBackend() {
-        return useBinderBackend;
-    }
-    
-    /**
      * Sets the target frame rate for the binder camera backend.
      * Only effective when binder backend is enabled.
      * Must be called before start().
@@ -1681,15 +1679,6 @@ public class PanoramicCameraGpu {
     public int getTargetFps() {
         return targetFps;
     }
-    
-    /**
-     * Gets the binder camera backend instance (for diagnostics).
-     * Returns null if binder backend is not enabled.
-     */
-    public BinderCameraBackend getBinderBackend() {
-        return binderBackend;
-    }
-    
     /**
      * Enables auto-probe mode: tries camera IDs 0-5 at startup to find
      * the one that produces actual image data. Logs resolution and pixel
