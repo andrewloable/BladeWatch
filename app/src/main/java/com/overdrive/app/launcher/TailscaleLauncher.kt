@@ -298,4 +298,26 @@ class TailscaleLauncher(
             }
         }
     }
+
+    /**
+     * Disable tailscale environment (cleanup).
+     * WARNING: This will not remove the device from the tailscale console but will disconnect
+     */
+    fun disableEnvironment(callback: TailscaleCallback? = null) {
+        logManager.warn(TAG, "⚠️ Disabling tailscale environment - will need to login again!")
+        callback?.onLog("⚠️ Disabling environment (will need login again)...")
+
+        adbShellExecutor.execute(
+            command = "pkill 'tailscaled' 2>/dev/null; rm -rf $TAILSCALE_HOME; echo done",
+            callback = object : AdbShellExecutor.ShellCallback {
+                override fun onSuccess(output: String) {
+                    logManager.info(TAG, "Tailscale environment disabled")
+                    callback?.onLog("Environment disabled")
+                    callback?.onTunnelUrl(null)
+                }
+
+                override fun onError(error: String) {}
+            }
+        )
+    }
 }

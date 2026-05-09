@@ -99,4 +99,24 @@ class TailscaleController(
         )
         _tunnelUrl.postValue(null)
     }
+
+    /**
+     * Disable tailscale environment (full cleanup including state).
+     */
+    fun disableEnvironment(callback: DaemonCallback? = null) {
+        tailscaleLauncher.disableEnvironment(object : TailscaleLauncher.TailscaleCallback {
+            override fun onLog(message: String) {
+                callback?.onStatusChanged(DaemonStatus.STOPPING, message)
+            }
+
+            override fun onTunnelUrl(url: String?) {
+                _tunnelUrl.postValue(null)
+                callback?.onStatusChanged(DaemonStatus.STOPPED, "Environment disabled")
+            }
+
+            override fun onError(error: String) {
+                callback?.onError(error)
+            }
+        })
+    }
 }
