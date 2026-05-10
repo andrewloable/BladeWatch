@@ -2,7 +2,7 @@
  * Vehicle Control — Compact bottom bar, no tabs
  * Chrome 58+
  */
-.main-content { padding: 0 !important; overflow: hidden !important; height: 100vh !important; min-height: 0 !important; }
+.main-content { padding: 0 !important; overflow: hidden !important; height: 100dvh !important; min-height: 0 !important; }
 .vc-container { position: relative; width: 100%; height: 100%; background: #0F0F12; overflow: hidden; }
 
 /* 3D fills the entire area — car renders behind the translucent bar */
@@ -151,7 +151,7 @@
     padding: 14px 12px;
 }
 .vc-panel.open.vc-panel-tall {
-    max-height: 240px;
+    max-height: 300px;
 }
 .vc-panel-row {
     display: -webkit-flex; display: flex;

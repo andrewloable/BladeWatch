@@ -55,7 +55,7 @@ body {
     background: var(--bg-base);
     color: var(--text-primary);
     line-height: 1.5;
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
 }
@@ -66,7 +66,7 @@ input, select { font-family: inherit; }
 /* === APP LAYOUT === */
 .app-layout {
     display: flex;
-    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 /* === SIDEBAR === */
@@ -333,7 +333,7 @@ input, select { font-family: inherit; }
 .main-content {
     flex: 1;
     margin-left: var(--sidebar-width);
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
 }
@@ -1029,7 +1029,7 @@ input, select { font-family: inherit; }
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
 }
 
 /* Live view mobile header - visible with background */

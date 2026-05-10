@@ -127,7 +127,7 @@ public class VehicleControlApiHandler {
         response.put("doors", doors);
 
         // Window open percent [1-6]: 0=closed, 100=fully open, -1=unknown
-        // Index: 0=LF, 1=RF, 2=LR, 3=RR, 4=sunroof, 5=rear
+        // Index: 0=LF, 1=RF, 2=LR, 3=RR, 4=sunroof, 5=sunshade
         JSONObject windows = new JSONObject();
         if (data.windowOpenPercent != null && data.windowOpenPercent.length >= 4) {
             windows.put("lf", data.windowOpenPercent[0]);
@@ -135,7 +135,7 @@ public class VehicleControlApiHandler {
             windows.put("lr", data.windowOpenPercent[2]);
             windows.put("rr", data.windowOpenPercent[3]);
             if (data.windowOpenPercent.length >= 5) windows.put("sunroof", data.windowOpenPercent[4]);
-            if (data.windowOpenPercent.length >= 6) windows.put("rear", data.windowOpenPercent[5]);
+            if (data.windowOpenPercent.length >= 6) windows.put("sunshade", data.windowOpenPercent[5]);
         }
         response.put("windows", windows);
 
@@ -343,6 +343,7 @@ public class VehicleControlApiHandler {
      * Body: one of:
      *   { "area": 1-4 (LF/RF/LR/RR) or 0 for all, "command": 1=open, 2=close, 3=stop }
      *   { "area": 1-4,                              "targetPercent": 0..100 }
+     *   { "area": 5-6, (Sunroof and Sunshade),      "targetPercent": 0..100 }
      *
      * targetPercent triggers closed-loop positioning: backend drives the
      * window and auto-stops at the target. Returns immediately; the motion
@@ -356,9 +357,9 @@ public class VehicleControlApiHandler {
             BydDataCollector collector = BydDataCollector.getInstance();
 
             if (req.has("targetPercent")) {
-                if (area < 1 || area > 4) {
+                if (area < 1 || area > 6) {
                     response.put("success", false);
-                    response.put("error", "targetPercent requires a specific area (1-4)");
+                    response.put("error", "targetPercent requires a specific area (1-6)");
                     HttpResponse.sendJson(out, response.toString());
                     return;
                 }
@@ -516,6 +517,8 @@ public class VehicleControlApiHandler {
             case 2: return "RF";
             case 3: return "LR";
             case 4: return "RR";
+            case 5: return "Sunroof";
+            case 6: return "Sunshade";
             default: return "?(" + area + ")";
         }
     }

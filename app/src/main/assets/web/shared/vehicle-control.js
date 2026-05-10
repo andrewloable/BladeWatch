@@ -792,7 +792,7 @@ var VC = {
 
         // Per-window preset levels — backend runs closed-loop to drive the
         // window to the target % and auto-stops. UI just sends the target.
-        var areas = ['lf', 'rf', 'lr', 'rr'];
+        var areas = ['lf', 'rf', 'lr', 'rr', 'sunroof', 'sunshade'];
         var rows = document.querySelectorAll('#panelWindows .vc-window-row[data-area]');
         for (var ri = 0; ri < rows.length; ri++) {
             (function(row) {
@@ -1021,7 +1021,9 @@ var VC = {
                     lf: w.lf >= 0 ? w.lf : 0,
                     rf: w.rf >= 0 ? w.rf : 0,
                     lr: w.lr >= 0 ? w.lr : 0,
-                    rr: w.rr >= 0 ? w.rr : 0
+                    rr: w.rr >= 0 ? w.rr : 0,
+                    sunroof: w.sunroof >= 0 ? w.sunroof : 0,
+                    sunshade: w.sunshade >= 0 ? w.sunshade : 0
                 };
             }
 
@@ -1187,7 +1189,7 @@ var VC = {
     },
 
     updateWindowBars: function() {
-        var areas = ['lf', 'rf', 'lr', 'rr'];
+        var areas = ['lf', 'rf', 'lr', 'rr', 'sunroof', 'sunshade'];
         for (var i = 0; i < areas.length; i++) {
             var area = areas[i];
             var fill = document.getElementById('winFill_' + area);
@@ -1234,7 +1236,7 @@ var VC = {
     },
 
     updateDoorIndicators: function() {
-        var areas = ['lf', 'rf', 'lr', 'rr'];
+        var areas = ['lf', 'rf', 'lr', 'rr', 'sunroof', 'sunshade'];
         for (var i = 0; i < areas.length; i++) {
             var area = areas[i];
             var el = document.getElementById('doorState_' + area);
@@ -1272,7 +1274,7 @@ var VC = {
 
     /** Update persistent glow for open windows */
     updateWindowGlows: function() {
-        var areas = ['lf', 'rf', 'lr', 'rr'];
+        var areas = ['lf', 'rf', 'lr', 'rr', 'sunroof', 'sunshade'];
         for (var i = 0; i < areas.length; i++) {
             var area = areas[i];
             var pct = this.vehicleState.windows[area] || 0;
