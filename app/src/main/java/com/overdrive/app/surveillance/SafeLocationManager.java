@@ -202,15 +202,23 @@ public class SafeLocationManager {
 
     private void onEnteredSafeZone(String zoneName) {
         CameraDaemon.log(TAG + ": ENTERED safe zone '" + zoneName + "' — suppressing surveillance");
-        // Don't call disableSurveillance() — that clears the user's preference.
-        // Just stop the pipeline and mark as suppressed. The preference stays enabled
-        // so surveillance auto-restarts when leaving the zone or on next ACC OFF.
-        if (CameraDaemon.isSurveillanceActive()) {
-            com.overdrive.app.surveillance.GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
-            if (pipeline != null) {
-                pipeline.disableSurveillance();
-                pipeline.stop();
-            }
+        // Only act when the pipeline is actually in SURVEILLANCE mode. The
+        // pipeline is shared with CONTINUOUS / DRIVE_MODE / PROXIMITY_GUARD
+        // recording — driving home with ACC ON + CONTINUOUS recording would
+        // otherwise have its recording torn down here.
+        com.overdrive.app.surveillance.GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
+        if (pipeline != null && pipeline.isSurveillanceMode()) {
+            // Don't call disableSurveillance() through CameraDaemon — that clears
+            // the user's preference. Just disable the sentry component and stop
+            // the pipeline. The preference stays enabled so surveillance
+            // auto-restarts when leaving the zone or on the next ACC OFF.
+            pipeline.disableSurveillance();
+            pipeline.stop();
+            CameraDaemon.setSafeZoneSuppressed(true);
+        } else {
+            // Pipeline is busy with continuous / drive recording, or idle. Just
+            // mark the suppression flag so when ACC eventually turns off and
+            // would have armed sentry, CameraDaemon's ACC-OFF handler skips it.
             CameraDaemon.setSafeZoneSuppressed(true);
         }
     }

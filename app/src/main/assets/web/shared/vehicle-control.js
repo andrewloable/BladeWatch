@@ -43,24 +43,41 @@ var VC = {
     _skySphere: null,
     _videoTexture: null,
 
-    // Color presets — realistic car paint colors
+    // Color presets — realistic car paint colors.
+    // Hex values are sRGB. applyColor() converts to linear before assigning
+    // to the material so the renderer's sRGB output encoding lands the final
+    // pixel back at this hex on screen — without that step a saturated red
+    // like #C8102E renders pinkish.
     colorPresets: [
         { name: 'Aurora White', hex: '#E8E8EC' },
         { name: 'Cosmos Black', hex: '#1A1A1E' },
         { name: 'Atlantic Blue', hex: '#1E3A5F' },
         { name: 'Deepsea Green', hex: '#1B4D3E' },
-        { name: 'Burgundy Red', hex: '#6B1D2A' },
-        { name: 'Storm Grey', hex: '#5C5C66' }
+        { name: 'Cherry Red',   hex: '#C8102E' },
+        { name: 'Storm Grey',   hex: '#5C5C66' }
     ],
+
+    // Active 3D model id — populated from manifest in loadSavedModel().
+    // The default 'seal' is bundled in the APK; everything else is downloaded on demand
+    // and persisted on the device, so re-selecting a model after first download is instant.
+    activeModelId: 'seal',
+    manifest: null,
+    _downloadPollTimer: null,
+    // Monotonic generation tag. Bumped on every loadModel() so async callbacks from
+    // an earlier load (network fetch, GLTF parse, retry) can detect they're stale
+    // and no-op. Without this, switching models rapidly can let an old model's
+    // loader.load() callback overwrite the newer one.
+    _loadGen: 0,
 
     // ==================== INITIALIZATION ====================
 
     init: function() {
-        this.baseColor = new THREE.Color(0xE8E8EC); // Default: Aurora White
+        var self = this;
+        // Default: Aurora White (converted to linear so it matches the rest
+        // of the colour pipeline; see applyColor() for the rationale).
+        this.baseColor = new THREE.Color(0xE8E8EC).convertSRGBToLinear();
         this.initThreeJS();
         this.initColorPicker();
-        this.loadSavedColor();
-        this.loadModel();
         this.bindControls();
         this.startStateSync();
         this.checkCloudStatus();
@@ -69,6 +86,102 @@ var VC = {
         this.animate();
         this.init3dButton();
         this.initCloudModal();
+
+        // Vehicle appearance (model + color) is stored unified server-side so AVN
+        // and phone-over-tunnel access show the same car. Fetch manifest + persisted
+        // selection in parallel, then apply both before kicking off the GLB load —
+        // this avoids a flash of "Aurora White Seal" before the saved choice arrives.
+        var manifestDone = false, selectedDone = false;
+        var manifest = null, selected = null;
+
+        function applyWhenReady() {
+            if (!manifestDone || !selectedDone) return;
+            self.manifest = manifest || {
+                version: 0,
+                'default': 'seal',
+                models: [{ id: 'seal', name: 'BYD Seal', file: 'seal.glb', bundled: true }]
+            };
+            self.initModelPicker();
+            // Apply persisted color BEFORE loading the model so the model's body-paint
+            // traversal picks up the saved baseColor on first paint, no recolor flash.
+            if (selected && selected.color) {
+                self.applyColor(selected.color, true);
+            }
+            // Server has already validated modelId against the manifest, so trust the response.
+            var chosenId = (selected && selected.modelId) || self.manifest['default'] || 'seal';
+            var sel = document.getElementById('modelPicker');
+            if (sel) sel.value = chosenId;
+            self.loadModel(chosenId);
+        }
+
+        this.ModelStore.loadManifest(function(m) {
+            manifest = m; manifestDone = true; applyWhenReady();
+        });
+        this._fetchSelected(function(s) {
+            selected = s; selectedDone = true; applyWhenReady();
+        });
+
+        // Background revalidate against the GitHub release. If the remote manifest
+        // version > what we just rendered, swap it in and re-render the dropdown.
+        // We deliberately do NOT kick off a model reload here — the user's current
+        // selection is still valid; if they want the new model they'll pick it.
+        this._kickManifestRefresh();
+    },
+
+    _kickManifestRefresh: function() {
+        var self = this;
+        this.ModelStore.refreshManifest(
+            function onChanged(newManifest) {
+                self.manifest = newManifest;
+                self.initModelPicker();
+                // initModelPicker rebuilds <option>s and resets selection to the
+                // first entry; restore the dropdown's active value.
+                var sel = document.getElementById('modelPicker');
+                if (sel && self.activeModelId) sel.value = self.activeModelId;
+            },
+            function onResult(stale) {
+                self._setStale(stale);
+            }
+        );
+    },
+
+    /**
+     * Toggle the stale indicator on the model dropdown. Stale means the most recent
+     * remote-manifest refresh failed (network down, GitHub unreachable, malformed
+     * response). The bundled or previously-cached manifest is still working — this
+     * only signals that newly-released models may not be visible yet.
+     */
+    _setStale: function(stale) {
+        var sel = document.getElementById('modelPicker');
+        if (!sel) return;
+        if (stale) sel.classList.add('stale');
+        else sel.classList.remove('stale');
+    },
+
+    _fetchSelected: function(cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/models/selected', true);
+        xhr.timeout = 5000;
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try { cb(JSON.parse(xhr.responseText)); return; } catch(e) {}
+            }
+            cb(null);
+        };
+        xhr.onerror = function() { cb(null); };
+        xhr.ontimeout = function() { cb(null); };
+        xhr.send();
+    },
+
+    _saveSelected: function(patch) {
+        // Fire-and-forget: a failed save just means next reload reverts. We don't
+        // block the UI on the round-trip so the user feels the click immediately.
+        try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/models/selected', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(patch));
+        } catch(e) {}
     },
 
     initThreeJS: function() {
@@ -155,8 +268,11 @@ var VC = {
         this._groundGrid = gridHelper;
     },
 
-    loadModel: function() {
+    loadModel: function(modelId) {
         var self = this;
+        modelId = modelId || this.activeModelId || 'seal';
+        this.activeModelId = modelId;
+        var gen = ++this._loadGen;
 
         // Sanity check — if Three.js failed to load (e.g. local extraction failed),
         // bail with a clear message instead of throwing in the loader constructor.
@@ -165,6 +281,92 @@ var VC = {
             return;
         }
 
+        // Show the loading overlay even on a hot model swap — the spinner doubles as
+        // the download progress indicator for non-bundled models.
+        var loadingEl = document.getElementById('vcLoading');
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        var spinner = document.querySelector('.vc-loading-spinner');
+        if (spinner) spinner.style.display = '';
+        var retryBtn = document.getElementById('vcLoadingRetry');
+        if (retryBtn) retryBtn.style.display = 'none';
+        var textEl = document.querySelector('.vc-loading-text');
+        if (textEl) textEl.textContent = 'Loading model...';
+
+        // If 3D surround view is active, exit it cleanly before swapping. The bowl
+        // shader, video stream, contact shadow, and orbit constraints are all tied
+        // to the *current* car's pose; leaving them up while we swap would mismatch
+        // the new model's bounding box and leave us with the old car's saved camera.
+        // Pass skipFlyOut=true so we don't waste a 0.7s cinematic animation on a
+        // car that's about to be replaced.
+        if (this._3dViewActive) {
+            this.stop3dView(true);
+        }
+
+        // Drop the previous model & its meshes so we don't leak materials when swapping.
+        // bodyPaintMeshes is rebuilt below as the new model is traversed.
+        this._disposeCarModel();
+
+        // Track whether load completed; arm a hard timeout so the spinner can never spin forever.
+        // BYD AVN networks can stall mid-download with no error event; without this the UI hangs.
+        this._modelLoadComplete = false;
+        if (this._modelLoadTimeout) clearTimeout(this._modelLoadTimeout);
+        this._modelLoadTimeout = setTimeout(function() {
+            if (!self._modelLoadComplete) {
+                self._showModelError('Model load timed out. Tap Retry.');
+            }
+        }, 60000);  // 60s — generous enough to cover a ~2MB download on slow head-unit LTE
+
+        // Resolve the model path: bundled (seal) loads instantly; everything else is
+        // downloaded server-side and then served from the persistent cache through the
+        // same URL (HttpServer.serveStaticFile() falls back to /data/local/tmp/overdrive/models/).
+        this.ModelStore.ensureLoaded(modelId, this.manifest, function(modelPath, err) {
+            if (gen !== self._loadGen) return; // user picked a different model meanwhile
+            if (err) {
+                self._modelLoadComplete = true;
+                if (self._modelLoadTimeout) { clearTimeout(self._modelLoadTimeout); self._modelLoadTimeout = null; }
+                self._showModelError(err);
+                return;
+            }
+            self._loadModelFromPath(modelPath, gen);
+        }, function(progressMsg) {
+            if (gen !== self._loadGen) return;
+            var t = document.querySelector('.vc-loading-text');
+            if (t) t.textContent = progressMsg;
+        });
+    },
+
+    _disposeCarModel: function() {
+        if (!this.carModel) return;
+        var self = this;
+
+        // Tear down satellite state that's *attached to* the car before removing
+        // the car itself. Order matters: these helpers reference this.carModel and
+        // would no-op (or warn from GSAP) if we cleared the reference first.
+        this.stopAcSonar();
+        if (this.stateGlows) {
+            var keys = Object.keys(this.stateGlows);
+            for (var k = 0; k < keys.length; k++) this.removeStateGlow(keys[k]);
+        }
+
+        this.carModel.traverse(function(node) {
+            if (node.isMesh) {
+                if (node.geometry) node.geometry.dispose();
+                if (node.material) {
+                    if (Array.isArray(node.material)) {
+                        for (var i = 0; i < node.material.length; i++) node.material[i].dispose();
+                    } else {
+                        node.material.dispose();
+                    }
+                }
+            }
+        });
+        if (this.scene) this.scene.remove(this.carModel);
+        this.carModel = null;
+        this.bodyPaintMeshes = [];
+    },
+
+    _loadModelFromPath: function(modelPath, gen) {
+        var self = this;
         var loader = new THREE.GLTFLoader();
 
         // Draco decoder — the GLB uses Draco mesh compression.
@@ -176,21 +378,10 @@ var VC = {
         dracoLoader.setDecoderConfig({ type: 'js' });
         loader.setDRACOLoader(dracoLoader);
 
-        var modelPath = '../shared/models/byd_seal_optimized.glb';
-
-        // Track whether load completed; arm a hard timeout so the spinner can never spin forever.
-        // BYD AVN networks can stall mid-download with no error event; without this the UI hangs.
-        this._modelLoadComplete = false;
-        if (this._modelLoadTimeout) clearTimeout(this._modelLoadTimeout);
-        this._modelLoadTimeout = setTimeout(function() {
-            if (!self._modelLoadComplete) {
-                self._showModelError('Model load timed out. Tap Retry.');
-            }
-        }, 20000);  // 20s — generous for slow head-unit storage
-
         loader.load(
             modelPath,
             function(gltf) {
+                if (gen !== self._loadGen) return; // a newer load has superseded this one
                 self._modelLoadComplete = true;
                 if (self._modelLoadTimeout) { clearTimeout(self._modelLoadTimeout); self._modelLoadTimeout = null; }
                 self.carModel = gltf.scene;
@@ -258,6 +449,7 @@ var VC = {
                 self.triggerIdlePulse();
             },
             function(progress) {
+                if (gen !== self._loadGen) return;
                 if (progress.total > 0) {
                     var pct = Math.round((progress.loaded / progress.total) * 100);
                     var textEl = document.querySelector('.vc-loading-text');
@@ -265,6 +457,7 @@ var VC = {
                 }
             },
             function(error) {
+                if (gen !== self._loadGen) return;
                 console.error('Model load error:', error);
                 self._modelLoadComplete = true;  // Don't fire timeout error after this.
                 if (self._modelLoadTimeout) { clearTimeout(self._modelLoadTimeout); self._modelLoadTimeout = null; }
@@ -325,12 +518,18 @@ var VC = {
 
     // ==================== VFX ANIMATIONS ====================
 
-    /** Flash all body paint meshes to a color and back */
+    /** Flash all body paint meshes to a color and back. Caller passes the
+     *  flash colour in sRGB (`new THREE.Color(0xRRGGBB)`); we convert to
+     *  linear here so the displayed flash matches the intended hex. The
+     *  saved origColors are already in linear space (they came from the
+     *  material) so they restore directly without extra conversion. */
     flashBodyColor: function(flashColor, duration, repeats, callback) {
         var self = this;
         if (this.bodyPaintMeshes.length === 0) return;
 
-        // Store current colors
+        var linearFlash = flashColor.clone().convertSRGBToLinear();
+
+        // Store current colors (already linear)
         var origColors = [];
         for (var i = 0; i < this.bodyPaintMeshes.length; i++) {
             origColors.push(this.bodyPaintMeshes[i].material.color.clone());
@@ -339,7 +538,7 @@ var VC = {
         // Flash each body mesh
         for (var j = 0; j < this.bodyPaintMeshes.length; j++) {
             gsap.to(this.bodyPaintMeshes[j].material.color, {
-                r: flashColor.r, g: flashColor.g, b: flashColor.b,
+                r: linearFlash.r, g: linearFlash.g, b: linearFlash.b,
                 duration: duration || 0.15,
                 yoyo: true,
                 repeat: repeats || 1,
@@ -585,66 +784,313 @@ var VC = {
         container.appendChild(custom);
     },
 
-    setColor: function(hex, activeSwatch) {
-        this.baseColor.set(hex);
+    /**
+     * Apply a body paint color in-memory. Does NOT persist — used both by user
+     * clicks (via setColor) and by the initial load (with the persisted value
+     * fetched from /api/models/selected, before the GLB has parsed).
+     *
+     * Sync swatch highlight too: when called from init() the swatches may not
+     * exist yet, so we no-op gracefully — initColorPicker will reflect the
+     * baseColor next time setColor runs anyway.
+     */
+    applyColor: function(hex, syncSwatch) {
+        // Convert sRGB hex → linear color space. The renderer is configured
+        // with `outputEncoding = sRGBEncoding`, which means materials store
+        // colors in linear space and the output is gamma-encoded on the way
+        // to the screen. Without this conversion the picked hex gets treated
+        // as already-linear and ends up rendered too bright + saturation-
+        // shifted (e.g. #C8102E reads as pinkish-magenta instead of red).
+        var linearColor = new THREE.Color(hex).convertSRGBToLinear();
+        this.baseColor.copy(linearColor);
 
-        // Update body paint color on all identified body panels
-        var newColor = new THREE.Color(hex);
         for (var i = 0; i < this.bodyPaintMeshes.length; i++) {
             var mesh = this.bodyPaintMeshes[i];
             if (mesh.material && mesh.material.color) {
-                mesh.material.color.copy(newColor);
+                mesh.material.color.copy(linearColor);
                 mesh.material.needsUpdate = true;
             }
         }
+        // Skip the rim light recolor while the surround bowl is up. The rim
+        // light sits at y=-1.5 (under the car) inside the cylinder; tinting
+        // it to the user's body-paint hex bleeds onto the bowl wall and makes
+        // the camera footage look washed out / tinted whatever colour they
+        // just picked. The rim light is decorative for the exterior orbit
+        // pose only — no need to track body colour while we're inside the bowl.
+        if (this.rimLight && !this._3dViewActive) this.rimLight.color.copy(linearColor);
 
-        // Update rim light color
-        if (this.rimLight) {
-            this.rimLight.color.set(hex);
+        if (syncSwatch) {
+            var swatches = document.querySelectorAll('.vc-swatch');
+            for (var j = 0; j < swatches.length; j++) {
+                swatches[j].classList.remove('active');
+                var dataHex = swatches[j].getAttribute('data-hex');
+                if (dataHex && dataHex.toLowerCase() === hex.toLowerCase()) {
+                    swatches[j].classList.add('active');
+                }
+            }
         }
-
-        // Update active swatch
-        var swatches = document.querySelectorAll('.vc-swatch');
-        for (var i = 0; i < swatches.length; i++) {
-            swatches[i].classList.remove('active');
-        }
-        if (activeSwatch) activeSwatch.classList.add('active');
-
-        // Persist
-        try { localStorage.setItem('vc_color', hex); } catch(e) {}
     },
 
-    loadSavedColor: function() {
-        var self = this;
-        try {
-            var saved = localStorage.getItem('vc_color');
-            if (saved) {
-                this.baseColor.set(saved);
-                if (this.rimLight) this.rimLight.color.set(saved);
-                
-                // Apply to body paint meshes if model already loaded
-                if (this.bodyPaintMeshes.length > 0) {
-                    var newColor = new THREE.Color(saved);
-                    for (var j = 0; j < this.bodyPaintMeshes.length; j++) {
-                        if (this.bodyPaintMeshes[j].material && this.bodyPaintMeshes[j].material.color) {
-                            this.bodyPaintMeshes[j].material.color.copy(newColor);
-                            this.bodyPaintMeshes[j].material.needsUpdate = true;
-                        }
-                    }
+    setColor: function(hex, activeSwatch) {
+        this.applyColor(hex, false);
+
+        var swatches = document.querySelectorAll('.vc-swatch');
+        for (var i = 0; i < swatches.length; i++) swatches[i].classList.remove('active');
+        if (activeSwatch) activeSwatch.classList.add('active');
+
+        this._saveSelected({ color: hex });
+    },
+
+    // ==================== MODEL PICKER ====================
+
+    /**
+     * Tiny client for the /api/models/* endpoints. Resolves a model id to a URL the
+     * GLTFLoader can consume; if the model isn't on disk yet, kicks off a server-side
+     * download and polls for progress, surfacing a percentage to the loading overlay.
+     *
+     * Bundled models (manifest.bundled === true) skip the server roundtrip entirely.
+     * Once a model has been downloaded once it lives in /data/local/tmp/overdrive/models/
+     * and the server transparently serves it under the same shared/models/<file>.glb URL.
+     */
+    ModelStore: {
+        /**
+         * Fetch the effective manifest from the server. The server returns whichever
+         * is newer between the APK-bundled copy and a previously-cached remote copy,
+         * so this is fast (local file read) and offline-safe.
+         *
+         * Pair with refreshManifest() below to also revalidate against the remote
+         * release in the background.
+         */
+        loadManifest: function(cb) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/models/manifest', true);
+            xhr.timeout = 8000;
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try { cb(JSON.parse(xhr.responseText)); return; } catch(e) {}
                 }
-                
-                setTimeout(function() {
-                    var swatches = document.querySelectorAll('.vc-swatch');
-                    for (var i = 0; i < swatches.length; i++) {
-                        swatches[i].classList.remove('active');
-                        var dataHex = swatches[i].getAttribute('data-hex');
-                        if (dataHex && dataHex.toLowerCase() === saved.toLowerCase()) {
-                            swatches[i].classList.add('active');
-                        }
+                cb(null);
+            };
+            xhr.onerror = function() { cb(null); };
+            xhr.ontimeout = function() { cb(null); };
+            xhr.send();
+        },
+
+        /**
+         * Background revalidation against the remote manifest. The server fetches
+         * GitHub (with If-None-Match for cheap 304 short-circuit), replaces its
+         * cache if the remote version is newer, and returns
+         *   {updated, stale, version, manifest?}.
+         *
+         * Two callbacks:
+         *   onChanged(newManifest) — fires only when the manifest actually changed.
+         *   onResult(stale)        — fires on every completion so callers can
+         *                            update a stale indicator. stale === true means
+         *                            the network/server attempt failed entirely.
+         *                            Either callback may be null.
+         */
+        refreshManifest: function(onChanged, onResult) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/models/manifest/refresh', true);
+            xhr.timeout = 15000;  // generous: a 302 + Azure blob read on slow LTE
+            xhr.onload = function() {
+                if (xhr.status < 200 || xhr.status >= 300) {
+                    if (onResult) onResult(true); // treat non-2xx as stale
+                    return;
+                }
+                try {
+                    var resp = JSON.parse(xhr.responseText);
+                    var stale = !!(resp && resp.stale);
+                    if (resp && resp.updated && resp.manifest && onChanged) {
+                        onChanged(resp.manifest);
                     }
-                }, 100);
+                    if (onResult) onResult(stale);
+                } catch(e) {
+                    if (onResult) onResult(true);
+                }
+            };
+            // Local server is on loopback so onerror/ontimeout almost never fires —
+            // a network failure manifests as `stale:true` in the response body.
+            // But cover the timeout path in case the server itself stalls.
+            xhr.onerror = function() { if (onResult) onResult(true); };
+            xhr.ontimeout = function() { if (onResult) onResult(true); };
+            xhr.send();
+        },
+
+        findEntry: function(manifest, id) {
+            if (!manifest || !manifest.models) return null;
+            for (var i = 0; i < manifest.models.length; i++) {
+                if (manifest.models[i].id === id) return manifest.models[i];
             }
-        } catch(e) {}
+            return null;
+        },
+
+        modelUrl: function(file) {
+            // The server falls back to the persistent download cache for any
+            // shared/models/*.glb miss, so this URL works for bundled and downloaded alike.
+            return '../shared/models/' + file;
+        },
+
+        /**
+         * Resolve `id` to a URL ready for THREE.GLTFLoader. Three outcomes:
+         *   1. Bundled or already-cached → onDone(url) immediately.
+         *   2. Needs download → POSTs /api/models/download, polls /status, then onDone(url).
+         *   3. Failure → onDone(null, errorMessage).
+         * onProgress(text) gets called with friendly status strings during the download.
+         */
+        ensureLoaded: function(id, manifest, onDone, onProgress) {
+            var self = this;
+            var entry = this.findEntry(manifest, id);
+            if (!entry) {
+                onDone(null, 'Unknown model: ' + id);
+                return;
+            }
+            var url = this.modelUrl(entry.file);
+
+            // Skip the API roundtrip for the bundled default — it's always on disk.
+            if (entry.bundled) {
+                onDone(url);
+                return;
+            }
+
+            // Quick existence check via /list (covers the "user re-selected a previously
+            // downloaded model" case, which should feel instant).
+            this._getList(function(list) {
+                var listEntry = self._findInList(list, id);
+                if (listEntry && listEntry.downloaded) {
+                    onDone(url);
+                    return;
+                }
+                self._download(id, entry, url, onDone, onProgress);
+            }, function() {
+                // Couldn't reach /list — assume not downloaded and try anyway.
+                self._download(id, entry, url, onDone, onProgress);
+            });
+        },
+
+        _getList: function(onOk, onErr) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/models/list', true);
+            xhr.timeout = 5000;
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try { onOk(JSON.parse(xhr.responseText)); return; } catch(e) {}
+                }
+                onErr();
+            };
+            xhr.onerror = function() { onErr(); };
+            xhr.ontimeout = function() { onErr(); };
+            xhr.send();
+        },
+
+        _findInList: function(list, id) {
+            if (!list || !list.models) return null;
+            for (var i = 0; i < list.models.length; i++) {
+                if (list.models[i].id === id) return list.models[i];
+            }
+            return null;
+        },
+
+        _download: function(id, entry, url, onDone, onProgress) {
+            var self = this;
+            if (onProgress) onProgress('Downloading ' + entry.name + '... 0%');
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/models/download?id=' + encodeURIComponent(id), true);
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    self._poll(id, entry, url, onDone, onProgress);
+                } else {
+                    onDone(null, 'Download request failed (' + xhr.status + ')');
+                }
+            };
+            xhr.onerror = function() { onDone(null, 'Network error starting download'); };
+            xhr.send();
+        },
+
+        _poll: function(id, entry, url, onDone, onProgress) {
+            var self = this;
+            var attempts = 0;
+            // 60s of poll budget at 250ms intervals — covers a ~2MB GLB on slow LTE.
+            var maxAttempts = 240;
+
+            function tick() {
+                attempts++;
+                if (attempts > maxAttempts) {
+                    onDone(null, 'Download timed out');
+                    return;
+                }
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', '/api/models/status?id=' + encodeURIComponent(id), true);
+                xhr.timeout = 4000;
+                xhr.onload = function() {
+                    if (xhr.status < 200 || xhr.status >= 300) {
+                        setTimeout(tick, 500);
+                        return;
+                    }
+                    var s;
+                    try { s = JSON.parse(xhr.responseText); }
+                    catch(e) { setTimeout(tick, 500); return; }
+
+                    if (s.state === 'done' || s.downloaded === true) {
+                        onDone(url);
+                        return;
+                    }
+                    if (s.state === 'error') {
+                        onDone(null, s.error || 'Download failed');
+                        return;
+                    }
+                    if (onProgress) {
+                        var pct = typeof s.percent === 'number' ? s.percent : 0;
+                        onProgress('Downloading ' + entry.name + '... ' + pct + '%');
+                    }
+                    setTimeout(tick, 250);
+                };
+                xhr.onerror = function() { setTimeout(tick, 500); };
+                xhr.ontimeout = function() { setTimeout(tick, 500); };
+                xhr.send();
+            }
+            tick();
+        }
+    },
+
+    initModelPicker: function() {
+        var self = this;
+        var sel = document.getElementById('modelPicker');
+        if (!sel || !this.manifest || !this.manifest.models) return;
+
+        // Wipe placeholder options and rebuild from the manifest so adding a model in
+        // a future release just means bumping the manifest, not editing this file.
+        sel.innerHTML = '';
+        for (var i = 0; i < this.manifest.models.length; i++) {
+            var m = this.manifest.models[i];
+            var opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name;
+            sel.appendChild(opt);
+        }
+
+        sel.addEventListener('change', function() {
+            self.setModel(sel.value);
+        });
+
+        // Tap-to-retry when stale. mousedown fires before the dropdown opens, so
+        // by the time the user is choosing, we've already kicked off a refresh —
+        // if it lands fast (304 path is ~200ms), the new model may even appear in
+        // the open dropdown. Throttle to once per second to avoid spamming on
+        // rapid taps.
+        sel.addEventListener('mousedown', function() {
+            if (!sel.classList.contains('stale')) return;
+            var now = Date.now();
+            if (self._lastStaleRetryMs && now - self._lastStaleRetryMs < 1000) return;
+            self._lastStaleRetryMs = now;
+            self._kickManifestRefresh();
+        });
+    },
+
+    setModel: function(id) {
+        if (!id || id === this.activeModelId) return;
+        this._saveSelected({ modelId: id });
+        this.loadModel(id);
     },
 
     // ==================== PANEL TOGGLE (Tabbed Controls) ====================
@@ -1604,19 +2050,33 @@ var VC = {
                 // Hide ground grid — it conflicts with the surround view
                 if (this._groundGrid) this._groundGrid.visible = false;
 
-                // Camera lives well inside the bowl (R=8) so the surround
-                // wraps around the user. Polar stays just above horizon so we
+                // Cinematic fly-in: GSAP-tween OrbitControls from the saved
+                // exterior pose to a hero position close to the car. The bowl
+                // wraps the user (R=8); polar stays just above horizon so we
                 // never look up at the cap or down through the floor.
                 if (this.controls) {
                     this._savedPolarMin = this.controls.minPolarAngle;
                     this._savedPolarMax = this.controls.maxPolarAngle;
                     this._savedMinDistance = this.controls.minDistance;
                     this._savedMaxDistance = this.controls.maxDistance;
-                    this.controls.minPolarAngle = Math.PI * 0.28;
+                    this._savedDamping = this.controls.dampingFactor;
+                    this._savedAutoRotate = this.controls.autoRotate;
+                    this._savedAutoRotateSpeed = this.controls.autoRotateSpeed;
+                    this._savedCamPos = this.camera.position.clone();
+                    this._savedTarget = this.controls.target.clone();
+                    this._savedFov = this.camera.fov;
+
+                    // Tighter limits while in the bowl so the camera can never
+                    // pierce the wall or look at the cap.
+                    this.controls.minPolarAngle = Math.PI * 0.22;
                     this.controls.maxPolarAngle = Math.PI * 0.52;
-                    this.controls.minDistance = 3.2;
-                    this.controls.maxDistance = 6.5;
-                    this.controls.autoRotate = false;
+                    this.controls.minDistance = 2.4;
+                    this.controls.maxDistance = 6.8;
+                    this.controls.dampingFactor = 0.05;  // smoother orbit
+                    this.controls.autoRotate = true;     // slow drift
+                    this.controls.autoRotateSpeed = 0.18;
+
+                    this._flyToHero();
                 }
 
             } else {
@@ -1633,6 +2093,75 @@ var VC = {
         }
 
         this.toast('3D Surround View active', 'info');
+    },
+
+    /** DevTools-only: dumps the mean luminance of each mosaic quadrant so you
+     *  can tell at a glance whether the source feed itself is missing a cam.
+     *  Run while 3D view is active: `VC.diag3dCams()` — quadrant order in the
+     *  mosaic is BL=Front, BR=Right, TL=Rear, TR=Left (matches the bowl shader).
+     *  A near-zero luminance for one quadrant means the AVM hardware isn't
+     *  publishing that camera; a non-zero value means the bowl shader is
+     *  ignoring it (rotation/swap defaults wrong for this BYD model). */
+    diag3dCams: function() {
+        if (!this._3dCanvas) {
+            console.warn('[VC] diag3dCams: 3D view not active');
+            return null;
+        }
+        var ctx = this._3dCanvas.getContext('2d');
+        var W = this._3dCanvas.width, H = this._3dCanvas.height;
+        var HW = W >> 1, HH = H >> 1;
+        // Sample each quadrant via getImageData — slow path, fine for one-shot diagnosis.
+        function meanLuma(x, y, w, h) {
+            try {
+                var data = ctx.getImageData(x, y, w, h).data;
+                var sum = 0, n = data.length / 4;
+                for (var i = 0; i < data.length; i += 4) {
+                    sum += data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+                }
+                return Math.round(sum / n);
+            } catch (e) { return -1; }
+        }
+        var r = {
+            // Canvas coords (top-down). Mosaic layout per GpuStreamScaler:
+            rear:  meanLuma(0,  0,  HW, HH),  // canvas TL
+            left:  meanLuma(HW, 0,  HW, HH),  // canvas TR
+            front: meanLuma(0,  HH, HW, HH),  // canvas BL
+            right: meanLuma(HW, HH, HW, HH)   // canvas BR
+        };
+        console.log('[VC] mosaic luma — front=' + r.front + ' right=' + r.right +
+                    ' rear=' + r.rear + ' left=' + r.left +
+                    '  (low values < 8 indicate a missing/dark cam)');
+        return r;
+    },
+
+    /** Cinematic GSAP fly-in from the saved exterior pose to a hero pose
+     *  inside the bowl. Tweens position + target + FOV in one burst so it
+     *  reads as a single camera move. Cheap on the head-unit GPU — three
+     *  scalar tweens, no continuous timer. */
+    _flyToHero: function() {
+        if (typeof gsap === 'undefined' || !this.controls) return;
+        var ctrl = this.controls;
+        var cam = this.camera;
+        // Hero pose: front-quarter, just above horizon, ~3.6m back.
+        // Lands slightly off-axis so the user can see the bowl curve and the
+        // car silhouette in one frame.
+        var hero = { x: 2.6, y: 1.7, z: 3.4 };
+        var heroTarget = { x: 0, y: 0.4, z: 0 };
+        var heroFov = (window.innerWidth < 768) ? 48 : 56;
+        gsap.to(cam.position, {
+            x: hero.x, y: hero.y, z: hero.z,
+            duration: 1.1, ease: 'power3.inOut',
+            onUpdate: function() { ctrl.update(); }
+        });
+        gsap.to(ctrl.target, {
+            x: heroTarget.x, y: heroTarget.y, z: heroTarget.z,
+            duration: 1.1, ease: 'power3.inOut',
+            onUpdate: function() { ctrl.update(); }
+        });
+        gsap.to(cam, {
+            fov: heroFov, duration: 1.1, ease: 'power3.inOut',
+            onUpdate: function() { cam.updateProjectionMatrix(); }
+        });
     },
 
     /** Soft contact-shadow plane under the car. Tiny dark blob; gives the
@@ -1669,9 +2198,18 @@ var VC = {
         this._contactShadow = mesh;
     },
 
-    stop3dView: function() {
+    stop3dView: function(skipFlyOut) {
         this._3dViewActive = false;
         this._3dStreamConnected = false;
+
+        // Kill any in-flight camera fly-in tweens from start3dView so they can't
+        // overwrite values we set further down (especially on the skipFlyOut path
+        // where we snap the camera back to its saved pose).
+        if (typeof gsap !== 'undefined' && this.camera && this.controls) {
+            gsap.killTweensOf(this.camera.position);
+            gsap.killTweensOf(this.camera);
+            gsap.killTweensOf(this.controls.target);
+        }
         if (this._3dTimeout) { clearTimeout(this._3dTimeout); this._3dTimeout = null; }
         var btn = document.getElementById('btn3dView');
         if (btn) btn.classList.remove('on');
@@ -1719,7 +2257,7 @@ var VC = {
         // Restore ground grid
         if (this._groundGrid) this._groundGrid.visible = true;
 
-        // Restore orbit constraints
+        // Restore orbit constraints + cinematic fly-out back to the hero pose
         if (this.controls && this._savedPolarMin !== undefined) {
             this.controls.minPolarAngle = this._savedPolarMin;
             this.controls.maxPolarAngle = this._savedPolarMax;
@@ -1729,7 +2267,51 @@ var VC = {
             if (this._savedMaxDistance !== undefined) {
                 this.controls.maxDistance = this._savedMaxDistance;
             }
-            this.controls.autoRotate = true;
+            if (this._savedDamping !== undefined) {
+                this.controls.dampingFactor = this._savedDamping;
+            }
+            this.controls.autoRotate = (this._savedAutoRotate !== undefined)
+                ? this._savedAutoRotate : true;
+            if (this._savedAutoRotateSpeed !== undefined) {
+                this.controls.autoRotateSpeed = this._savedAutoRotateSpeed;
+            }
+
+            if (!skipFlyOut && this._savedCamPos && this._savedTarget && typeof gsap !== 'undefined') {
+                var ctrl = this.controls;
+                var cam = this.camera;
+                gsap.to(cam.position, {
+                    x: this._savedCamPos.x, y: this._savedCamPos.y, z: this._savedCamPos.z,
+                    duration: 0.7, ease: 'power3.inOut',
+                    onUpdate: function() { ctrl.update(); }
+                });
+                gsap.to(ctrl.target, {
+                    x: this._savedTarget.x, y: this._savedTarget.y, z: this._savedTarget.z,
+                    duration: 0.7, ease: 'power3.inOut',
+                    onUpdate: function() { ctrl.update(); }
+                });
+                if (this._savedFov !== undefined) {
+                    var camRef = cam;
+                    gsap.to(cam, {
+                        fov: this._savedFov, duration: 0.7, ease: 'power3.inOut',
+                        onUpdate: function() { camRef.updateProjectionMatrix(); }
+                    });
+                }
+            } else if (skipFlyOut) {
+                // Snap camera + target to saved values without animating. Used when
+                // we're auto-exiting 3D for a model swap — the new model is about
+                // to load and we don't want a stale fly-out to fight the new layout.
+                if (this._savedCamPos) {
+                    this.camera.position.set(this._savedCamPos.x, this._savedCamPos.y, this._savedCamPos.z);
+                }
+                if (this._savedTarget) {
+                    this.controls.target.set(this._savedTarget.x, this._savedTarget.y, this._savedTarget.z);
+                }
+                if (this._savedFov !== undefined) {
+                    this.camera.fov = this._savedFov;
+                    this.camera.updateProjectionMatrix();
+                }
+                this.controls.update();
+            }
         }
 
         // Restore stream quality to LOW (default for remote viewing)
@@ -1739,10 +2321,8 @@ var VC = {
     },
 
     /**
-     * Surround geometry: a single curved bowl mesh (LatheGeometry) that
-     * flows from under the car up to the horizon, with a fake-homography
-     * ground projection on the lower bowl and a linear sky-fade on the
-     * upper bowl. One mesh, one shader — no wall/floor seam.
+     * Surround geometry: cylinder wall + ground disc — the "old" production
+     * layout the user confirmed reads cleanly (rear cam looked correct here).
      *
      * Mosaic layout (after THREE.CanvasTexture flipY=true):
      *   tex space    canvas    camera
@@ -1754,16 +2334,24 @@ var VC = {
      * Bearing: atan2(x, -z) → 0=front (-Z), +π/2=right (+X),
      *                          ±π=rear (+Z), -π/2=left (-X).
      *
-     * Runtime knobs (set on VC and call stop3dView();start3dView(); to apply):
+     * Per-cam knobs (arrays of length 4 indexed by world-quadrant idx
+     * 0=Front, 1=Right, 2=Rear, 3=Left). Rear (idx 2) is our reference —
+     * it already looks clean. The other three are tuneable so we can match
+     * its quality without affecting rear.
+     *
+     *   _3dCropBottom    [4]  hide bottom N% of each cam (car body / wheel)
+     *   _3dCropTop       [4]  hide top N% of each cam (warped sky)
+     *   _3dFishStrength  [4]  per-cam fisheye-undistort strength (0..1)
+     *
+     * Global knobs:
      *   _3dRotate        0..3   rotate camera assignment by 90° steps
      *   _3dSwapLR        bool   swap Left/Right cams
      *   _3dSwapFR        bool   swap Front/Rear cams
      *   _3dSideMirror    bool   horizontally flip side-camera images
      *   _3dRearMirror    bool   horizontally flip rear-camera image
-     *   _3dFeather       0..0.5 seam blend half-width (fraction of one quadrant)
-     *   _3dCropBottom    0..0.5 hide bottom N% of each cam (car body/wheel)
-     *   _3dCropTop       0..0.5 hide top N% of each cam (warped sky)
-     *   _3dFishStrength  0..1   fisheye-undistort strength (0 = none)
+     *   _3dFeather       0..0.5 seam blend half-width (fraction of quadrant)
+     *
+     * Apply changes via:  VC.stop3dView(); VC.start3dView();
      */
     _createSurroundBowl: function() {
         if (!this.scene) return;
@@ -1772,39 +2360,62 @@ var VC = {
             this._videoTexture = new THREE.CanvasTexture(this._3dCanvas);
             this._videoTexture.minFilter = THREE.LinearFilter;
             this._videoTexture.magFilter = THREE.LinearFilter;
+            // Anisotropic filtering: sharper sampling at grazing angles where
+            // the bowl curves away from the camera. Cheap on r147 + WebGL 1
+            // (uses EXT_texture_filter_anisotropic when available, no-ops
+            // gracefully on the BYD WebView when the extension is missing).
+            if (this.renderer && this.renderer.capabilities &&
+                typeof this.renderer.capabilities.getMaxAnisotropy === 'function') {
+                var maxAniso = this.renderer.capabilities.getMaxAnisotropy() || 1;
+                this._videoTexture.anisotropy = Math.min(8, maxAniso);
+            }
         } else {
             console.error('[VC] No canvas available for surround view');
             return;
         }
 
-        // Defaults preserve the original production mapping (no flip / no swap).
-        // Toggle these in the console + call VC.stop3dView();VC.start3dView();
-        // to verify against the BYD camera-mount convention on your model.
-        //   _3dRotate   0..3   rotate the world-bearing → camera mapping in 90° steps
-        //   _3dSwapLR   bool   swap the Left and Right cameras
-        //   _3dSwapFR   bool   swap the Front and Rear cameras
-        //   _3dSideMirror  bool   horizontally flip both side-camera images
-        //   _3dRearMirror  bool   horizontally flip the rear-camera image
-        //   _3dFeather  0..0.5 seam blend half-width as a fraction of one quadrant
-        if (this._3dSideMirror === undefined) this._3dSideMirror = false;
+        // Global mapping knobs.
+        // Side cams are mounted under the wing mirrors and the sensor's
+        // X-axis runs opposite the world's bearing axis — same situation
+        // we already handle for the rear cam. Default to mirrored so the
+        // side feeds match rear's correctness out of the box; the user
+        // can flip back via VC._3dSideMirror = false if their specific
+        // model is wired differently.
+        if (this._3dSideMirror === undefined) this._3dSideMirror = true;
         if (this._3dRearMirror === undefined) this._3dRearMirror = false;
-        // Default rotation 0: world bearing maps directly to camera index
-        // with no offset (front-of-world → front cam).  The earlier
-        // "everything looks swapped" symptom turned out to be a projection
-        // artifact from the bowl + homography path, not a real swap.
         if (this._3dRotate     === undefined) this._3dRotate = 0;
         if (this._3dSwapLR     === undefined) this._3dSwapLR = false;
         if (this._3dSwapFR     === undefined) this._3dSwapFR = false;
         if (this._3dFeather    === undefined) this._3dFeather = 0.30;
-        // Hide a thin sliver at the bottom (car body / wheel arch) and top
-        // (warped sky).  Conservative defaults — raise per BYD model if
-        // needed via VC._3dCropBottom / VC._3dCropTop.
-        if (this._3dCropBottom === undefined) this._3dCropBottom = 0.15;
-        if (this._3dCropTop    === undefined) this._3dCropTop = 0.08;
-        // Generic radial fisheye undistortion strength — 0 = no undistort
-        // (cheaper, what we had), 1 = full atan-style remap (visibly
-        // straightens lane lines).  Default 0.6 hits a usable middle.
-        if (this._3dFishStrength === undefined) this._3dFishStrength = 0.6;
+
+        // Per-cam tuning. Indices: 0=Front, 1=Right, 2=Rear, 3=Left.
+        //
+        // Rear (idx 2) is the reference: 0.15 / 0.08 / 0.6 produced a clean
+        // image on the user's vehicle. The other three start from educated
+        // defaults based on typical 4-cam AVM mount geometry — rear sits
+        // high on the boot lid and looks ~level, but front sits low in the
+        // grille and sees the hood (deeper bottom crop), and sides sit
+        // under the wing mirrors and look DOWN at the road past the door
+        // panel + wheel arch (much deeper bottom crop, wider lens →
+        // stronger fish-eye undistort).
+        //
+        // Tweak per BYD model from DevTools without affecting rear:
+        //   VC._3dCropBottom    = [front, right, rear, left]   // 0..0.5
+        //   VC._3dCropTop       = [front, right, rear, left]   // 0..0.5
+        //   VC._3dFishStrength  = [front, right, rear, left]   // 0..1
+        // Apply with: VC.stop3dView(); VC.start3dView();
+        if (!this._3dCropBottom || this._3dCropBottom.length !== 4) {
+            //                       F     R     Rear  L
+            this._3dCropBottom = [0.22, 0.28, 0.15, 0.28];
+        }
+        if (!this._3dCropTop || this._3dCropTop.length !== 4) {
+            //                       F     R     Rear  L
+            this._3dCropTop    = [0.08, 0.05, 0.08, 0.05];
+        }
+        if (!this._3dFishStrength || this._3dFishStrength.length !== 4) {
+            //                       F     R     Rear  L
+            this._3dFishStrength = [0.55, 0.70, 0.60, 0.70];
+        }
 
         var WALL_RADIUS = 8.0;
         var WALL_HEIGHT = 5.0;
@@ -1822,9 +2433,13 @@ var VC = {
             'uniform int   uRotate;',
             'uniform float uSwapLR;',
             'uniform float uSwapFR;',
-            'uniform float uCropBottom;',
-            'uniform float uCropTop;',
-            'uniform float uFishStrength;',
+            // Per-cam tuning arrays (indexed 0=Front, 1=Right, 2=Rear, 3=Left
+            // in WORLD space — sampleAt uses worldIdx, not the post-remap idx,
+            // so the same physical camera always gets the same crop/fish even
+            // when uRotate/uSwap* are non-default).
+            'uniform float uCropBottom[4];',
+            'uniform float uCropTop[4];',
+            'uniform float uFishStrength[4];',
             '',
             'vec2 quadOrigin(int idx) {',
             '    if (idx == 0) return vec2(0.0, 0.0);',  // Front
@@ -1846,20 +2461,30 @@ var VC = {
             '    return idx;',
             '}',
             '',
+            '// Per-cam GLSL ES 1.00 array indexing: index must be a',
+            '// constant-index expression on the BYD WebView (no dynamic',
+            '// indices on uniform arrays). Branch instead of subscript.',
+            'float pickFloat4(float a[4], int idx) {',
+            '    if (idx == 0) return a[0];',
+            '    if (idx == 1) return a[1];',
+            '    if (idx == 2) return a[2];',
+            '    return a[3];',
+            '}',
+            '',
             '// Generic radial fisheye undistortion. Treats the cam frame',
             '// as a normalised (-1,-1)..(+1,+1) plane, computes the polar',
             '// radius r, and remaps it through an atan-style curve so',
             '// straight world lines (lane markings) come out straighter.',
-            '// uFishStrength = 0 disables (returns input unchanged).',
-            'vec2 undistort(vec2 xy) {',
+            '// fishStrength = 0 disables (returns input unchanged).',
+            'vec2 undistort(vec2 xy, float fishStrength) {',
             '    float r = length(xy);',
-            '    if (r < 1e-4 || uFishStrength < 0.001) return xy;',
+            '    if (r < 1e-4 || fishStrength < 0.001) return xy;',
             '    // Approx fisheye half-FOV ~95° → tan(0.95) ≈ 1.40.',
             '    float k = 1.40;',
             '    // r_undist = tan(r * atan(k)) / k  — pulls peripheral',
             '    // pixels inward, straightening barrel curvature.',
             '    float rUndist = tan(r * atan(k)) / k;',
-            '    float scale = mix(1.0, rUndist / r, uFishStrength);',
+            '    float scale = mix(1.0, rUndist / r, fishStrength);',
             '    return xy * scale;',
             '}',
             '',
@@ -1873,6 +2498,12 @@ var VC = {
             'vec4 sampleAt(int worldIdx, float centeredOffset, float vSample) {',
             '    int idx = remapIdx(worldIdx);',
             '    vec2 qo = quadOrigin(idx);',
+            '    // Per-cam params — indexed by physical cam idx (post-remap),',
+            '    // so per-cam tuning sticks to the physical sensor regardless',
+            '    // of any future rotation/swap defaults.',
+            '    float fishStrength = pickFloat4(uFishStrength, idx);',
+            '    float cropBottom   = pickFloat4(uCropBottom,   idx);',
+            '    float cropTop      = pickFloat4(uCropTop,      idx);',
             '    float c = centeredOffset;',
             '    if (idx == 2 && uMirrorRear  > 0.5) c = -c;',
             '    if ((idx == 1 || idx == 3) && uMirrorSides > 0.5) c = -c;',
@@ -1882,18 +2513,18 @@ var VC = {
             '    // domain. After undistortion convert back to (u,v) in',
             '    // [0,1] within the quadrant.',
             '    vec2 nxy = vec2(c, vSample * 2.0 - 1.0);',
-            '    nxy = undistort(nxy);',
+            '    nxy = undistort(nxy, fishStrength);',
             '    float localU = 0.5 + 0.5 * nxy.x;',
             '    float localV = 0.5 + 0.5 * nxy.y;',
             '',
-            '    // Crop band: skip uCropBottom of the bottom (car body) and',
-            '    // uCropTop of the top (warped sky).  We CLAMP the V into the',
+            '    // Crop band: skip cropBottom of the bottom (car body) and',
+            '    // cropTop of the top (warped sky).  We CLAMP the V into the',
             '    // kept range when sampling so the texture continues visually',
             '    // into the cropped edge (no abrupt black band), but emit an',
             '    // alpha that fades over a soft band so the caller can blend',
             '    // smoothly to the bowl background.',
-            '    float vMin = uCropBottom;',
-            '    float vMax = 1.0 - uCropTop;',
+            '    float vMin = cropBottom;',
+            '    float vMax = 1.0 - cropTop;',
             '    // Sampling V — clamp into the visible band so cropped pixels',
             '    // read from the nearest valid row of the cam image.',
             '    float vSamp = clamp(localV, vMin, vMax);',
@@ -1957,6 +2588,10 @@ var VC = {
             '}'
         ].join('\n');
 
+        // Shared uniforms for both passes (wall + disc). Each pass gets its
+        // own array copy via .slice() — Three.js compiles the uniform-array
+        // slot independently per material, and we recreate both materials
+        // together on every start3dView, so this stays in sync.
         var sharedUniforms = function() {
             return {
                 uTexture:       { value: this._videoTexture },
@@ -1966,9 +2601,9 @@ var VC = {
                 uRotate:        { value: (this._3dRotate | 0) },
                 uSwapLR:        { value: this._3dSwapLR ? 1.0 : 0.0 },
                 uSwapFR:        { value: this._3dSwapFR ? 1.0 : 0.0 },
-                uCropBottom:    { value: this._3dCropBottom },
-                uCropTop:       { value: this._3dCropTop },
-                uFishStrength:  { value: this._3dFishStrength }
+                uCropBottom:    { value: this._3dCropBottom.slice() },
+                uCropTop:       { value: this._3dCropTop.slice() },
+                uFishStrength:  { value: this._3dFishStrength.slice() }
             };
         }.bind(this);
 
@@ -1998,25 +2633,20 @@ var VC = {
                 '    float bearing = atan(vWorldPos.x, -vWorldPos.z);',
                 '    vec4 cam = sampleSurround(bearing, vYNorm);',
                 '',
-                '    // Build the local sky/bowl color used as the background.',
                 '    vec3 horizon = vec3(0.04, 0.10, 0.11);',
                 '    vec3 zenith  = vec3(0.01, 0.02, 0.03);',
                 '    vec3 sky = mix(horizon, zenith, smoothstep(0.75, 1.0, vYNorm));',
                 '    vec3 baseBg = mix(vec3(0.04, 0.04, 0.05), sky,',
                 '                      smoothstep(0.0, 0.4, vYNorm));',
                 '',
-                '    // Cropped/out-of-frame fade — instead of mixing into a',
-                '    // flat plate, blend toward a *darkened* version of the',
-                '    // cam itself so the cropped strip reads as a softly',
-                '    // dimmed continuation of the image rather than a black',
-                '    // band.  cam.a → 0 at the crop edge, so we fade smoothly',
-                '    // from full-bright cam to dim cam to bg.',
+                '    // Cropped/out-of-frame fade — blend toward a *darkened*',
+                '    // version of the cam itself so the crop band reads as a',
+                '    // soft dimming of the image, not a black plate.',
                 '    vec3 dimmedCam = cam.rgb * 0.35;',
                 '    vec3 fadeColor = mix(baseBg, dimmedCam, 0.6);',
                 '    vec3 rgb = composeSurround(cam.rgb, cam.a, fadeColor);',
                 '',
-                '    // Normal sky fade — the upper bowl always dissolves to',
-                '    // the gradient regardless of whether the cam is cropped.',
+                '    // Upper bowl dissolves to sky regardless of crop.',
                 '    float skyFade = smoothstep(0.65, 0.95, vYNorm);',
                 '    rgb = mix(rgb, sky, skyFade);',
                 '',
@@ -2061,8 +2691,6 @@ var VC = {
                 '    float vSample = clamp(r * 0.5, 0.0, 0.5);',
                 '    vec4 cam = sampleSurround(bearing, vSample);',
                 '',
-                '    // Same soft-fade strategy as the wall: cropped pixels',
-                '    // ease into a darkened version of the cam itself.',
                 '    vec3 baseBg = vec3(0.04, 0.04, 0.05);',
                 '    vec3 dimmedCam = cam.rgb * 0.35;',
                 '    vec3 fadeColor = mix(baseBg, dimmedCam, 0.6);',
@@ -2071,7 +2699,7 @@ var VC = {
                 '    float innerFade = smoothstep(0.05, 0.18, r);',
                 '    float outerFade = smoothstep(1.0, 0.85, r);',
                 '    float a = innerFade * outerFade;',
-                '    rgb = mix(bg, rgb, a);',
+                '    rgb = mix(baseBg, rgb, a);',
                 '    gl_FragColor = vec4(rgb, 1.0);',
                 '}'
             ].join('\n'),

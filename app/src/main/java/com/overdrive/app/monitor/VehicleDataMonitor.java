@@ -146,147 +146,133 @@ public class VehicleDataMonitor {
     }
     
     /**
-     * Charging state derivation — single source of truth.
+     * Charging state derivation — hybrid approach.
      *
-     * Approach: net HV-bus power (engine power) is the canonical charging signal.
-     *   - Negative engine power = energy flowing INTO the battery
-     *     (regen while driving, plug-in charging while parked)
-     *   - Positive engine power = motor draw (or zero/idle)
+     * Two layers, evaluated in order:
      *
-     * To distinguish plug-in charging from regen, we require the gear to be in P.
-     * To exclude ICE-only generator-mode "self-charging" on PHEVs, we additionally
-     * require the charging gun to be physically connected.
+     *   Layer 1 (primary): trust the BYD ChargingDevice SDK directly.
+     *     If vd.chargingState == 1 (CHARGING), declare CHARGING. The BMS knows
+     *     when current is flowing into the pack better than anything else.
      *
-     * This avoids the BMS-state catch-22 entirely: BMS state can lag the gun
-     * connection by several seconds and report 0/15 while charging on PHEVs;
-     * engine power flips negative the instant current draws.
+     *   Layer 2 (fallback): inference, only when Layer 1 is silent.
+     *     Some PHEV firmwares (1) leave chargingGunState as UNAVAILABLE and
+     *     (2) never fire onBatteryManagementDeviceStateChanged for AC charging,
+     *     so vd.chargingState stays at 15 (IDLE) while the pack is actually
+     *     charging. In that case, infer charging from:
+     *         gear=P AND gun-not-definitely-disconnected
+     *         AND (engine power flowing into battery OR external/device power > 0)
+     *     This requires positive evidence of energy flow — it cannot trigger
+     *     from BMS-state alone and cannot be confused with regen (gear=P guard).
      *
-     * @return ChargingStateData with status set to CHARGING, READY, or null if no
-     *         charging-related data is available at all.
+     * Power magnitude resolution (independent of which layer detected charging):
+     *   1. external charging power (InstrumentDevice — real charger-reported)
+     *   2. chargingDevice.chargingPower  (often 0 on BYD HAL but free to try)
+     *   3. abs(engine power)             (truthful when ACC is on)
+     *   4. nominal-capacity hint         (3.3 kW PHEV / 7 kW BEV, marked estimated)
+     *
+     * @return ChargingStateData populated from whichever layer fired, or null
+     *         if the chargingDevice is silent and no inference signal is present.
      */
     public ChargingStateData getChargingState() {
         BydVehicleData vd = getVd();
         if (vd == null) return null;
 
-        // Threshold: -0.3 kW deadband to absorb sensor noise on a still vehicle.
-        // Below this magnitude, we don't trust the sign of engine power.
-        final double CHARGING_POWER_THRESHOLD_KW = 0.3;
+        // ---- Layer 1: BMS-direct ----
+        boolean bmsSaysCharging =
+            (vd.chargingState == ChargingStateData.CHARGING_BATTERY_STATE_CHARGING);
 
-        // Source 1: gear from authoritative GearMonitor (matches RecordingModeManager).
-        // Falls back to vd.gearMode if monitor isn't running.
+        // ---- Layer 2: inference (only when BMS is silent OR stuck at the
+        //                          known-buggy IDLE-while-charging PHEV reading) ----
+        // If the BMS is reporting a SPECIFIC non-charging state (READY/FINISHED/
+        // DISCHARGING/error) we trust it and skip inference — those states are
+        // explicit signals and inference would only produce false positives from
+        // sticky power readings left over after unplug.
+        boolean bmsAmbiguous =
+            (vd.chargingState == BydVehicleData.UNAVAILABLE)
+            || (vd.chargingState == ChargingStateData.CHARGING_BATTERY_STATE_IDLE);
+
+        // gear from authoritative GearMonitor — getCurrentGear() returns the
+        // cached value even after the monitor stops on ACC OFF, which is the
+        // last gear the driver was in (always P when key is removed).
         int gearNow;
         try {
             com.overdrive.app.monitor.GearMonitor gm =
                 com.overdrive.app.monitor.GearMonitor.getInstance();
-            gearNow = gm.isRunning() ? gm.getCurrentGear()
-                : (vd.gearMode != BydVehicleData.UNAVAILABLE ? vd.gearMode : com.overdrive.app.monitor.GearMonitor.GEAR_P);
+            gearNow = gm.getCurrentGear();
         } catch (Exception e) {
-            gearNow = (vd.gearMode != BydVehicleData.UNAVAILABLE) ? vd.gearMode : com.overdrive.app.monitor.GearMonitor.GEAR_P;
+            gearNow = (vd.gearMode != BydVehicleData.UNAVAILABLE)
+                ? vd.gearMode
+                : com.overdrive.app.monitor.GearMonitor.GEAR_P;
         }
         boolean inPark = (gearNow == com.overdrive.app.monitor.GearMonitor.GEAR_P);
+        boolean gunDefinitelyDisconnected = (vd.chargingGunState == 1);
 
-        // Source 2: net engine power (negative = into battery).
-        double enginePowerKw = vd.enginePowerKw;
-        boolean enginePowerKnown = !Double.isNaN(enginePowerKw);
-        boolean engineFlowingIntoBattery = enginePowerKnown && enginePowerKw < -CHARGING_POWER_THRESHOLD_KW;
+        // -0.3 kW deadband: below this magnitude engine-power sign is sensor noise.
+        // enginePowerKw is only refreshed while ACC is on (BydDataCollector gates
+        // collectEngine on accIsOn) so during ACC OFF this value is stale. We
+        // intentionally don't filter on staleness here because the gear-in-P
+        // guard plus the gun-not-disconnected guard already prevent it from
+        // false-triggering — the only way it matters is when the car is
+        // actually parked and plugged in.
+        boolean engineFlowingIntoBattery =
+            !Double.isNaN(vd.enginePowerKw) && vd.enginePowerKw < -0.3;
+        boolean externalPowerActive =
+            !Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0.15;
+        boolean devicePowerActive =
+            !Double.isNaN(vd.chargingPowerKw) && Math.abs(vd.chargingPowerKw) > 0.15;
+        boolean anyPowerEvidence =
+            engineFlowingIntoBattery || externalPowerActive || devicePowerActive;
 
-        // Source 3: gun connection (filters out ICE-only generator self-charging).
-        // Tri-state: explicitly connected, explicitly disconnected, or unknown.
-        // Many PHEV firmwares leave chargingGunState as UNAVAILABLE (-1) entirely;
-        // we cannot treat unknown as "disconnected" or PHEVs never report charging.
-        boolean gunConnected = (vd.chargingGunState == 2 || vd.chargingGunState == 3
-                || vd.chargingGunState == 4 || vd.chargingGunState == 5);
-        boolean gunUnknown = (vd.chargingGunState == BydVehicleData.UNAVAILABLE);
-        boolean gunDisconnected = (vd.chargingGunState == 1);
+        boolean inferredCharging = !bmsSaysCharging
+            && bmsAmbiguous
+            && inPark
+            && !gunDefinitelyDisconnected
+            && anyPowerEvidence;
 
-        // Source 4: external charging power from the charger/instrument side.
-        // This catches trickle charges below the engine-power deadband — small
-        // AC chargers can deliver 0.1-0.3 kW that engine-power sensor noise
-        // would mask, but the instrument cluster reports faithfully.
-        double extChargingPower = !Double.isNaN(vd.externalChargingPowerKw) ? vd.externalChargingPowerKw : 0;
-        boolean externalChargerActive = extChargingPower > 0.15;
+        boolean isCharging = bmsSaysCharging || inferredCharging;
 
-        // Source 5: chargingDevice power (typed listener delivers it directly).
-        // On PHEV firmwares where gunState is UNAVAILABLE, this is often the only
-        // proof of charging activity until the BMS state finally flips to 1.
-        double devChargingPower = !Double.isNaN(vd.chargingPowerKw) ? Math.abs(vd.chargingPowerKw) : 0;
-        boolean devicePowerActive = devChargingPower > 0.15;
-
-        // BMS may explicitly report CHARGING (state 1). Trust that even if gun
-        // state and engine power haven't agreed yet — the BMS knows current is
-        // flowing into the pack.
-        boolean bmsSaysCharging = vd.chargingState == ChargingStateData.CHARGING_BATTERY_STATE_CHARGING;
-
-        // Plug-in charging detection. Either:
-        //   - engine power flowing into battery (works on BEV + PHEV when ACC is on), OR
-        //   - any positive charger-side power signal AND gun is at least not
-        //     definitely-disconnected (handles PHEVs reporting gun=UNAVAILABLE).
-        boolean isPlugInCharging = engineFlowingIntoBattery
-                || ((externalChargerActive || devicePowerActive) && !gunDisconnected)
-                || (bmsSaysCharging && !gunDisconnected);
-
-        // Treat "gun present" loosely when other evidence shows charging activity.
-        // Required only to suppress the false "ICE generator self-charge" classification.
-        boolean gunPresentEnough = gunConnected
-                || (gunUnknown && (externalChargerActive || devicePowerActive || bmsSaysCharging));
-
-        // Final verdict.
+        // Decide effective state code.
         int effectiveState;
-        if (inPark && isPlugInCharging && gunPresentEnough) {
-            effectiveState = ChargingStateData.CHARGING_BATTERY_STATE_CHARGING;     // 1
-        } else if (inPark && gunConnected) {
-            effectiveState = ChargingStateData.CHARGING_BATTERY_STATE_READY;        // 0
-        } else if (inPark) {
-            effectiveState = ChargingStateData.CHARGING_BATTERY_STATE_IDLE;         // 15
+        if (isCharging) {
+            effectiveState = ChargingStateData.CHARGING_BATTERY_STATE_CHARGING;
+        } else if (vd.chargingState != BydVehicleData.UNAVAILABLE) {
+            // Pass through whatever the BMS reports (READY, FINISHED, IDLE, error...)
+            effectiveState = vd.chargingState;
         } else {
-            // Driving / not in park — never report charging here. Regen is not charging.
-            // If the BMS or HAL has its own state for the dashboard, surface it; else
-            // return null so callers don't display anything misleading.
-            if (vd.chargingState != BydVehicleData.UNAVAILABLE) {
-                // Map BMS "charging" while driving → READY (we don't trust it without P)
-                int raw = vd.chargingState;
-                effectiveState = (raw == ChargingStateData.CHARGING_BATTERY_STATE_CHARGING)
-                    ? ChargingStateData.CHARGING_BATTERY_STATE_READY : raw;
-            } else {
-                return null;
-            }
+            // No BMS state and no inference signal — caller has nothing to show.
+            return null;
         }
 
         ChargingStateData data = new ChargingStateData(effectiveState);
 
-        // Power magnitude — only meaningful when we believe we're charging.
+        // ---- Power magnitude ----
+        // Only fill when we believe we're charging. For non-charging states,
+        // ChargingStateData defaults power to 0 which is correct.
         if (effectiveState == ChargingStateData.CHARGING_BATTERY_STATE_CHARGING) {
-            // Priority order:
-            //   1. Engine power magnitude (truthful, fast — flips with current).
-            //   2. External charging power (instrument-side, includes OBC/wall losses).
-            //   3. ChargingDevice reported power (often broken on BYD HAL — last resort).
-            //   4. SoC change-rate estimate via nominal capacity (only if all else fails).
-            double resolved = 0;
-            if (engineFlowingIntoBattery) {
-                resolved = Math.abs(enginePowerKw);
-            } else if (!Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0) {
-                resolved = vd.externalChargingPowerKw;
+            if (!Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0) {
+                data.updateChargingPower(vd.externalChargingPowerKw);
             } else if (!Double.isNaN(vd.chargingPowerKw) && vd.chargingPowerKw > 0) {
-                resolved = vd.chargingPowerKw;
-            }
-
-            if (resolved > 0) {
-                data.updateChargingPower(resolved);
+                data.updateChargingPower(vd.chargingPowerKw);
+            } else if (engineFlowingIntoBattery) {
+                // Use absolute value: enginePower is negative when flowing in.
+                data.updateChargingPower(Math.abs(vd.enginePowerKw));
             } else {
-                // SoC-rate fallback: estimate kW from %/hour × nominal kWh.
+                // BMS or inference says CHARGING but no real kW signal arrived.
+                // Common on PHEVs where the SDK delivers state but never the kW.
+                // Show a nominal-based hint so the UI doesn't say "Charging at 0 kW".
                 try {
                     com.overdrive.app.abrp.SohEstimator soh =
                         com.overdrive.app.monitor.SocHistoryDatabase.getInstance().getSohEstimator();
                     if (soh != null && soh.getNominalCapacityKwh() > 0) {
                         double nominal = soh.getNominalCapacityKwh();
-                        double ratePerHour = com.overdrive.app.monitor.SocHistoryDatabase.getInstance()
-                            .getSocChangeRatePerHour();
-                        if (ratePerHour > 0.5) {
-                            double estimated = (ratePerHour / 100.0) * nominal;
-                            estimated = Math.max(0.5, Math.min(150, estimated));
-                            data.updateChargingPower(estimated);
-                            data.isEstimated = true;
+                        if (nominal < 30) {
+                            // PHEV: typical AC charge rate is 3.3 kW (single phase)
+                            data.updateChargingPower(3.3);
+                        } else {
+                            // BEV: typical AC charge rate is 7 kW
+                            data.updateChargingPower(7.0);
                         }
+                        data.isEstimated = true;
                     }
                 } catch (Exception ignored) { /* leave power at 0 */ }
             }

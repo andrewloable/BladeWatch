@@ -71,10 +71,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_new)
-        
-        // SOTA: Setup storage directories FIRST (app becomes owner for cross-UID access)
-        setupStorageDirectories()
-        
+
+        // Storage setup is posted off the onCreate critical path so a failure
+        // (e.g. ROM lacking the All-Files-Access Settings activity on BYD SL7)
+        // cannot abort activity launch. See setupStorageDirectories().
+        window.decorView.post {
+            try {
+                setupStorageDirectories()
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Deferred storage setup failed: ${e.message}", e)
+            }
+        }
+
         // Initialize DeviceIdGenerator with ADB executor for file sync
         val adbExecutor = com.overdrive.app.launcher.AdbShellExecutor(this)
         com.overdrive.app.util.DeviceIdGenerator.init(adbExecutor)
@@ -383,9 +391,8 @@ class MainActivity : AppCompatActivity() {
         android.util.Log.i("MainActivity", "========== CHECKING STORAGE PERMISSION ==========")
         val hasPermission = StorageSetup.checkStoragePermission(this)
         android.util.Log.i("MainActivity", "checkStoragePermission() = $hasPermission")
-        
+
         if (hasPermission) {
-            // Permission granted - create directories
             android.util.Log.i("MainActivity", "Permission OK - calling setupDirectories()")
             val success = StorageSetup.setupDirectories()
             if (success) {
@@ -393,10 +400,64 @@ class MainActivity : AppCompatActivity() {
             } else {
                 android.util.Log.w("MainActivity", "Some storage directories could not be created")
             }
-        } else {
-            // Need to request permission
-            android.util.Log.i("MainActivity", "Permission NOT granted - requesting...")
-            StorageSetup.requestStoragePermission(this)
+            return
+        }
+
+        // On Android 10 and below, the only path is the standard runtime
+        // permission dialog for WRITE_EXTERNAL_STORAGE. No MES, no app-ops.
+        // Preserve the original behaviour exactly.
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
+            android.util.Log.i("MainActivity", "Pre-R: requesting runtime WRITE_EXTERNAL_STORAGE")
+            fallbackToSettingsRequest()
+            return
+        }
+
+        // Android 11+: best-effort directory creation in legacy mode regardless
+        // of MES state, so recordings still work on this launch even if MES
+        // never lands. With requestLegacyExternalStorage="true" + targetSdk 25,
+        // WRITE_EXTERNAL_STORAGE is enough for our own paths under
+        // /storage/emulated/0/Overdrive.
+        val legacySuccess = StorageSetup.setupDirectories()
+        android.util.Log.i("MainActivity", "Legacy-mode setupDirectories success=$legacySuccess")
+
+        // Try the silent app-ops path first (only viable route on BYD SL7 which
+        // lacks the All-Files-Access Settings activity). Settings intent is only
+        // opened if the app-ops grant fails to land.
+        android.util.Log.i("MainActivity", "MES missing - attempting silent app-ops grant via ADB")
+        try {
+            val adb = com.overdrive.app.launcher.AdbShellExecutor(this)
+            StorageSetup.tryGrantViaAppOps(this, adb) { granted ->
+                runOnUiThread { onAppOpsGrantResult(granted) }
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MainActivity", "app-ops pre-grant threw, falling back to Settings: ${e.message}")
+            fallbackToSettingsRequest()
+        }
+    }
+
+    private fun onAppOpsGrantResult(granted: Boolean) {
+        if (granted) {
+            android.util.Log.i("MainActivity", "MES granted via app-ops; refreshing directories")
+            val success = StorageSetup.setupDirectories()
+            android.util.Log.i("MainActivity", "Post-grant setupDirectories success=$success")
+            return
+        }
+        android.util.Log.w("MainActivity", "app-ops grant did not take; falling back to Settings UI")
+        fallbackToSettingsRequest()
+    }
+
+    private fun fallbackToSettingsRequest() {
+        when (StorageSetup.requestStoragePermission(this)) {
+            StorageSetup.RequestOutcome.REQUESTED_RUNTIME,
+            StorageSetup.RequestOutcome.OPENED_SETTINGS -> {
+                // Result delivered to onRequestPermissionsResult / onActivityResult.
+            }
+            StorageSetup.RequestOutcome.UNAVAILABLE -> {
+                android.util.Log.w(
+                    "MainActivity",
+                    "All-Files-Access UI unavailable; staying in legacy storage mode"
+                )
+            }
         }
     }
     

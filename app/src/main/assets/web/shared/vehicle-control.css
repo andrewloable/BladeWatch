@@ -32,7 +32,11 @@
 .vc-nav-btn:hover { background: rgba(38,38,46,0.9); }
 .vc-nav-btn:active { -webkit-transform: scale(0.92); transform: scale(0.92); }
 
-/* Status bar floating on 3D */
+/* Status bar floating on 3D — two rows.
+   Row 1 (.vc-status-bar) holds connection state pills (lock, cloud).
+   Row 2 (.vc-status-bar-secondary) holds appearance controls (color, model picker).
+   Splitting the rows guarantees the model dropdown never overlaps the cloud pill on
+   narrow screens, no matter how long the model name or how cramped the device. */
 .vc-status-bar {
     position: absolute; top: 10px; left: 10px; right: 10px;
     display: -webkit-flex; display: flex;
@@ -41,6 +45,17 @@
     z-index: 10; pointer-events: none;
 }
 .vc-status-bar > * { pointer-events: auto; margin: 0 3px; }
+
+.vc-status-bar-secondary {
+    position: absolute; top: 56px; left: 10px; right: 10px;
+    display: -webkit-flex; display: flex;
+    -webkit-align-items: center; align-items: center;
+    -webkit-flex-wrap: wrap; flex-wrap: wrap;
+    -webkit-justify-content: flex-start; justify-content: flex-start;
+    gap: 6px;
+    z-index: 10; pointer-events: none;
+}
+.vc-status-bar-secondary > * { pointer-events: auto; }
 .vc-pill {
     display: -webkit-inline-flex; display: inline-flex;
     -webkit-align-items: center; align-items: center;
@@ -64,6 +79,34 @@
 .vc-swatch.active { border-color: #fff; box-shadow: 0 0 6px currentColor; -webkit-transform: scale(1.1); transform: scale(1.1); }
 .vc-swatch-custom { width: 24px; height: 24px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); position: relative; overflow: hidden; cursor: pointer; margin: 0 3px; touch-action: manipulation; }
 .vc-swatch-custom input { position: absolute; top: -4px; left: -4px; width: 32px; height: 32px; opacity: 0; cursor: pointer; }
+
+.vc-model-select {
+    background: rgba(15,15,18,0.85); color: #E4E4E7;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
+    padding: 5px 26px 5px 12px;
+    font-size: 12px; font-weight: 500;
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23A1A1AA' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 9px center;
+    cursor: pointer; touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    max-width: 140px; text-overflow: ellipsis;
+}
+.vc-model-select:focus { outline: none; border-color: rgba(0,212,170,0.5); }
+
+/* Stale indicator — most recent manifest refresh failed (network, GitHub, parse).
+   The select itself stays fully usable; this dot just signals "newly released
+   models may not appear here." Tapping the dropdown auto-retries the refresh.
+   The amber dot sits to the LEFT of the existing chevron so they don't fight
+   for the same pixel; padding-right grows to keep the dot off the model name. */
+.vc-model-select.stale {
+    background-image:
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23A1A1AA' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='6' viewBox='0 0 6 6'><circle cx='3' cy='3' r='2.5' fill='%23F59E0B'/></svg>");
+    background-repeat: no-repeat, no-repeat;
+    background-position: right 9px center, right 22px center;
+    padding-right: 36px;
+}
 
 .vc-loading { position: absolute; top: 40%; left: 50%; -webkit-transform: translate(-50%,-50%); transform: translate(-50%,-50%); text-align: center; z-index: 20; }
 .vc-loading-spinner { width: 36px; height: 36px; margin: 0 auto 10px; border: 3px solid rgba(255,255,255,0.06); border-top-color: #00D4AA; border-radius: 50%; -webkit-animation: spin .7s linear infinite; animation: spin .7s linear infinite; }
@@ -97,17 +140,17 @@
 .vc-toast.error { border-color: #EF4444; color: #EF4444; }
 .vc-toast.info { border-color: #0EA5E9; color: #0EA5E9; }
 
-/* 3D Surround View button */
+/* 3D Surround View button — laid out as a flex item inside .vc-status-bar-secondary
+   so vertical alignment is automatic, no manual top:50px to keep in sync with the row. */
 .vc-3d-btn {
-    position: absolute;
-    top: 50px;
-    right: 12px;
-    z-index: 15;
     display: -webkit-inline-flex; display: inline-flex;
     -webkit-flex-direction: column; flex-direction: column;
     -webkit-align-items: center; align-items: center;
     -webkit-justify-content: center; justify-content: center;
     width: 44px; height: 44px;
+    -webkit-flex-shrink: 0; flex-shrink: 0;
+    -webkit-flex-grow: 0; flex-grow: 0;
+    margin-left: auto;  /* push to far right within the secondary row */
     border-radius: 22px;
     border: 1px solid rgba(255,255,255,0.1);
     background: rgba(15,15,18,0.85);
@@ -351,6 +394,13 @@
     .vc-colors { padding: 2px 5px; }
     .vc-swatch { width: 20px; height: 20px; margin: 0 2px; }
     .vc-swatch-custom { width: 20px; height: 20px; margin: 0 2px; }
+    .vc-model-select { padding: 4px 22px 4px 10px; font-size: 11px; max-width: 140px; }
+    /* Clear the hamburger button (left:10 width:40 = right edge at 50) so the
+       secondary row can't slide under it. Drop the row a touch since the smaller
+       pills make the primary row shorter. */
+    .vc-status-bar-secondary { top: 56px; left: 56px; right: 10px; }
+    .vc-3d-btn { width: 40px; height: 40px; border-radius: 20px; }
+    .vc-3d-btn svg { width: 16px; height: 16px; }
 }
 
 @media (max-width: 480px) {
@@ -361,6 +411,11 @@
     .vc-colors { padding: 2px 4px; }
     .vc-swatch { width: 18px; height: 18px; margin: 0 1px; }
     .vc-swatch-custom { width: 18px; height: 18px; margin: 0 1px; }
+    .vc-model-select { padding: 3px 20px 3px 8px; font-size: 10px; max-width: 110px; border-radius: 14px; }
+    .vc-status-bar-secondary { top: 50px; left: 54px; right: 8px; gap: 4px; }
+    .vc-3d-btn { width: 36px; height: 36px; border-radius: 18px; }
+    .vc-3d-btn svg { width: 14px; height: 14px; }
+    .vc-3d-btn span { font-size: 6px; }
     .vc-bar { left: 1%; right: 1%; }
     .vc-tabs { padding: 5px 6px; }
     .vc-tabs > * { margin: 0 1px; }

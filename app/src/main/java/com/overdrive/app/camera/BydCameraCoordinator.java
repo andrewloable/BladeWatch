@@ -10,13 +10,11 @@ import java.lang.reflect.Proxy;
 /**
  * Cooperative camera coordinator for BYD platform.
  *
- * PRIMARY MECHANISM: Registers with IBYDCameraService as a camera user via
- * IBYDCameraUser.Stub. This gives us event-driven callbacks:
- *   - onPreOpenCamera: native app wants camera → yield immediately
- *   - onCloseCamera: native app released camera → reopen
- *
- * FALLBACK: If registerUser fails (older firmware, missing API), falls back to
- * polling getCurrentCameraUser() + frame stall detection.
+ * NOTE: registerCameraUser() / IBYDCameraUser callback registration is permanently
+ * DISABLED — the daemon does not participate in IBYDCameraService arbitration.
+ * The only live path is polling-based: getCurrentCameraUser() + frame-stall detection.
+ * All registerUser-gated branches in this file are dead and kept commented for
+ * reference only; do not re-enable without re-validating the yield/reacquire flow.
  *
  * Cleanup order (always): disablePreviewCallback → stopPreview → close
  */
@@ -31,7 +29,10 @@ public class BydCameraCoordinator {
     private Method getCurrentCameraUserMethod;  // For polling fallback
     private boolean serviceAvailable = false;
 
-    // Camera user registration (primary mechanism)
+    // Camera user registration — DISABLED. registerCameraUser() is no longer
+    // invoked, so these fields stay at their initial values for the lifetime
+    // of the process: cameraUser == null, registeredAsUser == false.
+    // Kept (non-final) so the commented-out registration code still compiles.
     private BydCameraUser cameraUser;
     private boolean registeredAsUser = false;
 
@@ -154,8 +155,13 @@ public class BydCameraCoordinator {
 
     /**
      * Registers with IBYDCameraService as a camera user.
-     * This is the primary mechanism — gives us event-driven yield/reacquire callbacks.
+     *
+     * DEAD CODE — DISABLED. Not invoked from {@link #register()} (call sites are
+     * commented out). Kept for reference in case event-driven yield is revived.
+     * If you uncomment the call site, also remove the `false` return in
+     * {@link #isRegisteredAsUser()} and revert the polling-only short-circuits.
      */
+    @SuppressWarnings("unused")
     private void registerCameraUser() {
         if (registeredAsUser) {
             logger.info("Already registered as camera user");
@@ -271,7 +277,10 @@ public class BydCameraCoordinator {
 
     /**
      * Unregisters from IBYDCameraService.
+     *
+     * DEAD CODE — DISABLED, paired with {@link #registerCameraUser()}.
      */
+    @SuppressWarnings("unused")
     private void unregisterCameraUser() {
         if (!registeredAsUser || cameraUser == null) return;
 
@@ -311,17 +320,19 @@ public class BydCameraCoordinator {
      * Returns false if native app opened but sharing is working (no frame stall).
      */
     public boolean isCameraYielded() {
-        if (registeredAsUser && cameraUser != null) {
-            return cameraUser.isYielded();
-        }
+        // registerCameraUser is DISABLED — only the polling path is live.
+        // if (registeredAsUser && cameraUser != null) {
+        //     return cameraUser.isYielded();
+        // }
         return yielded;
     }
 
     /**
      * Whether we're using event-driven registration (true) or polling fallback (false).
+     * Permanently false — registerCameraUser is DISABLED.
      */
     public boolean isRegisteredAsUser() {
-        return registeredAsUser;
+        return false;
     }
 
     // ==================== Polling Fallback ====================
@@ -334,11 +345,10 @@ public class BydCameraCoordinator {
      * Used at camera open time to decide PRIMARY vs SECONDARY mode.
      */
     public String queryCurrentCameraUser() {
-        // If registered as user, use the callback state
-        if (registeredAsUser && cameraUser != null) {
-            return cameraUser.isNativeAppHoldingCamera() ? "native" : null;
-        }
-        // Polling fallback via getCurrentCameraUser()
+        // registerCameraUser DISABLED — polling path only.
+        // if (registeredAsUser && cameraUser != null) {
+        //     return cameraUser.isNativeAppHoldingCamera() ? "native" : null;
+        // }
         if (getCurrentCameraUserMethod != null && reflectionServiceProxy != null) {
             try {
                 Object currentUser = getCurrentCameraUserMethod.invoke(reflectionServiceProxy);
@@ -363,10 +373,10 @@ public class BydCameraCoordinator {
             return false;
         }
 
-        // If registered as user, the callbacks handle this — no need to poll
-        if (registeredAsUser) {
-            return nativeAppActive;
-        }
+        // registerCameraUser DISABLED — callbacks never fire, so always poll.
+        // if (registeredAsUser) {
+        //     return nativeAppActive;
+        // }
 
         try {
             Object currentUser = getCurrentCameraUserMethod.invoke(reflectionServiceProxy);
@@ -430,26 +440,23 @@ public class BydCameraCoordinator {
     /**
      * Called by the frame stall detector when no frames arrive for 2+ seconds.
      *
-     * With registerUser: checks if native app holds camera (via callback state).
-     *   If yes → yield via yieldDueToContention (this is the ONLY yield trigger).
-     *   If no → genuine HAL issue, not contention.
-     *
-     * Without registerUser: falls back to polling getCurrentCameraUser.
+     * registerCameraUser is DISABLED, so only the polling path runs.
+     * If the native app currently holds the camera → yield. Otherwise HAL issue.
      */
     public boolean onFrameStallDetected() {
-        if (registeredAsUser && cameraUser != null) {
-            // With registerUser, we know if native app holds camera from onOpenCamera callback
-            if (cameraUser.isNativeAppHoldingCamera()) {
-                logger.warn("CONTENTION: Frame stall + native app holds camera — yielding now");
-                cameraUser.yieldDueToContention();
-                return true;
-            } else {
-                logger.warn("Frame stall but native app NOT holding camera — HAL issue");
-                return false;
-            }
-        }
+        // Event-driven path (registerCameraUser) DISABLED:
+        // if (registeredAsUser && cameraUser != null) {
+        //     if (cameraUser.isNativeAppHoldingCamera()) {
+        //         logger.warn("CONTENTION: Frame stall + native app holds camera — yielding now");
+        //         cameraUser.yieldDueToContention();
+        //         return true;
+        //     } else {
+        //         logger.warn("Frame stall but native app NOT holding camera — HAL issue");
+        //         return false;
+        //     }
+        // }
 
-        // Polling fallback
+        // Polling path (the only live path)
         checkNativeAppActive();
 
         if (nativeAppActive) {
@@ -617,7 +624,8 @@ public class BydCameraCoordinator {
     // ==================== State Queries ====================
 
     public boolean isNativeAppActive() { return nativeAppActive; }
-    public boolean isYielded() { return yielded || (cameraUser != null && cameraUser.isYielded()); }
+    // cameraUser is permanently null (registerCameraUser DISABLED), so polling 'yielded' is canonical.
+    public boolean isYielded() { return yielded; }
     public boolean isRegistered() { return serviceAvailable; }
     public boolean isEventCallbackActive() { return eventCallbackSet; }
     public void resetEventCallbackState() { eventCallbackSet = false; }

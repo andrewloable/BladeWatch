@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.overdrive.app.auth.AuthManager
 import com.overdrive.app.client.CameraDaemonClient
@@ -25,6 +26,8 @@ import com.overdrive.app.ui.viewmodel.RecordingViewModel
 import com.overdrive.app.util.DeviceIdGenerator
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.overdrive.app.R
 
 /**
@@ -45,6 +48,9 @@ class DashboardFragment : Fragment() {
     private lateinit var tvAccessMode: TextView
     private lateinit var cardDaemons: MaterialCardView
     private lateinit var cardRecording: MaterialCardView
+    private lateinit var chipGroupTunnels: ChipGroup
+
+    private var selectedTunnel: DaemonType? = null
     
     // Auth UI elements
     private lateinit var tvDeviceToken: TextView
@@ -86,6 +92,7 @@ class DashboardFragment : Fragment() {
         tvAccessMode = view.findViewById(R.id.tvAccessMode)
         cardDaemons = view.findViewById(R.id.cardDaemons)
         cardRecording = view.findViewById(R.id.cardRecording)
+        chipGroupTunnels = view.findViewById(R.id.chipGroupTunnels)
         
         // Auth UI
         tvDeviceToken = view.findViewById(R.id.tvDeviceToken)
@@ -120,35 +127,26 @@ class DashboardFragment : Fragment() {
     }
     
     private fun observeViewModels() {
-        // Observe current URL from MainViewModel (works for both PRIVATE and PUBLIC modes)
-        mainViewModel.currentUrl.observe(viewLifecycleOwner) { url ->
-            updateQrCode(url)
-        }
-        
-        // Observe access mode
+        // Observe access mode (display only — QR/URL are driven by per-tunnel observers below)
         mainViewModel.accessMode.observe(viewLifecycleOwner) { mode ->
             tvAccessMode.text = mode.name
-            // Update placeholder text based on mode
-            if (mainViewModel.currentUrl.value.isNullOrEmpty()) {
-                tvQrPlaceholder.text = when (mode) {
-                    com.overdrive.app.ui.model.AccessMode.PRIVATE -> getTunnelPlaceholderText()
-                    com.overdrive.app.ui.model.AccessMode.PUBLIC -> "Loading VPS URL..."
-                }
-            }
+            rebuildTunnelChips()
         }
-        
-        // Observe daemon states for quick status
+
+        // Observe daemon states for quick status + chip refresh (covers stop/disable cases)
         daemonsViewModel.daemonStates.observe(viewLifecycleOwner) { states ->
             val running = states.values.count { it.status == DaemonStatus.RUNNING }
             val total = states.size
             tvDaemonsStatus.text = "$running/$total Running"
-            
-            // Update tunnel placeholder if no URL yet
-            if (mainViewModel.currentUrl.value.isNullOrEmpty()) {
-                tvQrPlaceholder.text = getTunnelPlaceholderText()
-            }
+            rebuildTunnelChips()
         }
-        
+
+        // Observe each tunnel controller so chips rebuild when URLs appear/disappear
+        val rebuild = Observer<String?> { _ -> rebuildTunnelChips() }
+        daemonsViewModel.cloudflaredController.tunnelUrl.observe(viewLifecycleOwner, rebuild)
+        daemonsViewModel.zrokController.tunnelUrl.observe(viewLifecycleOwner, rebuild)
+        daemonsViewModel.tailscaleController.tunnelUrl.observe(viewLifecycleOwner, rebuild)
+
         // Observe recording state
         recordingViewModel.isRecording.observe(viewLifecycleOwner) { isRecording ->
             tvRecordingStatus.text = if (isRecording) "🔴 Recording" else "Idle"
@@ -160,28 +158,115 @@ class DashboardFragment : Fragment() {
             )
         }
     }
-    
-    private fun updateQrCode(url: String?) {
-        if (url.isNullOrEmpty()) {
-            showPlaceholder()
-        } else {
-            try {
-                val qrBitmap = QrCodeGenerator.generate(url, 400)
-                if (qrBitmap != null) {
-                    ivQrCode.setImageBitmap(qrBitmap)
-                    ivQrCode.visibility = View.VISIBLE
-                    tvQrPlaceholder.visibility = View.GONE
-                    tvUrl.text = url
-                    tvUrl.visibility = View.VISIBLE
-                } else {
-                    showPlaceholder()
+
+    /**
+     * Rebuild the tunnel chip group based on current per-controller URLs.
+     * Preserves selection across rebuilds when possible; falls back to the first
+     * available tunnel when the previously-selected one disappears.
+     */
+    private fun rebuildTunnelChips() {
+        val available = collectAvailableTunnels()
+
+        if (available.isEmpty()) {
+            chipGroupTunnels.removeAllViews()
+            chipGroupTunnels.visibility = View.GONE
+            selectedTunnel = null
+            renderQr(null)
+            return
+        }
+
+        // Decide selection: keep previous if still present, else first.
+        val newSelection = selectedTunnel?.takeIf { prev -> available.any { it.first == prev } }
+            ?: available.first().first
+        selectedTunnel = newSelection
+
+        // Rebuild chip set if mismatched (count or order changed).
+        val currentTags = (0 until chipGroupTunnels.childCount)
+            .map { (chipGroupTunnels.getChildAt(it) as Chip).tag as DaemonType }
+        val newTags = available.map { it.first }
+        if (currentTags != newTags) {
+            chipGroupTunnels.setOnCheckedStateChangeListener(null)
+            chipGroupTunnels.removeAllViews()
+            available.forEach { (type, _) ->
+                val chip = Chip(requireContext()).apply {
+                    id = View.generateViewId()
+                    tag = type
+                    text = labelFor(type)
+                    isCheckable = true
+                    isCheckedIconVisible = false
                 }
-            } catch (e: Exception) {
-                showPlaceholder()
+                chipGroupTunnels.addView(chip)
+            }
+            chipGroupTunnels.setOnCheckedStateChangeListener { group, ids ->
+                val checkedId = ids.firstOrNull() ?: return@setOnCheckedStateChangeListener
+                val chip = group.findViewById<Chip>(checkedId) ?: return@setOnCheckedStateChangeListener
+                val type = chip.tag as? DaemonType ?: return@setOnCheckedStateChangeListener
+                if (type != selectedTunnel) {
+                    selectedTunnel = type
+                    renderQr(urlFor(type))
+                }
             }
         }
+
+        // Mark the right chip checked (silently — listener guards against re-firing).
+        for (i in 0 until chipGroupTunnels.childCount) {
+            val chip = chipGroupTunnels.getChildAt(i) as Chip
+            chip.isChecked = (chip.tag as DaemonType) == newSelection
+        }
+
+        chipGroupTunnels.visibility = if (available.size > 1) View.VISIBLE else View.GONE
+        renderQr(urlFor(newSelection))
     }
-    
+
+    private fun collectAvailableTunnels(): List<Pair<DaemonType, String>> {
+        val list = mutableListOf<Pair<DaemonType, String>>()
+        daemonsViewModel.cloudflaredController.tunnelUrl.value
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { list.add(DaemonType.CLOUDFLARED_TUNNEL to it) }
+        daemonsViewModel.zrokController.tunnelUrl.value
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { list.add(DaemonType.ZROK_TUNNEL to it) }
+        daemonsViewModel.tailscaleController.tunnelUrl.value
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { list.add(DaemonType.TAILSCALE_TUNNEL to it) }
+        return list
+    }
+
+    private fun urlFor(type: DaemonType): String? = when (type) {
+        DaemonType.CLOUDFLARED_TUNNEL -> daemonsViewModel.cloudflaredController.tunnelUrl.value
+        DaemonType.ZROK_TUNNEL -> daemonsViewModel.zrokController.tunnelUrl.value
+        DaemonType.TAILSCALE_TUNNEL -> daemonsViewModel.tailscaleController.tunnelUrl.value
+        else -> null
+    }
+
+    private fun labelFor(type: DaemonType): String = when (type) {
+        DaemonType.CLOUDFLARED_TUNNEL -> "Cloudflared"
+        DaemonType.ZROK_TUNNEL -> "Zrok"
+        DaemonType.TAILSCALE_TUNNEL -> "Tailscale"
+        else -> type.displayName
+    }
+
+    private fun renderQr(url: String?) {
+        if (url.isNullOrEmpty()) {
+            showPlaceholder()
+            return
+        }
+        try {
+            val qrBitmap = QrCodeGenerator.generate(url, 400)
+            if (qrBitmap != null) {
+                ivQrCode.setImageBitmap(qrBitmap)
+                ivQrCode.visibility = View.VISIBLE
+                tvQrPlaceholder.visibility = View.GONE
+                tvUrl.text = url
+                tvUrl.visibility = View.VISIBLE
+            } else {
+                showPlaceholder()
+            }
+        } catch (e: Exception) {
+            showPlaceholder()
+        }
+    }
+
     private fun showPlaceholder() {
         ivQrCode.setImageDrawable(null)
         ivQrCode.visibility = View.VISIBLE

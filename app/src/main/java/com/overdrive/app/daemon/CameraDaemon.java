@@ -2392,7 +2392,9 @@ public class CameraDaemon {
                 gpuPipeline.getCamera().getCameraCoordinator();
             if (coordinator != null) {
                 status.put("cameraServiceRegistered", coordinator.isRegistered());
-                status.put("cameraUserRegistered", coordinator.isRegisteredAsUser());
+                // cameraUserRegistered intentionally omitted — registerCameraUser is
+                // permanently DISABLED, the value is always false. Polling fallback
+                // is the only live path. See BydCameraCoordinator.register().
                 status.put("cameraYielded", coordinator.isYielded());
                 status.put("nativeAppActive", coordinator.isNativeAppActive());
                 status.put("cameraEventCallback", coordinator.isEventCallbackActive());
