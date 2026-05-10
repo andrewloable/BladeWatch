@@ -341,6 +341,7 @@ public class MqttPublisherService implements MqttCallback {
             status.put("ssl", config.isSsl());
             status.put("trustAllCerts", config.trustAllCerts);
             status.put("proxyActive", ProxyHelper.isProxyAvailable());
+            status.put("proxyPort", ProxyHelper.getProxyPort());
         } catch (Exception ignored) {}
         return status;
     }

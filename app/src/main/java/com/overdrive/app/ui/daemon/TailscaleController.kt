@@ -87,6 +87,14 @@ class TailscaleController(
         tailscaleLauncher.needsLogin(callback)
     }
 
+    fun saveProxySettings(enabled: Boolean, callback: ((Boolean?) -> Unit)? = null) {
+        tailscaleLauncher.saveProxySettings(enabled, callback)
+    }
+
+    fun isProxyEnabled(callback: ((Boolean) -> Unit)) {
+        tailscaleLauncher.isProxyEnabled(callback)
+    }
+
     override fun cleanup() {
         // Use pkill -f for more reliable process killing (matches full command line)
         adbLauncher.executeShellCommand(

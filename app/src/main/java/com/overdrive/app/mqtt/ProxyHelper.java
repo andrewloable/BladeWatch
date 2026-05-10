@@ -38,11 +38,13 @@ public class ProxyHelper {
 
     private static final String PROXY_HOST = "127.0.0.1";
     private static final int PROXY_PORT = 8119;
+    private static final int TAILSCALE_PROXY_PORT = 8539;
     private static final int PROBE_TIMEOUT_MS = 200;
     private static final long CACHE_DURATION_MS = 60_000; // 60 seconds
 
     private static volatile boolean proxyChecked = false;
     private static volatile boolean proxyAvailable = false;
+    private static volatile int proxyPort = PROXY_PORT;
     private static volatile long lastProbeTime = 0;
 
     private ProxyHelper() {} // Utility class
@@ -61,9 +63,17 @@ public class ProxyHelper {
         lastProbeTime = now;
 
         try (Socket probe = new Socket()) {
-            probe.connect(new InetSocketAddress(PROXY_HOST, PROXY_PORT), PROBE_TIMEOUT_MS);
-            proxyAvailable = true;
-            logger.info("Proxy probe: sing-box available on port " + PROXY_PORT);
+            try {
+                probe.connect(new InetSocketAddress(PROXY_HOST, TAILSCALE_PROXY_PORT), PROBE_TIMEOUT_MS);
+                proxyAvailable = true;
+                proxyPort = TAILSCALE_PROXY_PORT;
+                logger.info("Proxy probe: Tailscale proxy available on port " + TAILSCALE_PROXY_PORT);
+            } catch (Exception e) {
+                probe.connect(new InetSocketAddress(PROXY_HOST, PROXY_PORT), PROBE_TIMEOUT_MS);
+                proxyAvailable = true;
+                proxyPort = PROXY_PORT;
+                logger.info("Proxy probe: sing-box available on port " + PROXY_PORT);
+            }
         } catch (Exception e) {
             proxyAvailable = false;
         }
@@ -76,7 +86,7 @@ public class ProxyHelper {
      * Used by MqttPublisherService to set JVM-level socksProxyPort for WebSocket connections.
      */
     public static int getProxyPort() {
-        return PROXY_PORT;
+        return proxyPort;
     }
 
     /**
@@ -94,7 +104,7 @@ public class ProxyHelper {
      */
     public static Proxy getHttpProxy() {
         if (isProxyAvailable()) {
-            return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(PROXY_HOST, PROXY_PORT));
+            return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(PROXY_HOST, proxyPort));
         }
         return Proxy.NO_PROXY;
     }
@@ -173,7 +183,7 @@ public class ProxyHelper {
 
         ProxiedSocketFactory() {
             this.proxy = new Proxy(Proxy.Type.SOCKS,
-                    new InetSocketAddress(PROXY_HOST, PROXY_PORT));
+                    new InetSocketAddress(PROXY_HOST, proxyPort));
         }
 
         @Override
@@ -230,7 +240,7 @@ public class ProxyHelper {
         ProxiedSslSocketFactory(SSLSocketFactory sslFactory) {
             this.sslFactory = sslFactory;
             this.proxy = new Proxy(Proxy.Type.SOCKS,
-                    new InetSocketAddress(PROXY_HOST, PROXY_PORT));
+                    new InetSocketAddress(PROXY_HOST, proxyPort));
         }
 
         /**
