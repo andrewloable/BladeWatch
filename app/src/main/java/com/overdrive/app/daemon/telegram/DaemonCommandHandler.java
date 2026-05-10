@@ -32,6 +32,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         {"telegram", "telegram_bot_daemon", "TelegramBotDaemon", "Telegram", "yes"},
         {"cloudflared", "cloudflared", "shell", "Cloudflare Tunnel", "yes"},
         {"zrok", "zrok", "shell", "Zrok Tunnel", "yes"},
+        {"tailscale", "tailscaled", "shell", "Tailscale Tunnel", "yes"},
         {"singbox", "sing-box", "shell", "Sing-Box", "yes"},
     };
     

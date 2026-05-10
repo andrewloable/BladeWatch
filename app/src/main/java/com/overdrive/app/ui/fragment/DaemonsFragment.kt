@@ -219,7 +219,17 @@ class DaemonsFragment : Fragment() {
                 .setMessage("Configure tailscale")
                 .setView(dialogView)
                 .setPositiveButton("Save") { _, _ ->
-                    saveTailscaleProxySettings(proxySwitch.isChecked)
+                    val enableProxy = proxySwitch.isChecked
+                    daemonsViewModel.tailscaleController.isProxyEnabled { wasEnabled ->
+                        activity?.runOnUiThread {
+                            // Only confirm when *turning on* the proxy (going off→on). Disabling is always safe.
+                            if (enableProxy && !wasEnabled) {
+                                confirmEnableTailscaleProxy()
+                            } else {
+                                saveTailscaleProxySettings(enableProxy)
+                            }
+                        }
+                    }
                 }
                 .setNegativeButton("Cancel", null)
                 .setNeutralButton("Delete") { _, _ ->
@@ -229,6 +239,30 @@ class DaemonsFragment : Fragment() {
 
             dialog.show()
         }
+    }
+
+    /**
+     * Confirm before enabling the tailscale proxy — has implications for MQTT to public brokers.
+     */
+    private fun confirmEnableTailscaleProxy() {
+        val context = context ?: return
+
+        AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+            .setTitle("Enable Tailscale Proxy?")
+            .setMessage(
+                "This routes MQTT through Tailscale so you can reach a private broker on your tailnet without port forwarding.\n\n" +
+                "While enabled:\n" +
+                "• MQTT to a tailnet broker works (e.g. Mosquitto on a device on your tailnet)\n" +
+                "• MQTT to public brokers (HiveMQ, AWS IoT, etc.) will fail — Tailscale only routes to your tailnet\n" +
+                "• The Tailscale daemon will restart to apply the change\n" +
+                "• Other app traffic and the rest of the device are not affected\n\n" +
+                "You can turn this off anytime."
+            )
+            .setPositiveButton("Enable") { _, _ ->
+                saveTailscaleProxySettings(true)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
     
     /**
@@ -342,6 +376,9 @@ class DaemonsFragment : Fragment() {
             activity?.runOnUiThread {
                 if (saved != null) {
                     if (saved) {
+                        // Force MQTT proxy probe to re-run on next reconnect
+                        com.overdrive.app.mqtt.ProxyHelper.invalidateCache()
+
                         val status = daemonsViewModel.daemonStates.value?.get(DaemonType.TAILSCALE_TUNNEL)?.status
                         if (status != DaemonStatus.STOPPED) {
                             daemonsViewModel.stopDaemon(DaemonType.TAILSCALE_TUNNEL)

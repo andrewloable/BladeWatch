@@ -266,15 +266,19 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
                                 }
                             }
                         } else if (type == DaemonType.TAILSCALE_TUNNEL) {
-                            // For tailscale, also fetch the tunnel URL
+                            // For tailscale, also fetch the tunnel URL and proxy state
                             tailscaleController.refreshTunnelUrl { url ->
-                                val statusText = url ?: "Running"
-                                updateStateWithSubprocesses(type, DaemonStatus.RUNNING, statusText, uptime, subprocesses)
-                                if (logResult) {
-                                    val uptimeStr = uptime?.let { " (uptime: $it)" } ?: ""
-                                    LogManager.getInstance().info("Daemons", "${type.name}: Running$uptimeStr" + (url?.let { " - $it" } ?: ""))
-                                    subprocesses.forEach { sp ->
-                                        LogManager.getInstance().debug("Daemons", "  └─ ${sp.name} (PID: ${sp.pid}, uptime: ${sp.uptime})")
+                                tailscaleController.isProxyEnabled { proxyOn ->
+                                    val base = url ?: "Running"
+                                    val statusText = if (proxyOn) "$base • Proxy: ON" else base
+                                    updateStateWithSubprocesses(type, DaemonStatus.RUNNING, statusText, uptime, subprocesses)
+                                    if (logResult) {
+                                        val uptimeStr = uptime?.let { " (uptime: $it)" } ?: ""
+                                        val proxyStr = if (proxyOn) " [proxy ON]" else ""
+                                        LogManager.getInstance().info("Daemons", "${type.name}: Running$uptimeStr$proxyStr" + (url?.let { " - $it" } ?: ""))
+                                        subprocesses.forEach { sp ->
+                                            LogManager.getInstance().debug("Daemons", "  └─ ${sp.name} (PID: ${sp.pid}, uptime: ${sp.uptime})")
+                                        }
                                     }
                                 }
                             }

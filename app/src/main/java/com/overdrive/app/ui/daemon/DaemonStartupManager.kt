@@ -258,8 +258,9 @@ class DaemonStartupManager(
         val cloudflaredEnabled = PreferencesManager.isDaemonEnabled(DaemonType.CLOUDFLARED_TUNNEL)
         val zrokEnabled = PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)
         val tailscaleEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)
+
+        // Cloudflared and Zrok are mutually exclusive (both expose the dashboard publicly)
         if (cloudflaredEnabled) {
-            // Do real-time check if already running before starting
             vm.cloudflaredController.isRunning { isRunning ->
                 if (isRunning) {
                     log.info(TAG, "Cloudflared already running, skipping start")
@@ -269,7 +270,6 @@ class DaemonStartupManager(
                 }
             }
         } else if (zrokEnabled) {
-            // Do real-time check if already running before starting
             vm.zrokController.isRunning { isRunning ->
                 if (isRunning) {
                     log.info(TAG, "Zrok already running, skipping start")
@@ -278,8 +278,12 @@ class DaemonStartupManager(
                     handler.post { vm.startDaemon(DaemonType.ZROK_TUNNEL) }
                 }
             }
-        } else if (tailscaleEnabled) {
-            // Do real-time check if already running before starting
+        } else if (!tailscaleEnabled) {
+            log.info(TAG, "No tunnel enabled by user")
+        }
+
+        // Tailscale runs independently — it's private access, not a public dashboard tunnel
+        if (tailscaleEnabled) {
             vm.tailscaleController.isRunning { isRunning ->
                 if (isRunning) {
                     log.info(TAG, "Tailscale already running, skipping start")
@@ -288,8 +292,6 @@ class DaemonStartupManager(
                     handler.post { vm.startDaemon(DaemonType.TAILSCALE_TUNNEL) }
                 }
             }
-        } else {
-            log.info(TAG, "No tunnel enabled by user")
         }
     }
 
@@ -311,6 +313,7 @@ class DaemonStartupManager(
             val tunnelDelay = if (accessMode == AccessMode.PUBLIC) 5000L else 0L
             
             handler.postDelayed({
+                // Cloudflared and Zrok are mutually exclusive
                 if (PreferencesManager.isDaemonEnabled(DaemonType.CLOUDFLARED_TUNNEL)) {
                     log.info(TAG, "Boot: Starting Cloudflared...")
                     adbLauncher.launchTunnel(object : AdbDaemonLauncher.TunnelCallback {
@@ -321,7 +324,10 @@ class DaemonStartupManager(
                 } else if (PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)) {
                     log.info(TAG, "Boot: Starting Zrok...")
                     startZrokOnBoot()
-                } else if (PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)) {
+                }
+
+                // Tailscale runs independently of cloudflared/zrok
+                if (PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)) {
                     log.info(TAG, "Boot: Starting Tailscale...")
                     startTailscaleOnBoot()
                 }
@@ -440,14 +446,14 @@ class DaemonStartupManager(
         val cloudflaredEnabled = PreferencesManager.isDaemonEnabled(DaemonType.CLOUDFLARED_TUNNEL)
         val zrokEnabled = PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)
         val tailscaleEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TAILSCALE_TUNNEL)
-        
+
+        // Cloudflared and Zrok are mutually exclusive
         if (cloudflaredEnabled) {
             vm.cloudflaredController.isRunning { isRunning ->
                 if (isRunning && forceRestart) {
                     log.info(TAG, "Restarting Cloudflared to apply new proxy settings...")
-                    handler.post { 
+                    handler.post {
                         vm.stopDaemon(DaemonType.CLOUDFLARED_TUNNEL)
-                        // Wait for stop, then start
                         handler.postDelayed({
                             log.info(TAG, "Starting Cloudflared with new settings")
                             vm.startDaemon(DaemonType.CLOUDFLARED_TUNNEL)
@@ -464,9 +470,8 @@ class DaemonStartupManager(
             vm.zrokController.isRunning { isRunning ->
                 if (isRunning && forceRestart) {
                     log.info(TAG, "Restarting Zrok to apply new proxy settings...")
-                    handler.post { 
+                    handler.post {
                         vm.stopDaemon(DaemonType.ZROK_TUNNEL)
-                        // Wait for stop, then start
                         handler.postDelayed({
                             log.info(TAG, "Starting Zrok with new settings")
                             vm.startDaemon(DaemonType.ZROK_TUNNEL)
@@ -479,13 +484,15 @@ class DaemonStartupManager(
                     log.info(TAG, "Zrok already running, no restart needed")
                 }
             }
-        } else if (tailscaleEnabled) {
+        }
+
+        // Tailscale runs independently of cloudflared/zrok
+        if (tailscaleEnabled) {
             vm.tailscaleController.isRunning { isRunning ->
                 if (isRunning && forceRestart) {
                     log.info(TAG, "Restarting Tailscale to apply new proxy settings...")
                     handler.post {
                         vm.stopDaemon(DaemonType.TAILSCALE_TUNNEL)
-                        // Wait for stop, then start
                         handler.postDelayed({
                             log.info(TAG, "Starting Tailscale with new settings")
                             vm.startDaemon(DaemonType.TAILSCALE_TUNNEL)
