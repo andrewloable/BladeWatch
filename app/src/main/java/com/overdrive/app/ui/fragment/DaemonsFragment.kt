@@ -2,6 +2,8 @@ package com.overdrive.app.ui.fragment
 
 import androidx.appcompat.app.AlertDialog
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,22 +17,25 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.overdrive.app.ui.adapter.DaemonAdapter
 import com.overdrive.app.ui.viewmodel.DaemonsViewModel
 import com.overdrive.app.ui.model.DaemonType
 import com.overdrive.app.R
+import com.overdrive.app.ui.model.DaemonStatus
 import com.overdrive.app.ui.util.QrCodeGenerator
 
 /**
  * Fragment for managing background daemons.
  */
 class DaemonsFragment : Fragment() {
-    
+
+    private val handler = Handler(Looper.getMainLooper())
+
     private val daemonsViewModel: DaemonsViewModel by activityViewModels()
-    
     private lateinit var recyclerDaemons: RecyclerView
     private lateinit var daemonAdapter: DaemonAdapter
-    
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -170,6 +175,13 @@ class DaemonsFragment : Fragment() {
             val qrCodeContainer = dialogView.findViewById<LinearLayout>(R.id.qrCodeContainer)
             val qrCodeText = dialogView.findViewById<TextView>(R.id.qrCodeURL)
             val qrCodeImage = dialogView.findViewById<ImageView>(R.id.qrCodeImage)
+            val proxySwitch = dialogView.findViewById<SwitchMaterial>(R.id.switchTailscaleProxy)
+
+            daemonsViewModel.tailscaleController.isProxyEnabled { isEnabled ->
+                activity?.runOnUiThread {
+                    proxySwitch.isChecked = isEnabled
+                }
+            }
 
             loginGenerateButton.setOnClickListener {
                 if (!loginGenerated) {
@@ -206,6 +218,9 @@ class DaemonsFragment : Fragment() {
                 .setTitle("📡 Tailscale Tunnel Settings")
                 .setMessage("Configure tailscale")
                 .setView(dialogView)
+                .setPositiveButton("Save") { _, _ ->
+                    saveTailscaleProxySettings(proxySwitch.isChecked)
+                }
                 .setNegativeButton("Cancel", null)
                 .setNeutralButton("Delete") { _, _ ->
                     confirmResetTailscaleEnvironment()
@@ -320,6 +335,32 @@ class DaemonsFragment : Fragment() {
                 Toast.makeText(context, "Tailscale environment reset (with warnings: $error)", Toast.LENGTH_LONG).show()
             }
         })
+    }
+
+    private fun saveTailscaleProxySettings(enabled: Boolean) {
+        daemonsViewModel.tailscaleController.saveProxySettings(enabled) { saved ->
+            activity?.runOnUiThread {
+                if (saved != null) {
+                    if (saved) {
+                        val status = daemonsViewModel.daemonStates.value?.get(DaemonType.TAILSCALE_TUNNEL)?.status
+                        if (status != DaemonStatus.STOPPED) {
+                            daemonsViewModel.stopDaemon(DaemonType.TAILSCALE_TUNNEL)
+                            handler.postDelayed(
+                                { daemonsViewModel.startDaemon(DaemonType.TAILSCALE_TUNNEL) },
+                                2000
+                            )
+                        }
+                        if (enabled) {
+                            Toast.makeText(context, "Tailscale proxy enabled", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Tailscale proxy disabled", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(context, "Failed to save proxy settings", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
     
     private fun saveZrokToken(token: String) {

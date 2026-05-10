@@ -23,6 +23,8 @@ class TailscaleLauncher(
         private const val TAILSCALED_PATH = "$TAILSCALE_HOME/tailscaled"
 
         private const val TAILSCALE_COMMUNICATION_PORT = "8532"
+
+        private const val TAILSCALE_PROXY_FILE = "$TAILSCALE_HOME/proxy_enabled"
         private const val TAILSCALE_PROXY_PORT = "8539"
 
         // Proxy settings for sing-box (socks5 for tailscale)
@@ -53,14 +55,16 @@ class TailscaleLauncher(
             } else {
                 checkAndInstallTailscale(callback) {
                     isSingboxActive { active ->
-                        launchTailscaleDaemon(active, callback)
+                        isProxyEnabled { enableProxy ->
+                            launchTailscaleDaemon(active, enableProxy, callback)
+                        }
                     }
                 }
             }
         }
     }
 
-    fun launchTailscaleDaemon(useProxy: Boolean, callback: TailscaleCallback) {
+    fun launchTailscaleDaemon(useProxy: Boolean, enableProxy: Boolean, callback: TailscaleCallback) {
         val cmd = buildString {
             append("nohup sh -c '")
 
@@ -80,7 +84,9 @@ class TailscaleLauncher(
             append(" --socket 127.0.0.1:$TAILSCALE_COMMUNICATION_PORT")
 
             // Optionally start socks5 proxy to access other tailscale devices
-            // append(" --socks5-server 127.0.0.1:$TAILSCALE_PROXY_PORT")
+            if (enableProxy) {
+                append(" --socks5-server 127.0.0.1:$TAILSCALE_PROXY_PORT")
+            }
 
             append("' > $TAILSCALE_LOG 2>&1 &")
         }
@@ -220,6 +226,47 @@ class TailscaleLauncher(
         adbShellExecutor.execute(
             command = "$TAILSCALE_PATH --socket 127.0.0.1:$TAILSCALE_COMMUNICATION_PORT $cmd",
             callback = callback
+        )
+    }
+
+    fun saveProxySettings(enabled: Boolean, callback: ((Boolean?) -> Unit)? = null) {
+        isProxyEnabled { isEnabled ->
+            if (enabled != isEnabled) {
+                adbShellExecutor.execute(
+                    command = "mkdir -p $TAILSCALE_HOME && echo $enabled > $TAILSCALE_PROXY_FILE && chmod 666 $TAILSCALE_PROXY_FILE",
+                    callback = object : AdbShellExecutor.ShellCallback {
+                        override fun onSuccess(output: String) {
+                            logManager.info(TAG, "Proxy settings saved to $TAILSCALE_PROXY_FILE")
+                            callback?.invoke(true)
+                        }
+                        override fun onError(error: String) {
+                            logManager.info(TAG, "Proxy settings failed to save to $TAILSCALE_PROXY_FILE")
+                            callback?.invoke(false)
+                        }
+                    }
+                )
+            } else {
+                callback?.invoke(null)
+            }
+        }
+    }
+
+    fun isProxyEnabled(callback: ((Boolean) -> Unit)) {
+        adbShellExecutor.execute(
+            command = "cat $TAILSCALE_PROXY_FILE 2>/dev/null",
+            callback = object : AdbShellExecutor.ShellCallback {
+                override fun onSuccess(output: String) {
+                    val enabledText = output.trim()
+                    if (enabledText == "true") {
+                        callback(true)
+                    } else {
+                        callback(false)
+                    }
+                }
+                override fun onError(error: String) {
+                    callback(false)
+                }
+            }
         )
     }
 

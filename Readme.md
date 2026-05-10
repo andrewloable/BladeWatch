@@ -112,6 +112,11 @@ Free, with no bandwidth limits. Connect from any device connected to tailscale.
 3. Generate a login URL and login
 4. Optionally, disable key expiry in tailscale if you would not like to log in every 6 months
 
+#### Tailscale proxy
+With tailscale enabled, the tailscale proxy can be enabled from the tailscale settings.
+This allows accessing an MQTT server through tailscale without port forwarding.
+This can be accessed via the tailscale IP or a subnet that has been advertised on tailscale.
+
 ## Tech Specs
 
 | Category | Detail |
