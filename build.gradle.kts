@@ -191,14 +191,6 @@ tasks.register("extractWebAssets") {
 }
 
 android {
-    signingConfigs {
-        create("release") {
-            storeFile = file("/Users/yashsriv/champ.jks")
-            storePassword = "SriPass123!@#"
-            keyPassword = "SriPass123!@#"
-            keyAlias = "key0"
-        }
-    }
     namespace = "com.overdrive.app"
     compileSdk = 36
     ndkVersion = "26.1.10909125"
