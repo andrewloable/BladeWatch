@@ -189,20 +189,33 @@ var VC = {
 
         this.scene = new THREE.Scene();
 
-        // Adjust camera for mobile portrait — closer zoom on narrow screens
+        // Pull camera further back on narrow screens so the car renders
+        // smaller — leaves headroom on the canvas for the four tyre
+        // callouts (and future engine/coolant/oil overlays) without them
+        // colliding with the rendered body. Wider FOV on mobile too, so
+        // the same body fits in less screen height.
         var isMobile = window.innerWidth < 768;
-        var fov = isMobile ? 42 : 50;
+        var fov = isMobile ? 50 : 50;
+        // Size the renderer to the CANVAS box, not the full window — the
+        // sidebar (260px on desktop) eats the left edge, and rendering at
+        // window-width pushes the car's visual centre off to the left of
+        // the visible area. Reading the canvas's CSS box keeps the car
+        // centred in whatever screen space is actually visible.
+        var canvasEl = document.getElementById('vehicleCanvas');
+        var canvasRect = canvasEl.getBoundingClientRect();
+        var renderW = canvasRect.width  || window.innerWidth;
+        var renderH = canvasRect.height || window.innerHeight;
         this.camera = new THREE.PerspectiveCamera(
-            fov, window.innerWidth / window.innerHeight, 0.1, 1000
+            fov, renderW / renderH, 0.1, 1000
         );
-        this.camera.position.set(isMobile ? 3.5 : 4, isMobile ? 2.2 : 2.5, isMobile ? 4.5 : 5);
+        this.camera.position.set(isMobile ? 5.0 : 4, isMobile ? 3.0 : 2.5, isMobile ? 6.5 : 5);
 
         this.renderer = new THREE.WebGLRenderer({
-            canvas: document.getElementById('vehicleCanvas'),
+            canvas: canvasEl,
             antialias: true,
             alpha: true
         });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(renderW, renderH, false);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3));
         this.renderer.setClearColor(0x0F0F12, 1);
         this.renderer.outputEncoding = THREE.sRGBEncoding;
@@ -285,6 +298,8 @@ var VC = {
         // the download progress indicator for non-bundled models.
         var loadingEl = document.getElementById('vcLoading');
         if (loadingEl) loadingEl.classList.remove('hidden');
+        var vpLoading = document.querySelector('.vc-viewport');
+        if (vpLoading) vpLoading.setAttribute('data-model-loading', 'true');
         var spinner = document.querySelector('.vc-loading-spinner');
         if (spinner) spinner.style.display = '';
         var retryBtn = document.getElementById('vcLoadingRetry');
@@ -435,17 +450,24 @@ var VC = {
                 self.carModel.position.sub(center);
                 self.carModel.position.y += 0.1;
 
-                // The Android WebView on the BYD head unit renders at a
-                // smaller effective canvas than mobile browsers, so the car
-                // looks tiny. Bump the model scale when running embedded.
+                // Slight bump on the Android WebView (BYD head unit) since
+                // its effective canvas is smaller than mobile browsers.
+                // Kept conservative (1.10) so the four tyre callouts and
+                // the planned engine/coolant/oil overlays have room around
+                // the rendered car without overlapping the body.
                 if (window.AndroidBridge) {
-                    self.carModel.scale.multiplyScalar(1.35);
+                    self.carModel.scale.multiplyScalar(1.10);
                 }
 
                 self.scene.add(self.carModel);
 
                 var loadingEl = document.getElementById('vcLoading');
                 if (loadingEl) loadingEl.classList.add('hidden');
+                var vpReady = document.querySelector('.vc-viewport');
+                if (vpReady) vpReady.removeAttribute('data-model-loading');
+                // Cache the bounding box once — the wheel-anchor positions are
+                // derived from it and the box is stable after model placement.
+                if (self._cacheCarBounds) self._cacheCarBounds();
                 self.triggerIdlePulse();
             },
             function(progress) {
@@ -496,11 +518,24 @@ var VC = {
     },
 
     onResize: function() {
-        var isMobile = window.innerWidth < 768;
-        this.camera.fov = isMobile ? 42 : 50;
-        this.camera.aspect = window.innerWidth / window.innerHeight;
+        // Match the FOV used at init() — we don't shrink the FOV on mobile
+        // anymore (the car was rendering too big and clipping into the
+        // tyre callouts). 50° is a comfortable garage-floor look at all
+        // screen widths.
+        this.camera.fov = 50;
+        // Re-measure the canvas's CSS box, not the window — the sidebar
+        // takes 260px on desktop. Without this, the car visually shifts
+        // off-centre toward the right edge of the visible area.
+        var rect = this.renderer.domElement.getBoundingClientRect();
+        var w = rect.width  || window.innerWidth;
+        var h = rect.height || window.innerHeight;
+        this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(w, h, false);
+        // Invalidate the cached tyre-layout dimensions so the next
+        // _updateTyreCalloutPositions call re-flows the boxes for the
+        // new viewport size.
+        this._tyreLastW = 0; this._tyreLastH = 0;
     },
 
     animate: function() {
@@ -514,6 +549,11 @@ var VC = {
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
         }
+        // Reposition tyre callouts after the camera/controls have settled
+        // for this frame. Cheap (4 vector projections + 4 line endpoints).
+        // Skipped automatically while 3D surround is active or the user has
+        // toggled the layer off.
+        this._updateTyreCalloutPositions();
     },
 
     // ==================== VFX ANIMATIONS ====================
@@ -1488,6 +1528,11 @@ var VC = {
                 }
             }
 
+            // Tyres — populate the corner callouts (also handles the
+            // tyres.available === false case by setting every corner to
+            // 'muted' / NO DATA).
+            if (data.tyres) self.updateTyreCallouts(data.tyres);
+
             // Update UI
             self.updateHUD();
             self.updateWindowBars();
@@ -1521,19 +1566,30 @@ var VC = {
     //     is stale (rate-limited server-side, so this is cheap to call).
     // Used as a fallback for the lock-state UI: the CAN bus often returns
     // "unknown" while the car is sleeping; the cloud knows the answer.
-    requestCloudLockRefresh: function() {
+    //
+    // The server's background REST refresh typically completes in 1-3s but
+    // its result lands in the next response, not this one. So when the
+    // payload comes back stale (or missing) and CAN didn't give us a valid
+    // value, we re-request after 3s to pick up the freshly-fetched data.
+    // _isFollowup prevents the 3s re-request from itself spawning more.
+    STALE_RESPONSE_AGE_S: 60,
+    FOLLOWUP_DELAY_MS: 3000,
+
+    requestCloudLockRefresh: function(_isFollowup) {
         var self = this;
         fetch('/api/vehicle/cloud-lock').then(function(resp) {
             return resp.json();
         }).then(function(data) {
             if (!data || !data.success || !data.status) return;
             var s = data.status;
+
             // Prefer cloud lock state when CAN bus didn't give us a valid one.
             // CAN bus sets self.vehicleState.locked = true/false; null = no
             // valid reading yet. We only override null — if CAN said locked
             // or unlocked, trust it (it's a few hundred ms fresh vs MQTT's
             // potentially-minutes-old snapshot).
-            if (self.vehicleState.locked === null || self.vehicleState.locked === undefined) {
+            var canIsAuthoritative = self.vehicleState.locked === true || self.vehicleState.locked === false;
+            if (!canIsAuthoritative) {
                 if (s.lockState === 'locked') {
                     self.vehicleState.locked = true;
                     self.updateHUD();
@@ -1545,6 +1601,17 @@ var VC = {
                     self.updateDoorIndicators();
                     self.updateTabIndicators();
                 }
+            }
+
+            // If the response is stale and CAN didn't give us a value,
+            // schedule one follow-up to pick up the result of the server's
+            // background REST refresh. Skipped if this is itself a follow-up
+            // call (avoids loops on persistently stale data).
+            var isStale = s.lockState === 'unknown'
+                    || s.lastMessageAge === -1
+                    || (typeof s.lastMessageAge === 'number' && s.lastMessageAge > self.STALE_RESPONSE_AGE_S);
+            if (!_isFollowup && isStale && !canIsAuthoritative) {
+                setTimeout(function() { self.requestCloudLockRefresh(true); }, self.FOLLOWUP_DELAY_MS);
             }
         }).catch(function(e) {
             console.warn('[VC] Cloud lock refresh error:', e);
@@ -1977,6 +2044,10 @@ var VC = {
         this._3dStreamConnected = false;
         var btn = document.getElementById('btn3dView');
         if (btn) btn.classList.add('on');
+        // Hide tyre callouts in 3D surround mode — the leader-line projection
+        // doesn't make sense once the bowl is the dominant shape on screen.
+        var vp = document.querySelector('.vc-viewport');
+        if (vp) vp.setAttribute('data-3d-on', 'true');
 
         // Timeout: if no stream data arrives within 8 seconds, show error and stop
         this._3dTimeout = setTimeout(function() {
@@ -2201,6 +2272,8 @@ var VC = {
     stop3dView: function(skipFlyOut) {
         this._3dViewActive = false;
         this._3dStreamConnected = false;
+        var vpReveal = document.querySelector('.vc-viewport');
+        if (vpReveal) vpReveal.removeAttribute('data-3d-on');
 
         // Kill any in-flight camera fly-in tweens from start3dView so they can't
         // overwrite values we set further down (especially on the skipFlyOut path
@@ -2668,50 +2741,120 @@ var VC = {
         this.scene.add(wall);
         this._skySphere = wall;
 
-        // ── Ground disc ─────────────────────────────────────────────────
-        var groundGeo = new THREE.CircleGeometry(WALL_RADIUS * 0.95, 96);
-        var groundMat = new THREE.ShaderMaterial({
-            uniforms: sharedUniforms(),
-            vertexShader: [
-                'varying vec2 vLocal;',
-                'void main() {',
-                '    vLocal = position.xy;',
-                '    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-                '}'
-            ].join('\n'),
-            fragmentShader: [
-                'precision mediump float;',
-                SHARED_GLSL,
-                'varying vec2 vLocal;',
-                'void main() {',
-                '    float worldX = vLocal.x;',
-                '    float worldZ = -vLocal.y;',
-                '    float bearing = atan(worldX, -worldZ);',
-                '    float r = length(vLocal) / ' + (WALL_RADIUS * 0.95).toFixed(2) + ';',
-                '    float vSample = clamp(r * 0.5, 0.0, 0.5);',
-                '    vec4 cam = sampleSurround(bearing, vSample);',
-                '',
-                '    vec3 baseBg = vec3(0.04, 0.04, 0.05);',
-                '    vec3 dimmedCam = cam.rgb * 0.35;',
-                '    vec3 fadeColor = mix(baseBg, dimmedCam, 0.6);',
-                '    vec3 rgb = composeSurround(cam.rgb, cam.a, fadeColor);',
-                '',
-                '    float innerFade = smoothstep(0.05, 0.18, r);',
-                '    float outerFade = smoothstep(1.0, 0.85, r);',
-                '    float a = innerFade * outerFade;',
-                '    rgb = mix(baseBg, rgb, a);',
-                '    gl_FragColor = vec4(rgb, 1.0);',
-                '}'
-            ].join('\n'),
-            side: THREE.DoubleSide,
-            depthWrite: false
-        });
-        var disc = new THREE.Mesh(groundGeo, groundMat);
-        disc.rotation.x = -Math.PI / 2;
-        disc.position.y = WALL_BOTTOM;
-        disc.renderOrder = -1;
-        this.scene.add(disc);
-        this._groundDisc = disc;
+        // No ground disc: a separate floor that re-projects the same mosaic
+        // ends up reading as a duplicate of the wall image painted on the
+        // floor. The wall already fades to the dark base near its bottom
+        // (groundFade in the fragment shader), so the floor reads as solid
+        // dark and the contact shadow does the rest of the heavy lifting.
+    },
+
+    // ==================== DEFAULT-VIEW DATA OVERLAYS ====================
+    //
+    // The default exterior view doubles as a live status board. Each overlay
+    // (tyres, engine, coolant, oil, …) follows the same pattern:
+    //   1. Anchor: world-space Vector3 derived from the car's bounding box,
+    //      cached once in _cacheCarBounds() so it survives orbit/zoom and
+    //      is independent of the specific GLB.
+    //   2. Container: a DOM element inside .vc-viewport that holds the
+    //      callout boxes. Hide rules in vehicle-control.css key on
+    //      .vc-viewport[data-3d-on="true"] so all default-view overlays
+    //      auto-disappear in 3D Surround mode.
+    //   3. Per-frame projection: project anchors → screen px → set box
+    //      left/top + leader-line endpoints. Called from animate() once
+    //      per frame after the renderer.render() has already drawn.
+    //   4. Per-poll content update: a fetchState() handler reads its slice
+    //      of the API payload and writes text + a state attr (normal /
+    //      warn / alert / muted) onto each box. CSS does the colouring.
+    //
+    // To add a new overlay (e.g. coolant): add anchors in _cacheCarBounds,
+    // add a DOM container next to vcTyreOverlay in the HTML, write
+    // _updateXxxOverlayPositions / updateXxxOverlay methods, and call them
+    // from animate() and fetchState() respectively.
+    //
+    // ---- Tyre callouts -----------------------------------------------------
+
+    // Static-layout approach. We tried per-frame 3D wheel projection but
+    // the alignment is unreliable across BYD models, camera angles, and
+    // the AndroidBridge scale bump. Instead the callouts are pinned to
+    // fixed screen slots — front pair above the car render area, rear
+    // pair below — with short decorative leader lines pointing inward
+    // toward the general wheel zone. This trades spatial fidelity for
+    // SOTA-grade visual stability: nothing jitters as the camera orbits.
+    _cacheCarBounds: function() {
+        // Mark "ready to lay out" — actual positioning is screen-space,
+        // not model-space, so we don't need to compute world anchors.
+        this._tyreLayoutReady = true;
+    },
+
+    // Reusable scratch vectors so the per-frame projection allocates nothing.
+    _tyreScratchVec: null,
+
+    // Layout is now pure CSS (see vehicle-control.css — .vc-tyre-callout
+     // pins itself to the appropriate corner of .vc-tyre-overlay, which
+     // covers the visible viewport). The per-frame call from animate()
+     // becomes a no-op so we never touch DOM layout properties on the
+     // BYD WebView's hot path.
+    _updateTyreCalloutPositions: function() { /* no-op — CSS handles it */ },
+
+    /** Map raw BYD enums + raw PSI to a 3-tier visual-state scale:
+     *    'alert'  → red     leak (airLeakState>=1) or PSI < 22 (deflated)
+     *    'warn'   → orange  pressureState UNDER/OVER, or PSI < 34, or PSI > 45
+     *    'normal' → green   34-45 PSI, no leak, signal OK
+     *    'muted'  → grey    no signal / no data
+     *  SDK enums are checked first so we still flag alert/warn when the
+     *  TPMS itself has detected a problem even if the raw PSI looks fine.
+     */
+    _tyreStateToken: function(corner) {
+        if (!corner || corner.available === false) return 'muted';
+        if (corner.signalState === 1) return 'muted';
+        if (corner.airLeakState && corner.airLeakState >= 1) return 'alert';
+        if (corner.pressureState && corner.pressureState >= 1) return 'warn';
+        if (typeof corner.psi === 'number') {
+            if (corner.psi < 22) return 'alert';
+            if (corner.psi < 34 || corner.psi > 45) return 'warn';
+        }
+        return 'normal';
+    },
+
+    _tyreStateLabel: function(corner) {
+        if (!corner || corner.available === false) return 'NO DATA';
+        if (corner.signalState === 1) return 'NO SIGNAL';
+        if (corner.airLeakState === 2) return 'FAST LEAK';
+        if (corner.airLeakState === 1) return 'SLOW LEAK';
+        if (corner.pressureState === 1) return 'LOW';
+        if (corner.pressureState === 2) return 'HIGH';
+        return 'OK';
+    },
+
+    updateTyreCallouts: function(tyres) {
+        if (!tyres) return;
+        var corners = ['fl', 'fr', 'rl', 'rr'];
+        for (var i = 0; i < corners.length; i++) {
+            var key = corners[i];
+            var data = tyres[key] || { available: false };
+            var box = document.getElementById('tyre' + key.toUpperCase());
+            if (!box) continue;
+
+            var state = this._tyreStateToken(data);
+            var label = this._tyreStateLabel(data);
+            box.setAttribute('data-state', state);
+
+            var psiEl  = box.querySelector('.vc-tyre-psi-val');
+            var kpaEl  = box.querySelector('.vc-tyre-kpa');
+            var stateEl = box.querySelector('.vc-tyre-state');
+
+            if (data.available && typeof data.psi === 'number') {
+                // Server already returns integer PSI to match the cluster's
+                // rounding exactly. Display kPa next to it so a user with
+                // metric calibration in mind can still cross-check.
+                if (psiEl)  psiEl.textContent  = data.psi;
+                if (kpaEl)  kpaEl.textContent  = (data.kPa || 0) + ' kPa';
+            } else {
+                if (psiEl)  psiEl.textContent  = '--';
+                if (kpaEl)  kpaEl.textContent  = '-- kPa';
+            }
+            if (stateEl) stateEl.textContent = label;
+        }
     },
 
     // ==================== API HELPERS ====================

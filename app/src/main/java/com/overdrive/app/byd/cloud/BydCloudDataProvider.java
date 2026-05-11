@@ -141,6 +141,16 @@ public final class BydCloudDataProvider {
     private volatile BydCloudMqttSubscriber subscriber;
 
     /**
+     * Single canonical BydCloudClient shared across MQTT subscriber, REST
+     * realtime poller, and on-demand refresh. Each client instance holds its
+     * own session; multiple instances racing to log in invalidate each other's
+     * sessionToken and produce code=1005 from /app/emqAuth/getEmqBrokerIp.
+     * The synchronized login() inside BydCloudClient only protects against
+     * concurrent calls *on the same instance*, so we must share one.
+     */
+    private volatile BydCloudClient sharedClient;
+
+    /**
      * Start the MQTT subscriber if BYD Cloud credentials are configured and verified.
      * Safe to call multiple times — no-ops if already running.
      */
@@ -151,19 +161,8 @@ public final class BydCloudDataProvider {
             BydCloudConfig config = BydCloudConfig.fromUnifiedConfig();
             if (!config.isVerified()) return;
 
-            BydCloudClient client = new BydCloudClient(config);
-
-            // Load Bangcle tables (same pattern as BydCloudDeterrent)
-            java.io.InputStream tablesStream = loadBangcleTables();
-            if (tablesStream == null) {
-                logger.warn("Cannot start cloud subscriber: Bangcle tables not available");
-                return;
-            }
-            try {
-                client.init(tablesStream);
-            } finally {
-                try { tablesStream.close(); } catch (Exception ignored) {}
-            }
+            BydCloudClient client = ensureSharedClient(config);
+            if (client == null) return;
 
             subscriber = new BydCloudMqttSubscriber(client);
             subscriber.start();
@@ -182,7 +181,47 @@ public final class BydCloudDataProvider {
             subscriber = null;
         }
         stopRealtimePoller();
+        sharedClient = null;
         mqttConnected = false;
+    }
+
+    /**
+     * Public entry point for any caller that needs a logged-in BydCloudClient.
+     * Returns the shared singleton — same instance used by MQTT subscriber and
+     * REST poller, so no duplicate logins. Returns null if not configured /
+     * Bangcle tables unavailable.
+     */
+    public BydCloudClient getSharedClient() {
+        BydCloudConfig config = BydCloudConfig.fromUnifiedConfig();
+        if (!config.isVerified()) return null;
+        return ensureSharedClient(config);
+    }
+
+    /**
+     * Lazily build (or rebuild) the shared client. Returns null if Bangcle
+     * tables aren't available. Safe to call from multiple threads — the first
+     * caller initializes, subsequent callers see the existing instance.
+     */
+    private synchronized BydCloudClient ensureSharedClient(BydCloudConfig config) {
+        if (sharedClient != null && sharedClient.isReady()) return sharedClient;
+        try {
+            BydCloudClient client = new BydCloudClient(config);
+            java.io.InputStream tables = loadBangcleTables();
+            if (tables == null) {
+                logger.warn("Cannot create cloud client: Bangcle tables not available");
+                return null;
+            }
+            try {
+                client.init(tables);
+            } finally {
+                try { tables.close(); } catch (Exception ignored) {}
+            }
+            sharedClient = client;
+            return client;
+        } catch (Exception e) {
+            logger.warn("Failed to create shared cloud client: " + e.getMessage());
+            return null;
+        }
     }
 
     // ── REST Realtime Poller (toggle-gated) ─────────────────────────────
@@ -305,23 +344,16 @@ public final class BydCloudDataProvider {
     }
 
     private BydCloudClient getOrCreateClient() {
-        // Reuse the subscriber's client if available
-        if (subscriber != null && subscriber.isConnected()) {
-            // The subscriber has a working client — but it's private.
-            // Create a fresh one for polling.
-        }
-
+        // Always return the shared client used by the MQTT subscriber.
+        // Creating separate instances causes them to race on login() and
+        // invalidate each other's session tokens, producing code=1005 on
+        // /app/emqAuth/getEmqBrokerIp.
         try {
             BydCloudConfig config = BydCloudConfig.fromUnifiedConfig();
             if (!config.isVerified()) return null;
-
-            BydCloudClient client = new BydCloudClient(config);
-            java.io.InputStream tables = loadBangcleTables();
-            if (tables == null) return null;
-            try { client.init(tables); } finally { try { tables.close(); } catch (Exception ignored) {} }
-            return client;
+            return ensureSharedClient(config);
         } catch (Exception e) {
-            logger.warn("Failed to create client for polling: " + e.getMessage());
+            logger.warn("Failed to obtain shared cloud client: " + e.getMessage());
             return null;
         }
     }
