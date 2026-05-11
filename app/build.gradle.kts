@@ -314,6 +314,12 @@ android {
                 "META-INF/INDEX.LIST",
                 "META-INF/*.kotlin_module"
             )
+            // Both paho.mqttv3 and paho.mqttv5 jars ship the same i18n
+            // bundle.properties — pick first to silence the merge conflict.
+            // The file is OSGi metadata, never read at runtime in our setup.
+            pickFirsts += listOf(
+                "bundle.properties"
+            )
         }
         // Exclude unnecessary native libs from dependencies
         jniLibs {
@@ -394,8 +400,13 @@ dependencies {
     implementation("com.h2database:h2:2.2.224")
 
     // Eclipse Paho MQTT - Pure Java MQTT client (no native dependencies)
-    // Supports MQTT 3.1.1, TLS, automatic reconnect, QoS 0/1/2
+    // mqttv3 used by HA/Mosquitto publish path (MqttPublisherService).
+    // mqttv5 used by BydCloudMqttSubscriber — BYD's EMQ broker only pushes
+    // vehicleInfo events to MQTT v5 subscribers; v3.1.1 connects fine but
+    // gets zero messages.  The two lib jars use different packages so they
+    // coexist cleanly.
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
+    implementation("org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
