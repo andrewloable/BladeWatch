@@ -32,6 +32,7 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
         {"telegram", "telegram_bot_daemon", "TelegramBotDaemon", "Telegram", "yes"},
         {"cloudflared", "cloudflared", "shell", "Cloudflare Tunnel", "yes"},
         {"zrok", "zrok", "shell", "Zrok Tunnel", "yes"},
+        {"tailscale", "tailscaled", "shell", "Tailscale Tunnel", "yes"},
         {"singbox", "sing-box", "shell", "Sing-Box", "yes"},
     };
     
@@ -557,7 +558,10 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
 
             case "tailscale":
                 // Tailscale tunnel - match UI version (TailscaleLauncher.kt)
-                // Check if sing-box proxy is running
+                // Check if tailscale proxy should be enabled
+                String proxyEnabledCheck = ctx.execShell("cat /data/local/tmp/.tailscale/proxy_enabled");
+                boolean enableProxy = proxyEnabledCheck != null && proxyEnabledCheck.trim().equals("true");
+
                 StringBuilder tailscaleCmd = new StringBuilder();
                 tailscaleCmd.append("nohup sh -c '");
 
@@ -577,6 +581,9 @@ public class DaemonCommandHandler implements TelegramCommandHandler {
                 // Same flags as UI version
                 tailscaleCmd.append("/data/local/tmp/.tailscale/tailscaled --tun userspace-networking ");
                 tailscaleCmd.append("--statedir /data/local/tmp/.tailscale ");
+                if (enableProxy) {
+                    tailscaleCmd.append("--socks5-server 127.0.0.1:8539 ");
+                }
                 tailscaleCmd.append("--socket 127.0.0.1:8532");
                 tailscaleCmd.append("' > /data/local/tmp/.tailscale/tailscaled.log 2>&1 &");
 

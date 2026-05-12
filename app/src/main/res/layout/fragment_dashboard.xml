@@ -59,6 +59,17 @@
 
                 </LinearLayout>
 
+                <!-- Tunnel selector chips (one chip per tunnel that has a URL) -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupTunnels"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:visibility="gone"
+                    app:singleSelection="true"
+                    app:selectionRequired="true"
+                    app:chipSpacingHorizontal="6dp" />
+
                 <!-- QR Code Container -->
                 <FrameLayout
                     android:layout_width="wrap_content"

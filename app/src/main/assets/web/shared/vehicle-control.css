@@ -2,7 +2,7 @@
  * Vehicle Control — Compact bottom bar, no tabs
  * Chrome 58+
  */
-.main-content { padding: 0 !important; overflow: hidden !important; height: 100dvh !important; min-height: 0 !important; }
+.main-content { padding: 0 !important; overflow: hidden !important; height: 100vh !important; height: 100dvh !important; min-height: 0 !important; position: relative; }
 .vc-container { position: relative; width: 100%; height: 100%; background: #0F0F12; overflow: hidden; }
 
 /* 3D fills the entire area — car renders behind the translucent bar */
@@ -32,7 +32,11 @@
 .vc-nav-btn:hover { background: rgba(38,38,46,0.9); }
 .vc-nav-btn:active { -webkit-transform: scale(0.92); transform: scale(0.92); }
 
-/* Status bar floating on 3D */
+/* Status bar floating on 3D — two rows.
+   Row 1 (.vc-status-bar) holds connection state pills (lock, cloud).
+   Row 2 (.vc-status-bar-secondary) holds appearance controls (color, model picker).
+   Splitting the rows guarantees the model dropdown never overlaps the cloud pill on
+   narrow screens, no matter how long the model name or how cramped the device. */
 .vc-status-bar {
     position: absolute; top: 10px; left: 10px; right: 10px;
     display: -webkit-flex; display: flex;
@@ -41,6 +45,17 @@
     z-index: 10; pointer-events: none;
 }
 .vc-status-bar > * { pointer-events: auto; margin: 0 3px; }
+
+.vc-status-bar-secondary {
+    position: absolute; top: 56px; left: 10px; right: 10px;
+    display: -webkit-flex; display: flex;
+    -webkit-align-items: center; align-items: center;
+    -webkit-flex-wrap: wrap; flex-wrap: wrap;
+    -webkit-justify-content: flex-start; justify-content: flex-start;
+    gap: 6px;
+    z-index: 10; pointer-events: none;
+}
+.vc-status-bar-secondary > * { pointer-events: auto; }
 .vc-pill {
     display: -webkit-inline-flex; display: inline-flex;
     -webkit-align-items: center; align-items: center;
@@ -64,6 +79,34 @@
 .vc-swatch.active { border-color: #fff; box-shadow: 0 0 6px currentColor; -webkit-transform: scale(1.1); transform: scale(1.1); }
 .vc-swatch-custom { width: 24px; height: 24px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); position: relative; overflow: hidden; cursor: pointer; margin: 0 3px; touch-action: manipulation; }
 .vc-swatch-custom input { position: absolute; top: -4px; left: -4px; width: 32px; height: 32px; opacity: 0; cursor: pointer; }
+
+.vc-model-select {
+    background: rgba(15,15,18,0.85); color: #E4E4E7;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
+    padding: 5px 26px 5px 12px;
+    font-size: 12px; font-weight: 500;
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23A1A1AA' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 9px center;
+    cursor: pointer; touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    max-width: 140px; text-overflow: ellipsis;
+}
+.vc-model-select:focus { outline: none; border-color: rgba(0,212,170,0.5); }
+
+/* Stale indicator — most recent manifest refresh failed (network, GitHub, parse).
+   The select itself stays fully usable; this dot just signals "newly released
+   models may not appear here." Tapping the dropdown auto-retries the refresh.
+   The amber dot sits to the LEFT of the existing chevron so they don't fight
+   for the same pixel; padding-right grows to keep the dot off the model name. */
+.vc-model-select.stale {
+    background-image:
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23A1A1AA' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='6' viewBox='0 0 6 6'><circle cx='3' cy='3' r='2.5' fill='%23F59E0B'/></svg>");
+    background-repeat: no-repeat, no-repeat;
+    background-position: right 9px center, right 22px center;
+    padding-right: 36px;
+}
 
 .vc-loading { position: absolute; top: 40%; left: 50%; -webkit-transform: translate(-50%,-50%); transform: translate(-50%,-50%); text-align: center; z-index: 20; }
 .vc-loading-spinner { width: 36px; height: 36px; margin: 0 auto 10px; border: 3px solid rgba(255,255,255,0.06); border-top-color: #00D4AA; border-radius: 50%; -webkit-animation: spin .7s linear infinite; animation: spin .7s linear infinite; }
@@ -97,17 +140,17 @@
 .vc-toast.error { border-color: #EF4444; color: #EF4444; }
 .vc-toast.info { border-color: #0EA5E9; color: #0EA5E9; }
 
-/* 3D Surround View button */
+/* 3D Surround View button — laid out as a flex item inside .vc-status-bar-secondary
+   so vertical alignment is automatic, no manual top:50px to keep in sync with the row. */
 .vc-3d-btn {
-    position: absolute;
-    top: 50px;
-    right: 12px;
-    z-index: 15;
     display: -webkit-inline-flex; display: inline-flex;
     -webkit-flex-direction: column; flex-direction: column;
     -webkit-align-items: center; align-items: center;
     -webkit-justify-content: center; justify-content: center;
     width: 44px; height: 44px;
+    -webkit-flex-shrink: 0; flex-shrink: 0;
+    -webkit-flex-grow: 0; flex-grow: 0;
+    margin-left: auto;  /* push to far right within the secondary row */
     border-radius: 22px;
     border: 1px solid rgba(255,255,255,0.1);
     background: rgba(15,15,18,0.85);
@@ -119,6 +162,191 @@
 .vc-3d-btn span { font-size: 7px; font-weight: 700; text-transform: uppercase; margin-top: 1px; }
 .vc-3d-btn:hover { border-color: #00D4AA; color: #00D4AA; }
 .vc-3d-btn.on { border-color: #00D4AA; background: rgba(0,212,170,0.15); color: #00D4AA; box-shadow: 0 0 12px rgba(0,212,170,0.3); }
+
+/* ===== TYRE PRESSURE CALLOUTS =====
+   Four floating cards, one per wheel, connected to the rendered car by SVG
+   leader lines. JS projects fixed wheel-anchor world positions to screen and
+   updates box positions + line endpoints on each animation frame, so the
+   callouts orbit with the car as the camera moves. Hidden whenever the
+   viewport is in 3D Surround mode (data-3d-on="true") or the user has toggled
+   them off (data-tyres-off="true") via the TYRE button. */
+/* Tyre callouts use no leader lines — purely screen-space pinned cards.
+   The data overlay container below holds the four boxes. */
+
+.vc-tyre-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 9;
+    -webkit-transition: opacity .25s; transition: opacity .25s;
+}
+
+/* Layout is pure CSS — no JS measurement of canvas width. Each callout
+   pins to its corner of the overlay container (which fills the visible
+   viewport), so the right pair lands on the visible right edge regardless
+   of canvas backing-buffer size. FRONT pair on the bottom, REAR on top. */
+.vc-tyre-callout {
+    position: absolute;
+    min-width: 92px;
+    padding: 7px 10px 8px;
+    background: rgba(15, 15, 18, 0.88);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #E4E4E7;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    pointer-events: auto;
+    -webkit-transition: border-color .2s, box-shadow .2s, opacity .2s;
+    transition: border-color .2s, box-shadow .2s, opacity .2s;
+}
+/* Vertical bands frame the car: FRONT pair (FL/FR) at the BOTTOM,
+   REAR pair (RL/RR) at the TOP. Matches the convention the user
+   expects when looking at the rendered car. */
+.vc-tyre-callout[data-corner="rl"],
+.vc-tyre-callout[data-corner="rr"] { top: 168px; }
+.vc-tyre-callout[data-corner="fl"],
+.vc-tyre-callout[data-corner="fr"] { bottom: 110px; }
+
+/* Horizontal pinning. The car renders facing the camera at the
+   default orbit pose, so the car's LEFT (driver-side) wheels sit on
+   the RIGHT of the screen (mirror image), and vice versa. Swap the
+   screen-side for each corner accordingly. */
+.vc-tyre-callout[data-corner="fr"],
+.vc-tyre-callout[data-corner="rr"] { left: 22px; }
+.vc-tyre-callout[data-corner="fl"],
+.vc-tyre-callout[data-corner="rl"] { right: 22px; }
+@media (min-width: 1200px) {
+    .vc-tyre-callout[data-corner="fr"],
+    .vc-tyre-callout[data-corner="rr"] { left: 80px; }
+    .vc-tyre-callout[data-corner="fl"],
+    .vc-tyre-callout[data-corner="rl"] { right: 80px; }
+}
+/* No accent strip — the box itself carries the state colour via the
+   border + dot + state label. Cleaner read with no leader lines. */
+
+.vc-tyre-head {
+    display: -webkit-flex; display: flex;
+    -webkit-align-items: center; align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: #A1A1AA;
+}
+.vc-tyre-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #22C55E;
+    box-shadow: 0 0 5px #22C55E;
+    -webkit-flex-shrink: 0; flex-shrink: 0;
+    -webkit-transition: background .2s, box-shadow .2s;
+    transition: background .2s, box-shadow .2s;
+}
+.vc-tyre-label { color: #C4C4CD; }
+.vc-tyre-state {
+    margin-left: auto;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    color: #22C55E;
+    -webkit-transition: color .2s; transition: color .2s;
+}
+.vc-tyre-psi {
+    display: -webkit-flex; display: flex;
+    -webkit-align-items: baseline; align-items: baseline;
+    gap: 4px;
+    margin-top: 2px;
+}
+.vc-tyre-psi-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+.vc-tyre-psi-unit {
+    font-size: 9px;
+    font-weight: 600;
+    color: #71717A;
+    letter-spacing: .8px;
+}
+.vc-tyre-sub {
+    display: -webkit-flex; display: flex;
+    -webkit-justify-content: space-between; justify-content: space-between;
+    -webkit-align-items: center; align-items: center;
+    margin-top: 4px;
+    font-size: 9px;
+    color: #71717A;
+}
+.vc-tyre-kpa { letter-spacing: .3px; }
+
+/* State colour scale — same 4 tiers as the engine chips so the page
+   reads as one consistent system. Both the dot AND the PSI value
+   colour shift so a low-pressure tyre is unmistakable from across
+   the cabin without reading the state label. */
+.vc-tyre-callout[data-state="normal"]  .vc-tyre-dot     { background: #22C55E; box-shadow: 0 0 5px #22C55E; }
+.vc-tyre-callout[data-state="normal"]  .vc-tyre-state   { color: #22C55E; }
+.vc-tyre-callout[data-state="normal"]  .vc-tyre-psi-val { color: #22C55E; }
+
+.vc-tyre-callout[data-state="caution"] .vc-tyre-dot     { background: #FBBF24; box-shadow: 0 0 6px #FBBF24; }
+.vc-tyre-callout[data-state="caution"] .vc-tyre-state   { color: #FBBF24; }
+.vc-tyre-callout[data-state="caution"] .vc-tyre-psi-val { color: #FBBF24; }
+.vc-tyre-callout[data-state="caution"]                  { border-color: rgba(251, 191, 36, 0.40); }
+
+.vc-tyre-callout[data-state="warn"]    .vc-tyre-dot     { background: #F59E0B; box-shadow: 0 0 6px #F59E0B; }
+.vc-tyre-callout[data-state="warn"]    .vc-tyre-state   { color: #F59E0B; }
+.vc-tyre-callout[data-state="warn"]    .vc-tyre-psi-val { color: #F59E0B; }
+.vc-tyre-callout[data-state="warn"]                     { border-color: rgba(245, 158, 11, 0.55); }
+
+.vc-tyre-callout[data-state="alert"]   .vc-tyre-dot     { background: #EF4444; box-shadow: 0 0 8px #EF4444; -webkit-animation: vcTyrePulse 1.4s ease-in-out infinite; animation: vcTyrePulse 1.4s ease-in-out infinite; }
+.vc-tyre-callout[data-state="alert"]   .vc-tyre-state   { color: #EF4444; }
+.vc-tyre-callout[data-state="alert"]   .vc-tyre-psi-val { color: #EF4444; }
+.vc-tyre-callout[data-state="alert"]                    { border-color: rgba(239, 68, 68, 0.65); box-shadow: 0 0 16px rgba(239, 68, 68, 0.22); }
+
+.vc-tyre-callout[data-state="muted"]   .vc-tyre-dot     { background: #71717A; box-shadow: 0 0 4px #71717A; }
+.vc-tyre-callout[data-state="muted"]   .vc-tyre-state   { color: #71717A; }
+.vc-tyre-callout[data-state="muted"]                    { opacity: 0.78; }
+
+@-webkit-keyframes vcTyrePulse { 0%,100% { -webkit-transform: scale(1); opacity: 1; } 50% { -webkit-transform: scale(1.35); opacity: 0.7; } }
+@keyframes vcTyrePulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.7; } }
+
+/* Hide tyre callouts when 3D Surround is active or the model is still
+   loading. Extend this selector list when adding new default-view
+   overlays. */
+.vc-viewport[data-3d-on="true"] .vc-tyre-overlay,
+.vc-viewport[data-model-loading="true"] .vc-tyre-overlay {
+    opacity: 0; pointer-events: none;
+}
+
+/* Compact on small screens — same min-width tightening pattern as the rest
+   of the floating UI. */
+@media (max-width: 768px) {
+    .vc-tyre-callout { min-width: 80px; padding: 5px 8px 6px; }
+    .vc-tyre-psi-val { font-size: 16px; }
+    .vc-tyre-head { font-size: 8px; gap: 4px; }
+    .vc-tyre-sub { font-size: 8px; }
+    /* Rear pair on top (below the mobile engine row at top:102),
+       front pair on the bottom. Mirror: car-left → screen-right. */
+    .vc-tyre-callout[data-corner="rl"],
+    .vc-tyre-callout[data-corner="rr"] { top: 158px; bottom: auto; }
+    .vc-tyre-callout[data-corner="fr"],
+    .vc-tyre-callout[data-corner="rr"] { left: 8px; }
+    .vc-tyre-callout[data-corner="fl"],
+    .vc-tyre-callout[data-corner="rl"] { right: 8px; }
+    .vc-tyre-callout[data-corner="fl"],
+    .vc-tyre-callout[data-corner="fr"] { bottom: 100px; top: auto; }
+}
+@media (max-width: 480px) {
+    .vc-tyre-callout { min-width: 72px; padding: 4px 7px 5px; border-radius: 8px; }
+    .vc-tyre-psi-val { font-size: 14px; }
+    .vc-tyre-head { font-size: 7px; }
+    .vc-tyre-sub { font-size: 7px; }
+    .vc-tyre-callout[data-corner="rl"],
+    .vc-tyre-callout[data-corner="rr"] { top: 152px; bottom: auto; }
+    .vc-tyre-callout[data-corner="fr"],
+    .vc-tyre-callout[data-corner="rr"] { left: 6px; }
+    .vc-tyre-callout[data-corner="fl"],
+    .vc-tyre-callout[data-corner="rl"] { right: 6px; }
+}
 
 /* ===== BOTTOM CONTROL BAR — Tabbed Expandable ===== */
 .vc-bar {
@@ -191,6 +419,10 @@
 .vc-window-label .label-pct {
     font-size: 9px; color: #71717A; margin-top: 2px;
 }
+/* "All Windows" row has no data-area and a longer label — give it room so the
+   text doesn't wrap awkwardly inside the 48px width used for LF/RF/LR/RR. */
+.vc-window-row:not([data-area]) .vc-window-label { width: 86px; }
+.vc-window-row:not([data-area]) .vc-window-label .label-area { font-size: 9px; }
 .vc-window-presets {
     display: -webkit-inline-flex; display: inline-flex;
     -webkit-align-items: center; align-items: center;
@@ -351,6 +583,13 @@
     .vc-colors { padding: 2px 5px; }
     .vc-swatch { width: 20px; height: 20px; margin: 0 2px; }
     .vc-swatch-custom { width: 20px; height: 20px; margin: 0 2px; }
+    .vc-model-select { padding: 4px 22px 4px 10px; font-size: 11px; max-width: 140px; }
+    /* Clear the hamburger button (left:10 width:40 = right edge at 50) so the
+       secondary row can't slide under it. Drop the row a touch since the smaller
+       pills make the primary row shorter. */
+    .vc-status-bar-secondary { top: 56px; left: 56px; right: 10px; }
+    .vc-3d-btn { width: 40px; height: 40px; border-radius: 20px; }
+    .vc-3d-btn svg { width: 16px; height: 16px; }
 }
 
 @media (max-width: 480px) {
@@ -361,6 +600,11 @@
     .vc-colors { padding: 2px 4px; }
     .vc-swatch { width: 18px; height: 18px; margin: 0 1px; }
     .vc-swatch-custom { width: 18px; height: 18px; margin: 0 1px; }
+    .vc-model-select { padding: 3px 20px 3px 8px; font-size: 10px; max-width: 110px; border-radius: 14px; }
+    .vc-status-bar-secondary { top: 50px; left: 54px; right: 8px; gap: 4px; }
+    .vc-3d-btn { width: 36px; height: 36px; border-radius: 18px; }
+    .vc-3d-btn svg { width: 14px; height: 14px; }
+    .vc-3d-btn span { font-size: 6px; }
     .vc-bar { left: 1%; right: 1%; }
     .vc-tabs { padding: 5px 6px; }
     .vc-tabs > * { margin: 0 1px; }

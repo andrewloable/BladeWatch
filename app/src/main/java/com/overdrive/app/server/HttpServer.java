@@ -576,7 +576,12 @@ public class HttpServer {
         if (path.startsWith("/api/storage/external")) {
             return ExternalStorageApiHandler.handle(path, method, body, out);
         }
-        
+
+        // 3D Vehicle Models API (download/persist user-selectable GLB models)
+        if (path.startsWith("/api/models/")) {
+            return ModelsApiHandler.handle(method, path, body, out);
+        }
+
         return false;
     }
     
@@ -785,10 +790,23 @@ public class HttpServer {
         if (relativePath.contains("..")) {
             return false;
         }
-        
+
         File file = new File(WEB_ROOT, relativePath);
         if (!file.exists() || !file.isFile()) {
-            return false;
+            // Fall back to the persistent models cache for GLBs that were downloaded
+            // at runtime. The bundled default (seal.glb) lives in WEB_ROOT; everything
+            // else is fetched on demand into ModelsApiHandler.MODELS_DIR.
+            if (relativePath.startsWith("shared/models/") && relativePath.endsWith(".glb")) {
+                String fileName = relativePath.substring("shared/models/".length());
+                File cached = ModelsApiHandler.cachedModelFile(fileName);
+                if (cached != null) {
+                    file = cached;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
         }
         
         try (FileInputStream fis = new FileInputStream(file)) {

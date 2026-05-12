@@ -251,23 +251,65 @@
                         </svg>
                     </button>
 
-                    <!-- Floating status -->
+                    <!-- Floating status — row 1: connection state pills only -->
                     <div class="vc-status-bar">
                         <div class="vc-pill">
                             <span class="dot green"></span><span id="lockStatus">Locked</span>
                         </div>
-                        <div class="vc-colors" id="colorPicker"></div>
                         <div class="vc-pill" id="cloudStatus">
                             <span class="dot amber"></span><span id="cloudStatusText">Checking...</span>
                         </div>
                     </div>
+                    <!-- Floating status — row 2: vehicle appearance controls.
+                         Keeps the picker/dropdown out of the connection-state row so they
+                         can never overlap the cloud pill on narrow screens. The 3D toggle
+                         lives here so flex alignment keeps it visually flush with the
+                         color/model controls instead of floating off-axis. -->
+                    <div class="vc-status-bar-secondary">
+                        <div class="vc-colors" id="colorPicker"></div>
+                        <select class="vc-model-select" id="modelPicker" title="Vehicle model">
+                            <option value="seal">BYD Seal</option>
+                        </select>
+                        <button class="vc-3d-btn" id="btn3dView" title="Toggle 3D Surround View">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                            <span>3D</span>
+                        </button>
+                    </div>
 
-                    <!-- 3D Surround View toggle — hidden when loaded in app WebView -->
-                    <button class="vc-3d-btn" id="btn3dView" title="Toggle 3D Surround View">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-                        <span>3D</span>
-                    </button>
-
+                    <!-- Tyre callouts: four cards anchored to fixed screen slots
+                         (front pair bottom, rear pair top). Auto-hide when 3D
+                         Surround is active.
+                         Engine glass row was removed: the BYD SDK's coolant /
+                         oil / gear feeds are unreliable on the test PHEV
+                         (cold-engine sentinels, conflicting Engine vs Setting
+                         readings). Don't reintroduce without verifying each
+                         field against the cluster's own readout first.
+                         Per-tyre temperature is also unavailable on this
+                         firmware: Instrument-device feature IDs (1246797848-884)
+                         return null; AutoCommander's getTyreTemperature is a
+                         wrapper-only API not in the public SDK stubs. -->
+                    <div class="vc-tyre-overlay" id="vcTyreOverlay">
+                        <div class="vc-tyre-callout" data-corner="fl" id="tyreFL">
+                            <div class="vc-tyre-head"><span class="vc-tyre-dot"></span><span class="vc-tyre-label">FL</span><span class="vc-tyre-state">--</span></div>
+                            <div class="vc-tyre-psi"><span class="vc-tyre-psi-val">--</span><span class="vc-tyre-psi-unit">PSI</span></div>
+                            <div class="vc-tyre-sub"><span class="vc-tyre-kpa">-- kPa</span></div>
+                        </div>
+                        <div class="vc-tyre-callout" data-corner="fr" id="tyreFR">
+                            <div class="vc-tyre-head"><span class="vc-tyre-dot"></span><span class="vc-tyre-label">FR</span><span class="vc-tyre-state">--</span></div>
+                            <div class="vc-tyre-psi"><span class="vc-tyre-psi-val">--</span><span class="vc-tyre-psi-unit">PSI</span></div>
+                            <div class="vc-tyre-sub"><span class="vc-tyre-kpa">-- kPa</span></div>
+                        </div>
+                        <div class="vc-tyre-callout" data-corner="rl" id="tyreRL">
+                            <div class="vc-tyre-head"><span class="vc-tyre-dot"></span><span class="vc-tyre-label">RL</span><span class="vc-tyre-state">--</span></div>
+                            <div class="vc-tyre-psi"><span class="vc-tyre-psi-val">--</span><span class="vc-tyre-psi-unit">PSI</span></div>
+                            <div class="vc-tyre-sub"><span class="vc-tyre-kpa">-- kPa</span></div>
+                        </div>
+                        <div class="vc-tyre-callout" data-corner="rr" id="tyreRR">
+                            <div class="vc-tyre-head"><span class="vc-tyre-dot"></span><span class="vc-tyre-label">RR</span><span class="vc-tyre-state">--</span></div>
+                            <div class="vc-tyre-psi"><span class="vc-tyre-psi-val">--</span><span class="vc-tyre-psi-unit">PSI</span></div>
+                            <div class="vc-tyre-sub"><span class="vc-tyre-kpa">-- kPa</span></div>
+                        </div>
+                    </div>
 
                     <div class="vc-toast" id="vcToast"></div>
 
@@ -349,19 +391,45 @@
                         <!-- Seats controls -->
                         <div class="vc-panel-row" id="panelSeats" style="display:none;">
                             <button class="vc-tile heat" id="btnSeatHeat1" title="Driver Seat Heat">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z"/><path d="M8 14.72a6 6 0 1 0 8 0"/></svg>
+                                <!-- Flame — clean fire glyph for heat. -->
+                                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                    <path d="M13.5 1.5c.3 2.4-.6 4.2-2.5 6-2.4 2.3-4 4.3-4 7.5a7 7 0 0 0 14 0c0-3-1.6-5.5-4-7.8.4 1.4-.2 2.5-1.4 2.8-1 .2-1.6-.5-1.6-1.6 0-2.4 0-4.6-.5-6.9z"/>
+                                </svg>
                                 <span>D.Heat</span>
                             </button>
                             <button class="vc-tile cool" id="btnSeatCool1" title="Driver Seat Cool">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><line x1="19.07" y1="4.93" x2="4.93" y2="19.07"/></svg>
+                                <!-- Snowflake — clean ice glyph for cool. -->
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="2" x2="12" y2="22"/>
+                                    <line x1="2" y1="12" x2="22" y2="12"/>
+                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07"/>
+                                    <polyline points="9 4 12 7 15 4"/>
+                                    <polyline points="9 20 12 17 15 20"/>
+                                    <polyline points="4 9 7 12 4 15"/>
+                                    <polyline points="20 9 17 12 20 15"/>
+                                </svg>
                                 <span>D.Cool</span>
                             </button>
                             <button class="vc-tile heat" id="btnSeatHeat2" title="Passenger Seat Heat">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z"/><path d="M8 14.72a6 6 0 1 0 8 0"/></svg>
+                                <!-- Flame — same icon as D.Heat (same function). -->
+                                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                    <path d="M13.5 1.5c.3 2.4-.6 4.2-2.5 6-2.4 2.3-4 4.3-4 7.5a7 7 0 0 0 14 0c0-3-1.6-5.5-4-7.8.4 1.4-.2 2.5-1.4 2.8-1 .2-1.6-.5-1.6-1.6 0-2.4 0-4.6-.5-6.9z"/>
+                                </svg>
                                 <span>P.Heat</span>
                             </button>
                             <button class="vc-tile cool" id="btnSeatCool2" title="Passenger Seat Cool">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><line x1="19.07" y1="4.93" x2="4.93" y2="19.07"/></svg>
+                                <!-- Snowflake — same icon as D.Cool (same function). -->
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="2" x2="12" y2="22"/>
+                                    <line x1="2" y1="12" x2="22" y2="12"/>
+                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                                    <line x1="19.07" y1="4.93" x2="4.93" y2="19.07"/>
+                                    <polyline points="9 4 12 7 15 4"/>
+                                    <polyline points="9 20 12 17 15 20"/>
+                                    <polyline points="4 9 7 12 4 15"/>
+                                    <polyline points="20 9 17 12 20 15"/>
+                                </svg>
                                 <span>P.Cool</span>
                             </button>
                         </div>
@@ -456,7 +524,14 @@
                         </button>
                         <button class="vc-tab" data-panel="panelSeats" onclick="VC.togglePanel('panelSeats', this)">
                             <span class="tab-dot"></span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z"/></svg>
+                            <!-- Seat silhouette: backrest, cushion, base — the
+                                 universal "seat" glyph. Matches the seat
+                                 buttons inside the Seats panel. -->
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M7 13V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v7"/>
+                                <path d="M5 19v-4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/>
+                                <path d="M7 19v2M17 19v2"/>
+                            </svg>
                             <span>Seats</span>
                         </button>
                         <button class="vc-tab" data-panel="panelWindows" onclick="VC.togglePanel('panelWindows', this)">
@@ -493,7 +568,7 @@
     <script src="../shared/vendor/GLTFLoader.js?v=12"></script>
     <script src="../shared/vendor/OrbitControls.js?v=12"></script>
     <script src="../shared/vendor/gsap.min.js?v=12"></script>
-    <script src="../shared/vehicle-control.js?v=12"></script>
+    <script src="../shared/vehicle-control.js?v=15"></script>
     <script>
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');

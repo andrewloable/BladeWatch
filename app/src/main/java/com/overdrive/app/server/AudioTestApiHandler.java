@@ -76,6 +76,14 @@ public class AudioTestApiHandler {
             response.put("exteriorSpeakerEnabled", speakerState != null ? speakerState == 1 : JSONObject.NULL);
             response.put("avasSource", avasSource != null ? avasSource : JSONObject.NULL);
 
+            // Probe the multimedia device for any related methods so we can see what
+            // the OEM build actually exposes (method names vary across BYD models).
+            java.util.List<String> matches = collector.probeMultimediaMethods(
+                    "AVAS|Speaker|Sound|External|Exterior|Outside|Avas");
+            org.json.JSONArray probeArr = new org.json.JSONArray();
+            for (String s : matches) probeArr.put(s);
+            response.put("probedMethods", probeArr);
+
         } catch (Exception e) {
             logger.warn("avas-state failed: " + e.getMessage());
             response.put("success", false);

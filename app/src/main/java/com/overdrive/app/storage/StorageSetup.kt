@@ -12,6 +12,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.overdrive.app.launcher.AdbShellExecutor
 import java.io.File
 
 /**
@@ -39,7 +40,16 @@ object StorageSetup {
     // Request codes
     const val REQUEST_CODE_STORAGE_PERMISSION = 100
     const val REQUEST_CODE_RUNTIME_PERMISSION = 101
-    
+
+    /**
+     * Outcome of a permission request attempt.
+     * - REQUESTED_RUNTIME: standard runtime dialog was shown; expect onRequestPermissionsResult
+     * - OPENED_SETTINGS: All-Files-Access Settings screen was launched; expect onActivityResult
+     * - UNAVAILABLE: no UI exists on this ROM (e.g. BYD SL7 lacks the Settings activity);
+     *                caller must continue without the permission rather than crashing
+     */
+    enum class RequestOutcome { REQUESTED_RUNTIME, OPENED_SETTINGS, UNAVAILABLE }
+
     /**
      * Check if app has storage permission.
      * - Android 11+: MANAGE_EXTERNAL_STORAGE
@@ -51,37 +61,21 @@ object StorageSetup {
             Environment.isExternalStorageManager()
         } else {
             // Android 10 and below: Check runtime permission
-            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == 
+            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
                 PackageManager.PERMISSION_GRANTED
         }
     }
-    
+
     /**
      * Request storage permission.
-     * - Android 11+: Opens Settings for MANAGE_EXTERNAL_STORAGE
+     * - Android 11+: Opens Settings for MANAGE_EXTERNAL_STORAGE (if available)
      * - Android 10 and below: Requests WRITE_EXTERNAL_STORAGE runtime permission
-     * 
-     * @return true if runtime permission was requested (use onRequestPermissionsResult),
-     *         false if Settings was opened (use onActivityResult)
+     *
+     * Each Settings intent attempt is independently guarded so that a ROM lacking
+     * the Settings activity (BYD SL7 global) does not crash the caller's onCreate.
      */
-    fun requestStoragePermission(activity: Activity): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11+: Open Settings
-            try {
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                    addCategory("android.intent.category.DEFAULT")
-                    data = Uri.parse("package:${activity.packageName}")
-                }
-                @Suppress("DEPRECATION")
-                activity.startActivityForResult(intent, REQUEST_CODE_STORAGE_PERMISSION)
-            } catch (e: Exception) {
-                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                @Suppress("DEPRECATION")
-                activity.startActivityForResult(intent, REQUEST_CODE_STORAGE_PERMISSION)
-            }
-            false // Settings opened, use onActivityResult
-        } else {
-            // Android 10 and below: Request runtime permission
+    fun requestStoragePermission(activity: Activity): RequestOutcome {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             ActivityCompat.requestPermissions(
                 activity,
                 arrayOf(
@@ -90,8 +84,79 @@ object StorageSetup {
                 ),
                 REQUEST_CODE_RUNTIME_PERMISSION
             )
-            true // Runtime permission requested, use onRequestPermissionsResult
+            return RequestOutcome.REQUESTED_RUNTIME
         }
+
+        // Android 11+: try the per-app screen first, then the global list as fallback.
+        val perAppIntent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+            addCategory("android.intent.category.DEFAULT")
+            data = Uri.parse("package:${activity.packageName}")
+        }
+        try {
+            @Suppress("DEPRECATION")
+            activity.startActivityForResult(perAppIntent, REQUEST_CODE_STORAGE_PERMISSION)
+            return RequestOutcome.OPENED_SETTINGS
+        } catch (e: Exception) {
+            Log.w(TAG, "Per-app All-Files-Access screen unavailable: ${e.message}")
+        }
+
+        val globalIntent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+        try {
+            @Suppress("DEPRECATION")
+            activity.startActivityForResult(globalIntent, REQUEST_CODE_STORAGE_PERMISSION)
+            return RequestOutcome.OPENED_SETTINGS
+        } catch (e: Exception) {
+            Log.w(TAG, "Global All-Files-Access screen unavailable: ${e.message}")
+        }
+
+        Log.w(TAG, "No Settings activity can grant MANAGE_EXTERNAL_STORAGE on this ROM")
+        return RequestOutcome.UNAVAILABLE
+    }
+
+    /**
+     * Best-effort: grant MANAGE_EXTERNAL_STORAGE via app-ops over the existing ADB
+     * shell connection. This is the only viable path on ROMs (BYD SL7 global) that
+     * omit the Settings UI for All-Files-Access.
+     *
+     * Runs asynchronously on the AdbShellExecutor's worker thread. If ADB auth has
+     * not yet been granted on this launch, the grant lands on the next launch — by
+     * which time Environment.isExternalStorageManager() will return true and the
+     * flow short-circuits before ever touching the Settings intent.
+     *
+     * Safe to call repeatedly: app-ops is idempotent.
+     *
+     * @param onComplete invoked once the ADB attempt finishes (success or failure)
+     *                   with the final isExternalStorageManager() value. Runs on
+     *                   the AdbShellExecutor worker thread — callers needing to
+     *                   touch UI must marshal to the main thread themselves.
+     */
+    fun tryGrantViaAppOps(
+        context: Context,
+        adb: AdbShellExecutor,
+        onComplete: ((granted: Boolean) -> Unit)? = null
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            onComplete?.invoke(true) // pre-R has no MES concept
+            return
+        }
+        if (Environment.isExternalStorageManager()) {
+            Log.i(TAG, "MANAGE_EXTERNAL_STORAGE already granted; skipping app-ops")
+            onComplete?.invoke(true)
+            return
+        }
+        val pkg = context.packageName
+        val cmd = "appops set $pkg MANAGE_EXTERNAL_STORAGE allow"
+        adb.execute(cmd, object : AdbShellExecutor.ShellCallback {
+            override fun onSuccess(output: String) {
+                val nowGranted = Environment.isExternalStorageManager()
+                Log.i(TAG, "app-ops grant ok (granted=$nowGranted): ${output.trim()}")
+                onComplete?.invoke(nowGranted)
+            }
+            override fun onError(error: String) {
+                Log.w(TAG, "app-ops grant failed: $error")
+                onComplete?.invoke(Environment.isExternalStorageManager())
+            }
+        })
     }
     
     /**

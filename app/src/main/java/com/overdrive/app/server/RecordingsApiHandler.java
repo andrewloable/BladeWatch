@@ -9,6 +9,7 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -231,9 +232,12 @@ public class RecordingsApiHandler {
      */
     private static byte[] generateThumbnail(File videoFile) {
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        try {
-            retriever.setDataSource(videoFile.getAbsolutePath());
-            
+        // setDataSource(String) calls ActivityThread.currentApplication().getPackageManager()
+        // for MIME lookup. The daemon has no registered Application, so that NPEs on DiLink5.
+        // The FileDescriptor overload skips the package-manager probe entirely.
+        try (FileInputStream fis = new FileInputStream(videoFile)) {
+            retriever.setDataSource(fis.getFD());
+
             // Get frame at 1 second (1000000 microseconds)
             Bitmap frame = retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             if (frame == null) {

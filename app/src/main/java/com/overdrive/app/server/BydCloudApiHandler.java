@@ -2,6 +2,7 @@ package com.overdrive.app.server;
 
 import com.overdrive.app.byd.cloud.BydCloudClient;
 import com.overdrive.app.byd.cloud.BydCloudConfig;
+import com.overdrive.app.byd.cloud.BydCloudDataProvider;
 import com.overdrive.app.byd.cloud.BydCloudDeterrent;
 import com.overdrive.app.byd.cloud.crypto.BydCryptoUtils;
 import com.overdrive.app.config.UnifiedConfigManager;
@@ -323,22 +324,27 @@ public class BydCloudApiHandler {
                 action = req.optString("action", "flash_lights");
             }
 
-            BydCloudClient client = new BydCloudClient(config);
-            InputStream tablesStream = getTablesStream();
-            if (tablesStream == null) {
-                response.put("success", false);
-                response.put("error", "Bangcle crypto tables not found");
-                HttpResponse.sendJson(out, response.toString());
-                return;
+            // Reuse the shared client to avoid racing with the running MQTT
+            // subscriber. Falls back to a one-shot client only if the
+            // shared one isn't initialized (e.g. credential setup just completed
+            // and the subscriber hasn't started yet).
+            BydCloudClient client = BydCloudDataProvider.getInstance().getSharedClient();
+            if (client == null) {
+                client = new BydCloudClient(config);
+                InputStream tablesStream = getTablesStream();
+                if (tablesStream == null) {
+                    response.put("success", false);
+                    response.put("error", "Bangcle crypto tables not found");
+                    HttpResponse.sendJson(out, response.toString());
+                    return;
+                }
+                try {
+                    client.init(tablesStream);
+                } finally {
+                    try { tablesStream.close(); } catch (Exception ignored) {}
+                }
+                client.login();
             }
-
-            try {
-                client.init(tablesStream);
-            } finally {
-                try { tablesStream.close(); } catch (Exception ignored) {}
-            }
-
-            client.login();
             client.verifyControlPassword(config.vin);
 
             boolean success;

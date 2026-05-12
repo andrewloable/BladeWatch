@@ -92,61 +92,88 @@ public class SystemCommandHandler implements TelegramCommandHandler {
     
     private void handleUrl(long chatId, CommandContext ctx) {
         try {
-            // Check which tunnel is running and get its URL
+            // Check each tunnel independently and collect URLs for any that are running.
             String cloudflaredRunning = ctx.execShell("pgrep -f cloudflared");
             String zrokRunning = ctx.execShell("pgrep -f zrok");
             String tailscaleRunning = ctx.execShell("pgrep -f tailscaled");
-            
+
             boolean cfUp = cloudflaredRunning != null && !cloudflaredRunning.trim().isEmpty();
             boolean zrokUp = zrokRunning != null && !zrokRunning.trim().isEmpty();
             boolean tailscaleUp = tailscaleRunning != null && !tailscaleRunning.trim().isEmpty();
-            
+
             if (!cfUp && !zrokUp && !tailscaleUp) {
                 ctx.sendMessage(chatId, "⚠️ No tunnel running\n\nStart one with:\n`/daemon cloudflared start`\n`/daemon zrok start`\n`/daemon tailscale start`");
                 return;
             }
-            
-            String url = null;
-            String tunnelType = null;
-            
-            // Prefer cloudflared if both are running (shouldn't happen but just in case)
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("🌐 *Tunnel URLs*\n\n");
+            int resolved = 0;
+            int pending = 0;
+
             if (cfUp) {
-                tunnelType = "Cloudflared";
-                // SOTA FIX: Use grep instead of cat to avoid loading entire log into memory
+                String url = null;
                 String grepResult = ctx.execShell("grep -o 'https://[a-z0-9-]*\\.trycloudflare\\.com' /data/local/tmp/cloudflared.log 2>/dev/null | grep -v 'api\\.' | head -1");
                 if (grepResult != null && grepResult.startsWith("https://") && grepResult.contains("-")) {
                     url = grepResult.trim();
                 }
-            } else if (zrokUp) {
-                tunnelType = "Zrok";
-                // SOTA FIX: Use grep instead of cat to avoid loading entire log into memory
+                if (url != null) {
+                    sb.append("• *Cloudflared:* ").append(url).append("\n");
+                    resolved++;
+                } else {
+                    sb.append("• *Cloudflared:* _starting, URL not available yet_\n");
+                    pending++;
+                }
+            }
+
+            if (zrokUp) {
+                String url = null;
                 String grepResult = ctx.execShell("grep -o 'https://[a-z0-9]*\\.share\\.zrok\\.io' /data/local/tmp/zrok.log 2>/dev/null | head -1");
                 if (grepResult != null && grepResult.startsWith("https://")) {
                     url = grepResult.trim();
                 }
-            } else if (tailscaleUp) {
-                tunnelType = "Tailscale";
-                String getIpResult = ctx.execShell("/data/local/tmp/.tailscale/tailscale --socket 127.0.0.1:8532 ip --1");
-                if (getIpResult != null) {
-                    url = "http://" + getIpResult.trim() + ":8080";
+                if (url != null) {
+                    sb.append("• *Zrok:* ").append(url).append("\n");
+                    resolved++;
+                } else {
+                    sb.append("• *Zrok:* _starting, URL not available yet_\n");
+                    pending++;
                 }
             }
-            
-            // Fallback to saved URL file if log parsing failed
-            if (url == null) {
+
+            if (tailscaleUp) {
+                String url = null;
+                String getIpResult = ctx.execShell("/data/local/tmp/.tailscale/tailscale --socket 127.0.0.1:8532 ip --1");
+                if (getIpResult != null && !getIpResult.trim().isEmpty()) {
+                    url = "http://" + getIpResult.trim() + ":8080";
+                }
+                if (url != null) {
+                    sb.append("• *Tailscale:* ").append(url).append("\n");
+                    resolved++;
+                } else {
+                    sb.append("• *Tailscale:* _starting, URL not available yet_\n");
+                    pending++;
+                }
+            }
+
+            // Last-resort fallback: if nothing resolved from logs, try the saved URL file.
+            if (resolved == 0) {
                 File urlFile = new File("/data/local/tmp/tunnel_url.txt");
                 if (urlFile.exists()) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(urlFile)));
-                    url = reader.readLine();
+                    String saved = reader.readLine();
                     reader.close();
+                    if (saved != null && !saved.isEmpty()) {
+                        sb.append("\n_Last known:_ ").append(saved.trim()).append("\n");
+                    }
                 }
             }
-            
-            if (url != null && !url.isEmpty()) {
-                ctx.sendMessage(chatId, "🌐 *" + tunnelType + " Tunnel*\n" + url);
-            } else {
-                ctx.sendMessage(chatId, "⚠️ " + tunnelType + " is running but URL not available yet.\nTry again in a few seconds.");
+
+            if (pending > 0) {
+                sb.append("\n_Try again in a few seconds for pending URLs._");
             }
+
+            ctx.sendMessage(chatId, sb.toString());
         } catch (Exception e) {
             ctx.sendMessage(chatId, "⚠️ Error: " + e.getMessage());
         }

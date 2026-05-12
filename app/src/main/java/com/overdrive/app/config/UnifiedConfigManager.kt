@@ -230,6 +230,16 @@ object UnifiedConfigManager {
             config.put("bydCloud", it)
         }
         if (!bydCloud.has("enabled")) bydCloud.put("enabled", false)
+
+        // Vehicle appearance defaults — selected 3D model and body paint color.
+        // Stored unified so AVN and remote (phone-over-tunnel) clients show the
+        // same vehicle. modelId must match an entry in models/manifest.json; the
+        // bundled default 'seal' is always available offline.
+        val vehicle = config.optJSONObject("vehicle") ?: JSONObject().also {
+            config.put("vehicle", it)
+        }
+        if (!vehicle.has("modelId")) vehicle.put("modelId", "seal")
+        if (!vehicle.has("color")) vehicle.put("color", "#E8E8EC")  // Aurora White
     }
     
     /**
@@ -474,6 +484,25 @@ object UnifiedConfigManager {
     @JvmStatic
     fun setBydCloud(bydCloud: JSONObject): Boolean {
         return updateSection("bydCloud", bydCloud)
+    }
+
+    /**
+     * Get vehicle appearance config section (selected 3D model + body color).
+     */
+    @JvmStatic
+    fun getVehicle(): JSONObject {
+        return loadConfig().optJSONObject("vehicle") ?: JSONObject().apply {
+            put("modelId", "seal")
+            put("color", "#E8E8EC")
+        }
+    }
+
+    /**
+     * Update vehicle appearance config section.
+     */
+    @JvmStatic
+    fun setVehicle(vehicle: JSONObject): Boolean {
+        return updateSection("vehicle", vehicle)
     }
     
     /**

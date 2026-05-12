@@ -743,21 +743,22 @@ public class CameraDaemon {
     // ==================== AVC HAL KEEP-ALIVE ====================
     
     /**
-     * Starts the AVC keep-alive watchdog if conditions are met:
-     * - ACC is ON
-     * - Pipeline is running
-     * - Keep-alive not already active
+     * Starts the AVC keep-alive watchdog if the pipeline is running.
      *
-     * Called after pipeline starts in any mode while ACC is ON.
+     * Runs regardless of ACC state. When ACC is OFF and the head unit stays
+     * awake (charging, sentry mode), the system can reap com.byd.avc and the
+     * AVM HAL goes cold — surface stays attached, onFrameAvailable still ticks,
+     * but the cameras deliver all-zero buffers. Keeping com.byd.avc warm
+     * prevents that black-frame state.
      */
     public static void startAvcKeepAliveIfNeeded() {
         if (avcHalWarmup == null) {
             avcHalWarmup = new com.overdrive.app.camera.AvcHalWarmup();
         }
-        if (AccMonitor.isAccOn() && gpuPipeline != null && gpuPipeline.isRunning()) {
+        if (gpuPipeline != null && gpuPipeline.isRunning()) {
             if (!avcHalWarmup.isActive()) {
                 avcHalWarmup.startKeepAlive();
-                log("AVC keep-alive started (ACC ON + pipeline running)");
+                log("AVC keep-alive started (pipeline running, accOn=" + AccMonitor.isAccOn() + ")");
             }
         }
     }
@@ -1378,6 +1379,10 @@ public class CameraDaemon {
             }
             // Enable surveillance mode (motion detection)
             gpuPipeline.enableSurveillance();
+            // Keep com.byd.avc warm so the AVM HAL keeps delivering real
+            // pixels during long sentry sessions. Without this the cameras
+            // go cold and the surveillance frames become ALL_BLACK.
+            startAvcKeepAliveIfNeeded();
             log("Surveillance mode activated successfully");
         } catch (Exception e) {
             log("ERROR: Failed to enable surveillance: " + e.getMessage());
@@ -1707,7 +1712,9 @@ public class CameraDaemon {
         stopUnlockPollThread();
 
         unlockPollThread = new Thread(() -> {
-            log("Unlock poll thread started (5s polling getDoorLockStatus)");
+            log("Unlock poll thread started (5s polling getDoorLockStatus + REST fallback)");
+
+            int restPollCounter = 0;
 
             while (!com.overdrive.app.monitor.AccMonitor.isAccOn()) {
                 try {
@@ -1717,19 +1724,43 @@ public class CameraDaemon {
                 }
                 if (com.overdrive.app.monitor.AccMonitor.isAccOn()) return;
 
+                // Source 1: SDK device poll. Returns INVALID(0) on firmwares
+                // that don't expose getDoorLockStatus(area) to user UID, but
+                // still works on most cars and gives us a fast (5s) signal.
                 try {
                     Object doorLockDevice = com.overdrive.app.byd.BydDeviceHelper.getDevice(
                         "android.hardware.bydauto.doorlock.BYDAutoDoorLockDevice", sharedAppContext);
-                    if (doorLockDevice == null) continue;
-
-                    int state = readDoorLockStatus(doorLockDevice);
-                    if (state == DOOR_STATE_LOCK) {
-                        applyLockEvent(true, "poll");
-                    } else if (state == DOOR_STATE_UNLOCK) {
-                        applyLockEvent(false, "poll");
+                    if (doorLockDevice != null) {
+                        int state = readDoorLockStatus(doorLockDevice);
+                        if (state == DOOR_STATE_LOCK) {
+                            applyLockEvent(true, "poll");
+                        } else if (state == DOOR_STATE_UNLOCK) {
+                            applyLockEvent(false, "poll");
+                        }
                     }
                 } catch (Exception e) {
                     // Silently continue — device may be sleeping
+                }
+
+                // Source 2: REST realtime poll fallback. Fires only when the
+                // cached cloud lock state has gone stale (5 min default), and
+                // is internally rate-limited at 30s. So this loop calls it
+                // every UNLOCK_POLL_INTERVAL_MS but the actual REST hit only
+                // happens when we genuinely need fresh data.
+                // The 12-iteration gate avoids hitting refreshLockStateIfStale()
+                // every 5s — that's still a no-op call but cheap to skip.
+                restPollCounter++;
+                if (restPollCounter >= 12) { // ~ once per minute at 5s interval
+                    restPollCounter = 0;
+                    try {
+                        com.overdrive.app.byd.cloud.BydCloudDataProvider.getInstance()
+                                .refreshLockStateIfStale();
+                        // The data provider fires its CloudLockStateListener
+                        // automatically when the fetch reveals a transition,
+                        // which we attached via attachCloudLockSource().
+                    } catch (Exception e) {
+                        // Silently continue — cloud may be down
+                    }
                 }
             }
             log("Unlock poll thread exiting (ACC ON)");
@@ -1895,6 +1926,9 @@ public class CameraDaemon {
                 }
                 gpuPipeline.setRecordingMode(
                     com.overdrive.app.surveillance.GpuPipelineConfig.RecordingMode.SENTRY);
+                // Keep com.byd.avc warm during sentry to prevent the AVM
+                // HAL from going cold (ALL_BLACK frames) on long parks.
+                startAvcKeepAliveIfNeeded();
                 // Door lock gate: surveillance is armed only after doors are locked.
                 // This prevents false motion events from the owner exiting the car.
                 // Three parallel sources fire concurrently (cloud MQTT, device-SDK
@@ -2392,7 +2426,9 @@ public class CameraDaemon {
                 gpuPipeline.getCamera().getCameraCoordinator();
             if (coordinator != null) {
                 status.put("cameraServiceRegistered", coordinator.isRegistered());
-                status.put("cameraUserRegistered", coordinator.isRegisteredAsUser());
+                // cameraUserRegistered intentionally omitted — registerCameraUser is
+                // permanently DISABLED, the value is always false. Polling fallback
+                // is the only live path. See BydCameraCoordinator.register().
                 status.put("cameraYielded", coordinator.isYielded());
                 status.put("nativeAppActive", coordinator.isNativeAppActive());
                 status.put("cameraEventCallback", coordinator.isEventCallbackActive());

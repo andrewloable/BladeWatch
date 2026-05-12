@@ -55,8 +55,11 @@ public final class BydCloudClient {
 
     /**
      * Login to BYD cloud API and obtain session tokens.
+     * Synchronized so the connect path and the periodic refresh path can't
+     * race — concurrent logins invalidate each other's tokens, which surfaces
+     * as a "broker lookup 1005 → force re-login" loop in MQTT subscriber logs.
      */
-    public void login() throws IOException {
+    public synchronized void login() throws IOException {
         if (!isReady()) throw new IllegalStateException("Client not initialized");
 
         long nowMs = System.currentTimeMillis();
@@ -100,8 +103,11 @@ public final class BydCloudClient {
     /**
      * Ensure we have a valid session, re-authenticating if needed.
      * Retries login once with a short backoff on transient server errors (1009).
+     * Synchronized so the check-then-login is atomic — without this two
+     * concurrent callers can both decide the session is expired and both
+     * issue logins, invalidating the first caller's token.
      */
-    public BydCloudSession ensureSession() throws IOException {
+    public synchronized BydCloudSession ensureSession() throws IOException {
         if (session == null || session.isExpired()) {
             try {
                 login();

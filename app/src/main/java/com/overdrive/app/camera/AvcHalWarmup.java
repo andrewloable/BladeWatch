@@ -17,12 +17,14 @@ import com.overdrive.app.monitor.AccMonitor;
  * 3. THEN open our camera as a secondary consumer
  *
  * Additionally, a 60-second keep-alive watchdog re-pokes com.byd.avc while
- * ACC is ON and the pipeline is running. BYD's system can kill the camera app
- * after inactivity, which destabilizes the HAL for all consumers.
+ * the pipeline is running, regardless of ACC state. BYD's system can kill
+ * the camera app after inactivity, which destabilizes the HAL for all
+ * consumers — including during ACC OFF sentry mode when the head unit stays
+ * awake (charging, surveillance armed).
  *
  * LIFECYCLE:
- * - start() when pipeline starts AND ACC is ON
- * - stop() when pipeline stops OR ACC goes OFF OR daemon shuts down
+ * - start() when pipeline starts (any mode, any ACC state)
+ * - stop() when pipeline stops OR daemon shuts down
  */
 public class AvcHalWarmup {
 
@@ -105,13 +107,14 @@ public class AvcHalWarmup {
 
                 // Double-check conditions before poking
                 if (!active) break;
-                if (!AccMonitor.isAccOn()) {
-                    logger.info("ACC is OFF — stopping keep-alive");
-                    break;
-                }
 
-                // Re-poke com.byd.avc to keep the camera HAL alive
-                logger.info("Keep-alive: re-launching com.byd.avc");
+                // Re-poke com.byd.avc to keep the camera HAL alive.
+                // Runs regardless of ACC state — when the head unit stays
+                // awake during ACC OFF (charging, sentry mode), the system
+                // still reaps com.byd.avc and the HAL goes cold. The owning
+                // pipeline (CameraDaemon) calls stopKeepAlive() on shutdown.
+                logger.info("Keep-alive: re-launching com.byd.avc (accOn=" +
+                    AccMonitor.isAccOn() + ")");
                 launchAvc();
             }
 

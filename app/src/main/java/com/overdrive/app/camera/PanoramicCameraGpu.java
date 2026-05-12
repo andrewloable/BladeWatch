@@ -80,8 +80,14 @@ public class PanoramicCameraGpu {
     private SurfaceTexture cameraSurfaceTexture;
     private Surface cameraSurface;
     
-    // Camera object (via reflection)
-    private Object cameraObj;
+    // Camera object (via reflection).
+    // volatile because reopenCamera() runs on the daemon thread and writes
+    // cameraObj while the GL render thread reads it in renderLoop(). Without
+    // volatile, the GL thread could observe a stale non-null cameraObj after
+    // we've torn down the BYD HAL and block in updateTexImage() against a
+    // dead BufferQueue (which is what was tripping the GL watchdog on
+    // ACC OFF→ON transitions).
+    private volatile Object cameraObj;
     
     // Render loop
     private HandlerThread glThread;
@@ -612,16 +618,29 @@ public class PanoramicCameraGpu {
             // Update watchdog heartbeat
             lastGlThreadHeartbeat = System.currentTimeMillis();
 
-            // SOTA: Skip frame processing if camera is yielded to native app
-            if (cameraYielded || cameraObj == null) {
+            // SOTA: Skip frame processing if camera is yielded to native app,
+            // not yet open, or being torn down/reopened by the daemon thread
+            // (reopenCamera/restartCameraAfterError). The restartInProgress
+            // gate is essential — without it the GL thread can race the
+            // daemon thread's close and block in updateTexImage() against a
+            // dead BufferQueue, freezing the GL thread until the watchdog
+            // kills the process.
+            if (cameraYielded || cameraObj == null || restartInProgress) {
                 // GL thread stays alive but doesn't touch camera — waiting for re-acquire
+                return;
+            }
+
+            // Snapshot the current SurfaceTexture so a concurrent recreate from
+            // the daemon thread doesn't NPE us mid-frame.
+            SurfaceTexture st = cameraSurfaceTexture;
+            if (st == null) {
                 return;
             }
 
             // CRITICAL: Always consume camera texture FIRST to keep the camera HAL's
             // BufferQueue flowing. If we don't call updateTexImage() promptly, the HAL
             // buffer fills up and the BYD native camera app loses video signal.
-            cameraSurfaceTexture.updateTexImage();
+            st.updateTexImage();
             frameCounter++;
             lastFrameTime = System.currentTimeMillis();
             firstFrameReceived = true;
@@ -1461,47 +1480,57 @@ public class PanoramicCameraGpu {
 
         logger.info("Reopening AVMCamera...");
 
+        // CRITICAL: Mark restart-in-progress BEFORE touching the camera so the
+        // GL watchdog uses GL_THREAD_WARMUP_TIMEOUT_MS (10s) instead of the
+        // normal 3s. Without this, the daemon thread's polling sleep + the
+        // GL thread briefly blocking on updateTexImage() against a dying HAL
+        // is enough to trip the watchdog and force a full process restart on
+        // every ACC OFF→ON transition. See log: "GL thread blocked for 3492ms".
+        restartInProgress = true;
+
         try {
-            // Proper cleanup order via BydCameraCoordinator
+            // Proper cleanup order via BydCameraCoordinator.
+            // Null cameraObj BEFORE closeCamera() so the GL renderLoop's
+            // `cameraObj == null` short-circuit (line ~616) kicks in immediately
+            // and stops calling updateTexImage() on a HAL that's being torn down.
             if (cameraObj != null) {
-                BydCameraCoordinator.closeCamera(cameraObj, cameraSurfaceMode);
+                Object toClose = cameraObj;
                 cameraObj = null;
+                BydCameraCoordinator.closeCamera(toClose, cameraSurfaceMode);
                 if (cameraCoordinator != null) {
                     cameraCoordinator.resetEventCallbackState();
                 }
                 logger.info("Camera closed (proper cleanup)");
             }
 
-            // If registered as camera user, the onCloseCamera callback handles reacquisition.
-            // We just need to wait for the native app to claim and then release the camera.
-            // The callback will fire onReacquireCamera → which calls restartCameraAfterError
-            // or reopenCamera again. So we only need a simple delay here.
-            if (cameraCoordinator != null && cameraCoordinator.isRegisteredAsUser()) {
-                logger.info("Registered as camera user — waiting for onCloseCamera callback " +
-                    "(native app will trigger reacquire)");
-                // Minimum wait for native app to boot and claim camera
-                Thread.sleep(3000);
+            // Kick the GL heartbeat so the watchdog timer resets at the start of
+            // the wait — close+log above can already have spent >1s.
+            lastGlThreadHeartbeat = System.currentTimeMillis();
 
-                // If native app hasn't claimed it yet (no onPreOpenCamera fired),
-                // just reopen — we're not contending
-                if (!cameraCoordinator.isCameraYielded()) {
-                    logger.info("No yield triggered — native app may not be running, reopening");
-                    startCamera();
-                    if (cameraCoordinator != null && cameraObj != null) {
-                        cameraCoordinator.setupEventCallback(cameraObj);
-                    }
-                    logger.info("Camera reopened (no contention detected)");
-                } else {
-                    logger.info("Camera yielded via callback — waiting for onCloseCamera to reacquire");
-                    // onCloseCamera → onCameraAvailable → onReacquireCamera will handle it
-                }
-                return;
-            }
+            // registerCameraUser is DISABLED — the event-driven branch below is
+            // dead. Kept for reference; do NOT re-enable without re-validating
+            // the IBYDCameraUser yield/reacquire path end-to-end.
+            // if (cameraCoordinator != null && cameraCoordinator.isRegisteredAsUser()) {
+            //     logger.info("Registered as camera user — waiting for onCloseCamera callback");
+            //     Thread.sleep(3000);
+            //     if (!cameraCoordinator.isCameraYielded()) {
+            //         startCamera();
+            //         if (cameraCoordinator != null && cameraObj != null) {
+            //             cameraCoordinator.setupEventCallback(cameraObj);
+            //         }
+            //     }
+            //     return;
+            // }
 
-            // FALLBACK: No registerUser — use polling to detect native app
-            logger.info("No registerUser — using polling fallback (maxWait=" + maxWaitMs + "ms)");
-            long minWaitMs = 3000;
-            Thread.sleep(minWaitMs);
+            // Polling path — the only live path. Wait long enough for the BYD
+            // native AVM app to claim the primary camera slot, then reopen as
+            // secondary consumer. Sleeps in 500ms chunks so we can refresh the
+            // GL watchdog heartbeat — otherwise a long single sleep on this
+            // (daemon) thread can race the GL thread mid-updateTexImage and
+            // make timeSinceHeartbeat exceed the threshold.
+            logger.info("Polling fallback (maxWait=" + maxWaitMs + "ms)");
+            final long minWaitMs = 3000;
+            sleepWithHeartbeat(minWaitMs);
 
             if (cameraCoordinator != null && cameraCoordinator.isRegistered()) {
                 long deadline = System.currentTimeMillis() + (maxWaitMs - minWaitMs);
@@ -1511,10 +1540,10 @@ public class PanoramicCameraGpu {
                     if (cameraCoordinator.checkNativeAppActive()) {
                         nativeAppDetected = true;
                         logger.info("Native app claimed camera (polling) — waiting for release");
-                        Thread.sleep(500);
+                        sleepWithHeartbeat(500);
                         break;
                     }
-                    Thread.sleep(500);
+                    sleepWithHeartbeat(500);
                 }
 
                 if (!nativeAppDetected) {
@@ -1523,7 +1552,7 @@ public class PanoramicCameraGpu {
             } else {
                 long remainingWait = maxWaitMs - minWaitMs;
                 logger.info("No service available — fixed delay (" + remainingWait + "ms)");
-                Thread.sleep(remainingWait);
+                sleepWithHeartbeat(remainingWait);
             }
 
             startCamera();
@@ -1532,6 +1561,9 @@ public class PanoramicCameraGpu {
                 cameraCoordinator.setupEventCallback(cameraObj);
             }
 
+            // Reset heartbeat after a successful reopen so the next watchdog
+            // tick measures from a known-good baseline.
+            lastGlThreadHeartbeat = System.currentTimeMillis();
             logger.info("Camera reopened successfully");
 
         } catch (Exception e) {
@@ -1543,10 +1575,30 @@ public class PanoramicCameraGpu {
                     if (cameraCoordinator != null && cameraObj != null) {
                         cameraCoordinator.setupEventCallback(cameraObj);
                     }
+                    lastGlThreadHeartbeat = System.currentTimeMillis();
                 }
             } catch (Exception e2) {
                 logger.error("Camera retry failed: " + e2.getMessage());
             }
+        } finally {
+            restartInProgress = false;
+        }
+    }
+
+    /**
+     * Sleeps for {@code totalMs} milliseconds in 250ms chunks, refreshing
+     * the GL watchdog heartbeat each chunk. Used while the daemon thread is
+     * waiting for the BYD HAL to settle so the watchdog doesn't kill the
+     * process during the wait.
+     */
+    private void sleepWithHeartbeat(long totalMs) throws InterruptedException {
+        final long step = 250;
+        long remaining = totalMs;
+        while (remaining > 0 && running) {
+            long chunk = Math.min(step, remaining);
+            Thread.sleep(chunk);
+            lastGlThreadHeartbeat = System.currentTimeMillis();
+            remaining -= chunk;
         }
     }
     

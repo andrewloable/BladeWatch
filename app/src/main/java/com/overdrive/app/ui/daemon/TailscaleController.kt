@@ -9,6 +9,7 @@ import android.content.Context
 import com.overdrive.app.launcher.AdbShellExecutor
 import com.overdrive.app.launcher.TailscaleLauncher
 import com.overdrive.app.logging.LogManager
+import com.overdrive.app.mqtt.ProxyHelper
 
 /**
  * Controller for the Tailscale Tunnel.
@@ -35,12 +36,14 @@ class TailscaleController(
 
     override fun start(callback: DaemonCallback) {
         callback.onStatusChanged(DaemonStatus.STARTING, "Starting tailscale daemon...")
+        ProxyHelper.invalidateCache()
 
         tailscaleLauncher.launchTailscale(object : TailscaleLauncher.TailscaleCallback {
             override fun onLog(message: String) = callback.onStatusChanged(DaemonStatus.STARTING, message)
 
             override fun onTunnelUrl(url: String?) {
                 _tunnelUrl.postValue(url)
+                ProxyHelper.invalidateCache()
                 callback.onStatusChanged(DaemonStatus.RUNNING, url ?: "")
             }
 
@@ -58,11 +61,13 @@ class TailscaleController(
 
             override fun onTunnelUrl(url: String?) {
                 _tunnelUrl.postValue(null)
+                ProxyHelper.invalidateCache()
                 callback.onStatusChanged(DaemonStatus.STOPPED, "Tailscale tunnel stopped")
             }
 
             override fun onError(error: String) {
                 _tunnelUrl.postValue(null)
+                ProxyHelper.invalidateCache()
                 callback.onError(error)
             }
         })
@@ -87,6 +92,14 @@ class TailscaleController(
         tailscaleLauncher.needsLogin(callback)
     }
 
+    fun saveProxySettings(enabled: Boolean, callback: ((Boolean?) -> Unit)? = null) {
+        tailscaleLauncher.saveProxySettings(enabled, callback)
+    }
+
+    fun isProxyEnabled(callback: ((Boolean) -> Unit)) {
+        tailscaleLauncher.isProxyEnabled(callback)
+    }
+
     override fun cleanup() {
         // Use pkill -f for more reliable process killing (matches full command line)
         adbLauncher.executeShellCommand(
@@ -98,6 +111,7 @@ class TailscaleController(
             }
         )
         _tunnelUrl.postValue(null)
+        ProxyHelper.invalidateCache()
     }
 
     /**
@@ -111,6 +125,7 @@ class TailscaleController(
 
             override fun onTunnelUrl(url: String?) {
                 _tunnelUrl.postValue(null)
+                ProxyHelper.invalidateCache()
                 callback?.onStatusChanged(DaemonStatus.STOPPED, "Environment disabled")
             }
 

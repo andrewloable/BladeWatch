@@ -4,12 +4,15 @@ import com.overdrive.app.byd.cloud.crypto.BydCryptoUtils;
 import com.overdrive.app.logging.DaemonLogger;
 import com.overdrive.app.mqtt.ProxyHelper;
 
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.MqttCallback;
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.json.JSONObject;
 
 import java.util.concurrent.Executors;
@@ -20,6 +23,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Subscribes to BYD's EMQ MQTT broker for real-time vehicle state push.
  * Decrypts incoming messages and feeds them to BydCloudDataProvider.
+ *
+ * Uses MQTT v5 (paho.mqttv5) — BYD's EMQ broker accepts v3.1.1 connections
+ * but only routes vehicleInfo push events to v5 subscribers. The reference
+ * implementations (Niek/BYD-re, jkaberg/pyBYD) both use v5 explicitly.
  */
 public final class BydCloudMqttSubscriber implements MqttCallback {
 
@@ -41,6 +48,14 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
     private volatile int consecutiveFailures = 0;
     private volatile long lastConnectAttemptMs = 0;
     private volatile long lastReauthAtMs = 0;
+    // Decrypt failures since last successful decrypt.  We allow a few before
+    // assuming the key is actually stale, since BYD's broker often delivers
+    // a retained message at subscribe time that was encrypted with a prior
+    // session's key — re-authing on every isolated failure is too aggressive.
+    private volatile int consecutiveDecryptFailures = 0;
+    private static final int DECRYPT_FAILURE_THRESHOLD = 3;
+    private static final long DECRYPT_FAILURE_WINDOW_MS = 60 * 1000;
+    private volatile long firstDecryptFailureAtMs = 0;
 
     private final AtomicBoolean connecting = new AtomicBoolean(false);
     private ScheduledExecutorService scheduler;
@@ -88,6 +103,11 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
     private void connectAndSubscribe() {
         if (!running || !connecting.compareAndSet(false, true)) return;
 
+        // Tracks how far we got so we can reset the backoff counter on
+        // partial progress (e.g. broker resolved but TLS handshake failed —
+        // those are transient and shouldn't escalate to 300s reconnect).
+        boolean brokerResolved = false;
+
         try {
             lastConnectAttemptMs = System.currentTimeMillis();
 
@@ -96,6 +116,7 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
 
             // Discover broker
             String brokerHost = client.fetchEmqBrokerHost();
+            brokerResolved = true;
             // Broker may already include port (e.g., "host:8883") — don't double-append
             String brokerUri;
             if (brokerHost.contains(":")) {
@@ -116,19 +137,22 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
             logger.info("Connecting to BYD EMQ: " + brokerUri + " topic=" + topic
                     + " proxy=" + ProxyHelper.isProxyAvailable());
 
-            // Create Paho client
+            // Create Paho v5 client
             MqttClient mc = new MqttClient(brokerUri, clientId, new MemoryPersistence());
             mc.setCallback(this);
 
-            MqttConnectOptions opts = new MqttConnectOptions();
-            opts.setCleanSession(true);
+            MqttConnectionOptions opts = new MqttConnectionOptions();
+            opts.setCleanStart(true);
             opts.setConnectionTimeout(15);
             opts.setKeepAliveInterval(60);
             opts.setAutomaticReconnect(false);
             opts.setUserName(username);
-            opts.setPassword(password.toCharArray());
+            opts.setPassword(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            // Be explicit on session expiry so the broker doesn't drop our
+            // queued messages between reconnects.
+            opts.setSessionExpiryInterval(0L);
 
-            // SSL with proxy support — same pattern as MqttPublisherService
+            // SSL with proxy support — same pattern as MqttPublisherService.
             boolean proxyActive = ProxyHelper.isProxyAvailable();
             if (proxyActive) {
                 opts.setSocketFactory(ProxyHelper.getProxiedSslSocketFactory(false));
@@ -140,23 +164,43 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
             }
 
             mc.connect(opts);
-            mc.subscribe(topic, 1);
+            // v5 subscribe API — IMqttMessageListener takes (topic, msg).
+            mc.subscribe(topic, 1, (t, msg) -> {
+                logger.info("EMQ raw message: topic=" + t
+                        + " bytes=" + (msg.getPayload() != null ? msg.getPayload().length : 0)
+                        + " qos=" + msg.getQos() + " retained=" + msg.isRetained());
+            });
 
             mqttClient = mc;
             consecutiveFailures = 0;
             dataProvider.setMqttConnected(true);
-            logger.info("Connected and subscribed to BYD EMQ");
+            logger.info("Connected and subscribed to BYD EMQ topic=" + topic);
 
         } catch (Exception e) {
-            consecutiveFailures++;
             String msg = e.getMessage() != null ? e.getMessage() : "";
             logger.warn("EMQ connect failed: " + msg);
             ProxyHelper.invalidateCache();
 
-            // Force re-login on auth/session errors (code 1005, token expired, etc.)
-            if (msg.contains("1005") || msg.contains("token") || msg.contains("Login failed")) {
+            // Classify the failure:
+            //   - true auth failure: HTTP 401/403, "token expired", "Login failed"
+            //   - transient broker/service error: 1005, 1008, 1009, "Unspecified error"
+            //   - other (network, TLS) — also transient
+            // Only true auth requires a forced re-login; transient errors should
+            // back off, not churn login() calls (which invalidate any healthy
+            // session held by other paths and creates a 1005 retry loop).
+            boolean isAuthFailure =
+                    msg.contains("token expired")
+                    || msg.contains("Login failed")
+                    || msg.contains(" 401 ") || msg.contains(" 403 ");
+            boolean isTransientService = msg.contains("1005")
+                    || msg.contains("1008")
+                    || msg.contains("1009")
+                    || msg.contains("Unspecified")
+                    || msg.contains("Service error");
+
+            if (isAuthFailure) {
                 try {
-                    logger.info("Forcing re-login due to auth error...");
+                    logger.info("Forcing re-login due to genuine auth error...");
                     client.login();
                 } catch (Exception loginErr) {
                     logger.warn("Re-login failed: " + loginErr.getMessage());
@@ -164,17 +208,41 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
             }
 
             disconnectQuietly();
-            scheduleReconnect();
+
+            // Backoff strategy: if we made any forward progress (broker
+            // resolved) the failure is downstream — TLS race, broker hiccup —
+            // and we should retry quickly instead of ramping into a 5-minute
+            // window. If we never resolved the broker, escalate normally.
+            // Transient service errors (1005/1008/1009) get a fixed short
+            // delay because they're an upstream BYD condition that's unlikely
+            // to clear faster on exponential ramp.
+            if (brokerResolved || isTransientService) {
+                consecutiveFailures = 1; // reset, but keep at first-attempt
+                scheduleReconnect(15);   // 15-second fixed retry
+            } else {
+                consecutiveFailures++;
+                scheduleReconnect(0); // 0 = compute from consecutiveFailures
+            }
         } finally {
             connecting.set(false);
         }
     }
 
     private void scheduleReconnect() {
+        scheduleReconnect(0);
+    }
+
+    /**
+     * @param fixedDelaySeconds if > 0, use this delay; if 0, compute from
+     *                          consecutiveFailures with exponential backoff.
+     */
+    private void scheduleReconnect(long fixedDelaySeconds) {
         if (!running || scheduler == null || scheduler.isShutdown()) return;
-        long delay = Math.min(
-                BACKOFF_BASE_SECONDS * (1L << Math.min(consecutiveFailures - 1, 10)),
-                BACKOFF_CAP_SECONDS);
+        long delay = fixedDelaySeconds > 0
+                ? fixedDelaySeconds
+                : Math.min(
+                        BACKOFF_BASE_SECONDS * (1L << Math.min(consecutiveFailures - 1, 10)),
+                        BACKOFF_CAP_SECONDS);
         logger.info("Reconnecting in " + delay + "s (attempt " + consecutiveFailures + ")");
         try {
             scheduler.schedule(this::connectAndSubscribe, delay, TimeUnit.SECONDS);
@@ -194,6 +262,35 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
         } catch (Exception e) {
             logger.warn("Session refresh failed: " + e.getMessage());
             scheduleReconnect();
+        }
+    }
+
+    /**
+     * Increment the decrypt-failure counter and only trigger a re-auth
+     * once we've seen the threshold crossed within the failure window.
+     * BYD's broker often delivers a retained message at subscribe time
+     * encrypted with a prior session's key — re-authing on the first
+     * isolated failure causes the connect-then-immediately-reconnect
+     * loop visible in the logs. The threshold lets us absorb that.
+     */
+    private void recordDecryptFailure(String kind) {
+        long now = System.currentTimeMillis();
+        if (consecutiveDecryptFailures == 0) {
+            firstDecryptFailureAtMs = now;
+        } else if (now - firstDecryptFailureAtMs > DECRYPT_FAILURE_WINDOW_MS) {
+            // Window expired — restart the count.
+            consecutiveDecryptFailures = 0;
+            firstDecryptFailureAtMs = now;
+        }
+        consecutiveDecryptFailures++;
+        logger.debug("MQTT decrypt failed (" + kind + ") — count="
+                + consecutiveDecryptFailures + "/" + DECRYPT_FAILURE_THRESHOLD);
+        if (consecutiveDecryptFailures >= DECRYPT_FAILURE_THRESHOLD) {
+            logger.warn("MQTT decrypt failed " + consecutiveDecryptFailures
+                    + " times in window — assuming stale key, re-authing");
+            consecutiveDecryptFailures = 0;
+            firstDecryptFailureAtMs = 0;
+            scheduleReauth();
         }
     }
 
@@ -242,20 +339,44 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
         System.clearProperty("socksProxyPort");
     }
 
-    // ── MqttCallback ────────────────────────────────────────────────────
+    // ── MqttCallback (v5) ───────────────────────────────────────────────
 
     @Override
-    public void connectionLost(Throwable cause) {
+    public void disconnected(MqttDisconnectResponse response) {
         dataProvider.setMqttConnected(false);
-        logger.warn("EMQ connection lost: " + (cause != null ? cause.getMessage() : "unknown"));
+        String msg = response != null && response.getException() != null
+                ? response.getException().getMessage()
+                : (response != null ? response.getReasonString() : "unknown");
+        logger.warn("EMQ disconnected: " + msg);
         consecutiveFailures++;
         ProxyHelper.invalidateCache();
         if (running) scheduleReconnect();
     }
 
     @Override
+    public void mqttErrorOccurred(MqttException exception) {
+        logger.warn("EMQ error: " + (exception != null ? exception.getMessage() : "unknown"));
+    }
+
+    @Override
+    public void connectComplete(boolean reconnect, String serverURI) {
+        logger.info("EMQ connectComplete: reconnect=" + reconnect + " uri=" + serverURI);
+    }
+
+    @Override
+    public void authPacketArrived(int reasonCode, MqttProperties properties) {
+        // Auth-packet flow not used by BYD — log for diagnostics only.
+        logger.debug("EMQ authPacketArrived: reason=" + reasonCode);
+    }
+
+    @Override
     public void messageArrived(String topic, MqttMessage message) {
         byte[] payload = message.getPayload();
+        // Always log arrival — this is the smoking gun for "are we even
+        // getting messages from the broker?" investigations.
+        logger.info("EMQ messageArrived: topic=" + topic
+                + " bytes=" + (payload != null ? payload.length : 0)
+                + " qos=" + message.getQos() + " retained=" + message.isRetained());
         if (payload == null || payload.length == 0) return;
 
         String encrypted = new String(payload, java.nio.charset.StandardCharsets.UTF_8).trim();
@@ -267,9 +388,11 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
             decrypted = BydCryptoUtils.aesDecryptUtf8(encrypted, decryptKey);
         } catch (Exception e) {
             // AES failure (BadPadding) or wrong key producing garbage UTF-8.
-            // Treat as stale-key — schedule a forced re-login.
-            logger.debug("MQTT decrypt failed: " + e.getMessage());
-            scheduleReauth();
+            // Treat as a *single* failure — only re-auth once we see the
+            // failure threshold crossed in the failure window.  Isolated
+            // failures (e.g. retained-message replay encrypted with the
+            // prior session's key) shouldn't trigger a full re-login.
+            recordDecryptFailure("AES");
             return;
         }
 
@@ -277,12 +400,16 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
         try {
             envelope = new JSONObject(decrypted);
         } catch (Exception e) {
-            // Decrypted but not valid JSON — also a key-mismatch symptom
-            // (random bytes happened to satisfy PKCS#7 padding).
-            logger.debug("MQTT JSON parse failed: " + e.getMessage());
-            scheduleReauth();
+            // Decrypted but not valid JSON — wrong-key symptom (random
+            // bytes happened to satisfy PKCS#7 padding).  Counted into
+            // the same failure threshold.
+            recordDecryptFailure("JSON");
             return;
         }
+
+        // Successful decrypt — reset the failure counter.
+        consecutiveDecryptFailures = 0;
+        firstDecryptFailureAtMs = 0;
 
         // ── Unwrap envelope ─────────────────────────────────────────────
         // BYD MQTT push shape: { event, vin, data: { uuid, respondData: {...} } }
@@ -309,7 +436,7 @@ public final class BydCloudMqttSubscriber implements MqttCallback {
     }
 
     @Override
-    public void deliveryComplete(IMqttDeliveryToken token) {
+    public void deliveryComplete(IMqttToken token) {
         // Subscriber only — no publishes
     }
 }

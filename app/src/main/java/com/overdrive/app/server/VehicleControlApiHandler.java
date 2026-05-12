@@ -114,6 +114,11 @@ public class VehicleControlApiHandler {
 
         // Door lock status: 1=locked, 2=unlocked, -1=unknown
         // Index: 0=LF, 1=RF, 2=LR, 3=RR, 4=trunk, 5=unused, 6=overall(derived)
+        //
+        // The BYDAutoDoorLockDevice service does not expose lock state to user-UID
+        // processes on most BYD firmwares (returns INVALID(0) for every area).
+        // So we overlay the BYD cloud snapshot's per-door lock fields here. If
+        // both the SDK and cloud are unavailable, values stay at -1.
         JSONObject doors = new JSONObject();
         if (data.doorLockStatus != null && data.doorLockStatus.length >= 7) {
             doors.put("lf", data.doorLockStatus[0]);
@@ -123,6 +128,37 @@ public class VehicleControlApiHandler {
             doors.put("trunk", data.doorLockStatus[4]);
             doors.put("hood", data.doorLockStatus[5]);
             doors.put("overall", data.doorLockStatus[6]);
+        }
+        try {
+            com.overdrive.app.byd.cloud.BydCloudDataProvider provider =
+                    com.overdrive.app.byd.cloud.BydCloudDataProvider.getInstance();
+            // Trigger an on-demand REST refresh if our cached snapshot is
+            // stale. The call is internally rate-limited (30s cooldown) and
+            // runs asynchronously; the *current* snapshot is used to render
+            // this response, but the next request will see fresh data.
+            new Thread(provider::refreshLockStateIfStale, "CloudLockRefresh").start();
+            com.overdrive.app.byd.cloud.VehicleCloudSnapshot cs = provider.getSnapshot();
+            if (cs != null && cs.hasValidLockState()) {
+                // Cloud snapshot semantics:
+                //   leftFrontDoorLock etc.: 1=UNLOCKED, 2=LOCKED (per pyBYD)
+                // API contract semantics: 1=locked, 2=unlocked (inverted).
+                int lf = cloudLockToApi(cs.leftFrontDoorLock);
+                int rf = cloudLockToApi(cs.rightFrontDoorLock);
+                int lr = cloudLockToApi(cs.leftRearDoorLock);
+                int rr = cloudLockToApi(cs.rightRearDoorLock);
+                if (lf != -1) doors.put("lf", lf);
+                if (rf != -1) doors.put("rf", rf);
+                if (lr != -1) doors.put("lr", lr);
+                if (rr != -1) doors.put("rr", rr);
+                int overall;
+                if (cs.isAnyUnlocked()) overall = 2;
+                else if (cs.isAllLocked()) overall = 1;
+                else overall = -1;
+                if (overall != -1) doors.put("overall", overall);
+                doors.put("source", "cloud");
+            }
+        } catch (Exception e) {
+            logger.debug("cloud-lock overlay failed: " + e.getMessage());
         }
         response.put("doors", doors);
 
@@ -183,6 +219,61 @@ public class VehicleControlApiHandler {
         if (data.acWindMode != BydVehicleData.UNAVAILABLE) climate.put("windMode", data.acWindMode);
         if (data.acFanLevel != BydVehicleData.UNAVAILABLE && vehiclePoweredOn) climate.put("fanLevel", data.acFanLevel);
         response.put("climate", climate);
+
+        // Tyres — per-corner pressure (kPa + PSI), temperature, and the three
+        // independent state enums (pressure under/over, slow/fast leak, signal
+        // lost). Indexed [FL, FR, RL, RR]. The web UI's tyre callouts read this
+        // block directly; if any required source is missing the corner falls
+        // back to {available:false} so the UI shows a grey "no signal" state.
+        JSONObject tyres = new JSONObject();
+        boolean anyTyreData = data.tyrePressure != null
+                || data.tyrePressureState != null
+                || data.tyreAirLeakState != null
+                || data.tyreSignalState != null;
+        if (anyTyreData) {
+            String[] keys = { "fl", "fr", "rl", "rr" };
+            for (int i = 0; i < keys.length; i++) {
+                JSONObject t = new JSONObject();
+                int kPa = (data.tyrePressure != null && i < data.tyrePressure.length)
+                        ? data.tyrePressure[i] : BydVehicleData.UNAVAILABLE;
+                if (kPa != BydVehicleData.UNAVAILABLE && kPa > 0) {
+                    t.put("kPa", kPa);
+                    // PSI = kPa * 0.1450377 (matches the AutoCommander
+                    // UnitFormatter conversion exactly). The kPa value
+                    // here is the raw int from BYDAutoTyreDevice —
+                    // identical to what the cluster reads.
+                    t.put("psi", (int) Math.round(kPa * 0.1450377));
+                }
+                // Per-tyre temperature was removed — confirmed not
+                // available via any public BYD SDK path (AutoCommander's
+                // own getTyreTemperature() also returns null with a
+                // "feature IDs not available" warning).
+                if (data.tyrePressureState != null && i < data.tyrePressureState.length) {
+                    t.put("pressureState", data.tyrePressureState[i]);
+                }
+                if (data.tyreAirLeakState != null && i < data.tyreAirLeakState.length) {
+                    t.put("airLeakState", data.tyreAirLeakState[i]);
+                }
+                if (data.tyreSignalState != null && i < data.tyreSignalState.length) {
+                    t.put("signalState", data.tyreSignalState[i]);
+                }
+                // Available = we got at least one valid pressure reading.
+                t.put("available", t.has("kPa"));
+                tyres.put(keys[i], t);
+            }
+            tyres.put("available", true);
+        } else {
+            tyres.put("available", false);
+        }
+        response.put("tyres", tyres);
+
+        // Engine telemetry block was removed: the BYD Auto SDK's
+        // engineCoolantLevel / oilLevel / waterTempC / gearMode feeds
+        // were producing unreliable values on the test PHEV
+        // (cold-engine sentinels, conflicting Engine vs Setting device
+        // readings, raw 28/254 oil dipstick that AutoCommander itself
+        // refuses to display). Don't reintroduce without verifying each
+        // field against the cluster's own readout first.
 
         response.put("timestamp", data.timestamp);
         HttpResponse.sendJson(out, response.toString());
@@ -544,6 +635,18 @@ public class VehicleControlApiHandler {
 
     // ==================== HELPERS ====================
 
+    /**
+     * Convert BYD cloud per-door lock value to API contract.
+     *   pyBYD reports: 1=UNLOCKED, 2=LOCKED on each *DoorLock field.
+     *   API contract publishes: 1=locked, 2=unlocked (inverted, historical).
+     * VehicleCloudSnapshot.LOCK_UNAVAILABLE / LOCK_UNKNOWN both map to -1.
+     */
+    private static int cloudLockToApi(int cloud) {
+        if (cloud == 2) return 1; // LOCKED
+        if (cloud == 1) return 2; // UNLOCKED
+        return -1;
+    }
+
     private static String getVin() throws Exception {
         BydCloudConfig config = BydCloudConfig.fromUnifiedConfig();
         if (!config.isConfigured() || config.vin.isEmpty()) {
@@ -558,22 +661,19 @@ public class VehicleControlApiHandler {
             throw new Exception("BYD Cloud not configured. Set up credentials in Settings → BYD Cloud.");
         }
 
-        BydCloudClient client = new BydCloudClient(config);
-
-        // Load bangcle tables
-        java.io.File tablesFile = new java.io.File("/data/local/tmp/bangcle_tables.bin");
-        if (!tablesFile.exists()) {
-            throw new Exception("Bangcle crypto tables not found. Reinstall the app.");
+        // Reuse the shared client owned by BydCloudDataProvider — creating a
+        // fresh client here would race the MQTT subscriber's login() and
+        // invalidate its session token (visible as code=1005 from the EMQ
+        // broker endpoint). The shared client's session is already verified.
+        BydCloudClient client = com.overdrive.app.byd.cloud.BydCloudDataProvider
+                .getInstance().getSharedClient();
+        if (client == null) {
+            throw new Exception("BYD Cloud client not initialized. Verify credentials in Settings → BYD Cloud.");
         }
-        InputStream tablesStream = new java.io.FileInputStream(tablesFile);
-        try {
-            client.init(tablesStream);
-        } finally {
-            try { tablesStream.close(); } catch (Exception ignored) {}
+        // Re-verify the control PIN if needed — a no-op if already done.
+        if (!config.vin.isEmpty()) {
+            client.verifyControlPassword(config.vin);
         }
-
-        client.login();
-        client.verifyControlPassword(config.vin);
         return client;
     }
 }

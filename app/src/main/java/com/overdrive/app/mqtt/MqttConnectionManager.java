@@ -394,10 +394,20 @@ public class MqttConnectionManager {
             }
             if (soc >= 0) payload.put("soc", soc);
 
-            // power
+            // power — primary source is the collector's batteryPowerKw (from
+            // BYDAutoBodyworkDevice.getBatteryPowerHEV / 10). Sign convention
+            // matches MQTT/ABRP: positive = discharge, negative = charge.
             try {
                 boolean powerSet = false;
-                if (vd != null && !Double.isNaN(vd.enginePowerKw) && Math.abs(vd.enginePowerKw) > 0.1 && Math.abs(vd.enginePowerKw) <= 300) {
+                if (vd != null && !Double.isNaN(vd.batteryPowerKw)
+                        && Math.abs(vd.batteryPowerKw) <= 500) {
+                    payload.put("power", vd.batteryPowerKw);
+                    powerSet = true;
+                }
+                if (!powerSet
+                        && vd != null && !Double.isNaN(vd.enginePowerKw)
+                        && Math.abs(vd.enginePowerKw) > 0.1
+                        && Math.abs(vd.enginePowerKw) <= 300) {
                     payload.put("power", vd.enginePowerKw);
                     powerSet = true;
                 }
@@ -436,17 +446,27 @@ public class MqttConnectionManager {
                 payload.put("lon", gpsMonitor.getLongitude());
             }
 
-            // is_charging
+            // is_charging — combines BMS state, batteryPowerKw direction, and
+            // legacy charge-power fields. Negative batteryPowerKw while parked
+            // is unambiguous evidence of charging.
             ChargingStateData chargingState = vehicleDataMonitor.getChargingState();
-            boolean isCharging = chargingState != null && chargingState.status == ChargingStateData.ChargingStatus.CHARGING;
-            // Fallback: detect AC charging even if BMS state is stale (reports READY/IDLE)
-            // but the gun is connected (state 2=AC, 3=DC) and power is flowing.
+            boolean isCharging = chargingState != null
+                    && chargingState.status == ChargingStateData.ChargingStatus.CHARGING;
             if (!isCharging && vd != null) {
-                boolean gunConnected = vd.chargingGunState == 2 || vd.chargingGunState == 3;
-                boolean powerFlowing = (!Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0.15)
-                        || (!Double.isNaN(vd.chargingPowerKw) && vd.chargingPowerKw > 0.15);
-                if (gunConnected && powerFlowing) {
+                boolean isParkedForChg = vd.gearMode == GearMonitor.GEAR_P;
+                if (!Double.isNaN(vd.batteryPowerKw)
+                        && vd.batteryPowerKw < -0.5
+                        && (isParkedForChg || Math.abs(vd.batteryPowerKw) > 1.0)) {
                     isCharging = true;
+                }
+                if (!isCharging) {
+                    boolean gunConnected = vd.chargingGunState == 2
+                            || vd.chargingGunState == 3;
+                    boolean powerFlowing = (!Double.isNaN(vd.externalChargingPowerKw)
+                                    && vd.externalChargingPowerKw > 0.15)
+                            || (!Double.isNaN(vd.chargingPowerKw)
+                                    && vd.chargingPowerKw > 0.15);
+                    if (gunConnected && powerFlowing) isCharging = true;
                 }
             }
             payload.put("is_charging", isCharging ? 1 : 0);
@@ -539,13 +559,9 @@ public class MqttConnectionManager {
                 // Cabin temp
                 if (!Double.isNaN(vd.insideTempCelsius)) payload.put("cabin_temp", vd.insideTempCelsius);
 
-                // Tyre temps (if available)
-                if (vd.tyreTemperatures != null) {
-                    payload.put("tyre_temp_fl", vd.tyreTemperatures[0]);
-                    payload.put("tyre_temp_fr", vd.tyreTemperatures[1]);
-                    payload.put("tyre_temp_rl", vd.tyreTemperatures[2]);
-                    payload.put("tyre_temp_rr", vd.tyreTemperatures[3]);
-                }
+                // Per-tyre temperature is not available via the public
+                // BYD SDK on real firmwares — keys removed to avoid
+                // publishing stale/zero values.
             }
 
         } catch (Exception e) {

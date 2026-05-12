@@ -488,7 +488,11 @@ public class BydDataCollector {
 
         // Extended data consumed by ABRP/MQTT/trips
         collectStatisticExtended(b);   // SOH, driving time, key battery
-        collectInstrumentExtended(b);  // cabin temp, tyre temps, trip data, consumption
+        collectInstrumentExtended(b);  // cabin temp, trip data, consumption
+
+        // Key proximity probe — runs every poll (ACC on or off) so we keep observing
+        // fob state across the parked-charging window and any "approach unlock" event.
+        collectKeyProximity(b);
 
         // Cloud data merge (when toggle enabled and data is fresh)
         mergeCloudData(b);
@@ -531,7 +535,7 @@ public class BydDataCollector {
 
         // Extended data — core + display-only
         collectStatisticExtended(b);   // SOH, driving time, key battery
-        collectInstrumentExtended(b);  // cabin temp, tyre temps, trip data, consumption
+        collectInstrumentExtended(b);  // cabin temp, trip data, consumption
         collectChargingExtended(b);    // charging rest time
         collectBodyworkExtended(b);    // steering, auto system, 12V level, sunroof, sunshade
         collectEngineExtended(b);      // coolant, oil, engine code
@@ -623,26 +627,23 @@ public class BydDataCollector {
                 }
             }
             
-            // Priority 3: BodyworkDevice.getBatteryPowerHEV() — fallback, unreliable on some BEVs
-            // On PHEVs this typically returns SOC% (not kWh). Detect by comparing with SOC.
+            // BodyworkDevice.getBatteryPowerHEV() — instantaneous battery power flow.
+            // The SDK returns the value scaled by 10 (e.g. 13.5 = 1.35 kW), so we
+            // divide to get real kW. Sign convention: positive = discharge
+            // (drive/accessory draw), negative = charge (regen or plugged-in charging).
+            // Reject anything beyond ±500 kW after scaling.
             Object hev = BydDeviceHelper.callGetter(bodyworkDevice, "getBatteryPowerHEV");
             if (hev instanceof Number) {
-                double hevVal = ((Number) hev).doubleValue();
-                if (hevVal >= 0) {
-                    b.socHevPercent(hevVal);
-                    // Only use as remainKwh if it's NOT just the SOC% value.
-                    // PHEVs return SOC% here (e.g., 76.0 for 76% SOC).
-                    // BEVs return remaining kWh (e.g., 45.2 kWh at 75% SOC on a 60 kWh pack).
-                    // Detection: if hevVal ≈ socPercent (within ±3), it's SOC% not kWh — skip.
-                    double soc = Double.isNaN(b.socPercent) ? -1 : b.socPercent;
-                    boolean looksLikeSocPercent = soc > 0 && Math.abs(hevVal - soc) < 3.0;
-                    if (!looksLikeSocPercent && hevVal > 1 && hevVal < 120 && Double.isNaN(b.remainKwh)) {
-                        b.remainKwh(hevVal);
-                        logger.debug("remainKwh from getBatteryPowerHEV: " + String.format("%.1f", hevVal) +
-                            " (soc=" + String.format("%.1f", soc) + "%)");
-                    } else if (looksLikeSocPercent) {
-                        logger.debug("getBatteryPowerHEV returned " + String.format("%.1f", hevVal) +
-                            " ≈ SOC " + String.format("%.1f", soc) + "% — treating as SOC%, not kWh");
+                double rawValue = ((Number) hev).doubleValue();
+                double powerKw = rawValue / 10.0;
+                if (Math.abs(powerKw) <= 500.0) {
+                    b.batteryPowerKw(powerKw);
+                    long now = System.currentTimeMillis();
+                    if (now - lastBatteryPowerLogMs > 60_000) {
+                        lastBatteryPowerLogMs = now;
+                        logger.debug("batteryPowerKw=" + String.format("%.2f", powerKw) +
+                            " (raw=" + String.format("%.1f", rawValue) + ", " +
+                            (powerKw > 0.5 ? "discharging" : powerKw < -0.5 ? "charging" : "idle") + ")");
                     }
                 }
             }
@@ -650,7 +651,7 @@ public class BydDataCollector {
             // getBatteryCapacity() — semantics vary by model:
             // - Newer models: returns Ah rating (fixed, e.g. 150 for Atto 3)
             // - Older models: returns remaining energy in 0.1 kWh units (changes with SOC)
-            // Used as fallback when getBatteryPowerHEV() returns negative.
+            // Used as remainKwh fallback when prior priorities haven't filled it.
             Object cap = BydDeviceHelper.callGetter(bodyworkDevice, "getBatteryCapacity");
             if (cap instanceof Number) {
                 double capVal = ((Number) cap).doubleValue();
@@ -699,7 +700,7 @@ public class BydDataCollector {
                     }
                 }
 
-                // Fallback for older models where getBatteryPowerHEV() returned negative:
+                // Fallback for older models where the prior priorities didn't fill remainKwh:
                 // getBatteryCapacity() / 10.0 gives remaining kWh
                 if (Double.isNaN(b.remainKwh) && capVal > 0) {
                     double kwhFromCap = capVal / 10.0;
@@ -713,6 +714,23 @@ public class BydDataCollector {
             // Power level
             Object pl = BydDeviceHelper.callGetter(bodyworkDevice, "getPowerLevel");
             if (pl instanceof Number) b.powerLevel(((Number) pl).intValue());
+
+            // Energy type — drivetrain discriminator (BEV/PHEV/HEV/FCEV).
+            // Mapping is OEM-specific; we store the raw int and let the consumer interpret.
+            // Suspected mapping (validate per model): 1=BEV, 2=PHEV, 3=HEV, 4=FCEV.
+            Object et = BydDeviceHelper.callGetter(bodyworkDevice, "getEnergyType");
+            if (et instanceof Number) {
+                int rawType = ((Number) et).intValue();
+                // Filter sentinels (BMS_UNAVAILABLE=65535, INVALID_VALUE=-10011 etc.)
+                if (rawType >= 0 && rawType < 100) {
+                    b.energyType(rawType);
+                    long now = System.currentTimeMillis();
+                    if (now - lastEnergyTypeLogMs > 300_000) {
+                        lastEnergyTypeLogMs = now;
+                        logger.info("getEnergyType=" + rawType + " (1=PHEV, 2=BEV, 3=HEV)");
+                    }
+                }
+            }
 
             // Battery temp from bodywork (feature ID 300941320, Double.TYPE)
             Object battTemp = BydDeviceHelper.callGet(bodyworkDevice, BydFeatureIds.BODYWORK_BATTERY_METRIC, Double.class);
@@ -949,17 +967,7 @@ public class BydDataCollector {
 
             // ==================== FUEL PERCENTAGE & FUEL RANGE (PHEV only) ====================
             // BEVs return bogus CAN bus values for fuel (e.g. constant 62% on a Seal).
-            // Gate on nominal battery capacity: PHEVs < 30 kWh, BEVs > 30 kWh.
-            boolean isPhev = false;
-            try {
-                com.overdrive.app.abrp.SohEstimator sohEst =
-                    com.overdrive.app.monitor.SocHistoryDatabase.getInstance().getSohEstimator();
-                if (sohEst != null && sohEst.getNominalCapacityKwh() > 0) {
-                    isPhev = sohEst.getNominalCapacityKwh() < 30.0;
-                }
-            } catch (Exception e) {
-                logger.debug("PHEV detection failed: " + e.getMessage());
-            }
+            boolean isPhev = isPhev(b);
 
             // ==================== FUEL DRIVING RANGE (PHEV only) ====================
             if (isPhev) {
@@ -1086,13 +1094,9 @@ public class BydDataCollector {
                 }
             }
 
-            // Always read the chargingDevice power getter when the device is present.
-            // VehicleDataMonitor.getChargingState() is the single source of truth that
-            // combines this with engine power and gear to produce the final charging
-            // verdict — gating reads here would create a chicken-and-egg with the
-            // BMS-state field that's known to lag the actual charging start by several
-            // seconds on AC and report 0/15 (READY/IDLE) on PHEVs while charging.
+            // Charging power from the BYD ChargingDevice SDK getter.
             // Sentinel filter: SDK reports up to ±500 kW; reject anything beyond.
+            // Listener callbacks (onChargingPowerChanged) keep this fresh between polls.
             Object power = BydDeviceHelper.callGetter(chargingDevice, "getChargingPower");
             if (power instanceof Number) {
                 double kw = ((Number) power).doubleValue();
@@ -1101,28 +1105,50 @@ public class BydDataCollector {
                 }
             }
 
-            // Safe-clear: zero out stale power readings only when we're CONFIDENT the
-            // vehicle is not charging.
-            //
-            // PHEV nuance: many PHEV firmwares
-            //   1) report chargingState=15 (IDLE) while actually charging on AC, and
-            //   2) leave chargingGunState = UNAVAILABLE (-1) entirely.
-            // The previous version treated "gun state unavailable" as "gun
-            // disconnected," which combined with the firmware's IDLE bug to wipe
-            // out the listener-delivered chargingPowerKw / externalChargingPowerKw
-            // every 5s — making the UI never show charging on PHEVs.
-            //
-            // Fix: require a DEFINITIVELY disconnected gun (==1) OR a recent
-            // observation that power is zero from BOTH sources. UNAVAILABLE no
-            // longer counts as disconnection on its own.
-            boolean bmsNotCharging = b.chargingState != BydVehicleData.UNAVAILABLE && b.chargingState != 1;
-            boolean gunDefinitelyDisconnected = (b.chargingGunState == 1);
-            boolean noPowerFlowing =
-                (Double.isNaN(b.chargingPowerKw) || Math.abs(b.chargingPowerKw) < 0.1)
-                && (Double.isNaN(b.externalChargingPowerKw) || b.externalChargingPowerKw < 0.1);
-            if (bmsNotCharging && (gunDefinitelyDisconnected || noPowerFlowing)) {
+            // Targeted clear: when the BMS reports an EXPLICIT non-charging
+            // terminal state (READY=0, FINISHED=2, TERMINATED=4, DISCHARG_FINISH=12),
+            // we know the previous charging session is over. Clear sticky listener-
+            // delivered power so the inference layer in VehicleDataMonitor can't
+            // false-trigger from leftover values. We do NOT clear on IDLE (15)
+            // because that's the buggy reading some PHEV firmwares give while
+            // actually charging — clearing there would break detection again.
+            // We do NOT clear on disconnect-only signals (gunState==1) without a
+            // BMS state agreeing, because PHEVs often leave gunState UNAVAILABLE.
+            if (b.chargingState == 0 || b.chargingState == 2
+                    || b.chargingState == 4 || b.chargingState == 12) {
                 b.chargingPowerKw(Double.NaN);
                 b.externalChargingPowerKw(Double.NaN);
+            }
+
+            // Charging mode — getChargingMode() raw value (AC vs DC vs wireless, model-specific).
+            // Stored on the snapshot; logged once on first sight then throttled at 5min.
+            Object mode = BydDeviceHelper.callGetter(chargingDevice, "getChargingMode");
+            if (mode instanceof Number) {
+                int rawMode = ((Number) mode).intValue();
+                // Filter sentinels (BMS_UNAVAILABLE=65535, INVALID values)
+                if (rawMode >= 0 && rawMode < 100) {
+                    b.chargingMode(rawMode);
+                    long now = System.currentTimeMillis();
+                    if (now - lastChargingModeLogMs > 300_000) {
+                        lastChargingModeLogMs = now;
+                        logger.info("getChargingMode=" + rawMode);
+                    }
+                }
+            }
+
+            // SDK getChargingState() — distinct from getBatteryManagementDeviceState() above.
+            // Diagnostic only for now: log to verify the value space against our existing
+            // chargingState (which may come from a different source).
+            Object chState = BydDeviceHelper.callGetter(chargingDevice, "getChargingState");
+            if (chState instanceof Number) {
+                int rawState = ((Number) chState).intValue();
+                if (rawState >= 0 && rawState < 100) {
+                    long now = System.currentTimeMillis();
+                    if (now - lastChargingStateRawLogMs > 300_000) {
+                        lastChargingStateRawLogMs = now;
+                        logger.debug("getChargingState=" + rawState + " (collector chargingState=" + b.chargingState + ")");
+                    }
+                }
             }
 
             // Charging type (0=DEFAULT, 3=VTOG)
@@ -1380,9 +1406,8 @@ public class BydDataCollector {
             if (mcu instanceof Number) b.mcuStatus(((Number) mcu).intValue());
             // NOTE: getBatteryRemainPowerEV() intentionally NOT called here.
             // On PHEVs (Sealion 6 DM-i), the PowerDevice EV subsystem returns stale kWh
-            // values when the ICE is running. The BodyworkDevice path (getBatteryPowerHEV +
-            // onBatteryPowerHEVChanged listener) is the correct CAN bus path for kWh on
-            // both BEVs and PHEVs.
+            // values when the ICE is running. We rely on Statistic/Bodywork paths for
+            // remaining kWh on both BEVs and PHEVs.
         } catch (Exception e) {
             logger.debug("collectPower error: " + e.getMessage());
         }
@@ -1393,6 +1418,40 @@ public class BydDataCollector {
      * BYD singletons store context from the first getInstance() call.
      * If another daemon initialized it first with a null/stale context, methods NPE.
      */
+    /**
+     * PHEV detection. Primary signal: bodywork getEnergyType() — typed value
+     * surfaced on the snapshot/builder. Suspected mapping is 1=BEV, 2=PHEV, 3=HEV;
+     * we treat 2 and 3 as PHEV/HEV (both have a fuel tank). Falls back to the
+     * SohEstimator nominal-capacity heuristic when energyType is unavailable
+     * or holds a sentinel value, preserving prior behavior.
+     */
+    private boolean isPhev(BydVehicleData.Builder b) {
+        return isPhevFromEnergyType(b.energyType);
+    }
+
+    private boolean isPhev(BydVehicleData snapshot) {
+        return isPhevFromEnergyType(snapshot.energyType);
+    }
+
+    private boolean isPhevFromEnergyType(int energyType) {
+        // Mapping confirmed against BYD-DiLink commander field data:
+        //   1 = PHEV (DM-i, DM-p — has both fuel and battery)
+        //   2 = BEV  (pure electric)
+        //   3 = HEV  (rare)
+        if (energyType == 1 || energyType == 3) return true;
+        if (energyType == 2) return false;
+        // Fallback only when getEnergyType returned a sentinel or the device
+        // wasn't ready: SohEstimator nominal capacity (PHEVs < 30 kWh).
+        try {
+            com.overdrive.app.abrp.SohEstimator sohEst =
+                com.overdrive.app.monitor.SocHistoryDatabase.getInstance().getSohEstimator();
+            if (sohEst != null && sohEst.getNominalCapacityKwh() > 0) {
+                return sohEst.getNominalCapacityKwh() < 30.0;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     private void ensureDeviceContext(Object device) {
         if (device == null || context == null) return;
         try {
@@ -1434,105 +1493,122 @@ public class BydDataCollector {
     private void collectTyre(BydVehicleData.Builder b) {
         if (tyreDevice == null) return;
         try {
+            // Pressure value (kPa, raw int — confirmed by BYD-DiLink commander app's
+            // UnitFormatter.formatPressure(): no scaling for kPa, *0.1450377 for psi,
+            // /100 for bar). Areas: 1=FL, 2=FR, 3=RL, 4=RR.
             int[] pressures = new int[4];
+            int[] pressureStates = new int[4];
+            int[] airLeakStates = new int[4];
+            int[] signalStates = new int[4];
             for (int i = 0; i < 4; i++) {
                 Object p = BydDeviceHelper.callGetter(tyreDevice, "getTyrePressureValue", i + 1);
                 pressures[i] = (p instanceof Number) ? ((Number) p).intValue() : -1;
+                Object s = BydDeviceHelper.callGetter(tyreDevice, "getTyrePressureState", i + 1);
+                pressureStates[i] = (s instanceof Number) ? ((Number) s).intValue() : -1;
+                Object leak = BydDeviceHelper.callGetter(tyreDevice, "getTyreAirLeakState", i + 1);
+                airLeakStates[i] = (leak instanceof Number) ? ((Number) leak).intValue() : -1;
+                Object sig = BydDeviceHelper.callGetter(tyreDevice, "getTyreSignalState", i + 1);
+                signalStates[i] = (sig instanceof Number) ? ((Number) sig).intValue() : -1;
             }
             b.tyrePressure(pressures);
+            b.tyrePressureState(pressureStates);
+            b.tyreAirLeakState(airLeakStates);
+            b.tyreSignalState(signalStates);
+
+            Object sys = BydDeviceHelper.callGetter(tyreDevice, "getTyreSystemState");
+            if (sys instanceof Number) b.tyreSystemState(((Number) sys).intValue());
+            Object temp = BydDeviceHelper.callGetter(tyreDevice, "getTyreTemperatureState");
+            if (temp instanceof Number) b.tyreTemperatureState(((Number) temp).intValue());
+
+            // PER-TYRE TEMPERATURE IS NOT EXPOSED BY BYDAutoTyreDevice.
+            // Confirmed via runtime method dump on the test vehicle: the
+            // Tyre device exposes only getTyreTemperatureState() (a single
+            // system-wide alarm enum), with no per-area getter. The BYD
+            // reference's getTyreTemperature(TyrePosition) is a wrapper
+            // method on AutoCommander's ICarController, not in the public
+            // Tyre device stubs. The dashboard cluster reads tyre temps
+            // via a private OEM binder we don't have access to. Don't
+            // re-add probe loops here — they are guaranteed to fail.
+
+            logTyreAlertsIfChanged(pressures, pressureStates, airLeakStates, signalStates,
+                    sys instanceof Number ? ((Number) sys).intValue() : Integer.MIN_VALUE,
+                    temp instanceof Number ? ((Number) temp).intValue() : Integer.MIN_VALUE);
         } catch (Exception e) {
             logger.debug("collectTyre error: " + e.getMessage());
         }
     }
 
+    // Last-seen tyre alert state — change-only logging so a developing slow leak
+    // surfaces at info, but a healthy car doesn't spam the log every poll.
+    private volatile int[] lastTyrePressuresKpa = null;
+    private volatile int[] lastTyrePressureStates = null;
+    private volatile int[] lastTyreAirLeakStates = null;
+    private volatile int[] lastTyreSignalStates = null;
+    private volatile int lastTyreSystemState = Integer.MIN_VALUE;
+    private volatile int lastTyreTemperatureState = Integer.MIN_VALUE;
+
+    private void logTyreAlertsIfChanged(int[] pressuresKpa, int[] pressureStates,
+                                        int[] airLeakStates, int[] signalStates,
+                                        int sysState, int tempState) {
+        // Pressures fluctuate constantly (heat, drive cycle). Only treat as
+        // "changed" if any wheel moves more than 5 kPa; otherwise the log
+        // would fire every poll on a moving car.
+        boolean pressureChanged = lastTyrePressuresKpa == null;
+        if (!pressureChanged) {
+            for (int i = 0; i < pressuresKpa.length; i++) {
+                if (Math.abs(pressuresKpa[i] - lastTyrePressuresKpa[i]) > 5) {
+                    pressureChanged = true;
+                    break;
+                }
+            }
+        }
+        boolean alertChanged =
+                !java.util.Arrays.equals(pressureStates, lastTyrePressureStates)
+                || !java.util.Arrays.equals(airLeakStates, lastTyreAirLeakStates)
+                || !java.util.Arrays.equals(signalStates, lastTyreSignalStates)
+                || sysState != lastTyreSystemState
+                || tempState != lastTyreTemperatureState;
+        if (!pressureChanged && !alertChanged) return;
+        lastTyrePressuresKpa = pressuresKpa.clone();
+        lastTyrePressureStates = pressureStates.clone();
+        lastTyreAirLeakStates = airLeakStates.clone();
+        lastTyreSignalStates = signalStates.clone();
+        lastTyreSystemState = sysState;
+        lastTyreTemperatureState = tempState;
+        // Per-wheel readout: kPa, alarm-state enum (0=NORMAL/1=UNDER/2=OVER),
+        // leak-state enum (0=Normal/1=Slow/2=Fast), signal-state enum (0=OK/1=Err)
+        StringBuilder sb = new StringBuilder("Tyre:");
+        String[] labels = {" FL", " FR", " RL", " RR"};
+        for (int i = 0; i < 4; i++) {
+            sb.append(labels[i]).append("=").append(pressuresKpa[i]).append("kPa");
+            sb.append("/alarm=").append(pressureStates[i]);
+            sb.append("/leak=").append(airLeakStates[i]);
+            sb.append("/sig=").append(signalStates[i]);
+        }
+        sb.append(" sys=").append(sysState == Integer.MIN_VALUE ? "n/a" : sysState);
+        sb.append(" temp=").append(tempState == Integer.MIN_VALUE ? "n/a" : tempState);
+        logger.info(sb.toString());
+    }
+
     private void collectDoorLock(BydVehicleData.Builder b) {
-        if (doorLockDevice == null) return;
-        try {
-            // SDK area constants per AbsBYDAutoDoorLockListener:
-            //   1=LEFT_FRONT, 2=LEFT_REAR, 3=RIGHT_FRONT, 4=RIGHT_REAR, 5=BACK(trunk)
-            //
-            // Snapshot layout: [0]=LF, [1]=RF, [2]=LR, [3]=RR, [4]=trunk,
-            //                  [5]=unused (no hood from DoorLock HAL), [6]=overall(derived)
-            //
-            // SDK uses INVALID=0, UNLOCK=1, LOCK=2. The HTTP API contract has
-            // historically published the inverted form (1=locked, 2=unlocked).
-            // We keep that contract here to avoid breaking existing consumers
-            // (UI / vehicle-control.html / mobile clients). Anything that wants
-            // raw SDK semantics should consume the typed listener directly via
-            // addDoorLockListener() — which receives unmodified SDK area+state.
+        // The BYDAutoDoorLockDevice service does not expose lock state to
+        // user-UID processes on most BYD firmwares — every getDoorLockStatus(area)
+        // call returns INVALID(0) and onDoorLockStatusChanged never fires.
+        // Field testing confirmed this on Sealion 6 / Atto 3 / others.
+        //
+        // Lock state is sourced exclusively from the BYD cloud REST/MQTT path
+        // via BydCloudDataProvider. The vehicle-control page calls the cloud
+        // API directly on load; the lock-gate uses CloudLockStateListener.
+        //
+        // We still publish a doorLockStatus[] array on the snapshot for
+        // compatibility with downstream consumers, but with all-UNAVAILABLE
+        // values — the cloud-lock fields on the JSON response carry the
+        // authoritative state.
+        if (b.doorLockStatus == null) {
             int[] locks = new int[7];
-
-            int lf = readAreaApi(1);
-            int rf = readAreaApi(3);
-            int lr = readAreaApi(2);
-            int rr = readAreaApi(4);
-            int trunk = readAreaApi(5);
-
-            locks[0] = lf;
-            locks[1] = rf;
-            locks[2] = lr;
-            locks[3] = rr;
-            locks[4] = trunk;
-            locks[5] = -1;
-
-            // Overall in API contract: all 4 LOCKED → 1, any UNLOCKED → 2, else -1.
-            boolean allLocked = true;
-            boolean anyUnlocked = false;
-            boolean anyValid = false;
-            for (int i = 0; i < 4; i++) {
-                if (locks[i] == 1) { anyValid = true; }
-                else if (locks[i] == 2) { anyUnlocked = true; anyValid = true; allLocked = false; }
-                else { allLocked = false; }
-            }
-            if (anyUnlocked) {
-                locks[6] = 2;
-            } else if (allLocked && anyValid) {
-                locks[6] = 1;
-            } else {
-                // Per-area reads all returned -1 — try the no-arg fallback that
-                // some older firmwares expose (single overall lock state).
-                Integer overall = readDoorLockOverallFallbackApi();
-                locks[6] = overall != null ? overall : -1;
-            }
-
+            for (int i = 0; i < 7; i++) locks[i] = -1;
             b.doorLockStatus(locks);
-        } catch (Exception e) {
-            logger.debug("collectDoorLock error: " + e.getMessage());
         }
-    }
-
-    /**
-     * Read a single area's lock state and convert to API contract semantics
-     * (1=locked, 2=unlocked, -1=unknown). Returns -1 on any failure.
-     */
-    private int readAreaApi(int area) {
-        Object v = BydDeviceHelper.callGetter(doorLockDevice, "getDoorLockStatus", area);
-        if (v instanceof Number) {
-            int sdk = ((Number) v).intValue();
-            return sdkToApi(sdk);
-        }
-        return -1;
-    }
-
-    /**
-     * Older-firmware fallback when per-area reads all return -1. Some early BYD
-     * HAL versions only expose getDoorLockState() (no-arg, single overall value).
-     * Returns API-contract value (1=locked, 2=unlocked) or null.
-     */
-    private Integer readDoorLockOverallFallbackApi() {
-        Object v = BydDeviceHelper.callGetter(doorLockDevice, "getDoorLockState");
-        if (v instanceof Number) {
-            int api = sdkToApi(((Number) v).intValue());
-            return (api == 1 || api == 2) ? api : null;
-        }
-        return null;
-    }
-
-    /** SDK → API contract: SDK_LOCK(2) → 1, SDK_UNLOCK(1) → 2, else -1. */
-    private static int sdkToApi(int sdk) {
-        if (sdk == 2) return 1;
-        if (sdk == 1) return 2;
-        return -1;
     }
 
     private void collectSensor(BydVehicleData.Builder b) {
@@ -1685,7 +1761,7 @@ public class BydDataCollector {
     }
 
     /**
-     * Extended instrument data: cabin temp, tyre temps, trip data, consumption.
+     * Extended instrument data: cabin temp, trip data, consumption.
      * Called from collectAll() (ABRP/MQTT/trips consume these).
      */
     private void collectInstrumentExtended(BydVehicleData.Builder b) {
@@ -1702,36 +1778,15 @@ public class BydDataCollector {
             logger.debug("collectInstrumentExtended insideTemp error: " + e.getMessage());
         }
 
-        // Tyre temperatures from instrument device
-        try {
-            if (instrumentDevice != null) {
-                int[] tyreTemps = new int[4];
-                boolean anyValid = false;
-                int[] featureIds = {
-                    BydFeatureIds.INSTRUMENT_LF_TYRE_TEMPERATURE,
-                    BydFeatureIds.INSTRUMENT_RF_TYRE_TEMPERATURE,
-                    BydFeatureIds.INSTRUMENT_LB_TYRE_TEMPERATURE,
-                    BydFeatureIds.INSTRUMENT_RB_TYRE_TEMPERATURE
-                };
-                for (int i = 0; i < 4; i++) {
-                    Object val = BydDeviceHelper.callGet(instrumentDevice, featureIds[i], Integer.class);
-                    if (val != null) {
-                        int raw = BydDeviceHelper.getIntValue(val);
-                        if (raw >= -40 && raw <= 150) {
-                            tyreTemps[i] = raw;
-                            anyValid = true;
-                        } else {
-                            tyreTemps[i] = BydVehicleData.UNAVAILABLE;
-                        }
-                    } else {
-                        tyreTemps[i] = BydVehicleData.UNAVAILABLE;
-                    }
-                }
-                if (anyValid) b.tyreTemperatures(tyreTemps);
-            }
-        } catch (Exception e) {
-            logger.debug("collectInstrumentExtended tyreTemps error: " + e.getMessage());
-        }
+        // Per-tyre temperature collection removed: confirmed not
+        // available via any public BYD SDK path. The Instrument-device
+        // feature IDs for LF/RF/LB/RB tyre temp return null on real
+        // PHEV firmware, the BYDAutoTyreDevice runtime method dump has
+        // no per-area temperature getter, and AutoCommander's own
+        // getTyreTemperature() falls back to a "not available in this
+        // SDK version" warning + null return. The dashboard cluster
+        // reads tyre temps via a private OEM binder that's not
+        // exposed to third-party apps.
 
         // Current trip mileage
         try {
@@ -1787,6 +1842,94 @@ public class BydDataCollector {
         } catch (Exception e) {
             logger.debug("collectInstrumentExtended last50km error: " + e.getMessage());
         }
+    }
+
+    // ==================== KEY PROXIMITY ====================
+    // Discrete key/fob proximity & authentication state probed from SettingDevice and
+    // InstrumentDevice. Methods are read reflectively so missing ones (model variation)
+    // don't break collection. Each value is the raw int from the SDK; UNAVAILABLE means
+    // the method returned a sentinel (BMS unavailable / invalid) or wasn't present.
+    //
+    // Logged on every state transition and at most once per 5 minutes regardless,
+    // so the log captures fob behaviour during parked / charging / approach windows.
+
+    private volatile int lastKeyStartState = Integer.MIN_VALUE;
+    private volatile int lastKeyMissingInd = Integer.MIN_VALUE;
+    private volatile int lastKeyBtLowPowerMode = Integer.MIN_VALUE;
+    private volatile int lastKeyPowerLowInd = Integer.MIN_VALUE;
+    private volatile int lastKeyDetectionReminder = Integer.MIN_VALUE;
+    private volatile int lastSmartKeyWarnState = Integer.MIN_VALUE;
+    private volatile long lastKeyProbeLogMs = 0;
+
+    private void collectKeyProximity(BydVehicleData.Builder b) {
+        int startState = readKeyInt(settingDevice, "getStartKeyState");
+        int missingInd = readKeyInt(settingDevice, "getMissKeyInd");
+        int btLowPower = readKeyInt(settingDevice, "getIKEYBTLowPowerMode");
+        int powerLow = readKeyInt(settingDevice, "getKeyPowerLowInd");
+        int detectionRem = readKeyInt(instrumentDevice, "getKeyDetectionReminder");
+        int warnState = readKeyInt(instrumentDevice, "getSmartKeySysWarnLightState");
+
+        if (startState != BydVehicleData.UNAVAILABLE) b.keyStartState(startState);
+        if (missingInd != BydVehicleData.UNAVAILABLE) b.keyMissingInd(missingInd);
+        if (btLowPower != BydVehicleData.UNAVAILABLE) b.keyBtLowPowerMode(btLowPower);
+        if (powerLow != BydVehicleData.UNAVAILABLE) b.keyPowerLowInd(powerLow);
+        if (detectionRem != BydVehicleData.UNAVAILABLE) b.keyDetectionReminder(detectionRem);
+        if (warnState != BydVehicleData.UNAVAILABLE) b.smartKeyWarnState(warnState);
+
+        boolean changed =
+            startState != lastKeyStartState
+            || missingInd != lastKeyMissingInd
+            || btLowPower != lastKeyBtLowPowerMode
+            || powerLow != lastKeyPowerLowInd
+            || detectionRem != lastKeyDetectionReminder
+            || warnState != lastSmartKeyWarnState;
+
+        long now = System.currentTimeMillis();
+        boolean heartbeat = now - lastKeyProbeLogMs > 300_000;
+
+        if (changed || heartbeat) {
+            lastKeyStartState = startState;
+            lastKeyMissingInd = missingInd;
+            lastKeyBtLowPowerMode = btLowPower;
+            lastKeyPowerLowInd = powerLow;
+            lastKeyDetectionReminder = detectionRem;
+            lastSmartKeyWarnState = warnState;
+            lastKeyProbeLogMs = now;
+            logger.info("KeyProbe: startState=" + fmtKeyVal(startState)
+                + " missingInd=" + fmtKeyVal(missingInd)
+                + " btLowPower=" + fmtKeyVal(btLowPower)
+                + " powerLow=" + fmtKeyVal(powerLow)
+                + " detectionReminder=" + fmtKeyVal(detectionRem)
+                + " smartKeyWarn=" + fmtKeyVal(warnState)
+                + " accIsOn=" + accIsOn
+                + (changed ? " [CHANGE]" : " [hb]"));
+        }
+    }
+
+    /**
+     * Reflective single-int getter that filters BYD sentinel values
+     * (BMS_UNAVAILABLE=65535, INVALID_VALUE=-10011, INVALID_VALUE_2=-10013).
+     * Returns BydVehicleData.UNAVAILABLE if the method is missing, the device is
+     * null, or the value is a known sentinel.
+     */
+    private static int readKeyInt(Object device, String methodName) {
+        if (device == null) return BydVehicleData.UNAVAILABLE;
+        try {
+            java.lang.reflect.Method m = device.getClass().getMethod(methodName);
+            Object result = m.invoke(device);
+            if (!(result instanceof Number)) return BydVehicleData.UNAVAILABLE;
+            int v = ((Number) result).intValue();
+            if (v == 65535 || v == -10011 || v == -10013) return BydVehicleData.UNAVAILABLE;
+            return v;
+        } catch (NoSuchMethodException e) {
+            return BydVehicleData.UNAVAILABLE;
+        } catch (Exception e) {
+            return BydVehicleData.UNAVAILABLE;
+        }
+    }
+
+    private static String fmtKeyVal(int v) {
+        return v == BydVehicleData.UNAVAILABLE ? "n/a" : Integer.toString(v);
     }
 
     /**
@@ -1897,25 +2040,57 @@ public class BydDataCollector {
     private void collectEngineExtended(BydVehicleData.Builder b) {
         if (engineDevice == null) return;
 
-        // Engine coolant level (0=normal, 1=low)
+        // Engine coolant level. BYD SDK constants: 1=NORMAL, 2=LOW.
+        // Some firmwares return 0 when the value is unavailable.
+        Integer coolantRaw = null;
         try {
             Object coolant = BydDeviceHelper.callGetter(engineDevice, "getEngineCoolantLevel");
             if (coolant instanceof Number) {
-                b.engineCoolantLevel(((Number) coolant).intValue());
+                coolantRaw = ((Number) coolant).intValue();
+                b.engineCoolantLevel(coolantRaw);
             }
         } catch (Exception e) {
             logger.debug("collectEngineExtended coolant error: " + e.getMessage());
         }
 
-        // Oil level (0-254)
+        // Oil level from Engine device. SDK range 0-254 (dipstick scale).
+        // 0 may be a "no value" sentinel rather than empty tank — needs
+        // verification against the cluster's own oil-level UI.
+        Integer engineOilRaw = null;
         try {
             Object oil = BydDeviceHelper.callGetter(engineDevice, "getOilLevel");
             if (oil instanceof Number) {
-                b.oilLevel(((Number) oil).intValue());
+                engineOilRaw = ((Number) oil).intValue();
+                b.oilLevel(engineOilRaw);
             }
         } catch (Exception e) {
             logger.debug("collectEngineExtended oilLevel error: " + e.getMessage());
         }
+
+        // Parallel reading from the Setting device (different code path).
+        // Setting.getEngineOilLevel exists on most BYD firmwares — pulling it
+        // alongside the Engine device version lets us cross-check which one
+        // is actually populated on this car. Logged for diagnostics only;
+        // not surfaced on the snapshot until we know which is canonical.
+        Integer settingOilRaw = null;
+        try {
+            if (settingDevice != null) {
+                Object oil = BydDeviceHelper.callGetter(settingDevice, "getEngineOilLevel");
+                if (oil instanceof Number) settingOilRaw = ((Number) oil).intValue();
+            }
+        } catch (Exception ignored) {}
+
+        // "Low oil indicator" lamp from Setting device — when this is set, the
+        // dashboard is already showing the warning. Useful as a sanity check.
+        Integer lowOilIndRaw = null;
+        try {
+            if (settingDevice != null) {
+                Object ind = BydDeviceHelper.callGetter(settingDevice, "getLowOilInd");
+                if (ind instanceof Number) lowOilIndRaw = ((Number) ind).intValue();
+            }
+        } catch (Exception ignored) {}
+
+        logEngineFluidsIfChanged(coolantRaw, engineOilRaw, settingOilRaw, lowOilIndRaw);
 
         // Engine code (e.g. "BYD473QF")
         try {
@@ -1929,6 +2104,44 @@ public class BydDataCollector {
         } catch (Exception e) {
             logger.debug("collectEngineExtended engineCode error: " + e.getMessage());
         }
+    }
+
+    // Last-seen engine-fluid readings — change-only logging plus a 5-min
+    // heartbeat so a healthy car doesn't spam the log but transitions
+    // (e.g. coolant drops to LOW after a leak develops) surface immediately.
+    private volatile Integer lastCoolantRaw = null;
+    private volatile Integer lastEngineOilRaw = null;
+    private volatile Integer lastSettingOilRaw = null;
+    private volatile Integer lastLowOilIndRaw = null;
+    private volatile long lastEngineFluidsLogMs = 0;
+    private volatile boolean firstEngineFluidsLog = true;
+
+    private void logEngineFluidsIfChanged(Integer coolantRaw, Integer engineOilRaw,
+                                          Integer settingOilRaw, Integer lowOilIndRaw) {
+        boolean changed = firstEngineFluidsLog
+                || !java.util.Objects.equals(coolantRaw, lastCoolantRaw)
+                || !java.util.Objects.equals(engineOilRaw, lastEngineOilRaw)
+                || !java.util.Objects.equals(settingOilRaw, lastSettingOilRaw)
+                || !java.util.Objects.equals(lowOilIndRaw, lastLowOilIndRaw);
+        long now = System.currentTimeMillis();
+        boolean heartbeat = now - lastEngineFluidsLogMs > 300_000;
+        if (!changed && !heartbeat) return;
+        firstEngineFluidsLog = false;
+        lastCoolantRaw = coolantRaw;
+        lastEngineOilRaw = engineOilRaw;
+        lastSettingOilRaw = settingOilRaw;
+        lastLowOilIndRaw = lowOilIndRaw;
+        lastEngineFluidsLogMs = now;
+        logger.info("EngineFluids: coolant=" + fmtFluid(coolantRaw)
+                + " (1=NORMAL,2=LOW)"
+                + " engineOil=" + fmtFluid(engineOilRaw) + " (0-254)"
+                + " settingOil=" + fmtFluid(settingOilRaw)
+                + " lowOilInd=" + fmtFluid(lowOilIndRaw)
+                + (changed ? " [CHANGE]" : " [hb]"));
+    }
+
+    private static String fmtFluid(Integer v) {
+        return v == null ? "n/a" : v.toString();
     }
 
     // ==================== CLOUD DATA MERGE ====================
@@ -2172,19 +2385,9 @@ public class BydDataCollector {
             try {
                 int fuel = ((Number) args[0]).intValue();
                 if (fuel > 0 && fuel <= 100) {
-                    boolean isPhev = false;
-                    try {
-                        com.overdrive.app.abrp.SohEstimator sohEst =
-                            com.overdrive.app.monitor.SocHistoryDatabase.getInstance().getSohEstimator();
-                        if (sohEst != null && sohEst.getNominalCapacityKwh() > 0) {
-                            isPhev = sohEst.getNominalCapacityKwh() < 30.0;
-                        }
-                    } catch (Exception ignored) {}
-                    if (isPhev) {
-                        BydVehicleData current = snapshot.get();
-                        if (current != null) {
-                            snapshot.set(current.toBuilder().fuelPercent(fuel).build());
-                        }
+                    BydVehicleData current = snapshot.get();
+                    if (current != null && isPhev(current)) {
+                        snapshot.set(current.toBuilder().fuelPercent(fuel).build());
                     }
                 }
             } catch (Exception e) { /* ignore */ }
@@ -2282,6 +2485,10 @@ public class BydDataCollector {
      */
     // Throttle charging power log to once per 30 seconds
     private volatile long lastChargingPowerLogTime = 0;
+    private volatile long lastBatteryPowerLogMs = 0;
+    private volatile long lastEnergyTypeLogMs = 0;
+    private volatile long lastChargingModeLogMs = 0;
+    private volatile long lastChargingStateRawLogMs = 0;
 
     private void onChargingCallback(String method, Object[] args) {
         // Typed callbacks for real-time charging updates
@@ -2364,7 +2571,7 @@ public class BydDataCollector {
         // Handle the new-style BYDAutoEvent callbacks
         if ("onDataEventChanged".equals(method) && args != null && args.length >= 2) {
             // NOTE: Do NOT blindly interpret all instrument events as charging power.
-            // The instrument device fires events for trip odometer, tyre temps, nav data,
+            // The instrument device fires events for trip odometer, nav data,
             // and dozens of other metrics. Only the typed onExternalChargingPowerChanged
             // callback (below) reliably delivers charging power.
             // Previously, events like INSTRUMENT_2IN1_CURRENT_JOURNEY_DRIVE_MILEAGE
@@ -2912,53 +3119,100 @@ public class BydDataCollector {
         return multimediaDevice;
     }
 
-    /** Get exterior speaker state: 1=enabled, 0=disabled, null=unavailable. */
+    /** Get exterior speaker state: 1=enabled, 0=disabled, null=unavailable or unsupported. */
     public Integer getExteriorSpeakerState() {
         if (multimediaDevice == null) return null;
         try {
-            Object result = BydDeviceHelper.callGetter(multimediaDevice, "getExteriorSpeakerState");
+            Method m = multimediaDevice.getClass().getMethod("getExteriorSpeakerState");
+            Object result = m.invoke(multimediaDevice);
             return (result instanceof Integer) ? (Integer) result : null;
+        } catch (NoSuchMethodException e) {
+            return null;
         } catch (Exception e) {
             logger.debug("getExteriorSpeakerState failed: " + e.getMessage());
             return null;
         }
     }
 
-    /** Set exterior speaker state: 1=enable, 0=disable. */
+    /** Set exterior speaker state: 1=enable, 0=disable. Returns false if unsupported on this device. */
     public boolean setExteriorSpeakerState(int state) {
         if (multimediaDevice == null) return false;
         try {
-            // callGetter works for any single-int method (invokes and returns result)
-            BydDeviceHelper.callGetter(multimediaDevice, "setExteriorSpeakerState", state);
+            Method m = multimediaDevice.getClass().getMethod("setExteriorSpeakerState", int.class);
+            m.invoke(multimediaDevice, state);
             return true;
+        } catch (NoSuchMethodException e) {
+            logger.warn("setExteriorSpeakerState: method not present on multimedia device — exterior speaker routing unsupported on this OEM build");
+            return false;
         } catch (Exception e) {
-            logger.debug("setExteriorSpeakerState failed: " + e.getMessage());
+            logger.warn("setExteriorSpeakerState failed: " + e.getMessage());
             return false;
         }
     }
 
-    /** Get AVAS sound source type. */
+    /** Get AVAS sound source type. Returns null if unsupported. */
     public Integer getAVASSoundSource() {
         if (multimediaDevice == null) return null;
         try {
-            Object result = BydDeviceHelper.callGetter(multimediaDevice, "getAVASSoundSource");
+            Method m = multimediaDevice.getClass().getMethod("getAVASSoundSource");
+            Object result = m.invoke(multimediaDevice);
             return (result instanceof Integer) ? (Integer) result : null;
+        } catch (NoSuchMethodException e) {
+            return null;
         } catch (Exception e) {
             logger.debug("getAVASSoundSource failed: " + e.getMessage());
             return null;
         }
     }
 
-    /** Set AVAS sound source type. */
+    /** Set AVAS sound source type. Returns false if unsupported on this device. */
     public boolean setAVASSoundSource(int sourceType) {
         if (multimediaDevice == null) return false;
         try {
-            BydDeviceHelper.callGetter(multimediaDevice, "setAVASSoundSource", sourceType);
+            Method m = multimediaDevice.getClass().getMethod("setAVASSoundSource", int.class);
+            m.invoke(multimediaDevice, sourceType);
             return true;
+        } catch (NoSuchMethodException e) {
+            logger.warn("setAVASSoundSource: method not present on multimedia device — AVAS routing unsupported on this OEM build");
+            return false;
         } catch (Exception e) {
-            logger.debug("setAVASSoundSource failed: " + e.getMessage());
+            logger.warn("setAVASSoundSource failed: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Probe the multimedia device for any AVAS / exterior-speaker / outside-sound related methods.
+     * Returns a list of method signatures (name + param types) whose name matches the regex.
+     * Used by the audio test handler to discover what the OEM build actually exposes.
+     */
+    public java.util.List<String> probeMultimediaMethods(String regex) {
+        java.util.List<String> matches = new java.util.ArrayList<>();
+        if (multimediaDevice == null) return matches;
+        java.util.regex.Pattern p;
+        try {
+            p = java.util.regex.Pattern.compile(regex, java.util.regex.Pattern.CASE_INSENSITIVE);
+        } catch (Exception e) {
+            return matches;
+        }
+        Class<?> cls = multimediaDevice.getClass();
+        while (cls != null && cls != Object.class) {
+            for (Method m : cls.getDeclaredMethods()) {
+                if (!p.matcher(m.getName()).find()) continue;
+                StringBuilder sig = new StringBuilder();
+                sig.append(m.getReturnType().getSimpleName()).append(' ').append(m.getName()).append('(');
+                Class<?>[] params = m.getParameterTypes();
+                for (int i = 0; i < params.length; i++) {
+                    if (i > 0) sig.append(", ");
+                    sig.append(params[i].getSimpleName());
+                }
+                sig.append(')');
+                matches.add(sig.toString());
+            }
+            cls = cls.getSuperclass();
+        }
+        java.util.Collections.sort(matches);
+        return matches;
     }
 
     /** Check if multimedia device is available. */

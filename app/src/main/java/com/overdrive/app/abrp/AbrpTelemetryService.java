@@ -194,10 +194,22 @@ public class AbrpTelemetryService {
             }
             if (soc >= 0) payload.put("soc", soc);
 
-            // power — from collector's enginePowerKw, fallback to charging monitor
+            // power — primary source is the collector's batteryPowerKw (from
+            // BYDAutoBodyworkDevice.getBatteryPowerHEV / 10), which uses the
+            // ABRP sign convention directly: positive = discharge, negative =
+            // charge. Falls back to enginePowerKw, then to charge-flow inferred
+            // from externalChargingPowerKw / chargingPowerKw.
             try {
                 boolean powerSet = false;
-                if (vd != null && !Double.isNaN(vd.enginePowerKw) && Math.abs(vd.enginePowerKw) > 0.1 && Math.abs(vd.enginePowerKw) <= 300) {
+                if (vd != null && !Double.isNaN(vd.batteryPowerKw)
+                        && Math.abs(vd.batteryPowerKw) <= 500) {
+                    payload.put("power", vd.batteryPowerKw);
+                    powerSet = true;
+                }
+                if (!powerSet
+                        && vd != null && !Double.isNaN(vd.enginePowerKw)
+                        && Math.abs(vd.enginePowerKw) > 0.1
+                        && Math.abs(vd.enginePowerKw) <= 300) {
                     payload.put("power", vd.enginePowerKw);
                     powerSet = true;
                 }
@@ -262,24 +274,35 @@ public class AbrpTelemetryService {
                 payload.put("lon", gpsMonitor.getLongitude());
             }
 
-            // is_charging
+            // is_charging — combines several sources, in priority order:
+            //   1. BMS-reported charging state (CHARGING enum)
+            //   2. Negative batteryPowerKw — direct evidence of energy entering
+            //      the pack. The most authoritative single signal we have:
+            //      regen during driving is included, but ABRP wants regen
+            //      classified as discharge anyway, so we additionally gate on
+            //      "parked OR power magnitude > 1 kW" to avoid mis-flagging
+            //      brief driving regen as a charging session.
+            //   3. Charging-power fields > 0.15 (legacy fallback for PHEVs
+            //      where neither BMS nor batteryPowerKw is reliable).
             ChargingStateData chargingState = vehicleDataMonitor.getChargingState();
-            boolean isCharging = chargingState != null && chargingState.status == ChargingStateData.ChargingStatus.CHARGING;
-            // Fallback: detect AC charging even if BMS state is stale (reports READY/IDLE)
-            // but the gun is connected (state 2=AC, 3=DC) and power is flowing.
-            // Also detect charging purely from power flow — on some PHEVs the gun state
-            // never transitions to 2/3 during AC charging, but power IS reported.
+            boolean isCharging = chargingState != null
+                    && chargingState.status == ChargingStateData.ChargingStatus.CHARGING;
             if (!isCharging && vd != null) {
-                boolean gunConnected = vd.chargingGunState == 2 || vd.chargingGunState == 3;
-                boolean powerFlowing = (!Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0.15)
-                        || (!Double.isNaN(vd.chargingPowerKw) && vd.chargingPowerKw > 0.15);
-                // Power flowing alone is sufficient evidence of charging — don't require gun state.
-                // On PHEVs, gun state may report 0/1 even while actively AC charging.
-                if (powerFlowing) {
+                boolean isParkedForChg = vd.gearMode == GearMonitor.GEAR_P;
+                // Negative battery flow + parked = unambiguous charging.
+                // Negative battery flow + driving with magnitude > 1 kW also
+                // counts as charging (V2L doesn't apply here, regen is brief).
+                if (!Double.isNaN(vd.batteryPowerKw)
+                        && vd.batteryPowerKw < -0.5
+                        && (isParkedForChg || Math.abs(vd.batteryPowerKw) > 1.0)) {
                     isCharging = true;
-                } else if (gunConnected) {
-                    // Gun connected but no power yet — BMS may be in pre-charge negotiation.
-                    // Don't mark as charging yet (avoids false positives during plug-in).
+                }
+                if (!isCharging) {
+                    boolean powerFlowing = (!Double.isNaN(vd.externalChargingPowerKw)
+                                    && vd.externalChargingPowerKw > 0.15)
+                            || (!Double.isNaN(vd.chargingPowerKw)
+                                    && vd.chargingPowerKw > 0.15);
+                    if (powerFlowing) isCharging = true;
                 }
             }
             payload.put("is_charging", isCharging ? 1 : 0);

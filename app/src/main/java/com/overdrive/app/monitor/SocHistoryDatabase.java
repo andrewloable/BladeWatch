@@ -62,6 +62,7 @@ public class SocHistoryDatabase {
     // Last recorded values for deduplication
     private long lastRecordTime = 0;
     private double lastRecordedSoc = -1;
+    private double lastRecordedKwh = -1;
     
     // SohEstimator reference (set externally)
     private volatile com.overdrive.app.abrp.SohEstimator sohEstimator;
@@ -452,14 +453,26 @@ public class SocHistoryDatabase {
             }
             
             long now = System.currentTimeMillis();
-            
+
             // Record at least once every 10 minutes regardless of SOC change
             // This ensures continuous data even when parked (5x the 2-min interval)
             long maxInterval = SAMPLE_INTERVAL_MS * 5; // 10 minutes
             boolean forceRecord = (now - lastRecordTime) >= maxInterval;
-            
-            // Skip only if SOC hasn't changed AND we recorded recently (within 10 min)
-            if (!forceRecord && lastRecordedSoc >= 0 && Math.abs(soc - lastRecordedSoc) < 0.5) {
+
+            // Always record on charging-state transitions so the chart's charging
+            // band and the charging_sessions table both see the start/end edges
+            // even when SOC hasn't moved 0.5% yet (typical for the first minutes
+            // of AC charging on a PHEV, and for any unplug while at 100%).
+            boolean stateTransition = (isCharging != wasCharging);
+
+            // BEV BMS reports remainKwh independently of SOC and can drift while
+            // SOC stays in the same percent bucket — record those updates too.
+            boolean kwhMoved = lastRecordedKwh >= 0 && remainingKwh > 0
+                && Math.abs(remainingKwh - lastRecordedKwh) >= 0.5;
+
+            // Skip only if nothing meaningful changed AND we recorded recently
+            if (!forceRecord && !stateTransition && !kwhMoved
+                    && lastRecordedSoc >= 0 && Math.abs(soc - lastRecordedSoc) < 0.5) {
                 return;
             }
             
@@ -504,7 +517,8 @@ public class SocHistoryDatabase {
             
             lastRecordTime = now;
             lastRecordedSoc = soc;
-            
+            if (remainingKwh > 0) lastRecordedKwh = remainingKwh;
+
             logger.debug("Recorded SOC: " + soc + "% (charging: " + isCharging + ")");
             
             // Track charging sessions
@@ -665,9 +679,9 @@ public class SocHistoryDatabase {
                 "SELECT MIN(timestamp) as t, " +
                 "  AVG(soc_percent) as soc, " +
                 "  MAX(is_charging) as charging, " +
-                "  AVG(charging_power_kw) as power, " +
+                "  AVG(CASE WHEN charging_power_kw > 0 THEN charging_power_kw END) as power, " +
                 "  AVG(range_km) as range, " +
-                "  AVG(remaining_kwh) as kwh, " +
+                "  AVG(CASE WHEN remaining_kwh > 0 THEN remaining_kwh END) as kwh, " +
                 "  AVG(CASE WHEN voltage_v > 0 THEN voltage_v END) as volt, " +
                 "  AVG(CASE WHEN hv_temp_avg > -999 THEN hv_temp_avg END) as temp, " +
                 "  AVG(CASE WHEN soh_percent > 0 THEN soh_percent END) as soh " +
@@ -688,9 +702,11 @@ public class SocHistoryDatabase {
                         row.put("t", rs.getLong("t"));
                         row.put("soc", Math.round(rs.getDouble("soc") * 10) / 10.0); // 1 decimal
                         row.put("charging", rs.getInt("charging") == 1);
-                        row.put("power", Math.round(rs.getDouble("power") * 100) / 100.0);
+                        double power = rs.getDouble("power");
+                        row.put("power", rs.wasNull() ? 0 : Math.round(power * 100) / 100.0);
                         row.put("range", (int) rs.getDouble("range"));
-                        row.put("kwh", Math.round(rs.getDouble("kwh") * 10) / 10.0);
+                        double kwh = rs.getDouble("kwh");
+                        if (!rs.wasNull()) row.put("kwh", Math.round(kwh * 10) / 10.0);
                         double volt = rs.getDouble("volt");
                         if (!rs.wasNull() && volt > 0) row.put("volt", Math.round(volt * 100) / 100.0);
                         double temp = rs.getDouble("temp");
@@ -838,7 +854,8 @@ public class SocHistoryDatabase {
                     chargingData.status == ChargingStateData.ChargingStatus.CHARGING);
                 livePoint.put("power", chargingData != null ? chargingData.chargingPowerKW : 0);
                 livePoint.put("range", rangeData != null ? rangeData.elecRangeKm : 0);
-                livePoint.put("kwh", monitor.getBatteryRemainPowerKwh());
+                double liveKwh = monitor.getBatteryRemainPowerKwh();
+                if (liveKwh > 0) livePoint.put("kwh", Math.round(liveKwh * 10) / 10.0);
                 
                 com.overdrive.app.abrp.SohEstimator sohEst = getSohEstimator();
                 if (sohEst != null && sohEst.hasEstimate()) {

@@ -23,6 +23,8 @@ public class BydVehicleData {
     public final double remainKwh;        // remaining energy
     public final double voltage12v;       // 12V battery volts
     public final int voltageLevelRaw;     // LOW/NORMAL/INVALID
+    public final double batteryPowerKw;   // instant battery flow from getBatteryPowerHEV (positive=discharge, negative=charge)
+    public final int energyType;          // bodywork getEnergyType() raw — drivetrain discriminator (BEV/PHEV/HEV)
 
     // ==================== THERMAL ====================
     public final double highCellTempC;    // highest cell temp (°C)
@@ -69,6 +71,7 @@ public class BydVehicleData {
     public final int chargingState;
     public final int chargingGunState;
     public final int chargerWorkState;
+    public final int chargingMode;        // SDK getChargingMode() raw (AC vs DC vs wireless — model-specific)
     public final double chargingPowerKw;
     public final double externalChargingPowerKw;
     public final double hvPackVoltage;    // HV battery pack voltage (V), from CAN event
@@ -77,7 +80,12 @@ public class BydVehicleData {
     public final int gearMode;
 
     // ==================== TYRES ====================
-    public final int[] tyrePressure;      // [FL, FR, RL, RR]
+    public final int[] tyrePressure;      // [FL, FR, RL, RR] in kPa (raw int from BYDAutoTyreDevice.getTyrePressureValue)
+    public final int[] tyrePressureState; // [FL, FR, RL, RR] — 0=NORMAL, 1=UNDERPRESSURE, 2=OVERPRESSURE
+    public final int[] tyreAirLeakState;  // [FL, FR, RL, RR] — 0=Normal, 1=Slow leak, 2=Fast leak
+    public final int[] tyreSignalState;   // [FL, FR, RL, RR] — 0=Signal OK, 1=Signal Error
+    public final int tyreSystemState;     // overall TPMS health (raw enum)
+    public final int tyreTemperatureState;// overall TPMS temperature warning (raw enum)
 
     // ==================== DOORS ====================
     public final int[] doorLockStatus;    // [1-7]
@@ -123,6 +131,16 @@ public class BydVehicleData {
     public final int keyBatteryLevel;         // 0=low, 1=normal
     public final int battery12vLevel;         // LOW/NORMAL/INVALID from bodywork
 
+    // ==================== KEY PROXIMITY ====================
+    // Discrete proximity / authentication signals from the BYD body controller.
+    // Semantics are model-specific; values are the raw int from the SDK.
+    public final int keyStartState;            // SettingDevice.getStartKeyState() — key recognized for start
+    public final int keyMissingInd;            // SettingDevice.getMissKeyInd() — "key missing" indicator
+    public final int keyBtLowPowerMode;        // SettingDevice.getIKEYBTLowPowerMode() — BLE-key low-power flag
+    public final int keyPowerLowInd;           // SettingDevice.getKeyPowerLowInd() — fob battery low
+    public final int keyDetectionReminder;    // InstrumentDevice.getKeyDetectionReminder()
+    public final int smartKeyWarnState;        // InstrumentDevice.getSmartKeySysWarnLightState()
+
     // ==================== EXTENDED THERMAL ====================
     public final double insideTempCelsius;    // Cabin temp from AC_TEMP_INSIDE
 
@@ -160,9 +178,6 @@ public class BydVehicleData {
     public final int wirelessChargingStatus;
     public final boolean driftModeEnabled;
 
-    // ==================== EXTENDED TYRE ====================
-    public final int[] tyreTemperatures;      // [FL, FR, RL, RR] in °C
-
     // ==================== EXTENDED SAFETY ====================
     public final int[] passengerDetection;    // OMS detection per seat
 
@@ -183,6 +198,8 @@ public class BydVehicleData {
         this.remainKwh = b.remainKwh;
         this.voltage12v = b.voltage12v;
         this.voltageLevelRaw = b.voltageLevelRaw;
+        this.batteryPowerKw = b.batteryPowerKw;
+        this.energyType = b.energyType;
         this.highCellTempC = b.highCellTempC;
         this.lowCellTempC = b.lowCellTempC;
         this.avgCellTempC = b.avgCellTempC;
@@ -213,11 +230,17 @@ public class BydVehicleData {
         this.chargingState = b.chargingState;
         this.chargingGunState = b.chargingGunState;
         this.chargerWorkState = b.chargerWorkState;
+        this.chargingMode = b.chargingMode;
         this.chargingPowerKw = b.chargingPowerKw;
         this.externalChargingPowerKw = b.externalChargingPowerKw;
         this.hvPackVoltage = b.hvPackVoltage;
         this.gearMode = b.gearMode;
         this.tyrePressure = b.tyrePressure;
+        this.tyrePressureState = b.tyrePressureState;
+        this.tyreAirLeakState = b.tyreAirLeakState;
+        this.tyreSignalState = b.tyreSignalState;
+        this.tyreSystemState = b.tyreSystemState;
+        this.tyreTemperatureState = b.tyreTemperatureState;
         this.doorLockStatus = b.doorLockStatus;
         this.windowOpenPercent = b.windowOpenPercent;
         this.leftTurnState = b.leftTurnState;
@@ -243,6 +266,12 @@ public class BydVehicleData {
         this.sohPercent = b.sohPercent;
         this.keyBatteryLevel = b.keyBatteryLevel;
         this.battery12vLevel = b.battery12vLevel;
+        this.keyStartState = b.keyStartState;
+        this.keyMissingInd = b.keyMissingInd;
+        this.keyBtLowPowerMode = b.keyBtLowPowerMode;
+        this.keyPowerLowInd = b.keyPowerLowInd;
+        this.keyDetectionReminder = b.keyDetectionReminder;
+        this.smartKeyWarnState = b.smartKeyWarnState;
         this.insideTempCelsius = b.insideTempCelsius;
         this.chargingRestTimeHours = b.chargingRestTimeHours;
         this.chargingRestTimeMinutes = b.chargingRestTimeMinutes;
@@ -268,7 +297,6 @@ public class BydVehicleData {
         this.sunshadePercent = b.sunshadePercent;
         this.wirelessChargingStatus = b.wirelessChargingStatus;
         this.driftModeEnabled = b.driftModeEnabled;
-        this.tyreTemperatures = b.tyreTemperatures;
         this.passengerDetection = b.passengerDetection;
         this.pm25Inside = b.pm25Inside;
         this.pm25Outside = b.pm25Outside;
@@ -312,6 +340,8 @@ public class BydVehicleData {
             putIfValid(batt, "remainKwh", remainKwh);
             putIfValid(batt, "voltage12v", voltage12v);
             if (voltageLevelRaw != UNAVAILABLE) batt.put("voltageLevelRaw", voltageLevelRaw);
+            putIfValid(batt, "batteryPowerKw", batteryPowerKw);
+            if (energyType != UNAVAILABLE) batt.put("energyType", energyType);
             j.put("battery", batt);
 
             // Thermal
@@ -376,6 +406,7 @@ public class BydVehicleData {
             if (chargingState != UNAVAILABLE) chg.put("state", chargingState);
             if (chargingGunState != UNAVAILABLE) chg.put("gunState", chargingGunState);
             if (chargerWorkState != UNAVAILABLE) chg.put("chargerState", chargerWorkState);
+            if (chargingMode != UNAVAILABLE) chg.put("mode", chargingMode);
             putIfValid(chg, "powerKw", chargingPowerKw);
             putIfValid(chg, "externalPowerKw", externalChargingPowerKw);
             j.put("charging", chg);
@@ -388,7 +419,25 @@ public class BydVehicleData {
                 JSONArray tp = new JSONArray();
                 for (int p : tyrePressure) tp.put(p);
                 j.put("tyrePressure", tp);
+                j.put("tyrePressureUnit", "kPa");
             }
+            if (tyrePressureState != null) {
+                JSONArray a = new JSONArray();
+                for (int v : tyrePressureState) a.put(v);
+                j.put("tyrePressureState", a);
+            }
+            if (tyreAirLeakState != null) {
+                JSONArray a = new JSONArray();
+                for (int v : tyreAirLeakState) a.put(v);
+                j.put("tyreAirLeakState", a);
+            }
+            if (tyreSignalState != null) {
+                JSONArray a = new JSONArray();
+                for (int v : tyreSignalState) a.put(v);
+                j.put("tyreSignalState", a);
+            }
+            if (tyreSystemState != UNAVAILABLE) j.put("tyreSystemState", tyreSystemState);
+            if (tyreTemperatureState != UNAVAILABLE) j.put("tyreTemperatureState", tyreTemperatureState);
 
             // Doors
             if (doorLockStatus != null) {
@@ -463,6 +512,16 @@ public class BydVehicleData {
             if (battery12vLevel != UNAVAILABLE) extBatt.put("battery12vLevel", battery12vLevel);
             if (extBatt.length() > 0) j.put("extendedBattery", extBatt);
 
+            // Key proximity
+            JSONObject keyJson = new JSONObject();
+            if (keyStartState != UNAVAILABLE) keyJson.put("startState", keyStartState);
+            if (keyMissingInd != UNAVAILABLE) keyJson.put("missingInd", keyMissingInd);
+            if (keyBtLowPowerMode != UNAVAILABLE) keyJson.put("btLowPowerMode", keyBtLowPowerMode);
+            if (keyPowerLowInd != UNAVAILABLE) keyJson.put("powerLowInd", keyPowerLowInd);
+            if (keyDetectionReminder != UNAVAILABLE) keyJson.put("detectionReminder", keyDetectionReminder);
+            if (smartKeyWarnState != UNAVAILABLE) keyJson.put("smartKeyWarnState", smartKeyWarnState);
+            if (keyJson.length() > 0) j.put("key", keyJson);
+
             // Extended Thermal (insideTempCelsius)
             // Note: insideTempCelsius is separate from the existing insideTempC in thermal
             JSONObject extTherm = new JSONObject();
@@ -513,15 +572,6 @@ public class BydVehicleData {
             if (driftModeEnabled) extBody.put("driftModeEnabled", true);
             if (extBody.length() > 0) j.put("extendedBodywork", extBody);
 
-            // Extended Tyre
-            if (tyreTemperatures != null) {
-                JSONObject extTyre = new JSONObject();
-                JSONArray tt = new JSONArray();
-                for (int t : tyreTemperatures) tt.put(t);
-                extTyre.put("tyreTemperatures", tt);
-                j.put("extendedTyre", extTyre);
-            }
-
             // Extended Safety
             if (passengerDetection != null) {
                 JSONObject extSafety = new JSONObject();
@@ -549,7 +599,8 @@ public class BydVehicleData {
         Builder b = new Builder();
         b.vin = vin; b.socPercent = socPercent; b.socHevPercent = socHevPercent;
         b.capacityAh = capacityAh; b.remainKwh = remainKwh; b.voltage12v = voltage12v;
-        b.voltageLevelRaw = voltageLevelRaw; b.highCellTempC = highCellTempC;
+        b.voltageLevelRaw = voltageLevelRaw; b.batteryPowerKw = batteryPowerKw;
+        b.energyType = energyType; b.highCellTempC = highCellTempC;
         b.lowCellTempC = lowCellTempC; b.avgCellTempC = avgCellTempC;
         b.waterTempC = waterTempC; b.outsideTempC = outsideTempC; b.insideTempC = insideTempC;
         b.bodyworkBattTempC = bodyworkBattTempC; b.highCellVoltage = highCellVoltage;
@@ -564,9 +615,14 @@ public class BydVehicleData {
         b.bodyworkRangeKm = bodyworkRangeKm; b.totalMileageKm = totalMileageKm;
         b.evMileageKm = evMileageKm; b.chargingState = chargingState;
         b.chargingGunState = chargingGunState; b.chargerWorkState = chargerWorkState;
+        b.chargingMode = chargingMode;
         b.chargingPowerKw = chargingPowerKw; b.externalChargingPowerKw = externalChargingPowerKw;
         b.hvPackVoltage = hvPackVoltage;
-        b.gearMode = gearMode; b.tyrePressure = tyrePressure; b.doorLockStatus = doorLockStatus;
+        b.gearMode = gearMode; b.tyrePressure = tyrePressure;
+        b.tyrePressureState = tyrePressureState; b.tyreAirLeakState = tyreAirLeakState;
+        b.tyreSignalState = tyreSignalState; b.tyreSystemState = tyreSystemState;
+        b.tyreTemperatureState = tyreTemperatureState;
+        b.doorLockStatus = doorLockStatus;
         b.windowOpenPercent = windowOpenPercent; b.leftTurnState = leftTurnState;
         b.rightTurnState = rightTurnState; b.lowBeam = lowBeam; b.highBeam = highBeam;
         b.rearFog = rearFog; b.frontFog = frontFog; b.hazard = hazard;
@@ -579,6 +635,9 @@ public class BydVehicleData {
         // Extended fields
         b.sohPercent = sohPercent; b.keyBatteryLevel = keyBatteryLevel;
         b.battery12vLevel = battery12vLevel; b.insideTempCelsius = insideTempCelsius;
+        b.keyStartState = keyStartState; b.keyMissingInd = keyMissingInd;
+        b.keyBtLowPowerMode = keyBtLowPowerMode; b.keyPowerLowInd = keyPowerLowInd;
+        b.keyDetectionReminder = keyDetectionReminder; b.smartKeyWarnState = smartKeyWarnState;
         b.chargingRestTimeHours = chargingRestTimeHours;
         b.chargingRestTimeMinutes = chargingRestTimeMinutes;
         b.chargingPercent = chargingPercent;
@@ -596,7 +655,7 @@ public class BydVehicleData {
         b.engineCode = engineCode; b.wiperState = wiperState;
         b.sunroofState = sunroofState; b.sunroofPosition = sunroofPosition;
         b.sunshadePercent = sunshadePercent; b.wirelessChargingStatus = wirelessChargingStatus;
-        b.driftModeEnabled = driftModeEnabled; b.tyreTemperatures = tyreTemperatures;
+        b.driftModeEnabled = driftModeEnabled;
         b.passengerDetection = passengerDetection;
         b.pm25Inside = pm25Inside; b.pm25Outside = pm25Outside;
         return b;
@@ -606,6 +665,8 @@ public class BydVehicleData {
         String vin;
         double socPercent = NaN, socHevPercent = NaN, capacityAh = NaN, remainKwh = NaN;
         double voltage12v = NaN; int voltageLevelRaw = UNAVAILABLE;
+        double batteryPowerKw = NaN;
+        int energyType = UNAVAILABLE;
         double highCellTempC = NaN, lowCellTempC = NaN, avgCellTempC = NaN;
         double waterTempC = NaN, outsideTempC = NaN, insideTempC = NaN, bodyworkBattTempC = NaN;
         double highCellVoltage = NaN, lowCellVoltage = NaN;
@@ -618,9 +679,12 @@ public class BydVehicleData {
         double fuelPercent = NaN;
         int totalMileageKm = UNAVAILABLE, evMileageKm = UNAVAILABLE;
         int chargingState = UNAVAILABLE, chargingGunState = UNAVAILABLE, chargerWorkState = UNAVAILABLE;
+        int chargingMode = UNAVAILABLE;
         double chargingPowerKw = NaN, externalChargingPowerKw = NaN, hvPackVoltage = NaN;
         int gearMode = UNAVAILABLE;
         int[] tyrePressure, doorLockStatus, windowOpenPercent, seatbeltStatus, radarDistances;
+        int[] tyrePressureState, tyreAirLeakState, tyreSignalState;
+        int tyreSystemState = UNAVAILABLE, tyreTemperatureState = UNAVAILABLE;
         int leftTurnState = UNAVAILABLE, rightTurnState = UNAVAILABLE;
         boolean lowBeam, highBeam, rearFog, frontFog, hazard; int dayTimeLight = UNAVAILABLE;
         int acStartState = UNAVAILABLE, acCycleMode = UNAVAILABLE, acWindMode = UNAVAILABLE, acFanLevel = UNAVAILABLE, tempUnit = UNAVAILABLE;
@@ -633,6 +697,12 @@ public class BydVehicleData {
         double sohPercent = NaN;
         int keyBatteryLevel = UNAVAILABLE;
         int battery12vLevel = UNAVAILABLE;
+        int keyStartState = UNAVAILABLE;
+        int keyMissingInd = UNAVAILABLE;
+        int keyBtLowPowerMode = UNAVAILABLE;
+        int keyPowerLowInd = UNAVAILABLE;
+        int keyDetectionReminder = UNAVAILABLE;
+        int smartKeyWarnState = UNAVAILABLE;
         double insideTempCelsius = NaN;
         int chargingRestTimeHours = UNAVAILABLE;
         int chargingRestTimeMinutes = UNAVAILABLE;
@@ -658,7 +728,6 @@ public class BydVehicleData {
         int sunshadePercent = UNAVAILABLE;
         int wirelessChargingStatus = UNAVAILABLE;
         boolean driftModeEnabled;
-        int[] tyreTemperatures;
         int[] passengerDetection;
         int pm25Inside = UNAVAILABLE;
         int pm25Outside = UNAVAILABLE;
@@ -670,6 +739,8 @@ public class BydVehicleData {
         public Builder remainKwh(double v) { remainKwh = v; return this; }
         public Builder voltage12v(double v) { voltage12v = v; return this; }
         public Builder voltageLevelRaw(int v) { voltageLevelRaw = v; return this; }
+        public Builder batteryPowerKw(double v) { batteryPowerKw = v; return this; }
+        public Builder energyType(int v) { energyType = v; return this; }
         public Builder highCellTempC(double v) { highCellTempC = v; return this; }
         public Builder lowCellTempC(double v) { lowCellTempC = v; return this; }
         public Builder avgCellTempC(double v) { avgCellTempC = v; return this; }
@@ -700,11 +771,17 @@ public class BydVehicleData {
         public Builder chargingState(int v) { chargingState = v; return this; }
         public Builder chargingGunState(int v) { chargingGunState = v; return this; }
         public Builder chargerWorkState(int v) { chargerWorkState = v; return this; }
+        public Builder chargingMode(int v) { chargingMode = v; return this; }
         public Builder chargingPowerKw(double v) { chargingPowerKw = v; return this; }
         public Builder externalChargingPowerKw(double v) { externalChargingPowerKw = v; return this; }
         public Builder hvPackVoltage(double v) { hvPackVoltage = v; return this; }
         public Builder gearMode(int v) { gearMode = v; return this; }
         public Builder tyrePressure(int[] v) { tyrePressure = v; return this; }
+        public Builder tyrePressureState(int[] v) { tyrePressureState = v; return this; }
+        public Builder tyreAirLeakState(int[] v) { tyreAirLeakState = v; return this; }
+        public Builder tyreSignalState(int[] v) { tyreSignalState = v; return this; }
+        public Builder tyreSystemState(int v) { tyreSystemState = v; return this; }
+        public Builder tyreTemperatureState(int v) { tyreTemperatureState = v; return this; }
         public Builder doorLockStatus(int[] v) { doorLockStatus = v; return this; }
         public Builder windowOpenPercent(int[] v) { windowOpenPercent = v; return this; }
         public Builder leftTurnState(int v) { leftTurnState = v; return this; }
@@ -733,6 +810,12 @@ public class BydVehicleData {
         public Builder sohPercent(double v) { sohPercent = v; return this; }
         public Builder keyBatteryLevel(int v) { keyBatteryLevel = v; return this; }
         public Builder battery12vLevel(int v) { battery12vLevel = v; return this; }
+        public Builder keyStartState(int v) { keyStartState = v; return this; }
+        public Builder keyMissingInd(int v) { keyMissingInd = v; return this; }
+        public Builder keyBtLowPowerMode(int v) { keyBtLowPowerMode = v; return this; }
+        public Builder keyPowerLowInd(int v) { keyPowerLowInd = v; return this; }
+        public Builder keyDetectionReminder(int v) { keyDetectionReminder = v; return this; }
+        public Builder smartKeyWarnState(int v) { smartKeyWarnState = v; return this; }
         public Builder insideTempCelsius(double v) { insideTempCelsius = v; return this; }
         public Builder chargingRestTimeHours(int v) { chargingRestTimeHours = v; return this; }
         public Builder chargingRestTimeMinutes(int v) { chargingRestTimeMinutes = v; return this; }
@@ -758,7 +841,6 @@ public class BydVehicleData {
         public Builder sunshadePercent(int v) { sunshadePercent = v; return this; }
         public Builder wirelessChargingStatus(int v) { wirelessChargingStatus = v; return this; }
         public Builder driftModeEnabled(boolean v) { driftModeEnabled = v; return this; }
-        public Builder tyreTemperatures(int[] v) { tyreTemperatures = v; return this; }
         public Builder passengerDetection(int[] v) { passengerDetection = v; return this; }
         public Builder pm25Inside(int v) { pm25Inside = v; return this; }
         public Builder pm25Outside(int v) { pm25Outside = v; return this; }

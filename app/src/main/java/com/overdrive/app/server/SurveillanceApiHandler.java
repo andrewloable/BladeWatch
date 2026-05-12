@@ -1085,11 +1085,13 @@ public class SurveillanceApiHandler {
             // Sort by name descending (newest first — filenames contain timestamp)
             java.util.Arrays.sort(events, (a, b) -> b.getName().compareTo(a.getName()));
             
-            // Try the most recent file (fall back to next if extraction fails)
+            // Try the most recent file (fall back to next if extraction fails).
+            // Use the FileDescriptor overload — setDataSource(String) NPEs on the
+            // headless daemon because ActivityThread.currentApplication() is null.
             for (int i = 0; i < Math.min(3, events.length); i++) {
                 android.media.MediaMetadataRetriever retriever = new android.media.MediaMetadataRetriever();
-                try {
-                    retriever.setDataSource(events[i].getAbsolutePath());
+                try (java.io.FileInputStream fis = new java.io.FileInputStream(events[i])) {
+                    retriever.setDataSource(fis.getFD());
                     android.graphics.Bitmap frame = retriever.getFrameAtTime(
                             1000000, android.media.MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
                     if (frame == null) {

@@ -155,7 +155,10 @@ public final class BydCloudDeterrent {
     }
 
     /**
-     * Lazily initialize the BYD cloud client.
+     * Get the BYD cloud client. Reuses BydCloudDataProvider's shared client
+     * to avoid racing with the running MQTT subscriber on login() — separate
+     * client instances invalidate each other's session tokens, which surfaces
+     * as code=1005 from /app/emqAuth/getEmqBrokerIp.
      */
     private BydCloudClient ensureClient() {
         if (client != null && client.isReady()) {
@@ -168,9 +171,19 @@ public final class BydCloudDeterrent {
         }
 
         try {
-            BydCloudClient c = new BydCloudClient(config);
+            BydCloudClient shared = BydCloudDataProvider.getInstance().getSharedClient();
+            if (shared != null) {
+                String vin = !config.vin.isEmpty() ? config.vin : shared.fetchFirstVin();
+                shared.verifyControlPassword(vin);
+                resolvedVin = vin;
+                client = shared;
+                return shared;
+            }
 
-            // Load Bangcle tables
+            // Fallback: BydCloudDataProvider hasn't been started yet (e.g. surveillance
+            // fired before subscriber init). Use a one-shot client. This is the only
+            // path that should ever spawn a new client outside the provider.
+            BydCloudClient c = new BydCloudClient(config);
             InputStream tablesStream = getTablesStream();
             if (tablesStream == null) {
                 logger.warn("Bangcle tables not available");
@@ -181,18 +194,13 @@ public final class BydCloudDeterrent {
             } finally {
                 try { tablesStream.close(); } catch (Exception ignored) {}
             }
-
-            // Login
             c.login();
-
-            // Verify control PIN
             String vin = config.vin;
             if (vin.isEmpty()) {
                 vin = c.fetchFirstVin();
             }
             c.verifyControlPassword(vin);
             resolvedVin = vin;
-
             client = c;
             return c;
         } catch (Exception e) {
