@@ -78,8 +78,7 @@ public final class BydDeviceHelper {
 
     /**
      * Call a method with one int parameter.
-     * Used for SDK methods like voiceCtlMoonRoof(int), voiceCtlSunshadePanel(int),
-     * setSeatHeatingState(int, int), setSeatVentilatingState(int, int).
+     * Used for SDK methods like voiceCtlMoonRoof(int), voiceCtlSunshadePanel(int).
      */
     public static Object callMethod(Object device, String methodName, int param1) {
         if (device == null) return null;
