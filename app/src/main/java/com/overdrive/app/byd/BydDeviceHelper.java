@@ -77,6 +77,25 @@ public final class BydDeviceHelper {
     }
 
     /**
+     * Call a method with one int parameter.
+     * Used for SDK methods like voiceCtlMoonRoof(int), voiceCtlSunshadePanel(int).
+     */
+    public static Object callMethod(Object device, String methodName, int param1) {
+        if (device == null) return null;
+        try {
+            Method m = device.getClass().getMethod(methodName, int.class);
+            return m.invoke(device, param1);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            logger.debug(methodName + "(" + param1 + ") threw: " +
+                    (cause != null ? cause.getClass().getSimpleName() + ": " + cause.getMessage() : "unknown"));
+        } catch (Exception e) {
+            logger.debug(methodName + "(" + param1 + ") failed: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
      * Call a method with two int parameters.
      * Used for SDK methods like setAcWindLevel(int, int), setAcWindMode(int, int),
      * setSeatHeatingState(int, int), setSeatVentilatingState(int, int).

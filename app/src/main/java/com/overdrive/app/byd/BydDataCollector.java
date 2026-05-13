@@ -2831,11 +2831,34 @@ public class BydDataCollector {
     }
 
     // --- Windows ---
+    public boolean setSunWindowCommand(int area, int command) {
+        try {
+            // area: 5=Sunroof, 6=Sunshade
+            if (area < 5 || area > 6) return false;
+            // incoming command: 1=open, 2=close, 3=stop, 4=half, (5=breath only for sunroof)
+            // Remap to these values to match windows (3 and 4 are swapped)
+            // SDK command: 1=open, 2=close, 3=half, 4=stop, (5=breath only for sunroof)
+            if (command == 3) {
+                command = 4;
+            } else if (command == 4) {
+                command = 3;
+            }
+            // SDK method: bodyworkDevice.voiceCtlMoonRoof(cmd) or bodyworkDevice.voiceCtlSunshadePanel(cmd)
+            String cmd = area == 5 ? "voiceCtlMoonRoof" : "voiceCtlSunshadePanel";
+            Object result = BydDeviceHelper.callMethod(bodyworkDevice, cmd, command);
+            return result instanceof Integer && ((Integer) result).intValue() == 0;
+        } catch (Exception e) {
+            logger.debug("Set " + (area == 5 ? "Sunroof" : "Sunshade") +  " failed: " + e.getMessage());
+            return false;
+        }
+    }
 
     public boolean setWindowCommand(int area, int command) {
         try {
-            // area: 1=LF, 2=RF, 3=LR, 4=RR
+            // area: 1=LF, 2=RF, 3=LR, 4=RR, 5=Sunroof, 6=Sunshade
             // command: 1=open, 2=close, 3=stop, 4=half, 5=breath
+            // Sunshade and Sunroof have different command for set
+            if (area >= 5 && area <= 6) return setSunWindowCommand(area, command);
             if (area < 1 || area > 4) return false;
             // SDK method: bodyworkDevice.setAllWindowState(lf, rf, lr, rr)
             // Only the target area gets the command, others get 0
@@ -2866,9 +2889,9 @@ public class BydDataCollector {
     // Per-area executor so a new target on one window cancels its prior
     // motion without affecting the others. Lazy-init.
     private final java.util.concurrent.ExecutorService[] windowExecutors =
-            new java.util.concurrent.ExecutorService[4];
+            new java.util.concurrent.ExecutorService[6];
     private final java.util.concurrent.Future<?>[] windowMotionTasks =
-            new java.util.concurrent.Future<?>[4];
+            new java.util.concurrent.Future<?>[6];
 
     private synchronized java.util.concurrent.ExecutorService getWindowExecutor(int areaIdx) {
         java.util.concurrent.ExecutorService ex = windowExecutors[areaIdx];
@@ -2903,12 +2926,13 @@ public class BydDataCollector {
      *         the window is already at the target.
      */
     public boolean moveWindowToPercent(int area, int targetPercent) {
-        if (area < 1 || area > 4) return false;
+        if (area < 1 || area > 6) return false;
         if (targetPercent < 0 || targetPercent > 100) return false;
         int areaIdx = area - 1;
 
         final int target = targetPercent;
-        final int tolerance = 5;          // ±5 % is the realistic floor (motor coast)
+        // Set the tolerance to 0 when fully open or closed requested to prevent windows being slightly open
+        final int tolerance = (targetPercent == 100 || targetPercent == 0) ? 0 : 5; // ±5 % is the realistic floor (motor coast)
         final long pollIntervalMs = 200;  // SDK getter is cheap; tight loop = clean stop
         final long maxRunMs = 12_000;     // window full-travel ≈ 4–6 s; cap at 12 s
         final long stallWindowMs = 1_200; // no progress for this long → stall / pinch
