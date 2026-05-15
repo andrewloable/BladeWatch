@@ -71,6 +71,12 @@ public class TripTelemetryRecorder {
     private double lastLon = 0;
     private boolean hasLastGps = false;
 
+    // GPS coverage tracking — how many samples landed valid lat/lon. Logged
+    // at trip end so the daemon log alone tells us why a trip's map is blank
+    // (no GPS during recording vs. file write failure vs. UI bug).
+    private long sampleCountTotal = 0;
+    private long sampleCountWithGps = 0;
+
     /**
      * Constructor takes TelemetryDataCollector as parameter (injected from TripAnalyticsManager).
      * May be null if TelemetryDataCollector hasn't been initialized yet (GPU init delay).
@@ -107,6 +113,8 @@ public class TripTelemetryRecorder {
         this.lastLat = 0;
         this.lastLon = 0;
         this.hasLastGps = false;
+        this.sampleCountTotal = 0;
+        this.sampleCountWithGps = 0;
 
         synchronized (bufferLock) {
             buffer.clear();
@@ -174,9 +182,15 @@ public class TripTelemetryRecorder {
         }
 
         String path = outputFile != null ? outputFile.getAbsolutePath() : null;
+        long fileBytes = (outputFile != null && outputFile.exists()) ? outputFile.length() : -1;
+        long gpsPct = sampleCountTotal == 0
+                ? 0
+                : Math.round(100.0 * sampleCountWithGps / sampleCountTotal);
         logger.info("Stopped recording trip " + currentTripId +
                 " (samples=" + speedSampleCount +
                 ", maxSpeed=" + maxSpeedKmh +
+                ", gps=" + sampleCountWithGps + "/" + sampleCountTotal + " (" + gpsPct + "%)" +
+                ", fileBytes=" + (fileBytes < 0 ? "missing" : Long.toString(fileBytes)) +
                 ", file=" + path + ")");
 
         return path;
@@ -282,8 +296,10 @@ public class TripTelemetryRecorder {
                     now, speedKmh, accelPedal, brakePedal,
                     brakePedalPressed, gearMode, lat, lon, altitude);
 
-            // Track GPS distance (haversine)
+            // Track GPS distance (haversine) and coverage stats.
+            sampleCountTotal++;
             if (lat != 0 && lon != 0) {
+                sampleCountWithGps++;
                 if (hasLastGps && lastLat != 0 && lastLon != 0) {
                     double dist = haversineKm(lastLat, lastLon, lat, lon);
                     // Filter out GPS jumps (>500m in 200ms is impossible at any speed)
@@ -404,6 +420,12 @@ public class TripTelemetryRecorder {
     /**
      * Write a list of 1Hz samples as a gzipped JSON-lines chunk appended to the output file.
      * Per-chunk approach: each flush creates a temp buffer, gzips it, and appends to the file.
+     *
+     * <p>Re-resolves the output directory against StorageManager.getTripsDir() on each
+     * flush. The directory pointer can flip mid-trip when the SD card unmounts/remounts
+     * (the watchdog rebinds tripsDir to internal storage and back). Without re-resolution,
+     * we'd keep appending to a path under a now-absent volume, every flush would IOException,
+     * and the trip would end with an empty file even though the recorder logs "ok".
      */
     private void writeGzippedChunk(List<TelemetrySample> samples) throws IOException {
         if (outputFile == null) return;
@@ -420,13 +442,62 @@ public class TripTelemetryRecorder {
             gzos.write(sb.toString().getBytes("UTF-8"));
         }
 
-        // Append gzipped bytes to the output file
+        // Re-resolve target file if its directory has gone away mid-trip.
+        // We migrate any partial bytes from the stale path to the live one so
+        // a chunk-by-chunk flush stays as one continuous file post-trip.
+        File target = resolveOutputFileForFlush();
+
+        // Append gzipped bytes to the (possibly relocated) output file.
         try (OutputStream fos = new BufferedOutputStream(
-                new FileOutputStream(outputFile, true))) {
+                new FileOutputStream(target, true))) {
             fos.write(baos.toByteArray());
         }
 
-        logger.info("Flushed " + samples.size() + " 1Hz samples to " + outputFile.getName() +
+        logger.info("Flushed " + samples.size() + " 1Hz samples to " + target.getName() +
                 " (" + baos.size() + " bytes gzipped)");
+    }
+
+    /**
+     * If the output file's parent directory has become unavailable (typical
+     * cause: SD card unmounted mid-trip), re-resolve against the live
+     * StorageManager.getTripsDir(). If the live dir differs, copy any bytes
+     * already written at the stale path to the new path before continuing.
+     *
+     * <p>Returns the file the caller should open. {@link #outputFile} is also
+     * updated to the new path so subsequent flushes (and stopRecording's path
+     * report) see the live location.
+     */
+    private File resolveOutputFileForFlush() {
+        if (outputFile == null) return outputFile;
+        File parent = outputFile.getParentFile();
+        if (parent != null && parent.exists() && parent.canWrite()) {
+            return outputFile;
+        }
+        File liveDir = StorageManager.getInstance().getTripsDir();
+        if (liveDir == null || liveDir.equals(parent)) {
+            return outputFile;
+        }
+        File newPath = new File(liveDir, outputFile.getName());
+        if (!newPath.equals(outputFile)) {
+            // Best-effort migration of any prior chunk bytes. If migration fails
+            // (e.g. stale file truly gone with the volume), we still proceed —
+            // the new flush will create a fresh file at the live path.
+            try {
+                if (outputFile.exists() && outputFile.length() > 0
+                        && (parent == null || parent.exists())) {
+                    java.nio.file.Files.copy(
+                            outputFile.toPath(),
+                            newPath.toPath(),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    logger.info("Trip telemetry migrated: " + outputFile.getAbsolutePath()
+                            + " -> " + newPath.getAbsolutePath());
+                }
+            } catch (Exception e) {
+                logger.warn("Trip telemetry migration failed: " + e.getMessage()
+                        + " — continuing at " + newPath.getAbsolutePath());
+            }
+            outputFile = newPath;
+        }
+        return outputFile;
     }
 }

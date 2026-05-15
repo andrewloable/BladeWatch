@@ -216,6 +216,7 @@ public class SurveillanceApiHandler {
             config.put("cameraLeft", cameras[3]);
             config.put("motionHeatmap", sentryConfig.isMotionHeatmapEnabled());
             config.put("filterDebugLog", sentryConfig.isFilterDebugLogEnabled());
+            config.put("telegramSendStartPing", sentryConfig.isTelegramSendStartPing());
             config.put("shadowFilter", sentryConfig.getShadowFilterMode());
             
             // ROI polygons and enabled flags
@@ -291,6 +292,7 @@ public class SurveillanceApiHandler {
             config.put("cameraRear", true);
             config.put("motionHeatmap", false);
             config.put("filterDebugLog", false);
+            config.put("telegramSendStartPing", false);
             config.put("shadowFilter", 2);
         }
         
@@ -594,6 +596,11 @@ public class SurveillanceApiHandler {
                 boolean val = configJson.optBoolean("filterDebugLog", false);
                 sentryConfig.setFilterDebugLogEnabled(val);
                 if (sentry != null) sentry.setFilterDebugEnabled(val);
+                configChanged = true;
+            }
+            if (configJson.has("telegramSendStartPing")) {
+                sentryConfig.setTelegramSendStartPing(
+                        configJson.optBoolean("telegramSendStartPing", false));
                 configChanged = true;
             }
             

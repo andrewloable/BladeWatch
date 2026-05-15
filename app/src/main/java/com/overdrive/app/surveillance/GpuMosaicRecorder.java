@@ -61,7 +61,14 @@ public class GpuMosaicRecorder {
     private HardwareEventRecorderGpu encoder;
     
     // State
-    private boolean recording = false;
+    // volatile + accessed under recordingLock for read-modify-write safety.
+    // The double-check around encoder.triggerEventRecording closes the racing
+    // start-paths (RecordingModeManager, deferred-listener thread, direct
+    // CameraDaemon.startPipeline calls) that previously could land two muxers
+    // on disk with timestamps milliseconds apart. The encoder side has its
+    // own startStopLock as defense in depth.
+    private volatile boolean recording = false;
+    private final Object recordingLock = new Object();
     private volatile boolean apaMode = false;  // APA mode: passthrough instead of mosaic split
     private volatile int cameraLayout = 0;  // 0=4-cam, 1=APA passthrough, 2=3-cam
     private long lastFrameTime = 0;
@@ -529,47 +536,51 @@ public class GpuMosaicRecorder {
      * @param outputPath Path for the output MP4 file
      */
     public void startRecording(String outputPath) {
-        if (recording) {
-            logger.warn( "Already recording");
-            return;
-        }
-        
-        // Start encoder recording (with pre-record buffer flush)
-        if (encoder != null && encoder.triggerEventRecording(outputPath, 5000)) {  // Default 5 sec post-record
-            recording = true;
-            frameCount = 0;
-            
-            // SOTA: Notify StorageManager that recording is active (for periodic cleanup)
-            try {
-                com.overdrive.app.storage.StorageManager.getInstance().setRecordingActive(true);
-            } catch (Exception e) {
-                logger.warn("Could not set recording active state: " + e.getMessage());
+        synchronized (recordingLock) {
+            if (recording) {
+                logger.warn("Already recording");
+                return;
             }
-            
-            logger.info("Recording started: " + outputPath + " (codec=" + 
-                (encoder.isHevcCodec() ? "H.265" : "H.264") + ")");
-        } else {
-            logger.error( "Failed to start encoder recording");
+
+            // Start encoder recording (with pre-record buffer flush)
+            if (encoder != null && encoder.triggerEventRecording(outputPath, 5000)) {  // Default 5 sec post-record
+                recording = true;
+                frameCount = 0;
+
+                // SOTA: Notify StorageManager that recording is active (for periodic cleanup)
+                try {
+                    com.overdrive.app.storage.StorageManager.getInstance().setRecordingActive(true);
+                } catch (Exception e) {
+                    logger.warn("Could not set recording active state: " + e.getMessage());
+                }
+
+                logger.info("Recording started: " + outputPath + " (codec=" +
+                    (encoder.isHevcCodec() ? "H.265" : "H.264") + ")");
+            } else {
+                logger.error("Failed to start encoder recording");
+            }
         }
     }
-    
+
     /**
      * Triggers event recording with pre-record buffer flush.
      * Alias for startRecording for API compatibility.
      */
     public void triggerEventRecording(String outputPath, long postRecordDurationMs) {
-        if (recording) {
-            logger.warn("Already recording");
-            return;
-        }
-        
-        // Start encoder recording (with pre-record buffer flush)
-        if (encoder != null && encoder.triggerEventRecording(outputPath, postRecordDurationMs)) {
-            recording = true;
-            frameCount = 0;
-            logger.info("Recording started: " + outputPath);
-        } else {
-            logger.error("Failed to start encoder recording");
+        synchronized (recordingLock) {
+            if (recording) {
+                logger.warn("Already recording");
+                return;
+            }
+
+            // Start encoder recording (with pre-record buffer flush)
+            if (encoder != null && encoder.triggerEventRecording(outputPath, postRecordDurationMs)) {
+                recording = true;
+                frameCount = 0;
+                logger.info("Recording started: " + outputPath);
+            } else {
+                logger.error("Failed to start encoder recording");
+            }
         }
     }
     
@@ -587,6 +598,32 @@ public class GpuMosaicRecorder {
      * @param prefix Filename prefix (e.g., "cam", "proximity", "event")
      */
     public void startRecording(java.io.File outputDir, String prefix) {
+        // Two-phase guard for the directory+prefix overload:
+        //
+        // Phase 1 (this check, intentionally unlocked): cheap volatile read.
+        //   If recording is already true, skip mkdirs/ensureSpace/timestamp
+        //   generation — work that's irrelevant once another caller has
+        //   started. This is a performance optimization, NOT the correctness
+        //   guarantee.
+        //
+        // Phase 2 (inside the inner startRecording(outputPath) call): the
+        //   recordingLock-protected re-check is the authoritative one. If two
+        //   callers both pass Phase 1, both will compute their own timestamps,
+        //   but only the first to acquire recordingLock will start the encoder
+        //   and create a file. The second caller is rejected at the inner
+        //   guard and discards its timestamp harmlessly — the wasted work is
+        //   bounded to a few mkdirs and a SimpleDateFormat call, which is
+        //   acceptable to keep this method lock-free during normal operation.
+        //
+        // The duplicate-files-on-disk symptom this whole structure prevents
+        // came from an earlier version where neither phase used a lock; the
+        // encoder's startStopLock alone was insufficient because the wrapper's
+        // recording flag had its own race window.
+        if (recording) {
+            logger.warn("Already recording — ignoring redundant start (dir=" +
+                (outputDir != null ? outputDir.getName() : "default") + ", prefix=" + prefix + ")");
+            return;
+        }
         // SOTA: Use StorageManager for recordings directory and auto-cleanup
         try {
             com.overdrive.app.storage.StorageManager storageManager =

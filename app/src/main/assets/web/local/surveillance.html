@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Surveillance - OverDrive</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="../shared/app-icon.webp">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00E5FF">
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -101,6 +106,13 @@
                         <path d="M4 5h16"/>
                     </svg>
                     <span>Trips</span>
+                </a>
+                <a href="notifications.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span>Notifications</span>
                 </a>
                 <a href="vehicle-control.html" class="nav-link">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -526,6 +538,20 @@
                             <label class="checkbox-item"><input type="checkbox" id="detectBike" onchange="SurvSettings.updateDetection()">Bike</label>
                         </div>
                         <div class="setting-hint">Select which objects YOLO AI should identify. Motion detection triggers regardless — AI classifies what was detected.</div>
+
+                        <!-- Telegram integration (advanced) -->
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name">Two-stage Telegram alerts</div>
+                                <div class="setting-desc">Send a quick "recording started" message, then the photo when it ends. Off by default — the photo alone is usually enough.</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="v2TelegramSendStartPing" onchange="SurvSettings.updateTelegramStartPing()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
 
                         <!-- Developer Section (collapsible) -->
                         <div style="border-top:1px solid var(--border-subtle);padding-top:12px;">
@@ -1082,7 +1108,9 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="../shared/auth.js"></script>
+    <script src="../shared/pwa-init.js"></script>
     <script src="../shared/core.js"></script>
+    <script src="../shared/update-flow.js"></script>
     <script src="../shared/pip.js"></script>
     <script src="../shared/surveillance.js"></script>
     <script src="../shared/safe-locations.js"></script>

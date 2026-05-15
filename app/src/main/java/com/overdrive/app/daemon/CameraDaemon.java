@@ -346,6 +346,19 @@ public class CameraDaemon {
         httpServer = new HttpServer(HTTP_PORT);
         ipcServer = new SurveillanceIpcServer(19877);
         accMonitor = new AccMonitor();
+
+        // Notifications subsystem — registry, push subscriptions, sinks.
+        // Lives in this process because HttpServer (where the API routes bind)
+        // runs here, and every v1 emit source (surveillance, proximity, tyre)
+        // lives here too. Init on a background thread because reading APK
+        // assets can take a moment and we don't want to delay HTTP startup.
+        new Thread(() -> {
+            try {
+                initNotifications();
+            } catch (Exception e) {
+                log("Notifications init failed: " + e.getMessage());
+            }
+        }, "NotificationsInit").start();
         
         // SOTA: Initialize unified config manager (handles migration from legacy configs)
         com.overdrive.app.config.UnifiedConfigManager.init();
@@ -370,12 +383,12 @@ public class CameraDaemon {
         
         // Initialize surveillance module (will use loaded settings)
         initSurveillance();
-        
+
         // Apply persisted settings to GPU pipeline (for runtime changes)
         // Note: Codec/bitrate are already applied during init, but this ensures
         // the config object is in sync and handles any settings that need runtime application
         applyPersistedSettings();
-        
+
         // If ACC went OFF before pipeline was ready, apply it now
         // RACE CONDITION FIX: Also verify ACC is still OFF before applying.
         // If ACC turned ON during pipeline init, the pending state is stale.
@@ -1165,7 +1178,7 @@ public class CameraDaemon {
     }
     
     // ==================== SURVEILLANCE CONTROL ====================
-    
+
     /**
      * Initialize surveillance with hardware encoding.
      * CPU usage: ~20% during recording
@@ -2846,7 +2859,91 @@ public class CameraDaemon {
     public static void log(String message) {
         logger.info(message);
     }
-    
+
+    // ==================== NOTIFICATIONS ====================
+
+    /**
+     * Initialize the Web Push notification subsystem. Loads the category
+     * registry from APK assets, opens persistent stores under
+     * {@code /data/local/tmp/.push/}, registers PushSink + LogSink with
+     * NotificationBus, and wires NotificationApiHandler so HTTP routes can
+     * resolve.
+     *
+     * <p>This method short-circuits and does NOTHING if the user hasn't
+     * reserved a zrok subdomain yet — push notifications require a stable
+     * HTTPS origin to install the PWA. Without zrok, we skip:
+     * <ul>
+     *   <li>Reading {@code notifications-categories.json} from assets</li>
+     *   <li>Generating / loading the VAPID keypair</li>
+     *   <li>Reading the subscription file</li>
+     *   <li>Registering sinks (so {@link com.overdrive.app.notifications.NotificationBus}
+     *       short-circuits all publishes — emit sites pay zero cost)</li>
+     * </ul>
+     * The user can re-trigger init by reserving a zrok URL and restarting
+     * the daemon.
+     */
+    private static void initNotifications() throws Exception {
+        // Cross-UID readable file — same one HttpServer.isPwaOrigin reads.
+        // PreferencesManager would NPE here because UID 2000 cannot read
+        // app-private SharedPreferences.
+        java.io.File zrokNameFile = new java.io.File("/data/local/tmp/.zrok/unique_name");
+        if (!zrokNameFile.exists() || zrokNameFile.length() == 0) {
+            log("Notifications skipped: no zrok unique_name reserved (PWA install requires stable HTTPS origin)");
+            return;
+        }
+
+        com.overdrive.app.notifications.CategoryRegistry registry = null;
+
+        // The registry JSON ships in the APK assets. Prefer the cached
+        // sharedAppContext if already populated; fall back to creating one
+        // (createAppContext() may block up to 10s on cold daemon start).
+        android.content.Context appContext = getAppContext();
+        if (appContext == null) {
+            try {
+                appContext = createAppContext();
+            } catch (Throwable ignored) {}
+        }
+        if (appContext != null) {
+            try {
+                registry = com.overdrive.app.notifications.CategoryRegistry.loadFromAssets(appContext);
+            } catch (Exception e) {
+                log("Failed to load notifications-categories.json: " + e.getMessage());
+            }
+        }
+        if (registry == null) {
+            log("Notification registry unavailable; subsystem will boot in degraded mode.");
+            return;
+        }
+
+        java.io.File pushDir = new java.io.File("/data/local/tmp/.push");
+        if (!pushDir.exists()) pushDir.mkdirs();
+
+        com.overdrive.app.notifications.push.VapidKeyStore keyStore =
+                new com.overdrive.app.notifications.push.VapidKeyStore(
+                        new java.io.File(pushDir, "vapid.json"));
+        // Touch the keystore so we generate / cache the keypair eagerly.
+        keyStore.publicKeyB64Url();
+
+        com.overdrive.app.notifications.push.SubscriptionStore subStore =
+                new com.overdrive.app.notifications.push.SubscriptionStore(
+                        new java.io.File(pushDir, "subscriptions.json"));
+        subStore.load();
+
+        com.overdrive.app.notifications.push.VapidSigner signer =
+                new com.overdrive.app.notifications.push.VapidSigner(keyStore, "");
+
+        com.overdrive.app.notifications.NotificationBus.get()
+                .subscribe(new com.overdrive.app.notifications.sinks.LogSink());
+        com.overdrive.app.notifications.NotificationBus.get()
+                .subscribe(new com.overdrive.app.notifications.sinks.PushSink(
+                        subStore, registry, keyStore, signer));
+
+        com.overdrive.app.server.NotificationApiHandler.init(registry, subStore, keyStore);
+
+        log("Notifications initialized: " + registry.all().size() + " categories, "
+                + subStore.size() + " subscriptions");
+    }
+
     // ==================== GPS MONITOR ====================
     
     /**

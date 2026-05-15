@@ -32,8 +32,19 @@ public class SocHistoryDatabase {
     // FILE_LOCK=SOCKET uses socket-based locking (more reliable than file locks on Android)
     // AUTO_SERVER=TRUE allows multiple processes to connect via TCP fallback
     private static final String DB_PATH = "/data/local/tmp/overdrive_soc_h2";
-    private static final String JDBC_URL = "jdbc:h2:file:" + DB_PATH + 
-        ";AUTO_SERVER=TRUE;FILE_LOCK=SOCKET;TRACE_LEVEL_FILE=0";
+    // DB_CLOSE_ON_EXIT=FALSE: we drive shutdown ourselves from CameraDaemon.shutdown().
+    // Without it, H2's JVM shutdown hook runs concurrently with our explicit
+    // stop() and our last in-flight 2-minute SOC tick, producing the
+    // "Database is already closed" + "Could not save properties …lock.db"
+    // pair that orphans the lock file across daemon restarts.
+    //
+    // AUTO_SERVER intentionally omitted — H2 throws
+    // "AUTO_SERVER=TRUE && DB_CLOSE_ON_EXIT=FALSE is not supported" if both
+    // are set. We're single-process anyway (only the camera daemon writes;
+    // HTTP reads happen in the same JVM via NotificationApiHandler). The
+    // FILE_LOCK=SOCKET is the actual cross-process safety net.
+    private static final String JDBC_URL = "jdbc:h2:file:" + DB_PATH +
+        ";FILE_LOCK=SOCKET;TRACE_LEVEL_FILE=0;DB_CLOSE_ON_EXIT=FALSE";
     
     // Table names
     private static final String TABLE_SOC = "soc_history";
@@ -283,22 +294,40 @@ public class SocHistoryDatabase {
     public void stop() {
         isRunning = false;
         if (scheduler != null) {
-            scheduler.shutdownNow();
+            scheduler.shutdown();
+            try {
+                // Give an in-flight tick a moment to finish so we don't close
+                // the connection out from under it. shutdownNow() interrupts
+                // the worker but doesn't wait — and the H2 write isn't
+                // interruptible, so the tick still hits the JDBC layer with
+                // a closed connection.
+                if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException ie) {
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
             scheduler = null;
         }
-        
-        // Close connection
+
         if (connection != null) {
             try {
                 connection.close();
             } catch (Exception ignored) {}
             connection = null;
         }
-        
+        isInitialized = false;
+
         logger.info("SOC history recording stopped");
     }
     
     private void reconnect() {
+        // After stop() flips isRunning=false the connection is intentionally
+        // closed. Re-opening here would re-acquire the lock file just before
+        // the JVM exits, leaving an orphaned .lock.db that blocks the next
+        // daemon start. Same defense in TripDatabase.reconnect.
+        if (!isRunning) return;
         try {
             if (connection == null || connection.isClosed()) {
                 connection = DriverManager.getConnection(JDBC_URL, "sa", "");
@@ -314,6 +343,10 @@ public class SocHistoryDatabase {
     private void recordCurrentSoc() {
         // Wrap entire method in try-catch to prevent scheduler death
         try {
+            // Bail out cleanly when stop() has already begun — otherwise we
+            // race connection.close() and trip H2's "already closed" path,
+            // which re-opens the DB on reconnect() and orphans the lock file.
+            if (!isRunning) return;
             if (!isInitialized || connection == null) {
                 logger.debug("SOC recording skipped: not initialized or no connection");
                 reconnect();

@@ -17,16 +17,43 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * HardwareEventRecorderGpu - MediaCodec encoder with Surface input for GPU pipeline.
- * 
+ *
  * This encoder receives frames directly from GPU via Surface, enabling
  * zero-copy recording. Configured for 2560x1920 @ 15 FPS with adaptive bitrate.
- * 
+ *
  * Key features:
  * - COLOR_FormatSurface input (GPU → Encoder)
  * - Sync frame request on event detection
  * - Adaptive bitrate (3-8 Mbps)
  * - File rotation and corruption protection
  * - Stream splitting (H.264 output → Disk + Network simultaneously)
+ *
+ * <h3>Lock ordering (read this before adding any new lock or call site)</h3>
+ * Three locks are used by this class plus its sibling {@code GpuMosaicRecorder}.
+ * Always acquire them in this order; releasing in reverse is fine but never
+ * acquire a higher-numbered lock while already holding a lower-numbered one
+ * in reverse:
+ * <ol>
+ *   <li><b>{@code GpuMosaicRecorder.recordingLock}</b> — outermost. Wraps the
+ *       wrapper-level {@code recording} flag and the inner call to
+ *       {@code triggerEventRecording}.</li>
+ *   <li><b>{@code startStopLock}</b> — encoder-level start/stop. Wraps
+ *       {@link #triggerEventRecording} and the public stop entry points
+ *       (so a start cannot interleave with a stop on a different thread).
+ *       The drainer/disk-writer threads do NOT take this lock.</li>
+ *   <li><b>{@code muxerLock}</b> — innermost. Serializes muxer field access
+ *       (writeSampleData, addTrack, start, stop, release, reassign).</li>
+ * </ol>
+ * Violating the order risks a deadlock if any path ever tries to acquire
+ * {@code startStopLock} while already holding {@code muxerLock}, or
+ * {@code recordingLock} while already holding {@code startStopLock}. Today
+ * no path does, and the lock-ordering invariant exists to keep it that way.
+ *
+ * <p>Background threads (drainer at {@link #drainerThread}, disk writer at
+ * {@link #diskWriterThread}, segment-rotator running on the drainer) only
+ * touch {@code muxerLock}. They observe state changes to the volatile
+ * {@code isWritingToFile} / {@code muxerStarted} flags written by the
+ * start/stop paths, and never try to acquire the higher-level locks.
  */
 public class HardwareEventRecorderGpu {
     private static final String TAG = "HWEncoderGpu";
@@ -64,9 +91,23 @@ public class HardwareEventRecorderGpu {
     private Surface inputSurface;
     
     // Muxer
-    private MediaMuxer muxer;
-    private int trackIndex = -1;
-    private boolean muxerStarted = false;
+    // SOTA: All muxer operations (writeSampleData, addTrack, start, stop, release,
+    // and reassignment of the `muxer` reference) MUST be performed while holding
+    // muxerLock. This makes muxer access fully serial across the drainer thread,
+    // disk writer thread, rotator (drainer), and the close caller. Without this
+    // lock, a concurrent writeSampleData against a stopping muxer corrupts the
+    // moov atom and leaves a sized-but-unplayable .mp4 on disk — exactly the
+    // failure mode that triggered this rewrite.
+    private final Object muxerLock = new Object();
+    private volatile MediaMuxer muxer;
+    private volatile int trackIndex = -1;
+    private volatile boolean muxerStarted = false;
+    // Set true by the disk writer when it gives up after repeated I/O failures
+    // (typically SD card unmount). The current segment's mdat is broken at that
+    // point — the close/rotate paths consult this flag and refuse to rename
+    // tempFile -> outputPath, so the user never sees a half-written .mp4 with the
+    // final extension. Reset whenever a new disk writer instance starts.
+    private volatile boolean writerAbortedCorrupt = false;
     private MediaFormat savedFormat = null;  // Save format for reuse
     
     // Circular buffer for pre-record
@@ -74,7 +115,14 @@ public class HardwareEventRecorderGpu {
     private static H264CircularBuffer sharedPreRecordBuffer;
     private static final Object bufferLock = new Object();
     private H264CircularBuffer preRecordBuffer;  // Reference to shared buffer
-    private boolean isWritingToFile = false;
+    // Volatile + accessed only under startStopLock for read-modify-write safety.
+    // Concurrent triggerEventRecording calls (e.g., RecordingModeManager + the
+    // deferred-format listener thread firing in the same window) used to both
+    // pass the `if (isWritingToFile)` check and build two muxers, leaving two
+    // .mp4.tmp files on disk with timestamps milliseconds apart. The lock
+    // closes that window.
+    private volatile boolean isWritingToFile = false;
+    private final Object startStopLock = new Object();
     private long postRecordStopTime = 0;
     
     // SOTA: Async pre-record flush queue (eliminates blocking on motion trigger)
@@ -114,6 +162,11 @@ public class HardwareEventRecorderGpu {
     
     // SOTA: Flag to disable pre-record buffer for stream-only encoders
     private boolean usePreRecordBuffer = true;
+
+    // FIX (Bug A): Initial pre-record buffer duration. Settable BEFORE init() so the
+    // first allocation honours the user's saved value instead of the hardcoded 5s.
+    // setPreRecordDuration() can still resize after init.
+    private int preRecordDurationSeconds = 5;
     
     // Pre-allocated BufferInfo — reused every drain cycle to avoid per-frame allocation
     private final MediaCodec.BufferInfo reusableBufferInfo = new MediaCodec.BufferInfo();
@@ -410,12 +463,19 @@ public class HardwareEventRecorderGpu {
         // Only allocate for encoders that use pre-record (not stream-only encoders)
         if (usePreRecordBuffer) {
             synchronized (bufferLock) {
+                int desiredSec = Math.max(1, preRecordDurationSeconds);
                 if (sharedPreRecordBuffer == null) {
-                    logger.info("Allocating NEW pre-record buffer (23MB)...");
-                    sharedPreRecordBuffer = new H264CircularBuffer(5);
+                    logger.info("Allocating NEW pre-record buffer (" + desiredSec + " sec)...");
+                    sharedPreRecordBuffer = new H264CircularBuffer(desiredSec);
                 } else {
-                    logger.info("Reusing EXISTING pre-record buffer (Zero-Allocation)");
-                    sharedPreRecordBuffer.clear();  // Clear old data but keep allocated memory
+                    long desiredUs = desiredSec * 1_000_000L;
+                    if (sharedPreRecordBuffer.getMaxDurationUs() != desiredUs) {
+                        logger.info("Resizing existing pre-record buffer to " + desiredSec + " sec");
+                        sharedPreRecordBuffer = new H264CircularBuffer(desiredSec);
+                    } else {
+                        logger.info("Reusing EXISTING pre-record buffer (Zero-Allocation)");
+                        sharedPreRecordBuffer.clear();  // Clear old data but keep allocated memory
+                    }
                 }
                 preRecordBuffer = sharedPreRecordBuffer;
             }
@@ -423,11 +483,12 @@ public class HardwareEventRecorderGpu {
             logger.info("Pre-record buffer disabled (stream-only mode)");
             preRecordBuffer = null;
         }
-        
+
         // SOTA: Start background drainer thread (moves SD card I/O off GL thread)
         startDrainerThread();
-        
-        logger.info( "Encoder initialized successfully" + (usePreRecordBuffer ? " (pre-record: 5 sec)" : " (stream-only)"));
+
+        logger.info("Encoder initialized successfully"
+                + (usePreRecordBuffer ? " (pre-record: " + Math.max(1, preRecordDurationSeconds) + " sec)" : " (stream-only)"));
     }
     
     /**
@@ -439,17 +500,21 @@ public class HardwareEventRecorderGpu {
      * @param durationSeconds New buffer duration in seconds
      */
     public void setPreRecordDuration(int durationSeconds) {
+        int clamped = Math.max(1, durationSeconds);
+        // FIX (Bug A): always remember the desired duration so that a later init()
+        // (e.g. after pipeline reinit) allocates the correct size.
+        this.preRecordDurationSeconds = clamped;
         synchronized (bufferLock) {
             if (sharedPreRecordBuffer != null) {
                 // SOTA: Check if duration actually changed before reallocating
-                long currentMaxDurationUs = durationSeconds * 1_000_000L;
+                long currentMaxDurationUs = clamped * 1_000_000L;
                 // Only recreate if duration is different (avoid 23MB allocation on every settings change)
                 if (sharedPreRecordBuffer.getMaxDurationUs() != currentMaxDurationUs) {
-                    logger.info("Pre-record duration changed, recreating buffer: " + durationSeconds + " seconds");
-                    sharedPreRecordBuffer = new H264CircularBuffer(durationSeconds);
+                    logger.info("Pre-record duration changed, recreating buffer: " + clamped + " seconds");
+                    sharedPreRecordBuffer = new H264CircularBuffer(clamped);
                     preRecordBuffer = sharedPreRecordBuffer;
                 } else {
-                    logger.info("Pre-record buffer already at " + durationSeconds + " seconds, clearing only");
+                    logger.info("Pre-record buffer already at " + clamped + " seconds, clearing only");
                     sharedPreRecordBuffer.clear();
                 }
             }
@@ -523,6 +588,36 @@ public class HardwareEventRecorderGpu {
 
     private volatile FormatAvailableListener formatAvailableListener = null;
 
+    /**
+     * Listener fired when {@link #rotateSegment()} finalises an old segment
+     * before opening a new one. Lets the surveillance engine flush hero
+     * thumbnails + JSON sidecar against the segment's actual filename
+     * (otherwise long events split across multiple .mp4 files would attach
+     * all metadata to the FIRST segment, leaving subsequent segments as
+     * unbadged plain MP4s in the recordings list).
+     *
+     * Fired AFTER the old segment is renamed from .tmp to its final .mp4
+     * name. Safe to read the file from inside {@code onSegmentClosed}.
+     * Fires on the encoder drainer thread; consumers should not block.
+     */
+    public interface SegmentListener {
+        /**
+         * @param closedSegment   the .mp4 file just renamed from .tmp,
+         *                        or {@code null} if the rotation produced
+         *                        no playable file (broken segment quarantined).
+         * @param newSegment      the new .mp4 path (still pre-finalize, pending
+         *                        bytes), so the engine knows what filename the
+         *                        next stop / next rotation will land on.
+         */
+        void onSegmentClosed(java.io.File closedSegment, java.io.File newSegment);
+    }
+
+    private volatile SegmentListener segmentListener = null;
+
+    public void setSegmentListener(SegmentListener listener) {
+        this.segmentListener = listener;
+    }
+
     public void setFormatAvailableListener(FormatAvailableListener listener) {
         this.formatAvailableListener = listener;
         // If format is already available when the listener is registered,
@@ -585,13 +680,20 @@ public class HardwareEventRecorderGpu {
      * @return true if started successfully, false otherwise
      */
     public boolean triggerEventRecording(String outputPath, long postRecordDurationMs) {
-        if (isWritingToFile) {
-            // Already recording, extend post-record duration
-            postRecordStopTime = System.currentTimeMillis() + postRecordDurationMs;
-            logger.info("Event extended - post-record timer reset to " + postRecordDurationMs + "ms");
-            return true;
-        }
-        
+        // Hold startStopLock across the entire start path so two concurrent
+        // callers can't both observe isWritingToFile == false and race ahead
+        // to build two muxers. The work inside is dominated by a few mkdirs
+        // and a MediaMuxer ctor (sub-100ms typically), so blocking another
+        // start request for that long is acceptable — the alternative is the
+        // duplicate-files-on-disk bug.
+        synchronized (startStopLock) {
+            if (isWritingToFile) {
+                // Already recording, extend post-record duration
+                postRecordStopTime = System.currentTimeMillis() + postRecordDurationMs;
+                logger.info("Event extended - post-record timer reset to " + postRecordDurationMs + "ms");
+                return true;
+            }
+
         try {
             this.outputPath = outputPath;
             
@@ -619,58 +721,104 @@ public class HardwareEventRecorderGpu {
                 // Directory exists (either created or already existed) - continue
             }
             
-            // Create muxer
-            muxer = new MediaMuxer(tempFile.getAbsolutePath(),
-                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            
-            // If we have a saved format, use it immediately
+            // SOTA: clear any stale per-segment state from the previous
+            // recording before the new muxer goes live. Without this, leftover
+            // PTS/frame counters from a prior run would mislead the duration
+            // computation in closeEventRecording.
+            recordedFrames = 0;
+            firstFramePtsUs = -1;
+            lastFramePtsUs = -1;
+            writerAbortedCorrupt = false;
+
+            // Create muxer. Hold muxerLock so the disk writer never observes a
+            // half-constructed muxer (e.g., started but trackIndex still -1).
+            boolean muxerOk = false;
+            synchronized (muxerLock) {
+                try {
+                    muxer = new MediaMuxer(tempFile.getAbsolutePath(),
+                            MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+
+                    // If we have a saved format, use it immediately
+                    if (savedFormat != null) {
+                        trackIndex = muxer.addTrack(savedFormat);
+                        muxer.start();
+                        muxerStarted = true;
+                        logger.info("Muxer started with saved format (track=" + trackIndex + ")");
+                    }
+                    muxerOk = true;
+                } catch (Exception e) {
+                    logger.error("MediaMuxer setup failed", e);
+                    if (muxer != null) {
+                        try { muxer.release(); } catch (Exception ignored) {}
+                        muxer = null;
+                    }
+                    muxerStarted = false;
+                    trackIndex = -1;
+                }
+            }
+            if (!muxerOk) {
+                if (tempFile != null && tempFile.exists()) tempFile.delete();
+                tempFile = null;
+                return false;
+            }
+
             if (savedFormat != null) {
-                trackIndex = muxer.addTrack(savedFormat);
-                muxer.start();
-                muxerStarted = true;
-                logger.info("Muxer started with saved format (track=" + trackIndex + ")");
-                
                 // SOTA: Queue pre-record packets for async flush (NON-BLOCKING!)
                 // drainEncoder() will write these on the GL thread
                 List<H264CircularBuffer.Packet> preRecordPackets = preRecordBuffer.getPacketsForFlush();
-                double preRecordDuration = preRecordPackets.isEmpty() ? 0 : 
-                    (preRecordPackets.get(preRecordPackets.size()-1).info.presentationTimeUs - 
+                double preRecordDuration = preRecordPackets.isEmpty() ? 0 :
+                    (preRecordPackets.get(preRecordPackets.size()-1).info.presentationTimeUs -
                      preRecordPackets.get(0).info.presentationTimeUs) / 1_000_000.0;
-                
+
                 // Store actual pre-record duration for timeline alignment
                 actualPreRecordDurationMs = (long)(preRecordDuration * 1000);
-                
+
                 // Add all packets to the flush queue (instant, no I/O)
                 pendingFlushQueue.addAll(preRecordPackets);
                 flushInProgress = true;
-                
+
                 logger.info(String.format("Queued %d pre-record packets (%.1f sec) for async flush",
                         preRecordPackets.size(), preRecordDuration));
             }
-            
+
             // Reset state
             startTimeNs = System.nanoTime();
             segmentStartTime = System.currentTimeMillis();  // Enable segment rotation for long events
             segmentNumber = 0;
             segmentBasePath = outputPath.replaceAll("\\.mp4$", "");  // Store base path for segment rotation
             postRecordStopTime = System.currentTimeMillis() + postRecordDurationMs;
-            
+
             isWritingToFile = true;
             recording = true;  // Keep for compatibility
-            
+
             logger.info(String.format("Event recording started: %s (codec=%s, bitrate=%d Mbps, post-record=%dms)",
                 tempFile.getName(),
                 codecMimeType.equals(MediaFormat.MIMETYPE_VIDEO_HEVC) ? "H.265" : "H.264",
                 bitrate / 1_000_000,
                 postRecordDurationMs));
             return true;
-            
+
         } catch (Exception e) {
             logger.error("Failed to trigger event recording", e);
+            // Best-effort cleanup so a partial init doesn't leave a muxer alive
+            // referencing a now-orphaned tmp file.
+            synchronized (muxerLock) {
+                if (muxer != null) {
+                    try { muxer.release(); } catch (Exception ignored) {}
+                    muxer = null;
+                }
+                muxerStarted = false;
+                trackIndex = -1;
+            }
+            if (tempFile != null && tempFile.exists()) tempFile.delete();
+            tempFile = null;
+            isWritingToFile = false;
+            recording = false;
             return false;
         }
+        } // end synchronized (startStopLock)
     }
-    
+
     /**
      * Legacy method for compatibility - redirects to triggerEventRecording.
      */
@@ -680,7 +828,13 @@ public class HardwareEventRecorderGpu {
     
     /**
      * Stops recording immediately or schedules post-record stop.
-     * 
+     *
+     * <p>Held under {@code startStopLock} for symmetry with
+     * {@link #triggerEventRecording}: a start cannot race a stop. The check
+     * outside the lock is a cheap volatile read so callers don't pay the lock
+     * cost when there's nothing to stop. The check inside the lock is the
+     * authoritative one.
+     *
      * @param immediate If true, stops immediately. If false, does nothing (timeout handled by caller)
      * @param postRecordDurationMs Post-record duration (ignored, kept for API compatibility)
      */
@@ -688,12 +842,18 @@ public class HardwareEventRecorderGpu {
         if (!isWritingToFile) {
             return;
         }
-        
-        if (immediate) {
-            closeEventRecording();
+        synchronized (startStopLock) {
+            if (!isWritingToFile) {
+                // Another thread already finalised between the volatile read
+                // above and our acquisition of the lock — nothing to do.
+                return;
+            }
+            if (immediate) {
+                closeEventRecording();
+            }
+            // Note: Post-record timeout is now handled by SurveillanceEngineGpu
+            // The encoder just writes frames until explicitly told to stop
         }
-        // Note: Post-record timeout is now handled by SurveillanceEngineGpu
-        // The encoder just writes frames until explicitly told to stop
     }
     
     /**
@@ -742,53 +902,70 @@ public class HardwareEventRecorderGpu {
             logger.warn("Final drain before close failed: " + e.getMessage());
         }
         
-        // Step 3: Flush the muxer write queue synchronously.
-        // The disk writer thread is already stopped, but drainEncoderInternal()
-        // pushed frames to the queue. Write them directly now.
-        {
+        // Step 3 + 4: under muxerLock, flush remaining queued packets into the
+        // still-live muxer, then stop+release. Tracking stopOk lets us refuse
+        // to rename a file whose moov was never written — that file would be
+        // sized, named .mp4, and unplayable.
+        boolean stopOk = false;
+        synchronized (muxerLock) {
             MuxerPacket packet;
             int flushed = 0;
             while ((packet = muxerWriteQueue.poll()) != null) {
                 if (muxerStarted && muxer != null) {
-                    muxer.writeSampleData(trackIndex, packet.data, packet.info);
-                    if (firstFramePtsUs < 0) firstFramePtsUs = packet.info.presentationTimeUs;
-                    lastFramePtsUs = packet.info.presentationTimeUs;
-                    recordedFrames++;
-                    flushed++;
+                    try {
+                        muxer.writeSampleData(trackIndex, packet.data, packet.info);
+                        if (firstFramePtsUs < 0) firstFramePtsUs = packet.info.presentationTimeUs;
+                        lastFramePtsUs = packet.info.presentationTimeUs;
+                        recordedFrames++;
+                        flushed++;
+                    } catch (Exception e) {
+                        logger.warn("Final flush write error: " + e.getMessage());
+                        writerAbortedCorrupt = true;
+                        break;
+                    }
                 }
             }
             if (flushed > 0) {
                 logger.info("Final muxer queue flush: " + flushed + " frames written");
             }
-        }
-        
-        // Step 4: NOW it's safe to flip the flag — no more writers.
-        isWritingToFile = false;
-        
-        // Stop muxer (may throw if no frames were written)
-        try {
-            if (muxerStarted) {
-                muxer.stop();
+
+            // No more writers can race us now — flag the writer state OFF before
+            // touching muxer.stop(). isWritingToFile is also cleared under the
+            // lock so the upcoming format-change handler can't reopen the muxer.
+            isWritingToFile = false;
+
+            // Stop muxer (may throw if no frames were written, or if the
+            // underlying file descriptor was severed by an SD-card unmount).
+            try {
+                if (muxerStarted && muxer != null) {
+                    muxer.stop();
+                    stopOk = true;
+                }
+            } catch (Exception e) {
+                logger.warn("Muxer stop error (may have had no frames): " + e.getMessage());
+            } finally {
                 muxerStarted = false;
             }
-        } catch (Exception e) {
-            logger.warn("Muxer stop error (may have had no frames): " + e.getMessage());
-            muxerStarted = false;
-        }
-        
-        try {
-            if (muxer != null) {
-                muxer.release();
+
+            try {
+                if (muxer != null) {
+                    muxer.release();
+                }
+            } catch (Exception e) {
+                logger.warn("Muxer release error: " + e.getMessage());
+            } finally {
                 muxer = null;
+                trackIndex = -1;
             }
-        } catch (Exception e) {
-            logger.warn("Muxer release error: " + e.getMessage());
-            muxer = null;
         }
-        
-        // Rename temp to final, or delete if too small (corrupt/empty)
+
+        // Rename temp to final, quarantine if broken, or delete if empty.
+        // SOTA: never promote a tempFile to a final .mp4 unless the muxer
+        // actually finalized — that's the single rule that prevents the
+        // "60 MB file that won't play" symptom.
+        boolean recordingBroken = !stopOk || writerAbortedCorrupt;
         if (tempFile != null && tempFile.exists()) {
-            if (recordedFrames > 0 && tempFile.length() > 1024) {
+            if (!recordingBroken && recordedFrames > 0 && tempFile.length() > 1024) {
                 File finalFile = new File(outputPath);
                 if (tempFile.renameTo(finalFile)) {
                     // Use actual PTS range for accurate duration (not recordedFrames/fps
@@ -800,14 +977,14 @@ public class HardwareEventRecorderGpu {
                             finalFile.getName(), segmentNumber, recordedFrames, durationSec, finalFile.length() / 1024,
                             codecMimeType.equals(MediaFormat.MIMETYPE_VIDEO_HEVC) ? "H.265" : "H.264",
                             bitrate / 1_000_000));
-                    
+
                     // Make file visible to events page and UI app
                     try {
                         com.overdrive.app.storage.StorageManager.getInstance().onFileSaved(finalFile);
                     } catch (Exception e) {
                         logger.warn("onFileSaved error: " + e.getMessage());
                     }
-                    
+
                     try {
                         TelegramNotifier.notifyVideoRecorded(
                                 finalFile.getAbsolutePath(), null, (int) durationSec);
@@ -818,9 +995,22 @@ public class HardwareEventRecorderGpu {
                     logger.error("Failed to rename temp file — deleting orphan");
                     tempFile.delete();
                 }
+            } else if (recordingBroken) {
+                // Quarantine: keep evidence under a sidecar extension so the
+                // recordings UI's *.mp4 listing doesn't pick it up. An
+                // operator can still find it on disk for diagnostics.
+                File broken = new File(outputPath + ".broken");
+                if (!tempFile.renameTo(broken)) {
+                    logger.warn("Quarantine rename failed; deleting broken tmp: " + tempFile.getName());
+                    tempFile.delete();
+                } else {
+                    logger.warn("Quarantined broken recording (stopOk=" + stopOk
+                            + ", writerAborted=" + writerAbortedCorrupt
+                            + ", " + (broken.length() / 1024) + " KB): " + broken.getName());
+                }
             } else {
-                // Empty or corrupt recording — delete the tmp file
-                logger.warn("Deleting empty/corrupt temp file: " + tempFile.getName() + 
+                // Empty / sub-1KB recording — drop it silently.
+                logger.warn("Deleting empty/corrupt temp file: " + tempFile.getName() +
                         " (frames=" + recordedFrames + ", size=" + tempFile.length() + ")");
                 tempFile.delete();
             }
@@ -1024,13 +1214,18 @@ public class HardwareEventRecorderGpu {
         if (drainerThread != null) {
             try {
                 drainerThread.interrupt();
-                drainerThread.join(500);
+                // SOTA: 2 s join matches the disk writer's join. The drainer can
+                // be inside a single drainEncoderInternal() pass that takes
+                // 100+ ms under SD-card pressure; the old 500 ms ceiling let
+                // the close path move on while the drainer was still pushing
+                // packets to the queue, racing the muxer.stop() call.
+                drainerThread.join(2000);
             } catch (InterruptedException e) {
                 // Ignore
             }
             drainerThread = null;
         }
-        
+
         // Stop disk writer after drainer (drainer may still be pushing to the queue)
         stopDiskWriterThread();
     }
@@ -1086,8 +1281,13 @@ public class HardwareEventRecorderGpu {
      */
     private void startDiskWriterThread() {
         if (diskWriterRunning) return;
-        
+
         diskWriterRunning = true;
+        // Each disk writer instance starts with a clean abort flag. The flag is
+        // only set when this writer hits the unrecoverable failure threshold; the
+        // close/rotate paths read it to decide whether to keep or quarantine the
+        // current tempFile.
+        writerAbortedCorrupt = false;
         // SD-unmount detection: if writes start failing repeatedly, the underlying
         // file descriptor is dead (typical when BYD/Android unmounts the SD card
         // mid-recording). The MP4's moov atom is written only on stopRecording, so
@@ -1104,32 +1304,29 @@ public class HardwareEventRecorderGpu {
                 try {
                     MuxerPacket packet = muxerWriteQueue.poll();
                     if (packet != null) {
-                        if (muxerStarted && muxer != null) {
-                            muxer.writeSampleData(trackIndex, packet.data, packet.info);
-                            if (firstFramePtsUs < 0) firstFramePtsUs = packet.info.presentationTimeUs;
-                            lastFramePtsUs = packet.info.presentationTimeUs;
-                            recordedFrames++;
-                            consecutiveWriteFailures[0] = 0;
+                        // SOTA: serialize against rotateSegment / closeEventRecording.
+                        // Without this lock, a concurrent muxer.stop() corrupts the
+                        // moov atom and produces a sized-but-unplayable .mp4.
+                        synchronized (muxerLock) {
+                            if (muxerStarted && muxer != null) {
+                                muxer.writeSampleData(trackIndex, packet.data, packet.info);
+                                if (firstFramePtsUs < 0) firstFramePtsUs = packet.info.presentationTimeUs;
+                                lastFramePtsUs = packet.info.presentationTimeUs;
+                                recordedFrames++;
+                                consecutiveWriteFailures[0] = 0;
+                            }
                         }
                     } else {
                         // Queue empty — sleep briefly to avoid busy-waiting
                         Thread.sleep(4);
                     }
                 } catch (InterruptedException e) {
-                    // Drain remaining packets before exiting
-                    MuxerPacket remaining;
-                    while ((remaining = muxerWriteQueue.poll()) != null) {
-                        try {
-                            if (muxerStarted && muxer != null) {
-                                muxer.writeSampleData(trackIndex, remaining.data, remaining.info);
-                                if (firstFramePtsUs < 0) firstFramePtsUs = remaining.info.presentationTimeUs;
-                                lastFramePtsUs = remaining.info.presentationTimeUs;
-                                recordedFrames++;
-                            }
-                        } catch (Exception ex) {
-                            logger.warn("Disk writer flush error: " + ex.getMessage());
-                        }
-                    }
+                    // Drain remaining packets before exiting. We deliberately do
+                    // NOT write here: by the time the writer is interrupted, the
+                    // close/rotate path is about to (or has already) called
+                    // muxer.stop(), so any further writeSampleData would corrupt
+                    // the moov. The close path drains the queue itself under the
+                    // lock before stopping the muxer.
                     break;
                 } catch (Exception e) {
                     consecutiveWriteFailures[0]++;
@@ -1140,6 +1337,11 @@ public class HardwareEventRecorderGpu {
                             + " consecutive write failures (likely SD card unmounted). "
                             + "Partial file at " + (tempFile != null ? tempFile.getAbsolutePath() : "unknown")
                             + " will not be playable.");
+                        // Mark the current segment corrupt so the close/rotate
+                        // path quarantines it rather than promoting tempFile to
+                        // outputPath. The user must never see a final .mp4
+                        // filename for a file whose moov was never written.
+                        writerAbortedCorrupt = true;
                         // Clear queue so the writer loop exits promptly
                         muxerWriteQueue.clear();
                         diskWriterRunning = false;
@@ -1217,8 +1419,12 @@ public class HardwareEventRecorderGpu {
             flushInProgress = false;
         }
         
-        // Check if segment rotation needed (only when actively writing to file)
-        if (isWritingToFile && segmentStartTime > 0) {
+        // Check if segment rotation needed (only when actively writing to file).
+        // SOTA: rotation requires a live disk writer + drainer; if either is
+        // shutting down (e.g., we're inside the synchronous final drain in
+        // closeEventRecording) the rotation logic would deadlock or produce a
+        // stranded muxer. Skip in that case.
+        if (isWritingToFile && segmentStartTime > 0 && drainerRunning && diskWriterRunning) {
             long elapsed = System.currentTimeMillis() - segmentStartTime;
             if (elapsed >= SEGMENT_DURATION_MS) {
                 logger.info("Segment duration reached (" + (elapsed / 1000) + "s), rotating to new file...");
@@ -1261,10 +1467,14 @@ public class HardwareEventRecorderGpu {
                 }
                 
                 if (recording && !muxerStarted) {
-                    trackIndex = muxer.addTrack(format);
-                    muxer.start();
-                    muxerStarted = true;
-                    logger.info( "Muxer started (track=" + trackIndex + ")");
+                    synchronized (muxerLock) {
+                        if (muxer != null && !muxerStarted) {
+                            trackIndex = muxer.addTrack(format);
+                            muxer.start();
+                            muxerStarted = true;
+                            logger.info("Muxer started (track=" + trackIndex + ")");
+                        }
+                    }
                 }
                 
                 // Send SPS/PPS to streaming callback
@@ -1330,86 +1540,221 @@ public class HardwareEventRecorderGpu {
         if (!isWritingToFile) {
             return;
         }
-        
+
         logger.info("Rotating segment " + segmentNumber + " - closing current file");
-        
-        // Close current muxer
-        try {
-            if (muxerStarted) {
-                muxer.stop();
+
+        // SOTA: Capture the old segment's identity locally. Field-level state
+        // (tempFile / outputPath / recordedFrames / firstFramePtsUs / lastFramePtsUs)
+        // belongs to the *new* segment by the end of this method; we must not
+        // let the new segment's stats mask whether the old one was finalized
+        // cleanly.
+        final File oldTemp = tempFile;
+        final String oldOutputPath = outputPath;
+        final int oldRecordedFrames = recordedFrames;
+        final long oldFirstPtsUs = firstFramePtsUs;
+        final long oldLastPtsUs = lastFramePtsUs;
+        final int oldSegmentNumber = segmentNumber;
+
+        // Step 1: stop the disk writer BEFORE touching the muxer.
+        // Without this, the writer may be inside muxer.writeSampleData() when
+        // we call muxer.stop(), corrupting the moov atom and leaving an
+        // unplayable but final-named .mp4 on disk. stopDiskWriterThread() also
+        // joins the thread, so by the time it returns no other thread is
+        // racing us.
+        stopDiskWriterThread();
+
+        boolean stopOk = false;
+        synchronized (muxerLock) {
+            // Step 2: drain any packets that the writer left in the queue
+            // straight into the still-live old muxer. Anything we drop here
+            // turns into a gap in the segment.
+            MuxerPacket pkt;
+            int drained = 0;
+            while ((pkt = muxerWriteQueue.poll()) != null) {
+                if (muxerStarted && muxer != null) {
+                    try {
+                        muxer.writeSampleData(trackIndex, pkt.data, pkt.info);
+                        if (firstFramePtsUs < 0) firstFramePtsUs = pkt.info.presentationTimeUs;
+                        lastFramePtsUs = pkt.info.presentationTimeUs;
+                        recordedFrames++;
+                        drained++;
+                    } catch (Exception e) {
+                        logger.warn("Rotation flush error: " + e.getMessage());
+                        writerAbortedCorrupt = true;
+                        break;
+                    }
+                }
+            }
+            if (drained > 0) {
+                logger.debug("Rotation drained " + drained + " queued frames into old segment");
+            }
+
+            // Step 3: stop the old muxer. Track success so we can quarantine
+            // the file if anything goes wrong — a swallowed exception here
+            // used to ship a sized-but-unplayable .mp4 to the user.
+            try {
+                if (muxerStarted && muxer != null) {
+                    muxer.stop();
+                    stopOk = true;
+                }
+            } catch (Exception e) {
+                logger.warn("Muxer stop error during rotation: " + e.getMessage());
+            } finally {
                 muxerStarted = false;
             }
-        } catch (Exception e) {
-            logger.warn("Muxer stop error during rotation: " + e.getMessage());
-            muxerStarted = false;
-        }
-        
-        try {
-            if (muxer != null) {
-                muxer.release();
+
+            try {
+                if (muxer != null) {
+                    muxer.release();
+                }
+            } catch (Exception e) {
+                logger.warn("Muxer release error during rotation: " + e.getMessage());
+            } finally {
                 muxer = null;
+                trackIndex = -1;
             }
-        } catch (Exception e) {
-            logger.warn("Muxer release error during rotation: " + e.getMessage());
-            muxer = null;
         }
-        
-        // Rename temp to final, or delete if empty
-        if (tempFile != null && tempFile.exists()) {
-            if (recordedFrames > 0 && tempFile.length() > 1024) {
-                File finalFile = new File(outputPath);
-                if (tempFile.renameTo(finalFile)) {
-                    float durationSec = recordedFrames / (float) fps;
+
+        // Step 4: finalize the old tempFile on disk — but ONLY rename to the
+        // final extension if the muxer actually finalized cleanly. Otherwise
+        // the file has no moov atom and would be a sized, named, unplayable
+        // .mp4 — exactly the bug we're fixing. Quarantine instead.
+        boolean segmentBroken = !stopOk || writerAbortedCorrupt;
+        // Tracks the .mp4 produced by THIS rotation (or null if none usable).
+        // Used to notify the SegmentListener after the new segment is open
+        // so the engine can flush hero/sidecar against the right filename.
+        File finalisedSegment = null;
+        if (oldTemp != null && oldTemp.exists()) {
+            if (!segmentBroken && oldRecordedFrames > 0 && oldTemp.length() > 1024) {
+                File finalFile = new File(oldOutputPath);
+                if (oldTemp.renameTo(finalFile)) {
+                    finalisedSegment = finalFile;
+                    float durationSec = (oldFirstPtsUs >= 0 && oldLastPtsUs > oldFirstPtsUs)
+                            ? (oldLastPtsUs - oldFirstPtsUs) / 1_000_000.0f
+                            : oldRecordedFrames / (float) fps;
                     logger.info(String.format("Segment %d saved: %s (%d frames, %.1f sec, %d KB)",
-                            segmentNumber, finalFile.getName(), recordedFrames, durationSec, finalFile.length() / 1024));
-                    
-                    // Make file visible to events page and UI app
+                            oldSegmentNumber, finalFile.getName(), oldRecordedFrames,
+                            durationSec, finalFile.length() / 1024));
                     try {
                         com.overdrive.app.storage.StorageManager.getInstance().onFileSaved(finalFile);
                     } catch (Exception e) {
                         logger.warn("onFileSaved error: " + e.getMessage());
                     }
                 } else {
-                    logger.error("Failed to rename segment " + segmentNumber + " — deleting orphan");
-                    tempFile.delete();
+                    logger.error("Failed to rename segment " + oldSegmentNumber + " — deleting orphan");
+                    oldTemp.delete();
+                }
+            } else if (segmentBroken) {
+                // Quarantine the broken segment under a .broken.mp4 sidecar so
+                // an operator can tell *something* went wrong without it
+                // showing up in the recordings UI as a real .mp4.
+                File broken = new File(oldOutputPath + ".broken");
+                if (!oldTemp.renameTo(broken)) {
+                    logger.warn("Quarantine rename failed; deleting broken tmp: " + oldTemp.getName());
+                    oldTemp.delete();
+                } else {
+                    logger.warn("Quarantined broken segment " + oldSegmentNumber
+                            + " (stopOk=" + stopOk + ", writerAborted=" + writerAbortedCorrupt
+                            + ", " + (broken.length() / 1024) + " KB): " + broken.getName());
                 }
             } else {
-                logger.warn("Deleting empty segment " + segmentNumber + " tmp file");
-                tempFile.delete();
+                logger.warn("Deleting empty segment " + oldSegmentNumber + " tmp file");
+                oldTemp.delete();
             }
         }
-        
-        // Start new segment
+
+        // SOTA: if the SD card just died we should not optimistically open a new
+        // muxer and pretend recording continues — every subsequent write would
+        // fail and pile up another quarantined segment. Stop here; the next
+        // user-driven start will trigger a fresh recorder init.
+        if (writerAbortedCorrupt) {
+            logger.warn("Writer aborted — abandoning rotation, recording stopped");
+            isWritingToFile = false;
+            recording = false;
+            recordedFrames = 0;
+            firstFramePtsUs = -1;
+            lastFramePtsUs = -1;
+            segmentStartTime = 0;
+            segmentNumber = 0;
+            segmentBasePath = null;
+            return;
+        }
+
+        // Step 5: open the next segment. Each rotated segment gets a fresh
+        // yyyyMMdd_HHmmss timestamp (no _1, _2 suffixes) so it matches the
+        // naming convention used at recording start.
         segmentNumber++;
-        String newPath = segmentBasePath + "_" + segmentNumber + ".mp4";
-        
+        String newPath = nextSegmentPath(segmentBasePath);
+
         try {
             this.outputPath = newPath;
             tempFile = new File(newPath + ".tmp");
-            
-            muxer = new MediaMuxer(tempFile.getAbsolutePath(),
-                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            
-            if (savedFormat != null) {
-                trackIndex = muxer.addTrack(savedFormat);
-                muxer.start();
-                muxerStarted = true;
-            }
-            
+            // Reset per-segment counters BEFORE the new muxer goes live so the
+            // disk writer (restarted below) records frames against the new
+            // file, not the old segment's totals.
             recordedFrames = 0;
+            firstFramePtsUs = -1;
+            lastFramePtsUs = -1;
             segmentStartTime = System.currentTimeMillis();
-            
+
+            synchronized (muxerLock) {
+                muxer = new MediaMuxer(tempFile.getAbsolutePath(),
+                        MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+
+                if (savedFormat != null) {
+                    trackIndex = muxer.addTrack(savedFormat);
+                    muxer.start();
+                    muxerStarted = true;
+                }
+            }
+
+            // Request a keyframe immediately so the new segment is independently
+            // decodable from its first sample. Without this, the segment would
+            // start with P-frames referencing a previous I-frame that lives in
+            // the old (now closed) file, and players would render garbage until
+            // the next 2-second I-frame interval.
+            requestSyncFrame();
+
             logger.info("Segment " + segmentNumber + " started: " + tempFile.getName());
-            
+
+            // Notify the engine: old segment is finalised, new segment is open.
+            // Engine flushes hero JPEG + per-actor thumbs + JSON sidecar against
+            // closedSegment, then resets ThumbnailBuffer/EventTimelineCollector
+            // so the next 2 minutes of metadata accumulates against newSegment.
+            // Failing here would orphan the metadata, so swallow exceptions —
+            // the new segment is already open and writing.
+            SegmentListener listener = segmentListener;
+            if (listener != null) {
+                try {
+                    listener.onSegmentClosed(finalisedSegment, new File(newPath));
+                } catch (Throwable t) {
+                    logger.warn("SegmentListener error: " + t.getMessage());
+                }
+            }
+
         } catch (Exception e) {
             logger.error("Failed to start new segment — stopping recording", e);
             // Clean up the failed tmp file
             if (tempFile != null && tempFile.exists()) {
                 tempFile.delete();
             }
+            synchronized (muxerLock) {
+                if (muxer != null) {
+                    try { muxer.release(); } catch (Exception ignored) {}
+                    muxer = null;
+                }
+                muxerStarted = false;
+                trackIndex = -1;
+            }
             isWritingToFile = false;
             recording = false;
+            return;
         }
+
+        // Step 6: bring the disk writer back online. It will pick up frames
+        // from the (now drained, then refilled by the drainer) queue and write
+        // them to the new muxer.
+        startDiskWriterThread();
     }
     
     /**
@@ -1435,6 +1780,52 @@ public class HardwareEventRecorderGpu {
     public String getCurrentOutputPath() {
         return outputPath;
     }
+
+    /**
+     * Build the path for the next rotated segment.
+     *
+     * <p>Input is the base path of the original recording (no extension), e.g.
+     * {@code /sdcard/.../cam_20260513_140523}. The original filename is
+     * {@code <prefix>_yyyyMMdd_HHmmss}; we drop the trailing timestamp and
+     * append a fresh one so each segment is a self-describing
+     * {@code <prefix>_yyyyMMdd_HHmmss.mp4}, never {@code _1}, {@code _2}, etc.
+     *
+     * <p>If the basename can't be parsed (unexpected format), falls back to
+     * the legacy {@code <base>_<n>.mp4} naming so a single bad recording
+     * doesn't lose its rotation.
+     */
+    private String nextSegmentPath(String basePath) {
+        String fresh = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss",
+                java.util.Locale.US).format(new java.util.Date());
+        try {
+            int slash = basePath.lastIndexOf('/');
+            String dir = slash >= 0 ? basePath.substring(0, slash + 1) : "";
+            String name = slash >= 0 ? basePath.substring(slash + 1) : basePath;
+            // Strip the original _yyyyMMdd_HHmmss suffix (last two underscore
+            // segments — date and time). Anything else is the prefix.
+            int lastUnderscore = name.lastIndexOf('_');
+            if (lastUnderscore > 0) {
+                int prevUnderscore = name.lastIndexOf('_', lastUnderscore - 1);
+                if (prevUnderscore > 0) {
+                    String prefix = name.substring(0, prevUnderscore);
+                    String candidate = dir + prefix + "_" + fresh + ".mp4";
+                    // Same-second rotation (or pre-existing file) — disambiguate
+                    // with a short suffix rather than overwriting.
+                    if (new java.io.File(candidate).exists()
+                            || candidate.equals(outputPath)) {
+                        // Underscore (not dash) so the UI regexes in
+                        // RecordingsApiHandler — CAM_PATTERN / EVENT_PATTERN /
+                        // PROXIMITY_PATTERN, all `(?:_\d+)?` — accept the
+                        // disambiguated filename. A dash made the segment
+                        // invisible to the web UI, calendar, and storage stats.
+                        candidate = dir + prefix + "_" + fresh + "_" + segmentNumber + ".mp4";
+                    }
+                    return candidate;
+                }
+            }
+        } catch (Exception ignored) {}
+        return basePath + "_" + segmentNumber + ".mp4";
+    }
     
     /**
      * Implements loop recording by deleting oldest segments when storage is low.
@@ -1449,22 +1840,26 @@ public class HardwareEventRecorderGpu {
     }
 
     /**
-     * Clean up orphaned .tmp files that were left behind by crashed recordings.
-     * Deletes .tmp files older than 5 minutes.
+     * Clean up orphaned .tmp files that were left behind by crashed recordings,
+     * and reap *.broken quarantine sidecars produced by the close/rotate paths
+     * when a muxer.stop() failed or the disk writer aborted. Files older than
+     * 5 minutes are removed.
      */
     public static void cleanupOrphanedTmpFiles(File directory) {
         if (!directory.exists() || !directory.isDirectory()) return;
-        
-        File[] tmpFiles = directory.listFiles((dir, name) -> name.endsWith(".tmp"));
-        if (tmpFiles == null) return;
-        
+
+        File[] orphans = directory.listFiles((dir, name) ->
+                name.endsWith(".tmp") || name.endsWith(".broken"));
+        if (orphans == null) return;
+
         long now = System.currentTimeMillis();
-        for (File tmp : tmpFiles) {
-            long age = now - tmp.lastModified();
+        for (File f : orphans) {
+            long age = now - f.lastModified();
             if (age > 5 * 60 * 1000) { // Older than 5 minutes
-                long size = tmp.length();
-                if (tmp.delete()) {
-                    logger.info("Cleaned orphaned tmp: " + tmp.getName() + " (" + (size / 1024) + " KB, age=" + (age / 1000) + "s)");
+                long size = f.length();
+                if (f.delete()) {
+                    logger.info("Cleaned orphan: " + f.getName() + " (" + (size / 1024)
+                            + " KB, age=" + (age / 1000) + "s)");
                 }
             }
         }
@@ -1551,12 +1946,63 @@ public class HardwareEventRecorderGpu {
                 long fileSize = file.length();
                 if (file.delete()) {
                     totalSize -= fileSize;
-                    logger.info("Deleted old segment: " + file.getName() + 
-                            " (" + (fileSize / 1024) + " KB)");
+                    long sidecarBytes = deleteSegmentSidecars(file);
+                    logger.info("Deleted old segment: " + file.getName() +
+                            " (" + (fileSize / 1024) + " KB"
+                            + (sidecarBytes > 0 ? ", +" + (sidecarBytes / 1024) + " KB sidecars" : "")
+                            + ")");
                 } else {
                     logger.warn("Failed to delete file: " + file.getName());
                 }
             }
         }
+    }
+
+    /**
+     * Removes the sidecar files that accompany an .mp4 segment: JSON event
+     * timeline, v3 hero JPEG, and per-actor thumbnails {@code thumb_<base>_a*.jpg}.
+     *
+     * Without this, the loop-rotation deletion only frees the .mp4's bytes —
+     * sidecars accumulate as orphans because future passes continue to skip
+     * non-.mp4 files. Returns the freed bytes.
+     */
+    private static long deleteSegmentSidecars(File mp4File) {
+        // Drop the API-handler cache entry for this segment so /api/recordings
+        // doesn't keep returning a phantom row for a file that's been rotated.
+        try {
+            com.overdrive.app.server.RecordingsApiHandler.invalidateRecordingCache(
+                    mp4File.getAbsolutePath());
+        } catch (Throwable ignored) {}
+
+        File parent = mp4File.getParentFile();
+        if (parent == null) return 0L;
+        String mp4Name = mp4File.getName();
+        if (!mp4Name.endsWith(".mp4")) return 0L;
+        String base = mp4Name.substring(0, mp4Name.length() - 4);
+        long freed = 0L;
+
+        File jsonFile = new File(parent, base + ".json");
+        if (jsonFile.exists()) {
+            long s = jsonFile.length();
+            if (jsonFile.delete()) freed += s;
+        }
+        File heroFile = new File(parent, base + ".jpg");
+        if (heroFile.exists()) {
+            long s = heroFile.length();
+            if (heroFile.delete()) freed += s;
+        }
+        // Anchor with "_a" so sibling segment thumbs (e.g. <base>_2's actor
+        // thumbs at "thumb_<base>_2_a*.jpg") aren't swept when this segment
+        // is rotated out. ThumbnailBuffer always writes "thumb_<base>_a<id>...".
+        final String perActorPrefix = "thumb_" + base + "_a";
+        File[] perActor = parent.listFiles((d, name) ->
+                name.startsWith(perActorPrefix) && name.endsWith(".jpg"));
+        if (perActor != null) {
+            for (File f : perActor) {
+                long s = f.length();
+                if (f.delete()) freed += s;
+            }
+        }
+        return freed;
     }
 }

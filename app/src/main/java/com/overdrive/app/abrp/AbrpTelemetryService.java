@@ -194,20 +194,12 @@ public class AbrpTelemetryService {
             }
             if (soc >= 0) payload.put("soc", soc);
 
-            // power — primary source is the collector's batteryPowerKw (from
-            // BYDAutoBodyworkDevice.getBatteryPowerHEV / 10), which uses the
-            // ABRP sign convention directly: positive = discharge, negative =
-            // charge. Falls back to enginePowerKw, then to charge-flow inferred
-            // from externalChargingPowerKw / chargingPowerKw.
+            // power — ABRP sign convention: positive = discharge, negative = charge.
+            // Sources, in order: enginePowerKw (driving — sign already matches ABRP),
+            // then negated charging power (external/device).
             try {
                 boolean powerSet = false;
-                if (vd != null && !Double.isNaN(vd.batteryPowerKw)
-                        && Math.abs(vd.batteryPowerKw) <= 500) {
-                    payload.put("power", vd.batteryPowerKw);
-                    powerSet = true;
-                }
-                if (!powerSet
-                        && vd != null && !Double.isNaN(vd.enginePowerKw)
+                if (vd != null && !Double.isNaN(vd.enginePowerKw)
                         && Math.abs(vd.enginePowerKw) > 0.1
                         && Math.abs(vd.enginePowerKw) <= 300) {
                     payload.put("power", vd.enginePowerKw);
@@ -274,36 +266,17 @@ public class AbrpTelemetryService {
                 payload.put("lon", gpsMonitor.getLongitude());
             }
 
-            // is_charging — combines several sources, in priority order:
-            //   1. BMS-reported charging state (CHARGING enum)
-            //   2. Negative batteryPowerKw — direct evidence of energy entering
-            //      the pack. The most authoritative single signal we have:
-            //      regen during driving is included, but ABRP wants regen
-            //      classified as discharge anyway, so we additionally gate on
-            //      "parked OR power magnitude > 1 kW" to avoid mis-flagging
-            //      brief driving regen as a charging session.
-            //   3. Charging-power fields > 0.15 (legacy fallback for PHEVs
-            //      where neither BMS nor batteryPowerKw is reliable).
+            // is_charging — BMS state primary, with charge-power flow as a
+            // fallback for PHEVs whose BMS state stays at IDLE while charging.
             ChargingStateData chargingState = vehicleDataMonitor.getChargingState();
             boolean isCharging = chargingState != null
                     && chargingState.status == ChargingStateData.ChargingStatus.CHARGING;
             if (!isCharging && vd != null) {
-                boolean isParkedForChg = vd.gearMode == GearMonitor.GEAR_P;
-                // Negative battery flow + parked = unambiguous charging.
-                // Negative battery flow + driving with magnitude > 1 kW also
-                // counts as charging (V2L doesn't apply here, regen is brief).
-                if (!Double.isNaN(vd.batteryPowerKw)
-                        && vd.batteryPowerKw < -0.5
-                        && (isParkedForChg || Math.abs(vd.batteryPowerKw) > 1.0)) {
-                    isCharging = true;
-                }
-                if (!isCharging) {
-                    boolean powerFlowing = (!Double.isNaN(vd.externalChargingPowerKw)
-                                    && vd.externalChargingPowerKw > 0.15)
-                            || (!Double.isNaN(vd.chargingPowerKw)
-                                    && vd.chargingPowerKw > 0.15);
-                    if (powerFlowing) isCharging = true;
-                }
+                boolean powerFlowing = (!Double.isNaN(vd.externalChargingPowerKw)
+                                && vd.externalChargingPowerKw > 0.15)
+                        || (!Double.isNaN(vd.chargingPowerKw)
+                                && vd.chargingPowerKw > 0.15);
+                if (powerFlowing) isCharging = true;
             }
             payload.put("is_charging", isCharging ? 1 : 0);
 

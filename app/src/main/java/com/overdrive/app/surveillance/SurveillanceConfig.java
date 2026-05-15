@@ -148,6 +148,31 @@ public class SurveillanceConfig {
     // Recording
     private int preRecordSeconds = 5;
     private int postRecordSeconds = 10;
+
+    // ========================================================================
+    // Notification severity gating (item 8)
+    //
+    // Per-tier mute is enforced device-side via PushSubscription.mutedCategories
+    // against the new "surveillance.motion.{notice,alert,critical}" subcategories
+    // (see notifications-categories.json). These config fields exist purely so
+    // the legacy NotificationGate static helpers compile and so existing callers
+    // that read the values keep working. They are NOT persisted any more.
+    // ========================================================================
+    private boolean pushNotices  = false;
+    private boolean pushAlerts   = true;
+    private boolean pushCritical = true;
+
+    /**
+     * Telegram-specific: when true, send a "Recording in progress…" text
+     * message at the moment recording starts, in addition to the rich photo +
+     * caption sent when it closes. When false, only the close-stage photo is
+     * sent — recommended default because the start-stage text is redundant
+     * for users who also have the PWA push (the PWA banner replaces itself
+     * via the same notification tag, but Telegram has no equivalent and the
+     * user sees two messages back-to-back). Telegram-only users may want
+     * this on for low-latency awareness.
+     */
+    private boolean telegramSendStartPing = false;
     
     // ========================================================================
     // UNIFIED SENSITIVITY (0-100%)
@@ -524,6 +549,17 @@ public class SurveillanceConfig {
     public boolean isDetectBike() { return detectBike; }
     public int getPreRecordSeconds() { return preRecordSeconds; }
     public int getPostRecordSeconds() { return postRecordSeconds; }
+
+    // Notification gating (item 8)
+    public boolean isPushNotices() { return pushNotices; }
+    public boolean isPushAlerts() { return pushAlerts; }
+    public boolean isPushCritical() { return pushCritical; }
+    public void setPushNotices(boolean v)  { this.pushNotices = v; }
+    public void setPushAlerts(boolean v)   { this.pushAlerts = v; }
+    public void setPushCritical(boolean v) { this.pushCritical = v; }
+
+    public boolean isTelegramSendStartPing() { return telegramSendStartPing; }
+    public void setTelegramSendStartPing(boolean v) { this.telegramSendStartPing = v; }
     
     // Object detection setters
     public void setAiConfidence(float confidence) {

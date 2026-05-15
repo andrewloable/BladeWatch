@@ -66,6 +66,62 @@ public class RecordingsApiHandler {
     private static final Pattern EVENT_PATTERN = Pattern.compile("event_(\\d{8})_(\\d{6})(?:_\\d+)?\\.mp4");
     private static final Pattern PROXIMITY_PATTERN = Pattern.compile("proximity_(\\d{8})_(\\d{6})(?:_\\d+)?\\.mp4");
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
+
+    // Per-recording cache keyed by absolute mp4 path. Validated against
+    // (mp4 length + mp4 mtime + sidecar mtime); any change invalidates.
+    // Without this, every /api/recordings call (UI auto-refresh polls it)
+    // re-scans + re-parses every JSON sidecar from disk — a directory of
+    // 1000 recordings means 1000 sidecar reads per poll. The cache turns
+    // the steady-state cost into one File.exists() + two lastModified()
+    // calls per recording.
+    private static final java.util.concurrent.ConcurrentHashMap<String, CachedRecording> RECORDING_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Drop a cache entry for the given mp4 absolute path. Callers outside
+     * this class (loop rotation in HardwareEventRecorderGpu, the Kotlin
+     * RecordingScanner, manual SD-card maintenance) should call this when
+     * they delete an .mp4 so the API cache doesn't return phantom entries.
+     * No-op when the key isn't present.
+     */
+    public static void invalidateRecordingCache(String absMp4Path) {
+        if (absMp4Path == null) return;
+        RECORDING_CACHE.remove(absMp4Path);
+    }
+
+    /**
+     * Periodic prune. Removes entries whose underlying .mp4 no longer exists.
+     * Call from a long-running daemon's hourly maintenance pass to keep the
+     * cache from growing unbounded across months of uptime.
+     */
+    public static void pruneRecordingCache() {
+        java.util.Iterator<java.util.Map.Entry<String, CachedRecording>> it =
+                RECORDING_CACHE.entrySet().iterator();
+        int removed = 0;
+        while (it.hasNext()) {
+            java.util.Map.Entry<String, CachedRecording> e = it.next();
+            if (!new File(e.getKey()).exists()) {
+                it.remove();
+                removed++;
+            }
+        }
+        if (removed > 0) {
+            CameraDaemon.log("RECORDING_CACHE pruned " + removed + " stale entries");
+        }
+    }
+
+    private static final class CachedRecording {
+        final long mp4Length;
+        final long mp4Mtime;
+        final long sidecarMtime;  // 0 if absent
+        final String json;        // serialized JSONObject — cheaper to clone than to rebuild
+        CachedRecording(long mp4Length, long mp4Mtime, long sidecarMtime, String json) {
+            this.mp4Length = mp4Length;
+            this.mp4Mtime = mp4Mtime;
+            this.sidecarMtime = sidecarMtime;
+            this.json = json;
+        }
+    }
     
     /**
      * Handle recordings API requests.
@@ -82,7 +138,12 @@ public class RecordingsApiHandler {
             int pageSize = parseIntParam(params.get("pageSize"), 12);
             // Clamp pageSize to reasonable limits
             pageSize = Math.max(1, Math.min(pageSize, 50));
-            listRecordings(out, type, date, page, pageSize);
+            // v3 filters (item 6): comma-separated lists of class groups, severities,
+            // and proximity bands. Empty / missing = no filter.
+            String classes = params.get("class");        // e.g. "person,vehicle"
+            String severities = params.get("severity");  // e.g. "ALERT,CRITICAL"
+            String proximities = params.get("proximity"); // e.g. "VERY_CLOSE,CLOSE"
+            listRecordings(out, type, date, page, pageSize, classes, severities, proximities);
             return true;
         }
         
@@ -117,7 +178,16 @@ public class RecordingsApiHandler {
             batchDeleteRecordings(out, body);
             return true;
         }
-        
+
+        // In-flight recording probe — used by events.js to show a pinned
+        // "Recording in progress" placeholder when the user taps a fresh
+        // notification before the .mp4.tmp has been finalized to .mp4.
+        if (path.startsWith("/api/recordings/inflight/") && method.equals("GET")) {
+            String filename = path.substring("/api/recordings/inflight/".length());
+            serveInflightStatus(out, filename);
+            return true;
+        }
+
         // Delete recording
         if (path.startsWith("/api/recordings/") && method.equals("DELETE")) {
             String filename = path.substring(16);
@@ -171,32 +241,62 @@ public class RecordingsApiHandler {
             HttpResponse.sendError(out, 400, "Invalid filename");
             return;
         }
-        
+
+        // Direct sidecar JPEG hits — heroes ("event_xxx.jpg") or per-actor
+        // ("thumb_event_xxx_a17_9300.jpg") written by ThumbnailBuffer next to
+        // the MP4. Looking these up here means events.js can use a single URL
+        // shape (/thumb/<filename>) for both video-frame and AI thumbnails.
+        if (filename.toLowerCase(Locale.US).endsWith(".jpg")) {
+            File jpegFile = findSiblingJpeg(filename);
+            if (jpegFile != null && jpegFile.exists() && jpegFile.length() > 0) {
+                HttpResponse.sendImage(out, jpegFile, "image/jpeg");
+                return;
+            }
+            HttpResponse.sendError(out, 404, "Thumbnail not found: " + filename);
+            return;
+        }
+
         // Check cache first
         File cacheDir = new File(getThumbnailCacheDir());
         if (!cacheDir.exists()) {
             cacheDir.mkdirs();
         }
-        
+
         String thumbName = filename.replace(".mp4", ".jpg");
         File thumbFile = new File(cacheDir, thumbName);
-        
+
+        // SOTA: if a v3 hero JPEG exists alongside the MP4, prefer it.
+        // It's the peak-severity moment captured during the recording rather
+        // than a generic frame at +1s. Backwards-compat: legacy clips without
+        // a hero file fall through to the cache + MediaMetadataRetriever path.
+        File heroSibling = findSiblingJpeg(thumbName);
+        if (heroSibling != null && heroSibling.exists() && heroSibling.length() > 0) {
+            HttpResponse.sendImage(out, heroSibling, "image/jpeg");
+            return;
+        }
+
         // If cached thumbnail exists and is valid, serve it immediately
         if (thumbFile.exists() && thumbFile.length() > 0) {
             HttpResponse.sendImage(out, thumbFile, "image/jpeg");
             return;
         }
-        
-        // Find the source video file
-        File videoFile = findVideoFile(filename);
+
+        // Find the source video file. allowInFlightTmp=true so a notification
+        // tapped within seconds of motion still gets a hero image: the
+        // MediaMetadataRetriever can read sync frames from <name>.mp4.tmp
+        // before the muxer finalises the moov atom on close.
+        File videoFile = findVideoFile(filename, true);
         if (videoFile == null) {
             HttpResponse.sendError(out, 404, "Video not found: " + filename);
             return;
         }
-        
-        // Queue background generation if not already pending
-        if (!pendingThumbs.contains(filename)) {
-            pendingThumbs.add(filename);
+
+        // Queue background generation if not already pending. add() returns
+        // false when the element was already present, so a single atomic
+        // call avoids the check-then-act race where two concurrent requests
+        // both pass `contains()` and submit overlapping FileOutputStreams to
+        // the same thumb file.
+        if (pendingThumbs.add(filename)) {
             final File vf = videoFile;
             final File tf = thumbFile;
             final String fn = filename;
@@ -276,41 +376,181 @@ public class RecordingsApiHandler {
     }
     
     /**
+     * Reports whether a given filename is currently being written by the
+     * encoder as {@code <filename>.tmp}. Used by the events page to display
+     * a pinned "Recording in progress" placeholder when the user taps a
+     * notification before the post-record window finalizes the file.
+     *
+     * <p>Response shape:
+     * <pre>{ "inflight": true, "filename": "...", "sizeBytes": 1234567 }</pre>
+     * or
+     * <pre>{ "inflight": false, "filename": "..." }</pre>
+     *
+     * <p>{@code inflight=false} can mean either "the file finished and was
+     * renamed" (success) or "no such recording exists" — the caller already
+     * reloads the recordings list when the probe flips, so the success and
+     * not-found branches converge in the UI.
+     */
+    private static void serveInflightStatus(OutputStream out, String filename) throws Exception {
+        // Security: prevent path traversal
+        if (filename == null || filename.isEmpty()
+                || filename.contains("..") || filename.contains("/")) {
+            HttpResponse.sendError(out, 400, "Invalid filename");
+            return;
+        }
+        File tmp = findInflightTmp(filename);
+        org.json.JSONObject json = new org.json.JSONObject();
+        try {
+            json.put("filename", filename);
+            json.put("inflight", tmp != null);
+            if (tmp != null) {
+                json.put("sizeBytes", tmp.length());
+            }
+        } catch (Exception ignored) {}
+        HttpResponse.sendJson(out, json.toString());
+    }
+
+    /**
+     * Locate {@code <filename>.tmp} across all recording storage roots.
+     * Returns null when no in-flight write is happening.
+     */
+    private static File findInflightTmp(String filename) {
+        StorageManager sm = StorageManager.getInstance();
+        String tmpName = filename + ".tmp";
+        for (File dir : sm.getAllRecordingsDirs()) {
+            File f = new File(dir, tmpName);
+            if (f.exists() && f.canRead() && f.length() > 0) return f;
+        }
+        for (File dir : sm.getAllSurveillanceDirs()) {
+            File f = new File(dir, tmpName);
+            if (f.exists() && f.canRead() && f.length() > 0) return f;
+        }
+        for (File dir : sm.getAllProximityDirs()) {
+            File f = new File(dir, tmpName);
+            if (f.exists() && f.canRead() && f.length() > 0) return f;
+        }
+        return null;
+    }
+
+    /**
      * Find a video file across all storage locations.
      * Uses StorageManager to get all possible directories without hardcoding paths.
      */
     private static File findVideoFile(String filename) {
+        return findVideoFile(filename, false);
+    }
+
+    /**
+     * @param allowInFlightTmp when true, fall through to {@code <filename>.tmp}
+     *        for files still being written by HardwareEventRecorderGpu. Useful
+     *        for thumbnail generation (MediaMetadataRetriever reads frames
+     *        without needing the moov atom). NOT safe for video streaming —
+     *        a .tmp lacks the moov atom and the {@code <video>} element will
+     *        fail to load it. Streaming MUST use the default false.
+     */
+    private static File findVideoFile(String filename, boolean allowInFlightTmp) {
         StorageManager sm = StorageManager.getInstance();
-        
+
         // Search all recordings directories (active + alternate)
         for (File dir : sm.getAllRecordingsDirs()) {
             File f = new File(dir, filename);
             if (f.exists() && f.canRead() && f.length() > 0) return f;
         }
-        
+
         // Search all surveillance directories (active + alternate)
         for (File dir : sm.getAllSurveillanceDirs()) {
             File f = new File(dir, filename);
             if (f.exists() && f.canRead() && f.length() > 0) return f;
         }
-        
+
         // Search all proximity directories (active + alternate)
         for (File dir : sm.getAllProximityDirs()) {
             File f = new File(dir, filename);
             if (f.exists() && f.canRead() && f.length() > 0) return f;
         }
-        
+
         // Check legacy recordings location
         File legacyFile = new File(LEGACY_RECORDINGS_DIR, filename);
         if (legacyFile.exists() && legacyFile.canRead() && legacyFile.length() > 0) return legacyFile;
-        
+
         // Check legacy sentry location
         File legacySentryFile = new File(LEGACY_SENTRY_DIR, filename);
         if (legacySentryFile.exists() && legacySentryFile.canRead() && legacySentryFile.length() > 0) return legacySentryFile;
-        
+
+        // In-flight fallback (thumbnails only): a notification fires the moment
+        // startRecording() returns, but the file on disk is still
+        // <name>.mp4.tmp until closeEventRecording() finishes (10-15s
+        // post-record). Without this fallback, a tap within that window
+        // fetches /thumb/<name> and gets 404, so the push notification banner
+        // shows no hero image. We DON'T enable this for video streaming
+        // because a .tmp lacks the moov atom.
+        if (allowInFlightTmp) {
+            String tmpName = filename + ".tmp";
+            for (File dir : sm.getAllRecordingsDirs()) {
+                File f = new File(dir, tmpName);
+                if (f.exists() && f.canRead() && f.length() > 0) return f;
+            }
+            for (File dir : sm.getAllSurveillanceDirs()) {
+                File f = new File(dir, tmpName);
+                if (f.exists() && f.canRead() && f.length() > 0) return f;
+            }
+            for (File dir : sm.getAllProximityDirs()) {
+                File f = new File(dir, tmpName);
+                if (f.exists() && f.canRead() && f.length() > 0) return f;
+            }
+        }
+
         return null;
     }
     
+    /**
+     * Locate a JPEG sibling next to a recording. Used to serve hero / per-actor
+     * thumbnails that ThumbnailBuffer writes alongside the MP4. Same security
+     * + directory-search rules as findVideoFile.
+     */
+    private static File findSiblingJpeg(String jpegName) {
+        if (jpegName == null || jpegName.isEmpty()) return null;
+        if (jpegName.contains("..") || jpegName.contains("/")) return null;
+        StorageManager sm = StorageManager.getInstance();
+        for (File dir : sm.getAllRecordingsDirs()) {
+            File f = new File(dir, jpegName);
+            if (f.exists() && f.canRead() && f.length() > 0) return f;
+        }
+        for (File dir : sm.getAllSurveillanceDirs()) {
+            File f = new File(dir, jpegName);
+            if (f.exists() && f.canRead() && f.length() > 0) return f;
+        }
+        for (File dir : sm.getAllProximityDirs()) {
+            File f = new File(dir, jpegName);
+            if (f.exists() && f.canRead() && f.length() > 0) return f;
+        }
+        File legacy = new File(LEGACY_RECORDINGS_DIR, jpegName);
+        if (legacy.exists() && legacy.canRead() && legacy.length() > 0) return legacy;
+        File legacySentry = new File(LEGACY_SENTRY_DIR, jpegName);
+        if (legacySentry.exists() && legacySentry.canRead() && legacySentry.length() > 0) return legacySentry;
+        return null;
+    }
+
+    private static Set<String> splitCsvLower(String csv) {
+        if (csv == null || csv.isEmpty()) return java.util.Collections.emptySet();
+        Set<String> out = new HashSet<>();
+        for (String s : csv.split(",")) {
+            String t = s.trim().toLowerCase(Locale.US);
+            if (!t.isEmpty()) out.add(t);
+        }
+        return out;
+    }
+
+    private static Set<String> splitCsvUpper(String csv) {
+        if (csv == null || csv.isEmpty()) return java.util.Collections.emptySet();
+        Set<String> out = new HashSet<>();
+        for (String s : csv.split(",")) {
+            String t = s.trim().toUpperCase(Locale.US);
+            if (!t.isEmpty()) out.add(t);
+        }
+        return out;
+    }
+
     private static Map<String, String> parseQuery(String query) {
         Map<String, String> params = new HashMap<>();
         if (query == null || query.isEmpty()) return params;
@@ -327,8 +567,15 @@ public class RecordingsApiHandler {
     /**
      * List all recordings with optional filters and pagination.
      */
-    private static void listRecordings(OutputStream out, String typeFilter, String dateFilter, 
+    private static void listRecordings(OutputStream out, String typeFilter, String dateFilter,
                                        int page, int pageSize) throws Exception {
+        listRecordings(out, typeFilter, dateFilter, page, pageSize, null, null, null);
+    }
+
+    private static void listRecordings(OutputStream out, String typeFilter, String dateFilter,
+                                       int page, int pageSize,
+                                       String classFilter, String severityFilter,
+                                       String proximityFilter) throws Exception {
         List<JSONObject> recordings = new ArrayList<>();
         StorageManager sm = StorageManager.getInstance();
         
@@ -378,7 +625,40 @@ public class RecordingsApiHandler {
             seenFilenames.add(name);
             return false;
         });
-        
+
+        // v3 filters (item 6): each filter is comma-separated; recording must
+        // match at least one value in each non-empty filter. Recordings without
+        // sidecar data (legacy clips) only pass when the filter is unset.
+        Set<String> classSet = splitCsvLower(classFilter);
+        Set<String> sevSet   = splitCsvUpper(severityFilter);
+        Set<String> proxSet  = splitCsvUpper(proximityFilter);
+        if (!classSet.isEmpty() || !sevSet.isEmpty() || !proxSet.isEmpty()) {
+            recordings.removeIf(rec -> {
+                if (!sevSet.isEmpty()) {
+                    String sev = rec.optString("peakSeverity", "");
+                    if (sev.isEmpty() || !sevSet.contains(sev)) return true;
+                }
+                if (!proxSet.isEmpty()) {
+                    String prox = rec.optString("peakProximity", "");
+                    if (prox.isEmpty() || !proxSet.contains(prox)) return true;
+                }
+                if (!classSet.isEmpty()) {
+                    org.json.JSONArray actors = rec.optJSONArray("actors");
+                    if (actors == null || actors.length() == 0) return true;
+                    boolean any = false;
+                    for (int i = 0; i < actors.length(); i++) {
+                        JSONObject a = actors.optJSONObject(i);
+                        if (a == null) continue;
+                        if (classSet.contains(a.optString("class", "").toLowerCase(Locale.US))) {
+                            any = true; break;
+                        }
+                    }
+                    if (!any) return true;
+                }
+                return false;
+            });
+        }
+
         // Pagination
         int totalCount = recordings.size();
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
@@ -407,13 +687,13 @@ public class RecordingsApiHandler {
     
     private static void scanDirectory(File dir, String type, List<JSONObject> recordings, String dateFilter) {
         if (!dir.exists() || !dir.isDirectory()) return;
-        
+
         // Verify directory is actually readable (catches unmounted SD card ghost paths)
         if (!dir.canRead()) return;
-        
+
         File[] files = dir.listFiles((d, name) -> name.endsWith(".mp4"));
         if (files == null) return;
-        
+
         long filterStart = 0, filterEnd = 0;
         if (dateFilter != null && !dateFilter.isEmpty()) {
             try {
@@ -429,12 +709,12 @@ public class RecordingsApiHandler {
                 CameraDaemon.log("Invalid date filter: " + dateFilter);
             }
         }
-        
+
         for (File file : files) {
             // Skip ghost files: must be readable and have actual content
             // On BYD, unmounted SD card can leave stale directory entries with 0-byte ghosts
             if (!file.canRead() || file.length() <= 0) continue;
-            
+
             JSONObject recording = parseRecording(file, type);
             if (recording != null) {
                 // Apply date filter if specified
@@ -448,6 +728,40 @@ public class RecordingsApiHandler {
     }
     
     private static JSONObject parseRecording(File file, String type) {
+        // Cache lookup: hot path skips regex + DateFormat + sidecar I/O when
+        // nothing has changed. Key by absolute path; the type only affects
+        // which regex matches but a given file matches at most one regex,
+        // so cached entries are stable across `type` values.
+        final String cacheKey = file.getAbsolutePath();
+        final long mp4Length = file.length();
+        final long mp4Mtime = file.lastModified();
+        File sidecar = new File(file.getParentFile(),
+                file.getName().replace(".mp4", ".json"));
+        final long sidecarMtime = sidecar.exists() ? sidecar.lastModified() : 0L;
+
+        CachedRecording cached = RECORDING_CACHE.get(cacheKey);
+        if (cached != null
+                && cached.mp4Length == mp4Length
+                && cached.mp4Mtime == mp4Mtime
+                && cached.sidecarMtime == sidecarMtime) {
+            try {
+                return new JSONObject(cached.json);
+            } catch (Exception ignored) {
+                // fall through to re-parse
+            }
+        }
+
+        JSONObject parsed = parseRecordingUncached(file, type);
+        if (parsed != null) {
+            try {
+                RECORDING_CACHE.put(cacheKey,
+                        new CachedRecording(mp4Length, mp4Mtime, sidecarMtime, parsed.toString()));
+            } catch (Exception ignored) {}
+        }
+        return parsed;
+    }
+
+    private static JSONObject parseRecordingUncached(File file, String type) {
         try {
             String name = file.getName();
             long timestamp;
@@ -493,7 +807,74 @@ public class RecordingsApiHandler {
             
             // Thumbnail URL - server generates thumbnail from video
             rec.put("thumbnailUrl", "/thumb/" + name);
-            
+
+            // ---- v3 sidecar enrichment (item 6) ----
+            // If a JSON sidecar accompanies this MP4, attach the high-level stats so
+            // the events list can render badges + filter without opening every file.
+            // Backwards-compatible: if no sidecar / v2 sidecar / parse error, the
+            // recording entry simply lacks the new fields and the UI degrades.
+            try {
+                File sidecar = new File(file.getParentFile(), name.replace(".mp4", ".json"));
+                if (sidecar.exists() && sidecar.canRead()) {
+                    StringBuilder sb = new StringBuilder((int) Math.min(sidecar.length(), 65536));
+                    try (java.io.BufferedReader br = new java.io.BufferedReader(
+                            new java.io.FileReader(sidecar))) {
+                        String line;
+                        while ((line = br.readLine()) != null) sb.append(line);
+                    }
+                    JSONObject side = new JSONObject(sb.toString());
+                    int sideVersion = side.optInt("version", 2);
+                    rec.put("schemaVersion", sideVersion);
+                    JSONObject stats = side.optJSONObject("stats");
+                    if (stats != null) {
+                        // v2 fields (always present)
+                        rec.put("personSpans", stats.optInt("person", 0));
+                        rec.put("vehicleSpans", stats.optInt("car", 0));
+                        rec.put("bikeSpans", stats.optInt("bike", 0));
+                        // v3 fields (may be absent on legacy clips)
+                        if (stats.has("personCount"))  rec.put("personCount",  stats.optInt("personCount"));
+                        if (stats.has("vehicleCount")) rec.put("vehicleCount", stats.optInt("vehicleCount"));
+                        if (stats.has("bikeCount"))    rec.put("bikeCount",    stats.optInt("bikeCount"));
+                        if (stats.has("animalCount"))  rec.put("animalCount",  stats.optInt("animalCount"));
+                        if (stats.has("peakSeverity")) rec.put("peakSeverity", stats.optString("peakSeverity"));
+                        if (stats.has("peakProximity")) rec.put("peakProximity", stats.optString("peakProximity"));
+                        if (stats.has("peakSeverityMs")) rec.put("peakSeverityMs", stats.optLong("peakSeverityMs"));
+                    }
+                    // Hero thumbnail filename (v3 only)
+                    if (side.has("heroThumbnail")) {
+                        String heroName = side.optString("heroThumbnail");
+                        if (heroName != null && !heroName.isEmpty()) {
+                            File heroFile = new File(file.getParentFile(), heroName);
+                            if (heroFile.exists()) {
+                                rec.put("heroThumbnailUrl", "/thumb/" + heroName);
+                            }
+                        }
+                    }
+                    // Compact actors[] for filter chips. Strip the heavy fields.
+                    // EXCLUDE static actors so a clip with two parked cars + a
+                    // person walking in only matches "Person" / "Alert" filters,
+                    // not "Vehicle". Forensic-detail callers that want the
+                    // complete list can read the full sidecar via /api/events/.
+                    org.json.JSONArray actors = side.optJSONArray("actors");
+                    if (actors != null && actors.length() > 0) {
+                        org.json.JSONArray slim = new org.json.JSONArray();
+                        for (int i = 0; i < actors.length(); i++) {
+                            JSONObject a = actors.optJSONObject(i);
+                            if (a == null) continue;
+                            if (a.optBoolean("isStatic", false)) continue;
+                            JSONObject s = new JSONObject();
+                            s.put("class", a.optString("class", "object"));
+                            s.put("peakSeverity", a.optString("peakSeverity", "NOTICE"));
+                            s.put("peakProximity", a.optString("peakProximity", "UNKNOWN"));
+                            slim.put(s);
+                        }
+                        rec.put("actors", slim);
+                    }
+                }
+            } catch (Exception se) {
+                // Sidecar parse failure is non-fatal; recording still appears in list.
+            }
+
             return rec;
         } catch (Exception e) {
             return null;
@@ -825,30 +1206,64 @@ public class RecordingsApiHandler {
         }
         
         boolean deleted = file.delete();
-        
-        // SOTA: Also delete JSON sidecar if it exists
         if (deleted) {
-            String jsonName = filename.replace(".mp4", ".json");
-            File jsonFile = new File(file.getParentFile(), jsonName);
-            if (jsonFile.exists()) {
-                jsonFile.delete();
-            }
-            
-            // Delete cached thumbnail
-            String thumbName = filename.replace(".mp4", ".jpg");
-            File thumbFile = new File(getThumbnailCacheDir(), thumbName);
-            if (thumbFile.exists()) {
-                thumbFile.delete();
-            }
+            deleteSidecars(file, filename);
         }
-        
+
         JSONObject response = new JSONObject();
         response.put("success", deleted);
         if (!deleted) {
             response.put("error", "Failed to delete file");
         }
-        
+
         HttpResponse.sendJson(out, response.toString());
+    }
+
+    /**
+     * Sweep the .mp4's sidecar files: JSON event timeline, cached thumb,
+     * v3 hero JPEG, per-actor thumbs ({@code thumb_<base>_a*.jpg}).
+     *
+     * Mirrors RecordingScanner.deleteRecording on the Android side — without
+     * this sweep, web-UI deletes leak hero/per-actor JPEGs into the storage
+     * directory until disk fills (the loop-rotation cleanup also doesn't see
+     * them because it only iterates .mp4 files).
+     */
+    private static void deleteSidecars(File mp4File, String filename) {
+        // Invalidate the in-memory parse cache so the next /api/recordings
+        // call doesn't return a phantom entry for the just-deleted file.
+        RECORDING_CACHE.remove(mp4File.getAbsolutePath());
+
+        // JSON event timeline
+        String jsonName = filename.replace(".mp4", ".json");
+        File jsonFile = new File(mp4File.getParentFile(), jsonName);
+        if (jsonFile.exists()) jsonFile.delete();
+
+        // Cached thumbnail
+        String thumbName = filename.replace(".mp4", ".jpg");
+        File thumbFile = new File(getThumbnailCacheDir(), thumbName);
+        if (thumbFile.exists()) thumbFile.delete();
+
+        // v3 hero JPEG sibling: <base>.jpg next to the mp4
+        File parent = mp4File.getParentFile();
+        if (parent == null || !parent.canRead()) return;
+        String base = filename.endsWith(".mp4")
+                ? filename.substring(0, filename.length() - 4)
+                : filename;
+        File heroSibling = new File(parent, base + ".jpg");
+        if (heroSibling.exists()) heroSibling.delete();
+
+        // Per-actor thumbs: thumb_<base>_a<id>(_<rel>).jpg
+        // Anchor with "_a" so a sibling segment named "<base>_2.mp4" with
+        // its own thumbs at "thumb_<base>_2_a*.jpg" is NOT swept when we
+        // delete <base>.mp4 — the underscore-after-_2_ is followed by 'a'
+        // for actor thumbs, but "_2_" itself is followed by an actor digit
+        // that the original prefix-only check would catch incorrectly.
+        final String perActorPrefix = "thumb_" + base + "_a";
+        File[] perActor = parent.listFiles((dir, name) ->
+                name.startsWith(perActorPrefix) && name.endsWith(".jpg"));
+        if (perActor != null) {
+            for (File f : perActor) f.delete();
+        }
     }
     
     /**
@@ -910,20 +1325,7 @@ public class RecordingsApiHandler {
                 boolean success = file.delete();
                 if (success) {
                     deleted++;
-                    
-                    // Also delete JSON sidecar if it exists
-                    String jsonName = filename.replace(".mp4", ".json");
-                    File jsonFile = new File(file.getParentFile(), jsonName);
-                    if (jsonFile.exists()) {
-                        jsonFile.delete();
-                    }
-                    
-                    // Delete cached thumbnail
-                    String thumbName = filename.replace(".mp4", ".jpg");
-                    File thumbFile = new File(getThumbnailCacheDir(), thumbName);
-                    if (thumbFile.exists()) {
-                        thumbFile.delete();
-                    }
+                    deleteSidecars(file, filename);
                 } else {
                     failed++;
                     errors.put(filename + ": delete failed");

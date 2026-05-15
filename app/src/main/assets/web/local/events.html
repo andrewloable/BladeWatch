@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Events - OverDrive</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="../shared/app-icon.webp">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00E5FF">
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -534,6 +539,59 @@
             border-radius: 4px;
             font-family: 'JetBrains Mono', monospace;
         }
+
+        /* In-flight recording placeholder. Pinned at the top of the list when
+           the events page is opened from a notification before the encoder
+           finishes its post-record window (~10–15 s). The card swaps to a
+           normal recording entry the moment the rename completes. */
+        .recording-card-inflight {
+            border: 1px solid rgba(0, 212, 170, 0.45);
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.08) 0%, rgba(14, 165, 233, 0.04) 100%);
+            cursor: default;
+        }
+        .recording-card-inflight:hover { border-color: rgba(0, 212, 170, 0.65); }
+        .recording-card-inflight:active { transform: none; }
+        .recording-card-inflight .inflight-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 212, 170, 0.85);
+            color: #0a0a0f;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .recording-card-inflight .inflight-dot {
+            width: 6px;
+            height: 6px;
+            background: #0a0a0f;
+            border-radius: 50%;
+            animation: inflight-pulse 1.2s ease-in-out infinite;
+        }
+        @keyframes inflight-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.4; transform: scale(0.7); }
+        }
+        .recording-badge.live {
+            background: rgba(0, 212, 170, 0.18);
+            color: #00d4aa;
+        }
+
+        /* Brief post-finalize highlight so the user can see the entry the
+           inflight placeholder just turned into. */
+        .recording-card-just-finalized {
+            animation: recording-just-finalized 1.6s ease-out;
+        }
+        @keyframes recording-just-finalized {
+            0%   { box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.65); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0); }
+        }
         
         .recording-info {
             flex: 1;
@@ -576,6 +634,88 @@
             background: rgba(251, 146, 60, 0.2);
             color: #fb923c;
         }
+
+        /* v3 severity badges + actor summary (item 6) */
+        .recording-badge.sev-notice   { background: rgba(160,160,160,0.20); color: #c2c2c2; }
+        .recording-badge.sev-alert    { background: rgba(255,136,0,0.20);   color: #ff9b3d; }
+        .recording-badge.sev-critical { background: rgba(239,68,68,0.25);   color: #ff6b6b; }
+
+        .actor-summary {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 2px;
+        }
+        .actor-summary .pill {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 1px 6px;
+            border-radius: 999px;
+            font-size: 10px;
+        }
+        .actor-summary .prox-VERY_CLOSE { color: #ff6b6b; border-color: rgba(255,107,107,0.35); }
+        .actor-summary .prox-CLOSE      { color: #ff9b3d; border-color: rgba(255,155,61,0.35); }
+        .actor-summary .prox-MID        { color: #c2c2c2; }
+        .actor-summary .prox-FAR        { color: #888; }
+
+        .recording-card.sev-alert    { box-shadow: inset 3px 0 0 #ff9b3d; }
+        .recording-card.sev-critical { box-shadow: inset 3px 0 0 #ff6b6b; }
+
+        /* v3 Actor / Severity / Proximity chip rows.
+           Lives in its own block below .events-top-bar so the desktop top-row
+           (calendar + type tabs + storage) keeps full breathing room. Each
+           row has a small label prefix and scrolls horizontally if narrow. */
+        .actor-filter-rows {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .filter-tabs-row2 {
+            /* Override .filter-tabs flex:1 so multiple rows stack properly */
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 6px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .filter-tabs-row2::-webkit-scrollbar { display: none; }
+        .filter-row-label {
+            flex: 0 0 auto;
+            padding: 0 4px 0 2px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        .filter-chip {
+            flex: 0 0 auto;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.10);
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .filter-chip.active {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-primary, #fff);
+            border-color: rgba(255,255,255,0.25);
+        }
+        .filter-chip.sev-notice.active   { background: rgba(160,160,160,0.20); }
+        .filter-chip.sev-alert.active    { background: rgba(255,136,0,0.20);   color: #ff9b3d; }
+        .filter-chip.sev-critical.active { background: rgba(239,68,68,0.25);   color: #ff6b6b; }
         
         .recording-meta {
             font-size: 11px;
@@ -689,35 +829,33 @@
             background: rgba(0, 0, 0, 0.95);
             z-index: 1000;
             display: none;
-            align-items: flex-end;
+            align-items: center;
             justify-content: center;
-            padding: 0;
+            padding: 16px;
         }
-        
+
         .video-modal.active {
             display: flex;
         }
-        
+
         .video-container {
             max-width: 1200px;
             width: 100%;
-            max-height: 100vh;
-            max-height: 100dvh;
+            max-height: calc(100vh - 32px);
+            max-height: calc(100dvh - 32px);
             background: var(--bg-surface);
-            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            border-radius: var(--radius-lg);
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
-        
+
         @media (min-width: 768px) {
             .video-modal {
-                align-items: center;
                 padding: 20px;
             }
-            
+
             .video-container {
-                border-radius: var(--radius-lg);
                 max-height: calc(100vh - 40px);
                 max-height: calc(100dvh - 40px);
             }
@@ -1126,6 +1264,13 @@
                     </svg>
                     <span>Trips</span>
                 </a>
+                <a href="notifications.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
                 <a href="vehicle-control.html" class="nav-link">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="11" width="18" height="11" rx="2"/>
@@ -1309,7 +1454,7 @@
                         <button class="filter-tab" data-filter="normal" onclick="BYD.events.setFilter('normal')">Normal</button>
                         <button class="filter-tab" data-filter="proximity" onclick="BYD.events.setFilter('proximity')">Proximity</button>
                     </div>
-                    
+
                     <div class="storage-stats" id="storageStats">
                         <div class="storage-info">
                             <span class="storage-value" id="storageUsed">--</span>
@@ -1331,6 +1476,38 @@
                                 <span id="proximityCount">0</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!--
+                  v3 actor / severity / proximity chip rows. Lives OUTSIDE
+                  .events-top-bar so the desktop horizontal flex layout for
+                  calendar+type-tabs+storage stays uncluttered. Three labelled
+                  rows below, each with its own "Any" to clear that dimension.
+                -->
+                <div class="actor-filter-rows">
+                    <div class="filter-tabs filter-tabs-row2" data-filter-row="class">
+                        <span class="filter-row-label">What:</span>
+                        <button class="filter-chip active" data-class="" onclick="BYD.events.setActorFilter('class','')">Any</button>
+                        <button class="filter-chip" data-class="person"  onclick="BYD.events.setActorFilter('class','person')">Person</button>
+                        <button class="filter-chip" data-class="vehicle" onclick="BYD.events.setActorFilter('class','vehicle')">Vehicle</button>
+                        <button class="filter-chip" data-class="bike"    onclick="BYD.events.setActorFilter('class','bike')">Bike</button>
+                        <button class="filter-chip" data-class="animal"  onclick="BYD.events.setActorFilter('class','animal')">Animal</button>
+                    </div>
+                    <div class="filter-tabs filter-tabs-row2" data-filter-row="severity">
+                        <span class="filter-row-label">Severity:</span>
+                        <button class="filter-chip active" data-severity="" onclick="BYD.events.setActorFilter('severity','')">Any</button>
+                        <button class="filter-chip sev-notice"   data-severity="NOTICE"   onclick="BYD.events.setActorFilter('severity','NOTICE')">Notice</button>
+                        <button class="filter-chip sev-alert"    data-severity="ALERT"    onclick="BYD.events.setActorFilter('severity','ALERT')">Alert</button>
+                        <button class="filter-chip sev-critical" data-severity="CRITICAL" onclick="BYD.events.setActorFilter('severity','CRITICAL')">Critical</button>
+                    </div>
+                    <div class="filter-tabs filter-tabs-row2" data-filter-row="proximity">
+                        <span class="filter-row-label">Distance:</span>
+                        <button class="filter-chip active" data-proximity="" onclick="BYD.events.setActorFilter('proximity','')">Any</button>
+                        <button class="filter-chip" data-proximity="VERY_CLOSE" onclick="BYD.events.setActorFilter('proximity','VERY_CLOSE')">Very close</button>
+                        <button class="filter-chip" data-proximity="CLOSE"      onclick="BYD.events.setActorFilter('proximity','CLOSE')">Close</button>
+                        <button class="filter-chip" data-proximity="MID"        onclick="BYD.events.setActorFilter('proximity','MID')">Mid</button>
+                        <button class="filter-chip" data-proximity="FAR"        onclick="BYD.events.setActorFilter('proximity','FAR')">Far</button>
                     </div>
                 </div>
                 
@@ -1483,7 +1660,9 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="../shared/auth.js"></script>
+    <script src="../shared/pwa-init.js"></script>
     <script src="../shared/core.js"></script>
+    <script src="../shared/update-flow.js"></script>
     <script src="../shared/pip.js"></script>
     <script src="../shared/events.js"></script>
     <script>

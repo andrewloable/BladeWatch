@@ -76,14 +76,23 @@ class BootReceiver : BroadcastReceiver() {
                 }
             }
             
-            // App update - start daemons and bring app to foreground
+            // App update — DO NOT start daemons here. The old process's daemon
+            // kill sequence may still be in flight, and the new MainActivity is
+            // the sole orchestrator post-update: it runs UpdateLifecycle.hardResetDaemons
+            // before DaemonStartupManager. Starting daemons here would race the
+            // hard reset and resurrect old/zombie watchdogs (see /data/local/tmp/
+            // overdrive_update_in_progress sentinel).
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
-                startDaemons(context, action)
+                lastStartTime = System.currentTimeMillis()
                 try {
                     val launchIntent = Intent(context, com.overdrive.app.ui.MainActivity::class.java)
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    launchIntent.putExtra(
+                        com.overdrive.app.updater.UpdateLifecycle.EXTRA_POST_UPDATE,
+                        true,
+                    )
                     context.startActivity(launchIntent)
-                    Log.d(TAG, "App relaunched after update")
+                    Log.d(TAG, "MY_PACKAGE_REPLACED — relaunching MainActivity (post_update=true)")
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to relaunch app: ${e.message}")
                 }

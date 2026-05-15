@@ -138,7 +138,13 @@ class MainActivity : AppCompatActivity() {
         // Start Location Sidecar service (establishes ADB connection)
         startLocationSidecarService()
         
-        // Initialize daemons after a short delay to allow ADB connection
+        // Initialize daemons after a short delay to allow ADB connection.
+        // If this is a post-update launch, run UpdateLifecycle.hardResetDaemons
+        // FIRST so any zombie daemons / watchdogs from the previous install are
+        // dead before the new daemon launcher starts. See UpdateLifecycle for
+        // the sentinel handshake details.
+        val isPostUpdate = com.overdrive.app.updater.UpdateLifecycle
+            .isPostUpdateLaunch(this, intent)
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             // Sync device ID to file synchronously before daemon startup
             Thread {
@@ -148,15 +154,58 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "Device ID sync error: ${e.message}")
                 }
-                
-                // Start daemons on main thread
-                runOnUiThread {
-                    daemonStartupManager.initializeOnAppLaunch()
-                    
-                    // Check daemon statuses after startup
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        daemonStartupManager.checkAllDaemonStatuses()
-                    }, 3000)
+
+                val startDaemons = Runnable {
+                    runOnUiThread {
+                        daemonStartupManager.initializeOnAppLaunch()
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            daemonStartupManager.checkAllDaemonStatuses()
+                        }, 3000)
+                    }
+                }
+
+                if (isPostUpdate) {
+                    logsViewModel.info("Update", "Post-update launch — hard-resetting daemons before startup")
+                    com.overdrive.app.updater.UpdateLifecycle.hardResetDaemons(this) {
+                        // Consume the just-updated marker only after the cleanup
+                        // completes. A crash mid-reset will leave the sentinel
+                        // in place so the next launch retries.
+                        val updatedVersion = com.overdrive.app.updater.AppUpdater
+                            .consumeJustUpdatedVersion(this)
+                        if (updatedVersion != null) {
+                            runOnUiThread {
+                                Toast.makeText(this, "✅ Updated to $updatedVersion", Toast.LENGTH_LONG).show()
+                                logsViewModel.info("Update", "App updated to $updatedVersion")
+                            }
+                            // Plant the Telegram post-update hint file so when
+                            // the cloudflared tunnel comes back with a NEW URL,
+                            // the user sees "🔄 Updated to vX — new tunnel URL"
+                            // instead of the generic "URL changed" message.
+                            // The daemon deletes the hint after one read, so
+                            // subsequent (non-update) tunnel restarts go back
+                            // to the normal copy.
+                            try {
+                                val adb = com.overdrive.app.launcher.AdbDaemonLauncher(this)
+                                val hintFile = com.overdrive.app.updater
+                                    .UpdateLifecycle.TELEGRAM_POST_UPDATE_HINT_FILE
+                                adb.executeShellCommand(
+                                    "echo '$updatedVersion' > $hintFile",
+                                    object : com.overdrive.app.launcher
+                                        .AdbDaemonLauncher.LaunchCallback {
+                                        override fun onLog(message: String) {}
+                                        override fun onLaunched() {}
+                                        override fun onError(error: String) {}
+                                    }
+                                )
+                            } catch (e: Exception) {
+                                android.util.Log.w("MainActivity",
+                                    "Failed to plant Telegram post-update hint: ${e.message}")
+                            }
+                        }
+                        startDaemons.run()
+                    }
+                } else {
+                    startDaemons.run()
                 }
             }.start()
         }, 1000)
@@ -203,24 +252,26 @@ class MainActivity : AppCompatActivity() {
     }
     
     /**
-     * Start the status overlay service if overlay permission is granted.
-     * If not granted, show the setup guide to help the user enable it.
+     * Start the status overlay service if overlay permission is granted, and
+     * show the setup guide whenever the install/update marker has advanced.
+     * The guide must reappear on every install/replace because BYD wipes the
+     * autostart whitelist on each install.
      */
     private fun startStatusOverlay() {
         val hasPermission = com.overdrive.app.overlay.StatusOverlayService.hasOverlayPermission(this)
         android.util.Log.i("MainActivity", "Overlay permission: $hasPermission")
         logsViewModel.info("Overlay", "Overlay permission: $hasPermission")
-        
+
         if (hasPermission) {
-            // Permission granted — start the overlay service
             com.overdrive.app.overlay.StatusOverlayService.startIfPermitted(this)
             logsViewModel.info("Overlay", "Status overlay service started")
-        } else {
-            // No permission — show setup guide after a short delay
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                com.overdrive.app.overlay.SetupGuideDialog.showIfNeeded(this)
-            }, 2000)
         }
+
+        // showIfNeeded is no-op when the seen install-time matches the current
+        // PackageInfo.lastUpdateTime, so it's safe to call on every launch.
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            com.overdrive.app.overlay.SetupGuideDialog.showIfNeeded(this)
+        }, 2000)
     }
     
     override fun onNewIntent(intent: android.content.Intent?) {

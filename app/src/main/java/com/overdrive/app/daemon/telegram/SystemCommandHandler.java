@@ -180,7 +180,13 @@ public class SystemCommandHandler implements TelegramCommandHandler {
     }
     
     private void handleHelp(long chatId, CommandContext ctx) {
-        String text = "📖 *Commands*\n\n" +
+        // Read the persisted app version. AppUpdater writes /data/local/tmp/overdrive_version
+        // on every check/install — this method reads from that file and falls
+        // back to BuildConfig.VERSION_NAME when the file is missing.
+        String version = com.overdrive.app.updater.AppUpdater.getDisplayVersionFromFile();
+
+        String text = "📖 *Commands*\n" +
+                "_OverDrive " + version + "_\n\n" +
                 "*Surveillance*\n" +
                 "`/start` - Start surveillance\n" +
                 "`/stop` - Stop surveillance\n" +

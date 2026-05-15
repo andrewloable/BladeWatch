@@ -123,12 +123,24 @@ public class SurveillanceEngineGpu {
     
     // Detection mode
     private boolean useObjectDetection = false;
-    private YoloDetector yoloDetector = null;
+    // FIX (A8/B3): volatile so the AI executor sees writes from the UI thread
+    // without a torn read. The lambda still snapshots into a local before use.
+    private volatile YoloDetector yoloDetector = null;
+    // FIX (Bug B): retain context references so we can lazily re-init the YOLO detector
+    // when the user re-enables object detection after disabling all classes.
+    private android.content.Context yoloContext = null;
+    private android.content.res.AssetManager yoloAssetManager = null;
     
     // Object detection filters (SOTA: Quadrant-relative height filter in YoloDetector)
     private float minObjectSize = 0.12f;  // 12% of QUADRANT height (~8m for person in 2x2 grid)
     private float aiConfidence = 0.25f;  // 25% confidence (lowered for debugging)
-    private int[] classFilter = null;  // null = all classes, or {0, 2, 3} for person, car, bike
+    // FIX (Bug B): tri-state semantics for classFilter:
+    //   null            -> uninitialised, fall back to "all classes" defaults
+    //   length == 0     -> user explicitly disabled all classes; YOLO must be skipped
+    //   length >  0     -> only those COCO class IDs are kept
+    private int[] classFilter = null;
+    // Mirror of "should AI run at all" derived from classFilter; cheaper to read on hot path.
+    private volatile boolean aiEnabled = true;
     
     // AI throttling - only run YOLO every 500ms to save CPU
     private long lastAiTimeMs = 0;
@@ -136,7 +148,15 @@ public class SurveillanceEngineGpu {
     
     // --- SOTA FIX: Persistent Resources (Eliminates GC Stutter) ---
     // 1. Reusable Buffer: Prevents ~900KB allocation per frame
-    private byte[] aiBuffer = null;
+    // Per-thread scratch buffer for cropFromMosaic. Previously a single
+    // shared byte[] was racy: the main render thread (processFrame, tracker
+    // update) and the aiExecutor thread (baseline seed / lighting refresh /
+    // post-suppression refresh) both call cropFromMosaic, and concurrent
+    // System.arraycopy into the same buffer can produce torn rows. All
+    // call sites that retain the result already defensive-copy, but the
+    // arraycopy ITSELF is racy — torn rows feed YOLO garbage. ThreadLocal
+    // gives each thread its own scratch with no synchronization overhead.
+    private final ThreadLocal<byte[]> aiBufferTL = new ThreadLocal<>();
     // 2. Single Thread Executor: Prevents OS thread creation overhead
     private final ExecutorService aiExecutor = Executors.newSingleThreadExecutor();
     // 3. Atomic Flag for thread safety
@@ -160,6 +180,31 @@ public class SurveillanceEngineGpu {
     
     // Cross-quadrant object tracker
     private final CrossQuadrantTracker crossQuadrantTracker = new CrossQuadrantTracker();
+
+    // Actor-layer tracker — sits ON TOP of the existing YOLO + cross-quadrant
+    // pipeline and emits Actor records carrying proximity / trend / severity for
+    // the timeline + thumbnail + notification + UI layers. Does not affect motion
+    // detection or recording trigger logic.
+    private final ActorTracker actorTracker = new ActorTracker();
+    // Snapshot of the most recent Actor list, for callers that read state.
+    // CopyOnWrite to keep reads lock-free for UI / API threads.
+    private volatile java.util.List<Actor> lastActors = java.util.Collections.emptyList();
+
+    // Thumbnail capture buffer (Block C). Field declared here so the wiring point
+    // in runAiOnQuadrant compiles even before Block C lands. Constructed/reset by
+    // recording lifecycle handlers.
+    private ThumbnailBuffer thumbnailBuffer = null;
+
+    // FIX (B1/H-a): recording-generation counter. Bumped whenever a recording
+    // ends and Actor/Thumbnail state is reset. The aiExecutor lambda captures
+    // the value at scheduling time; on completion, it compares against the
+    // current value and drops its writes (lastActors update, ThumbnailBuffer
+    // observe, baseline promotion) if the generation has advanced. Without
+    // this, a slow YOLO inference scheduled before stopRecording can repopulate
+    // state for a recording that has already finished, polluting the next
+    // recording's first frames.
+    private final java.util.concurrent.atomic.AtomicLong recordingGeneration =
+            new java.util.concurrent.atomic.AtomicLong(0);
     
     // Heartbeat cooldown: prevent NCC tracker from spamming YOLO on every frame
     // when the template match is failing. Without this, a bad template causes
@@ -211,7 +256,11 @@ public class SurveillanceEngineGpu {
     
     // Output directory
     private File eventOutputDir;
-    private File currentEventFile;
+    // volatile: read by main render thread (publishMotionFinal,
+    // sendFinalTelegramNotification) and written by the encoder drainer
+    // thread (segment listener at rotation time). Without this, the main
+    // thread could observe a stale File reference.
+    private volatile File currentEventFile;
     
     // Frame dimensions - SOTA: Increased to 640x480 for better AI detection
     // At 320x240 with quad view, each camera is 160x120 - too small for YOLO
@@ -260,6 +309,14 @@ public class SurveillanceEngineGpu {
     public void init(File eventDir, GpuDownscaler downscaler, android.content.res.AssetManager assetManager, android.content.Context context) {
         this.eventOutputDir = eventDir;
         this.downscaler = downscaler;
+        // Retain for lazy YOLO re-init (Bug B fix path)
+        this.yoloContext = context;
+        this.yoloAssetManager = assetManager;
+        // Construct thumbnail buffer once; it is reused across recordings (it
+        // clears its slots itself at recording-stop).
+        if (this.thumbnailBuffer == null) {
+            this.thumbnailBuffer = new ThumbnailBuffer();
+        }
         
         if (!eventDir.exists()) {
             eventDir.mkdirs();
@@ -609,6 +666,14 @@ public class SurveillanceEngineGpu {
             final byte[] seedFrame = new byte[smallRgbFrame.length];
             System.arraycopy(smallRgbFrame, 0, seedFrame, 0, smallRgbFrame.length);
             aiExecutor.execute(() -> {
+                // FIX (A8/B3): snapshot detector at lambda entry — see runAiOnQuadrant
+                // for rationale. Toggling AI off via setObjectFilters between
+                // submission and execution would otherwise NPE or crash native TFLite.
+                final YoloDetector detectorSnap = yoloDetector;
+                if (detectorSnap == null || !aiEnabled) {
+                    logger.info("Baseline seed skipped (detector closed)");
+                    return;
+                }
                 logger.info("Seeding detection baseline (frame 30)...");
                 int qW = THUMBNAIL_WIDTH / 2;
                 int qH = THUMBNAIL_HEIGHT / 2;
@@ -617,7 +682,7 @@ public class SurveillanceEngineGpu {
                         byte[] quadCrop = cropFromMosaic(seedFrame, q, qW, qH);
                         if (quadCrop != null) {
                             java.util.List<com.overdrive.app.ai.Detection> dets =
-                                    yoloDetector.detect(quadCrop, qW, qH, aiConfidence, true, true, false, true, minObjectSize);
+                                    detectorSnap.detect(quadCrop, qW, qH, aiConfidence, true, true, false, true, minObjectSize);
                             detectionBaseline.seedFromDetections(q, dets, qW, qH);
                         }
                     } catch (Exception e) {
@@ -973,11 +1038,12 @@ public class SurveillanceEngineGpu {
                         
                         try {
                             String videoFilename = currentEventFile != null ? currentEventFile.getName() : null;
-                            TelegramNotifier.notifyMotion("motion", 1.0f, videoFilename);
+                            sendRichMotionNotifications(videoFilename);
+                            publishMotionNotification(videoFilename);
                         } catch (Exception e) {
                             logger.warn("Failed to send motion notification: " + e.getMessage());
                         }
-                        
+
                         // SOTA: Fire BYD cloud deterrent (flash lights / find car)
                         // Runs on background thread, never blocks surveillance pipeline
                         try {
@@ -1114,7 +1180,8 @@ public class SurveillanceEngineGpu {
                         startRecording();
                         try {
                             String videoFilename = currentEventFile != null ? currentEventFile.getName() : null;
-                            TelegramNotifier.notifyMotion("motion", 1.0f, videoFilename);
+                            sendRichMotionNotifications(videoFilename);
+                            publishMotionNotification(videoFilename);
                         } catch (Exception e) {
                             logger.warn("Failed to send motion notification: " + e.getMessage());
                         }
@@ -1126,7 +1193,7 @@ public class SurveillanceEngineGpu {
                         }
                     }
                 }
-                
+
                 if (firstMotionTime != 0 && timeSinceLastMotion > gapTolerance) {
                     // Motion sequence ended without triggering
                     long motionDuration = lastMotionTime - firstMotionTime;
@@ -1319,6 +1386,12 @@ public class SurveillanceEngineGpu {
                         final byte[] frameSnapshot = new byte[smallRgbFrame.length];
                         System.arraycopy(smallRgbFrame, 0, frameSnapshot, 0, smallRgbFrame.length);
                         aiExecutor.execute(() -> {
+                            // FIX (A8/B3): snapshot detector at lambda entry.
+                            final YoloDetector detectorSnap = yoloDetector;
+                            if (detectorSnap == null || !aiEnabled) {
+                                logger.info("Lighting-transition baseline refresh skipped (detector closed)");
+                                return;
+                            }
                             logger.info("Refreshing detection baseline (lighting transition)...");
                             int qW = THUMBNAIL_WIDTH / 2;
                             int qH = THUMBNAIL_HEIGHT / 2;
@@ -1327,7 +1400,7 @@ public class SurveillanceEngineGpu {
                                     byte[] quadCrop = cropFromMosaic(frameSnapshot, qr, qW, qH);
                                     if (quadCrop != null) {
                                         java.util.List<com.overdrive.app.ai.Detection> dets =
-                                                yoloDetector.detect(quadCrop, qW, qH, aiConfidence, true, true, false, true, minObjectSize);
+                                                detectorSnap.detect(quadCrop, qW, qH, aiConfidence, true, true, false, true, minObjectSize);
                                         detectionBaseline.refreshQuadrant(qr, dets, qW, qH);
                                     }
                                 } catch (Exception e) {
@@ -1381,15 +1454,21 @@ public class SurveillanceEngineGpu {
                                 System.arraycopy(smallRgbFrame, 0, frameSnapshot, 0, smallRgbFrame.length);
                             
                                 aiExecutor.execute(() -> {
+                                    // FIX (A8/B3): snapshot detector at lambda entry.
+                                    final YoloDetector detectorSnap = yoloDetector;
+                                    if (detectorSnap == null || !aiEnabled) {
+                                        logger.debug("Post-suppression baseline refresh skipped (detector closed)");
+                                        return;
+                                    }
                                     try {
                                         int qW = THUMBNAIL_WIDTH / 2;
                                         int qH = THUMBNAIL_HEIGHT / 2;
                                         byte[] quadCrop = cropFromMosaic(frameSnapshot, qToRefresh, qW, qH);
                                         if (quadCrop != null) {
                                             java.util.List<com.overdrive.app.ai.Detection> dets =
-                                                    yoloDetector.detect(quadCrop, qW, qH, aiConfidence, true, true, false, true, minObjectSize);
+                                                    detectorSnap.detect(quadCrop, qW, qH, aiConfidence, true, true, false, true, minObjectSize);
                                             detectionBaseline.refreshQuadrant(qToRefresh, dets, qW, qH);
-                                            logger.debug("Post-suppression baseline refresh Q" + qToRefresh + 
+                                            logger.debug("Post-suppression baseline refresh Q" + qToRefresh +
                                                     " [" + MotionPipelineV2.QUADRANT_NAMES[qToRefresh] + "]: " +
                                                     (dets != null ? dets.size() : 0) + " detections");
                                         }
@@ -1409,7 +1488,12 @@ public class SurveillanceEngineGpu {
      * Run YOLO on a single quadrant (cropped from the mosaic).
      */
     private void runAiOnQuadrant(byte[] mosaicRgb, int quadrant) {
-        if (!useObjectDetection || yoloDetector == null) return;
+        // FIX (Bug B): respect user's class toggles. Empty classFilter = sentinel for
+        // "all classes disabled" — skip YOLO entirely. Saves ~50-80ms per quadrant per
+        // wake event and frees the TFLite interpreter.
+        if (!useObjectDetection) return;
+        if (!aiEnabled || (classFilter != null && classFilter.length == 0)) return;
+        if (yoloDetector == null) return;
         if (isAiRunning.get()) return;
         
         long now = System.currentTimeMillis();
@@ -1457,16 +1541,27 @@ public class SurveillanceEngineGpu {
                 cropData = new byte[foveatedRgb.length];
                 System.arraycopy(foveatedRgb, 0, cropData, 0, foveatedRgb.length);
             } else {
-                // Foveated crop failed — fall back to mosaic crop
+                // Foveated crop failed — fall back to mosaic crop. Copy because
+                // cropFromMosaic returns a pointer to the shared aiBuffer which
+                // gets overwritten by subsequent main-thread tracker updates and
+                // mosaicQuadCrop captures (line ~1591) before the aiExecutor
+                // lambda runs. Without this copy, the lambda's YOLO inference +
+                // ThumbnailBuffer.observe see a stale or wrong-quadrant frame —
+                // the visible symptom being the bbox drawn on the hero image
+                // landing on the wrong part of the thumbnail.
                 qW = THUMBNAIL_WIDTH / 2;
                 qH = THUMBNAIL_HEIGHT / 2;
-                cropData = cropFromMosaic(mosaicRgb, quadrant, qW, qH);
+                byte[] mosaicShared = cropFromMosaic(mosaicRgb, quadrant, qW, qH);
+                cropData = new byte[mosaicShared.length];
+                System.arraycopy(mosaicShared, 0, cropData, 0, mosaicShared.length);
             }
         } else {
-            // Legacy path: 320×240 from mosaic
+            // Legacy path: 320×240 from mosaic. See note above — must copy.
             qW = THUMBNAIL_WIDTH / 2;
             qH = THUMBNAIL_HEIGHT / 2;
-            cropData = cropFromMosaic(mosaicRgb, quadrant, qW, qH);
+            byte[] mosaicShared = cropFromMosaic(mosaicRgb, quadrant, qW, qH);
+            cropData = new byte[mosaicShared.length];
+            System.arraycopy(mosaicShared, 0, cropData, 0, mosaicShared.length);
         }
         
         if (cropData == null) return;
@@ -1504,6 +1599,11 @@ public class SurveillanceEngineGpu {
             // Tracker not available
         }
         final boolean isHeartbeatRun = heartbeatCheck;
+
+        // FIX (B1/H-a): capture the recording generation NOW. The lambda below
+        // will check it on completion and skip cross-recording writes if the
+        // generation has advanced (i.e. stopRecording fired in the meantime).
+        final long generationAtSchedule = recordingGeneration.get();
         
         // Capture mosaic quadrant crop for the texture tracker (always 320×240).
         // The tracker needs the mosaic-scale image regardless of whether YOLO used foveated.
@@ -1522,6 +1622,19 @@ public class SurveillanceEngineGpu {
         
         aiExecutor.execute(() -> {
             try {
+                // FIX (A8/B3): Snapshot the detector reference at lambda entry.
+                // The line-1450 guard runs on the calling thread BEFORE this
+                // lambda is scheduled. Between scheduling and execution, the UI
+                // thread can call setObjectFilters() which closes the
+                // interpreter and nulls yoloDetector. Without this snapshot,
+                // the .detect() call below would NPE on a null field — or
+                // worse, race against close() and crash the native interpreter.
+                final YoloDetector detectorSnap = yoloDetector;
+                if (detectorSnap == null || !aiEnabled) {
+                    isAiRunning.set(false);
+                    return;
+                }
+
                 boolean detectPerson = true, detectCar = true, detectBike = true;
                 if (classFilter != null && classFilter.length > 0) {
                     detectPerson = false; detectCar = false; detectBike = false;
@@ -1532,7 +1645,7 @@ public class SurveillanceEngineGpu {
                     }
                 }
                 
-                java.util.List<com.overdrive.app.ai.Detection> detections = yoloDetector.detect(
+                java.util.List<com.overdrive.app.ai.Detection> detections = detectorSnap.detect(
                         cropData, qW, qH, aiConfidence, detectPerson, detectCar, false, detectBike, minObjectSize);
                 
                 // Track how many motion-filtered detections we found (accessible outside the block
@@ -1722,18 +1835,18 @@ public class SurveillanceEngineGpu {
                         // events before recording starts for the JSON sidecar.
                         timelineCollector.onAiDetection(motionFiltered, hasActiveMotion, 1 << qIdx);
                         
-                        // Cross-quadrant tracking: assign persistent track IDs.
-                        // The tracker expects bounding boxes in 320×240 quadrant pixel space.
-                        // When using foveated crop (640×640), YOLO returns coords in 640×640
-                        // space. We must translate them back to 320×240 before tracking,
-                        // otherwise a 10px real-world movement looks like 80px to the tracker
-                        // and breaks the dist < 120 centroid matching threshold.
-                        java.util.List<com.overdrive.app.ai.Detection> trackableDetections;
+                        // Cross-quadrant tracking REQUIRES bboxes in 320×240 quadrant
+                        // pixel space — its centroid threshold (dist < 120) and edge
+                        // margin (48 px) are hardcoded against Q_WIDTH=320 / Q_HEIGHT=240
+                        // (CrossQuadrantTracker.java:59-60). When foveated, rescale a
+                        // separate copy for CQT only; the tracker needs centroids, not
+                        // bboxes, and rescaling distorts that minimally.
+                        java.util.List<com.overdrive.app.ai.Detection> cqtDetections;
                         if (usedFoveated) {
-                            trackableDetections = new java.util.ArrayList<>(motionFiltered.size());
+                            cqtDetections = new java.util.ArrayList<>(motionFiltered.size());
                             float scaleToQuad = 320.0f / FoveatedCropper.CROP_SIZE;  // 0.5
                             for (com.overdrive.app.ai.Detection det : motionFiltered) {
-                                trackableDetections.add(new com.overdrive.app.ai.Detection(
+                                cqtDetections.add(new com.overdrive.app.ai.Detection(
                                         det.getClassId(),
                                         det.getConfidence(),
                                         (int)(det.getX() * scaleToQuad),
@@ -1743,11 +1856,108 @@ public class SurveillanceEngineGpu {
                                 ));
                             }
                         } else {
-                            trackableDetections = motionFiltered;
+                            cqtDetections = motionFiltered;
                         }
-                        
+
                         java.util.List<CrossQuadrantTracker.TrackResult> tracked =
-                                crossQuadrantTracker.processDetections(trackableDetections, qIdx);
+                                crossQuadrantTracker.processDetections(cqtDetections, qIdx);
+
+                        // ActorTracker + ThumbnailBuffer want bboxes in cropData's
+                        // NATIVE coord space so the bbox-vs-rgb pair stays coherent
+                        // when ThumbnailBuffer draws the box on the hero JPEG. In
+                        // foveated mode that's 640×640 (motionFiltered's native space);
+                        // in mosaic mode, 320×240 (also motionFiltered's native space).
+                        // Either way, motionFiltered is what we want — NOT cqtDetections,
+                        // which is forced to 320 for CQT's hardcoded thresholds.
+                        java.util.List<com.overdrive.app.ai.Detection> trackableDetections = motionFiltered;
+
+                        // Build a parallel array of cross-quadrant track IDs to
+                        // hand to ActorTracker. This binds the per-quadrant
+                        // ActorTracker to the cross-camera identity assigned by
+                        // CrossQuadrantTracker, so a person walking front→right
+                        // doesn't get two actorIds. The arrays line up by index
+                        // because processDetections returns one TrackResult per
+                        // input Detection in order — and motionFiltered + cqtDetections
+                        // share the same iteration order so indices stay aligned.
+                        int[] xqTrackIds = new int[trackableDetections.size()];
+                        for (int ti = 0; ti < tracked.size() && ti < xqTrackIds.length; ti++) {
+                            xqTrackIds[ti] = tracked.get(ti).trackId;
+                        }
+
+                        // Actor layer: convert YOLO detections (in cropData's native
+                        // coord space) into persistent Actor records. Snapshot is
+                        // published as lastActors for downstream consumers (timeline,
+                        // thumbnails, notifications, UI). Recording-relative timestamps
+                        // require the recording start time which we look up from the
+                        // recorder.
+                        try {
+                            // FIX (B1/H-a): if stopRecording bumped the generation
+                            // while we were running, our writes belong to a
+                            // recording that's already finalised. Skip them so
+                            // we don't pollute the *next* recording's state.
+                            if (recordingGeneration.get() != generationAtSchedule) {
+                                logger.debug("AI lambda completed after recording stop (gen "
+                                        + generationAtSchedule + " vs " + recordingGeneration.get()
+                                        + ") — skipping Actor/Thumbnail writes");
+                            } else {
+                            long recordingStartWall = (timelineCollector != null && timelineCollector.isCollecting())
+                                    ? timelineCollector.getRecordingStartTimeMs() : 0L;
+                            // Pass the ACTUAL crop dims (qW × qH) used for this YOLO
+                            // run. trackableDetections (motionFiltered) is in qW × qH
+                            // pixel space, so the proximity ratio (bboxH / quadH) is
+                            // self-consistent. ThumbnailBuffer also receives qW × qH
+                            // and the same bbox space — bbox draws on the right pixels.
+                            java.util.List<Actor> actorSnapshot = actorTracker.update(
+                                    trackableDetections,
+                                    xqTrackIds,
+                                    qIdx,
+                                    qW,
+                                    qH,
+                                    recordingStartWall,
+                                    System.currentTimeMillis());
+                            lastActors = actorSnapshot;
+                            // Forward to thumbnail buffer so it can capture the peak-severity frame.
+                            // Block C wires this; safe no-op if buffer not yet attached.
+                            if (thumbnailBuffer != null && cropData != null) {
+                                thumbnailBuffer.observe(actorSnapshot, cropData, qW, qH, qIdx);
+                            }
+                            // Mid-event baseline promotion: if the Actor layer
+                            // has classified a vehicle / non-person actor as
+                            // static, promote it into the baseline now so the
+                            // *next* motion event suppresses it without waiting
+                            // for stopRecording → updateFromEventEnd. Closes
+                            // the loop with the Actor tracker's "static" flag.
+                            for (Actor a : actorSnapshot) {
+                                if (!a.isStatic) continue;
+                                if (a.classGroup == Actor.ClassGroup.PERSON
+                                        || a.classGroup == Actor.ClassGroup.ANIMAL
+                                        || a.classGroup == Actor.ClassGroup.UNKNOWN) continue;
+                                int cocoCls;
+                                switch (a.classGroup) {
+                                    case VEHICLE: cocoCls = 2; break;  // car
+                                    case BIKE:    cocoCls = 1; break;  // bicycle
+                                    default: continue;
+                                }
+                                // Baseline promotion only on mosaic frames.
+                                // The DetectionBaseline normalizes coords to
+                                // [0,1] of the QUADRANT for stable cross-event
+                                // comparison. Foveated crops are a moving 640×640
+                                // window centered on motion centroid, so their
+                                // normalized coords don't refer to a stable
+                                // physical region — promoting a foveated bbox
+                                // would seed an entry that nothing in the next
+                                // event can possibly match. Mosaic frames are
+                                // the full quadrant downscaled, which is the
+                                // stable reference baseline expects.
+                                if (usedFoveated) continue;
+                                detectionBaseline.promoteStaticActor(qIdx, cocoCls,
+                                        a.lastBboxX, a.lastBboxY, a.lastBboxW, a.lastBboxH,
+                                        qW, qH);
+                            }
+                            }  // close else { generation guard
+                        } catch (Exception aEx) {
+                            logger.warn("ActorTracker.update failed: " + aEx.getMessage());
+                        }
                         
                         // SOTA: Start/refresh texture tracker on the highest-confidence detection.
                         // YOLO's job is done — the NCC tracker takes over frame-by-frame
@@ -1848,12 +2058,14 @@ public class SurveillanceEngineGpu {
     private byte[] cropFromMosaic(byte[] mosaicRgb, int quadrant, int qW, int qH) {
         int startX = (quadrant % 2) * qW;
         int startY = (quadrant / 2) * qH;
-        
+
         int cropSize = qW * qH * BYTES_PER_PIXEL;
+        byte[] aiBuffer = aiBufferTL.get();
         if (aiBuffer == null || aiBuffer.length != cropSize) {
             aiBuffer = new byte[cropSize];
+            aiBufferTL.set(aiBuffer);
         }
-        
+
         for (int y = 0; y < qH; y++) {
             int srcOffset = ((startY + y) * THUMBNAIL_WIDTH + startX) * BYTES_PER_PIXEL;
             int dstOffset = y * qW * BYTES_PER_PIXEL;
@@ -2008,7 +2220,7 @@ public class SurveillanceEngineGpu {
      */
     public void setConfig(SurveillanceConfig config) {
         this.config = config;
-        
+
         // Sync legacy fields for backward compatibility
         this.flashImmunity = config.getFlashImmunity();
         this.requiredActiveBlocks = config.getRequiredBlocks();
@@ -2016,6 +2228,18 @@ public class SurveillanceEngineGpu {
         this.aiConfidence = config.getAiConfidence();
         this.preRecordMs = config.getPreRecordSeconds() * 1000L;
         this.postRecordMs = config.getPostRecordSeconds() * 1000L;
+
+        // FIX (Bug A): propagate the loaded pre-record duration to the encoder's
+        // circular buffer. Without this the encoder retains its hardcoded 5s
+        // allocation from init() until the user re-saves the setting, which makes
+        // the persisted value look like it was reset.
+        if (recorder != null && recorder.getEncoder() != null) {
+            try {
+                recorder.getEncoder().setPreRecordDuration(config.getPreRecordSeconds());
+            } catch (Exception e) {
+                logger.warn("Failed to propagate pre-record duration to encoder: " + e.getMessage());
+            }
+        }
         
         // Sync loitering time for Java-side sustained motion enforcement
         this.loiteringTimeMs = config.getLoiteringTimeSeconds() * 1000L;
@@ -2082,6 +2306,14 @@ public class SurveillanceEngineGpu {
      */
     public float getLastEstimatedDistance() {
         return lastEstimatedDistance;
+    }
+
+    /**
+     * Snapshot of currently-active Actors. Lock-free read suitable for UI / API
+     * threads. May be empty if no detections have been observed yet.
+     */
+    public java.util.List<Actor> getLastActors() {
+        return lastActors;
     }
     
     /**
@@ -2158,11 +2390,11 @@ public class SurveillanceEngineGpu {
      * @param detectCar Enable car detection
      * @param detectBike Enable bike detection
      */
-    public void setObjectFilters(float minSize, float confidence, 
+    public void setObjectFilters(float minSize, float confidence,
                                  boolean detectPerson, boolean detectCar, boolean detectBike) {
         this.minObjectSize = minSize;
         this.aiConfidence = confidence;
-        
+
         // Build class filter for YOLO
         java.util.ArrayList<Integer> classes = new java.util.ArrayList<>();
         if (detectPerson) classes.add(0);  // COCO: person
@@ -2175,23 +2407,485 @@ public class SurveillanceEngineGpu {
             classes.add(1);  // COCO: bicycle
             classes.add(3);  // COCO: motorcycle
         }
-        
+
+        // FIX (Bug B): empty list now means "user disabled all classes" — represented as
+        // an empty array (sentinel) rather than null. The hot-path guard short-circuits
+        // YOLO entirely. This also lets us unload the TFLite interpreter to reclaim
+        // ~50MB of native memory until detection is re-enabled.
+        boolean hadAi = this.aiEnabled;
         if (classes.isEmpty()) {
-            classFilter = null;  // Detect all classes
+            classFilter = new int[0];
+            this.aiEnabled = false;
         } else {
             classFilter = new int[classes.size()];
             for (int i = 0; i < classes.size(); i++) {
                 classFilter[i] = classes.get(i);
             }
+            this.aiEnabled = true;
         }
-        
-        logger.info(String.format("Object filters: minSize=%.1f%%, confidence=%.0f%%, classes=%s",
-                minSize * 100, confidence * 100, classes));
+
+        // Unload YOLO when AI is now off; load lazily again on next call when re-enabled
+        // (lazy re-init is handled where YoloDetector is constructed in init()).
+        if (!aiEnabled && yoloDetector != null) {
+            try {
+                yoloDetector.close();
+            } catch (Exception e) {
+                logger.warn("YoloDetector close failed: " + e.getMessage());
+            }
+            yoloDetector = null;
+            logger.info("YOLO detector closed: all object classes disabled by user");
+        } else if (aiEnabled && !hadAi) {
+            logger.info("Object detection re-enabled; YOLO will be reloaded on next inference");
+        }
+
+        logger.info(String.format("Object filters: minSize=%.1f%%, confidence=%.0f%%, aiEnabled=%s, classes=%s",
+                minSize * 100, confidence * 100, aiEnabled, classes));
+
+        // Lazily reload YOLO if it was previously closed and we now need it again
+        if (aiEnabled && yoloDetector == null) {
+            reloadYoloDetectorIfPossible();
+        }
+    }
+
+    /**
+     * (Bug B helper) Lazily re-initialise the YOLO detector after a previous unload.
+     * Uses the same Context/AssetManager paths as the original init() so daemon and
+     * regular runs both work. Idempotent and safe to call when AI is already loaded.
+     */
+    private void reloadYoloDetectorIfPossible() {
+        if (yoloDetector != null) return;
+        try {
+            if (yoloContext != null) {
+                yoloDetector = new YoloDetector(yoloContext);
+            } else if (yoloAssetManager != null) {
+                yoloDetector = new YoloDetector(new com.overdrive.app.ai.AssetContext(yoloAssetManager));
+            } else {
+                logger.warn("Cannot reload YOLO: no context/assetManager retained");
+                return;
+            }
+            boolean ok = yoloDetector.init();
+            if (ok) {
+                useObjectDetection = true;
+                logger.info("YOLO detector reloaded (object detection re-enabled)");
+            } else {
+                logger.warn("YOLO reload failed");
+                yoloDetector = null;
+            }
+        } catch (Exception e) {
+            logger.warn("YOLO reload threw: " + e.getMessage());
+            yoloDetector = null;
+        }
     }
     
     /**
+     * Publish a motion notification onto the cross-cutting NotificationBus.
+     *
+     * <p>Filename is the not-yet-finalized {@code currentEventFile} name —
+     * recording is still in progress when this fires. Delivering the push
+     * immediately (rather than waiting for finalization) prioritizes alert
+     * latency over tap-to-play polish; the events page will surface a
+     * "still recording" state until the file closes.
+     */
+    /**
+     * Send a Telegram motion notification enriched with the current Actor
+     * snapshot. Falls back to a generic "motion" payload when no Actors are
+     * known yet (e.g. recording started purely on motion before YOLO ran).
+     * Honours the user's notification tier toggles (item 8).
+     */
+    private void sendRichMotionNotifications(String videoFilename) {
+        // User opt-out: by default, Telegram only gets the recording-CLOSE
+        // photo (sendFinalTelegramNotification, fired from stopRecording). The
+        // start-stage text message is suppressed because the user-visible end
+        // result is two messages back-to-back — same content, no replace
+        // semantics in Telegram. Telegram-only users who want low-latency
+        // pings can flip telegramSendStartPing on in Sentry settings.
+        //
+        // Treat null config as "default" (off). Without this, an early-startup
+        // motion event before config has been wired would leak through with
+        // legacy "always send" behaviour, contradicting the documented default.
+        if (config == null || !config.isTelegramSendStartPing()) {
+            return;
+        }
+        java.util.List<Actor> snap = lastActors;
+        Actor.Severity peakSev = com.overdrive.app.notifications.NotificationGate.maxSeverity(snap);
+        // Per-tier muting for the web push system happens device-side via
+        // muted-categories. Telegram has its own subscription model; we still
+        // pass severity so the daemon can format the message accordingly.
+        // Static actors (parked cars next to ours) MUST NOT count or be picked
+        // as the detection label — see publishMotionNotification for the same
+        // reasoning.
+        int persons = 0, vehicles = 0, bikes = 0, animals = 0;
+        Actor.Proximity closest = null;
+        String camHint = null;
+        String detectionLabel = "motion";
+        Actor threat = null;
+        for (Actor a : snap) {
+            if (a.isStatic) continue;
+            switch (a.classGroup) {
+                case PERSON:  persons++;  break;
+                case VEHICLE: vehicles++; break;
+                case BIKE:    bikes++;    break;
+                case ANIMAL:  animals++;  break;
+                default: break;
+            }
+            if (closest == null || a.peakProximity.ordinal() < closest.ordinal()) {
+                closest = a.peakProximity;
+                if (a.peakCamera >= 0 && a.peakCamera < MotionPipelineV2.QUADRANT_NAMES.length) {
+                    camHint = MotionPipelineV2.QUADRANT_NAMES[a.peakCamera];
+                }
+            }
+            if (threat == null
+                    || a.peakSeverity.ordinal() > threat.peakSeverity.ordinal()
+                    || (a.peakSeverity == threat.peakSeverity
+                        && classRank(a.classGroup) > classRank(threat.classGroup))) {
+                threat = a;
+            }
+        }
+        float bestConf = threat != null ? threat.peakConfidence : 0f;
+        if (threat != null) detectionLabel = Actor.groupLabel(threat.classGroup);
+        try {
+            TelegramNotifier.notifyMotion(
+                    detectionLabel,
+                    bestConf > 0f ? bestConf : 1.0f,
+                    videoFilename,
+                    peakSev != null ? peakSev.name() : null,
+                    persons, vehicles, bikes, animals,
+                    closest != null ? closest.name() : null,
+                    camHint);
+        } catch (Throwable t) {
+            logger.debug("Telegram notify failed: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Final Telegram notification at recording-end. Computes the same actor
+     * summary as {@link #sendRichMotionNotifications} but routes via
+     * {@code notifyMotionFinalized} so the daemon sends a photo (with the hero
+     * JPEG as the image and the threat summary as the caption) instead of a
+     * text-only message. Falls back gracefully on the daemon side if the photo
+     * can't be sent.
+     */
+    private void sendFinalTelegramNotification(String videoFilename, String heroPhotoPath) {
+        java.util.List<Actor> snap = lastActors;
+        Actor.Severity peakSev = com.overdrive.app.notifications.NotificationGate.maxSeverity(snap);
+        int persons = 0, vehicles = 0, bikes = 0, animals = 0;
+        Actor.Proximity closest = null;
+        String camHint = null;
+        for (Actor a : snap) {
+            if (a.isStatic) continue;
+            switch (a.classGroup) {
+                case PERSON:  persons++;  break;
+                case VEHICLE: vehicles++; break;
+                case BIKE:    bikes++;    break;
+                case ANIMAL:  animals++;  break;
+                default: break;
+            }
+            if (closest == null || a.peakProximity.ordinal() < closest.ordinal()) {
+                closest = a.peakProximity;
+                if (a.peakCamera >= 0 && a.peakCamera < MotionPipelineV2.QUADRANT_NAMES.length) {
+                    camHint = MotionPipelineV2.QUADRANT_NAMES[a.peakCamera];
+                }
+            }
+        }
+        try {
+            TelegramNotifier.notifyMotionFinalized(
+                    videoFilename,
+                    heroPhotoPath,
+                    peakSev != null ? peakSev.name() : null,
+                    persons, vehicles, bikes, animals,
+                    closest != null ? closest.name() : null,
+                    camHint);
+        } catch (Throwable t) {
+            logger.debug("Telegram finalized notify failed: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Rank a class group for "which actor is the threat in this scene". Higher
+     * = more important to surface. Mirrors {@link ThumbnailBuffer}'s scoring so
+     * the notification title agrees with the thumbnail.
+     */
+    private static int classRank(Actor.ClassGroup g) {
+        if (g == null) return 0;
+        switch (g) {
+            case PERSON:  return 4;
+            case BIKE:    return 3;
+            case VEHICLE: return 2;
+            case ANIMAL:  return 1;
+            default:      return 0;
+        }
+    }
+
+    /**
+     * Stable per-event tag used by both the initial quick notification and the
+     * finalized rich one. Same tag → OS replaces the first banner with the
+     * second instead of stacking. Tag is derived from the filename so it's
+     * unique per recording (a 1-minute dedupe window across recordings is no
+     * longer needed since the tag is already event-scoped).
+     */
+    private static String notificationTagFor(String videoFilename) {
+        if (videoFilename != null && !videoFilename.isEmpty()) {
+            return "motion:" + videoFilename;
+        }
+        // Fallback when we don't yet have a filename — minute-bucket dedupe
+        // (matches legacy behaviour).
+        return "motion-" + (System.currentTimeMillis() / 60000L);
+    }
+
+    /**
+     * Capitalised, human-readable proximity phrase used as the lead clause
+     * in notification bodies. "VERY_CLOSE" → "Very close", etc.
+     */
+    private static String proximityPhrase(Actor.Proximity p) {
+        if (p == null) return "";
+        switch (p) {
+            case VERY_CLOSE: return "Very close";
+            case CLOSE:      return "Close";
+            case MID:        return "Mid range";
+            case FAR:        return "Far";
+            default:         return "";
+        }
+    }
+
+    /**
+     * Pluralised count list for notification bodies.
+     * (1, 0, 0, 0) → "1 person"
+     * (2, 1, 0, 0) → "2 people, 1 vehicle"
+     * (0, 2, 0, 1) → "2 vehicles, 1 animal"
+     * Skips zero counts; uses proper plurals; drops the "× n" formatter.
+     */
+    private static String formatActorCounts(int persons, int vehicles, int bikes, int animals) {
+        java.util.List<String> parts = new java.util.ArrayList<>(4);
+        if (persons > 0)  parts.add(persons  + " " + (persons  == 1 ? "person"  : "people"));
+        if (vehicles > 0) parts.add(vehicles + " " + (vehicles == 1 ? "vehicle" : "vehicles"));
+        if (bikes > 0)    parts.add(bikes    + " " + (bikes    == 1 ? "bike"    : "bikes"));
+        if (animals > 0)  parts.add(animals  + " " + (animals  == 1 ? "animal"  : "animals"));
+        return String.join(", ", parts);
+    }
+
+    /**
+     * Initial low-priority notification at the moment recording starts.
+     *
+     * Why we still publish at start: the user expects feedback "something just
+     * happened" with low latency. The hero thumbnail isn't ready yet (it's
+     * written by ThumbnailBuffer at recording-end), so this banner is text-
+     * only and minimum-severity. The matching {@link #publishMotionFinal}
+     * call after recording-end carries the rich title + thumbnail and uses
+     * the SAME tag — so the OS replaces this quick banner instead of stacking.
+     *
+     * Routing: always to {@code surveillance.motion.notice} so users who only
+     * want Alerts/Criticals at start can mute this tier and just receive the
+     * final notification.
+     */
+    private void publishMotionNotification(String videoFilename) {
+        try {
+            // Honour the user's per-tier toggle. The start banner is always
+            // routed to surveillance.motion.notice (final stage carries the
+            // real severity), so it's gated by isPushNotices(). With the
+            // default config (pushNotices=false) start banners are off and
+            // the user only sees the rich final notification.
+            if (config != null && !config.isPushNotices()) {
+                return;
+            }
+            org.json.JSONObject data = new org.json.JSONObject();
+            String url;
+            if (videoFilename != null && !videoFilename.isEmpty()) {
+                String enc = java.net.URLEncoder.encode(videoFilename, "UTF-8");
+                data.put("filename", videoFilename);
+                data.put("snapshot", "/thumb/" + enc);
+                data.put("stage", "start");
+                url = "/events.html?filter=sentry&file=" + enc;
+            } else {
+                url = "/events.html?filter=sentry";
+            }
+
+            String camHint = null;
+            for (Actor a : lastActors) {
+                if (a.peakCamera >= 0 && a.peakCamera < MotionPipelineV2.QUADRANT_NAMES.length) {
+                    camHint = MotionPipelineV2.QUADRANT_NAMES[a.peakCamera];
+                    break;
+                }
+            }
+            String title = (camHint != null) ? "Motion at " + camHint : "Motion detected";
+            String body = "Recording in progress";
+
+            com.overdrive.app.notifications.NotificationBus.get().publish(
+                    new com.overdrive.app.notifications.NotificationEvent(
+                            "surveillance.motion.notice",
+                            com.overdrive.app.notifications.NotificationEvent.Severity.INFO,
+                            title,
+                            body,
+                            notificationTagFor(videoFilename),
+                            url,
+                            data));
+        } catch (Throwable t) {
+            logger.debug("publishMotionNotification (start) failed: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Finalized rich notification fired from stopRecording AFTER the hero JPEG
+     * has been written by ThumbnailBuffer. Uses the same tag as the initial
+     * notification so the OS replaces the "Recording in progress…" banner
+     * with the proper threat summary + image.
+     *
+     * Routes to the severity-appropriate subcategory ({@code .notice/.alert/.critical})
+     * so per-tier muting works.
+     */
+    private void publishMotionFinal(String videoFilename, String heroJpegName) {
+        try {
+            // Snapshot the current Actor view — at this point the recording has
+            // closed so lastActors holds the final state.
+            java.util.List<Actor> snap = lastActors;
+            Actor.Severity peakSev = com.overdrive.app.notifications.NotificationGate.maxSeverity(snap);
+            // Per-tier gate (config-level): if the user has unchecked the push
+            // toggle for this tier in surveillance.html, suppress the publish
+            // entirely. Per-device subcategory muting still happens downstream
+            // in PushSink for users who want to silence individual devices.
+            if (!com.overdrive.app.notifications.NotificationGate.shouldPush(peakSev, config)) {
+                logger.debug("publishMotionFinal suppressed by per-tier toggle (sev=" + peakSev + ")");
+                return;
+            }
+
+            // Build per-class counts + closest proximity from snapshot.
+            //
+            // ONLY count non-static actors. The user's worry: two cars parked
+            // next to ours while a person walks in. YOLO returns 3 detections;
+            // the parked cars are flagged isStatic by the tracker; we exclude
+            // them from counts so the notification reads "1 person near front
+            // camera" — not "1 person, 2 vehicles".
+            int persons = 0, vehicles = 0, bikes = 0, animals = 0;
+            Actor.Proximity closest = null;
+            String camHint = null;
+            // Threat actor = highest-severity, then best class rank
+            // (person > bike > vehicle > animal).
+            Actor threat = null;
+            for (Actor a : snap) {
+                if (a.isStatic) continue;
+                switch (a.classGroup) {
+                    case PERSON:  persons++;  break;
+                    case VEHICLE: vehicles++; break;
+                    case BIKE:    bikes++;    break;
+                    case ANIMAL:  animals++;  break;
+                    default: break;
+                }
+                if (closest == null || a.peakProximity.ordinal() < closest.ordinal()) {
+                    closest = a.peakProximity;
+                    if (a.peakCamera >= 0 && a.peakCamera < MotionPipelineV2.QUADRANT_NAMES.length) {
+                        camHint = MotionPipelineV2.QUADRANT_NAMES[a.peakCamera];
+                    }
+                }
+                if (threat == null
+                        || a.peakSeverity.ordinal() > threat.peakSeverity.ordinal()
+                        || (a.peakSeverity == threat.peakSeverity
+                            && classRank(a.classGroup) > classRank(threat.classGroup))) {
+                    threat = a;
+                }
+            }
+
+            // ---- Title (severity tier + threat class + camera) ----
+            // Format: "CRITICAL · Person at front" or "Alert · Vehicle at rear"
+            // or plain "Motion at front" when AI didn't classify.
+            String title;
+            if (threat == null) {
+                title = (camHint != null) ? "Motion at " + camHint : "Motion detected";
+            } else {
+                StringBuilder sb = new StringBuilder();
+                if (peakSev == Actor.Severity.CRITICAL) sb.append("CRITICAL · ");
+                else if (peakSev == Actor.Severity.ALERT) sb.append("Alert · ");
+                String label = Actor.groupLabel(threat.classGroup);
+                if (!label.isEmpty()) {
+                    label = Character.toUpperCase(label.charAt(0)) + label.substring(1);
+                }
+                sb.append(label);
+                if (camHint != null) sb.append(" at ").append(camHint);
+                title = sb.toString();
+            }
+
+            // ---- Body (proximity phrase + counts when relevant) ----
+            // Single actor: "Very close" / "Close" / "Mid range" / "Far".
+            // Multiple actors: "Very close · 1 person, 2 vehicles".
+            // Drops the awkward "1× person, closest very close" phrasing.
+            String body;
+            int totalActors = persons + vehicles + bikes + animals;
+            if (threat == null) {
+                body = "Recording in progress";
+            } else {
+                StringBuilder sb = new StringBuilder();
+                if (closest != null && closest != Actor.Proximity.UNKNOWN) {
+                    sb.append(proximityPhrase(closest));
+                }
+                if (totalActors > 1) {
+                    if (sb.length() > 0) sb.append(" · ");
+                    sb.append(formatActorCounts(persons, vehicles, bikes, animals));
+                }
+                if (sb.length() == 0) sb.append("Motion detected");
+                body = sb.toString();
+            }
+
+            org.json.JSONObject data = new org.json.JSONObject();
+            String url;
+            if (videoFilename != null) {
+                String enc = java.net.URLEncoder.encode(videoFilename, "UTF-8");
+                data.put("filename", videoFilename);
+                // Prefer the just-written hero JPEG for the OS banner image.
+                // Falls back to /thumb/<mp4-name> which the server also resolves
+                // to the hero sibling, but the explicit JPEG path skips a layer
+                // of resolution and avoids any 202-while-generating window.
+                String snapshotName = (heroJpegName != null && !heroJpegName.isEmpty())
+                        ? heroJpegName : videoFilename;
+                String encSnap = java.net.URLEncoder.encode(snapshotName, "UTF-8");
+                data.put("snapshot", "/thumb/" + encSnap);
+                data.put("stage", "final");
+                url = "/events.html?filter=sentry&file=" + enc;
+            } else {
+                url = "/events.html?filter=sentry";
+            }
+            // Surface the new metadata so the notification UI / SW can render it
+            data.put("severity", peakSev.name());
+            data.put("personCount", persons);
+            data.put("vehicleCount", vehicles);
+            data.put("bikeCount", bikes);
+            data.put("animalCount", animals);
+            if (closest != null && closest != Actor.Proximity.UNKNOWN) {
+                data.put("closestProximity", closest.name());
+            }
+            if (camHint != null) data.put("camera", camHint);
+
+            com.overdrive.app.notifications.NotificationEvent.Severity nsev;
+            if (peakSev == Actor.Severity.CRITICAL) {
+                nsev = com.overdrive.app.notifications.NotificationEvent.Severity.CRITICAL;
+            } else if (peakSev == Actor.Severity.ALERT) {
+                nsev = com.overdrive.app.notifications.NotificationEvent.Severity.WARN;
+            } else {
+                nsev = com.overdrive.app.notifications.NotificationEvent.Severity.INFO;
+            }
+
+            // Route to severity-specific subcategory so per-tier muting works
+            // (item 8). Devices that have not yet learned the new IDs still
+            // receive the parent "surveillance.motion" event below.
+            String subCategory;
+            if (peakSev == Actor.Severity.CRITICAL) subCategory = "surveillance.motion.critical";
+            else if (peakSev == Actor.Severity.ALERT) subCategory = "surveillance.motion.alert";
+            else subCategory = "surveillance.motion.notice";
+
+            com.overdrive.app.notifications.NotificationBus.get().publish(
+                    new com.overdrive.app.notifications.NotificationEvent(
+                            subCategory,
+                            nsev,
+                            title,
+                            body,
+                            notificationTagFor(videoFilename),
+                            url,
+                            data));
+        } catch (Throwable t) {
+            logger.debug("publishMotionFinal failed: " + t.getMessage());
+        }
+    }
+
+    /**
      * Starts recording an event with pre-record support.
-     * 
+     *
      * The encoder is always running and buffering frames. This method
      * triggers the flush of the pre-record buffer and starts writing to file.
      */
@@ -2242,6 +2936,46 @@ public class SurveillanceEngineGpu {
         // Trigger event recording (flushes pre-record buffer)
         recorder.triggerEventRecording(currentEventFile.getAbsolutePath(), postRecordMs);
         recording = true;
+
+        // Per-segment hero / sidecar plumbing.
+        // The recorder rotates .mp4 files at SEGMENT_DURATION_MS (2 min) so a
+        // long event spans multiple files. Without this listener, the
+        // ThumbnailBuffer + EventTimelineCollector would only flush against
+        // the FIRST segment's filename at stopRecording — segments 2..N would
+        // appear in the recordings library as plain MP4s with no badges, no
+        // actor counts, no hero thumbnail. With this listener, each rotated
+        // segment gets its own coherent (hero JPEG, per-actor JPEGs, JSON
+        // sidecar) tied to its own filename. The metadata buffers are reset
+        // on rotation so segment N+1 collects independent state.
+        try {
+            HardwareEventRecorderGpu enc = recorder.getEncoder();
+            if (enc != null) {
+                enc.setSegmentListener((closedSegment, newSegment) -> {
+                    try {
+                        if (closedSegment != null) {
+                            flushSegmentMetadata(closedSegment);
+                        }
+                        // Update currentEventFile so stopRecording's flush
+                        // attaches to the LAST segment, not the first.
+                        if (newSegment != null) {
+                            currentEventFile = newSegment;
+                            // Restart the timeline collector for the new
+                            // segment so relMs in its sidecar is measured
+                            // from segment-N start, not event start.
+                            // Use the no-preRing variant: the pre-trigger
+                            // ring captured spans from BEFORE segment 1
+                            // began; replaying them at each rotation would
+                            // duplicate them across every segment's sidecar.
+                            timelineCollector.startCollectingNoPreRing();
+                        }
+                    } catch (Exception ex) {
+                        logger.warn("Per-segment flush failed: " + ex.getMessage());
+                    }
+                });
+            }
+        } catch (Exception e) {
+            logger.warn("Could not register segment listener: " + e.getMessage());
+        }
         
         // SOTA: Start timeline event collection for this recording.
         // Use the ACTUAL pre-record duration from the H.264 circular buffer, not the
@@ -2287,21 +3021,162 @@ public class SurveillanceEngineGpu {
             lastEventQuadrant = -1;
         }
         
-        // Stop immediately (post-record already handled by timeout)
+        // Stop immediately (post-record already handled by timeout). Synchronously
+        // joins the encoder drainer thread, after which no further frames or
+        // segment-rotation listener calls can fire.
         recorder.stopEventRecording(true, 0);
         recording = false;
         lastRecordingStopTime = System.currentTimeMillis();  // Track when we stopped
-        
+
+        // FIX (B1/H-a): bump the generation counter NOW — before the publish
+        // path reads lastActors. Any aiExecutor lambda still in flight will,
+        // when it completes, observe gen != generationAtSchedule and skip its
+        // writes (Actor/Thumbnail/lastActors mutation). Without this fence,
+        // a late lambda landing between the recorder stop and publishMotionFinal
+        // could overwrite lastActors, making the notification mis-attribute
+        // the event. The actorTracker.reset() / lastActors = empty / clear()
+        // calls below run AFTER publish so the publish path sees the snapshot
+        // that was current at recorder-stop time.
+        recordingGeneration.incrementAndGet();
+
         if (currentEventFile != null && currentEventFile.exists()) {
             logger.info( String.format("Saved: %s (%d KB)",
                     currentEventFile.getName(), currentEventFile.length() / 1024));
-            
-            // SOTA: Write timeline JSON sidecar alongside the MP4
-            timelineCollector.stopAndWrite(currentEventFile);
+
+            // Flush metadata for the FINAL segment. Earlier segments were
+            // already flushed by the segment listener on each rotation.
+            flushSegmentMetadata(currentEventFile);
+
+            // Two-stage notification: replace the "Recording in progress…"
+            // banner that fired at recording start with the rich threat
+            // summary + hero image. Same notification tag → OS replaces, not
+            // stacks. Telegram gets the equivalent rich path with photo.
+            // Use the final segment's metadata for the user-facing notif —
+            // earlier segments already published their own banners on close.
+            String videoName = currentEventFile.getName();
+            String heroSibling = videoName.replace(".mp4", ".jpg");
+            File heroSiblingFile = new File(currentEventFile.getParentFile(), heroSibling);
+            String heroName = heroSiblingFile.exists() ? heroSibling : null;
+            String heroPath = heroSiblingFile.exists() ? heroSiblingFile.getAbsolutePath() : null;
+            try { publishMotionFinal(videoName, heroName); }
+            catch (Throwable t) { logger.debug("publishMotionFinal threw: " + t.getMessage()); }
+            try { sendFinalTelegramNotification(videoName, heroPath); }
+            catch (Throwable t) { logger.debug("sendFinalTelegramNotification threw: " + t.getMessage()); }
         }
-        
+
+        // Detach the segment listener so a stale lambda from a previous event
+        // can't reset state for the next event's segments.
+        try {
+            HardwareEventRecorderGpu enc = recorder.getEncoder();
+            if (enc != null) enc.setSegmentListener(null);
+        } catch (Exception ignored) {}
+
         currentEventFile = null;
+        // Reset Actor state for the next event so IDs / dwell windows don't leak across recordings
+        actorTracker.reset();
+        lastActors = java.util.Collections.emptyList();
+        if (thumbnailBuffer != null) thumbnailBuffer.clear();
         logger.info("Recording stopped, motion detection continues");
+    }
+
+    /**
+     * Write hero JPEG + per-actor thumbnails + JSON timeline sidecar
+     * alongside the given .mp4 segment. Used by both stopRecording (final
+     * segment) and the rotation listener (intermediate segments). Resets
+     * {@link #thumbnailBuffer} and {@link #timelineCollector} after writing
+     * so the next segment starts with empty metadata buffers.
+     *
+     * Idempotent and exception-safe — failures are logged but never
+     * thrown to the caller, since rotation can't be aborted by a hero
+     * write failure.
+     */
+    private void flushSegmentMetadata(File segmentMp4) {
+        if (segmentMp4 == null) return;
+
+        // Renormalize per-actor peak timestamps against THIS segment's
+        // timeline origin. Actor.peakSeverityRelMs was computed against
+        // whichever segment's origin was current when the peak was hit;
+        // if the peak fell in segment 1 and the actor is still alive in
+        // segment 2, the raw relMs would point at a wall-time before
+        // segment 2's start. Sidecar consumers (web events page,
+        // VideoPlayerFragment) build scrub-to-event markers off this
+        // field — without renormalization, the markers land outside the
+        // segment's playable range.
+        //
+        // Strategy: if the peak's wall time falls inside this segment's
+        // window [segmentStart, now], rewrite relMs against segmentStart.
+        // Otherwise drop relMs (writers treat -1 as "field absent" and
+        // omit it from the JSON). The actor is still emitted with all
+        // its other peak fields (severity tier, proximity, class) so
+        // badges and filters keep working.
+        long segmentStartMs = timelineCollector.getRecordingStartTimeMs();
+        java.util.List<Actor> rawActors = lastActors;
+        java.util.List<Actor> segmentActors;
+        if (rawActors == null || rawActors.isEmpty() || segmentStartMs <= 0) {
+            segmentActors = rawActors;
+        } else {
+            segmentActors = new java.util.ArrayList<>(rawActors.size());
+            for (Actor a : rawActors) {
+                long renormalizedRelMs;
+                if (a.peakSeverityWallMs > 0 && a.peakSeverityWallMs >= segmentStartMs) {
+                    renormalizedRelMs = a.peakSeverityWallMs - segmentStartMs;
+                } else {
+                    renormalizedRelMs = -1L;  // peak fell outside this segment
+                }
+                if (renormalizedRelMs == a.peakSeverityRelMs) {
+                    segmentActors.add(a);
+                } else {
+                    segmentActors.add(new Actor(
+                            a.actorId, a.classGroup,
+                            a.firstSeenWallMs, a.lastSeenWallMs,
+                            a.firstSeenRelMs, a.lastSeenRelMs,
+                            a.cameraMask,
+                            a.peakProximity, a.lastProximity,
+                            a.trend, a.isStatic,
+                            a.peakSeverity, a.peakSeverityWallMs, renormalizedRelMs,
+                            a.peakConfidence,
+                            a.peakBboxX, a.peakBboxY, a.peakBboxW, a.peakBboxH,
+                            a.peakBboxQuadW, a.peakBboxQuadH, a.peakCamera,
+                            a.lastBboxX, a.lastBboxY, a.lastBboxW, a.lastBboxH));
+                }
+            }
+        }
+
+        File heroFile = null;
+        if (thumbnailBuffer != null) {
+            try {
+                java.util.Map<Long, Long> relMap = new java.util.HashMap<>();
+                if (segmentActors != null) {
+                    for (Actor a : segmentActors) {
+                        if (a.peakSeverityRelMs >= 0) {
+                            relMap.put(a.actorId, a.peakSeverityRelMs);
+                        }
+                    }
+                }
+                heroFile = thumbnailBuffer.flushToDisk(segmentMp4, relMap);
+                if (heroFile != null) {
+                    logger.info("Hero thumbnail (" + segmentMp4.getName() + "): " + heroFile.getName());
+                }
+            } catch (Exception e) {
+                logger.warn("Thumbnail flush failed for " + segmentMp4.getName() + ": " + e.getMessage());
+            }
+        }
+
+        // Write timeline JSON sidecar alongside this segment.
+        try {
+            timelineCollector.stopAndWrite(segmentMp4, segmentActors,
+                    heroFile != null ? heroFile.getName() : null);
+        } catch (Exception e) {
+            logger.warn("Timeline write failed for " + segmentMp4.getName() + ": " + e.getMessage());
+        }
+
+        // Reset the metadata buffers for the next segment. ThumbnailBuffer
+        // already self-clears in flushToDisk; timelineCollector needs an
+        // explicit reset before the rotation listener calls startCollecting
+        // for the new segment. Don't clear lastActors — the next segment's
+        // first frame should have continuity with the actors that crossed
+        // the rotation boundary (so a person mid-loiter doesn't get a fresh
+        // actorId on every rotation).
     }
     
     /**
@@ -2366,6 +3241,10 @@ public class SurveillanceEngineGpu {
         
         // Reset cross-quadrant tracker for clean session
         crossQuadrantTracker.reset();
+
+        // Reset Actor layer too — fresh ID space for each session
+        actorTracker.reset();
+        lastActors = java.util.Collections.emptyList();
         
         // Reset detection baseline for clean session
         detectionBaseline.reset();
@@ -2889,7 +3768,10 @@ public class SurveillanceEngineGpu {
         }
         
         currentFrame = null;
-        aiBuffer = null;  // Let GC reclaim the large buffer
+        // ThreadLocal: clear this thread's scratch. Other threads' entries
+        // (aiExecutor, drainer) will be reclaimed when those threads exit
+        // or the next allocation replaces them.
+        aiBufferTL.remove();
         
         logger.info("Released");
     }

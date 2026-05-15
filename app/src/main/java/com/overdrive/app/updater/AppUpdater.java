@@ -46,6 +46,9 @@ public class AppUpdater {
     private static final String UPDATE_TIMESTAMP_FILE = "/data/local/tmp/overdrive_update_timestamp";
     // Version file readable by daemon process (SharedPreferences are per-process)
     public static final String VERSION_FILE = "/data/local/tmp/overdrive_version";
+    // Sentinels for the post-update handshake (see UpdateLifecycle).
+    private static final String UPDATE_IN_PROGRESS_FILE = UpdateLifecycle.UPDATE_IN_PROGRESS_FILE;
+    private static final String POST_UPDATE_FILE = UpdateLifecycle.POST_UPDATE_FILE;
 
     private final Context context;
     private volatile boolean cancelled = false;
@@ -134,7 +137,14 @@ public class AppUpdater {
 
     private void cleanupLeftoverApk() {
         try {
-            getAdbLauncher().executeShellCommand("rm -f " + APK_PATH, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+            // Also age out a stale Telegram post-update hint older than 24h —
+            // if Telegram never came back online to consume it, the user has
+            // already noticed the URL change through other means and a "you
+            // were just updated" message would be confusing days later.
+            String cmd = "rm -f " + APK_PATH + "; " +
+                    "find " + UpdateLifecycle.TELEGRAM_POST_UPDATE_HINT_FILE +
+                    " -mmin +1440 -delete 2>/dev/null; echo done";
+            getAdbLauncher().executeShellCommand(cmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                 @Override public void onLog(String m) {}
                 @Override public void onLaunched() { Log.i(TAG, "Cleaned up leftover APK"); }
                 @Override public void onError(String e) {}
@@ -395,7 +405,8 @@ public class AppUpdater {
 
                 String installCmd = "pm install -r -d " + APK_PATH +
                     "; rm -f " + APK_PATH +
-                    "; sleep 2; am start -n com.overdrive.app/.ui.MainActivity";
+                    "; sleep 2; am start -n com.overdrive.app/.ui.MainActivity" +
+                    " --ez " + UpdateLifecycle.EXTRA_POST_UPDATE + " true";
 
                 getAdbLauncher().executeShellCommand(installCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                     @Override public void onLog(String message) {
@@ -425,6 +436,15 @@ public class AppUpdater {
                             .putBoolean(PREF_JUST_UPDATED, false)
                             .remove(PREF_UPDATED_VERSION)
                             .commit();
+                    // Wipe the post-update sentinels — install never landed, so
+                    // there's nothing for the next launch to recover from.
+                    getAdbLauncher().executeShellCommand(
+                            "rm -f " + UPDATE_IN_PROGRESS_FILE + " " + POST_UPDATE_FILE,
+                            new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+                                @Override public void onLog(String m) {}
+                                @Override public void onLaunched() {}
+                                @Override public void onError(String e) {}
+                            });
                     postInstallError(callback, "Install failed: " + output);
                 } else {
                     postProgress(callback, "✅ Update installed! Restarting...");
@@ -469,9 +489,36 @@ public class AppUpdater {
 
     private void stopAllDaemons() {
         Log.i(TAG, "Stopping all daemons...");
-        
+
         com.overdrive.app.launcher.AdbDaemonLauncher launcher = getAdbLauncher();
-        
+
+        // Step 0: Plant the post-update sentinels so the new process knows to
+        // run a hard-reset before starting daemons (see UpdateLifecycle). The
+        // BootReceiver path is intentionally inert on MY_PACKAGE_REPLACED, so
+        // the new MainActivity is the sole daemon orchestrator after install.
+        final boolean[] markerDone = {false};
+        String markerCmd =
+                "echo 'update at $(date)' > " + UPDATE_IN_PROGRESS_FILE + "; " +
+                "echo 'update at $(date)' > " + POST_UPDATE_FILE + "; " +
+                "echo done";
+        launcher.executeShellCommand(markerCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+            @Override public void onLog(String m) {}
+            @Override public void onLaunched() {
+                markerDone[0] = true;
+                synchronized (markerDone) { markerDone.notify(); }
+            }
+            @Override public void onError(String e) {
+                Log.w(TAG, "Sentinel write: " + e);
+                markerDone[0] = true;
+                synchronized (markerDone) { markerDone.notify(); }
+            }
+        });
+        try {
+            synchronized (markerDone) {
+                if (!markerDone[0]) markerDone.wait(3000);
+            }
+        } catch (InterruptedException ignored) {}
+
         // Step 1: Kill ALL watchdog scripts and write sentinels FIRST.
         // This prevents watchdogs from respawning daemons between kills.
         // Must happen before any daemon kill — otherwise the watchdog sees the
@@ -512,8 +559,9 @@ public class AppUpdater {
         
         // Step 2: Kill all daemon processes.
         // Watchdogs are already dead so nothing will respawn these.
-        String[] daemons = {"acc_sentry_daemon", "byd_cam_daemon", "sentry_daemon", 
-                "telegram_bot_daemon", "sentry_proxy", "cloudflared", "zrok", "sing-box"};
+        String[] daemons = {"acc_sentry_daemon", "byd_cam_daemon", "sentry_daemon",
+                "telegram_bot_daemon", "sentry_proxy", "cloudflared", "zrok", "sing-box",
+                "tailscaled"};
         
         for (String daemon : daemons) {
             final boolean[] done = {false};
@@ -541,19 +589,31 @@ public class AppUpdater {
         // Step 3: Final sweep — catch any stragglers that slipped through.
         // This handles edge cases where a watchdog respawned a daemon in the
         // brief window between step 1 and step 2, or orphaned shell processes.
+        // NOTE: we keep UPDATE_IN_PROGRESS_FILE / POST_UPDATE_FILE in place;
+        // the new process clears them after its own hard-reset pass.
         Log.i(TAG, "Final sweep for remaining processes...");
         String finalSweepCmd =
                 "pkill -9 -f 'start_cam_daemon' 2>/dev/null; " +
                 "pkill -9 -f 'start_acc_sentry' 2>/dev/null; " +
                 "pkill -9 -f 'byd_cam_daemon' 2>/dev/null; " +
+                "pkill -9 -f 'cam_daemon' 2>/dev/null; " +
                 "pkill -9 -f 'acc_sentry_daemon' 2>/dev/null; " +
                 "pkill -9 -f 'sentry_daemon' 2>/dev/null; " +
-                "rm -f /data/local/tmp/camera_daemon.lock 2>/dev/null; " +
-                "rm -f /data/local/tmp/acc_sentry_daemon.lock 2>/dev/null; " +
-                // Clean up sentinel — the new app version's daemon launcher clears it
-                // on startup anyway, but remove it here too in case the install fails
-                // and the user manually restarts. Without this, the watchdog would
-                // refuse to start the camera daemon.
+                "pkill -9 -f 'telegram_bot_daemon' 2>/dev/null; " +
+                "pkill -9 -f 'sentry_proxy' 2>/dev/null; " +
+                "pkill -9 -f 'cloudflared' 2>/dev/null; " +
+                "pkill -9 -f 'zrok' 2>/dev/null; " +
+                "pkill -9 -f 'sing-box' 2>/dev/null; " +
+                "pkill -9 -f 'tailscaled' 2>/dev/null; " +
+                "killall -9 cloudflared 2>/dev/null; " +
+                "killall -9 zrok 2>/dev/null; " +
+                "killall -9 tailscaled 2>/dev/null; " +
+                "killall -9 sing-box 2>/dev/null; " +
+                "rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; " +
+                "rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; " +
+                "rm -f /data/local/tmp/start_cam_daemon.sh /data/local/tmp/start_acc_sentry.sh 2>/dev/null; " +
+                // Clear camera_daemon.disabled but keep the post-update sentinels
+                // so the new process can detect and act on them.
                 "rm -f /data/local/tmp/camera_daemon.disabled 2>/dev/null; " +
                 "echo done";
         

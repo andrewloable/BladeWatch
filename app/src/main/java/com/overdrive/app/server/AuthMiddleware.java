@@ -43,7 +43,14 @@ public class AuthMiddleware {
         "/auth/logout",
         "/login.html",
         "/login",
-        "/favicon.ico"
+        "/favicon.ico",
+        // PWA install assets — the browser fetches these as part of service-
+        // worker registration and manifest discovery, with no Bearer header
+        // (browser-internal fetch, not auth.js-wrapped). These are still
+        // origin-gated in HttpServer.isPwaOrigin so they only resolve from
+        // the configured zrok subdomain.
+        "/manifest.json",
+        "/sw.js"
     ));
 
     // Path prefixes that don't require authentication

@@ -54,7 +54,15 @@ public class TelegramBotDaemon {
     /** https://api.telegram.org/bot */
     private static String TELEGRAM_API_BASE() { return Safe.s("FS7R/5I0wopp0qBqyJXzvDKg6eI9UXmD/Oei3NbaaGQ="); }
     
-    private static final int IPC_PORT = 19878;  // Telegram IPC (19877 is used by Surveillance)
+    // Port allocations across daemons:
+    //   19876 — CameraDaemon control TCP (Constants.kt)
+    //   19877 — SurveillanceIpcServer (IPC for the surveillance engine)
+    //   19878 — BydEventDaemon TCP push (vehicle door / charge / radar events)
+    //   19879 — SentryDaemon control
+    //   19880 — Telegram bot IPC (this daemon)
+    // Was previously 19878 which collides with BydEventDaemon — whichever
+    // daemon started second silently failed to bind. Moved to 19880.
+    private static final int IPC_PORT = 19880;
     
     // Singleton lock (same pattern as CameraDaemon / AccSentryDaemon)
     private static final String LOCK_FILE = "/data/local/tmp/telegram_bot_daemon.lock";
@@ -392,21 +400,39 @@ public class TelegramBotDaemon {
      * Start IPC server to receive notification requests from app process.
      * Listens on localhost:19877 for JSON commands.
      */
+    /**
+     * Worker pool for IPC handlers. Sized at 2 — enough to overlap a slow
+     * sendPhoto/sendVideo (now up to 30s on 429 retry) with a parallel
+     * notifyMotion/notifyCritical from the engine. Without this, the accept
+     * thread itself ran the handler inline and a single retrying call would
+     * stall every other Telegram message during the burst that triggered
+     * the rate limit. Daemon thread so it doesn't pin shutdown.
+     */
+    private static final java.util.concurrent.ExecutorService IPC_WORKERS =
+            java.util.concurrent.Executors.newFixedThreadPool(2, r -> {
+                Thread t = new Thread(r, "TelegramIPCWorker");
+                t.setDaemon(true);
+                return t;
+            });
+
     private static void startIpcServer() {
         Thread ipcThread = new Thread(() -> {
             log("IPC server starting on port " + IPC_PORT);
-            
+
             while (running) {
                 ServerSocket serverSocket = null;
                 try {
                     serverSocket = new ServerSocket(IPC_PORT, 5, InetAddress.getByName("127.0.0.1"));
                     serverSocket.setReuseAddress(true);
                     log("IPC server listening on 127.0.0.1:" + IPC_PORT);
-                    
+
                     while (running) {
                         try {
                             Socket client = serverSocket.accept();
-                            handleIpcClient(client);
+                            // Dispatch off the accept thread so a slow handler
+                            // (e.g. sendPhoto sleeping 30s on 429 retry) can't
+                            // block subsequent IPC commands.
+                            IPC_WORKERS.execute(() -> handleIpcClient(client));
                         } catch (Exception e) {
                             if (running) {
                                 log("IPC accept error: " + e.getMessage());
@@ -497,10 +523,34 @@ public class TelegramBotDaemon {
                     if (!url.isEmpty() && ownerChatId > 0) {
                         // Save URL to file for /url command
                         saveTunnelUrl(url);
-                        
-                        String msg = isNew ? "🌐 *Tunnel URL*\n" + url : "🔄 *Tunnel URL Changed*\n" + url;
+
+                        // Check the post-update hint file. If present, the new
+                        // URL was caused by an app update — frame the message
+                        // accordingly and consume the hint so subsequent tunnel
+                        // restarts go back to the generic copy. Hint contents:
+                        // the new version string (e.g. "alpha-v11.4").
+                        String postUpdateVersion = consumePostUpdateHint();
+
+                        String msg;
+                        if (postUpdateVersion != null) {
+                            // Cloudflared free quick-tunnels rotate their URL on
+                            // every restart (*.trycloudflare.com); zrok/tailscale/
+                            // named cloudflared tunnels keep the same URL. Only
+                            // call out the rotation when it actually happened.
+                            boolean rotates = url.contains(".trycloudflare.com");
+                            msg = "🔄 *Overdrive updated to " + postUpdateVersion + "*\n" +
+                                  (rotates ? "New tunnel URL:\n" : "Tunnel back online:\n") + url;
+                            if (rotates) {
+                                msg += "\n\n_The cloudflared link rotates after every install._";
+                            }
+                        } else if (isNew) {
+                            msg = "🌐 *Tunnel URL*\n" + url;
+                        } else {
+                            msg = "🔄 *Tunnel URL Changed*\n" + url;
+                        }
                         boolean ok = sendMessage(ownerChatId, msg);
-                        log("notifyTunnel message sent: " + ok);
+                        log("notifyTunnel message sent: " + ok +
+                                (postUpdateVersion != null ? " (post-update)" : ""));
                         response.put("status", ok ? "ok" : "error");
                     } else {
                         response.put("status", "error");
@@ -509,20 +559,35 @@ public class TelegramBotDaemon {
                     break;
                     
                 case "notifyMotion":
-                    String detection = cmd.optString("detection", "motion");
-                    float confidence = (float) cmd.optDouble("confidence", 0);
-                    String videoFilename = cmd.optString("videoFilename", "");
                     if (ownerChatId > 0) {
-                        StringBuilder msg = new StringBuilder();
-                        msg.append("🚨 *Motion Detected*\n");
-                        msg.append(detection);
-                        if (confidence > 0) msg.append(" (").append(Math.round(confidence * 100)).append("%)");
-                        if (!videoFilename.isEmpty()) {
-                            msg.append("\n\n📹 Recording: `").append(videoFilename).append("`");
-                            msg.append("\n⏳ _Recording in progress..._");
-                            msg.append("\n📥 `/download ").append(videoFilename).append("`");
+                        String motionText = formatMotionMessage(cmd, /*finalized=*/false);
+                        boolean ok = sendMessage(ownerChatId, motionText);
+                        response.put("status", ok ? "ok" : "error");
+                    } else {
+                        response.put("status", "error");
+                        response.put("message", "Owner not set");
+                    }
+                    break;
+
+                case "notifyMotionFinalized":
+                    // Recording closed and the hero JPEG has been written. Send a
+                    // PHOTO (with rich caption) when the path is available; fall
+                    // back to text-only if the photo upload fails or there's no
+                    // hero — never silently drop.
+                    if (ownerChatId > 0) {
+                        String finalCaption = formatMotionMessage(cmd, /*finalized=*/true);
+                        String heroPath = cmd.optString("heroPhotoPath", "");
+                        boolean ok;
+                        if (!heroPath.isEmpty() && new java.io.File(heroPath).exists()) {
+                            ok = sendPhoto(ownerChatId, heroPath, finalCaption);
+                            if (!ok) {
+                                // Photo upload failed — fall back to text so the
+                                // user still gets the alert.
+                                ok = sendMessage(ownerChatId, finalCaption);
+                            }
+                        } else {
+                            ok = sendMessage(ownerChatId, finalCaption);
                         }
-                        boolean ok = sendMessage(ownerChatId, msg.toString());
                         response.put("status", ok ? "ok" : "error");
                     } else {
                         response.put("status", "error");
@@ -977,6 +1042,235 @@ public class TelegramBotDaemon {
         }
     }
     
+    /**
+     * Send a photo to the chat with an optional caption (Markdown).
+     * Used by the surveillance pipeline to ship the hero JPEG of the recording
+     * with the threat summary as the caption — the Telegram analogue of the
+     * PWA notification's hero image.
+     */
+    public static boolean sendPhoto(long chatId, String photoPath, String caption) {
+        try {
+            File photoFile = new File(photoPath);
+            if (!photoFile.exists()) {
+                log("Photo file not found: " + photoPath);
+                return false;
+            }
+
+            String url = TELEGRAM_API_BASE() + botToken + "/sendPhoto";
+
+            // Build the multipart request once; we may need to re-send on 429.
+            // Reusing the builder is simplest because OkHttp consumes the body
+            // exactly once per request, so we re-create the body on retry.
+            for (int attempt = 0; attempt < 2; attempt++) {
+                MultipartBody.Builder bodyBuilder = new MultipartBody.Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart("chat_id", String.valueOf(chatId))
+                        .addFormDataPart("photo", photoFile.getName(),
+                                RequestBody.create(photoFile, MediaType.parse("image/jpeg")));
+
+                if (caption != null && !caption.isEmpty()) {
+                    bodyBuilder.addFormDataPart("caption", caption);
+                    bodyBuilder.addFormDataPart("parse_mode", "Markdown");
+                }
+
+                Request request = new Request.Builder()
+                        .url(url)
+                        .post(bodyBuilder.build())
+                        .build();
+
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (response.isSuccessful()) {
+                        log("Photo sent: " + photoPath);
+                        return true;
+                    }
+                    if (response.code() == 429 && attempt == 0) {
+                        // Telegram rate limit. Body carries {"parameters":{"retry_after":N}}
+                        long sleepSec = parseRetryAfter(response, 1L);
+                        log("sendPhoto 429 — sleeping " + sleepSec + "s before retry");
+                        try { Thread.sleep(Math.min(sleepSec * 1000L, 30_000L)); }
+                        catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            return false;
+                        }
+                        continue;  // retry
+                    }
+                    log("sendPhoto HTTP error: " + response.code());
+                    return false;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log("sendPhoto error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Parse Telegram's retry_after hint from a 429 response. The API returns
+     * {@code {"ok":false,"error_code":429,"description":"Too Many Requests:
+     * retry after 30","parameters":{"retry_after":30}}}. Falls back to the
+     * provided default (seconds) if parsing fails.
+     */
+    private static long parseRetryAfter(Response response, long defaultSec) {
+        try {
+            String body = response.peekBody(1024).string();
+            JSONObject json = new JSONObject(body);
+            JSONObject params = json.optJSONObject("parameters");
+            if (params != null && params.has("retry_after")) {
+                return Math.max(1L, params.getLong("retry_after"));
+            }
+            // Some proxies expose Retry-After as a header instead.
+            String hdr = response.header("Retry-After");
+            if (hdr != null) {
+                try { return Math.max(1L, Long.parseLong(hdr.trim())); } catch (NumberFormatException ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return defaultSec;
+    }
+
+    /**
+     * Format a Telegram motion message from the IPC command's actor metadata.
+     * Used by both notifyMotion (start) and notifyMotionFinalized (recording
+     * close) so the wording is consistent. Uses Markdown.
+     *
+     * Output examples (final stage):
+     *   🚨 *CRITICAL · Person at front*
+     *   Very close
+     *   📹 `event_20260514_223124.mp4`
+     *
+     *   🚨 *CRITICAL · Person at front*
+     *   Very close · 1 person, 2 vehicles
+     *   📹 `event_20260514_223124.mp4`
+     *
+     * Start stage:
+     *   👁 *Motion at front*
+     *   _Recording in progress_
+     *   📹 `event_20260514_223124.mp4`
+     */
+    private static String formatMotionMessage(JSONObject cmd, boolean finalized) {
+        String severity = cmd.optString("severity", "");
+        String videoFilename = cmd.optString("videoFilename", "");
+        String camera = cmd.optString("camera", "");
+        String closestProximity = cmd.optString("closestProximity", "");
+        int personCount  = cmd.optInt("personCount", 0);
+        int vehicleCount = cmd.optInt("vehicleCount", 0);
+        int bikeCount    = cmd.optInt("bikeCount", 0);
+        int animalCount  = cmd.optInt("animalCount", 0);
+        int totalActors  = personCount + vehicleCount + bikeCount + animalCount;
+
+        StringBuilder msg = new StringBuilder();
+
+        // ---- Title line: "<icon> *<TIER> · <Class> at <camera>*" ----
+        boolean haveActorInfo = totalActors > 0;
+        String primary = haveActorInfo
+                ? chooseTelegramPrimary(personCount, vehicleCount, bikeCount, animalCount)
+                : null;
+        String tierIcon;
+        String tierWord;
+        if ("CRITICAL".equalsIgnoreCase(severity))    { tierIcon = "🚨"; tierWord = "CRITICAL"; }
+        else if ("ALERT".equalsIgnoreCase(severity))  { tierIcon = "⚠️"; tierWord = "Alert"; }
+        else                                          { tierIcon = "👁"; tierWord = null; }
+
+        // Camera is the only free-form interpolation outside backticks. Today
+        // it's enum-bounded ("front"/"right"/"rear"/"left") so safe, but
+        // mdEscape it defensively so a future user-supplied label can't break
+        // Markdown rendering with a stray *, _, `, or [.
+        String safeCamera = camera.isEmpty() ? "" : mdEscape(camera);
+        msg.append(tierIcon).append(" *");
+        if (tierWord != null && haveActorInfo) {
+            msg.append(tierWord).append(" · ").append(primary);
+            if (!safeCamera.isEmpty()) msg.append(" at ").append(safeCamera);
+        } else if (tierWord != null) {
+            msg.append(tierWord);
+            if (!safeCamera.isEmpty()) msg.append(" at ").append(safeCamera);
+        } else if (haveActorInfo) {
+            msg.append(primary);
+            if (!safeCamera.isEmpty()) msg.append(" at ").append(safeCamera);
+        } else if (!safeCamera.isEmpty()) {
+            msg.append("Motion at ").append(safeCamera);
+        } else {
+            msg.append("Motion detected");
+        }
+        msg.append("*\n");
+
+        // ---- Body line ----
+        if (finalized) {
+            String prox = proximityPhraseTelegram(closestProximity);
+            StringBuilder body = new StringBuilder();
+            if (!prox.isEmpty()) body.append(prox);
+            if (totalActors > 1) {
+                if (body.length() > 0) body.append(" · ");
+                body.append(formatTelegramCounts(personCount, vehicleCount, bikeCount, animalCount));
+            }
+            if (body.length() > 0) {
+                msg.append(body).append("\n");
+            }
+        } else {
+            // Start-stage: minimal "in progress" line, mirrors the PWA
+            // "Recording in progress" body.
+            msg.append("_Recording in progress_\n");
+        }
+
+        // ---- Footer ----
+        if (!videoFilename.isEmpty()) {
+            msg.append("📹 `").append(videoFilename).append("`");
+            if (!finalized) {
+                msg.append("\n📥 `/download ").append(videoFilename).append("`");
+            }
+        }
+        return msg.toString();
+    }
+
+    /**
+     * Escape Markdown legacy parse_mode metacharacters in free-form text that
+     * lands outside backticks. Underscores in filenames are the most common
+     * offender (the .mp4 timestamp format itself is rich in {@code _}).
+     * Preserves readability — no zero-width characters, just backslash-escapes.
+     */
+    private static String mdEscape(String s) {
+        if (s == null || s.isEmpty()) return s == null ? "" : s;
+        StringBuilder b = new StringBuilder(s.length() + 8);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '_' || c == '*' || c == '`' || c == '[') b.append('\\');
+            b.append(c);
+        }
+        return b.toString();
+    }
+
+    private static String chooseTelegramPrimary(int p, int v, int b, int a) {
+        // Match the engine-side classRank: PERSON > BIKE > VEHICLE > ANIMAL.
+        // Single-actor case shows just the class word; the body line carries
+        // the count breakdown when there's more than one actor.
+        if (p > 0) return "Person";
+        if (b > 0) return "Bike";
+        if (v > 0) return "Vehicle";
+        if (a > 0) return "Animal";
+        return "Motion";
+    }
+
+    /** Capitalised proximity phrase for the body's lead clause. */
+    private static String proximityPhraseTelegram(String enumName) {
+        if (enumName == null) return "";
+        switch (enumName) {
+            case "VERY_CLOSE": return "Very close";
+            case "CLOSE":      return "Close";
+            case "MID":        return "Mid range";
+            case "FAR":        return "Far";
+            default:           return "";
+        }
+    }
+
+    /** Pluralised count list: "1 person, 2 vehicles" — drops "× n" formatter. */
+    private static String formatTelegramCounts(int p, int v, int b, int a) {
+        java.util.List<String> parts = new java.util.ArrayList<>(4);
+        if (p > 0) parts.add(p + " " + (p == 1 ? "person"  : "people"));
+        if (v > 0) parts.add(v + " " + (v == 1 ? "vehicle" : "vehicles"));
+        if (b > 0) parts.add(b + " " + (b == 1 ? "bike"    : "bikes"));
+        if (a > 0) parts.add(a + " " + (a == 1 ? "animal"  : "animals"));
+        return String.join(", ", parts);
+    }
+
     public static boolean sendVideo(long chatId, String videoPath, String caption) {
         try {
             File videoFile = new File(videoPath);
@@ -984,34 +1278,46 @@ public class TelegramBotDaemon {
                 log("Video file not found: " + videoPath);
                 return false;
             }
-            
+
             String url = TELEGRAM_API_BASE() + botToken + "/sendVideo";
-            
-            MultipartBody.Builder bodyBuilder = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("chat_id", String.valueOf(chatId))
-                    .addFormDataPart("supports_streaming", "true")
-                    .addFormDataPart("video", videoFile.getName(),
-                            RequestBody.create(videoFile, MediaType.parse("video/mp4")));
-            
-            if (caption != null && !caption.isEmpty()) {
-                bodyBuilder.addFormDataPart("caption", caption);
-            }
-            
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(bodyBuilder.build())
-                    .build();
-            
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (response.isSuccessful()) {
-                    log("Video sent: " + videoPath);
-                    return true;
-                } else {
+
+            for (int attempt = 0; attempt < 2; attempt++) {
+                MultipartBody.Builder bodyBuilder = new MultipartBody.Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart("chat_id", String.valueOf(chatId))
+                        .addFormDataPart("supports_streaming", "true")
+                        .addFormDataPart("video", videoFile.getName(),
+                                RequestBody.create(videoFile, MediaType.parse("video/mp4")));
+
+                if (caption != null && !caption.isEmpty()) {
+                    bodyBuilder.addFormDataPart("caption", caption);
+                }
+
+                Request request = new Request.Builder()
+                        .url(url)
+                        .post(bodyBuilder.build())
+                        .build();
+
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (response.isSuccessful()) {
+                        log("Video sent: " + videoPath);
+                        return true;
+                    }
+                    if (response.code() == 429 && attempt == 0) {
+                        long sleepSec = parseRetryAfter(response, 5L);
+                        log("sendVideo 429 — sleeping " + sleepSec + "s before retry");
+                        try { Thread.sleep(Math.min(sleepSec * 1000L, 60_000L)); }
+                        catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            return false;
+                        }
+                        continue;
+                    }
                     log("sendVideo HTTP error: " + response.code());
                     return false;
                 }
             }
+            return false;
         } catch (Exception e) {
             log("sendVideo error: " + e.getMessage());
             return false;
@@ -1097,6 +1403,35 @@ public class TelegramBotDaemon {
         } catch (Exception e) {
             log("Save tunnel URL error: " + e.getMessage());
         }
+    }
+
+    /**
+     * One-shot read of the post-update hint file. If present, returns the
+     * trimmed version string and deletes the file so the next tunnel restart
+     * uses the generic message. Returns null if the hint isn't there or the
+     * read fails.
+     *
+     * Path is duplicated (not pulled from UpdateLifecycle) because this code
+     * runs in the daemon process which loads classes lazily and we want to
+     * avoid pulling the whole updater package transitively.
+     */
+    private static String consumePostUpdateHint() {
+        File hint = new File("/data/local/tmp/overdrive_post_update_pending_telegram");
+        if (!hint.exists()) return null;
+        String version = null;
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(hint)))) {
+            String line = r.readLine();
+            if (line != null) {
+                String trimmed = line.trim();
+                if (!trimmed.isEmpty()) version = trimmed;
+            }
+        } catch (Exception e) {
+            log("Post-update hint read error: " + e.getMessage());
+        }
+        // Delete unconditionally — even if the read failed we don't want a
+        // stale hint to keep flagging unrelated tunnel restarts.
+        try { hint.delete(); } catch (Exception ignored) {}
+        return version;
     }
     
     // ==================== PUBLIC API FOR NOTIFICATIONS ====================

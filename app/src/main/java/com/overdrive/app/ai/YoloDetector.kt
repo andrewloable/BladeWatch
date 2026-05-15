@@ -47,11 +47,30 @@ class YoloDetector(private val context: Context) {
     private var interpreter: Interpreter? = null
     private var gpuDelegate: GpuDelegate? = null
     private var isGpuEnabled = false
-    
+
+    // Monitor that mutually excludes inference (interp.run) from
+    // close() / re-init. Without it, a UI/IPC-thread close() can free
+    // the native TFLite interpreter while aiExecutor is mid-detect,
+    // causing a SIGSEGV in tensorflowlite_jni. The Java-side null
+    // snapshot in the engine guards null-deref but not use-after-free
+    // inside the native run.
+    private val interpLock = Any()
+
     // SOTA: Pre-allocate all buffers to avoid GC
     private var inputImageBuffer: TensorImage? = null
     private var inputByteBuffer: ByteBuffer? = null  // Reused for zero-copy
     private var outputBuffer: ByteBuffer? = null
+
+    // Reusable shaped input buffer. Re-create only when image dimensions
+    // change (rare — quadrant size is fixed at startup). Without this,
+    // every detect() allocated a fresh TensorBuffer + ByteBuffer.wrap →
+    // ~1 MB short-lived garbage per inference, contradicting the class's
+    // "zero GC churn" promise. Class-field allocation + dim guard runs
+    // O(1) when dims match.
+    private var shapedBufferW: Int = -1
+    private var shapedBufferH: Int = -1
+    private var shapedBuffer: TensorBuffer? = null
+    private var floatOutput: FloatArray? = null
     
     // Model configuration
     private val modelPath = "models/yolo11n.tflite"
@@ -213,35 +232,62 @@ class YoloDetector(private val context: Context) {
         detectBike: Boolean = false,
         minRelativeHeight: Float = 0.15f  // SOTA: 15% of QUADRANT height (~5m for person)
     ): List<Detection> {
-        
-        val interp = interpreter ?: return emptyList()
-        
+
+        // FIX (Bug B): if the caller has disabled every detectable class, skip the
+        // entire inference path. This is the belt-and-braces defence behind the
+        // engine's aiEnabled gate and ensures any future caller path benefits too.
+        if (!detectPerson && !detectCar && !detectAnimal && !detectBike) {
+            return emptyList()
+        }
+
         if (width <= 0 || height <= 0) return emptyList()
-        
+
         // CRITICAL: Color channel handling
         // GpuDownscaler outputs RGB from OpenGL (RGBA_8888 with A dropped)
         // The data is already in RGB format - NO SWAP NEEDED
         // Image is now correctly oriented (vertical flip applied in GpuDownscaler)
         val processedData = rgbData  // Use directly - already RGB from GpuDownscaler
-        
-        // Load with explicit shape [height, width, 3]
-        val shapedBuffer = TensorBuffer.createFixedSize(intArrayOf(height, width, 3), DataType.UINT8)
-        shapedBuffer.loadBuffer(ByteBuffer.wrap(processedData))
-        
-        inputImageBuffer!!.load(shapedBuffer)
-        
-        // SOTA: Process with native C++ ops (bilinear resize + UINT8->FLOAT32 normalize)
-        val tensorImage = imageProcessor.process(inputImageBuffer)
-        
-        // Run inference (GPU accelerated)
-        outputBuffer!!.rewind()
-        interp.run(tensorImage.buffer, outputBuffer)
-        
-        // Parse output
-        outputBuffer!!.rewind()
-        val output = FloatArray(84 * 8400)
-        outputBuffer!!.asFloatBuffer().get(output)
-        
+
+        // Synchronize against close(). Inside the lock we're guaranteed the
+        // native interpreter is alive for the duration of run(). Lock cost
+        // on the single-thread aiExecutor is uncontended steady-state; the
+        // brief contention with close() is fine — close happens rarely
+        // (toggle off, daemon shutdown).
+        val output: FloatArray
+        synchronized(interpLock) {
+            val interp = interpreter ?: return emptyList()
+
+            // Reuse the shaped TensorBuffer across calls. Re-allocate only on
+            // dimension change (rare). Same for the float output array.
+            var sb = shapedBuffer
+            if (sb == null || shapedBufferW != width || shapedBufferH != height) {
+                sb = TensorBuffer.createFixedSize(intArrayOf(height, width, 3), DataType.UINT8)
+                shapedBuffer = sb
+                shapedBufferW = width
+                shapedBufferH = height
+            }
+            sb.loadBuffer(ByteBuffer.wrap(processedData))
+
+            inputImageBuffer!!.load(sb)
+
+            // SOTA: Process with native C++ ops (bilinear resize + UINT8->FLOAT32 normalize)
+            val tensorImage = imageProcessor.process(inputImageBuffer)
+
+            // Run inference (GPU accelerated)
+            outputBuffer!!.rewind()
+            interp.run(tensorImage.buffer, outputBuffer)
+
+            // Parse output
+            outputBuffer!!.rewind()
+            var fo = floatOutput
+            if (fo == null || fo.size != 84 * 8400) {
+                fo = FloatArray(84 * 8400)
+                floatOutput = fo
+            }
+            outputBuffer!!.asFloatBuffer().get(fo)
+            output = fo
+        }
+
         return parseOutput(
             output, width, height, confThreshold,
             detectPerson, detectCar, detectAnimal, detectBike, minRelativeHeight
@@ -469,9 +515,19 @@ class YoloDetector(private val context: Context) {
      * Clean up resources
      */
     fun close() {
-        interpreter?.close()
-        gpuDelegate?.close()
-        interpreter = null
-        gpuDelegate = null
+        // Acquiring interpLock blocks until any in-flight detect() releases it.
+        // Without this, freeing the native interpreter mid-run would SIGSEGV
+        // inside tensorflowlite_jni.
+        synchronized(interpLock) {
+            interpreter?.close()
+            gpuDelegate?.close()
+            interpreter = null
+            gpuDelegate = null
+            // Drop the reused buffers too — they'll be re-allocated on next init().
+            shapedBuffer = null
+            shapedBufferW = -1
+            shapedBufferH = -1
+            // floatOutput is shape-independent; safe to keep pooled.
+        }
     }
 }

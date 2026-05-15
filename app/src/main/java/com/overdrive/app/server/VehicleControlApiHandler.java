@@ -229,7 +229,8 @@ public class VehicleControlApiHandler {
         boolean anyTyreData = data.tyrePressure != null
                 || data.tyrePressureState != null
                 || data.tyreAirLeakState != null
-                || data.tyreSignalState != null;
+                || data.tyreSignalState != null
+                || data.tyreTemperature != null;
         if (anyTyreData) {
             String[] keys = { "fl", "fr", "rl", "rr" };
             for (int i = 0; i < keys.length; i++) {
@@ -239,15 +240,17 @@ public class VehicleControlApiHandler {
                 if (kPa != BydVehicleData.UNAVAILABLE && kPa > 0) {
                     t.put("kPa", kPa);
                     // PSI = kPa * 0.1450377 (matches the AutoCommander
-                    // UnitFormatter conversion exactly). The kPa value
-                    // here is the raw int from BYDAutoTyreDevice —
-                    // identical to what the cluster reads.
-                    t.put("psi", (int) Math.round(kPa * 0.1450377));
+                    // UnitFormatter conversion). One decimal place is
+                    // enough to distinguish ±3 kPa steps the BYD TPMS
+                    // actually reports — integer rounding collapses
+                    // 247/250/253 kPa all to 36 psi, hiding real change.
+                    double psi = kPa * 0.1450377;
+                    t.put("psi", Math.round(psi * 10.0) / 10.0);
                 }
-                // Per-tyre temperature was removed — confirmed not
-                // available via any public BYD SDK path (AutoCommander's
-                // own getTyreTemperature() also returns null with a
-                // "feature IDs not available" warning).
+                if (data.tyreTemperature != null && i < data.tyreTemperature.length
+                        && data.tyreTemperature[i] != BydVehicleData.UNAVAILABLE) {
+                    t.put("temperatureC", data.tyreTemperature[i]);
+                }
                 if (data.tyrePressureState != null && i < data.tyrePressureState.length) {
                     t.put("pressureState", data.tyrePressureState[i]);
                 }

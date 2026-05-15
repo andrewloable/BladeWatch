@@ -23,7 +23,6 @@ public class BydVehicleData {
     public final double remainKwh;        // remaining energy
     public final double voltage12v;       // 12V battery volts
     public final int voltageLevelRaw;     // LOW/NORMAL/INVALID
-    public final double batteryPowerKw;   // instant battery flow from getBatteryPowerHEV (positive=discharge, negative=charge)
     public final int energyType;          // bodywork getEnergyType() raw — drivetrain discriminator (BEV/PHEV/HEV)
 
     // ==================== THERMAL ====================
@@ -84,6 +83,7 @@ public class BydVehicleData {
     public final int[] tyrePressureState; // [FL, FR, RL, RR] — 0=NORMAL, 1=UNDERPRESSURE, 2=OVERPRESSURE
     public final int[] tyreAirLeakState;  // [FL, FR, RL, RR] — 0=Normal, 1=Slow leak, 2=Fast leak
     public final int[] tyreSignalState;   // [FL, FR, RL, RR] — 0=Signal OK, 1=Signal Error
+    public final int[] tyreTemperature;   // [FL, FR, RL, RR] in °C; UNAVAILABLE until TPMS fires
     public final int tyreSystemState;     // overall TPMS health (raw enum)
     public final int tyreTemperatureState;// overall TPMS temperature warning (raw enum)
 
@@ -198,7 +198,6 @@ public class BydVehicleData {
         this.remainKwh = b.remainKwh;
         this.voltage12v = b.voltage12v;
         this.voltageLevelRaw = b.voltageLevelRaw;
-        this.batteryPowerKw = b.batteryPowerKw;
         this.energyType = b.energyType;
         this.highCellTempC = b.highCellTempC;
         this.lowCellTempC = b.lowCellTempC;
@@ -239,6 +238,7 @@ public class BydVehicleData {
         this.tyrePressureState = b.tyrePressureState;
         this.tyreAirLeakState = b.tyreAirLeakState;
         this.tyreSignalState = b.tyreSignalState;
+        this.tyreTemperature = b.tyreTemperature;
         this.tyreSystemState = b.tyreSystemState;
         this.tyreTemperatureState = b.tyreTemperatureState;
         this.doorLockStatus = b.doorLockStatus;
@@ -340,7 +340,6 @@ public class BydVehicleData {
             putIfValid(batt, "remainKwh", remainKwh);
             putIfValid(batt, "voltage12v", voltage12v);
             if (voltageLevelRaw != UNAVAILABLE) batt.put("voltageLevelRaw", voltageLevelRaw);
-            putIfValid(batt, "batteryPowerKw", batteryPowerKw);
             if (energyType != UNAVAILABLE) batt.put("energyType", energyType);
             j.put("battery", batt);
 
@@ -435,6 +434,12 @@ public class BydVehicleData {
                 JSONArray a = new JSONArray();
                 for (int v : tyreSignalState) a.put(v);
                 j.put("tyreSignalState", a);
+            }
+            if (tyreTemperature != null) {
+                JSONArray a = new JSONArray();
+                for (int v : tyreTemperature) a.put(v == UNAVAILABLE ? JSONObject.NULL : (Object) v);
+                j.put("tyreTemperature", a);
+                j.put("tyreTemperatureUnit", "C");
             }
             if (tyreSystemState != UNAVAILABLE) j.put("tyreSystemState", tyreSystemState);
             if (tyreTemperatureState != UNAVAILABLE) j.put("tyreTemperatureState", tyreTemperatureState);
@@ -599,7 +604,7 @@ public class BydVehicleData {
         Builder b = new Builder();
         b.vin = vin; b.socPercent = socPercent; b.socHevPercent = socHevPercent;
         b.capacityAh = capacityAh; b.remainKwh = remainKwh; b.voltage12v = voltage12v;
-        b.voltageLevelRaw = voltageLevelRaw; b.batteryPowerKw = batteryPowerKw;
+        b.voltageLevelRaw = voltageLevelRaw;
         b.energyType = energyType; b.highCellTempC = highCellTempC;
         b.lowCellTempC = lowCellTempC; b.avgCellTempC = avgCellTempC;
         b.waterTempC = waterTempC; b.outsideTempC = outsideTempC; b.insideTempC = insideTempC;
@@ -620,7 +625,8 @@ public class BydVehicleData {
         b.hvPackVoltage = hvPackVoltage;
         b.gearMode = gearMode; b.tyrePressure = tyrePressure;
         b.tyrePressureState = tyrePressureState; b.tyreAirLeakState = tyreAirLeakState;
-        b.tyreSignalState = tyreSignalState; b.tyreSystemState = tyreSystemState;
+        b.tyreSignalState = tyreSignalState; b.tyreTemperature = tyreTemperature;
+        b.tyreSystemState = tyreSystemState;
         b.tyreTemperatureState = tyreTemperatureState;
         b.doorLockStatus = doorLockStatus;
         b.windowOpenPercent = windowOpenPercent; b.leftTurnState = leftTurnState;
@@ -665,7 +671,6 @@ public class BydVehicleData {
         String vin;
         double socPercent = NaN, socHevPercent = NaN, capacityAh = NaN, remainKwh = NaN;
         double voltage12v = NaN; int voltageLevelRaw = UNAVAILABLE;
-        double batteryPowerKw = NaN;
         int energyType = UNAVAILABLE;
         double highCellTempC = NaN, lowCellTempC = NaN, avgCellTempC = NaN;
         double waterTempC = NaN, outsideTempC = NaN, insideTempC = NaN, bodyworkBattTempC = NaN;
@@ -683,7 +688,7 @@ public class BydVehicleData {
         double chargingPowerKw = NaN, externalChargingPowerKw = NaN, hvPackVoltage = NaN;
         int gearMode = UNAVAILABLE;
         int[] tyrePressure, doorLockStatus, windowOpenPercent, seatbeltStatus, radarDistances;
-        int[] tyrePressureState, tyreAirLeakState, tyreSignalState;
+        int[] tyrePressureState, tyreAirLeakState, tyreSignalState, tyreTemperature;
         int tyreSystemState = UNAVAILABLE, tyreTemperatureState = UNAVAILABLE;
         int leftTurnState = UNAVAILABLE, rightTurnState = UNAVAILABLE;
         boolean lowBeam, highBeam, rearFog, frontFog, hazard; int dayTimeLight = UNAVAILABLE;
@@ -739,7 +744,6 @@ public class BydVehicleData {
         public Builder remainKwh(double v) { remainKwh = v; return this; }
         public Builder voltage12v(double v) { voltage12v = v; return this; }
         public Builder voltageLevelRaw(int v) { voltageLevelRaw = v; return this; }
-        public Builder batteryPowerKw(double v) { batteryPowerKw = v; return this; }
         public Builder energyType(int v) { energyType = v; return this; }
         public Builder highCellTempC(double v) { highCellTempC = v; return this; }
         public Builder lowCellTempC(double v) { lowCellTempC = v; return this; }
@@ -780,6 +784,7 @@ public class BydVehicleData {
         public Builder tyrePressureState(int[] v) { tyrePressureState = v; return this; }
         public Builder tyreAirLeakState(int[] v) { tyreAirLeakState = v; return this; }
         public Builder tyreSignalState(int[] v) { tyreSignalState = v; return this; }
+        public Builder tyreTemperature(int[] v) { tyreTemperature = v; return this; }
         public Builder tyreSystemState(int v) { tyreSystemState = v; return this; }
         public Builder tyreTemperatureState(int v) { tyreTemperatureState = v; return this; }
         public Builder doorLockStatus(int[] v) { doorLockStatus = v; return this; }

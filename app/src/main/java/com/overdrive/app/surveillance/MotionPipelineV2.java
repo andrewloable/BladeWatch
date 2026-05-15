@@ -403,9 +403,19 @@ public class MotionPipelineV2 {
      */
     public void applyConfig(Config config) {
         if (!initialized) return;
-        
+
         configBuffer.clear();
-        
+        // Zero-fill the buffer before writing fields. ByteBuffer.clear() only
+        // resets position/limit — not the underlying bytes. If the native
+        // struct grows in a future build (e.g. partial shadow-fields support
+        // between BASE_CONFIG_SIZE and BASE_CONFIG_SIZE+SHADOW_FIELDS_SIZE),
+        // any bytes we don't explicitly write would carry stale values from
+        // the previous applyConfig call. Costs ~60-76 byte writes — negligible.
+        for (int i = 0; i < configBuffer.capacity(); i++) {
+            configBuffer.put((byte) 0);
+        }
+        configBuffer.position(0);
+
         // Stage 1
         configBuffer.putFloat(config.brightnessShiftThreshold);
         configBuffer.putInt(config.brightnessSuppressionFrames);

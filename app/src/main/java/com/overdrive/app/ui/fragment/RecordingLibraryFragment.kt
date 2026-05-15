@@ -50,6 +50,34 @@ class RecordingLibraryFragment : Fragment() {
     private var chipFilterNormal: Chip? = null
     private var chipFilterSentry: Chip? = null
     private var chipFilterProximity: Chip? = null
+
+    // Calendar collapse (item 7) — full month grid is collapsed by default;
+    // an always-visible week strip lives in its own row above and provides
+    // day-by-day navigation without needing to expand the month.
+    private var calendarBody: View? = null
+    private var btnCalendarCollapse: ImageButton? = null
+    private var recyclerWeekStrip: RecyclerView? = null
+    private var btnPrevWeek: ImageButton? = null
+    private var btnNextWeek: ImageButton? = null
+    // Separate adapter so the week strip can show "today" and "selected"
+    // independently from the month grid (which lives behind the collapse).
+    private val weekStripAdapter = CalendarAdapter { day -> onWeekDaySelected(day) }
+    // The Calendar instance used to build the 7-day window. Independent of
+    // the month-level `calendar` so paging the week strip doesn't fight with
+    // month prev/next. weekAnchor always points at the SELECTED day.
+    private val weekAnchor: Calendar = Calendar.getInstance()
+
+    // v3 actor / severity filter chips (item 7) — two rows.
+    // Row 1 ("What:") covers actor class. Row 2 ("Severity:") covers severity.
+    // Each row's "Any" chip clears that row only.
+    private var chipActorAny: Chip? = null
+    private var chipActorPerson: Chip? = null
+    private var chipActorVehicle: Chip? = null
+    private var chipActorBike: Chip? = null
+    private var chipActorAnimal: Chip? = null
+    private var chipSevAny: Chip? = null
+    private var chipSevAlert: Chip? = null
+    private var chipSevCritical: Chip? = null
     
     // Multi-select toolbar
     private var selectToolbar: LinearLayout? = null
@@ -64,6 +92,13 @@ class RecordingLibraryFragment : Fragment() {
     private val calendar = Calendar.getInstance()
     private var selectedDay = calendar.get(Calendar.DAY_OF_MONTH)
     private var currentFilter = RecordingFilter.ALL
+
+    // v3 actor + severity filter state (item 7)
+    private val actorClassFilter = mutableSetOf<String>()  // lowercased class group names
+    private val severityFilter = mutableSetOf<String>()    // "ALERT" / "CRITICAL"
+    // SOTA pattern: calendar lives behind a toggle. Collapsed by default so the
+    // user lands on the grid; tap the chevron in the month bar to expand.
+    private var calendarCollapsed = true
     
     private val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
     
@@ -198,8 +233,105 @@ class RecordingLibraryFragment : Fragment() {
         } catch (e: Exception) {
             // Filter chips not available - use default filter
         }
+
+        // Calendar collapse + actor filter (item 7)
+        try {
+            calendarBody = view.findViewById(R.id.calendarBody)
+            btnCalendarCollapse = view.findViewById(R.id.btnCalendarCollapse)
+            btnCalendarCollapse?.setOnClickListener { toggleCalendarCollapsed() }
+            // Apply initial collapsed state (SOTA: list-first, week-strip-only,
+            // full month tap-to-reveal)
+            calendarBody?.visibility = if (calendarCollapsed) View.GONE else View.VISIBLE
+            btnCalendarCollapse?.rotation = if (calendarCollapsed) 90f else 270f
+
+            // Always-visible week strip
+            recyclerWeekStrip = view.findViewById(R.id.recyclerWeekStrip)
+            btnPrevWeek = view.findViewById(R.id.btnPrevWeek)
+            btnNextWeek = view.findViewById(R.id.btnNextWeek)
+            recyclerWeekStrip?.layoutManager =
+                LinearLayoutManager(view.context, LinearLayoutManager.HORIZONTAL, false)
+            recyclerWeekStrip?.adapter = weekStripAdapter
+            btnPrevWeek?.setOnClickListener { shiftWeek(-7) }
+            btnNextWeek?.setOnClickListener { shiftWeek(+7) }
+            // Seed the cell width from the display so the first inflate of
+            // each cell has the right width — avoids the 1-2 frame "one big
+            // cell stretched across the strip" flicker that would otherwise
+            // appear before the post-layout width calculation runs.
+            val screenWidthPx = resources.displayMetrics.widthPixels
+            // Strip's available width = screen − two 32dp arrow buttons − ~8dp padding
+            val arrowsPx = (32 + 32 + 8) * resources.displayMetrics.density
+            val initialCell = ((screenWidthPx - arrowsPx) / 7f).toInt().coerceAtLeast(1)
+            weekStripAdapter.setCellWidthPx(initialCell)
+
+            chipActorAny      = view.findViewById(R.id.chipActorAny)
+            chipSevAny        = view.findViewById(R.id.chipSevAny)
+            chipActorPerson   = view.findViewById(R.id.chipActorPerson)
+            chipActorVehicle  = view.findViewById(R.id.chipActorVehicle)
+            chipActorBike     = view.findViewById(R.id.chipActorBike)
+            chipActorAnimal   = view.findViewById(R.id.chipActorAnimal)
+            chipSevAlert      = view.findViewById(R.id.chipSevAlert)
+            chipSevCritical   = view.findViewById(R.id.chipSevCritical)
+            setupActorChips()
+        } catch (e: Exception) {
+            // Older layout; ignore
+        }
     }
-    
+
+    private fun toggleCalendarCollapsed() {
+        calendarCollapsed = !calendarCollapsed
+        calendarBody?.visibility = if (calendarCollapsed) View.GONE else View.VISIBLE
+        btnCalendarCollapse?.rotation = if (calendarCollapsed) 90f else 270f
+    }
+
+    private fun setupActorChips() {
+        // Per-row "Any" — clears only its own dimension. Severity filters are
+        // unaffected when the user taps "Any" in the Actor row, and vice
+        // versa; this matches the two-row visual model.
+        chipActorAny?.setOnClickListener {
+            actorClassFilter.clear()
+            updateActorChipChecks()
+            loadRecordingsForSelectedDate()
+        }
+        chipSevAny?.setOnClickListener {
+            severityFilter.clear()
+            updateActorChipChecks()
+            loadRecordingsForSelectedDate()
+        }
+        chipActorPerson?.setOnClickListener  { toggleActorClass("person") }
+        chipActorVehicle?.setOnClickListener { toggleActorClass("vehicle") }
+        chipActorBike?.setOnClickListener    { toggleActorClass("bike") }
+        chipActorAnimal?.setOnClickListener  { toggleActorClass("animal") }
+        chipSevAlert?.setOnClickListener     { toggleSeverity("ALERT") }
+        chipSevCritical?.setOnClickListener  { toggleSeverity("CRITICAL") }
+        updateActorChipChecks()
+    }
+
+    private fun toggleActorClass(name: String) {
+        if (actorClassFilter.contains(name)) actorClassFilter.remove(name)
+        else actorClassFilter.add(name)
+        updateActorChipChecks()
+        loadRecordingsForSelectedDate()
+    }
+
+    private fun toggleSeverity(name: String) {
+        if (severityFilter.contains(name)) severityFilter.remove(name)
+        else severityFilter.add(name)
+        updateActorChipChecks()
+        loadRecordingsForSelectedDate()
+    }
+
+    private fun updateActorChipChecks() {
+        // Per-row "Any" stays checked iff its row has no specific selections.
+        chipActorAny?.isChecked      = actorClassFilter.isEmpty()
+        chipSevAny?.isChecked        = severityFilter.isEmpty()
+        chipActorPerson?.isChecked   = actorClassFilter.contains("person")
+        chipActorVehicle?.isChecked  = actorClassFilter.contains("vehicle")
+        chipActorBike?.isChecked     = actorClassFilter.contains("bike")
+        chipActorAnimal?.isChecked   = actorClassFilter.contains("animal")
+        chipSevAlert?.isChecked      = severityFilter.contains("ALERT")
+        chipSevCritical?.isChecked   = severityFilter.contains("CRITICAL")
+    }
+
     private fun setupFilterChips() {
         chipFilterAll?.setOnClickListener {
             currentFilter = RecordingFilter.ALL
@@ -252,9 +384,12 @@ class RecordingLibraryFragment : Fragment() {
             onSelectionChanged = { count -> onSelectionChanged(count) }
         )
         
+        // SOTA grid (item 7): 2-column grid for video tiles. Calendar lives in
+        // the collapsible header; the list takes most of the screen.
         recyclerRecordings.apply {
-            layoutManager = LinearLayoutManager(context)
+            layoutManager = GridLayoutManager(context, 2)
             adapter = recordingAdapter
+            setHasFixedSize(true)
         }
     }
     
@@ -314,6 +449,125 @@ class RecordingLibraryFragment : Fragment() {
         // Set days immediately with empty counts for instant feedback
         calendarAdapter.setDays(days, emptyMap())
         calendarAdapter.setSelectedDay(selectedDay)
+
+        // Keep the always-visible week strip in sync with the same year/month/day.
+        weekAnchor.set(year, month, selectedDay.coerceAtLeast(1))
+        updateWeekStrip()
+    }
+
+    /**
+     * Build a 7-day window centred on the selected date and feed it into
+     * the week-strip adapter. Window starts on Sunday-of-the-selected-week so
+     * weekday positions stay aligned across navigations.
+     */
+    private fun updateWeekStrip() {
+        val rv = recyclerWeekStrip ?: return
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }
+
+        // Find Sunday of the anchor's week
+        val startOfWeek = (weekAnchor.clone() as Calendar).apply {
+            set(Calendar.DAY_OF_WEEK, firstDayOfWeek)
+        }
+
+        val days = ArrayList<CalendarAdapter.CalendarDay>(7)
+        // Build counts only for days in the displayed month (cheap cache from updateCalendar).
+        val anchorYear = weekAnchor.get(Calendar.YEAR)
+        val anchorMonth = weekAnchor.get(Calendar.MONTH)
+        val cursor = startOfWeek.clone() as Calendar
+        for (i in 0 until 7) {
+            val dayOfMonth = cursor.get(Calendar.DAY_OF_MONTH)
+            val sameMonth = cursor.get(Calendar.YEAR) == anchorYear &&
+                            cursor.get(Calendar.MONTH) == anchorMonth
+            val isToday = cursor.timeInMillis == today.timeInMillis
+            val isFuture = cursor.after(today)
+            days.add(CalendarAdapter.CalendarDay(
+                dayOfMonth = dayOfMonth,
+                isCurrentMonth = sameMonth,
+                isToday = isToday,
+                isFuture = isFuture
+            ))
+            cursor.add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        weekStripAdapter.setDays(days, emptyMap())
+        // Highlight the selected day if it's in this week's window AND in the
+        // anchor's month (avoids highlighting a same-numbered day from an
+        // adjacent month).
+        weekStripAdapter.setSelectedDay(if (days.any {
+            it.isCurrentMonth && it.dayOfMonth == selectedDay
+        }) selectedDay else -1)
+
+        // Force each cell to (strip_width / 7) so all 7 days fit exactly across
+        // the row. Run on next layout pass once rv.width is known.
+        rv.post {
+            val w = rv.width
+            if (w > 0) {
+                weekStripAdapter.setCellWidthPx(w / 7)
+            }
+        }
+    }
+
+    /**
+     * Shift the week-strip window by ±7 days. Crosses month boundaries and
+     * pulls the parent calendar / selectedDay along so the recordings list
+     * reloads for the new selected day.
+     */
+    private fun shiftWeek(deltaDays: Int) {
+        weekAnchor.add(Calendar.DAY_OF_MONTH, deltaDays)
+        // Don't allow navigating into the future. Normalise both sides to
+        // midnight so the comparison is by date only — otherwise the wall-
+        // clock hours/minutes inside `today` can produce inconsistent results
+        // vs the normalised comparison used in updateWeekStrip().
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }
+        if (weekAnchor.after(today)) {
+            weekAnchor.timeInMillis = today.timeInMillis
+        }
+        // Sync month-level state so updateCalendar() rebuilds the right month grid
+        // (in case the user expands it after this).
+        calendar.set(weekAnchor.get(Calendar.YEAR),
+                     weekAnchor.get(Calendar.MONTH), 1)
+        selectedDay = weekAnchor.get(Calendar.DAY_OF_MONTH)
+        updateCalendar()
+        loadRecordingsForSelectedDate()
+    }
+
+    private fun onWeekDaySelected(day: Int) {
+        // The week strip might span two months. The day from the adapter is
+        // always the day-of-month of the cell; we resolve the absolute date
+        // by walking the strip cells to find which one was tapped, but a
+        // simpler heuristic: search forward/backward from the current anchor
+        // to the closest matching day-of-month within ±3 days.
+        val target = (weekAnchor.clone() as Calendar)
+        // Move target to the start-of-week first so we can iterate cells
+        target.set(Calendar.DAY_OF_WEEK, target.firstDayOfWeek)
+        var found = false
+        for (i in 0 until 7) {
+            if (target.get(Calendar.DAY_OF_MONTH) == day) {
+                weekAnchor.timeInMillis = target.timeInMillis
+                found = true
+                break
+            }
+            target.add(Calendar.DAY_OF_MONTH, 1)
+        }
+        if (!found) return
+        // Don't allow tapping a future day — date-only compare (see shiftWeek).
+        val today = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }
+        if (weekAnchor.after(today)) return
+
+        calendar.set(weekAnchor.get(Calendar.YEAR),
+                     weekAnchor.get(Calendar.MONTH), 1)
+        selectedDay = weekAnchor.get(Calendar.DAY_OF_MONTH)
+        updateCalendar()
+        loadRecordingsForSelectedDate()
     }
     
     private fun buildCalendarDays(year: Int, month: Int): List<CalendarAdapter.CalendarDay> {
@@ -353,6 +607,10 @@ class RecordingLibraryFragment : Fragment() {
     private fun onDaySelected(day: Int) {
         selectedDay = day
         calendarAdapter.setSelectedDay(day)
+        // Sync the week-strip anchor so selecting a day in the month grid
+        // also updates the strip's selection (and re-centers if needed).
+        weekAnchor.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), day)
+        updateWeekStrip()
         loadRecordingsForSelectedDate()
     }
     
@@ -390,14 +648,27 @@ class RecordingLibraryFragment : Fragment() {
                 val allRecordings = RecordingScanner.getRecordingsForDate(requireContext(), year, month, selectedDay)
                 Log.d(TAG, "Found ${allRecordings.size} recordings for date")
                 
-                val recordings = when (currentFilter) {
+                val typeFiltered = when (currentFilter) {
                     RecordingFilter.ALL -> allRecordings
                     RecordingFilter.NORMAL -> allRecordings.filter { it.type == RecordingFile.RecordingType.NORMAL }
                     RecordingFilter.SENTRY -> allRecordings.filter { it.type == RecordingFile.RecordingType.SENTRY }
                     RecordingFilter.PROXIMITY -> allRecordings.filter { it.type == RecordingFile.RecordingType.PROXIMITY }
                 }
-                
-                Log.d(TAG, "After filter (${currentFilter}): ${recordings.size} recordings")
+
+                // v3 actor/severity filter (item 7). Empty filters pass everything.
+                val recordings = if (actorClassFilter.isEmpty() && severityFilter.isEmpty()) {
+                    typeFiltered
+                } else {
+                    typeFiltered.filter { rec ->
+                        val classOk = actorClassFilter.isEmpty()
+                                || rec.actorClasses.any { it.lowercase() in actorClassFilter }
+                        val sevOk = severityFilter.isEmpty()
+                                || (rec.peakSeverity?.uppercase() in severityFilter)
+                        classOk && sevOk
+                    }
+                }
+
+                Log.d(TAG, "After filter (${currentFilter}, actor=$actorClassFilter, sev=$severityFilter): ${recordings.size} recordings")
                 
                 activity?.runOnUiThread {
                     if (isAdded) {

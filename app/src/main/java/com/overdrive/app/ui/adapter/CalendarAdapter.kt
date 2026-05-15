@@ -16,10 +16,24 @@ import com.overdrive.app.R
 class CalendarAdapter(
     private val onDaySelected: (Int) -> Unit
 ) : RecyclerView.Adapter<CalendarAdapter.DayViewHolder>() {
-    
+
     private var days: List<CalendarDay> = emptyList()
     private var selectedDay: Int = -1
     private var recordingCounts: Map<Int, Int> = emptyMap()
+    /**
+     * If non-zero, each row item is force-resized to this width (px). Used by
+     * the horizontal week strip so 7 cells fit the parent row exactly. Month
+     * grid leaves this at 0 and inherits the GridLayoutManager's per-cell
+     * width as before.
+     */
+    private var cellWidthPx: Int = 0
+
+    fun setCellWidthPx(px: Int) {
+        if (cellWidthPx != px) {
+            cellWidthPx = px
+            notifyDataSetChanged()
+        }
+    }
     
     fun setDays(days: List<CalendarDay>, recordingCounts: Map<Int, Int> = emptyMap()) {
         this.days = days
@@ -41,6 +55,14 @@ class CalendarAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DayViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_calendar_day, parent, false)
+        if (cellWidthPx > 0) {
+            // Override match_parent for horizontal week-strip layout. Without
+            // this, LinearLayoutManager stretches each item to fill the strip
+            // and only one day shows.
+            val lp = view.layoutParams ?: ViewGroup.LayoutParams(cellWidthPx, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.width = cellWidthPx
+            view.layoutParams = lp
+        }
         return DayViewHolder(view)
     }
     

@@ -388,11 +388,14 @@ class WebViewFragment : Fragment() {
                     // which has reliable video playback via VideoView
                     if (url.contains("/events.html") || url.endsWith("/events")) {
                         try {
-                            // Extract filter param if present (e.g., events.html?filter=sentry)
+                            // Extract filter / file params if present
+                            // (e.g., events.html?filter=sentry&file=event_20260512_143022.mp4)
                             val uri = android.net.Uri.parse(url)
                             val filter = uri.getQueryParameter("filter")
+                            val file = uri.getQueryParameter("file")
                             val bundle = android.os.Bundle().apply {
                                 if (filter != null) putString("filter", filter)
+                                if (file != null) putString("file", file)
                             }
                             androidx.navigation.fragment.NavHostFragment.findNavController(this@WebViewFragment)
                                 .navigate(R.id.eventsFragment, bundle)

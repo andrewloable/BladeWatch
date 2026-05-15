@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#00E5FF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="../shared/app-icon.webp">
+    <title>Notifications - OverDrive</title>
+    <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        .notif-page-body { max-width: 720px; margin: 0 auto; }
+        .notif-section { margin-bottom: 28px; }
+        .notif-section h2 {
+            font-size: 12px; font-weight: 600;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin: 0 0 4px;
+        }
+        .notif-section-sub {
+            font-size: 13px; color: rgba(255,255,255,0.45);
+            line-height: 1.5; margin: 0 0 14px;
+        }
+        .notif-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 4px 0;
+        }
+        .notif-row {
+            position: relative;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .notif-row:last-child { border-bottom: 0; }
+        .notif-row-text { flex: 1; min-width: 0; padding-right: 12px; }
+        .notif-row-label {
+            font-size: 14px; font-weight: 500;
+            display: flex; align-items: center; gap: 8px;
+            flex-wrap: wrap;
+        }
+        .notif-row-note {
+            font-size: 12px; color: rgba(255,255,255,0.5);
+            margin-top: 2px;
+        }
+        .notif-sev-pill {
+            position: relative;
+            display: inline-block;
+            font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+            padding: 2px 8px; border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.7);
+            cursor: help;
+        }
+        .notif-sev-pill.warn { color: #FFB75A; background: rgba(255,183,90,0.1); }
+        .notif-sev-pill.critical { color: #FF6B6B; background: rgba(255,107,107,0.1); }
+        .notif-sev-pill.auto { color: #00E5FF; background: rgba(0,229,255,0.1); }
+        /* Tooltip is a child of the pill (anchored to it), positioned just
+           below-right of the pill, kept narrow enough that it never covers
+           the toggle on the row's right edge. Triggers only on pill hover
+           so casual mouse movement through the row doesn't hide the toggle. */
+        .notif-sev-tooltip {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: max-content;
+            max-width: min(240px, calc(100vw - 48px));
+            padding: 8px 10px;
+            background: rgba(10,10,15,0.96);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: rgba(255,255,255,0.92);
+            font-size: 11px; font-weight: 400; line-height: 1.45;
+            text-transform: none; letter-spacing: 0;
+            white-space: normal; text-align: left;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.15s;
+            z-index: 100;
+        }
+        .notif-sev-pill:hover .notif-sev-tooltip,
+        .notif-sev-pill:focus .notif-sev-tooltip,
+        .notif-sev-pill:focus-within .notif-sev-tooltip {
+            opacity: 1;
+        }
+        .notif-toggle {
+            position: relative; width: 44px; height: 26px;
+            background: rgba(255,255,255,0.12); border-radius: 13px;
+            transition: background 0.15s;
+            flex-shrink: 0; cursor: pointer;
+        }
+        .notif-toggle.on { background: #00E5FF; }
+        .notif-toggle::after {
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: #fff; transition: transform 0.15s;
+        }
+        .notif-toggle.on::after { transform: translateX(18px); }
+        /* Inactive toggle — push isn't enabled on this device so the
+           per-category preference is moot. Show as visibly disabled and
+           ignore clicks. */
+        .notif-toggle.inactive {
+            background: rgba(255,255,255,0.06);
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+        .notif-toggle.inactive.on { background: rgba(255,255,255,0.06); }
+        .notif-toggle.inactive::after {
+            background: rgba(255,255,255,0.4);
+            transform: none !important;
+        }
+        .notif-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 132px; height: 38px;
+            padding: 0 18px;
+            border: 1px solid rgba(0,229,255,0.4); border-radius: 8px;
+            background: rgba(0,229,255,0.08); color: #00E5FF;
+            font-size: 13px; font-weight: 500; line-height: 1; cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .notif-btn:hover { background: rgba(0,229,255,0.15); }
+        .notif-btn.danger { border-color: rgba(255,107,107,0.4); background: rgba(255,107,107,0.08); color: #FF6B6B; }
+        .notif-btn.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .notif-status {
+            font-size: 13px; padding: 12px 16px; border-radius: 8px;
+            margin: 12px 0; line-height: 1.5;
+        }
+        .notif-status.ok    { background: rgba(0,229,255,0.08); color: #00E5FF; }
+        .notif-status.warn  { background: rgba(255,183,90,0.08); color: #FFB75A; }
+        .notif-status.error { background: rgba(255,107,107,0.08); color: #FF6B6B; }
+        .notif-status code {
+            background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        }
+        .notif-permission-row {
+            display: grid;
+            grid-template-columns: 16px 1fr;
+            column-gap: 12px;
+            row-gap: 14px;
+            align-items: center;
+        }
+        .notif-permission-row::before {
+            content: ''; grid-column: 1; grid-row: 1;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: rgba(255,255,255,0.35);
+            justify-self: center;
+        }
+        .notif-permission-row.granted::before { background: #00E5FF; box-shadow: 0 0 8px rgba(0,229,255,0.6); }
+        .notif-permission-row.denied::before  { background: #FF6B6B; }
+        .notif-permission-row.default::before { background: #FFB75A; }
+        .notif-permission-state {
+            grid-column: 2; grid-row: 1;
+            font-size: 14px; color: rgba(255,255,255,0.85);
+        }
+        .notif-action-row {
+            grid-column: 2; grid-row: 2;
+            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+        }
+        .notif-action-row .notif-btn { flex: 0 0 auto; }
+        .device-row { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .device-row:last-child { border-bottom: 0; }
+        .device-row-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .device-row-label { font-weight: 500; }
+        .device-row-meta { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+        .empty-state {
+            padding: 24px 16px; text-align: center;
+            color: rgba(255,255,255,0.5); font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-logo">
+                        <img src="../shared/app-icon.webp" alt="OverDrive">
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-name">OverDrive</span>
+                        <span class="brand-tagline">Sentry System</span>
+                        <span class="brand-version" id="appVersion"></span>
+                    </div>
+                </div>
+                <button class="sidebar-close" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 12a9 9 0 0 0 8 8"/><circle cx="2" cy="12" r="2"/></svg>
+                    <span>Live View</span>
+                </a>
+                <a href="events.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span>Events</span>
+                </a>
+                <a href="surveillance.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>Surveillance</span>
+                </a>
+                <a href="recording.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>
+                    <span>Recordings</span>
+                </a>
+                <a href="performance.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    <span>Performance</span>
+                </a>
+                <a href="abrp.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/><circle cx="18" cy="12" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg>
+                    <span>ABRP</span>
+                </a>
+                <a href="mqtt.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M8.46 15.54A5 5 0 0 1 7 12a5 5 0 0 1 1.46-3.54"/><path d="M15.54 8.46A5 5 0 0 1 17 12a5 5 0 0 1-1.46 3.54"/><path d="M5.64 18.36A9 9 0 0 1 3 12a9 9 0 0 1 2.64-6.36"/><path d="M18.36 5.64A9 9 0 0 1 21 12a9 9 0 0 1-2.64 6.36"/></svg>
+                    <span>MQTT</span>
+                </a>
+                <a href="trips.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h2v-7l4 4 4-4 4 4 4-4v7h2"/><path d="M4 5h16"/></svg>
+                    <span>Trips</span>
+                </a>
+                <a href="notifications.html" class="nav-link active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="vehicle-control.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <span>Vehicle Control</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-card">
+                    <div class="status-row">
+                        <span class="status-label"><span class="status-dot" id="connDot"></span>Device</span>
+                        <span class="status-value" id="deviceId">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">ACC</span>
+                        <span class="status-value" id="accValue">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">
+                            <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="7" width="12" height="10" rx="1"/><path d="M6 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/></svg>12V
+                        </span>
+                        <span class="status-value" id="batteryValue">--</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Sentry</span>
+                        <span class="status-value" id="survStatus">OFF</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">
+                            <span id="networkIcon"><svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg></span>Net
+                        </span>
+                        <span class="status-value" id="networkValue">--</span>
+                    </div>
+                </div>
+                <!-- EV Battery & Charging Card -->
+                <div class="status-card ev-card" id="evCard">
+                    <div class="ev-header-row">
+                        <span class="ev-title">Vehicle Status</span>
+                        <span class="ev-percent-text" id="evPercentValue">--%</span>
+                    </div>
+                    <div class="ev-svg-container">
+                        <svg viewBox="0 0 320 130" class="ev-car-svg">
+                            <defs>
+                                <linearGradient id="ceramicBody" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="60%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient>
+                                <linearGradient id="glassTint" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#020617"/><stop offset="100%" stop-color="#1e293b"/></linearGradient>
+                                <linearGradient id="batteryFlow" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#2dd4bf" class="grad-start"/><stop offset="50%" stop-color="#06b6d4" class="grad-mid"/><stop offset="100%" stop-color="#3b82f6" class="grad-end"/></linearGradient>
+                                <pattern id="chargeFlowPattern" x="0" y="0" width="20" height="10" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="10" height="16" fill="rgba(255,255,255,0.4)"/></pattern>
+                                <linearGradient id="chromeGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="50%" stop-color="#ffffff"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient>
+                            </defs>
+                            <g transform="translate(0, -3)"><circle cx="70" cy="90" r="19" fill="#050505"/><circle cx="250" cy="90" r="19" fill="#050505"/></g>
+                            <path d="M10,65 Q15,50 30,45 L60,38 L100,20 C130,10 180,10 210,22 L260,40 Q280,44 295,52 L310,62 Q315,68 312,78 L275,78 Q250,50 225,78 L95,78 Q70,50 45,78 L15,78 Q5,78 5,68 Q5,62 10,65 Z" fill="url(#ceramicBody)" filter="drop-shadow(0 8px 16px rgba(0,0,0,0.3))"/>
+                            <path d="M95,78 L225,78 L225,98 L95,98 Z" fill="url(#ceramicBody)"/>
+                            <g><path d="M100,24 L210,26 L240,42 L200,42 L100,40 Z" fill="none" stroke="url(#chromeGrad)" stroke-width="1.5"/><path d="M102,26 L208,28 L235,41 L200,41 L102,39 Z" fill="url(#glassTint)"/><path d="M155,27 L160,28 L160,41 L155,40 Z" fill="#020617"/></g>
+                            <rect id="evBatteryFill" x="100" y="80" width="0" height="16" rx="2" fill="url(#batteryFlow)" class="battery-bar"/>
+                            <rect id="evChargeFlow" x="100" y="80" width="0" height="16" rx="2" fill="url(#chargeFlowPattern)" class="charge-flow" opacity="0"/>
+                            <g transform="translate(70, 90)"><circle r="19" fill="#050505"/><circle r="14" fill="#ffffff"/><circle r="14" fill="url(#ceramicBody)" opacity="0.8"/><circle r="14" fill="none" stroke="#e2e8f0" stroke-width="1"/><path d="M0,-14 L0,14 M-12,-7 L12,7 M-12,7 L12,-7" stroke="#cbd5e1" stroke-width="2"/><circle r="4" fill="#1e293b"/></g>
+                            <g transform="translate(250, 90)"><circle r="19" fill="#050505"/><circle r="14" fill="#ffffff"/><circle r="14" fill="url(#ceramicBody)" opacity="0.8"/><circle r="14" fill="none" stroke="#e2e8f0" stroke-width="1"/><path d="M0,-14 L0,14 M-12,-7 L12,7 M-12,7 L12,-7" stroke="#cbd5e1" stroke-width="2"/><circle r="4" fill="#1e293b"/></g>
+                            <path d="M290,55 L302,53 L298,60 Z" fill="#fff" filter="drop-shadow(0 0 3px cyan)"/>
+                            <path d="M12,58 L18,55 L18,62 Z" fill="#ef4444" opacity="0.9"/>
+                            <g id="svgChargeIcon" transform="translate(160, 5) scale(0)" style="transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);"><circle r="12" fill="#00D4AA" stroke="#fff" stroke-width="2"/><path d="M-2,-6 L-4,1 L0,1 L-2,7 L5,-1 L1,-1 Z" fill="#fff"/></g>
+                        </svg>
+                    </div>
+                    <div class="ev-info-row">
+                        <div class="ev-range"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg><span id="evRange">-- km</span></div>
+                        <div class="ev-power-status"><span class="ev-power-val" id="evPower">-- kW</span></div>
+                    </div>
+                    <div class="ev-soh-row" id="evSohRow" style="display:none;">
+                        <span class="ev-soh-label">SOH</span>
+                        <span class="ev-soh-val" id="evSohValue">--%</span>
+                    </div>
+                    <div class="ev-personalized-range" id="evPersonalizedRow" style="display:none;">
+                        <span class="ev-personalized-label">⚡ Personalized</span>
+                        <span class="ev-personalized-val" id="evPersonalizedRange">-- km</span>
+                    </div>
+                </div>
+
+                <!-- Fuel Card (PHEV only — hidden for BEVs) -->
+                <div class="status-card fuel-card" id="fuelCard" style="display:none;">
+                    <div class="fuel-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:#F59E0B;">
+                            <path d="M3 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
+                            <path d="M3 22h10"/>
+                            <path d="M13 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6"/>
+                            <path d="M6 14v-3"/>
+                        </svg>
+                        <span class="fuel-title">Fuel</span>
+                        <span class="fuel-percent" id="fuelPercentValue">--%</span>
+                    </div>
+                    <div class="fuel-bar-track">
+                        <div class="fuel-bar-fill" id="fuelBarFill" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="mobile-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                </button>
+                <span style="font-weight:600;">Notifications</span>
+                <div style="width:40px;"></div>
+            </div>
+
+            <header class="page-header">
+                <h1 class="page-title">Notifications</h1>
+                <div class="header-actions">
+                    <div class="header-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span id="currentTime">--:--</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-body">
+                <div class="notif-page-body">
+                    <div id="status" class="notif-status" style="display:none;"></div>
+
+                    <div id="originBanner" class="notif-status warn" style="display:none;">
+                        <strong>Push notifications require Zrok.</strong>
+                        They install via the reserved Zrok URL only — Cloudflare quick tunnels
+                        change every restart and would invalidate every subscription.
+                        Tailscale serves over plain HTTP and can't be used for Web Push at all.
+                        Open the dashboard from your <code>&lt;name&gt;.share.zrok.io</code> URL
+                        on your phone, "Add to Home Screen", then return here to enable.
+                    </div>
+
+                    <div id="backendBanner" class="notif-status warn" style="display:none;">
+                        <strong>Notifications backend not initialized.</strong>
+                        Reserve a Zrok URL via the daemons screen and restart the daemon
+                        to enable push delivery.
+                    </div>
+
+                    <div class="notif-section" id="permissionSection">
+                        <h2>Push delivery</h2>
+                        <p class="notif-section-sub">
+                            Enables alerts on the device you are currently using. Each phone
+                            you install the dashboard onto needs to be enabled here once.
+                        </p>
+                        <div class="notif-card" style="padding: 16px 18px;">
+                            <div id="permissionRow" class="notif-permission-row">
+                                <div id="permissionState" class="notif-permission-state"></div>
+                                <div class="notif-action-row">
+                                    <button class="notif-btn" id="enableBtn">Enable on this device</button>
+                                    <button class="notif-btn" id="testBtn">Send test</button>
+                                    <button class="notif-btn danger" id="disableBtn" style="display:none;">Disable on this device</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="notif-section">
+                        <h2>Categories</h2>
+                        <p class="notif-section-sub">
+                            Toggle which kinds of alerts are pushed to this device. Each
+                            category fires when the head unit detects the matching event;
+                            what triggers it depends on the related daemon's settings.
+                            Hover any row to see what its severity level means.
+                        </p>
+
+                        <div id="categoriesContainer">
+                            <div class="notif-card"><div class="empty-state">Loading…</div></div>
+                        </div>
+                    </div>
+
+                    <div class="notif-section">
+                        <h2>Registered devices</h2>
+                        <p class="notif-section-sub">
+                            Every phone that enabled push notifications appears here.
+                            Use <strong>Remove</strong> to deregister a device — useful if you
+                            lose the phone or want to stop alerts to it without touching it.
+                            <strong>Disable on this device</strong> above also unsubscribes the
+                            current browser locally, while Remove is server-side only.
+                        </p>
+                        <div class="notif-card" id="devicesCard">
+                            <div class="empty-state" id="devicesEmpty">No devices registered yet.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/auth.js"></script>
+    <script src="../shared/pwa-init.js"></script>
+    <script src="../shared/core.js"></script>
+    <script src="../shared/update-flow.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+
+        // Preview-mode escape hatch: when the page is loaded off a local dev
+        // server (no real auth backend), the requireAuth() bounce to
+        // /login.html would 404 and create a redirect loop. PREVIEW_MODE
+        // covers both:
+        //   - port 8000 static server (no API at all → loads PREVIEW_REGISTRY)
+        //   - file:// (no server at all)
+        // ?devPwa=1 hits dev/preview-server.py on port 8443 which DOES
+        // implement the API, so we want fetches to go through but still
+        // need to skip the auth redirect.
+        var DEV_PWA_MODE = /[?&]devPwa=1\b/.test(window.location.search);
+        var PREVIEW_MODE =
+            window.location.protocol === 'file:' ||
+            (window.location.port === '8000' &&
+             (window.location.hostname === 'localhost' ||
+              window.location.hostname === '127.0.0.1'));
+        // PREVIEW_MODE drives the in-memory registry fallback. DEV_PWA_MODE
+        // hits real endpoints. Auth redirect must be skipped in either case.
+        var SKIP_AUTH_REDIRECT = PREVIEW_MODE || DEV_PWA_MODE;
+
+        if (!SKIP_AUTH_REDIRECT && typeof BYDAuth !== 'undefined' && BYDAuth.requireAuth) {
+            BYDAuth.requireAuth();
+        }
+        if (typeof BYD !== 'undefined' && BYD.core) BYD.core.init();
+
+        // ==================== ORIGIN GATE ====================
+        // Dev escape hatch: ?devPwa=1 lets the page run its full flow against
+        // a localhost preview server (dev/preview-server.py). Chrome treats
+        // localhost as a secure context for SW + push, so the install +
+        // subscribe + UI flow all behave like production.
+        var DEV_PWA = /[?&]devPwa=1\b/.test(window.location.search);
+        var ORIGIN_OK = (function () {
+            if (DEV_PWA) return true;
+            var host = window.location.hostname || '';
+            var loopback = host === '127.0.0.1' || host === 'localhost' || host === '0.0.0.0';
+            var insecure = window.location.protocol !== 'https:';
+            var notZrok  = !/\.share\.zrok\.io$/i.test(host);
+            return !(loopback || insecure || notZrok);
+        })();
+
+        if (!ORIGIN_OK) {
+            var b = document.getElementById('originBanner');
+            if (b) b.style.display = '';
+            ['enableBtn', 'testBtn', 'disableBtn'].forEach(function (id) {
+                var x = document.getElementById(id);
+                if (x) { x.classList.add('disabled'); x.disabled = true; }
+            });
+        }
+
+        var state = {
+            categories: [],
+            currentSubscriptionId: null,
+            muted: new Set(),
+            backendReady: false
+        };
+
+        function showStatus(kind, message) {
+            var el = document.getElementById('status');
+            if (!el) return;
+            el.className = 'notif-status ' + kind;
+            el.textContent = message;
+            el.style.display = '';
+        }
+        function hideStatus() {
+            var el = document.getElementById('status');
+            if (el) el.style.display = 'none';
+        }
+
+        function permissionLabel() {
+            if (!ORIGIN_OK) {
+                return 'Push delivery requires the Zrok URL — see banner above.';
+            }
+            if (typeof Notification === 'undefined') return 'Notifications not supported in this browser';
+            switch (Notification.permission) {
+                case 'granted': return 'Notifications are enabled on this device';
+                case 'denied':  return 'Notifications are blocked. Enable in browser settings.';
+                default:        return 'Notifications are not yet enabled.';
+            }
+        }
+
+        function refreshPermissionUI() {
+            var stateEl = document.getElementById('permissionState');
+            var rowEl = document.getElementById('permissionRow');
+            if (stateEl) stateEl.textContent = permissionLabel();
+            if (rowEl) {
+                rowEl.classList.remove('granted', 'denied', 'default');
+                if (!ORIGIN_OK) {
+                    rowEl.classList.add('denied');
+                } else if (typeof Notification !== 'undefined') {
+                    rowEl.classList.add(Notification.permission);
+                }
+            }
+            // When origin can't host a service worker, every action button stays
+            // disabled. The earlier ORIGIN_OK block already added the disabled
+            // class — don't undo it here.
+            if (!ORIGIN_OK) return;
+
+            var enableBtn = document.getElementById('enableBtn');
+            var disableBtn = document.getElementById('disableBtn');
+            if (typeof Notification === 'undefined' || Notification.permission === 'denied') {
+                if (enableBtn) { enableBtn.classList.add('disabled'); enableBtn.disabled = true; }
+            } else if (Notification.permission === 'granted') {
+                if (enableBtn) enableBtn.style.display = 'none';
+                if (disableBtn) disableBtn.style.display = '';
+            } else {
+                if (enableBtn) enableBtn.style.display = '';
+                if (disableBtn) disableBtn.style.display = 'none';
+            }
+        }
+
+        // Static preview registry — used only in PREVIEW_MODE so the layout
+        // can be reviewed off a plain static server (no /api routes available).
+        // Production reads the real JSON via /api/notifications/categories
+        // which is itself fed from app/src/main/assets/notifications-categories.json.
+        var PREVIEW_REGISTRY = {
+            version: 1,
+            categories: [
+                { id: 'surveillance.motion', label: 'Motion detected (legacy)', group: 'Surveillance',
+                  defaultEnabled: false, severity: 'auto',
+                  defaultClickUrl: '/events.html?filter=sentry',
+                  note: 'Legacy single-stream category, kept for backwards compatibility. Prefer the three Notice / Alert / Critical tiers below.' },
+                { id: 'surveillance.motion.notice', label: 'Surveillance — Notice', group: 'Surveillance',
+                  defaultEnabled: false, severity: 'info',
+                  defaultClickUrl: '/events.html?filter=sentry',
+                  note: 'Routine motion or passing-by. Off by default — turn on if you want a record of every event.' },
+                { id: 'surveillance.motion.alert', label: 'Surveillance — Alert', group: 'Surveillance',
+                  defaultEnabled: true, severity: 'warn',
+                  defaultClickUrl: '/events.html?filter=sentry',
+                  note: 'Person near the vehicle, vehicle approaching, or close-range activity.' },
+                { id: 'surveillance.motion.critical', label: 'Surveillance — Critical', group: 'Surveillance',
+                  defaultEnabled: true, severity: 'critical',
+                  defaultClickUrl: '/events.html?filter=sentry',
+                  note: 'Person at very close range or sustained dwell at the vehicle. Drop-everything alert.' },
+                { id: 'surveillance.proximity', label: 'Proximity alert', group: 'Surveillance',
+                  defaultEnabled: true, severity: 'auto',
+                  defaultClickUrl: '/events.html?filter=proximity',
+                  note: 'Range and trigger depend on Recording settings' },
+                { id: 'vehicle.health.tyre.pressure', label: 'Tyre pressure alarm', group: 'Vehicle',
+                  defaultEnabled: true, severity: 'warn',
+                  defaultClickUrl: '/vehicle-control.html',
+                  note: 'Underpressure or overpressure detected by TPMS' },
+                { id: 'vehicle.health.tyre.leak', label: 'Tyre leak detected', group: 'Vehicle',
+                  defaultEnabled: true, severity: 'auto',
+                  defaultClickUrl: '/vehicle-control.html',
+                  note: 'Slow or fast leak detected by TPMS sensor' },
+                { id: 'vehicle.security.door.opened', label: 'Door opened', group: 'Security',
+                  defaultEnabled: false, severity: 'warn',
+                  defaultClickUrl: '/vehicle-control.html',
+                  note: 'Fires when any door, hood, or trunk is opened while parked (ACC OFF)' },
+                { id: 'vehicle.security.door.closed', label: 'Door closed', group: 'Security',
+                  defaultEnabled: false, severity: 'info',
+                  defaultClickUrl: '/vehicle-control.html',
+                  note: 'Fires when any door, hood, or trunk is closed while parked (ACC OFF)' },
+                { id: 'vehicle.charging.started', label: 'Charging started', group: 'Charging',
+                  defaultEnabled: true, severity: 'info',
+                  defaultClickUrl: '/vehicle-control.html',
+                  note: 'Fires when the BMS reports a charging session has begun' },
+                { id: 'vehicle.charging.stopped', label: 'Charging stopped', group: 'Charging',
+                  defaultEnabled: true, severity: 'info',
+                  defaultClickUrl: '/vehicle-control.html',
+                  note: 'Debounced 10s to ride out brief gaps during plug-in or DC charger handshakes' },
+                { id: 'vehicle.charging.full', label: 'Charging complete (SOC ≥ 99.5%)', group: 'Charging',
+                  defaultEnabled: false, severity: 'info',
+                  defaultClickUrl: '/vehicle-control.html',
+                  note: 'Fires once per session when the pack reaches near-full. Suppressed if you plug in an already-full car' },
+                { id: 'vehicle.charging.fault', label: 'Charging fault', group: 'Charging',
+                  defaultEnabled: true, severity: 'critical',
+                  defaultClickUrl: '/vehicle-control.html',
+                  note: 'AC, DC charger, charging gun, or C10 breakdown reported by BMS' }
+            ]
+        };
+
+        async function loadCategories() {
+            var container = document.getElementById('categoriesContainer');
+
+            // In preview mode, skip the network call and render the static
+            // registry directly so the layout populates without a backend.
+            if (PREVIEW_MODE) {
+                state.categories = PREVIEW_REGISTRY.categories;
+                state.backendReady = false;
+                renderCategories();
+                return;
+            }
+
+            try {
+                var r = await BYDAuth.fetch('/api/notifications/categories');
+                if (r.status === 503) {
+                    state.backendReady = false;
+                    var bb = document.getElementById('backendBanner');
+                    if (bb) bb.style.display = '';
+                    if (container) container.innerHTML = '<div class="notif-card"><div class="empty-state">Backend not ready.</div></div>';
+                    return;
+                }
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                var meta = await r.json();
+                state.categories = meta.categories || [];
+                state.backendReady = true;
+                renderCategories();
+            } catch (e) {
+                if (container) container.innerHTML = '<div class="notif-card"><div class="empty-state">Could not load categories.</div></div>';
+                showStatus('error', 'Failed to load categories: ' + (e && e.message ? e.message : e));
+            }
+        }
+
+        function severityClass(sev) {
+            if (sev === 'critical') return 'critical';
+            if (sev === 'warn') return 'warn';
+            if (sev === 'auto') return 'auto';
+            return '';
+        }
+
+        function severityTooltip(sev) {
+            switch (sev) {
+                case 'critical':
+                    return 'Critical: drop-everything alert — sticky banner, longer vibrate, ignores quiet hours.';
+                case 'warn':
+                    return 'Warn: short vibrate, standard banner — something to look at soon.';
+                case 'auto':
+                    return 'Auto: severity is decided per-event from the data (slow leak → warn, fast leak → critical).';
+                default:
+                    return 'Info: silent banner, no vibrate — reserved for confirmations.';
+            }
+        }
+
+
+        // Used when the registry doesn't ship a `note` for a category.
+        // Keep the wording short and concrete — describes what triggers it
+        // (the head unit's detection logic), not what it does (push it).
+        function categoryDescription(id) {
+            switch (id) {
+                case 'surveillance.motion':
+                    return 'Fires when the surveillance engine detects motion near the parked car. Severity scales with detection confidence.';
+                case 'surveillance.proximity':
+                    return 'Fires when proximity radar detects an object close to the vehicle. RED (<0.5 m) is critical, YELLOW (<0.8 m) is warn.';
+                case 'surveillance.recording.finalized':
+                    return 'Fires after a recording is written to disk and is ready to view. Off by default.';
+                case 'vehicle.health.tyre.pressure':
+                    return 'Fires when the TPMS reports underpressure or overpressure on any wheel.';
+                case 'vehicle.health.tyre.leak':
+                    return 'Fires when the TPMS detects a slow or fast leak. Fast leaks are pushed as critical.';
+                case 'vehicle.security.door.opened':
+                    return 'Fires when a door, hood, or trunk is opened while the car is parked (ACC OFF).';
+                case 'vehicle.security.door.closed':
+                    return 'Fires when a door, hood, or trunk is closed while the car is parked (ACC OFF).';
+                default:
+                    return '';
+            }
+        }
+
+        function renderCategories() {
+            var container = document.getElementById('categoriesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (state.categories.length === 0) {
+                container.innerHTML = '<div class="notif-card"><div class="empty-state">No categories registered.</div></div>';
+                return;
+            }
+
+            // Group by 'group'
+            var groups = {};
+            var order = [];
+            state.categories.forEach(function (c) {
+                var g = c.group || 'Other';
+                if (!groups[g]) { groups[g] = []; order.push(g); }
+                groups[g].push(c);
+            });
+
+            order.forEach(function (g) {
+                var section = document.createElement('div');
+                section.className = 'notif-section';
+                section.innerHTML = '<h2>' + escapeHtml(g) + '</h2>';
+                var card = document.createElement('div');
+                card.className = 'notif-card';
+
+                // Toggles are interactive only when this device actually has
+                // a registered push subscription. Otherwise the per-category
+                // preference has nowhere to apply, so render them inactive.
+                var hasSubscription = !!state.currentSubscriptionId;
+                groups[g].forEach(function (c) {
+                    var enabled = hasSubscription && !state.muted.has(c.id);
+                    var row = document.createElement('div');
+                    row.className = 'notif-row';
+                    var description = c.note || categoryDescription(c.id);
+                    var toggleClasses = ['notif-toggle'];
+                    if (enabled) toggleClasses.push('on');
+                    if (!hasSubscription) toggleClasses.push('inactive');
+                    row.innerHTML =
+                        '<div class="notif-row-text">' +
+                            '<div class="notif-row-label">' + escapeHtml(c.label) +
+                                '<span class="notif-sev-pill ' + severityClass(c.severity) + '" tabindex="0">' +
+                                    escapeHtml(c.severity || 'info') +
+                                    '<span class="notif-sev-tooltip">' +
+                                        escapeHtml(severityTooltip(c.severity)) +
+                                    '</span>' +
+                                '</span>' +
+                            '</div>' +
+                            (description ? '<div class="notif-row-note">' + escapeHtml(description) + '</div>' : '') +
+                        '</div>' +
+                        '<div class="' + toggleClasses.join(' ') + '" data-cat="' + escapeAttr(c.id) + '" role="switch" aria-checked="' + enabled + '" aria-disabled="' + (!hasSubscription) + '" tabindex="0"></div>';
+                    card.appendChild(row);
+                });
+                section.appendChild(card);
+                container.appendChild(section);
+            });
+
+            container.querySelectorAll('.notif-toggle').forEach(function (t) {
+                t.addEventListener('click', function () { onToggle(t.dataset.cat, t); });
+            });
+        }
+
+        async function onToggle(catId, el) {
+            if (!state.currentSubscriptionId) {
+                showStatus('warn', 'Enable notifications on this device first.');
+                return;
+            }
+            if (state.muted.has(catId)) state.muted.delete(catId);
+            else state.muted.add(catId);
+            el.classList.toggle('on');
+
+            var muted = Array.from(state.muted);
+            try {
+                await BYDAuth.fetch('/api/push/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: state.currentSubscriptionId,
+                        mutedCategories: muted
+                    })
+                });
+            } catch (e) { showStatus('error', 'Failed to save preference'); }
+        }
+
+        // SHA-256 first 12 bytes of endpoint, base64url no-padding — matches
+        // SubscriptionStore.idForEndpoint on the server.
+        async function localIdForEndpoint(endpoint) {
+            try {
+                if (!window.crypto || !window.crypto.subtle) return null;
+                var enc = new TextEncoder().encode(endpoint);
+                var hash = await crypto.subtle.digest('SHA-256', enc);
+                var bytes = new Uint8Array(hash).slice(0, 12);
+                var bin = '';
+                for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            } catch (e) { return null; }
+        }
+
+        async function loadSubscriptions() {
+            try {
+                var r = await BYDAuth.fetch('/api/push/subscriptions');
+                if (r.status === 503) return;
+                if (!r.ok) return;
+                var data = await r.json();
+                var subs = data.subscriptions || [];
+                renderDevices(subs);
+
+                if (!('serviceWorker' in navigator)) return;
+                var reg = await navigator.serviceWorker.getRegistration();
+                var sub = reg ? await reg.pushManager.getSubscription() : null;
+                if (!sub) return;
+                var localId = await localIdForEndpoint(sub.endpoint);
+                if (!localId) return;
+                var found = subs.find(function (s) { return s.id === localId; });
+                if (found) {
+                    state.currentSubscriptionId = found.id;
+                    state.muted = new Set(found.mutedCategories || []);
+                    renderCategories();
+                }
+            } catch (e) { /* swallow — page still works without it */ }
+        }
+
+        function renderDevices(subs) {
+            var card = document.getElementById('devicesCard');
+            if (!card) return;
+            if (!subs.length) {
+                card.innerHTML = '<div class="empty-state">No devices registered yet.</div>';
+                return;
+            }
+            card.innerHTML = '';
+            subs.forEach(function (s) {
+                var row = document.createElement('div');
+                row.className = 'device-row';
+                var lastSeen = s.lastSeenAt
+                    ? new Date(s.lastSeenAt).toLocaleString()
+                    : 'never';
+                row.innerHTML =
+                    '<div class="device-row-top">' +
+                        '<div>' +
+                            '<div class="device-row-label">' + escapeHtml(s.label || 'Unnamed device') + '</div>' +
+                            '<div class="device-row-meta">Last seen ' + escapeHtml(lastSeen) + '</div>' +
+                        '</div>' +
+                        '<button class="notif-btn danger" data-id="' + escapeAttr(s.id) + '">Remove</button>' +
+                    '</div>';
+                card.appendChild(row);
+            });
+            card.querySelectorAll('button[data-id]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    removeDevice(b.dataset.id);
+                });
+            });
+        }
+
+        async function removeDevice(id) {
+            if (!confirm('Remove this device from notifications?')) return;
+            try {
+                await BYDAuth.fetch('/api/push/unsubscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+                await loadSubscriptions();
+            } catch (e) { showStatus('error', 'Failed to remove device'); }
+        }
+
+        var enableBtnEl = document.getElementById('enableBtn');
+        if (enableBtnEl) enableBtnEl.addEventListener('click', async function () {
+            hideStatus();
+            if (!ORIGIN_OK) return;
+            if (!window.OverdrivePush) {
+                showStatus('error', 'PWA bootstrap not loaded — install to home screen first.');
+                return;
+            }
+            try {
+                var result = await window.OverdrivePush.requestAndSubscribe();
+                if (!result.ok) {
+                    showStatus('error', 'Could not enable: ' + result.reason);
+                    return;
+                }
+                state.currentSubscriptionId = result.id;
+                refreshPermissionUI();
+                await loadSubscriptions();
+                showStatus('ok', 'Push notifications enabled on this device.');
+            } catch (e) {
+                showStatus('error', 'Enable failed: ' + (e && e.message ? e.message : e));
+            }
+        });
+
+        var disableBtnEl = document.getElementById('disableBtn');
+        if (disableBtnEl) disableBtnEl.addEventListener('click', async function () {
+            hideStatus();
+            try {
+                if (window.OverdrivePush) await window.OverdrivePush.unsubscribe();
+                state.currentSubscriptionId = null;
+                refreshPermissionUI();
+                await loadSubscriptions();
+                showStatus('ok', 'Notifications disabled on this device.');
+            } catch (e) {
+                showStatus('error', 'Disable failed: ' + (e && e.message ? e.message : e));
+            }
+        });
+
+        var testBtnEl = document.getElementById('testBtn');
+        if (testBtnEl) testBtnEl.addEventListener('click', async function () {
+            hideStatus();
+            try {
+                var r = await BYDAuth.fetch('/api/push/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ severity: 'info' })
+                });
+                if (r.status === 503) {
+                    showStatus('warn', 'Backend not initialized. Reserve a Zrok URL first.');
+                    return;
+                }
+                if (!r.ok) {
+                    showStatus('error', 'Test failed: HTTP ' + r.status);
+                    return;
+                }
+                showStatus('ok', 'Test sent. Check your notification center.');
+            } catch (e) {
+                showStatus('error', 'Test failed: ' + (e && e.message ? e.message : e));
+            }
+        });
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function escapeAttr(s) { return escapeHtml(s); }
+
+        (async function () {
+            refreshPermissionUI();
+            await loadCategories();
+            if (state.backendReady) await loadSubscriptions();
+        })();
+    </script>
+</body>
+</html>

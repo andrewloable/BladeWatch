@@ -357,6 +357,233 @@ public final class BydDeviceHelper {
         return false;
     }
 
+    public static boolean registerTyreListener(Object device, ListenerCallback callback) {
+        if (device == null) return false;
+        try {
+            android.hardware.bydauto.tyre.AbsBYDAutoTyreListener listener =
+                new android.hardware.bydauto.tyre.AbsBYDAutoTyreListener() {
+                    @Override
+                    public void onTyrePressureValueChanged(int wheel, int value) {
+                        invokeCallback(callback, "onTyrePressureValueChanged", new Object[]{wheel, value});
+                    }
+                    @Override
+                    public void onTyrePressureStateChanged(int wheel, int state) {
+                        invokeCallback(callback, "onTyrePressureStateChanged", new Object[]{wheel, state});
+                    }
+                    @Override
+                    public void onTyreBatteryValueChanged(int wheel, double value) {
+                        invokeCallback(callback, "onTyreBatteryValueChanged", new Object[]{wheel, value});
+                    }
+                    @Override
+                    public void onTyreBatteryStateChanged(int state) {
+                        invokeCallback(callback, "onTyreBatteryStateChanged", new Object[]{state});
+                    }
+                    @Override
+                    public void onTyreTemperatureStateChanged(int state) {
+                        invokeCallback(callback, "onTyreTemperatureStateChanged", new Object[]{state});
+                    }
+                    @Override
+                    public void onTyreAirLeakStateChanged(int wheel, int state) {
+                        invokeCallback(callback, "onTyreAirLeakStateChanged", new Object[]{wheel, state});
+                    }
+                    @Override
+                    public void onTyreSignalStateChanged(int wheel, int state) {
+                        invokeCallback(callback, "onTyreSignalStateChanged", new Object[]{wheel, state});
+                    }
+                    @Override
+                    public void onTyreSystemStateChanged(int state) {
+                        invokeCallback(callback, "onTyreSystemStateChanged", new Object[]{state});
+                    }
+                    @Override
+                    public void onIndirectTyreSystemStateChanged(int state) {
+                        invokeCallback(callback, "onIndirectTyreSystemStateChanged", new Object[]{state});
+                    }
+                    // Generic feature-ID event channel. When the listener is
+                    // registered via the 2-arg overload with an int[] filter,
+                    // the HAL fires this for each subscribed feature ID
+                    // instead of (or alongside) the typed callbacks above.
+                    // The Tyre device delegates per-wheel temperature reads
+                    // through Instrument-class feature IDs (LF/RF/LB/RB).
+                    public void onDataEventChanged(int eventId, android.hardware.bydauto.BYDAutoEventValue value) {
+                        invokeCallback(callback, "onDataEventChanged", new Object[]{eventId, value});
+                    }
+                };
+
+            // Log available registerListener overloads for diagnostics
+            Method[] allMethods = device.getClass().getMethods();
+            StringBuilder overloads = new StringBuilder();
+            for (Method m : allMethods) {
+                if ("registerListener".equals(m.getName())) {
+                    Class<?>[] params = m.getParameterTypes();
+                    overloads.append("  registerListener(");
+                    for (int i = 0; i < params.length; i++) {
+                        if (i > 0) overloads.append(", ");
+                        overloads.append(params[i].getSimpleName());
+                    }
+                    overloads.append(")\n");
+                }
+            }
+            if (overloads.length() > 0) {
+                logger.info("TyreDevice registerListener overloads:\n" + overloads);
+            }
+
+            // Strategy 1: 2-arg registration with the per-wheel temperature
+            // feature IDs. BYDAutoFeatureIds.Instrument exposes the LF/RF/LB/
+            // RB tyre temperature property IDs — those are the ones the Tyre
+            // device's underlying property tree actually keys on, regardless
+            // of which device class hosts the registerListener overload.
+            // Filtering on this exact set is what wakes up the temperature
+            // event channel on firmwares where the bare typed callbacks
+            // (onTyreBatteryValueChanged) stay dormant.
+            Method registerWithIds = findRegisterMethodWithIds(device.getClass(),
+                android.hardware.bydauto.tyre.AbsBYDAutoTyreListener.class);
+            boolean twoArgRegistered = false;
+            if (registerWithIds != null) {
+                try {
+                    int[] tyreFeatureIds = com.overdrive.app.byd.BydFeatureIds.INSTRUMENT_TYRE_TEMP_IDS;
+                    registerWithIds.invoke(device, listener, tyreFeatureIds);
+                    logger.info("Tyre listener registered via 2-arg overload with LF/RF/LB/RB feature IDs");
+                    twoArgRegistered = true;
+                } catch (Exception e) {
+                    logger.info("Tyre 2-arg registration with LF/RF/LB/RB IDs failed: " + e.getMessage());
+                }
+                // Fallback: empty int[]. Some HAL implementations interpret
+                // this as "subscribe to all features"; others reject it.
+                // We only attempt this if the typed-ID registration above
+                // failed outright (e.g. method threw on invoke).
+                if (!twoArgRegistered) {
+                    try {
+                        registerWithIds.invoke(device, listener, new int[0]);
+                        logger.info("Tyre listener registered via 2-arg overload with empty int[] (subscribe-all fallback)");
+                        twoArgRegistered = true;
+                    } catch (Exception e) {
+                        logger.info("Tyre 2-arg registration with empty int[] failed: " + e.getMessage());
+                    }
+                }
+            }
+
+            // Strategy 2: Also register via single-arg (ensures pressure/leak/signal
+            // events still arrive even if the two-arg only subscribes to temp events).
+            // If two-arg already succeeded, this is additive — BYD HAL allows multiple
+            // registrations. If two-arg wasn't available, this is the only path.
+            Method register = findRegisterMethod(device.getClass(),
+                android.hardware.bydauto.tyre.AbsBYDAutoTyreListener.class);
+            if (register != null) {
+                register.invoke(device, listener);
+                if (twoArgRegistered) {
+                    logger.info("Tyre listener also registered via 1-arg overload (pressure/state events)");
+                } else {
+                    logger.info("Tyre listener registered via 1-arg overload only");
+                }
+                return true;
+            }
+            // If single-arg failed but two-arg succeeded, still report success
+            if (twoArgRegistered) return true;
+            logger.debug("registerTyreListener: no registerListener method on "
+                + device.getClass().getName());
+        } catch (NoClassDefFoundError e) {
+            logger.debug("registerTyreListener: class not available on this firmware");
+        } catch (Exception e) {
+            logger.debug("registerTyreListener failed: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Register a typed engine listener so onEngineCoolantLevelChanged and
+     * onOilLevelChanged actually dispatch (the bare 1-arg
+     * registerListener(IBYDAutoListener) registration succeeds but the HAL
+     * never invokes the device-specific callbacks on AbsBYDAutoEngineListener
+     * subclasses on most firmware).
+     *
+     * Mirrors the tyre approach: try the 2-arg overload first (HAL only fires
+     * onDataEventChanged with feature-IDs when registered with int[] filter),
+     * then 1-arg as a baseline. Both succeed additively where supported.
+     */
+    public static boolean registerEngineListener(Object device, ListenerCallback callback) {
+        if (device == null) return false;
+        try {
+            android.hardware.bydauto.engine.AbsBYDAutoEngineListener listener =
+                new android.hardware.bydauto.engine.AbsBYDAutoEngineListener() {
+                    @Override
+                    public void onEngineSpeedChanged(int value) {
+                        invokeCallback(callback, "onEngineSpeedChanged", new Object[]{value});
+                    }
+                    @Override
+                    public void onEngineCoolantLevelChanged(int state) {
+                        invokeCallback(callback, "onEngineCoolantLevelChanged", new Object[]{state});
+                    }
+                    @Override
+                    public void onOilLevelChanged(int value) {
+                        invokeCallback(callback, "onOilLevelChanged", new Object[]{value});
+                    }
+                    // Generic feature-ID event channel, same pattern as the
+                    // tyre listener. Engine extras (coolant temp, oil temp on
+                    // PHEV firmware) tend to land here keyed on feature IDs
+                    // we may not have in BYDAutoFeatureIds.Engine.
+                    public void onDataEventChanged(int eventId, android.hardware.bydauto.BYDAutoEventValue value) {
+                        invokeCallback(callback, "onDataEventChanged", new Object[]{eventId, value});
+                    }
+                };
+
+            // Diagnostic: dump all registerListener overloads so we know what
+            // shapes the HAL exposes on this firmware.
+            Method[] allMethods = device.getClass().getMethods();
+            StringBuilder overloads = new StringBuilder();
+            for (Method m : allMethods) {
+                if ("registerListener".equals(m.getName())) {
+                    Class<?>[] params = m.getParameterTypes();
+                    overloads.append("  registerListener(");
+                    for (int i = 0; i < params.length; i++) {
+                        if (i > 0) overloads.append(", ");
+                        overloads.append(params[i].getSimpleName());
+                    }
+                    overloads.append(")\n");
+                }
+            }
+            if (overloads.length() > 0) {
+                logger.info("EngineDevice registerListener overloads:\n" + overloads);
+            }
+
+            // Strategy 1: 2-arg with empty int[]. We don't have engine fluid
+            // feature IDs in BYDAutoFeatureIds.Engine, so empty-array
+            // (subscribe-all) is the only option for the filtered overload.
+            Method registerWithIds = findRegisterMethodWithIds(device.getClass(),
+                android.hardware.bydauto.engine.AbsBYDAutoEngineListener.class);
+            boolean twoArgRegistered = false;
+            if (registerWithIds != null) {
+                try {
+                    registerWithIds.invoke(device, listener, new int[0]);
+                    logger.info("Engine listener registered via 2-arg overload with empty int[]");
+                    twoArgRegistered = true;
+                } catch (Exception e) {
+                    logger.info("Engine 2-arg registration failed: " + e.getMessage());
+                }
+            }
+
+            // Strategy 2: 1-arg typed. Even when the HAL never fires the
+            // typed callbacks, this one is harmless and gives us the
+            // baseline that several other devices rely on.
+            Method register = findRegisterMethod(device.getClass(),
+                android.hardware.bydauto.engine.AbsBYDAutoEngineListener.class);
+            if (register != null) {
+                register.invoke(device, listener);
+                logger.info(twoArgRegistered
+                        ? "Engine listener also registered via 1-arg overload"
+                        : "Engine listener registered via 1-arg overload only");
+                return true;
+            }
+            if (twoArgRegistered) return true;
+            logger.debug("registerEngineListener: no registerListener method on "
+                + device.getClass().getName());
+        } catch (NoClassDefFoundError e) {
+            logger.debug("registerEngineListener: class not available on this firmware");
+        } catch (Exception e) {
+            logger.debug("registerEngineListener failed: " + e.getMessage());
+        }
+        return false;
+    }
+
     /**
      * Register a typed door-lock listener. Captures the canonical
      * onDoorLockStatusChanged(area, state) event the BMS emits when the gun is

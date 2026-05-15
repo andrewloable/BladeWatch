@@ -2083,7 +2083,13 @@ input, select { font-family: inherit; }
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 12px 16px;
+        /* Pad past the iOS notch / Android cutout so the hamburger isn't
+           visually clipped or cut off by the system status bar. The
+           viewport-fit=cover meta tag on each page makes safe-area-inset-top
+           non-zero on devices with a notch. */
+        padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
+        padding-left: calc(16px + env(safe-area-inset-left, 0px));
+        padding-right: calc(16px + env(safe-area-inset-right, 0px));
         background: var(--bg-surface);
         border-bottom: 1px solid var(--border-subtle);
     }

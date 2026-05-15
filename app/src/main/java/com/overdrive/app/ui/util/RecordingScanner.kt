@@ -87,23 +87,87 @@ object RecordingScanner {
      * Scan a directory and add files, deduplicating by filename.
      * Files from the first scanned directory (active) take priority.
      */
-    private fun scanDirectoryDedup(dir: File, type: RecordingFile.RecordingType, 
+    private fun scanDirectoryDedup(dir: File, type: RecordingFile.RecordingType,
                                     results: MutableList<RecordingFile>, seen: MutableSet<String>) {
         if (!dir.exists() || !dir.canRead()) return
-        
+
         val files = dir.listFiles() ?: return
-        
+
         for (file in files) {
             if (!file.isFile || !file.name.endsWith(".mp4")) continue
             // Skip ghost files (0-byte stale entries from unmounted SD card)
             if (file.length() <= 0 || !file.canRead()) continue
             if (seen.contains(file.name)) continue
-            
+
             val recording = RecordingFile.fromFile(file, type)
             if (recording != null) {
-                results.add(recording)
+                // v3 sidecar enrichment (item 7). Backwards-compat: legacy clips
+                // simply have no sidecar and the recording is added unchanged.
+                val enriched = enrichWithSidecar(recording)
+                results.add(enriched)
                 seen.add(file.name)
             }
+        }
+    }
+
+    /**
+     * Best-effort sidecar parse. Returns the recording unchanged on any error
+     * so old / corrupt / missing sidecars never break the list.
+     */
+    private fun enrichWithSidecar(rec: RecordingFile): RecordingFile {
+        return try {
+            val sidecar = File(rec.file.absolutePath.replace(".mp4", ".json"))
+            if (!sidecar.exists() || !sidecar.canRead()) return rec
+            // Cap at 64KB to avoid pathological reads
+            val capBytes = 65536L
+            val length = sidecar.length().coerceAtMost(capBytes).toInt()
+            val text = sidecar.bufferedReader().use { br ->
+                val sb = StringBuilder(length)
+                val buf = CharArray(4096)
+                var read = 0
+                while (read < length) {
+                    val n = br.read(buf, 0, minOf(buf.size, length - read))
+                    if (n <= 0) break
+                    sb.append(buf, 0, n)
+                    read += n
+                }
+                sb.toString()
+            }
+            val root = org.json.JSONObject(text)
+            val stats = root.optJSONObject("stats")
+            val sev = stats?.optString("peakSeverity")?.takeIf { it.isNotEmpty() }
+            val prox = stats?.optString("peakProximity")?.takeIf { it.isNotEmpty() }
+            val person  = stats?.optInt("personCount", 0) ?: 0
+            val vehicle = stats?.optInt("vehicleCount", 0) ?: 0
+            val bike    = stats?.optInt("bikeCount", 0) ?: 0
+            val animal  = stats?.optInt("animalCount", 0) ?: 0
+            val heroName = root.optString("heroThumbnail").takeIf { it.isNotEmpty() }
+            val heroFile = heroName?.let { File(rec.file.parentFile, it) }?.takeIf { it.exists() }
+            // Exclude static actors from the class list used for filter chips.
+            // Two parked cars at the recording moment shouldn't make a clip
+            // "match Vehicle filter" — only moving actors count.
+            val classes = mutableListOf<String>()
+            val actorsArr = root.optJSONArray("actors")
+            if (actorsArr != null) {
+                for (i in 0 until actorsArr.length()) {
+                    val a = actorsArr.optJSONObject(i) ?: continue
+                    if (a.optBoolean("isStatic", false)) continue
+                    val c = a.optString("class").takeIf { it.isNotEmpty() } ?: continue
+                    classes.add(c)
+                }
+            }
+            rec.copy(
+                peakSeverity = sev,
+                peakProximity = prox,
+                personCount = person,
+                vehicleCount = vehicle,
+                bikeCount = bike,
+                animalCount = animal,
+                heroThumbnailFile = heroFile,
+                actorClasses = classes
+            )
+        } catch (e: Exception) {
+            rec
         }
     }
     
@@ -119,6 +183,14 @@ object RecordingScanner {
      * Delete a recording file, its JSON sidecar (event timeline), and cached thumbnail.
      */
     fun deleteRecording(recording: RecordingFile): Boolean {
+        // Drop the web API's parse cache for this absolute path before the
+        // file vanishes; otherwise /api/recordings would keep returning a
+        // phantom row until the cache validator's mtime check finally fails.
+        try {
+            com.overdrive.app.server.RecordingsApiHandler
+                .invalidateRecordingCache(recording.file.absolutePath)
+        } catch (_: Throwable) {}
+
         val deleted = recording.file.delete()
         if (deleted) {
             // Also delete JSON sidecar (event timeline) if it exists
@@ -126,7 +198,7 @@ object RecordingScanner {
             if (jsonFile.exists()) {
                 jsonFile.delete()
             }
-            
+
             // Delete cached thumbnail from the thumbs directory
             val sm = com.overdrive.app.storage.StorageManager.getInstance()
             val recordingsDir = sm.recordingsDir
@@ -137,7 +209,25 @@ object RecordingScanner {
                     thumbFile.delete()
                 }
             }
-            
+
+            // v3 (item 7): also delete the sibling hero JPEG and per-actor thumbnails.
+            // Per-actor thumbs are named "thumb_<base>_a<id>(_<rel>).jpg"; iterate the
+            // parent dir for any file matching this prefix.
+            val parent = recording.file.parentFile
+            if (parent != null && parent.canRead()) {
+                val base = recording.file.name.removeSuffix(".mp4")
+                val heroSibling = File(parent, "$base.jpg")
+                if (heroSibling.exists()) heroSibling.delete()
+                // Anchor with "_a" — sibling segments share the timestamp
+                // base; their thumbs ("thumb_<base>_2_a*.jpg") would
+                // otherwise be swept too. ThumbnailBuffer always writes the
+                // actor suffix as "_a<id>...", so this anchor is safe.
+                val perActorPrefix = "thumb_${base}_a"
+                parent.listFiles { f ->
+                    f.isFile && f.name.startsWith(perActorPrefix) && f.name.endsWith(".jpg")
+                }?.forEach { it.delete() }
+            }
+
             invalidateCache()
         }
         return deleted

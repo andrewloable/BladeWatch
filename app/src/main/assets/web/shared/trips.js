@@ -99,6 +99,10 @@ const TRIPS = {
                 const currSelect = document.getElementById('currencySelect');
                 if (rateInput && this.electricityRate > 0) rateInput.value = this.electricityRate;
                 if (currSelect) currSelect.value = this.currency;
+                // Load distance unit preference
+                var distUnit = data.config.distanceUnit || 'km';
+                BYD.units.mode = distUnit;
+                this.updateDistanceUnitButtons(distUnit);
                 // Update currency icons
                 this.updateCurrencyIcons();
             }
@@ -133,6 +137,54 @@ const TRIPS = {
             this.updatePeriodSummary();
             this.updateCostHero();
         } catch (e) { console.warn('[Trips] Save cost config failed:', e); }
+    },
+
+    async setDistanceUnit(unit) {
+        BYD.units.mode = unit;
+        this.updateDistanceUnitButtons(unit);
+        try {
+            await fetch('/api/trips/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ distanceUnit: unit })
+            });
+            // Refresh all displays that show distance/speed values
+            this.updatePeriodSummary();
+            this.updateCostHero();
+            if (this.currentTrips && this.currentTrips.length > 0) {
+                this.renderTripCards(this.currentTrips);
+            }
+            // Force a status refresh so the left nav range updates immediately
+            if (BYD.core) BYD.core.refreshStatus();
+        } catch (e) { console.warn('[Trips] Set distance unit failed:', e); }
+    },
+
+    updateDistanceUnitButtons(unit) {
+        var kmBtn = document.getElementById('unitKm');
+        var miBtn = document.getElementById('unitMi');
+        if (kmBtn && miBtn) {
+            if (unit === 'mi') {
+                kmBtn.classList.remove('active');
+                miBtn.classList.add('active');
+            } else {
+                kmBtn.classList.add('active');
+                miBtn.classList.remove('active');
+            }
+        }
+        // Update the cost card labels
+        var costUnitEl = document.getElementById('costPerKmUnit');
+        if (costUnitEl) costUnitEl.textContent = BYD.units.perDistLabel();
+        var costTitleEl = document.getElementById('costPerDistLabel');
+        if (costTitleEl) costTitleEl.textContent = BYD.units.distLabel();
+        // Update the summary consumption label
+        var consLabel = document.getElementById('summaryConsumption');
+        if (consLabel) {
+            var labelEl = consLabel.closest('.summary-stat');
+            if (labelEl) {
+                var lbl = labelEl.querySelector('.summary-stat-label');
+                if (lbl) lbl.textContent = BYD.units.consumptionLabel();
+            }
+        }
     },
 
     updateCurrencyIcons() {
@@ -658,26 +710,38 @@ const TRIPS = {
     // ==================== TRIP LIST ====================
 
     async loadTrips(days, offset) {
+        const off = offset || 0;
         try {
-            const resp = await fetch('/api/trips?days=' + days + '&limit=' + this.pageSize);
+            const resp = await fetch('/api/trips?days=' + days
+                + '&limit=' + this.pageSize
+                + '&offset=' + off);
             const data = await resp.json();
             const skel = document.getElementById('tripListSkeleton');
             if (skel) skel.style.display = 'none';
 
+            const btn = document.getElementById('loadMoreBtn');
+            const empty = document.getElementById('tripEmptyState');
+
             if (data.success && data.trips && data.trips.length > 0) {
-                if (offset === 0) this.trips = [];
+                if (off === 0) this.trips = [];
                 this.trips = this.trips.concat(data.trips);
                 this.currentOffset = this.trips.length;
                 this.renderTripList(this.trips);
-                const btn = document.getElementById('loadMoreBtn');
+                // Short page → no more rows in this window. Server returns
+                // exactly `pageSize` only when there's at least one more page
+                // to fetch, so this is the canonical "has more" signal.
                 if (btn) btn.style.display = data.trips.length >= this.pageSize ? 'block' : 'none';
-                document.getElementById('tripEmptyState').style.display = 'none';
-            } else if (offset === 0) {
+                if (empty) empty.style.display = 'none';
+            } else if (off === 0) {
                 // No trips for this period — clear the list and show empty state.
                 this.trips = [];
                 this.renderTripList([]);
-                document.getElementById('tripEmptyState').style.display = 'flex';
-                document.getElementById('loadMoreBtn').style.display = 'none';
+                if (empty) empty.style.display = 'flex';
+                if (btn) btn.style.display = 'none';
+            } else {
+                // Paginating past end-of-data (data.success but no more rows).
+                // Don't touch this.trips; just hide the button.
+                if (btn) btn.style.display = 'none';
             }
         } catch (e) {
             console.warn('[Trips] Load trips failed:', e);
@@ -687,7 +751,9 @@ const TRIPS = {
     },
 
     loadMore() {
-        this.currentDays += 30;
+        // Paginate through the same time window — don't widen `currentDays`,
+        // that would re-fetch the same head rows under a larger cutoff and
+        // produce duplicates relative to what we already have.
         this.loadTrips(this.currentDays, this.currentOffset);
     },
 
@@ -770,7 +836,7 @@ const TRIPS = {
             '</div>' +
             '<div class="trip-score-badge ' + scoreClass + '">' + avgScore + '</div>' +
             '<div class="trip-capsules">' +
-                '<span class="trip-capsule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/><circle cx="12" cy="12" r="10"/></svg> ' + dist + ' km</span>' +
+                '<span class="trip-capsule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/><circle cx="12" cy="12" r="10"/></svg> ' + BYD.units.dist(parseFloat(dist)) + '</span>' +
                 '<span class="trip-capsule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ' + dur + '</span>' +
                 '<span class="trip-capsule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> ' + (energyUsed > 0 ? energyUsed.toFixed(1) + ' kWh' : eff + ' %/km') + '</span>' +
                 '<span class="trip-capsule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="7" width="12" height="10" rx="1"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/></svg> ' + socStart + '→' + socEnd + '%</span>' +
@@ -807,7 +873,7 @@ const TRIPS = {
             if (data.success && data.summary && data.summary.length > 0) {
                 const s = data.summary[0];
                 this.setEl('summaryTrips', s.tripCount || s.trip_count || 0);
-                this.setEl('summaryDistance', (s.totalDistanceKm || s.total_distance_km || 0).toFixed(1));
+                this.setEl('summaryDistance', BYD.units.distVal(s.totalDistanceKm || s.total_distance_km || 0).toFixed(1));
                 this.setEl('summaryTime', ((s.totalDurationSeconds || s.total_duration_seconds || 0) / 3600).toFixed(1));
                 // Compute overall from 5 sub-scores (matching backend integer division)
                 const sA = s.avgAnticipation || s.avg_anticipation || 0;
@@ -852,7 +918,7 @@ const TRIPS = {
         });
 
         this.setEl('summaryTrips', trips.length);
-        this.setEl('summaryDistance', totalDist.toFixed(1));
+        this.setEl('summaryDistance', BYD.units.distVal(totalDist).toFixed(1));
         this.setEl('summaryTime', (totalDur / 3600).toFixed(1));
         this.setEl('summaryEfficiency', trips.length > 0 ? Math.floor(scoreSum / trips.length) : '--');
         this.setEl('summaryEnergy', totalEnergy > 0 ? totalEnergy.toFixed(1) : '--');
@@ -1094,7 +1160,7 @@ const TRIPS = {
             this.setEl('detailTitle', start.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }));
             this.setEl('detailSubtitle', start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) +
                 ' – ' + new Date(trip.endTime || trip.end_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
-            this.setEl('detailDistance', (trip.distanceKm || trip.distance_km || 0).toFixed(1));
+            this.setEl('detailDistance', BYD.units.distVal(trip.distanceKm || trip.distance_km || 0).toFixed(1));
             this.setEl('detailDuration', this.formatDuration(trip.durationSeconds || trip.duration_seconds || 0));
             this.setEl('detailSocDelta', ((trip.socStart || trip.soc_start || 0) - (trip.socEnd || trip.soc_end || 0)).toFixed(1) + '%');
             // Show energy kWh or efficiency
@@ -2103,7 +2169,7 @@ const TRIPS = {
             ctx.fillStyle = '#fff';
             ctx.font = '11px Inter, sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText('Speed: ' + (s.s || 0) + ' km/h', tx + 8, ty + 15);
+            ctx.fillText('Speed: ' + (s.s || 0) + ' ' + BYD.units.speedLabel(), tx + 8, ty + 15);
             ctx.fillText('Accel: ' + (s.a || 0) + '%', tx + 8, ty + 30);
             ctx.fillText('Brake: ' + (s.b || 0) + '%', tx + 8, ty + 45);
             // SoC interpolated
@@ -2252,7 +2318,7 @@ const TRIPS = {
             ctx.fillStyle = this.colors.text;
             ctx.font = '10px Inter, sans-serif';
             ctx.textAlign = 'right';
-            ctx.fillText(label + ' km/h', pad.left - 6, y + barH / 2 + 3);
+            ctx.fillText(label + ' ' + BYD.units.speedLabel(), pad.left - 6, y + barH / 2 + 3);
 
             // Percentage
             ctx.fillStyle = 'rgba(255,255,255,0.7)';
@@ -2273,8 +2339,8 @@ const TRIPS = {
             const summaryEl = document.getElementById('speedHistSummary');
             if (summaryEl) {
                 summaryEl.innerHTML =
-                    '<span class="speed-hist-stat">Avg: <span class="shval">' + avg + ' km/h</span></span>' +
-                    '<span class="speed-hist-stat">Max: <span class="shval">' + max + ' km/h</span></span>' +
+                    '<span class="speed-hist-stat">Avg: <span class="shval">' + BYD.units.speed(avg) + '</span></span>' +
+                    '<span class="speed-hist-stat">Max: <span class="shval">' + BYD.units.speed(max) + '</span></span>' +
                     '<span class="speed-hist-stat">Low speed: <span class="shval">' + lowPct + '%</span></span>' +
                     '<span class="speed-hist-stat">High speed: <span class="shval">' + highPct + '%</span></span>';
             }

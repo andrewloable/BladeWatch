@@ -21,6 +21,11 @@ public class TripConfig {
     private boolean enabled = false;
     private double electricityRate = 0;  // Cost per kWh
     private String currency = "";        // Currency symbol (₹, $, €, £)
+    // Distance unit preference: "km" (default) or "mi".
+    // When "mi", the backend applies MILES_TO_KM conversion on BYD SDK values
+    // and the frontend converts km→miles for display. This setting overrides
+    // the auto-detected getMileageUnit() from the instrument cluster.
+    private String distanceUnit = "km";
 
     public TripConfig() {
         this.enabled = false;
@@ -38,7 +43,8 @@ public class TripConfig {
                 enabled = section.optBoolean("enabled", false);
                 electricityRate = section.optDouble("electricityRate", 0);
                 currency = section.optString("currency", "");
-                logger.info("Config loaded: enabled=" + enabled + " rate=" + electricityRate + " " + currency);
+                distanceUnit = section.optString("distanceUnit", "km");
+                logger.info("Config loaded: enabled=" + enabled + " rate=" + electricityRate + " " + currency + " unit=" + distanceUnit);
                 return true;
             } else {
                 logger.info("No tripAnalytics section in UnifiedConfigManager, using defaults");
@@ -62,6 +68,7 @@ public class TripConfig {
             section.put("enabled", enabled);
             section.put("electricityRate", electricityRate);
             section.put("currency", currency);
+            section.put("distanceUnit", distanceUnit);
             boolean success = UnifiedConfigManager.updateSection(SECTION, section);
             if (success) {
                 logger.info("Config saved to UnifiedConfigManager: enabled=" + enabled);
@@ -87,6 +94,10 @@ public class TripConfig {
         return currency;
     }
 
+    public String getDistanceUnit() {
+        return distanceUnit;
+    }
+
     // ==================== SETTERS ====================
 
     public void setEnabled(boolean enabled) {
@@ -101,6 +112,10 @@ public class TripConfig {
         this.currency = currency != null ? currency : "";
     }
 
+    public void setDistanceUnit(String unit) {
+        this.distanceUnit = ("mi".equals(unit)) ? "mi" : "km";
+    }
+
     // ==================== UTILITY ====================
 
     /**
@@ -112,6 +127,7 @@ public class TripConfig {
             json.put("enabled", enabled);
             json.put("electricityRate", electricityRate);
             json.put("currency", currency);
+            json.put("distanceUnit", distanceUnit);
         } catch (Exception e) {
             logger.error("toJson error: " + e.getMessage());
         }

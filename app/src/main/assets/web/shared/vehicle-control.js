@@ -2314,6 +2314,12 @@ var VC = {
             this._groundDisc.material.dispose();
             this._groundDisc = null;
         }
+        if (this._surroundDisc && this.scene) {
+            this.scene.remove(this._surroundDisc);
+            this._surroundDisc.geometry.dispose();
+            this._surroundDisc.material.dispose();
+            this._surroundDisc = null;
+        }
         if (this._contactShadow && this.scene) {
             this.scene.remove(this._contactShadow);
             this._contactShadow.geometry.dispose();
@@ -2479,17 +2485,86 @@ var VC = {
         //   VC._3dCropTop       = [front, right, rear, left]   // 0..0.5
         //   VC._3dFishStrength  = [front, right, rear, left]   // 0..1
         // Apply with: VC.stop3dView(); VC.start3dView();
+        // The wall now ONLY paints content above the horizon — the disc owns
+        // ground content via geometric IPM (see _createGroundDisc below). To
+        // keep car bodywork off the wall, cropBottom is pushed up well above
+        // the visible body lip on each cam. Rear cam sits high on the boot lid
+        // and sees less of the body than the wing-mirror sides do.
         if (!this._3dCropBottom || this._3dCropBottom.length !== 4) {
             //                       F     R     Rear  L
-            this._3dCropBottom = [0.22, 0.28, 0.15, 0.28];
+            this._3dCropBottom = [0.42, 0.52, 0.32, 0.52];
         }
         if (!this._3dCropTop || this._3dCropTop.length !== 4) {
             //                       F     R     Rear  L
-            this._3dCropTop    = [0.08, 0.05, 0.08, 0.05];
+            this._3dCropTop    = [0.10, 0.08, 0.10, 0.08];
         }
         if (!this._3dFishStrength || this._3dFishStrength.length !== 4) {
             //                       F     R     Rear  L
             this._3dFishStrength = [0.55, 0.70, 0.60, 0.70];
+        }
+
+        // ─── Ground-disc IPM parameters ─────────────────────────────────
+        // Per-cam extrinsics + intrinsics for inverse perspective mapping
+        // on the ground disc. Idx order (post-remap): 0=Front, 1=Right,
+        // 2=Rear, 3=Left.
+        //
+        // Tweak from DevTools without rebuilding the wall:
+        //   VC._3dCamHeight  = [F, R, Rear, L]   // metres above ground
+        //   VC._3dCamTilt    = [F, R, Rear, L]   // pitch-down rad (~0.4-0.8)
+        //   VC._3dCamYaw     = [F, R, Rear, L]   // yaw bias rad (±0.2 fixes per-side skew)
+        //   VC._3dCamFov     = [F, R, Rear, L]   // half-FOV rad (~1.6 = 92°)
+        //   VC._3dNearClip   = [F, R, Rear, L]   // metres — ground closer = under-car
+        //   VC._3dFarClip    = [F, R, Rear, L]   // metres — fade to wall beyond this
+        // Apply with: VC.stop3dView(); VC.start3dView();
+        if (!this._3dCamHeight || this._3dCamHeight.length !== 4) {
+            //                     F     R     Rear  L      (m above ground)
+            this._3dCamHeight = [0.65, 0.95, 1.05, 0.95];
+        }
+        if (!this._3dCamTilt || this._3dCamTilt.length !== 4) {
+            //                     F     R     Rear  L      (rad — pitch down)
+            this._3dCamTilt   = [0.55, 0.75, 0.55, 0.75];
+        }
+        if (!this._3dCamYaw || this._3dCamYaw.length !== 4) {
+            //                     F     R     Rear  L      (rad — yaw bias)
+            this._3dCamYaw    = [0.00, 0.00, 0.00, 0.00];
+        }
+        if (!this._3dCamFov || this._3dCamFov.length !== 4) {
+            // Effective pinhole half-FOV in radians. NOT the lens's optical
+            // half-FOV (which is ~95° on these fisheyes — would blow up tan()
+            // since tan approaches ±∞ at π/2). The fisheye re-curve below maps
+            // this pinhole space back into actual lens space, so values in the
+            // 60–80° (1.05–1.40 rad) range work best.
+            //                     F     R     Rear  L      (rad — pinhole half-FOV)
+            this._3dCamFov    = [1.20, 1.25, 1.20, 1.25];
+        }
+        if (!this._3dNearClip || this._3dNearClip.length !== 4) {
+            // Distance from each CAM MOUNT (not from origin). The body-hole
+            // already excludes pixels inside the car footprint; near-clip
+            // here is the inner radius of useful IPM around each cam — far
+            // enough out to avoid extreme down-look distortion under the
+            // bumper, but not so far that the cam loses its near-field view.
+            //                     F     R     Rear  L      (m — from cam)
+            this._3dNearClip  = [0.40, 0.40, 0.40, 0.40];
+        }
+        if (!this._3dFarClip || this._3dFarClip.length !== 4) {
+            // Distance from each CAM MOUNT to where the cams contribution
+            // fades out for the wall seam. The disc edge is at world-radius
+            // ~7.84m; from a cam mounted ±2.2m the far edge is up to ~10m.
+            //                     F     R     Rear  L      (m — from cam)
+            this._3dFarClip   = [10.5, 9.5,  10.5, 9.5];
+        }
+        // Cam mount positions in world XZ. The car sits at origin facing -Z, so
+        // the front cam is at -Z, rear at +Z, side cams at ±X. Without these
+        // offsets the IPM model places all cams at the origin and far-field
+        // ground content lands in the wrong pixel — visible on near/mid-field
+        // only since the offset error fraction shrinks with distance.
+        if (!this._3dCamPosX || this._3dCamPosX.length !== 4) {
+            //                     F     R     Rear  L      (m — world X)
+            this._3dCamPosX   = [0.00,  0.95, 0.00, -0.95];
+        }
+        if (!this._3dCamPosZ || this._3dCamPosZ.length !== 4) {
+            //                     F     R     Rear  L      (m — world Z; -Z = front)
+            this._3dCamPosZ   = [-2.20, 0.00, 2.20, 0.00];
         }
 
         var WALL_RADIUS = 8.0;
@@ -2660,6 +2735,127 @@ var VC = {
             '// instead of showing whatever happens to be in the texture there.',
             'vec3 composeSurround(vec3 surround_rgb, float alpha, vec3 bg) {',
             '    return mix(bg, surround_rgb, alpha);',
+            '}',
+            '',
+            '// ─── Inverse perspective mapping for the ground disc ──────────',
+            '// Each cam is modelled as a pinhole at (0, h, d) looking outward',
+            '// with pitch-down `tilt`, yaw bias `yawBias`, and half-FOV `hfov`.',
+            '// Given a world-space ground point (gx, 0, gz), reproject it back',
+            '// into the cams normalised image plane (-1..+1) and sample the',
+            '// matching mosaic quadrant. Returns a vec4 where .a is the per-cam',
+            '// confidence (0 = behind/clipped, 1 = squarely in frame).',
+            'uniform float uCamHeight[4];',
+            'uniform float uCamTilt[4];',
+            'uniform float uCamYaw[4];',
+            'uniform float uCamFov[4];',
+            'uniform float uNearClip[4];',
+            'uniform float uFarClip[4];',
+            'uniform float uCamPosX[4];',
+            'uniform float uCamPosZ[4];',
+            '',
+            '// Forward direction (in world XZ) for each PHYSICAL cam after',
+            '// the post-remap idx is known. Front=-Z, Right=+X, Rear=+Z, Left=-X.',
+            'vec2 camForward(int idx) {',
+            '    if (idx == 0) return vec2( 0.0, -1.0);',  // Front
+            '    if (idx == 1) return vec2( 1.0,  0.0);',  // Right
+            '    if (idx == 2) return vec2( 0.0,  1.0);',  // Rear
+            '    return vec2(-1.0, 0.0);',                  // Left
+            '}',
+            '',
+            'vec4 sampleGroundFromCam(int worldIdx, vec2 ground) {',
+            '    // Per-cam params index by WORLD idx (not remapped) so they stay',
+            '    // attached to the physical cam mount regardless of mosaic-layout',
+            '    // swap/rotate knobs. remapIdx is only consulted by sampleAt to',
+            '    // find the right quadrant in the texture atlas.',
+            '    float h     = pickFloat4(uCamHeight, worldIdx);',
+            '    float tilt  = pickFloat4(uCamTilt,   worldIdx);',
+            '    float yawB  = pickFloat4(uCamYaw,    worldIdx);',
+            '    float hfov  = pickFloat4(uCamFov,    worldIdx);',
+            '    float near  = pickFloat4(uNearClip,  worldIdx);',
+            '    float far   = pickFloat4(uFarClip,   worldIdx);',
+            '',
+            '    vec2 fwd = camForward(worldIdx);',
+            '    // Apply yaw bias to the forward vector (rotates around Y in XZ).',
+            '    float cy = cos(yawB), sy = sin(yawB);',
+            '    vec2 fwdR = vec2(fwd.x * cy - fwd.y * sy, fwd.x * sy + fwd.y * cy);',
+            '    // Right vector in XZ: rotate fwd -90° about Y in Three.js RH coords',
+            '    // so that fwd=(0,-1) (world -Z = front) gives right=(+1,0) (world +X).',
+            '    vec2 right = vec2(-fwdR.y, fwdR.x);',
+            '',
+            '    // Translate the world ground point into cam-LOCAL XZ. The cam',
+            '    // sits at (camPosX, camPosZ) in world space, so a point P_world',
+            '    // appears as (P - camPos) from the cams POV. Without this,',
+            '    // near/mid-field IPM lands on the wrong pixel (the further the',
+            '    // mount is from origin, the larger the error fraction).',
+            '    float camX = pickFloat4(uCamPosX, worldIdx);',
+            '    float camZ = pickFloat4(uCamPosZ, worldIdx);',
+            '    vec2 local = ground - vec2(camX, camZ);',
+            '',
+            '    // Cam-space ground vector (forward = +Z_cam, right = +X_cam).',
+            '    float zc = dot(local, fwdR);',
+            '    float xc = dot(local, right);',
+            '    float dist = length(local);',
+            '',
+            '    // Clip behind the cam, under the car, or past the disc edge.',
+            '    if (zc <= 0.05) return vec4(0.0);',
+            '    if (dist < near || dist > far) return vec4(0.0);',
+            '',
+            '    // World ray to the ground point in untilted cam frame: (xc, -h, zc).',
+            '    // The cam is pitched DOWN by `tilt` (optical axis rotates from +Z',
+            '    // toward -Y). To express the ray in the tilted cam frame we apply',
+            '    // the INVERSE rotation, i.e. rotate +tilt about cam-X:',
+            '    //   y_tilted =  y*cos + z*sin',
+            '    //   z_tilted = -y*sin + z*cos',
+            '    float ct = cos(tilt), st = sin(tilt);',
+            '    float yr = -h * ct + zc * st;',
+            '    float zr =  h * st + zc * ct;',
+            '    if (zr <= 0.05) return vec4(0.0);',
+            '',
+            '    // Normalised image-plane coords. tan(hfov) sets the horizontal',
+            '    // half-extent at unit depth — same convention as the wall',
+            '    // shaders fisheye undistort.',
+            '    float k = tan(hfov);',
+            '    float u = (xc / zr) / k;',
+            '    float v = (yr / zr) / k;',
+            '',
+            '    // (u, v) is now in PINHOLE-RECTIFIED sensor space — exactly what',
+            '    // sampleAt expects, since sampleAt internally calls undistort()',
+            '    // to map rectified coords back into the raw fisheye texture.',
+            '    // Reject points past the rectified-image bounds; sampleAt will',
+            '    // additionally fade at the per-cam crop edges.',
+            '    float r = length(vec2(u, v));',
+            '    if (r > 1.0) return vec4(0.0);',
+            '',
+            '    // sampleAt expects: c in [-1..+1] (horiz-centred) and vSample',
+            '    // in [0..1] mapped 0=bottom-of-cam-frame .. 1=top. Image-plane',
+            '    // y is +up; ground points project below the optical axis (v<0)',
+            '    // so they must land in the lower half of the cam image (vSample',
+            '    // < 0.5). Mapping: vSample = 0.5 + 0.5*v.',
+            '    float vSample = 0.5 + 0.5 * v;',
+            '    vec4 col = sampleAt(worldIdx, u, vSample);',
+            '',
+            '    // Confidence: high in the image centre, falling off toward the',
+            '    // edge of the lens circle and toward the cams near/far clips.',
+            '    float radial = 1.0 - smoothstep(0.55, 0.95, r);',
+            '    float nearF  = smoothstep(near, near + 0.4, dist);',
+            '    float farF   = 1.0 - smoothstep(far - 1.2, far, dist);',
+            '    col.a *= radial * nearF * farF;',
+            '    return col;',
+            '}',
+            '',
+            'vec4 sampleGround(vec2 ground) {',
+            '    // Sum confidence-weighted samples from all 4 cams. This gives',
+            '    // a soft Voronoi-style blend in the cam overlap regions so',
+            '    // seams disappear without a hard partition.',
+            '    vec4 s0 = sampleGroundFromCam(0, ground);',
+            '    vec4 s1 = sampleGroundFromCam(1, ground);',
+            '    vec4 s2 = sampleGroundFromCam(2, ground);',
+            '    vec4 s3 = sampleGroundFromCam(3, ground);',
+            '    float wsum = s0.a + s1.a + s2.a + s3.a;',
+            '    if (wsum < 1e-3) return vec4(0.0);',
+            '    vec3 rgb = (s0.rgb * s0.a + s1.rgb * s1.a +',
+            '                s2.rgb * s2.a + s3.rgb * s3.a) / wsum;',
+            '    return vec4(rgb, clamp(wsum, 0.0, 1.0));',
             '}'
         ].join('\n');
 
@@ -2678,7 +2874,15 @@ var VC = {
                 uSwapFR:        { value: this._3dSwapFR ? 1.0 : 0.0 },
                 uCropBottom:    { value: this._3dCropBottom.slice() },
                 uCropTop:       { value: this._3dCropTop.slice() },
-                uFishStrength:  { value: this._3dFishStrength.slice() }
+                uFishStrength:  { value: this._3dFishStrength.slice() },
+                uCamHeight:     { value: this._3dCamHeight.slice() },
+                uCamTilt:       { value: this._3dCamTilt.slice() },
+                uCamYaw:        { value: this._3dCamYaw.slice() },
+                uCamFov:        { value: this._3dCamFov.slice() },
+                uNearClip:      { value: this._3dNearClip.slice() },
+                uFarClip:       { value: this._3dFarClip.slice() },
+                uCamPosX:       { value: this._3dCamPosX.slice() },
+                uCamPosZ:       { value: this._3dCamPosZ.slice() }
             };
         }.bind(this);
 
@@ -2743,11 +2947,85 @@ var VC = {
         this.scene.add(wall);
         this._skySphere = wall;
 
-        // No ground disc: a separate floor that re-projects the same mosaic
-        // ends up reading as a duplicate of the wall image painted on the
-        // floor. The wall already fades to the dark base near its bottom
-        // (groundFade in the fragment shader), so the floor reads as solid
-        // dark and the contact shadow does the rest of the heavy lifting.
+        // ── Ground disc ─────────────────────────────────────────────────
+        // True SOTA AVM uses a flat near-field + curved far-field. The wall
+        // shader above only paints the horizon and sky (the cropBottom values
+        // were just bumped to hide the bodywork band of each fisheye), and
+        // this disc fills everything from under the bumpers out to the bowl
+        // radius via geometric IPM (sampleGround in SHARED_GLSL).
+        //
+        // The fragment shader receives world-space (x, z) directly — no UV
+        // assumption, no quadrant remap on the wall side — so each ground
+        // pixel pulls from whichever cam(s) actually saw that point. Multiple
+        // cams contribute via confidence-weighted blend so the cardinal seams
+        // (front/right corner etc.) dissolve smoothly.
+        var DISC_SIZE = WALL_RADIUS * 2.0;
+        var discGeo = new THREE.PlaneGeometry(DISC_SIZE, DISC_SIZE, 1, 1);
+
+        var discMat = new THREE.ShaderMaterial({
+            uniforms: sharedUniforms(),
+            vertexShader: [
+                'varying vec3 vWorldPos;',
+                'void main() {',
+                '    vec4 wp = modelMatrix * vec4(position, 1.0);',
+                '    vWorldPos = wp.xyz;',
+                '    gl_Position = projectionMatrix * viewMatrix * wp;',
+                '}'
+            ].join('\n'),
+            fragmentShader: [
+                'precision mediump float;',
+                SHARED_GLSL,
+                'varying vec3 vWorldPos;',
+                'void main() {',
+                '    // Ground point in world XZ. The plane is rotated -90° on X',
+                '    // below, so position.xy in object space maps to (x, z) in world.',
+                '    vec2 ground = vWorldPos.xz;',
+                '    float radius = length(ground);',
+                '',
+                '    // Cut a body-shaped hole under the car so we never try to',
+                '    // invent pixels the cams cant physically see — the body',
+                '    // occludes the ground inside its own footprint, and IPM',
+                '    // would otherwise paint stretched bodywork onto the disc.',
+                '    // Half-extents: ~2.35m fore/aft, ~0.95m lateral (BYD Seal).',
+                '    float bodyX = abs(ground.x) / 0.95;',
+                '    float bodyZ = abs(ground.y) / 2.35;',
+                '    float bodyR = max(bodyX, bodyZ);',  // chebyshev / rounded box
+                '    float carHole = smoothstep(1.00, 1.25, bodyR);',
+                '',
+                '    // Fade the disc out as it approaches the wall radius so the',
+                '    // disc/wall seam is a soft cross-fade rather than a hard ring.',
+                '    float edgeFade = 1.0 - smoothstep(' +
+                    (WALL_RADIUS * 0.85).toFixed(2) + ', ' +
+                    (WALL_RADIUS * 0.98).toFixed(2) + ', radius);',
+                '',
+                '    vec4 g = sampleGround(ground);',
+                '    float alpha = g.a * carHole * edgeFade;',
+                '',
+                '    if (alpha < 0.01) discard;',
+                '',
+                '    // Subtle vignette toward the disc edge so far-field IPM',
+                '    // distortion (which gets stretchy near the horizon) reads',
+                '    // as atmospheric haze instead of broken geometry.',
+                '    float haze = smoothstep(' +
+                    (WALL_RADIUS * 0.55).toFixed(2) + ', ' +
+                    (WALL_RADIUS * 0.95).toFixed(2) + ', radius);',
+                '    vec3 hazeColor = vec3(0.06, 0.09, 0.10);',
+                '    vec3 rgb = mix(g.rgb, hazeColor, haze * 0.35);',
+                '',
+                '    gl_FragColor = vec4(rgb, alpha);',
+                '}'
+            ].join('\n'),
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        });
+
+        var disc = new THREE.Mesh(discGeo, discMat);
+        disc.rotation.x = -Math.PI / 2;
+        disc.position.y = WALL_BOTTOM + 0.001;  // a hair above the wall floor
+        disc.renderOrder = -1;                   // after wall (-2), before car (0)
+        this.scene.add(disc);
+        this._surroundDisc = disc;
     },
 
     // ==================== DEFAULT-VIEW DATA OVERLAYS ====================
@@ -2843,17 +3121,26 @@ var VC = {
 
             var psiEl  = box.querySelector('.vc-tyre-psi-val');
             var kpaEl  = box.querySelector('.vc-tyre-kpa');
+            var tempEl = box.querySelector('.vc-tyre-temp-val');
+            var tempBox = box.querySelector('.vc-tyre-temp');
             var stateEl = box.querySelector('.vc-tyre-state');
 
             if (data.available && typeof data.psi === 'number') {
-                // Server already returns integer PSI to match the cluster's
-                // rounding exactly. Display kPa next to it so a user with
-                // metric calibration in mind can still cross-check.
-                if (psiEl)  psiEl.textContent  = data.psi;
+                // Server returns PSI to one decimal place. Display kPa next
+                // to it so a user with metric calibration in mind can still
+                // cross-check.
+                if (psiEl)  psiEl.textContent  = data.psi.toFixed(1);
                 if (kpaEl)  kpaEl.textContent  = (data.kPa || 0) + ' kPa';
             } else {
                 if (psiEl)  psiEl.textContent  = '--';
                 if (kpaEl)  kpaEl.textContent  = '-- kPa';
+            }
+            if (typeof data.temperatureC === 'number') {
+                if (tempEl)  tempEl.textContent  = data.temperatureC;
+                if (tempBox) tempBox.style.display = '';
+            } else {
+                if (tempEl)  tempEl.textContent  = '--';
+                if (tempBox) tempBox.style.display = 'none';
             }
             if (stateEl) stateEl.textContent = label;
         }

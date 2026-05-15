@@ -34,7 +34,12 @@ BYD.surveillance = {
         cameraLeft: true,
         cameraRear: true,
         motionHeatmap: false,
-        filterDebugLog: false
+        filterDebugLog: false,
+        // Telegram-specific: send a "Recording in progress…" text ping at
+        // recording start. OFF by default so users with both PWA + Telegram
+        // see one notification per event (PWA has tag-replace; Telegram does
+        // not). Telegram-only users may turn this on for low-latency awareness.
+        telegramSendStartPing: false
     },
     storageInfo: {
         sdCardAvailable: false,
@@ -644,7 +649,8 @@ BYD.surveillance = {
             'environmentPreset', 'sensitivityLevel', 'detectionZone', 'loiteringTime',
             'shadowFilter',
             'cameraFront', 'cameraRight', 'cameraLeft', 'cameraRear',
-            'motionHeatmap', 'filterDebugLog'
+            'motionHeatmap', 'filterDebugLog',
+            'telegramSendStartPing'
         ];
         const pick = (obj) => {
             const r = {};
@@ -952,6 +958,13 @@ BYD.surveillance = {
         this.config.cameraRight = document.getElementById('v2CameraRight').checked;
         this.config.cameraLeft = document.getElementById('v2CameraLeft').checked;
         this.config.cameraRear = document.getElementById('v2CameraRear').checked;
+        this.markChanged();
+    },
+
+    updateTelegramStartPing() {
+        const el = document.getElementById('v2TelegramSendStartPing');
+        if (!el) return;
+        this.config.telegramSendStartPing = el.checked;
         this.markChanged();
     },
 
@@ -1300,6 +1313,10 @@ BYD.surveillance = {
         if (hm) hm.checked = this.config.motionHeatmap;
         const fd = document.getElementById('v2FilterDebugLog');
         if (fd) fd.checked = this.config.filterDebugLog;
+
+        // Telegram start-ping opt-in
+        const tg = document.getElementById('v2TelegramSendStartPing');
+        if (tg) tg.checked = !!this.config.telegramSendStartPing;
         
         // Object detection checkboxes
         const dp = document.getElementById('detectPerson');

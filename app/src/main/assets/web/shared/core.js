@@ -5,6 +5,55 @@
 
 window.BYD = window.BYD || {};
 
+/**
+ * Unit formatting utility. All backend values are stored in km/km·h.
+ * When the user's vehicle is set to miles, this module converts for display.
+ * The mode is updated from the /status response on every poll cycle.
+ */
+BYD.units = {
+    mode: 'km',  // 'km' or 'mi' — updated from /status.distanceUnit
+    KM_TO_MI: 0.621371,
+
+    /** Format a distance value (stored in km) for display. */
+    dist(km, decimals) {
+        if (km == null || isNaN(km)) return '--';
+        if (this.mode === 'mi') return Math.round(km * this.KM_TO_MI) + ' mi';
+        return (decimals != null ? km.toFixed(decimals) : Math.round(km)) + ' km';
+    },
+
+    /** Format a speed value (stored in km/h) for display. */
+    speed(kmh, decimals) {
+        if (kmh == null || isNaN(kmh)) return '--';
+        var d = decimals != null ? decimals : 1;
+        if (this.mode === 'mi') return (kmh * this.KM_TO_MI).toFixed(d) + ' mph';
+        return kmh.toFixed(d) + ' km/h';
+    },
+
+    /** Return just the distance unit label. */
+    distLabel() { return this.mode === 'mi' ? 'mi' : 'km'; },
+
+    /** Return just the speed unit label. */
+    speedLabel() { return this.mode === 'mi' ? 'mph' : 'km/h'; },
+
+    /** Convert km value to display value (number only, no label). */
+    distVal(km) {
+        if (km == null || isNaN(km)) return 0;
+        return this.mode === 'mi' ? Math.round(km * this.KM_TO_MI) : Math.round(km);
+    },
+
+    /** Convert km/h value to display value (number only, no label). */
+    speedVal(kmh) {
+        if (kmh == null || isNaN(kmh)) return 0;
+        return this.mode === 'mi' ? kmh * this.KM_TO_MI : kmh;
+    },
+
+    /** Per-100 consumption label: "kWh/100km" or "kWh/100mi". */
+    consumptionLabel() { return this.mode === 'mi' ? 'kWh/100mi' : 'kWh/100km'; },
+
+    /** "per km" or "per mi" for cost display. */
+    perDistLabel() { return this.mode === 'mi' ? '/mi' : '/km'; }
+};
+
 BYD.core = {
     deviceId: null,
     pollInterval: null,
@@ -53,6 +102,11 @@ BYD.core = {
             const res = await fetch('/status');
             const status = await res.json();
             this.lastStatus = status;
+
+            // Distance unit preference (from user setting / auto-detect)
+            if (status.distanceUnit) {
+                BYD.units.mode = status.distanceUnit;
+            }
 
             // Device ID
             if (status.deviceId) {
@@ -185,9 +239,9 @@ BYD.core = {
         // Update range from actual API data (electric range only)
         if (evRange) {
             if (status.range && status.range.elecRangeKm !== undefined) {
-                // Use electric range from BYD API
+                // Use electric range from BYD API — convert to user's display unit
                 const rangeKm = status.range.elecRangeKm;
-                evRange.textContent = rangeKm + ' km';
+                evRange.textContent = BYD.units.dist(rangeKm);
                 
                 // Add warning styling if range is low
                 if (status.range.isCritical) {
@@ -202,7 +256,7 @@ BYD.core = {
             } else if (soc !== null) {
                 // Fallback: estimate range (~4km per %)
                 const estimatedRange = Math.round(soc * 4);
-                evRange.textContent = '~' + estimatedRange + ' km';
+                evRange.textContent = '~' + BYD.units.dist(estimatedRange);
                 evRange.classList.remove('low', 'critical');
             }
         }
@@ -361,7 +415,7 @@ BYD.core = {
         if (this._personalizedRangeFetched) {
             if (this._personalizedRangeKm > 0) {
                 pRow.style.display = 'flex';
-                pVal.textContent = this._personalizedRangeKm + ' km';
+                pVal.textContent = BYD.units.dist(this._personalizedRangeKm);
             }
             return;
         }
@@ -375,7 +429,7 @@ BYD.core = {
                 if (predicted > 0) {
                     this._personalizedRangeKm = predicted;
                     pRow.style.display = 'flex';
-                    pVal.textContent = predicted + ' km';
+                    pVal.textContent = BYD.units.dist(predicted);
                 }
             }
         } catch (e) {

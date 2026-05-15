@@ -1,7 +1,10 @@
 package com.overdrive.app.ui.adapter
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.media.MediaMetadataRetriever
+import android.util.LruCache
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,8 +32,15 @@ class RecordingAdapter(
     private val onSelectionChanged: ((Int) -> Unit)? = null
 ) : ListAdapter<RecordingFile, RecordingAdapter.RecordingViewHolder>(RecordingDiffCallback()) {
     
-    // Cache for thumbnails
-    private val thumbnailCache = mutableMapOf<String, Bitmap?>()
+    // Cache for thumbnails — size-bounded LRU. The cap is set in BYTES so a
+    // mix of small sidecar JPEGs (~50 KB decoded) and full-res
+    // MediaMetadataRetriever frames (~1 MB on a 1080p clip) coexist without
+    // unbounded growth as the user scrolls through hundreds of recordings.
+    // 8 MB ≈ 100 sidecar thumbs OR ~16 full-res frames, comfortable for a 4 GB
+    // RAM head unit.
+    private val thumbnailCache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
     
     // Multi-select state
     var selectMode = false
@@ -85,53 +95,91 @@ class RecordingAdapter(
         private val tvRecordingTime: TextView = itemView.findViewById(R.id.tvRecordingTime)
         private val tvDuration: TextView = itemView.findViewById(R.id.tvDuration)
         private val tvSize: TextView = itemView.findViewById(R.id.tvSize)
-        private val btnPlay: ImageButton = itemView.findViewById(R.id.btnPlay)
         private val btnDelete: ImageButton = itemView.findViewById(R.id.btnDelete)
         private val cbSelect: CheckBox = itemView.findViewById(R.id.cbSelect)
-        
+        private val tvFilename: TextView? = itemView.findViewById(R.id.tvFilename)
+        private val tvSeverity: TextView? = itemView.findViewById(R.id.tvSeverity)
+        private val tvActorSummary: TextView? = itemView.findViewById(R.id.tvActorSummary)
+        private val severityStripe: View? = itemView.findViewById(R.id.severityStripe)
+
         fun bind(recording: RecordingFile) {
             tvCameraId.text = "C${recording.cameraId}"
             tvRecordingTime.text = recording.formattedTime
             tvDuration.text = if (recording.durationMs > 0) recording.formattedDuration else "--:--"
             tvSize.text = recording.formattedSize
-            
+            tvFilename?.text = recording.file.name
+
+            // Severity badge + stripe (item 7) — only when v3 sidecar provided severity
+            when (recording.peakSeverity?.uppercase()) {
+                "CRITICAL" -> {
+                    tvSeverity?.visibility = View.VISIBLE
+                    tvSeverity?.text = "CRITICAL"
+                    tvSeverity?.setBackgroundColor(0xCCEF4444.toInt())
+                    severityStripe?.visibility = View.VISIBLE
+                    severityStripe?.setBackgroundColor(0xFFEF4444.toInt())
+                }
+                "ALERT" -> {
+                    tvSeverity?.visibility = View.VISIBLE
+                    tvSeverity?.text = "ALERT"
+                    tvSeverity?.setBackgroundColor(0xCCFF8800.toInt())
+                    severityStripe?.visibility = View.VISIBLE
+                    severityStripe?.setBackgroundColor(0xFFFF9B3D.toInt())
+                }
+                else -> {
+                    tvSeverity?.visibility = View.GONE
+                    severityStripe?.visibility = View.GONE
+                }
+            }
+
+            // Actor + proximity summary (v3 only)
+            val parts = mutableListOf<String>()
+            if (recording.personCount > 0)  parts += "👤 ${recording.personCount}"
+            if (recording.vehicleCount > 0) parts += "🚗 ${recording.vehicleCount}"
+            if (recording.bikeCount > 0)    parts += "🚲 ${recording.bikeCount}"
+            if (recording.animalCount > 0)  parts += "🐾 ${recording.animalCount}"
+            val proxLabel = when (recording.peakProximity?.uppercase()) {
+                "VERY_CLOSE" -> "very close"
+                "CLOSE" -> "close"
+                "MID" -> "mid"
+                "FAR" -> "far"
+                else -> null
+            }
+            if (proxLabel != null) parts += proxLabel
+            if (parts.isNotEmpty()) {
+                tvActorSummary?.visibility = View.VISIBLE
+                tvActorSummary?.text = parts.joinToString(" · ")
+            } else {
+                tvActorSummary?.visibility = View.GONE
+            }
+
             // Load thumbnail
             loadThumbnail(recording)
             
-            // Multi-select mode
             if (selectMode) {
                 cbSelect.visibility = View.VISIBLE
-                // Clear listener before setting checked state to prevent spurious callbacks during recycling
                 cbSelect.setOnCheckedChangeListener(null)
                 cbSelect.isChecked = recording.path in selectedItems
-                btnPlay.visibility = View.GONE
                 btnDelete.visibility = View.GONE
-                
+
                 cbSelect.setOnCheckedChangeListener { _, isChecked ->
-                    if (isChecked) {
-                        selectedItems.add(recording.path)
-                    } else {
-                        selectedItems.remove(recording.path)
-                    }
+                    if (isChecked) selectedItems.add(recording.path)
+                    else           selectedItems.remove(recording.path)
                     onSelectionChanged?.invoke(selectedItems.size)
                 }
-                
+
                 itemView.setOnClickListener {
                     cbSelect.isChecked = !cbSelect.isChecked
                 }
-                
+
                 itemView.setOnLongClickListener(null)
             } else {
                 cbSelect.setOnCheckedChangeListener(null)
                 cbSelect.visibility = View.GONE
-                btnPlay.visibility = View.VISIBLE
                 btnDelete.visibility = View.VISIBLE
-                
-                btnPlay.setOnClickListener { onPlay(recording) }
+
                 btnDelete.setOnClickListener { onDelete(recording) }
+                // Tile body opens the player. Long-press = enter multi-select.
                 itemView.setOnClickListener { onPlay(recording) }
-                
-                // Long press to enter select mode
                 itemView.setOnLongClickListener {
                     enterSelectMode()
                     selectedItems.add(recording.path)
@@ -143,39 +191,47 @@ class RecordingAdapter(
         }
         
         private fun loadThumbnail(recording: RecordingFile) {
-            val path = recording.path
-            
-            // Check cache first
-            if (thumbnailCache.containsKey(path)) {
-                val cached = thumbnailCache[path]
-                if (cached != null) {
-                    ivThumbnail.setImageBitmap(cached)
-                } else {
-                    ivThumbnail.setImageResource(R.color.surface_variant)
-                }
+            // Cache key includes the hero presence so we don't mix MP4-frame thumbs
+            // with hero AI thumbs in memory.
+            val cacheKey = recording.heroThumbnailFile?.absolutePath
+                ?: recording.path
+
+            val cached = thumbnailCache.get(cacheKey)
+            if (cached != null) {
+                ivThumbnail.setImageBitmap(cached)
                 return
             }
-            
-            // Set placeholder while loading
+
             ivThumbnail.setImageResource(R.color.surface_variant)
-            
-            // Load thumbnail async
+
             CoroutineScope(Dispatchers.IO).launch {
-                val thumbnail = extractThumbnail(path)
-                thumbnailCache[path] = thumbnail
-                
+                // Prefer the hero JPEG written by ThumbnailBuffer next to the MP4.
+                // Falls back to MediaMetadataRetriever for legacy clips with no
+                // sidecar.
+                val thumbnail = recording.heroThumbnailFile?.let { decodeJpeg(it) }
+                    ?: extractThumbnail(recording.path)
+                if (thumbnail != null) {
+                    thumbnailCache.put(cacheKey, thumbnail)
+                }
+
                 withContext(Dispatchers.Main) {
-                    // Only update if still showing same recording
                     if (bindingAdapterPosition != RecyclerView.NO_POSITION &&
-                        getItem(bindingAdapterPosition).path == path) {
-                        if (thumbnail != null) {
-                            ivThumbnail.setImageBitmap(thumbnail)
-                        }
+                        getItem(bindingAdapterPosition).path == recording.path &&
+                        thumbnail != null) {
+                        ivThumbnail.setImageBitmap(thumbnail)
                     }
                 }
             }
         }
-        
+
+        private fun decodeJpeg(file: java.io.File): Bitmap? {
+            return try {
+                BitmapFactory.decodeFile(file.absolutePath)
+            } catch (e: Exception) {
+                null
+            }
+        }
+
         private fun extractThumbnail(path: String): Bitmap? {
             return try {
                 val retriever = MediaMetadataRetriever()
@@ -190,7 +246,7 @@ class RecordingAdapter(
     }
     
     fun clearCache() {
-        thumbnailCache.clear()
+        thumbnailCache.evictAll()
     }
     
     private class RecordingDiffCallback : DiffUtil.ItemCallback<RecordingFile>() {

@@ -278,6 +278,26 @@
     color: #71717A;
 }
 .vc-tyre-kpa { letter-spacing: .3px; }
+.vc-tyre-temp {
+    display: -webkit-flex; display: flex;
+    -webkit-align-items: baseline; align-items: baseline;
+    gap: 3px;
+    margin-top: 3px;
+    font-size: 10px;
+    color: #A1A1AA;
+}
+.vc-tyre-temp-val {
+    font-size: 12px;
+    font-weight: 600;
+    color: #E4E4E7;
+    line-height: 1;
+}
+.vc-tyre-temp-unit {
+    font-size: 9px;
+    font-weight: 600;
+    color: #71717A;
+    letter-spacing: .6px;
+}
 
 /* State colour scale — same 4 tiers as the engine chips so the page
    reads as one consistent system. Both the dot AND the PSI value
@@ -324,6 +344,8 @@
     .vc-tyre-psi-val { font-size: 16px; }
     .vc-tyre-head { font-size: 8px; gap: 4px; }
     .vc-tyre-sub { font-size: 8px; }
+    .vc-tyre-temp { font-size: 9px; margin-top: 2px; }
+    .vc-tyre-temp-val { font-size: 11px; }
     /* Rear pair on top (below the mobile engine row at top:102),
        front pair on the bottom. Mirror: car-left → screen-right. */
     .vc-tyre-callout[data-corner="rl"],
@@ -340,6 +362,8 @@
     .vc-tyre-psi-val { font-size: 14px; }
     .vc-tyre-head { font-size: 7px; }
     .vc-tyre-sub { font-size: 7px; }
+    .vc-tyre-temp { font-size: 8px; margin-top: 2px; }
+    .vc-tyre-temp-val { font-size: 10px; }
     .vc-tyre-callout[data-corner="rl"],
     .vc-tyre-callout[data-corner="rr"] { top: 152px; bottom: auto; }
     .vc-tyre-callout[data-corner="fr"],

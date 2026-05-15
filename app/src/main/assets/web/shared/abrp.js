@@ -146,7 +146,7 @@ const ABRP = {
             tlm_utc:         t.utc != null ? new Date(t.utc * 1000).toLocaleTimeString() : '--',
             tlm_soc:         t.soc != null ? t.soc.toFixed(1) + '%' : '--%',
             tlm_power:       t.power != null ? t.power.toFixed(1) + ' kW' : '-- kW',
-            tlm_speed:       t.speed != null ? t.speed.toFixed(1) + ' km/h' : '-- km/h',
+            tlm_speed:       t.speed != null ? BYD.units.speed(t.speed) : '-- ' + BYD.units.speedLabel(),
             tlm_lat:         t.lat != null ? t.lat.toFixed(6) : '--',
             tlm_lon:         t.lon != null ? t.lon.toFixed(6) : '--',
             tlm_is_charging: t.is_charging != null ? (t.is_charging ? 'Yes' : 'No') : '--',
@@ -184,7 +184,7 @@ const ABRP = {
         setEl('vehiclePower', t.power != null ? t.power.toFixed(1) + ' kW' : '-- kW');
 
         // Speed
-        setEl('vehicleSpeed', t.speed != null ? t.speed.toFixed(1) + ' km/h' : '-- km/h');
+        setEl('vehicleSpeed', t.speed != null ? BYD.units.speed(t.speed) : '-- ' + BYD.units.speedLabel());
 
         // Ext temp
         setEl('vehicleTemp', t.ext_temp != null ? t.ext_temp.toFixed(1) + ' °C' : '-- °C');

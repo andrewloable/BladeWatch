@@ -677,7 +677,7 @@ public class SentryDaemon {
     
     // ==================== DAEMON CONTROL (KILL HANDLING) ====================
     
-    private static final int CONTROL_PORT = 19879;  // SentryDaemon control port (19876=CameraDaemon, 19878=TelegramBot)
+    private static final int CONTROL_PORT = 19879;  // SentryDaemon control (19876=CameraDaemon, 19877=Surveillance IPC, 19878=BydEventDaemon, 19880=TelegramBot)
     private static String PID_FILE() { return PATH_SENTRY_PID(); }
     private static volatile boolean running = true;
     private static java.net.ServerSocket controlSocket;

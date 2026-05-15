@@ -68,10 +68,69 @@ public class ProximityRecordingHandler {
             
             // Send Telegram notification
             sendTelegramNotification(triggerLevel);
-            
+
+            // Publish to NotificationBus → push notifications
+            publishProximityNotification(triggerLevel);
+
         } catch (Exception e) {
             logger.error("Failed to start proximity recording: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Publish a proximity notification onto the cross-cutting NotificationBus.
+     *
+     * <p>RED trigger ({@code <0.5m}) is treated as critical so it overrides
+     * the user's quiet hours. YELLOW ({@code 0.5–0.8m}) is warn.
+     */
+    private void publishProximityNotification(String triggerLevel) {
+        try {
+            boolean red = "RED".equals(triggerLevel);
+            org.json.JSONObject data = new org.json.JSONObject();
+            data.put("triggerLevel", triggerLevel);
+
+            // The pipeline's encoder was started above with the proximity_
+            // prefix. Pull the active output path so the push deep-links to
+            // the exact clip being recorded and renders its thumbnail.
+            String filename = activeRecordingFilename();
+            String url;
+            if (filename != null) {
+                String enc = java.net.URLEncoder.encode(filename, "UTF-8");
+                data.put("filename", filename);
+                data.put("snapshot", "/thumb/" + enc);
+                url = "/events.html?filter=proximity&file=" + enc;
+            } else {
+                url = "/events.html?filter=proximity";
+            }
+
+            com.overdrive.app.notifications.NotificationBus.get().publish(
+                    new com.overdrive.app.notifications.NotificationEvent(
+                            "surveillance.proximity",
+                            red
+                                    ? com.overdrive.app.notifications.NotificationEvent.Severity.CRITICAL
+                                    : com.overdrive.app.notifications.NotificationEvent.Severity.WARN,
+                            red ? "Object very close" : "Object nearby",
+                            red ? "Within 0.5 m" : "Within 0.8 m",
+                            "proximity-" + triggerLevel,
+                            url,
+                            data));
+        } catch (Throwable t) {
+            logger.debug("publishProximityNotification failed: " + t.getMessage());
+        }
+    }
+
+    private String activeRecordingFilename() {
+        try {
+            if (pipeline == null) return null;
+            com.overdrive.app.surveillance.HardwareEventRecorderGpu enc = pipeline.getEncoder();
+            if (enc == null) return null;
+            String path = enc.getCurrentOutputPath();
+            if (path == null || path.isEmpty()) return null;
+            int slash = path.lastIndexOf('/');
+            return slash >= 0 ? path.substring(slash + 1) : path;
+        } catch (Throwable t) {
+            return null;
         }
     }
     

@@ -19,7 +19,20 @@ BYD.events = {
     // Multi-select state
     selectMode: false,
     selectedFiles: new Set(),
-    
+
+    // In-flight recording state. Populated only when the user is deep-linked
+    // (?file=…) from a fresh notification AND the referenced file isn't yet
+    // in the recordings list (it's still <name>.mp4.tmp on disk). The
+    // recordings page renders a pinned placeholder card while this is set,
+    // and polls /api/recordings/inflight/<file> every 2s to detect when the
+    // post-record window finishes and the rename completes.
+    inflightFilename: null,
+    inflightPollHandle: null,
+
+    // v3 actor/severity/proximity filter state (item 6). Empty values = no filter.
+    actorFilter: { class: '', severity: '', proximity: '' },
+
+
     async init() {
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam = urlParams.get('filter');
@@ -29,13 +42,30 @@ BYD.events = {
                 tab.classList.toggle('active', tab.dataset.filter === filterParam);
             });
         }
-        
+        const fileParam = urlParams.get('file');
+
         this.renderCalendar();
         this.updateRecordingsTitle();
         this.updateCalendarButton();
         await this.loadDatesWithRecordings();
         await this.loadStorageStats();
         await this.loadRecordings();
+
+        // Deep-link from a notification.
+        //   - If the recording is finalized (in this.recordings): open the player.
+        //   - If it's still being written (.mp4.tmp on disk): show a pinned
+        //     placeholder card and poll for finalization.
+        //   - If it's neither finalized nor in flight (older notification, file
+        //     was deleted, etc.): silently no-op so we don't yank the user
+        //     around.
+        if (fileParam) {
+            const found = this.recordings.find(r => r.filename === fileParam);
+            if (found) {
+                this.playVideo(fileParam);
+            } else {
+                this.checkAndPollInflight(fileParam);
+            }
+        }
         
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
@@ -62,6 +92,26 @@ BYD.events = {
         
         observer.observe(calendarPopup, { attributes: true });
         observer.observe(videoModal, { attributes: true });
+
+        // Stop inflight polling when the page is unloaded or hidden — without
+        // this, setInterval keeps firing in the background after the user
+        // navigates away (BFCache visit, swipe-to-back PWA gesture, etc.).
+        // visibilitychange covers tab-hidden too, since the platform may not
+        // run setInterval reliably while hidden anyway.
+        const stopOnExit = () => this.stopInflightPolling();
+        window.addEventListener('pagehide', stopOnExit);
+        window.addEventListener('beforeunload', stopOnExit);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') stopOnExit();
+        });
+    },
+
+    /** Idempotent stop — safe to call multiple times. */
+    stopInflightPolling() {
+        if (this.inflightPollHandle) {
+            clearInterval(this.inflightPollHandle);
+            this.inflightPollHandle = null;
+        }
     },
     
     toggleCalendar() {
@@ -192,6 +242,21 @@ BYD.events = {
         this.currentPage = 1;
         this.loadRecordings();
     },
+
+    /**
+     * Set v3 actor / severity / proximity filter (item 6).
+     * Empty value clears the row. Updates chip active states.
+     */
+    setActorFilter(kind, value) {
+        if (!this.actorFilter) this.actorFilter = { class: '', severity: '', proximity: '' };
+        this.actorFilter[kind] = value || '';
+        const rowSel = '.filter-tabs[data-filter-row="' + kind + '"] .filter-chip';
+        document.querySelectorAll(rowSel).forEach(chip => {
+            chip.classList.toggle('active', (chip.dataset[kind] || '') === (value || ''));
+        });
+        this.currentPage = 1;
+        this.loadRecordings();
+    },
     
     updateRecordingsTitle() {
         const title = document.getElementById('recordingsTitle');
@@ -269,15 +334,117 @@ BYD.events = {
         }
     },
     
+    /**
+     * Single source of truth for filename → thumbnail DOM id. Both the inflight
+     * placeholder and the recordings-list renderer use this so the
+     * "highlight just-finalized card" lookup can't drift from the id used
+     * when the card was rendered.
+     */
+    _thumbDomId(filename) {
+        return 'thumb-' + filename.replace(/[^a-zA-Z0-9]/g, '_');
+    },
+
+    /**
+     * Probe the backend for an in-flight .mp4.tmp matching the deep-linked
+     * filename. If it's there, set state and start polling so the placeholder
+     * card upgrades to a normal entry the moment the post-record window ends.
+     */
+    async checkAndPollInflight(filename) {
+        try {
+            const res = await fetch('/api/recordings/inflight/' + encodeURIComponent(filename));
+            const data = await res.json();
+            if (!data || !data.inflight) {
+                // File isn't in flight — no placeholder, no polling. The
+                // recording either finished and was paginated past the first
+                // page, or it never existed.
+                return;
+            }
+            this.inflightFilename = filename;
+            this.renderRecordings();
+            this.startInflightPolling();
+        } catch (e) {
+            console.warn('[events] inflight probe failed:', e);
+        }
+    },
+
+    startInflightPolling() {
+        this.stopInflightPolling();
+        this.inflightPollHandle = setInterval(async () => {
+            if (!this.inflightFilename) {
+                this.stopInflightPolling();
+                return;
+            }
+            try {
+                const res = await fetch('/api/recordings/inflight/' +
+                    encodeURIComponent(this.inflightFilename));
+                const data = await res.json();
+                if (!data.inflight) {
+                    // Rename finished. Clear the placeholder, reload the list
+                    // so the freshly-renamed file appears in its proper slot,
+                    // and stop polling. We deliberately do NOT auto-open the
+                    // video — the user came here from a notification a few
+                    // seconds ago; surfacing the entry visibly is enough.
+                    const finishedFile = this.inflightFilename;
+                    this.inflightFilename = null;
+                    this.stopInflightPolling();
+                    await this.loadRecordings();
+                    // If the file landed on this page, briefly highlight it.
+                    const node = document.getElementById(this._thumbDomId(finishedFile));
+                    const card = node ? node.closest('.recording-card') : null;
+                    if (card) {
+                        card.classList.add('recording-card-just-finalized');
+                        setTimeout(() => {
+                            card.classList.remove('recording-card-just-finalized');
+                        }, 2000);
+                    }
+                }
+            } catch (e) {
+                // Network blip — keep polling, don't bail.
+            }
+        }, 2000);
+    },
+
+    /**
+     * Build the pinned "Recording in progress" card markup. Reuses the
+     * existing recording-card / recording-thumbnail / recording-info CSS so
+     * it slots in visually with the rest of the list. Distinguished by the
+     * .recording-card-inflight modifier (subtle pulse) and a Recording badge
+     * sitting where the duration badge would normally be.
+     *
+     * Thumbnail loads from the same /thumb/ endpoint, which now serves a sync
+     * frame from the .mp4.tmp file before post-record finalises (see
+     * RecordingsApiHandler.findVideoFile, allowInFlightTmp).
+     */
+    renderInflightCard(filename) {
+        const thumbId = this._thumbDomId(filename);
+        const fname = filename.length > 28 ? filename.substring(0, 25) + '...' : filename;
+        const thumbUrl = '/thumb/' + encodeURIComponent(filename);
+        return '' +
+            '<div class="recording-card recording-card-inflight" data-filename="' + filename + '">' +
+                '<div class="recording-thumbnail" id="' + thumbId + '" data-thumb="' + thumbUrl + '">' +
+                    '<div class="thumb-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg></div>' +
+                    '<span class="inflight-badge"><span class="inflight-dot"></span>Recording</span>' +
+                '</div>' +
+                '<div class="recording-info">' +
+                    '<div class="recording-name"><span class="recording-badge live">Live</span>' + fname + '</div>' +
+                    '<div class="recording-meta"><span>Available in a few seconds…</span></div>' +
+                '</div>' +
+            '</div>';
+    },
+
     async loadRecordings() {
         const list = document.getElementById('recordingsList');
         list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-        
+
         try {
             let url = '/api/recordings';
             const params = [];
             if (this.currentFilter !== 'all') params.push('type=' + this.currentFilter);
             if (this.selectedDate) params.push('date=' + this.selectedDate);
+            // v3 actor filters (item 6)
+            if (this.actorFilter && this.actorFilter.class)     params.push('class=' + encodeURIComponent(this.actorFilter.class));
+            if (this.actorFilter && this.actorFilter.severity)  params.push('severity=' + encodeURIComponent(this.actorFilter.severity));
+            if (this.actorFilter && this.actorFilter.proximity) params.push('proximity=' + encodeURIComponent(this.actorFilter.proximity));
             params.push('page=' + this.currentPage);
             params.push('pageSize=' + this.pageSize);
             url += '?' + params.join('&');
@@ -302,14 +469,25 @@ BYD.events = {
     
     renderRecordings() {
         const list = document.getElementById('recordingsList');
-        
+
+        // Inflight placeholder always renders FIRST so it's visible even when
+        // the rest of the page is empty (deep-link arrived faster than any
+        // pagination of older recordings finished).
+        const inflightHtml = this.inflightFilename
+            ? this.renderInflightCard(this.inflightFilename)
+            : '';
+
         if (this.recordings.length === 0) {
-            list.innerHTML = '<div class="empty-state"><svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg><div class="empty-title">No recordings found</div><div class="empty-text">Recordings will appear here when available</div></div>';
+            if (inflightHtml) {
+                list.innerHTML = inflightHtml;
+            } else {
+                list.innerHTML = '<div class="empty-state"><svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg><div class="empty-title">No recordings found</div><div class="empty-text">Recordings will appear here when available</div></div>';
+            }
             return;
         }
-        
-        list.innerHTML = this.recordings.map(rec => {
-            const thumbId = 'thumb-' + rec.filename.replace(/[^a-zA-Z0-9]/g, '_');
+
+        list.innerHTML = inflightHtml + this.recordings.map(rec => {
+            const thumbId = this._thumbDomId(rec.filename);
             const badge = rec.type === 'sentry' ? 'Sentry' : rec.type === 'proximity' ? 'Proximity' : 'Normal';
             const fname = rec.filename.length > 28 ? rec.filename.substring(0, 25) + '...' : rec.filename;
             const isSelected = this.selectedFiles.has(rec.filename);
@@ -324,16 +502,43 @@ BYD.events = {
                 ? 'BYD.events.toggleFileSelection(\'' + rec.filename + '\')'
                 : 'BYD.events.playVideo(\'' + rec.filename + '\')';
             
-            return '<div class="recording-card' + (isSelected ? ' selected' : '') + '" data-filename="' + rec.filename + '" onclick="' + cardClick + '">' +
+            // v3 enrichment (item 6): use hero JPEG when present, sev badge, actor summary
+            const sev = (rec.peakSeverity || '').toUpperCase();
+            const sevClass = sev === 'CRITICAL' ? 'sev-critical' : sev === 'ALERT' ? 'sev-alert' : '';
+            const sevBadge = sev ? '<span class="recording-badge sev-' + sev.toLowerCase() + '">' + sev + '</span>' : '';
+            const thumbUrl = rec.heroThumbnailUrl || rec.thumbnailUrl || '';
+            const personCount  = rec.personCount  || rec.personSpans  || 0;
+            const vehicleCount = rec.vehicleCount || rec.vehicleSpans || 0;
+            const bikeCount    = rec.bikeCount    || rec.bikeSpans    || 0;
+            const animalCount  = rec.animalCount  || 0;
+            const proxLabel = (function(p) {
+                switch ((p||'').toUpperCase()) {
+                    case 'VERY_CLOSE': return 'very close';
+                    case 'CLOSE': return 'close';
+                    case 'MID': return 'mid';
+                    case 'FAR': return 'far';
+                    default: return '';
+                }
+            })(rec.peakProximity);
+            let actorPills = '';
+            if (personCount > 0)  actorPills += '<span class="pill">👤 ' + personCount + '</span>';
+            if (vehicleCount > 0) actorPills += '<span class="pill">🚗 ' + vehicleCount + '</span>';
+            if (bikeCount > 0)    actorPills += '<span class="pill">🚲 ' + bikeCount + '</span>';
+            if (animalCount > 0)  actorPills += '<span class="pill">🐾 ' + animalCount + '</span>';
+            if (proxLabel)        actorPills += '<span class="pill prox-' + (rec.peakProximity || 'UNKNOWN') + '">' + proxLabel + '</span>';
+            const actorRow = actorPills ? '<div class="actor-summary">' + actorPills + '</div>' : '';
+
+            return '<div class="recording-card' + (isSelected ? ' selected' : '') + (sevClass ? ' ' + sevClass : '') + '" data-filename="' + rec.filename + '" onclick="' + cardClick + '">' +
                 checkbox +
-                '<div class="recording-thumbnail" id="' + thumbId + '" data-thumb="' + (rec.thumbnailUrl || '') + '">' +
+                '<div class="recording-thumbnail" id="' + thumbId + '" data-thumb="' + thumbUrl + '">' +
                 '<div class="thumb-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg></div>' +
                 '<div class="play-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>' +
                 (rec.duration ? '<span class="duration-badge">' + rec.duration + '</span>' : '') +
                 '</div>' +
                 '<div class="recording-info">' +
-                '<div class="recording-name"><span class="recording-badge ' + rec.type + '">' + badge + '</span>' + fname + '</div>' +
+                '<div class="recording-name"><span class="recording-badge ' + rec.type + '">' + badge + '</span>' + sevBadge + fname + '</div>' +
                 '<div class="recording-meta"><span>' + rec.dateFormatted + '</span><span>' + rec.timeFormatted + '</span><span>' + rec.sizeFormatted + '</span></div>' +
+                actorRow +
                 '</div>' +
                 (this.selectMode ? '' : 
                 '<div class="recording-actions">' +
@@ -456,7 +661,18 @@ BYD.events = {
     
     async deleteRecording(filename) {
         if (!confirm('Delete ' + filename + '?')) return;
-        
+
+        // If the modal player is currently showing this recording, pause it
+        // and detach the source BEFORE the DELETE goes through. Otherwise
+        // the in-flight Range request races with the file disappearing and
+        // the user sees an "error: source not supported" toast.
+        try {
+            const player = document.getElementById('videoPlayer');
+            if (player && player.src && player.src.endsWith('/video/' + filename)) {
+                this.closeVideo();
+            }
+        } catch (_) {}
+
         try {
             const res = await fetch('/api/recordings/' + filename, { method: 'DELETE' });
             const data = await res.json();

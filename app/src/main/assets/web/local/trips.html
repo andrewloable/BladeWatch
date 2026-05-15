@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Trips - OverDrive</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="../shared/app-icon.webp">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00E5FF">
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -1255,6 +1260,13 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h2v-7l4 4 4-4 4 4 4-4v7h2"/><path d="M4 5h16"/></svg>
                     <span>Trips</span>
                 </a>
+                <a href="notifications.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
                 <a href="vehicle-control.html" class="nav-link">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="11" width="18" height="11" rx="2"/>
@@ -1431,7 +1443,7 @@
                         <div id="costHeroCard" style="background:linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.03) 100%);border:1px solid rgba(245,158,11,0.15);border-radius:20px;padding:20px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;overflow:visible;">
                             <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:16px;align-self:flex-start;">
                                 <span style="font-size:18px;">💰</span>
-                                Cost per km
+                                Cost per <span id="costPerDistLabel">km</span>
                             </div>
                             <div id="costNoRate" style="position:relative;">
                                 <div style="position:relative;width:140px;height:140px;margin:0 auto 8px;">
@@ -1568,6 +1580,19 @@
                                     </select>
                                     <input type="number" id="rateInput" placeholder="0.00" step="0.01" min="0" onchange="TRIPS.showApplyNeeded()" style="width:80px;padding:8px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;font-family:'JetBrains Mono',monospace;">
                                     <span style="font-size:11px;color:var(--text-muted);">/kWh</span>
+                                </div>
+                            </div>
+                            <!-- Distance Unit -->
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-name">Distance Unit</div>
+                                    <div class="setting-desc">Display distances and speeds in km or miles</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="btn-group">
+                                        <button class="btn-toggle active" id="unitKm" onclick="TRIPS.setDistanceUnit('km')">🌍 km</button>
+                                        <button class="btn-toggle" id="unitMi" onclick="TRIPS.setDistanceUnit('mi')">🇬🇧 miles</button>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Storage Location Selection -->
@@ -1954,7 +1979,9 @@
 
     <script src="../shared/leaflet.js"></script>
     <script src="../shared/auth.js"></script>
+    <script src="../shared/pwa-init.js"></script>
     <script src="../shared/core.js"></script>
+    <script src="../shared/update-flow.js"></script>
     <script src="../shared/trips.js"></script>
     <script>
         function toggleSidebar() {

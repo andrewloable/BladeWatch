@@ -293,7 +293,7 @@ public class SohEstimator {
                 logger.info("[diag] BYDAutoStatisticDevice probe failed: " + describeException(e));
             }
 
-            // BYDAutoBodyworkDevice — getBatteryCapacity (we use this) + getBatteryPowerHEV
+            // BYDAutoBodyworkDevice — getBatteryCapacity (we use this)
             try {
                 Class<?> bodyCls = Class.forName("android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice");
                 Object bodyDev = bodyCls.getMethod("getInstance", android.content.Context.class)
@@ -310,18 +310,6 @@ public class SohEstimator {
                         logger.info("[diag] BYDAutoBodyworkDevice.getBatteryCapacity = " + cap + semHint);
                     } catch (Exception e) {
                         logger.info("[diag] getBatteryCapacity failed: " + describeException(e));
-                    }
-                    try {
-                        Object hev = bodyCls.getMethod("getBatteryPowerHEV").invoke(bodyDev);
-                        String hevHint;
-                        if (hev instanceof Number) {
-                            double v = ((Number) hev).doubleValue();
-                            if (v == 65535.0 || v == 65534.0 || v == 255.0) hevHint = " (sentinel — unavailable)";
-                            else hevHint = " (BEVs: kWh remaining; PHEVs: typically SOC%)";
-                        } else hevHint = "";
-                        logger.info("[diag] BYDAutoBodyworkDevice.getBatteryPowerHEV = " + hev + hevHint);
-                    } catch (Exception e) {
-                        logger.info("[diag] getBatteryPowerHEV failed: " + describeException(e));
                     }
                 }
             } catch (ClassNotFoundException e) {

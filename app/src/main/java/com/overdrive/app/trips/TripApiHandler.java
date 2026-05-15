@@ -144,18 +144,24 @@ public class TripApiHandler {
 
     /**
      * GET /api/trips — list trips.
-     * Query: days (default 7), limit (default 50).
+     * Query: days (default 7), limit (default 50), offset (default 0).
+     *
+     * <p>Pagination via offset. A client doing Load More keeps the same
+     * {@code days} and increments {@code offset} by the size of the previous
+     * response. The server returns up to {@code limit} rows starting at
+     * {@code offset}; a short page (length &lt; limit) signals end-of-data.
      */
     private JSONObject handleListTrips(Map<String, String> params) {
         int days = getIntParam(params, "days", 7);
         int limit = getIntParam(params, "limit", 50);
+        int offset = getIntParam(params, "offset", 0);
 
         TripDatabase db = manager.getDatabase();
         if (db == null) {
             return errorResponse("Trip database not available", 500);
         }
 
-        List<TripRecord> trips = db.getTrips(days, limit);
+        List<TripRecord> trips = db.getTrips(days, limit, offset);
         JSONArray tripsArray = new JSONArray();
         for (TripRecord trip : trips) {
             enrichTripEnergy(trip);
@@ -478,6 +484,18 @@ public class TripApiHandler {
                 }
                 if (bodyJson.has("currency")) {
                     config.setCurrency(bodyJson.getString("currency"));
+                }
+                if (bodyJson.has("distanceUnit")) {
+                    String unit = bodyJson.getString("distanceUnit");
+                    config.setDistanceUnit(unit);
+                    // Propagate to BydDataCollector so the conversion factor updates immediately
+                    try {
+                        com.overdrive.app.byd.BydDataCollector collector =
+                                com.overdrive.app.byd.BydDataCollector.getInstance();
+                        if (collector != null) {
+                            collector.setDistanceUnitOverride("mi".equals(unit) ? "mi" : "km");
+                        }
+                    } catch (Exception ignored) {}
                 }
                 config.save();
             }

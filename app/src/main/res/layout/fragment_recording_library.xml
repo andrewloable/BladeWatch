@@ -7,7 +7,7 @@
     android:background="@color/bg_base"
     android:orientation="vertical">
 
-    <!-- Ultra Compact Calendar Header -->
+    <!-- Ultra Compact Calendar Header (item 7: now collapsible) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -44,7 +44,71 @@
             android:contentDescription="Next month"
             android:src="@drawable/ic_chevron_right"
             app:tint="@color/text_secondary" />
+
+        <!-- Expand/collapse the full month grid. Week strip below stays
+             visible regardless. -->
+        <ImageButton
+            android:id="@+id/btnCalendarCollapse"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Toggle full month view"
+            android:src="@drawable/ic_chevron_left"
+            android:rotation="270"
+            app:tint="@color/text_secondary" />
     </LinearLayout>
+
+    <!-- Always-visible week strip: 7 days centered on the selected date. Arrow
+         buttons advance the strip by ±7 days without expanding the month grid.
+         Replaces the previous "expand-or-nothing" calendar UX. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingBottom="4dp">
+
+        <ImageButton
+            android:id="@+id/btnPrevWeek"
+            android:layout_width="32dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Previous week"
+            android:src="@drawable/ic_chevron_left"
+            app:tint="@color/text_secondary" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerWeekStrip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:overScrollMode="never"
+            android:nestedScrollingEnabled="false" />
+
+        <ImageButton
+            android:id="@+id/btnNextWeek"
+            android:layout_width="32dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Next week"
+            android:src="@drawable/ic_chevron_right"
+            app:tint="@color/text_secondary" />
+    </LinearLayout>
+
+    <!-- Full-month grid body — collapsed by default (visibility="gone"), expanded
+         via the chevron in the month header. The week strip above is always
+         visible so day-by-day navigation works without expanding the month.
+         The XML default of `gone` matches the runtime default applied in
+         initViews(); this keeps the Android Studio preview from showing two
+         stacked calendars (week strip + month grid). -->
+    <LinearLayout
+        android:id="@+id/calendarBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
 
     <!-- Compact Day Headers -->
     <LinearLayout
@@ -125,6 +189,9 @@
         android:paddingHorizontal="4dp"
         android:overScrollMode="never"
         android:nestedScrollingEnabled="false" />
+
+    </LinearLayout>
+    <!-- /calendarBody -->
 
     <!-- Professional Filter Bar -->
     <LinearLayout
@@ -221,6 +288,160 @@
                 app:checkedIconVisible="false" />
 
         </com.google.android.material.chip.ChipGroup>
+    </LinearLayout>
+
+    <!--
+      v3 filter rows (item 7).
+      Two semantically-distinct dimensions get two rows so the user can scan
+      them independently. Each row has a small "What:" / "Severity:" label
+      anchoring it, and its own "Any" chip to clear *that row only*.
+    -->
+
+    <!-- Row 2: WHAT (actor class) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="What:"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginEnd="8dp" />
+
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/actorChipGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="4dp"
+                app:singleLine="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipActorAny"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:text="Any"
+                    android:checked="true"
+                    android:textSize="11sp"
+                    app:chipMinHeight="26dp"
+                    app:chipMinTouchTargetSize="26dp" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipActorPerson"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:text="Person"
+                    android:textSize="11sp"
+                    app:chipMinHeight="26dp"
+                    app:chipMinTouchTargetSize="26dp" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipActorVehicle"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:text="Vehicle"
+                    android:textSize="11sp"
+                    app:chipMinHeight="26dp"
+                    app:chipMinTouchTargetSize="26dp" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipActorBike"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:text="Bike"
+                    android:textSize="11sp"
+                    app:chipMinHeight="26dp"
+                    app:chipMinTouchTargetSize="26dp" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipActorAnimal"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:text="Animal"
+                    android:textSize="11sp"
+                    app:chipMinHeight="26dp"
+                    app:chipMinTouchTargetSize="26dp" />
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- Row 3: SEVERITY -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Severity:"
+            android:textColor="@color/text_muted"
+            android:textSize="11sp"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginEnd="8dp" />
+
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/severityChipGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="4dp"
+                app:singleLine="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSevAny"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:text="Any"
+                    android:checked="true"
+                    android:textSize="11sp"
+                    app:chipMinHeight="26dp"
+                    app:chipMinTouchTargetSize="26dp" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSevAlert"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:text="Alert"
+                    android:textSize="11sp"
+                    app:chipMinHeight="26dp"
+                    app:chipMinTouchTargetSize="26dp" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSevCritical"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:text="Critical"
+                    android:textSize="11sp"
+                    app:chipMinHeight="26dp"
+                    app:chipMinTouchTargetSize="26dp" />
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
     </LinearLayout>
 
     <!-- Divider -->

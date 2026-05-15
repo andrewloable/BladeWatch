@@ -105,6 +105,19 @@ public class EventTimelineCollector {
     private long recordingStartTimeMs = 0;
     private volatile boolean collecting = false;
 
+    /**
+     * Wall-clock timestamp (ms) of the start of the current recording (with
+     * pre-record offset already applied). Returns 0 when not collecting.
+     * Used by ActorTracker to compute Actor-relative timestamps.
+     */
+    public long getRecordingStartTimeMs() {
+        return recordingStartTimeMs;
+    }
+
+    public boolean isCollecting() {
+        return collecting;
+    }
+
     // Async writer
     private final ExecutorService writeExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "TimelineWriter");
@@ -127,60 +140,99 @@ public class EventTimelineCollector {
      * shifting timestamps to align with the video's pre-record window.
      */
     public synchronized void startCollecting(long preRecordMs) {
+        startCollecting(preRecordMs, /*flushPreRing=*/true);
+    }
+
+    /**
+     * Segment-rotation entry point: start collecting WITHOUT replaying the
+     * pre-trigger ring buffer. The pre-ring captured spans from before the
+     * original event began; replaying them at every rotation would seed
+     * each subsequent segment with stale "marker at relMs=0" entries that
+     * already appeared in segment 1's sidecar. Used by SurveillanceEngineGpu
+     * when rotateSegment fires.
+     */
+    public synchronized void startCollectingNoPreRing() {
+        startCollecting(0L, /*flushPreRing=*/false);
+    }
+
+    private synchronized void startCollecting(long preRecordMs, boolean flushPreRing) {
         spanCount = 0;
         inflightStart = -1;
 
         // Timeline origin: the start of the video (preRecordMs before now)
         recordingStartTimeMs = System.currentTimeMillis() - preRecordMs;
 
-        // Flush pre-trigger ring buffer: copy spans that fall within the
-        // pre-record window into the active span array.
-        // Pre-trigger spans use absolute wall-clock timestamps.
-        // We need to convert them to relative timestamps (ms since recordingStartTimeMs).
-        commitPreInflight();  // Commit any in-flight pre-trigger span first
-
-        long windowStart = recordingStartTimeMs;  // Earliest timestamp to include
         int flushed = 0;
+        if (flushPreRing) {
+            // Flush pre-trigger ring buffer: copy spans that fall within the
+            // pre-record window into the active span array.
+            // Pre-trigger spans use absolute wall-clock timestamps.
+            // We need to convert them to relative timestamps (ms since recordingStartTimeMs).
+            commitPreInflight();  // Commit any in-flight pre-trigger span first
 
-        // Read ring buffer in chronological order
-        int readStart = (preRingCount < PRE_RING_CAPACITY) ? 0 : preRingHead;
-        for (int i = 0; i < preRingCount; i++) {
-            int idx = (readStart + i) % PRE_RING_CAPACITY;
+            long windowStart = recordingStartTimeMs;  // Earliest timestamp to include
 
-            // Only include spans that overlap with the pre-record window
-            if (preRingEnds[idx] < windowStart) continue;
+            // Read ring buffer in chronological order
+            int readStart = (preRingCount < PRE_RING_CAPACITY) ? 0 : preRingHead;
+            for (int i = 0; i < preRingCount; i++) {
+                int idx = (readStart + i) % PRE_RING_CAPACITY;
 
-            long relStart = Math.max(0, preRingStarts[idx] - recordingStartTimeMs);
-            long relEnd = preRingEnds[idx] - recordingStartTimeMs;
+                // Only include spans that overlap with the pre-record window
+                if (preRingEnds[idx] < windowStart) continue;
 
-            if (spanCount < SPAN_CAPACITY) {
-                spanStarts[spanCount]      = relStart;
-                spanEnds[spanCount]        = relEnd;
-                spanTypes[spanCount]       = preRingTypes[idx];
-                spanConfidences[spanCount] = preRingConfs[idx];
-                spanCounts[spanCount]      = preRingCounts[idx];
-                spanCameras[spanCount]     = preRingCams[idx];
-                spanCount++;
-                flushed++;
+                long relStart = Math.max(0, preRingStarts[idx] - recordingStartTimeMs);
+                long relEnd = preRingEnds[idx] - recordingStartTimeMs;
+
+                if (spanCount < SPAN_CAPACITY) {
+                    spanStarts[spanCount]      = relStart;
+                    spanEnds[spanCount]        = relEnd;
+                    spanTypes[spanCount]       = preRingTypes[idx];
+                    spanConfidences[spanCount] = preRingConfs[idx];
+                    spanCounts[spanCount]      = preRingCounts[idx];
+                    spanCameras[spanCount]     = preRingCams[idx];
+                    spanCount++;
+                    flushed++;
+                }
             }
+        } else {
+            // Rotation path: drop any in-flight pre-ring span so it won't
+            // spuriously appear in a future event's pre-roll.
+            preInflightStart = -1;
         }
 
         collecting = true;
         logger.info("Timeline collection started (preRecord=" + preRecordMs +
-                "ms, origin shifted, flushed " + flushed + " pre-trigger spans)");
+                "ms, origin shifted, flushed " + flushed + " pre-trigger spans"
+                + (flushPreRing ? "" : ", preRing skipped") + ")");
     }
 
     /**
      * Stop collecting and write the JSON sidecar ASYNCHRONOUSLY.
      */
     public synchronized void stopAndWrite(File mp4File) {
+        stopAndWrite(mp4File, null, null);
+    }
+
+    /**
+     * Stop collecting and write a v3 JSON sidecar with Actor records + hero
+     * thumbnail reference. Backwards-compat: the v3 sidecar is a strict superset
+     * of v2 (all v2 fields preserved), so old readers continue to work.
+     *
+     * @param mp4File          The recording file
+     * @param actors           Final actor snapshot from ActorTracker (may be null/empty)
+     * @param heroThumbnail    Filename of the hero JPEG, written by ThumbnailBuffer.
+     *                         Just the basename (e.g. "event_xxx.jpg"), or null.
+     */
+    public synchronized void stopAndWrite(File mp4File,
+                                          java.util.List<Actor> actors,
+                                          String heroThumbnail) {
         if (!collecting) return;
         collecting = false;
 
         commitInflight();
 
         final int count = spanCount;
-        if (count == 0) {
+        if (count == 0 && (actors == null || actors.isEmpty())) {
             logger.info("No events collected, skipping sidecar write");
             return;
         }
@@ -200,14 +252,17 @@ public class EventTimelineCollector {
         System.arraycopy(spanCameras,     0, cams,   0, count);
 
         final long durationMs = System.currentTimeMillis() - recordingStartTimeMs;
+        // Snapshot actors so the writer thread sees an immutable copy
+        final java.util.List<Actor> actorsCopy =
+                (actors == null || actors.isEmpty())
+                        ? java.util.Collections.<Actor>emptyList()
+                        : new java.util.ArrayList<>(actors);
+        final String heroThumb = heroThumbnail;
 
         writeExecutor.execute(() -> {
-            writeJsonSidecar(mp4File, starts, ends, types, confs, counts, cams, count, durationMs);
+            writeJsonSidecar(mp4File, starts, ends, types, confs, counts, cams, count,
+                    durationMs, actorsCopy, heroThumb);
         });
-    }
-
-    public boolean isCollecting() {
-        return collecting;
     }
 
     // ========================================================================
@@ -398,19 +453,36 @@ public class EventTimelineCollector {
     private void writeJsonSidecar(File mp4File, long[] starts, long[] ends,
                                    byte[] types, float[] confs, byte[] counts,
                                    byte[] cameras, int count, long durationMs) {
+        // Backwards-compat overload: delegate to the v3 writer with no actors/hero.
+        writeJsonSidecar(mp4File, starts, ends, types, confs, counts, cameras,
+                count, durationMs, java.util.Collections.<Actor>emptyList(), null);
+    }
+
+    /**
+     * v3 sidecar writer — superset of v2. Old readers (which look for
+     * {@code version=2}, {@code events[]}, {@code stats.{motion,person,car,bike}})
+     * keep working because every v2 field is still present. New readers may
+     * additionally read:
+     *   - {@code actors[]}        list of {@link Actor}-shaped records
+     *   - {@code stats.peakSeverity} / {@code peakSeverityTMs}
+     *   - {@code stats.{personCount,vehicleCount,bikeCount,animalCount}}
+     *   - {@code stats.peakProximity}
+     *   - {@code heroThumbnail}    basename of the JPEG sibling file
+     */
+    private void writeJsonSidecar(File mp4File, long[] starts, long[] ends,
+                                   byte[] types, float[] confs, byte[] counts,
+                                   byte[] cameras, int count, long durationMs,
+                                   java.util.List<Actor> actors, String heroThumbnail) {
         final String[] CAMERA_NAMES = {"front", "right", "rear", "left"};
 
         try {
             // SOTA: Sort spans chronologically by start time.
-            // Spans are committed to the buffer in completion order (short-lived spans
-            // finish first), not in start-time order. Without sorting, a passing car
-            // that dies quickly appears before a person who started earlier but stayed longer.
             Integer[] sortIdx = new Integer[count];
             for (int i = 0; i < count; i++) sortIdx[i] = i;
             java.util.Arrays.sort(sortIdx, (a, b) -> Long.compare(starts[a], starts[b]));
-            
+
             JSONObject root = new JSONObject();
-            root.put("version", 2);
+            root.put("version", 3);
             root.put("durationMs", durationMs);
 
             JSONArray eventsArray = new JSONArray();
@@ -456,12 +528,88 @@ public class EventTimelineCollector {
 
             root.put("events", eventsArray);
 
+            // ---- Actors (v3) ----
+            int personCount = 0, vehicleCount = 0, bikeCount = 0, animalCount = 0;
+            Actor.Severity peakSev = null;
+            Actor.Proximity peakProx = null;
+            long peakSevRel = -1;
+            JSONArray actorsArr = new JSONArray();
+            if (actors != null) {
+                for (Actor a : actors) {
+                    JSONObject ao = new JSONObject();
+                    ao.put("actorId", a.actorId);
+                    ao.put("classGroup", a.classGroup.name());
+                    ao.put("class", Actor.groupLabel(a.classGroup));
+                    ao.put("firstSeenWallMs", a.firstSeenWallMs);
+                    ao.put("lastSeenWallMs", a.lastSeenWallMs);
+                    if (a.firstSeenRelMs >= 0) ao.put("firstSeenMs", a.firstSeenRelMs);
+                    if (a.lastSeenRelMs >= 0)  ao.put("lastSeenMs", a.lastSeenRelMs);
+                    ao.put("peakProximity", a.peakProximity.name());
+                    ao.put("lastProximity", a.lastProximity.name());
+                    ao.put("trend", a.trend.name());
+                    ao.put("isStatic", a.isStatic);
+                    ao.put("peakSeverity", a.peakSeverity.name());
+                    ao.put("peakSeverityWallMs", a.peakSeverityWallMs);
+                    if (a.peakSeverityRelMs >= 0) ao.put("peakSeverityMs", a.peakSeverityRelMs);
+                    ao.put("peakConfidence", Math.round(a.peakConfidence * 100) / 100.0);
+                    ao.put("peakCamera", a.peakCamera >= 0 && a.peakCamera < 4
+                            ? CAMERA_NAMES[a.peakCamera] : "");
+                    JSONArray camArr = new JSONArray();
+                    for (int bit = 0; bit < 4; bit++) {
+                        if ((a.cameraMask & (1 << bit)) != 0) camArr.put(CAMERA_NAMES[bit]);
+                    }
+                    ao.put("cameras", camArr);
+
+                    actorsArr.put(ao);
+
+                    // Counts + peak fields exclude static actors. The classic
+                    // failure to prevent: a parked car next to ours dominates
+                    // the stats and notification because YOLO sees it at high
+                    // confidence. Static = not a threat = not a count.
+                    if (!a.isStatic) {
+                        switch (a.classGroup) {
+                            case PERSON:  personCount++;  break;
+                            case VEHICLE: vehicleCount++; break;
+                            case BIKE:    bikeCount++;    break;
+                            case ANIMAL:  animalCount++;  break;
+                            default: break;
+                        }
+                        if (peakSev == null || a.peakSeverity.ordinal() > peakSev.ordinal()) {
+                            peakSev = a.peakSeverity;
+                            peakSevRel = a.peakSeverityRelMs;
+                        }
+                        if (peakProx == null || a.peakProximity.ordinal() < peakProx.ordinal()) {
+                            peakProx = a.peakProximity;
+                        }
+                    }
+                }
+            }
+            root.put("actors", actorsArr);
+
+            // ---- Stats (v2 fields preserved + v3 additions) ----
             JSONObject stats = new JSONObject();
+            // v2 fields: keep names exactly so existing readers keep working
             stats.put("motion", motionN);
             stats.put("person", personN);
             stats.put("car", carN);
             stats.put("bike", bikeN);
+            // v3 additions
+            stats.put("personCount", personCount);
+            stats.put("vehicleCount", vehicleCount);
+            stats.put("bikeCount", bikeCount);
+            stats.put("animalCount", animalCount);
+            if (peakSev != null) {
+                stats.put("peakSeverity", peakSev.name());
+                if (peakSevRel >= 0) stats.put("peakSeverityMs", peakSevRel);
+            }
+            if (peakProx != null) {
+                stats.put("peakProximity", peakProx.name());
+            }
             root.put("stats", stats);
+
+            if (heroThumbnail != null && !heroThumbnail.isEmpty()) {
+                root.put("heroThumbnail", heroThumbnail);
+            }
 
             String jsonName = mp4File.getName().replace(".mp4", ".json");
             File jsonFile = new File(mp4File.getParentFile(), jsonName);
@@ -480,8 +628,8 @@ public class EventTimelineCollector {
 
             jsonFile.setReadable(true, false);
 
-            logger.info(String.format("Timeline saved: %s (%d spans, duration=%ds)",
-                    jsonFile.getName(), count, durationMs / 1000));
+            logger.info(String.format("Timeline saved (v3): %s (%d spans, %d actors, dur=%ds)",
+                    jsonFile.getName(), count, actorsArr.length(), durationMs / 1000));
 
         } catch (Exception e) {
             logger.error("Failed to write timeline JSON: " + e.getMessage(), e);

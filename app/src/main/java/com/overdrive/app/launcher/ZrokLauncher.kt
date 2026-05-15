@@ -168,7 +168,14 @@ class ZrokLauncher(
                 if (isRunning) {
                     logManager.info(TAG, "Zrok already running")
                     callback.onLog("Tunnel already running")
-                    callback.onTunnelUrl(permanentUrl)
+                    // Even on the fast path, reconcile against the running
+                    // tunnel's actual URL — the zrok process from a previous
+                    // boot may have bound a name that disagrees with the
+                    // permanentUrl the app cached. Same drift case as the
+                    // fresh-launch path above.
+                    reconcileTunnelUrl(permanentUrl, attempt = 1) { actualUrl ->
+                        callback.onTunnelUrl(actualUrl)
+                    }
                 } else {
                     callback.onLog("Setting up zrok...")
                     checkAndInstallZrokForReserved(shareToken, permanentUrl, callback)
@@ -496,7 +503,7 @@ class ZrokLauncher(
         val cmd = buildString {
             append("nohup sh -c '")
             append("HOME=$ZROK_HOME ")
-            
+
             if (useProxy) {
                 val proxyUrl = "socks5://$PROXY_HOST:$PROXY_PORT"
                 append("ALL_PROXY=$proxyUrl ")
@@ -504,31 +511,119 @@ class ZrokLauncher(
                 append("HTTPS_PROXY=$proxyUrl ")
                 append("NO_PROXY=localhost,127.0.0.1 ")
             }
-            
+
             // RESERVED mode: uses token instead of public
             append("$ZROK_TMP_PATH share reserved $shareToken --headless")
             append("' > $ZROK_LOG 2>&1 &")
         }
-        
+
         logManager.debug(TAG, "Executing reserved share: $cmd")
-        
+
         adbShellExecutor.execute(
             command = cmd,
             callback = object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
                     logManager.info(TAG, "✅ Reserved tunnel started!")
                     callback.onLog("✅ Tunnel started!")
-                    callback.onLog("Permanent URL: $permanentUrl")
-                    // For reserved mode, we already know the URL
-                    callback.onTunnelUrl(permanentUrl)
+                    // The reserved token's URL is decided by zrok server-side, NOT
+                    // by this client's local `uniqueName` field. If the local file
+                    // ever drifted from the token's actual reserved name (manual
+                    // shell `zrok reserve`, factory-reset that wiped the unique_name
+                    // file but kept the token, cross-device token copy, etc.), the
+                    // local `permanentUrl` would be a fiction. Read the log and
+                    // reconcile the file with what zrok actually bound. Without
+                    // this, HttpServer.isPwaOrigin() rejects /sw.js on the live
+                    // tunnel because its hostname doesn't match unique_name file.
+                    reconcileTunnelUrl(permanentUrl, attempt = 1) { actualUrl ->
+                        callback.onLog("Permanent URL: $actualUrl")
+                        callback.onTunnelUrl(actualUrl)
+                    }
                 }
-                
+
                 override fun onError(error: String) {
                     logManager.error(TAG, "Failed to launch reserved share: $error")
                     callback.onError("Launch failed: $error")
                 }
             }
         )
+    }
+
+    /**
+     * Dedicated scheduler for reconcile retries. Using a separate thread
+     * means the inter-attempt wait does NOT hold the shared AdbShellExecutor
+     * hostage — DaemonLauncher (which uses the same executor to start
+     * CameraDaemon) can interleave its shell commands between reconcile
+     * attempts. Single-thread is fine: only one reconcile flow runs at a time.
+     */
+    private val reconcileScheduler: java.util.concurrent.ScheduledExecutorService =
+            java.util.concurrent.Executors.newSingleThreadScheduledExecutor { r ->
+                Thread(r, "zrok-reconcile").apply { isDaemon = true }
+            }
+
+    /**
+     * Read zrok's log to discover the actual tunnel URL it bound, then
+     * reconcile the local {@code unique_name} file + in-memory state with
+     * what zrok server-side resolved the reserved token to. Falls back to
+     * the locally-computed {@code expectedUrl} after a bounded number of
+     * polls if the log never emits a URL (e.g. a transient share failure
+     * already surfaced as an error elsewhere).
+     *
+     * Calls {@code onUrl} with the URL the rest of the launcher should
+     * propagate to its callback. Idempotent — writing the same name back
+     * to the file is harmless.
+     */
+    private fun reconcileTunnelUrl(expectedUrl: String, attempt: Int, onUrl: (String) -> Unit) {
+        // 10 attempts × ~1s each = ~10s to find the URL in the log. zrok
+        // typically emits within 1-2s; the higher cap covers slow links.
+        if (attempt > 10) {
+            logManager.warn(TAG, "reconcileTunnelUrl: log never emitted URL after 10 attempts, " +
+                    "falling back to local expected=$expectedUrl")
+            onUrl(expectedUrl)
+            return
+        }
+        // Wait 1s on the scheduler thread, THEN enqueue a fast grep on the
+        // shared ADB executor. The shared executor is only held for the
+        // grep itself (~50ms), not the inter-attempt wait. CameraDaemon's
+        // launch shell commands queued on the same executor can interleave
+        // between attempts without delay.
+        reconcileScheduler.schedule({
+            adbShellExecutor.execute(
+                    "grep -oE 'https://[a-z0-9]+\\.share\\.zrok\\.io' $ZROK_LOG 2>/dev/null | head -1",
+                    object : AdbShellExecutor.ShellCallback {
+                        override fun onSuccess(output: String) {
+                            val actualUrl = output.trim()
+                            if (actualUrl.isEmpty() || !actualUrl.startsWith("https://")) {
+                                reconcileTunnelUrl(expectedUrl, attempt + 1, onUrl)
+                                return
+                            }
+                            // Extract the unique-name segment from "https://<name>.share.zrok.io".
+                            val nameRegex = Regex("^https://([a-z0-9]+)\\.share\\.zrok\\.io$")
+                            val nameMatch = nameRegex.find(actualUrl)
+                            if (nameMatch == null) {
+                                logManager.warn(TAG, "reconcileTunnelUrl: couldn't parse unique-name from $actualUrl")
+                                onUrl(actualUrl)
+                                return
+                            }
+                            val actualName = nameMatch.groupValues[1]
+                            if (actualName != uniqueName) {
+                                logManager.warn(TAG,
+                                        "Reserved tunnel name drifted: expected=$uniqueName actual=$actualName " +
+                                        "→ rewriting unique_name file. (Likely cause: token was reserved " +
+                                        "with a different name than the local file remembers — manual zrok " +
+                                        "reserve, cross-device token copy, or factory-reset of /data/local/tmp/.zrok.)")
+                                uniqueName = actualName
+                                saveUniqueName(actualName)
+                            } else {
+                                logManager.info(TAG, "Tunnel URL reconciled: $actualUrl (matches local unique_name)")
+                            }
+                            onUrl(actualUrl)
+                        }
+                        override fun onError(error: String) {
+                            reconcileTunnelUrl(expectedUrl, attempt + 1, onUrl)
+                        }
+                    }
+            )
+        }, 1, java.util.concurrent.TimeUnit.SECONDS)
     }
     
     /**
@@ -1318,21 +1413,33 @@ class ZrokLauncher(
     }
     
     /**
-     * Delete enable token from unified storage.
+     * Delete enable token from unified storage AND wipe everything else
+     * derived from the previous zrok account.
+     *
+     * The reserved_token and unique_name belong to the account whose enable
+     * token we just deleted — leaving them on disk causes `share reserved`
+     * to fail or, worse, causes the next start to auto-reserve a new name
+     * under the new account and silently rotate the public URL. That breaks
+     * every PWA install on every phone (push subscriptions are origin-bound).
+     *
+     * environment.json is the account identity; carrying it forward into a
+     * different account is incoherent. Kill the entire ~/.zrok directory.
      */
     fun deleteEnableToken(callback: ((Boolean) -> Unit)? = null) {
         zrokToken = ""
         tokenLoaded = false
-        
+        reservedShareToken = null
+        uniqueName = UNIQUE_NAME_PREFIX
+
         adbShellExecutor.execute(
-            command = "rm -f $ZROK_ENABLE_TOKEN_FILE 2>/dev/null; echo done",
+            command = "rm -rf $ZROK_HOME/.zrok 2>/dev/null; echo done",
             callback = object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
-                    logManager.info(TAG, "Enable token deleted from unified storage")
+                    logManager.info(TAG, "Zrok state wiped (token, identity, reserved share, unique name)")
                     callback?.invoke(true)
                 }
                 override fun onError(error: String) {
-                    logManager.warn(TAG, "Failed to delete enable token: $error")
+                    logManager.warn(TAG, "Failed to wipe zrok state: $error")
                     callback?.invoke(false)
                 }
             }

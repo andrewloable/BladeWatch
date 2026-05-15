@@ -22,8 +22,17 @@ public class TripDatabase {
     private static final DaemonLogger logger = DaemonLogger.getInstance(TAG);
 
     private static final String DB_PATH = "/data/local/tmp/overdrive_trips_h2";
+    // DB_CLOSE_ON_EXIT=FALSE: avoid H2's JVM shutdown hook racing the
+    // daemon's explicit close path. Without this we hit the same orphaned-
+    // lock-file pattern as SocHistoryDatabase, which blocks the next
+    // CameraDaemon start with "Locked by another process".
+    //
+    // AUTO_SERVER omitted — incompatible with DB_CLOSE_ON_EXIT=FALSE
+    // (H2 throws JdbcSQLFeatureNotSupportedException at init). Single-
+    // process architecture: only CameraDaemon writes, TripApiHandler reads
+    // from the same JVM. FILE_LOCK=SOCKET handles cross-process safety.
     private static final String JDBC_URL = "jdbc:h2:file:" + DB_PATH +
-            ";AUTO_SERVER=TRUE;FILE_LOCK=SOCKET;TRACE_LEVEL_FILE=0";
+            ";FILE_LOCK=SOCKET;TRACE_LEVEL_FILE=0;DB_CLOSE_ON_EXIT=FALSE";
 
     private Connection connection;
     private volatile boolean isInitialized = false;
@@ -397,17 +406,37 @@ public class TripDatabase {
     /**
      * Get recent trips within the given number of days, limited to the given count.
      * Sorted by start_time descending (newest first).
+     *
+     * <p>Backwards-compatible overload — equivalent to {@link #getTrips(int, int, int)}
+     * with offset=0. Kept so callers that don't paginate (rollups, route detection)
+     * continue to work without changes.
      */
     public List<TripRecord> getTrips(int days, int limit) {
+        return getTrips(days, limit, 0);
+    }
+
+    /**
+     * Paginated variant: skip the first {@code offset} rows of the time-ordered
+     * result set, then return up to {@code limit} rows. Used by the trips list
+     * UI's Load More button.
+     *
+     * <p>Pagination is offset-based, not cursor-based — fine for the trips
+     * table where new rows are only appended (never inserted in the middle of
+     * history). A cursor would only matter if a sibling client could insert
+     * older rows during a paging session.
+     */
+    public List<TripRecord> getTrips(int days, int limit, int offset) {
         List<TripRecord> trips = new ArrayList<>();
         if (!ensureConnection()) return trips;
+        if (offset < 0) offset = 0;
 
         long cutoff = System.currentTimeMillis() - ((long) days * 86400000L);
-        String sql = "SELECT * FROM trips WHERE start_time >= ? ORDER BY start_time DESC LIMIT ?";
+        String sql = "SELECT * FROM trips WHERE start_time >= ? ORDER BY start_time DESC LIMIT ? OFFSET ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setLong(1, cutoff);
             pstmt.setInt(2, limit);
+            pstmt.setInt(3, offset);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     trips.add(readTripFromResultSet(rs));

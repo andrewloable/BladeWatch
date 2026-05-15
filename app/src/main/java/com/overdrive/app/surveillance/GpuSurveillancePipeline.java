@@ -92,6 +92,15 @@ public class GpuSurveillancePipeline {
     public GpuPipelineConfig getConfig() {
         return config;
     }
+
+    /**
+     * Returns the underlying hardware encoder, or null if the pipeline has
+     * not been initialized yet. Used by callers that need the active output
+     * file path for things like push-notification deep-links.
+     */
+    public HardwareEventRecorderGpu getEncoder() {
+        return recorder != null ? recorder.getEncoder() : null;
+    }
     
     /**
      * Sets the recording mode (Normal/Sentry).
@@ -360,8 +369,19 @@ public class GpuSurveillancePipeline {
             " @ " + fps + "fps, " + (bitrate / 1_000_000) + " Mbps");
 
         encoder = new HardwareEventRecorderGpu(encoderWidth, encoderHeight, fps, bitrate, codecMimeType);
+        // FIX (Bug A): on encoder reinit (codec/bitrate change), keep the user's
+        // configured pre-record duration so the buffer doesn't reset to 5s.
+        try {
+            SurveillanceConfigManager cfgMgr = new SurveillanceConfigManager();
+            if (cfgMgr.configExists()) {
+                SurveillanceConfig survCfg = cfgMgr.loadConfig();
+                encoder.setPreRecordDuration(survCfg.getPreRecordSeconds());
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to apply pre-record duration on reinit: " + e.getMessage());
+        }
         encoder.init();
-        
+
         // Reinitialize recorder with new encoder on GL thread
         if (camera != null && camera.getEglCore() != null) {
             final Object initLock = new Object();
@@ -480,34 +500,57 @@ public class GpuSurveillancePipeline {
             (codecMimeType.contains("hevc") ? "H.265" : "H.264") +
             " @ " + fps + "fps, " + (bitrate / 1_000_000) + " Mbps");
         encoder = new HardwareEventRecorderGpu(encoderWidth, encoderHeight, fps, bitrate, codecMimeType);
+
+        // FIX (Bug A): pre-load saved pre-record duration BEFORE encoder.init() so the
+        // shared circular buffer is allocated at the right size on first init. Without
+        // this the buffer is allocated with the hardcoded 5s default and only resized
+        // on the next user-initiated settings save.
+        SurveillanceConfig preLoadedConfig = null;
+        try {
+            SurveillanceConfigManager configManager = new SurveillanceConfigManager();
+            if (configManager.configExists()) {
+                preLoadedConfig = configManager.loadConfig();
+                encoder.setPreRecordDuration(preLoadedConfig.getPreRecordSeconds());
+                logger.info("Pre-applied pre-record duration from saved config: "
+                        + preLoadedConfig.getPreRecordSeconds() + "s");
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to pre-load config (will retry after init): " + e.getMessage());
+        }
+
         encoder.init();
-        
+
         // 2. Create GPU mosaic recorder (shared)
         recorder = new GpuMosaicRecorder();
         // Note: recorder.init() will be called after EGL context is created by camera
-        
+
         // Wire up telemetry collector to new recorder if available
         if (telemetryCollector != null) {
             recorder.setTelemetryCollector(telemetryCollector);
         }
         // Apply persisted overlay enabled state to new recorder
         recorder.setOverlayEnabled(overlayEnabledConfig);
-        
+
         // 3. Create GPU downscaler
         downscaler = new GpuDownscaler();
         // Note: downscaler.init() will be called after EGL context is created by camera
-        
+
         // 4. Create surveillance engine (uses shared recorder)
         sentry = new SurveillanceEngineGpu();
         sentry.init(eventOutputDir, downscaler, assetManager, context);  // Pass Context for Java TFLite
         sentry.setRecorder(recorder);  // Share recorder with normal recording
-        
-        // 4b. Load saved config from disk (if exists)
+
+        // 4b. Apply saved config (use the pre-loaded one if available so we don't
+        // hit disk twice).
         try {
-            SurveillanceConfigManager configManager = new SurveillanceConfigManager();
-            if (configManager.configExists()) {
-                SurveillanceConfig savedConfig = configManager.loadConfig();
-                sentry.setConfig(savedConfig);
+            if (preLoadedConfig == null) {
+                SurveillanceConfigManager configManager = new SurveillanceConfigManager();
+                if (configManager.configExists()) {
+                    preLoadedConfig = configManager.loadConfig();
+                }
+            }
+            if (preLoadedConfig != null) {
+                sentry.setConfig(preLoadedConfig);
                 logger.info("Loaded saved surveillance config");
             }
         } catch (Exception e) {

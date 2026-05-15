@@ -32,7 +32,7 @@ import java.util.concurrent.Executors;
 public class TelegramNotifier {
     
     private static final String TAG = "TelegramNotifier";
-    private static final int IPC_PORT = 19878;  // Telegram daemon IPC port
+    private static final int IPC_PORT = 19880;  // Telegram daemon IPC (moved from 19878 to free up that port for BydEventDaemon)
     
     // Background executor for IPC calls
     private static final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
@@ -119,12 +119,32 @@ public class TelegramNotifier {
      * @param videoFilename The event video filename (e.g., "event_20260113_143022.mp4")
      */
     public static void notifyMotion(String aiDetection, float confidence, String videoFilename) {
-        // Publish to in-app event bus
+        notifyMotion(aiDetection, confidence, videoFilename, null, 0, 0, 0, 0, null, null);
+    }
+
+    /**
+     * Notify motion with full Actor metadata (item 3 redesign). Backwards-compat
+     * helper — daemons that don't understand the new fields can still parse the
+     * legacy fields. New fields are additive.
+     *
+     * @param severity         "NOTICE" / "ALERT" / "CRITICAL" or null
+     * @param personCount      number of person Actors in the snapshot
+     * @param vehicleCount     number of vehicle Actors
+     * @param bikeCount        number of bike Actors
+     * @param animalCount      number of animal Actors
+     * @param closestProximity "VERY_CLOSE" / "CLOSE" / "MID" / "FAR" or null
+     * @param camera           camera hint ("front"/"right"/"rear"/"left") or null
+     */
+    public static void notifyMotion(String aiDetection, float confidence, String videoFilename,
+                                    String severity,
+                                    int personCount, int vehicleCount, int bikeCount, int animalCount,
+                                    String closestProximity, String camera) {
+        // Publish to in-app event bus (legacy MotionEvent shape preserved)
         TelegramEventBus.getInstance().publish(
                 new MotionEvent(aiDetection, confidence)
         );
-        
-        // Send via IPC to daemon
+
+        // Send via IPC to daemon (legacy + new fields)
         executor.execute(() -> {
             try {
                 JSONObject cmd = new JSONObject();
@@ -134,11 +154,91 @@ public class TelegramNotifier {
                 if (videoFilename != null && !videoFilename.isEmpty()) {
                     cmd.put("videoFilename", videoFilename);
                 }
+                // v3 additions — daemon ignores unknown fields, so older daemons keep working
+                if (severity != null) cmd.put("severity", severity);
+                if (personCount > 0)  cmd.put("personCount", personCount);
+                if (vehicleCount > 0) cmd.put("vehicleCount", vehicleCount);
+                if (bikeCount > 0)    cmd.put("bikeCount", bikeCount);
+                if (animalCount > 0)  cmd.put("animalCount", animalCount);
+                if (closestProximity != null) cmd.put("closestProximity", closestProximity);
+                if (camera != null)   cmd.put("camera", camera);
                 sendIpc(cmd);
             } catch (Exception e) {
                 Log.e(TAG, "notifyMotion IPC error", e);
             }
         });
+    }
+
+    /**
+     * Finalized motion notification: fired AFTER the recording closes and the
+     * hero JPEG has been written. Daemon will send a Telegram photo (rather
+     * than text only) using {@code heroPhotoPath} as the image. If the photo
+     * path is missing or sendPhoto fails, daemon falls back to the rich
+     * text-only message — never silently drops.
+     *
+     * @param heroPhotoPath  ABSOLUTE filesystem path to the hero JPEG, or null
+     */
+    public static void notifyMotionFinalized(String videoFilename, String heroPhotoPath,
+                                             String severity,
+                                             int personCount, int vehicleCount, int bikeCount, int animalCount,
+                                             String closestProximity, String camera) {
+        executor.execute(() -> {
+            try {
+                JSONObject cmd = new JSONObject();
+                cmd.put("cmd", "notifyMotionFinalized");
+                if (videoFilename != null && !videoFilename.isEmpty()) {
+                    cmd.put("videoFilename", videoFilename);
+                }
+                if (heroPhotoPath != null && !heroPhotoPath.isEmpty()) {
+                    cmd.put("heroPhotoPath", heroPhotoPath);
+                }
+                if (severity != null) cmd.put("severity", severity);
+                if (personCount > 0)  cmd.put("personCount", personCount);
+                if (vehicleCount > 0) cmd.put("vehicleCount", vehicleCount);
+                if (bikeCount > 0)    cmd.put("bikeCount", bikeCount);
+                if (animalCount > 0)  cmd.put("animalCount", animalCount);
+                if (closestProximity != null) cmd.put("closestProximity", closestProximity);
+                if (camera != null)   cmd.put("camera", camera);
+                JSONObject resp = sendIpc(cmd);
+                // FIX (C3): if the daemon predates this command (returns
+                // "error" with "Unknown command"), retry once via the legacy
+                // notifyMotion path so a stale daemon still ships a Telegram
+                // message instead of dropping the event silently. Old daemons
+                // can't send a photo, but text-only is better than nothing.
+                if (resp != null
+                        && "error".equals(resp.optString("status", ""))
+                        && resp.optString("message", "").contains("Unknown command")) {
+                    Log.w(TAG, "Daemon doesn't know notifyMotionFinalized; falling back to legacy notifyMotion");
+                    JSONObject legacy = new JSONObject();
+                    legacy.put("cmd", "notifyMotion");
+                    legacy.put("detection", choosePrimaryDetection(personCount, vehicleCount, bikeCount, animalCount));
+                    legacy.put("confidence", 1.0f);
+                    if (videoFilename != null && !videoFilename.isEmpty()) {
+                        legacy.put("videoFilename", videoFilename);
+                    }
+                    if (severity != null) legacy.put("severity", severity);
+                    if (personCount > 0)  legacy.put("personCount", personCount);
+                    if (vehicleCount > 0) legacy.put("vehicleCount", vehicleCount);
+                    if (bikeCount > 0)    legacy.put("bikeCount", bikeCount);
+                    if (animalCount > 0)  legacy.put("animalCount", animalCount);
+                    if (closestProximity != null) legacy.put("closestProximity", closestProximity);
+                    if (camera != null)   legacy.put("camera", camera);
+                    sendIpc(legacy);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "notifyMotionFinalized IPC error", e);
+            }
+        });
+    }
+
+    /** Engine-side mirror of TelegramBotDaemon.chooseTelegramPrimary for the
+     *  legacy-fallback path. Class rank: PERSON > BIKE > VEHICLE > ANIMAL. */
+    private static String choosePrimaryDetection(int p, int v, int b, int a) {
+        if (p > 0) return "person";
+        if (b > 0) return "bike";
+        if (v > 0) return "vehicle";
+        if (a > 0) return "animal";
+        return "motion";
     }
     
     /**

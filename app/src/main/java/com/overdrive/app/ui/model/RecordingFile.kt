@@ -17,7 +17,16 @@ data class RecordingFile(
     val durationMs: Long,
     val sizeBytes: Long,
     val type: RecordingType,
-    val contentUri: Uri? = null  // SOTA: MediaStore content URI for cross-UID access
+    val contentUri: Uri? = null,  // SOTA: MediaStore content URI for cross-UID access
+    // ---- v3 sidecar enrichment (item 7). Lazily populated; null on legacy clips. ----
+    val peakSeverity: String? = null,    // "NOTICE" / "ALERT" / "CRITICAL"
+    val peakProximity: String? = null,   // "VERY_CLOSE" / "CLOSE" / "MID" / "FAR"
+    val personCount: Int = 0,
+    val vehicleCount: Int = 0,
+    val bikeCount: Int = 0,
+    val animalCount: Int = 0,
+    val heroThumbnailFile: File? = null,  // Sibling JPEG path or null
+    val actorClasses: List<String> = emptyList()  // ["person","vehicle",...] for filtering
 ) {
     // Secondary constructor for MediaStore results
     constructor(

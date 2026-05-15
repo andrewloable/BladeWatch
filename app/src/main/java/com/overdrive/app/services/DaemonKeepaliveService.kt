@@ -71,12 +71,28 @@ class DaemonKeepaliveService : Service() {
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "Service onStartCommand")
-        
-        // Start daemons
-        try {
-            DaemonStartupManager.startOnBoot(applicationContext)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start daemons: ${e.message}")
+
+        // Skip daemon startup when a post-update launch is in progress.
+        // MainActivity is the sole orchestrator after an install: it runs
+        // UpdateLifecycle.hardResetDaemons (kills zombie daemons + watchdogs +
+        // wipes lock files) and THEN calls DaemonStartupManager.initializeOnAppLaunch.
+        // If we also fired startOnBoot here, two things would race:
+        //   1. The bootStarted flag would block initializeOnAppLaunch's view of
+        //      the singleton (different instance — but both schedule 45s tasks),
+        //      and we'd end up doing work in the still-zombie environment.
+        //   2. Daemons launched here would be killed seconds later by the
+        //      hardReset sweep, then restarted again — pointless thrash and
+        //      a real risk of overlapping camera handles on the AVMCamera HAL.
+        val postUpdate = com.overdrive.app.updater.UpdateLifecycle
+            .isPostUpdateLaunch(applicationContext, null)
+        if (postUpdate) {
+            Log.i(TAG, "Post-update launch — deferring daemon startup to MainActivity")
+        } else {
+            try {
+                DaemonStartupManager.startOnBoot(applicationContext)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start daemons: ${e.message}")
+            }
         }
         
         // Bring the status pill back if the process was restarted without the

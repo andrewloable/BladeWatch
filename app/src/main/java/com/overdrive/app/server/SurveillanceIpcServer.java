@@ -93,19 +93,29 @@ public class SurveillanceIpcServer implements Runnable {
     
     private void handleClient(Socket client) {
         try {
+            // Read timeout: a client that opens the socket and never sends a
+            // newline would otherwise pin one of the worker threads forever.
+            // Eight half-open sockets (a buggy/restarting daemon under load)
+            // exhaust the pool and the IPC server stops accepting commands.
+            // 5s is plenty for localhost JSON traffic.
+            client.setSoTimeout(5000);
             BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
             PrintWriter out = new PrintWriter(client.getOutputStream(), true);
-            
+
             String line = in.readLine();
             if (line != null) {
                 JSONObject request = new JSONObject(line);
                 JSONObject response = handleCommand(request);
                 out.println(response.toString());
             }
-            
+
             client.close();
+        } catch (java.net.SocketTimeoutException ste) {
+            logger.warn("IPC client read timeout — closing socket");
+            try { client.close(); } catch (Exception ignored) {}
         } catch (Exception e) {
             logger.error("Error handling client", e);
+            try { client.close(); } catch (Exception ignored) {}
         }
     }
     
@@ -402,8 +412,20 @@ public class SurveillanceIpcServer implements Runnable {
      * Apply configuration changes to surveillance system.
      * Updates both the running engine (if available) AND persists to config file.
      * Config is ALWAYS persisted even if surveillance is not running.
+     *
+     * synchronized: the IPC server runs an 8-thread pool; without serialization,
+     * two concurrent SET_CONFIG requests (web UI + Telegram daemon, say) could
+     * each load + mutate + save their own snapshot, losing the other's update.
+     * Lock granularity is class-wide (CONFIG_LOCK) because the persisted file
+     * is shared state, not instance state.
      */
+    private static final Object CONFIG_LOCK = new Object();
+
     private void applyConfig(JSONObject config) {
+        synchronized (CONFIG_LOCK) { applyConfigLocked(config); }
+    }
+
+    private void applyConfigLocked(JSONObject config) {
         try {
             com.overdrive.app.surveillance.GpuSurveillancePipeline pipeline =
                 CameraDaemon.getGpuPipeline();
@@ -883,7 +905,12 @@ public class SurveillanceIpcServer implements Runnable {
                 }
                 configChanged = true;
             }
-            
+            if (config.has("telegramSendStartPing")) {
+                sentryConfig.setTelegramSendStartPing(
+                        config.optBoolean("telegramSendStartPing", false));
+                configChanged = true;
+            }
+
         } catch (Exception e) {
             logger.error("Failed to apply config", e);
         }

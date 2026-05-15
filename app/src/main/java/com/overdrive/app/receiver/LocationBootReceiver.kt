@@ -18,10 +18,12 @@ class LocationBootReceiver : BroadcastReceiver() {
     }
     
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
-            intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
-            
-            Log.i(TAG, "Boot/Package update received, starting LocationSidecarService...")
+        // Skip MY_PACKAGE_REPLACED — MainActivity starts LocationSidecarService on
+        // every launch, and the post-update path needs UpdateLifecycle.hardResetDaemons
+        // to run first. Keep cold-boot path so location works without UI.
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+
+            Log.i(TAG, "Boot received, starting LocationSidecarService...")
             
             try {
                 val serviceIntent = Intent(context, LocationSidecarService::class.java)

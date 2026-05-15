@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Vehicle Control - OverDrive</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="../shared/app-icon.webp">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00E5FF">
     <link rel="stylesheet" href="../shared/styles.css?v=12">
     <link rel="stylesheet" href="../shared/vehicle-control.css?v=12">
     <!-- Web fonts loaded async + non-blocking. WebView falls back to system sans-serif if offline. -->
@@ -92,6 +97,13 @@
                         <path d="M4 5h16"/>
                     </svg>
                     <span>Trips</span>
+                </a>
+                <a href="notifications.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span>Notifications</span>
                 </a>
                 <a href="vehicle-control.html" class="nav-link active">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -276,38 +288,30 @@
                         </button>
                     </div>
 
-                    <!-- Tyre callouts: four cards anchored to fixed screen slots
-                         (front pair bottom, rear pair top). Auto-hide when 3D
-                         Surround is active.
-                         Engine glass row was removed: the BYD SDK's coolant /
-                         oil / gear feeds are unreliable on the test PHEV
-                         (cold-engine sentinels, conflicting Engine vs Setting
-                         readings). Don't reintroduce without verifying each
-                         field against the cluster's own readout first.
-                         Per-tyre temperature is also unavailable on this
-                         firmware: Instrument-device feature IDs (1246797848-884)
-                         return null; AutoCommander's getTyreTemperature is a
-                         wrapper-only API not in the public SDK stubs. -->
                     <div class="vc-tyre-overlay" id="vcTyreOverlay">
                         <div class="vc-tyre-callout" data-corner="fl" id="tyreFL">
                             <div class="vc-tyre-head"><span class="vc-tyre-dot"></span><span class="vc-tyre-label">FL</span><span class="vc-tyre-state">--</span></div>
                             <div class="vc-tyre-psi"><span class="vc-tyre-psi-val">--</span><span class="vc-tyre-psi-unit">PSI</span></div>
                             <div class="vc-tyre-sub"><span class="vc-tyre-kpa">-- kPa</span></div>
+                            <div class="vc-tyre-temp"><span class="vc-tyre-temp-val">--</span><span class="vc-tyre-temp-unit">°C</span></div>
                         </div>
                         <div class="vc-tyre-callout" data-corner="fr" id="tyreFR">
                             <div class="vc-tyre-head"><span class="vc-tyre-dot"></span><span class="vc-tyre-label">FR</span><span class="vc-tyre-state">--</span></div>
                             <div class="vc-tyre-psi"><span class="vc-tyre-psi-val">--</span><span class="vc-tyre-psi-unit">PSI</span></div>
                             <div class="vc-tyre-sub"><span class="vc-tyre-kpa">-- kPa</span></div>
+                            <div class="vc-tyre-temp"><span class="vc-tyre-temp-val">--</span><span class="vc-tyre-temp-unit">°C</span></div>
                         </div>
                         <div class="vc-tyre-callout" data-corner="rl" id="tyreRL">
                             <div class="vc-tyre-head"><span class="vc-tyre-dot"></span><span class="vc-tyre-label">RL</span><span class="vc-tyre-state">--</span></div>
                             <div class="vc-tyre-psi"><span class="vc-tyre-psi-val">--</span><span class="vc-tyre-psi-unit">PSI</span></div>
                             <div class="vc-tyre-sub"><span class="vc-tyre-kpa">-- kPa</span></div>
+                            <div class="vc-tyre-temp"><span class="vc-tyre-temp-val">--</span><span class="vc-tyre-temp-unit">°C</span></div>
                         </div>
                         <div class="vc-tyre-callout" data-corner="rr" id="tyreRR">
                             <div class="vc-tyre-head"><span class="vc-tyre-dot"></span><span class="vc-tyre-label">RR</span><span class="vc-tyre-state">--</span></div>
                             <div class="vc-tyre-psi"><span class="vc-tyre-psi-val">--</span><span class="vc-tyre-psi-unit">PSI</span></div>
                             <div class="vc-tyre-sub"><span class="vc-tyre-kpa">-- kPa</span></div>
+                            <div class="vc-tyre-temp"><span class="vc-tyre-temp-val">--</span><span class="vc-tyre-temp-unit">°C</span></div>
                         </div>
                     </div>
 
@@ -558,11 +562,13 @@
          install its global fetch override that auto-attaches the JWT bearer
          token (works through tunnels where cookies are stripped). -->
     <script src="../shared/auth.js?v=12"></script>
+    <script src="../shared/pwa-init.js"></script>
     <script src="../shared/SotaPlayer.js?v=12"></script>
     <!-- core.js polls /status every 5s and populates the sidebar status card
          (12V, ACC, SOC, range, SOH, fuel, network). Without it those values
          all stay at "--" since vehicle-control.js only manages the 3D scene. -->
     <script src="../shared/core.js?v=13"></script>
+    <script src="../shared/update-flow.js"></script>
     <script src="../shared/vendor/three.min.js?v=12"></script>
     <script src="../shared/vendor/DRACOLoader.js?v=12"></script>
     <script src="../shared/vendor/GLTFLoader.js?v=12"></script>

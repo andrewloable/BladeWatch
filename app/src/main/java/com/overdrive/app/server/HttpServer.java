@@ -51,12 +51,78 @@ public class HttpServer {
     private final int port;
     private ServerSocket serverSocket;
     private volatile boolean running = true;
-    
+
     // Thread Pool to prevent server clogging (max 32 concurrent connections)
     private final ExecutorService threadPool = Executors.newFixedThreadPool(32);
 
     public HttpServer(int port) {
         this.port = port;
+    }
+
+    /** Path that ZrokLauncher writes the reserved subdomain to (cross-UID readable). */
+    private static final String ZROK_UNIQUE_NAME_FILE = "/data/local/tmp/.zrok/unique_name";
+
+    /** Cache the reserved zrok unique name to avoid one disk read per request. */
+    private static volatile String cachedZrokUniqueName;
+    private static volatile long cachedZrokUniqueNameAt;
+    private static final long ZROK_NAME_CACHE_TTL_MS = 60_000L;
+
+    /**
+     * Returns true when the request's Host header matches the configured
+     * PWA install origin (the user's reserved zrok subdomain). Only that
+     * origin gets to download {@code manifest.json} and {@code sw.js}, so
+     * PWAs only install against a stable URL — push subscriptions are
+     * bound to origin and a rotating URL would break every notification.
+     *
+     * <p>Reads the unique name from the cross-UID file written by
+     * {@code ZrokLauncher} ({@code /data/local/tmp/.zrok/unique_name}).
+     * The Kotlin {@code PreferencesManager} would NPE here because it lives
+     * in app-private SharedPreferences, which UID 2000 (this daemon) cannot
+     * read.
+     */
+    private static boolean isPwaOrigin(String hostHeader) {
+        if (hostHeader == null || hostHeader.isEmpty()) return false;
+        // Strip optional :port for comparison
+        int colon = hostHeader.indexOf(':');
+        String hostOnly = colon > 0 ? hostHeader.substring(0, colon) : hostHeader;
+
+        // Reject loopback / LAN — those are the WebView and shouldn't get a PWA.
+        if (hostOnly.equals("127.0.0.1") || hostOnly.equals("localhost")) return false;
+
+        String unique = readZrokUniqueName();
+        if (unique == null || unique.isEmpty()) return false;
+
+        // Match exactly the reserved subdomain to avoid letting any random
+        // *.share.zrok.io install a PWA against this car.
+        String expected = unique + ".share.zrok.io";
+        return hostOnly.equalsIgnoreCase(expected);
+    }
+
+    private static String readZrokUniqueName() {
+        long now = System.currentTimeMillis();
+        String c = cachedZrokUniqueName;
+        if (c != null && (now - cachedZrokUniqueNameAt) < ZROK_NAME_CACHE_TTL_MS) return c;
+
+        try {
+            File f = new File(ZROK_UNIQUE_NAME_FILE);
+            if (!f.exists() || f.length() == 0) {
+                cachedZrokUniqueName = "";
+                cachedZrokUniqueNameAt = now;
+                return "";
+            }
+            try (FileInputStream fis = new FileInputStream(f)) {
+                byte[] buf = new byte[(int) Math.min(f.length(), 256)];
+                int n = fis.read(buf);
+                String s = (n > 0 ? new String(buf, 0, n, "UTF-8") : "").trim();
+                cachedZrokUniqueName = s;
+                cachedZrokUniqueNameAt = now;
+                return s;
+            }
+        } catch (Exception e) {
+            cachedZrokUniqueName = "";
+            cachedZrokUniqueNameAt = now;
+            return "";
+        }
     }
 
     /**
@@ -243,6 +309,11 @@ public class HttpServer {
             // Cloudflared injects Cf-*, zrok / ngrok injects X-Forwarded-*.
             boolean hasTunnelHeaders = false;
             String forwardedFor = null;
+            String hostHeader = null;
+            // Zrok's HTTP backend rewrites Host: to the backend URL (localhost:8080)
+            // before forwarding, and stashes the original public hostname in
+            // X-Forwarded-Host. Captured here so isPwaOrigin can match it.
+            String forwardedHostHeader = null;
 
             while ((line = reader.readLine()) != null && !line.isEmpty()) {
                 String lower = line.toLowerCase();
@@ -258,11 +329,20 @@ public class HttpServer {
                     cookieHeader = line.substring(7).trim();
                 } else if (lower.startsWith("authorization:")) {
                     authHeader = line.substring(14).trim();
+                } else if (lower.startsWith("host:")) {
+                    hostHeader = line.substring(5).trim();
                 } else if (lower.startsWith("x-forwarded-for:")) {
                     hasTunnelHeaders = true;
                     forwardedFor = line.substring(16).trim();
+                } else if (lower.startsWith("x-forwarded-host:")) {
+                    hasTunnelHeaders = true;
+                    // Header value can be a comma list ("a.example, b.example")
+                    // when chained through multiple proxies. The leftmost entry
+                    // is the original client-facing host.
+                    String v = line.substring(17).trim();
+                    int comma = v.indexOf(',');
+                    forwardedHostHeader = (comma > 0 ? v.substring(0, comma) : v).trim();
                 } else if (lower.startsWith("x-forwarded-proto:")
-                        || lower.startsWith("x-forwarded-host:")
                         || lower.startsWith("x-real-ip:")
                         || lower.startsWith("forwarded:")
                         || lower.startsWith("cf-connecting-ip:")
@@ -375,6 +455,66 @@ public class HttpServer {
                 return;
             }
             
+            // PWA install assets — gated to the configured PWA origin so we
+            // don't accidentally bootstrap a service worker on the in-car
+            // WebView (Host: 127.0.0.1) or on a tunnel whose URL is not stable
+            // (e.g. cloudflared quick tunnels). Subscriptions are origin-bound;
+            // installing the PWA from an unstable origin breaks every push.
+            // Strip query (?...) and fragment (#...) — browsers sometimes
+            // append cache-bust params on the SW fetch.
+            String pwaPathOnly = path;
+            int pwaQ = pwaPathOnly.indexOf('?');
+            if (pwaQ >= 0) pwaPathOnly = pwaPathOnly.substring(0, pwaQ);
+            int pwaH = pwaPathOnly.indexOf('#');
+            if (pwaH >= 0) pwaPathOnly = pwaPathOnly.substring(0, pwaH);
+            if (pwaPathOnly.equals("/manifest.json") || pwaPathOnly.equals("/sw.js")) {
+                // Through a tunnel, Host: is rewritten to the backend (localhost:8080).
+                // Match against X-Forwarded-Host when present so the reserved
+                // zrok subdomain still passes the gate.
+                String pwaOriginHost = forwardedHostHeader != null ? forwardedHostHeader : hostHeader;
+                if (!isPwaOrigin(pwaOriginHost)) {
+                    // Diagnostic: figure out *why* the gate rejected. Three legs:
+                    //   (a) no headers at all
+                    //   (b) X-Forwarded-Host present but didn't match unique_name
+                    //   (c) X-Forwarded-Host missing → fell back to Host: localhost
+                    // Logging the leg lets the user fix the right thing instead
+                    // of guessing whether zrok's headers, the unique_name file,
+                    // or the share domain is wrong.
+                    String unique = readZrokUniqueName();
+                    CameraDaemon.log("PWA gate REJECT path=" + pwaPathOnly
+                            + " xfh=" + forwardedHostHeader
+                            + " host=" + hostHeader
+                            + " unique=" + (unique != null && !unique.isEmpty() ? unique : "<empty>")
+                            + " expected=" + (unique != null && !unique.isEmpty() ? unique + ".share.zrok.io" : "<no-unique>"));
+                    HttpResponse.sendError(out, 404, "Not Found");
+                    client.close();
+                    return;
+                }
+                String filePath = "local/" + pwaPathOnly.substring(1);
+                if (!serveStaticFile(out, filePath)) {
+                    HttpResponse.sendError(out, 404, "Not Found");
+                }
+                client.close();
+                return;
+            }
+
+            // Notification API — separate handler, all routes auth-gated above
+            if (path.startsWith("/api/notifications") || path.startsWith("/api/push")) {
+                if (NotificationApiHandler.handle(method, path, body, out)) {
+                    client.close();
+                    return;
+                }
+            }
+
+            // Notifications settings page
+            if (path.equals("/notifications.html") || path.equals("/notifications")) {
+                if (!serveStaticFile(out, "local/notifications.html")) {
+                    HttpResponse.sendError(out, 404, "notifications.html not found");
+                }
+                client.close();
+                return;
+            }
+
             // Route to modular handlers first
             if (routeToHandlers(method, path, body, rangeHeader, out)) {
                 // Handled by a modular handler
@@ -582,6 +722,11 @@ public class HttpServer {
             return ModelsApiHandler.handle(method, path, body, out);
         }
 
+        // App Update API (check, preview, install, progress)
+        if (path.startsWith("/api/update/")) {
+            return UpdateApiHandler.handle(method, path, body, out);
+        }
+
         return false;
     }
     
@@ -686,11 +831,20 @@ public class HttpServer {
                 }
                 status.put("range", range);
             }
+
+            // Distance unit preference — "km" or "mi". Derived from user setting
+            // (TripConfig.distanceUnit) which overrides auto-detection. The web UI
+            // uses this to convert km values for display and pick the right label.
+            try {
+                com.overdrive.app.byd.BydDataCollector collector =
+                        com.overdrive.app.byd.BydDataCollector.getInstance();
+                status.put("distanceUnit", (collector != null && collector.isMilesMode()) ? "mi" : "km");
+            } catch (Exception ignored) {
+                status.put("distanceUnit", "km");
+            }
         } catch (Exception e) {
             // Vehicle data not available
         }
-        
-        // SOH from SohEstimator (persisted file fallback if estimator not available)
         try {
             JSONObject soh = new JSONObject();
             boolean hasSoh = false;
@@ -813,11 +967,17 @@ public class HttpServer {
             String contentType = getContentType(relativePath);
             
             // HTML pages must always revalidate so the user gets the latest UI logic.
-            // Shared static assets (JS/CSS/fonts/images) ship inside the APK and never
-            // change without an app update, so we let the browser cache them to avoid
-            // re-downloading ~360KB on every page load.
+            // The service worker and PWA manifest also need to bypass cache —
+            // a stuck-cached SW means the user can't pick up notification fixes
+            // without a manual unregister.
+            // Other shared static assets (JS/CSS/fonts/images) ship inside the APK
+            // and never change without an app update, so we let the browser cache
+            // them to avoid re-downloading ~360KB on every page load.
             String cacheControl;
-            if (relativePath.endsWith(".html")) {
+            String fileName = new File(relativePath).getName();
+            if (relativePath.endsWith(".html")
+                    || fileName.equals("sw.js")
+                    || fileName.equals("manifest.json")) {
                 cacheControl = "no-store, no-cache, must-revalidate, max-age=0";
             } else {
                 cacheControl = "public, max-age=86400";

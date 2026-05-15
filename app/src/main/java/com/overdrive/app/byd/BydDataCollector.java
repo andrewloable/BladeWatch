@@ -84,11 +84,20 @@ public class BydDataCollector {
         void onLockSnapshotUpdated(BydVehicleData snapshot);
     }
 
+    /** Raw BMS charging-state edges from the charging HAL. Fires only on
+     *  transitions (current != previous), not on every poll. State values
+     *  match {@code ChargingStateData.CHARGING_BATTERY_STATE_*}. */
+    public interface ChargingStateListener {
+        void onChargingStateChanged(int previousState, int newState);
+    }
+
     private final java.util.concurrent.CopyOnWriteArrayList<DoorStateListener> doorStateListeners =
         new java.util.concurrent.CopyOnWriteArrayList<>();
     private final java.util.concurrent.CopyOnWriteArrayList<DoorLockListener> doorLockListeners =
         new java.util.concurrent.CopyOnWriteArrayList<>();
     private final java.util.concurrent.CopyOnWriteArrayList<LockSnapshotListener> lockSnapshotListeners =
+        new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final java.util.concurrent.CopyOnWriteArrayList<ChargingStateListener> chargingStateListeners =
         new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public void addDoorStateListener(DoorStateListener l) { if (l != null) doorStateListeners.addIfAbsent(l); }
@@ -97,6 +106,8 @@ public class BydDataCollector {
     public void removeDoorLockListener(DoorLockListener l) { doorLockListeners.remove(l); }
     public void addLockSnapshotListener(LockSnapshotListener l) { if (l != null) lockSnapshotListeners.addIfAbsent(l); }
     public void removeLockSnapshotListener(LockSnapshotListener l) { lockSnapshotListeners.remove(l); }
+    public void addChargingStateListener(ChargingStateListener l) { if (l != null) chargingStateListeners.addIfAbsent(l); }
+    public void removeChargingStateListener(ChargingStateListener l) { chargingStateListeners.remove(l); }
 
     private void notifyDoorStateListeners(int area, int state) {
         for (DoorStateListener l : doorStateListeners) {
@@ -116,6 +127,13 @@ public class BydDataCollector {
         for (LockSnapshotListener l : lockSnapshotListeners) {
             try { l.onLockSnapshotUpdated(snap); }
             catch (Exception e) { logger.debug("LockSnapshotListener error: " + e.getMessage()); }
+        }
+    }
+
+    private void notifyChargingStateListeners(int previousState, int newState) {
+        for (ChargingStateListener l : chargingStateListeners) {
+            try { l.onChargingStateChanged(previousState, newState); }
+            catch (Exception e) { logger.debug("ChargingStateListener error: " + e.getMessage()); }
         }
     }
 
@@ -145,10 +163,21 @@ public class BydDataCollector {
     /**
      * Initialize all BYD devices. Each device is independent — failures are logged and skipped.
      */
-    public void init(Context context) {
+    public synchronized void init(Context context) {
+        if (initialized && this.context == context) {
+            return;
+        }
         this.context = context;
         logger.info("=== BYD Data Collector Initializing ===");
         long start = System.currentTimeMillis();
+
+        // Re-init: tear down state that would otherwise accumulate.
+        availableDevices.clear();
+        unavailableDevices.clear();
+        if (pollScheduler != null) {
+            pollScheduler.shutdownNow();
+            pollScheduler = null;
+        }
 
         // Initialize each device type
         bodyworkDevice = initDevice("android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice", "Bodywork");
@@ -180,6 +209,22 @@ public class BydDataCollector {
         // Detect mileage unit from instrument cluster
         detectMileageUnit();
 
+        // If auto-detection failed, fall back to user's persisted preference
+        if (!unitDetected) {
+            try {
+                com.overdrive.app.trips.TripConfig tripConfig = new com.overdrive.app.trips.TripConfig();
+                tripConfig.load();
+                String savedUnit = tripConfig.getDistanceUnit();
+                if ("mi".equals(savedUnit)) {
+                    distanceToKmFactor = MILES_TO_KM;
+                    unitDetected = true;
+                    logger.info("Mileage unit: MILES (from user config override, factor=" + MILES_TO_KM + ")");
+                }
+            } catch (Exception e) {
+                logger.info("Could not load distance unit from TripConfig: " + e.getMessage());
+            }
+        }
+
         // Read initial values (full collection including display-only devices)
         collectAllFull();
 
@@ -190,6 +235,13 @@ public class BydDataCollector {
 
         // Register listeners
         registerAllListeners();
+
+        // Bridge BYD door-state events to push notifications. Safe to start
+        // here — the door listener is only invoked once the bodywork HAL
+        // fires onDoorStateChanged, which requires registerAllListeners to
+        // have run first.
+        com.overdrive.app.notifications.DoorEventNotifier.start();
+        com.overdrive.app.notifications.ChargingEventNotifier.start();
 
         // Start periodic polling to keep data fresh (listeners may not fire for all values)
         startPolling();
@@ -239,6 +291,35 @@ public class BydDataCollector {
      */
     public double getDistanceToKmFactor() {
         return distanceToKmFactor;
+    }
+
+    /**
+     * Override the distance unit from user settings. Called when the user
+     * explicitly selects km or miles in the Trip Settings UI. This fixes the
+     * case where auto-detection via getMileageUnit() fails (instrumentDevice
+     * null, SDK returns null, etc.) and the raw miles values pass through
+     * unconverted.
+     *
+     * @param unit "mi" for miles (factor=1.60934), "km" for km (factor=1.0)
+     */
+    public void setDistanceUnitOverride(String unit) {
+        if ("mi".equals(unit)) {
+            distanceToKmFactor = MILES_TO_KM;
+            unitDetected = true;
+            logger.info("Distance unit OVERRIDE: MILES (factor=" + MILES_TO_KM + ")");
+        } else {
+            distanceToKmFactor = 1.0;
+            unitDetected = true;
+            logger.info("Distance unit OVERRIDE: KM (factor=1.0)");
+        }
+    }
+
+    /**
+     * Returns true if the vehicle's instrument cluster is configured for miles.
+     * Used by the /status API to tell the web UI which display unit to use.
+     */
+    public boolean isMilesMode() {
+        return distanceToKmFactor > 1.0;
     }
 
     private java.util.concurrent.ScheduledExecutorService pollScheduler;
@@ -461,6 +542,7 @@ public class BydDataCollector {
         collectCharging(b);     // chargingState, gunState, chargingPower
         collectInstrument(b);   // outsideTemp, externalChargingPower
         collectOta(b);          // 12V voltage (precise)
+        collectTyre(b);         // pressure (kPa), pressure/leak/signal state per wheel
 
         // DRIVING ONLY: skip most when ACC is off (values are always 0/stale when parked).
         // EXCEPTION: enginePower remains meaningful when the car is plugged in and
@@ -469,7 +551,7 @@ public class BydDataCollector {
         // (where chargingGunState is often UNAVAILABLE and chargingState is
         // stuck at 15=IDLE due to firmware bugs). Detect "probably charging"
         // from the listener-delivered chargingPower / externalChargingPower
-        // values that get set from typed callbacks even while ACC is off.
+        // values populated from typed callbacks even while ACC is off.
         if (accIsOn) {
             collectSpeed(b);        // speed, accel, brake
             collectEngine(b);       // enginePower, motorSpeed/torque
@@ -627,27 +709,6 @@ public class BydDataCollector {
                 }
             }
             
-            // BodyworkDevice.getBatteryPowerHEV() — instantaneous battery power flow.
-            // The SDK returns the value scaled by 10 (e.g. 13.5 = 1.35 kW), so we
-            // divide to get real kW. Sign convention: positive = discharge
-            // (drive/accessory draw), negative = charge (regen or plugged-in charging).
-            // Reject anything beyond ±500 kW after scaling.
-            Object hev = BydDeviceHelper.callGetter(bodyworkDevice, "getBatteryPowerHEV");
-            if (hev instanceof Number) {
-                double rawValue = ((Number) hev).doubleValue();
-                double powerKw = rawValue / 10.0;
-                if (Math.abs(powerKw) <= 500.0) {
-                    b.batteryPowerKw(powerKw);
-                    long now = System.currentTimeMillis();
-                    if (now - lastBatteryPowerLogMs > 60_000) {
-                        lastBatteryPowerLogMs = now;
-                        logger.debug("batteryPowerKw=" + String.format("%.2f", powerKw) +
-                            " (raw=" + String.format("%.1f", rawValue) + ", " +
-                            (powerKw > 0.5 ? "discharging" : powerKw < -0.5 ? "charging" : "idle") + ")");
-                    }
-                }
-            }
-
             // getBatteryCapacity() — semantics vary by model:
             // - Newer models: returns Ah rating (fixed, e.g. 150 for Atto 3)
             // - Older models: returns remaining energy in 0.1 kWh units (changes with SOC)
@@ -934,6 +995,28 @@ public class BydDataCollector {
             // ==================== WATER TEMP ====================
             Object waterTemp = BydDeviceHelper.callGetter(statisticDevice, "getWaterTemperature");
             if (waterTemp instanceof Number) b.waterTempC(((Number) waterTemp).intValue());
+
+            // Fallback: try Engine device if Statistic didn't provide coolant temp.
+            // Some firmware only exposes coolant temperature via the Engine device.
+            if (b.waterTempC == BydVehicleData.UNAVAILABLE && engineDevice != null) {
+                try {
+                    String[] coolantGetters = {
+                        "getWaterTemperature", "getCoolantTemperature",
+                        "getEngineCoolantTemperature", "getEngineWaterTemperature",
+                        "getEngineCoolantTemp", "getWaterTemp"
+                    };
+                    for (String getter : coolantGetters) {
+                        Object engineCoolant = BydDeviceHelper.callGetter(engineDevice, getter);
+                        if (engineCoolant instanceof Number) {
+                            int tempC = ((Number) engineCoolant).intValue();
+                            if (tempC >= -50 && tempC <= 200) {
+                                b.waterTempC(tempC);
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
 
             // ==================== TOTAL ELEC CONSUMPTION ====================
             Object totalElec = BydDeviceHelper.callGetter(statisticDevice, "getTotalElecConValue");
@@ -1240,16 +1323,41 @@ public class BydDataCollector {
                 if (t >= -50 && t <= 60) b.outsideTempC(t);
             }
 
-            // External charging power — read unconditionally when the instrument
-            // device is present. VehicleDataMonitor.getChargingState() decides what
-            // to do with the value; gating here would create a circular dependency
-            // with the BMS state we're trying to override on PHEVs.
-            // Range filter: 0.1..500 kW (BYD sentinel 104857.5 is excluded).
+            // External charging power. Two scaling regimes seen across BYD firmware:
+            //
+            //   - Listener path (onExternalChargingPowerChanged) — SDK pre-scales
+            //     to kW. This matches BYDCarController in autocommander, which
+            //     treats the listener arg as kW directly.
+            //   - Polled getter — some firmware (Seal U DM-i PHEV, build 1124xxx)
+            //     returns the raw CAN value in hectowatts (centiKW). Observed:
+            //     221.7 raw for a real ~1.9 kW charger (221.7/100 = 2.217 kW,
+            //     which is the wall-side handshake before AC→DC conversion loss).
+            //     Same firmware family is the one that has the feature ID
+            //     fallback below also delivering hectowatts (189.5 raw → 1.8 kW
+            //     charger, per the comment on that path).
+            //
+            // Heuristic: kW values are bounded by physical reality (AC charging
+            // tops at ~22 kW 3-phase, PHEV onboard charger maxes at 7 kW).
+            // Anything above 50 from a getter that's supposed to be kW is the
+            // hectowatt scale — divide. Below 50, trust the value as-is.
+            // The 104857.5 BYD sentinel falls cleanly above the 50000 cap.
             Object extPower = BydDeviceHelper.callGetter(instrumentDevice, "getExternalChargingPower");
             if (extPower instanceof Number) {
-                double p = ((Number) extPower).doubleValue();
-                if (p > 0.1 && p <= 500) {
-                    b.externalChargingPowerKw(p);
+                double raw = ((Number) extPower).doubleValue();
+                double kw;
+                if (raw > 50.0 && raw < 50000.0) {
+                    kw = raw / 100.0; // hectowatts → kW
+                } else {
+                    kw = raw;         // already kW (BEV firmware default)
+                }
+                if (kw > 0.1 && kw <= 500) {
+                    b.externalChargingPowerKw(kw);
+                    if (!loggedExtChargePowerScale) {
+                        loggedExtChargePowerScale = true;
+                        logger.info("getExternalChargingPower: raw=" + raw + " → " + kw
+                                + " kW (scale=" + (raw > 50.0 && raw < 50000.0 ? "hectowatts/100" : "kW")
+                                + "). Cross-check against the cluster's charging readout to confirm.");
+                    }
                 }
             }
 
@@ -1509,26 +1617,40 @@ public class BydDataCollector {
                 airLeakStates[i] = (leak instanceof Number) ? ((Number) leak).intValue() : -1;
                 Object sig = BydDeviceHelper.callGetter(tyreDevice, "getTyreSignalState", i + 1);
                 signalStates[i] = (sig instanceof Number) ? ((Number) sig).intValue() : -1;
+
+                // Poll per-wheel temperature via the matching SDK getter.
+                // The async onTyreBatteryValueChanged callback is dormant on
+                // some firmwares (PHEV models on this fleet, confirmed by
+                // log capture), but a small subset of those firmwares still
+                // answer getTyreBatteryValue(area) with the same temperature
+                // value the cluster reads. callGetter is null-safe so this
+                // is a no-op on firmwares that don't expose the getter.
+                pollPerWheelTyreTemp(i);
             }
             b.tyrePressure(pressures);
             b.tyrePressureState(pressureStates);
             b.tyreAirLeakState(airLeakStates);
             b.tyreSignalState(signalStates);
+            b.tyreTemperature(snapshotTyreTemperatures());
 
             Object sys = BydDeviceHelper.callGetter(tyreDevice, "getTyreSystemState");
             if (sys instanceof Number) b.tyreSystemState(((Number) sys).intValue());
             Object temp = BydDeviceHelper.callGetter(tyreDevice, "getTyreTemperatureState");
             if (temp instanceof Number) b.tyreTemperatureState(((Number) temp).intValue());
 
-            // PER-TYRE TEMPERATURE IS NOT EXPOSED BY BYDAutoTyreDevice.
-            // Confirmed via runtime method dump on the test vehicle: the
-            // Tyre device exposes only getTyreTemperatureState() (a single
-            // system-wide alarm enum), with no per-area getter. The BYD
-            // reference's getTyreTemperature(TyrePosition) is a wrapper
-            // method on AutoCommander's ICarController, not in the public
-            // Tyre device stubs. The dashboard cluster reads tyre temps
-            // via a private OEM binder we don't have access to. Don't
-            // re-add probe loops here — they are guaranteed to fail.
+            // Per-tyre temperature has three possible channels:
+            //   1. Async listener: AbsBYDAutoTyreListener.onTyreBatteryValueChanged
+            //      — fires on BEV firmware when registered via the two-arg
+            //      registerListener(listener, int[]) overload. Dormant on some
+            //      PHEV firmware with single-arg registration only.
+            //   2. Polled getter: pollPerWheelTyreTemp() above tries
+            //      getTyreBatteryValue / getTyreTemperatureValue /
+            //      getTyreTemperature / getTyreTemperatureState.
+            //   3. InstrumentDevice feature IDs: polled in
+            //      collectInstrumentExtended() using the LF/RF/LB/RB
+            //      tyre temperature feature IDs from BydFeatureIds.
+            // If all three channels stay silent, tyre temperature is not
+            // available on this firmware via any known SDK path.
 
             logTyreAlertsIfChanged(pressures, pressureStates, airLeakStates, signalStates,
                     sys instanceof Number ? ((Number) sys).intValue() : Integer.MIN_VALUE,
@@ -1546,6 +1668,20 @@ public class BydDataCollector {
     private volatile int[] lastTyreSignalStates = null;
     private volatile int lastTyreSystemState = Integer.MIN_VALUE;
     private volatile int lastTyreTemperatureState = Integer.MIN_VALUE;
+
+    private final int[] tyreTemperatureCache = new int[]{
+            BydVehicleData.UNAVAILABLE, BydVehicleData.UNAVAILABLE,
+            BydVehicleData.UNAVAILABLE, BydVehicleData.UNAVAILABLE
+    };
+    private volatile boolean loggedTyreSlot0 = false;
+    private volatile boolean loggedInstrumentTyreTemp = false;
+    // Per-wheel one-shot log. We surface the FIRST onTyreBatteryValueChanged
+    // arrival for each wheel at info level so it's obvious from a single log
+    // pull whether the BYD HAL is delivering temperature events at all on
+    // this vehicle. Without this, a silent firmware looks identical to a
+    // working firmware where we just haven't received an event yet.
+    private final boolean[] loggedTyreFirstEvent = new boolean[]{false, false, false, false};
+    private volatile boolean loggedTyreOutOfRange = false;
 
     private void logTyreAlertsIfChanged(int[] pressuresKpa, int[] pressureStates,
                                         int[] airLeakStates, int[] signalStates,
@@ -1569,6 +1705,65 @@ public class BydDataCollector {
                 || sysState != lastTyreSystemState
                 || tempState != lastTyreTemperatureState;
         if (!pressureChanged && !alertChanged) return;
+
+        // Notification emit on TPMS state transitions. We only fire on
+        // 0 (NORMAL) -> non-zero edges so a stuck-non-zero alarm doesn't
+        // re-notify on every poll. The TPMS firmware itself is the source
+        // of truth — we don't threshold kPa ourselves (matches the cluster's
+        // own private-binder calibration).
+        if (lastTyrePressureStates != null && lastTyreAirLeakStates != null) {
+            String[] wheelLabels = {"Front-left", "Front-right", "Rear-left", "Rear-right"};
+            for (int i = 0; i < 4 && i < pressureStates.length; i++) {
+                int prevP = lastTyrePressureStates[i];
+                int curP = pressureStates[i];
+                if (prevP == 0 && curP != 0) {
+                    try {
+                        org.json.JSONObject data = new org.json.JSONObject();
+                        data.put("wheel", i);
+                        data.put("kPa", pressuresKpa[i]);
+                        data.put("state", curP);
+                        com.overdrive.app.notifications.NotificationBus.get().publish(
+                                new com.overdrive.app.notifications.NotificationEvent(
+                                        "vehicle.health.tyre.pressure",
+                                        com.overdrive.app.notifications.NotificationEvent.Severity.WARN,
+                                        curP == 1 ? "Underpressure" : "Overpressure",
+                                        wheelLabels[i] + " — " + pressuresKpa[i] + " kPa",
+                                        "tyre-pressure-" + i,
+                                        null,
+                                        data));
+                    } catch (Throwable t) {
+                        logger.debug("tyre.pressure notify failed: " + t.getMessage());
+                    }
+                }
+
+                int prevL = lastTyreAirLeakStates[i];
+                int curL = airLeakStates[i];
+                if (prevL == 0 && curL != 0) {
+                    try {
+                        org.json.JSONObject data = new org.json.JSONObject();
+                        data.put("wheel", i);
+                        data.put("leakState", curL);
+                        data.put("kPa", pressuresKpa[i]);
+                        com.overdrive.app.notifications.NotificationEvent.Severity sev =
+                                curL == 2
+                                        ? com.overdrive.app.notifications.NotificationEvent.Severity.CRITICAL
+                                        : com.overdrive.app.notifications.NotificationEvent.Severity.WARN;
+                        com.overdrive.app.notifications.NotificationBus.get().publish(
+                                new com.overdrive.app.notifications.NotificationEvent(
+                                        "vehicle.health.tyre.leak",
+                                        sev,
+                                        curL == 2 ? "Fast leak detected" : "Slow leak detected",
+                                        wheelLabels[i] + " (" + pressuresKpa[i] + " kPa)",
+                                        "tyre-leak-" + i,
+                                        null,
+                                        data));
+                    } catch (Throwable t) {
+                        logger.debug("tyre.leak notify failed: " + t.getMessage());
+                    }
+                }
+            }
+        }
+
         lastTyrePressuresKpa = pressuresKpa.clone();
         lastTyrePressureStates = pressureStates.clone();
         lastTyreAirLeakStates = airLeakStates.clone();
@@ -1588,6 +1783,306 @@ public class BydDataCollector {
         sb.append(" sys=").append(sysState == Integer.MIN_VALUE ? "n/a" : sysState);
         sb.append(" temp=").append(tempState == Integer.MIN_VALUE ? "n/a" : tempState);
         logger.info(sb.toString());
+    }
+
+    // Per-wheel temperature poll: candidate method names, in order. On the
+    // first poll we look up each via reflection; from then on we go straight
+    // to the surviving method (or short-circuit if none exist on this
+    // firmware). This means a sensor that wakes up later still gets a chance
+    // to report — we only lock out based on method-existence, not on whether
+    // a value was in range.
+    private static final String[] TYRE_TEMP_GETTER_CANDIDATES = {
+            "getTyreBatteryValue",      // matches the async callback name
+            "getTyreTemperatureValue",  // some HEV variants
+            "getTyreTemperature",       // legacy / wrapper variants
+            "getTyreTemperatureState"   // indexed state getter that returns °C on some firmware
+    };
+    // null = not resolved yet (first cycle still running),
+    // != null and != NO_TYRE_TEMP_GETTER = the resolved Method,
+    // == NO_TYRE_TEMP_GETTER sentinel = no candidate exists on this firmware.
+    private static final java.lang.reflect.Method NO_TYRE_TEMP_GETTER;
+    static {
+        java.lang.reflect.Method m = null;
+        try { m = Object.class.getDeclaredMethod("toString"); }
+        catch (NoSuchMethodException e) { /* impossible */ }
+        NO_TYRE_TEMP_GETTER = m;
+    }
+    private volatile java.lang.reflect.Method resolvedTyreTempMethod = null;
+    // Index into TYRE_TEMP_GETTER_CANDIDATES: which candidate is currently resolved.
+    // When the resolved method consistently returns out-of-range values, we advance
+    // to the next candidate. This ensures getTyreBatteryValue returning battery voltage
+    // doesn't permanently block getTyreTemperatureState from being tried.
+    private volatile int resolvedTyreTempCandidateIdx = 0;
+    private volatile int tyreTempOutOfRangeCount = 0;
+    private static final int TYRE_TEMP_OUT_OF_RANGE_THRESHOLD = 5; // after 5 bad reads, try next
+    private final boolean[] loggedTyrePollHit = new boolean[]{false, false, false, false};
+    // Diagnostics: surface the FIRST observation per failure mode so a single
+    // log capture tells us which path the BYD HAL is taking.
+    private volatile boolean loggedTyrePollNullReturn = false;
+    private volatile boolean loggedTyrePollNonNumber = false;
+    private volatile boolean loggedTyrePollThrew = false;
+
+    /**
+     * Try to read per-wheel temperature via a getter call. On firmwares where
+     * the {@code onTyreBatteryValueChanged} async callback never fires, a
+     * polled getter is the only remaining channel.
+     *
+     * <p>The first invocation looks up each candidate method by name; the
+     * first one that exists is cached and used from then on. We do NOT
+     * require a value in range to "resolve" the getter — a sensor that's
+     * temporarily out of signal can still come online later.
+     */
+    private void pollPerWheelTyreTemp(int idx) {
+        if (tyreDevice == null) return;
+        int wheel = idx + 1; // BYD area: LF=1, RF=2, LR=3, RR=4
+
+        java.lang.reflect.Method method = resolvedTyreTempMethod;
+        if (method == NO_TYRE_TEMP_GETTER) return;
+        if (method == null) {
+            method = resolveTyreTempMethod();
+            resolvedTyreTempMethod = method;
+            if (method == NO_TYRE_TEMP_GETTER) return;
+        }
+
+        Object raw;
+        try {
+            raw = method.invoke(tyreDevice, wheel);
+        } catch (Throwable t) {
+            if (!loggedTyrePollThrew) {
+                loggedTyrePollThrew = true;
+                Throwable cause = t.getCause() != null ? t.getCause() : t;
+                logger.info("Tyre temp poll: " + method.getName() + "(" + wheel
+                        + ") threw " + cause.getClass().getSimpleName()
+                        + ": " + cause.getMessage());
+            }
+            return; // transient failure; method stays resolved for next cycle
+        }
+        if (raw == null) {
+            if (!loggedTyrePollNullReturn) {
+                loggedTyrePollNullReturn = true;
+                logger.info("Tyre temp poll: " + method.getName() + "(" + wheel
+                        + ") returned null — getter exists but firmware has no value");
+            }
+            return;
+        }
+        if (!(raw instanceof Number)) {
+            if (!loggedTyrePollNonNumber) {
+                loggedTyrePollNonNumber = true;
+                logger.info("Tyre temp poll: " + method.getName() + "(" + wheel
+                        + ") returned " + raw.getClass().getSimpleName() + " = " + raw);
+            }
+            return;
+        }
+        double v = ((Number) raw).doubleValue();
+        if (!(v >= -40.0 && v <= 125.0)) {
+            tyreTempOutOfRangeCount++;
+            if (tyreTempOutOfRangeCount == 1) {
+                // Log on first occurrence
+                logger.info("Tyre temp poll: " + method.getName() + "(" + wheel
+                        + ") returned " + v + " — outside temperature range, "
+                        + "this firmware reports battery voltage via this getter. "
+                        + "Will try next candidate after " + TYRE_TEMP_OUT_OF_RANGE_THRESHOLD + " bad reads.");
+            }
+            if (tyreTempOutOfRangeCount >= TYRE_TEMP_OUT_OF_RANGE_THRESHOLD) {
+                // This method consistently returns garbage — advance to next candidate
+                tyreTempOutOfRangeCount = 0;
+                resolvedTyreTempCandidateIdx++;
+                resolvedTyreTempMethod = null; // force re-resolution from next candidate
+                logger.info("Tyre temp poll: " + method.getName()
+                        + " returned out-of-range " + TYRE_TEMP_OUT_OF_RANGE_THRESHOLD
+                        + " times — advancing to next candidate (idx="
+                        + resolvedTyreTempCandidateIdx + ")");
+            }
+            return;
+        }
+        // Valid reading — reset the out-of-range counter
+        tyreTempOutOfRangeCount = 0;
+
+        int tempC = (int) Math.round(v);
+        synchronized (tyreTemperatureCache) {
+            tyreTemperatureCache[idx] = tempC;
+        }
+        if (!loggedTyrePollHit[idx]) {
+            loggedTyrePollHit[idx] = true;
+            logger.info("Tyre temp poll FIRST: wheel=" + wheel
+                    + " (" + new String[]{"FL","FR","RL","RR"}[idx] + ") via "
+                    + method.getName() + " = " + tempC + "°C");
+        }
+    }
+
+    private java.lang.reflect.Method resolveTyreTempMethod() {
+        Class<?> cls = tyreDevice.getClass();
+        for (int i = resolvedTyreTempCandidateIdx; i < TYRE_TEMP_GETTER_CANDIDATES.length; i++) {
+            String name = TYRE_TEMP_GETTER_CANDIDATES[i];
+            try {
+                java.lang.reflect.Method m = cls.getMethod(name, int.class);
+                resolvedTyreTempCandidateIdx = i;
+                logger.info("Tyre temp poll: using " + name + "(int) on "
+                        + cls.getSimpleName() + " (candidate idx=" + i + ")");
+                return m;
+            } catch (NoSuchMethodException ignored) { /* try next */ }
+        }
+        logger.info("Tyre temp poll: no getter on this firmware "
+                + "(tried " + java.util.Arrays.toString(TYRE_TEMP_GETTER_CANDIDATES)
+                + " starting from idx=" + resolvedTyreTempCandidateIdx + ")");
+        return NO_TYRE_TEMP_GETTER;
+    }
+
+    private int[] snapshotTyreTemperatures() {
+        synchronized (tyreTemperatureCache) {
+            return new int[]{
+                    tyreTemperatureCache[0], tyreTemperatureCache[1],
+                    tyreTemperatureCache[2], tyreTemperatureCache[3]
+            };
+        }
+    }
+
+    // Diagnostic: log each unknown tyre feature ID at most once, capped at 32
+    // unique IDs total. The cap prevents a chatty HAL (some emit a feature ID
+    // every 100ms for trip metrics) from flooding the log if an unknown one
+    // happens to slip through the listener filter.
+    private final java.util.concurrent.ConcurrentHashMap<Integer, Boolean> loggedUnknownTyreIds =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final int MAX_UNKNOWN_TYRE_IDS = 32;
+
+    private void logUnknownTyreEventOnce(int eventId, int rawInt, double rawDbl) {
+        if (loggedUnknownTyreIds.size() >= MAX_UNKNOWN_TYRE_IDS) return;
+        if (loggedUnknownTyreIds.putIfAbsent(eventId, Boolean.TRUE) != null) return;
+        logger.info("Tyre event UNKNOWN id=" + eventId
+                + " intValue=" + (rawInt == Integer.MIN_VALUE ? "n/a" : Integer.toString(rawInt))
+                + " doubleValue=" + (Double.isNaN(rawDbl) ? "n/a" : Double.toString(rawDbl))
+                + " — if this looks like a temperature, add it to BydFeatureIds.INSTRUMENT_*_TYRE_TEMPERATURE");
+    }
+
+    // Per-wheel out-of-range counters for the known LF/RF/LB/RB feature IDs.
+    // Logged once per wheel so a sleeping TPMS sensor doesn't spam.
+    private final boolean[] loggedTyreEventOutOfRange = new boolean[]{false, false, false, false};
+
+    private void logTyreEventOutOfRangeOnce(int eventId, int wheelIdx, int rawInt, double rawDbl) {
+        if (wheelIdx < 0 || wheelIdx > 3 || loggedTyreEventOutOfRange[wheelIdx]) return;
+        loggedTyreEventOutOfRange[wheelIdx] = true;
+        logger.info("Tyre event OUT-OF-RANGE: " + new String[]{"FL","FR","RL","RR"}[wheelIdx]
+                + " (id=" + eventId + ") intValue="
+                + (rawInt == Integer.MIN_VALUE ? "n/a" : Integer.toString(rawInt))
+                + " doubleValue=" + (Double.isNaN(rawDbl) ? "n/a" : Double.toString(rawDbl))
+                + " — sensor likely asleep; will retry silently on next event.");
+    }
+
+    private void onTyreCallback(String method, Object[] args) {
+        if (args == null) return;
+        try {
+            // Generic feature-ID event from the 2-arg listener registration.
+            // Per-wheel temperature on this firmware family arrives here keyed
+            // on the LF/RF/LB/RB Instrument feature IDs. We accept either
+            // intValue (some firmwares emit °C as an integer) or doubleValue
+            // (others emit a fractional °C).
+            if ("onDataEventChanged".equals(method) && args.length >= 2) {
+                int eventId = ((Number) args[0]).intValue();
+                Object eventValue = args[1];
+                int idx = -1;
+                if (eventId == BydFeatureIds.INSTRUMENT_LF_TYRE_TEMPERATURE) idx = 0;
+                else if (eventId == BydFeatureIds.INSTRUMENT_RF_TYRE_TEMPERATURE) idx = 1;
+                else if (eventId == BydFeatureIds.INSTRUMENT_LB_TYRE_TEMPERATURE) idx = 2;
+                else if (eventId == BydFeatureIds.INSTRUMENT_RB_TYRE_TEMPERATURE) idx = 3;
+
+                if (idx < 0) {
+                    // Unknown feature ID — log once per ID so the next log
+                    // capture surfaces real per-wheel temperature IDs we
+                    // can add to BydFeatureIds.
+                    if (eventValue != null) {
+                        int rawInt = BydDeviceHelper.getIntValue(eventValue);
+                        double rawDbl = BydDeviceHelper.getDoubleValue(eventValue);
+                        logUnknownTyreEventOnce(eventId, rawInt, rawDbl);
+                    }
+                    return;
+                }
+
+                // Known wheel — extract value, prefer the int slot.
+                int rawInt = BydDeviceHelper.getIntValue(eventValue);
+                double rawDbl = BydDeviceHelper.getDoubleValue(eventValue);
+                Double tempC = null;
+                if (rawInt != Integer.MIN_VALUE && rawInt >= -40 && rawInt <= 125) {
+                    tempC = (double) rawInt;
+                } else if (!Double.isNaN(rawDbl) && rawDbl >= -40.0 && rawDbl <= 125.0) {
+                    tempC = rawDbl;
+                }
+                if (tempC == null) {
+                    // Sentinel — TPMS hasn't reported this wheel yet, or
+                    // the value lives in a slot we don't know about.
+                    logTyreEventOutOfRangeOnce(eventId, idx, rawInt, rawDbl);
+                    return;
+                }
+                int tempCi = (int) Math.round(tempC);
+                synchronized (tyreTemperatureCache) {
+                    tyreTemperatureCache[idx] = tempCi;
+                }
+                if (!loggedTyreFirstEvent[idx]) {
+                    loggedTyreFirstEvent[idx] = true;
+                    logger.info("Tyre event FIRST: " + new String[]{"FL","FR","RL","RR"}[idx]
+                            + " (id=" + eventId + ") = " + tempCi + "°C");
+                }
+                BydVehicleData current = snapshot.get();
+                if (current != null) {
+                    snapshot.set(current.toBuilder().tyreTemperature(snapshotTyreTemperatures()).build());
+                }
+                return;
+            }
+
+            if ("onTyreBatteryValueChanged".equals(method) && args.length >= 2) {
+                int wheel = ((Number) args[0]).intValue();
+                double value = ((Number) args[1]).doubleValue();
+                if (wheel == 0) {
+                    if (!loggedTyreSlot0) {
+                        loggedTyreSlot0 = true;
+                        logger.info("Tyre slot 0 raw event observed (value=" + value + ") — ignoring further slot 0");
+                    }
+                    return;
+                }
+                if (wheel < 1 || wheel > 4) {
+                    logger.info("Tyre battery callback: unexpected wheel=" + wheel + " value=" + value);
+                    return;
+                }
+                int idx = wheel - 1;
+                if (!loggedTyreFirstEvent[idx]) {
+                    loggedTyreFirstEvent[idx] = true;
+                    logger.info("Tyre battery callback FIRST: wheel=" + wheel
+                            + " (" + new String[]{"FL","FR","RL","RR"}[idx] + ") value=" + value);
+                }
+                if (!(value >= -40.0 && value <= 125.0)) {
+                    if (!loggedTyreOutOfRange) {
+                        loggedTyreOutOfRange = true;
+                        logger.info("Tyre battery callback: value " + value
+                                + " outside temperature range — likely battery voltage on this firmware");
+                    }
+                    return;
+                }
+                int tempC = (int) Math.round(value);
+                synchronized (tyreTemperatureCache) {
+                    tyreTemperatureCache[idx] = tempC;
+                }
+                BydVehicleData current = snapshot.get();
+                if (current != null) {
+                    snapshot.set(current.toBuilder().tyreTemperature(snapshotTyreTemperatures()).build());
+                }
+                return;
+            }
+
+            if ("onTyrePressureValueChanged".equals(method)
+                    || "onTyrePressureStateChanged".equals(method)
+                    || "onTyreAirLeakStateChanged".equals(method)
+                    || "onTyreSignalStateChanged".equals(method)
+                    || "onTyreSystemStateChanged".equals(method)
+                    || "onTyreTemperatureStateChanged".equals(method)
+                    || "onIndirectTyreSystemStateChanged".equals(method)) {
+                BydVehicleData current = snapshot.get();
+                if (current == null) return;
+                BydVehicleData.Builder b = current.toBuilder();
+                collectTyre(b);
+                snapshot.set(b.build());
+            }
+        } catch (Exception e) {
+            logger.debug("onTyreCallback error (" + method + "): " + e.getMessage());
+        }
     }
 
     private void collectDoorLock(BydVehicleData.Builder b) {
@@ -1778,15 +2273,49 @@ public class BydDataCollector {
             logger.debug("collectInstrumentExtended insideTemp error: " + e.getMessage());
         }
 
-        // Per-tyre temperature collection removed: confirmed not
-        // available via any public BYD SDK path. The Instrument-device
-        // feature IDs for LF/RF/LB/RB tyre temp return null on real
-        // PHEV firmware, the BYDAutoTyreDevice runtime method dump has
-        // no per-area temperature getter, and AutoCommander's own
-        // getTyreTemperature() falls back to a "not available in this
-        // SDK version" warning + null return. The dashboard cluster
-        // reads tyre temps via a private OEM binder that's not
-        // exposed to third-party apps.
+        // Per-tyre temperature from InstrumentDevice via feature ID get() calls.
+        // Slot mapping from BYDAutoFeatureIds.Instrument:
+        //   LF_TYRE_TEMPERATURE, RF_TYRE_TEMPERATURE, LB_TYRE_TEMPERATURE, RB_TYRE_TEMPERATURE
+        // These may return null on some firmware but are the correct channel on others.
+        try {
+            if (instrumentDevice != null) {
+                int[] featureIds = BydFeatureIds.INSTRUMENT_TYRE_TEMP_IDS;
+                // Order: LF=0, RF=1, LB(RL)=2, RB(RR)=3
+                int[] tempResults = new int[4];
+                boolean anyValid = false;
+                for (int i = 0; i < featureIds.length; i++) {
+                    Object result = BydDeviceHelper.callGet(instrumentDevice, featureIds[i], Integer.class);
+                    if (result != null) {
+                        int raw = BydDeviceHelper.getIntValue(result);
+                        if (raw >= -40 && raw <= 125) {
+                            tempResults[i] = raw;
+                            anyValid = true;
+                        } else {
+                            tempResults[i] = Integer.MIN_VALUE;
+                        }
+                    } else {
+                        tempResults[i] = Integer.MIN_VALUE;
+                    }
+                }
+                if (anyValid) {
+                    // Map: index 0=LF, 1=RF, 2=LB(RL), 3=RB(RR)
+                    synchronized (tyreTemperatureCache) {
+                        if (tempResults[0] != Integer.MIN_VALUE) tyreTemperatureCache[0] = tempResults[0];
+                        if (tempResults[1] != Integer.MIN_VALUE) tyreTemperatureCache[1] = tempResults[1];
+                        if (tempResults[2] != Integer.MIN_VALUE) tyreTemperatureCache[2] = tempResults[2];
+                        if (tempResults[3] != Integer.MIN_VALUE) tyreTemperatureCache[3] = tempResults[3];
+                    }
+                    b.tyreTemperature(snapshotTyreTemperatures());
+                    if (!loggedInstrumentTyreTemp) {
+                        loggedInstrumentTyreTemp = true;
+                        logger.info("Tyre temp from InstrumentDevice feature IDs: LF=" + tempResults[0]
+                            + " RF=" + tempResults[1] + " RL=" + tempResults[2] + " RR=" + tempResults[3] + "°C");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("collectInstrumentExtended tyreTemp error: " + e.getMessage());
+        }
 
         // Current trip mileage
         try {
@@ -2040,8 +2569,8 @@ public class BydDataCollector {
     private void collectEngineExtended(BydVehicleData.Builder b) {
         if (engineDevice == null) return;
 
-        // Engine coolant level. BYD SDK constants: 1=NORMAL, 2=LOW.
-        // Some firmwares return 0 when the value is unavailable.
+        // Engine coolant level. BYD SDK constants: 0=NORMAL, 1=LOW.
+        // Some firmwares return -1 or sentinel when the value is unavailable.
         Integer coolantRaw = null;
         try {
             Object coolant = BydDeviceHelper.callGetter(engineDevice, "getEngineCoolantLevel");
@@ -2133,7 +2662,7 @@ public class BydDataCollector {
         lastLowOilIndRaw = lowOilIndRaw;
         lastEngineFluidsLogMs = now;
         logger.info("EngineFluids: coolant=" + fmtFluid(coolantRaw)
-                + " (1=NORMAL,2=LOW)"
+                + " (0=NORMAL,1=LOW)"
                 + " engineOil=" + fmtFluid(engineOilRaw) + " (0-254)"
                 + " settingOil=" + fmtFluid(settingOilRaw)
                 + " lowOilInd=" + fmtFluid(lowOilIndRaw)
@@ -2239,6 +2768,16 @@ public class BydDataCollector {
             logger.info("  Charging listener registered");
             count++;
         }
+        // Engine listener: typed for onEngineCoolantLevelChanged /
+        // onOilLevelChanged. Without this, engine fluid status is only
+        // refreshed by the one-shot collectAllFull at init.
+        if (BydDeviceHelper.registerEngineListener(engineDevice, this::onEngineCallback)) {
+            logger.info("  Engine listener registered (typed)");
+            count++;
+        } else if (BydDeviceHelper.registerListener(engineDevice, this::onEngineCallback)) {
+            logger.info("  Engine listener registered (generic fallback)");
+            count++;
+        }
         if (BydDeviceHelper.registerListener(instrumentDevice, this::onInstrumentCallback)) {
             logger.info("  Instrument listener registered (external charging power)");
             count++;
@@ -2273,8 +2812,11 @@ public class BydDataCollector {
             logger.info("  DoorLock listener registered (generic fallback — lock callbacks may not fire)");
             count++;
         }
-        if (BydDeviceHelper.registerListener(tyreDevice, this::onDisplayCallback)) {
-            logger.info("  Tyre listener registered");
+        if (BydDeviceHelper.registerTyreListener(tyreDevice, this::onTyreCallback)) {
+            logger.info("  Tyre listener registered (typed)");
+            count++;
+        } else if (BydDeviceHelper.registerListener(tyreDevice, this::onDisplayCallback)) {
+            logger.info("  Tyre listener registered (generic fallback)");
             count++;
         }
         if (BydDeviceHelper.registerListener(acDevice, this::onDisplayCallback)) {
@@ -2485,10 +3027,13 @@ public class BydDataCollector {
      */
     // Throttle charging power log to once per 30 seconds
     private volatile long lastChargingPowerLogTime = 0;
-    private volatile long lastBatteryPowerLogMs = 0;
     private volatile long lastEnergyTypeLogMs = 0;
     private volatile long lastChargingModeLogMs = 0;
     private volatile long lastChargingStateRawLogMs = 0;
+    // One-shot: log the raw vs scaled getExternalChargingPower value the first
+    // time we successfully publish a value, so the next field log capture can
+    // confirm the hectowatt vs kW scaling against the cluster's own readout.
+    private volatile boolean loggedExtChargePowerScale = false;
 
     private void onChargingCallback(String method, Object[] args) {
         // Typed callbacks for real-time charging updates
@@ -2509,10 +3054,12 @@ public class BydDataCollector {
                 if (state >= 0 && state <= 15) {
                     BydVehicleData current = snapshot.get();
                     if (current != null && current.chargingState != state) {
+                        int previous = current.chargingState;
                         snapshot.set(current.toBuilder().chargingState(state).build());
                         logger.info("BMS state changed: " + state + " (" +
                                 (state == 0 ? "READY" : state == 1 ? "CHARGING" : state == 2 ? "FINISHED" :
                                  state == 3 ? "DISCHARGING" : state == 15 ? "IDLE" : "OTHER") + ")");
+                        notifyChargingStateListeners(previous, state);
                     }
                 }
             } catch (Exception e) { /* ignore */ }
@@ -2677,6 +3224,159 @@ public class BydDataCollector {
                 }
             } catch (Exception e) { logger.debug("handleKeyBatteryLevelChanged error: " + e.getMessage()); }
         }
+    }
+
+    /**
+     * Dispatcher for the typed engine listener. Routes the three known
+     * device-specific callbacks to existing handle* methods, and forwards
+     * unrecognised feature-ID events to the discovery logger so we can
+     * extend BydFeatureIds.Engine with whatever fluid temperature IDs this
+     * firmware happens to publish.
+     */
+    private void onEngineCallback(String method, Object[] args) {
+        if (args == null) return;
+        try {
+            if ("onEngineCoolantLevelChanged".equals(method)) {
+                handleEngineCoolantLevelChanged(args);
+                if (!loggedEngineCoolantEvent && args.length > 0) {
+                    loggedEngineCoolantEvent = true;
+                    int level = BydDeviceHelper.getIntValue(args[0]);
+                    logger.info("Engine event FIRST: coolantLevel=" + level
+                            + " (0=NORMAL,1=LOW)");
+                }
+                return;
+            }
+            if ("onOilLevelChanged".equals(method)) {
+                handleOilLevelChanged(args);
+                if (!loggedEngineOilEvent && args.length > 0) {
+                    loggedEngineOilEvent = true;
+                    int level = BydDeviceHelper.getIntValue(args[0]);
+                    logger.info("Engine event FIRST: oilLevel=" + level + " (0-254)");
+                }
+                return;
+            }
+            if ("onEngineSpeedChanged".equals(method) && args.length > 0) {
+                int rpm = ((Number) args[0]).intValue();
+                if (rpm >= 0 && rpm <= 8000) {
+                    BydVehicleData current = snapshot.get();
+                    if (current != null) {
+                        snapshot.set(current.toBuilder().engineSpeedRpm(rpm).build());
+                    }
+                }
+                return;
+            }
+            if ("onDataEventChanged".equals(method) && args.length >= 2) {
+                int eventId = ((Number) args[0]).intValue();
+                Object eventValue = args[1];
+                int rawInt = BydDeviceHelper.getIntValue(eventValue);
+                double rawDbl = BydDeviceHelper.getDoubleValue(eventValue);
+
+                // Known engine feature IDs — these are declared in
+                // BYDAutoFeatureIds.Engine but the typed callbacks
+                // (onEngineSpeedChanged etc.) are dormant on PHEV firmware,
+                // so consume them off the generic event channel instead.
+                // Apply the same sentinel filters and scaling as collectEngine.
+                if (eventId == BydFeatureIds.ENGINE_SPEED
+                        || eventId == BydFeatureIds.ENGINE_SPEED_ALT) {
+                    // 8191 (0x1FFF) is a PHEV "engine off" sentinel observed on this
+                    // firmware family; the standard BMS_UNAVAILABLE family covers the rest.
+                    if (rawInt != BydFeatureIds.BMS_UNAVAILABLE
+                            && rawInt != BydFeatureIds.INVALID_VALUE
+                            && rawInt != BydFeatureIds.INVALID_VALUE_2
+                            && rawInt != 8191
+                            && rawInt >= 0 && rawInt <= 8000) {
+                        BydVehicleData current = snapshot.get();
+                        if (current != null) {
+                            snapshot.set(current.toBuilder().engineSpeedRpm(rawInt).build());
+                        }
+                    }
+                    return;
+                }
+                if (eventId == BydFeatureIds.ENGINE_POWER) {
+                    // The event's intValue carries the raw CAN signal; doubleValue is
+                    // typically 0.0 on the listener path. Same dual-scale heuristic as
+                    // collectEngine: |raw| > 100 implies deciwatts (×0.1 → kW),
+                    // otherwise treat as kW directly. Range-filter excludes sentinels.
+                    double raw = (rawInt != Integer.MIN_VALUE) ? (double) rawInt : rawDbl;
+                    if (!Double.isNaN(raw) && raw >= -200.0 && raw <= 400.0) {
+                        double kw = (Math.abs(raw) > 100.0) ? raw * 0.1 : raw;
+                        // After scaling, re-check the kW range so a hectowatt value
+                        // like 3095 (→ 309.5) gets rejected instead of mis-stored.
+                        if (kw >= -200.0 && kw <= 400.0) {
+                            BydVehicleData current = snapshot.get();
+                            if (current != null) {
+                                snapshot.set(current.toBuilder().enginePowerKw(kw).build());
+                            }
+                        }
+                    }
+                    return;
+                }
+                if (eventId == BydFeatureIds.ENGINE_FRONT_MOTOR_SPEED) {
+                    // Front motor RPM is negated to match the cluster's display
+                    // convention (forward motion = positive). Filter sentinels.
+                    if (rawInt != Integer.MIN_VALUE
+                            && rawInt != BydFeatureIds.BMS_UNAVAILABLE
+                            && rawInt != BydFeatureIds.INVALID_VALUE
+                            && rawInt != BydFeatureIds.INVALID_VALUE_2
+                            && Math.abs(rawInt) <= 25000) {
+                        BydVehicleData current = snapshot.get();
+                        if (current != null) {
+                            snapshot.set(current.toBuilder().frontMotorSpeed(-rawInt).build());
+                        }
+                    }
+                    return;
+                }
+                if (eventId == BydFeatureIds.ENGINE_REAR_MOTOR_SPEED) {
+                    if (rawInt != Integer.MIN_VALUE
+                            && rawInt != BydFeatureIds.BMS_UNAVAILABLE
+                            && rawInt != BydFeatureIds.INVALID_VALUE
+                            && rawInt != BydFeatureIds.INVALID_VALUE_2
+                            && Math.abs(rawInt) <= 25000) {
+                        BydVehicleData current = snapshot.get();
+                        if (current != null) {
+                            snapshot.set(current.toBuilder().rearMotorSpeed(rawInt).build());
+                        }
+                    }
+                    return;
+                }
+                if (eventId == BydFeatureIds.ENGINE_FRONT_MOTOR_TORQUE) {
+                    // Negated to match cluster convention (same as collectEngine).
+                    if (!Double.isNaN(rawDbl) && Math.abs(rawDbl) <= 1000.0) {
+                        BydVehicleData current = snapshot.get();
+                        if (current != null) {
+                            snapshot.set(current.toBuilder().frontMotorTorque(-rawDbl).build());
+                        }
+                    }
+                    return;
+                }
+
+                // Unknown ID — log once for discovery (capped at 32 unique IDs).
+                logUnknownEngineEventOnce(eventId, rawInt, rawDbl);
+            }
+        } catch (Exception e) {
+            logger.debug("onEngineCallback error (" + method + "): " + e.getMessage());
+        }
+    }
+
+    // One-shot diagnostic flags for the typed engine callbacks.
+    private volatile boolean loggedEngineCoolantEvent = false;
+    private volatile boolean loggedEngineOilEvent = false;
+
+    // Log each unknown engine feature ID once, capped at 32 unique IDs total.
+    // Engine fluids on some firmware (coolant temp, oil temp on PHEVs) arrive
+    // here keyed on IDs that aren't in BYDAutoFeatureIds.Engine — surface the
+    // first sighting of each so we can extend the constant table empirically.
+    private final java.util.concurrent.ConcurrentHashMap<Integer, Boolean> loggedUnknownEngineIds =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final int MAX_UNKNOWN_ENGINE_IDS = 32;
+
+    private void logUnknownEngineEventOnce(int eventId, int rawInt, double rawDbl) {
+        if (loggedUnknownEngineIds.size() >= MAX_UNKNOWN_ENGINE_IDS) return;
+        if (loggedUnknownEngineIds.putIfAbsent(eventId, Boolean.TRUE) != null) return;
+        logger.info("Engine event UNKNOWN id=" + eventId
+                + " intValue=" + (rawInt == Integer.MIN_VALUE ? "n/a" : Integer.toString(rawInt))
+                + " doubleValue=" + (Double.isNaN(rawDbl) ? "n/a" : Double.toString(rawDbl))
+                + " — if this looks like a coolant/oil temp, add it to BydFeatureIds.Engine");
     }
 
     private void handleEngineCoolantLevelChanged(Object[] args) {

@@ -109,13 +109,6 @@ public class VehicleDataMonitor {
     public BydVehicleData getVd() {
         try {
             BydDataCollector c = BydDataCollector.getInstance();
-            if (!c.isInitialized() && context != null) {
-                // BydDataCollector not yet initialized — init it now
-                // This handles the race where VehicleDataMonitor is queried
-                // before CameraDaemon finishes BydDataCollector.init()
-                logger.info("BydDataCollector not initialized — initializing from VehicleDataMonitor");
-                c.init(context);
-            }
             return c.isInitialized() ? c.getData() : null;
         } catch (Exception e) { return null; }
     }
@@ -216,19 +209,12 @@ public class VehicleDataMonitor {
         // actually parked and plugged in.
         boolean engineFlowingIntoBattery =
             !Double.isNaN(vd.enginePowerKw) && vd.enginePowerKw < -0.3;
-        // batteryPowerKw uses the same sign convention (positive=discharge,
-        // negative=charge) and is fresher than enginePowerKw — refreshed
-        // even with ACC OFF as long as the BodyworkDevice is responsive.
-        // Negative magnitude > 0.5 kW = energy flowing into the pack.
-        boolean batteryFlowingIntoPack =
-            !Double.isNaN(vd.batteryPowerKw) && vd.batteryPowerKw < -0.5;
         boolean externalPowerActive =
             !Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0.15;
         boolean devicePowerActive =
             !Double.isNaN(vd.chargingPowerKw) && Math.abs(vd.chargingPowerKw) > 0.15;
         boolean anyPowerEvidence =
-            engineFlowingIntoBattery || batteryFlowingIntoPack
-                || externalPowerActive || devicePowerActive;
+            engineFlowingIntoBattery || externalPowerActive || devicePowerActive;
 
         boolean inferredCharging = !bmsSaysCharging
             && bmsAmbiguous
@@ -259,16 +245,12 @@ public class VehicleDataMonitor {
             // Priority order:
             //   1. externalChargingPowerKw — charger-reported (matches AC wall power on PHEVs)
             //   2. chargingPowerKw — BMS-reported battery-side (broken on most BYDs)
-            //   3. |batteryPowerKw| — direct pack-flow magnitude when negative
-            //   4. |enginePowerKw| — fallback when ACC is on
-            //   5. nominal-capacity hint (estimated)
+            //   3. |enginePowerKw| — fallback when ACC is on
+            //   4. nominal-capacity hint (estimated)
             if (!Double.isNaN(vd.externalChargingPowerKw) && vd.externalChargingPowerKw > 0) {
                 data.updateChargingPower(vd.externalChargingPowerKw);
             } else if (!Double.isNaN(vd.chargingPowerKw) && vd.chargingPowerKw > 0) {
                 data.updateChargingPower(vd.chargingPowerKw);
-            } else if (batteryFlowingIntoPack) {
-                // Use absolute value: batteryPowerKw is negative when charging.
-                data.updateChargingPower(Math.abs(vd.batteryPowerKw));
             } else if (engineFlowingIntoBattery) {
                 // Use absolute value: enginePower is negative when flowing in.
                 data.updateChargingPower(Math.abs(vd.enginePowerKw));
