@@ -91,6 +91,18 @@ public class VehicleControlApiHandler {
             return true;
         }
 
+        // POST /api/vehicle/lights
+        if (cleanPath.equals("/api/vehicle/lights") && method.equals("POST")) {
+            handleLights(out, body);
+            return true;
+        }
+
+        // POST /api/vehicle/adas
+        if (cleanPath.equals("/api/vehicle/adas") && method.equals("POST")) {
+            handleAdas(out, body);
+            return true;
+        }
+
         return false;
     }
 
@@ -206,7 +218,13 @@ public class VehicleControlApiHandler {
         lights.put("lowBeam", data.lowBeam);
         lights.put("highBeam", data.highBeam);
         lights.put("hazard", data.hazard);
+        lights.put("dayTimeLight", data.dayTimeLight);
         response.put("lights", lights);
+
+        // Adas
+        JSONObject adas = new JSONObject();
+        adas.put("speedLimitWarning", data.speedLimitWarning);
+        response.put("adas", adas);
 
         // Climate — only report AC state if vehicle power is on (powerLevel >= 2)
         // Otherwise stale cached data shows AC on when car is actually off
@@ -567,7 +585,7 @@ public class VehicleControlApiHandler {
 
     /**
      * Seat heating/ventilation via local HAL.
-     * Body: { "action": "heating"|"ventilation", "position": 1-4, "level": 0-3 }
+     * Body: { "action": "heating"|"ventilation"|"position", "position": 1-4, "level": 0-3 }
      * Position: 1=driver, 2=passenger, 3=rear-left, 4=rear-right
      * Level: 0=off, 1=low, 2=medium, 3=high (clamped to 0-2 internally)
      */
@@ -583,6 +601,8 @@ public class VehicleControlApiHandler {
 
             if ("ventilation".equals(action)) {
                 success = collector.setSeatVentilation(position, level);
+            } else if ("position".equals(action)) {
+                success = collector.setSeatMemoryPosition(position);
             } else {
                 success = collector.setSeatHeating(position, level);
             }
@@ -596,6 +616,70 @@ public class VehicleControlApiHandler {
             response.put("level", level);
         } catch (Exception e) {
             logger.warn("Seat command failed: " + e.getMessage());
+            response.put("success", false);
+            response.put("error", e.getMessage());
+        }
+        HttpResponse.sendJson(out, response.toString());
+    }
+
+    /**
+     * Light controls
+     * Target: "dayTimeLight"
+     * Enable: true/false
+     */
+    private static void handleLights(OutputStream out, String body) throws Exception {
+        JSONObject response = new JSONObject();
+        try {
+            JSONObject req = new JSONObject(body);
+            String target = req.optString("target", null);
+            boolean enable = req.optBoolean("enable", true);
+            BydDataCollector collector = BydDataCollector.getInstance();
+            boolean success = false;
+
+            if ("dayTimeLight".equals(target)) {
+                success = collector.setDayTimeLight(enable);
+            }
+            logger.info("Lights: target=" + target + " enable=" + enable
+                    + " result=" + success);
+
+            response.put("success", true);
+            response.put("commandSuccess", success);
+            response.put("target", target);
+            response.put("enable", enable);
+        } catch (Exception e) {
+            logger.warn("Light command failed: " + e.getMessage());
+            response.put("success", false);
+            response.put("error", e.getMessage());
+        }
+        HttpResponse.sendJson(out, response.toString());
+    }
+
+    /**
+     * ADAS controls
+     * Target: "speedLimitWarning"
+     * Enable: true/false
+     */
+    private static void handleAdas(OutputStream out, String body) throws Exception {
+        JSONObject response = new JSONObject();
+        try {
+            JSONObject req = new JSONObject(body);
+            String target = req.optString("target", null);
+            boolean enable = req.optBoolean("enable", true);
+            BydDataCollector collector = BydDataCollector.getInstance();
+            boolean success = false;
+
+            if ("speedLimitWarning".equals(target)) {
+                success = collector.setSpeedLimitWarning(enable);
+            }
+            logger.info("Adas: target=" + target + " enable=" + enable
+                    + " result=" + success);
+
+            response.put("success", true);
+            response.put("commandSuccess", success);
+            response.put("target", target);
+            response.put("enable", enable);
+        } catch (Exception e) {
+            logger.warn("Adas command failed: " + e.getMessage());
             response.put("success", false);
             response.put("error", e.getMessage());
         }

@@ -119,6 +119,7 @@ public final class BydFeatureIds {
     public static final int LIGHT_ATMOSPHERE_CUSTOM_BRIGHTNESS_SET = resolveOrFallback("Light.ATMOSPHERE_CUSTOM_BRIGHTNESS_SET", 1276194858);
     public static final int LIGHT_ATMOSPHERE_CUSTOM_COLOR = resolveOrFallback("Light.ATMOSPHERE_CUSTOM_COLOR", 657457168);
     public static final int LIGHT_ATMOSPHERE_CUSTOM_COLOR_SET = resolveOrFallback("Light.ATMOSPHERE_CUSTOM_COLOR_SET", 1276194864);
+    public static final int LIGHT_DAY_RUNNING_LIGHT_AUTO_STATE = resolveOrFallback("Light.LIGHT_DAY_RUNNING_LIGHT_AUTO_STATE", 985661476);
 
     // ==================== INSTRUMENT ====================
     public static final int INSTRUMENT_DD_MAIN_SAFETYBELT_STATE = resolveOrFallback("Instrument.INSTRUMENT_DD_MAIN_SAFETYBELT_STATE", 692060184);
@@ -232,6 +233,8 @@ public final class BydFeatureIds {
     public static final int ADAS_RCW_STATE_SET = resolveOrFallback("Adas.ADAS_RCW_STATE_SET", 944766992);
     public static final int ADAS_ESP_STATE = resolveOrFallback("Adas.ADAS_ESP_STATE", 305135676);
     public static final int ADAS_ESP_STATE_SET = resolveOrFallback("Adas.ADAS_ESP_STATE_SET", 944766984);
+    public static final int ADAS_SLW_FUNC_SWITCH_STATE = resolveOrFallback("Adas.ADAS_SLW_FUNC_SWITCH_STATE", 535834664);
+    public static final int ADAS_SLW_FUNC_SWITCH_STATE_SET = resolveOrFallback("Adas.ADAS_SLW_FUNC_SWITCH_STATE_SET", 850452531);
 
     // ==================== SENSOR ====================
     public static final int SENSOR_AUTO_SLOPE = resolveOrFallback("Sensor.SENSOR_AUTO_SLOPE", 573571116);
