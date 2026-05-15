@@ -802,6 +802,17 @@ public class SurveillanceApiHandler {
                 } catch (Exception e) {
                     CameraDaemon.log("Failed to apply config: " + e.getMessage());
                 }
+
+                // Persist to disk so settings survive ACC OFF/ON (pipeline.stop()
+                // sets initialized=false, and the next start() reloads config from
+                // disk via SurveillanceConfigManager.loadConfig() — without this
+                // save, every detection/recording field reverts to the last
+                // persisted value on the next ACC cycle).
+                try {
+                    new SurveillanceConfigManager().saveConfig(sentryConfig);
+                } catch (Exception e) {
+                    CameraDaemon.log("Failed to persist surveillance config: " + e.getMessage());
+                }
             }
             
             // Save recording settings (bitrate, codec) to unified config
