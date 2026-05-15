@@ -133,10 +133,25 @@ public final class BydFeatureIds {
     public static final int INSTRUMENT_NAVI_TYPE_SET = resolveOrFallback("Instrument.NAVI_TYPE_SET", 1276157976);
     public static final int INSTRUMENT_2IN1_CURRENT_JOURNEY_DRIVE_MILEAGE = resolveOrFallback("Instrument.INSTRUMENT_2IN1_CURRENT_JOURNEY_DRIVE_MILEAGE", 1246801948);
     public static final int INSTRUMENT_2IN1_CURRENT_JOURNEY_DRIVE_TIME = resolveOrFallback("Instrument.INSTRUMENT_2IN1_CURRENT_JOURNEY_DRIVE_TIME", 1246801938);
-    // INSTRUMENT_LF/RF/LB/RB_TYRE_TEMPERATURE feature IDs removed:
-    // they return null on real BYD firmwares (verified via PHEV runtime
-    // probe). The dashboard cluster reads tyre temps via a private OEM
-    // binder we can't access from third-party apps.
+    // Instrument tyre temperature feature IDs — used for two-arg listener
+    // registration and polled get() calls. May return null on some firmwares
+    // but are the correct channel for TPMS temperature on others.
+    public static final int INSTRUMENT_LF_TYRE_TEMPERATURE = resolveOrFallback(
+        "Instrument.LF_TYRE_TEMPERATURE", 1246797848);
+    public static final int INSTRUMENT_RF_TYRE_TEMPERATURE = resolveOrFallback(
+        "Instrument.RF_TYRE_TEMPERATURE", 1246797860);
+    public static final int INSTRUMENT_LB_TYRE_TEMPERATURE = resolveOrFallback(
+        "Instrument.LB_TYRE_TEMPERATURE", 1246797872);
+    public static final int INSTRUMENT_RB_TYRE_TEMPERATURE = resolveOrFallback(
+        "Instrument.RB_TYRE_TEMPERATURE", 1246797884);
+
+    /** All instrument tyre temperature feature IDs for listener subscription */
+    public static final int[] INSTRUMENT_TYRE_TEMP_IDS = {
+        INSTRUMENT_LF_TYRE_TEMPERATURE,
+        INSTRUMENT_RF_TYRE_TEMPERATURE,
+        INSTRUMENT_LB_TYRE_TEMPERATURE,
+        INSTRUMENT_RB_TYRE_TEMPERATURE
+    };
     public static final int INSTRUMENT_CHARGING_CHARGE_PERCENT_DD = resolveOrFallback("Instrument.CHARGING_CHARGE_PERCENT_DD", 842006544);
     public static final int INSTRUMENT_CHARGING_CHARGE_POWER_DD = resolveOrFallback("Instrument.CHARGING_CHARGE_POWER_DD", 842006552);
     public static final int INSTRUMENT_CHARGING_CHARGE_REST_HOUR_DD = resolveOrFallback("Instrument.CHARGING_CHARGE_REST_HOUR_DD", 842006568);

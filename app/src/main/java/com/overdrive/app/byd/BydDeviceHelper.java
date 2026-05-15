@@ -226,6 +226,14 @@ public final class BydDeviceHelper {
         return null;
     }
 
+    /**
+     * Resolve the IBYDAutoListener-derived interface for a given device class
+     * by inspecting registerListener parameter types. Some devices (e.g. ADAS)
+     * declare a derived interface (IBYDAutoADASListener) instead of the base
+     * IBYDAutoListener — Class.forName on the base name would still find a
+     * class, but the proxy must implement the device-specific subtype or
+     * registerListener.invoke fails with IllegalArgumentException.
+     */
     private static Class<?> getListenerInterface(Class<?> cls, String listenerInterfaceName) {
         if (cls != null) {
             Method[] methods = cls.getDeclaredMethods();

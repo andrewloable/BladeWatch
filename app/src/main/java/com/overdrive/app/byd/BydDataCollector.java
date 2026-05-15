@@ -3189,7 +3189,6 @@ public class BydDataCollector {
                 int iVal = BydDeviceHelper.getIntValue(eventValue);
 
                 if (eventId == BydFeatureIds.ADAS_SLW_FUNC_SWITCH_STATE && iVal > 0 && iVal < 3) {
-
                     BydVehicleData current = snapshot.get();
                     if (current != null) {
                         snapshot.set(current.toBuilder().speedLimitWarning(iVal == 2).build());
@@ -4106,10 +4105,14 @@ public class BydDataCollector {
         }
     }
 
+    /**
+     * Recall a stored driver-side seat memory position (1 or 2).
+     * SDK feature lives on settingDevice — Adas.* IDs do not accept this set.
+     */
     public boolean setSeatMemoryPosition(int position) {
         try {
             if (position < 1 || position > 2) return false;
-            int result = BydDeviceHelper.callSetSingle(adasDevice, BydFeatureIds.SETTING_LF_MEMORY_LOCATION_WAKE_SET, position);
+            int result = BydDeviceHelper.callSetSingle(settingDevice, BydFeatureIds.SETTING_LF_MEMORY_LOCATION_WAKE_SET, position);
             return result == 0;
         } catch (Exception e) {
             logger.debug("setSeatMemoryPosition failed: " + e.getMessage());

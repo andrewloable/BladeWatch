@@ -117,7 +117,7 @@ public class VehicleControlApiHandler {
 
         if (data == null) {
             response.put("success", false);
-            response.put("error", "Vehicle data not available");
+            response.put("error", Messages.get("errors.vehicle_data_unavailable"));
             HttpResponse.sendJson(out, response.toString());
             return;
         }
@@ -221,7 +221,7 @@ public class VehicleControlApiHandler {
         lights.put("dayTimeLight", data.dayTimeLight);
         response.put("lights", lights);
 
-        // Adas
+        // ADAS
         JSONObject adas = new JSONObject();
         adas.put("speedLimitWarning", data.speedLimitWarning);
         response.put("adas", adas);
@@ -428,7 +428,7 @@ public class VehicleControlApiHandler {
                     // causes the body controller to fire the anti-theft alarm.
                     if (!unlockSuccess) {
                         response.put("success", false);
-                        response.put("error", "Cannot open trunk: unlock failed. Car may still be locked.");
+                        response.put("error", Messages.get("errors.vehicle_trunk_unlock_failed"));
                         response.put("action", action);
                         HttpResponse.sendJson(out, response.toString());
                         return;
@@ -471,7 +471,7 @@ public class VehicleControlApiHandler {
             if (req.has("targetPercent")) {
                 if (area < 1 || area > 6) {
                     response.put("success", false);
-                    response.put("error", "targetPercent requires a specific area (1-6)");
+                    response.put("error", Messages.get("errors.vehicle_window_target_requires_area"));
                     HttpResponse.sendJson(out, response.toString());
                     return;
                 }
@@ -566,7 +566,7 @@ public class VehicleControlApiHandler {
                 default:
                     logger.warn("Climate: unknown action '" + action + "'");
                     response.put("success", false);
-                    response.put("error", "Unknown action: " + action);
+                    response.put("error", Messages.get("errors.vehicle_unknown_action_with_action", action));
                     HttpResponse.sendJson(out, response.toString());
                     return;
             }
@@ -584,10 +584,11 @@ public class VehicleControlApiHandler {
     }
 
     /**
-     * Seat heating/ventilation via local HAL.
+     * Seat heating/ventilation/memory-recall via local HAL.
      * Body: { "action": "heating"|"ventilation"|"position", "position": 1-4, "level": 0-3 }
      * Position: 1=driver, 2=passenger, 3=rear-left, 4=rear-right
      * Level: 0=off, 1=low, 2=medium, 3=high (clamped to 0-2 internally)
+     * For action="position", `position` is the stored memory slot (1-2).
      */
     private static void handleSeat(OutputStream out, String body) throws Exception {
         JSONObject response = new JSONObject();
@@ -623,9 +624,8 @@ public class VehicleControlApiHandler {
     }
 
     /**
-     * Light controls
-     * Target: "dayTimeLight"
-     * Enable: true/false
+     * Light controls.
+     * Body: { "target": "dayTimeLight", "enable": true|false }
      */
     private static void handleLights(OutputStream out, String body) throws Exception {
         JSONObject response = new JSONObject();
@@ -635,9 +635,13 @@ public class VehicleControlApiHandler {
             boolean enable = req.optBoolean("enable", true);
             BydDataCollector collector = BydDataCollector.getInstance();
             boolean success = false;
+            String errorKey = null;
 
             if ("dayTimeLight".equals(target)) {
                 success = collector.setDayTimeLight(enable);
+                if (!success) errorKey = "errors.vehicle_drl_set_failed";
+            } else {
+                errorKey = "errors.vehicle_unsupported_target_with_target";
             }
             logger.info("Lights: target=" + target + " enable=" + enable
                     + " result=" + success);
@@ -646,6 +650,11 @@ public class VehicleControlApiHandler {
             response.put("commandSuccess", success);
             response.put("target", target);
             response.put("enable", enable);
+            if (errorKey != null) {
+                response.put("error", "errors.vehicle_unsupported_target_with_target".equals(errorKey)
+                        ? Messages.get(errorKey, target)
+                        : Messages.get(errorKey));
+            }
         } catch (Exception e) {
             logger.warn("Light command failed: " + e.getMessage());
             response.put("success", false);
@@ -655,9 +664,8 @@ public class VehicleControlApiHandler {
     }
 
     /**
-     * ADAS controls
-     * Target: "speedLimitWarning"
-     * Enable: true/false
+     * ADAS controls.
+     * Body: { "target": "speedLimitWarning", "enable": true|false }
      */
     private static void handleAdas(OutputStream out, String body) throws Exception {
         JSONObject response = new JSONObject();
@@ -667,9 +675,13 @@ public class VehicleControlApiHandler {
             boolean enable = req.optBoolean("enable", true);
             BydDataCollector collector = BydDataCollector.getInstance();
             boolean success = false;
+            String errorKey = null;
 
             if ("speedLimitWarning".equals(target)) {
                 success = collector.setSpeedLimitWarning(enable);
+                if (!success) errorKey = "errors.vehicle_slw_set_failed";
+            } else {
+                errorKey = "errors.vehicle_unsupported_target_with_target";
             }
             logger.info("Adas: target=" + target + " enable=" + enable
                     + " result=" + success);
@@ -678,6 +690,11 @@ public class VehicleControlApiHandler {
             response.put("commandSuccess", success);
             response.put("target", target);
             response.put("enable", enable);
+            if (errorKey != null) {
+                response.put("error", "errors.vehicle_unsupported_target_with_target".equals(errorKey)
+                        ? Messages.get(errorKey, target)
+                        : Messages.get(errorKey));
+            }
         } catch (Exception e) {
             logger.warn("Adas command failed: " + e.getMessage());
             response.put("success", false);
