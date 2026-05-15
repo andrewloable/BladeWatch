@@ -25,7 +25,9 @@ var VC = {
         locked: null,
         trunkOpen: false,
         doors: { lf: 1, rf: 1, lr: 1, rr: 1, trunk: -1, hood: -1 },
-        windows: { lf: 0, rf: 0, lr: 0, rr: 0 },
+        windows: { lf: 0, rf: 0, lr: 0, rr: 0, sunroof: 0, sunshade: 0 },
+        lights: { dayTimeLight: false },
+        adas: { speedLimitWarning: false },
         soc: 0,
         rangeKm: 0,
         cloudConfigured: false,
@@ -693,7 +695,9 @@ var VC = {
             lf: { x: 1.0, y: 0.9, z: 0.5 },
             rf: { x: -1.0, y: 0.9, z: 0.5 },
             lr: { x: 1.0, y: 0.9, z: -0.5 },
-            rr: { x: -1.0, y: 0.9, z: -0.5 }
+            rr: { x: -1.0, y: 0.9, z: -0.5 },
+            sunroof: { x: 0, y: 1.4, z: -0.5 },
+            sunshade: { x: 0, y: 1.4, z: -0.5 }
         };
         var pos = positions[area];
         if (!pos) return;
@@ -1312,14 +1316,43 @@ var VC = {
         // All windows — only fully-open / fully-closed makes sense for "all"
         // (per-window % requires per-window polling, no SDK batch primitive).
         this.bindBtn('btnWinAllOpen', function() {
-            for (var j = 0; j < areas.length; j++) self.triggerWindowVFX(areas[j], true);
+            for (var j = 0; j < 4; j++) self.triggerWindowVFX(areas[j], true);
             self.apiPost('/api/vehicle/window', { area: 0, command: 1 });
             self.toast('All windows opening', 'info');
         });
         this.bindBtn('btnWinAllClose', function() {
-            for (var j = 0; j < areas.length; j++) self.triggerWindowVFX(areas[j], false);
+            for (var j = 0; j < 4; j++) self.triggerWindowVFX(areas[j], false);
             self.apiPost('/api/vehicle/window', { area: 0, command: 2 });
             self.toast('All windows closing', 'info');
+        });
+
+        // === Lights controls ===
+        this.bindBtn('btnDRL', function() {
+            const enable = self.vehicleState.lights?.dayTimeLight ? false : true;
+            self.triggerSonarVFX(0, 0.6, 2, new THREE.Color(enable ? 0xFF6B35 : 0x1A1A1E));
+            self.apiPost('/api/vehicle/lights', { target: 'dayTimeLight', enable }).then(function(result) {
+                if (result.success && result.commandSuccess) {
+                    self.vehicleState.lights.dayTimeLight = result.enable;
+                    self.updateLightsUI();
+                    self.toast('Daytime running lights ' + (result.enable ? 'enabled' : 'disabled'), 'info');
+                } else {
+                    self.toast(result.error || 'Daytime running lights setting failed', 'error');
+                }
+            });
+        });
+
+        // === ADAS controls ===
+        this.bindBtn('btnSLW', function() {
+            const enable = self.vehicleState.adas?.speedLimitWarning ? false : true
+            self.apiPost('/api/vehicle/adas', { target: 'speedLimitWarning', enable }).then(function(result) {
+                if (result.success && result.commandSuccess) {
+                    self.vehicleState.adas.speedLimitWarning = result.enable;
+                    self.updateAdasUI();
+                    self.toast('Speed limit warning ' + (result.enable ? 'enabled' : 'disabled'), 'info');
+                } else {
+                    self.toast(result.error || 'Speed limit warning setting failed', 'error');
+                }
+            });;
         });
 
         // === CLIMATE CONTROLS ===
@@ -1424,6 +1457,17 @@ var VC = {
                         self.toast('Seat cool: Off', 'info');
                     }
                     self.apiPost('/api/vehicle/seat', { action: 'ventilation', position: pos, level: next });
+                });
+            })(si);
+        }
+        for (var si = 1; si <= 2; si++) {
+            (function(pos) {
+                self.bindBtn('btnSeatMemory' + pos, function() {
+                    // Cool VFX — blue sonar at seat - Only for driver seat
+                    var sp = seatPositions[1];
+                    self.triggerSonarVFX(sp.x, sp.y, sp.z, new THREE.Color(0x00BFFF));
+                    self.toast('Seat memory position: ' + pos, 'success');
+                    self.apiPost('/api/vehicle/seat', { action: 'position', position: pos });
                 });
             })(si);
         }
@@ -1535,6 +1579,10 @@ var VC = {
             // 'muted' / NO DATA).
             if (data.tyres) self.updateTyreCallouts(data.tyres);
 
+            if (data.lights) self.vehicleState.lights = data.lights;
+
+            if (data.adas) self.vehicleState.adas = data.adas;
+
             // Update UI
             self.updateHUD();
             self.updateWindowBars();
@@ -1544,6 +1592,8 @@ var VC = {
             self.updateClimateUI();
             self.updateSeatGlows();
             self.updateTabIndicators();
+            self.updateLightsUI();
+            self.updateAdasUI();
 
         }).catch(function(e) {
             console.warn('[VC] State fetch error:', e);
@@ -1996,6 +2046,18 @@ var VC = {
                 this._stopSeatSonar(key);
             }
         }
+    },
+
+    updateLightsUI: function() {
+        var btnDRL = document.getElementById('btnDRL');
+
+        if (btnDRL) { if (this.vehicleState.lights?.dayTimeLight) btnDRL.classList.add('on'); else btnDRL.classList.remove('on'); }
+    },
+
+    updateAdasUI: function() {
+        var btnSLW = document.getElementById('btnSLW');
+
+        if (btnSLW) { if (this.vehicleState.adas?.speedLimitWarning) btnSLW.classList.add('on'); else btnSLW.classList.remove('on'); }
     },
 
     /** Stop sonar for a specific seat and clean up meshes */
