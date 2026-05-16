@@ -347,6 +347,13 @@ public class CameraDaemon {
         ipcServer = new SurveillanceIpcServer(19877);
         accMonitor = new AccMonitor();
 
+        // Init app context. This will break the app if run in a thread
+        if (sharedAppContext == null) {
+            try {
+                sharedAppContext = createAppContext();
+            } catch (Throwable ignored) {}
+        }
+
         // Notifications subsystem — registry, push subscriptions, sinks.
         // Lives in this process because HttpServer (where the API routes bind)
         // runs here, and every v1 emit source (surveillance, proximity, tyre)
@@ -2872,15 +2879,10 @@ public class CameraDaemon {
     private static void initNotifications() throws Exception {
         com.overdrive.app.notifications.CategoryRegistry registry = null;
 
-        // The registry JSON ships in the APK assets. Prefer the cached
-        // sharedAppContext if already populated; fall back to creating one
-        // (createAppContext() may block up to 10s on cold daemon start).
+        // The registry JSON ships in the APK assets. Use the cached
+        // sharedAppContext if already populated; Do not create one
+        // as it breaks in a thread
         android.content.Context appContext = getAppContext();
-        if (appContext == null) {
-            try {
-                appContext = createAppContext();
-            } catch (Throwable ignored) {}
-        }
         if (appContext != null) {
             try {
                 registry = com.overdrive.app.notifications.CategoryRegistry.loadFromAssets(appContext);
