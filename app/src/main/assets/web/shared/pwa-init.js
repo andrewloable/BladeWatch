@@ -149,15 +149,10 @@
                 return;
             }
 
-            // permission === 'granted'
-            var meta = await getCategoriesAndKey();
-            if (!meta || !meta.vapidPublicKey) {
-                log('no VAPID key from server');
-                return;
+            if (!await reg.pushManager.getSubscription()) {
+                // Don't recreate the subscription on init as the user could have disabled after previous enabling
+                log('push subscription was previously registered');
             }
-            var sub = await ensureSubscription(reg, meta.vapidPublicKey);
-            await postSubscription(sub);
-            log('push subscription registered');
         } catch (e) {
             log('init failed:', e && e.message ? e.message : e);
         }

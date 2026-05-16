@@ -46,16 +46,15 @@ public class AuthMiddleware {
         "/favicon.ico",
         // PWA install assets — the browser fetches these as part of service-
         // worker registration and manifest discovery, with no Bearer header
-        // (browser-internal fetch, not auth.js-wrapped). These are still
-        // origin-gated in HttpServer.isPwaOrigin so they only resolve from
-        // the configured zrok subdomain.
+        // (browser-internal fetch, not auth.js-wrapped).
         "/manifest.json",
         "/sw.js"
     ));
 
     // Path prefixes that don't require authentication
     private static final String[] PUBLIC_PREFIXES = {
-        "/shared/"       // Static assets (CSS, JS, fonts, models)
+        "/shared/", // Static assets (CSS, JS, fonts, models)
+        "/i18n/"    // Language files
     };
 
     // Cookie name for JWT

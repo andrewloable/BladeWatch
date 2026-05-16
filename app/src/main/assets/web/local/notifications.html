@@ -358,7 +358,7 @@
                     <div id="status" class="notif-status" style="display:none;"></div>
 
                     <div id="originBanner" class="notif-status warn" style="display:none;" data-i18n="notif.origin_banner">
-                        Push notifications require Zrok. They install via the reserved Zrok URL only — Cloudflare quick tunnels change every restart and would invalidate every subscription. Tailscale serves over plain HTTP and can't be used for Web Push at all. Open the dashboard from your &lt;name&gt;.share.zrok.io URL on your phone, "Add to Home Screen", then return here to enable.
+                        Push notifications require Zrok or a reverse proxy. Cloudflare quick tunnels change every restart and would invalidate every subscription. Tailscale serves over plain HTTP and can't be used for Web Push unless using a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.
                     </div>
 
                     <div id="backendBanner" class="notif-status warn" style="display:none;" data-i18n="notif.backend_banner">
@@ -459,14 +459,17 @@
             if (DEV_PWA) return true;
             var host = window.location.hostname || '';
             var loopback = host === '127.0.0.1' || host === 'localhost' || host === '0.0.0.0';
-            var insecure = window.location.protocol !== 'https:';
-            var notZrok  = !/\.share\.zrok\.io$/i.test(host);
-            return !(loopback || insecure || notZrok);
+            var insecure = !window.isSecureContext;
+            var cloudflare = /[a-z0-9-]*\.trycloudflare\.com/i.test(host);
+            return !(loopback || insecure || cloudflare);
         })();
+        var notZrok  = !/\.share\.zrok\.io$/i.test(window.location.hostname);
 
-        if (!ORIGIN_OK) {
+        if (notZrok) {
             var b = document.getElementById('originBanner');
             if (b) b.style.display = '';
+        }
+        if (!ORIGIN_OK) {
             ['enableBtn', 'testBtn', 'disableBtn'].forEach(function (id) {
                 var x = document.getElementById(id);
                 if (x) { x.classList.add('disabled'); x.disabled = true; }
@@ -492,22 +495,37 @@
             if (el) el.style.display = 'none';
         }
 
-        function permissionLabel() {
+        function isPwaInstalled() {
+            return window?.matchMedia("(display-mode: standalone)")?.matches
+                || window?.navigator?.standalone === true;
+        }
+
+        async function getPushSubscription() {
+            const reg = await navigator?.serviceWorker?.getRegistration();
+            const sub = reg ? await reg?.pushManager?.getSubscription() : null;
+            return { reg, sub };
+        }
+
+        async function permissionLabel() {
             if (!ORIGIN_OK) {
                 return BYD.i18n.t('notif.perm_zrok_required');
             }
-            if (typeof Notification === 'undefined') return BYD.i18n.t('notif.perm_unsupported');
-            switch (Notification.permission) {
-                case 'granted': return BYD.i18n.t('notif.perm_granted');
-                case 'denied':  return BYD.i18n.t('notif.perm_denied');
-                default:        return BYD.i18n.t('notif.perm_default');
+            if (typeof Notification === 'undefined') {
+                if (!isPwaInstalled()) return BYD.i18n.t('notif.perm_unsupported_install');
+                return BYD.i18n.t('notif.perm_unsupported');
             }
+            const { sub } = await getPushSubscription();
+            const perm = Notification.permission;
+            if (perm === 'denied') return BYD.i18n.t('notif.perm_denied');
+            // Notification.permission can be granted even when subscription has been removed
+            if (sub) return BYD.i18n.t('notif.perm_granted');
+            return BYD.i18n.t('notif.perm_default');
         }
 
-        function refreshPermissionUI() {
+        async function refreshPermissionUI() {
             var stateEl = document.getElementById('permissionState');
             var rowEl = document.getElementById('permissionRow');
-            if (stateEl) stateEl.textContent = permissionLabel();
+            if (stateEl) stateEl.textContent = await permissionLabel();
             if (rowEl) {
                 rowEl.classList.remove('granted', 'denied', 'default');
                 if (!ORIGIN_OK) {
@@ -521,11 +539,12 @@
             // class — don't undo it here.
             if (!ORIGIN_OK) return;
 
+            const { sub } = await getPushSubscription();
             var enableBtn = document.getElementById('enableBtn');
             var disableBtn = document.getElementById('disableBtn');
             if (typeof Notification === 'undefined' || Notification.permission === 'denied') {
                 if (enableBtn) { enableBtn.classList.add('disabled'); enableBtn.disabled = true; }
-            } else if (Notification.permission === 'granted') {
+            } else if (sub) {
                 if (enableBtn) enableBtn.style.display = 'none';
                 if (disableBtn) disableBtn.style.display = '';
             } else {
@@ -777,8 +796,7 @@
                 renderDevices(subs);
 
                 if (!('serviceWorker' in navigator)) return;
-                var reg = await navigator.serviceWorker.getRegistration();
-                var sub = reg ? await reg.pushManager.getSubscription() : null;
+                const { reg, sub } = await getPushSubscription();
                 if (!sub) return;
                 var localId = await localIdForEndpoint(sub.endpoint);
                 if (!localId) return;
@@ -849,7 +867,7 @@
                     return;
                 }
                 state.currentSubscriptionId = result.id;
-                refreshPermissionUI();
+                await refreshPermissionUI();
                 await loadSubscriptions();
                 showStatus('ok', BYD.i18n.t('notif.enable_success'));
             } catch (e) {
@@ -863,7 +881,7 @@
             try {
                 if (window.OverdrivePush) await window.OverdrivePush.unsubscribe();
                 state.currentSubscriptionId = null;
-                refreshPermissionUI();
+                await refreshPermissionUI();
                 await loadSubscriptions();
                 showStatus('ok', 'Notifications disabled on this device.');
             } catch (e) {
@@ -902,7 +920,9 @@
         function escapeAttr(s) { return escapeHtml(s); }
 
         (async function () {
-            refreshPermissionUI();
+            // Languages might not be available yet
+            await BYD.i18n.init();
+            await refreshPermissionUI();
             await loadCategories();
             if (state.backendReady) await loadSubscriptions();
         })();

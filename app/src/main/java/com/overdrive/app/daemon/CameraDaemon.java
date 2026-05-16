@@ -2868,30 +2868,8 @@ public class CameraDaemon {
      * {@code /data/local/tmp/.push/}, registers PushSink + LogSink with
      * NotificationBus, and wires NotificationApiHandler so HTTP routes can
      * resolve.
-     *
-     * <p>This method short-circuits and does NOTHING if the user hasn't
-     * reserved a zrok subdomain yet — push notifications require a stable
-     * HTTPS origin to install the PWA. Without zrok, we skip:
-     * <ul>
-     *   <li>Reading {@code notifications-categories.json} from assets</li>
-     *   <li>Generating / loading the VAPID keypair</li>
-     *   <li>Reading the subscription file</li>
-     *   <li>Registering sinks (so {@link com.overdrive.app.notifications.NotificationBus}
-     *       short-circuits all publishes — emit sites pay zero cost)</li>
-     * </ul>
-     * The user can re-trigger init by reserving a zrok URL and restarting
-     * the daemon.
      */
     private static void initNotifications() throws Exception {
-        // Cross-UID readable file — same one HttpServer.isPwaOrigin reads.
-        // PreferencesManager would NPE here because UID 2000 cannot read
-        // app-private SharedPreferences.
-        java.io.File zrokNameFile = new java.io.File("/data/local/tmp/.zrok/unique_name");
-        if (!zrokNameFile.exists() || zrokNameFile.length() == 0) {
-            log("Notifications skipped: no zrok unique_name reserved (PWA install requires stable HTTPS origin)");
-            return;
-        }
-
         com.overdrive.app.notifications.CategoryRegistry registry = null;
 
         // The registry JSON ships in the APK assets. Prefer the cached
