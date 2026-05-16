@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "Meddelelser",
-    "origin_banner": "Push-meldinger krever Zrok. De installerer via den reserverte Zrok-URL bare  Cloudflare raske tunneler endrer hver gjenstart og ville invalidere hvert abonnement. Tailscale tjener over vanlig HTTP og kan ikke brukes til Web Push i det hele tatt. Åpne instrumentpanelet fra din reserverte Zrok-URL på telefonen, legg til Startskjerm, og deretter gå tilbake her for å aktivere.",
     "backend_banner": "Innstilling av meldinger ikke initialisert. Reserver en Zrok URL via daemon-skjermen og start daemon om for å aktivere push-levering.",
     "push_delivery": "Trykket levering",
     "push_delivery_sub": "Du må ha en gang på telefonen du installerer dashbordet på.",
@@ -148,7 +147,6 @@
     "registered_devices": "Registrerte enheter",
     "devices_sub": "Alle telefoner som har aktiveret push-meldinger vises her. Bruk fjern for å avregistrere en enhet. Å deaktivere på denne enheten ovenfor avmelder også den nåværende nettleseren lokalt, mens fjern er bare server-side.",
     "no_devices": "Ingen enheter registrert ennå.",
-    "perm_zrok_required": "Push levering krever Zrok URL  se banner ovenfor.",
     "perm_unsupported": "Notifikasjoner som ikke støttes i denne nettleseren",
     "perm_granted": "Meddelelser er aktivert på denne enheten",
     "perm_denied": "Meldinger er blokkert.",
@@ -172,7 +170,10 @@
     "sev_critical": "Kritisk: Drop-all alert  klebrig banner, lenger vibrere, ignorerer stille timer.",
     "sev_warn": "Advarsel: kort vibrasjon, standard banner  noe å se på snart.",
     "sev_auto": "Auto: alvorlighetsgrad bestemmes per hendelse fra dataene (langsom lekkasje → advarsel, rask lekkasje → kritisk).",
-    "sev_info": "Informasjon: stille banner, ingen vibrasjon  forbeholdt bekreftelser."
+    "sev_info": "Informasjon: stille banner, ingen vibrasjon  forbeholdt bekreftelser.",
+    "origin_banner": "Push-meldinger krever Zrok eller en omvendt proxy. Cloudflare raske tunneler endrer hver gjenstart og ville invalidere hver abonnement. Tailscale tjener over vanlig HTTP og kan ikke brukes til Web Push med mindre du bruker en omvendt proxy. Åpne instrumentpanelet fra din reserverte Zrok eller omvendt proxy URL på telefonen din, legg til Startskjerm, og deretter gå tilbake her for å aktivere.",
+    "perm_zrok_required": "Push levering krever Zrok eller en omvendt proxy  se banner ovenfor.",
+    "perm_unsupported_install": "Hvis du bruker Safari, prøv å legge til på startskjermen for å få varsler"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "Klima",
     "tab_seats": "Sittelser",
     "tab_windows": "Vinduer",
-    "tab_lights": "Lys",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "Pos 1",
-    "seat_pos_2": "Pos 2",
-    "seat_pos_1_title": "Posisjon 1",
-    "seat_pos_2_title": "Posisjon 2",
-    "seat_memory_position": "Seteminnesposisjon: {pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "Kjørelys",
-    "btn_slw": "SLW",
-    "btn_slw_title": "Fartsgrenseadvarsel",
-    "drl_enabled": "Kjørelys aktivert",
-    "drl_disabled": "Kjørelys deaktivert",
-    "drl_failed": "Kunne ikke endre kjørelys",
-    "slw_enabled": "Fartsgrenseadvarsel aktivert",
-    "slw_disabled": "Fartsgrenseadvarsel deaktivert",
-    "slw_failed": "Kunne ikke endre fartsgrenseadvarsel",
     "unlocked": "Ulåst",
     "model_load_failed": "Modellen er ikke funnet.",
     "model_load_failed_short": "Modelllast mislykkes.",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "Nettverksfeil: {message}",
     "fuel": "Brensel",
     "personalized_label": " Personliggjort",
-    "soh_label": "SOH"
+    "soh_label": "SOH",
+    "tab_lights": "Lys",
+    "tab_adas": "ADAS-systemet",
+    "seat_pos_1": "1 Pos",
+    "seat_pos_2": "Pos 2",
+    "seat_pos_1_title": "Støtte 1",
+    "seat_pos_2_title": "2 Posisjon",
+    "seat_memory_position": "Sittmemorikkposisjon: {pos}",
+    "btn_drl": "D",
+    "btn_drl_title": "Daglig løplys",
+    "btn_slw": "SLW",
+    "btn_slw_title": "Varsel om hastighetsgrenser",
+    "drl_enabled": "Daglig lysaktiver",
+    "drl_disabled": "Dagens lys er avlyst",
+    "drl_failed": "Dagens lysinnstilling mislykkes",
+    "slw_enabled": "Rettingsgrensvarsel aktiveret",
+    "slw_disabled": "Rettingsgrensvarsel inaktivert",
+    "slw_failed": "Vinnsgrensvarsel innstilling mislyktes"
   },
   "roi": {
     "editing": "REDIGERING",
@@ -1299,6 +1300,11 @@
     "live": "Leve",
     "enable_failed": "Ikke aktiveret streaming"
   },
+  "map": {
+    "your_vehicle": "Din bil",
+    "your_vehicle_sub": "BYD Champ Sentry",
+    "you_are_here": "Du er her"
+  },
   "pip": {
     "select_camera": "Velg kamera",
     "select_a_camera": "Velg et kamera",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "xxxxxxxx"
-  },
-  "map": {
-    "your_vehicle": "Din bil",
-    "your_vehicle_sub": "BYD Champ Sentry",
-    "you_are_here": "Du er her"
   }
 }

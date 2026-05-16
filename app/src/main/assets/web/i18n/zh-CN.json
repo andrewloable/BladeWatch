@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "通知",
-    "origin_banner": "推通知需要Zrok.它们通过保留的Zrok URL 仅安装Z0XX快速道每一次重启都会改变,并会无效的每次订阅.Tailscale 通过简单的HTTP服务,不能用于Web Push.打开您的电话上的Zrok URL 仪表板,添加到主屏幕,然后返回这里启用.",
     "backend_banner": "通过 daemons 屏幕预备一个 Zrok URL,然后重新启动 daemon 启动推送.",
     "push_delivery": "推送",
     "push_delivery_sub": "您正在使用的设备上启用警报.",
@@ -148,7 +147,6 @@
     "registered_devices": "已注册的设备",
     "devices_sub": "移除使用移除,以取消设备的注册.在上面的设备上禁用也会在本地取消当前浏览器的订阅,而移除则仅是服务器侧.",
     "no_devices": "没有任何设备登记.",
-    "perm_zrok_required": "推送需要Zrok URL 查看上面的横幅.",
     "perm_unsupported": "在本浏览器中未支持的通知",
     "perm_granted": "在此设备上启用了通知",
     "perm_denied": "通知被阻止. 在浏览器设置中启用.",
@@ -172,7 +170,10 @@
     "sev_critical": "关键:放弃一切警报 粘旗,振动更长,忽略安静的时间.",
     "sev_warn": "警告:短振动,标准标志  很快看看的东西.",
     "sev_auto": "根据数据,每次事件的严重性 (缓慢泄漏 →警告,快速泄漏 →关键) 决定.",
-    "sev_info": "信息:无声旗,没有振动  仅供确认."
+    "sev_info": "信息:无声旗,没有振动  仅供确认.",
+    "origin_banner": "推送通知需要Zrok或反向代理.Cloudflare快速道每一次重启都会改变,并会无效每个订阅.Tailscale在简单的HTTP上服务,除非使用反向代理,否则不能用于Web Push.从您预留的Zrok或反向代理URL打开仪表板在手机上,添加到主屏幕,然后返回这里启用.",
+    "perm_zrok_required": "推送需要Zrok或反向代理查看上面的横幅.",
+    "perm_unsupported_install": "如果使用 Safari,请尝试在主屏幕上添加通知"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "气候",
     "tab_seats": "座椅",
     "tab_windows": "窗户",
-    "tab_lights": "灯光",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "位置 1",
-    "seat_pos_2": "位置 2",
-    "seat_pos_1_title": "位置 1",
-    "seat_pos_2_title": "位置 2",
-    "seat_memory_position": "座椅记忆位置：{pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "日间行车灯",
-    "btn_slw": "SLW",
-    "btn_slw_title": "限速警告",
-    "drl_enabled": "日间行车灯已开启",
-    "drl_disabled": "日间行车灯已关闭",
-    "drl_failed": "日间行车灯设置失败",
-    "slw_enabled": "限速警告已开启",
-    "slw_disabled": "限速警告已关闭",
-    "slw_failed": "限速警告设置失败",
     "unlocked": "开锁",
     "model_load_failed": "没有找到模型,请点击重试.",
     "model_load_failed_short": "模型负载失败了.",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "网络错误:{message}",
     "fuel": "燃料",
     "personalized_label": " 个性化",
-    "soh_label": "果"
+    "soh_label": "果",
+    "tab_lights": "灯光",
+    "tab_adas": "美国ADAS",
+    "seat_pos_1": "标签: 标签:",
+    "seat_pos_2": "两位",
+    "seat_pos_1_title": "位置 1",
+    "seat_pos_2_title": "2 立场",
+    "seat_memory_position": "座椅内存位置:{pos}",
+    "btn_drl": "其他:",
+    "btn_drl_title": "白天运行灯",
+    "btn_slw": "美国",
+    "btn_slw_title": "预警速度限制",
+    "drl_enabled": "昼间运行灯启动",
+    "drl_disabled": "昼间运行灯关闭",
+    "drl_failed": "白天运行灯设置失败",
+    "slw_enabled": "启用速度限制警告",
+    "slw_disabled": "禁用速度限制警告",
+    "slw_failed": "速度限制警告设置失败"
   },
   "roi": {
     "editing": "编辑",
@@ -1299,6 +1300,11 @@
     "live": "活着",
     "enable_failed": "无法启用流媒体"
   },
+  "map": {
+    "your_vehicle": "你的车辆",
+    "your_vehicle_sub": "士哨兵BYD",
+    "you_are_here": "你在这里"
+  },
   "pip": {
     "select_camera": "选择摄像头",
     "select_a_camera": "选择一个相机",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "其他"
-  },
-  "map": {
-    "your_vehicle": "你的车辆",
-    "your_vehicle_sub": "士哨兵BYD",
-    "you_are_here": "你在这里"
   }
 }

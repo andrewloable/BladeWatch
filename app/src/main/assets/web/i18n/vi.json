@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "Thông báo",
-    "origin_banner": "Các thông báo đẩy yêu cầu Zrok. Họ cài đặt thông qua URL Zrok chỉ được đặt  Cloudflare đường hầm nhanh thay đổi mỗi khởi động lại và sẽ vô hiệu hóa mọi đăng ký. Tailscale phục vụ trên HTTP đơn giản và không thể được sử dụng cho Web Push.",
     "backend_banner": "Thông báo backend không khởi tạo. Đặt phòng một URL Zrok qua màn hình daemon và khởi động lại daemon để kích hoạt chuyển giao đẩy.",
     "push_delivery": "Đưa hàng đẩy",
     "push_delivery_sub": "Tối nay bạn đang sử dụng thiết bị này, mỗi điện thoại bạn cài đặt bảng điều khiển trên phải được bật một lần ở đây.",
@@ -148,7 +147,6 @@
     "registered_devices": "Các thiết bị đăng ký",
     "devices_sub": "Mỗi điện thoại cho phép thông báo đẩy xuất hiện ở đây. Sử dụng Remove để xóa đăng ký thiết bị. Thiết lập trên thiết bị trên cũng hủy đăng ký trình duyệt hiện tại tại tại địa phương, trong khi Remove chỉ là phía máy chủ.",
     "no_devices": "Không có thiết bị nào được đăng ký.",
-    "perm_zrok_required": "Chuyển phát đẩy yêu cầu URL Zrok  xem banner ở trên.",
     "perm_unsupported": "Thông báo không được hỗ trợ trong trình duyệt này",
     "perm_granted": "Thông báo được bật trên thiết bị này",
     "perm_denied": "Thông báo bị chặn. Khả năng trong cài đặt trình duyệt.",
@@ -172,7 +170,10 @@
     "sev_critical": "Quan trọng: Thả mọi thứ cảnh báo  cờ dán, rung động lâu hơn, bỏ qua giờ yên tĩnh.",
     "sev_warn": "Cảnh báo: rung ngắn, cờ tiêu chuẩn  điều gì đó để xem sớm.",
     "sev_auto": "tự động: mức độ nghiêm trọng được quyết định theo từng sự kiện từ dữ liệu (khí chậm → cảnh báo, rò rỉ nhanh → quan trọng).",
-    "sev_info": "Thông tin: biểu ngữ im lặng, không có rung động  dành riêng cho xác nhận."
+    "sev_info": "Thông tin: biểu ngữ im lặng, không có rung động  dành riêng cho xác nhận.",
+    "origin_banner": "Các thông báo đẩy yêu cầu Zrok hoặc một proxy ngược. Cloudflare nhanh đường hầm thay đổi mỗi khởi động lại và sẽ vô hiệu hóa mọi đăng ký. Tailscale phục vụ trên HTTP đơn giản và không thể được sử dụng cho Web Push trừ khi sử dụng một proxy ngược. mở bảng điều khiển từ Zrok dự trữ của bạn hoặc URL proxy ngược trên điện thoại của bạn, thêm vào màn hình chính, sau đó quay lại đây để kích hoạt.",
+    "perm_zrok_required": "Chuyển phát đẩy yêu cầu Zrok hoặc một đại diện ngược  xem banner trên.",
+    "perm_unsupported_install": "Thông báo không được hỗ trợ. Nếu sử dụng Safari, hãy thử thêm vào màn hình chính để nhận thông báo"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "Khí hậu",
     "tab_seats": "Lượng ghế",
     "tab_windows": "Chiếc cửa sổ",
-    "tab_lights": "Đèn",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "Vị trí 1",
-    "seat_pos_2": "Vị trí 2",
-    "seat_pos_1_title": "Vị trí 1",
-    "seat_pos_2_title": "Vị trí 2",
-    "seat_memory_position": "Vị trí ghế đã lưu: {pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "Đèn chạy ban ngày",
-    "btn_slw": "SLW",
-    "btn_slw_title": "Cảnh báo giới hạn tốc độ",
-    "drl_enabled": "Đã bật đèn chạy ban ngày",
-    "drl_disabled": "Đã tắt đèn chạy ban ngày",
-    "drl_failed": "Cài đặt đèn chạy ban ngày thất bại",
-    "slw_enabled": "Đã bật cảnh báo giới hạn tốc độ",
-    "slw_disabled": "Đã tắt cảnh báo giới hạn tốc độ",
-    "slw_failed": "Cài đặt cảnh báo giới hạn tốc độ thất bại",
     "unlocked": "Không khóa",
     "model_load_failed": "Mô hình không tìm thấy, nhấn \"Retry\" để thử lại.",
     "model_load_failed_short": "Mẫu tải thất bại.",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "Hầm mạng: {message}",
     "fuel": "Chất nhiên liệu",
     "personalized_label": " Tự tạo",
-    "soh_label": "SOH"
+    "soh_label": "SOH",
+    "tab_lights": "Đèn",
+    "tab_adas": "ADAS ADAS",
+    "seat_pos_1": "1 Post",
+    "seat_pos_2": "2 Pos",
+    "seat_pos_1_title": "Đề xuất 1",
+    "seat_pos_2_title": "2 Định vị",
+    "seat_memory_position": "Tầm nhớ ghế: {pos}",
+    "btn_drl": "DRL",
+    "btn_drl_title": "Đèn chạy ban ngày",
+    "btn_slw": "SLW",
+    "btn_slw_title": "Lời cảnh báo giới hạn tốc độ",
+    "drl_enabled": "Đèn chạy ban ngày được bật",
+    "drl_disabled": "Đèn chạy ban ngày bị tắt",
+    "drl_failed": "Đèn hoạt động ban ngày cài đặt thất bại",
+    "slw_enabled": "Đảm bảo tốc độ",
+    "slw_disabled": "Lệnh cảnh báo giới hạn tốc độ bị vô hiệu hóa",
+    "slw_failed": "Đài báo cảnh báo giới hạn tốc độ không hoạt động"
   },
   "roi": {
     "editing": "ĐÔNG",
@@ -1299,6 +1300,11 @@
     "live": "Đời sống",
     "enable_failed": "Không kích hoạt phát trực tuyến"
   },
+  "map": {
+    "your_vehicle": "Xe của bạn",
+    "your_vehicle_sub": "BYD Champ Sentry",
+    "you_are_here": "Anh ở đây."
+  },
   "pip": {
     "select_camera": "Chọn Camera",
     "select_a_camera": "Chọn một máy ảnh",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "xxxxxxxx"
-  },
-  "map": {
-    "your_vehicle": "Xe của bạn",
-    "your_vehicle_sub": "BYD Champ Sentry",
-    "you_are_here": "Anh ở đây."
   }
 }

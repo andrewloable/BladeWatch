@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "通知",
-    "origin_banner": "推通知需要Zrok. 他們只透過預訂的Zrok URL 設置 Cloudflare 快速道每一次重啟都會改變,並將每次訂閱都無效. Tailscale 在直線 HTTP 上服務,並不能使用Web Push. 在您的手機上打開預訂的Zrok URL 儀表板,加入主屏,然後返回此以啟用.",
     "backend_banner": "預備一個 Zrok URL 透過惡魔屏幕,並重新啟動惡魔,",
     "push_delivery": "推送方式",
     "push_delivery_sub": "您現在使用的裝置上啟動警報.",
@@ -148,7 +147,6 @@
     "registered_devices": "已註冊的裝置",
     "devices_sub": "請使用 Remove 取消註冊裝置. 在此裝置上,取消本地取消當前的浏覽器,而 Remove 僅是伺服器端.",
     "no_devices": "沒有任何裝置登記.",
-    "perm_zrok_required": "按交付需要Zrok URL 查看上面的標籤.",
     "perm_unsupported": "在這個浏览器中未支持的通知",
     "perm_granted": "在此裝置上啟用通知",
     "perm_denied": "預覽器設定中啟用.",
@@ -172,7 +170,10 @@
     "sev_critical": "關鍵: 放下一切警報 貼的旗, 振動更長, 忽略靜靜的時間.",
     "sev_warn": "警告:短振動,標準標誌,",
     "sev_auto": "自動:每次事件的嚴重性由數據決定 (慢性泄漏 →警告,快速泄漏 →危險).",
-    "sev_info": "沒有振動 留給確認."
+    "sev_info": "沒有振動 留給確認.",
+    "origin_banner": "推通知需要Zrok或反向代理. Cloudflare 快速道會改變每一次重啟,並將每次訂閱都無效. Tailscale 在簡直 HTTP 上提供服務,除非使用反向代理,無法使用Web Push. 在您預訂的Zrok或電話上的反向代理URL上打開儀表板,添加到主屏幕,然后返回此以啟用.",
+    "perm_zrok_required": "推送需要Zrok或反向代理查看上面的標籤.",
+    "perm_unsupported_install": "如果使用 Safari,請嘗試在主屏幕上添加通知"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "氣候",
     "tab_seats": "座位",
     "tab_windows": "窗戶",
-    "tab_lights": "燈光",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "位置 1",
-    "seat_pos_2": "位置 2",
-    "seat_pos_1_title": "位置 1",
-    "seat_pos_2_title": "位置 2",
-    "seat_memory_position": "座椅記憶位置：{pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "日間行車燈",
-    "btn_slw": "SLW",
-    "btn_slw_title": "限速警告",
-    "drl_enabled": "日間行車燈已開啟",
-    "drl_disabled": "日間行車燈已關閉",
-    "drl_failed": "日間行車燈設定失敗",
-    "slw_enabled": "限速警告已開啟",
-    "slw_disabled": "限速警告已關閉",
-    "slw_failed": "限速警告設定失敗",
     "unlocked": "沒有鎖定",
     "model_load_failed": "沒有找到模型,請按下重複嘗試.",
     "model_load_failed_short": "沒有任何問題.",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "網路錯誤: {message}",
     "fuel": "燃料",
     "personalized_label": " 專屬於個人",
-    "soh_label": "其他國家"
+    "soh_label": "其他國家",
+    "tab_lights": "燈具",
+    "tab_adas": "美國ADAS",
+    "seat_pos_1": "沒有任何問題",
+    "seat_pos_2": "兩位",
+    "seat_pos_1_title": "位置 1",
+    "seat_pos_2_title": "其他國家",
+    "seat_memory_position": "座位記憶位置: {pos}",
+    "btn_drl": "D 沒有任何問題",
+    "btn_drl_title": "昼間運行燈",
+    "btn_slw": "美國",
+    "btn_slw_title": "預警速度限制",
+    "drl_enabled": "啟動日光燈",
+    "drl_disabled": "停電日電燈",
+    "drl_failed": "沒有日光燈",
+    "slw_enabled": "啟用速度限制警告",
+    "slw_disabled": "禁用速度限制警告",
+    "slw_failed": "速度限制警告設定失效"
   },
   "roi": {
     "editing": "編輯",
@@ -1299,6 +1300,11 @@
     "live": "活著",
     "enable_failed": "沒有啟動流動"
   },
+  "map": {
+    "your_vehicle": "您的車輛",
+    "your_vehicle_sub": "士哨兵 BYD",
+    "you_are_here": "你在這裡"
+  },
   "pip": {
     "select_camera": "選擇相機",
     "select_a_camera": "選擇相機",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "沒有任何問題"
-  },
-  "map": {
-    "your_vehicle": "您的車輛",
-    "your_vehicle_sub": "士哨兵 BYD",
-    "you_are_here": "你在這裡"
   }
 }

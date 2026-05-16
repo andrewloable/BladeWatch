@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "Notifiche",
-    "origin_banner": "Le notifiche push richiedono Zrok. Installano tramite l'URL Zrok riservato solo  Cloudflare tunnels veloci cambiano ogni riavvio e invaliderebbero ogni abbonamento. Tailscale serve su semplice HTTP e non può essere utilizzato per Web Push affatto. Apri la dashboard dal tuo URL Zrok riservato sul telefono, Aggiungi allo schermo iniziale, quindi torna qui per attivare.",
     "backend_banner": "Le notifiche backend non sono initializate. Prenota un URL Zrok tramite la schermata dei demoni e riavvia il daemon per abilitare la consegna push.",
     "push_delivery": "Spinta di consegna",
     "push_delivery_sub": "Ogni telefono che installa la dashboard deve essere attivato una volta.",
@@ -148,7 +147,6 @@
     "registered_devices": "Dispositivi registrati",
     "devices_sub": "Ogni telefono che ha abilitato le notifiche push viene visualizzato qui. Utilizzare rimuovere per disregistrare un dispositivo. Disattivare su questo dispositivo sopra anche annulla l'iscrizione del browser corrente localmente, mentre rimuovere è solo sul lato server.",
     "no_devices": "Non ci sono dispositivi registrati.",
-    "perm_zrok_required": "La consegna push richiede l'URL Zrok  vedere banner sopra.",
     "perm_unsupported": "Notifiche non supportate in questo browser",
     "perm_granted": "Le notifiche sono abilitate su questo dispositivo",
     "perm_denied": "Le notifiche sono bloccate. Abilita nelle impostazioni del browser.",
@@ -172,7 +170,10 @@
     "sev_critical": "Critico: allerta per tutto, bandiera appiccicosa, vibrazione più lunga, ignora le ore di silenzio.",
     "sev_warn": "Avvertimento: vibrazione breve, banner standard... qualcosa da guardare presto.",
     "sev_auto": "Auto: la gravità è determinata per evento dai dati (lucca lenta → avvertimento, fuga rapida → critica).",
-    "sev_info": "Informazioni: bandiera silenziosa, senza vibrazioni  riservata alle conferme."
+    "sev_info": "Informazioni: bandiera silenziosa, senza vibrazioni  riservata alle conferme.",
+    "origin_banner": "Le notifiche push richiedono Zrok o un proxy inverso. Cloudflare rapide tunnels cambiano ogni riavvio e invalidare ogni abbonamento. Tailscale serve su semplice HTTP e non può essere utilizzato per Web Push a meno che non si utilizza un proxy inverso. Aprire il pannello da Zrok riservato o URL proxy inverso sul telefono, Aggiungere allo schermo iniziale, quindi tornare qui per abilitare.",
+    "perm_zrok_required": "La consegna push richiede Zrok o un proxy inverso  vedere banner sopra.",
+    "perm_unsupported_install": "Notifiche non supportate. Se si utilizza Safari, prova ad aggiungere alla schermata iniziale per ricevere notifiche"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "Il clima",
     "tab_seats": "Sedi",
     "tab_windows": "Finestre",
-    "tab_lights": "Luci",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "Pos 1",
-    "seat_pos_2": "Pos 2",
-    "seat_pos_1_title": "Posizione 1",
-    "seat_pos_2_title": "Posizione 2",
-    "seat_memory_position": "Memoria sedile: {pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "Luci diurne",
-    "btn_slw": "SLW",
-    "btn_slw_title": "Avviso limite velocità",
-    "drl_enabled": "Luci diurne attivate",
-    "drl_disabled": "Luci diurne disattivate",
-    "drl_failed": "Impostazione luci diurne fallita",
-    "slw_enabled": "Avviso limite velocità attivato",
-    "slw_disabled": "Avviso limite velocità disattivato",
-    "slw_failed": "Impostazione avviso limite velocità fallita",
     "unlocked": "Non bloccato",
     "model_load_failed": "Non si trova il modello, tocca \"Retry\" per riprovare.",
     "model_load_failed_short": "Il modello non ha funzionato.",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "Errore di rete: {message}",
     "fuel": "Carburante",
     "personalized_label": " Personalizzazione",
-    "soh_label": "SOH"
+    "soh_label": "SOH",
+    "tab_lights": "Luce",
+    "tab_adas": "ADAS",
+    "seat_pos_1": "1 post",
+    "seat_pos_2": "2 Pos",
+    "seat_pos_1_title": "1 posizione",
+    "seat_pos_2_title": "2 Posizione",
+    "seat_memory_position": "Posizione della memoria del sedile: {pos}",
+    "btn_drl": "DRL",
+    "btn_drl_title": "Luce di corsa diurne",
+    "btn_slw": "SLW",
+    "btn_slw_title": "Avvertimento di limite di velocità",
+    "drl_enabled": "L'accesso alle luci diurne",
+    "drl_disabled": "Disattivato il semaforo diurno",
+    "drl_failed": "Il sistema di illuminazione diurna non funziona",
+    "slw_enabled": "Avviso di limite di velocità abilitato",
+    "slw_disabled": "Avviso di limite di velocità disabilitato",
+    "slw_failed": "Non è stato possibile impostare l'avvertimento di limite di velocità"
   },
   "roi": {
     "editing": "RITERNAMENTO",
@@ -1299,6 +1300,11 @@
     "live": "Vivi",
     "enable_failed": "Non è stato possibile attivare lo streaming"
   },
+  "map": {
+    "your_vehicle": "Il tuo veicolo",
+    "your_vehicle_sub": "BYD Sentinella campione",
+    "you_are_here": "Sei qui."
+  },
   "pip": {
     "select_camera": "Selezionare la fotocamera",
     "select_a_camera": "Selezionare una fotocamera",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "xxxxxxxx"
-  },
-  "map": {
-    "your_vehicle": "Il tuo veicolo",
-    "your_vehicle_sub": "BYD Sentinella campione",
-    "you_are_here": "Sei qui."
   }
 }

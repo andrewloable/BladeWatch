@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "Mitteilungen",
-    "origin_banner": "Cloudflare schnelle Tunnel ändern jeden Neustart und würden jedes Abonnement ungültig machen. Tailscale dient über einfaches HTTP und kann für Web Push nicht verwendet werden. Öffnen Sie das Dashboard von Ihrer reservierten Zrok URL auf Ihrem Telefon, hinzufügen Sie auf den Startbildschirm, dann kehren Sie hier zurück, um aktivieren.",
     "backend_banner": "Benachrichtigungen im Backend nicht initialisiert. Reservieren Sie eine Zrok URL über den Daemons-Bildschirm und starten Sie den Daemon neu, um die Push-Delivery zu aktivieren.",
     "push_delivery": "Schublieferung",
     "push_delivery_sub": "Alle Geräte, auf die Sie das Dashboard installieren, müssen hier einmal aktiviert werden.",
@@ -148,7 +147,6 @@
     "registered_devices": "Eintragte Geräte",
     "devices_sub": "Jedes Telefon, das Push-Benachrichtigungen aktiviert hat, erscheint hier. Verwenden Sie Remove, um ein Gerät zu entregnen. Das Deaktivieren dieses Geräts löscht auch den aktuellen Browser lokal ab, während Remove nur auf der Serverseite ist.",
     "no_devices": "Keine Geräte registriert noch.",
-    "perm_zrok_required": "Die Push-Lieferung erfordert die Zrok URL  siehe oben.",
     "perm_unsupported": "Benachrichtigungen, die in diesem Browser nicht unterstützt werden",
     "perm_granted": "Mitteilungen sind auf diesem Gerät aktiviert",
     "perm_denied": "Benachrichtigungen sind blockiert.",
@@ -172,7 +170,10 @@
     "sev_critical": "Kritisch: Drop-all-Alarm  Klebriges Banner, länger vibriert, ignoriert ruhige Stunden.",
     "sev_warn": "Warnung: kurze Schwingung, Standardbanner  etwas, das bald zu sehen ist.",
     "sev_auto": "Auto: Die Schwere wird pro Vorfall aus den Daten (langsames Leck → Warnung, schnelles Leck → kritisch) entschieden.",
-    "sev_info": "Info: Schweigendes Banner, kein Vibrationszeichen  Zur Bestätigung reserviert."
+    "sev_info": "Info: Schweigendes Banner, kein Vibrationszeichen  Zur Bestätigung reserviert.",
+    "origin_banner": "Cloudflare schnelle Tunnels ändern jeden Neustart und würden jedes Abonnement ungültig machen. Tailscale dient über einfache HTTP und kann nicht für Web Push verwendet werden, es sei denn, Sie verwenden einen Reverse Proxy. Öffnen Sie das Dashboard von Ihrem reservierten Zrok oder Reverse Proxy URL auf Ihrem Telefon, fügen Sie zum Startbildschirm hinzu, kehren Sie dann hier zurück, um aktivieren.",
+    "perm_zrok_required": "Die Push-Lieferung erfordert Zrok oder einen Reverse Proxy  siehe oben.",
+    "perm_unsupported_install": "Benachrichtigungen nicht unterstützt. Wenn Sie Safari verwenden, versuchen Sie, die Benachrichtigungen auf den Startbildschirm hinzuzufügen"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "Klima",
     "tab_seats": "Sitzplätze",
     "tab_windows": "Fenster",
-    "tab_lights": "Licht",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "Pos 1",
-    "seat_pos_2": "Pos 2",
-    "seat_pos_1_title": "Position 1",
-    "seat_pos_2_title": "Position 2",
-    "seat_memory_position": "Sitzspeicher-Position: {pos}",
-    "btn_drl": "TFL",
-    "btn_drl_title": "Tagfahrlicht",
-    "btn_slw": "SLW",
-    "btn_slw_title": "Geschwindigkeitswarnung",
-    "drl_enabled": "Tagfahrlicht aktiviert",
-    "drl_disabled": "Tagfahrlicht deaktiviert",
-    "drl_failed": "Tagfahrlicht-Einstellung fehlgeschlagen",
-    "slw_enabled": "Geschwindigkeitswarnung aktiviert",
-    "slw_disabled": "Geschwindigkeitswarnung deaktiviert",
-    "slw_failed": "Geschwindigkeitswarnung-Einstellung fehlgeschlagen",
     "unlocked": "Unverschlossen",
     "model_load_failed": "Modell nicht gefunden.",
     "model_load_failed_short": "Die Modelllast ist gescheitert.",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "Netzwerkausfall: {message}",
     "fuel": "Kraftstoff",
     "personalized_label": " Personalisiert",
-    "soh_label": "SOH"
+    "soh_label": "SOH",
+    "tab_lights": "Lichter",
+    "tab_adas": "ADAS ist eine",
+    "seat_pos_1": "1 Pos",
+    "seat_pos_2": "2 Pos",
+    "seat_pos_1_title": "Position 1",
+    "seat_pos_2_title": "2 Position",
+    "seat_memory_position": "Sitz-Speicherposition: {pos}",
+    "btn_drl": "D. R.",
+    "btn_drl_title": "Tagesläufe",
+    "btn_slw": "SLW",
+    "btn_slw_title": "Warnung vor Geschwindigkeitsbegrenzung",
+    "drl_enabled": "Tagesbetriebsbeleuchtung aktiviert",
+    "drl_disabled": "Tagesbetriebsbeleuchtung ausgeschaltet",
+    "drl_failed": "Tagesbetriebsbeleuchtung",
+    "slw_enabled": "Geschwindigkeitsbegrenzungsanweisung aktiviert",
+    "slw_disabled": "Geschwindigkeitsbegrenzungshinderung ausgeschaltet",
+    "slw_failed": "Geschwindigkeitsbegrenzung Warnung Einstellung fehlgeschlagen"
   },
   "roi": {
     "editing": "BEARBEITUNG",
@@ -1299,6 +1300,11 @@
     "live": "Lebendig",
     "enable_failed": "Streaming nicht aktiviert"
   },
+  "map": {
+    "your_vehicle": "Ihr Fahrzeug",
+    "your_vehicle_sub": "BYD Champ Sentry",
+    "you_are_here": "Du bist hier."
+  },
   "pip": {
     "select_camera": "Wählen Sie Kamera",
     "select_a_camera": "Wählen Sie eine Kamera aus",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "- Das ist nicht wahr."
-  },
-  "map": {
-    "your_vehicle": "Ihr Fahrzeug",
-    "your_vehicle_sub": "BYD Champ Sentry",
-    "you_are_here": "Du bist hier."
   }
 }

@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "통지",
-    "origin_banner": "푸시 알림은 Zrok을 필요로 합니다. 그들은 예약된 Zrok URL를 통해 설치합니다. Cloudflare 빠른 터널은 모든 재부팅을 변경하고 모든 구독을 무효화합니다. Tailscale는 단순한 HTTP를 통해 서비스하며 웹 푸시에는 전혀 사용할 수 없습니다. 전화기에서 예약된 Zrok URL에서 대시보드를 열고, 홈 스크린에 추가하고, 다시 여기를 활성화하십시오.",
     "backend_banner": "알림 백엔드는 초기화되지 않았습니다. 데몬 화면을 통해 Zrok URL를 예약하고 푸시 전달을 활성화하기 위해 데몬을 다시 시작하십시오.",
     "push_delivery": "추진 배달",
     "push_delivery_sub": "현재 사용하는 장치에 알림을 활성화합니다. 이 패시보드를 설치하는 모든 전화는 여기에 한번 활성화되어야 합니다.",
@@ -148,7 +147,6 @@
     "registered_devices": "등록된 장치",
     "devices_sub": "푸시 알림을 활성화 한 모든 전화가 여기에 표시됩니다. 기기를 비등록하려면 제거를 사용하십시오. 위의 이 기기에서 비활성화하면 현 브라우저를 로컬에서 취소합니다. 제거는 서버 측면에서만 사용됩니다.",
     "no_devices": "아직 등록된 장치가 없습니다.",
-    "perm_zrok_required": "푸시 배달은 Zrok URL를 필요로 합니다.",
     "perm_unsupported": "이 브라우저에서 지원되지 않는 알림",
     "perm_granted": "이 장치에 알림이 활성화되어 있습니다.",
     "perm_denied": "알림은 차단되어 있습니다. 브라우저 설정에서 활성화합니다.",
@@ -172,7 +170,10 @@
     "sev_critical": "비평: 모든 것을 떨어뜨리는 경고  붙어있는 깃발, 더 긴 진동, 조용한 시간을 무시합니다.",
     "sev_warn": "경고: 짧은 진동, 표준 깃발",
     "sev_auto": "자동: 심각성은 데이터에서 사건별로 결정됩니다 ( 느린 누출 → 경고, 빠른 누출 → 중요한).",
-    "sev_info": "정보: 침묵한 깃발, 진동이 없습니다"
+    "sev_info": "정보: 침묵한 깃발, 진동이 없습니다",
+    "origin_banner": "푸시 알림은 Zrok 또는 역 프록시를 필요로 한다. Cloudflare 빠른 터널은 모든 재부팅을 변경하여 모든 구독을 무효화합니다. Tailscale는 단순한 HTTP를 통해 서비스하며 역 프록시를 사용하지 않는 한 웹 푸시에 사용할 수 없습니다. 예약된 Zrok 또는 역 프록시 URL에서 패시보드를 열고, 홈 스크린에 추가하고, 다시 여기를 활성화하십시오.",
+    "perm_zrok_required": "푸시 배달은 Zrok 또는 역임 대리인이 필요합니다.",
+    "perm_unsupported_install": "통지 지원되지 않습니다. Safari를 사용하는 경우, 통지 수신을 위해 홈 화면에 추가하도록 시도하십시오"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "기후",
     "tab_seats": "좌석",
     "tab_windows": "창문",
-    "tab_lights": "조명",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "위치 1",
-    "seat_pos_2": "위치 2",
-    "seat_pos_1_title": "위치 1",
-    "seat_pos_2_title": "위치 2",
-    "seat_memory_position": "시트 메모리 위치: {pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "주간 주행등",
-    "btn_slw": "SLW",
-    "btn_slw_title": "속도 제한 경고",
-    "drl_enabled": "주간 주행등이 켜졌습니다",
-    "drl_disabled": "주간 주행등이 꺼졌습니다",
-    "drl_failed": "주간 주행등 설정 실패",
-    "slw_enabled": "속도 제한 경고가 켜졌습니다",
-    "slw_disabled": "속도 제한 경고가 꺼졌습니다",
-    "slw_failed": "속도 제한 경고 설정 실패",
     "unlocked": "잠금 해제",
     "model_load_failed": "모형은 발견되지 않았습니다. 다시 시도하기 위해 다시 누르세요.",
     "model_load_failed_short": "모델 로드 실패",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "네트워크 오류: {message}",
     "fuel": "연료",
     "personalized_label": " 개인화",
-    "soh_label": "SOH"
+    "soh_label": "SOH",
+    "tab_lights": "빛",
+    "tab_adas": "ADAS는 ADAS입니다.",
+    "seat_pos_1": "1 포스트",
+    "seat_pos_2": "2 포스",
+    "seat_pos_1_title": "1 위치",
+    "seat_pos_2_title": "2 입장은",
+    "seat_memory_position": "좌석 메모리 위치: {pos}",
+    "btn_drl": "D:",
+    "btn_drl_title": "낮에 가동하는 조명",
+    "btn_slw": "SLW",
+    "btn_slw_title": "속도 제한 경고",
+    "drl_enabled": "낮에 작동하는 조명",
+    "drl_disabled": "낮에는 작동하는 조명 비켜져 있습니다",
+    "drl_failed": "낮에 작동하는 조명 설정이 실패",
+    "slw_enabled": "속도 제한 경고가 활성화",
+    "slw_disabled": "속도 제한 경고가 비활성화",
+    "slw_failed": "속도 제한 경고 설정이 실패"
   },
   "roi": {
     "editing": "편집",
@@ -1299,6 +1300,11 @@
     "live": "살아",
     "enable_failed": "스트리밍을 활성화하지 못함"
   },
+  "map": {
+    "your_vehicle": "당신 차량",
+    "your_vehicle_sub": "BYD 샴 텐트리",
+    "you_are_here": "여기 있잖아"
+  },
   "pip": {
     "select_camera": "카메라를 선택",
     "select_a_camera": "카메라를 선택",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "xxxxxxxxx"
-  },
-  "map": {
-    "your_vehicle": "당신 차량",
-    "your_vehicle_sub": "BYD 샴 텐트리",
-    "you_are_here": "여기 있잖아"
   }
 }

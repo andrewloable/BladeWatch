@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "İletişimler",
-    "origin_banner": "Cloudflare hızlı tüneller her yeniden başlatmayı değiştirir ve her aboneliği geçersiz kılar. Tailscale basit HTTP üzerinden hizmet verir ve Web Push için kullanılamaz. Telefonunuzdaki Zrok URL'inizden araç tablosunu açın, Ana Ekrana Ekleyin, sonra etkinleştirmek için buraya geri dönün.",
     "backend_banner": "İletişimlerin arka uçları başlatılmamış. Zrok URL'sini daemon ekranı üzerinden rezerve edin ve push teslimatını etkinleştirmek için daemon'u yeniden başlatın.",
     "push_delivery": "İndirme teslimatı",
     "push_delivery_sub": "Şu anda kullandığınız cihazda uyarıları etkinleştirir.",
@@ -148,7 +147,6 @@
     "registered_devices": "Kayıtlı cihazlar",
     "devices_sub": "Bu cihazın kayıt dışı bırakılması için, her push bildirimlerini etkinleştiren telefon burada görünür. Bir cihazı kaldırmak için kaldır kullanın. Yukarıdaki bu cihazda etkinleştirmek, mevcut tarayıcıyı yerel olarak da abonelikten çıkarır, Remove ise yalnızca sunucu tarafındadır.",
     "no_devices": "Henüz kayıtlı cihaz yok.",
-    "perm_zrok_required": "Push teslimatı Zrok URL'ini gerektirir  yukarıdaki pankartı görün.",
     "perm_unsupported": "Bu tarayıcıda desteklenmeyen bildirimler",
     "perm_granted": "Bu cihazda bildirimler etkinleştirilmiştir.",
     "perm_denied": "İletiler engellenmiş. Tarayıcı ayarlarında etkinleştirilmiştir.",
@@ -172,7 +170,10 @@
     "sev_critical": "Kritik: her şeyi bırak alarm  yapışkan bayrak, daha uzun titreşme, sessiz saatleri görmezden gelmek.",
     "sev_warn": "Uyarı: kısa titreşim, standart pankart  yakında bakılacak bir şey.",
     "sev_auto": "Otomatik: olay başına şiddet verilerden belirlenir (slow leak → warning, fast leak → critical).",
-    "sev_info": "Bilgi: sessiz bayrak, titreşim yok  onay için rezerve."
+    "sev_info": "Bilgi: sessiz bayrak, titreşim yok  onay için rezerve.",
+    "origin_banner": "Cloudflare hızlı tüneller her yeniden başlatmayı değiştirir ve her aboneliği geçersiz kılar. Tailscale basit HTTP üzerinden hizmet verir ve ters bir vekil kullanmadıkça Web Push için kullanılamaz. Zrok rezervasyonunuzdan veya telefonunuzdaki ters vekil URL'den araç tablosunu açın, Ana Ekrana Ekleyin, sonra etkinleştirmek için buraya geri dönün.",
+    "perm_zrok_required": "Push teslimatı Zrok veya ters bir vekil gerektirir  yukarıdaki banner'e bakın.",
+    "perm_unsupported_install": "Uyarı desteklenmiyor. Safari kullanıyorsanız, bildirimleri almak için ana ekrana eklemeyi deneyin"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "İklim",
     "tab_seats": "Koltuklar",
     "tab_windows": "Pencereler",
-    "tab_lights": "Işıklar",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "Konum 1",
-    "seat_pos_2": "Konum 2",
-    "seat_pos_1_title": "Konum 1",
-    "seat_pos_2_title": "Konum 2",
-    "seat_memory_position": "Koltuk hafıza konumu: {pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "Gündüz farları",
-    "btn_slw": "SLW",
-    "btn_slw_title": "Hız sınırı uyarısı",
-    "drl_enabled": "Gündüz farları açık",
-    "drl_disabled": "Gündüz farları kapalı",
-    "drl_failed": "Gündüz farları ayarı başarısız",
-    "slw_enabled": "Hız sınırı uyarısı açık",
-    "slw_disabled": "Hız sınırı uyarısı kapalı",
-    "slw_failed": "Hız sınırı uyarısı ayarı başarısız",
     "unlocked": "Kilitlenmemiş",
     "model_load_failed": "Model bulunamadı. Tekrar denemek için tekrar dene.",
     "model_load_failed_short": "Model yükü başarısız oldu.",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "Ağ hatası: {message}",
     "fuel": "Yakıt",
     "personalized_label": " Kişisel",
-    "soh_label": "SOH"
+    "soh_label": "SOH",
+    "tab_lights": "Işıklar",
+    "tab_adas": "ADAS AD",
+    "seat_pos_1": "1 Post",
+    "seat_pos_2": "2 Pos",
+    "seat_pos_1_title": "1 pozisyon",
+    "seat_pos_2_title": "2 Pozisyon",
+    "seat_memory_position": "Koltuk belleği pozisyonu: {pos}",
+    "btn_drl": "DRL",
+    "btn_drl_title": "Günlük ışıklar",
+    "btn_slw": "SLW",
+    "btn_slw_title": "Hız sınırları uyarısı",
+    "drl_enabled": "Günlük işleyen ışıklar etkinleştirilmiştir",
+    "drl_disabled": "Günlük işleyen ışıklar devre dışı bırakıldı",
+    "drl_failed": "Günlük ışık ayarları başarısız oldu",
+    "slw_enabled": "Hız sınırı uyarısı etkinleştirilmiştir",
+    "slw_disabled": "Hız sınırı uyarısı devre dışı bırakıldı",
+    "slw_failed": "Hız sınırı uyarısı ayarı başarısız oldu"
   },
   "roi": {
     "editing": "Düzenleme",
@@ -1299,6 +1300,11 @@
     "live": "Canlı",
     "enable_failed": "Aktarmayı etkinleştiremedim"
   },
+  "map": {
+    "your_vehicle": "Aracınız",
+    "your_vehicle_sub": "BYD Şampiyon Gözcü",
+    "you_are_here": "Sen buradasın."
+  },
   "pip": {
     "select_camera": "Kamera Seçimi",
     "select_a_camera": "Bir kamera seçin",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "- Evet."
-  },
-  "map": {
-    "your_vehicle": "Aracınız",
-    "your_vehicle_sub": "BYD Şampiyon Gözcü",
-    "you_are_here": "Sen buradasın."
   }
 }

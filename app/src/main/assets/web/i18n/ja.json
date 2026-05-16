@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "通知",
-    "origin_banner": "プレッシュ通知は Zrok を要求します. 予約した Zrok URL を介してインストールするだけで  Cloudflare 速トンネルは,すべてのリセットアップを変更し,すべてのサブスクリプションを無効化します. Tailscale は単純な HTTP で提供され,Web Push に使用できません. 携帯電話の予約した Zrok URL からダッシュボードを開いて,ホーム画面に追加して,有効にするためにここに戻ります.",
     "backend_banner": "通知バックエンドは初期化されていない. ダイモン画面でZrok URLを予約し,ダイモンを再起動してプッシュ配信を有効にします.",
     "push_delivery": "送料",
     "push_delivery_sub": "デバイスのアラートを有効にする. デバイスのダッシュボードをインストールするたびに,一度に起動する必要があります.",
@@ -148,7 +147,6 @@
     "registered_devices": "登録された装置",
     "devices_sub": "プッシュ通知を有効にしたすべての電話はここに表示されます.デバイスを登録解除するために Remove を使用します.上記のデバイスを無効化すると,現在のブラウザを本地的にキャンセルします. Removeはサーバーサイドのみです.",
     "no_devices": "記録されていない",
-    "perm_zrok_required": "プッシュ配達には Zrok URL  参照上のバナーが必要です.",
     "perm_unsupported": "このブラウザでサポートされていない通知",
     "perm_granted": "このデバイスで通知が有効です",
     "perm_denied": "通知がブロックされています. ブラウザ設定で有効です.",
@@ -172,7 +170,10 @@
     "sev_critical": "重要な: 落とし込み 警報 粘着したバナー 長く振動し,静かな時間を無視する",
     "sev_warn": "警告:短振動 標準のバナー すぐ見られるもの",
     "sev_auto": "自動: 事件ごとに重度はデータから決定されます (遅い漏れ →警告,高速漏れ →批判).",
-    "sev_info": "情報は: 静かな旗,振動なし 確認のために予約"
+    "sev_info": "情報は: 静かな旗,振動なし 確認のために予約",
+    "origin_banner": "押す通知には Zrok または逆代理が必要です. Cloudflare 速通は,すべてのリセットアップを変更し,すべてのサブスクリプションを無効化します. Tailscale は単純な HTTP で提供され,逆代理を使用しない限り Web Push に使用できません.予約した Zrok または電話上の逆代理 URL からダッシュボードを開いて,ホーム画面に追加して,有効にするためにここに戻ります.",
+    "perm_zrok_required": "プッシュ配達には Zrok または逆代理が必要になります",
+    "perm_unsupported_install": "通知がサポートされていません. Safari を使用している場合は,通知を取得するためにホーム画面に追加してみてください"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "気候",
     "tab_seats": "座席",
     "tab_windows": "窓",
-    "tab_lights": "ライト",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "ポジション 1",
-    "seat_pos_2": "ポジション 2",
-    "seat_pos_1_title": "ポジション 1",
-    "seat_pos_2_title": "ポジション 2",
-    "seat_memory_position": "シートメモリー位置: {pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "デイタイムランニングライト",
-    "btn_slw": "SLW",
-    "btn_slw_title": "制限速度警告",
-    "drl_enabled": "デイタイムランニングライトをオンにしました",
-    "drl_disabled": "デイタイムランニングライトをオフにしました",
-    "drl_failed": "デイタイムランニングライトの設定に失敗しました",
-    "slw_enabled": "制限速度警告をオンにしました",
-    "slw_disabled": "制限速度警告をオフにしました",
-    "slw_failed": "制限速度警告の設定に失敗しました",
     "unlocked": "解鎖された",
     "model_load_failed": "モデルが見つかりませんでした 再試してください",
     "model_load_failed_short": "モデル負荷が失敗した",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "ネットワークエラー: {message}",
     "fuel": "燃料",
     "personalized_label": " 個人的に",
-    "soh_label": "SOH"
+    "soh_label": "SOH",
+    "tab_lights": "ライト",
+    "tab_adas": "ADASは,",
+    "seat_pos_1": "1 投稿",
+    "seat_pos_2": "ポーズ 2",
+    "seat_pos_1_title": "位置 1",
+    "seat_pos_2_title": "2 立場",
+    "seat_memory_position": "座席メモリ位置: {pos}",
+    "btn_drl": "DRL",
+    "btn_drl_title": "日中の走行灯",
+    "btn_slw": "SLW",
+    "btn_slw_title": "速制限警告",
+    "drl_enabled": "日中の走行灯が有効",
+    "drl_disabled": "日中は走るライトが消えた",
+    "drl_failed": "日中走行灯の設定が失敗",
+    "slw_enabled": "速度制限警告が有効",
+    "slw_disabled": "速制限警告が無効",
+    "slw_failed": "速制限警告設定が失敗"
   },
   "roi": {
     "editing": "編集",
@@ -1299,6 +1300,11 @@
     "live": "生きている",
     "enable_failed": "ストリーミングを有効にすることができなかった"
   },
+  "map": {
+    "your_vehicle": "あなたの車",
+    "your_vehicle_sub": "BYD シャン・センチリー",
+    "you_are_here": "やって来た"
+  },
   "pip": {
     "select_camera": "カメラを選択する",
     "select_a_camera": "カメラを選択する",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "〇 〇 〇"
-  },
-  "map": {
-    "your_vehicle": "あなたの車",
-    "your_vehicle_sub": "BYD シャン・センチリー",
-    "you_are_here": "やって来た"
   }
 }

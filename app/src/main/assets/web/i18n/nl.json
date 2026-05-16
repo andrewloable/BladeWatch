@@ -136,7 +136,6 @@
   },
   "notif": {
     "page_title": "Kennisgevingen",
-    "origin_banner": "Cloudflare snelle tunnels veranderen elke herstart en zouden elk abonnement ongeldig maken. Tailscale dient via een eenvoudige HTTP en kan helemaal niet worden gebruikt voor Web Push. Open het dashboard van uw gereserveerde Zrok URL op uw telefoon, Voeg toe op het startpaneel, en keert dan terug om het te activeren.",
     "backend_banner": "Zorg voor een Zrok URL via het daemon-scherm en start de daemon opnieuw om push-levering mogelijk te maken.",
     "push_delivery": "Push levering",
     "push_delivery_sub": "Elke telefoon die je het dashboard installeert moet hier eenmaal ingeschakeld worden.",
@@ -148,7 +147,6 @@
     "registered_devices": "geregistreerde apparaten",
     "devices_sub": "Alle telefoons die pushmeldingen hebben ingeschakeld worden weergegeven hier. Gebruik verwijderen om een apparaat te verwijderen.",
     "no_devices": "Er zijn nog geen apparaten geregistreerd.",
-    "perm_zrok_required": "Push-levering vereist de Zrok URL  zie banner hierboven.",
     "perm_unsupported": "Kennisgevingen niet ondersteund in deze browser",
     "perm_granted": "Op dit apparaat zijn meldingen ingeschakeld",
     "perm_denied": "Kennisgevingen zijn geblokkeerd.",
@@ -172,7 +170,10 @@
     "sev_critical": "Critisch: drop-everything alert  kleverige banner, langer trillen, negeert stille uren.",
     "sev_warn": "Waarschuwing: korte trillingen, standaardbanner  iets om snel te kijken.",
     "sev_auto": "Auto: de ernst wordt per gebeurtenis bepaald uit de gegevens (slower leak → waarschuwing, snel leak → kritisch).",
-    "sev_info": "Informatie: stille banner, geen vibratie  gereserveerd voor bevestigingen."
+    "sev_info": "Informatie: stille banner, geen vibratie  gereserveerd voor bevestigingen.",
+    "origin_banner": "Cloudflare snelle tunnels veranderen elke herstart en annuleren elk abonnement. Tailscale dient via een eenvoudige HTTP en kan niet worden gebruikt voor Web Push tenzij u een omgekeerde proxy gebruikt. Open het dashboard van uw gereserveerde Zrok of omgekeerde proxy URL op uw telefoon, Voeg aan het startscherm, en keert dan terug hier om te activeren.",
+    "perm_zrok_required": "Push-levering vereist Zrok of een omgekeerde proxy  zie banner hierboven.",
+    "perm_unsupported_install": "Als u Safari gebruikt, probeer het toe te voegen aan het startscherm om meldingen te krijgen"
   },
   "trip": {
     "tier": {
@@ -1207,23 +1208,6 @@
     "tab_climate": "Klimaat",
     "tab_seats": "Sitting",
     "tab_windows": "Windows",
-    "tab_lights": "Verlichting",
-    "tab_adas": "ADAS",
-    "seat_pos_1": "Pos 1",
-    "seat_pos_2": "Pos 2",
-    "seat_pos_1_title": "Positie 1",
-    "seat_pos_2_title": "Positie 2",
-    "seat_memory_position": "Stoelgeheugen: {pos}",
-    "btn_drl": "DRL",
-    "btn_drl_title": "Dagrijverlichting",
-    "btn_slw": "SLW",
-    "btn_slw_title": "Snelheidsbegrenzerwaarschuwing",
-    "drl_enabled": "Dagrijverlichting ingeschakeld",
-    "drl_disabled": "Dagrijverlichting uitgeschakeld",
-    "drl_failed": "Instelling dagrijverlichting mislukt",
-    "slw_enabled": "Snelheidswaarschuwing ingeschakeld",
-    "slw_disabled": "Snelheidswaarschuwing uitgeschakeld",
-    "slw_failed": "Instelling snelheidswaarschuwing mislukt",
     "unlocked": "Onversloten",
     "model_load_failed": "Modell niet gevonden.",
     "model_load_failed_short": "Het model is mislukt.",
@@ -1243,7 +1227,24 @@
     "network_error_msg": "Netwerkafval: {message}",
     "fuel": "Brandstof",
     "personalized_label": " Persoonlijk gemaakt",
-    "soh_label": "SOH"
+    "soh_label": "SOH",
+    "tab_lights": "Lichten",
+    "tab_adas": "ADAS ADAS is een van de meest bekende",
+    "seat_pos_1": "1 post",
+    "seat_pos_2": "Pos 2",
+    "seat_pos_1_title": "Positie 1",
+    "seat_pos_2_title": "2 Positie",
+    "seat_memory_position": "Zitting geheugenpositie: {pos}",
+    "btn_drl": "D. R.L.",
+    "btn_drl_title": "Daglicht",
+    "btn_slw": "SLW",
+    "btn_slw_title": "Waarschuwing voor snelheidslimiet",
+    "drl_enabled": "Daglicht ingeschakeld",
+    "drl_disabled": "Daglicht uitgeschakeld",
+    "drl_failed": "De daglichtinstelling is mislukt",
+    "slw_enabled": "Vermelding van de snelheidslimiet ingeschakeld",
+    "slw_disabled": "Verzorging van de snelheidslimiet uitgeschakeld",
+    "slw_failed": "Verwijderde waarschuwing voor snelheidslimiet"
   },
   "roi": {
     "editing": "VERDRAAG",
@@ -1299,6 +1300,11 @@
     "live": "Leven",
     "enable_failed": "Streaming niet geactiveerd"
   },
+  "map": {
+    "your_vehicle": "Uw voertuig",
+    "your_vehicle_sub": "BYD Champ Sentry",
+    "you_are_here": "Je bent hier."
+  },
   "pip": {
     "select_camera": "Selecteer camera",
     "select_a_camera": "Selecteer een camera",
@@ -1338,10 +1344,5 @@
   },
   "auth": {
     "code_placeholder": "- Ja, dat is het geval."
-  },
-  "map": {
-    "your_vehicle": "Uw voertuig",
-    "your_vehicle_sub": "BYD Champ Sentry",
-    "you_are_here": "Je bent hier."
   }
 }

@@ -2870,13 +2870,21 @@ public class CameraDaemon {
     // ==================== NOTIFICATIONS ====================
 
     /**
+     * Idempotency guard. Once the registry + sinks are wired, repeat calls
+     * are no-ops.
+     */
+    private static volatile boolean notificationsInitialized = false;
+
+    /**
      * Initialize the Web Push notification subsystem. Loads the category
      * registry from APK assets, opens persistent stores under
      * {@code /data/local/tmp/.push/}, registers PushSink + LogSink with
      * NotificationBus, and wires NotificationApiHandler so HTTP routes can
      * resolve.
      */
-    private static void initNotifications() throws Exception {
+    public static synchronized void initNotifications() throws Exception {
+        if (notificationsInitialized) return;
+
         com.overdrive.app.notifications.CategoryRegistry registry = null;
 
         // The registry JSON ships in the APK assets. Use the cached
@@ -2920,6 +2928,7 @@ public class CameraDaemon {
 
         com.overdrive.app.server.NotificationApiHandler.init(registry, subStore, keyStore);
 
+        notificationsInitialized = true;
         log("Notifications initialized: " + registry.all().size() + " categories, "
                 + subStore.size() + " subscriptions");
     }

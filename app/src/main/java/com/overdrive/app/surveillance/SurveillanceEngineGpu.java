@@ -2516,7 +2516,6 @@ public class SurveillanceEngineGpu {
         // reasoning.
         int persons = 0, vehicles = 0, bikes = 0, animals = 0;
         Actor.Proximity closest = null;
-        String camHint = null;
         String detectionLabel = "motion";
         Actor threat = null;
         for (Actor a : snap) {
@@ -2530,9 +2529,6 @@ public class SurveillanceEngineGpu {
             }
             if (closest == null || a.peakProximity.ordinal() < closest.ordinal()) {
                 closest = a.peakProximity;
-                if (a.peakCamera >= 0 && a.peakCamera < MotionPipelineV2.QUADRANT_NAMES.length) {
-                    camHint = MotionPipelineV2.QUADRANT_NAMES[a.peakCamera];
-                }
             }
             if (threat == null
                     || a.peakSeverity.ordinal() > threat.peakSeverity.ordinal()
@@ -2541,6 +2537,9 @@ public class SurveillanceEngineGpu {
                 threat = a;
             }
         }
+        // camHint follows the threat actor so the title's "X at <camera>" phrase
+        // names the camera that saw X, not whichever actor happened to be closest.
+        String camHint = cameraNameFor(threat);
         float bestConf = threat != null ? threat.peakConfidence : 0f;
         if (threat != null) detectionLabel = Actor.groupLabel(threat.classGroup);
         try {
@@ -2570,7 +2569,7 @@ public class SurveillanceEngineGpu {
         Actor.Severity peakSev = com.overdrive.app.notifications.NotificationGate.maxSeverity(snap);
         int persons = 0, vehicles = 0, bikes = 0, animals = 0;
         Actor.Proximity closest = null;
-        String camHint = null;
+        Actor threat = null;
         for (Actor a : snap) {
             if (a.isStatic) continue;
             switch (a.classGroup) {
@@ -2582,11 +2581,16 @@ public class SurveillanceEngineGpu {
             }
             if (closest == null || a.peakProximity.ordinal() < closest.ordinal()) {
                 closest = a.peakProximity;
-                if (a.peakCamera >= 0 && a.peakCamera < MotionPipelineV2.QUADRANT_NAMES.length) {
-                    camHint = MotionPipelineV2.QUADRANT_NAMES[a.peakCamera];
-                }
+            }
+            if (threat == null
+                    || a.peakSeverity.ordinal() > threat.peakSeverity.ordinal()
+                    || (a.peakSeverity == threat.peakSeverity
+                        && classRank(a.classGroup) > classRank(threat.classGroup))) {
+                threat = a;
             }
         }
+        // camHint follows the threat actor — see sendRichMotionNotifications.
+        String camHint = cameraNameFor(threat);
         try {
             TelegramNotifier.notifyMotionFinalized(
                     videoFilename,
@@ -2614,6 +2618,12 @@ public class SurveillanceEngineGpu {
             case ANIMAL:  return 1;
             default:      return 0;
         }
+    }
+
+    private static String cameraNameFor(Actor a) {
+        if (a == null) return null;
+        if (a.peakCamera < 0 || a.peakCamera >= MotionPipelineV2.QUADRANT_NAMES.length) return null;
+        return MotionPipelineV2.QUADRANT_NAMES[a.peakCamera];
     }
 
     /**
@@ -2756,7 +2766,6 @@ public class SurveillanceEngineGpu {
             // camera" — not "1 person, 2 vehicles".
             int persons = 0, vehicles = 0, bikes = 0, animals = 0;
             Actor.Proximity closest = null;
-            String camHint = null;
             // Threat actor = highest-severity, then best class rank
             // (person > bike > vehicle > animal).
             Actor threat = null;
@@ -2771,9 +2780,6 @@ public class SurveillanceEngineGpu {
                 }
                 if (closest == null || a.peakProximity.ordinal() < closest.ordinal()) {
                     closest = a.peakProximity;
-                    if (a.peakCamera >= 0 && a.peakCamera < MotionPipelineV2.QUADRANT_NAMES.length) {
-                        camHint = MotionPipelineV2.QUADRANT_NAMES[a.peakCamera];
-                    }
                 }
                 if (threat == null
                         || a.peakSeverity.ordinal() > threat.peakSeverity.ordinal()
@@ -2782,6 +2788,9 @@ public class SurveillanceEngineGpu {
                     threat = a;
                 }
             }
+            // camHint follows the threat actor so the title's "X at <camera>"
+            // phrase names the camera that saw X, not whichever actor was closest.
+            String camHint = cameraNameFor(threat);
 
             // ---- Title (severity tier + threat class + camera) ----
             // Format: "CRITICAL · Person at front" or "Alert · Vehicle at rear"
@@ -2805,9 +2814,12 @@ public class SurveillanceEngineGpu {
             // ---- Body (proximity phrase + counts when relevant) ----
             // Single actor: "Very close" / "Close" / "Mid range" / "Far".
             // Multiple actors: "Very close · 1 person, 2 vehicles".
-            // Drops the awkward "1× person, closest very close" phrasing.
+            // When a hero JPEG was written, append "close-up view" so the user
+            // knows the attached image is the foveated crop around the threat,
+            // not a wide shot of the camera frame.
             String body;
             int totalActors = persons + vehicles + bikes + animals;
+            boolean hasHero = heroJpegName != null && !heroJpegName.isEmpty();
             if (threat == null) {
                 body = "Recording in progress";
             } else {
@@ -2820,6 +2832,7 @@ public class SurveillanceEngineGpu {
                     sb.append(formatActorCounts(persons, vehicles, bikes, animals));
                 }
                 if (sb.length() == 0) sb.append("Motion detected");
+                if (hasHero) sb.append(" · close-up view");
                 body = sb.toString();
             }
 
