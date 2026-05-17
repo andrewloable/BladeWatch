@@ -1,0 +1,309 @@
+package com.overdrive.app.ui.fragment
+
+import android.content.res.Configuration
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.commit
+import androidx.navigation.fragment.findNavController
+import androidx.transition.AutoTransition
+import androidx.transition.TransitionManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.overdrive.app.BuildConfig
+import com.overdrive.app.R
+import com.overdrive.app.ui.MainActivity
+import com.overdrive.app.ui.dialog.LanguagePickerDialog
+import com.overdrive.app.ui.fragment.settings.SettingsAboutFragment
+import com.overdrive.app.ui.fragment.settings.SettingsAppearanceFragment
+import com.overdrive.app.ui.fragment.settings.SettingsDaemonsFragment
+import com.overdrive.app.ui.fragment.settings.SettingsPrivacyFragment
+import com.overdrive.app.ui.fragment.settings.SettingsRecordingFragment
+import com.overdrive.app.ui.fragment.settings.SettingsSurveillanceFragment
+import com.overdrive.app.ui.util.PreferencesManager
+import java.util.Locale
+
+/**
+ * Settings entry point.
+ *
+ * Two layout variants drive completely different UX:
+ *  - **Portrait** (`layout/fragment_settings.xml`) — SOTA hub with hero
+ *    header, two quick-toggle tiles (Theme / Language), a Preferences
+ *    section list (Recording / Surveillance / Daemons), an About & data
+ *    section (About row + destructive Reset row), and a build footer.
+ *  - **Landscape** (`layout-land/fragment_settings.xml`) — two-pane
+ *    sub-rail layout (~280dp left rail of section names + detail pane on
+ *    the right). Sections are dynamically inflated from the [Section]
+ *    enum and click-swap a child fragment into `R.id.settingsContent`.
+ *
+ * Orientation detection happens in [onViewCreated] via
+ * [resources.configuration.orientation]. Each branch wires a disjoint
+ * set of views — the union of IDs would not exist in any single layout.
+ */
+class SettingsFragment : Fragment() {
+
+    /**
+     * Sub-rail sections. The order here is the visual order in the rail
+     * (top → bottom). [navigates] = true marks rows that traditionally
+     * leave the Settings page (Recording / Surveillance) — kept for the
+     * trailing chevron affordance even though we now host them inline.
+     */
+    private enum class Section(
+        val labelRes: Int,
+        val iconRes: Int,
+        val navigates: Boolean = false
+    ) {
+        APPEARANCE(R.string.settings_section_appearance, R.drawable.ic_dashboard),
+        RECORDING(R.string.settings_section_recording, R.drawable.ic_recording, navigates = true),
+        SURVEILLANCE(R.string.settings_section_surveillance, R.drawable.ic_sentry, navigates = true),
+        DAEMONS(R.string.settings_section_daemons, R.drawable.ic_daemons),
+        PRIVACY(R.string.settings_section_privacy, R.drawable.ic_delete),
+        ABOUT(R.string.settings_section_about, R.drawable.ic_update),
+    }
+
+    private var currentSection: Section = Section.APPEARANCE
+
+    /** Map from Section → its row view in the sub-rail (landscape only). */
+    private val rowViews = mutableMapOf<Section, View>()
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View = inflater.inflate(R.layout.fragment_settings, container, false)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val isLandscape = resources.configuration.orientation ==
+            Configuration.ORIENTATION_LANDSCAPE
+
+        if (isLandscape && view.findViewById<View>(R.id.settingsContent) != null) {
+            setupLandscapeSubrail(view, savedInstanceState)
+        } else {
+            // Portrait: SOTA hub. Hero header is layout-driven; wire up the
+            // quick toggles, section shortcuts, about/reset rows, and footer.
+            setupQuickThemeTile(view)
+            setupLanguagePicker(view)
+            setupSectionShortcuts(view)
+            setupAboutActions(view)
+            setupFooter(view)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_SECTION, currentSection.name)
+    }
+
+    // ============================================================
+    // Landscape sub-rail
+    // ============================================================
+
+    private fun setupLandscapeSubrail(root: View, savedInstanceState: Bundle?) {
+        val rowsContainer =
+            root.findViewById<LinearLayout>(R.id.subrailRowsContainer) ?: return
+
+        val savedName = savedInstanceState?.getString(KEY_SECTION)
+        currentSection = savedName
+            ?.let { name -> Section.values().firstOrNull { it.name == name } }
+            ?: Section.APPEARANCE
+
+        // Build one row per Section. Tag the row with the section so the
+        // shared click listener can recover it.
+        Section.values().forEach { section ->
+            val row = layoutInflater.inflate(
+                R.layout.item_settings_subrail_row,
+                rowsContainer,
+                /* attachToRoot = */ false
+            )
+            row.tag = section
+            row.findViewById<ImageView>(R.id.subrailRowIcon).setImageResource(section.iconRes)
+            row.findViewById<TextView>(R.id.subrailRowLabel).setText(section.labelRes)
+            row.findViewById<ImageView>(R.id.subrailRowChevron).visibility =
+                if (section.navigates) View.VISIBLE else View.GONE
+
+            row.setOnClickListener { selectSection(section, animate = true) }
+
+            rowsContainer.addView(row)
+            rowViews[section] = row
+        }
+
+        // Initial selection. First-time attach: skip the swap animation
+        // so the page paints in one frame; rotation: also skip (saved
+        // section is already "current" from the user's perspective).
+        selectSection(currentSection, animate = false, force = true)
+    }
+
+    /**
+     * Make [section] the active sub-rail row and host its content
+     * fragment in `settingsContent`.
+     *
+     * @param animate when true, applies a M3-style cross-fade to the
+     *                detail pane swap and a delayed transition to the
+     *                rail (for the active-pill move).
+     * @param force   when true, performs the swap even if [section]
+     *                already equals [currentSection] (used for the
+     *                initial render).
+     */
+    private fun selectSection(
+        section: Section,
+        animate: Boolean,
+        force: Boolean = false
+    ) {
+        if (!force && section == currentSection && childFragmentManager
+                .findFragmentById(R.id.settingsContent) != null
+        ) return
+
+        currentSection = section
+
+        // Update rail visual state. TransitionManager drives the active
+        // pill's apparent "move" — the underlying View doesn't move, but
+        // the selected-state background fades in/out which the eye reads
+        // as a slide.
+        val rail = view?.findViewById<LinearLayout>(R.id.subrailRowsContainer)
+        if (rail != null && animate) {
+            TransitionManager.beginDelayedTransition(rail, AutoTransition().apply {
+                duration = 220L
+            })
+        }
+        rowViews.forEach { (s, v) -> v.isSelected = (s == section) }
+
+        // Swap detail content. Use a fade if animation is requested and
+        // the project's anim resources are available.
+        val fragment = fragmentForSection(section)
+        childFragmentManager.commit {
+            if (animate) {
+                setCustomAnimations(R.anim.fade_in, R.anim.fade_out)
+            }
+            replace(R.id.settingsContent, fragment, "settings_section_${section.name}")
+        }
+    }
+
+    private fun fragmentForSection(section: Section): Fragment = when (section) {
+        Section.APPEARANCE -> SettingsAppearanceFragment()
+        Section.RECORDING -> SettingsRecordingFragment()
+        Section.SURVEILLANCE -> SettingsSurveillanceFragment()
+        Section.DAEMONS -> SettingsDaemonsFragment()
+        Section.PRIVACY -> SettingsPrivacyFragment()
+        Section.ABOUT -> SettingsAboutFragment()
+    }
+
+    // ============================================================
+    // Portrait (original monolithic page) — unchanged behavior
+    // ============================================================
+
+    /**
+     * Portrait quick-tile theme picker. The tile shows the active mode as
+     * its big-line value; tapping it opens a 3-option Material picker. The
+     * SOTA tile-style picker still lives on the Appearance pane (for
+     * landscape) so we don't duplicate the visual previews here.
+     */
+    private fun setupQuickThemeTile(view: View) {
+        val tile = view.findViewById<View>(R.id.quickTileTheme) ?: return
+        val tvValue = view.findViewById<TextView>(R.id.tvQuickThemeValue) ?: return
+        tvValue.text = themeModeLabel(PreferencesManager.getThemeMode())
+
+        tile.setOnClickListener {
+            val ctx = context ?: return@setOnClickListener
+            val labels = arrayOf(
+                getString(R.string.settings_theme_auto),
+                getString(R.string.settings_theme_light),
+                getString(R.string.settings_theme_dark),
+            )
+            val current = PreferencesManager.getThemeMode()
+            val checked = when (current) {
+                AppCompatDelegate.MODE_NIGHT_NO -> 1
+                AppCompatDelegate.MODE_NIGHT_YES -> 2
+                else -> 0
+            }
+            MaterialAlertDialogBuilder(ctx)
+                .setTitle(R.string.settings_theme_label)
+                .setSingleChoiceItems(labels, checked) { dialog, which ->
+                    val mode = when (which) {
+                        1 -> AppCompatDelegate.MODE_NIGHT_NO
+                        2 -> AppCompatDelegate.MODE_NIGHT_YES
+                        else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                    }
+                    PreferencesManager.setThemeMode(mode)
+                    tvValue.text = themeModeLabel(mode)
+                    dialog.dismiss()
+                }
+                .setNegativeButton(R.string.action_cancel, null)
+                .show()
+        }
+    }
+
+    private fun themeModeLabel(mode: Int): String = when (mode) {
+        AppCompatDelegate.MODE_NIGHT_NO -> getString(R.string.settings_theme_light)
+        AppCompatDelegate.MODE_NIGHT_YES -> getString(R.string.settings_theme_dark)
+        else -> getString(R.string.settings_theme_auto)
+    }
+
+    private fun setupLanguagePicker(view: View) {
+        val tvValue = view.findViewById<TextView>(R.id.tvLanguageValue) ?: return
+        tvValue.text = currentLocaleDisplay()
+        view.findViewById<View>(R.id.cardLanguage)?.setOnClickListener {
+            val activity = activity ?: return@setOnClickListener
+            LanguagePickerDialog.show(activity) { activity.recreate() }
+        }
+    }
+
+    private fun currentLocaleDisplay(): String {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        val tag = if (!locales.isEmpty) locales[0]?.toLanguageTag() else null
+        return if (tag.isNullOrEmpty()) {
+            getString(R.string.settings_theme_auto).substringBefore('(').trim()
+                .ifEmpty { Locale.getDefault().displayLanguage }
+        } else {
+            Locale.forLanguageTag(tag).getDisplayName(Locale.getDefault())
+                .replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+                }
+        }
+    }
+
+    private fun setupSectionShortcuts(view: View) {
+        view.findViewById<View>(R.id.cardSectionRecording)?.setOnClickListener {
+            findNavController().navigate(R.id.recordingSettingsWebFragment)
+        }
+        view.findViewById<View>(R.id.cardSectionSurveillance)?.setOnClickListener {
+            findNavController().navigate(R.id.surveillanceSettingsWebFragment)
+        }
+        view.findViewById<View>(R.id.cardSectionDaemons)?.setOnClickListener {
+            findNavController().navigate(R.id.daemonsFragment)
+        }
+    }
+
+    private fun setupAboutActions(view: View) {
+        view.findViewById<View>(R.id.cardCheckUpdate)?.setOnClickListener {
+            (activity as? MainActivity)?.invokeCheckForUpdates()
+        }
+        view.findViewById<View>(R.id.cardResetData)?.setOnClickListener {
+            (activity as? MainActivity)?.invokeResetDataDialog()
+        }
+    }
+
+    /**
+     * Footer line at the bottom of the portrait hub. Read-only. Shows
+     * "OverDrive vX.Y · com.overdrive.app" so power users can confirm
+     * the running version + package id without diving into About.
+     */
+    private fun setupFooter(view: View) {
+        val tv = view.findViewById<TextView>(R.id.tvSettingsFooter) ?: return
+        tv.text = getString(
+            R.string.settings_footer_format,
+            BuildConfig.VERSION_NAME,
+            BuildConfig.APPLICATION_ID
+        )
+    }
+
+    private companion object {
+        const val KEY_SECTION = "settings_subrail_section"
+    }
+}

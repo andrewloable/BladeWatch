@@ -41,7 +41,6 @@ class DaemonAdapter(
     
     inner class DaemonViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val statusIndicator: View = itemView.findViewById(R.id.statusIndicator)
-        private val statusGlow: View? = itemView.findViewById(R.id.statusGlow)
         private val tvDaemonName: TextView = itemView.findViewById(R.id.tvDaemonName)
         private val tvDaemonStatus: TextView = itemView.findViewById(R.id.tvDaemonStatus)
         private val switchDaemon: SwitchMaterial = itemView.findViewById(R.id.switchDaemon)
@@ -84,22 +83,27 @@ class DaemonAdapter(
             }
             val color = ContextCompat.getColor(itemView.context, colorRes)
             (statusIndicator.background as? GradientDrawable)?.setColor(color)
-            
-            // Update glow visibility and color
-            statusGlow?.apply {
-                visibility = if (state.status == DaemonStatus.RUNNING) View.VISIBLE else View.INVISIBLE
-                alpha = if (state.status == DaemonStatus.RUNNING) 0.5f else 0f
-            }
-            
-            // Set status text color based on status
+
+            // Status-text color: live status colors when meaningful, otherwise
+            // fall back to the M3 onSurfaceVariant baseline used by the layout.
             val textColorRes = when {
-                state.needsConfiguration -> R.color.status_starting // Yellow/amber
+                state.needsConfiguration -> R.color.status_starting
                 state.status == DaemonStatus.RUNNING -> R.color.status_running
                 state.status == DaemonStatus.ERROR -> R.color.status_error
                 state.status == DaemonStatus.STARTING || state.status == DaemonStatus.STOPPING -> R.color.status_starting
-                else -> R.color.text_secondary
+                else -> null
             }
-            tvDaemonStatus.setTextColor(ContextCompat.getColor(itemView.context, textColorRes))
+            if (textColorRes != null) {
+                tvDaemonStatus.setTextColor(ContextCompat.getColor(itemView.context, textColorRes))
+            } else {
+                // Resolve ?attr/colorOnSurfaceVariant from theme so we never hard-code hex.
+                val ta = itemView.context.obtainStyledAttributes(
+                    intArrayOf(com.google.android.material.R.attr.colorOnSurfaceVariant)
+                )
+                val themed = ta.getColor(0, 0)
+                ta.recycle()
+                tvDaemonStatus.setTextColor(themed)
+            }
             
             // Set switch state without triggering listener
             switchDaemon.setOnCheckedChangeListener(null)
@@ -167,20 +171,31 @@ class DaemonAdapter(
             // Populate subprocess list
             if (hasSubprocesses) {
                 subprocessList.removeAllViews()
+                // Resolve M3 themed colors once so we don't hard-code hex.
+                val themeAttrs = itemView.context.obtainStyledAttributes(
+                    intArrayOf(
+                        com.google.android.material.R.attr.colorOnSurface,
+                        com.google.android.material.R.attr.colorOnSurfaceVariant
+                    )
+                )
+                val onSurface = themeAttrs.getColor(0, 0)
+                val onSurfaceVariant = themeAttrs.getColor(1, 0)
+                themeAttrs.recycle()
+
                 state.subprocesses.forEach { subprocess ->
                     val subView = LayoutInflater.from(itemView.context)
                         .inflate(android.R.layout.simple_list_item_2, subprocessList, false)
-                    
+
                     subView.findViewById<TextView>(android.R.id.text1).apply {
                         text = "${subprocess.name} (PID: ${subprocess.pid})"
-                        setTextColor(ContextCompat.getColor(context, R.color.text_primary))
-                        textSize = 12f
+                        setTextColor(onSurface)
+                        textSize = 13f
                     }
-                    
+
                     subView.findViewById<TextView>(android.R.id.text2).apply {
                         text = "Uptime: ${subprocess.uptime}"
-                        setTextColor(ContextCompat.getColor(context, R.color.text_hint))
-                        textSize = 10f
+                        setTextColor(onSurfaceVariant)
+                        textSize = 11f
                     }
                     subprocessList.addView(subView)
                 }

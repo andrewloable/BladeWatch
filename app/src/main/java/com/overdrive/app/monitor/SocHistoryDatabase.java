@@ -49,6 +49,7 @@ public class SocHistoryDatabase {
     // Table names
     private static final String TABLE_SOC = "soc_history";
     private static final String TABLE_CHARGING = "charging_sessions";
+    private static final String TABLE_ACC_EVENTS = "acc_events";
     
     // Retention periods
     private static final long RETENTION_DAYS = 7;
@@ -236,10 +237,34 @@ public class SocHistoryDatabase {
                 "peak_power_kw REAL" +
                 ");"
             );
-            
+
             stmt.execute(
                 "CREATE INDEX IF NOT EXISTS idx_charging_start ON " + TABLE_CHARGING + "(start_time);"
             );
+
+            // ACC events table — every ACC ON/OFF transition is logged here so
+            // the dashboard "parking delta" insight can compute changes across
+            // a real park-and-return cycle (not inferred from SOC sample gaps).
+            // Snapshot fields are nullable: if BydDataCollector is not yet
+            // initialized at the moment of the event we still record the
+            // transition so future correlation is possible.
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS " + TABLE_ACC_EVENTS + " (" +
+                "id IDENTITY PRIMARY KEY," +
+                "timestamp BIGINT NOT NULL," +
+                "event_type VARCHAR(8) NOT NULL," +    // 'ON' or 'OFF'
+                "soc_percent REAL," +                  // nullable if read failed
+                "remaining_kwh REAL," +                // nullable
+                "voltage_v REAL," +                    // nullable
+                "range_km INTEGER" +                   // nullable
+                ");"
+            );
+
+            stmt.execute(
+                "CREATE INDEX IF NOT EXISTS idx_acc_events_ts ON " + TABLE_ACC_EVENTS + "(timestamp DESC);"
+            );
+
+            logger.info("acc_events table ready (migration idempotent)");
         }
     }
 
@@ -1249,9 +1274,17 @@ public class SocHistoryDatabase {
         try (Statement stmt = connection.createStatement()) {
             int n1 = stmt.executeUpdate("DELETE FROM " + TABLE_SOC);
             int n2 = stmt.executeUpdate("DELETE FROM " + TABLE_CHARGING);
-            total = n1 + n2;
+            int n3 = 0;
+            try {
+                n3 = stmt.executeUpdate("DELETE FROM " + TABLE_ACC_EVENTS);
+            } catch (Exception ignored) {
+                // Table may not exist on very old installs that haven't yet
+                // run the migration — ignore so SOC/charging still wipe.
+            }
+            total = n1 + n2 + n3;
             logger.info("resetAll: cleared " + n1 + " from " + TABLE_SOC
-                + " and " + n2 + " from " + TABLE_CHARGING);
+                + ", " + n2 + " from " + TABLE_CHARGING
+                + ", " + n3 + " from " + TABLE_ACC_EVENTS);
             return total;
         } catch (Exception e) {
             logger.error("resetAll failed", e);
@@ -1323,6 +1356,246 @@ public class SocHistoryDatabase {
     
     public boolean isAvailable() {
         return isInitialized && connection != null;
+    }
+
+    // ==================== ACC EVENTS ====================
+
+    /**
+     * Record a single ACC transition. Called synchronously from
+     * CameraDaemon.onAccStateChanged() so the snapshot is captured BEFORE
+     * the daemon tears down BydDataCollector.
+     *
+     * @param eventType "ON" or "OFF" (case-insensitive — normalized to upper).
+     * @param data the BydVehicleData snapshot at the moment of the event.
+     *             Pass null if the snapshot is unavailable; nullable fields
+     *             will be persisted as SQL NULL.
+     *
+     * Best-effort: any exception is caught and logged; never propagates.
+     */
+    public void recordAccEvent(String eventType, com.overdrive.app.byd.BydVehicleData data) {
+        try {
+            if (eventType == null) return;
+            String type = eventType.trim().toUpperCase();
+            if (!"ON".equals(type) && !"OFF".equals(type)) return;
+
+            if (!isAvailable()) {
+                logger.debug("recordAccEvent skipped: DB not available (type=" + type + ")");
+                return;
+            }
+
+            long now = System.currentTimeMillis();
+
+            // Pull snapshot fields defensively. Use SQL NULL when the value
+            // is missing or sentinel — never a fake zero.
+            Double socPercent = null;
+            Double remainingKwh = null;
+            Double voltageV = null;
+            Integer rangeKm = null;
+            if (data != null) {
+                if (!Double.isNaN(data.socPercent) && data.socPercent >= 0 && data.socPercent <= 100) {
+                    socPercent = data.socPercent;
+                }
+                if (!Double.isNaN(data.remainKwh) && data.remainKwh > 0) {
+                    remainingKwh = data.remainKwh;
+                }
+                if (!Double.isNaN(data.voltage12v) && data.voltage12v > 0) {
+                    voltageV = data.voltage12v;
+                }
+                if (data.elecRangeKm != com.overdrive.app.byd.BydVehicleData.UNAVAILABLE
+                        && data.elecRangeKm >= 0) {
+                    rangeKm = data.elecRangeKm;
+                }
+            }
+
+            String sql = "INSERT INTO " + TABLE_ACC_EVENTS +
+                " (timestamp, event_type, soc_percent, remaining_kwh, voltage_v, range_km) " +
+                "VALUES (?, ?, ?, ?, ?, ?);";
+
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setLong(1, now);
+                pstmt.setString(2, type);
+                if (socPercent != null) pstmt.setDouble(3, socPercent);
+                else pstmt.setNull(3, java.sql.Types.REAL);
+                if (remainingKwh != null) pstmt.setDouble(4, remainingKwh);
+                else pstmt.setNull(4, java.sql.Types.REAL);
+                if (voltageV != null) pstmt.setDouble(5, voltageV);
+                else pstmt.setNull(5, java.sql.Types.REAL);
+                if (rangeKm != null) pstmt.setInt(6, rangeKm);
+                else pstmt.setNull(6, java.sql.Types.INTEGER);
+                pstmt.executeUpdate();
+            }
+
+            logger.debug("ACC event recorded: " + type +
+                " soc=" + (socPercent == null ? "null" : socPercent) +
+                " kWh=" + (remainingKwh == null ? "null" : remainingKwh));
+        } catch (Exception e) {
+            // Never propagate — must not break the daemon's ACC state machine.
+            logger.error("recordAccEvent failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Compute the most recent completed park-and-return cycle.
+     *
+     * Algorithm (NO inference, only real events):
+     *   1. Find the most recent OFF event in the table.
+     *   2. Find the most recent ON event whose timestamp > that OFF's timestamp.
+     *      (i.e. the matching return event).
+     *   3. If both exist with usable SOC values, compute delta and return it.
+     *   4. Anything else → return null.
+     *
+     * Edge cases (ALL return null, never fake data):
+     *   - DB unavailable / not initialized.
+     *   - No OFF events ever recorded (just installed, never parked yet).
+     *   - Most recent OFF has no subsequent ON (currently parked — delta unknown).
+     *   - Either bracket has soc_percent IS NULL or NaN.
+     *   - soc_percent &lt; 0 or &gt; 100 on either bracket.
+     *   - |deltaSoc| &gt; 100 (sanity floor for bad data).
+     *   - The OFF was older than `maxAgeHours` hours ago (stale).
+     *
+     * Returned JSON shape on success:
+     *   { offTs, onTs, idleMinutes, deltaSoc, deltaKwh?, isCharging }
+     *   deltaKwh present only when both samples have remaining_kwh &gt; 0.
+     *   isCharging=true if deltaSoc &gt; 0.5 (battery gained energy parked = plugged in).
+     */
+    public JSONObject getLastParkingDelta(int maxAgeHours) {
+        // Edge case: DB unavailable / not initialized.
+        if (!isAvailable()) return null;
+        if (maxAgeHours <= 0) return null;
+        try {
+            // Step 1: find the most recent OFF event.
+            long offTs;
+            Double offSoc;
+            Double offKwh;
+            String offSql = "SELECT timestamp, soc_percent, remaining_kwh " +
+                "FROM " + TABLE_ACC_EVENTS + " WHERE event_type = 'OFF' " +
+                "ORDER BY timestamp DESC LIMIT 1";
+            try (PreparedStatement pstmt = connection.prepareStatement(offSql)) {
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    // Edge case: no OFF events ever recorded.
+                    if (!rs.next()) return null;
+                    offTs = rs.getLong(1);
+                    double s = rs.getDouble(2);
+                    offSoc = rs.wasNull() ? null : s;
+                    double k = rs.getDouble(3);
+                    offKwh = rs.wasNull() ? null : k;
+                }
+            }
+
+            // Edge case: OFF older than maxAgeHours → stale, skip.
+            long now = System.currentTimeMillis();
+            long ageMs = now - offTs;
+            long maxAgeMs = (long) maxAgeHours * 60L * 60L * 1000L;
+            if (ageMs < 0 || ageMs > maxAgeMs) return null;
+
+            // Step 2: find the most recent ON event after that OFF.
+            long onTs;
+            Double onSoc;
+            Double onKwh;
+            String onSql = "SELECT timestamp, soc_percent, remaining_kwh " +
+                "FROM " + TABLE_ACC_EVENTS + " WHERE event_type = 'ON' AND timestamp > ? " +
+                "ORDER BY timestamp DESC LIMIT 1";
+            try (PreparedStatement pstmt = connection.prepareStatement(onSql)) {
+                pstmt.setLong(1, offTs);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    // Edge case: most recent OFF has no subsequent ON
+                    // (currently parked — delta unknown).
+                    if (!rs.next()) return null;
+                    onTs = rs.getLong(1);
+                    double s = rs.getDouble(2);
+                    onSoc = rs.wasNull() ? null : s;
+                    double k = rs.getDouble(3);
+                    onKwh = rs.wasNull() ? null : k;
+                }
+            }
+
+            // Edge case: either bracket has soc_percent IS NULL or NaN.
+            if (offSoc == null || onSoc == null) return null;
+            if (Double.isNaN(offSoc) || Double.isNaN(onSoc)) return null;
+
+            // Edge case: soc out of valid range on either bracket.
+            if (offSoc < 0 || offSoc > 100) return null;
+            if (onSoc < 0 || onSoc > 100) return null;
+
+            double deltaSoc = onSoc - offSoc;
+
+            // Edge case: |deltaSoc| > 100 sanity floor for bad data.
+            if (Double.isNaN(deltaSoc) || Math.abs(deltaSoc) > 100) return null;
+
+            // Edge case: onTs must be after offTs (already enforced by query
+            // but defend against clock skew on the host).
+            if (onTs <= offTs) return null;
+
+            JSONObject out = new JSONObject();
+            out.put("offTs", offTs);
+            out.put("onTs", onTs);
+            out.put("idleMinutes", (onTs - offTs) / 60_000L);
+            out.put("deltaSoc", Math.round(deltaSoc * 10) / 10.0);
+
+            // deltaKwh present only when both samples have remaining_kwh > 0.
+            if (offKwh != null && onKwh != null
+                    && !Double.isNaN(offKwh) && !Double.isNaN(onKwh)
+                    && offKwh > 0 && onKwh > 0) {
+                double deltaKwh = onKwh - offKwh;
+                if (!Double.isNaN(deltaKwh) && Math.abs(deltaKwh) < 500) {
+                    out.put("deltaKwh", Math.round(deltaKwh * 10) / 10.0);
+                }
+            }
+
+            // isCharging: positive SOC delta > 0.5 means the pack gained
+            // energy while parked — i.e. plugged in.
+            out.put("isCharging", deltaSoc > 0.5);
+
+            return out;
+        } catch (Exception e) {
+            logger.debug("getLastParkingDelta failed: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get the most recent completed charging session within the last `hoursBack`
+     * hours. Returns null if none, if values are garbage, or if DB is closed.
+     *
+     * Returned JSON shape:
+     *  { startTime, endTime, durationMinutes, energyAddedKwh, startSoc, endSoc }
+     */
+    public JSONObject getMostRecentCompletedChargingSession(int hoursBack) {
+        if (!isAvailable()) return null;
+        if (hoursBack <= 0) return null;
+        try {
+            long cutoff = System.currentTimeMillis() - (hoursBack * 60L * 60L * 1000L);
+            String sql = "SELECT start_time, end_time, start_soc, end_soc, energy_added_kwh " +
+                "FROM " + TABLE_CHARGING +
+                " WHERE end_time IS NOT NULL AND start_time >= ? " +
+                "ORDER BY end_time DESC LIMIT 1";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setLong(1, cutoff);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (!rs.next()) return null;
+                    long start = rs.getLong(1);
+                    long end = rs.getLong(2);
+                    double startSoc = rs.getDouble(3);
+                    double endSoc = rs.getDouble(4);
+                    double energy = rs.getDouble(5);
+                    if (end <= start) return null;
+                    if (Double.isNaN(energy) || energy <= 0 || energy > 500) return null;
+                    long durationMin = (end - start) / 60_000L;
+                    if (durationMin <= 0 || durationMin > 7 * 24 * 60) return null;
+                    JSONObject out = new JSONObject();
+                    out.put("startTime", start);
+                    out.put("endTime", end);
+                    out.put("durationMinutes", durationMin);
+                    out.put("energyAddedKwh", Math.round(energy * 10) / 10.0);
+                    out.put("startSoc", Math.round(startSoc * 10) / 10.0);
+                    out.put("endSoc", Math.round(endSoc * 10) / 10.0);
+                    return out;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("getMostRecentCompletedChargingSession failed: " + e.getMessage());
+            return null;
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
 package com.overdrive.app.overlay;
 
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -123,7 +123,7 @@ public class SetupGuideDialog {
             }
         });
 
-        AlertDialog dialog = new AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+        AlertDialog dialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(context, R.style.Theme_Overdrive_M3_Dialog)
                 .setView(view)
                 .setCancelable(true)
                 .create();

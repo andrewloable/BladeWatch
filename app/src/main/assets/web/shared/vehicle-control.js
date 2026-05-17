@@ -219,7 +219,11 @@ var VC = {
         });
         this.renderer.setSize(renderW, renderH, false);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3));
-        this.renderer.setClearColor(0x0F0F12, 1);
+        // Read the clear colour from the active theme so the 3D viewport
+        // matches the surrounding chrome under both light and dark themes.
+        // Was previously hardcoded #0F0F12 which left the car silhouette
+        // sitting in a black box on a light-themed page.
+        this.renderer.setClearColor(this._readCanvasClearColor(), 1);
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.2;
@@ -245,6 +249,49 @@ var VC = {
         this.addGroundGrid();
 
         window.addEventListener('resize', function() { self.onResize(); });
+
+        // React to theme changes so the renderer's clear colour stays in
+        // sync with the rest of the UI. The Android shell sets data-theme
+        // on every page-load and again from the live theme picker; we
+        // observe the attribute so the WebGL canvas flips without a reload.
+        this._themeObserver = new MutationObserver(function () {
+            if (!self.renderer) return;
+            self.renderer.setClearColor(self._readCanvasClearColor(), 1);
+        });
+        this._themeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme']
+        });
+    },
+
+    /**
+     * Resolve the canvas clear colour from the active --vc-canvas-bg token,
+     * which itself maps to --bg-base in the shared palette. Returns a 0xRRGGBB
+     * integer compatible with THREE.WebGLRenderer.setClearColor. Falls back
+     * to the legacy dark color if the token can't be resolved (e.g. CSS not
+     * yet applied on first frame).
+     */
+    _readCanvasClearColor: function () {
+        try {
+            var s = getComputedStyle(document.documentElement);
+            var raw = (s.getPropertyValue('--vc-canvas-bg') || '').trim();
+            if (!raw) raw = (s.getPropertyValue('--bg-base') || '').trim();
+            // Hex literal — strip leading # and parse the 6 hex digits.
+            var m = raw.match(/^#([0-9a-fA-F]{6})$/);
+            if (m) return parseInt(m[1], 16);
+            // Three-digit hex (#abc → #aabbcc).
+            m = raw.match(/^#([0-9a-fA-F]{3})$/);
+            if (m) {
+                var t = m[1];
+                return parseInt(t[0] + t[0] + t[1] + t[1] + t[2] + t[2], 16);
+            }
+            // rgb() / rgba() — pull the three channels.
+            m = raw.match(/^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+            if (m) {
+                return ((+m[1]) << 16) | ((+m[2]) << 8) | (+m[3]);
+            }
+        } catch (e) { /* fall through */ }
+        return 0x0F0F12;
     },
 
     addLighting: function() {

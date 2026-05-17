@@ -1,29 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-log-line item.
+
+  Composition: HH:mm:ss timestamp · 3dp level stripe · [tag] · message
+  All fields use monospace for log-readability. The level stripe is tinted
+  per-bind by LogsAdapter (see LogsAdapter.kt → bind()) and intentionally
+  references the log-level color resources rather than M3 attrs so DEBUG /
+  INFO / WARN / ERROR remain distinguishable in both light and dark themes.
+
+  Preserved IDs (LogsAdapter.kt findViewById targets):
+    tvTimestamp, levelIndicator, tvTag, tvMessage
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:paddingVertical="3dp">
 
-    <!-- Timestamp -->
     <TextView
         android:id="@+id/tvTimestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="monospace"
         android:text="@string/log_entry_default_timestamp"
-        android:textColor="@color/text_muted"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="10sp" />
 
-    <!-- Level indicator -->
     <View
         android:id="@+id/levelIndicator"
         android:layout_width="3dp"
         android:layout_height="match_parent"
         android:layout_marginHorizontal="8dp"
-        android:background="@color/status_success" />
+        android:background="?attr/colorPrimary" />
 
-    <!-- Tag -->
     <TextView
         android:id="@+id/tvTag"
         android:layout_width="wrap_content"
@@ -32,10 +41,9 @@
         android:maxWidth="80dp"
         android:singleLine="true"
         android:text="@string/log_entry_default_tag"
-        android:textColor="@color/brand_secondary"
+        android:textColor="?attr/colorPrimary"
         android:textSize="10sp" />
 
-    <!-- Message -->
     <TextView
         android:id="@+id/tvMessage"
         android:layout_width="0dp"
@@ -44,7 +52,6 @@
         android:layout_weight="1"
         android:fontFamily="monospace"
         android:text="@string/log_entry_default_message"
-        android:textColor="@color/text_primary"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="10sp" />
-
 </LinearLayout>

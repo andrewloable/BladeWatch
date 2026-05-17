@@ -22,6 +22,27 @@
             --border-subtle: rgba(255, 255, 255, 0.06);
             --border-default: rgba(255, 255, 255, 0.1);
         }
+        /* Light theme — login is a self-contained page (no shared/styles.css)
+           so we duplicate the same M3 light palette used elsewhere. The
+           Android WebViewFragment sets [data-theme="light"] on every load
+           when the app is in light mode. */
+        :root[data-theme="light"] {
+            --brand-primary: #00876C;
+            --brand-secondary: #00658F;
+            --bg-base: #F7FAF7;
+            --bg-surface: #ECEFEC;
+            --bg-elevated: #E6E9E6;
+            --text-primary: #181C1A;
+            --text-secondary: #3F4944;
+            --text-muted: #6F7975;
+            --danger: #BA1A1A;
+            --success: #1F7A3F;
+            --border-subtle: rgba(0, 0, 0, 0.06);
+            --border-default: rgba(0, 0, 0, 0.10);
+        }
+        /* No prefers-color-scheme fallback — login defaults to dark in any
+           browser that doesn't set [data-theme="light"]. Matches the rest
+           of the design system (shared/styles.css, vehicle-control.css). */
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
         

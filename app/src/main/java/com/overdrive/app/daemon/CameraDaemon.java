@@ -1826,7 +1826,37 @@ public class CameraDaemon {
     public static void onAccStateChanged(boolean accIsOff) {
         // Update AccMonitor state for HTTP API responses
         com.overdrive.app.monitor.AccMonitor.setAccState(!accIsOff);
-        
+
+        // CRITICAL: Capture the BydVehicleData snapshot and record the ACC
+        // transition BEFORE any pipeline/teardown work. The OFF event must
+        // be persisted before BydDataCollector.setAccState(false) (further
+        // down) zeroes out polling — otherwise the OFF row would have stale
+        // or null telemetry. For ON, the collector is being resumed, not
+        // torn down; the snapshot may be a few seconds stale, which is
+        // fine (a 3s skew is negligible vs a 12-hour park, and any latency
+        // biases the displayed delta toward zero — conservative).
+        //
+        // Wrapped in try/catch — must NEVER throw out of onAccStateChanged
+        // because that would break the daemon's state machine.
+        try {
+            com.overdrive.app.byd.BydVehicleData accSnapshot = null;
+            try {
+                com.overdrive.app.byd.BydDataCollector collector =
+                    com.overdrive.app.byd.BydDataCollector.getInstance();
+                if (collector != null && collector.isInitialized()) {
+                    accSnapshot = collector.getData();
+                }
+            } catch (Throwable t) {
+                // Collector not initialized yet on cold boot, etc. — pass
+                // null snapshot, the row will still be recorded with the
+                // event type so future correlation is possible.
+            }
+            com.overdrive.app.monitor.SocHistoryDatabase.getInstance()
+                .recordAccEvent(accIsOff ? "OFF" : "ON", accSnapshot);
+        } catch (Throwable t) {
+            log("recordAccEvent failed (non-fatal): " + t.getMessage());
+        }
+
         // ALWAYS notify TripAnalyticsManager regardless of GPU pipeline state.
         // Trip detection depends on ACC events and must not be blocked by pipeline readiness.
         if (tripAnalyticsManager != null) {

@@ -910,6 +910,21 @@ public class SurveillanceIpcServer implements Runnable {
                         config.optBoolean("telegramSendStartPing", false));
                 configChanged = true;
             }
+            if (config.has("telegramNotices")) {
+                sentryConfig.setTelegramNotices(
+                        config.optBoolean("telegramNotices", false));
+                configChanged = true;
+            }
+            if (config.has("telegramAlerts")) {
+                sentryConfig.setTelegramAlerts(
+                        config.optBoolean("telegramAlerts", true));
+                configChanged = true;
+            }
+            if (config.has("telegramCritical")) {
+                sentryConfig.setTelegramCritical(
+                        config.optBoolean("telegramCritical", true));
+                configChanged = true;
+            }
 
         } catch (Exception e) {
             logger.error("Failed to apply config", e);

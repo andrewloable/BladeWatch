@@ -34,6 +34,7 @@ class DaemonsFragment : Fragment() {
 
     private val daemonsViewModel: DaemonsViewModel by activityViewModels()
     private lateinit var recyclerDaemons: RecyclerView
+    private lateinit var tvDaemonsCount: TextView
     private lateinit var daemonAdapter: DaemonAdapter
 
     override fun onCreateView(
@@ -57,6 +58,7 @@ class DaemonsFragment : Fragment() {
     
     private fun initViews(view: View) {
         recyclerDaemons = view.findViewById(R.id.recyclerDaemons)
+        tvDaemonsCount = view.findViewById(R.id.tvDaemonsCount)
     }
     
     private fun setupRecyclerView() {
@@ -79,6 +81,11 @@ class DaemonsFragment : Fragment() {
             // Convert map to list sorted by daemon type ordinal
             val sortedList = states.values.sortedBy { it.type.ordinal }
             daemonAdapter.submitList(sortedList)
+
+            // Update hero header live count: "X of Y running"
+            val total = sortedList.size
+            val running = sortedList.count { it.status == DaemonStatus.RUNNING }
+            tvDaemonsCount.text = getString(R.string.daemons_count_fmt, running, total)
         }
     }
     
@@ -133,7 +140,7 @@ class DaemonsFragment : Fragment() {
                 // Pre-fill with current token if exists
                 currentToken?.let { editToken.setText(it) }
                 
-                val dialog = AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+                val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(context, R.style.Theme_Overdrive_M3_Dialog)
                     .setTitle(getString(R.string.dialog_zrok_token_title))
                     .setMessage(getString(R.string.dialog_zrok_token_message))
                     .setView(dialogView)
@@ -214,7 +221,7 @@ class DaemonsFragment : Fragment() {
                 }
             }
 
-            val dialog = AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+            val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(context, R.style.Theme_Overdrive_M3_Dialog)
                 .setTitle(getString(R.string.dialog_tailscale_settings_title))
                 .setMessage(getString(R.string.dialog_tailscale_settings_message))
                 .setView(dialogView)
@@ -247,7 +254,7 @@ class DaemonsFragment : Fragment() {
     private fun confirmEnableTailscaleProxy() {
         val context = context ?: return
 
-        AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(context, R.style.Theme_Overdrive_M3_Dialog)
             .setTitle(getString(R.string.dialog_tailscale_proxy_enable_title))
             .setMessage(getString(R.string.dialog_tailscale_proxy_enable_message))
             .setPositiveButton(getString(R.string.dialog_enable)) { _, _ ->
@@ -263,7 +270,7 @@ class DaemonsFragment : Fragment() {
     private fun confirmResetZrokEnvironment() {
         val context = context ?: return
         
-        AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(context, R.style.Theme_Overdrive_M3_Dialog)
             .setTitle(getString(R.string.dialog_zrok_reset_title))
             .setMessage(getString(R.string.dialog_zrok_reset_message))
             .setPositiveButton(getString(R.string.dialog_reset)) { _, _ ->
@@ -317,7 +324,7 @@ class DaemonsFragment : Fragment() {
     private fun confirmResetTailscaleEnvironment() {
         val context = context ?: return
 
-        AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(context, R.style.Theme_Overdrive_M3_Dialog)
             .setTitle(getString(R.string.dialog_tailscale_reset_title))
             .setMessage(getString(R.string.dialog_tailscale_reset_message))
             .setPositiveButton(getString(R.string.dialog_reset)) { _, _ ->

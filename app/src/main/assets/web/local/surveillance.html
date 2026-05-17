@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#00E5FF">
+    <script src="../shared/theme.js?v=2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -35,7 +36,7 @@
                     </div>
                     <div class="brand-text">
                         <span class="brand-name" data-i18n="app.name">OverDrive</span>
-                        <span class="brand-tagline" data-i18n="app.tagline">Sentry System</span>
+                        <span class="brand-tagline" data-i18n="app.tagline">Surveillance System</span>
                         <span class="brand-version" id="appVersion"></span>
                     </div>
                 </div>
@@ -145,7 +146,7 @@
                         <span class="status-value" id="batteryValue">--</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label" data-i18n="status.sentry">Sentry</span>
+                        <span class="status-label" data-i18n="status.sentry">Surveillance</span>
                         <span class="status-value" id="survStatus" data-i18n="status.off">OFF</span>
                     </div>
                     <div class="status-row">
@@ -251,7 +252,7 @@
                 <!-- Fuel Card (PHEV only — hidden for BEVs) -->
                 <div class="status-card fuel-card" id="fuelCard" style="display:none;">
                     <div class="fuel-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:#F59E0B;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--warning);">
                             <path d="M3 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
                             <path d="M3 22h10"/>
                             <path d="M13 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6"/>
@@ -553,6 +554,72 @@
                             </div>
                         </div>
 
+                        <!-- Per-tier Telegram filter — mirrors the push tier toggles
+                             so a Telegram-only user can mute background-noise alerts.
+                             NOTICE off by default (matches push), ALERT and CRITICAL on.
+                             The whole `v2TelegramTierGroup` is greyed out when the bot
+                             isn't paired (loaded from /api/settings/telegram-status). -->
+                        <div id="v2TelegramTierGroup">
+                        <div class="setting-row" style="border-bottom:none;">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="surveillance.telegram_tiers">Telegram severity filter</div>
+                                <div class="setting-desc" data-i18n="surveillance.telegram_tiers_desc">Pick which severity tiers reach your Telegram chat. Off tiers are still recorded; only the message is suppressed.</div>
+                                <div id="v2TelegramTierWarning"
+                                     class="setting-desc"
+                                     style="display:none; margin-top:6px; padding:8px 10px;
+                                            border-radius:8px; background:rgba(245,158,11,0.10);
+                                            border:1px solid rgba(245,158,11,0.25);
+                                            color:var(--warning);"
+                                     data-i18n="surveillance.telegram_not_paired">Telegram bot isn't paired yet — tier toggles have no effect until you link a bot.</div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" style="display:flex;align-items:center;gap:8px;">
+                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text-muted);"></span>
+                                    <span data-i18n="surveillance.tier_notice">Notice</span>
+                                </div>
+                                <div class="setting-desc" data-i18n="surveillance.tier_notice_desc">Routine activity (parked cars, distant movement)</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="v2TelegramNotices" onchange="SurvSettings.updateTelegramTiers()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" style="display:flex;align-items:center;gap:8px;">
+                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FFB75A;"></span>
+                                    <span data-i18n="surveillance.tier_alert">Alert</span>
+                                </div>
+                                <div class="setting-desc" data-i18n="surveillance.tier_alert_desc">Approaching person, vehicle close enough to warrant attention</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="v2TelegramAlerts" onchange="SurvSettings.updateTelegramTiers()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" style="display:flex;align-items:center;gap:8px;">
+                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FF6B6B;"></span>
+                                    <span data-i18n="surveillance.tier_critical">Critical</span>
+                                </div>
+                                <div class="setting-desc" data-i18n="surveillance.tier_critical_desc">Person at very close range — likely tampering / loitering</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="v2TelegramCritical" onchange="SurvSettings.updateTelegramTiers()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        </div><!-- /#v2TelegramTierGroup -->
+
                         <!-- Developer Section (collapsible) -->
                         <div style="border-top:1px solid var(--border-subtle);padding-top:12px;">
                             <div class="setting-row" style="border-bottom:none;cursor:pointer;" onclick="document.getElementById('v2DevContent').style.display = document.getElementById('v2DevContent').style.display === 'none' ? 'block' : 'none'; this.querySelector('.dev-arrow').classList.toggle('open');">
@@ -632,7 +699,7 @@
                         <!-- Drawing content (hidden when ROI disabled) -->
                         <div id="roiDrawingContent" style="display:none;">
                             <!-- Canvas container — 4:3 aspect ratio, responsive -->
-                            <div id="roiCanvasContainer" style="position:relative; width:100%; height:0; padding-bottom:75%; background:#0d1117; border-radius:8px; overflow:hidden; border:1px solid var(--card-border); z-index:0;">
+                            <div id="roiCanvasContainer" style="position:relative; width:100%; height:0; padding-bottom:75%; background:var(--bg-base); border-radius:8px; overflow:hidden; border:1px solid var(--border-default); z-index:0;">
                                 <canvas id="roiCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; display:block; touch-action:none; cursor:crosshair;"></canvas>
                             </div>
 
@@ -712,8 +779,8 @@
                             </div>
                         </div>
                         <div class="setting-hint" data-i18n="surveillance.deterrent_hint">Flash Lights and Horn + Lights use BYD's cloud API. The command bounces off BYD's servers to the car's T-Box. Requires BYD Cloud account setup below.</div>
-                        <div id="deterrentWarning" class="info-box" style="display:none; border-color:#f59e0b; background:rgba(245,158,11,0.08); margin-top:8px;">
-                            <div style="display:flex; align-items:center; gap:8px; color:#b45309;">
+                        <div id="deterrentWarning" class="info-box" style="display:none; border-color:var(--warning); background:rgba(245,158,11,0.08); margin-top:8px;">
+                            <div style="display:flex; align-items:center; gap:8px; color:var(--warning);">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                                 <span style="font-size:13px;" data-i18n="surveillance.deterrent_warning">BYD Cloud account not configured. Set up your credentials below to enable cloud deterrents.</span>
                             </div>
@@ -1030,7 +1097,7 @@
                         </div>
                         <!-- Recommend banner (shown only when API says recommendAutoCleanup) -->
                         <div class="info-box" id="cdrRecommendBanner" style="display:none;background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.3);">
-                            <div class="info-row" style="color:#ffc107;">
+                            <div class="info-row" style="color:var(--warning);">
                                 <span class="label" data-i18n="recording.cdr_recommend_label">⚠️ Recommended</span>
                                 <span class="value" data-i18n="recording.cdr_recommend_text">Overdrive uses SD — enable cleanup to keep space free</span>
                             </div>

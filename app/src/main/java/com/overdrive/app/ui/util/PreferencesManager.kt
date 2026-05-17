@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.os.UserManager
 import android.util.Log
-import com.overdrive.app.ui.model.AccessMode
+import androidx.appcompat.app.AppCompatDelegate
 import com.overdrive.app.ui.model.DaemonType
 
 /**
@@ -16,8 +16,8 @@ object PreferencesManager {
     
     private const val TAG = "PreferencesManager"
     private const val PREFS_NAME = "overdrive_prefs"
-    private const val KEY_ACCESS_MODE = "access_mode"
     private const val KEY_ENABLED_DAEMONS = "enabled_daemons"
+    private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_SELECTED_CAMERAS = "selected_cameras"
     private const val KEY_LAST_TUNNEL_URL = "last_tunnel_url"
     private const val KEY_LAST_ZROK_URL = "last_zrok_url"
@@ -56,7 +56,7 @@ object PreferencesManager {
         }
         
         prefs = storageContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        Log.d(TAG, "Initialized with device-encrypted storage. Current access mode: ${getAccessMode()}")
+        Log.d(TAG, "Initialized with device-encrypted storage")
     }
     
     /**
@@ -80,25 +80,24 @@ object PreferencesManager {
         return prefs ?: throw IllegalStateException("PreferencesManager not initialized. Call init() first.")
     }
     
-    // Access Mode
-    fun getAccessMode(): AccessMode {
-        val value = requirePrefs().getString(KEY_ACCESS_MODE, AccessMode.PRIVATE.name)
-        val mode = try {
-            AccessMode.valueOf(value ?: AccessMode.PRIVATE.name)
-        } catch (e: Exception) {
-            AccessMode.PRIVATE
-        }
-        Log.d(TAG, "getAccessMode() -> $mode (raw: $value)")
-        return mode
+    /**
+     * Theme mode (Auto/Light/Dark) — persisted, read at app start.
+     * Stored as the AppCompatDelegate.MODE_NIGHT_* int so the value can be
+     * passed straight to setDefaultNightMode().
+     * Default: MODE_NIGHT_FOLLOW_SYSTEM (auto, follows the head-unit theme).
+     */
+    fun getThemeMode(): Int {
+        return requirePrefs().getInt(
+            KEY_THEME_MODE,
+            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        )
     }
-    
-    fun setAccessMode(mode: AccessMode) {
-        Log.d(TAG, "setAccessMode($mode)")
-        // Use commit() instead of apply() to ensure synchronous write
-        val success = requirePrefs().edit().putString(KEY_ACCESS_MODE, mode.name).commit()
-        Log.d(TAG, "setAccessMode commit result: $success")
+
+    fun setThemeMode(mode: Int) {
+        requirePrefs().edit().putInt(KEY_THEME_MODE, mode).apply()
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
-    
+
     // Enabled Daemons
     fun getEnabledDaemons(): Set<DaemonType> {
         val names = requirePrefs().getStringSet(KEY_ENABLED_DAEMONS, emptySet()) ?: emptySet()
@@ -206,13 +205,6 @@ object PreferencesManager {
         requirePrefs().edit().putBoolean(KEY_LOGS_EXPANDED, expanded).apply()
     }
 
-    /**
-     * Get the current access URL based on mode.
-     */
-    fun getCurrentUrl(): String? {
-        return when (getAccessMode()) {
-            AccessMode.PRIVATE -> getLastTunnelUrl()  // Private = cloudflared tunnel
-            AccessMode.PUBLIC -> getLastTunnelUrl()   // Public = also uses tunnel now
-        }
-    }
+    /** Current access URL — always the last tunnel URL we saw. */
+    fun getCurrentUrl(): String? = getLastTunnelUrl()
 }

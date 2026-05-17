@@ -1,45 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  SOTA WebView host.
+
+  Composition:
+    - Full-bleed WebView
+    - Loading overlay : centered M3 progress + caption
+    - Error overlay   : icon + headline + body + tonal retry button
+
+  Both overlays use ?attr/colorBackground so they blend with the rest of
+  the shell while the page is loading or unreachable.
+
+  Preserved IDs (WebViewFragment.kt findViewById targets):
+    webView, loadingOverlay, errorOverlay, btnRetry
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_base">
+    android:background="?android:attr/colorBackground">
 
     <WebView
         android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Loading overlay shown while page loads -->
+    <!-- ==================== LOADING OVERLAY ==================== -->
     <LinearLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/bg_base"
+        android:background="?android:attr/colorBackground"
         android:gravity="center"
         android:orientation="vertical">
 
         <ProgressBar
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:indeterminateTint="@color/brand_primary" />
+            android:indeterminateTint="?attr/colorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="@string/webview_loading"
-            android:textColor="@color/text_muted"
-            android:textSize="14sp" />
-
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
 
-    <!-- Error state shown when server is unreachable -->
+    <!-- ==================== ERROR OVERLAY ==================== -->
     <LinearLayout
         android:id="@+id/errorOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/bg_base"
+        android:background="?android:attr/colorBackground"
         android:gravity="center"
         android:orientation="vertical"
         android:padding="48dp"
@@ -55,31 +68,28 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:gravity="center"
             android:text="@string/webview_camera_daemon_not_running"
-            android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:fontFamily="sans-serif-medium"
-            android:gravity="center" />
+            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:gravity="center"
             android:text="@string/webview_start_camera_daemon"
-            android:textColor="@color/text_muted"
-            android:textSize="14sp"
-            android:gravity="center" />
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRetry"
+            style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="@string/action_retry"
-            app:cornerRadius="12dp"
-            app:backgroundTint="@color/brand_primary"
-            android:textColor="@color/bg_base" />
-
+            app:cornerRadius="14dp" />
     </LinearLayout>
-
 </FrameLayout>

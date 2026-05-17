@@ -72,7 +72,110 @@ public class QualitySettingsApiHandler {
             handleTelemetryOverlayPost(out, body);
             return true;
         }
+        // Web-shell appearance (theme picker shipped on every page).
+        // Same UnifiedConfigManager-backed pattern as the rest of /api/settings.
+        if (path.equals("/api/settings/appearance") && method.equals("GET")) {
+            sendAppearance(out);
+            return true;
+        }
+        if (path.equals("/api/settings/appearance") && method.equals("POST")) {
+            handleAppearancePost(out, body);
+            return true;
+        }
+        // Telegram bot status — used by the surveillance settings UI to
+        // grey-out the per-tier filter toggles when the bot isn\'t paired,
+        // so the user understands why the toggles do nothing instead of
+        // silently configuring a feature that can never fire.
+        if (path.equals("/api/settings/telegram-status") && method.equals("GET")) {
+            sendTelegramStatus(out);
+            return true;
+        }
         return false;
+    }
+
+    /**
+     * GET /api/settings/telegram-status — read /data/local/tmp/telegram_config.properties
+     * and report whether the bot is configured (token present) and paired
+     * (owner_chat_id > 0). Both must be true for any Telegram message to
+     * actually leave the device. The web UI uses this to disable the tier
+     * filter toggles + show a "pair Telegram first" hint.
+     */
+    private static void sendTelegramStatus(OutputStream out) throws Exception {
+        boolean configured = false;
+        boolean paired = false;
+        try {
+            // Hard-coded path mirrors TelegramBotDaemon.PATH_TELEGRAM_CONFIG.
+            // Reading the properties file directly avoids a cross-process
+            // hop to the daemon (which may not be running yet on cold-boot).
+            java.io.File f = new java.io.File("/data/local/tmp/telegram_config.properties");
+            if (f.exists() && f.canRead()) {
+                java.util.Properties props = new java.util.Properties();
+                try (java.io.FileInputStream fis = new java.io.FileInputStream(f)) {
+                    props.load(fis);
+                }
+                String tok = props.getProperty("bot_token", "");
+                configured = tok != null && !tok.trim().isEmpty();
+                String owner = props.getProperty("owner_chat_id", "-1");
+                try {
+                    paired = configured && Long.parseLong(owner.trim()) > 0;
+                } catch (NumberFormatException ignored) {}
+            }
+        } catch (Exception e) {
+            // Treat any read failure as "not configured" — the UI will
+            // grey out the toggles and the runtime gate (NotificationGate
+            // → daemon "Owner not set") still backstops the user.
+        }
+        JSONObject response = new JSONObject();
+        response.put("success", true);
+        response.put("configured", configured);
+        response.put("paired", paired);
+        // `enabled` = the gate condition the engine effectively uses (token
+        // present AND owner paired). Surface as a single field so the UI
+        // doesn\'t have to re-compute the same logic.
+        response.put("enabled", configured && paired);
+        HttpResponse.sendJson(out, response.toString());
+    }
+
+    /**
+     * GET /api/settings/appearance — return the saved theme preference.
+     * Defaults to "dark" so first-load before the user has interacted with
+     * the picker matches the rest of the design system.
+     */
+    private static void sendAppearance(OutputStream out) throws Exception {
+        JSONObject app = com.overdrive.app.config.UnifiedConfigManager.getAppearance();
+        JSONObject response = new JSONObject();
+        response.put("success", true);
+        response.put("theme", app.optString("theme", "dark"));
+        HttpResponse.sendJson(out, response.toString());
+    }
+
+    /**
+     * POST /api/settings/appearance — body: { "theme": "dark"|"light"|"auto" }.
+     * Validates the value is one of the three accepted strings; rejects with
+     * 400 otherwise. "auto" means follow OS preference (handled client-side
+     * via prefers-color-scheme media query).
+     */
+    private static void handleAppearancePost(OutputStream out, String body) throws Exception {
+        JSONObject response = new JSONObject();
+        try {
+            JSONObject req = new JSONObject(body == null ? "{}" : body);
+            String theme = req.optString("theme", "dark");
+            if (!"dark".equals(theme) && !"light".equals(theme) && !"auto".equals(theme)) {
+                response.put("success", false);
+                response.put("error", "theme must be one of: dark, light, auto");
+                HttpResponse.sendJson(out, response.toString());
+                return;
+            }
+            JSONObject app = new JSONObject();
+            app.put("theme", theme);
+            boolean ok = com.overdrive.app.config.UnifiedConfigManager.setAppearance(app);
+            response.put("success", ok);
+            response.put("theme", theme);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+        }
+        HttpResponse.sendJson(out, response.toString());
     }
     
     /**

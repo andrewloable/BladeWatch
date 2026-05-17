@@ -1,25 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/colorSurfaceContainerHigh"
     android:orientation="vertical"
     android:padding="24dp">
 
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/zrok_enable_token_hint"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        android:hint="@string/zrok_enable_token_hint">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editZrokToken"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textVisiblePassword"
             android:fontFamily="monospace"
-            android:textSize="14sp"
+            android:imeOptions="actionDone"
+            android:inputType="textVisiblePassword"
             android:maxLines="1"
-            android:imeOptions="actionDone" />
+            android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -28,35 +30,39 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="@string/zrok_token_storage_note"
-        android:textColor="@color/text_muted"
-        android:textSize="12sp" />
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="16dp"
-        android:background="@color/card_border" />
+        android:layout_marginTop="20dp"
+        android:background="?attr/colorOutlineVariant" />
 
-    <TextView
+    <!-- Reset Environment — proper M3 outlined button so it reads as a real
+         destructive action. Error-tinted stroke + label. -->
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnResetZrokEnvironment"
+        style="?attr/materialButtonOutlinedStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
+        android:minHeight="48dp"
         android:text="@string/zrok_reset_environment"
-        android:textColor="#EF4444"
-        android:textSize="14sp"
-        android:fontFamily="sans-serif-medium"
-        android:padding="8dp"
-        android:background="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true" />
+        android:textAllCaps="false"
+        android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+        android:textColor="?attr/colorError"
+        app:cornerRadius="20dp"
+        app:strokeColor="?attr/colorError"
+        app:rippleColor="?attr/colorError" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginStart="4dp"
         android:text="@string/zrok_reset_environment_desc"
-        android:textColor="@color/text_muted"
-        android:textSize="11sp" />
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
 </LinearLayout>

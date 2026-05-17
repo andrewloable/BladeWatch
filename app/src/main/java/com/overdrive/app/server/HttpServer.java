@@ -703,7 +703,17 @@ public class HttpServer {
         JSONObject status = new JSONObject();
         status.put("status", "ok");
         status.put("deviceId", CameraDaemon.getDeviceId());
-        
+
+        // Vehicle-data readiness, surfaced explicitly so the web UI can render
+        // a "waiting for vehicle…" state instead of silently leaving every
+        // field blank when the BYD binders haven't bound yet (cold-boot race
+        // — HTTP comes up well before BydDataCollector finishes ~15 binder
+        // lookups). On first hit, give the collector a short window to come
+        // online; this resolves the most common "tunnel loads, no data"
+        // report without forcing the client to retry.
+        boolean vehicleReady = waitForVehicleDataReady(1500);
+        status.put("vehicleDataReady", vehicleReady);
+
         // App version — read from persisted version file (written by AppUpdater)
         // Falls back to BuildConfig.VERSION_NAME if file doesn't exist yet
         status.put("appVersion", com.overdrive.app.updater.AppUpdater.getDisplayVersionFromFile());
@@ -724,11 +734,15 @@ public class HttpServer {
             status.put("safeZoneName", safeMgr.getCurrentZoneName());
         }
         
-        // Vehicle data (charging state and power)
+        // Vehicle data (charging state and power).
+        // Each subsection is wrapped individually — one BYD HAL throwing
+        // RemoteException must not zero out unrelated fields. Any failure
+        // here is logged so customers reporting "blank data" produce evidence
+        // we can act on, instead of silent emptiness.
         try {
             com.overdrive.app.monitor.VehicleDataMonitor vehicleMonitor =
                 com.overdrive.app.monitor.VehicleDataMonitor.getInstance();
-            
+
             com.overdrive.app.monitor.ChargingStateData chargingState = vehicleMonitor.getChargingState();
             if (chargingState != null) {
                 JSONObject charging = new JSONObject();
@@ -791,7 +805,11 @@ public class HttpServer {
                 status.put("locale", "en");
             }
         } catch (Exception e) {
-            // Vehicle data not available
+            // Vehicle data not available — surface the cause so a customer
+            // report includes the proximate failure (binder gone, SDK class
+            // missing, etc.) rather than just "page is blank".
+            CameraDaemon.log("status: vehicle data block failed: " + e);
+            status.put("vehicleDataError", e.getClass().getSimpleName() + ": " + e.getMessage());
         }
         try {
             JSONObject soh = new JSONObject();
@@ -883,6 +901,40 @@ public class HttpServer {
         status.put("network", com.overdrive.app.monitor.NetworkMonitor.getNetworkInfo());
         
         HttpResponse.sendJson(out, status.toString());
+    }
+
+    /**
+     * Block briefly until BydDataCollector reports initialized, so the very
+     * first /status request after boot doesn't return a shell with every
+     * vehicle field omitted. The collector typically finishes inside ~600 ms
+     * but cold-boot binders can stretch beyond a second; we cap the wait so
+     * a permanently-broken collector still returns a response.
+     *
+     * @return true if the collector is initialized when this returns,
+     *         false if the wait timed out (caller still emits status, just
+     *         with vehicle fields absent and vehicleDataReady=false).
+     */
+    private boolean waitForVehicleDataReady(long maxWaitMs) {
+        try {
+            com.overdrive.app.byd.BydDataCollector collector =
+                com.overdrive.app.byd.BydDataCollector.getInstance();
+            if (collector.isInitialized()) {
+                return true;
+            }
+            long deadline = System.currentTimeMillis() + maxWaitMs;
+            while (System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+                if (collector.isInitialized()) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

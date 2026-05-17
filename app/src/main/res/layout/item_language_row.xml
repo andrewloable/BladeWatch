@@ -1,17 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Single row in the language picker. Native-script name on the left,
-     BCP-47 tag on the right, optional check mark for the current pick. -->
+<!--
+  Single row in the language picker. Native-script name on the left,
+  optional English-name subtitle below it, BCP-47 tag on the trailing
+  side, and a check icon for the current selection (hidden otherwise).
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/languageRow"
     android:layout_width="match_parent"
-    android:layout_height="56dp"
+    android:layout_height="wrap_content"
+    android:minHeight="56dp"
     android:background="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingHorizontal="20dp">
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="10dp">
 
     <LinearLayout
         android:layout_width="0dp"
@@ -23,16 +29,17 @@
             android:id="@+id/tvLangName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_primary"
-            android:textSize="15sp"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textColor="?attr/colorOnSurface"
             tools:text="日本語" />
 
         <TextView
             android:id="@+id/tvLangSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_muted"
-            android:textSize="11sp"
+            android:layout_marginTop="2dp"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:visibility="gone"
             tools:text="Auto"
             tools:visibility="visible" />
@@ -45,8 +52,8 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="12dp"
         android:fontFamily="monospace"
-        android:textColor="@color/text_muted"
-        android:textSize="11sp"
+        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
         tools:text="ja" />
 
     <ImageView
@@ -56,6 +63,7 @@
         android:contentDescription="@null"
         android:src="@drawable/ic_check"
         android:visibility="invisible"
+        app:tint="?attr/colorPrimary"
         tools:visibility="visible" />
 
 </LinearLayout>

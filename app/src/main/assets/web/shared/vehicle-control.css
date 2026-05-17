@@ -1,9 +1,67 @@
 /**
  * Vehicle Control — Compact bottom bar, no tabs
  * Chrome 58+
+ *
+ * Theme tokens. The page used to bake the dark palette into every floating
+ * pill, tile, and panel as raw rgba(15,15,18,…) literals, which left the
+ * page black under the new light theme even though the rest of the WebView
+ * (sidebar, page-body, etc.) uses var(--bg-base). The tokens below are the
+ * single source of truth for the surfaces specific to this page; the light
+ * variants under [data-theme="light"] flip them in lockstep with shared
+ * styles.css. Brand teal (--brand-primary in shared/styles.css) is reused
+ * for accents so identity is preserved across themes.
  */
+:root {
+    --vc-canvas-bg: var(--bg-base);
+    --vc-pill-bg: rgba(15,15,18,0.85);
+    --vc-pill-bg-strong: rgba(15,15,18,0.92);
+    --vc-pill-bg-hover: rgba(38,38,46,0.9);
+    --vc-bar-bg: rgba(10, 10, 14, 0.88);
+    --vc-modal-bg: #1A1A1F;
+    --vc-modal-overlay: rgba(0, 0, 0, 0.7);
+    --vc-tile-bg: rgba(255,255,255,0.025);
+    --vc-tile-bg-disabled: rgba(255,255,255,0.015);
+    --vc-tile-bg-hover: rgba(0,212,170,0.06);
+    --vc-border: rgba(255,255,255,0.08);
+    --vc-border-subtle: rgba(255,255,255,0.06);
+    --vc-border-faint: rgba(255,255,255,0.04);
+    --vc-text-primary: #fff;
+    --vc-text-strong: #E4E4E7;
+    --vc-text-soft: #C4C4CD;
+    --vc-text-secondary: #A1A1AA;
+    --vc-text-muted: #71717A;
+}
+:root[data-theme="light"] {
+    /* The pills sit over the 3D car canvas (which has its own scene
+       lighting), so they need a translucent surface that reads on either
+       a sky-bright or shadow-dark slice of the render. A light tinted
+       glass with a darker text colour does that without going pure white. */
+    --vc-canvas-bg: var(--bg-base);
+    --vc-pill-bg: rgba(247,250,247,0.82);
+    --vc-pill-bg-strong: rgba(247,250,247,0.92);
+    --vc-pill-bg-hover: rgba(224,228,225,0.92);
+    --vc-bar-bg: rgba(247,250,247,0.92);
+    --vc-modal-bg: #ECEFEC;
+    --vc-modal-overlay: rgba(24, 28, 26, 0.45);
+    --vc-tile-bg: rgba(0,0,0,0.04);
+    --vc-tile-bg-disabled: rgba(0,0,0,0.02);
+    --vc-tile-bg-hover: rgba(0,135,108,0.08);
+    --vc-border: rgba(0,0,0,0.10);
+    --vc-border-subtle: rgba(0,0,0,0.06);
+    --vc-border-faint: rgba(0,0,0,0.04);
+    --vc-text-primary: #181C1A;
+    --vc-text-strong: #2A2F2C;
+    --vc-text-soft: #3F4944;
+    --vc-text-secondary: #6F7975;
+    --vc-text-muted: #8B948F;
+}
+/* No prefers-color-scheme fallback by design — pages default DARK in
+   Chrome / external browsers, matching the primary in-car experience and
+   the rest of the design system in shared/styles.css. Theme switching
+   only fires when [data-theme="light"] is explicitly set (the Android
+   WebViewFragment does this on every page-load). */
 .main-content { padding: 0 !important; overflow: hidden !important; height: 100vh !important; height: 100dvh !important; min-height: 0 !important; position: relative; }
-.vc-container { position: relative; width: 100%; height: 100%; background: #0F0F12; overflow: hidden; }
+.vc-container { position: relative; width: 100%; height: 100%; background: var(--vc-canvas-bg); overflow: hidden; }
 
 /* 3D fills the entire area — car renders behind the translucent bar */
 .vc-viewport { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
@@ -21,15 +79,15 @@
     width: 40px; height: 40px;
     border-radius: 12px;
     border: none;
-    background: rgba(15,15,18,0.85);
-    color: #fff;
+    background: var(--vc-pill-bg);
+    color: var(--vc-text-primary);
     cursor: pointer;
     -webkit-transition: background .2s; transition: background .2s;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
 }
 .vc-nav-btn svg { width: 22px; height: 22px; }
-.vc-nav-btn:hover { background: rgba(38,38,46,0.9); }
+.vc-nav-btn:hover { background: var(--vc-pill-bg-hover); }
 .vc-nav-btn:active { -webkit-transform: scale(0.92); transform: scale(0.92); }
 
 /* Status bar floating on 3D — two rows.
@@ -59,8 +117,8 @@
 .vc-pill {
     display: -webkit-inline-flex; display: inline-flex;
     -webkit-align-items: center; align-items: center;
-    background: rgba(15,15,18,0.85); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 500; color: #fff;
+    background: var(--vc-pill-bg); border: 1px solid var(--vc-border);
+    border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 500; color: var(--vc-text-primary);
     white-space: nowrap; -webkit-flex-shrink: 0; flex-shrink: 0;
 }
 .vc-pill .dot { width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; }
@@ -71,18 +129,18 @@
 
 .vc-colors {
     display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
-    background: rgba(15,15,18,0.85); border: 1px solid rgba(255,255,255,0.08);
+    background: var(--vc-pill-bg); border: 1px solid var(--vc-border);
     border-radius: 20px; padding: 3px 8px;
 }
 .vc-swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; margin: 0 3px; -webkit-transition: all .15s; transition: all .15s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .vc-swatch:hover { -webkit-transform: scale(1.15); transform: scale(1.15); }
-.vc-swatch.active { border-color: #fff; box-shadow: 0 0 6px currentColor; -webkit-transform: scale(1.1); transform: scale(1.1); }
-.vc-swatch-custom { width: 24px; height: 24px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); position: relative; overflow: hidden; cursor: pointer; margin: 0 3px; touch-action: manipulation; }
+.vc-swatch.active { border-color: var(--vc-text-primary); box-shadow: 0 0 6px currentColor; -webkit-transform: scale(1.1); transform: scale(1.1); }
+.vc-swatch-custom { width: 24px; height: 24px; border-radius: 50%; border: 2px dashed var(--vc-text-muted); position: relative; overflow: hidden; cursor: pointer; margin: 0 3px; touch-action: manipulation; }
 .vc-swatch-custom input { position: absolute; top: -4px; left: -4px; width: 32px; height: 32px; opacity: 0; cursor: pointer; }
 
 .vc-model-select {
-    background: rgba(15,15,18,0.85); color: #E4E4E7;
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
+    background: var(--vc-pill-bg); color: var(--vc-text-strong);
+    border: 1px solid var(--vc-border); border-radius: 18px;
     padding: 5px 26px 5px 12px;
     font-size: 12px; font-weight: 500;
     -webkit-appearance: none; -moz-appearance: none; appearance: none;
@@ -109,10 +167,10 @@
 }
 
 .vc-loading { position: absolute; top: 40%; left: 50%; -webkit-transform: translate(-50%,-50%); transform: translate(-50%,-50%); text-align: center; z-index: 20; }
-.vc-loading-spinner { width: 36px; height: 36px; margin: 0 auto 10px; border: 3px solid rgba(255,255,255,0.06); border-top-color: #00D4AA; border-radius: 50%; -webkit-animation: spin .7s linear infinite; animation: spin .7s linear infinite; }
+.vc-loading-spinner { width: 36px; height: 36px; margin: 0 auto 10px; border: 3px solid var(--vc-border-subtle); border-top-color: #00D4AA; border-radius: 50%; -webkit-animation: spin .7s linear infinite; animation: spin .7s linear infinite; }
 @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
 @keyframes spin { to { transform: rotate(360deg); } }
-.vc-loading-text { font-size: 12px; color: #A1A1AA; max-width: 280px; }
+.vc-loading-text { font-size: 12px; color: var(--vc-text-secondary); max-width: 280px; }
 .vc-loading.hidden { display: none; }
 .vc-loading-retry {
     display: none;
@@ -134,7 +192,7 @@
 .vc-loading-retry:hover { background: rgba(0,212,170,0.16); }
 .vc-loading-retry:active { -webkit-transform: scale(.95); transform: scale(.95); }
 
-.vc-toast { position: absolute; top: 44px; left: 50%; -webkit-transform: translateX(-50%) translateY(-12px); transform: translateX(-50%) translateY(-12px); background: rgba(15,15,18,0.92); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 14px; font-size: 11px; font-weight: 500; color: #fff; z-index: 100; opacity: 0; pointer-events: none; -webkit-transition: all .2s; transition: all .2s; }
+.vc-toast { position: absolute; top: 44px; left: 50%; -webkit-transform: translateX(-50%) translateY(-12px); transform: translateX(-50%) translateY(-12px); background: var(--vc-pill-bg-strong); border: 1px solid var(--vc-border); border-radius: 8px; padding: 6px 14px; font-size: 11px; font-weight: 500; color: var(--vc-text-primary); z-index: 100; opacity: 0; pointer-events: none; -webkit-transition: all .2s; transition: all .2s; }
 .vc-toast.show { opacity: 1; -webkit-transform: translateX(-50%) translateY(0); transform: translateX(-50%) translateY(0); }
 .vc-toast.success { border-color: #22C55E; color: #22C55E; }
 .vc-toast.error { border-color: #EF4444; color: #EF4444; }
@@ -152,9 +210,9 @@
     -webkit-flex-grow: 0; flex-grow: 0;
     margin-left: auto;  /* push to far right within the secondary row */
     border-radius: 22px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(15,15,18,0.85);
-    color: #A1A1AA;
+    border: 1px solid var(--vc-border);
+    background: var(--vc-pill-bg);
+    color: var(--vc-text-secondary);
     cursor: pointer;
     -webkit-transition: all .2s; transition: all .2s;
 }
@@ -188,11 +246,11 @@
     position: absolute;
     min-width: 92px;
     padding: 7px 10px 8px;
-    background: rgba(15, 15, 18, 0.88);
+    background: var(--vc-pill-bg);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--vc-border);
     border-radius: 10px;
-    color: #E4E4E7;
+    color: var(--vc-text-strong);
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     pointer-events: auto;
     -webkit-transition: border-color .2s, box-shadow .2s, opacity .2s;
@@ -231,7 +289,7 @@
     font-weight: 700;
     letter-spacing: .8px;
     text-transform: uppercase;
-    color: #A1A1AA;
+    color: var(--vc-text-secondary);
 }
 .vc-tyre-dot {
     width: 6px; height: 6px;
@@ -242,7 +300,7 @@
     -webkit-transition: background .2s, box-shadow .2s;
     transition: background .2s, box-shadow .2s;
 }
-.vc-tyre-label { color: #C4C4CD; }
+.vc-tyre-label { color: var(--vc-text-soft); }
 .vc-tyre-state {
     margin-left: auto;
     font-size: 8px;
@@ -260,13 +318,13 @@
 .vc-tyre-psi-val {
     font-size: 18px;
     font-weight: 700;
-    color: #fff;
+    color: var(--vc-text-primary);
     line-height: 1;
 }
 .vc-tyre-psi-unit {
     font-size: 9px;
     font-weight: 600;
-    color: #71717A;
+    color: var(--vc-text-muted);
     letter-spacing: .8px;
 }
 .vc-tyre-sub {
@@ -275,7 +333,7 @@
     -webkit-align-items: center; align-items: center;
     margin-top: 4px;
     font-size: 9px;
-    color: #71717A;
+    color: var(--vc-text-muted);
 }
 .vc-tyre-kpa { letter-spacing: .3px; }
 .vc-tyre-temp {
@@ -284,18 +342,18 @@
     gap: 3px;
     margin-top: 3px;
     font-size: 10px;
-    color: #A1A1AA;
+    color: var(--vc-text-secondary);
 }
 .vc-tyre-temp-val {
     font-size: 12px;
     font-weight: 600;
-    color: #E4E4E7;
+    color: var(--vc-text-strong);
     line-height: 1;
 }
 .vc-tyre-temp-unit {
     font-size: 9px;
     font-weight: 600;
-    color: #71717A;
+    color: var(--vc-text-muted);
     letter-spacing: .6px;
 }
 
@@ -323,7 +381,7 @@
 .vc-tyre-callout[data-state="alert"]                    { border-color: rgba(239, 68, 68, 0.65); box-shadow: 0 0 16px rgba(239, 68, 68, 0.22); }
 
 .vc-tyre-callout[data-state="muted"]   .vc-tyre-dot     { background: #71717A; box-shadow: 0 0 4px #71717A; }
-.vc-tyre-callout[data-state="muted"]   .vc-tyre-state   { color: #71717A; }
+.vc-tyre-callout[data-state="muted"]   .vc-tyre-state   { color: var(--vc-text-muted); }
 .vc-tyre-callout[data-state="muted"]                    { opacity: 0.78; }
 
 @-webkit-keyframes vcTyrePulse { 0%,100% { -webkit-transform: scale(1); opacity: 1; } 50% { -webkit-transform: scale(1.35); opacity: 0.7; } }
@@ -390,9 +448,9 @@
     width: 100%;
     max-height: 0;
     overflow: hidden;
-    background: rgba(10, 10, 14, 0.88);
+    background: var(--vc-bar-bg);
     -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--vc-border-subtle);
     border-bottom: none;
     border-radius: 16px 16px 0 0;
     -webkit-transition: max-height .3s cubic-bezier(0.4, 0, 0.2, 1), padding .3s; transition: max-height .3s cubic-bezier(0.4, 0, 0.2, 1), padding .3s;
@@ -437,11 +495,11 @@
     font-family: 'JetBrains Mono', monospace;
 }
 .vc-window-label .label-area {
-    font-size: 10px; font-weight: 700; color: #C4C4CD;
+    font-size: 10px; font-weight: 700; color: var(--vc-text-soft);
     text-transform: uppercase; letter-spacing: .4px;
 }
 .vc-window-label .label-pct {
-    font-size: 9px; color: #71717A; margin-top: 2px;
+    font-size: 9px; color: var(--vc-text-muted); margin-top: 2px;
 }
 /* "All Windows" row has no data-area and a longer label — give it room so the
    text doesn't wrap awkwardly inside the 48px width used for LF/RF/LR/RR. */
@@ -458,16 +516,16 @@
     -webkit-justify-content: center; justify-content: center;
     width: 38px; height: 32px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.06);
-    background: rgba(255,255,255,0.025);
-    color: #C4C4CD;
+    border: 1px solid var(--vc-border-subtle);
+    background: var(--vc-tile-bg);
+    color: var(--vc-text-soft);
     font-size: 11px; font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
     cursor: pointer;
     -webkit-flex-shrink: 0; flex-shrink: 0;
     -webkit-transition: all .15s; transition: all .15s;
 }
-.vc-preset:hover { border-color: rgba(0,212,170,.3); color: #fff; background: rgba(0,212,170,.06); }
+.vc-preset:hover { border-color: rgba(0,212,170,.3); color: var(--vc-text-primary); background: rgba(0,212,170,.06); }
 .vc-preset:active { -webkit-transform: scale(.9); transform: scale(.9); }
 .vc-preset.active { border-color: #00D4AA; background: rgba(0,212,170,.12); color: #00D4AA; }
 .vc-preset.pending { opacity: .4; pointer-events: none; }
@@ -477,9 +535,9 @@
     display: -webkit-flex; display: flex;
     -webkit-align-items: center; align-items: center;
     -webkit-justify-content: center; justify-content: center;
-    background: rgba(10, 10, 14, 0.88);
+    background: var(--vc-bar-bg);
     -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--vc-border-subtle);
     border-radius: 16px;
     padding: 6px 10px;
     width: 100%;
@@ -495,7 +553,7 @@
     border-radius: 12px;
     border: 1px solid transparent;
     background: transparent;
-    color: #71717A;
+    color: var(--vc-text-muted);
     cursor: pointer;
     -webkit-transition: all .15s; transition: all .15s;
     -webkit-tap-highlight-color: transparent;
@@ -506,7 +564,7 @@
 .vc-tab span { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
 .vc-tab:active { -webkit-transform: scale(.92); transform: scale(.92); }
 .vc-tab.active { border-color: rgba(0,212,170,0.4); background: rgba(0,212,170,0.08); color: #00D4AA; }
-.vc-tab.has-active { color: #A1A1AA; }
+.vc-tab.has-active { color: var(--vc-text-secondary); }
 .vc-tab .tab-dot {
     position: absolute; top: 6px; right: 6px;
     width: 5px; height: 5px; border-radius: 50%;
@@ -541,21 +599,21 @@
     border-radius: 10px;
     /* Always-visible neutral background tier — tiles never disappear against
        the canvas (the body paint flash effect could otherwise wash them out). */
-    border: 1px solid rgba(255,255,255,0.06);
-    background: rgba(255,255,255,0.025);
-    color: #C4C4CD; cursor: pointer;
+    border: 1px solid var(--vc-border-subtle);
+    background: var(--vc-tile-bg);
+    color: var(--vc-text-soft); cursor: pointer;
     margin: 0 1px;
     -webkit-flex-shrink: 0; flex-shrink: 0;
     -webkit-transition: all .15s; transition: all .15s;
 }
 .vc-tile svg { width: 22px; height: 22px; margin-bottom: 2px; stroke: currentColor; }
 .vc-tile span { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: inherit; }
-.vc-tile:hover { border-color: rgba(0,212,170,.3); color: #fff; background: rgba(0,212,170,.06); }
+.vc-tile:hover { border-color: rgba(0,212,170,.3); color: var(--vc-text-primary); background: rgba(0,212,170,.06); }
 .vc-tile:active { -webkit-transform: scale(.9); transform: scale(.9); }
 .vc-tile.on { border-color: #00D4AA; background: rgba(0,212,170,.12); color: #00D4AA; box-shadow: 0 0 12px rgba(0,212,170,.2); }
 .vc-tile.active { border-color: #00D4AA; background: rgba(0,212,170,.10); color: #00D4AA; }
 /* Disable highlight stays readable: outline grey, not greyed-out invisible. */
-.vc-tile:disabled, .vc-tile[disabled] { color: #71717A; border-color: rgba(255,255,255,0.04); background: rgba(255,255,255,0.015); cursor: not-allowed; }
+.vc-tile:disabled, .vc-tile[disabled] { color: var(--vc-text-muted); border-color: var(--vc-border-faint); background: var(--vc-tile-bg-disabled); cursor: not-allowed; }
 .vc-tile.heat:hover { border-color: rgba(239,68,68,.3); color: #EF4444; }
 .vc-tile.heat.on { border-color: #EF4444; background: rgba(239,68,68,.12); color: #EF4444; box-shadow: 0 0 12px rgba(239,68,68,.2); }
 .vc-tile.cool:hover { border-color: rgba(56,189,248,.3); color: #38BDF8; }
@@ -569,9 +627,9 @@
     -webkit-justify-content: center; justify-content: center;
     width: 34px; height: 34px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--vc-border-subtle);
     background: transparent;
-    color: #A1A1AA; cursor: pointer;
+    color: var(--vc-text-secondary); cursor: pointer;
     margin: 0 1px;
     -webkit-flex-shrink: 0; flex-shrink: 0;
     -webkit-transition: all .12s; transition: all .12s;
@@ -587,7 +645,7 @@
     -webkit-justify-content: center; justify-content: center;
     min-width: 40px; height: 34px;
     padding: 0 4px;
-    font-size: 15px; font-weight: 700; color: #fff;
+    font-size: 15px; font-weight: 700; color: var(--vc-text-primary);
     font-family: 'JetBrains Mono', monospace;
     -webkit-flex-shrink: 0; flex-shrink: 0;
 }
@@ -655,7 +713,7 @@
 /* ===== CLOUD REQUIRED MODAL ===== */
 .vc-modal-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--vc-modal-overlay);
     -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
     z-index: 9999;
     display: -webkit-flex; display: flex;
@@ -670,8 +728,8 @@
     pointer-events: auto;
 }
 .vc-modal {
-    background: #1A1A1F;
-    border: 1px solid rgba(255,255,255,0.08);
+    background: var(--vc-modal-bg);
+    border: 1px solid var(--vc-border);
     border-radius: 20px;
     padding: 32px 28px 24px;
     max-width: 340px;
@@ -703,25 +761,25 @@
 .vc-modal-title {
     font-size: 16px;
     font-weight: 700;
-    color: #fff;
+    color: var(--vc-text-primary);
     margin-bottom: 8px;
 }
 .vc-modal-text {
     font-size: 13px;
-    color: #A1A1AA;
+    color: var(--vc-text-secondary);
     line-height: 1.5;
     margin-bottom: 24px;
 }
 .vc-modal-text strong {
-    color: #D4D4D8;
+    color: var(--vc-text-strong);
 }
 .vc-modal-btn {
     display: inline-block;
     padding: 10px 28px;
     border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.04);
-    color: #fff;
+    border: 1px solid var(--vc-border);
+    background: var(--vc-tile-bg);
+    color: var(--vc-text-primary);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;

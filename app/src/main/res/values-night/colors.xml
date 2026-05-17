@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DARK palette — what was previously the only palette in values/colors.xml.
+  Keys here MIRROR the light palette in values/colors.xml so existing
+  layouts that reference @color/bg_base etc. flip automatically when the
+  user picks dark mode (or follow-system at night).
+
+  Brand teal stays the same in both themes for identity continuity.
+-->
+<resources>
+    <!-- Legacy compat colors -->
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Brand -->
+    <color name="brand_primary">#5DDBB6</color>
+    <color name="brand_secondary">#85CFFF</color>
+    <color name="brand_cyan">@color/brand_primary</color>
+    <color name="brand_cyan_glow">#335DDBB6</color>
+
+    <!-- Backgrounds — M3 surface tonal stack -->
+    <color name="bg_base">#0E1311</color>
+    <color name="bg_surface">#1A1F1D</color>
+    <color name="bg_elevated">#242927</color>
+    <color name="bg_hover">#2F3432</color>
+
+    <color name="surface_variant">@color/bg_elevated</color>
+
+    <!-- Text -->
+    <color name="text_primary">#DEE4E0</color>
+    <color name="text_secondary">#BFC9C3</color>
+    <color name="text_muted">#899692</color>
+
+    <!-- Borders -->
+    <color name="border_default">#26FFFFFF</color>
+
+    <!-- Status -->
+    <color name="status_success">#5BD382</color>
+    <color name="status_warning">#FFB870</color>
+    <color name="status_danger">#FFB4AB</color>
+    <color name="status_running">@color/status_success</color>
+    <color name="status_stopped">@color/text_muted</color>
+    <color name="status_error">@color/status_danger</color>
+    <color name="status_starting">@color/status_warning</color>
+
+    <!-- Accent legacy -->
+    <color name="accent_orange">@color/status_warning</color>
+
+
+    <!-- Logs -->
+
+    <!-- Cards -->
+    <color name="card_border">#1AFFFFFF</color>
+
+
+    <!-- Switches -->
+    <color name="switch_track_on">@color/brand_primary</color>
+    <color name="switch_thumb_on">#003828</color>
+    <color name="switch_track_off">@color/bg_hover</color>
+    <color name="switch_thumb_off">@color/text_muted</color>
+
+    <!-- Buttons -->
+
+    <!-- Gradient -->
+</resources>

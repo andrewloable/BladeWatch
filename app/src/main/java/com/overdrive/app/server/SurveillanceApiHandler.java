@@ -217,6 +217,9 @@ public class SurveillanceApiHandler {
             config.put("motionHeatmap", sentryConfig.isMotionHeatmapEnabled());
             config.put("filterDebugLog", sentryConfig.isFilterDebugLogEnabled());
             config.put("telegramSendStartPing", sentryConfig.isTelegramSendStartPing());
+            config.put("telegramNotices", sentryConfig.isTelegramNotices());
+            config.put("telegramAlerts", sentryConfig.isTelegramAlerts());
+            config.put("telegramCritical", sentryConfig.isTelegramCritical());
             config.put("shadowFilter", sentryConfig.getShadowFilterMode());
             
             // ROI polygons and enabled flags
@@ -601,6 +604,24 @@ public class SurveillanceApiHandler {
             if (configJson.has("telegramSendStartPing")) {
                 sentryConfig.setTelegramSendStartPing(
                         configJson.optBoolean("telegramSendStartPing", false));
+                configChanged = true;
+            }
+            // Per-tier Telegram filter — mirrors push tier toggles. Defaults
+            // (notices=false, alerts=true, critical=true) match the field
+            // initializers on SurveillanceConfig.
+            if (configJson.has("telegramNotices")) {
+                sentryConfig.setTelegramNotices(
+                        configJson.optBoolean("telegramNotices", false));
+                configChanged = true;
+            }
+            if (configJson.has("telegramAlerts")) {
+                sentryConfig.setTelegramAlerts(
+                        configJson.optBoolean("telegramAlerts", true));
+                configChanged = true;
+            }
+            if (configJson.has("telegramCritical")) {
+                sentryConfig.setTelegramCritical(
+                        configJson.optBoolean("telegramCritical", true));
                 configChanged = true;
             }
             

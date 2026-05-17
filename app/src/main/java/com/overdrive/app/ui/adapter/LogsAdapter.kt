@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
 import com.overdrive.app.ui.model.LogEntry
 import com.overdrive.app.ui.model.LogLevel
 import com.overdrive.app.R
@@ -41,15 +42,29 @@ class LogsAdapter : ListAdapter<LogEntry, LogsAdapter.LogViewHolder>(LogDiffCall
             tvTimestamp.text = timeFormat.format(Date(entry.timestamp))
             tvTag.text = "[${entry.tag}]"
             tvMessage.text = entry.message
-            
-            // Set level indicator color
-            val colorRes = when (entry.level) {
-                LogLevel.DEBUG -> R.color.text_secondary
-                LogLevel.INFO -> R.color.status_running
-                LogLevel.WARN -> R.color.accent_orange
-                LogLevel.ERROR -> R.color.status_error
+
+            // Level stripe — resolve M3 theme attrs at bind time so the tint
+            // flips with the active light/dark theme. Falls back to the
+            // legacy palette when an attr can't be resolved. (colorPrimary /
+            // colorError live in appcompat's R.attr; colorTertiary /
+            // colorOutline live in material's R.attr — non-transitive R is
+            // enabled, so we have to qualify each one.)
+            val ctx = itemView.context
+            val attr = when (entry.level) {
+                LogLevel.DEBUG -> com.google.android.material.R.attr.colorOutline
+                LogLevel.INFO  -> androidx.appcompat.R.attr.colorPrimary
+                LogLevel.WARN  -> com.google.android.material.R.attr.colorTertiary
+                LogLevel.ERROR -> androidx.appcompat.R.attr.colorError
             }
-            levelIndicator.setBackgroundResource(colorRes)
+            val fallback = when (entry.level) {
+                LogLevel.DEBUG -> ctx.getColor(R.color.text_secondary)
+                LogLevel.INFO  -> ctx.getColor(R.color.status_running)
+                LogLevel.WARN  -> ctx.getColor(R.color.accent_orange)
+                LogLevel.ERROR -> ctx.getColor(R.color.status_error)
+            }
+            levelIndicator.setBackgroundColor(
+                MaterialColors.getColor(itemView, attr, fallback)
+            )
         }
     }
     

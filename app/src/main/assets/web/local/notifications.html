@@ -9,6 +9,7 @@
     <link rel="apple-touch-icon" href="../shared/app-icon.webp">
     <title data-i18n="app.notifications_title">Notifications - OverDrive</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <script src="../shared/theme.js?v=2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="manifest" href="/manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,16 +20,16 @@
         .notif-section h2 {
             font-size: 12px; font-weight: 600;
             letter-spacing: 0.08em; text-transform: uppercase;
-            color: rgba(255,255,255,0.5);
+            color: var(--text-secondary);
             margin: 0 0 4px;
         }
         .notif-section-sub {
-            font-size: 13px; color: rgba(255,255,255,0.45);
+            font-size: 13px; color: var(--text-muted);
             line-height: 1.5; margin: 0 0 14px;
         }
         .notif-card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
             border-radius: 12px;
             padding: 4px 0;
         }
@@ -36,7 +37,7 @@
             position: relative;
             display: flex; align-items: center; justify-content: space-between;
             padding: 14px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid var(--border-subtle);
         }
         .notif-row:last-child { border-bottom: 0; }
         .notif-row-text { flex: 1; min-width: 0; padding-right: 12px; }
@@ -46,7 +47,7 @@
             flex-wrap: wrap;
         }
         .notif-row-note {
-            font-size: 12px; color: rgba(255,255,255,0.5);
+            font-size: 12px; color: var(--text-secondary);
             margin-top: 2px;
         }
         .notif-sev-pill {
@@ -54,8 +55,8 @@
             display: inline-block;
             font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
             padding: 2px 8px; border-radius: 999px;
-            background: rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.7);
+            background: var(--bg-hover);
+            color: var(--text-secondary);
             cursor: help;
         }
         .notif-sev-pill.warn { color: #FFB75A; background: rgba(255,183,90,0.1); }
@@ -72,13 +73,13 @@
             width: max-content;
             max-width: min(240px, calc(100vw - 48px));
             padding: 8px 10px;
-            background: rgba(10,10,15,0.96);
-            border: 1px solid rgba(255,255,255,0.18);
+            background: var(--panel-overlay-bg);
+            border: 1px solid var(--border-default);
             border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: var(--shadow-overlay);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            color: rgba(255,255,255,0.92);
+            color: var(--text-primary);
             font-size: 11px; font-weight: 400; line-height: 1.45;
             text-transform: none; letter-spacing: 0;
             white-space: normal; text-align: left;
@@ -93,7 +94,7 @@
         }
         .notif-toggle {
             position: relative; width: 44px; height: 26px;
-            background: rgba(255,255,255,0.12); border-radius: 13px;
+            background: var(--border-default); border-radius: 13px;
             transition: background 0.15s;
             flex-shrink: 0; cursor: pointer;
         }
@@ -108,14 +109,14 @@
            per-category preference is moot. Show as visibly disabled and
            ignore clicks. */
         .notif-toggle.inactive {
-            background: rgba(255,255,255,0.06);
+            background: var(--border-subtle);
             cursor: not-allowed;
             pointer-events: none;
             opacity: 0.45;
         }
-        .notif-toggle.inactive.on { background: rgba(255,255,255,0.06); }
+        .notif-toggle.inactive.on { background: var(--border-subtle); }
         .notif-toggle.inactive::after {
-            background: rgba(255,255,255,0.4);
+            background: var(--text-muted);
             transform: none !important;
         }
         .notif-btn {
@@ -139,7 +140,7 @@
         .notif-status.warn  { background: rgba(255,183,90,0.08); color: #FFB75A; }
         .notif-status.error { background: rgba(255,107,107,0.08); color: #FF6B6B; }
         .notif-status code {
-            background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;
+            background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px;
             font-family: 'JetBrains Mono', monospace; font-size: 12px;
         }
         .notif-permission-row {
@@ -152,7 +153,7 @@
         .notif-permission-row::before {
             content: ''; grid-column: 1; grid-row: 1;
             width: 10px; height: 10px; border-radius: 50%;
-            background: rgba(255,255,255,0.35);
+            background: var(--text-muted);
             justify-self: center;
         }
         .notif-permission-row.granted::before { background: #00E5FF; box-shadow: 0 0 8px rgba(0,229,255,0.6); }
@@ -160,21 +161,21 @@
         .notif-permission-row.default::before { background: #FFB75A; }
         .notif-permission-state {
             grid-column: 2; grid-row: 1;
-            font-size: 14px; color: rgba(255,255,255,0.85);
+            font-size: 14px; color: var(--text-secondary);
         }
         .notif-action-row {
             grid-column: 2; grid-row: 2;
             display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
         }
         .notif-action-row .notif-btn { flex: 0 0 auto; }
-        .device-row { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .device-row { padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); }
         .device-row:last-child { border-bottom: 0; }
         .device-row-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
         .device-row-label { font-weight: 500; }
-        .device-row-meta { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+        .device-row-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
         .empty-state {
             padding: 24px 16px; text-align: center;
-            color: rgba(255,255,255,0.5); font-size: 13px;
+            color: var(--text-secondary); font-size: 13px;
         }
     </style>
 </head>
@@ -189,7 +190,7 @@
                     </div>
                     <div class="brand-text">
                         <span class="brand-name" data-i18n="app.name">OverDrive</span>
-                        <span class="brand-tagline" data-i18n="app.tagline">Sentry System</span>
+                        <span class="brand-tagline" data-i18n="app.tagline">Surveillance System</span>
                         <span class="brand-version" id="appVersion"></span>
                     </div>
                 </div>
@@ -262,7 +263,7 @@
                         <span class="status-value" id="batteryValue">--</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label" data-i18n="status.sentry">Sentry</span>
+                        <span class="status-label" data-i18n="status.sentry">Surveillance</span>
                         <span class="status-value" id="survStatus" data-i18n="status.off">OFF</span>
                     </div>
                     <div class="status-row">
@@ -317,7 +318,7 @@
                 <!-- Fuel Card (PHEV only — hidden for BEVs) -->
                 <div class="status-card fuel-card" id="fuelCard" style="display:none;">
                     <div class="fuel-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:#F59E0B;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--warning);">
                             <path d="M3 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
                             <path d="M3 22h10"/>
                             <path d="M13 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6"/>

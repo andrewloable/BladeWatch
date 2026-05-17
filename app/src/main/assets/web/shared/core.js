@@ -360,6 +360,17 @@ BYD.core = {
     deviceId: null,
     pollInterval: null,
     lastStatus: null,
+    // Counts /status fetch failures (network error, non-2xx, JSON parse).
+    // Drives the UI "stale" / "disconnected" indicators and a sooner retry,
+    // so a brief tunnel/Wi-Fi blip doesn't blank the dashboard for 5 s.
+    pollFailureCount: 0,
+    // Whether we've ever received a populated vehicle-data status. Used to
+    // decide between "Waiting for vehicle…" (first load, binders not bound
+    // yet) and last-known-good (we had data, transient error since).
+    hasEverHadVehicleData: false,
+    POLL_INTERVAL_OK_MS: 5000,
+    POLL_INTERVAL_RETRY_MS: 1500,
+    POLL_STALE_AFTER_FAILURES: 2,
 
     /**
      * Initialize core module
@@ -389,21 +400,65 @@ BYD.core = {
     },
 
     /**
-     * Start status polling
+     * Start status polling.
+     *
+     * Adaptive cadence: 5 s on success, 1.5 s while failing. Self-rescheduling
+     * (no fixed setInterval) so the next tick always reflects the current
+     * health — without this, a single long-fail period would still hold the
+     * UI in "stale" for the full 5 s after recovery.
      */
     startStatusPolling() {
-        this.refreshStatus();
-        this.pollInterval = setInterval(() => this.refreshStatus(), 5000);
+        var self = this;
+        function tick() {
+            self.refreshStatus().then(function (ok) {
+                var delay = ok ? self.POLL_INTERVAL_OK_MS : self.POLL_INTERVAL_RETRY_MS;
+                self.pollInterval = setTimeout(tick, delay);
+            });
+        }
+        tick();
     },
 
     /**
-     * Refresh status from server (consolidated - includes GPS)
+     * Refresh status from server (consolidated — includes GPS, vehicle data, etc).
+     *
+     * Resilience contract:
+     *   - On HTTP 401: redirect to /login.html (JWT expired or never set).
+     *   - On network/parse error: keep previously-rendered values, increment
+     *     failure counter, and let startStatusPolling() retry sooner. We do
+     *     NOT reset cards to "--" on a single bad poll — that's what made
+     *     the dashboard look broken on tunnel hiccups.
+     *   - On success but vehicleDataReady=false: show "Waiting for vehicle…"
+     *     in the EV card on first load; keep last-known after that.
+     *
+     * @returns {Promise<Object|null>} the parsed status object on success
+     *          (truthy → OK, used by tick() and update-flow's drift watch),
+     *          or null on failure.
      */
     async refreshStatus() {
         try {
             const res = await fetch('/status');
+            // 401 means JWT is missing/expired/invalid — bounce to login so
+            // the user lands on a screen that actually does something. The
+            // global fetch wrapper in auth.js attaches Authorization but does
+            // NOT redirect on 401; we handle it here for /status specifically.
+            if (res.status === 401) {
+                this._showStaleBanner('disconnected');
+                const path = window.location.pathname + window.location.search;
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(path);
+                return null;
+            }
+            if (!res.ok) {
+                throw new Error('HTTP ' + res.status);
+            }
             const status = await res.json();
+            this.pollFailureCount = 0;
+            this._clearStaleBanner();
             this.lastStatus = status;
+            // Track whether the server has ever delivered real vehicle data.
+            // Drives the "Waiting for vehicle…" placeholder vs. last-known
+            // behaviour on cards downstream.
+            const hadData = !!(status.soc || status.range || status.charging);
+            if (hadData) this.hasEverHadVehicleData = true;
 
             // Distance unit preference (from user setting / auto-detect)
             if (status.distanceUnit) {
@@ -480,11 +535,85 @@ BYD.core = {
 
             return status;
         } catch (e) {
-            console.error('[Core] Status refresh error:', e);
-            // Remove connected indicator on error
-            const connDot = document.getElementById('connDot');
-            if (connDot) connDot.classList.remove('connected');
+            this.pollFailureCount++;
+            console.warn('[Core] Status refresh failed (' + this.pollFailureCount + '): ' + e);
+            // Don't blank the dashboard on a single hiccup — keep the last
+            // good values rendered. After a couple of consecutive failures,
+            // surface a clear "Disconnected" indicator so the user knows the
+            // numbers on screen are no longer fresh.
+            if (this.pollFailureCount >= this.POLL_STALE_AFTER_FAILURES) {
+                const connDot = document.getElementById('connDot');
+                if (connDot) connDot.classList.remove('connected');
+                this._showStaleBanner(this.pollFailureCount > 4 ? 'disconnected' : 'stale');
+            }
             return null;
+        }
+    },
+
+    /**
+     * Show a small connection-state pill near the sidebar status card.
+     * Created lazily so pages without the sidebar (e.g. login) cost nothing.
+     * The pill replaces the deviceId text on the device row when stale —
+     * keeps the existing two-column status-row layout intact and stays
+     * clear of the data-i18n hydration path on the label.
+     */
+    _showStaleBanner(state) {
+        var deviceEl = document.getElementById('deviceId');
+        if (!deviceEl) return;
+        // Stash the real device id so we can restore it on recovery.
+        if (deviceEl.dataset.realText === undefined) {
+            deviceEl.dataset.realText = deviceEl.textContent;
+        }
+        var pill = document.getElementById('connStatePill');
+        if (!pill) {
+            pill = document.createElement('span');
+            pill.id = 'connStatePill';
+            // Tight pill sized to fit the .status-value column even on
+            // narrow sidebars. Long translations (e.g. Norwegian
+            // "Frakoblet") clip with ellipsis rather than push the row out
+            // of the card.
+            pill.style.cssText = 'padding:2px 6px;border-radius:10px;' +
+                'font-size:10px;font-weight:600;letter-spacing:.3px;' +
+                'text-transform:uppercase;max-width:100%;display:inline-block;' +
+                'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' +
+                'vertical-align:middle;';
+            deviceEl.textContent = '';
+            deviceEl.appendChild(pill);
+        }
+        // i18n.t() returns null while the catalog is still loading and the
+        // raw key (e.g. "status.disconnected") when loaded but the key is
+        // missing in the active locale. Treat both as "fall back to the
+        // English label" so the user never sees a dotted-namespace string.
+        var i18nLookup = function (key, fallback) {
+            if (!window.BYD || !BYD.i18n) return fallback;
+            var v = BYD.i18n.t(key);
+            return (v && v !== key) ? v : fallback;
+        };
+        if (state === 'disconnected') {
+            pill.textContent = i18nLookup('status.disconnected', 'Disconnected');
+            pill.style.background = 'rgba(239,68,68,0.18)';
+            pill.style.color = '#ef4444';
+        } else {
+            pill.textContent = i18nLookup('status.stale', 'Stale');
+            pill.style.background = 'rgba(251,191,36,0.18)';
+            pill.style.color = '#f59e0b';
+        }
+        pill.style.display = '';
+    },
+
+    _clearStaleBanner() {
+        var pill = document.getElementById('connStatePill');
+        if (!pill) return;
+        // Restore the real device id text so the row reads normally again.
+        var deviceEl = document.getElementById('deviceId');
+        if (deviceEl) {
+            var real = deviceEl.dataset.realText;
+            deviceEl.removeAttribute('data-real-text');
+            // The next /status tick will overwrite this with the live id;
+            // we only need to make the pill go away cleanly.
+            deviceEl.textContent = real != null ? real : (this.deviceId || '');
+        } else {
+            pill.parentNode && pill.parentNode.removeChild(pill);
         }
     },
 
@@ -506,6 +635,28 @@ BYD.core = {
         const evBatteryFill = document.getElementById('evBatteryFill');
         const evChargeFlow = document.getElementById('evChargeFlow');
         const evRange = document.getElementById('evRange');
+
+        // First-load placeholder: server says vehicle data isn't ready yet
+        // (BYD binders still binding, ACC just came on, etc.). Show an
+        // explicit "Waiting for vehicle…" instead of the silent "--%" that
+        // looked like the app was simply broken.
+        if (soc === null && status.vehicleDataReady === false && !this.hasEverHadVehicleData) {
+            if (evPercentValue) {
+                evPercentValue.textContent = (BYD.i18n && BYD.i18n.t('status.waiting_vehicle')) || 'Waiting…';
+                evPercentValue.style.fontSize = '11px';
+                evPercentValue.style.fontWeight = '600';
+                evPercentValue.style.letterSpacing = '.3px';
+            }
+            if (evRange) evRange.textContent = '—';
+            return;
+        }
+        // We've had real data at some point, or are getting it now — restore
+        // the percentage formatting to its default look.
+        if (evPercentValue && evPercentValue.style.fontSize) {
+            evPercentValue.style.fontSize = '';
+            evPercentValue.style.fontWeight = '';
+            evPercentValue.style.letterSpacing = '';
+        }
 
         if (soc !== null) {
             const socRounded = Math.round(soc);

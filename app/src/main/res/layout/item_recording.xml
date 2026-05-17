@@ -2,31 +2,40 @@
 <!--
   Recording grid tile — designed for a 2-column grid (item 7 SOTA pattern,
   Google-Photos / Eufy-style). Aspect 16:10 with metadata layered on top of
-  the thumbnail. Severity tint on top corner; duration on bottom-right; actor
-  pills on bottom-left.
+  the thumbnail. Severity stripe across the top edge; severity badge top-
+  right; camera-id chip top-left; duration bottom-right; actor pills
+  bottom-left.
+
+  Card uses ?attr/colorSurfaceContainer (no stroke), 20dp radius. Footer
+  text uses ?attr/colorOnSurface / ?attr/colorOnSurfaceVariant. The
+  per-item severity tints (stripe + badge background) and the bottom-edge
+  scrim pills (duration / actors) are deliberately hard-coded to dark
+  semi-transparent values: those overlays sit on the thumbnail bitmap
+  (not on the card surface), so they need their own contrast independent
+  of the app theme.
+
+  Preserved IDs (RecordingAdapter.kt findViewById targets):
+    ivThumbnail, severityStripe, tvSeverity, tvCameraId, tvDuration,
+    tvActorSummary, cbSelect, tvFilename, tvRecordingTime, tvSize,
+    btnDelete
 -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="6dp"
-    app:cardBackgroundColor="@color/bg_surface"
-    app:cardCornerRadius="14dp"
-    app:strokeColor="@color/card_border"
-    app:strokeWidth="1dp"
-    app:cardElevation="0dp"
-    android:foreground="?attr/selectableItemBackground">
+    android:layout_margin="@dimen/card_gap_horizontal_half"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer"
+    app:cardCornerRadius="@dimen/card_radius_standard"
+    app:cardElevation="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Thumbnail surface with overlays.
-             Aspect handled by fixed height (LinearLayout parent ignores
-             ConstraintLayout dimensionRatio attrs). 160dp pairs nicely with the
-             ~half-screen width a 2-col grid yields on phones. -->
+        <!-- ==================== THUMBNAIL ==================== -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="160dp">
@@ -36,31 +45,31 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:adjustViewBounds="true"
-                android:background="@color/surface_variant"
+                android:background="?attr/colorSurfaceContainerHigh"
                 android:contentDescription="@string/cd_video_thumbnail"
                 android:scaleType="centerCrop" />
 
-            <!-- Severity stripe — solid bar across the top edge, set programmatically. -->
+            <!-- Severity stripe — top edge, dynamic color via adapter. -->
             <View
                 android:id="@+id/severityStripe"
                 android:layout_width="match_parent"
                 android:layout_height="3dp"
                 android:layout_gravity="top"
-                android:visibility="gone"
-                android:background="@color/status_warning" />
+                android:background="?attr/colorTertiary"
+                android:visibility="gone" />
 
-            <!-- Top-right severity badge -->
+            <!-- Top-right severity badge — bg set per-bind. -->
             <TextView
                 android:id="@+id/tvSeverity"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|end"
                 android:layout_margin="6dp"
+                android:fontFamily="sans-serif-medium"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp"
                 android:textColor="@android:color/white"
                 android:textSize="9sp"
-                android:fontFamily="sans-serif-medium"
                 android:visibility="gone"
                 tools:text="ALERT" />
 
@@ -72,14 +81,15 @@
                 android:layout_gravity="top|start"
                 android:layout_margin="6dp"
                 android:background="@drawable/calendar_day_bg_selected"
+                android:fontFamily="sans-serif-medium"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp"
-                android:textColor="@color/bg_base"
+                android:textColor="?attr/colorOnPrimary"
                 android:textSize="9sp"
-                android:fontFamily="sans-serif-medium"
                 tools:text="C0" />
 
-            <!-- Bottom-right duration -->
+            <!-- Bottom-right duration — dark scrim is intentional, sits over
+                 the thumbnail bitmap, not on a theme surface. -->
             <TextView
                 android:id="@+id/tvDuration"
                 android:layout_width="wrap_content"
@@ -93,7 +103,7 @@
                 android:textSize="11sp"
                 tools:text="0:42" />
 
-            <!-- Bottom-left actor summary (overlay pills) -->
+            <!-- Bottom-left actor summary — same justification as duration. -->
             <TextView
                 android:id="@+id/tvActorSummary"
                 android:layout_width="wrap_content"
@@ -101,69 +111,67 @@
                 android:layout_gravity="bottom|start"
                 android:layout_margin="6dp"
                 android:background="#99000000"
+                android:ellipsize="end"
+                android:maxWidth="220dp"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp"
+                android:singleLine="true"
                 android:textColor="@android:color/white"
                 android:textSize="11sp"
                 android:visibility="gone"
-                android:singleLine="true"
-                android:ellipsize="end"
-                android:maxWidth="220dp"
                 tools:text="👤 1 · close" />
 
-            <!-- Selection checkbox: bottom-right when in select mode (overrides duration) -->
+            <!-- Selection checkbox: top-left when in select mode. -->
             <CheckBox
                 android:id="@+id/cbSelect"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|start"
                 android:layout_margin="2dp"
-                android:visibility="gone"
-                android:buttonTint="@color/brand_primary" />
+                android:buttonTint="?attr/colorPrimary"
+                android:visibility="gone" />
 
-            <!-- Big play affordance on tap (centred, slightly transparent) -->
+            <!-- Big play affordance, slightly transparent. -->
             <ImageView
                 android:layout_width="44dp"
                 android:layout_height="44dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_play_circle"
                 android:alpha="0.85"
-                android:contentDescription="@string/cd_play" />
-
+                android:contentDescription="@string/cd_play"
+                android:src="@drawable/ic_play_circle" />
         </FrameLayout>
 
-        <!-- Metadata footer (compact: time · size · filename) -->
+        <!-- ==================== FOOTER ==================== -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="8dp">
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="10dp">
 
             <TextView
                 android:id="@+id/tvFilename"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text_primary"
-                android:textSize="12sp"
-                android:fontFamily="sans-serif-medium"
-                android:singleLine="true"
                 android:ellipsize="middle"
+                android:singleLine="true"
+                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                android:textColor="?attr/colorOnSurface"
                 tools:text="event_20260514_223124.mp4" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_marginTop="2dp"
                 android:gravity="center_vertical"
-                android:layout_marginTop="2dp">
+                android:orientation="horizontal">
 
                 <TextView
                     android:id="@+id/tvRecordingTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     tools:text="22:31" />
 
                 <View
@@ -175,11 +183,11 @@
                 <TextView
                     android:id="@+id/tvSize"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="11sp"
+                    android:layout_weight="1"
                     android:singleLine="true"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     tools:text="125 MB" />
 
                 <ImageButton
@@ -189,12 +197,8 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/cd_delete"
                     android:src="@drawable/ic_delete"
-                    app:tint="@color/text_muted" />
-
+                    app:tint="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
-
         </LinearLayout>
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

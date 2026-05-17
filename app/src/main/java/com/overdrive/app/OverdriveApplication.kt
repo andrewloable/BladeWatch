@@ -27,12 +27,16 @@ class OverdriveApplication : Application() {
 
         // Initialize LogConfig with app's cache directory for file logging
         LogConfig.init(this)
-        
+
         // Initialize LogManager with file logging enabled
         LogManager.getInstance(LogConfig.default())
-        
+
         // Initialize PreferencesManager before any ViewModel is created
         PreferencesManager.init(this)
+
+        // Apply persisted theme mode (Auto / Light / Dark) before any Activity
+        // is created so the first paint matches the user's choice.
+        AppCompatDelegate.setDefaultNightMode(PreferencesManager.getThemeMode())
         
         // Privileged shell (UID 1000) DISABLED — causes BYD default dashcam
         // to show "no signal" by elevating app's camera priority via accmodemanager.

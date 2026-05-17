@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Recordings page — portrait.
+
+  Header layout (top → down):
+    1. Title row: "Recordings" headline + tonal "Settings" icon-button on the right.
+    2. Counts subtitle: "X today · Y total · Z GB" populated by RecordingsFragment.
+    3. M3 segmented Dashcam | Surveillance toggle group whose labels gain a
+       count suffix at runtime (e.g. "Dashcam · 118" / "Surveillance · 202").
+    4. Library container fills the rest, hosting RecordingLibraryFragment.
+
+  IDs preserved (consumed by RecordingsFragment.kt):
+    segmentedSource, segmentDashcam, segmentSurveillance,
+    btnRecordingsSettings, libraryContainer.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <!-- Hero header: title + summary + segmented control. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/page_padding_horizontal"
+        android:paddingTop="@dimen/page_padding_top"
+        android:paddingBottom="@dimen/card_gap_vertical">
+
+        <!-- Title row: headline left, tonal Settings button right. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/recordings_title"
+                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="end" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRecordingsSettings"
+                style="@style/Widget.Material3.Button.TonalButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="12dp"
+                android:contentDescription="@string/recordings_action_settings"
+                android:text="@string/recordings_action_settings"
+                android:textAllCaps="false"
+                app:icon="@drawable/ic_settings"
+                app:iconGravity="textStart" />
+        </LinearLayout>
+
+        <!-- Counts subtitle: populated at runtime by RecordingsFragment. -->
+        <TextView
+            android:id="@+id/tvRecordingsSummary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="@string/recordings_summary_pending"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="12 today · 320 total · 42 GB" />
+
+        <!-- Segmented Dashcam | Surveillance. Labels gain "· N" suffix at runtime. -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/segmentedSource"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/segmentDashcam"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/recordings_segment_dashcam"
+                android:textAllCaps="false" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/segmentSurveillance"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/recordings_segment_surveillance"
+                android:textAllCaps="false" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+    </LinearLayout>
+
+    <!-- Container hosting the native RecordingLibraryFragment (set by code) -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/libraryContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

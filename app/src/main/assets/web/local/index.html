@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#00E5FF">
+    <script src="../shared/theme.js?v=2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -30,7 +31,7 @@
                     <div class="brand-logo"><img src="../shared/app-icon.webp" alt="OverDrive"></div>
                     <div class="brand-text">
                         <span class="brand-name" data-i18n="app.name">OverDrive</span>
-                        <span class="brand-tagline" data-i18n="app.tagline">Sentry System</span>
+                        <span class="brand-tagline" data-i18n="app.tagline">Surveillance System</span>
                         <span class="brand-version" id="appVersion"></span>
                     </div>
                 </div>
@@ -135,7 +136,7 @@
                         <span class="status-value" id="batteryValue">--</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label" data-i18n="status.sentry">Sentry</span>
+                        <span class="status-label" data-i18n="status.sentry">Surveillance</span>
                         <span class="status-value" id="survStatus" data-i18n="status.off">OFF</span>
                     </div>
                     <div class="status-row">
@@ -240,7 +241,7 @@
                 <!-- Fuel Card (PHEV only — hidden for BEVs) -->
                 <div class="status-card fuel-card" id="fuelCard" style="display:none;">
                     <div class="fuel-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:#F59E0B;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--warning);">
                             <path d="M3 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
                             <path d="M3 22h10"/>
                             <path d="M13 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6"/>
@@ -394,38 +395,90 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <style>
+        /* Theme tokens for the Live View page. The panel itself stays dark
+           where video is letterboxed (black bars look correct), but the
+           floating chrome (top bar pills, quality select, car selector,
+           hotspot labels) flips with the active theme so it reads on a
+           light cabin display as well as a night-mode one. Brand teal stays
+           identical across themes. */
+        .live-view-page {
+            --lv-panel-bg: linear-gradient(180deg, #080810 0%, #0c0c14 50%, #080810 100%);
+            --lv-top-overlay: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, transparent 100%);
+            --lv-pill-bg: rgba(255,255,255,0.05);
+            --lv-pill-bg-hover: rgba(255,255,255,0.10);
+            --lv-pill-border: rgba(255,255,255,0.10);
+            --lv-pill-border-soft: rgba(255,255,255,0.08);
+            --lv-overlay-text: rgba(255,255,255,0.95);
+            --lv-overlay-shadow: 0 1px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5);
+            --lv-label-overlay-bg: rgba(0,0,0,0.7);
+            --lv-car-bg: linear-gradient(0deg, #000000 0%, rgba(8,8,16,0.9) 60%, transparent 100%);
+            --lv-quality-option-bg: #1a1a2e;
+            --lv-quality-option-color: #ffffff;
+            --lv-idle-icon-bg: rgba(255,255,255,0.03);
+            --lv-idle-icon-border: rgba(255,255,255,0.06);
+            --lv-hotspot-ring-border: rgba(255,255,255,0.4);
+            --lv-hotspot-ring-bg: rgba(255,255,255,0.08);
+            --lv-floor-spotlight: rgba(255,255,255,0.12);
+            --lv-shadow-strong: rgba(0,0,0,0.6);
+            --lv-shadow-soft: rgba(0,0,0,0.7);
+        }
+        :root[data-theme="light"] .live-view-page {
+            /* The video letterbox stays #000 (set on video/canvas elements
+               directly), but the surrounding chrome flips to a light tinted
+               glass with darker text and softer shadows. */
+            --lv-panel-bg: linear-gradient(180deg, #F7FAF7 0%, #ECEFEC 50%, #F7FAF7 100%);
+            --lv-top-overlay: linear-gradient(180deg, rgba(247,250,247,0.95) 0%, transparent 100%);
+            --lv-pill-bg: rgba(0,0,0,0.04);
+            --lv-pill-bg-hover: rgba(0,0,0,0.08);
+            --lv-pill-border: rgba(0,0,0,0.10);
+            --lv-pill-border-soft: rgba(0,0,0,0.08);
+            --lv-overlay-text: #181C1A;
+            --lv-overlay-shadow: 0 1px 2px rgba(255,255,255,0.6);
+            --lv-label-overlay-bg: rgba(247,250,247,0.85);
+            --lv-car-bg: linear-gradient(0deg, rgba(236,239,236,0.96) 0%, rgba(236,239,236,0.7) 60%, transparent 100%);
+            --lv-quality-option-bg: #ECEFEC;
+            --lv-quality-option-color: #181C1A;
+            --lv-idle-icon-bg: rgba(0,0,0,0.04);
+            --lv-idle-icon-border: rgba(0,0,0,0.08);
+            --lv-hotspot-ring-border: rgba(24,28,26,0.45);
+            --lv-hotspot-ring-bg: rgba(24,28,26,0.06);
+            --lv-floor-spotlight: rgba(0,0,0,0.10);
+            --lv-shadow-strong: rgba(0,0,0,0.18);
+            --lv-shadow-soft: rgba(0,0,0,0.22);
+        }
+
         /* SOTA Seamless Camera View */
         .seamless-camera-view {
             display: flex;
             flex-direction: column;
             height: 100%;
-            background: linear-gradient(180deg, #080810 0%, #0c0c14 50%, #080810 100%);
+            background: var(--lv-panel-bg);
             position: relative;
             overflow: hidden;
         }
-        
+
         /* Top Bar */
         .camera-top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 16px 20px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, transparent 100%);
+            background: var(--lv-top-overlay);
             position: absolute;
             top: 0; left: 0; right: 0;
             z-index: 20;
         }
-        
+
         .top-bar-left, .top-bar-right { display: flex; align-items: center; gap: 10px; }
-        
+
         .connection-status {
             display: flex;
             align-items: center;
             gap: 8px;
             padding: 8px 14px;
-            background: rgba(255,255,255,0.05);
+            background: var(--lv-pill-bg);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid var(--lv-pill-border-soft);
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
@@ -465,9 +518,9 @@
             font-size: 12px;
             font-weight: 600;
             color: var(--text-primary);
-            background: rgba(255,255,255,0.05);
+            background: var(--lv-pill-bg);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--lv-pill-border);
             border-radius: 10px;
             cursor: pointer;
             outline: none;
@@ -481,33 +534,35 @@
             position: relative;
             min-width: 80px;
         }
-        
+
         .quality-select-sota:hover { border-color: var(--brand-primary); }
-        .quality-select-sota option { 
-            background: #1a1a2e; 
-            color: #ffffff; 
+        .quality-select-sota option {
+            background: var(--lv-quality-option-bg);
+            color: var(--lv-quality-option-color);
             padding: 10px;
             font-size: 14px;
         }
-        
+
         .top-bar-btn {
             width: 38px; height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.05);
+            background: var(--lv-pill-bg);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--lv-pill-border);
             border-radius: 10px;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s;
         }
-        
-        .top-bar-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+
+        .top-bar-btn:hover { background: var(--lv-pill-bg-hover); color: var(--text-primary); }
         .top-bar-btn svg { width: 18px; height: 18px; }
         
-        /* Video Display */
+        /* Video Display — letterbox area stays #000 in both themes; black
+           bars on a video feed are the universally-correct neutral, and
+           the video frame itself sets the perceived background. */
         .video-display-area {
             flex: 1;
             position: relative;
@@ -518,25 +573,25 @@
             overflow: hidden;
             background: #000;
         }
-        
+
         .video-display-area video, .video-display-area #sw_container {
             position: absolute;
             max-width: 100%; max-height: 100%;
             width: 100%; height: 100%;
             object-fit: contain;
             border-radius: 12px;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+            box-shadow: 0 8px 40px var(--lv-shadow-strong);
             display: none;
             background: #000;
         }
-        
+
         .video-display-area #sota_canvas {
             position: absolute;
             max-width: 100%; max-height: 100%;
             width: 100%; height: 100%;
             object-fit: contain;
             border-radius: 12px;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+            box-shadow: 0 8px 40px var(--lv-shadow-strong);
             display: none;
             background: #000;
             z-index: 10;
@@ -561,35 +616,35 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: var(--lv-idle-icon-bg);
+            border: 1px solid var(--lv-idle-icon-border);
             border-radius: 20px;
         }
-        
+
         .idle-icon svg { width: 32px; height: 32px; opacity: 0.5; }
         .idle-text { font-size: 14px; font-weight: 500; }
-        
+
         .camera-label-overlay {
             position: absolute;
             top: 70px;
             left: 50%;
             transform: translateX(-50%);
             padding: 8px 20px;
-            background: rgba(0,0,0,0.7);
+            background: var(--lv-label-overlay-bg);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--lv-pill-border);
             border-radius: 20px;
             font-size: 13px;
             font-weight: 600;
             z-index: 10;
         }
-        
+
         /* Bottom Car Selector */
         .car-selector-bottom {
             flex-shrink: 0;
             padding: 20px 16px 24px 16px;
             padding-bottom: calc(30px + var(--safe-bottom));
-            background: linear-gradient(0deg, #000000 0%, rgba(8,8,16,0.9) 60%, transparent 100%);
+            background: var(--lv-car-bg);
             display: flex;
             justify-content: center;
         }
@@ -613,7 +668,7 @@
             transform: translateX(-50%);
             width: 80%;
             height: 20px;
-            background: radial-gradient(ellipse at center, rgba(255,255,255,0.12) 0%, transparent 70%);
+            background: radial-gradient(ellipse at center, var(--lv-floor-spotlight) 0%, transparent 70%);
             border-radius: 50%;
             z-index: 1;
             pointer-events: none;
@@ -625,7 +680,7 @@
             display: block;
             position: relative;
             z-index: 2;
-            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.7));
+            filter: drop-shadow(0 8px 16px var(--lv-shadow-soft));
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         
@@ -653,9 +708,9 @@
         
         .hotspot-ring {
             width: 20px; height: 20px;
-            border: 2px solid rgba(255,255,255,0.4);
+            border: 2px solid var(--lv-hotspot-ring-border);
             border-radius: 50%;
-            background: rgba(255,255,255,0.08);
+            background: var(--lv-hotspot-ring-bg);
             transition: all 0.3s;
         }
         
@@ -673,8 +728,8 @@
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.08em;
-            color: rgba(255,255,255,0.95);
-            text-shadow: 0 1px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5);
+            color: var(--lv-overlay-text);
+            text-shadow: var(--lv-overlay-shadow);
             white-space: nowrap;
             transition: all 0.3s;
         }
@@ -738,15 +793,15 @@
             .camera-top-bar { padding: 12px 16px; }
             .connection-status { padding: 6px 10px; font-size: 11px; }
             .decoder-chip { padding: 4px 8px; font-size: 9px; }
-            .quality-select-sota { 
-                padding: 6px 26px 6px 10px; 
+            .quality-select-sota {
+                padding: 6px 26px 6px 10px;
                 font-size: 11px;
                 /* Use native appearance on mobile for better dropdown rendering */
                 -webkit-appearance: menulist;
                 -moz-appearance: menulist;
                 appearance: menulist;
                 background-image: none;
-                background-color: rgba(26, 26, 46, 0.95);
+                background-color: var(--lv-quality-option-bg);
                 border-radius: 8px;
             }
             .top-bar-btn { width: 34px; height: 34px; }

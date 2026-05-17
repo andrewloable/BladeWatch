@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#00E5FF">
+    <script src="../shared/theme.js?v=2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -143,7 +144,7 @@
             left: 12px;
             right: 12px;
             bottom: 12px;
-            background: rgba(10,10,15,0.96);
+            background: var(--panel-overlay-bg);
             border: 1px solid var(--brand-primary);
             border-radius: 12px;
             padding: 16px 18px;
@@ -190,7 +191,7 @@
             color: var(--brand-primary);
             line-height: 1.4;
             padding-top: 8px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid var(--border-subtle);
         }
 
         /* Range Hero Card */
@@ -264,7 +265,7 @@
             left: 12px;
             right: 12px;
             bottom: 12px;
-            background: rgba(10,10,15,0.96);
+            background: var(--panel-overlay-bg);
             border: 1px solid var(--brand-secondary);
             border-radius: 12px;
             padding: 16px 18px;
@@ -288,7 +289,7 @@
             align-items: center;
             padding: 6px 0;
             font-size: 13px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid var(--border-subtle);
         }
         .range-tooltip-row:last-child { border-bottom: none; }
         .range-tooltip-label { color: var(--text-muted); font-size: 12px; }
@@ -296,7 +297,7 @@
         .range-tooltip-conditions {
             margin-top: 10px;
             padding-top: 8px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid var(--border-subtle);
         }
         .range-tooltip-conditions-label {
             font-size: 11px;
@@ -394,7 +395,7 @@
         /* Radar tooltip */
         .radar-tooltip {
             position: absolute;
-            background: rgba(15,15,20,0.95);
+            background: var(--panel-overlay-bg-strong);
             border: 1px solid var(--brand-primary);
             border-radius: 12px;
             padding: 12px 16px;
@@ -430,7 +431,7 @@
             color: var(--brand-primary);
             margin-top: 6px;
             padding-top: 6px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid var(--border-subtle);
             line-height: 1.4;
         }
 
@@ -487,11 +488,11 @@
             margin-left: 4px;
             padding: 2px;
             border-radius: 50%;
-            background: rgba(0,0,0,0.2);
+            background: var(--panel-overlay-bg-faint);
             display: inline-flex;
             cursor: pointer;
         }
-        .clear-date-btn:hover { background: rgba(0,0,0,0.4); }
+        .clear-date-btn:hover { background: var(--panel-overlay-bg-soft); }
         .filter-tabs {
             display: flex;
             gap: 6px;
@@ -521,7 +522,7 @@
         .calendar-popup {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6);
+            background: var(--panel-overlay-bg-deep);
             z-index: 1000;
             display: none;
             align-items: flex-end;
@@ -698,7 +699,7 @@
             background: var(--bg-elevated);
             border-color: rgba(0,212,170,0.4);
             transform: translateY(-4px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            box-shadow: 0 10px 30px var(--panel-overlay-bg-soft);
         }
         .trip-card-top {
             display: flex;
@@ -945,7 +946,7 @@
             padding-left: 8px;
             padding-right: 8px;
         }
-        .score-row:hover { background: rgba(255,255,255,0.02); }
+        .score-row:hover { background: var(--bg-hover); }
         .score-row + .score-row { border-top: 1px solid var(--border-subtle); }
         .score-row-top {
             display: flex;
@@ -1216,7 +1217,7 @@
                     </div>
                     <div class="brand-text">
                         <span class="brand-name" data-i18n="app.name">OverDrive</span>
-                        <span class="brand-tagline" data-i18n="app.tagline">Sentry System</span>
+                        <span class="brand-tagline" data-i18n="app.tagline">Surveillance System</span>
                         <span class="brand-version" id="appVersion"></span>
                     </div>
                 </div>
@@ -1292,7 +1293,7 @@
                         <span class="status-value" id="batteryValue">--</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label" data-i18n="status.sentry">Sentry</span>
+                        <span class="status-label" data-i18n="status.sentry">Surveillance</span>
                         <span class="status-value" id="survStatus" data-i18n="status.off">OFF</span>
                     </div>
                     <div class="status-row">
@@ -1347,7 +1348,7 @@
                 <!-- Fuel Card (PHEV only — hidden for BEVs) -->
                 <div class="status-card fuel-card" id="fuelCard" style="display:none;">
                     <div class="fuel-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:#F59E0B;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--warning);">
                             <path d="M3 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
                             <path d="M3 22h10"/>
                             <path d="M13 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6"/>
@@ -1454,7 +1455,7 @@
                                         <span style="font-size:12px;color:var(--text-muted);margin-top:2px;">/km</span>
                                     </div>
                                 </div>
-                                <div style="position:absolute;left:-4px;right:-4px;bottom:-8px;background:rgba(10,10,15,0.96);border:1px solid var(--warning);border-radius:8px;padding:10px 12px;opacity:0;transition:opacity 0.2s;pointer-events:none;font-size:11px;color:var(--text-muted);text-align:center;z-index:10;" class="cost-hint" data-i18n="trip.cost_hint">
+                                <div style="position:absolute;left:-4px;right:-4px;bottom:-8px;background:var(--panel-overlay-bg);border:1px solid var(--warning);border-radius:8px;padding:10px 12px;opacity:0;transition:opacity 0.2s;pointer-events:none;font-size:11px;color:var(--text-muted);text-align:center;z-index:10;" class="cost-hint" data-i18n="trip.cost_hint">
                                     💡 Set your electricity rate in Trip Storage → Electricity Rate
                                 </div>
                             </div>
@@ -1680,7 +1681,7 @@
                             </div>
                             <!-- Recommend banner (shown only when API says recommendAutoCleanup) -->
                             <div class="info-box" id="tripCdrRecommendBanner" style="display:none;background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.3);">
-                                <div class="info-row" style="color:#ffc107;">
+                                <div class="info-row" style="color:var(--warning);">
                                     <span class="label" data-i18n="trip.cdr.recommend_label">⚠️ Recommended</span>
                                     <span class="value" data-i18n="trip.cdr.recommend_text">Overdrive uses SD — enable cleanup to keep space free</span>
                                 </div>
@@ -1765,8 +1766,8 @@
                             <div class="detail-stat"><div class="detail-stat-value" id="detailSocStart">--</div><div class="detail-stat-label" data-i18n="trip.detail.start_soc">Start SoC</div></div>
                             <div class="detail-stat"><div class="detail-stat-value" id="detailTemp">--</div><div class="detail-stat-label" data-i18n="trip.detail.temp_c">Temp °C</div></div>
                             <div class="detail-stat"><div class="detail-stat-value" id="detailCost" style="color:var(--warning);">--</div><div class="detail-stat-label" data-i18n="trip.detail.cost">Cost</div></div>
-                            <div class="detail-stat"><div class="detail-stat-value" id="detailElevGain" style="color:#22C55E;">--</div><div class="detail-stat-label" data-i18n="trip.detail.elev_up">Elev ↑</div></div>
-                            <div class="detail-stat"><div class="detail-stat-value" id="detailElevLoss" style="color:#EF4444;">--</div><div class="detail-stat-label" data-i18n="trip.detail.elev_down">Elev ↓</div></div>
+                            <div class="detail-stat"><div class="detail-stat-value" id="detailElevGain" style="color:var(--success);">--</div><div class="detail-stat-label" data-i18n="trip.detail.elev_up">Elev ↑</div></div>
+                            <div class="detail-stat"><div class="detail-stat-value" id="detailElevLoss" style="color:var(--danger);">--</div><div class="detail-stat-label" data-i18n="trip.detail.elev_down">Elev ↓</div></div>
                         </div>
                         <div style="margin-top:8px;text-align:center;"><span id="detailGradientPill" style="display:none;"></span></div>
                     </div>
@@ -1803,9 +1804,9 @@
                         </div>
                         <div id="tripMap"></div>
                         <div class="map-speed-legend">
-                            <span><span class="legend-dot" style="background:#22C55E"></span> <span data-i18n="trip.route.speed_low">&lt;40 km/h</span></span>
-                            <span><span class="legend-dot" style="background:#F59E0B"></span> <span data-i18n="trip.route.speed_mid">40–80 km/h</span></span>
-                            <span><span class="legend-dot" style="background:#EF4444"></span> <span data-i18n="trip.route.speed_high">&gt;80 km/h</span></span>
+                            <span><span class="legend-dot" style="background:var(--success)"></span> <span data-i18n="trip.route.speed_low">&lt;40 km/h</span></span>
+                            <span><span class="legend-dot" style="background:var(--warning)"></span> <span data-i18n="trip.route.speed_mid">40–80 km/h</span></span>
+                            <span><span class="legend-dot" style="background:var(--danger)"></span> <span data-i18n="trip.route.speed_high">&gt;80 km/h</span></span>
                         </div>
                     </div>
 
@@ -1817,7 +1818,7 @@
                             <span data-i18n="trip.timeline.speed_pedal_title">Speed &amp; Pedal Timeline</span>
                         </div>
                         <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--text-muted);">
-                            <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:3px;background:#00D4AA;border-radius:2px;display:inline-block;"></span> <span data-i18n="trip.timeline.legend_speed">Speed</span></span>
+                            <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:3px;background:var(--brand-primary);border-radius:2px;display:inline-block;"></span> <span data-i18n="trip.timeline.legend_speed">Speed</span></span>
                             <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:8px;background:rgba(14,165,233,0.3);border-radius:2px;display:inline-block;"></span> <span data-i18n="trip.timeline.legend_accel">Accel</span></span>
                             <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:8px;background:rgba(239,68,68,0.3);border-radius:2px;display:inline-block;"></span> <span data-i18n="trip.timeline.legend_brake">Brake</span></span>
                             <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:0;border-top:2px dashed rgba(245,158,11,0.5);display:inline-block;"></span> <span data-i18n="trip.timeline.legend_soc">SoC%</span></span>
@@ -1842,9 +1843,9 @@
                             <canvas id="speedHistogram"></canvas>
                         </div>
                         <div class="speed-hist-legend">
-                            <span><span class="legend-dot" style="background:#F59E0B;width:8px;height:8px;border-radius:50%;display:inline-block"></span> <span data-i18n="trip.speed_dist.low">Low (&lt;40)</span></span>
-                            <span><span class="legend-dot" style="background:#22C55E;width:8px;height:8px;border-radius:50%;display:inline-block"></span> <span data-i18n="trip.speed_dist.normal">Normal (40–80)</span></span>
-                            <span><span class="legend-dot" style="background:#EF4444;width:8px;height:8px;border-radius:50%;display:inline-block"></span> <span data-i18n="trip.speed_dist.high">High (&gt;80)</span></span>
+                            <span><span class="legend-dot" style="background:var(--warning);width:8px;height:8px;border-radius:50%;display:inline-block"></span> <span data-i18n="trip.speed_dist.low">Low (&lt;40)</span></span>
+                            <span><span class="legend-dot" style="background:var(--success);width:8px;height:8px;border-radius:50%;display:inline-block"></span> <span data-i18n="trip.speed_dist.normal">Normal (40–80)</span></span>
+                            <span><span class="legend-dot" style="background:var(--danger);width:8px;height:8px;border-radius:50%;display:inline-block"></span> <span data-i18n="trip.speed_dist.high">High (&gt;80)</span></span>
                         </div>
                         <div class="speed-hist-summary" id="speedHistSummary"></div>
                     </div>

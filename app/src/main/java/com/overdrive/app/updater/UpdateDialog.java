@@ -1,7 +1,7 @@
 package com.overdrive.app.updater;
 
 import android.animation.ObjectAnimator;
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.text.SpannableStringBuilder;
@@ -28,7 +28,8 @@ public class UpdateDialog {
         message.append("\n\n");
         message.append(markdownToSpannable(releaseNotes));
 
-        new AlertDialog.Builder(context)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(
+                context, R.style.Theme_Overdrive_M3_Dialog)
                 .setTitle("\uD83D\uDE80 Update Available")
                 .setMessage(message)
                 .setPositiveButton("Update Now", (d, w) -> { d.dismiss(); onUpdate.run(); })
@@ -43,7 +44,8 @@ public class UpdateDialog {
         ProgressBar progressBar = view.findViewById(R.id.updateProgressBar);
         TextView percentText = view.findViewById(R.id.updatePercentText);
 
-        AlertDialog dialog = new AlertDialog.Builder(context)
+        AlertDialog dialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(
+                context, R.style.Theme_Overdrive_M3_Dialog)
                 .setTitle("\u2B07\uFE0F Updating Overdrive")
                 .setView(view)
                 .setNegativeButton("Cancel", (d, w) -> { if (onCancel != null) onCancel.run(); d.dismiss(); })

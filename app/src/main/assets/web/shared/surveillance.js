@@ -39,7 +39,12 @@ BYD.surveillance = {
         // recording start. OFF by default so users with both PWA + Telegram
         // see one notification per event (PWA has tag-replace; Telegram does
         // not). Telegram-only users may turn this on for low-latency awareness.
-        telegramSendStartPing: false
+        telegramSendStartPing: false,
+        // Per-tier Telegram filter — mirrors the push tier toggles. Defaults
+        // match: NOTICE off (background noise), ALERT + CRITICAL on.
+        telegramNotices: false,
+        telegramAlerts: true,
+        telegramCritical: true
     },
     storageInfo: {
         sdCardAvailable: false,
@@ -102,6 +107,11 @@ BYD.surveillance = {
         this.savedConfig = JSON.parse(JSON.stringify(this.config));
         this.updateUI();
         this.startClock();
+
+        // Telegram pairing state — drives the tier filter availability UI.
+        // Re-checked when reloadConfig() fires (visibility change, periodic
+        // refresh) so a freshly-paired bot un-greys the toggles live.
+        this.refreshTelegramAvailability();
         
         // Load BYD Cloud status
         if (window.BydCloud) {
@@ -168,6 +178,9 @@ BYD.surveillance = {
         } catch (e) {
             console.warn('Failed to reload config:', e);
         }
+        // Re-probe Telegram pairing on every reload — newly-paired bots
+        // should un-grey the tier toggles without a page refresh.
+        this.refreshTelegramAvailability();
     },
     
     async loadStorageSettings() {
@@ -649,7 +662,8 @@ BYD.surveillance = {
             'shadowFilter',
             'cameraFront', 'cameraRight', 'cameraLeft', 'cameraRear',
             'motionHeatmap', 'filterDebugLog',
-            'telegramSendStartPing'
+            'telegramSendStartPing',
+            'telegramNotices', 'telegramAlerts', 'telegramCritical'
         ];
         const pick = (obj) => {
             const r = {};
@@ -970,6 +984,66 @@ BYD.surveillance = {
         if (!el) return;
         this.config.telegramSendStartPing = el.checked;
         this.markChanged();
+    },
+
+    /**
+     * Per-tier Telegram filter handler. Wires the three new toggles
+     * (Notice / Alert / Critical) into config so the next config save
+     * pushes them to the daemon. Same markChanged → Apply button flow as
+     * the rest of the surveillance settings.
+     */
+    updateTelegramTiers() {
+        const n = document.getElementById('v2TelegramNotices');
+        const a = document.getElementById('v2TelegramAlerts');
+        const c = document.getElementById('v2TelegramCritical');
+        if (n) this.config.telegramNotices = n.checked;
+        if (a) this.config.telegramAlerts = a.checked;
+        if (c) this.config.telegramCritical = c.checked;
+        this.markChanged();
+    },
+
+    /**
+     * Reflect the Telegram-bot pairing state in the tier filter UI. The
+     * tier toggles + the two-stage start-ping are functionally inert when
+     * the bot isn\'t paired (engine still calls TelegramNotifier, daemon
+     * just answers "Owner not set" and drops the message), so we visually
+     * disable them and show an inline warning so the user understands
+     * why their toggles don\'t produce messages. Re-runs on every config
+     * refresh (every 10s) so freshly-paired bots un-grey live without a
+     * page reload.
+     */
+    async refreshTelegramAvailability() {
+        let paired = false;
+        try {
+            const r = await fetch('/api/settings/telegram-status');
+            if (r.ok) {
+                const j = await r.json();
+                paired = !!(j && j.enabled);
+            }
+        } catch (e) {
+            // Network blip / endpoint missing on older builds — treat as
+            // "unknown" and leave toggles enabled so we don\'t block users
+            // on a transient failure.
+            paired = true;
+        }
+        const group = document.getElementById('v2TelegramTierGroup');
+        const warning = document.getElementById('v2TelegramTierWarning');
+        const startPing = document.getElementById('v2TelegramSendStartPing');
+        const tierIds = ['v2TelegramNotices', 'v2TelegramAlerts', 'v2TelegramCritical'];
+
+        const setDisabled = (el, dis) => {
+            if (!el) return;
+            el.disabled = dis;
+            const row = el.closest('.setting-row');
+            if (row) {
+                row.style.opacity = dis ? '0.55' : '';
+                row.style.pointerEvents = dis ? 'none' : '';
+            }
+        };
+        setDisabled(startPing, !paired);
+        for (const id of tierIds) setDisabled(document.getElementById(id), !paired);
+        if (warning) warning.style.display = paired ? 'none' : 'block';
+        if (group) group.dataset.telegramPaired = paired ? '1' : '0';
     },
 
     updateV2Dev() {
@@ -1348,6 +1422,16 @@ BYD.surveillance = {
         // Telegram start-ping opt-in
         const tg = document.getElementById('v2TelegramSendStartPing');
         if (tg) tg.checked = !!this.config.telegramSendStartPing;
+
+        // Per-tier Telegram filter — null-coalesce to the documented defaults
+        // so configs saved before these fields existed render correctly
+        // (notices off, alerts on, critical on).
+        const tn = document.getElementById('v2TelegramNotices');
+        if (tn) tn.checked = this.config.telegramNotices === true;
+        const ta = document.getElementById('v2TelegramAlerts');
+        if (ta) ta.checked = this.config.telegramAlerts !== false;
+        const tc = document.getElementById('v2TelegramCritical');
+        if (tc) tc.checked = this.config.telegramCritical !== false;
         
         // Object detection checkboxes
         const dp = document.getElementById('detectPerson');

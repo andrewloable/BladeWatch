@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Rail header: brand mark + language picker, anchored at the top of the rail.
+  Stacks vertically; rail items follow below.
+  Width matches the rail's collapsed width (~80dp).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingTop="20dp"
+    android:paddingBottom="12dp">
+
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:contentDescription="@string/cd_brand_logo"
+        android:src="@drawable/ic_sidebar_logo"
+        app:tint="?attr/colorPrimary" />
+
+    <ImageButton
+        android:id="@+id/railLanguageButton"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="20dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/settings_language_label"
+        android:src="@drawable/ic_language"
+        app:tint="?attr/colorOnSurfaceVariant" />
+</LinearLayout>

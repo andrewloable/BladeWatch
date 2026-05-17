@@ -119,6 +119,21 @@ public final class ThumbnailBuffer {
         for (Actor a : actors) {
             // Only consider actors that hit at least NOTICE in this frame's quadrant
             if (a.peakCamera != camera) continue;
+            // Skip background scenery: a static non-person actor that never
+            // escalated past NOTICE is almost always a parked car or a tree
+            // briefly uncovered by motion. Including them in the slot pool
+            // means a far parked vehicle wins the hero score on otherwise-empty
+            // events — the user sees a thumbnail with a green bbox over a
+            // static car in the distance and assumes the system flagged it as
+            // a threat. EventTimelineCollector's peakProximity aggregation
+            // already excludes these (RecordingsApiHandler honours the result
+            // for the distance chip filter). Mirror the same gate here so the
+            // hero / per-actor JPEGs agree with the recording-level summary.
+            if (a.isStatic
+                    && a.classGroup != Actor.ClassGroup.PERSON
+                    && a.peakSeverity == Actor.Severity.NOTICE) {
+                continue;
+            }
             long incoming = score(a.peakSeverity, a.peakConfidence, a.peakProximity, a.classGroup);
             Slot existing = slots.get(a.actorId);
             long existingScore = existing != null

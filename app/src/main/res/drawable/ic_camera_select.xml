@@ -1,29 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Material Symbols Rounded: switch_camera (24px, weight 400, fill 0) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24">
-    <!-- Camera body -->
-    <path
-        android:pathData="M23,19V7c0,-1.1 -0.9,-2 -2,-2H3C1.9,5 1,5.9 1,7v12c0,1.1 0.9,2 2,2h18C22.1,21 23,20.1 23,19z"
-        android:strokeWidth="2"
-        android:fillColor="#00000000"
-        android:strokeColor="@color/brand_primary" />
-    <!-- Lens circle (radius 4) -->
-    <path
-        android:pathData="M12,9a4,4 0,1 0,0 8a4,4 0,1 0,0 -8z"
-        android:strokeWidth="2"
-        android:fillColor="#00000000"
-        android:strokeColor="@color/brand_primary" />
-    <!-- Lens dot (radius 1.5) -->
-    <path
-        android:pathData="M12,11.5a1.5,1.5 0,1 0,0 3a1.5,1.5 0,1 0,0 -3z"
-        android:fillColor="@color/brand_primary" />
-    <!-- Top notch -->
-    <path
-        android:pathData="M8.5,5L7,3h10l-1.5,2"
-        android:strokeWidth="1.5"
-        android:fillColor="#00000000"
-        android:strokeColor="@color/brand_primary" />
+    android:viewportHeight="24"
+    android:tint="?attr/colorOnSurfaceVariant">
+    <group
+        android:scaleX="0.025"
+        android:scaleY="0.025"
+        android:translateY="24">
+        <path
+            android:fillColor="@android:color/white"
+            android:pathData="M160-120q-33 0-56.5-23.5T80-200v-480q0-33 23.5-56.5T160-760h126l50-54q11-12 26.5-19t32.5-7h170q17 0 32.5 7t26.5 19l50 54h126q33 0 56.5 23.5T880-680v480q0 33-23.5 56.5T800-120H160Zm0-80h640v-480H638l-73-80H395l-73 80H160v480Zm320-240Zm-126 42h252l-34 34q-11 11-11 28t11 28q11 11 28 11t28-11l104-104q12-12 12-28t-12-28L628-572q-11-11-27.5-11.5T572-572q-11 11-11.5 27.5T571-516l37 38H352l37-38q11-11 11-27.5T388-572q-11-11-28-11t-28 11L228-468q-12 12-12 28t12 28l104 104q11 11 28 11t28-11q11-11 11-28t-11-28l-34-34Z"/>
+    </group>
 </vector>

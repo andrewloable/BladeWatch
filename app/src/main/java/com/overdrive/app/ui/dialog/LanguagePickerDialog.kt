@@ -1,8 +1,6 @@
 package com.overdrive.app.ui.dialog
 
-import android.app.AlertDialog
 import android.content.Context
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,19 +11,20 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.overdrive.app.R
 import com.overdrive.app.server.LocaleManager
 
 /**
- * Language picker that mirrors the web bottom-sheet UX:
+ * Language picker rendered as a real M3 [BottomSheetDialog].
+ *
  *   - "Auto (follow system)" pinned at the top
  *   - 17 supported languages in native script with BCP-47 tag on the right
- *   - Current pick gets a check mark
+ *   - Current pick gets a check mark on the trailing side
  *   - Selection persists via [LocaleManager] so the WebView and the native UI
  *     come back in the same language on the very next launch
  *
- * Implemented as a styled [AlertDialog] anchored to the bottom of the window
- * (so it reads as a sheet) without pulling in a separate dependency.
+ * Public API is unchanged: [show] takes a context + optional callback.
  */
 object LanguagePickerDialog {
 
@@ -63,10 +62,10 @@ object LanguagePickerDialog {
         val rv = view.findViewById<RecyclerView>(R.id.rvLanguages)
         rv.layoutManager = LinearLayoutManager(context)
 
-        val dialog = AlertDialog.Builder(context, R.style.Theme_Overdrive_Dialog)
-            .setView(view)
-            .setCancelable(true)
-            .create()
+        val dialog = BottomSheetDialog(context, R.style.Theme_Overdrive_M3_BottomSheet).apply {
+            setContentView(view)
+            setCancelable(true)
+        }
 
         val rawCurrent = LocaleManager.getRaw()  // null/auto/<tag>
         val effective = LocaleManager.get()       // resolved tag
@@ -78,17 +77,14 @@ object LanguagePickerDialog {
             dialog.dismiss()
         }
 
+        // Subtitle: "<N> languages available" — count includes Auto.
+        view.findViewById<TextView>(R.id.tvLangPickerSubtitle)?.text =
+            context.getString(R.string.language_picker_subtitle_fmt, LocaleManager.SUPPORTED.size)
+
         view.findViewById<View>(R.id.btnLangPickerClose).setOnClickListener {
             dialog.dismiss()
         }
 
-        dialog.setOnShowListener {
-            // Anchor to bottom + full width for that bottom-sheet feel.
-            dialog.window?.let { w ->
-                w.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                w.setGravity(Gravity.BOTTOM)
-            }
-        }
         dialog.show()
     }
 

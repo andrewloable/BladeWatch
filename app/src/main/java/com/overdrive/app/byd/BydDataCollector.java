@@ -1800,17 +1800,43 @@ public class BydDataCollector {
         logger.info(sb.toString());
     }
 
-    // Per-wheel temperature poll: candidate method names, in order. On the
-    // first poll we look up each via reflection; from then on we go straight
-    // to the surviving method (or short-circuit if none exist on this
-    // firmware). This means a sensor that wakes up later still gets a chance
-    // to report — we only lock out based on method-existence, not on whether
-    // a value was in range.
-    private static final String[] TYRE_TEMP_GETTER_CANDIDATES = {
-            "getTyreBatteryValue",      // matches the async callback name
-            "getTyreTemperatureValue",  // some HEV variants
-            "getTyreTemperature",       // legacy / wrapper variants
-            "getTyreTemperatureState"   // indexed state getter that returns °C on some firmware
+    // Per-wheel temperature poll: candidate (device, method, slot-mapping)
+    // tuples, in priority order. Each candidate names a getter on either
+    // tyreDevice or instrumentDevice plus a per-corner slot map, because the
+    // two HALs use DIFFERENT wheel-index conventions:
+    //   tyreDevice.getTyreXxx(int):       1=LF, 2=RF, 3=LR, 4=RR
+    //   instrumentDevice.getWheelTemperature(int): 1=RF, 2=RR, 3=LF, 4=LR
+    // Cache layout is fixed at [FL=0, FR=1, RL=2, RR=3]; each candidate's
+    // slotForCacheIdx[i] gives the int to pass for cache slot i.
+    //
+    // On the first poll we look up each via reflection; from then on we go
+    // straight to the surviving method (or short-circuit if none exist on
+    // this firmware). This means a sensor that wakes up later still gets a
+    // chance to report — we only lock out based on method-existence, not on
+    // whether a value was in range.
+    private static final int DEV_TYRE = 0;
+    private static final int DEV_INSTRUMENT = 1;
+    private static final class TyreTempCandidate {
+        final int deviceKind;
+        final String methodName;
+        final int[] slotForCacheIdx; // index by [FL=0, FR=1, RL=2, RR=3]
+        TyreTempCandidate(int deviceKind, String methodName, int[] slotForCacheIdx) {
+            this.deviceKind = deviceKind;
+            this.methodName = methodName;
+            this.slotForCacheIdx = slotForCacheIdx;
+        }
+    }
+    private static final int[] TYRE_DEVICE_SLOTS       = {1, 2, 3, 4}; // identity
+    private static final int[] INSTRUMENT_DEVICE_SLOTS = {3, 1, 4, 2}; // FL=slot3, FR=slot1, RL=slot4, RR=slot2
+    private static final TyreTempCandidate[] TYRE_TEMP_CANDIDATES = {
+            // Instrument-side first: confirmed to return real per-corner °C
+            // on firmwares where every tyreDevice candidate returns null.
+            new TyreTempCandidate(DEV_INSTRUMENT, "getWheelTemperature",     INSTRUMENT_DEVICE_SLOTS),
+            // tyreDevice fallbacks — order preserves prior behaviour.
+            new TyreTempCandidate(DEV_TYRE,       "getTyreBatteryValue",      TYRE_DEVICE_SLOTS),
+            new TyreTempCandidate(DEV_TYRE,       "getTyreTemperatureValue",  TYRE_DEVICE_SLOTS),
+            new TyreTempCandidate(DEV_TYRE,       "getTyreTemperature",       TYRE_DEVICE_SLOTS),
+            new TyreTempCandidate(DEV_TYRE,       "getTyreTemperatureState",  TYRE_DEVICE_SLOTS),
     };
     // null = not resolved yet (first cycle still running),
     // != null and != NO_TYRE_TEMP_GETTER = the resolved Method,
@@ -1823,7 +1849,7 @@ public class BydDataCollector {
         NO_TYRE_TEMP_GETTER = m;
     }
     private volatile java.lang.reflect.Method resolvedTyreTempMethod = null;
-    // Index into TYRE_TEMP_GETTER_CANDIDATES: which candidate is currently resolved.
+    // Index into TYRE_TEMP_CANDIDATES: which candidate is currently resolved.
     // When the resolved method consistently returns out-of-range values, we advance
     // to the next candidate. This ensures getTyreBatteryValue returning battery voltage
     // doesn't permanently block getTyreTemperatureState from being tried.
@@ -1848,9 +1874,6 @@ public class BydDataCollector {
      * temporarily out of signal can still come online later.
      */
     private void pollPerWheelTyreTemp(int idx) {
-        if (tyreDevice == null) return;
-        int wheel = idx + 1; // BYD area: LF=1, RF=2, LR=3, RR=4
-
         java.lang.reflect.Method method = resolvedTyreTempMethod;
         if (method == NO_TYRE_TEMP_GETTER) return;
         if (method == null) {
@@ -1858,10 +1881,23 @@ public class BydDataCollector {
             resolvedTyreTempMethod = method;
             if (method == NO_TYRE_TEMP_GETTER) return;
         }
+        if (resolvedTyreTempCandidateIdx >= TYRE_TEMP_CANDIDATES.length) return;
+
+        TyreTempCandidate cand = TYRE_TEMP_CANDIDATES[resolvedTyreTempCandidateIdx];
+        Object device = (cand.deviceKind == DEV_INSTRUMENT) ? instrumentDevice : tyreDevice;
+        if (device == null) {
+            // The candidate's device was nulled out after resolution (init
+            // failure, device unavailable). Advance so the next poll picks
+            // a candidate whose device is still alive.
+            resolvedTyreTempCandidateIdx++;
+            resolvedTyreTempMethod = null;
+            return;
+        }
+        int wheel = cand.slotForCacheIdx[idx];
 
         Object raw;
         try {
-            raw = method.invoke(tyreDevice, wheel);
+            raw = method.invoke(device, wheel);
         } catch (Throwable t) {
             if (!loggedTyrePollThrew) {
                 loggedTyrePollThrew = true;
@@ -1926,20 +1962,26 @@ public class BydDataCollector {
     }
 
     private java.lang.reflect.Method resolveTyreTempMethod() {
-        Class<?> cls = tyreDevice.getClass();
-        for (int i = resolvedTyreTempCandidateIdx; i < TYRE_TEMP_GETTER_CANDIDATES.length; i++) {
-            String name = TYRE_TEMP_GETTER_CANDIDATES[i];
+        for (int i = resolvedTyreTempCandidateIdx; i < TYRE_TEMP_CANDIDATES.length; i++) {
+            TyreTempCandidate cand = TYRE_TEMP_CANDIDATES[i];
+            Object device = (cand.deviceKind == DEV_INSTRUMENT) ? instrumentDevice : tyreDevice;
+            if (device == null) continue; // device unavailable on this firmware
             try {
-                java.lang.reflect.Method m = cls.getMethod(name, int.class);
+                java.lang.reflect.Method m = device.getClass().getMethod(cand.methodName, int.class);
                 resolvedTyreTempCandidateIdx = i;
-                logger.info("Tyre temp poll: using " + name + "(int) on "
-                        + cls.getSimpleName() + " (candidate idx=" + i + ")");
+                logger.info("Tyre temp poll: using " + cand.methodName + "(int) on "
+                        + device.getClass().getSimpleName() + " (candidate idx=" + i + ")");
                 return m;
             } catch (NoSuchMethodException ignored) { /* try next */ }
         }
+        StringBuilder tried = new StringBuilder();
+        for (int i = 0; i < TYRE_TEMP_CANDIDATES.length; i++) {
+            if (i > 0) tried.append(", ");
+            tried.append(TYRE_TEMP_CANDIDATES[i].deviceKind == DEV_INSTRUMENT ? "instrument." : "tyre.");
+            tried.append(TYRE_TEMP_CANDIDATES[i].methodName);
+        }
         logger.info("Tyre temp poll: no getter on this firmware "
-                + "(tried " + java.util.Arrays.toString(TYRE_TEMP_GETTER_CANDIDATES)
-                + " starting from idx=" + resolvedTyreTempCandidateIdx + ")");
+                + "(tried " + tried + " starting from idx=" + resolvedTyreTempCandidateIdx + ")");
         return NO_TYRE_TEMP_GETTER;
     }
 

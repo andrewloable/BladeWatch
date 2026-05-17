@@ -74,6 +74,13 @@ public class UpdateApiHandler {
     // ================== /api/update/check ==================
 
     private static void handleCheck(OutputStream out) throws Exception {
+        // Outer try wraps the entire handler so a caller waiting on a tunnel
+        // (Cloudflared/zrok) ALWAYS gets a JSON body back — even on
+        // unexpected exceptions. Without this, an exception inside the
+        // AppUpdater chain bubbles up to HttpServer.handleClient's catch
+        // which only logs and closes the socket, leaving the client to
+        // parse an empty body ("JSON.parse: unexpected end of data").
+        try {
         Context ctx = CameraDaemon.getAppContext();
         if (ctx == null) {
             HttpResponse.sendJsonError(out, Messages.get("errors.update_app_context_not_ready"));
@@ -82,6 +89,12 @@ public class UpdateApiHandler {
 
         // Run synchronously by blocking on a callback latch. AppUpdater.checkForUpdate
         // dispatches to its own executor + posts to mainHandler, so we wait here.
+        // Cap wait at 12s so the tunnel timeout (typically 30s) has plenty
+        // of headroom to deliver the response. Public tunnels (zrok, free
+        // Cloudflared) sometimes terminate idle connections aggressively
+        // around the 20-30s mark, leaving the user with the dreaded empty
+        // body. 12s + a couple seconds for the server to format and send
+        // is well inside that window.
         final Object lock = new Object();
         final boolean[] done = {false};
         final JSONObject[] resultRef = {null};
@@ -123,7 +136,7 @@ public class UpdateApiHandler {
         });
 
         synchronized (lock) {
-            if (!done[0]) lock.wait(20_000);
+            if (!done[0]) lock.wait(12_000);
         }
 
         if (resultRef[0] == null) {
@@ -131,6 +144,17 @@ public class UpdateApiHandler {
             return;
         }
         HttpResponse.sendJson(out, resultRef[0].toString());
+        } catch (Throwable t) {
+            // Final safety net: any exception that reaches here means we
+            // never sent a response. Log it and emit a JSON error so the
+            // client doesn't get an empty body and crash on parse.
+            CameraDaemon.log("update/check failed: " + t.getClass().getSimpleName()
+                    + ": " + t.getMessage());
+            try {
+                HttpResponse.sendJsonError(out,
+                        "Update check failed: " + (t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName()));
+            } catch (Exception ignored) { /* socket already gone */ }
+        }
     }
 
     // ================== /api/update/preview ==================

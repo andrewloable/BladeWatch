@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>3D Surround View — Local Sandbox</title>
+    <script>
+        // Theme bootstrap is inline so login (which is auth-public)
+        // gets the same dark default + localStorage hydration as every other
+        // page, without depending on the auth-protected shared/theme.js.
+        (function(){
+            var v = (function(){try{var x=localStorage.getItem("overdrive_theme");return x==="light"||x==="dark"||x==="auto"?x:"dark"}catch(e){return"dark"}})();
+            var eff = v==="auto" ? (window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark") : (v==="light"?"light":"dark");
+            document.documentElement.setAttribute("data-theme", eff);
+        })();
+    </script>
 <style>
     html, body {
         margin: 0; padding: 0; height: 100%; overflow: hidden;

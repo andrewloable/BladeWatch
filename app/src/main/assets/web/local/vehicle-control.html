@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#00E5FF">
+    <script src="../shared/theme.js?v=2"></script>
     <link rel="stylesheet" href="../shared/styles.css?v=12">
     <link rel="stylesheet" href="../shared/vehicle-control.css?v=12">
     <!-- Web fonts loaded async + non-blocking. WebView falls back to system sans-serif if offline. -->
@@ -26,7 +27,7 @@
                     </div>
                     <div class="brand-text">
                         <span class="brand-name" data-i18n="app.name">OverDrive</span>
-                        <span class="brand-tagline" data-i18n="app.tagline">Sentry System</span>
+                        <span class="brand-tagline" data-i18n="app.tagline">Surveillance System</span>
                         <span class="brand-version" id="appVersion"></span>
                     </div>
                 </div>
@@ -136,7 +137,7 @@
                         <span class="status-value" id="batteryValue">--</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label" data-i18n="status.sentry">Sentry</span>
+                        <span class="status-label" data-i18n="status.sentry">Surveillance</span>
                         <span class="status-value" id="survStatus" data-i18n="status.off">OFF</span>
                     </div>
                     <div class="status-row">
@@ -228,7 +229,7 @@
                 <!-- Fuel Card (PHEV only) -->
                 <div class="status-card fuel-card" id="fuelCard" style="display:none;">
                     <div class="fuel-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:#F59E0B;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--warning);">
                             <path d="M3 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 22h10"/>
                             <path d="M13 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6"/><path d="M6 14v-3"/>
                         </svg>

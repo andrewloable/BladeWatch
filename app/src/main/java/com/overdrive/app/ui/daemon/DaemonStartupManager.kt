@@ -8,7 +8,6 @@ import com.overdrive.app.launcher.AdbShellExecutor
 import com.overdrive.app.launcher.ZrokLauncher
 import com.overdrive.app.launcher.TailscaleLauncher
 import com.overdrive.app.logging.LogManager
-import com.overdrive.app.ui.model.AccessMode
 import com.overdrive.app.ui.model.DaemonType
 import com.overdrive.app.ui.util.PreferencesManager
 import com.overdrive.app.ui.viewmodel.DaemonsViewModel
@@ -140,10 +139,10 @@ class DaemonStartupManager(
         log.info(TAG, "=== Checking all daemon statuses ===")
         daemonsViewModel?.let { vm ->
             DaemonType.values().forEach { type -> vm.refreshDaemonStatus(type, logResult = true) }
-            val savedMode = PreferencesManager.getAccessMode()
-            val streamMode = if (savedMode == AccessMode.PUBLIC) "public" else "private"
-            log.info(TAG, "Syncing camera daemon stream mode to: $streamMode")
-            vm.cameraDaemonController.setStreamMode(streamMode)
+            // Camera daemon defaults to private stream mode. Public exposure is opt-in
+            // per-tunnel (cloudflared / zrok) via the Daemons settings, not a global mode.
+            log.info(TAG, "Syncing camera daemon stream mode to: private")
+            vm.cameraDaemonController.setStreamMode("private")
         }
     }
 
@@ -223,25 +222,20 @@ class DaemonStartupManager(
             return
         }
         log.info(TAG, "Starting optional daemons from preferences...")
-        val accessMode = PreferencesManager.getAccessMode()
-        log.info(TAG, "Current access mode: $accessMode")
-        
-        // PUBLIC mode ALWAYS requires singbox, or user explicitly enabled it
-        if (accessMode == AccessMode.PUBLIC || PreferencesManager.isDaemonEnabled(DaemonType.SINGBOX_PROXY)) {
+
+        // Singbox starts iff the user enabled it. Tunnels are independent toggles.
+        if (PreferencesManager.isDaemonEnabled(DaemonType.SINGBOX_PROXY)) {
             vm.singboxController.isRunning { isRunning ->
                 if (isRunning) {
                     log.info(TAG, "Singbox already running, skipping start")
-                    // Start tunnel after confirming singbox is running
                     handler.postDelayed({ startTunnelFromPreferences(vm) }, 1000)
                 } else {
-                    log.info(TAG, "Starting Singbox (required for PUBLIC mode)...")
+                    log.info(TAG, "Starting Singbox (user enabled)...")
                     handler.post { vm.startDaemon(DaemonType.SINGBOX_PROXY) }
-                    // Wait for singbox to start, then start tunnel
                     handler.postDelayed({ startTunnelFromPreferences(vm) }, 5000)
                 }
             }
         } else {
-            // PRIVATE mode - just start tunnel if enabled
             startTunnelFromPreferences(vm)
         }
         
@@ -298,20 +292,14 @@ class DaemonStartupManager(
     private fun startOptionalDaemonsViaAdb() {
         log.info(TAG, "Starting optional daemons via ADB...")
         try {
-            val accessMode = PreferencesManager.getAccessMode()
-            
-            // PUBLIC mode ALWAYS requires Singbox
-            if (accessMode == AccessMode.PUBLIC) {
-                log.info(TAG, "Boot: Starting Singbox (required for PUBLIC mode)...")
-                adbLauncher.startSingbox(createLogCallback("Singbox"))
-            } else if (PreferencesManager.isDaemonEnabled(DaemonType.SINGBOX_PROXY)) {
+            // Singbox is gated only by its own user toggle now.
+            if (PreferencesManager.isDaemonEnabled(DaemonType.SINGBOX_PROXY)) {
                 log.info(TAG, "Boot: Starting Singbox (user enabled)...")
                 adbLauncher.startSingbox(createLogCallback("Singbox"))
             }
-            
-            // Start tunnel after singbox (if in PUBLIC mode, wait for singbox)
-            val tunnelDelay = if (accessMode == AccessMode.PUBLIC) 5000L else 0L
-            
+
+            val tunnelDelay = 0L
+
             handler.postDelayed({
                 // Cloudflared and Zrok are mutually exclusive
                 if (PreferencesManager.isDaemonEnabled(DaemonType.CLOUDFLARED_TUNNEL)) {
@@ -390,57 +378,9 @@ class DaemonStartupManager(
     }
 
 
-    fun onAccessModeChanged(newMode: AccessMode) {
-        val vm = daemonsViewModel ?: return
-        when (newMode) {
-            AccessMode.PRIVATE -> {
-                log.info(TAG, "Switched to PRIVATE mode")
-                vm.cameraDaemonController.setStreamMode("private") { success ->
-                    if (success) log.info(TAG, "Camera daemon set to PRIVATE mode")
-                }
-                // Check if singbox is running and stop it (not needed in PRIVATE mode)
-                vm.singboxController.isRunning { isRunning ->
-                    if (isRunning) {
-                        log.info(TAG, "Stopping Sing-box (not needed in PRIVATE mode)")
-                        handler.post { vm.stopDaemon(DaemonType.SINGBOX_PROXY) }
-                        // Restart tunnels without proxy after singbox stops
-                        handler.postDelayed({ restartTunnelIfEnabled(vm, forceRestart = true) }, 2000)
-                    }
-                    // If singbox wasn't running, tunnels are already running without proxy - no restart needed
-                }
-            }
-            AccessMode.PUBLIC -> {
-                log.info(TAG, "Switched to PUBLIC mode")
-                vm.cameraDaemonController.setStreamMode("public") { success ->
-                    if (success) log.info(TAG, "Camera daemon set to PUBLIC mode")
-                }
-                
-                // PUBLIC mode ALWAYS requires singbox - start it regardless of user preference
-                // Then restart tunnels to pick up the proxy
-                vm.singboxController.isRunning { singboxWasRunning ->
-                    log.info(TAG, "Singbox running check result: $singboxWasRunning")
-                    if (singboxWasRunning) {
-                        // Singbox already running - tunnels already have proxy, just ensure tunnel is started
-                        log.info(TAG, "Sing-box already running, ensuring tunnel is started")
-                        startTunnelIfEnabled(vm)
-                    } else {
-                        // Singbox NOT running - MUST start it for PUBLIC mode, then restart tunnels
-                        log.info(TAG, "PUBLIC mode requires Sing-box - starting it now...")
-                        handler.post { vm.startDaemon(DaemonType.SINGBOX_PROXY) }
-                        // Wait for singbox to start, then FORCE restart tunnels with proxy
-                        handler.postDelayed({
-                            log.info(TAG, "Sing-box should be up, FORCE restarting tunnels with proxy...")
-                            restartTunnelIfEnabled(vm, forceRestart = true)
-                        }, 5000)
-                    }
-                }
-            }
-        }
-    }
-
     /**
      * Restart tunnel if enabled. When forceRestart=true, kills existing tunnel first
-     * so it can pick up new proxy settings (e.g., when switching to PUBLIC mode).
+     * so it can pick up new proxy settings (e.g., after singbox toggle).
      */
     private fun restartTunnelIfEnabled(vm: DaemonsViewModel, forceRestart: Boolean = false) {
         val cloudflaredEnabled = PreferencesManager.isDaemonEnabled(DaemonType.CLOUDFLARED_TUNNEL)

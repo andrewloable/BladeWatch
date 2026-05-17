@@ -173,6 +173,16 @@ public class SurveillanceConfig {
      * this on for low-latency awareness.
      */
     private boolean telegramSendStartPing = false;
+
+    /**
+     * Telegram per-tier mute. Mirrors the push tier toggles so a
+     * Telegram-only user can choose to receive only the actually-important
+     * alerts. Defaults match push (NOTICE off, ALERT on, CRITICAL on) so a
+     * fresh install behaves the same way under both transports.
+     */
+    private boolean telegramNotices  = false;
+    private boolean telegramAlerts   = true;
+    private boolean telegramCritical = true;
     
     // ========================================================================
     // UNIFIED SENSITIVITY (0-100%)
@@ -560,6 +570,13 @@ public class SurveillanceConfig {
 
     public boolean isTelegramSendStartPing() { return telegramSendStartPing; }
     public void setTelegramSendStartPing(boolean v) { this.telegramSendStartPing = v; }
+
+    public boolean isTelegramNotices()  { return telegramNotices; }
+    public boolean isTelegramAlerts()   { return telegramAlerts; }
+    public boolean isTelegramCritical() { return telegramCritical; }
+    public void setTelegramNotices(boolean v)  { this.telegramNotices = v; }
+    public void setTelegramAlerts(boolean v)   { this.telegramAlerts = v; }
+    public void setTelegramCritical(boolean v) { this.telegramCritical = v; }
     
     // Object detection setters
     public void setAiConfidence(float confidence) {

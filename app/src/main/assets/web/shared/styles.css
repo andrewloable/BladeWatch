@@ -25,7 +25,20 @@
     --success: #22C55E;
     --warning: #F59E0B;
     --danger: #EF4444;
-    
+
+    /* Chart palette — accents used by data visualizations / legends.
+       These are mid-luminance hues that read OK on either theme; the
+       light-theme overlay below tweaks them for AA contrast on light
+       surfaces. Use these instead of inline hex literals so theme
+       switching cascades through. */
+    --chart-line-1: #00D4AA; /* primary accent line */
+    --chart-line-2: #0EA5E9; /* secondary accent line */
+    --chart-warning: #fbbf24; /* yellow voltage / warning sample */
+    --chart-soh: #a855f7;    /* SOH purple */
+    --chart-batt-1: #2dd4bf; /* battery gradient start (teal) */
+    --chart-batt-2: #06b6d4; /* battery gradient mid (cyan) */
+    --chart-batt-3: #3b82f6; /* battery gradient end (blue) */
+
     /* Borders & Effects */
     --border-subtle: rgba(255, 255, 255, 0.06);
     --border-default: rgba(255, 255, 255, 0.1);
@@ -33,6 +46,18 @@
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
     --shadow-glow: 0 0 20px rgba(0, 212, 170, 0.15);
+
+    /* Overlay surfaces — translucent panels that float over content
+       (toasts, callouts, modal backdrops, fixed cards above maps).
+       Pages used to bake these as raw rgba(10,10,15,…) literals which
+       broke under light theme. The light overrides flip them in lockstep. */
+    --panel-overlay-bg: rgba(10, 10, 15, 0.96);
+    --panel-overlay-bg-strong: rgba(15, 15, 20, 0.95);
+    --panel-overlay-bg-soft: rgba(0, 0, 0, 0.4);
+    --panel-overlay-bg-faint: rgba(0, 0, 0, 0.2);
+    --panel-overlay-bg-deep: rgba(0, 0, 0, 0.6);
+    --modal-backdrop: rgba(0, 0, 0, 0.75);
+    --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
     
     /* Layout */
     --sidebar-width: 260px;
@@ -46,6 +71,71 @@
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ==================================================================
+   LIGHT THEME OVERLAY
+   Applied when <html data-theme="light"> (set by Android WebViewFragment
+   based on the app's current night mode), or via prefers-color-scheme
+   on first paint when the WebView hasn't received the attribute yet.
+   Same variable names so the rest of the stylesheet doesn't change.
+   Brand teal stays identical across themes for identity continuity.
+================================================================== */
+:root[data-theme="light"] {
+    --brand-primary: #00876C;
+    --brand-secondary: #00658F;
+    --brand-gradient: linear-gradient(135deg, #00876C 0%, #00658F 100%);
+
+    --bg-base: #F7FAF7;
+    --bg-surface: #ECEFEC;
+    --bg-elevated: #E6E9E6;
+    --bg-hover: #E0E4E1;
+    --bg-glass: rgba(247, 250, 247, 0.88);
+
+    --text-primary: #181C1A;
+    --text-secondary: #3F4944;
+    --text-muted: #6F7975;
+
+    --success: #1F7A3F;
+    --warning: #A6601C;
+    --danger: #BA1A1A;
+
+    /* Chart palette — light-theme variants. Deeper / more saturated
+       so labels and dots stay legible on the lighter surface tones. */
+    --chart-line-1: #00876C;
+    --chart-line-2: #00658F;
+    --chart-warning: #B45309;
+    --chart-soh: #7C3AED;
+    --chart-batt-1: #0F766E;
+    --chart-batt-2: #0369A1;
+    --chart-batt-3: #1D4ED8;
+
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-default: rgba(0, 0, 0, 0.10);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
+    --shadow-glow: 0 0 20px rgba(0, 135, 108, 0.16);
+
+    /* Light-theme overlay surfaces — light tinted glass with darker edges
+       that read on the light cabin display. The dimmed-overlay tokens stay
+       dark (modal backdrops should be neutral so the foreground card pops
+       on either theme). */
+    --panel-overlay-bg: rgba(247, 250, 247, 0.96);
+    --panel-overlay-bg-strong: rgba(247, 250, 247, 0.92);
+    --panel-overlay-bg-soft: rgba(24, 28, 26, 0.10);
+    --panel-overlay-bg-faint: rgba(24, 28, 26, 0.05);
+    --panel-overlay-bg-deep: rgba(24, 28, 26, 0.18);
+    --modal-backdrop: rgba(24, 28, 26, 0.45);
+    --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+/* No prefers-color-scheme fallback — pages default to DARK in Chrome / any
+   browser that doesn't set [data-theme="light"]. This matches the primary
+   in-car experience (the head-unit deployment) and the brand identity, and
+   keeps developer testing in Chrome consistent with how users see the app
+   most often. The Android WebViewFragment stamps data-theme on every
+   page-load to follow the app's appearance setting; an explicit
+   [data-theme="light"] from any other context still flips the palette. */
 
 /* === RESET & BASE === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2431,11 +2521,14 @@ input, select { font-family: inherit; }
 
 /* === SOTA WHITE RIMS & FLOW === */
 .ev-card {
-    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-    border: 1px solid rgba(255,255,255,0.1);
+    /* Theme-aware gradient — dark slate in dark mode, soft tinted-white in
+       light mode. Was previously hardcoded `#1e293b → #0f172a` which left
+       the bottom card on the sidebar visibly black under light theme. */
+    background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
+    border: 1px solid var(--border-default);
     border-radius: 16px;
     padding: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    box-shadow: var(--shadow-md);
 }
 
 @media (max-width: 768px) {

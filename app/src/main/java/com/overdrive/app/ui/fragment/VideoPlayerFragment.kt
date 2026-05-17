@@ -29,8 +29,19 @@ class VideoPlayerFragment : Fragment() {
     companion object {
         const val ARG_VIDEO_PATH = "video_path"
         const val ARG_VIDEO_TITLE = "video_title"
+        /**
+         * When true, the player is hosted as a child fragment inside another
+         * surface (e.g. the Recordings landscape preview pane). In inline mode:
+         *   - The back button is hidden (the parent owns navigation).
+         *   - No findNavController().popBackStack() / navigateUp() calls are
+         *     made — those would unwind the parent's nav stack and break the
+         *     host. Errors silently no-op instead of popping.
+         */
+        const val ARG_INLINE = "inline"
         private const val SEEK_UPDATE_MS = 250L
     }
+
+    private var inlineMode: Boolean = false
 
     private lateinit var videoView: VideoView
     private lateinit var seekBar: SeekBar
@@ -90,11 +101,24 @@ class VideoPlayerFragment : Fragment() {
         topBar = view.findViewById(R.id.topBar)
         bottomControls = view.findViewById(R.id.bottomControls)
 
+        inlineMode = arguments?.getBoolean(ARG_INLINE, false) ?: false
+
         val videoPath = arguments?.getString(ARG_VIDEO_PATH) ?: run {
-            findNavController().popBackStack(); return
+            // In inline mode we must NOT pop the parent's nav stack — just
+            // bail out quietly (the host can decide what to render instead).
+            if (!inlineMode) findNavController().popBackStack()
+            return
         }
         val videoTitle = arguments?.getString(ARG_VIDEO_TITLE) ?: File(videoPath).name
         tvTitle.text = videoTitle
+
+        // In inline mode the parent screen owns navigation, so suppress our
+        // own back affordance. (Layout positions topBar at the top of the
+        // inline card; without this the card would gain a redundant back chip
+        // that pops the parent's nav stack.)
+        if (inlineMode) {
+            btnBack.visibility = View.GONE
+        }
 
         // File size meta
         val file = File(videoPath)
@@ -140,7 +164,12 @@ class VideoPlayerFragment : Fragment() {
     }
 
     private fun setupControls() {
-        btnBack.setOnClickListener { findNavController().popBackStack() }
+        btnBack.setOnClickListener {
+            // Defensive: btnBack is hidden in inline mode, but guard the
+            // click listener anyway so a stray hit-test never pops the
+            // parent's nav stack from within the inline preview pane.
+            if (!inlineMode) findNavController().popBackStack()
+        }
 
         btnPlayPause.setOnClickListener {
             if (videoView.isPlaying) {

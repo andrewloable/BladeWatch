@@ -11,8 +11,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.GravityCompat
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -23,7 +21,6 @@ import com.overdrive.app.logging.LogManager
 // import com.overdrive.app.shell.PrivilegedShellSetup
 import com.overdrive.app.storage.StorageSetup
 import com.overdrive.app.ui.daemon.DaemonStartupManager
-import com.overdrive.app.ui.model.AccessMode
 import com.overdrive.app.ui.model.DaemonStatus
 import com.overdrive.app.ui.model.DaemonType
 import com.overdrive.app.ui.viewmodel.DaemonsViewModel
@@ -31,42 +28,47 @@ import com.overdrive.app.ui.viewmodel.LogsViewModel
 import com.overdrive.app.ui.viewmodel.MainViewModel
 import com.overdrive.app.launcher.AdbDaemonLauncher
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.navigation.NavigationView
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.navigationrail.NavigationRailView
 import com.overdrive.app.BuildConfig
 import com.overdrive.app.R
 import com.overdrive.app.util.BydDataCacheWhitelist
 
 /**
- * Main activity with drawer navigation and modern UI.
+ * Main activity hosting the M3 navigation-rail shell.
+ *
+ * Top-level destinations are wired via the rail in setupNavigation(). The
+ * old drawer-action handlers (check-update, reset, battery-health,
+ * camera-probe, traffic-monitor) are kept private but exposed via
+ * `invoke*Action` thin wrappers that the new SettingsFragment / Diagnostics
+ * fragment call.
  */
 class MainActivity : AppCompatActivity() {
-    
-    private lateinit var drawerLayout: DrawerLayout
+
     private lateinit var navController: NavController
     private lateinit var appBarConfiguration: AppBarConfiguration
-    
+
     private val mainViewModel: MainViewModel by viewModels()
     private val daemonsViewModel: DaemonsViewModel by viewModels()
     private val logsViewModel: LogsViewModel by viewModels()
     private var appUpdater: com.overdrive.app.updater.AppUpdater? = null
-    
+
     // Daemon startup manager
     private lateinit var daemonStartupManager: DaemonStartupManager
-    
+
+    // Handler + runnable owned by the activity so they can be cancelled in
+    // onDestroy() — prevents the periodic update check from leaking the
+    // activity instance after recreate.
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var updateCheckRunnable: Runnable? = null
+
     // UI elements
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var navigationView: NavigationView
-    private lateinit var switchAccessMode: SwitchMaterial
-    private lateinit var tvAccessMode: TextView
+    private lateinit var navigationRail: NavigationRailView
     private lateinit var tvCurrentUrl: TextView
     private lateinit var urlBar: View
     private lateinit var statusIndicator: View
     private lateinit var urlStatusDot: View
     private lateinit var btnCopyUrl: ImageButton
-    
-    // Flag to prevent recursive switch updates
-    private var isUpdatingSwitch = false
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,7 +107,6 @@ class MainActivity : AppCompatActivity() {
         
         initViews()
         setupNavigation(savedInstanceState)
-        setupAccessModeToggle()
         setupCopyButton()
         setupLogListener()
         observeViewModels()
@@ -382,15 +383,17 @@ class MainActivity : AppCompatActivity() {
      * Schedule periodic update checks (every 6 hours).
      */
     private fun schedulePeriodicUpdateCheck() {
-        val handler = android.os.Handler(android.os.Looper.getMainLooper())
         val sixHoursMs = 6 * 60 * 60 * 1000L
-        val checkRunnable = object : Runnable {
+        // Cancel any prior runnable (e.g. across activity recreate).
+        updateCheckRunnable?.let { mainHandler.removeCallbacks(it) }
+        val runnable = object : Runnable {
             override fun run() {
                 checkForAppUpdate()
-                handler.postDelayed(this, sixHoursMs)
+                mainHandler.postDelayed(this, sixHoursMs)
             }
         }
-        handler.postDelayed(checkRunnable, sixHoursMs)
+        updateCheckRunnable = runnable
+        mainHandler.postDelayed(runnable, sixHoursMs)
     }
 
     private fun performAppUpdate(updater: com.overdrive.app.updater.AppUpdater) {
@@ -645,133 +648,46 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun initViews() {
-        drawerLayout = findViewById(R.id.drawerLayout)
         toolbar = findViewById(R.id.toolbar)
-        navigationView = findViewById(R.id.navigationView)
-        switchAccessMode = findViewById(R.id.switchAccessMode)
-        tvAccessMode = findViewById(R.id.tvAccessMode)
+        navigationRail = findViewById(R.id.navigationRail)
         tvCurrentUrl = findViewById(R.id.tvCurrentUrl)
         urlBar = findViewById(R.id.urlBar)
         statusIndicator = findViewById(R.id.statusIndicator)
         urlStatusDot = findViewById(R.id.urlStatusDot)
         btnCopyUrl = findViewById(R.id.btnCopyUrl)
         
-        // Populate nav header with version and device ID
-        val headerView = navigationView.getHeaderView(0)
-        if (headerView != null) {
-            val tvVersion = headerView.findViewById<TextView>(R.id.tvVersion)
-            val tvDeviceId = headerView.findViewById<TextView>(R.id.tvDeviceId)
-            
-            // Set version (use channel version from updater if available)
-            val versionName = com.overdrive.app.updater.AppUpdater.getDisplayVersion(this)
-            tvVersion?.text = versionName
-            
-            // Set device ID
-            val deviceId = com.overdrive.app.util.DeviceIdGenerator.generateDeviceId(this)
-            tvDeviceId?.text = deviceId
-        }
+        // Brand version + device id used to live in the drawer header; in the
+        // rail-based shell they're surfaced on the Dashboard card instead.
     }
     
     private fun setupNavigation(savedInstanceState: Bundle?) {
-        // Setup toolbar
         setSupportActionBar(toolbar)
-        
-        // Get NavController from NavHostFragment
+
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as NavHostFragment
         navController = navHostFragment.navController
-        
-        // Define top-level destinations (no back button)
-        appBarConfiguration = AppBarConfiguration(
-            setOf(R.id.dashboardFragment, R.id.daemonsFragment, 
-                  R.id.recordingFragment, R.id.adbConsoleFragment),
-            drawerLayout
-        )
-        
-        // Setup toolbar with navigation
-        toolbar.setupWithNavController(navController, appBarConfiguration)
-        
-        // Setup navigation view with nav controller
-        navigationView.setupWithNavController(navController)
-        
-        // Handle non-navigation menu items (like "Check for Updates")
-        navigationView.setNavigationItemSelectedListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.nav_check_update -> {
-                    drawerLayout.closeDrawers()
-                    checkForAppUpdateManual()
-                    true
-                }
-                R.id.nav_traffic_monitor -> {
-                    drawerLayout.closeDrawers()
-                    onTrafficMonitorClicked()
-                    true
-                }
-                R.id.nav_reconfigure_camera -> {
-                    drawerLayout.closeDrawers()
-                    onReconfigureCameraClicked()
-                    true
-                }
-                R.id.nav_battery_health -> {
-                    drawerLayout.closeDrawers()
-                    showBatteryHealthDialog()
-                    true
-                }
-                R.id.nav_reset_data -> {
-                    drawerLayout.closeDrawers()
-                    showResetDataDialog()
-                    true
-                }
-                else -> {
-                    // Let NavController handle navigation items
-                    val handled = androidx.navigation.ui.NavigationUI.onNavDestinationSelected(menuItem, navController)
-                    if (handled) drawerLayout.closeDrawers()
-                    handled
-                }
-            }
-        }
-        
-        // Check traffic monitor status when drawer opens
-        drawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
-            override fun onDrawerOpened(drawerView: View) {
-                checkTrafficMonitorStatus()
-                updateCameraProbeMenuItem()
-                refreshLanguageFooter()
-            }
-            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
-            override fun onDrawerClosed(drawerView: View) {}
-            override fun onDrawerStateChanged(newState: Int) {}
-        })
 
-        // Pinned language footer at the bottom of the drawer.
-        findViewById<View>(R.id.drawerLanguageFooter)?.setOnClickListener {
-            drawerLayout.closeDrawers()
+        // Top-level destinations on the rail — no back arrow on these.
+        appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.dashboardFragment,
+                R.id.liveViewFragment,
+                R.id.recordingsFragment,
+                R.id.vehicleControlFragment,
+                R.id.tripsFragment,
+                R.id.integrationsFragment,
+                R.id.diagnosticsFragment,
+                R.id.settingsFragment
+            )
+        )
+
+        toolbar.setupWithNavController(navController, appBarConfiguration)
+        navigationRail.setupWithNavController(navController)
+
+        // Wire the brand-mark / language button on the rail header.
+        navigationRail.headerView?.findViewById<View>(R.id.railLanguageButton)?.setOnClickListener {
             com.overdrive.app.ui.dialog.LanguagePickerDialog.show(this) {
-                // Recreate so AppCompat reapplies the new locale to the entire
-                // activity tree (toolbar title, all visible Fragments, drawer).
                 recreate()
-            }
-        }
-        refreshLanguageFooter()
-        
-        // Add LogsPanelFragment if not already added
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.logsPanelContainer, com.overdrive.app.ui.fragment.LogsPanelFragment())
-                .commit()
-        }
-    }
-    
-    private fun setupAccessModeToggle() {
-        switchAccessMode.setOnCheckedChangeListener { _, isChecked ->
-            if (!isUpdatingSwitch) {
-                val mode = if (isChecked) AccessMode.PUBLIC else AccessMode.PRIVATE
-                mainViewModel.setAccessMode(mode)
-                logsViewModel.info("App", "Access mode changed to ${mode.name}")
-                
-                // Handle cloudflared based on mode using startup manager
-                daemonStartupManager.onAccessModeChanged(mode)
-                updateUrlDisplay()
             }
         }
     }
@@ -805,17 +721,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun observeViewModels() {
-        // Observe access mode changes
-        mainViewModel.accessMode.observe(this) { mode ->
-            // Update switch without triggering listener
-            isUpdatingSwitch = true
-            switchAccessMode.isChecked = mode == AccessMode.PUBLIC
-            isUpdatingSwitch = false
-            
-            tvAccessMode.text = mode.name
-            updateUrlDisplay()
-        }
-        
         // Observe tunnel URL from cloudflared controller
         daemonsViewModel.cloudflaredController.tunnelUrl.observe(this) { url ->
             mainViewModel.setTunnelUrl(url)
@@ -862,7 +767,6 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun updateUrlDisplay() {
-        val accessMode = mainViewModel.accessMode.value ?: AccessMode.PRIVATE
         // Check both tunnel URLs - prefer zrok if available
         val zrokUrl = daemonsViewModel.zrokController.tunnelUrl.value
         val cloudflaredUrl = daemonsViewModel.cloudflaredController.tunnelUrl.value
@@ -908,41 +812,21 @@ class MainActivity : AppCompatActivity() {
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
     
+    @Deprecated("Default back behavior is handled by NavController + the activity")
     override fun onBackPressed() {
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START)
-        } else {
-            super.onBackPressed()
-        }
+        @Suppress("DEPRECATION")
+        super.onBackPressed()
     }
     
     // ==================== Camera Reconfiguration ====================
     
     /**
-     * Update the "Reconfigure Camera" menu item to show current probe status.
-     * Called when the drawer opens.
+     * No-op since the rail shell doesn't have a drawer-side menu item to
+     * retitle — Camera probe status is shown inside the dialog itself.
      */
-    private fun updateCameraProbeMenuItem() {
-        val menuItem = navigationView.menu.findItem(R.id.nav_reconfigure_camera) ?: return
-        
-        try {
-            val config = com.overdrive.app.config.UnifiedConfigManager.loadConfig()
-            val cameraConfig = config.optJSONObject("camera")
-            val savedId = cameraConfig?.optInt("probedCameraId", -1) ?: -1
-            val savedMode = cameraConfig?.optInt("probedSurfaceMode", -1) ?: -1
-            val isManual = cameraConfig?.optBoolean("manualOverride", false) ?: false
-            
-            if (savedId >= 0 && savedMode >= 0) {
-                val mode = if (isManual) "Manual" else "Auto"
-                menuItem.title = "Camera: ID $savedId ($mode)"
-            } else {
-                menuItem.title = "Camera: Auto (detecting...)"
-            }
-        } catch (e: Exception) {
-            menuItem.title = "Camera Selection"
-        }
-    }
-    
+    private fun updateCameraProbeMenuItem() { /* intentionally empty */ }
+
+
     /**
      * Handle "Reconfigure Camera" menu item click.
      * Shows a styled dialog to manually select camera ID or use auto-detection.
@@ -978,7 +862,7 @@ class MainActivity : AppCompatActivity() {
         val currentSelection = if (isManual && currentId >= 0) currentId + 1 else 0
         radioGroup.check(radioIds[currentSelection])
         
-        val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_Overdrive_Dialog)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
             .setView(dialogView)
             .setNegativeButton(getString(R.string.dialog_close), null)
             .create()
@@ -1203,7 +1087,7 @@ class MainActivity : AppCompatActivity() {
                     sohView.setTextColor(resources.getColor(colorRes, null))
                 }
                 
-                val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_Overdrive_Dialog)
+                val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
                     .setView(dialogView)
                     .setPositiveButton(getString(R.string.dialog_close), null)
                     .create()
@@ -1223,7 +1107,7 @@ class MainActivity : AppCompatActivity() {
      * Confirmation dialog before resetting SOH estimation.
      */
     private fun confirmSohReset() {
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
             .setTitle(getString(R.string.dialog_reset_soh_title))
             .setMessage(getString(R.string.dialog_reset_soh_message))
             .setPositiveButton(getString(R.string.dialog_reset)) { _, _ ->
@@ -1297,7 +1181,7 @@ class MainActivity : AppCompatActivity() {
                 dialogView.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(id) to cat
             }
 
-        val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_Overdrive_Dialog)
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
             .setView(dialogView)
             .setPositiveButton(getString(R.string.dialog_reset_selected), null)  // Wired below to allow keep-open on validate
             .setNegativeButton(getString(R.string.action_cancel), null)
@@ -1343,7 +1227,7 @@ class MainActivity : AppCompatActivity() {
             "mediaTrips" to getString(R.string.reset_label_trip_files)
         )
         val list = categories.joinToString("\n") { "• " + (labels[it] ?: it) }
-        android.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
             .setTitle(getString(R.string.dialog_reset_following_title))
             .setMessage(getString(R.string.dialog_reset_following_message, list))
             .setPositiveButton(getString(R.string.dialog_reset)) { _, _ -> performReset(categories, labels) }
@@ -1395,7 +1279,7 @@ class MainActivity : AppCompatActivity() {
                                 lines.append("✗ ").append(label).append(": ").append(err).append("\n")
                             }
                         }
-                        android.app.AlertDialog.Builder(this)
+                        com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
                             .setTitle(getString(R.string.dialog_reset_complete_title))
                             .setMessage(lines.toString().trim())
                             .setPositiveButton(getString(R.string.dialog_ok), null)
@@ -1462,24 +1346,14 @@ class MainActivity : AppCompatActivity() {
         )
     }
     
-    private fun refreshLanguageFooter() {
-        val tv = findViewById<TextView>(R.id.tvDrawerLanguageCurrent) ?: return
-        tv.text = com.overdrive.app.ui.dialog.LanguagePickerDialog.currentLabel(this)
-    }
-
-    private fun updateTrafficMonitorMenuItem(enabled: Boolean) {
-        val menuItem = navigationView.menu.findItem(R.id.nav_traffic_monitor)
-        if (enabled) {
-            menuItem?.title = getString(R.string.traffic_monitor_enabled_title)
-        } else {
-            menuItem?.title = getString(R.string.traffic_monitor_disabled_title)
-        }
-    }
-    
-    private fun updateTrafficMonitorMenuItemText(text: String) {
-        val menuItem = navigationView.menu.findItem(R.id.nav_traffic_monitor)
-        menuItem?.title = text
-    }
+    /**
+     * Drawer-era helpers — kept as no-ops because checkTrafficMonitorStatus()
+     * still calls them, and we want behavior parity (the status check still
+     * runs; it just doesn't have a drawer menu item to retitle anymore).
+     * Settings → Diagnostics shows the traffic monitor in dialog form.
+     */
+    private fun updateTrafficMonitorMenuItem(enabled: Boolean) { /* no-op in rail shell */ }
+    private fun updateTrafficMonitorMenuItemText(text: String) { /* no-op in rail shell */ }
     
     /**
      * Handle traffic monitor menu item click.
@@ -1493,7 +1367,7 @@ class MainActivity : AppCompatActivity() {
             // ADB not connected — retry the check and show explanation
             checkTrafficMonitorStatus()
             
-            android.app.AlertDialog.Builder(this)
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
                 .setTitle(getString(R.string.dialog_traffic_cannot_check_title))
                 .setMessage(getString(R.string.dialog_traffic_cannot_check_message))
                 .setPositiveButton(getString(R.string.dialog_ok), null)
@@ -1503,7 +1377,7 @@ class MainActivity : AppCompatActivity() {
 
         if (currentlyEnabled) {
             // Currently enabled — offer to disable with full explanation
-            android.app.AlertDialog.Builder(this)
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
                 .setTitle(getString(R.string.dialog_traffic_disable_title))
                 .setMessage(getString(R.string.dialog_traffic_disable_message))
                 .setPositiveButton(getString(R.string.dialog_disable)) { _, _ ->
@@ -1513,7 +1387,7 @@ class MainActivity : AppCompatActivity() {
                 .show()
         } else {
             // Currently disabled — offer to re-enable
-            android.app.AlertDialog.Builder(this)
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_Overdrive_M3_Dialog)
                 .setTitle(getString(R.string.dialog_traffic_enable_title))
                 .setMessage(getString(R.string.dialog_traffic_enable_message))
                 .setPositiveButton(getString(R.string.dialog_enable)) { _, _ ->
@@ -1552,7 +1426,7 @@ class MainActivity : AppCompatActivity() {
                     logsViewModel.info("TrafficMonitor", "BYD Traffic Monitor $state")
                     
                     // Show reboot reminder
-                    android.app.AlertDialog.Builder(this@MainActivity)
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity, R.style.Theme_Overdrive_M3_Dialog)
                         .setTitle(getString(R.string.dialog_traffic_status_title, state.replaceFirstChar { it.uppercase() }))
                         .setMessage(getString(R.string.dialog_traffic_reboot_message))
                         .setPositiveButton(getString(R.string.dialog_ok), null)
@@ -1574,8 +1448,27 @@ class MainActivity : AppCompatActivity() {
         LogManager.setLogListener(null)
         // Remove ADB auth callback
         com.overdrive.app.launcher.AdbShellExecutor.setAuthCallback(null)
+        // Cancel the periodic update check so the Runnable doesn't leak the
+        // activity reference after recreate.
+        updateCheckRunnable?.let { mainHandler.removeCallbacks(it) }
+        updateCheckRunnable = null
         // Note: We intentionally do NOT call cleanupAll() here
         // Daemons should persist after app closure
         super.onDestroy()
+    }
+
+    // ==========================================================
+    //  Public shims invoked by SettingsFragment / DiagnosticsFragment
+    //  Behaviour identical to the old drawer items — no logic change.
+    // ==========================================================
+
+    fun invokeCheckForUpdates() = checkForAppUpdateManual()
+    fun invokeResetDataDialog() = showResetDataDialog()
+    fun invokeBatteryHealthAction() = showBatteryHealthDialog()
+    fun invokeReconfigureCameraAction() = onReconfigureCameraClicked()
+    fun invokeTrafficMonitorAction() {
+        // Match drawer-open behavior: refresh status before showing dialog.
+        checkTrafficMonitorStatus()
+        onTrafficMonitorClicked()
     }
 }

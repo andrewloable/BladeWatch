@@ -504,6 +504,27 @@ object UnifiedConfigManager {
     fun setVehicle(vehicle: JSONObject): Boolean {
         return updateSection("vehicle", vehicle)
     }
+
+    /**
+     * Web-shell appearance preference (theme picker shipped in the WebView
+     * pages). Stored separately from the Android-shell theme so a
+     * Telegram-bot user accessing the tunnel can pick their own preference
+     * without touching the Android side. Default: "dark".
+     *
+     * Schema:
+     *   { "theme": "dark" | "light" | "auto" }
+     */
+    @JvmStatic
+    fun getAppearance(): JSONObject {
+        return loadConfig().optJSONObject("appearance") ?: JSONObject().apply {
+            put("theme", "dark")
+        }
+    }
+
+    @JvmStatic
+    fun setAppearance(appearance: JSONObject): Boolean {
+        return updateSection("appearance", appearance)
+    }
     
     /**
      * Update a specific section of the config.

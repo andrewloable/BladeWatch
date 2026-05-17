@@ -1,6 +1,7 @@
 package com.overdrive.app.ui.fragment
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -37,17 +38,92 @@ class WebViewFragment : Fragment() {
         private const val KEY_SAVED_URL = "saved_url"
         
         /**
-         * JavaScript injected after page load.
-         * 1. Hides sidebar (app drawer handles navigation)
-         * 2. Replaces window.fetch() with a version that routes ALL localhost
-         *    requests through AndroidBridge.httpRequest() — bypassing the
-         *    system proxy entirely. External URLs use original fetch.
+         * JavaScript injected after each page load.
+         *
+         *   1. Tags <html data-app-shell="1"> so the page CSS can opt into
+         *      app-shell-only tweaks via that attribute selector — cleaner
+         *      than scattering Android-specific overrides across pages.
+         *   2. Hides the in-page sidebar / mobile header / fullscreen
+         *      button — the Android shell already provides a navigation rail
+         *      and top app bar, so the page-internal navigation is redundant
+         *      and creates the overlap the user reports on Live View.
+         *   3. Repositions the Map ↔ Cameras mini-preview toggle to the
+         *      bottom-right (default top-left collides with the camera-top-bar
+         *      pill in landscape windowed mode).
+         *   4. Patches window.fetch() to route POST/PUT/DELETE through
+         *      AndroidBridge.httpRequest() so writes bypass sing-box proxy.
+         *      GET requests go through the normal WebView path so polling
+         *      doesn't block the JS thread.
          */
         private const val INJECT_JS = """
 (function() {
-    // Hide sidebar
+    document.documentElement.setAttribute('data-app-shell', '1');
+
+    var css = [
+        // === Global: hide page-internal navigation. The Android shell already
+        //     provides the nav rail + top app bar, so the in-page sidebar,
+        //     mobile header, and floating mini-preview tab switcher are all
+        //     redundant and visually noisy. ===
+        '.sidebar, .sidebar-overlay, .mobile-header { display: none !important; }',
+        '.main-content { margin-left: 0 !important; padding-top: 0 !important; }',
+        '.pip-container, .pip-toggle-btn, #pipToggleBtn, #pipContainer { display: none !important; }',
+        '.toast-container { z-index: 20000 !important; bottom: 70px !important; }',
+        '.page-header { padding-top: 12px !important; }',
+        '.page-body { padding-bottom: 80px !important; }',
+        '.footer-bar { bottom: 0 !important; left: 0 !important; right: 0 !important;',
+        '              padding: 12px 16px !important; padding-bottom: 12px !important;',
+        '              z-index: 10000 !important; }',
+
+        // === Live View (index.html) tweaks ===
+        // The mini-preview is the only Map ↔ Cameras toggle on this page,
+        // so we MUST keep it visible — but its default top: 80px / left:
+        // 24px lands underneath the camera-top-bar pill at narrow widths.
+        // Move it to the top-right corner clear of everything else.
+        '[data-app-shell="1"] .mini-preview { top: auto !important; left: auto !important;',
+        '   bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;',
+        '   right: 20px !important; width: 64px !important; height: 64px !important;',
+        '   z-index: 60 !important; }',
+        '[data-app-shell="1"] .mini-preview-content svg { width: 22px !important; height: 22px !important; }',
+        '[data-app-shell="1"] .mini-preview-label { font-size: 9px !important; padding: 3px 0 !important; }',
+        // Hide the in-page fullscreen button — the WebView already fills
+        // the destination and the button's request would be denied here.
+        '[data-app-shell="1"] .top-bar-btn { display: none !important; }',
+        // Pull the absolute-positioned camera top bar in by a hair so the
+        // connection-status pill and quality dropdown breathe at narrow
+        // landscape widths (head-unit windowed mode, ~600-900px wide).
+        '[data-app-shell="1"] .camera-top-bar { padding: 12px 14px !important; gap: 8px; }',
+        '[data-app-shell="1"] .camera-top-bar .top-bar-left,',
+        '[data-app-shell="1"] .camera-top-bar .top-bar-right { min-width: 0; flex-wrap: nowrap; }',
+        '[data-app-shell="1"] .quality-select-sota { min-width: 96px; max-width: 140px; }',
+        // Map overlay buttons (My Location / Directions) — keep them clear
+        // of the top-bar pill. The default top: 16px lands underneath the
+        // pill on narrow viewports.
+        '[data-app-shell="1"] #panelMap .map-overlay-actions { top: 14px !important; right: 14px !important; gap: 10px !important; }',
+        '[data-app-shell="1"] .btn-map-float { width: 44px !important; height: 44px !important; }',
+        '[data-app-shell="1"] .btn-map-float svg { width: 20px !important; height: 20px !important; }',
+        // Camera hotspot labels — clamp width and slightly shrink the
+        // negative offsets so labels don't clip the .seamless-camera-view
+        // when the WebView is in landscape windowed mode.
+        '[data-app-shell="1"] .cam-hotspot .hotspot-label {',
+        '   max-width: 64px; white-space: nowrap; overflow: hidden;',
+        '   text-overflow: ellipsis; padding: 3px 7px; font-size: 9px; }',
+        '[data-app-shell="1"] .cam-hotspot[data-cam="4"] .hotspot-label { left: -34px !important; }',
+        '[data-app-shell="1"] .cam-hotspot[data-cam="2"] .hotspot-label { right: -34px !important; }',
+
+        // === Page-specific carry-overs (kept from previous behaviour) ===
+        '#safeLocMap { z-index: 1 !important; position: relative !important; overflow: hidden !important; }',
+        '#safeLocMap .leaflet-pane { z-index: 1 !important; }',
+        '#safeLocMap .leaflet-control-container { z-index: 10 !important; }',
+        '#roiCanvasContainer { position: relative !important; width: 100% !important;',
+        '                      height: 200px !important; padding-bottom: 0 !important;',
+        '                      overflow: hidden !important; z-index: 0 !important; }',
+        '#roiCanvas { position: absolute !important; top: 0 !important; left: 0 !important;',
+        '             width: 100% !important; height: 100% !important;',
+        '             max-width: 100% !important; max-height: 200px !important; }'
+    ].join(' ');
+
     var s = document.createElement('style');
-    s.textContent = '.sidebar, .sidebar-overlay, .mobile-header { display: none !important; } .main-content { margin-left: 0 !important; padding-top: 0 !important; } .pip-container, .pip-toggle-btn, #pipToggleBtn, #pipContainer { display: none !important; } .footer-bar { bottom: 0 !important; left: 0 !important; right: 0 !important; padding: 12px 16px !important; padding-bottom: 12px !important; z-index: 10000 !important; } .page-body { padding-bottom: 80px !important; } #safeLocMap { z-index: 1 !important; position: relative !important; overflow: hidden !important; } #safeLocMap .leaflet-pane { z-index: 1 !important; } #safeLocMap .leaflet-control-container { z-index: 10 !important; } #roiCanvasContainer { position: relative !important; width: 100% !important; height: 200px !important; padding-bottom: 0 !important; overflow: hidden !important; z-index: 0 !important; } #roiCanvas { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; max-width: 100% !important; max-height: 200px !important; } .page-header { padding-top: 12px !important; } .toast-container { z-index: 20000 !important; bottom: 70px !important; }';
+    s.textContent = css;
     document.head.appendChild(s);
 
     // Replace fetch() to bypass sing-box proxy for localhost
@@ -175,7 +251,9 @@ class WebViewFragment : Fragment() {
             settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
             settings.loadWithOverviewMode = true
             settings.useWideViewPort = true
-            setBackgroundColor(android.graphics.Color.parseColor("#0a0a0f"))
+            // Resolve background color from the active theme so the WebView's
+            // outer chrome flips with light/dark mode.
+            setBackgroundColor(resolveThemeBackground())
             // Enable hardware acceleration for video playback
             setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
@@ -364,6 +442,10 @@ class WebViewFragment : Fragment() {
                     super.onPageFinished(view, url)
                     if (!pageLoadFailed) {
                         showContent()
+                        // Theme: tag <html data-theme="…"> BEFORE INJECT_JS so any
+                        // CSS that depends on the variable values uses the right
+                        // values on first paint.
+                        view?.evaluateJavascript(buildThemeInjectJs(), null)
                         // Hide sidebar (app drawer handles navigation) and
                         // patch fetch() to bypass proxy for ALL localhost calls
                         view?.evaluateJavascript(INJECT_JS, null)
@@ -397,8 +479,11 @@ class WebViewFragment : Fragment() {
                                 if (filter != null) putString("filter", filter)
                                 if (file != null) putString("file", file)
                             }
+                            // Route web-side "events" links to the unified Recordings page.
+                            // RecordingsFragment hosts RecordingLibraryFragment and will pick
+                            // up the `filter` / `file` arguments through saved-state if needed.
                             androidx.navigation.fragment.NavHostFragment.findNavController(this@WebViewFragment)
-                                .navigate(R.id.eventsFragment, bundle)
+                                .navigate(R.id.recordingsFragment, bundle)
                         } catch (e: Exception) {
                             android.util.Log.e("WebView", "Failed to navigate to events: ${e.message}")
                         }
@@ -480,7 +565,26 @@ class WebViewFragment : Fragment() {
      * This is synchronous — called from JS via AndroidBridge.httpRequest().
      */
     inner class ProxyBypassBridge {
-        
+
+        /**
+         * Expose the active app theme ("dark" / "light") so theme.js can
+         * stamp <html data-theme="…"> at script-include time, BEFORE any
+         * stylesheet evaluates. Without this the page paints once with the
+         * default-dark palette and then re-paints when onPageFinished
+         * injects the theme — visible flash on light-mode devices.
+         *
+         * Reads UI_MODE_NIGHT_MASK so it tracks the same source the rest of
+         * the Android shell uses (PreferencesManager.setThemeMode →
+         * AppCompatDelegate.setDefaultNightMode → activity Configuration).
+         */
+        @android.webkit.JavascriptInterface
+        fun getAppTheme(): String {
+            val ctx = context ?: return "dark"
+            val isNight = (ctx.resources.configuration.uiMode and
+                Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            return if (isNight) "dark" else "light"
+        }
+
         @android.webkit.JavascriptInterface
         fun httpRequest(urlStr: String, method: String, body: String, headers: String): String {
             var conn: java.net.HttpURLConnection? = null
@@ -658,6 +762,47 @@ class WebViewFragment : Fragment() {
         super.onResume()
         webView?.onResume()
         if (pageLoadFailed) retryLoad()
+        // Re-apply theme on resume so a user toggle while the page was
+        // backgrounded is reflected without requiring a full reload.
+        webView?.let { it.evaluateJavascript(buildThemeInjectJs(), null) }
+    }
+
+    /**
+     * Resolve the active theme's `colorBackground` so the WebView's outer
+     * chrome (visible during page loads or where the page itself is
+     * transparent) matches whatever light/dark mode the activity is in.
+     */
+    private fun resolveThemeBackground(): Int {
+        val tv = android.util.TypedValue()
+        return if (requireContext().theme.resolveAttribute(
+                android.R.attr.colorBackground, tv, true
+            )
+        ) tv.data else android.graphics.Color.BLACK
+    }
+
+    /**
+     * Build the JS snippet that tags <html data-theme="dark|light"> based on
+     * the current activity night-mode configuration. Called both on every
+     * page-finished and on resume so theme switches propagate without a reload.
+     */
+    private fun buildThemeInjectJs(): String {
+        val isNight = (resources.configuration.uiMode and
+            Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val theme = if (isNight) "dark" else "light"
+        return "document.documentElement.setAttribute('data-theme','$theme');"
+    }
+
+    /**
+     * Apply a theme to this WebView immediately. The Settings theme picker
+     * calls this on every visible WebView fragment so the switch is instant
+     * (no activity recreate, no page reload).
+     */
+    fun applyTheme(theme: String) {
+        val safe = if (theme == "light") "light" else "dark"
+        webView?.evaluateJavascript(
+            "document.documentElement.setAttribute('data-theme','$safe');",
+            null
+        )
     }
 
     override fun onPause() {

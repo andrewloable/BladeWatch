@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#00E5FF">
+    <script src="../shared/theme.js?v=2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -84,14 +85,14 @@
             margin-left: 4px;
             padding: 2px;
             border-radius: 50%;
-            background: rgba(0,0,0,0.2);
+            background: var(--panel-overlay-bg-faint);
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
         .clear-date-btn:hover {
-            background: rgba(0,0,0,0.4);
+            background: var(--panel-overlay-bg-soft);
         }
         
         /* Calendar Popup */
@@ -101,7 +102,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
+            background: var(--panel-overlay-bg-deep);
             z-index: 500;
             display: none;
             align-items: flex-end;
@@ -514,7 +515,7 @@
             position: absolute;
             width: 36px;
             height: 36px;
-            background: rgba(0, 0, 0, 0.6);
+            background: var(--panel-overlay-bg-deep);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -531,7 +532,7 @@
             position: absolute;
             bottom: 4px;
             right: 4px;
-            background: rgba(0, 0, 0, 0.75);
+            background: var(--modal-backdrop);
             color: white;
             font-size: 10px;
             font-weight: 600;
@@ -650,7 +651,7 @@
         }
         .actor-summary .pill {
             background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid var(--border-subtle);
             padding: 1px 6px;
             border-radius: 999px;
             font-size: 10px;
@@ -709,7 +710,7 @@
             white-space: nowrap;
         }
         .filter-chip.active {
-            background: rgba(255,255,255,0.08);
+            background: var(--bg-hover);
             color: var(--text-primary, #fff);
             border-color: rgba(255,255,255,0.25);
         }
@@ -826,7 +827,7 @@
         .video-modal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: var(--modal-backdrop);
             z-index: 1000;
             display: none;
             align-items: center;
@@ -996,7 +997,7 @@
             position: relative;
             width: 100%;
             height: 12px;
-            background: #1a1a2e;
+            background: var(--bg-elevated);
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
@@ -1053,7 +1054,7 @@
             display: flex;
             gap: 12px;
             padding: 4px 8px;
-            background: #1a1a2e;
+            background: var(--bg-elevated);
             justify-content: center;
         }
         
@@ -1192,7 +1193,7 @@
                     </div>
                     <div class="brand-text">
                         <span class="brand-name" data-i18n="app.name">OverDrive</span>
-                        <span class="brand-tagline" data-i18n="app.tagline">Sentry System</span>
+                        <span class="brand-tagline" data-i18n="app.tagline">Surveillance System</span>
                         <span class="brand-version" id="appVersion"></span>
                     </div>
                 </div>
@@ -1302,7 +1303,7 @@
                         <span class="status-value" id="batteryValue">--</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label" data-i18n="status.sentry">Sentry</span>
+                        <span class="status-label" data-i18n="status.sentry">Surveillance</span>
                         <span class="status-value" id="survStatus" data-i18n="status.off">OFF</span>
                     </div>
                     <div class="status-row">
@@ -1408,7 +1409,7 @@
                 <!-- Fuel Card (PHEV only — hidden for BEVs) -->
                 <div class="status-card fuel-card" id="fuelCard" style="display:none;">
                     <div class="fuel-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:#F59E0B;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--warning);">
                             <path d="M3 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
                             <path d="M3 22h10"/>
                             <path d="M13 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6"/>

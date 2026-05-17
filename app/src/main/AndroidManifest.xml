@@ -202,7 +202,7 @@
         android:allowBackup="true"
         android:label="@string/app_name"
         android:extractNativeLibs="true"
-        android:theme="@style/Theme.Overdrive"
+        android:theme="@style/Theme.Overdrive.M3"
         android:icon="@mipmap/ic_launcher_foreground"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:requestLegacyExternalStorage="true"

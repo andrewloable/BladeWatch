@@ -107,8 +107,32 @@
         if (link) link.style.opacity = '0.6';
         toast(BYD.i18n.t('update.checking'), 'info');
 
-        fetch('/api/update/check').then(function (r) { return r.json(); }).then(function (res) {
+        // Defensive: parse body as text first so we can surface a useful
+        // error when the server returns an empty body (the previous "JSON
+        // parse: unexpected end of data" crash) or non-JSON content. The
+        // common cause is a 20s update-check that hits an upstream
+        // exception and is swallowed by the HTTP loop's outer catch — the
+        // socket closes with no body. We treat that as a generic "check
+        // failed" and surface it cleanly instead of crashing the toast.
+        fetch('/api/update/check').then(function (r) {
+            return r.text().then(function (text) {
+                return { status: r.status, ok: r.ok, body: text };
+            });
+        }).then(function (resp) {
             if (link) link.style.opacity = '';
+            var res;
+            try {
+                res = resp.body ? JSON.parse(resp.body) : null;
+            } catch (e) {
+                res = null;
+            }
+            if (!res) {
+                var hint = !resp.body
+                    ? BYD.i18n.t('errors.network')
+                    : ('HTTP ' + resp.status);
+                toast(BYD.i18n.t('update.check_failed', {error: hint}), 'error');
+                return;
+            }
             if (res.error) {
                 toast(BYD.i18n.t('update.check_failed', {error: res.error}), 'error');
                 return;
@@ -118,7 +142,12 @@
                 return;
             }
             // Update available — fetch preview metadata + show modal.
-            fetch('/api/update/preview').then(function (r) { return r.json(); }).then(function (preview) {
+            // Same defensive body parse on the preview endpoint.
+            fetch('/api/update/preview').then(function (r) {
+                return r.text().then(function (text) { return text; });
+            }).then(function (text) {
+                var preview = null;
+                try { preview = text ? JSON.parse(text) : null; } catch (e) {}
                 showConfirmModal(res, preview || {});
             }).catch(function () {
                 showConfirmModal(res, {});

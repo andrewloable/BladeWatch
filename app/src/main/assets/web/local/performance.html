@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title data-i18n="app.performance_title">Performance - OverDrive</title>
     <link rel="icon" type="image/webp" href="../shared/app-icon.webp">
+    <script src="../shared/theme.js?v=2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -328,7 +329,7 @@
         .time-btn.active {
             color: var(--brand-primary);
             background: var(--bg-surface);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 3px var(--panel-overlay-bg-faint);
         }
         
         /* Responsive */
@@ -473,7 +474,7 @@
                     <div class="brand-logo"><img src="../shared/app-icon.webp" alt="OverDrive"></div>
                     <div class="brand-text">
                         <span class="brand-name" data-i18n="app.name">OverDrive</span>
-                        <span class="brand-tagline" data-i18n="app.tagline">Sentry System</span>
+                        <span class="brand-tagline" data-i18n="app.tagline">Surveillance System</span>
                         <span class="brand-version" id="appVersion"></span>
                     </div>
                 </div>
@@ -577,7 +578,7 @@
                         <span class="status-value" id="batteryValue">--</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label" data-i18n="status.sentry">Sentry</span>
+                        <span class="status-label" data-i18n="status.sentry">Surveillance</span>
                         <span class="status-value" id="survStatus" data-i18n="status.off">OFF</span>
                     </div>
                     <div class="status-row">
@@ -683,7 +684,7 @@
                 <!-- Fuel Card (PHEV only — hidden for BEVs) -->
                 <div class="status-card fuel-card" id="fuelCard" style="display:none;">
                     <div class="fuel-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:#F59E0B;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px;color:var(--warning);">
                             <path d="M3 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
                             <path d="M3 22h10"/>
                             <path d="M13 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6"/>
@@ -762,7 +763,7 @@
                 <div class="chart-card soc-chart-card" id="voltageChartCard">
                     <div class="chart-header">
                         <div class="chart-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;margin-right:8px;stroke:#fbbf24;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;margin-right:8px;stroke:var(--chart-warning);">
                                 <rect x="6" y="7" width="12" height="10" rx="1"/><path d="M6 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/>
                             </svg>
                             <span data-i18n="performance.batt12v_history">12V Battery History</span>
@@ -784,7 +785,7 @@
                     </div>
                     <div class="chart-hint" data-i18n="performance.chart_hint">Touch or hover to see values</div>
                     <div class="chart-legend" style="margin-top:8px;justify-content:center;">
-                        <div class="legend-item"><span class="legend-dot" style="background:#fbbf24;"></span><span data-i18n="performance.legend_12v">12V Voltage</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:var(--chart-warning);"></span><span data-i18n="performance.legend_12v">12V Voltage</span></div>
                         <div class="legend-item"><span class="legend-dot" style="background:rgba(239,68,68,0.5);"></span><span data-i18n="performance.legend_warn_115">Warning (11.5V)</span></div>
                         <div class="legend-item"><span class="legend-dot" style="background:rgba(14,165,233,0.3);"></span><span data-i18n="abrp.charging">Charging</span></div>
                     </div>
@@ -794,7 +795,7 @@
                 <div class="chart-card soc-chart-card" id="batteryHealthCard">
                     <div class="chart-header">
                         <div class="chart-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;margin-right:8px;stroke:#a855f7;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;margin-right:8px;stroke:var(--chart-soh);">
                                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                             </svg>
                             <span data-i18n="performance.battery_health">Battery Health</span>
@@ -806,7 +807,7 @@
                         </div>
                     </div>
                     <div class="soc-stats-row">
-                        <div class="soc-stat"><span class="soc-stat-value" id="sohValue" style="color:#a855f7;">--%</span><span class="soc-stat-label" data-i18n="performance.label_soh">SOH</span></div>
+                        <div class="soc-stat"><span class="soc-stat-value" id="sohValue" style="color:var(--chart-soh);">--%</span><span class="soc-stat-label" data-i18n="performance.label_soh">SOH</span></div>
                         <div class="soc-stat"><span class="soc-stat-value" id="estCapacity">-- kWh</span><span class="soc-stat-label" data-i18n="performance.label_est_cap">Est. Cap</span></div>
                         <div class="soc-stat"><span class="soc-stat-value" id="tempHighVal">--°C</span><span class="soc-stat-label" data-i18n="performance.label_temp_hi">Temp Hi</span></div>
                         <div class="soc-stat"><span class="soc-stat-value" id="tempLowVal">--°C</span><span class="soc-stat-label" data-i18n="performance.label_temp_lo">Temp Lo</span></div>
@@ -818,9 +819,9 @@
                     </div>
                     <div class="chart-hint" data-i18n="performance.chart_hint">Touch or hover to see values</div>
                     <div class="chart-legend" style="margin-top:8px;justify-content:center;">
-                        <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span><span data-i18n="performance.legend_high">High</span></div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span><span data-i18n="performance.legend_low">Low</span></div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span><span data-i18n="performance.legend_avg">Average</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:var(--danger);"></span><span data-i18n="performance.legend_high">High</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:var(--success);"></span><span data-i18n="performance.legend_low">Low</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:var(--chart-batt-3);"></span><span data-i18n="performance.legend_avg">Average</span></div>
                         <div class="legend-item"><span class="legend-dot" style="background:rgba(14,165,233,0.3);"></span><span data-i18n="abrp.charging">Charging</span></div>
                     </div>
                 </div>
@@ -829,7 +830,7 @@
                 <div class="chart-card" id="sohDetailCard" style="border: 1px solid rgba(168, 85, 247, 0.3); background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(168, 85, 247, 0.05) 100%);">
                     <div class="chart-header">
                         <div class="chart-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;margin-right:8px;stroke:#a855f7;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;margin-right:8px;stroke:var(--chart-soh);">
                                 <rect x="6" y="7" width="12" height="10" rx="1"/><path d="M6 10H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2"/><path d="M18 10h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2"/>
                                 <path d="M9 12.5L11 10.5 12 12 13 10.5 15 12.5"/>
                             </svg>
@@ -841,7 +842,7 @@
                     <!-- Active SOH + Source Selector -->
                     <div style="display:flex;align-items:center;gap:16px;margin:16px 0;">
                         <div style="text-align:center;min-width:100px;">
-                            <div id="sohDetailPercent" style="font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:700;color:#a855f7;line-height:1;">--%</div>
+                            <div id="sohDetailPercent" style="font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:700;color:var(--chart-soh);line-height:1;">--%</div>
                             <div style="font-size:12px;color:var(--text-muted);margin-top:4px;" data-i18n="performance.active_soh">Active SOH</div>
                             <div id="sohEmaValue" style="font-size:11px;color:var(--text-muted);margin-top:2px;" data-i18n="performance.ema_placeholder">EMA: --%</div>
                         </div>
