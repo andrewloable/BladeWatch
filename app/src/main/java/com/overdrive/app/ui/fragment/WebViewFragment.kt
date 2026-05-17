@@ -577,8 +577,60 @@ class WebViewFragment : Fragment() {
          * the Android shell uses (PreferencesManager.setThemeMode →
          * AppCompatDelegate.setDefaultNightMode → activity Configuration).
          */
+        /**
+         * Expose the active app locale (e.g. "en", "de", "zh-CN") so theme.js's
+         * sibling i18n bootstrap can stamp the right language at script-include
+         * time inside the Android WebView. The web-side picker is suppressed
+         * in-app — the app's Settings → Language panel is the source of truth.
+         * External tunnel/browser users get their own localStorage-backed
+         * picker via the lang-picker.js sheet.
+         *
+         * Reads LocaleManager.get() which is the same source the rest of the
+         * server uses (it's what /status reports as `locale`). On any error
+         * (e.g. very early boot before the file is written) returns "en" so
+         * the page still loads.
+         */
+        @android.webkit.JavascriptInterface
+        fun getAppLocale(): String {
+            return try {
+                com.overdrive.app.server.LocaleManager.get()
+            } catch (e: Exception) {
+                "en"
+            }
+        }
+
         @android.webkit.JavascriptInterface
         fun getAppTheme(): String {
+            // Source-of-truth ordering — try the strongest signal first:
+            //   1. PreferencesManager (the user's explicit pick: AUTO / NO / YES)
+            //      AUTO falls through to step 2.
+            //   2. AppCompatDelegate.getDefaultNightMode() — the active runtime
+            //      mode after setDefaultNightMode() is called. This is what
+            //      every Material widget actually uses, and stays correct
+            //      across activity recreates.
+            //   3. Configuration.uiMode — last-resort fallback for very early
+            //      paint moments where AppCompatDelegate hasn't propagated yet.
+            //
+            // The previous implementation only read step 3 which is the
+            // SYSTEM uiMode and ignored AppCompat overrides — picking Light
+            // in the app left this returning "dark" until the OS itself
+            // flipped, which is exactly the bug the user reported.
+            try {
+                val pref = com.overdrive.app.ui.util.PreferencesManager.getThemeMode()
+                when (pref) {
+                    androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO -> return "light"
+                    androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES -> return "dark"
+                }
+            } catch (ignored: Exception) {
+                // PreferencesManager not initialized (very early boot) —
+                // fall through to the next signal.
+            }
+            try {
+                val mode = androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode()
+                if (mode == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO) return "light"
+                if (mode == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES) return "dark"
+            } catch (ignored: Exception) { /* fall through */ }
+
             val ctx = context ?: return "dark"
             val isNight = (ctx.resources.configuration.uiMode and
                 Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -784,12 +836,33 @@ class WebViewFragment : Fragment() {
      * Build the JS snippet that tags <html data-theme="dark|light"> based on
      * the current activity night-mode configuration. Called both on every
      * page-finished and on resume so theme switches propagate without a reload.
+     *
+     * Reads PreferencesManager → AppCompatDelegate → resources.uiMode in that
+     * order so an explicit Light/Dark pick wins over the OS-level uiMode
+     * (which lags behind setDefaultNightMode for a frame or two and was the
+     * source of the "Light app, dark WebView" report).
      */
     private fun buildThemeInjectJs(): String {
+        val theme = resolveActiveTheme()
+        return "document.documentElement.setAttribute('data-theme','$theme');"
+    }
+
+    private fun resolveActiveTheme(): String {
+        try {
+            val pref = com.overdrive.app.ui.util.PreferencesManager.getThemeMode()
+            when (pref) {
+                androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO -> return "light"
+                androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES -> return "dark"
+            }
+        } catch (ignored: Exception) { /* fall through */ }
+        try {
+            val mode = androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode()
+            if (mode == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO) return "light"
+            if (mode == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES) return "dark"
+        } catch (ignored: Exception) { /* fall through */ }
         val isNight = (resources.configuration.uiMode and
             Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val theme = if (isNight) "dark" else "light"
-        return "document.documentElement.setAttribute('data-theme','$theme');"
+        return if (isNight) "dark" else "light"
     }
 
     /**
