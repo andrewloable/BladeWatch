@@ -512,12 +512,20 @@ object UnifiedConfigManager {
      * without touching the Android side. Default: "dark".
      *
      * Schema:
-     *   { "theme": "dark" | "light" | "auto" }
+     *   { "theme": "dark" | "light" | "auto",
+     *     "locale": "en" | "de" | … | "auto" }
+     *
+     * `locale` is stored here (not in LocaleManager) so the web-side
+     * language picker doesn't cross-pollinate the Android app's locale.
+     * Survives tunnel-URL changes (each new zrok session is a fresh
+     * origin, so localStorage alone is not enough). Default: "auto"
+     * (the runtime falls back to navigator.language).
      */
     @JvmStatic
     fun getAppearance(): JSONObject {
         return loadConfig().optJSONObject("appearance") ?: JSONObject().apply {
             put("theme", "dark")
+            put("locale", "auto")
         }
     }
 

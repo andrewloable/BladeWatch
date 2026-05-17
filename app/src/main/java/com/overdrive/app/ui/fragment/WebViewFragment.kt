@@ -878,6 +878,32 @@ class WebViewFragment : Fragment() {
         )
     }
 
+    /**
+     * Apply a locale to this WebView immediately. The Android language
+     * picker calls this on every visible WebView fragment so the switch is
+     * instant (the activity recreate that follows AppCompatDelegate.set
+     * ApplicationLocales would normally re-load the page, but on some
+     * head-unit configurations the recreate is skipped — e.g. when the
+     * fragment is offscreen — and the stale WebView keeps showing the
+     * previous language until the user manually navigates away and back).
+     *
+     * Calls BYD.i18n.setLang() in the loaded page, which refetches the
+     * catalog and re-hydrates every [data-i18n] node. Safe to call before
+     * the page has finished loading — the call is no-op'd until BYD is
+     * present.
+     */
+    fun applyLocale(lang: String) {
+        if (lang.isBlank()) return
+        // Sanitise to a JS string literal — only the BCP-47 alphabet is
+        // valid here (a-zA-Z0-9 plus "-"). Drop everything else.
+        val safe = lang.replace(Regex("[^a-zA-Z0-9-]"), "")
+        if (safe.isEmpty()) return
+        webView?.evaluateJavascript(
+            "if (window.BYD && BYD.i18n && BYD.i18n.setLang) { BYD.i18n.setLang('$safe'); }",
+            null
+        )
+    }
+
     override fun onPause() {
         webView?.onPause()
         super.onPause()

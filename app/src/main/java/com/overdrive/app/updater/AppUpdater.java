@@ -53,7 +53,21 @@ public class AppUpdater {
     private final Context context;
     private volatile boolean cancelled = false;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    // Null in the daemon process — Looper.getMainLooper() returns null when no
+    // thread has been designated as the main looper (the daemon's main() only
+    // does Looper.prepare(), not prepareMainLooper()). Callbacks fall back to
+    // inline execution; see runCallback().
+    private final Handler mainHandler = resolveMainHandler();
+
+    private static Handler resolveMainHandler() {
+        Looper looper = Looper.getMainLooper();
+        return looper != null ? new Handler(looper) : null;
+    }
+
+    private void runCallback(Runnable r) {
+        if (mainHandler != null) mainHandler.post(r);
+        else r.run();
+    }
     private AdbShellExecutor adb; // Lazy — only created when install is triggered
     private com.overdrive.app.launcher.AdbDaemonLauncher adbLauncher; // For daemon management
 
@@ -159,7 +173,7 @@ public class AppUpdater {
     public void checkForUpdate(UpdateCallback callback) {
         String channel = BuildConfig.UPDATE_CHANNEL;
         if (channel == null || channel.isEmpty()) {
-            mainHandler.post(() -> callback.onNoUpdate(BuildConfig.VERSION_NAME));
+            runCallback(() -> callback.onNoUpdate(BuildConfig.VERSION_NAME));
             return;
         }
 
@@ -234,7 +248,7 @@ public class AppUpdater {
                                 .edit().putString(PREF_UPDATED_VERSION, remoteVersion).apply();
                         persistVersionToFile(remoteVersion);
                         Log.i(TAG, "First run — saved baseline timestamp: " + updatedAt + ", version: " + remoteVersion);
-                        mainHandler.post(() -> callback.onNoUpdate(currentVersion));
+                        runCallback(() -> callback.onNoUpdate(currentVersion));
                         return;
                     }
 
@@ -263,9 +277,9 @@ public class AppUpdater {
                             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                                     .edit().putString(PREF_UPDATED_VERSION, remoteVersion).apply();
                             persistVersionToFile(remoteVersion);
-                            Log.i(TAG, "Fresh deploy detected (app install " + appInstallTime + 
+                            Log.i(TAG, "Fresh deploy detected (app install " + appInstallTime +
                                     " > remote asset " + remoteAssetTime + ") — updated baseline");
-                            mainHandler.post(() -> callback.onNoUpdate(currentVersion));
+                            runCallback(() -> callback.onNoUpdate(currentVersion));
                             return;
                         }
                     } catch (Exception e) {
@@ -277,10 +291,10 @@ public class AppUpdater {
                             ", Last installed: " + lastInstalledTimestamp);
 
                     if (apkUpdated) {
-                        mainHandler.post(() -> callback.onUpdateAvailable(
+                        runCallback(() -> callback.onUpdateAvailable(
                                 currentVersion, remoteVersion, releaseNotes));
                     } else {
-                        mainHandler.post(() -> callback.onNoUpdate(currentVersion));
+                        runCallback(() -> callback.onNoUpdate(currentVersion));
                     }
                 }
             } catch (Exception e) {
@@ -306,7 +320,7 @@ public class AppUpdater {
                 // Step 1: Download APK via ADB shell (shell user can write to /data/local/tmp/)
                 // Use app_process to run Java URL download as UID 2000
                 postProgress(callback, "Downloading update...");
-                mainHandler.post(() -> callback.onDownloadProgress(-1)); // -1 = indeterminate
+                runCallback(() -> callback.onDownloadProgress(-1)); // -1 = indeterminate
 
                 String downloadCmd = buildDownloadCommand(latestDownloadUrl, APK_PATH);
                 
@@ -349,7 +363,7 @@ public class AppUpdater {
                     return;
                 }
 
-                mainHandler.post(() -> callback.onDownloadProgress(100));
+                runCallback(() -> callback.onDownloadProgress(100));
 
                 // Step 2: Verify APK size via shell
                 postProgress(callback, "Verifying download...");
@@ -448,7 +462,7 @@ public class AppUpdater {
                     postInstallError(callback, "Install failed: " + output);
                 } else {
                     postProgress(callback, "✅ Update installed! Restarting...");
-                    mainHandler.post(callback::onSuccess);
+                    runCallback(callback::onSuccess);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Install error: " + e.getMessage());
@@ -736,13 +750,13 @@ public class AppUpdater {
     }
 
     private void postError(UpdateCallback cb, String msg) {
-        mainHandler.post(() -> cb.onError(msg));
+        runCallback(() -> cb.onError(msg));
     }
     private void postInstallError(InstallCallback cb, String msg) {
-        mainHandler.post(() -> cb.onError(msg));
+        runCallback(() -> cb.onError(msg));
     }
     private void postProgress(InstallCallback cb, String msg) {
-        mainHandler.post(() -> cb.onProgress(msg));
+        runCallback(() -> cb.onProgress(msg));
     }
 
     /**

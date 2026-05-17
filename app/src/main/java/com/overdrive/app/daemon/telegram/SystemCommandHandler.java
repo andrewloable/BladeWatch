@@ -199,12 +199,14 @@ public class SystemCommandHandler implements TelegramCommandHandler {
                 "`/daemon <name> start|stop`\n\n" +
                 "*System*\n" +
                 "`/url` - Tunnel URL\n" +
+                "`/update` - Check for app update\n" +
                 "`/help` - This message";
-        
+
         String[][][] buttons = {
             {{"📊 Status", "cmd:/status"}, {"📹 Events", "cmd:/events"}},
             {{"✅ Start Surveillance", "cmd:/start"}, {"⛔ Stop Surveillance", "cmd:/stop"}},
-            {{"🤖 Daemons", "cmd:/daemons"}, {"🌐 Tunnel URL", "cmd:/url"}}
+            {{"🤖 Daemons", "cmd:/daemons"}, {"🌐 Tunnel URL", "cmd:/url"}},
+            {{"⬆️ Check Update", "cmd:/update"}}
         };
         
         ctx.sendMessageWithButtons(chatId, text, buttons);

@@ -137,40 +137,61 @@ public class QualitySettingsApiHandler {
     }
 
     /**
-     * GET /api/settings/appearance — return the saved theme preference.
-     * Defaults to "dark" so first-load before the user has interacted with
-     * the picker matches the rest of the design system.
+     * GET /api/settings/appearance — return the saved theme + locale
+     * preferences for the WEB UI (not the Android app). Defaults to
+     * theme=dark / locale=auto so first-load matches the design system.
+     *
+     * Note: `locale` here is the web-only language pick. The Android
+     * app's locale lives in LocaleManager and is round-tripped through
+     * /api/i18n/lang. Keeping these endpoints separate is what stops
+     * picking Hindi on the tunnel from also flipping the in-car app.
      */
     private static void sendAppearance(OutputStream out) throws Exception {
         JSONObject app = com.overdrive.app.config.UnifiedConfigManager.getAppearance();
         JSONObject response = new JSONObject();
         response.put("success", true);
         response.put("theme", app.optString("theme", "dark"));
+        response.put("locale", app.optString("locale", "auto"));
         HttpResponse.sendJson(out, response.toString());
     }
 
     /**
-     * POST /api/settings/appearance — body: { "theme": "dark"|"light"|"auto" }.
-     * Validates the value is one of the three accepted strings; rejects with
-     * 400 otherwise. "auto" means follow OS preference (handled client-side
-     * via prefers-color-scheme media query).
+     * POST /api/settings/appearance — body: { "theme": "dark"|"light"|"auto",
+     *                                          "locale": "<bcp47>"|"auto" }.
+     * Either field may be omitted (partial update). theme is validated to
+     * one of three strings; locale is validated against LocaleManager
+     * SUPPORTED set (with "auto" sentinel allowed). Persists into the
+     * appearance section of the unified config, NOT into LocaleManager.
      */
     private static void handleAppearancePost(OutputStream out, String body) throws Exception {
         JSONObject response = new JSONObject();
         try {
             JSONObject req = new JSONObject(body == null ? "{}" : body);
-            String theme = req.optString("theme", "dark");
-            if (!"dark".equals(theme) && !"light".equals(theme) && !"auto".equals(theme)) {
-                response.put("success", false);
-                response.put("error", "theme must be one of: dark, light, auto");
-                HttpResponse.sendJson(out, response.toString());
-                return;
-            }
             JSONObject app = new JSONObject();
-            app.put("theme", theme);
+            String theme = req.optString("theme", null);
+            if (theme != null) {
+                if (!"dark".equals(theme) && !"light".equals(theme) && !"auto".equals(theme)) {
+                    response.put("success", false);
+                    response.put("error", "theme must be one of: dark, light, auto");
+                    HttpResponse.sendJson(out, response.toString());
+                    return;
+                }
+                app.put("theme", theme);
+            }
+            String locale = req.optString("locale", null);
+            if (locale != null) {
+                if (!"auto".equals(locale) && !com.overdrive.app.server.LocaleManager.isSupported(locale)) {
+                    response.put("success", false);
+                    response.put("error", "locale must be 'auto' or one of the supported tags");
+                    HttpResponse.sendJson(out, response.toString());
+                    return;
+                }
+                app.put("locale", locale);
+            }
             boolean ok = com.overdrive.app.config.UnifiedConfigManager.setAppearance(app);
             response.put("success", ok);
-            response.put("theme", theme);
+            if (theme != null)  response.put("theme", theme);
+            if (locale != null) response.put("locale", locale);
         } catch (Exception e) {
             response.put("success", false);
             response.put("error", e.getMessage());

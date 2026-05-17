@@ -95,6 +95,13 @@ object LanguagePickerDialog {
      */
     @JvmStatic
     fun applySelection(context: Context, tag: String) {
+        // Broadcast to every visible WebView BEFORE the locale write so the
+        // user sees an instant language flip in any open WebView page,
+        // regardless of whether the activity ends up recreating. The
+        // recreate that follows setApplicationLocales restores the same
+        // page anyway, so the new fragment's onPageFinished -> init() is
+        // a no-op visually.
+        broadcastLocaleToWebViews(context, if (tag == LocaleManager.AUTO_TAG) LocaleManager.get() else tag)
         if (tag == LocaleManager.AUTO_TAG) {
             LocaleManager.setAuto()
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
@@ -102,6 +109,30 @@ object LanguagePickerDialog {
             LocaleManager.set(tag)
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
         }
+    }
+
+    /**
+     * Walk the activity's fragment tree and apply the new locale to every
+     * attached WebViewFragment. Recurses through child fragment managers
+     * so fragments hosted under NavHostFragment are reached too. Same
+     * pattern SettingsAppearanceFragment uses for theme broadcasts.
+     */
+    private fun broadcastLocaleToWebViews(context: Context, lang: String) {
+        if (lang.isBlank()) return
+        val activity = context as? androidx.fragment.app.FragmentActivity ?: return
+        val fm = activity.supportFragmentManager
+        collectWebViewFragments(fm).forEach { it.applyLocale(lang) }
+    }
+
+    private fun collectWebViewFragments(
+        fm: androidx.fragment.app.FragmentManager
+    ): List<com.overdrive.app.ui.fragment.WebViewFragment> {
+        val out = mutableListOf<com.overdrive.app.ui.fragment.WebViewFragment>()
+        for (f in fm.fragments) {
+            if (f is com.overdrive.app.ui.fragment.WebViewFragment) out.add(f)
+            if (f.isAdded) out.addAll(collectWebViewFragments(f.childFragmentManager))
+        }
+        return out
     }
 
     /**

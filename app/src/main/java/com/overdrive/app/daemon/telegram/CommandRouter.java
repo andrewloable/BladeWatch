@@ -19,6 +19,7 @@ public class CommandRouter {
         handlers.add(new SurveillanceCommandHandler());
         handlers.add(new SystemCommandHandler());
         handlers.add(new EventCommandHandler());
+        handlers.add(new UpdateCommandHandler());
     }
     
     /**

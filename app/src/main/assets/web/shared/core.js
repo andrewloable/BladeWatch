@@ -271,10 +271,17 @@ BYD.i18n = (function () {
     }
 
     /**
-     * Switch active language. Persists choice locally — and, ONLY when
-     * running inside the Android WebView, posts to the server so the
-     * app-side LocaleManager picks up the change too. External browsers
-     * stay self-contained: their picker doesn't reach into the app.
+     * Switch active language. Always persists locally. Server persistence
+     * splits two ways:
+     *   In-app WebView  → POST /api/i18n/lang (writes the app's
+     *                     LocaleManager so server-emitted strings match).
+     *   External tunnel → POST /api/settings/appearance with {locale}
+     *                     (writes a SEPARATE web-only locale into the
+     *                     unified config). Survives tunnel-URL rotation:
+     *                     each new zrok session is a fresh origin so
+     *                     localStorage alone is not enough.
+     * Either way, server writes are fire-and-forget; the catalog refetch
+     * is the only thing the UI waits on.
      */
     function setLang(lang) {
         var resolved = resolveLang(lang);
@@ -286,6 +293,12 @@ BYD.i18n = (function () {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ lang: resolved })
+            }); } catch (e) {}
+        } else {
+            try { fetch('/api/settings/appearance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locale: resolved })
             }); } catch (e) {}
         }
         return fetchCatalog(resolved).then(function (cat) {
@@ -312,9 +325,10 @@ BYD.i18n = (function () {
      *   In-app WebView  — AndroidBridge.getAppLocale() (sync, always fresh)
      *                     → localStorage → navigator.language → 'en'
      *   External        — localStorage → navigator.language → 'en'
-     * The localStorage step second-place in app context is a transition
-     * fallback for users who picked a language on the web before this
-     * separation existed; once the app pushes a locale, that wins.
+     *                     and asynchronously sync from /api/settings/appearance
+     *                     so a freshly-rotated tunnel URL still serves the
+     *                     user's last-picked language (localStorage is per
+     *                     origin, the server-stored value survives URL flips).
      */
     function init() {
         if (state.loadingPromise) return state.loadingPromise;
@@ -323,7 +337,18 @@ BYD.i18n = (function () {
             try {
                 if (typeof window.AndroidBridge.getAppLocale === 'function') {
                     var fromApp = window.AndroidBridge.getAppLocale();
-                    if (fromApp) picked = fromApp;
+                    if (fromApp) {
+                        picked = fromApp;
+                        // The app's locale is the source of truth in-app.
+                        // Mirror it into localStorage so a stale value left
+                        // there from before this code shipped (or from a
+                        // prior tunnel session on the same WebView profile)
+                        // can never resurface in a future load. Without
+                        // this, a user who picked French on the tunnel,
+                        // then English in the app, would still see French
+                        // until they cleared cache.
+                        try { setStored(resolveLang(fromApp)); } catch (e) {}
+                    }
                 }
             } catch (e) { /* fall through to localStorage */ }
         }
@@ -334,8 +359,49 @@ BYD.i18n = (function () {
             state.loaded = true;
             hydrate(document);
             notify();
+            // External mode: pull the server-stored web locale to handle
+            // the tunnel-URL-rotation case (localStorage on the new
+            // origin is empty, but the server remembers the last pick).
+            // Skipped in-app — the AndroidBridge sync read above is
+            // already authoritative.
+            if (!inAppWebView()) {
+                fetchServerWebLocale().then(function (serverLang) {
+                    if (!serverLang) return;
+                    var resolved = resolveLang(serverLang);
+                    if (resolved && resolved !== state.lang) {
+                        // Mirror the server pick into localStorage so a
+                        // subsequent reload short-circuits without a fetch.
+                        setStored(resolved);
+                        // setLang() refetches + rehydrates. Skip the
+                        // server POST inside it (we just READ the value).
+                        state.lang = resolved;
+                        fetchCatalog(resolved).then(function (cat2) {
+                            state.catalog = cat2 || {};
+                            hydrate(document);
+                            notify();
+                        });
+                    }
+                });
+            }
         });
         return state.loadingPromise;
+    }
+
+    /** Read the web-only locale from /api/settings/appearance. Returns null
+     *  on any failure or if the server has the "auto" sentinel (which means
+     *  "no explicit pick — use the local detection"). */
+    function fetchServerWebLocale() {
+        try {
+            return fetch('/api/settings/appearance', { credentials: 'same-origin' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (j) {
+                    if (!j || !j.locale || j.locale === 'auto') return null;
+                    return j.locale;
+                })
+                .catch(function () { return null; });
+        } catch (e) {
+            return Promise.resolve(null);
+        }
     }
 
     return {
