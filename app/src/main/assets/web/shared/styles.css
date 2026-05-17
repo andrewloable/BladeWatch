@@ -206,6 +206,11 @@ input, select { font-family: inherit; }
     top: 0;
     background: var(--bg-surface);
     z-index: 1;
+    /* Pad past the iOS notch / Android cutout so the text isn't
+       visually clipped or cut off by the system status bar. The
+       viewport-fit=cover meta tag on each page makes safe-area-inset-top
+       non-zero on devices with a notch. */
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
 }
 
 
@@ -470,6 +475,25 @@ input, select { font-family: inherit; }
     flex-direction: column;
 }
 
+/* === PWA FIX === */
+/* Android PWA makes the height too big with both lvh and dvh.
+   Rotating the page to landscape and portrait fixes it until
+   it is loaded again if not set to svh. */
+@media (display-mode: standalone) {
+    body, .app-layout, .main-content {
+        min-height: 100svh;
+    }
+}
+
+/* IOS PWA makes the height too small with svh */
+@supports (-webkit-touch-callout: none) {
+    @media (display-mode: standalone) {
+        body, .app-layout, .main-content {
+            min-height: 100lvh;
+        }
+    }
+}
+
 /* === PAGE HEADER === */
 .page-header {
     height: var(--header-height);
@@ -515,6 +539,7 @@ input, select { font-family: inherit; }
     padding: 32px;
     padding-bottom: calc(32px + 80px); /* Account for fixed footer */
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* === CARDS === */
@@ -655,7 +680,7 @@ input, select { font-family: inherit; }
 }
 
 .btn-toggle {
-    padding: 8px 16px;
+    padding: 8px 12px;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);

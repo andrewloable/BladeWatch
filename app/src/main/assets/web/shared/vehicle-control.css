@@ -60,8 +60,18 @@
    the rest of the design system in shared/styles.css. Theme switching
    only fires when [data-theme="light"] is explicitly set (the Android
    WebViewFragment does this on every page-load). */
-.main-content { padding: 0 !important; overflow: hidden !important; height: 100vh !important; height: 100dvh !important; min-height: 0 !important; position: relative; }
-.vc-container { position: relative; width: 100%; height: 100%; background: var(--vc-canvas-bg); overflow: hidden; }
+.vc-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: var(--vc-canvas-bg);
+    overflow: hidden;
+    /* Margin past the iOS notch / Android cutout so the hamburger isn't
+       visually clipped or cut off by the system status bar. The
+       viewport-fit=cover meta tag on each page makes safe-area-inset-top
+       non-zero on devices with a notch. */
+    margin-top: calc(12px + env(safe-area-inset-top, 0px));
+}
 
 /* 3D fills the entire area — car renders behind the translucent bar */
 .vc-viewport { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
@@ -413,7 +423,7 @@
     .vc-tyre-callout[data-corner="fl"],
     .vc-tyre-callout[data-corner="rl"] { right: 8px; }
     .vc-tyre-callout[data-corner="fl"],
-    .vc-tyre-callout[data-corner="fr"] { bottom: 100px; top: auto; }
+    .vc-tyre-callout[data-corner="fr"] { bottom: 120px; top: auto; }
 }
 @media (max-width: 480px) {
     .vc-tyre-callout { min-width: 72px; padding: 4px 7px 5px; border-radius: 8px; }
@@ -615,9 +625,11 @@
 /* Disable highlight stays readable: outline grey, not greyed-out invisible. */
 .vc-tile:disabled, .vc-tile[disabled] { color: var(--vc-text-muted); border-color: var(--vc-border-faint); background: var(--vc-tile-bg-disabled); cursor: not-allowed; }
 .vc-tile.heat:hover { border-color: rgba(239,68,68,.3); color: #EF4444; }
-.vc-tile.heat.on { border-color: #EF4444; background: rgba(239,68,68,.12); color: #EF4444; box-shadow: 0 0 12px rgba(239,68,68,.2); }
+.vc-tile.heat.on1 { border-color: #EF4444AA; background: rgba(239,68,68,.12); color: #EF4444AA; box-shadow: 0 0 12px rgba(239,68,68,.2); }
+.vc-tile.heat.on2 { border-color: #EF4444; background: rgba(239,68,68,.12); color: #EF4444; box-shadow: 0 0 12px rgba(239,68,68,.2); }
 .vc-tile.cool:hover { border-color: rgba(56,189,248,.3); color: #38BDF8; }
-.vc-tile.cool.on { border-color: #38BDF8; background: rgba(56,189,248,.12); color: #38BDF8; box-shadow: 0 0 12px rgba(56,189,248,.2); }
+.vc-tile.cool.on1 { border-color: #38BDF8AA; background: rgba(56,189,248,.12); color: #38BDF8AA; box-shadow: 0 0 12px rgba(56,189,248,.2); }
+.vc-tile.cool.on2 { border-color: #38BDF8; background: rgba(56,189,248,.12); color: #38BDF8; box-shadow: 0 0 12px rgba(56,189,248,.2); }
 .vc-tile.pending { opacity: .4; pointer-events: none; }
 
 /* Small +/- button */

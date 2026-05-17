@@ -610,6 +610,7 @@ public class BydDataCollector {
         collectAc(b);
         collectLight(b);
         collectAdas(b);
+        collectSettings(b);
         collectPower(b);
         collectSafetyBelt(b);
         collectTyre(b);
@@ -1515,6 +1516,23 @@ public class BydDataCollector {
             }
         } catch (Exception e) {
             logger.debug("collectAdas error: " + e.getMessage());
+        }
+    }
+
+    private void collectSettings(BydVehicleData.Builder b) {
+        if (settingDevice == null) return;
+        try {
+            int[] seatHeat = new int[2];
+            int[] seatCool = new int[2];
+            for (int i = 0; i < 2; i++) {
+                Object heat = BydDeviceHelper.callGetter(settingDevice, "getSeatHeatingState", i + 1);
+                seatHeat[i] = (heat instanceof Number) ? ((Number) heat).intValue() - 1 : -1;
+                Object cool = BydDeviceHelper.callGetter(settingDevice, "getSeatVentilatingState", i + 1);
+                seatCool[i] = (cool instanceof Number) ? ((Number) cool).intValue() - 1 : -1;
+            }
+            b.seatHeat(seatHeat).seatCool(seatCool);
+        } catch (Exception e) {
+            logger.debug("collectSettings error: " + e.getMessage());
         }
     }
 
@@ -2851,6 +2869,10 @@ public class BydDataCollector {
             logger.info("  Adas listener registered");
             count++;
         }
+        if (BydDeviceHelper.registerListener(settingDevice, this::onSettingsCallback)) {
+            logger.info("  Settings listener registered");
+            count++;
+        }
         if (BydDeviceHelper.registerListener(radarDevice, this::onGenericCallback)) {
             logger.info("  Radar listener registered");
             count++;
@@ -3235,6 +3257,37 @@ public class BydDataCollector {
                     if (current != null) {
                         snapshot.set(current.toBuilder().speedLimitWarning(iVal == 2).build());
                     }
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void onSettingsCallback(String method, Object[] args) {
+        if ("onDataEventChanged".equals(method) && args != null && args.length >= 2) {
+            try {
+                int eventId = ((Number) args[0]).intValue();
+                Object eventValue = args[1];
+                int iVal = BydDeviceHelper.getIntValue(eventValue);
+
+                List<Integer> seatEventTypes = List.of(
+                        BydFeatureIds.SET_DRIVER_SEAT_HEATING_STATE,
+                        BydFeatureIds.SET_DRIVER_SEAT_VENTILATING_STATE,
+                        BydFeatureIds.SET_PASSENGER_SEAT_HEATING_STATE,
+                        BydFeatureIds.SET_PASSENGER_SEAT_VENTILATING_STATE
+                );
+
+                int seatEventType = seatEventTypes.indexOf(eventId);
+                if (seatEventType >= 0 && iVal > 0 && iVal < 4) {
+                    BydVehicleData.Builder current = snapshot.get().toBuilder();
+                    int[] seatHeat = current.seatHeat == null ? new int[2] : current.seatHeat;
+                    int[] seatCool = current.seatCool == null ? new int[2] : current.seatCool;
+                    switch (seatEventType) {
+                        case 0: seatHeat[0] = iVal - 1; break;
+                        case 1: seatCool[0] = iVal - 1; break;
+                        case 2: seatHeat[1] = iVal - 1; break;
+                        case 3: seatCool[1] = iVal - 1; break;
+                    }
+                    snapshot.set(current.seatCool(seatHeat).seatCool(seatCool).build());
                 }
             } catch (Exception ignored) {}
         }

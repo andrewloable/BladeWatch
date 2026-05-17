@@ -34,8 +34,8 @@ var VC = {
         acOn: false,
         acTemp: 22,
         acFan: 3,
-        seatHeat: { 1: 0, 2: 0 },  // 0=off, 1=low, 2=high
-        seatCool: { 1: 0, 2: 0 }
+        seatHeat: [0, 0],  // 0=off, 1=low, 2=high
+        seatCool: [0, 0]
     },
 
     pollInterval: null,
@@ -1465,11 +1465,11 @@ var VC = {
         for (var si = 1; si <= 2; si++) {
             (function(pos) {
                 self.bindBtn('btnSeatHeat' + pos, function() {
-                    var cur = self.vehicleState.seatHeat[pos] || 0;
+                    var cur = self.vehicleState.seatHeat[pos - 1] || 0;
                     var next = (cur + 1) % 3;
-                    self.vehicleState.seatHeat[pos] = next;
-                    self.vehicleState.seatCool[pos] = 0;
-                    self.updateSeatUI(pos);
+                    self.vehicleState.seatHeat[pos - 1] = next;
+                    self.vehicleState.seatCool[pos - 1] = 0;
+                    self.updateSeatUI();
                     self.updateSeatGlows();
                     // Heat VFX — warm sonar at seat, intensity scales with level
                     var sp = seatPositions[pos];
@@ -1486,11 +1486,11 @@ var VC = {
                     self.apiPost('/api/vehicle/seat', { action: 'heating', position: pos, level: next });
                 });
                 self.bindBtn('btnSeatCool' + pos, function() {
-                    var cur = self.vehicleState.seatCool[pos] || 0;
+                    var cur = self.vehicleState.seatCool[pos - 1] || 0;
                     var next = (cur + 1) % 3;
-                    self.vehicleState.seatCool[pos] = next;
-                    self.vehicleState.seatHeat[pos] = 0;
-                    self.updateSeatUI(pos);
+                    self.vehicleState.seatCool[pos - 1] = next;
+                    self.vehicleState.seatHeat[pos - 1] = 0;
+                    self.updateSeatUI();
                     self.updateSeatGlows();
                     // Cool VFX — blue sonar at seat
                     var sp = seatPositions[pos];
@@ -1632,6 +1632,9 @@ var VC = {
             if (data.lights) self.vehicleState.lights = data.lights;
             if (data.adas) self.vehicleState.adas = data.adas;
 
+            if (data.seats?.heat) self.vehicleState.seatHeat = data.seats.heat;
+            if (data.seats?.cool) self.vehicleState.seatCool = data.seats.cool;
+
             // Update UI
             self.updateHUD();
             self.updateWindowBars();
@@ -1639,6 +1642,7 @@ var VC = {
             self.updateTrunkIndicator();
             self.updateWindowGlows();
             self.updateClimateUI();
+            self.updateSeatUI();
             self.updateSeatGlows();
             self.updateTabIndicators();
             self.updateLightsUI();
@@ -2000,14 +2004,22 @@ var VC = {
         }
     },
 
-    updateSeatUI: function(pos) {
-        var heatBtn = document.getElementById('btnSeatHeat' + pos);
-        var coolBtn = document.getElementById('btnSeatCool' + pos);
-        var heatLvl = this.vehicleState.seatHeat[pos] || 0;
-        var coolLvl = this.vehicleState.seatCool[pos] || 0;
+    updateSeatUI: function() {
+        for (var pos = 0; pos < 2; pos++) {
+            var heatBtn = document.getElementById('btnSeatHeat' + (pos + 1));
+            var coolBtn = document.getElementById('btnSeatCool' + (pos + 1));
+            var heatLvl = this.vehicleState.seatHeat[pos] || 0;
+            var coolLvl = this.vehicleState.seatCool[pos] || 0;
 
-        if (heatBtn) { if (heatLvl > 0) heatBtn.classList.add('on'); else heatBtn.classList.remove('on'); }
-        if (coolBtn) { if (coolLvl > 0) coolBtn.classList.add('on'); else coolBtn.classList.remove('on'); }
+            if (heatBtn) {
+                heatBtn.classList.remove('on1', 'on2');
+                if (heatLvl > 0) heatBtn.classList.add('on' + heatLvl);
+            }
+            if (coolBtn) {
+                coolBtn.classList.remove('on1', 'on2');
+                if (coolLvl > 0) coolBtn.classList.add('on' + coolLvl);
+            }
+        }
     },
 
     updateLightsUI: function() {
@@ -2034,8 +2046,8 @@ var VC = {
         };
 
         for (var pos = 1; pos <= 2; pos++) {
-            var heatLvl = this.vehicleState.seatHeat[pos] || 0;
-            var coolLvl = this.vehicleState.seatCool[pos] || 0;
+            var heatLvl = this.vehicleState.seatHeat[pos - 1] || 0;
+            var coolLvl = this.vehicleState.seatCool[pos - 1] || 0;
             var key = 'seat_' + pos;
 
             if (heatLvl > 0 || coolLvl > 0) {
