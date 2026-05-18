@@ -137,6 +137,70 @@ public class AppUpdater {
     }
 
     /**
+     * Run a shell command, picking the right executor for the current process.
+     *
+     * The app process (UID 10xxx) needs to elevate to UID 2000 to write
+     * /data/local/tmp and call `pm install`, so it goes through the ADB-shell
+     * tunnel ({@link com.overdrive.app.launcher.AdbDaemonLauncher}).
+     *
+     * The daemon process is ALREADY UID 2000 (it was launched via app_process
+     * by the same ADB tunnel at startup), so it can — and must — execute
+     * shell commands directly. Routing daemon-side calls through the ADB
+     * tunnel fails on every BYD head unit because dadb tries to read the
+     * app's adbkey at /data/user/0/com.overdrive.app/files/adbkey, and that
+     * directory is mode 0700 owned by the app UID — UID 2000 can't open it
+     * (EACCES). The user reported this as
+     * "Install failed: Download failed: ERROR: Execution failed:
+     *  /data/user/0/com.overdrive.app/files/adbkey: open failed:
+     *  EACCES (Permission denied)".
+     *
+     * Direct exec is also faster (no socket round-trip per command).
+     *
+     * Callback semantics match {@link com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback}:
+     * onLog gets the combined stdout/stderr, then onLaunched fires on success
+     * (exit 0) or onError on a non-zero exit / spawn failure.
+     */
+    private void runShell(String command,
+                          com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback callback) {
+        if (android.os.Process.myUid() != 2000) {
+            getAdbLauncher().executeShellCommand(command, callback);
+            return;
+        }
+        // Daemon path — exec directly. Runs SYNCHRONOUSLY on the caller's
+        // thread (don't bounce onto AppUpdater.executor — downloadAndInstall
+        // already runs there and is single-threaded, so queueing more work
+        // would deadlock against the wait() that follows each call site).
+        // The synchronous callback fires before return, so the caller's
+        // notify/wait pattern still works (the wait sees the done flag
+        // already true and short-circuits).
+        try {
+            Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", command});
+            StringBuilder out = new StringBuilder();
+            java.io.BufferedReader stdout = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(p.getInputStream()));
+            java.io.BufferedReader stderr = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(p.getErrorStream()));
+            String line;
+            while ((line = stdout.readLine()) != null) {
+                out.append(line).append('\n');
+            }
+            while ((line = stderr.readLine()) != null) {
+                out.append(line).append('\n');
+            }
+            int exit = p.waitFor();
+            String combined = out.toString().trim();
+            if (!combined.isEmpty()) callback.onLog(combined);
+            if (exit == 0) {
+                callback.onLaunched();
+            } else {
+                callback.onError("Exit " + exit + ": " + combined);
+            }
+        } catch (Exception e) {
+            callback.onError("Execution failed: " + e.getMessage());
+        }
+    }
+
+    /**
      * Cancel an in-progress download/install.
      */
     public void cancel() {
@@ -158,7 +222,7 @@ public class AppUpdater {
             String cmd = "rm -f " + APK_PATH + "; " +
                     "find " + UpdateLifecycle.TELEGRAM_POST_UPDATE_HINT_FILE +
                     " -mmin +1440 -delete 2>/dev/null; echo done";
-            getAdbLauncher().executeShellCommand(cmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+            runShell(cmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                 @Override public void onLog(String m) {}
                 @Override public void onLaunched() { Log.i(TAG, "Cleaned up leftover APK"); }
                 @Override public void onError(String e) {}
@@ -327,7 +391,7 @@ public class AppUpdater {
                 final boolean[] dlDone = {false};
                 final String[] dlResult = {null};
 
-                getAdbLauncher().executeShellCommand(downloadCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+                runShell(downloadCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                     @Override public void onLog(String message) {
                         dlResult[0] = message;
                     }
@@ -348,7 +412,7 @@ public class AppUpdater {
                 }
 
                 if (cancelled) {
-                    getAdbLauncher().executeShellCommand("rm -f " + APK_PATH, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+                    runShell("rm -f " + APK_PATH, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                         @Override public void onLog(String m) {}
                         @Override public void onLaunched() {}
                         @Override public void onError(String e) {}
@@ -369,7 +433,7 @@ public class AppUpdater {
                 postProgress(callback, "Verifying download...");
                 final boolean[] szDone = {false};
                 final String[] szResult = {null};
-                getAdbLauncher().executeShellCommand("stat -c%s " + APK_PATH + " 2>/dev/null || echo 0",
+                runShell("stat -c%s " + APK_PATH + " 2>/dev/null || echo 0",
                         new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                     @Override public void onLog(String message) { szResult[0] = message.trim(); }
                     @Override public void onLaunched() {
@@ -389,7 +453,7 @@ public class AppUpdater {
                 long fileSize = 0;
                 try { fileSize = Long.parseLong(szResult[0].trim()); } catch (Exception ignored) {}
                 if (fileSize < 1_000_000) {
-                    getAdbLauncher().executeShellCommand("rm -f " + APK_PATH, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+                    runShell("rm -f " + APK_PATH, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                         @Override public void onLog(String m) {}
                         @Override public void onLaunched() {}
                         @Override public void onError(String e) {}
@@ -398,12 +462,10 @@ public class AppUpdater {
                     return;
                 }
 
-                // Step 3: Stop all daemons
-                postProgress(callback, "Stopping daemons...");
-                stopAllDaemons();
-                Thread.sleep(3000);
-
-                // Step 4: Save update info BEFORE install (process gets killed during pm install)
+                // Step 3: Save update info BEFORE we touch any daemon (the daemon
+                // process — if we're running inside it — is about to die, and the
+                // app process gets killed by `pm install -r`; either way the
+                // SharedPreferences write must happen first).
                 context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                         .edit()
                         .putBoolean(PREF_JUST_UPDATED, true)
@@ -412,7 +474,30 @@ public class AppUpdater {
                 persistVersionToFile(remoteVersion);
                 saveLastUpdateTimestamp(remoteUpdatedAt);
 
-                // Step 5: Install and relaunch
+                // Step 4 & 5: Stop daemons + install + relaunch. The control flow
+                // splits here based on which process we're in:
+                //
+                //   App process (UID 10xxx) — the existing synchronous flow works.
+                //   The app talks to UID 2000 over the dadb tunnel; that tunnel
+                //   outlives our app process when `pm install -r` replaces it,
+                //   and the same tunnel runs `am start` after the install lands.
+                //
+                //   Daemon process (UID 2000) — we ARE one of the processes the
+                //   stop step kills, so we cannot supervise the install ourselves.
+                //   Instead, write a self-contained install script to
+                //   /data/local/tmp/ and kick it off detached (subshell + closed
+                //   stdio so init reparents it), then return. The script runs
+                //   on its own; our death is fine.
+                if (android.os.Process.myUid() == 2000) {
+                    postProgress(callback, "Stopping daemons & installing...");
+                    runDetachedInstall(callback);
+                    return;
+                }
+
+                postProgress(callback, "Stopping daemons...");
+                stopAllDaemons();
+                Thread.sleep(3000);
+
                 postProgress(callback, "Installing...");
                 final boolean[] done = {false};
                 final String[] result = {null};
@@ -422,7 +507,7 @@ public class AppUpdater {
                     "; sleep 2; am start -n com.overdrive.app/.ui.MainActivity" +
                     " --ez " + UpdateLifecycle.EXTRA_POST_UPDATE + " true";
 
-                getAdbLauncher().executeShellCommand(installCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+                runShell(installCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                     @Override public void onLog(String message) {
                         Log.i(TAG, "Install: " + message);
                         result[0] = message;
@@ -452,7 +537,7 @@ public class AppUpdater {
                             .commit();
                     // Wipe the post-update sentinels — install never landed, so
                     // there's nothing for the next launch to recover from.
-                    getAdbLauncher().executeShellCommand(
+                    runShell(
                             "rm -f " + UPDATE_IN_PROGRESS_FILE + " " + POST_UPDATE_FILE,
                             new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                                 @Override public void onLog(String m) {}
@@ -491,9 +576,184 @@ public class AppUpdater {
                "fi'";
     }
 
+    /**
+     * Daemon-process install path: write a self-contained install script and
+     * fire it off detached (setsid + null fds) so it survives our death.
+     *
+     * Why a script instead of a single `runShell(...)`: this very process is
+     * one of the things `pkill -9 -f byd_cam_daemon` will kill. If the kill
+     * runs in our own shell we'd suicide before `pm install` ever fires. The
+     * script is launched with setsid into a new session with closed std fds,
+     * so the kernel doesn't reap it when the daemon dies.
+     *
+     * The script: kills watchdogs first (so they can't respawn the daemons
+     * we're about to kill), kills daemons (including us), runs `pm install
+     * -r -d`, then `am start` to relaunch the app. Same sequence the
+     * synchronous app-process flow uses, just packaged so the caller can
+     * exit before it runs.
+     *
+     * The webapp tracks success via /api/update/progress + the app coming
+     * back online; the SharedPreferences `PREF_JUST_UPDATED` flag we wrote
+     * in step 3 is what the new MainActivity reads to confirm.
+     */
+    private void runDetachedInstall(InstallCallback callback) {
+        String scriptPath = "/data/local/tmp/overdrive_install.sh";
+        String logPath = "/data/local/tmp/overdrive_install.log";
+
+        StringBuilder script = new StringBuilder();
+        script.append("#!/system/bin/sh\n");
+        script.append("set +e\n");
+        script.append("exec >").append(logPath).append(" 2>&1\n");
+        script.append("echo \"[install] starting at $(date)\"\n");
+        // Step 1: plant sentinels so the new MainActivity recovers correctly.
+        script.append("echo 'update at '$(date) > ").append(UPDATE_IN_PROGRESS_FILE).append("\n");
+        script.append("echo 'update at '$(date) > ").append(POST_UPDATE_FILE).append("\n");
+        // Step 2: kill watchdogs FIRST so they can't respawn the daemons we're
+        // about to kill in step 3. Mirrors DaemonLauncher.killDaemonViaAdb's
+        // ordering — if the daemon is killed before its watchdog, the watchdog
+        // observes the death and immediately relaunches it. Disable sentinel
+        // is also planted so any watchdog we miss exits on its next iteration.
+        script.append("echo 'disabled for update at '$(date) > /data/local/tmp/camera_daemon.disabled\n");
+        script.append("pkill -9 -f 'start_cam_daemon' 2>/dev/null\n");
+        script.append("pkill -9 -f 'start_acc_sentry' 2>/dev/null\n");
+        script.append("rm -f /data/local/tmp/start_cam_daemon.sh /data/local/tmp/cam_watchdog.pid 2>/dev/null\n");
+        script.append("rm -f /data/local/tmp/start_acc_sentry.sh /data/local/tmp/acc_sentry_daemon.lock 2>/dev/null\n");
+        script.append("sleep 1\n");
+
+        // Step 3: kill the daemons themselves. Mirrors DaemonLauncher per-daemon
+        // UID-2000 recipes (see killDaemonViaAdb at DaemonLauncher.kt:1457):
+        //
+        //   - acc_sentry_daemon  → pkill -f 'acc_sentry' (broader pattern so
+        //                          stragglers from start_acc_sentry also die)
+        //   - byd_cam_daemon     → pkill -f start_cam_daemon (already done in
+        //                          step 2) THEN pkill -f byd_cam_daemon. We're
+        //                          one of the matches; the script survives
+        //                          because the (...&) wrapper put it in a
+        //                          separate process group reparented to init.
+        //   - sentry_daemon, telegram_bot_daemon, sentry_proxy
+        //                        → simple pkill -f + killall by exe name
+        //   - cloudflared, zrok, tailscaled, sing-box (native binaries)
+        //                        → killall -9 by exe name (matches argv[0]
+        //                          basename more reliably than pkill -f does
+        //                          across BYD toybox vintages)
+        //
+        // Each kill is `2>/dev/null` so a "no such process" exit code doesn't
+        // abort the script (we have set +e but a stale errexit from a sourced
+        // env would still be a risk).
+        script.append("pkill -9 -f 'acc_sentry' 2>/dev/null\n");
+        script.append("pkill -9 -f 'byd_cam_daemon' 2>/dev/null\n");
+        script.append("killall -9 byd_cam_daemon 2>/dev/null\n");
+        script.append("pkill -9 -f 'sentry_daemon' 2>/dev/null\n");
+        script.append("pkill -9 -f 'telegram_bot_daemon' 2>/dev/null\n");
+        script.append("pkill -9 -f 'sentry_proxy' 2>/dev/null\n");
+        script.append("pkill -9 -f 'cloudflared' 2>/dev/null\n");
+        script.append("killall -9 cloudflared 2>/dev/null\n");
+        script.append("pkill -9 -f 'zrok' 2>/dev/null\n");
+        script.append("killall -9 zrok 2>/dev/null\n");
+        script.append("pkill -9 -f 'sing-box' 2>/dev/null\n");
+        script.append("killall -9 sing-box 2>/dev/null\n");
+        script.append("pkill -9 -f 'tailscaled' 2>/dev/null\n");
+        script.append("killall -9 tailscaled 2>/dev/null\n");
+
+        // Per-daemon lock files (mirrors DaemonLauncher's killDaemonViaAdb
+        // cleanup) so the relaunched MainActivity's daemon supervisor doesn't
+        // refuse to start because a stale lock looks alive.
+        script.append("rm -f /data/local/tmp/camera_daemon.lock 2>/dev/null\n");
+        script.append("rm -f /data/local/tmp/acc_sentry_daemon.lock 2>/dev/null\n");
+        script.append("rm -f /data/local/tmp/telegram_bot_daemon.lock 2>/dev/null\n");
+        script.append("rm -f /data/local/tmp/*_daemon.lock 2>/dev/null\n");
+        script.append("rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null\n");
+        // Clear the camera disable sentinel — we needed it set above so
+        // any surviving watchdog exits, but the new MainActivity must not
+        // see it on startup or it'll leave the camera daemon disabled.
+        // POST_UPDATE_FILE / UPDATE_IN_PROGRESS_FILE stay in place; the new
+        // process consumes them via UpdateLifecycle.
+        script.append("rm -f /data/local/tmp/camera_daemon.disabled 2>/dev/null\n");
+        script.append("sleep 2\n");
+        // Step 4: install. `pm install -r -d` allows downgrades (-d) so a
+        // bad release doesn't strand the user, and replaces the existing app
+        // (-r). Stdout is captured into PM_OUT so step 4b can include the
+        // failure reason in the progress JSON if `pm install` exits non-zero.
+        script.append("echo \"[install] running pm install\"\n");
+        script.append("PM_OUT=$(pm install -r -d ").append(APK_PATH).append(" 2>&1)\n");
+        script.append("INSTALL_RC=$?\n");
+        script.append("echo \"$PM_OUT\"\n");
+        script.append("rm -f ").append(APK_PATH).append("\n");
+        // Step 4b: on `pm install` failure, write phase=error to the progress
+        // JSON so the webapp's poller surfaces the failure instead of sitting
+        // in reconnect-mode forever waiting for an upgraded daemon that will
+        // never appear. Same shape as UpdateApiHandler.writeProgress so the
+        // /api/update/progress endpoint and update-flow.js consume it without
+        // changes. We do this before `am start` so the relaunched app reports
+        // the error in its own UI, and the failure write happens BEFORE the
+        // sentinels are cleared (the new MainActivity reads PROGRESS_FILE on
+        // start and can roll back PREF_JUST_UPDATED if it sees phase=error).
+        // `pm install` Success path skips this block entirely; the daemon
+        // restart that follows `am start` re-writes phase=installing/100 and
+        // eventually a fresh daemon overwrites with idle.
+        script.append("if [ \"$INSTALL_RC\" != \"0\" ]; then\n");
+        // Escape special chars in PM_OUT for JSON. toybox lacks `jq`, but we
+        // can substitute backslashes, double-quotes, and newlines via
+        // parameter expansion (POSIX) — covers the ~99% case of pm install's
+        // single-line failure messages like "Failure [INSTALL_PARSE_FAILED…]".
+        // Strip ALL control chars first (`tr -d '\000-\037'`) — a stray tab
+        // or stack-trace embedded NUL would produce technically-invalid JSON
+        // and JSONObject would throw, swallowing the error in the consumer.
+        script.append("  PM_ESC=$(printf %s \"$PM_OUT\" | tr -d '\\000-\\037' | ");
+        script.append("sed 's/\\\\/\\\\\\\\/g;s/\"/\\\\\"/g')\n");
+        script.append("  TS=$(($(date +%s) * 1000))\n");
+        script.append("  printf '{\"phase\":\"error\",\"percent\":-1,");
+        script.append("\"message\":\"Install failed\",\"error\":\"%s\",\"ts\":%s}' ");
+        script.append("\"$PM_ESC\" \"$TS\" > /data/local/tmp/overdrive_update_progress.json\n");
+        script.append("  echo \"[install] FAILED rc=$INSTALL_RC\"\n");
+        // Clear the in-progress sentinel so the new MainActivity doesn't run a
+        // post-update hard-reset for an install that never landed. Keep
+        // POST_UPDATE_FILE — its presence on a still-old-version app is the
+        // signal MainActivity uses to read PROGRESS_FILE and show the error.
+        script.append("  rm -f ").append(UPDATE_IN_PROGRESS_FILE).append("\n");
+        script.append("fi\n");
+        // Step 5: relaunch. Runs in both success and failure cases so the user
+        // gets the app back either way (with the new APK on success, or with
+        // the old APK + an error toast on failure).
+        script.append("sleep 2\n");
+        script.append("am start -n com.overdrive.app/.ui.MainActivity --ez ");
+        script.append(UpdateLifecycle.EXTRA_POST_UPDATE).append(" true\n");
+        script.append("echo \"[install] done rc=$INSTALL_RC at $(date)\"\n");
+
+        try {
+            // Write the script via a Runtime.exec heredoc — this is the
+            // daemon process, so we have direct write access to /data/local/tmp.
+            try (java.io.FileWriter w = new java.io.FileWriter(scriptPath)) {
+                w.write(script.toString());
+            }
+            new java.io.File(scriptPath).setExecutable(true, false);
+
+            // Detach: a subshell with `& exit 0` reparents the install script
+            // to init (PID 1), so SIGTERM/SIGHUP from the daemon's death don't
+            // reach it. We don't rely on `setsid` — toybox builds on BYD ROMs
+            // are inconsistent about which applets ship. The script itself
+            // does `exec >log 2>&1` to close all stdio, and `</dev/null` here
+            // closes stdin so nothing keeps the parent waiting.
+            ProcessBuilder pb = new ProcessBuilder(
+                    "sh", "-c",
+                    "(sh " + scriptPath + " </dev/null >/dev/null 2>&1 &)");
+            pb.redirectErrorStream(true);
+            pb.start();
+
+            postProgress(callback, "Installing...");
+            // Don't onSuccess here — the daemon process itself is about to be
+            // killed by the script. Just return and let the script + webapp
+            // poller take it from here.
+            runCallback(callback::onSuccess);
+        } catch (Exception e) {
+            Log.e(TAG, "Detached install failed: " + e.getMessage());
+            postInstallError(callback, "Detached install failed: " + e.getMessage());
+        }
+    }
+
     private void cleanup(String path) {
         try {
-            getAdbLauncher().executeShellCommand("rm -f " + path, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+            runShell("rm -f " + path, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                 @Override public void onLog(String m) {}
                 @Override public void onLaunched() {}
                 @Override public void onError(String e) {}
@@ -515,7 +775,7 @@ public class AppUpdater {
                 "echo 'update at $(date)' > " + UPDATE_IN_PROGRESS_FILE + "; " +
                 "echo 'update at $(date)' > " + POST_UPDATE_FILE + "; " +
                 "echo done";
-        launcher.executeShellCommand(markerCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+        runShell(markerCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
             @Override public void onLog(String m) {}
             @Override public void onLaunched() {
                 markerDone[0] = true;
@@ -549,7 +809,7 @@ public class AppUpdater {
                 "echo done";
         
         final boolean[] wdDone = {false};
-        launcher.executeShellCommand(killWatchdogsCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+        runShell(killWatchdogsCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
             @Override public void onLog(String m) {}
             @Override public void onLaunched() {
                 Log.i(TAG, "Watchdog scripts killed");
@@ -632,7 +892,7 @@ public class AppUpdater {
                 "echo done";
         
         final boolean[] sweepDone = {false};
-        launcher.executeShellCommand(finalSweepCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+        runShell(finalSweepCmd, new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
             @Override public void onLog(String m) {}
             @Override public void onLaunched() {
                 sweepDone[0] = true;
@@ -720,7 +980,7 @@ public class AppUpdater {
                 .edit().putString(PREF_LAST_UPDATE_TIME, timestamp).commit();
         // Also save to filesystem via ADB shell (survives reinstall, app can't write /data/local/tmp directly)
         try {
-            getAdbLauncher().executeShellCommand("echo '" + timestamp + "' > " + UPDATE_TIMESTAMP_FILE,
+            runShell("echo '" + timestamp + "' > " + UPDATE_TIMESTAMP_FILE,
                     new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                 @Override public void onLog(String m) {}
                 @Override public void onLaunched() {}
@@ -738,7 +998,7 @@ public class AppUpdater {
     private void persistVersionToFile(String version) {
         if (version == null || version.isEmpty()) return;
         try {
-            getAdbLauncher().executeShellCommand("echo '" + version + "' > " + VERSION_FILE,
+            runShell("echo '" + version + "' > " + VERSION_FILE,
                     new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
                 @Override public void onLog(String m) {}
                 @Override public void onLaunched() {}
@@ -762,6 +1022,13 @@ public class AppUpdater {
     /**
      * Check if app was just updated and return the version string.
      * Clears the flag after reading so it only shows once.
+     *
+     * Callers MUST call {@link #consumeFailedUpdateError(Context)} first.
+     * That method clears PREF_JUST_UPDATED on a failed install (the flag is
+     * set before `runDetachedInstall` so it's true on BOTH success and
+     * failure paths; the progress JSON is the authoritative outcome
+     * signal). After that, this method only returns a non-null version
+     * when the install actually succeeded.
      */
     public static String consumeJustUpdatedVersion(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -774,6 +1041,76 @@ public class AppUpdater {
             return version;
         }
         return null;
+    }
+
+    /**
+     * Read and clear a failed-install error written by the daemon-side
+     * install script. Returns the error message (e.g. "Failure
+     * [INSTALL_PARSE_FAILED_NO_CERTIFICATES]") when the script's
+     * `pm install` exited non-zero, or null when there's no failure to
+     * report. Called on app launch — together with
+     * {@link #consumeJustUpdatedVersion(Context)} — so the user sees a
+     * concrete error toast instead of a misleading success message or
+     * silence.
+     *
+     * Also clears PREF_JUST_UPDATED. The flag is set BEFORE the install
+     * script runs (at line 471 in downloadAndInstall) so it's "true" on
+     * BOTH success and failure paths; we use the progress JSON as the
+     * authoritative success/failure signal. If we left the flag set on
+     * failure, the immediately-following consumeJustUpdatedVersion call
+     * would see PREF_JUST_UPDATED=true with no failure marker (because we
+     * deleted it here) and would fire the misleading "Updated to vX" toast
+     * alongside the error toast.
+     */
+    public static String consumeFailedUpdateError(Context context) {
+        if (!hasFailedUpdateMarker()) return null;
+        String err = null;
+        try {
+            java.io.File f = new java.io.File("/data/local/tmp/overdrive_update_progress.json");
+            StringBuilder sb = new StringBuilder();
+            try (java.io.BufferedReader r = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(new java.io.FileInputStream(f)))) {
+                String line;
+                while ((line = r.readLine()) != null) sb.append(line);
+            }
+            JSONObject j = new JSONObject(sb.toString());
+            err = j.optString("error", null);
+            if (err == null || err.isEmpty()) err = j.optString("message", "Install failed");
+        } catch (Exception ignored) {}
+        // One-shot: clear the just-updated flag AND delete the progress file
+        // and post-update sentinel so the next launch is clean. The retry
+        // will write a fresh record.
+        try {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(PREF_JUST_UPDATED, false)
+                    .remove(PREF_UPDATED_VERSION)
+                    .apply();
+        } catch (Exception ignored) {}
+        try { new java.io.File("/data/local/tmp/overdrive_update_progress.json").delete(); } catch (Exception ignored) {}
+        try { new java.io.File(POST_UPDATE_FILE).delete(); } catch (Exception ignored) {}
+        return err;
+    }
+
+    /**
+     * True when the progress JSON exists and reports phase=error. Used as a
+     * gate so consumeJustUpdatedVersion doesn't toast "Updated to vX" for an
+     * install that never landed.
+     */
+    private static boolean hasFailedUpdateMarker() {
+        try {
+            java.io.File f = new java.io.File("/data/local/tmp/overdrive_update_progress.json");
+            if (!f.exists()) return false;
+            StringBuilder sb = new StringBuilder();
+            try (java.io.BufferedReader r = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(new java.io.FileInputStream(f)))) {
+                String line;
+                while ((line = r.readLine()) != null) sb.append(line);
+            }
+            return new JSONObject(sb.toString()).optString("phase", "").equals("error");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

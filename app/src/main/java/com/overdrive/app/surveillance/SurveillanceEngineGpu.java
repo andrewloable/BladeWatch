@@ -157,8 +157,27 @@ public class SurveillanceEngineGpu {
     // arraycopy ITSELF is racy — torn rows feed YOLO garbage. ThreadLocal
     // gives each thread its own scratch with no synchronization overhead.
     private final ThreadLocal<byte[]> aiBufferTL = new ThreadLocal<>();
-    // 2. Single Thread Executor: Prevents OS thread creation overhead
-    private final ExecutorService aiExecutor = Executors.newSingleThreadExecutor();
+    // 2. Single Thread Executor: Prevents OS thread creation overhead.
+    //    Runs at THREAD_PRIORITY_BACKGROUND so a 200-300ms CPU YOLO inference
+    //    can't preempt the camera-frame producer or encoder-feed thread. On
+    //    this device's NNAPI-SL stack, ~538 of ~546 model ops fall through to
+    //    XNNPACK on CPU even when "NNAPI" is enabled, so YOLO is in practice
+    //    a CPU-heavy task and must yield to higher-priority threads.
+    private final ExecutorService aiExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(() -> {
+            // Drop to Linux nice +10 so a 200-300ms CPU YOLO pass can't
+            // preempt the camera/encoder feed. setThreadPriority works
+            // regardless of how Java's Thread.priority maps internally.
+            try {
+                android.os.Process.setThreadPriority(
+                        android.os.Process.THREAD_PRIORITY_BACKGROUND);
+            } catch (Throwable ignored) {}
+            r.run();
+        }, "SentryAiExecutor");
+        t.setDaemon(true);
+        t.setPriority(Thread.MIN_PRIORITY);
+        return t;
+    });
     // 3. Atomic Flag for thread safety
     private final AtomicBoolean isAiRunning = new AtomicBoolean(false);
     // --- END SOTA FIX ---
@@ -171,8 +190,35 @@ public class SurveillanceEngineGpu {
     // V2 Pipeline: Per-quadrant 6-stage motion detection
     private MotionPipelineV2 pipelineV2 = null;
     private MotionPipelineV2.Config pipelineV2Config = null;
-    // Staggered YOLO: queue of quadrants to run AI on
-    private final java.util.Queue<Integer> aiQuadrantQueue = new java.util.LinkedList<>();
+    // Staggered YOLO: queue of quadrants to run AI on.
+    // Bounded + de-duplicating: there are only 4 quadrants, so a bitset-backed
+    // ArrayDeque guarantees the queue can never grow past 4 entries no matter
+    // how many motion events fire. Without this bound, sustained 4-quadrant
+    // motion would pile up dozens of pending inferences (the executor processes
+    // at AI_COOLDOWN_MS = 500ms; bursts at 10 FPS add 4 per frame), every one
+    // of which holds GPU/DSP cycles when it eventually runs and contributes to
+    // the recording stutter. add() is idempotent for already-queued quadrants.
+    private final java.util.ArrayDeque<Integer> aiQuadrantQueue = new java.util.ArrayDeque<>(4);
+    private int aiQuadrantQueueMask = 0;  // bit q = quadrant q is in queue
+
+    private void aiQuadrantQueueAdd(int q) {
+        if (q < 0 || q >= MotionPipelineV2.NUM_QUADRANTS) return;
+        int bit = 1 << q;
+        if ((aiQuadrantQueueMask & bit) != 0) return;  // already queued
+        aiQuadrantQueueMask |= bit;
+        aiQuadrantQueue.addLast(q);
+    }
+
+    private Integer aiQuadrantQueuePoll() {
+        Integer q = aiQuadrantQueue.pollFirst();
+        if (q != null) aiQuadrantQueueMask &= ~(1 << q);
+        return q;
+    }
+
+    private void aiQuadrantQueueClear() {
+        aiQuadrantQueue.clear();
+        aiQuadrantQueueMask = 0;
+    }
     
     // Foveated AI cropping: high-res 640×640 crop from raw camera strip
     private FoveatedCropper foveatedCropper = null;
@@ -693,6 +739,12 @@ public class SurveillanceEngineGpu {
             });
         }
         
+        // Per-quadrant override post-filter. The native pipeline ran with the
+        // aggregate (most-permissive) sensitivity/zone, so each quadrant's
+        // result currently reflects the loosest gates. Walk the quadrants and
+        // demote any result that wouldn't pass its own effective gates.
+        applyQuadrantOverrides(results);
+
         // Check if any quadrant detected motion at MEDIUM or higher threat.
         int maxThreat = pipelineV2.getMaxThreatLevel();
         boolean anyMotion = maxThreat >= MotionPipelineV2.THREAT_MEDIUM;
@@ -862,15 +914,15 @@ public class SurveillanceEngineGpu {
             // JSON sidecar records a generic "motion" event instead of classifying it.
             if (useObjectDetection && !isAiRunning.get() && aiQuadrantQueue.isEmpty()) {
                 int bestQ = pipelineV2.getHighestThreatQuadrant();
-                if (bestQ >= 0) aiQuadrantQueue.add(bestQ);
+                if (bestQ >= 0) aiQuadrantQueueAdd(bestQ);
                 for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
                     if (q != bestQ && results[q].motionDetected) {
-                        aiQuadrantQueue.add(q);
+                        aiQuadrantQueueAdd(q);
                     }
                 }
                 // Kick off AI immediately if cooldown allows
                 if (!aiQuadrantQueue.isEmpty() && (System.currentTimeMillis() - lastAiTimeMs) >= AI_COOLDOWN_MS) {
-                    runAiOnQuadrant(smallRgbFrame, aiQuadrantQueue.poll());
+                    runAiOnQuadrant(smallRgbFrame, aiQuadrantQueuePoll());
                 }
             }
             
@@ -1074,32 +1126,30 @@ public class SurveillanceEngineGpu {
                     if (useObjectDetection && !isAiRunning.get()) {
                         for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
                             if (results[q].motionDetected && results[q].threatLevel >= MotionPipelineV2.THREAT_MEDIUM) {
-                                if (!aiQuadrantQueue.contains(q)) {
-                                    aiQuadrantQueue.add(q);
-                                }
+                                aiQuadrantQueueAdd(q);  // dedups internally
                             }
                         }
                         // FIX: Check cooldown before consuming queue item
                         if (!aiQuadrantQueue.isEmpty() && (System.currentTimeMillis() - lastAiTimeMs) >= AI_COOLDOWN_MS) {
-                            runAiOnQuadrant(smallRgbFrame, aiQuadrantQueue.poll());
+                            runAiOnQuadrant(smallRgbFrame, aiQuadrantQueuePoll());
                         }
                     }
                 }
-                
+
                 // Staggered YOLO: queue active quadrants for AI detection
                 if (useObjectDetection && !isAiRunning.get()) {
-                    aiQuadrantQueue.clear();
+                    aiQuadrantQueueClear();
                     // Add quadrants sorted by threat level (highest first)
                     int bestQ = pipelineV2.getHighestThreatQuadrant();
-                    if (bestQ >= 0) aiQuadrantQueue.add(bestQ);
+                    if (bestQ >= 0) aiQuadrantQueueAdd(bestQ);
                     for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
                         if (q != bestQ && results[q].motionDetected) {
-                            aiQuadrantQueue.add(q);
+                            aiQuadrantQueueAdd(q);
                         }
                     }
                     // FIX: Check cooldown before consuming queue item
                     if (!aiQuadrantQueue.isEmpty() && (System.currentTimeMillis() - lastAiTimeMs) >= AI_COOLDOWN_MS) {
-                        runAiOnQuadrant(smallRgbFrame, aiQuadrantQueue.poll());
+                        runAiOnQuadrant(smallRgbFrame, aiQuadrantQueuePoll());
                     }
                 }
             }
@@ -1290,10 +1340,10 @@ public class SurveillanceEngineGpu {
                         if (NativeMotion.trackerNeedsYoloHeartbeat(q)) {
                             long timeSinceLastHeartbeat = now - lastHeartbeatTimeMs[q];
                             if (timeSinceLastHeartbeat >= HEARTBEAT_COOLDOWN_MS
-                                    && useObjectDetection && !isAiRunning.get() && !aiQuadrantQueue.contains(q)) {
-                                aiQuadrantQueue.add(q);
+                                    && useObjectDetection && !isAiRunning.get()) {
+                                aiQuadrantQueueAdd(q);  // dedups internally
                                 lastHeartbeatTimeMs[q] = now;
-                                logger.info("Tracker heartbeat: waking YOLO for Q" + q + 
+                                logger.info("Tracker heartbeat: waking YOLO for Q" + q +
                                         " [" + MotionPipelineV2.QUADRANT_NAMES[q] + "]");
                             }
                         }
@@ -1310,7 +1360,7 @@ public class SurveillanceEngineGpu {
         // permanently vaporizing that quadrant's AI pass.
         if (useObjectDetection && !isAiRunning.get() && !aiQuadrantQueue.isEmpty()) {
             if ((System.currentTimeMillis() - lastAiTimeMs) >= AI_COOLDOWN_MS) {
-                runAiOnQuadrant(smallRgbFrame, aiQuadrantQueue.poll());
+                runAiOnQuadrant(smallRgbFrame, aiQuadrantQueuePoll());
             }
         }
         
@@ -2258,8 +2308,24 @@ public class SurveillanceEngineGpu {
         // detection zone override their specific parameters, then loitering and cameras.
         if (pipelineV2Config != null && pipelineV2 != null) {
             pipelineV2Config.applyEnvironmentPreset(config.getEnvironmentPreset());
-            pipelineV2Config.applySensitivity(config.getSensitivityLevel());
-            pipelineV2Config.applyDetectionZone(config.getDetectionZone());
+
+            // The native pipeline runs once with a single config. To honor
+            // per-quadrant overrides we feed the *most-permissive* aggregate
+            // (highest sensitivity, widest detection zone) to native, then
+            // demote per-quadrant in Java via applyQuadrantOverrides().
+            int aggSens = config.getSensitivityLevel();
+            String aggZone = config.getDetectionZone();
+            for (int q = 0; q < 4; q++) {
+                aggSens = Math.max(aggSens, config.getEffectiveSensitivityLevel(q));
+                if ("extended".equals(config.getEffectiveDetectionZone(q))) {
+                    aggZone = "extended";
+                } else if ("normal".equals(config.getEffectiveDetectionZone(q))
+                        && "close".equals(aggZone)) {
+                    aggZone = "normal";
+                }
+            }
+            pipelineV2Config.applySensitivity(aggSens);
+            pipelineV2Config.applyDetectionZone(aggZone);
             pipelineV2Config.loiteringFrames = config.getLoiteringTimeSeconds() * 10;
             // Apply saved shadow filter mode (after preset, so user override takes precedence)
             pipelineV2Config.shadowFilterMode = config.getShadowFilterMode();
@@ -2268,8 +2334,9 @@ public class SurveillanceEngineGpu {
                 pipelineV2Config.quadrantEnabled[i] = cameras[i];
             }
             pipelineV2.applyConfig(pipelineV2Config);
-            logger.info(String.format("V2 pipeline config applied: env=%s, sens=%d, zone=%s, loiter=%ds, cameras=[%b,%b,%b,%b]",
-                    config.getEnvironmentPreset(), config.getSensitivityLevel(), config.getDetectionZone(),
+            logger.info(String.format("V2 pipeline config applied: env=%s, sens=%d (agg=%d), zone=%s (agg=%s), loiter=%ds, cameras=[%b,%b,%b,%b]",
+                    config.getEnvironmentPreset(), config.getSensitivityLevel(), aggSens,
+                    config.getDetectionZone(), aggZone,
                     config.getLoiteringTimeSeconds(), cameras[0], cameras[1], cameras[2], cameras[3]));
         }
         
@@ -2317,6 +2384,75 @@ public class SurveillanceEngineGpu {
     }
     
     /**
+     * Re-evaluate each quadrant's result against its effective (possibly
+     * overridden) sensitivity / zone gates. The native pipeline already ran
+     * with the most-permissive aggregate config, so we only ever demote — we
+     * never falsely promote, so this can't synthesize motion that the native
+     * stage didn't see.
+     *
+     * Demotion clears motionDetected, threatLevel, confirmedBlocks, and
+     * componentSize. activeBlocks and per-block confidences are preserved for
+     * diagnostics.
+     */
+    private void applyQuadrantOverrides(MotionPipelineV2.QuadrantResult[] results) {
+        if (config == null || results == null) return;
+
+        // Fast path: nothing overridden → skip entirely.
+        boolean anyOverride = false;
+        for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
+            if (config.getQuadrantSensitivityOverride(q) != null
+                    || config.getQuadrantDetectionZoneOverride(q) != null) {
+                anyOverride = true;
+                break;
+            }
+        }
+        if (!anyOverride) return;
+
+        for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
+            MotionPipelineV2.QuadrantResult r = results[q];
+            if (r == null || !r.motionDetected) continue;
+
+            int effSens = config.getEffectiveSensitivityLevel(q);
+            String effZone = config.getEffectiveDetectionZone(q);
+            MotionPipelineV2.Config.GateThresholds gates =
+                    MotionPipelineV2.Config.gatesForSensitivity(effSens);
+            int maxRow = MotionPipelineV2.Config.maxDistanceRowForZone(effZone);
+
+            // Recount confirmed blocks at this quadrant's stricter confidence threshold.
+            int confirmedAtThreshold = 0;
+            if (r.blockConfidence != null) {
+                for (int i = 0; i < r.blockConfidence.length; i++) {
+                    if (r.blockConfidence[i] >= gates.confidenceThreshold) confirmedAtThreshold++;
+                }
+            } else {
+                confirmedAtThreshold = r.confirmedBlocks;
+            }
+
+            boolean failsAlarm = confirmedAtThreshold < gates.alarmBlockThreshold;
+            boolean failsComponent = r.componentSize < gates.minComponentSize;
+            boolean failsZone = (maxRow > 0) && (r.centroidY < maxRow);
+
+            if (failsAlarm || failsComponent || failsZone) {
+                r.motionDetected = false;
+                r.threatLevel = MotionPipelineV2.THREAT_NONE;
+                r.confirmedBlocks = confirmedAtThreshold;
+                if (filterDebugEnabled) {
+                    String reason = failsAlarm ? "alarm" : failsComponent ? "component" : "zone";
+                    logger.debug(String.format(
+                            "  [%s] OVERRIDE_DEMOTED reason=%s sens=%d zone=%s confirmed@%.2f=%d/%d component=%d/%d centroidRow=%.1f/cutoff=%d",
+                            MotionPipelineV2.QUADRANT_NAMES[q], reason, effSens, effZone,
+                            gates.confidenceThreshold, confirmedAtThreshold, gates.alarmBlockThreshold,
+                            r.componentSize, gates.minComponentSize, r.centroidY, maxRow));
+                }
+            } else {
+                // Pass: update confirmedBlocks to reflect the stricter count
+                // so downstream consumers see consistent numbers.
+                r.confirmedBlocks = confirmedAtThreshold;
+            }
+        }
+    }
+
+    /**
      * Estimate real-world distance from a centroid Y position in block coordinates.
      * 
      * The centroid Y is in block coordinates (0 = top row / far, GRID_ROWS-1 = bottom / close).
@@ -2339,7 +2475,7 @@ public class SurveillanceEngineGpu {
         int quadrantOffsetY = (quadrant >= 2) ? (THUMBNAIL_HEIGHT / 2) : 0;
         int globalY = quadrantOffsetY + (int) pixelY;
         
-        return config.estimateDistance(globalY);
+        return config.estimateDistanceForQuadrant(quadrant, globalY);
     }
     
     /**
@@ -2988,29 +3124,39 @@ public class SurveillanceEngineGpu {
             return;
         }
         
-        // SOTA: Ensure storage space before recording (auto-cleanup oldest files)
+        // SOTA: Storage cleanup happens off the trigger thread.
+        // The periodic cleanup (StorageManager.startPeriodicCleanup, 30s cadence
+        // with a 90%-of-limit threshold) is the steady-state mechanism. Doing
+        // a synchronous scan + delete here was costing 100-200ms on the
+        // motion-detection thread on near-full SD cards, which was the
+        // dominant contributor to lag at motion onset. Two changes:
+        //   1. SD-card mount check stays sync (cheap, microseconds, and we
+        //      need a valid path before triggerEventRecording).
+        //   2. ensureSurveillanceSpace fires on aiExecutor — a cheap noop if
+        //      already under the limit, and worst case it runs in parallel
+        //      with the recording itself. New recordings still write; old
+        //      ones get pruned a beat later.
+        com.overdrive.app.storage.StorageManager storageManager;
         try {
-            com.overdrive.app.storage.StorageManager storageManager =
-                com.overdrive.app.storage.StorageManager.getInstance();
-            
-            // Safety net: verify SD card is still mounted before writing
-            // BYD system can unmount it at any time when ACC is off
-            if (storageManager.getSurveillanceStorageType() == 
-                com.overdrive.app.storage.StorageManager.StorageType.SD_CARD &&
-                !storageManager.isSdCardMounted()) {
+            storageManager = com.overdrive.app.storage.StorageManager.getInstance();
+            if (storageManager.getSurveillanceStorageType() ==
+                    com.overdrive.app.storage.StorageManager.StorageType.SD_CARD &&
+                    !storageManager.isSdCardMounted()) {
                 logger.warn("SD card unmounted before recording - attempting remount");
                 if (!storageManager.ensureSdCardMounted(true)) {
                     logger.error("SD card remount failed - event may write to stale path");
                 }
             }
-            
-            // Reserve ~50MB for new recording (typical event is 10-30MB)
-            boolean spaceAvailable = storageManager.ensureSurveillanceSpace(50 * 1024 * 1024);
-            if (!spaceAvailable) {
-                logger.warn("Storage cleanup could not free enough space, recording anyway");
-            }
         } catch (Exception e) {
-            logger.warn("Storage check failed: " + e.getMessage());
+            logger.warn("Storage mount check failed: " + e.getMessage());
+            storageManager = null;
+        }
+        final com.overdrive.app.storage.StorageManager smRef = storageManager;
+        if (smRef != null) {
+            aiExecutor.execute(() -> {
+                try { smRef.ensureSurveillanceSpace(50 * 1024 * 1024); }
+                catch (Exception e) { logger.warn("Async storage cleanup failed: " + e.getMessage()); }
+            });
         }
         
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());

@@ -142,6 +142,15 @@
         android:label="@string/settings_section_daemons"
         tools:layout="@layout/fragment_daemons" />
 
+    <!-- About — reachable from the portrait Settings hub's About row.
+         Hosts the SettingsAboutFragment that shows version, license,
+         source link, support links, and the Check for Updates action. -->
+    <fragment
+        android:id="@+id/settingsAboutFragment"
+        android:name="com.overdrive.app.ui.fragment.settings.SettingsAboutFragment"
+        android:label="@string/settings_section_about"
+        tools:layout="@layout/fragment_settings_about" />
+
     <!-- Native video player (entered from Recordings) -->
     <fragment
         android:id="@+id/videoPlayerFragment"

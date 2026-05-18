@@ -706,11 +706,16 @@ class WebViewFragment : Fragment() {
 
     private var cachedJwt: String? = null
     private var jwtExpiry: Long = 0
+    // Pin the WebView cookie's JWT to the AuthManager state version it was
+    // minted from — the cookie travels through CookieManager which has its
+    // own persistence, so a stale JWT here outlives the in-process cache.
+    private var cachedJwtStateVersion: Long = -1
 
     private fun getAuthJwt(): String? {
         // Cache JWT for 5 minutes to avoid spamming auth state saves
         val now = System.currentTimeMillis()
-        if (cachedJwt != null && now < jwtExpiry) return cachedJwt
+        val curVersion = com.overdrive.app.auth.AuthManager.getStateVersion()
+        if (cachedJwt != null && now < jwtExpiry && cachedJwtStateVersion == curVersion) return cachedJwt
         
         return try {
             // Try to initialize AuthManager if not already done
@@ -730,6 +735,7 @@ class WebViewFragment : Fragment() {
             if (jwt != null) {
                 cachedJwt = jwt
                 jwtExpiry = now + 5 * 60 * 1000  // 5 min cache
+                cachedJwtStateVersion = com.overdrive.app.auth.AuthManager.getStateVersion()
                 android.util.Log.d("WebView", "JWT generated successfully")
             } else {
                 android.util.Log.e("WebView", "JWT generation failed after retry")
@@ -742,6 +748,10 @@ class WebViewFragment : Fragment() {
     }
 
     private fun injectAuthCookie() {
+        injectAuthCookie(attempt = 0)
+    }
+
+    private fun injectAuthCookie(attempt: Int) {
         try {
             val jwt = getAuthJwt()
             if (jwt != null) {
@@ -749,26 +759,22 @@ class WebViewFragment : Fragment() {
                 cm.setAcceptCookie(true)
                 cm.setCookie("http://127.0.0.1:${CameraDaemon.HTTP_PORT}", "byd_session=$jwt; Path=/; Max-Age=31536000")
                 cm.flush()
-                android.util.Log.d("WebView", "Auth cookie set")
-            } else {
-                // JWT not available yet — retry after 2 seconds (daemon may still be starting)
+                android.util.Log.d("WebView", "Auth cookie set${if (attempt > 0) " (attempt ${attempt + 1})" else ""}")
+                if (attempt > 0) {
+                    // Auth came online after the page already tried to
+                    // load — reload so it picks up the now-valid cookie.
+                    webView?.reload()
+                }
+            } else if (attempt < 10) {
+                // Auth not ready yet — daemon may still be writing the
+                // unified config. Poll up to ~10s. Each retry re-mints
+                // the JWT, so we'll pick up the daemon's secret as soon
+                // as it lands in the unified config.
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    try {
-                        val retryJwt = getAuthJwt()
-                        if (retryJwt != null) {
-                            val cm = CookieManager.getInstance()
-                            cm.setCookie("http://127.0.0.1:${CameraDaemon.HTTP_PORT}", "byd_session=$retryJwt; Path=/; Max-Age=31536000")
-                            cm.flush()
-                            android.util.Log.d("WebView", "Auth cookie set (retry)")
-                            // Reload page now that auth is available
-                            webView?.reload()
-                        } else {
-                            android.util.Log.e("WebView", "Auth cookie retry also failed")
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.e("WebView", "Auth cookie retry error: ${e.message}")
-                    }
-                }, 2000)
+                    injectAuthCookie(attempt + 1)
+                }, 1000)
+            } else {
+                android.util.Log.e("WebView", "Auth cookie retry exhausted after 10 attempts")
             }
         } catch (e: Exception) {
             android.util.Log.e("WebView", "Cookie inject failed: ${e.message}")

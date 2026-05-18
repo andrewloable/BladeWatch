@@ -1159,7 +1159,11 @@ const TRIPS = {
 
                 // Update circle value
                 this.setEl('rangeCircleValue', predicted);
-                const rangePct = Math.min(100, (predicted / 500) * 100);
+                // Fill = personalized vs projected (built-in). Full ring when you
+                // match or beat the factory baseline; partial when below it.
+                const rangePct = builtInKm > 0
+                    ? Math.min(100, (predictedKm / builtInKm) * 100)
+                    : Math.min(100, (predictedKm / 500) * 100);
                 this.renderCircleGauge('rangeCircleCanvas', rangePct, '#0EA5E9');
 
                 // Delta capsule below circle — shows personalized vs built-in
@@ -1935,11 +1939,11 @@ const TRIPS = {
         const radius = Math.min(cx, cy) * 0.55;
 
         const axes = [
-            { label: 'Anticipation', key: 'anticipation' },
-            { label: 'Smoothness', key: 'smoothness' },
-            { label: 'Speed Disc.', key: 'speedDiscipline' },
-            { label: 'Efficiency', key: 'efficiency' },
-            { label: 'Consistency', key: 'consistency' }
+            { label: this.criterion('anticipation', 'label'),    key: 'anticipation' },
+            { label: this.criterion('smoothness', 'label'),      key: 'smoothness' },
+            { label: this.criterion('speedDiscipline', 'label'), key: 'speedDiscipline' },
+            { label: this.criterion('efficiency', 'label'),      key: 'efficiency' },
+            { label: this.criterion('consistency', 'label'),     key: 'consistency' }
         ];
         const n = axes.length;
         const angleStep = (Math.PI * 2) / n;

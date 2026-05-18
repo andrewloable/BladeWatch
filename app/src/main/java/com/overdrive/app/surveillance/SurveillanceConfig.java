@@ -205,7 +205,67 @@ public class SurveillanceConfig {
     private boolean motionHeatmapEnabled = false;
     private boolean filterDebugLogEnabled = false;
     private int shadowFilterMode = 2;               // 0=OFF, 1=LIGHT, 2=NORMAL, 3=AGGRESSIVE
-    
+
+    // ========================================================================
+    // Per-Quadrant Sensitivity / Zone Overrides
+    // ========================================================================
+    // null = inherit the global value. Indexed Q0=front, Q1=right, Q2=rear, Q3=left.
+    // Side cams (Q1, Q3) often want stricter recall than front/rear because
+    // a parking-lot neighbor pulls into the side stalls — these overrides let
+    // the user crank just the sides without flooding front/rear with false
+    // positives.
+    private Integer[] quadrantSensitivityOverride = new Integer[4];   // 1-5, null = inherit
+    private String[]  quadrantDetectionZoneOverride = new String[4];   // close|normal|extended, null = inherit
+
+    /**
+     * Resolved sensitivity level for a quadrant: per-quadrant override if set,
+     * otherwise the global {@code sensitivityLevel}.
+     */
+    public int getEffectiveSensitivityLevel(int quadrant) {
+        if (quadrant >= 0 && quadrant < 4 && quadrantSensitivityOverride[quadrant] != null) {
+            return quadrantSensitivityOverride[quadrant];
+        }
+        return sensitivityLevel;
+    }
+
+    /**
+     * Resolved detection zone for a quadrant: per-quadrant override if set,
+     * otherwise the global {@code detectionZone}.
+     */
+    public String getEffectiveDetectionZone(int quadrant) {
+        if (quadrant >= 0 && quadrant < 4 && quadrantDetectionZoneOverride[quadrant] != null) {
+            return quadrantDetectionZoneOverride[quadrant];
+        }
+        return detectionZone;
+    }
+
+    public Integer getQuadrantSensitivityOverride(int quadrant) {
+        if (quadrant < 0 || quadrant >= 4) return null;
+        return quadrantSensitivityOverride[quadrant];
+    }
+
+    public void setQuadrantSensitivityOverride(int quadrant, Integer level) {
+        if (quadrant < 0 || quadrant >= 4) return;
+        if (level == null) {
+            quadrantSensitivityOverride[quadrant] = null;
+        } else {
+            quadrantSensitivityOverride[quadrant] = Math.max(1, Math.min(5, level));
+        }
+    }
+
+    public String getQuadrantDetectionZoneOverride(int quadrant) {
+        if (quadrant < 0 || quadrant >= 4) return null;
+        return quadrantDetectionZoneOverride[quadrant];
+    }
+
+    public void setQuadrantDetectionZoneOverride(int quadrant, String zone) {
+        if (quadrant < 0 || quadrant >= 4) return;
+        if (zone == null) { quadrantDetectionZoneOverride[quadrant] = null; return; }
+        if (zone.equals("close") || zone.equals("normal") || zone.equals("extended")) {
+            quadrantDetectionZoneOverride[quadrant] = zone;
+        }
+    }
+
     // V2 getters
     public String getEnvironmentPreset() { return environmentPreset; }
     public String getDetectionZone() { return detectionZone; }
@@ -422,29 +482,60 @@ public class SurveillanceConfig {
      * @return Estimated distance in meters
      */
     public float estimateDistance(int globalY) {
+        return estimateDistance(-1, globalY);
+    }
+
+    /**
+     * Quadrant-aware variant. When {@code quadrant} is in [0,3], picks the
+     * camera-height calibration per camera (FRONT/SIDE/REAR/SIDE) instead of
+     * inferring from mosaic row. Side cameras (Q1=right, Q3=left) are
+     * mirror-mounted at HEIGHT_SIDE which is materially taller than the front
+     * grille / rear plate; using the wrong height under-reports distance by
+     * ~20-30%.
+     */
+    public float estimateDistanceForQuadrant(int quadrant, int globalY) {
+        return estimateDistance(quadrant, globalY);
+    }
+
+    private float estimateDistance(int quadrant, int globalY) {
         if (globalY <= 0) return 999.0f;
-        
+
         // Per-camera calibration
         float currentCamHeight;
         float currentCamTilt = TILT_ZERO;   // All 360 cameras: zero tilt
         float currentFov = FOV_WIDE;        // All 360 cameras: wide angle
-        
+
         double localY;
         double quadrantHeight;
-        
+
         if (isMosaic) {
             int halfH = frameHeight / 2;  // 240 for 480p
-            
+
             if (globalY < halfH) {
-                // --- TOP ROW (Front / Right cameras) ---
-                currentCamHeight = HEIGHT_FRONT;
                 localY = globalY;           // 0-239 within top quadrant
                 quadrantHeight = halfH;     // 240
             } else {
-                // --- BOTTOM ROW (Rear / Left cameras) ---
-                currentCamHeight = HEIGHT_REAR;
                 localY = globalY - halfH;   // Convert to local: 240->0, 479->239
                 quadrantHeight = halfH;     // 240
+            }
+
+            // Quadrant order: Q0=front, Q1=right, Q2=rear, Q3=left
+            switch (quadrant) {
+                case 1:
+                case 3:
+                    currentCamHeight = HEIGHT_SIDE;
+                    break;
+                case 2:
+                    currentCamHeight = HEIGHT_REAR;
+                    break;
+                case 0:
+                    currentCamHeight = HEIGHT_FRONT;
+                    break;
+                default:
+                    // Legacy callers without a quadrant: fall back to
+                    // top-row=FRONT, bottom-row=REAR (the historic behavior).
+                    currentCamHeight = (globalY < halfH) ? HEIGHT_FRONT : HEIGHT_REAR;
+                    break;
             }
         } else {
             // Single camera view
@@ -494,14 +585,6 @@ public class SurveillanceConfig {
         if (distance > 50.0f) return 50.0f;
         
         return distance;
-    }
-    
-    /**
-     * Two-parameter version for API compatibility.
-     * X coordinate is ignored since distance only depends on Y.
-     */
-    public float estimateDistance(int globalX, int globalY) {
-        return estimateDistance(globalY);
     }
     
     /**

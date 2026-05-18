@@ -89,6 +89,18 @@ public class PerformanceApiHandler {
             return handleDiscover(out);
         }
         
+        // GET /api/performance/parking-delta - Most recent completed park-and-return cycle.
+        // Routed BEFORE the /soc prefix match below since both share the /soc-adjacent
+        // SocHistoryDatabase, but this endpoint is a single-row JSON, not history.
+        if (path.startsWith("/api/performance/parking-delta") && method.equals("GET")) {
+            return handleParkingDelta(path, out);
+        }
+
+        // GET /api/performance/last-charge - Most recent completed charging session.
+        if (path.startsWith("/api/performance/last-charge") && method.equals("GET")) {
+            return handleLastCharge(path, out);
+        }
+
         // GET /api/performance/soc - SOC history
         if (path.startsWith("/api/performance/soc") && method.equals("GET")) {
             return handleSocHistory(path, out);
@@ -349,8 +361,76 @@ public class PerformanceApiHandler {
     }
     
     /**
+     * GET /api/performance/parking-delta?maxAgeHours=72
+     *
+     * Proxies SocHistoryDatabase.getLastParkingDelta() to UI-process callers
+     * (DashboardInsightProvider) which can't open the H2 file themselves —
+     * the daemon's FILE_LOCK=SOCKET excludes other JVMs, and the UI-side
+     * singleton is never init()'d anyway because init() only runs in
+     * CameraDaemon.main().
+     *
+     * Response: the JSON object returned by getLastParkingDelta(), or
+     *           {"available": false} when the DB is offline / no qualifying cycle.
+     */
+    private static boolean handleParkingDelta(String path, OutputStream out) throws Exception {
+        try {
+            int maxAgeHours = parseIntQueryParam(path, "maxAgeHours", 72);
+            SocHistoryDatabase socDb = SocHistoryDatabase.getInstance();
+            JSONObject delta = socDb.getLastParkingDelta(maxAgeHours);
+            if (delta == null) {
+                HttpResponse.sendJson(out, "{\"available\": false}");
+            } else {
+                HttpResponse.sendJson(out, delta.toString());
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("Failed to get parking delta", e);
+            HttpResponse.sendJson(out, "{\"available\": false, \"error\": \"" + e.getMessage() + "\"}");
+            return true;
+        }
+    }
+
+    /**
+     * GET /api/performance/last-charge?hoursBack=24
+     *
+     * Proxies SocHistoryDatabase.getMostRecentCompletedChargingSession() for the
+     * same cross-process reason as parking-delta above.
+     */
+    private static boolean handleLastCharge(String path, OutputStream out) throws Exception {
+        try {
+            int hoursBack = parseIntQueryParam(path, "hoursBack", 24);
+            SocHistoryDatabase socDb = SocHistoryDatabase.getInstance();
+            JSONObject session = socDb.getMostRecentCompletedChargingSession(hoursBack);
+            if (session == null) {
+                HttpResponse.sendJson(out, "{\"available\": false}");
+            } else {
+                HttpResponse.sendJson(out, session.toString());
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("Failed to get last charge", e);
+            HttpResponse.sendJson(out, "{\"available\": false, \"error\": \"" + e.getMessage() + "\"}");
+            return true;
+        }
+    }
+
+    private static int parseIntQueryParam(String path, String name, int defaultValue) {
+        if (path == null || !path.contains("?")) return defaultValue;
+        try {
+            String query = path.substring(path.indexOf("?") + 1);
+            for (String param : query.split("&")) {
+                String[] kv = param.split("=");
+                if (kv.length == 2 && kv[0].equals(name)) {
+                    return Integer.parseInt(kv[1]);
+                }
+            }
+        } catch (Exception ignored) {}
+        return defaultValue;
+    }
+
+    /**
      * Handle SOC history requests.
-     * 
+     *
      * Endpoints:
      * - GET /api/performance/soc?hours=24&points=200 - Get SOC history
      * - GET /api/performance/soc/stats?hours=24 - Get SOC statistics
@@ -488,8 +568,13 @@ public class PerformanceApiHandler {
             if (sohEst != null) {
                 sohEst.reset();
 
-                // Re-run capacity detection and seed immediately from live data
-                sohEst.autoDetectCarModel(null);
+                // Re-run capacity detection and seed immediately from live data.
+                // Passing null context disables every HAL probe — getEnergyMode,
+                // getFuelPercentageValue, getBatteryCapacity all need it — which
+                // means dumpPhevDiagnostics can't infer drivetrain and the
+                // exact-Ah path can't fire. Use the daemon's app context.
+                android.content.Context appCtx = com.overdrive.app.daemon.CameraDaemon.getAppContext();
+                sohEst.autoDetectCarModel(appCtx);
                 sohEst.seedInitialEstimate();
 
                 JSONObject response = new JSONObject();
@@ -576,7 +661,11 @@ public class PerformanceApiHandler {
                                 SocHistoryDatabase.getInstance().getSohEstimator();
                             if (sohEst != null) {
                                 sohEst.reset();
-                                sohEst.autoDetectCarModel(null);
+                                // Pass app context — null disables HAL probes
+                                // and forces SOC-heuristic-only re-detection.
+                                android.content.Context appCtx =
+                                    com.overdrive.app.daemon.CameraDaemon.getAppContext();
+                                sohEst.autoDetectCarModel(appCtx);
                                 sohEst.seedInitialEstimate();
                                 r.put("success", true);
                             } else {

@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">監控</string>
     <string name="settings_section_daemons">子</string>
     <string name="settings_section_privacy">隱私與資料</string>
-    <string name="settings_section_about">關於 &amp; 更新</string>
+    <string name="settings_section_about">關於</string>
     <string name="settings_subrail_overline">設定方式</string>
     <string name="cd_settings_subrail">設定子線</string>
     <string name="settings_privacy_title">隱私與資料</string>

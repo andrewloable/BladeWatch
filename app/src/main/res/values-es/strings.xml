@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">Vigilancia</string>
     <string name="settings_section_daemons">Los demonios</string>
     <string name="settings_section_privacy">Privacidad y datos</string>
-    <string name="settings_section_about">Sobre y actualizaciones</string>
+    <string name="settings_section_about">Acerca de</string>
     <string name="settings_subrail_overline">SETIMENTADES</string>
     <string name="cd_settings_subrail">Subferril de configuración</string>
     <string name="settings_privacy_title">Privacidad y datos</string>

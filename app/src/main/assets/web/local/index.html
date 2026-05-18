@@ -350,7 +350,7 @@
                                 </div>
                             </div>
 
-                            <!-- Bottom Car Image Selector -->
+                            <!-- Bottom Car Image Selector — flips to a right-rail in landscape -->
                             <div class="car-selector-bottom">
                                 <div class="car-image-container">
                                     <img src="../shared/car-icon.webp" alt="Car" class="car-image" id="carImage">
@@ -425,11 +425,19 @@
             --lv-floor-spotlight: rgba(255,255,255,0.12);
             --lv-shadow-strong: rgba(0,0,0,0.6);
             --lv-shadow-soft: rgba(0,0,0,0.7);
+            /* Video stage / letterbox background. Dark theme keeps the
+               classic black-bars look; light theme flips to the page surface
+               so the camera tab isn't a giant black slab on a light cabin
+               display. The decoded video's own pixels still cover most of
+               the area while a stream is active — this colour is only
+               visible in idle / buffer / aspect-mismatch regions. */
+            --lv-video-bg: #000;
         }
         :root[data-theme="light"] .live-view-page {
-            /* The video letterbox stays #000 (set on video/canvas elements
-               directly), but the surrounding chrome flips to a light tinted
-               glass with darker text and softer shadows. */
+            /* The surrounding chrome flips to a light tinted glass with
+               darker text and softer shadows. The video stage itself also
+               flips (see --lv-video-bg) so the idle state and letterbox
+               match the rest of the light palette. */
             --lv-panel-bg: linear-gradient(180deg, #F7FAF7 0%, #ECEFEC 50%, #F7FAF7 100%);
             --lv-top-overlay: linear-gradient(180deg, rgba(247,250,247,0.95) 0%, transparent 100%);
             --lv-pill-bg: rgba(0,0,0,0.04);
@@ -449,6 +457,7 @@
             --lv-floor-spotlight: rgba(0,0,0,0.10);
             --lv-shadow-strong: rgba(0,0,0,0.18);
             --lv-shadow-soft: rgba(0,0,0,0.22);
+            --lv-video-bg: var(--bg-base);
         }
 
         /* SOTA Seamless Camera View */
@@ -476,24 +485,28 @@
         .top-bar-left, .top-bar-right { display: flex; align-items: center; gap: 10px; }
 
         .connection-status {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 14px;
+            gap: 10px;
+            padding: 8px 16px;
             background: var(--lv-pill-bg);
             backdrop-filter: blur(20px);
             border: 1px solid var(--lv-pill-border-soft);
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
+            color: var(--lv-overlay-text);
+            white-space: nowrap;
         }
-        
+
         .conn-dot {
             width: 8px; height: 8px;
+            flex: 0 0 8px;
             border-radius: 50%;
             background: var(--text-muted);
             transition: all 0.3s;
         }
+        .connection-status .status-text { line-height: 1; }
         
         .connection-status.live .conn-dot {
             background: #22c55e;
@@ -564,9 +577,14 @@
         .top-bar-btn:hover { background: var(--lv-pill-bg-hover); color: var(--text-primary); }
         .top-bar-btn svg { width: 18px; height: 18px; }
         
-        /* Video Display — letterbox area stays #000 in both themes; black
-           bars on a video feed are the universally-correct neutral, and
-           the video frame itself sets the perceived background. */
+        /* Video Display — the stage and the layered video / canvas /
+           software-decoder containers all share --lv-video-bg so the camera
+           tab flips palette with the rest of the app. Dark theme resolves
+           it to #000 (the classic letterbox look); light theme resolves it
+           to the page surface so the panel doesn't read as a black slab on
+           a light cabin display. The decoded video's own pixels cover most
+           of the area while streaming, so this colour is only visible in
+           idle / buffer / aspect-mismatch regions. */
         .video-display-area {
             flex: 1;
             position: relative;
@@ -575,7 +593,7 @@
             justify-content: center;
             min-height: 200px;
             overflow: hidden;
-            background: #000;
+            background: var(--lv-video-bg);
         }
 
         .video-display-area video, .video-display-area #sw_container {
@@ -586,7 +604,7 @@
             border-radius: 12px;
             box-shadow: 0 8px 40px var(--lv-shadow-strong);
             display: none;
-            background: #000;
+            background: var(--lv-video-bg);
         }
 
         .video-display-area #sota_canvas {
@@ -597,7 +615,7 @@
             border-radius: 12px;
             box-shadow: 0 8px 40px var(--lv-shadow-strong);
             display: none;
-            background: #000;
+            background: var(--lv-video-bg);
             z-index: 10;
         }
         
@@ -822,6 +840,59 @@
         }
         
         /* Mini preview position handled by .cameras-mode class */
+
+        /* ===========================================================
+           LANDSCAPE LAYOUT (e.g. BYD Seal head unit, 1920x1080)
+           Default vertical layout puts the car selector below the video,
+           which works in portrait but wastes 30%+ of the canvas in
+           landscape. We flip the cameras panel to side-by-side so the
+           video grows horizontally (75%) and the car-image selector
+           stays as a fixed-width 25% rail on the right.
+           A small toggle near the top-bar collapses the rail to a
+           thin handle, so a single tap can give the video the full
+           canvas. Toggle is purely CSS-driven via a class on the
+           panelCameras element.
+           =========================================================== */
+        /* Landscape trigger is `orientation: landscape` only — no min-width.
+           In the BYD in-app WebView the device is 1920x1080 in landscape but
+           the WebView viewport is narrower than the device width because the
+           Android shell's NavigationRailView claims a fixed pixel column on
+           the left. A `min-width: 900px` gate fails for that effective
+           viewport even though the screen is clearly landscape, so the
+           selector falls back to the portrait below-video stack which the
+           user reads as "selector is taking 50% height". Orientation alone
+           is the right signal — if the device is landscape, side-rail wins.
+           Outside the in-app shell (zrok tunnel on a phone in landscape with
+           a tiny browser window) this could activate at narrow widths, but
+           the rail's `min-width: 200px` keeps the video area still usable. */
+        @media (orientation: landscape) {
+            #panelCameras .seamless-camera-view {
+                flex-direction: row;
+            }
+            #panelCameras .video-display-area {
+                flex: 1 1 75%;
+                min-height: 0;
+            }
+            #panelCameras .car-selector-bottom {
+                flex: 0 0 25%;
+                max-width: 280px;
+                min-width: 200px;
+                padding: 16px 12px;
+                padding-bottom: 24px;
+                border-left: 1px solid var(--lv-pill-border-soft, rgba(255,255,255,0.08));
+                background: var(--lv-car-bg);
+                align-items: center;
+                position: relative;
+                transition: max-width 0.25s ease, min-width 0.25s ease,
+                            flex-basis 0.25s ease, padding 0.25s ease;
+            }
+            /* Move the car upward so labels above/below stay clear of
+               the panel edges. The portrait extra-margin assumed a wide
+               flex container; we tighten that here. */
+            #panelCameras .car-image-container {
+                margin: 22px auto;
+            }
+        }
     </style>
 
     <script src="../shared/auth.js"></script>
@@ -861,26 +932,39 @@
         BYD.stream.currentViewMode = -1; // -1 = none selected
         
         BYD.stream.selectCamera = async function(mode) {
-            // Toggle behavior: if same camera tapped again, stop the stream
-            if (this.currentViewMode === mode && this.sotaPlayer && this.sotaPlayer.isRunning()) {
+            // Toggle behavior: if the same camera is tapped again, stop the
+            // stream. The earlier guard only checked sotaPlayer (WebCodecs),
+            // so on the BYD in-app WebView (Chrome 58, no VideoDecoder) the
+            // active player is jmuxer / Broadway / hw_player and the toggle
+            // never fired — re-tapping the same camera silently re-started
+            // the stream. Treat ANY active player + streamStarted as "live".
+            const sotaLive = this.sotaPlayer && this.sotaPlayer.isRunning && this.sotaPlayer.isRunning();
+            const legacyLive = this.streamStarted && (
+                !!this.jmuxer || !!this.broadwayPlayer ||
+                (this.ws && this.ws.readyState === WebSocket.OPEN)
+            );
+            if (this.currentViewMode === mode && (sotaLive || legacyLive)) {
                 console.log("[Stream] Toggling off camera:", mode);
-                this.sotaPlayer.stop();
+                // Reuse the canonical stopStream path so all decoder branches
+                // (sota / jmuxer / broadway / ws) tear down cleanly. The
+                // standalone `sotaPlayer.stop()` left jmuxer + ws dangling
+                // when the active decoder wasn't WebCodecs.
+                this.stopStream();
                 this.currentViewMode = -1;
-                this.streamStarted = false;
-                
+
                 // Remove active state from hotspots
                 document.querySelectorAll('.cam-hotspot').forEach(el => el.classList.remove('active'));
-                
+
                 // Update UI
                 const labelEl = document.getElementById('currentCameraLabel');
                 const overlayEl = document.getElementById('cameraLabelOverlay');
                 if (labelEl) labelEl.textContent = BYD.i18n.t('pip.select_camera');
                 if (overlayEl) overlayEl.style.display = 'none';
-                
+
                 // Show idle state
                 const idleState = document.getElementById('videoIdleState');
                 if (idleState) idleState.classList.remove('hidden');
-                
+
                 this.updateConnectionStatus('idle');
                 return;
             }

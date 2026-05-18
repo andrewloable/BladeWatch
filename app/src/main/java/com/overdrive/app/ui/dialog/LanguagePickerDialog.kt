@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.overdrive.app.R
 import com.overdrive.app.server.LocaleManager
@@ -65,6 +66,24 @@ object LanguagePickerDialog {
         val dialog = BottomSheetDialog(context, R.style.Theme_Overdrive_M3_BottomSheet).apply {
             setContentView(view)
             setCancelable(true)
+        }
+
+        // Open the picker already expanded to a tall, centered state
+        // instead of the default collapsed peek at the bottom edge of the
+        // screen. The sheet still respects its own max-width / max-height
+        // so on very tall displays it won't fill 100% of the viewport.
+        dialog.setOnShowListener {
+            val sheet = dialog.findViewById<View>(
+                com.google.android.material.R.id.design_bottom_sheet
+            ) ?: return@setOnShowListener
+            val behavior = BottomSheetBehavior.from(sheet)
+            behavior.skipCollapsed = true
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+            // Tall peek so the sheet visually centers near the middle of
+            // the screen rather than peeking from the bottom on tall
+            // displays (e.g. BYD Seal portrait 1080×1920).
+            val displayMetrics = context.resources.displayMetrics
+            behavior.peekHeight = (displayMetrics.heightPixels * 0.7f).toInt()
         }
 
         val rawCurrent = LocaleManager.getRaw()  // null/auto/<tag>

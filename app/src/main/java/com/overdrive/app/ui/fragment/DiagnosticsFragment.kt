@@ -14,7 +14,6 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.commit
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.overdrive.app.R
@@ -74,12 +73,8 @@ class DiagnosticsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Mount the live logs panel inline.
-        if (childFragmentManager.findFragmentById(R.id.logsPanelContainer) == null) {
-            childFragmentManager.commit {
-                replace(R.id.logsPanelContainer, LogsPanelFragment())
-            }
-        }
+        // The inline live-logs panel was removed from this page. Logs
+        // remain reachable from the ADB Console tile.
 
         view.findViewById<View>(R.id.cardAdb).setOnClickListener {
             findNavController().navigate(R.id.adbConsoleFragment)
@@ -91,6 +86,19 @@ class DiagnosticsFragment : Fragment() {
             (activity as? MainActivity)?.invokeReconfigureCameraAction()
         }
         view.findViewById<View>(R.id.cardBattery).setOnClickListener {
+            (activity as? MainActivity)?.invokeBatteryHealthAction()
+        }
+        view.findViewById<View>(R.id.cardSettingsShortcut)?.setOnClickListener {
+            findNavController().navigate(R.id.settingsFragment)
+        }
+        // HEALTH tiles for Camera + Battery now act as shortcuts to the
+        // same actions the corresponding TOOLS tiles fire — saves the
+        // user a tap when the tile already shows the health they want
+        // to act on.
+        view.findViewById<View>(R.id.cardCameraHealth)?.setOnClickListener {
+            (activity as? MainActivity)?.invokeReconfigureCameraAction()
+        }
+        view.findViewById<View>(R.id.cardBatteryHealth)?.setOnClickListener {
             (activity as? MainActivity)?.invokeBatteryHealthAction()
         }
 
@@ -418,7 +426,10 @@ class DiagnosticsFragment : Fragment() {
                     val props = java.util.Properties()
                     java.io.FileInputStream(sohFile).use { props.load(it) }
                     val v = props.getProperty("soh_percent")?.toDoubleOrNull()
-                    if (v != null && v > 0.0 && v <= 100.0) {
+                    // Accept up to 110% — BYD packs are factory over-provisioned
+                    // 102-104% so a near-new pack legitimately reads >100%.
+                    // Matches SohEstimator.applyWeightedSoh's accept band.
+                    if (v != null && v >= 60.0 && v <= 110.0) {
                         sohPercent = v
                     }
                 }

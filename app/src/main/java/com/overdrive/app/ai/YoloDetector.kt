@@ -109,11 +109,18 @@ class YoloDetector(private val context: Context) {
     /**
      * Initialize the detector with hardware acceleration.
      * Fallback chain: GPU delegate → NNAPI (Hexagon DSP) → CPU (4 threads)
-     * 
+     *
      * DiLink 5 (Adreno 643 / Snapdragon 662) has incomplete OpenCL support —
      * the GPU delegate fails on DEQUANTIZE/SPLIT ops. However, the Qualcomm
      * NNAPI driver routes to the Hexagon DSP which handles quantized models
      * well (~50-80ms vs ~200-300ms on CPU).
+     *
+     * NOTE: a previous revision tried NNAPI first to avoid GPU contention
+     * with the H.264/H.265 encoder. On this device's NNAPI-SL implementation
+     * only ~8 of ~546 ops actually run on the hardware accelerator and the
+     * rest fall through to XNNPACK on CPU (see the
+     * "SL_ANeuralNetworksDiagnostic_registerCallbacks" warnings) — making
+     * NNAPI ≈ CPU here. So GPU first remains correct on this hardware.
      */
     fun init(): Boolean {
         try {
@@ -126,9 +133,9 @@ class YoloDetector(private val context: Context) {
                 logger.error("Failed to load TFLite native libraries: ${e.message}")
                 return false
             }
-            
+
             val modelFile = FileUtil.loadMappedFile(context, modelPath)
-            
+
             // === TIER 1: GPU Delegate ===
             var loaded = false
             try {
@@ -136,10 +143,10 @@ class YoloDetector(private val context: Context) {
                 gpuDelegate = GpuDelegate()
                 gpuOptions.addDelegate(gpuDelegate)
                 logger.info("Trying GPU delegate...")
-                
+
                 interpreter = Interpreter(modelFile, gpuOptions)
                 interpreter!!.allocateTensors()
-                
+
                 isGpuEnabled = true
                 loaded = true
                 logger.info("GPU delegate applied successfully")
@@ -151,17 +158,17 @@ class YoloDetector(private val context: Context) {
                 gpuDelegate = null
                 isGpuEnabled = false
             }
-            
+
             // === TIER 2: NNAPI (Hexagon DSP on Qualcomm) ===
             if (!loaded) {
                 try {
                     val nnapiOptions = Interpreter.Options()
                     nnapiOptions.setUseNNAPI(true)
                     logger.info("Trying NNAPI delegate (Hexagon DSP)...")
-                    
+
                     interpreter = Interpreter(modelFile, nnapiOptions)
                     interpreter!!.allocateTensors()
-                    
+
                     isGpuEnabled = false  // Not GPU, but still hardware-accelerated
                     loaded = true
                     logger.info("NNAPI delegate applied successfully (~50-80ms inference)")

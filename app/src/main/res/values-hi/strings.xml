@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">निगरानी</string>
     <string name="settings_section_daemons">डेमोन</string>
     <string name="settings_section_privacy">गोपनीयता और डेटा</string>
-    <string name="settings_section_about">के बारे में &amp; अद्यतन</string>
+    <string name="settings_section_about">के बारे में</string>
     <string name="settings_subrail_overline">सेटिंग्स</string>
     <string name="cd_settings_subrail">सेटिंग उप-रेल</string>
     <string name="settings_privacy_title">गोपनीयता और डेटा</string>

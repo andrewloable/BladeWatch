@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">การเฝ้าระวัง</string>
     <string name="settings_section_daemons">แดมอน</string>
     <string name="settings_section_privacy">ความเป็นส่วนตัว &amp; ข้อมูล</string>
-    <string name="settings_section_about">เกี่ยวกับ &amp; updates</string>
+    <string name="settings_section_about">เกี่ยวกับ</string>
     <string name="settings_subrail_overline">การตั้งค่า</string>
     <string name="cd_settings_subrail">การตั้งค่า sub-rail</string>
     <string name="settings_privacy_title">ความเป็นส่วนตัว &amp; ข้อมูล</string>

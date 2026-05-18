@@ -184,7 +184,23 @@ class SurveillanceConfigManager(
             put(KEY_MOTION_HEATMAP, config.isMotionHeatmapEnabled)
             put(KEY_FILTER_DEBUG_LOG, config.isFilterDebugLogEnabled)
             put(KEY_SHADOW_FILTER, config.shadowFilterMode)
-            
+
+            // Per-quadrant overrides (null = inherit). Persisted as a single
+            // object so absence in older configs cleanly maps to "inherit all".
+            val overrideObj = org.json.JSONObject()
+            val qKeysOv = arrayOf("Q0", "Q1", "Q2", "Q3")
+            for (q in 0..3) {
+                val sens = config.getQuadrantSensitivityOverride(q)
+                val zone = config.getQuadrantDetectionZoneOverride(q)
+                if (sens != null || zone != null) {
+                    val perQ = org.json.JSONObject()
+                    if (sens != null) perQ.put("sensitivityLevel", sens)
+                    if (zone != null) perQ.put("detectionZone", zone)
+                    overrideObj.put(qKeysOv[q], perQ)
+                }
+            }
+            put("quadrantOverrides", overrideObj)
+
             // ROI polygons (per-quadrant) — always persist polygon even when disabled
             val roiObj = org.json.JSONObject()
             val qKeys = arrayOf("Q0", "Q1", "Q2", "Q3")
@@ -257,6 +273,21 @@ class SurveillanceConfigManager(
         if (json.has(KEY_FILTER_DEBUG_LOG)) config.setFilterDebugLogEnabled(json.optBoolean(KEY_FILTER_DEBUG_LOG, false))
         if (json.has(KEY_SHADOW_FILTER)) config.setShadowFilterMode(json.optInt(KEY_SHADOW_FILTER, 2))
         
+        // Per-quadrant overrides
+        val overrides = json.optJSONObject("quadrantOverrides")
+        if (overrides != null) {
+            val qKeysOv = arrayOf("Q0", "Q1", "Q2", "Q3")
+            for (q in 0..3) {
+                val perQ = overrides.optJSONObject(qKeysOv[q]) ?: continue
+                if (perQ.has("sensitivityLevel")) {
+                    config.setQuadrantSensitivityOverride(q, perQ.optInt("sensitivityLevel", 3))
+                }
+                if (perQ.has("detectionZone")) {
+                    config.setQuadrantDetectionZoneOverride(q, perQ.optString("detectionZone", "normal"))
+                }
+            }
+        }
+
         // ROI polygons (per-quadrant)
         val roiPolygons = json.optJSONObject("roiPolygons")
         if (roiPolygons != null) {

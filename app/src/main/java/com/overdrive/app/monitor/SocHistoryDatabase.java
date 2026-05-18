@@ -424,7 +424,8 @@ public class SocHistoryDatabase {
                         // If capacity was cleared (e.g., after SOH reset), re-detect it
                         // so the periodic tick can re-seed SOH without a daemon restart.
                         if (sohEst.getNominalCapacityKwh() <= 0) {
-                            sohEst.autoDetectCarModel(null);
+                            sohEst.autoDetectCarModel(
+                                com.overdrive.app.daemon.CameraDaemon.getAppContext());
                         }
                         // If we now have capacity but no estimate, seed it
                         if (sohEst.getNominalCapacityKwh() > 0 && !sohEst.hasEstimate()) {

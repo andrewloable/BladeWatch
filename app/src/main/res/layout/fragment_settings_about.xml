@@ -125,40 +125,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Check for updates CTA -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardCheckUpdate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/page_padding_top"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer"
-            app:cardCornerRadius="@dimen/card_radius_standard"
-            app:cardElevation="0dp">
-
-            <LinearLayout
-                style="@style/SettingsRow.Inner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_update"
-                    app:tint="?attr/colorPrimary" />
-
-                <TextView
-                    style="@style/SettingsRow.Title"
-                    android:text="@string/settings_action_check_update" />
-
-                <ImageView
-                    style="@style/SettingsRow.Chevron"
-                    android:src="@drawable/ic_chevron_right" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
         <!-- License — Overdrive is MIT-licensed. Tap opens the LICENSE
              text on GitHub. -->
         <com.google.android.material.card.MaterialCardView

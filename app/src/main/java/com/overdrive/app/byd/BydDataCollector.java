@@ -730,31 +730,13 @@ public class BydDataCollector {
                         com.overdrive.app.abrp.SohEstimator sohEst =
                             com.overdrive.app.monitor.SocHistoryDatabase.getInstance().getSohEstimator();
                         if (sohEst != null && sohEst.getNominalCapacityKwh() > 0) {
-                            // Derive cell count from pack voltage (same logic as autoDetectFromPackVoltage)
-                            BydVehicleData currentVd = getData();
-                            int cellCount = 0;
-                            if (currentVd != null && !Double.isNaN(currentVd.hvPackVoltage) && currentVd.hvPackVoltage > 200) {
-                                double cellV = 3.2;
-                                if (!Double.isNaN(currentVd.highCellVoltage) && currentVd.highCellVoltage > 2.5 && currentVd.highCellVoltage < 3.7) {
-                                    cellV = currentVd.highCellVoltage;
-                                } else if (!Double.isNaN(currentVd.lowCellVoltage) && currentVd.lowCellVoltage > 2.5 && currentVd.lowCellVoltage < 3.7) {
-                                    cellV = currentVd.lowCellVoltage;
-                                }
-                                cellCount = (int) Math.round(currentVd.hvPackVoltage / cellV);
-                            }
-                            
-                            // Fallback: derive cell count from nominal capacity and Ah rating.
-                            // On PHEVs, hvPackVoltage may not be reported but we know the pack
-                            // size from BMS capacity detection. Formula:
-                            //   nominalKwh = cellCount × cellVoltage × Ah / 1000
-                            //   cellCount = nominalKwh × 1000 / (Ah × cellVoltage)
-                            if (cellCount < 90 || cellCount > 200) {
-                                double cellV = 3.2;
-                                if (currentVd != null && !Double.isNaN(currentVd.highCellVoltage) && currentVd.highCellVoltage > 2.5 && currentVd.highCellVoltage < 3.7) {
-                                    cellV = currentVd.highCellVoltage;
-                                }
-                                cellCount = (int) Math.round(sohEst.getNominalCapacityKwh() * 1000.0 / (capVal * cellV));
-                            }
+                            // Cell count is CONFIGURATION, not a computed signal — pack
+                            // voltage / 3.2V undercounts at low SOC (Seal Premium @ 18% SOC:
+                            // 501.5V / 3.2 = 157s, but pack is actually 172s). Deriving from
+                            // nominalKwh / (Ah × 3.2) is tautological and produces SOH = 100%.
+                            // Look up the canonical cell count for the detected pack kWh.
+                            int cellCount = com.overdrive.app.abrp.SohEstimator
+                                .cellCountForCapacity(sohEst.getNominalCapacityKwh());
                             
                             if (cellCount >= 90 && cellCount <= 200) {
                                 sohEst.updateFromCapacityAh(capVal, cellCount);
@@ -780,22 +762,9 @@ public class BydDataCollector {
             Object pl = BydDeviceHelper.callGetter(bodyworkDevice, "getPowerLevel");
             if (pl instanceof Number) b.powerLevel(((Number) pl).intValue());
 
-            // Energy type — drivetrain discriminator (BEV/PHEV/HEV/FCEV).
-            // Mapping is OEM-specific; we store the raw int and let the consumer interpret.
-            // Suspected mapping (validate per model): 1=BEV, 2=PHEV, 3=HEV, 4=FCEV.
-            Object et = BydDeviceHelper.callGetter(bodyworkDevice, "getEnergyType");
-            if (et instanceof Number) {
-                int rawType = ((Number) et).intValue();
-                // Filter sentinels (BMS_UNAVAILABLE=65535, INVALID_VALUE=-10011 etc.)
-                if (rawType >= 0 && rawType < 100) {
-                    b.energyType(rawType);
-                    long now = System.currentTimeMillis();
-                    if (now - lastEnergyTypeLogMs > 300_000) {
-                        lastEnergyTypeLogMs = now;
-                        logger.info("getEnergyType=" + rawType + " (1=PHEV, 2=BEV, 3=HEV)");
-                    }
-                }
-            }
+            // getEnergyType removed — observed returning 1 on both BEV and PHEV
+            // firmwares, so it cannot be trusted as a drivetrain discriminator.
+            // PHEV detection now uses live fuel HAL signals (computeIsPhev).
 
             // Battery temp from bodywork (feature ID 300941320, Double.TYPE)
             Object battTemp = BydDeviceHelper.callGet(bodyworkDevice, BydFeatureIds.BODYWORK_BATTERY_METRIC, Double.class);
@@ -1568,29 +1537,87 @@ public class BydDataCollector {
      * If another daemon initialized it first with a null/stale context, methods NPE.
      */
     /**
-     * PHEV detection. Primary signal: bodywork getEnergyType() — typed value
-     * surfaced on the snapshot/builder. Suspected mapping is 1=BEV, 2=PHEV, 3=HEV;
-     * we treat 2 and 3 as PHEV/HEV (both have a fuel tank). Falls back to the
-     * SohEstimator nominal-capacity heuristic when energyType is unavailable
-     * or holds a sentinel value, preserving prior behavior.
+     * PHEV detection. getEnergyType is unreliable — observed returning 1 on
+     * both BEV and PHEV firmwares, so we cannot trust it as the discriminator.
+     * Primary signal: live fuel HAL values. If both getFuelPercentageValue
+     * and getFuelDrivingRangeValue return BMS-unavailable sentinels, the
+     * vehicle has no fuel system → BEV. Otherwise (real fuel readings, OR
+     * we haven't been able to probe yet) treat as PHEV/HEV.
+     *
+     * Cached after first successful probe to avoid hammering reflection.
      */
+    private volatile int cachedDrivetrain = 0;  // 0=unknown, 1=BEV, 2=PHEV/HEV
+    private volatile long lastDrivetrainProbeMs = 0;
+    private static final long DRIVETRAIN_REPROBE_MS = 60_000;
+
     private boolean isPhev(BydVehicleData.Builder b) {
-        return isPhevFromEnergyType(b.energyType);
+        return computeIsPhev();
     }
 
     private boolean isPhev(BydVehicleData snapshot) {
-        return isPhevFromEnergyType(snapshot.energyType);
+        return computeIsPhev();
     }
 
-    private boolean isPhevFromEnergyType(int energyType) {
-        // Mapping confirmed against BYD-DiLink commander field data:
-        //   1 = PHEV (DM-i, DM-p — has both fuel and battery)
-        //   2 = BEV  (pure electric)
-        //   3 = HEV  (rare)
-        if (energyType == 1 || energyType == 3) return true;
-        if (energyType == 2) return false;
-        // Fallback only when getEnergyType returned a sentinel or the device
-        // wasn't ready: SohEstimator nominal capacity (PHEVs < 30 kWh).
+    private boolean computeIsPhev() {
+        long now = System.currentTimeMillis();
+        if (cachedDrivetrain != 0 && (now - lastDrivetrainProbeMs) < DRIVETRAIN_REPROBE_MS) {
+            return cachedDrivetrain == 2;
+        }
+        boolean fuelPctSentinel = false;
+        boolean fuelRangeSentinel = false;
+        boolean fuelPctReal = false;
+        boolean fuelRangeReal = false;
+        if (statisticDevice != null) {
+            try {
+                Object fp = BydDeviceHelper.callGetter(statisticDevice, "getFuelPercentageValue");
+                if (fp instanceof Number) {
+                    int v = ((Number) fp).intValue();
+                    if (isBevFuelSentinel(v)) fuelPctSentinel = true;
+                    // 0 is intentionally NOT counted as "real" — a BEV that
+                    // happens to return 0 instead of a sentinel would falsely
+                    // classify as PHEV. PHEVs with truly empty tanks will be
+                    // caught by fuelRangeReal once driven, or by the capacity
+                    // fallback in the meantime.
+                    else if (v > 0 && v <= 100) fuelPctReal = true;
+                }
+            } catch (Exception ignored) {}
+            try {
+                Object fr = BydDeviceHelper.callGetter(statisticDevice, "getFuelDrivingRangeValue");
+                if (fr instanceof Number) {
+                    int v = ((Number) fr).intValue();
+                    if (isBevFuelSentinel(v)) fuelRangeSentinel = true;
+                    else if (v > 0 && v < 1500) fuelRangeReal = true;
+                }
+            } catch (Exception ignored) {}
+        }
+        // PHEV: at least one fuel signal returns a real, non-zero, non-sentinel
+        // value AND the other is either real or at a sentinel (i.e. NOT a real
+        // value claiming the opposite — that would indicate firmware lying).
+        // BEV: both signals at sentinel.
+        // Otherwise: defer to capacity heuristic, don't cache.
+        if (fuelPctReal && fuelRangeReal) {
+            cachedDrivetrain = 2;
+            lastDrivetrainProbeMs = now;
+            return true;
+        }
+        if (fuelPctSentinel && fuelRangeSentinel) {
+            cachedDrivetrain = 1;
+            lastDrivetrainProbeMs = now;
+            return false;
+        }
+        // One real + one sentinel is the "PHEV with empty tank or 0 km" case.
+        // Cache as PHEV with a SHORTER TTL so a transient HAL miss self-heals
+        // quickly. Without the cache, every isPhev() call re-runs both
+        // reflection probes — onFuelPercentageChanged fires at HAL rate.
+        if ((fuelPctReal && fuelRangeSentinel) || (fuelRangeReal && fuelPctSentinel)) {
+            cachedDrivetrain = 2;
+            // 5s TTL via lastDrivetrainProbeMs offset trick: pretend the probe
+            // happened (DRIVETRAIN_REPROBE_MS - 5000) ms ago, so the next call
+            // in >5s will re-probe.
+            lastDrivetrainProbeMs = now - (DRIVETRAIN_REPROBE_MS - 5_000);
+            return true;
+        }
+        // Unknown — defer to capacity-based heuristic, do NOT cache.
         try {
             com.overdrive.app.abrp.SohEstimator sohEst =
                 com.overdrive.app.monitor.SocHistoryDatabase.getInstance().getSohEstimator();
@@ -1599,6 +1626,12 @@ public class BydDataCollector {
             }
         } catch (Exception ignored) {}
         return false;
+    }
+
+    private static boolean isBevFuelSentinel(int v) {
+        return v == 255 || v == 254 || v == 511 || v == 1023
+            || v == 2046 || v == 2047 || v == 4095
+            || v == 65534 || v == 65535;
     }
 
     private void ensureDeviceContext(Object device) {
@@ -3118,7 +3151,6 @@ public class BydDataCollector {
      */
     // Throttle charging power log to once per 30 seconds
     private volatile long lastChargingPowerLogTime = 0;
-    private volatile long lastEnergyTypeLogMs = 0;
     private volatile long lastChargingModeLogMs = 0;
     private volatile long lastChargingStateRawLogMs = 0;
     // One-shot: log the raw vs scaled getExternalChargingPower value the first

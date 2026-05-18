@@ -221,7 +221,23 @@ public class SurveillanceApiHandler {
             config.put("telegramAlerts", sentryConfig.isTelegramAlerts());
             config.put("telegramCritical", sentryConfig.isTelegramCritical());
             config.put("shadowFilter", sentryConfig.getShadowFilterMode());
-            
+
+            // Per-quadrant overrides (sensitivity / detection zone). Each
+            // entry is omitted when no override is set (= inherit global).
+            org.json.JSONObject overrides = new org.json.JSONObject();
+            String[] qKeysOv = {"Q0", "Q1", "Q2", "Q3"};
+            for (int q = 0; q < 4; q++) {
+                Integer sens = sentryConfig.getQuadrantSensitivityOverride(q);
+                String zone = sentryConfig.getQuadrantDetectionZoneOverride(q);
+                if (sens != null || zone != null) {
+                    org.json.JSONObject perQ = new org.json.JSONObject();
+                    if (sens != null) perQ.put("sensitivityLevel", sens.intValue());
+                    if (zone != null) perQ.put("detectionZone", zone);
+                    overrides.put(qKeysOv[q], perQ);
+                }
+            }
+            config.put("quadrantOverrides", overrides);
+
             // ROI polygons and enabled flags
             org.json.JSONObject roiObj = new org.json.JSONObject();
             String[] qKeys = {"Q0", "Q1", "Q2", "Q3"};
@@ -588,6 +604,24 @@ public class SurveillanceApiHandler {
                     sentry.setV2QuadrantEnabled(1, right);
                     sentry.setV2QuadrantEnabled(2, rear);
                     sentry.setV2QuadrantEnabled(3, left);
+                }
+                configChanged = true;
+            }
+            if (configJson.has("quadrantOverrides")) {
+                org.json.JSONObject overrides = configJson.optJSONObject("quadrantOverrides");
+                String[] qKeysOv = {"Q0", "Q1", "Q2", "Q3"};
+                for (int q = 0; q < 4; q++) {
+                    org.json.JSONObject perQ = overrides != null
+                            ? overrides.optJSONObject(qKeysOv[q]) : null;
+                    if (perQ == null) {
+                        sentryConfig.setQuadrantSensitivityOverride(q, null);
+                        sentryConfig.setQuadrantDetectionZoneOverride(q, null);
+                    } else {
+                        sentryConfig.setQuadrantSensitivityOverride(q,
+                                perQ.has("sensitivityLevel") ? perQ.optInt("sensitivityLevel", 3) : null);
+                        sentryConfig.setQuadrantDetectionZoneOverride(q,
+                                perQ.has("detectionZone") ? perQ.optString("detectionZone", null) : null);
+                    }
                 }
                 configChanged = true;
             }

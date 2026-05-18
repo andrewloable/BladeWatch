@@ -28,7 +28,8 @@ import com.overdrive.app.ui.viewmodel.LogsViewModel
 import com.overdrive.app.ui.viewmodel.MainViewModel
 import com.overdrive.app.launcher.AdbDaemonLauncher
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.navigationrail.NavigationRailView
+import android.widget.ImageView
+import android.widget.LinearLayout
 import com.overdrive.app.BuildConfig
 import com.overdrive.app.R
 import com.overdrive.app.util.BydDataCacheWhitelist
@@ -63,7 +64,7 @@ class MainActivity : AppCompatActivity() {
 
     // UI elements
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var navigationRail: NavigationRailView
+    private lateinit var navigationRail: LinearLayout
     private lateinit var tvCurrentUrl: TextView
     private lateinit var urlBar: View
     private lateinit var statusIndicator: View
@@ -168,6 +169,18 @@ class MainActivity : AppCompatActivity() {
                 if (isPostUpdate) {
                     logsViewModel.info("Update", "Post-update launch — hard-resetting daemons before startup")
                     com.overdrive.app.updater.UpdateLifecycle.hardResetDaemons(this) {
+                        // Surface failed-install errors first. consumeJustUpdatedVersion
+                        // returns null when a failure marker is present, so the success
+                        // toast never fires on a failed install. consumeFailedUpdateError
+                        // also clears the marker so it's a one-shot.
+                        val installError = com.overdrive.app.updater.AppUpdater
+                            .consumeFailedUpdateError(this)
+                        if (installError != null) {
+                            runOnUiThread {
+                                Toast.makeText(this, getString(R.string.toast_update_install_failed, installError), Toast.LENGTH_LONG).show()
+                                logsViewModel.warn("Update", "Install failed: $installError")
+                            }
+                        }
                         // Consume the just-updated marker only after the cleanup
                         // completes. A crash mid-reset will leave the sentinel
                         // in place so the next launch retries.
@@ -226,6 +239,15 @@ class MainActivity : AppCompatActivity() {
                 override fun onLaunched() {}
                 override fun onError(error: String) {}
             })
+
+            // Surface failed-install errors first (consumeJustUpdatedVersion
+            // returns null when a failure marker is present, so the success
+            // toast never fires on a failed install).
+            val installError = com.overdrive.app.updater.AppUpdater.consumeFailedUpdateError(this)
+            if (installError != null) {
+                Toast.makeText(this, getString(R.string.toast_update_install_failed, installError), Toast.LENGTH_LONG).show()
+                logsViewModel.warn("Update", "Install failed: $installError")
+            }
 
             // Show post-update message if app was just updated
             val updatedVersion = com.overdrive.app.updater.AppUpdater.consumeJustUpdatedVersion(this)
@@ -677,18 +699,114 @@ class MainActivity : AppCompatActivity() {
                 R.id.tripsFragment,
                 R.id.integrationsFragment,
                 R.id.diagnosticsFragment,
-                R.id.settingsFragment
+                R.id.settingsFragment,
+                R.id.settingsAboutFragment
             )
         )
 
         toolbar.setupWithNavController(navController, appBarConfiguration)
-        navigationRail.setupWithNavController(navController)
 
-        // Wire the brand-mark / language button on the rail header.
-        navigationRail.headerView?.findViewById<View>(R.id.railLanguageButton)?.setOnClickListener {
+        setupCustomRail()
+    }
+
+    /**
+     * Bind the custom navigation rail (LinearLayout of @layout/item_rail_destination
+     * includes). Material's NavigationRailView caps menu items at 7 in
+     * collapsed mode, so we use a plain vertical list of icon+label rows
+     * instead. Each row's destination, icon, and label are wired here.
+     *
+     * Selection sync is driven from the NavController so deep links and
+     * code-driven nav also light up the right rail item.
+     */
+    private fun setupCustomRail() {
+        // Order matches the previous rail_menu.xml so user's mental model
+        // stays the same.
+        val items = listOf(
+            RailItem(R.id.railDestDashboard, R.id.dashboardFragment,
+                R.drawable.ic_dashboard, R.string.rail_dashboard),
+            RailItem(R.id.railDestLive, R.id.liveViewFragment,
+                R.drawable.ic_live, R.string.rail_live),
+            RailItem(R.id.railDestRecordings, R.id.recordingsFragment,
+                R.drawable.ic_recording, R.string.rail_recordings),
+            RailItem(R.id.railDestVehicle, R.id.vehicleControlFragment,
+                R.drawable.ic_vehicle_control, R.string.rail_vehicle),
+            RailItem(R.id.railDestTrips, R.id.tripsFragment,
+                R.drawable.ic_trips, R.string.rail_trips),
+            RailItem(R.id.railDestIntegrations, R.id.integrationsFragment,
+                R.drawable.ic_integrations, R.string.rail_integrations),
+            RailItem(R.id.railDestDiagnostics, R.id.diagnosticsFragment,
+                R.drawable.ic_diagnostics, R.string.rail_diagnostics),
+            RailItem(R.id.railDestSettings, R.id.settingsFragment,
+                R.drawable.ic_settings, R.string.rail_settings),
+            RailItem(R.id.railDestAbout, R.id.settingsAboutFragment,
+                R.drawable.ic_update, R.string.settings_section_about)
+        )
+
+        // Bind icon + label and click handler per row.
+        items.forEach { item ->
+            val row = navigationRail.findViewById<View>(item.rowId) ?: return@forEach
+            row.findViewById<ImageView>(R.id.railItemIcon)?.setImageResource(item.iconRes)
+            row.findViewById<TextView>(R.id.railItemLabel)?.setText(item.labelRes)
+            row.setOnClickListener {
+                navigateToRailDestination(item.destinationId)
+            }
+        }
+
+        // Selection sync — light up the row whose destinationId matches
+        // the current nav destination (or any of its ancestors).
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            var node: androidx.navigation.NavDestination? = destination
+            while (node != null) {
+                val match = items.firstOrNull { it.destinationId == node!!.id }
+                if (match != null) {
+                    items.forEach { item ->
+                        navigationRail.findViewById<View>(item.rowId)?.isSelected =
+                            (item.destinationId == match.destinationId)
+                    }
+                    return@addOnDestinationChangedListener
+                }
+                node = node.parent
+            }
+        }
+
+        // Language picker — moved to the toolbar end-cluster so it's
+        // reachable from the top-right at every screen size. Falls back
+        // to the legacy rail-header button if a downstream layout ever
+        // restores it; the dialog itself is the same.
+        val languageClick = View.OnClickListener {
             com.overdrive.app.ui.dialog.LanguagePickerDialog.show(this) {
                 recreate()
             }
+        }
+        findViewById<View>(R.id.toolbarLanguageButton)?.setOnClickListener(languageClick)
+        navigationRail.findViewById<View>(R.id.railLanguageButton)?.setOnClickListener(languageClick)
+    }
+
+    private data class RailItem(
+        val rowId: Int,
+        val destinationId: Int,
+        val iconRes: Int,
+        val labelRes: Int
+    )
+
+    /**
+     * Navigate to a rail destination, popping any sub-pages so the tab
+     * resets to its root. Cross-fade animation keeps the switch soft.
+     */
+    private fun navigateToRailDestination(destinationId: Int) {
+        val options = androidx.navigation.NavOptions.Builder()
+            .setLaunchSingleTop(true)
+            .setRestoreState(false)
+            .setPopUpTo(destinationId, /* inclusive = */ false, /* saveState = */ false)
+            .setEnterAnim(R.anim.fade_in)
+            .setExitAnim(R.anim.fade_out)
+            .setPopEnterAnim(R.anim.fade_in)
+            .setPopExitAnim(R.anim.fade_out)
+            .build()
+        try {
+            navController.navigate(destinationId, /* args = */ null, options)
+        } catch (_: IllegalArgumentException) {
+            // Destination not in graph — defensive only.
         }
     }
     

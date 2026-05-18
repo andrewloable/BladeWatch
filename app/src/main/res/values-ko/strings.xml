@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">감시</string>
     <string name="settings_section_daemons">대몬</string>
     <string name="settings_section_privacy">개인 정보 보호 &amp; 데이터</string>
-    <string name="settings_section_about">&amp; 업데이트에 관한 것</string>
+    <string name="settings_section_about">정보</string>
     <string name="settings_subrail_overline">설정</string>
     <string name="cd_settings_subrail">설정 하부 철도</string>
     <string name="settings_privacy_title">개인 정보 보호 &amp; 데이터</string>

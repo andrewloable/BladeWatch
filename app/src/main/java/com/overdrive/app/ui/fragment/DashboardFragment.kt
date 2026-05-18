@@ -28,6 +28,7 @@ import com.overdrive.app.auth.AuthManager
 import com.overdrive.app.client.CameraDaemonClient
 import com.overdrive.app.ui.dashboard.DashboardInsight
 import com.overdrive.app.ui.dashboard.DashboardInsightProvider
+import com.overdrive.app.ui.model.DaemonState
 import com.overdrive.app.ui.model.DaemonStatus
 import com.overdrive.app.ui.model.DaemonType
 import com.overdrive.app.ui.util.QrCodeGenerator
@@ -57,13 +58,16 @@ class DashboardFragment : Fragment() {
     private val recordingViewModel: RecordingViewModel by activityViewModels()
 
     // Hero
+    private lateinit var heroCard: MaterialCardView
     private lateinit var heroGreeting: TextView
     private lateinit var heroSubtitle: TextView
 
     // Metric tiles
     private lateinit var metricRecordings: MaterialCardView
     private lateinit var metricRecordingsValue: TextView
-    private lateinit var metricStorage: MaterialCardView
+    // Storage line lives inside the combined Recordings tile now; no
+    // separate clickable card. The text view is still bound so the
+    // background metrics walker can populate "8.4 GB used · 12 GB free".
     private lateinit var metricStorageValue: TextView
     private lateinit var metricTunnel: MaterialCardView
     private lateinit var metricTunnelValue: TextView
@@ -86,10 +90,10 @@ class DashboardFragment : Fragment() {
     private lateinit var btnRegenerateToken: MaterialButton
     private var isTokenVisible = false
 
-    // Quick actions
-    private lateinit var quickLive: MaterialButton
-    private lateinit var quickRecordings: MaterialButton
-    private lateinit var quickSettings: MaterialButton
+    // Quick-action tiles (cards now, not buttons — they share dimensions
+    // with the metric tiles so the dashboard reads as one rhythm).
+    private lateinit var quickLive: MaterialCardView
+    private lateinit var quickSettings: MaterialCardView
 
     // Background work for storage / recording-count tiles. Single thread is enough
     // — both probes are just a directory walk, and serializing them keeps disk I/O
@@ -164,6 +168,13 @@ class DashboardFragment : Fragment() {
         // SOC delta from a parking session that ended off-screen, etc.).
         rotationPaused = false
         rebuildInsightsAsync()
+        // Re-read the access code on every resume. On a fresh install the
+        // app process initializes AuthManager with an in-memory secret
+        // before the daemon writes the canonical one to /data/local/tmp/;
+        // a resume-time refresh means navigating away and back is enough
+        // to pick up the daemon's secret if the bootstrap reconcile
+        // (1s cadence in AuthManager.getState()) hasn't fired yet.
+        loadAuthState()
     }
 
     override fun onPause() {
@@ -179,12 +190,12 @@ class DashboardFragment : Fragment() {
     }
 
     private fun bindViews(view: View) {
+        heroCard = view.findViewById(R.id.heroCard)
         heroGreeting = view.findViewById(R.id.heroGreeting)
         heroSubtitle = view.findViewById(R.id.heroSubtitle)
 
         metricRecordings = view.findViewById(R.id.metricRecordings)
         metricRecordingsValue = view.findViewById(R.id.metricRecordingsValue)
-        metricStorage = view.findViewById(R.id.metricStorage)
         metricStorageValue = view.findViewById(R.id.metricStorageValue)
         metricTunnel = view.findViewById(R.id.metricTunnel)
         metricTunnelValue = view.findViewById(R.id.metricTunnelValue)
@@ -204,16 +215,12 @@ class DashboardFragment : Fragment() {
         btnRegenerateToken = view.findViewById(R.id.btnRegenerateToken)
 
         quickLive = view.findViewById(R.id.quickLive)
-        quickRecordings = view.findViewById(R.id.cardRecording)
         quickSettings = view.findViewById(R.id.quickSettings)
     }
 
     private fun wireClicks() {
         // Tile taps deep-link to the matching destination.
         metricRecordings.setOnClickListener {
-            findNavController().navigate(R.id.recordingsFragment)
-        }
-        metricStorage.setOnClickListener {
             findNavController().navigate(R.id.recordingsFragment)
         }
         metricTunnel.setOnClickListener {
@@ -224,9 +231,6 @@ class DashboardFragment : Fragment() {
         }
         quickLive.setOnClickListener {
             findNavController().navigate(R.id.liveViewFragment)
-        }
-        quickRecordings.setOnClickListener {
-            findNavController().navigate(R.id.recordingsFragment)
         }
         quickSettings.setOnClickListener {
             findNavController().navigate(R.id.settingsFragment)
@@ -243,7 +247,11 @@ class DashboardFragment : Fragment() {
             val running = states.values.count { it.status == DaemonStatus.RUNNING }
             val total = states.size
             tvDaemonsStatus.text = getString(R.string.dashboard_daemons_running, running, total)
-            updateHeroSubtitle(running, total)
+            // Hero tile alert vs. ok is driven only by *core* daemons — tunnels
+            // and bots are opt-in services and missing them shouldn't paint the
+            // dashboard red. STARTING counts as ok so the hero flips green the
+            // moment a daemon is being launched, without waiting for RUNNING.
+            updateHeroSubtitle(running, total, computeCoreHealth(states))
             rebuildTunnelChips()
         }
 
@@ -323,12 +331,13 @@ class DashboardFragment : Fragment() {
 
             mainHandler.post {
                 if (!isAdded || view == null) return@post
-                metricStorageValue.text = usedHuman
-                // Free-space subtitle is informational; surface it via
-                // contentDescription so screen readers / long-press still
-                // expose it without changing the layout.
-                metricStorageValue.contentDescription =
-                    "$usedHuman used · $freeHuman free"
+                // The combined tile shows a single label line: the
+                // localized "Today's recordings" suffixed with the storage
+                // figure. Keeps the tile structure identical to every
+                // other metric tile (icon → value → label) so heights
+                // match across the grid.
+                val baseLabel = getString(R.string.dashboard_metric_recordings)
+                metricStorageValue.text = "$baseLabel · $usedHuman"
 
                 todayClipCount = clipCountToday
                 renderRecordingsValue()
@@ -385,7 +394,7 @@ class DashboardFragment : Fragment() {
         return getString(keyRes)
     }
 
-    private fun updateHeroSubtitle(running: Int, total: Int) {
+    private fun updateHeroSubtitle(running: Int, total: Int, coreHealth: CoreHealth) {
         // Cache the daemon summary so the carousel can fall through to it when
         // no real insights have data. This keeps the legacy "X of Y services
         // online" line as the safety net the user has always seen.
@@ -397,6 +406,83 @@ class DashboardFragment : Fragment() {
         if (insights.isEmpty()) {
             heroSubtitle.text = daemonFallbackText(running, total)
         }
+        applyGreetingTint(coreHealth)
+    }
+
+    /**
+     * Tint the hero card by *core* daemon health. Uses M3 Container tones so
+     * the wash is soft rather than the saturated colorPrimary/Error.
+     *
+     * - OK   → primaryContainer (green wash, On*Container fg).
+     * - ALERT → errorContainer (red wash) — only when at least one CORE daemon
+     *           is in a hard-failed state. Tunnels (cloudflared/zrok/tailscale)
+     *           and the Telegram bot are opt-in and never trigger ALERT.
+     * - UNKNOWN → neutral surface — used pre-bind / before the daemon-states
+     *           LiveData has fired so a fresh install doesn't flash red.
+     *
+     * STARTING is treated as OK (not ALERT) so the hero flips green the
+     * instant a daemon is being launched, instead of waiting for RUNNING.
+     */
+    private fun applyGreetingTint(coreHealth: CoreHealth) {
+        if (!::heroCard.isInitialized) return
+        val ctx = context ?: return
+        val (bgAttr, fgAttr, subAttr) = when (coreHealth) {
+            CoreHealth.UNKNOWN -> Triple(
+                com.google.android.material.R.attr.colorSurfaceContainer,
+                com.google.android.material.R.attr.colorOnSurface,
+                com.google.android.material.R.attr.colorOnSurfaceVariant
+            )
+            CoreHealth.OK -> Triple(
+                com.google.android.material.R.attr.colorPrimaryContainer,
+                com.google.android.material.R.attr.colorOnPrimaryContainer,
+                com.google.android.material.R.attr.colorOnPrimaryContainer
+            )
+            CoreHealth.ALERT -> Triple(
+                com.google.android.material.R.attr.colorErrorContainer,
+                com.google.android.material.R.attr.colorOnErrorContainer,
+                com.google.android.material.R.attr.colorOnErrorContainer
+            )
+        }
+        resolveAttrColor(ctx, bgAttr)?.let { heroCard.setCardBackgroundColor(it) }
+        resolveAttrColor(ctx, fgAttr)?.let { heroGreeting.setTextColor(it) }
+        resolveAttrColor(ctx, subAttr)?.let { heroSubtitle.setTextColor(it) }
+    }
+
+    private enum class CoreHealth { UNKNOWN, OK, ALERT }
+
+    /**
+     * Reduce the daemon-state map to a tri-state for the hero tint.
+     *
+     * Rule: green when every core daemon is started (RUNNING / STARTING /
+     * STOPPING — anything that means a process exists or is being managed),
+     * red when at least one core daemon is STOPPED. ERROR is folded in
+     * with STOPPED for tinting purposes since either way the daemon isn't
+     * doing its job.
+     *
+     * "Core" = Camera + Sentry + ACC Sentry. Sing-box, tunnels, and the
+     * Telegram bot are all opt-in — they don't gate the hero tint.
+     */
+    private fun computeCoreHealth(states: Map<DaemonType, DaemonState>?): CoreHealth {
+        if (states.isNullOrEmpty()) return CoreHealth.UNKNOWN
+        val core = setOf(
+            DaemonType.CAMERA_DAEMON,
+            DaemonType.SENTRY_DAEMON,
+            DaemonType.ACC_SENTRY_DAEMON
+        )
+        var sawCore = false
+        for ((type, state) in states) {
+            if (type !in core) continue
+            sawCore = true
+            if (state.status == DaemonStatus.STOPPED || state.status == DaemonStatus.ERROR) {
+                return CoreHealth.ALERT
+            }
+        }
+        return if (sawCore) CoreHealth.OK else CoreHealth.UNKNOWN
+    }
+
+    private fun resolveAttrColor(ctx: Context, attr: Int): Int? {
+        val tv = android.util.TypedValue()
+        return if (ctx.theme.resolveAttribute(attr, tv, true)) tv.data else null
     }
 
     private fun daemonFallbackText(running: Int, total: Int): CharSequence = when {
@@ -679,16 +765,40 @@ class DashboardFragment : Fragment() {
 
     private fun loadAuthState() {
         try {
-            val state = AuthManager.getState()
+            // getState()/initialize() can return null on a fresh install
+            // before the daemon has populated the unified config — in that
+            // window the access code genuinely doesn't exist yet. Show
+            // the masked placeholder and schedule a short poll: the
+            // daemon writes the canonical secret within ~1-2s of boot,
+            // and we want the dashboard tile to fill in without the user
+            // having to navigate away.
+            val state = AuthManager.getState() ?: AuthManager.initialize()
             if (state != null) {
                 updateTokenDisplay(state.secret)
             } else {
-                AuthManager.initialize()
-                loadAuthState()
+                tvDeviceToken.text = getString(R.string.dashboard_token_masked)
+                scheduleAuthRetry(attempt = 1)
             }
         } catch (e: Exception) {
             tvDeviceToken.text = getString(R.string.dashboard_token_masked)
         }
+    }
+
+    private fun scheduleAuthRetry(attempt: Int) {
+        // Cap the retry storm at ~10 seconds total (10 attempts × 1s).
+        // Anything beyond that is a real config problem, not a daemon
+        // boot race; falling back to user-driven onResume()/regenerate
+        // is fine.
+        if (attempt > 10) return
+        mainHandler.postDelayed({
+            if (!isAdded) return@postDelayed
+            val state = AuthManager.getState()
+            if (state != null) {
+                updateTokenDisplay(state.secret)
+            } else {
+                scheduleAuthRetry(attempt + 1)
+            }
+        }, 1000)
     }
 
     private fun updateTokenDisplay(secret: String) {
@@ -722,12 +832,21 @@ class DashboardFragment : Fragment() {
     }
 
     private fun regenerateToken() {
-        AuthManager.regenerateToken()
+        val newToken = AuthManager.regenerateToken()
         // Use the lifecycle-managed metricsExecutor (shut down in onDestroyView)
         // instead of a bare Thread that would outlive the fragment and leak
         // its Activity reference. The applicationContext for the Toast also
         // bypasses requireContext()'s detach-aware throw.
         val ctx = context?.applicationContext ?: return
+        if (newToken == null) {
+            // Persistence failed — usually means the daemon hasn't booted
+            // yet so the unified config file isn't writable from app UID.
+            // Better to surface this than to claim success and leave the
+            // user wondering why login still rejects the new code.
+            Toast.makeText(ctx, ctx.getString(R.string.toast_token_regenerated_restart), Toast.LENGTH_LONG).show()
+            loadAuthState()
+            return
+        }
         val executor = metricsExecutor ?: Executors.newSingleThreadExecutor()
             .also { metricsExecutor = it }
         executor.execute {

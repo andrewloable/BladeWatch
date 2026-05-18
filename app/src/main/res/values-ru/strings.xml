@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">Наблюдение</string>
     <string name="settings_section_daemons">Демоны</string>
     <string name="settings_section_privacy">Конфиденциальность и данные</string>
-    <string name="settings_section_about">О &amp; обновления</string>
+    <string name="settings_section_about">О приложении</string>
     <string name="settings_subrail_overline">Устройства</string>
     <string name="cd_settings_subrail">Настройки подпоезда</string>
     <string name="settings_privacy_title">Конфиденциальность и данные</string>

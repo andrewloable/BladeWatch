@@ -37,4 +37,11 @@
         android:id="@+id/settingsFragment"
         android:icon="@drawable/ic_settings"
         android:title="@string/rail_settings" />
+    <!-- About lives on the rail too so users can reach it without
+         hunting inside Settings. SettingsAboutFragment hosts version,
+         license, source link, support links + Check for Updates. -->
+    <item
+        android:id="@+id/settingsAboutFragment"
+        android:icon="@drawable/ic_update"
+        android:title="@string/settings_section_about" />
 </menu>

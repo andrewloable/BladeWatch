@@ -16,15 +16,22 @@
     Network : tvNetworkValue / viewNetworkTunnelDot / tvNetworkTunnelState
     Storage : tvStorageUsed / tvStorageFree
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?android:attr/colorBackground"
+    android:fillViewport="true"
+    android:clipToPadding="false">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:animateLayoutChanges="true"
     android:paddingHorizontal="@dimen/page_padding_horizontal"
     android:paddingTop="@dimen/page_padding_top"
-    android:paddingBottom="0dp"
+    android:paddingBottom="@dimen/page_padding_bottom"
     android:clipToPadding="false">
 
     <!-- ================== HERO ROW ================== -->
@@ -59,35 +66,10 @@
                 android:textColor="?attr/colorOnSurfaceVariant" />
         </LinearLayout>
 
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:cardBackgroundColor="?attr/colorSecondaryContainer"
-            app:cardCornerRadius="999dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="8dp">
-
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:background="@drawable/status_dot_online" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/diagnostics_health_clear"
-                    android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                    android:textColor="?attr/colorOnSecondaryContainer" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        <!-- The "All clear" status pill was removed: it had no real
+             telemetry behind it and read as a clickable affordance even
+             though it was purely informational. The HEALTH grid below
+             carries the same signal with real data. -->
     </LinearLayout>
 
     <!-- ================== HEALTH SECTION ================== -->
@@ -114,7 +96,7 @@
             android:layout_weight="1"
             android:layout_marginEnd="@dimen/card_gap_horizontal_half"
             android:minHeight="@dimen/grid_tile_min_height"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
             app:cardCornerRadius="@dimen/card_radius_standard"
             app:cardElevation="0dp">
 
@@ -195,7 +177,7 @@
             android:layout_weight="1"
             android:layout_marginStart="@dimen/card_gap_horizontal_half"
             android:minHeight="@dimen/grid_tile_min_height"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
             app:cardCornerRadius="@dimen/card_radius_standard"
             app:cardElevation="0dp">
 
@@ -266,12 +248,16 @@
         android:baselineAligned="false">
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardCameraHealth"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="@dimen/card_gap_horizontal_half"
             android:minHeight="@dimen/grid_tile_min_height"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
             app:cardCornerRadius="@dimen/card_radius_standard"
             app:cardElevation="0dp">
 
@@ -329,12 +315,16 @@
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardBatteryHealth"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="@dimen/card_gap_horizontal_half"
             android:minHeight="@dimen/grid_tile_min_height"
-            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
             app:cardCornerRadius="@dimen/card_radius_standard"
             app:cardElevation="0dp">
 
@@ -419,58 +409,34 @@
             android:layout_marginEnd="@dimen/card_gap_horizontal_half"
             android:clickable="true"
             android:focusable="true"
-            app:cardBackgroundColor="?android:attr/colorBackground"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
             app:cardCornerRadius="@dimen/card_radius_standard"
-            app:cardElevation="0dp"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:strokeWidth="1dp">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="@dimen/card_padding_standard">
 
                 <ImageView
                     android:layout_width="@dimen/card_icon_standard"
                     android:layout_height="@dimen/card_icon_standard"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_traffic_monitor"
-                    app:tint="?attr/colorPrimary" />
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/tvTrafficLabel"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/tvTrafficLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/diagnostics_section_traffic"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:text="@string/diagnostics_traffic_subtitle"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="?attr/colorOnSurfaceVariant" />
+                    android:text="@string/diagnostics_section_traffic"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                    android:textColor="?attr/colorOnSurface" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -482,57 +448,33 @@
             android:layout_marginStart="@dimen/card_gap_horizontal_half"
             android:clickable="true"
             android:focusable="true"
-            app:cardBackgroundColor="?android:attr/colorBackground"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
             app:cardCornerRadius="@dimen/card_radius_standard"
-            app:cardElevation="0dp"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:strokeWidth="1dp">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="@dimen/card_padding_standard">
 
                 <ImageView
                     android:layout_width="@dimen/card_icon_standard"
                     android:layout_height="@dimen/card_icon_standard"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_camera_probe"
-                    app:tint="?attr/colorPrimary" />
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
-                <LinearLayout
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/diagnostics_section_camera_probe"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:text="@string/diagnostics_camera_probe_subtitle"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="?attr/colorOnSurfaceVariant" />
+                    android:text="@string/diagnostics_section_camera_probe"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                    android:textColor="?attr/colorOnSurface" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
@@ -553,57 +495,33 @@
             android:layout_marginEnd="@dimen/card_gap_horizontal_half"
             android:clickable="true"
             android:focusable="true"
-            app:cardBackgroundColor="?android:attr/colorBackground"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
             app:cardCornerRadius="@dimen/card_radius_standard"
-            app:cardElevation="0dp"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:strokeWidth="1dp">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="@dimen/card_padding_standard">
 
                 <ImageView
                     android:layout_width="@dimen/card_icon_standard"
                     android:layout_height="@dimen/card_icon_standard"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_console"
-                    app:tint="?attr/colorPrimary" />
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
-                <LinearLayout
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/diagnostics_section_adb_console"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:text="@string/diagnostics_adb_subtitle"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="?attr/colorOnSurfaceVariant" />
+                    android:text="@string/diagnostics_section_adb_console"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                    android:textColor="?attr/colorOnSurface" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -615,121 +533,87 @@
             android:layout_marginStart="@dimen/card_gap_horizontal_half"
             android:clickable="true"
             android:focusable="true"
-            app:cardBackgroundColor="?android:attr/colorBackground"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
             app:cardCornerRadius="@dimen/card_radius_standard"
-            app:cardElevation="0dp"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:strokeWidth="1dp">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="@dimen/card_padding_standard">
 
                 <ImageView
                     android:layout_width="@dimen/card_icon_standard"
                     android:layout_height="@dimen/card_icon_standard"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_battery_health"
-                    app:tint="?attr/colorPrimary" />
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
-                <LinearLayout
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/diagnostics_section_battery"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:text="@string/diagnostics_battery_subtitle"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="?attr/colorOnSurfaceVariant" />
+                    android:text="@string/diagnostics_section_battery"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                    android:textColor="?attr/colorOnSurface" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 
-    <!-- ================== LIVE EVENT LOG CARD ================== -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- TOOLS row 3: Settings shortcut. Diagnostics is where power users
+         land for tuning; surfacing Settings here closes the loop without
+         making them hop back to the rail. -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="@dimen/page_padding_top"
-        android:layout_marginBottom="@dimen/page_padding_top"
-        app:cardBackgroundColor="?attr/colorSurfaceContainer"
-        app:cardCornerRadius="@dimen/card_radius_standard"
-        app:cardElevation="0dp">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/card_gap_vertical"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
 
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardSettingsShortcut"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:paddingHorizontal="@dimen/card_padding_standard"
-            android:paddingTop="@dimen/card_padding_standard"
-            android:paddingBottom="@dimen/card_gap_vertical">
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
+            app:cardCornerRadius="@dimen/card_radius_standard"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:layout_marginBottom="@dimen/card_gap_vertical">
+                android:padding="@dimen/card_padding_standard">
 
-                <LinearLayout
+                <ImageView
+                    android:layout_width="@dimen/card_icon_standard"
+                    android:layout_height="@dimen/card_icon_standard"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_settings"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/diagnostics_logs_card_title"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/diagnostics_logs_card_subtitle"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:background="@drawable/status_dot_online" />
+                    android:text="@string/rail_settings"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                    android:textColor="?attr/colorOnSurface" />
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
-            <FrameLayout
-                android:id="@+id/logsPanelContainer"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    <!-- The Live Event Log card was removed from this page. Logs are
+         still available via the ADB Console tile if a power user needs
+         them, but the always-on log feed was making the page feel busy
+         without delivering primary diagnostic value. -->
 </LinearLayout>
+</androidx.core.widget.NestedScrollView>

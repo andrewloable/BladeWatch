@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">Vigilância</string>
     <string name="settings_section_daemons">Demônios</string>
     <string name="settings_section_privacy">Privacidade e dados</string>
-    <string name="settings_section_about">Sobre &amp; atualizações</string>
+    <string name="settings_section_about">Sobre</string>
     <string name="settings_subrail_overline">SETINGS</string>
     <string name="cd_settings_subrail">Subferro de configuração</string>
     <string name="settings_privacy_title">Privacidade e dados</string>

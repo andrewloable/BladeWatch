@@ -1583,17 +1583,17 @@ public class SurveillanceIpcServer implements Runnable {
         // Plant the Telegram post-update hint so the new process's first
         // notifyTunnel handler frames the message as "Overdrive updated to X".
         // Best-effort: failure here just falls back to the generic "URL
-        // changed" copy.
+        // changed" copy. We're already in the daemon process (UID 2000), and
+        // /data/local/tmp/ is world-writable for shell, so a direct
+        // FileWriter is both simpler and avoids the AdbDaemonLauncher path
+        // (which would EACCES on the app's adbkey when called from here).
         try {
             String hintVersion = versionRef[0] != null ? versionRef[0] : "unknown";
-            new com.overdrive.app.launcher.AdbDaemonLauncher(ctx).executeShellCommand(
-                    "echo '" + hintVersion + "' > "
-                            + com.overdrive.app.updater.UpdateLifecycle.TELEGRAM_POST_UPDATE_HINT_FILE,
-                    new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
-                        @Override public void onLog(String m) {}
-                        @Override public void onLaunched() {}
-                        @Override public void onError(String e) {}
-                    });
+            try (java.io.FileWriter fw = new java.io.FileWriter(
+                    com.overdrive.app.updater.UpdateLifecycle.TELEGRAM_POST_UPDATE_HINT_FILE)) {
+                fw.write(hintVersion);
+                fw.write('\n');
+            }
         } catch (Exception ignored) {}
 
         // Start install on a background thread. The IPC reply returns now

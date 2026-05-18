@@ -31,6 +31,11 @@ object DaemonHttpClient {
 
     @Volatile private var cachedJwt: String? = null
     @Volatile private var cachedAt: Long = 0
+    // Pin the cached JWT to the AuthManager state version it was minted from.
+    // If the underlying secret reconciles to the daemon's value (fresh-install
+    // race), AuthManager bumps stateVersion and we mint a new JWT immediately
+    // instead of waiting out the TTL with a stale signature.
+    @Volatile private var cachedStateVersion: Long = -1
 
     /**
      * Open an authenticated connection to a daemon endpoint.
@@ -74,12 +79,14 @@ object DaemonHttpClient {
     fun invalidate() {
         cachedJwt = null
         cachedAt = 0
+        cachedStateVersion = -1
     }
 
     private fun currentJwt(): String? {
         val now = System.currentTimeMillis()
         val cur = cachedJwt
-        if (cur != null && (now - cachedAt) < JWT_CACHE_TTL_MS) return cur
+        val curVersion = AuthManager.getStateVersion()
+        if (cur != null && (now - cachedAt) < JWT_CACHE_TTL_MS && cachedStateVersion == curVersion) return cur
 
         // Mint a fresh JWT. AuthManager handles its own initialization race
         // (returns null on cold-start before deviceSecret is loaded). On null,
@@ -93,6 +100,7 @@ object DaemonHttpClient {
         if (fresh != null) {
             cachedJwt = fresh
             cachedAt = now
+            cachedStateVersion = AuthManager.getStateVersion()
         }
         return fresh
     }

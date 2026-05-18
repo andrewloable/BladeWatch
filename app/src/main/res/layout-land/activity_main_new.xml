@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Modern M3 shell.
-  Layout = navigation rail (left) + main stage (top app bar over nav host).
-  No drawer, no always-on logs panel, no access-mode pill.
+  Modern M3 shell — LANDSCAPE variant.
 
-  ID `drawerLayout` is kept ONLY to satisfy compile-time references in
-  MainActivity.kt while the access-mode strip-out finishes — but the root
-  is no longer a DrawerLayout. (The MainActivity refactor uses findViewById
-  for `drawerLayout` only as a fallback path; we'll prune that field next.)
+  Target device: BYD Seal 15.6" rotatable infotainment.
+    Landscape = 1920x1080 px ≈ 960dp x 540dp (at 320dpi).
+    The OS reserves a TOP system bar and a BOTTOM system bar (BYD launcher
+    bars). The app gets only the strip in between.
+
+  fitsSystemWindows="true" on the root makes the framework pad the root by
+  the system-bar insets, so our content automatically lives between the two
+  bars without having to know their exact heights.
+
+  Layout = navigation rail (left, scrollable) + main stage on the right.
+  The right side stacks: compact MaterialToolbar → optional URL bar → nav
+  host. Toolbar uses a denser ?actionBarSize equivalent so vertical real
+  estate stays with the actual page content.
+
+  ID `drawerLayout` was historically referenced; the rail-based shell does
+  not use a drawer. MainActivity tolerates its absence (findViewById
+  fallback).
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -26,18 +37,10 @@
         android:orientation="horizontal">
 
         <!-- ============================================================== -->
-        <!--  Navigation rail — CUSTOM (not NavigationRailView).            -->
-        <!--                                                                -->
-        <!--  Material 1.13 NavigationRailView caps menu items at 7 in its  -->
-        <!--  collapsed mode (NavigationBarMenu.MAX_ITEM_COUNT) and the     -->
-        <!--  app:scrollingEnabled flag did NOT lift the cap in practice on -->
-        <!--  this build. Items 8 and 9 (Settings, About) silently dropped. -->
-        <!--                                                                -->
-        <!--  This rail is a plain vertical LinearLayout of 9 destination   -->
-        <!--  items inside a NestedScrollView. MainActivity wires clicks    -->
-        <!--  via tags, syncs selection from a NavController listener, and  -->
-        <!--  treats this view's id (`navigationRail`) the same way it      -->
-        <!--  treated NavigationRailView.                                    -->
+        <!--  Navigation rail — scrollable so all 8 destinations reach in   -->
+        <!--  the height-constrained landscape strip between BYD's two      -->
+        <!--  system bars. Without scroll, "Diagnostics" + "Settings" got   -->
+        <!--  clipped off the bottom.                                       -->
         <!-- ============================================================== -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/navigationRailScroll"
@@ -54,12 +57,12 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:paddingBottom="16dp">
+                android:paddingBottom="12dp">
 
-                <!-- Rail header (language button) was here. The language
-                     affordance moved to the toolbar end-cluster so it sits
-                     in the conventional top-right slot. The rail now goes
-                     straight to its first destination. -->
+                <include
+                    layout="@layout/rail_header"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
 
                 <include
                     android:id="@+id/railDestDashboard"
@@ -102,13 +105,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
 
-                <!-- Hairline divider separating the primary destinations
-                     from the meta entry (About). Mirrors the M3 pattern
-                     of grouping action vs. info items on the rail. -->
+                <!-- Hairline divider separating primary destinations
+                     from the meta entry (About). -->
                 <View
                     android:layout_width="40dp"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="6dp"
+                    android:layout_marginVertical="4dp"
                     android:background="?attr/colorOutlineVariant" />
 
                 <include
@@ -120,7 +122,7 @@
         </androidx.core.widget.NestedScrollView>
 
         <!-- ============================================================== -->
-        <!--  Main stage                                                     -->
+        <!--  Main stage — toolbar (compact) → URL bar → fragment host.     -->
         <!-- ============================================================== -->
         <LinearLayout
             android:layout_width="0dp"
@@ -136,18 +138,20 @@
                 app:elevation="0dp"
                 app:liftOnScroll="false">
 
+                <!--
+                  Compact toolbar (48dp) for landscape. The default
+                  ?actionBarSize is 56dp portrait / 48dp landscape on most
+                  themes, but pinning it explicitly avoids the larger
+                  Material3 64dp from eating the page's vertical budget.
+                -->
                 <com.google.android.material.appbar.MaterialToolbar
                     android:id="@+id/toolbar"
                     android:layout_width="match_parent"
-                    android:layout_height="?attr/actionBarSize"
+                    android:layout_height="48dp"
                     android:background="?attr/colorSurface"
-                    app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge">
+                    app:titleTextAppearance="@style/TextAppearance.Material3.TitleMedium">
 
-                    <!-- Toolbar end-cluster: tunnel status dot + language picker.
-                         Both live in a single horizontal row pinned to the
-                         end so the language affordance is reachable from the
-                         top-right at every screen size, not buried under the
-                         rail header where users had been missing it. -->
+                    <!-- Tunnel status pill (online/offline dot) -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -164,20 +168,10 @@
                             android:layout_height="8dp"
                             android:background="@drawable/status_dot_offline" />
 
-                        <ImageButton
-                            android:id="@+id/toolbarLanguageButton"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_marginStart="12dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/settings_language_label"
-                            android:src="@drawable/ic_language"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-
                     </LinearLayout>
                 </com.google.android.material.appbar.MaterialToolbar>
 
-                <!-- URL bar: tunnel URL preview, only shown when one exists. -->
+                <!-- URL bar — denser padding in landscape. -->
                 <LinearLayout
                     android:id="@+id/urlBar"
                     android:layout_width="match_parent"
@@ -186,7 +180,7 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingHorizontal="20dp"
-                    android:paddingVertical="10dp">
+                    android:paddingVertical="6dp">
 
                     <View
                         android:id="@+id/urlStatusDot"
@@ -219,8 +213,8 @@
 
                     <ImageButton
                         android:id="@+id/btnCopyUrl"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
                         android:layout_marginStart="8dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="@string/cd_copy_url"

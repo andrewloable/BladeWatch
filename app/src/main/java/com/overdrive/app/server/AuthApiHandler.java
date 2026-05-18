@@ -154,12 +154,21 @@ public class AuthApiHandler {
 
                 String jwt = AuthManager.generateJwt();
                 AuthManager.AuthState state = AuthManager.getState();
-                response.put("success", true);
-                response.put("jwt", jwt);
-                response.put("deviceId", state.deviceId);
-                response.put("expiresIn", 365 * 24 * 60 * 60); // 1 year — matches JWT expiry
+                if (jwt == null || state == null) {
+                    // Auth state was invalidated between validateDeviceToken
+                    // and here (e.g. concurrent regenerateToken). Treat as
+                    // a transient failure rather than NPEing on state.deviceId.
+                    response.put("success", false);
+                    response.put("error", Messages.get("errors.invalid_device_token"));
+                    log("Auth state vanished mid-login — asking client to retry");
+                } else {
+                    response.put("success", true);
+                    response.put("jwt", jwt);
+                    response.put("deviceId", state.deviceId);
+                    response.put("expiresIn", 365 * 24 * 60 * 60); // 1 year — matches JWT expiry
 
-                log("Token validated for device: " + state.deviceId);
+                    log("Token validated for device: " + state.deviceId);
+                }
             } else {
                 response.put("success", false);
                 response.put("error", Messages.get("errors.invalid_device_token"));

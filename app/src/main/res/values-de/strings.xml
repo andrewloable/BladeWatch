@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">Überwachung</string>
     <string name="settings_section_daemons">Dämonen</string>
     <string name="settings_section_privacy">Datenschutz und Daten</string>
-    <string name="settings_section_about">Über &amp; Updates</string>
+    <string name="settings_section_about">Über</string>
     <string name="settings_subrail_overline">Einstellungen</string>
     <string name="cd_settings_subrail">Einstellungs-Subbahn</string>
     <string name="settings_privacy_title">Datenschutz und Daten</string>

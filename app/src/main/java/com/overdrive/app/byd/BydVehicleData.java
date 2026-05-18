@@ -23,7 +23,6 @@ public class BydVehicleData {
     public final double remainKwh;        // remaining energy
     public final double voltage12v;       // 12V battery volts
     public final int voltageLevelRaw;     // LOW/NORMAL/INVALID
-    public final int energyType;          // bodywork getEnergyType() raw — drivetrain discriminator (BEV/PHEV/HEV)
 
     // ==================== THERMAL ====================
     public final double highCellTempC;    // highest cell temp (°C)
@@ -205,7 +204,6 @@ public class BydVehicleData {
         this.remainKwh = b.remainKwh;
         this.voltage12v = b.voltage12v;
         this.voltageLevelRaw = b.voltageLevelRaw;
-        this.energyType = b.energyType;
         this.highCellTempC = b.highCellTempC;
         this.lowCellTempC = b.lowCellTempC;
         this.avgCellTempC = b.avgCellTempC;
@@ -350,7 +348,6 @@ public class BydVehicleData {
             putIfValid(batt, "remainKwh", remainKwh);
             putIfValid(batt, "voltage12v", voltage12v);
             if (voltageLevelRaw != UNAVAILABLE) batt.put("voltageLevelRaw", voltageLevelRaw);
-            if (energyType != UNAVAILABLE) batt.put("energyType", energyType);
             j.put("battery", batt);
 
             // Thermal
@@ -625,7 +622,7 @@ public class BydVehicleData {
         b.vin = vin; b.socPercent = socPercent; b.socHevPercent = socHevPercent;
         b.capacityAh = capacityAh; b.remainKwh = remainKwh; b.voltage12v = voltage12v;
         b.voltageLevelRaw = voltageLevelRaw;
-        b.energyType = energyType; b.highCellTempC = highCellTempC;
+        b.highCellTempC = highCellTempC;
         b.lowCellTempC = lowCellTempC; b.avgCellTempC = avgCellTempC;
         b.waterTempC = waterTempC; b.outsideTempC = outsideTempC; b.insideTempC = insideTempC;
         b.bodyworkBattTempC = bodyworkBattTempC; b.highCellVoltage = highCellVoltage;
@@ -693,7 +690,6 @@ public class BydVehicleData {
         String vin;
         double socPercent = NaN, socHevPercent = NaN, capacityAh = NaN, remainKwh = NaN;
         double voltage12v = NaN; int voltageLevelRaw = UNAVAILABLE;
-        int energyType = UNAVAILABLE;
         double highCellTempC = NaN, lowCellTempC = NaN, avgCellTempC = NaN;
         double waterTempC = NaN, outsideTempC = NaN, insideTempC = NaN, bodyworkBattTempC = NaN;
         double highCellVoltage = NaN, lowCellVoltage = NaN;
@@ -768,7 +764,6 @@ public class BydVehicleData {
         public Builder remainKwh(double v) { remainKwh = v; return this; }
         public Builder voltage12v(double v) { voltage12v = v; return this; }
         public Builder voltageLevelRaw(int v) { voltageLevelRaw = v; return this; }
-        public Builder energyType(int v) { energyType = v; return this; }
         public Builder highCellTempC(double v) { highCellTempC = v; return this; }
         public Builder lowCellTempC(double v) { lowCellTempC = v; return this; }
         public Builder avgCellTempC(double v) { avgCellTempC = v; return this; }

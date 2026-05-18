@@ -121,6 +121,49 @@ public class MotionPipelineV2 {
         public int oscillationThreshold = 3;
         
         /**
+         * Java-side gate values for a sensitivity level. Used by per-quadrant
+         * post-filtering: the native pipeline runs once with the most-permissive
+         * config, and stricter quadrants demote results that don't clear these
+         * values. Keep in sync with {@link #applySensitivity(int)}.
+         */
+        public static class GateThresholds {
+            public final int alarmBlockThreshold;
+            public final int minComponentSize;
+            public final float confidenceThreshold;
+            GateThresholds(int alarm, int comp, float conf) {
+                this.alarmBlockThreshold = alarm;
+                this.minComponentSize = comp;
+                this.confidenceThreshold = conf;
+            }
+        }
+
+        public static GateThresholds gatesForSensitivity(int level) {
+            switch (level) {
+                case 1: return new GateThresholds(3, 2, 0.8f);
+                case 2: return new GateThresholds(2, 2, 0.75f);
+                case 3: return new GateThresholds(2, 1, 0.7f);
+                case 4: return new GateThresholds(1, 1, 0.65f);
+                case 5: return new GateThresholds(1, 1, 0.6f);
+                default: return new GateThresholds(2, 1, 0.7f);
+            }
+        }
+
+        /**
+         * Detection-zone row cutoff. Mirrors {@link #applyDetectionZone(String)}
+         * for use in per-quadrant post-filtering. Returns the maxDistanceRow
+         * (centroids strictly above this row are rejected).
+         */
+        public static int maxDistanceRowForZone(String zone) {
+            if (zone == null) return 2;
+            switch (zone) {
+                case "close":    return 4;
+                case "normal":   return 2;
+                case "extended": return 0;
+                default:         return 2;
+            }
+        }
+
+        /**
          * Apply a sensitivity preset (1-5).
          */
         public void applySensitivity(int level) {

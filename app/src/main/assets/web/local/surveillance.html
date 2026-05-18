@@ -530,6 +530,45 @@
                         </div>
                         <div class="setting-hint" id="cameraControlsHint" data-i18n="surveillance.camera_controls_hint">Disable cameras facing a wall or busy road to reduce false alerts.</div>
 
+                        <!-- Side-cam Boost -->
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-name" data-i18n="surveillance.sidecam_boost">Side-cam Boost</div>
+                                <div class="setting-desc" data-i18n="surveillance.sidecam_boost_desc">Override sensitivity and detection zone for the left and right cameras only. Useful when neighbours pull into adjacent stalls and the front/rear settings are too conservative to catch them.</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="sideCamBoostEnabled" onchange="SurvSettings.updateSideCamBoost()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="sideCamBoostControls" style="display:none;padding-bottom:16px;">
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-name" style="font-size:13px;" data-i18n="surveillance.sidecam_sens">Side sensitivity</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="slider-control">
+                                        <span class="slider-value" id="sideCamSensValue" data-i18n="surveillance.v2_sens_label.4">4</span>
+                                        <input type="range" class="slider" id="sideCamSensSlider" min="1" max="5" value="4" oninput="SurvSettings.updateSideCamSens(this.value)">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="setting-row" style="border-bottom:none;">
+                                <div class="setting-info">
+                                    <div class="setting-name" style="font-size:13px;" data-i18n="surveillance.sidecam_zone">Side zone</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="btn-group" id="sideCamZoneBtns">
+                                        <button class="btn-toggle" data-value="close" onclick="SurvSettings.setSideCamZone('close')" data-i18n="surveillance.det_close">Close</button>
+                                        <button class="btn-toggle" data-value="normal" onclick="SurvSettings.setSideCamZone('normal')" data-i18n="surveillance.det_normal">Normal</button>
+                                        <button class="btn-toggle active" data-value="extended" onclick="SurvSettings.setSideCamZone('extended')" data-i18n="surveillance.det_extended">Extended</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Object Detection -->
                         <div class="setting-row" style="border-bottom:none;">
                             <div class="setting-info">
@@ -1153,7 +1192,7 @@
                             </div>
                         </div>
                         <!-- Manual Cleanup Button -->
-                        <button class="btn btn-secondary" style="width:100%;margin-top:12px;" onclick="SurvSettings.triggerCdrCleanup()" data-i18n="recording.cdr_cleanup_now">
+                        <button class="btn btn-danger" style="width:100%;margin-top:12px;" onclick="SurvSettings.triggerCdrCleanup()" data-i18n="recording.cdr_cleanup_now">
                             🗑️ Clean Up Now
                         </button>
                         <!-- Stats -->

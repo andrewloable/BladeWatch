@@ -35,6 +35,10 @@ BYD.surveillance = {
         cameraRear: true,
         motionHeatmap: false,
         filterDebugLog: false,
+        // Per-quadrant sensitivity / zone overrides. Keys: Q0=front, Q1=right,
+        // Q2=rear, Q3=left. Absent key = inherit global. The "Side-cam Boost"
+        // UI writes to Q1 + Q3.
+        quadrantOverrides: {},
         // Telegram-specific: send a "Recording in progress…" text ping at
         // recording start. OFF by default so users with both PWA + Telegram
         // see one notification per event (PWA has tag-replace; Telegram does
@@ -661,6 +665,7 @@ BYD.surveillance = {
             'environmentPreset', 'sensitivityLevel', 'detectionZone', 'loiteringTime',
             'shadowFilter',
             'cameraFront', 'cameraRight', 'cameraLeft', 'cameraRear',
+            'quadrantOverrides',
             'motionHeatmap', 'filterDebugLog',
             'telegramSendStartPing',
             'telegramNotices', 'telegramAlerts', 'telegramCritical'
@@ -976,6 +981,62 @@ BYD.surveillance = {
         this.config.cameraRight = document.getElementById('v2CameraRight').checked;
         this.config.cameraLeft = document.getElementById('v2CameraLeft').checked;
         this.config.cameraRear = document.getElementById('v2CameraRear').checked;
+        this.markChanged();
+    },
+
+    /**
+     * Side-cam Boost: writes overrides into quadrantOverrides Q1 (right) and
+     * Q3 (left). Disabling the boost removes both keys so the side cams
+     * inherit the global sensitivity / zone again.
+     */
+    _writeSideCamOverrides(sens, zone) {
+        const ov = Object.assign({}, this.config.quadrantOverrides || {});
+        if (sens == null && zone == null) {
+            delete ov.Q1;
+            delete ov.Q3;
+        } else {
+            const perQ = {};
+            if (sens != null) perQ.sensitivityLevel = parseInt(sens);
+            if (zone != null) perQ.detectionZone = zone;
+            ov.Q1 = perQ;
+            ov.Q3 = Object.assign({}, perQ);
+        }
+        this.config.quadrantOverrides = ov;
+    },
+
+    updateSideCamBoost() {
+        const on = document.getElementById('sideCamBoostEnabled').checked;
+        const ctl = document.getElementById('sideCamBoostControls');
+        if (ctl) ctl.style.display = on ? '' : 'none';
+        if (on) {
+            const sens = parseInt(document.getElementById('sideCamSensSlider').value);
+            const activeZoneBtn = document.querySelector('#sideCamZoneBtns .btn-toggle.active');
+            const zone = activeZoneBtn ? activeZoneBtn.dataset.value : 'extended';
+            this._writeSideCamOverrides(sens, zone);
+        } else {
+            this._writeSideCamOverrides(null, null);
+        }
+        this.markChanged();
+    },
+
+    updateSideCamSens(value) {
+        const sens = parseInt(value);
+        const valEl = document.getElementById('sideCamSensValue');
+        if (valEl) {
+            valEl.setAttribute('data-i18n', 'surveillance.v2_sens_label.' + sens);
+            valEl.textContent = this.v2SensLabel(sens) || sens;
+        }
+        const activeZoneBtn = document.querySelector('#sideCamZoneBtns .btn-toggle.active');
+        const zone = activeZoneBtn ? activeZoneBtn.dataset.value : 'extended';
+        this._writeSideCamOverrides(sens, zone);
+        this.markChanged();
+    },
+
+    setSideCamZone(zone) {
+        document.querySelectorAll('#sideCamZoneBtns .btn-toggle').forEach(btn =>
+            btn.classList.toggle('active', btn.dataset.value === zone));
+        const sens = parseInt(document.getElementById('sideCamSensSlider').value);
+        this._writeSideCamOverrides(sens, zone);
         this.markChanged();
     },
 
@@ -1412,6 +1473,30 @@ BYD.surveillance = {
         if (cl) cl.checked = this.config.cameraLeft;
         const cb = document.getElementById('v2CameraRear');
         if (cb) cb.checked = this.config.cameraRear;
+
+        // Side-cam Boost — derived from quadrantOverrides[Q1] / [Q3]. We
+        // treat "boost enabled" as: both side quadrants share an override.
+        // If the user customized just one side via API, fall back to that
+        // quadrant's value to stay consistent.
+        const ov = this.config.quadrantOverrides || {};
+        const q1 = ov.Q1 || {};
+        const q3 = ov.Q3 || {};
+        const boostOn = !!(q1.sensitivityLevel || q3.sensitivityLevel || q1.detectionZone || q3.detectionZone);
+        const boostBox = document.getElementById('sideCamBoostEnabled');
+        const boostCtl = document.getElementById('sideCamBoostControls');
+        if (boostBox) boostBox.checked = boostOn;
+        if (boostCtl) boostCtl.style.display = boostOn ? '' : 'none';
+        const sideSens = (q1.sensitivityLevel || q3.sensitivityLevel || 4);
+        const sideZone = (q1.detectionZone || q3.detectionZone || 'extended');
+        const sSlider = document.getElementById('sideCamSensSlider');
+        if (sSlider) sSlider.value = sideSens;
+        const sValue = document.getElementById('sideCamSensValue');
+        if (sValue) {
+            sValue.setAttribute('data-i18n', 'surveillance.v2_sens_label.' + sideSens);
+            sValue.textContent = this.v2SensLabel(sideSens) || sideSens;
+        }
+        document.querySelectorAll('#sideCamZoneBtns .btn-toggle').forEach(btn =>
+            btn.classList.toggle('active', btn.dataset.value === sideZone));
 
         // Developer toggles
         const hm = document.getElementById('v2MotionHeatmap');

@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">监控</string>
     <string name="settings_section_daemons">魔鬼</string>
     <string name="settings_section_privacy">隐私与数据</string>
-    <string name="settings_section_about">关于 &amp; 更新</string>
+    <string name="settings_section_about">关于</string>
     <string name="settings_subrail_overline">设置</string>
     <string name="cd_settings_subrail">设置子轨道</string>
     <string name="settings_privacy_title">隐私与数据</string>

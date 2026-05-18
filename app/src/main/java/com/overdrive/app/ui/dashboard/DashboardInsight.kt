@@ -15,10 +15,11 @@ import android.util.TypedValue
 import androidx.annotation.AttrRes
 import androidx.annotation.WorkerThread
 import com.overdrive.app.R
-import com.overdrive.app.monitor.SocHistoryDatabase
 import com.overdrive.app.ui.util.RecordingScanner
+import com.overdrive.app.util.DaemonHttpClient
 import org.json.JSONObject
 import java.io.File
+import java.net.HttpURLConnection
 import java.util.Calendar
 import kotlin.math.abs
 
@@ -105,22 +106,18 @@ class DashboardInsightProvider(appContext: Context) {
      * park-and-return cycle, computed from real ACC ON/OFF events recorded
      * in the daemon (NO inference from sample gaps).
      *
+     * Fetched over HTTP from the camera daemon — the H2 DB lives in a
+     * different process (UID 1000, app_process), so the UI process can't
+     * touch SocHistoryDatabase directly: its singleton is never init()'d
+     * here, and FILE_LOCK=SOCKET would refuse a second JVM anyway.
+     *
      * Skipped silently when |deltaSoc| ≤ 0.5 or the cycle is older than 3 days.
      */
     private fun parkingDeltaInsight(emphasisColor: Int): DashboardInsight? {
-        val db = try {
-            SocHistoryDatabase.getInstance()
-        } catch (_: Throwable) {
-            return null
-        }
-        if (!db.isAvailable) return null
         // 72 hours = 3 days, after which the delta is too stale to be
         // interesting on the dashboard.
-        val json: JSONObject = try {
-            db.getLastParkingDelta(72) ?: return null
-        } catch (_: Throwable) {
-            return null
-        }
+        val json = fetchDaemonJson("/api/performance/parking-delta?maxAgeHours=72") ?: return null
+        if (json.optBoolean("available", true).not()) return null
         val deltaSoc = json.optDouble("deltaSoc", Double.NaN)
         if (deltaSoc.isNaN() || abs(deltaSoc) <= 0.5 || abs(deltaSoc) > 100) return null
         // Use onTs (the return event) for staleness — that's when the user
@@ -188,17 +185,8 @@ class DashboardInsightProvider(appContext: Context) {
 
     /** "Last charge: +X kWh in Y minutes" — only if a session in the last 24h. */
     private fun chargingRecapInsight(emphasisColor: Int): DashboardInsight? {
-        val db = try {
-            SocHistoryDatabase.getInstance()
-        } catch (_: Throwable) {
-            return null
-        }
-        if (!db.isAvailable) return null
-        val json: JSONObject = try {
-            db.getMostRecentCompletedChargingSession(24) ?: return null
-        } catch (_: Throwable) {
-            return null
-        }
+        val json = fetchDaemonJson("/api/performance/last-charge?hoursBack=24") ?: return null
+        if (json.optBoolean("available", true).not()) return null
         val kwh = json.optDouble("energyAddedKwh", Double.NaN)
         val mins = json.optLong("durationMinutes", 0L)
         if (kwh.isNaN() || kwh <= 0.05 || kwh > 500) return null
@@ -293,6 +281,29 @@ class DashboardInsightProvider(appContext: Context) {
     }
 
     // ============== Helpers ==============
+
+    /**
+     * GET against the in-process daemon. Returns null on any error (timeout,
+     * non-200, malformed JSON) — callers treat null as "no insight available"
+     * and the carousel skips it.
+     *
+     * Always called from a worker thread (build() is @WorkerThread).
+     */
+    private fun fetchDaemonJson(path: String): JSONObject? {
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = DaemonHttpClient.open(path, "GET", connectTimeoutMs = 1500, readTimeoutMs = 2500)
+            val code = conn.responseCode
+            if (code != 200) return null
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            if (body.isEmpty()) return null
+            JSONObject(body)
+        } catch (_: Throwable) {
+            null
+        } finally {
+            try { conn?.disconnect() } catch (_: Throwable) {}
+        }
+    }
 
     private fun safeDir(block: () -> File): File? = try {
         val d = block()

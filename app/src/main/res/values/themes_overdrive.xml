@@ -83,6 +83,23 @@
         <!-- Auto-pick up our M3 dialog overlay for every MaterialAlertDialogBuilder. -->
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Overdrive.M3.MaterialAlertDialog</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.Overdrive.M3.MaterialAlertDialog</item>
+
+        <!-- Typography overrides: tighten the M3 expressive scale for a
+             modern infotainment look. The default M3 type scale uses
+             generous tracking and weights tuned for phones; on a 1920×1080
+             head unit those defaults read as soft. We bias headlines and
+             display text to sans-serif-medium with negative tracking, and
+             sharpen labels with a small positive tracking for an
+             "expressive" rhythm. Body styles inherit defaults — they
+             render long-form text and don't benefit from tighter tracking. -->
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.Overdrive.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Overdrive.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Overdrive.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Overdrive.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Overdrive.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Overdrive.TitleMedium</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Overdrive.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.Overdrive.LabelMedium</item>
     </style>
 
     <!-- ============================================================== -->
@@ -276,6 +293,53 @@
         <item name="android:layout_height">20dp</item>
         <item name="android:contentDescription">@null</item>
         <item name="android:tint">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- ============================================================== -->
+    <!-- M3 Expressive type scale — tighter tracking, medium weights.    -->
+    <!-- Each style inherits from the matching Material3 token so we     -->
+    <!-- only override the bits we want to tighten; the rest (sizes,     -->
+    <!-- line heights) come from the platform spec.                      -->
+    <!-- ============================================================== -->
+
+    <style name="TextAppearance.Overdrive.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.Overdrive.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.Overdrive.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.015</item>
+    </style>
+
+    <style name="TextAppearance.Overdrive.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="TextAppearance.Overdrive.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.005</item>
+    </style>
+
+    <style name="TextAppearance.Overdrive.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.Overdrive.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <style name="TextAppearance.Overdrive.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.04</item>
     </style>
 
 </resources>

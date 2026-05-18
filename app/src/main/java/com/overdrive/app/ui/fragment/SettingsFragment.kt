@@ -19,7 +19,6 @@ import com.overdrive.app.BuildConfig
 import com.overdrive.app.R
 import com.overdrive.app.ui.MainActivity
 import com.overdrive.app.ui.dialog.LanguagePickerDialog
-import com.overdrive.app.ui.fragment.settings.SettingsAboutFragment
 import com.overdrive.app.ui.fragment.settings.SettingsAppearanceFragment
 import com.overdrive.app.ui.fragment.settings.SettingsDaemonsFragment
 import com.overdrive.app.ui.fragment.settings.SettingsPrivacyFragment
@@ -53,6 +52,8 @@ class SettingsFragment : Fragment() {
      * leave the Settings page (Recording / Surveillance) — kept for the
      * trailing chevron affordance even though we now host them inline.
      */
+    // About was removed from this sub-rail — it now lives only on the
+    // main navigation rail so there's a single entry point.
     private enum class Section(
         val labelRes: Int,
         val iconRes: Int,
@@ -61,9 +62,8 @@ class SettingsFragment : Fragment() {
         APPEARANCE(R.string.settings_section_appearance, R.drawable.ic_dashboard),
         RECORDING(R.string.settings_section_recording, R.drawable.ic_recording, navigates = true),
         SURVEILLANCE(R.string.settings_section_surveillance, R.drawable.ic_sentry, navigates = true),
-        DAEMONS(R.string.settings_section_daemons, R.drawable.ic_daemons),
+        DAEMONS(R.string.settings_section_daemons, R.drawable.ic_services),
         PRIVACY(R.string.settings_section_privacy, R.drawable.ic_delete),
-        ABOUT(R.string.settings_section_about, R.drawable.ic_update),
     }
 
     private var currentSection: Section = Section.APPEARANCE
@@ -87,11 +87,12 @@ class SettingsFragment : Fragment() {
             setupLandscapeSubrail(view, savedInstanceState)
         } else {
             // Portrait: SOTA hub. Hero header is layout-driven; wire up the
-            // quick toggles, section shortcuts, about/reset rows, and footer.
+            // quick toggles, section shortcuts, the destructive Reset row,
+            // and footer. About now lives only on the main rail.
             setupQuickThemeTile(view)
             setupLanguagePicker(view)
             setupSectionShortcuts(view)
-            setupAboutActions(view)
+            setupResetRow(view)
             setupFooter(view)
         }
     }
@@ -191,7 +192,6 @@ class SettingsFragment : Fragment() {
         Section.SURVEILLANCE -> SettingsSurveillanceFragment()
         Section.DAEMONS -> SettingsDaemonsFragment()
         Section.PRIVACY -> SettingsPrivacyFragment()
-        Section.ABOUT -> SettingsAboutFragment()
     }
 
     // ============================================================
@@ -280,10 +280,7 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun setupAboutActions(view: View) {
-        view.findViewById<View>(R.id.cardCheckUpdate)?.setOnClickListener {
-            (activity as? MainActivity)?.invokeCheckForUpdates()
-        }
+    private fun setupResetRow(view: View) {
         view.findViewById<View>(R.id.cardResetData)?.setOnClickListener {
             (activity as? MainActivity)?.invokeResetDataDialog()
         }

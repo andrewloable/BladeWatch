@@ -378,7 +378,7 @@
     <string name="settings_section_surveillance">Bewaking</string>
     <string name="settings_section_daemons">Deemonen</string>
     <string name="settings_section_privacy">Privacy &amp; gegevens</string>
-    <string name="settings_section_about">Over &amp; updates</string>
+    <string name="settings_section_about">Over</string>
     <string name="settings_subrail_overline">Instellingen</string>
     <string name="cd_settings_subrail">Opstelling sub-rail</string>
     <string name="settings_privacy_title">Privacy &amp; gegevens</string>
