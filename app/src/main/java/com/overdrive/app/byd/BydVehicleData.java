@@ -109,6 +109,10 @@ public class BydVehicleData {
     // ==================== SEATBELTS ====================
     public final int[] seatbeltStatus;    // [1-5]
 
+    // ==================== SEATS ====================
+    public final int[] seatHeat;    // [1-2]
+    public final int[] seatCool;    // [1-2]
+
     // ==================== CLIMATE ====================
     public final int acStartState;
     public final int acCycleMode;
@@ -256,6 +260,8 @@ public class BydVehicleData {
         this.dayTimeLight = b.dayTimeLight;
         this.speedLimitWarning = b.speedLimitWarning;
         this.seatbeltStatus = b.seatbeltStatus;
+        this.seatHeat = b.seatHeat;
+        this.seatCool = b.seatCool;
         this.acStartState = b.acStartState;
         this.acCycleMode = b.acCycleMode;
         this.acWindMode = b.acWindMode;
@@ -479,6 +485,16 @@ public class BydVehicleData {
                 for (int s : seatbeltStatus) sb.put(s);
                 j.put("seatbeltStatus", sb);
             }
+            if (seatHeat != null) {
+                JSONArray sb = new JSONArray();
+                for (int s : seatHeat) sb.put(s);
+                j.put("seatHeat", sb);
+            }
+            if (seatCool != null) {
+                JSONArray sb = new JSONArray();
+                for (int s : seatCool) sb.put(s);
+                j.put("seatCool", sb);
+            }
 
             // Climate
             JSONObject clim = new JSONObject();
@@ -637,6 +653,7 @@ public class BydVehicleData {
         b.rightTurnState = rightTurnState; b.lowBeam = lowBeam; b.highBeam = highBeam;
         b.rearFog = rearFog; b.frontFog = frontFog; b.hazard = hazard;
         b.dayTimeLight = dayTimeLight; b.seatbeltStatus = seatbeltStatus;
+        b.seatHeat = seatHeat; b.seatCool = seatCool;
         b.speedLimitWarning = speedLimitWarning;
         b.acStartState = acStartState; b.acCycleMode = acCycleMode; b.acWindMode = acWindMode; b.acFanLevel = acFanLevel;
         b.tempUnit = tempUnit; b.slopeDegrees = slopeDegrees; b.powerLevel = powerLevel;
@@ -693,6 +710,7 @@ public class BydVehicleData {
         double chargingPowerKw = NaN, externalChargingPowerKw = NaN, hvPackVoltage = NaN;
         int gearMode = UNAVAILABLE;
         int[] tyrePressure, doorLockStatus, windowOpenPercent, seatbeltStatus, radarDistances;
+        int[] seatHeat, seatCool;
         int[] tyrePressureState, tyreAirLeakState, tyreSignalState, tyreTemperature;
         int tyreSystemState = UNAVAILABLE, tyreTemperatureState = UNAVAILABLE;
         int leftTurnState = UNAVAILABLE, rightTurnState = UNAVAILABLE;
@@ -805,6 +823,8 @@ public class BydVehicleData {
         public Builder dayTimeLight(boolean v) { dayTimeLight = v; return this; }
         public Builder speedLimitWarning(boolean v) { speedLimitWarning = v; return this; }
         public Builder seatbeltStatus(int[] v) { seatbeltStatus = v; return this; }
+        public Builder seatHeat(int[] v) { seatHeat = v; return this; }
+        public Builder seatCool(int[] v) { seatCool = v; return this; }
         public Builder acStartState(int v) { acStartState = v; return this; }
         public Builder acCycleMode(int v) { acCycleMode = v; return this; }
         public Builder acWindMode(int v) { acWindMode = v; return this; }

@@ -82,6 +82,10 @@ public final class BydFeatureIds {
     public static final int SETTING_DRAG_MODE_CURRENT_STATE = resolveOrFallback("Setting.SETTING_DRAG_MODE_CURRENT_STATE", 875560989);
     public static final int SETTING_TARGET_DRIVING_MODE = resolveOrFallback("Setting.SETTING_TARGET_DRIVING_MODE", 1272971280);
     public static final int SETTING_TARGET_DRIVING_MODE_ALT = resolveOrFallback("Setting.SETTING_TARGET_DRIVING_MODE_ALT", 255852712);
+    public static final int SET_DRIVER_SEAT_HEATING_STATE = resolveOrFallback("Setting.SET_DRIVER_SEAT_HEATING_STATE", 1335885835);
+    public static final int SET_DRIVER_SEAT_VENTILATING_STATE = resolveOrFallback("Setting.SET_DRIVER_SEAT_VENTILATING_STATE", 1335885832);
+    public static final int SET_PASSENGER_SEAT_HEATING_STATE = resolveOrFallback("Setting.SET_PASSENGER_SEAT_HEATING_STATE", 1335885843);
+    public static final int SET_PASSENGER_SEAT_VENTILATING_STATE = resolveOrFallback("Setting.SET_PASSENGER_SEAT_VENTILATING_STATE", 1335885840);
 
     // ==================== BODY ====================
     public static final int BODY_ATMOSPHERE_LIGHT_SWITCH = resolveOrFallback("Body.ATMOSPHERE_LIGHT_SWITCH_EXECUTE", 489701406);
