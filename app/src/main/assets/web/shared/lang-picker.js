@@ -202,8 +202,15 @@
     /**
      * Mount the chip into the sidebar footer when DOM is ready.
      * Idempotent — safe if the script gets included twice.
+     *
+     * Suppressed inside the Android WebView. The app's Settings → Language
+     * panel is the source of truth there; showing a redundant web picker
+     * that gets overridden on the next /status poll just confuses users
+     * (they pick a language, see it flip, then watch the app push it back).
+     * Same in-app gating pattern as theme.js.
      */
     function mount() {
+        if (typeof window.AndroidBridge !== 'undefined') return;
         if (document.getElementById('langChip')) return;
         var footer = document.querySelector('.sidebar-footer');
         if (!footer) return;

@@ -27,6 +27,16 @@ public interface CommandContext {
      * Send an IPC command to a local service.
      */
     JSONObject sendIpcCommand(int port, JSONObject command);
+
+    /**
+     * Send an IPC command with a custom socket read timeout. Use when the
+     * server-side handler may legitimately take longer than the default
+     * (e.g. GitHub API calls in update flow). Default impl falls back to
+     * the 5s-timeout method so existing impls don't break.
+     */
+    default JSONObject sendIpcCommand(int port, JSONObject command, int timeoutMs) {
+        return sendIpcCommand(port, command);
+    }
     
     /**
      * Execute a shell command and return output.

@@ -381,7 +381,13 @@ public class TelegramBotDaemon {
             public JSONObject sendIpcCommand(int port, JSONObject command) {
                 return TelegramBotDaemon.sendIpcCommand(port, command);
             }
-            
+
+            @Override
+            public JSONObject sendIpcCommand(int port, JSONObject command, int timeoutMs) {
+                return TelegramBotDaemon.sendIpcCommand(port, command, timeoutMs);
+            }
+
+
             @Override
             public String execShell(String command) {
                 return TelegramBotDaemon.execShell(command);
@@ -1327,17 +1333,21 @@ public class TelegramBotDaemon {
     // ==================== UTILITIES ====================
     
     private static JSONObject sendIpcCommand(int port, JSONObject command) {
+        return sendIpcCommand(port, command, 5000);
+    }
+
+    private static JSONObject sendIpcCommand(int port, JSONObject command, int timeoutMs) {
         Socket socket = null;
         try {
             socket = new Socket("127.0.0.1", port);
-            socket.setSoTimeout(5000);
-            
+            socket.setSoTimeout(timeoutMs);
+
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            
+
             writer.println(command.toString());
             String response = reader.readLine();
-            
+
             return response != null ? new JSONObject(response) : null;
         } catch (Exception e) {
             log("IPC error (port " + port + "): " + e.getMessage());

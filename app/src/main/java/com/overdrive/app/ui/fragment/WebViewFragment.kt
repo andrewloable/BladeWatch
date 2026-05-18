@@ -76,13 +76,14 @@ class WebViewFragment : Fragment() {
 
         // === Live View (index.html) tweaks ===
         // The mini-preview is the only Map ↔ Cameras toggle on this page,
-        // so we MUST keep it visible — but its default top: 80px / left:
-        // 24px lands underneath the camera-top-bar pill at narrow widths.
-        // Move it to the top-right corner clear of everything else.
-        '[data-app-shell="1"] .mini-preview { top: auto !important; left: auto !important;',
-        '   bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;',
-        '   right: 20px !important; width: 64px !important; height: 64px !important;',
-        '   z-index: 60 !important; }',
+        // so we MUST keep it visible. Match the web-tunnel placement
+        // (top-left) — earlier injection moved it bottom-right because the
+        // page-internal mobile-header pushed content down, but we hide that
+        // header above so the original top: 80px / left: 24px works fine
+        // and the in-app WebView matches what users see on the tunnel.
+        '[data-app-shell="1"] .mini-preview { top: 80px !important; left: 24px !important;',
+        '   right: auto !important; bottom: auto !important;',
+        '   width: 64px !important; height: 64px !important; z-index: 60 !important; }',
         '[data-app-shell="1"] .mini-preview-content svg { width: 22px !important; height: 22px !important; }',
         '[data-app-shell="1"] .mini-preview-label { font-size: 9px !important; padding: 3px 0 !important; }',
         // Hide the in-page fullscreen button — the WebView already fills
@@ -874,6 +875,32 @@ class WebViewFragment : Fragment() {
         val safe = if (theme == "light") "light" else "dark"
         webView?.evaluateJavascript(
             "document.documentElement.setAttribute('data-theme','$safe');",
+            null
+        )
+    }
+
+    /**
+     * Apply a locale to this WebView immediately. The Android language
+     * picker calls this on every visible WebView fragment so the switch is
+     * instant (the activity recreate that follows AppCompatDelegate.set
+     * ApplicationLocales would normally re-load the page, but on some
+     * head-unit configurations the recreate is skipped — e.g. when the
+     * fragment is offscreen — and the stale WebView keeps showing the
+     * previous language until the user manually navigates away and back).
+     *
+     * Calls BYD.i18n.setLang() in the loaded page, which refetches the
+     * catalog and re-hydrates every [data-i18n] node. Safe to call before
+     * the page has finished loading — the call is no-op'd until BYD is
+     * present.
+     */
+    fun applyLocale(lang: String) {
+        if (lang.isBlank()) return
+        // Sanitise to a JS string literal — only the BCP-47 alphabet is
+        // valid here (a-zA-Z0-9 plus "-"). Drop everything else.
+        val safe = lang.replace(Regex("[^a-zA-Z0-9-]"), "")
+        if (safe.isEmpty()) return
+        webView?.evaluateJavascript(
+            "if (window.BYD && BYD.i18n && BYD.i18n.setLang) { BYD.i18n.setLang('$safe'); }",
             null
         )
     }

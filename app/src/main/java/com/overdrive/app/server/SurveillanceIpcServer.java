@@ -392,6 +392,19 @@ public class SurveillanceIpcServer implements Runnable {
                     break;
                 }
 
+                // ==================== UPDATE COMMANDS ====================
+                // Telegram daemon delegates here because AppUpdater needs the
+                // app Context (PackageManager, SharedPreferences) which only
+                // exists in CameraDaemon's process.
+
+                case "CHECK_UPDATE":
+                    handleCheckUpdate(response);
+                    break;
+
+                case "INSTALL_UPDATE":
+                    handleInstallUpdate(request, response);
+                    break;
+
                 default:
                     logger.warn("Unknown IPC command: " + command);
                     response.put("success", false);
@@ -1423,6 +1436,218 @@ public class SurveillanceIpcServer implements Runnable {
         }
         response.put("success", true);
         response.put("telemetry", mqttManager.getLatestTelemetry());
+    }
+
+    // ==================== UPDATE HANDLERS ====================
+    // Mirror UpdateApiHandler.handleCheck/handleInstall but invoked over IPC
+    // (port 19877) so other-process daemons can drive an update without going
+    // through the loopback-trusted HTTP path.
+
+    private void handleCheckUpdate(JSONObject response) throws Exception {
+        android.content.Context ctx = CameraDaemon.getAppContext();
+        if (ctx == null) {
+            response.put("success", false);
+            response.put("error", "App context not ready");
+            return;
+        }
+        com.overdrive.app.updater.AppUpdater updater =
+                new com.overdrive.app.updater.AppUpdater(ctx);
+        final Object lock = new Object();
+        final boolean[] done = {false};
+        final JSONObject[] resultRef = {null};
+        updater.checkForUpdate(new com.overdrive.app.updater.AppUpdater.UpdateCallback() {
+            @Override public void onUpdateAvailable(String currentVersion, String newVersion, String releaseNotes) {
+                JSONObject r = new JSONObject();
+                try {
+                    r.put("available", true);
+                    r.put("currentVersion", currentVersion);
+                    r.put("remoteVersion", newVersion);
+                    r.put("releaseNotes", releaseNotes != null ? releaseNotes : "");
+                } catch (Exception ignored) {}
+                resultRef[0] = r;
+                synchronized (lock) { done[0] = true; lock.notify(); }
+            }
+            @Override public void onNoUpdate(String currentVersion) {
+                JSONObject r = new JSONObject();
+                try {
+                    r.put("available", false);
+                    r.put("currentVersion", currentVersion);
+                    r.put("remoteVersion", currentVersion);
+                } catch (Exception ignored) {}
+                resultRef[0] = r;
+                synchronized (lock) { done[0] = true; lock.notify(); }
+            }
+            @Override public void onError(String error) {
+                JSONObject r = new JSONObject();
+                try {
+                    r.put("available", false);
+                    r.put("error", error != null ? error : "unknown");
+                    r.put("currentVersion", com.overdrive.app.BuildConfig.VERSION_NAME);
+                } catch (Exception ignored) {}
+                resultRef[0] = r;
+                synchronized (lock) { done[0] = true; lock.notify(); }
+            }
+        });
+        try {
+            synchronized (lock) {
+                if (!done[0]) lock.wait(12_000);
+            }
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+        if (resultRef[0] == null) {
+            response.put("success", false);
+            response.put("error", "Update check timed out");
+            return;
+        }
+        // Merge result fields into response
+        java.util.Iterator<String> keys = resultRef[0].keys();
+        while (keys.hasNext()) {
+            String k = keys.next();
+            response.put(k, resultRef[0].opt(k));
+        }
+        response.put("success", true);
+    }
+
+    /**
+     * Two-stage install:
+     *   1. Sync check to populate latestDownloadUrl (so /install can't be used
+     *      as a blind download trigger, mirroring UpdateApiHandler).
+     *   2. Plant the Telegram post-update hint (so the new process's first
+     *      tunnel notification frames as "updated to X" instead of generic
+     *      "URL changed"), then kick off downloadAndInstall on a background
+     *      thread. The IPC reply returns immediately because the daemon dies
+     *      mid-install.
+     *
+     * Progress reporting reuses /data/local/tmp/overdrive_update_progress.json
+     * via UpdateApiHandler-style writes so the same polling path serves both
+     * the webapp and Telegram.
+     */
+    private void handleInstallUpdate(JSONObject request, JSONObject response) throws Exception {
+        android.content.Context ctx = CameraDaemon.getAppContext();
+        if (ctx == null) {
+            response.put("success", false);
+            response.put("error", "App context not ready");
+            return;
+        }
+
+        // Public-mode block mirrors UpdateApiHandler.handleInstall — the bot
+        // is already owner-paired but this keeps the policy uniform.
+        if (CameraDaemon.isPublicMode()) {
+            response.put("success", false);
+            response.put("error", "Update disabled in public mode");
+            return;
+        }
+
+        com.overdrive.app.updater.AppUpdater updater =
+                new com.overdrive.app.updater.AppUpdater(ctx);
+
+        final Object lock = new Object();
+        final boolean[] done = {false};
+        final boolean[] available = {false};
+        final String[] err = {null};
+        final String[] versionRef = {null};
+
+        updater.checkForUpdate(new com.overdrive.app.updater.AppUpdater.UpdateCallback() {
+            @Override public void onUpdateAvailable(String c, String n, String rn) {
+                available[0] = true;
+                versionRef[0] = n;
+                synchronized (lock) { done[0] = true; lock.notify(); }
+            }
+            @Override public void onNoUpdate(String c) {
+                synchronized (lock) { done[0] = true; lock.notify(); }
+            }
+            @Override public void onError(String e) {
+                err[0] = e;
+                synchronized (lock) { done[0] = true; lock.notify(); }
+            }
+        });
+        try {
+            synchronized (lock) {
+                if (!done[0]) lock.wait(20_000);
+            }
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+        if (err[0] != null) {
+            response.put("success", false);
+            response.put("error", "Pre-install check failed: " + err[0]);
+            return;
+        }
+        if (!available[0]) {
+            response.put("success", false);
+            response.put("error", "No update available");
+            return;
+        }
+
+        // Plant the Telegram post-update hint so the new process's first
+        // notifyTunnel handler frames the message as "Overdrive updated to X".
+        // Best-effort: failure here just falls back to the generic "URL
+        // changed" copy.
+        try {
+            String hintVersion = versionRef[0] != null ? versionRef[0] : "unknown";
+            new com.overdrive.app.launcher.AdbDaemonLauncher(ctx).executeShellCommand(
+                    "echo '" + hintVersion + "' > "
+                            + com.overdrive.app.updater.UpdateLifecycle.TELEGRAM_POST_UPDATE_HINT_FILE,
+                    new com.overdrive.app.launcher.AdbDaemonLauncher.LaunchCallback() {
+                        @Override public void onLog(String m) {}
+                        @Override public void onLaunched() {}
+                        @Override public void onError(String e) {}
+                    });
+        } catch (Exception ignored) {}
+
+        // Start install on a background thread. The IPC reply returns now
+        // because the daemon dies mid-install; Telegram polls progress via a
+        // separate IPC request (CHECK_UPDATE-style polling isn't needed —
+        // /data/local/tmp/overdrive_update_progress.json is already tailed by
+        // the webapp; the Telegram bot reads it on demand instead).
+        new Thread(() -> {
+            try {
+                writeInstallProgress("queued", 0, "Update queued", null);
+                updater.downloadAndInstall(new com.overdrive.app.updater.AppUpdater.InstallCallback() {
+                    @Override public void onProgress(String message) {
+                        String m = message == null ? "" : message;
+                        String phase = "downloading";
+                        if (m.contains("Verifying")) phase = "verifying";
+                        else if (m.contains("Stopping daemons")) phase = "stopping_daemons";
+                        else if (m.contains("Installing") || m.contains("installed")) phase = "installing";
+                        writeInstallProgress(phase, -1, m, null);
+                    }
+                    @Override public void onDownloadProgress(int percent) {
+                        writeInstallProgress("downloading", percent,
+                                percent < 0 ? "Downloading…" : "Downloading " + percent + "%",
+                                null);
+                    }
+                    @Override public void onSuccess() {
+                        writeInstallProgress("installing", 100, "Update installed, restarting…", null);
+                    }
+                    @Override public void onError(String error) {
+                        writeInstallProgress("error", -1, "Install failed", error);
+                    }
+                });
+            } catch (Exception e) {
+                writeInstallProgress("error", -1, "Install crashed", e.getMessage());
+            }
+        }, "TelegramUpdate-Install").start();
+
+        response.put("success", true);
+        response.put("status", "scheduled");
+        response.put("remoteVersion", versionRef[0] != null ? versionRef[0] : "");
+    }
+
+    private static void writeInstallProgress(String phase, int percent, String message, String error) {
+        JSONObject r = new JSONObject();
+        try {
+            r.put("phase", phase);
+            r.put("percent", percent);
+            r.put("message", message != null ? message : "");
+            if (error != null) r.put("error", error);
+            r.put("ts", System.currentTimeMillis());
+        } catch (Exception ignored) {}
+        try (java.io.FileWriter fw = new java.io.FileWriter(
+                "/data/local/tmp/overdrive_update_progress.json")) {
+            fw.write(r.toString());
+        } catch (Exception ignored) {}
     }
 
     public void stop() {
