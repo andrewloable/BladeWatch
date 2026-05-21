@@ -150,6 +150,6 @@
     "update_downloading_with_percent": "กำลังโหลด... {0}%",
     "update_installing_finishing": "กำลังติดตั้งลงจอรถ เดี๋ยวกลับมาทำงานต่อ",
     "update_install_failed": "ติดตั้งไม่สำเร็จ",
-    "update_install_crashed": "การติดตั้งล่ม"
+    "update_install_crashed": "การติดตั้งล้มเหลว"
   }
 }
