@@ -367,4 +367,33 @@
     } else {
         mountPicker();
     }
+
+    // ─── Step 6: dynamic favicon / brand-logo selection ────────────────
+    function applyThemeIcons(effective) {
+        try {
+            var light = '/shared/app-icon-light.webp';
+            var dark = '/shared/app-icon-dark.webp';
+            var choose = (effective === 'dark') ? dark : light;
+            var fav = document.querySelector('link[rel~="icon"]');
+            var at = document.querySelector('link[rel~="apple-touch-icon"]');
+            var imgs = document.querySelectorAll('.brand-logo img');
+            if (fav) fav.href = choose;
+            if (at) at.href = choose;
+            for (var i = 0; i < imgs.length; i++) imgs[i].src = choose;
+        } catch (e) { console.warn('applyThemeIcons', e); }
+    }
+
+    // Initial apply and observe changes to data-theme
+    try {
+        applyThemeIcons(resolveEffective(readStoredTheme()));
+        var mo = new MutationObserver(function (mutations) {
+            mutations.forEach(function (m) {
+                if (m.attributeName === 'data-theme') {
+                    var v = document.documentElement.getAttribute('data-theme');
+                    applyThemeIcons(v === 'light' ? 'light' : 'dark');
+                }
+            });
+        });
+        mo.observe(document.documentElement, { attributes: true });
+    } catch (e) { /* noop */ }
 })();

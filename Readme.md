@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://overdrive-5lc.pages.dev/app-icon.webp" width="120" alt="OverDrive Logo">
+  <img src="app/src/main/assets/web/shared/app-icon-ios.webp" width="120" alt="OverDrive Logo">
 </p>
 
 <h1 align="center">OverDrive</h1>

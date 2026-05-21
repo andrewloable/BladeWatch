@@ -52,12 +52,12 @@ function showFromPayload(payload) {
     // Large icon shown next to the body. Use the full app icon edge-to-edge.
     // The OS may still apply a circular mask on Android — that's the system
     // notification rail and not controllable from the SW.
-    icon: '/shared/app-icon.webp',
+    icon: '/shared/app-icon-light.webp',
     // Status-bar badge: small monochrome glyph rendered next to the time.
     // Without this, Android falls back to a generic dot which looks worse
     // than the real branding. Same source file — Android renders it
     // monochrome anyway.
-    badge: '/shared/app-icon.webp',
+    badge: '/shared/app-icon-light.webp',
     tag: payload.tag || payload.category || 'overdrive',
     timestamp: payload.ts || Date.now(),
     data: payload,
