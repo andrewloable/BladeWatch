@@ -1151,14 +1151,15 @@ BYD.surveillance = {
         const el = document.getElementById('v2TelegramSendStartPing');
         if (!el) return;
         this.config.telegramSendStartPing = el.checked;
-        this.markChanged();
+        this._persistTelegramFields(['telegramSendStartPing']);
     },
 
     /**
      * Per-tier Telegram filter handler. Wires the three new toggles
-     * (Notice / Alert / Critical) into config so the next config save
-     * pushes them to the daemon. Same markChanged → Apply button flow as
-     * the rest of the surveillance settings.
+     * (Notice / Alert / Critical) into config and persists immediately
+     * — the Telegram block lives on notifications.html, which has no
+     * Apply button, so we can't rely on the surveillance.html partial-save
+     * path here.
      */
     updateTelegramTiers() {
         const n = document.getElementById('v2TelegramNotices');
@@ -1167,7 +1168,60 @@ BYD.surveillance = {
         if (n) this.config.telegramNotices = n.checked;
         if (a) this.config.telegramAlerts = a.checked;
         if (c) this.config.telegramCritical = c.checked;
-        this.markChanged();
+        this._persistTelegramFields(['telegramNotices', 'telegramAlerts', 'telegramCritical']);
+    },
+
+    /**
+     * Immediate save for the v2Telegram* toggles on the Notifications →
+     * Telegram tab. Mirrors TelegramPrefs.save() over on
+     * /api/telegram/preferences: edit lands in this.config, POST it
+     * straight to /api/surveillance/config, and on success sync
+     * savedConfig so the dirty diff (and any sibling Apply button on
+     * surveillance.html) doesn't think this tab is still pending. On
+     * failure, revert the in-memory + checkbox state so the UI doesn't
+     * pretend the change was persisted.
+     */
+    _persistTelegramFields(fields) {
+        const prev = {};
+        const body = {};
+        for (let i = 0; i < fields.length; i++) {
+            const k = fields[i];
+            prev[k] = this.savedConfig ? this.savedConfig[k] : undefined;
+            body[k] = this.config[k];
+        }
+        fetch('/api/surveillance/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        }).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+          .then(() => {
+              if (this.savedConfig) {
+                  for (let i = 0; i < fields.length; i++) {
+                      this.savedConfig[fields[i]] = this.config[fields[i]];
+                  }
+              }
+              this.markChanged();
+              if (BYD.utils && BYD.utils.toast) {
+                  BYD.utils.toast(BYD.i18n.t('telegram.prefs_saved'), 'success');
+              }
+          })
+          .catch(() => {
+              for (let i = 0; i < fields.length; i++) {
+                  const k = fields[i];
+                  if (prev[k] !== undefined) this.config[k] = prev[k];
+              }
+              const tg = document.getElementById('v2TelegramSendStartPing');
+              if (tg) tg.checked = !!this.config.telegramSendStartPing;
+              const tn = document.getElementById('v2TelegramNotices');
+              if (tn) tn.checked = this.config.telegramNotices === true;
+              const ta = document.getElementById('v2TelegramAlerts');
+              if (ta) ta.checked = this.config.telegramAlerts !== false;
+              const tc = document.getElementById('v2TelegramCritical');
+              if (tc) tc.checked = this.config.telegramCritical !== false;
+              if (BYD.utils && BYD.utils.toast) {
+                  BYD.utils.toast(BYD.i18n.t('telegram.prefs_save_failed'), 'error');
+              }
+          });
     },
 
     /**
@@ -1684,7 +1738,11 @@ BYD.surveillance = {
         ],
         storage: [
             // Sentinel — branches the Apply flow to /api/settings/storage.
-            '_storage_endpoint'
+            // The diff loop in _tabDirty() skips this sentinel, so it doesn't
+            // participate in the per-tab dirty check; the two fields below
+            // are what actually drive Apply enablement on the storage tab.
+            '_storage_endpoint',
+            'surveillanceLimitMb', 'surveillanceStorageType'
         ],
         advanced: [
             'motionHeatmap', 'filterDebugLog'

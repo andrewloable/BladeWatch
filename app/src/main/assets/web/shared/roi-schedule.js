@@ -74,6 +74,13 @@ var RoiEditor = (function() {
         var c = document.getElementById('roiDrawingContent');
         if (c) c.style.display = roiEnabledFlags[currentQuadrant] ? 'block' : 'none';
         draw(); updateStatus(); updateUnsaved();
+        // Persist the toggle immediately for the active camera. The Save
+        // Zone button only exists inside #roiDrawingContent, so when the
+        // user disables a zone the button collapses out of reach and the
+        // dirty state would otherwise have nowhere to land. Block edits
+        // still go through the explicit Save Zone button — auto-save here
+        // is scoped to the enable/disable flip itself, not the painted mask.
+        save();
     }
 
     function selectCamera(q) {
@@ -164,9 +171,18 @@ var RoiEditor = (function() {
         var en = roiEnabledFlags[currentQuadrant];
         var qk = ['Q0', 'Q1', 'Q2', 'Q3'];
         var payload = {};
-        // Always send blocks (even when disabling) so they persist for re-enable
-        payload['roiBlocks_' + qk[currentQuadrant]] = blocks[currentQuadrant].slice();
         payload['roiEnabled_' + qk[currentQuadrant]] = en;
+        // Only ship blocks when enabling. The server's roiBlocks_* handler in
+        // SurveillanceApiHandler unconditionally re-derives roiEnabled from the
+        // block contents (anyActive ⇒ enabled=true), so sending an all-active
+        // mask alongside enabled=false would silently flip enabled back to
+        // true — leaving "● unsaved" stuck because the server's response
+        // contradicts the toggle the user just set. Persisted blocks live in
+        // survCfg and are unaffected by omitting the key, so re-enable later
+        // still recovers the previous mask.
+        if (en) {
+            payload['roiBlocks_' + qk[currentQuadrant]] = blocks[currentQuadrant].slice();
+        }
         // Disable Save button while in flight so a double-tap can't fire two
         // POSTs (the second one would race against the loadConfig() refresh).
         var saveBtn = document.querySelector('#roiDrawingContent .btn.btn-primary');

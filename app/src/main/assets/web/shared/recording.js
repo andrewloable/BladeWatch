@@ -47,6 +47,13 @@ BYD.recording = {
 
     async init() {
         await this.loadConfig();
+        // Pull recordingsLimitMb / recordingsStorageType from the server
+        // BEFORE the savedConfig snapshot — otherwise savedConfig captures
+        // the JS in-memory defaults (limit=500, type=INTERNAL) and the
+        // storage-tab dirty diff sees the slider as already-edited the
+        // moment loadStorageSettings() runs later, which leaves Apply
+        // either always-on or always-off depending on the server value.
+        await this.loadStorageSettings();
         await this.loadStorageStats();
         await this.loadTelemetryOverlay();
         this.savedConfig = JSON.parse(JSON.stringify(this.config));

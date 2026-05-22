@@ -1438,12 +1438,56 @@
                                     <div class="setting-desc" data-i18n="trip.settings.rate_help">Cost per kWh for trip cost calculation</div>
                                 </div>
                                 <div class="setting-control" style="display:flex;gap:8px;align-items:center;">
-                                    <select id="currencySelect" onchange="TRIPS.showApplyNeeded()" style="padding:8px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;">
-                                        <option value="$">$ USD</option>
-                                        <option value="₹">₹ INR</option>
-                                        <option value="€">€ EUR</option>
-                                        <option value="£">£ GBP</option>
-                                        <option value="฿">฿ THB</option>
+                                    <select id="currencySelect" onchange="TRIPS.showApplyNeeded()" style="padding:8px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;max-width:150px;">
+                                        <optgroup label="Common">
+                                            <option value="$">$ USD</option>
+                                            <option value="€">€ EUR</option>
+                                            <option value="£">£ GBP</option>
+                                            <option value="¥">¥ JPY</option>
+                                            <option value="A$">A$ AUD</option>
+                                            <option value="C$">C$ CAD</option>
+                                            <option value="CHF ">CHF</option>
+                                        </optgroup>
+                                        <optgroup label="Asia / Pacific">
+                                            <option value="₹">₹ INR</option>
+                                            <option value="CN¥">CN¥ CNY</option>
+                                            <option value="HK$">HK$ HKD</option>
+                                            <option value="NT$">NT$ TWD</option>
+                                            <option value="₩">₩ KRW</option>
+                                            <option value="฿">฿ THB</option>
+                                            <option value="RM">RM MYR</option>
+                                            <option value="S$">S$ SGD</option>
+                                            <option value="Rp">Rp IDR</option>
+                                            <option value="₱">₱ PHP</option>
+                                            <option value="₫">₫ VND</option>
+                                            <option value="NZ$">NZ$ NZD</option>
+                                        </optgroup>
+                                        <optgroup label="Middle East / Africa">
+                                            <option value="AED ">AED</option>
+                                            <option value="SAR ">SAR</option>
+                                            <option value="QAR ">QAR</option>
+                                            <option value="₪">₪ ILS</option>
+                                            <option value="R ">R ZAR</option>
+                                        </optgroup>
+                                        <optgroup label="Europe (non-EUR)">
+                                            <option value="NOK ">NOK kr</option>
+                                            <option value="SEK ">SEK kr</option>
+                                            <option value="DKK ">DKK kr</option>
+                                            <option value="zł">zł PLN</option>
+                                            <option value="Kč">Kč CZK</option>
+                                            <option value="Ft">Ft HUF</option>
+                                            <option value="₺">₺ TRY</option>
+                                            <option value="₽">₽ RUB</option>
+                                            <option value="₴">₴ UAH</option>
+                                        </optgroup>
+                                        <optgroup label="Latin America">
+                                            <option value="R$">R$ BRL</option>
+                                            <option value="MX$">MX$ MXN</option>
+                                            <option value="AR$">AR$ ARS</option>
+                                            <option value="CLP$">CLP$ CLP</option>
+                                            <option value="S/">S/ PEN</option>
+                                            <option value="COL$">COL$ COP</option>
+                                        </optgroup>
                                     </select>
                                     <input type="number" id="rateInput" placeholder="0.00" step="0.01" min="0" onchange="TRIPS.showApplyNeeded()" style="width:80px;padding:8px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;font-family:'JetBrains Mono',monospace;">
                                     <span style="font-size:11px;color:var(--text-muted);">/kWh</span>
