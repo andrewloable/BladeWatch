@@ -443,16 +443,7 @@ public class HttpServer {
                 if (!serveStaticFile(out, "angular/" + filePath)) {
                     HttpResponse.sendError(out, 404, "Not Found: " + path);
                 }
-            // Legacy pages kept for regression testing until Angular is fully stable.
-            } else if (path.startsWith("/legacy/")) {
-                String filePath = path.substring("/legacy/".length());
-                int q = filePath.indexOf('?');
-                if (q >= 0) filePath = filePath.substring(0, q);
-                if (filePath.isEmpty()) filePath = "index.html";
-                if (!serveStaticFile(out, "local/" + filePath)) {
-                    HttpResponse.sendError(out, 404, "Not Found: /legacy/" + filePath);
-                }
-            // Legacy manifest + service worker (still used by installed PWA instances).
+            // PWA manifest + service worker (still used by installed PWA instances).
             } else if (path.startsWith("/manifest.json")) {
                 if (!serveStaticFile(out, "local/manifest.json")) {
                     HttpResponse.sendError(out, 404, "manifest.json not found");

@@ -6,16 +6,16 @@ surface — color roles, type scale, shape scale, elevation model, and motion
 curves — and additionally adopts **Material 3 Expressive** refinements (tighter
 type tracking, tonal active indicators) tuned for a large in-car display.
 
-The **embedded web UI** has two generations. The legacy static pages (now served
-only under the daemon's `/legacy/` prefix) mirror the native M3 system through
-the generated [design-tokens.css](../app/src/main/assets/web/shared/design-tokens.css).
-The current web UI is an **Angular 19 SPA** (`web/`) with its own component-scoped
-SCSS; it shares the same visual language and design vocabulary but is **not** wired
-to `design-tokens.css` — its SCSS uses CSS custom properties with literal
-fallbacks rather than the canonical M3 role variables, so when changing a color
-role it is the native layer and the legacy token pipeline that stay in lockstep,
-not the SPA. Treat the design tokens below as the **Android source of truth**; the
-SPA tracks the same look by convention.
+The **embedded web UI** is the **Angular 19 SPA** (`web/`), with its own
+component-scoped SCSS. The older generation — static HTML pages styled through a
+generated `design-tokens.css` — was retired with the `/legacy/` route. The token
+pipeline below is therefore **retained but currently unconsumed**: no shipped page
+loads `design-tokens.css` any more, and whether to retire it is a separate
+design-system decision. The SPA is **not** wired to
+`design-tokens.css`: its SCSS uses CSS custom properties with literal fallbacks
+rather than the canonical M3 role variables. Treat the design tokens below as the
+**Android source of truth**; the SPA tracks the same look by convention and must
+be updated by hand when a role changes.
 
 > Material 3 version: **1.13.0** (Android Material Components), per
 > [libs.versions.toml:9](../gradle/libs.versions.toml#L9).
@@ -25,15 +25,13 @@ SPA tracks the same look by convention.
 | Layer | Renders | M3 source of truth |
 |-------|---------|--------------------|
 | **Android** (native shell) | `MainActivity`, fragments, dialogs, navigation rail | [themes_bladewatch.xml](../app/src/main/res/values/themes_bladewatch.xml) (roles + widgets), [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (+ `values-night`), [dimens_bladewatch.xml](../app/src/main/res/values/dimens_bladewatch.xml) (shape/spacing) |
-| **Legacy web** (static pages, `/legacy/`) | the old static HTML pages served by `CameraDaemon` | [design-tokens.css](../app/src/main/assets/web/shared/design-tokens.css) (CSS custom properties mirroring the same M3 roles) |
 | **Web SPA** (Angular 19, `web/`) | the embedded web UI / browser / tunnel client | component-scoped SCSS under `web/src` (own values; same visual language, not wired to `design-tokens.css`) |
 
-The Android shell and the **legacy** `design-tokens.css` are kept in **parity**:
-the web `design-tokens.css` is generated to mirror `colors_m3.xml` (light) and its
-`values-night` counterpart (dark). Changing a color role means changing it in both
-places — see [Theming & token pipeline](#theming--token-pipeline). The Angular SPA
-is **not** part of that generated pipeline; it carries its own SCSS values and
-should be updated by hand to keep visual parity when roles change.
+With the legacy pages retired, `colors_m3.xml` (light) and its `values-night`
+counterpart (dark) are the only M3 role definitions that matter — see
+[Theming & token pipeline](#theming--token-pipeline). The Angular SPA carries its
+own SCSS values and must be updated by hand to keep visual parity when roles
+change.
 
 **Target device.** BYD Seal 15.6″ rotatable infotainment — landscape
 `1920×1080` (`960×540dp`), portrait `1080×1920` (`540×960dp`). The design

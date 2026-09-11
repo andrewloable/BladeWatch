@@ -54,11 +54,11 @@ native fragments (see table above).
 Remote browser/tunnel access is now the **Angular SPA**, whose router covers the
 same surface (dashboard, live, recording, surveillance, events, trips, vehicle,
 location, diagnostics, notifications, performance, settings, about, login). The
-old static HTML pages (`about.html`, `notifications.html`, `events.html`,
-`index.html`, `login.html`, …) are retained only under the daemon's `/legacy/`
-prefix for regression testing. In the native shell, `events`/`events.html` links
-are still intercepted and rerouted to the native Recordings page (see §4,
-`shouldOverrideUrlLoading`).
+old static HTML pages and the `/legacy/` prefix that served them were retired
+once the SPA was confirmed stable; `local/` now keeps only `login.html`,
+`manifest.json`, `sw.js`, and `credits.json`, each on its own route. In the
+native shell, `/events` links are still intercepted and rerouted to the native
+Recordings page (see §4, `shouldOverrideUrlLoading`).
 
 ---
 
@@ -144,8 +144,10 @@ otherwise break localhost calls. Key behaviors:
 ### Misc
 - `onShowFileChooser` bridges `<input type=file>` into the Android photo picker
   (`OpenMultipleDocuments`), honoring `accept` MIME hints.
-- `shouldOverrideUrlLoading` intercepts `events.html`/`events` links and routes
-  them to the **native** `recordingsFragment` (with `filter`/`file` args);
+- `shouldOverrideUrlLoading` intercepts links whose **path** is `/events` and
+  routes them to the **native** `recordingsFragment` (with `filter`/`file`
+  args). It matches on the parsed path, not the whole URL, so deep links
+  carrying a query string (`/events?filter=sentry&file=…`) still match;
   external `http(s)` links open in the system browser; localhost links load
   in-place.
 - `onConsoleMessage` mirrors page console logs to logcat under tag `WebViewJS`.
@@ -158,8 +160,9 @@ now serves the **Angular SPA** from `assets/web/angular/` (extracted to
 `/data/local/tmp/web/angular` at runtime): `/` and any unrecognised path return
 `angular/index.html` so the Angular router resolves the route client-side, and
 hashed build chunks are served from `/assets/` and `/vendor/`. The legacy static
-HTML pages are still reachable under the `/legacy/` prefix (mapping to
-`assets/web/local/`) for regression testing. RPC calls hit
+HTML pages and the `/legacy/` prefix are gone; `assets/web/local/` retains only
+`login.html`, `manifest.json`, `sw.js`, and `credits.json`, each served by its
+own explicit route. RPC calls hit
 `/bladewatch.v1.<Service>/<Method>` and are dispatched by `ConnectDispatcher`;
 inline REST routes (`/api/...`) are handled separately. All routes pass through
 `AuthMiddleware` first.
@@ -216,5 +219,5 @@ WebView page, preserve them:
 - Route handling: [HttpServer.java](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java)
 - Auth: [AuthManager.java](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java), [AuthMiddleware.java](../app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java)
 - Embedded web UI (Angular SPA): [web/](../web/), built/copied by [build.gradle.kts:497](../app/build.gradle.kts#L497), served from [app/src/main/assets/web/angular/](../app/src/main/assets/web/angular/)
-- Legacy web assets (under `/legacy/`): [app/src/main/assets/web/local/](../app/src/main/assets/web/local/)
+- Retained static assets (login page, PWA manifest/service worker, credits): [app/src/main/assets/web/local/](../app/src/main/assets/web/local/)
 - Native migration exemplars: `LiveViewFragment`/`LiveViewController`/`LiveStreamClient`, `RecordingsFragment`, `LocationFragment`, `VehicleController`, `TripsController`, `PerformanceController`, `RecordingSettingsController`, `SurveillanceSettingsController`

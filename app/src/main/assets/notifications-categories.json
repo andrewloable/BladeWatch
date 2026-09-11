@@ -7,7 +7,7 @@
       "group": "Surveillance",
       "defaultEnabled": false,
       "severity": "auto",
-      "defaultClickUrl": "/events.html?filter=sentry",
+      "defaultClickUrl": "/events?filter=sentry",
       "note": "Legacy single-stream category, kept for backwards compatibility. Prefer the three Notice / Alert / Critical tiers below."
     },
     {
@@ -16,7 +16,7 @@
       "group": "Surveillance",
       "defaultEnabled": false,
       "severity": "info",
-      "defaultClickUrl": "/events.html?filter=sentry",
+      "defaultClickUrl": "/events?filter=sentry",
       "note": "Routine motion or passing-by. Off by default — turn on if you want a record of every event."
     },
     {
@@ -25,7 +25,7 @@
       "group": "Surveillance",
       "defaultEnabled": true,
       "severity": "warn",
-      "defaultClickUrl": "/events.html?filter=sentry",
+      "defaultClickUrl": "/events?filter=sentry",
       "note": "Person near the vehicle, vehicle approaching, or close-range activity."
     },
     {
@@ -34,7 +34,7 @@
       "group": "Surveillance",
       "defaultEnabled": true,
       "severity": "critical",
-      "defaultClickUrl": "/events.html?filter=sentry",
+      "defaultClickUrl": "/events?filter=sentry",
       "note": "Person at very close range or sustained dwell at the vehicle. Drop-everything alert."
     },
     {
@@ -43,7 +43,7 @@
       "group": "Surveillance",
       "defaultEnabled": true,
       "severity": "auto",
-      "defaultClickUrl": "/events.html?filter=proximity",
+      "defaultClickUrl": "/events?filter=proximity",
       "note": "Range and trigger depend on Recording settings"
     },
     {
@@ -52,7 +52,7 @@
       "group": "Vehicle",
       "defaultEnabled": true,
       "severity": "warn",
-      "defaultClickUrl": "/vehicle-control.html",
+      "defaultClickUrl": "/vehicle",
       "note": "Underpressure or overpressure detected by TPMS"
     },
     {
@@ -61,7 +61,7 @@
       "group": "Vehicle",
       "defaultEnabled": true,
       "severity": "auto",
-      "defaultClickUrl": "/vehicle-control.html",
+      "defaultClickUrl": "/vehicle",
       "note": "Slow or fast leak detected by TPMS sensor"
     },
     {
@@ -70,7 +70,7 @@
       "group": "Security",
       "defaultEnabled": false,
       "severity": "warn",
-      "defaultClickUrl": "/vehicle-control.html",
+      "defaultClickUrl": "/vehicle",
       "note": "Fires when any door, hood, or trunk is opened while parked (ACC OFF)"
     },
     {
@@ -79,7 +79,7 @@
       "group": "Security",
       "defaultEnabled": false,
       "severity": "info",
-      "defaultClickUrl": "/vehicle-control.html",
+      "defaultClickUrl": "/vehicle",
       "note": "Fires when any door, hood, or trunk is closed while parked (ACC OFF)"
     },
     {
@@ -88,7 +88,7 @@
       "group": "Charging",
       "defaultEnabled": true,
       "severity": "info",
-      "defaultClickUrl": "/vehicle-control.html",
+      "defaultClickUrl": "/vehicle",
       "note": "Fires when the BMS reports a charging session has begun"
     },
     {
@@ -97,7 +97,7 @@
       "group": "Charging",
       "defaultEnabled": true,
       "severity": "info",
-      "defaultClickUrl": "/vehicle-control.html",
+      "defaultClickUrl": "/vehicle",
       "note": "Debounced 10s to ride out brief gaps during plug-in or DC charger handshakes"
     },
     {
@@ -107,7 +107,7 @@
       "defaultEnabled": true,
       "severity": "warn",
       "bypassQuietHours": true,
-      "defaultClickUrl": "/vehicle-control.html",
+      "defaultClickUrl": "/vehicle",
       "note": "Fires once per session when the pack reaches near-full or the BMS marks the session FINISHED. Suppressed if you plug in an already-full car. Bypasses quiet hours so you wake up to an unplug reminder."
     },
     {
@@ -116,7 +116,7 @@
       "group": "Charging",
       "defaultEnabled": true,
       "severity": "critical",
-      "defaultClickUrl": "/vehicle-control.html",
+      "defaultClickUrl": "/vehicle",
       "note": "AC, DC charger, charging gun, or C10 breakdown reported by BMS"
     }
   ]

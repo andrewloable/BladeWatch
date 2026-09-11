@@ -21,7 +21,7 @@ exposed over HTTP — see `docs/ipc-auth-and-secrets.md`.
 The HTTP server serves (all on a single port so a Zrok tunnel can expose both
 HTTP and WebSocket):
 
-- The Angular SPA build (`/`, `/assets/*`, `/vendor/*`) plus legacy pages.
+- The Angular SPA build (`/`, `/assets/*`, `/vendor/*`).
 - Shared JavaScript, CSS, and i18n resources.
 - Auth endpoints (`/auth/*`).
 - The REST API (`/api/*`, `/status`, `/video/*`, `/thumb/*`, `/snapshot/*`).

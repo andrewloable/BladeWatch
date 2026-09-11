@@ -10,7 +10,7 @@ http://127.0.0.1:8080
 
 The server exposes two parallel API surfaces over the same port:
 
-1. **REST** — plain JSON over `/api/*`, plus `/status`, `/video/*`, `/thumb/*`, etc. This is the original surface; the WebView and legacy pages call it directly.
+1. **REST** — plain JSON over `/api/*`, plus `/status`, `/video/*`, `/thumb/*`, etc. This is the original surface; the in-app WebView calls it directly.
 2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by the Angular SPA. See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers to keep the two surfaces in 1:1 parity, so the REST families below are the source of truth for behaviour.
 
 ## Auth
@@ -103,7 +103,6 @@ Angular build output and asset areas:
 - `GET /assets/*`, `GET /vendor/*` → Angular SPA chunks (`angular/...`).
 - `GET /shared/*`, `GET /local/*` → bundled static assets. `?v=` cache-busting
   and `#` fragments are stripped before disk lookup.
-- `GET /legacy/*` → legacy pages kept for regression testing (`local/...`).
 - `GET /i18n/{tag}.json` → locale catalogs (404 on unsupported tags so the
   runtime falls back to `en`). Served with `Cache-Control: no-store, no-cache,
   must-revalidate, max-age=0` — the catalog URLs are unhashed (unlike the
@@ -452,7 +451,7 @@ stubs (`cd proto && buf generate`). Tracked by BladeWatch-852m.
   (REST) or `proto/bladewatch/v1/*.proto` (Connect) for the authoritative shape.
 - New Angular clients should prefer the Connect API (`/bladewatch.v1.*`, with
   `Connect-Protocol-Version: 1` and a JSON content-type). REST remains the
-  source of truth and is still used by the WebView/legacy pages.
+  source of truth and is still used by the in-app WebView.
 - Do not send mutating calls from WebView through a proxy path; use the injected bridge pattern already implemented by the app.
 - Prefer the `/ws` WebSocket stream for live video rather than polling snapshots.
 

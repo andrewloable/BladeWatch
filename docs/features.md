@@ -84,7 +84,7 @@ A dedicated Location experience exists in both the native UI and the web app:
 
 ## Embedded Web UI and PWA
 
-The primary web UI is an Angular 19 single-page app (source in `web/`, built with Vite, talking to the daemon over ConnectRPC). Its build output is bundled under `app/src/main/assets/web/angular/`, extracted by the daemon to `/data/local/tmp/web`, and served locally. A set of legacy hand-written assets (`shared/`, `local/`, `web/`) and the Three.js Vehicle hero (`hero/hero.html`) also ship under `app/src/main/assets/web/`.
+The primary web UI is an Angular 19 single-page app (source in `web/`, built with Vite, talking to the daemon over ConnectRPC). Its build output is bundled under `app/src/main/assets/web/angular/`, extracted by the daemon to `/data/local/tmp/web`, and served locally. The retained hand-written assets (the login page, PWA manifest/service worker and credits under `local/`, plus the shared 3D/vendor assets under `shared/`) and the Three.js Vehicle hero (`hero/hero.html`) also ship under `app/src/main/assets/web/`. The old static HTML pages and their `/legacy/` route were retired once the SPA was confirmed stable.
 
 Angular pages (routes), each built for 1:1 parity with its native Android counterpart:
 
@@ -220,6 +220,8 @@ Notification features include:
 - Android notification channels and foreground service notifications.
 
 Surveillance and proximity events deliver notifications through Web Push. There is no Telegram notification path.
+
+Tapping a push opens the Angular SPA at the route for that category — `/events?filter=sentry` or `/events?filter=proximity` for surveillance and proximity clips, `/vehicle` for TPMS, door, and charging alerts. Event pushes also carry the clip name as `file=`, which opens that recording directly, and a pre-signed snapshot URL as `hero=`, which the events page renders as an inline banner. The banner exists because iOS Safari ignores `options.image` on Web Push, so the snapshot never reaches the OS notification banner; only a same-origin `/thumb/` path is accepted for `hero=`. Category click targets live in [notifications-categories.json](../app/src/main/assets/notifications-categories.json) as `defaultClickUrl`, used when an event carries no URL of its own.
 
 ## Remote Access
 

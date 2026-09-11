@@ -105,9 +105,9 @@ public class ProximityRecordingHandler {
                 // matching final-stage push fires from stopRecording with
                 // the same tag and a real signed snapshot URL.
                 data.put("stage", "start");
-                url = "/events.html?filter=proximity&file=" + enc;
+                url = "/events?filter=proximity&file=" + enc;
             } else {
-                url = "/events.html?filter=proximity";
+                url = "/events?filter=proximity";
             }
 
             net.bladewatch.app.notifications.NotificationBus.get().publish(
@@ -207,7 +207,7 @@ public class ProximityRecordingHandler {
             data.put("snapshot", snapUrl);
 
             String enc = java.net.URLEncoder.encode(videoFile, "UTF-8");
-            String url = "/events.html?filter=proximity&file=" + enc;
+            String url = "/events?filter=proximity&file=" + enc;
 
             net.bladewatch.app.notifications.NotificationBus.get().publish(
                     new net.bladewatch.app.notifications.NotificationEvent(

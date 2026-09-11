@@ -2886,9 +2886,9 @@ public class SurveillanceEngineGpu {
                 // the start banner intentionally text-only and lets the final
                 // push install the real hero image cleanly.
                 data.put("stage", "start");
-                url = "/events.html?filter=sentry&file=" + enc;
+                url = "/events?filter=sentry&file=" + enc;
             } else {
-                url = "/events.html?filter=sentry";
+                url = "/events?filter=sentry";
             }
 
             String camHint = null;
@@ -3040,9 +3040,9 @@ public class SurveillanceEngineGpu {
                 if (thumbTok != null) snapUrl += "?t=" + thumbTok;
                 data.put("snapshot", snapUrl);
                 data.put("stage", "final");
-                url = "/events.html?filter=sentry&file=" + enc;
+                url = "/events?filter=sentry&file=" + enc;
             } else {
-                url = "/events.html?filter=sentry";
+                url = "/events?filter=sentry";
             }
             // Surface the new metadata so the notification UI / SW can render it
             data.put("severity", peakSev.name());

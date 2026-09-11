@@ -166,7 +166,8 @@ unrecognised paths so the Angular router resolves them client-side), dispatches
 ConnectRPC calls under `/bladewatch.v1.<Service>/<Method>` via `ConnectDispatcher`,
 and still exposes the inline REST/camera APIs, auth endpoints, thumbnail/video
 serving, i18n catalogs, update APIs, and WebSocket live streaming. The legacy
-static pages remain available under `/legacy/` for regression testing.
+static pages and their `/legacy/` route were retired once the Angular SPA was
+confirmed stable — the SPA is now the only web UI the daemon serves.
 
 ### `GpuSurveillancePipeline`
 

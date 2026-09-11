@@ -42,13 +42,10 @@ class WebViewFragment : Fragment() {
          *   1. Tags <html data-app-shell="1"> so the page CSS can opt into
          *      app-shell-only tweaks via that attribute selector — cleaner
          *      than scattering Android-specific overrides across pages.
-         *   2. Hides the in-page sidebar / mobile header / fullscreen
-         *      button — the Android shell already provides a navigation rail
-         *      and top app bar, so the page-internal navigation is redundant
-         *      and creates the overlap the user reports on Live View.
-         *   3. Repositions the Map ↔ Cameras mini-preview toggle to the
-         *      bottom-right (default top-left collides with the camera-top-bar
-         *      pill in landscape windowed mode).
+         *   2. Hides the page's own title header — the Android shell already
+         *      provides the top app bar, so it would read as a duplicate.
+         *   3. Suppresses the focus ring Chrome 58 leaves on tapped buttons
+         *      (CSS plus an explicit blur() on click).
          *   4. Patches window.fetch() to route POST/PUT/DELETE through
          *      AndroidBridge.httpRequest() so writes go direct (NO_PROXY).
          *      GET requests go through the normal WebView path so polling
@@ -59,28 +56,13 @@ class WebViewFragment : Fragment() {
     document.documentElement.setAttribute('data-app-shell', '1');
 
     var css = [
-        // === Global: hide page-internal navigation. The Android shell already
-        //     provides the nav rail + top app bar, so the in-page sidebar,
-        //     mobile header, page-header title, and floating mini-preview tab
-        //     switcher are all redundant and visually noisy. ===
-        '.sidebar, .sidebar-overlay, .mobile-header { display: none !important; }',
-        // The activity's MaterialToolbar already shows the page title; hiding
-        // the in-page <header class="page-header"> kills the duplicate title.
+        // === Global: hide the page's own title header. The Android shell
+        //     already provides the top app bar, so the in-page
+        //     <header class="page-header"> is a duplicate title. ===
         '.page-header { display: none !important; }',
-        // Sidebar is hidden in the embedded WebView, so collapse the
-        // CSS variable that anchored sticky elements (.bottom-tabs,
-        // .footer-bar) to the right of where the sidebar used to live.
-        // Without this the bottom-tab bar leaves a 260px gap on the left
-        // and only fills half the viewport in landscape.
-        ':root { --sidebar-width: 0px !important; }',
+        // The Android shell supplies the navigation, so the page must not
+        // reserve room for its own rail/header offsets.
         '.main-content { margin-left: 0 !important; padding-top: 0 !important; }',
-        '.bottom-tabs { left: 0 !important; right: 0 !important; }',
-        '.pip-container, .pip-toggle-btn, #pipToggleBtn, #pipContainer { display: none !important; }',
-        '.toast-container { z-index: 20000 !important; bottom: 70px !important; }',
-        '.page-body { padding-bottom: 80px !important; }',
-        '.footer-bar { bottom: 0 !important; left: 0 !important; right: 0 !important;',
-        '              padding: 12px 16px !important; padding-bottom: 12px !important;',
-        '              z-index: 10000 !important; }',
 
         // === Strip the persistent yellow focus ring Chrome leaves on
         //     buttons after a tap. The active tab is already conveyed by
@@ -96,101 +78,12 @@ class WebViewFragment : Fragment() {
         'button:focus, button:focus-visible { outline: none !important; }',
         '* { -webkit-tap-highlight-color: transparent !important; }',
 
-        // === Generic icon-then-text spacing inside the WebView shell.
-        //     Across pages (recording.html / surveillance.html /
-        //     about.html ...) icon+title rows
-        //     use `display:flex; gap:` to space the leading SVG from its
-        //     label. Chrome 58 on the BYD head-unit honors `gap` only
-        //     intermittently — on some firmware builds the icon and the
-        //     text end up touching. Belt-and-braces fix: bump gap AND add
-        //     a margin-right shim on every direct SVG child of an
-        //     icon-bearing row so the spacing always shows. Scoped to
-        //     [data-app-shell="1"] so the standalone web tunnel keeps its
-        //     authored spacing. ===
-        '[data-app-shell="1"] .card-title { gap: 12px !important; }',
-        '[data-app-shell="1"] .card-title > svg { margin-right: 6px !important; }',
-        '[data-app-shell="1"] .info-box-note > .info-icon,',
-        '[data-app-shell="1"] .info-box-warning > .info-icon { margin-right: 12px !important; }',
-        '[data-app-shell="1"] .tier-card { gap: 16px !important; }',
-        '[data-app-shell="1"] .tier-card > .tier-icon { margin-right: 8px !important; }',
-        '[data-app-shell="1"] .credit-row { gap: 16px !important; }',
-        '[data-app-shell="1"] .credit-row > .credit-avatar { margin-right: 4px !important; }',
-        // Settings rows that pair a leading SVG with a label.
-        '[data-app-shell="1"] .setting-row > svg:first-child,',
-        '[data-app-shell="1"] .setting-info > svg:first-child { margin-right: 12px !important; }',
-
-        // === Recording-mode chip sizing inside the embedded WebView only.
-        //     The 44dp chip + 22px glyph the standalone web shell uses reads
-        //     too heavy in the in-app WebView — the head-unit window is
-        //     narrower than the desktop / tunnel viewport, so the icon
-        //     dominates the row. Shrink the chip to 32dp and the SVG to
-        //     16px ONLY when the page is hosted by the Android shell
-        //     (data-app-shell="1") so the standalone tunnel stays untouched. ===
-        '[data-app-shell="1"] .mode-icon {',
-        '   flex: 0 0 32px !important; width: 32px !important; height: 32px !important;',
-        '   border-radius: 9px !important; }',
-        '[data-app-shell="1"] .mode-icon svg {',
-        '   width: 16px !important; height: 16px !important; }',
-        // gap: bumped to 18px so the icon chip doesn't crowd the title.
-        // Chrome 58 supports flex `gap` here (the WebView constraint that
-        // forced margin-based shims only applies inside the 3D vehicle-
-        // control overlay; PWA pages can use modern flex gap).
-        '[data-app-shell="1"] .mode-card {',
-        '   gap: 18px !important; padding: 12px !important;',
-        '   padding-right: 44px !important; min-height: 0 !important; }',
-        // Belt-and-braces margin shim — if any earlier rule clobbers gap,
-        // the chip still gets a visible breathing space before the body.
-        '[data-app-shell="1"] .mode-icon { margin-right: 6px !important; }',
-        '[data-app-shell="1"] .mode-name { font-size: 13px !important; }',
-        '[data-app-shell="1"] .mode-desc { font-size: 11px !important; }',
-
-        // === Live View (index.html) tweaks ===
-        // The mini-preview is the only Map ↔ Cameras toggle on this page,
-        // so we MUST keep it visible. Match the web-tunnel placement
-        // (top-left) — earlier injection moved it bottom-right because the
-        // page-internal mobile-header pushed content down, but we hide that
-        // header above so the original top: 80px / left: 24px works fine
-        // and the in-app WebView matches what users see on the tunnel.
-        '[data-app-shell="1"] .mini-preview { top: 80px !important; left: 24px !important;',
-        '   right: auto !important; bottom: auto !important;',
-        '   width: 64px !important; height: 64px !important; z-index: 60 !important; }',
-        '[data-app-shell="1"] .mini-preview-content svg { width: 22px !important; height: 22px !important; }',
-        '[data-app-shell="1"] .mini-preview-label { font-size: 9px !important; padding: 3px 0 !important; }',
-        // Hide the in-page fullscreen button — the WebView already fills
-        // the destination and the button's request would be denied here.
-        '[data-app-shell="1"] .top-bar-btn { display: none !important; }',
-        // Pull the absolute-positioned camera top bar in by a hair so the
-        // connection-status pill and quality dropdown breathe at narrow
-        // landscape widths (head-unit windowed mode, ~600-900px wide).
-        '[data-app-shell="1"] .camera-top-bar { padding: 12px 14px !important; gap: 8px; }',
-        '[data-app-shell="1"] .camera-top-bar .top-bar-left,',
-        '[data-app-shell="1"] .camera-top-bar .top-bar-right { min-width: 0; flex-wrap: nowrap; }',
-        '[data-app-shell="1"] .quality-select-sota { min-width: 96px; max-width: 140px; }',
-        // Map overlay buttons (My Location / Directions) — keep them clear
-        // of the top-bar pill. The default top: 16px lands underneath the
-        // pill on narrow viewports.
-        '[data-app-shell="1"] #panelMap .map-overlay-actions { top: 14px !important; right: 14px !important; gap: 10px !important; }',
-        '[data-app-shell="1"] .btn-map-float { width: 44px !important; height: 44px !important; }',
-        '[data-app-shell="1"] .btn-map-float svg { width: 20px !important; height: 20px !important; }',
-        // Camera hotspot labels — clamp width and slightly shrink the
-        // negative offsets so labels don't clip the .seamless-camera-view
-        // when the WebView is in landscape windowed mode.
-        '[data-app-shell="1"] .cam-hotspot .hotspot-label {',
-        '   max-width: 64px; white-space: nowrap; overflow: hidden;',
-        '   text-overflow: ellipsis; padding: 3px 7px; font-size: 9px; }',
-        '[data-app-shell="1"] .cam-hotspot[data-cam="4"] .hotspot-label { left: -34px !important; }',
-        '[data-app-shell="1"] .cam-hotspot[data-cam="2"] .hotspot-label { right: -34px !important; }',
-
-        // === Page-specific carry-overs (kept from previous behaviour) ===
-        '#safeLocMap { z-index: 1 !important; position: relative !important; overflow: hidden !important; }',
-        '#safeLocMap .leaflet-pane { z-index: 1 !important; }',
-        '#safeLocMap .leaflet-control-container { z-index: 10 !important; }',
-        '#roiCanvasContainer { position: relative !important; width: 100% !important;',
-        '                      height: 200px !important; padding-bottom: 0 !important;',
-        '                      overflow: hidden !important; z-index: 0 !important; }',
-        '#roiCanvas { position: absolute !important; top: 0 !important; left: 0 !important;',
-        '             width: 100% !important; height: 100% !important;',
-        '             max-width: 100% !important; max-height: 200px !important; }'
+        // Legacy static pages are retired (BladeWatch-nt9r): the per-page
+        // tweak blocks that lived here targeted classes only those pages
+        // shipped (.card-title / .tier-card / .mode-card / .mini-preview /
+        // .camera-top-bar / .cam-hotspot / #safeLocMap / #roiCanvas). The
+        // only page this WebView still hosts is the Angular SPA, which uses
+        // none of them, so the rules were inert and are gone.
     ].join(' ');
 
     var s = document.createElement('style');
@@ -203,7 +96,7 @@ class WebViewFragment : Fragment() {
     //     so the visual highlight clears immediately. The .is-active
     //     pill remains, so the active tab is still obvious. ===
     function patchBottomTabsBlur() {
-        var bar = document.querySelector('.bottom-tabs');
+        var bar = document.querySelector('.bottom-tab-bar');
         if (!bar) return false;
         bar.addEventListener('click', function (ev) {
             var btn = ev.target;
@@ -217,7 +110,7 @@ class WebViewFragment : Fragment() {
         return true;
     }
     if (!patchBottomTabsBlur()) {
-        // Tab bar is built by app-tabs.js after DOMContentLoaded; observe.
+        // The Angular nav mounts after the SPA bootstraps; observe for it.
         var tabsObserver = new MutationObserver(function () {
             if (patchBottomTabsBlur()) tabsObserver.disconnect();
         });
@@ -671,12 +564,16 @@ class WebViewFragment : Fragment() {
                     val url = request?.url?.toString() ?: return false
                     
                     // Intercept events page links — use native RecordingLibraryFragment
-                    // which has reliable video playback via VideoView
-                    if (url.contains("/events.html") || url.endsWith("/events")) {
+                    // which has reliable video playback via VideoView.
+                    // Match on the PATH, not the whole URL: the deep links carry a
+                    // query string (/events?filter=sentry&file=…), so an endsWith
+                    // check on the full URL would miss every param'd link.
+                    val interceptUri = android.net.Uri.parse(url)
+                    if (interceptUri.path == "/events") {
                         try {
                             // Extract filter / file params if present
-                            // (e.g., events.html?filter=sentry&file=event_20260512_143022.mp4)
-                            val uri = android.net.Uri.parse(url)
+                            // (e.g., /events?filter=sentry&file=event_20260512_143022.mp4)
+                            val uri = interceptUri
                             val filter = uri.getQueryParameter("filter")
                             val file = uri.getQueryParameter("file")
                             val bundle = android.os.Bundle().apply {
