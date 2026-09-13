@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">Arka plan hizmetleri</string>
     <string name="daemons_count_pending">Kargo hizmetleri...</string>
     <string name="daemons_count_fmt">%1$d\'nin %2$d\'i çalıştırmak</string>
-    <string name="update_preparing">Güncellemeye hazırlanıyorum...</string>
-    <string name="update_percent_zero">% 0</string>
     <string name="battery_health_title">Batarya Sağlığı</string>
     <string name="battery_health_subtitle">Sağlık durumu</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">%d kayıtlarını kalıcı olarak siler.</item>
         <item quantity="other">Bu %d kayıtlarını kalıcı olarak siler.</item>
     </plurals>
-    <string name="toast_updated_to">%1$s\'e güncellenmiştir</string>
-    <string name="toast_update_install_failed">Güncelleme yükleme başarısız oldu: %1$s</string>
-    <string name="toast_checking_for_updates">Güncellemeleri kontrol ediyorum...</string>
     <string name="toast_app_up_to_date">Uygulama güncel (v%1$s)</string>
-    <string name="toast_update_check_failed">Güncelleme kontrol başarısız oldu: %1$s</string>
     <string name="toast_storage_permission_required">Kayıtlar için gerekli depolama izni</string>
     <string name="toast_url_copied_short">URL kopyalandı!</string>
     <string name="toast_camera_set_to_auto">Otomatik olarak ayarlanmış kamera</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">Yeniden ayarlama tamamlandı</string>
     <string name="dialog_traffic_cannot_check_title">Durumu kontrol edemiyorum</string>
-    <string name="dialog_traffic_cannot_check_message">ADB bağlantısı henüz hazır değil.\n\nSistem paketlerini yönetmek için uygulamaya ADB erişimi gerekir. Lütfen emin olun:\n\n• USB Debugging geliştiricisi seçeneklerinde etkinleştirilmiştir\n• ADB yetki sorusu kabul edilmiştir\n\nStatus otomatik olarak bağlandıktan sonra güncellenir.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB bağlı değil ve uygulama otomatik olarak yeniden bağlanamadı.\n\nBu araçta, Geliştirici Seçenekleri\'ndeki standart \"USB Hata Ayıklama\" anahtarı tek başına yeterli değildir — cihazın kendi kablosuz ADB (ağ üzerinden hata ayıklama) ayarının da açık olması gerekir ve bir sistem güncellemesi bunu sıfırlayabilir. Kablosuz ADB\'yi baş ünitede yeniden etkinleştirin veya USB ile bağlanın.\n\nBağlantı kurulduğunda durum otomatik olarak güncellenecektir.</string>
     <string name="dialog_traffic_disable_title">BYD Trafik Gözlemini devre dışı bırakmak mı?</string>
     <string name="dialog_traffic_disable_message">BYD Traffic Monitor (com.byd.trafficmonitor) arka planda yol trafiği koşullarını sürekli olarak izleyen bir sistem uygulamasıdır.\n\n️ Neden devre dışı bırakın?\n\n• Mobil verileri tüketir (parkedildiğinde bile)\n• ZCPU ve arka planda pil kullanır\n• Ayrı bir navigasyon uygulaması kullanırsanız gerekmez\n• Dashcam\'ın ağ kullanımına müdahale edebilir\n\nBu, sadece haritada yerleşmiş trafik örtüsünü etkilemektedir. Navigasyonunuz, ZBluetooth ve diğer tüm otomobil fonksiyonları etkilenmez kalır.\n\n\nBir sert yeniden başlatma devre dışı bırakıldıktan sonra gereklidir (orta konsol düğmesini 5 saniye tutun).</string>
     <string name="dialog_traffic_enable_title">BYD Trafik Monitörü yeniden etkinleştirmek mi?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">BladeWatch hakkında</string>
     <string name="settings_about_version_label">Versiyon</string>
     <string name="settings_about_package_label">İnşaat</string>
-    <string name="settings_about_check_update_value">En son GitHub sürümünü kontrol edin ve daha yeniyse yükleyin.</string>
     <string name="settings_about_support_section">Senin gibi insanlar tarafından güçlendirilmiş.</string>
     <string name="settings_about_support_share_title">Başka bir araç sahibine bahset</string>
     <string name="settings_about_support_share_value">Paylaşılan her bağlantı başka bir BYD sahibinin BladeWatch\'i keşfetmesine yardımcı olur.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">URL kopyalandı: %1$s</string>
     <string name="settings_about_support_kofi_title">Sonraki versiyon için yakıt</string>
     <string name="settings_about_support_kofi_value">Ko-Fi\'de kahve içmek gece geç saatleri bekliyor.</string>
-    <string name="settings_about_support_kofi_url">https://ko-fi.com/E1E71XALHX</string>
     <string name="settings_about_license_title">Lisans</string>
     <string name="settings_about_license_value">MIT  açık kaynak. Tam metni görüntülemek için dokunun.</string>
     <string name="settings_about_source_title">Kaynak kodu</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">https://github.com/yash-srivastava/BladeWatch-release/blob/main/license</string>
-    <string name="settings_about_source_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_star_title">GitHub\'da bir bırak</string>
     <string name="settings_about_star_value">Bir saniye sürer, çok şey ifade eder.</string>
-    <string name="settings_about_star_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_thanks_title">Teşekkürler</string>
     <string name="settings_about_thanks_subtitle">Katkıda bulunanların ve destekçilerin yardımıyla kuruldu.</string>
     <string name="settings_about_contributors_title">Katkıda bulunanlar</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">Yapılandırılmış</string>
     <string name="integrations_status_not_set_up">Yapılandırılmamış .</string>
     <string name="integrations_configure_button">Yapılandırma</string>
-    <string name="settings_action_check_update">Güncellemeleri kontrol edin</string>
     <string name="settings_action_reset_data">Verileri yeniden ayarlayın...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">Nöbette</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">Araç SOH okuması — hesaplanan tahmin bekleniyor</string>
     <string name="soh_nominal_baseline">Nominal referans — güvenilir SOH verisi bekleniyor</string>
     <string name="rail_location">Konum</string>
-    <string name="settings_about_auto_update_title">Sunucudan otomatik güncelleme</string>
-    <string name="settings_about_auto_update_value">Yerel bir derlemeyi test ederken bunu kapatın. GitHub güncelleme kontrolünü sürdürmek için tekrar açın.</string>
     <string name="settings_drive_side_label">Navigasyon Tarafı</string>
     <string name="settings_drive_side_subtitle">Navigasyon menüsünün ekranın hangi tarafında görüneceğini seçin.</string>
     <string name="settings_drive_side_left">Sol</string>

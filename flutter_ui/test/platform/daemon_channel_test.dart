@@ -1,0 +1,82 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:bladewatch_ui/platform/daemon_channel.dart';
+
+import '../fakes/fake_platform_channel.dart';
+
+void main() {
+  group('DaemonChannel', () {
+    test('start calls daemon.start and returns the response as a String-keyed map', () async {
+      final fake = FakePlatformChannel()..stub('daemon', 'start', {'status': 'ok'});
+      final result = await DaemonChannel(fake).start();
+
+      expect(result, {'status': 'ok'});
+      expect(fake.calls.single.group, 'daemon');
+      expect(fake.calls.single.method, 'start');
+    });
+
+    test('stop calls daemon.stop', () async {
+      final fake = FakePlatformChannel()..stub('daemon', 'stop', <String, dynamic>{});
+      await DaemonChannel(fake).stop();
+      expect(fake.calls.single.method, 'stop');
+    });
+
+    test('status calls daemon.status and converts a non-String-keyed map (as the real channel returns)', () async {
+      // Object?-keyed map — exactly what MethodChannel's standard codec
+      // hands back for a Kotlin Map, not the Map<String, dynamic> a fake
+      // test might casually stub.
+      final Map<Object?, Object?> raw = {'recording': true};
+      final fake = FakePlatformChannel()..stub('daemon', 'status', raw);
+
+      final result = await DaemonChannel(fake).status();
+
+      expect(result, isA<Map<String, dynamic>>());
+      expect(result['recording'], true);
+    });
+
+    test('processStatus calls daemon.processStatus and returns a String-to-bool map', () async {
+      final Map<Object?, Object?> raw = {
+        'status': 'ok',
+        'daemons': <Object?, Object?>{
+          'CAMERA_DAEMON': true,
+          'SENTRY_DAEMON': false,
+          'ACC_SENTRY_DAEMON': false,
+          'ZROK_TUNNEL': false,
+        },
+      };
+      final fake = FakePlatformChannel()..stub('daemon', 'processStatus', raw);
+
+      final result = await DaemonChannel(fake).processStatus();
+
+      expect(fake.calls.single.method, 'processStatus');
+      expect(result, {
+        'CAMERA_DAEMON': true,
+        'SENTRY_DAEMON': false,
+        'ACC_SENTRY_DAEMON': false,
+        'ZROK_TUNNEL': false,
+      });
+    });
+
+    test('propagates a shellCallFailed PlatformChannelError', () async {
+      final fake = FakePlatformChannel()
+        ..stubError(
+          'daemon',
+          'start',
+          const PlatformChannelError(PlatformChannelErrorReason.shellCallFailed, 'rejected'),
+        );
+
+      await expectLater(() => DaemonChannel(fake).start(), throwsA(isA<PlatformChannelError>()));
+    });
+
+    test('propagates a timeout', () async {
+      final fake = FakePlatformChannel()..stubTimeout('daemon', 'status');
+
+      await expectLater(() => DaemonChannel(fake).status(), throwsA(isA<ChannelTimeoutException>()));
+    });
+
+    test('processStatus propagates a timeout', () async {
+      final fake = FakePlatformChannel()..stubTimeout('daemon', 'processStatus');
+
+      await expectLater(() => DaemonChannel(fake).processStatus(), throwsA(isA<ChannelTimeoutException>()));
+    });
+  });
+}

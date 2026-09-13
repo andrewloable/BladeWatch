@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">배경 서비스</string>
     <string name="daemons_count_pending">로딩 서비스...</string>
     <string name="daemons_count_fmt">실행 중인 %1$d의 %2$d</string>
-    <string name="update_preparing">업데이트를 준비하고 있어요</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">배터리 건강</string>
     <string name="battery_health_subtitle">건강 상태</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">이것은 %d 녹음을 영구적으로 삭제합니다. 이것은 취소할 수 없습니다.</item>
         <item quantity="other">이것은 %d 녹음을 영구적으로 삭제합니다. 이것은 취소할 수 없습니다.</item>
     </plurals>
-    <string name="toast_updated_to">%1$s로 업데이트</string>
-    <string name="toast_update_install_failed">업데이트 설치 실패: %1$s</string>
-    <string name="toast_checking_for_updates">업데이트를 확인하고...</string>
     <string name="toast_app_up_to_date">앱은 최신 (v%1$s)</string>
-    <string name="toast_update_check_failed">업데이트 확인 실패: %1$s</string>
     <string name="toast_storage_permission_required">기록에 필요한 저장 권한</string>
     <string name="toast_url_copied_short">URL 복사!</string>
     <string name="toast_camera_set_to_auto">자동으로 설정된 카메라</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">다시 설정 완료</string>
     <string name="dialog_traffic_cannot_check_title">상태 확인 불가능</string>
-    <string name="dialog_traffic_cannot_check_message">ADB 연결은 아직 준비되지 않았습니다. 앱은 시스템 패키지를 관리하기 위해 ADB 액세스가 필요합니다. 개발자 옵션에서 USB 디버깅이 활성화되어 있는지 확인하십시오.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB가 연결되어 있지 않으며, 앱이 자동으로 다시 연결하지 못했습니다.\n\n이 차량에서는 개발자 옵션의 일반적인 \"USB 디버깅\" 스위치만으로는 충분하지 않습니다 — 헤드 유닛 자체의 무선 ADB(네트워크 디버깅) 설정도 켜져 있어야 하며, 시스템 업데이트로 인해 꺼질 수 있습니다. 헤드 유닛에서 무선 ADB를 다시 활성화하거나 USB로 연결하십시오.\n\n연결되면 상태가 자동으로 업데이트됩니다.</string>
     <string name="dialog_traffic_disable_title">BYD 트래픽 모니터를 비활성화하세요?</string>
     <string name="dialog_traffic_disable_message">BYD 트래픽 모니터 (com.byd.trafficmonitor) 는 백그라운드에서 도로 교통 상태를 지속적으로 모니터링하는 내장 시스템 응용 프로그램입니다. \n\n️ 왜 비활성화해야합니까?\n\n• 모바일 데이터를 소비합니다 (파크 할 때에도) \n• 배경에서 CPU와 배터리를 사용합니다\n• 별도의 내비게이션 응용 프로그램을 사용하면 필요하지 않습니다\n• 대시캠 네트워크 사용에 방해를 줄 수 있습니다\n\n이 안전하게 비활성화 할 수 있습니다.</string>
     <string name="dialog_traffic_enable_title">BYD 트래픽 모니터를 다시 활성화하세요?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">BladeWatch에 대해</string>
     <string name="settings_about_version_label">버전</string>
     <string name="settings_about_package_label">건설</string>
-    <string name="settings_about_check_update_value">최신 GitHub 릴리스를 확인하고 최신 버전인 경우 설치하십시오.</string>
     <string name="settings_about_support_section">당신 같은 사람들로부터</string>
     <string name="settings_about_support_share_title">다른 차주에게도 알려주세요</string>
     <string name="settings_about_support_share_value">공유된 모든 링크는 다른 BYD 소유자가 오버드라이브를 발견하는 데 도움이 됩니다.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">브라우저가 없습니다. URL 복사: %1$s</string>
     <string name="settings_about_support_kofi_title">다음 발매에 연료</string>
     <string name="settings_about_support_kofi_value">Ko-Fi에 커피 한잔하면 늦은 밤의 약속이 올 수 있습니다.</string>
-    <string name="settings_about_support_kofi_url">[http://ko-fi.com/E1E71XALHX]</string>
     <string name="settings_about_license_title">라이센스</string>
     <string name="settings_about_license_value">MIT  오픈소스. 전체 텍스트를 보기 위해 누르십시오.</string>
     <string name="settings_about_source_title">소스 코드</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">[http://github.com/yash-srivastava/BladeWatch-release/blob/main/LICENSE]</string>
-    <string name="settings_about_source_url">[http://github.com/yash-srivastava/BladeWatch-release]</string>
     <string name="settings_about_star_title">GitHub에 를 던지십시오</string>
     <string name="settings_about_star_value">잠깐만요, 많은 것을 의미하죠</string>
-    <string name="settings_about_star_url">[http://github.com/yash-srivastava/BladeWatch-release]</string>
     <string name="settings_about_thanks_title">감사합니다</string>
     <string name="settings_about_thanks_subtitle">기여자와 후원자의 도움으로 만들어졌습니다.</string>
     <string name="settings_about_contributors_title">기여자</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">구성</string>
     <string name="integrations_status_not_set_up">설치되지 않은</string>
     <string name="integrations_configure_button">구성</string>
-    <string name="settings_action_check_update">업데이트 확인</string>
     <string name="settings_action_reset_data">데이터 리셋...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">감시 중</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">차량 SOH 판독값 — 계산된 추정값 대기 중</string>
     <string name="soh_nominal_baseline">공칭 기준값 — 신뢰할 수 있는 SOH 데이터 대기 중</string>
     <string name="rail_location">위치</string>
-    <string name="settings_about_auto_update_title">서버에서 자동 업데이트</string>
-    <string name="settings_about_auto_update_value">로컬 빌드를 테스트하는 동안에는 이 기능을 끄세요. GitHub 업데이트 확인을 다시 시작하려면 켜세요.</string>
     <string name="settings_drive_side_label">내비게이션 위치</string>
     <string name="settings_drive_side_subtitle">내비게이션 메뉴가 화면의 어느 쪽에 표시될지 선택하세요.</string>
     <string name="settings_drive_side_left">왼쪽</string>

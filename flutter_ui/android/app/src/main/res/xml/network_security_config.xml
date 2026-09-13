@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext HTTP is permitted ONLY to the loopback addresses the daemon listens
+  on, and nowhere else.
+
+  Why this file has to exist: this APK runs at Flutter's default targetSdk (35+),
+  and from targetSdk 28 Android's default network security policy blocks all
+  cleartext traffic — loopback included. Everything this app needs from the
+  daemon is plain HTTP on 127.0.0.1:8080 (the Connect RPC surface, plus /video/
+  and /thumb/). `dart:io`'s HttpClient uses the Dart VM's own socket stack and is
+  not subject to this policy, so the RPC transport would have kept working and
+  hidden the problem — but video_player is ExoPlayer underneath, which does go
+  through Android networking, so recording playback would fail on device with a
+  cleartext-blocked error.
+
+  Deliberately NOT `android:usesCleartextTraffic="true"` on <application>: that
+  re-permits cleartext to every host, including anything reachable over the Zrok
+  tunnel or the car's own network. This allows exactly the loopback daemon and
+  leaves TLS enforced everywhere else, which matters because the tunnel URLs are
+  only safe when paired with JWT auth (see the Security Notes in CLAUDE.md).
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

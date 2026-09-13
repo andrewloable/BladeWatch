@@ -85,7 +85,6 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 | `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
 | `VehicleService` | `GetState`, `GetAcDiagnostics`, `GetSeatDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`, `SetAdas`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported) | `/api/vehicle/*`, `/api/gps/*` |
 | `NotificationsService` | `GetCategories`, `Subscribe`, `Unsubscribe`, `ListSubscriptions`, `UpdatePreferences`, `SendTest` | `/api/notifications/*`, `/api/push/*` |
-| `UpdateService` | `CheckUpdate`, `GetPreview`, `InstallUpdate`, `GetProgress` | `/api/update/*` |
 
 The full request/response message shapes are in `proto/bladewatch/v1/*.proto`
 (one file per service, plus `common.proto`). Regenerate stubs with
@@ -382,17 +381,6 @@ Connect mirror (via `SystemService`): `ListModels`, `DownloadModel`,
 `GetSelectedModel`, `SetSelectedModel`, `GetModelsManifest`. Performance and SoH
 routes are mirrored by `SystemService.{GetPerformance,ResetPerformance,
 GetParkingDelta,GetLastCharge,GetSohNominal,SetSohNominal,GetSohStatus,ResetSoh}`.
-
-## Updates
-
-Handled by `UpdateApiHandler`:
-
-- `GET /api/update/check`.
-- `GET /api/update/preview`.
-- `POST /api/update/install?confirm=true`.
-- `GET /api/update/progress`.
-
-Connect mirror: `UpdateService.{CheckUpdate,GetPreview,InstallUpdate,GetProgress}`.
 
 ## Notifications and Push
 

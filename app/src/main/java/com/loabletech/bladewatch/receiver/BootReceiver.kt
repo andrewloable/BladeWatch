@@ -98,19 +98,21 @@ class BootReceiver : BroadcastReceiver() {
                 }
             }
             
-            // App update — DO NOT start daemons here. The old process's daemon
-            // kill sequence may still be in flight, and the new MainActivity is
-            // the sole orchestrator post-update: it runs UpdateLifecycle.hardResetDaemons
-            // before DaemonStartupManager. Starting daemons here would race the
-            // hard reset and resurrect old/zombie watchdogs (see /data/local/tmp/
-            // bladewatch_update_in_progress sentinel).
+            // Package replaced — DO NOT start daemons here. Zombie daemons from
+            // the previous install are still alive, and the new MainActivity is the
+            // sole orchestrator: it runs DaemonHardReset.hardResetDaemons before
+            // DaemonStartupManager. Starting daemons here would race the sweep and
+            // resurrect old watchdogs.
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
                 lastStartTime = System.currentTimeMillis()
+                // Also record it durably: DaemonKeepaliveService has no Intent to
+                // read, and it must defer daemon startup until the sweep has run.
+                net.bladewatch.app.launcher.DaemonHardReset.markPostInstall(context)
                 try {
                     val launchIntent = Intent(context, net.bladewatch.app.ui.MainActivity::class.java)
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     launchIntent.putExtra(
-                        net.bladewatch.app.updater.UpdateLifecycle.EXTRA_POST_UPDATE,
+                        net.bladewatch.app.launcher.DaemonHardReset.EXTRA_POST_INSTALL,
                         true,
                     )
                     context.startActivity(launchIntent)

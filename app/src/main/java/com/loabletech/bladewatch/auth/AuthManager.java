@@ -658,14 +658,26 @@ public class AuthManager {
      * write fails (cross-UID, before the daemon has created the file)
      * the in-memory cache can retain a stale auth section. We force a
      * reload on failure so the next reader does not keep a phantom state.
+     *
+     * deviceId/tokenEpoch are ALSO mirrored into the secret store's "auth"
+     * section (alongside deviceSecret, which lives there exclusively) —
+     * BladeWatch-b195: the Flutter APK's JwtMinter can only reach this
+     * config over the secret_get_section IPC command, which reads
+     * exclusively from SecretConfigStore. Before this, secret_get_section
+     * could only ever return deviceSecret, so JwtMinter's deviceId check
+     * always failed and every Flutter-side RPC call went out unauthenticated.
+     * These two fields are not secret; storing them in the 600 secrets file
+     * alongside the real secret is no worse for confidentiality than the
+     * status quo, and keeps JwtMinter.kt's single IPC call unchanged. See
+     * {@link #writeSecretStoreMirror} for that half, tested in isolation.
      */
     private static boolean writeToConfig(AuthState state) {
         try {
-            if (state.deviceSecret == null || state.deviceSecret.isEmpty()) {
-                if (!SecretConfigBridge.delete(CONFIG_SECTION, KEY_DEVICE_SECRET)) {
-                    return false;
-                }
-            } else if (!SecretConfigBridge.putString(CONFIG_SECTION, KEY_DEVICE_SECRET, state.deviceSecret)) {
+            // Captured once, up front, and reused for both rollback points below so a
+            // failure at either step restores the same pre-write state.
+            SecretStoreSnapshot prior = SecretStoreSnapshot.capture();
+
+            if (!writeSecretStoreMirror(state, prior)) {
                 return false;
             }
 
@@ -676,11 +688,7 @@ public class AuthManager {
             }
 
             log("Failed to persist public auth state; rolling back secret write");
-            if (state.deviceSecret == null || state.deviceSecret.isEmpty()) {
-                SecretConfigBridge.putString(CONFIG_SECTION, KEY_DEVICE_SECRET, "");
-            } else {
-                SecretConfigBridge.delete(CONFIG_SECTION, KEY_DEVICE_SECRET);
-            }
+            prior.restore();
             UnifiedConfigManager.forceReload();
             return false;
         } catch (Exception e) {
@@ -689,6 +697,86 @@ public class AuthManager {
                 log("forceReload after write failure also failed: " + ignored.getMessage());
             }
             return false;
+        }
+    }
+
+    /**
+     * Writes deviceSecret (exclusively) and mirrors deviceId/tokenEpoch into
+     * the secret store's "auth" section — see {@link #writeToConfig}'s doc
+     * comment for why the mirror exists (BladeWatch-b195). Package-private,
+     * factored out of writeToConfig so it can be exercised directly in a JVM
+     * test via {@link SecretConfigBridge#directStoreForTest} without also
+     * touching UnifiedConfigManager (a separate, real-file-path-hardcoded
+     * class with its own untested I/O boundary).
+     *
+     * Rolls back the secret write on its own if the mirror fails, so callers
+     * that get {@code false} back can treat the secret store as untouched.
+     */
+    static boolean writeSecretStoreMirror(AuthState state) {
+        // Snapshot what is in the store BEFORE touching it. A rollback has to put these
+        // back; deleting deviceId/tokenEpoch instead (as this used to do) destroys the
+        // values an already-paired device was relying on, so a failed re-pair left the
+        // store worse off than if the write had never been attempted — and JwtMinter,
+        // which reads exactly these keys over secret_get_section, would then mint
+        // unauthenticated calls forever.
+        return writeSecretStoreMirror(state, SecretStoreSnapshot.capture());
+    }
+
+    private static boolean writeSecretStoreMirror(AuthState state, SecretStoreSnapshot prior) {
+        boolean secretOk = (state.deviceSecret == null || state.deviceSecret.isEmpty())
+                ? SecretConfigBridge.delete(CONFIG_SECTION, KEY_DEVICE_SECRET)
+                : SecretConfigBridge.putString(CONFIG_SECTION, KEY_DEVICE_SECRET, state.deviceSecret);
+        if (!secretOk) {
+            return false;
+        }
+
+        boolean mirrorOk = (state.deviceSecret == null || state.deviceSecret.isEmpty())
+                ? SecretConfigBridge.delete(CONFIG_SECTION, KEY_DEVICE_ID) && SecretConfigBridge.delete(CONFIG_SECTION, KEY_TOKEN_EPOCH)
+                : SecretConfigBridge.putString(CONFIG_SECTION, KEY_DEVICE_ID, state.deviceId)
+                        && SecretConfigBridge.putLong(CONFIG_SECTION, KEY_TOKEN_EPOCH, state.tokenEpoch);
+        if (!mirrorOk) {
+            log("Failed to mirror deviceId/tokenEpoch into the secret store; rolling back secret write");
+            prior.restore();
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * The three secret-store fields {@link #writeSecretStoreMirror} touches, captured
+     * before the write so a failure can put them back exactly as they were rather than
+     * deleting them. A null field means "was absent", which restores as a delete.
+     */
+    private static final class SecretStoreSnapshot {
+        private final String deviceSecret;
+        private final String deviceId;
+        private final String tokenEpoch;
+
+        private SecretStoreSnapshot(String deviceSecret, String deviceId, String tokenEpoch) {
+            this.deviceSecret = deviceSecret;
+            this.deviceId = deviceId;
+            this.tokenEpoch = tokenEpoch;
+        }
+
+        static SecretStoreSnapshot capture() {
+            return new SecretStoreSnapshot(
+                    SecretConfigBridge.getString(CONFIG_SECTION, KEY_DEVICE_SECRET),
+                    SecretConfigBridge.getString(CONFIG_SECTION, KEY_DEVICE_ID),
+                    SecretConfigBridge.getString(CONFIG_SECTION, KEY_TOKEN_EPOCH));
+        }
+
+        void restore() {
+            restoreKey(KEY_DEVICE_SECRET, deviceSecret);
+            restoreKey(KEY_DEVICE_ID, deviceId);
+            restoreKey(KEY_TOKEN_EPOCH, tokenEpoch);
+        }
+
+        private static void restoreKey(String key, String value) {
+            if (value == null) {
+                SecretConfigBridge.delete(CONFIG_SECTION, key);
+            } else {
+                SecretConfigBridge.putString(CONFIG_SECTION, key, value);
+            }
         }
     }
 

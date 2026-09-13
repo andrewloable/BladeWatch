@@ -3,6 +3,7 @@ import java.security.MessageDigest
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlinx.kover)
 }
 
 fun sha256Hex(file: File): String {
@@ -611,3 +612,187 @@ tasks.register("validateI18nCatalogs") {
 }
 // Validate before any variant's assets are packaged.
 tasks.named("preBuild") { dependsOn("validateI18nCatalogs") }
+
+// Fail the build if the Android string catalogs (res/values*/strings.xml, 624 keys
+// across 17 locales) are malformed, have an unescaped apostrophe (the Android-XML
+// equivalent of the smart-quote footgun that hit the web i18n catalogs above), or a
+// locale is missing a key that values/strings.xml has. Every string key added by
+// hand across 17 files invites exactly this class of silent gap.
+tasks.register("validateAndroidStrings") {
+    description = "Validate res/values*/strings.xml: key parity with values/strings.xml, valid XML, escaped apostrophes"
+    group = "verification"
+    val resDir = file("src/main/res")
+
+    fun hasUnescapedApostrophe(text: String): Boolean {
+        var inQuotes = false
+        var i = 0
+        while (i < text.length) {
+            val c = text[i]
+            if (c == '\\') {
+                i += 2 // an escaped char (\' , \" , \n, ...) is never itself a footgun
+                continue
+            }
+            if (c == '"') {
+                inQuotes = !inQuotes
+            } else if (c == '\'' && !inQuotes) {
+                return true
+            }
+            i++
+        }
+        return false
+    }
+
+    // keys == null means the file failed to parse — callers must not treat that
+    // as "zero keys" (which would falsely report every master key as missing).
+    data class ParsedStrings(val keys: Set<String>?, val problems: List<String>)
+
+    fun parseStrings(f: File): ParsedStrings {
+        val doc = try {
+            javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(f)
+        } catch (e: Exception) {
+            return ParsedStrings(null, listOf("malformed XML — ${e.message}"))
+        }
+        val problems = mutableListOf<String>()
+        val keys = mutableSetOf<String>()
+        val nodes = doc.getElementsByTagName("string")
+        for (i in 0 until nodes.length) {
+            val el = nodes.item(i) as org.w3c.dom.Element
+            if (el.getAttribute("translatable") == "false") continue
+            val name = el.getAttribute("name")
+            keys.add(name)
+            if (hasUnescapedApostrophe(el.textContent ?: "")) {
+                problems.add("$name: unescaped apostrophe (use \\' or wrap the whole value in double quotes)")
+            }
+        }
+        return ParsedStrings(keys, problems)
+    }
+
+    doLast {
+        val masterFile = resDir.resolve("values/strings.xml")
+        if (!masterFile.exists()) throw GradleException("Android strings: values/strings.xml missing at ${masterFile.path}")
+        val master = parseStrings(masterFile)
+        if (master.problems.isNotEmpty() || master.keys == null) {
+            throw GradleException(
+                "Android strings validation FAILED in values/strings.xml:\n" +
+                    master.problems.joinToString("\n") { "  - $it" }
+            )
+        }
+        val masterKeys = master.keys
+
+        // values-night is a theme (dark-mode colors), not a locale.
+        val localeDirs = resDir.listFiles { f -> f.isDirectory && f.name.startsWith("values-") && f.name != "values-night" }
+            ?.sortedBy { it.name } ?: emptyList()
+
+        val problems = mutableListOf<String>()
+        for (dir in localeDirs) {
+            val f = dir.resolve("strings.xml")
+            if (!f.exists()) continue
+            val parsed = parseStrings(f)
+            for (p in parsed.problems) problems.add("${dir.name}/strings.xml: $p")
+            // A parse failure already reported above; comparing keys against an
+            // empty set here would just misreport every master key as "missing".
+            if (parsed.keys != null) {
+                val missing = masterKeys - parsed.keys
+                if (missing.isNotEmpty()) {
+                    problems.add(
+                        "${dir.name}/strings.xml: ${missing.size} key(s) missing vs values/strings.xml " +
+                            "(${missing.sorted().take(5).joinToString(", ")}${if (missing.size > 5) ", …" else ""})"
+                    )
+                }
+            }
+        }
+
+        if (problems.isNotEmpty()) {
+            throw GradleException("Android strings validation FAILED:\n" + problems.joinToString("\n") { "  - $it" })
+        }
+        logger.lifecycle("Android strings: ${localeDirs.size} locales, full key parity with values/strings.xml (${masterKeys.size} keys), valid XML, no unescaped apostrophes ✓")
+    }
+}
+tasks.named("preBuild") { dependsOn("validateAndroidStrings") }
+
+// Fail the build if the Flutter ARB catalogs (flutter_ui/lib/l10n/app_*.arb,
+// ported from res/values*/strings.xml in BladeWatch-ncbb.3 — see
+// tools/i18n/xml_to_arb.py) are malformed JSON or a locale is missing a key
+// that the app_en.arb template has. Same failure mode as the two checks
+// above, same fix.
+tasks.register("validateArbCatalogs") {
+    description = "Validate flutter_ui/lib/l10n/*.arb: valid JSON + full key parity with app_en.arb"
+    group = "verification"
+    val arbDir = file("../flutter_ui/lib/l10n")
+    doLast {
+        val slurper = groovy.json.JsonSlurper()
+        fun keysOf(obj: Any?): Set<String> {
+            @Suppress("UNCHECKED_CAST")
+            val map = obj as? Map<String, Any?> ?: return emptySet()
+            return map.keys.filter { !it.startsWith("@") }.toSortedSet()
+        }
+        val templateFile = arbDir.resolve("app_en.arb")
+        if (!templateFile.exists()) throw GradleException("ARB: app_en.arb missing at ${templateFile.path}")
+        val templateKeys = try {
+            keysOf(slurper.parse(templateFile))
+        } catch (e: Exception) {
+            throw GradleException("ARB: app_en.arb is not valid JSON — ${e.message}")
+        }
+        val arbFiles = arbDir.listFiles { f -> f.name.endsWith(".arb") }?.sortedBy { it.name } ?: emptyList()
+        val problems = mutableListOf<String>()
+        for (f in arbFiles) {
+            val parsed = try {
+                slurper.parse(f)
+            } catch (e: Exception) {
+                problems.add("${f.name}: INVALID JSON — ${e.message}"); continue
+            }
+            if (f.name == "app_en.arb") continue
+            val keys = keysOf(parsed)
+            val missing = templateKeys - keys
+            val extra = keys - templateKeys
+            if (missing.isNotEmpty()) {
+                problems.add("${f.name}: ${missing.size} key(s) missing vs app_en.arb (e.g. ${missing.take(5).joinToString(", ")})")
+            }
+            if (extra.isNotEmpty()) {
+                problems.add("${f.name}: ${extra.size} extra key(s) not in app_en.arb (e.g. ${extra.take(5).joinToString(", ")})")
+            }
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException("ARB catalog validation FAILED:\n" + problems.joinToString("\n") { "  - $it" })
+        }
+        logger.lifecycle("ARB: ${arbFiles.size} catalogs valid, full key parity with app_en.arb (${templateKeys.size} keys) ✓")
+    }
+}
+tasks.named("preBuild") { dependsOn("validateArbCatalogs") }
+
+// Kotlin coverage gate (BladeWatch-ncbb.5). koverVerify fails the build below
+// minBound — baselined against the existing ~20-file/~3,100 LOC suite under
+// app/src/test/java/com/loabletech/bladewatch/, see docs/build-and-operations.md
+// for the current figure and the ratchet policy (may only ever go up).
+// Excludes: generated ConnectRPC/protobuf code, and the android.hardware.*/
+// android.os.* BYD SDK compile-time stubs — real classes are loaded at runtime
+// via reflection from the boot classloader (see "BYD SDK Stub Pattern" in
+// CLAUDE.md), so the stub bodies in this APK are never instantiated and are
+// not testable by design.
+kover {
+    reports {
+        total {
+            filters {
+                excludes {
+                    // connect-kotlin/protobuf generated code (RPC clients + message
+                    // classes, ~1,100 files) — all live flat under this one package.
+                    packages("net.bladewatch.app.grpc.v1")
+                    // BYD SDK compile-time stubs (android.hardware.*, android.os.*,
+                    // including nested sub-packages like android.hardware.bydauto.power) —
+                    // real classes are loaded at runtime via reflection from the boot
+                    // classloader, so these stub bodies are never instantiated.
+                    packages("android.hardware", "android.os")
+                }
+            }
+            verify {
+                rule {
+                    // Baseline measured 2026-09-12 against the existing ~20-file JVM
+                    // suite: 1020/48610 lines covered (~2.10%) after excluding
+                    // generated protobuf and the BYD stubs above. Floor of that
+                    // real figure — raise this as tests are added; never lower it.
+                    minBound(2)
+                }
+            }
+        }
+    }
+}

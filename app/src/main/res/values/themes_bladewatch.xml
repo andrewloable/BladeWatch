@@ -252,7 +252,7 @@
          a layout fully define its own content (used by SetupGuideDialog,
          dialog_camera_selection, dialog_battery_health, dialog_reset_data,
          dialog_time_window, dialog_zrok_token,
-         dialog_update_progress, dialog_roi_drawing). -->
+         dialog_roi_drawing). -->
     <style name="Theme.BladeWatch.M3.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorSurface">?attr/colorSurfaceContainerHigh</item>
         <item name="dialogCornerRadius">28dp</item>

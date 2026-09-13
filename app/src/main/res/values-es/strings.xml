@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">Servicios de antecedentes</string>
     <string name="daemons_count_pending">Servicios de carga...</string>
     <string name="daemons_count_fmt">%1$d de %2$d en funcionamiento</string>
-    <string name="update_preparing">Preparando la actualización...</string>
-    <string name="update_percent_zero">El porcentaje del producto</string>
     <string name="battery_health_title">Salud de la batería</string>
     <string name="battery_health_subtitle">Estado de salud</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">Esto borrará permanentemente la grabación %d.</item>
         <item quantity="other">Esto borrará permanentemente las grabaciones de %d.</item>
     </plurals>
-    <string name="toast_updated_to">Actualizado a %1$s</string>
-    <string name="toast_update_install_failed">La actualización de la instalación falló: %1$s</string>
-    <string name="toast_checking_for_updates">Verificando las actualizaciones...</string>
     <string name="toast_app_up_to_date">La aplicación está actualizada (v%1$s)</string>
-    <string name="toast_update_check_failed">La verificación de actualización falló: %1$s</string>
     <string name="toast_storage_permission_required">Permiso de almacenamiento requerido para las grabaciones</string>
     <string name="toast_url_copied_short">¡URL copiado!</string>
     <string name="toast_camera_set_to_auto">La cámara se ajusta a Auto</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">Reinicio completo</string>
     <string name="dialog_traffic_cannot_check_title">No puedo comprobar el estado</string>
-    <string name="dialog_traffic_cannot_check_message">La conexión ADB aún no está lista.\n\nLa aplicación necesita acceso ADB para administrar los paquetes del sistema. Por favor asegúrese de que:\n\n• USB Debugging está habilitado en Opciones de Desarrollador\n• La solicitud de autorización ADB ha sido aceptada\n\nEl estado se actualizará automáticamente una vez conectado.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB no está conectado y la aplicación no pudo reconectarse automáticamente.\n\nEn este vehículo, el interruptor habitual de \"Depuración USB\" en Opciones de desarrollador no es suficiente por sí solo: la propia opción de ADB inalámbrico (depuración por red) de la unidad central también debe estar activada, y una actualización del sistema puede desactivarla. Vuelva a activar el ADB inalámbrico en la unidad central, o conéctese por USB.\n\nEl estado se actualizará automáticamente en cuanto se conecte.</string>
     <string name="dialog_traffic_disable_title">¿Desactivar el monitor de tráfico BYD?</string>
     <string name="dialog_traffic_disable_message">El BYD Traffic Monitor (com.byd.trafficmonitor) es una aplicación de sistema integrada que monitoriza continuamente las condiciones del tráfico en el fondo.\n\n️ ¿Por qué deshabilitarlo?\n\n• Consume datos móviles (incluso cuando está estacionado)\n• Utiliza CPU y batería en el fondo\n• No es necesario si utiliza una aplicación de navegación separada\n• Puede interferir con el uso de la red de la dashcam\n\nEsto es seguro para deshabilitar  solo afecta a la superposición de tráfico integrada en el mapa. Su navegación, Bluetooth y todas las demás funciones del automóvil permanecen no afectadas.\n\n\nSe reinicializan duramente después de deshabilit</string>
     <string name="dialog_traffic_enable_title">¿Rehabilitar el monitor de tráfico BYD?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">Sobre BladeWatch</string>
     <string name="settings_about_version_label">Versión</string>
     <string name="settings_about_package_label">Construir</string>
-    <string name="settings_about_check_update_value">Compruebe la última versión de GitHub e instálela si es más reciente.</string>
     <string name="settings_about_support_section">Alimentado por gente como tú</string>
     <string name="settings_about_support_share_title">Cuéntaselo a otro propietario</string>
     <string name="settings_about_support_share_value">Cada enlace compartido ayuda a otro propietario de BYD a descubrir BladeWatch.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">No se ha encontrado ningún navegador. URL copiado: %1$s</string>
     <string name="settings_about_support_kofi_title">Combustible para el próximo lanzamiento</string>
     <string name="settings_about_support_kofi_value">Un café en Ko-Fi mantiene los compromisos nocturnos.</string>
-    <string name="settings_about_support_kofi_url">El objetivo de la investigación es mejorar la calidad de vida de las personas.</string>
     <string name="settings_about_license_title">Licencia</string>
     <string name="settings_about_license_value">MIT  código abierto. Toque para ver el texto completo.</string>
     <string name="settings_about_source_title">Código fuente</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">El proyecto de ley de la ley de licencia para el uso de la tecnología de la información (Licencia de licencia para la licencia de licencia para la licencia de licencia para la licencia de licencia para la licencia de licencia para la licencia de licencia para la licencia de licencia para la licencia de licencia para la licencia de licencia para la licencia para la licencia de licencia para la licencia para la licencia de licencia para la licencia de licencia para la licencia para la licencia de licencia para la licencia de licencia para la licencia de licencia para la licencia para la licencia de licencia para la licencia de licencia para la licencia para la licencia de licencia para la licencia de licencia.</string>
-    <string name="settings_about_source_url">La versión de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original.</string>
     <string name="settings_about_star_title">Deja un en GitHub</string>
     <string name="settings_about_star_value">Toma un segundo, significa mucho.</string>
-    <string name="settings_about_star_url">La versión de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original de la versión original.</string>
     <string name="settings_about_thanks_title">Gracias</string>
     <string name="settings_about_thanks_subtitle">Construido con la ayuda de colaboradores y patrocinadores.</string>
     <string name="settings_about_contributors_title">Colaboradores</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">Configurado</string>
     <string name="integrations_status_not_set_up">No está instalado</string>
     <string name="integrations_configure_button">Configuración</string>
-    <string name="settings_action_check_update">Compruebe las actualizaciones</string>
     <string name="settings_action_reset_data">Resetear los datos...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">En vigilancia</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">Lectura de SOH del vehículo — esperando la estimación calculada</string>
     <string name="soh_nominal_baseline">Base nominal — esperando datos de SOH fiables</string>
     <string name="rail_location">Ubicación</string>
-    <string name="settings_about_auto_update_title">Actualización automática desde el servidor</string>
-    <string name="settings_about_auto_update_value">Desactive esto mientras prueba una compilación local. Vuelva a activarlo para reanudar la búsqueda de actualizaciones en GitHub.</string>
     <string name="settings_drive_side_label">Lado de navegación</string>
     <string name="settings_drive_side_subtitle">Elija en qué lado de la pantalla aparece el menú de navegación.</string>
     <string name="settings_drive_side_left">Izquierda</string>

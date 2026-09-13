@@ -1,11 +1,17 @@
 package net.bladewatch.app.auth;
 
+import net.bladewatch.app.config.SecretConfigBridge;
+import net.bladewatch.app.config.SecretConfigStore;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.Base64;
 
@@ -17,11 +23,70 @@ public class AuthManagerTest {
     @Before
     public void setUp() {
         AuthManager.clearTestState();
+        SecretConfigBridge.INSTANCE.directStoreForTest = null;
     }
 
     @After
     public void tearDown() {
         AuthManager.clearTestState();
+        SecretConfigBridge.INSTANCE.directStoreForTest = null;
+    }
+
+    // --- BladeWatch-b195: deviceId/tokenEpoch mirrored into the secret store ---
+    //
+    // JwtMinter.kt (flutter_ui/android) can only reach auth state over the
+    // secret_get_section IPC command, which reads exclusively from
+    // SecretConfigStore. writeSecretStoreMirror() is the package-private half
+    // of writeToConfig() that touches only SecretConfigBridge — factored out
+    // specifically so it's testable here without also depending on
+    // UnifiedConfigManager (a separate class hardcoded to real device paths
+    // like /storage/emulated/0/..., which this JVM test must not touch).
+
+    @Test
+    public void writeSecretStoreMirrorWritesDeviceIdAndTokenEpochAlongsideSecret() throws Exception {
+        Path tempDir = Files.createTempDirectory("auth-manager-mirror-test");
+        try {
+            SecretConfigStore store = new SecretConfigStore(new File(tempDir.toFile(), "secrets.json"));
+            SecretConfigBridge.INSTANCE.directStoreForTest = store;
+
+            AuthManager.AuthState state = makeState("byd-b195-test", "secret-abc", 7);
+            Assert.assertTrue(AuthManager.writeSecretStoreMirror(state));
+
+            org.json.JSONObject section = store.loadSection("auth");
+            Assert.assertEquals("byd-b195-test", section.optString("deviceId"));
+            Assert.assertEquals("secret-abc", section.optString("deviceSecret"));
+            Assert.assertEquals(7L, section.optLong("tokenEpoch"));
+        } finally {
+            deleteRecursive(tempDir.toFile());
+        }
+    }
+
+    @Test
+    public void writeSecretStoreMirrorReturnsFalseWithoutThrowingWhenTheStoreIsUnwritable() throws Exception {
+        Path tempDir = Files.createTempDirectory("auth-manager-mirror-test-readonly");
+        try {
+            Assert.assertTrue("test setup: chmod the temp dir read-only", tempDir.toFile().setWritable(false));
+            try {
+                SecretConfigStore store = new SecretConfigStore(new File(tempDir.toFile(), "secrets.json"));
+                SecretConfigBridge.INSTANCE.directStoreForTest = store;
+
+                AuthManager.AuthState state = makeState("byd-test", "secret-xyz", 1);
+                Assert.assertFalse(AuthManager.writeSecretStoreMirror(state));
+            } finally {
+                tempDir.toFile().setWritable(true);
+            }
+        } finally {
+            deleteRecursive(tempDir.toFile());
+        }
+    }
+
+    private void deleteRecursive(File file) {
+        if (file == null || !file.exists()) return;
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) deleteRecursive(child);
+        }
+        file.delete();
     }
 
     @Test

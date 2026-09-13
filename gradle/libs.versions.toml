@@ -15,6 +15,7 @@ lifecycleKtx = "2.8.7"
 zxing = "3.5.3"
 osmdroid = "6.1.20"
 connectrpc-kotlin = "0.6.0"
+kover = "0.9.9"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -43,4 +44,5 @@ connectrpc-kotlin-google-java-ext = { group = "com.connectrpc", name = "connect-
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+kotlinx-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 

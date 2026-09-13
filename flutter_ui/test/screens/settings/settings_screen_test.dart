@@ -1,0 +1,169 @@
+import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
+import 'package:bladewatch_ui/platform/config_channel.dart';
+import 'package:bladewatch_ui/platform/daemon_channel.dart';
+import 'package:bladewatch_ui/platform/prefs_channel.dart';
+import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_ui/rpc/services/safe_locations_service_client.dart';
+import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
+import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_ui/screens/settings/settings_appearance_screen.dart';
+import 'package:bladewatch_ui/screens/settings/settings_daemons_screen.dart';
+import 'package:bladewatch_ui/screens/settings/settings_overlay_screen.dart';
+import 'package:bladewatch_ui/screens/settings/settings_privacy_screen.dart';
+import 'package:bladewatch_ui/screens/settings/settings_recording_screen.dart';
+import 'package:bladewatch_ui/screens/settings/settings_screen.dart';
+import 'package:bladewatch_ui/screens/surveillance/surveillance_screen.dart';
+import 'package:bladewatch_ui/shell/shell_controller.dart';
+import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../../fakes/fake_platform_channel.dart';
+import '../../fakes/fake_rpc_client.dart';
+
+void main() {
+  late FakeRpcClient rpc;
+  late FakePlatformChannel channel;
+  late bool languageOpened;
+
+  setUp(() {
+    rpc = FakeRpcClient();
+    channel = FakePlatformChannel();
+    languageOpened = false;
+    channel.stub('prefs', 'getThemeMode', null);
+    channel.stub('prefs', 'getDriveSide', null);
+    channel.stub('daemon', 'processStatus', {
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': false},
+    });
+    rpc.stubJson('SystemService', 'GetStatus', {'recordingStatus': {}});
+    rpc.stubJson('RecordingsService', 'GetStats', {'stats': {}});
+    rpc.stubJson('SettingsService', 'GetQuality', {});
+    rpc.stubJson('StorageService', 'GetStorageSettings', {'recordingsCount': 0, 'recordingsSize': 0});
+    rpc.stubJson('SurveillanceService', 'GetConfig', {'success': false});
+    rpc.stubJson('SurveillanceService', 'GetStatus', {});
+    rpc.stubJson('SafeLocationsService', 'ListZones', {'zones': []});
+  });
+
+  SettingsHubDependencies buildDeps() => SettingsHubDependencies(
+        prefs: PrefsChannel(channel),
+        shellController: ShellController(),
+        systemService: SystemServiceClient(rpc),
+        recordingsService: RecordingsServiceClient(rpc),
+        settingsService: SettingsServiceClient(rpc),
+        storageService: StorageServiceClient(rpc),
+        surveillanceService: SurveillanceServiceClient(rpc),
+        longSurveillanceService: SurveillanceServiceClient(rpc),
+        safeLocationsService: SafeLocationsServiceClient(rpc),
+        daemonChannel: DaemonChannel(channel),
+        configChannel: ConfigChannel(channel),
+        onOpenLanguagePicker: () => languageOpened = true,
+      );
+
+  Future<void> pump(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(MaterialApp(
+      theme: BladeWatchTheme.light(),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: SettingsScreen(deps: buildDeps())),
+    ));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('defaults to the Appearance section', (tester) async {
+    await pump(tester);
+
+    expect(find.byType(SettingsAppearanceScreen), findsOneWidget);
+  });
+
+  testWidgets('selecting Recording swaps the content and disposes Appearance', (tester) async {
+    await pump(tester);
+
+    await tester.tap(find.byKey(const ValueKey('settings.section.recording')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsRecordingScreen), findsOneWidget);
+    expect(find.byType(SettingsAppearanceScreen), findsNothing);
+  });
+
+  testWidgets('selecting Overlay shows the overlay switches', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('settings.section.overlay')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsOverlayScreen), findsOneWidget);
+  });
+
+  testWidgets('selecting Daemons shows the daemons list', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('settings.section.daemons')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsDaemonsScreen), findsOneWidget);
+  });
+
+  testWidgets('selecting Privacy shows the privacy screen and the reset button opens its dialog', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('settings.section.privacy')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsPrivacyScreen), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('privacy.resetData')));
+    await tester.pumpAndSettle();
+    expect(find.text('Reset Data'), findsOneWidget);
+  });
+
+  testWidgets('selecting Surveillance mounts the real settings screen inline', (tester) async {
+    await pump(tester);
+
+    await tester.tap(find.byKey(const ValueKey('settings.section.surveillance')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SurveillanceSettingsScreen), findsOneWidget);
+  });
+
+  testWidgets('opening the language picker from Appearance calls the callback', (tester) async {
+    await pump(tester);
+
+    await tester.tap(find.byKey(const ValueKey('language.card')));
+
+    expect(languageOpened, isTrue);
+  });
+
+  testWidgets('switching back to a previously-visited section rebuilds it fresh', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('settings.section.recording')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('settings.section.appearance')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsAppearanceScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('renders without error in dark theme', (tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(MaterialApp(
+      theme: BladeWatchTheme.dark(),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: SettingsScreen(deps: buildDeps())),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
+}

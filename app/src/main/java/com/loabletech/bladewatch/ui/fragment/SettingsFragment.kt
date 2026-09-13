@@ -21,7 +21,6 @@ import net.bladewatch.app.R
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.ui.MainActivity
 import org.json.JSONObject
-import net.bladewatch.app.updater.AppUpdater
 import net.bladewatch.app.ui.dialog.LanguagePickerDialog
 import net.bladewatch.app.ui.fragment.settings.SettingsAppearanceFragment
 import net.bladewatch.app.ui.fragment.settings.SettingsDaemonsFragment
@@ -396,7 +395,7 @@ class SettingsFragment : Fragment() {
         val tv = view.findViewById<TextView>(R.id.tvSettingsFooter) ?: return
         tv.text = getString(
             R.string.settings_footer_format,
-            AppUpdater.getDisplayVersion(requireContext()),
+            net.bladewatch.app.BuildConfig.VERSION_NAME,
             BuildConfig.APPLICATION_ID
         )
     }

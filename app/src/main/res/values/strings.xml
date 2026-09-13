@@ -256,9 +256,6 @@
 
     <!-- dialog_time_window -->
 
-    <!-- dialog_update_progress -->
-    <string name="update_preparing">Preparing update…</string>
-    <string name="update_percent_zero">0%</string>
 
     <!-- dialog_battery_health -->
     <string name="battery_health_title">Battery Health</string>
@@ -313,11 +310,7 @@
          ============================================================ -->
 
     <!-- MainActivity -->
-    <string name="toast_updated_to">Updated to %1$s</string>
-    <string name="toast_update_install_failed">Update install failed: %1$s</string>
-    <string name="toast_checking_for_updates">Checking for updates…</string>
     <string name="toast_app_up_to_date">App is up to date (v%1$s)</string>
-    <string name="toast_update_check_failed">Update check failed: %1$s</string>
     <string name="toast_storage_permission_required">Storage permission required for recordings</string>
     <string name="toast_url_copied_short">URL copied!</string>
     <string name="toast_camera_set_to_auto">Camera set to Auto</string>
@@ -355,7 +348,7 @@
     <string name="dialog_reset_complete_title">Reset complete</string>
 
     <string name="dialog_traffic_cannot_check_title">Cannot Check Status</string>
-    <string name="dialog_traffic_cannot_check_message">ADB connection is not ready yet.\n\nThe app needs ADB access to manage system packages. Please ensure:\n\n• USB Debugging is enabled in Developer Options\n• The ADB authorization prompt has been accepted\n\nThe status will update automatically once connected.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB is not connected, and the app could not reconnect automatically.\n\nOn this vehicle, the standard \"USB debugging\" toggle in Developer Options is not enough by itself — the head unit\'s own wireless ADB (network debugging) setting also needs to be on, and a system update can reset it. Re-enable wireless ADB on the head unit, or connect via USB.\n\nThe status will update automatically once connected.</string>
 
     <string name="dialog_traffic_disable_title">Disable BYD Traffic Monitor?</string>
     <string name="dialog_traffic_disable_message">The BYD Traffic Monitor (com.byd.trafficmonitor) is a built-in system app that continuously monitors road traffic conditions in the background.\n\nWhy disable it?\n\n• Consumes mobile data (even when parked)\n• Uses CPU and battery in the background\n• Not needed if you use a separate navigation app\n• Can interfere with the dashcam\'s network usage\n\nThis is safe to disable — it only affects the built-in traffic overlay on the map. Your navigation, Bluetooth, and all other car functions remain unaffected.\n\nA hard reboot is required after disabling (hold center console button 5 seconds).</string>
@@ -513,9 +506,6 @@
     <string name="settings_about_title">About BladeWatch</string>
     <string name="settings_about_version_label">Version</string>
     <string name="settings_about_package_label">Build</string>
-    <string name="settings_about_auto_update_title">Auto-update from server</string>
-    <string name="settings_about_auto_update_value">Disable this while testing a local build. Turn it back on to resume checking GitHub for updates.</string>
-    <string name="settings_about_check_update_value">Check the latest GitHub release and install if newer.</string>
     <!-- Support-development section: tiered options, low-cost first.
          star → spread → coffee, in that visual order. Copy aims for
          personality without being corny — short, warm, specific. -->
@@ -628,7 +618,6 @@
     <string name="diagnostics_settings_subtitle">App preferences, theme, and language.</string>
 
     <!-- Settings → About / Privacy actions (rows) -->
-    <string name="settings_action_check_update">Check for updates</string>
     <string name="settings_action_reset_data">Reset data…</string>
 
     <!-- Content descriptions for rail / segmented controls -->

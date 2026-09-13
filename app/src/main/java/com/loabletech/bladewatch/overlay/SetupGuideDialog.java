@@ -68,7 +68,7 @@ public class SetupGuideDialog {
         if (tvVersionBanner != null) {
             if (isUpdate) {
                 tvVersionBanner.setText(context.getString(R.string.setup_version_banner,
-                        net.bladewatch.app.updater.AppUpdater.getDisplayVersion(context)));
+                        net.bladewatch.app.BuildConfig.VERSION_NAME));
                 tvVersionBanner.setVisibility(View.VISIBLE);
             } else {
                 tvVersionBanner.setVisibility(View.GONE);

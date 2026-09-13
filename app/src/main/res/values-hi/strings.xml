@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">पृष्ठभूमि सेवाएं</string>
     <string name="daemons_count_pending">लोड सेवाएं...</string>
     <string name="daemons_count_fmt">%1$d का %2$d चल रहा है</string>
-    <string name="update_preparing">अद्यतन की तैयारी ...</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">बैटरी स्वास्थ्य</string>
     <string name="battery_health_subtitle">स्वास्थ्य की स्थिति</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">यह %d रिकॉर्डिंग को स्थायी रूप से मिटा देगा।</item>
         <item quantity="other">यह %d रिकॉर्डिंगों को स्थायी रूप से मिटा देगा. यह रद्द नहीं किया जा सकता है.</item>
     </plurals>
-    <string name="toast_updated_to">%1$s पर अद्यतन</string>
-    <string name="toast_update_install_failed">अद्यतन स्थापना विफल: %1$s</string>
-    <string name="toast_checking_for_updates">अद्यतनों की जाँच...</string>
     <string name="toast_app_up_to_date">ऐप अद्यतित है (v%1$s)</string>
-    <string name="toast_update_check_failed">अद्यतन जांच विफल: %1$s</string>
     <string name="toast_storage_permission_required">रिकॉर्डिंग के लिए आवश्यक भंडारण अनुमति</string>
     <string name="toast_url_copied_short">URL कॉपी!</string>
     <string name="toast_camera_set_to_auto">ऑटो पर कैमरा सेट</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">पूर्ण रीसेट</string>
     <string name="dialog_traffic_cannot_check_title">स्थिति की जांच नहीं कर सका</string>
-    <string name="dialog_traffic_cannot_check_message">एडीबी कनेक्शन अभी तक तैयार नहीं है। सिस्टम पैकेज प्रबंधित करने के लिए एप्लिकेशन को एडीबी एक्सेस की आवश्यकता है। कृपया सुनिश्चित करें किः\n\n• USB डिबगिंग डेवलपर विकल्पों में सक्षम है\n• एडीबी प्राधिकरण प्रलोभन स्वीकार किया गया है\n\nएक बार कनेक्ट होने पर स्थिति स्वचालित रूप से अपडेट हो जाएगी।</string>
+    <string name="dialog_traffic_cannot_check_message">ADB कनेक्ट नहीं है, और ऐप खुद से फिर से कनेक्ट नहीं हो पाया।\n\nइस वाहन में, डेवलपर विकल्पों का सामान्य \"USB डिबगिंग\" स्विच अकेला पर्याप्त नहीं है — हेड यूनिट की अपनी वायरलेस ADB (नेटवर्क डिबगिंग) सेटिंग भी चालू होनी चाहिए, और सिस्टम अपडेट इसे बंद कर सकता है। हेड यूनिट पर वायरलेस ADB को पुनः चालू करें, या USB से कनेक्ट करें।\n\nकनेक्ट होते ही स्थिति खुद से अपडेट हो जाएगी।</string>
     <string name="dialog_traffic_disable_title">BYD ट्रैफिक मॉनिटर को निष्क्रिय करें?</string>
     <string name="dialog_traffic_disable_message">BYD ट्रैफिक मॉनिटर (com.byd.trafficmonitor) एक अंतर्निहित सिस्टम ऐप है जो लगातार पृष्ठभूमि में सड़क यातायात की स्थिति की निगरानी करता है।\n\n️ इसे निष्क्रिय क्यों करें?\n\n• मोबाइल डेटा का उपभोग करता है (यहां तक कि जब पार्किंग की जाती है)\n• पृष्ठभूमि में CPU और बैटरी का उपयोग करता है\n• यदि आप एक अलग नेविगेशन ऐप का उपयोग करते हैं\n• डैशकैम के नेटवर्क उपयोग में हस्तक्षेप कर सकता है\n\nयह निष्क्रिय करने के लिए सुरक्षित है  यह केवल नक्शे पर अंतर्निहित यातायात ओवरले को प्रभावित करता है। आपका नेविगेशन, Bluetooth, और अन्य सभी कार कार्यों को प्रभावित नहीं करता है।\n\n\nएक हार्ड रीबूट</string>
     <string name="dialog_traffic_enable_title">BYD ट्रैफिक मॉनिटर को फिर से सक्षम करें?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">BladeWatch के बारे में</string>
     <string name="settings_about_version_label">संस्करण</string>
     <string name="settings_about_package_label">निर्माण</string>
-    <string name="settings_about_check_update_value">नवीनतम GitHub रिलीज़ की जाँच करें और यदि नया हो तो इंस्टॉल करें।</string>
     <string name="settings_about_support_section">आप जैसे लोगों द्वारा संचालित</string>
     <string name="settings_about_support_share_title">किसी और मालिक को बताएं</string>
     <string name="settings_about_support_share_value">प्रत्येक साझा लिंक एक और BYD मालिक ओवरड्राइव की खोज करने में मदद करता है।</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">कोई ब्राउज़र नहीं मिला। URL कॉपीः %1$s</string>
     <string name="settings_about_support_kofi_title">अगले रिलीज को ईंधन</string>
     <string name="settings_about_support_kofi_value">Ko-fi पर एक कॉफी देर रात प्रतिबद्धताओं को आगे बढ़ाती है।</string>
-    <string name="settings_about_support_kofi_url">https://ko-fi.com/E1E71XALHX</string>
     <string name="settings_about_license_title">लाइसेंस</string>
     <string name="settings_about_license_value">MIT  ओपन सोर्स. पूर्ण पाठ देखने के लिए टैप करें.</string>
     <string name="settings_about_source_title">स्रोत कोड</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">https://github.com/yash-srivastava/BladeWatch-release/blob/main/license</string>
-    <string name="settings_about_source_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_star_title">GitHub पर छोड़ें</string>
     <string name="settings_about_star_value">यह एक सेकंड लेता है. यह बहुत मायने रखता है.</string>
-    <string name="settings_about_star_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_thanks_title">धन्यवाद</string>
     <string name="settings_about_thanks_subtitle">योगदानकर्ताओं और समर्थकों की मदद से निर्मित।</string>
     <string name="settings_about_contributors_title">योगदानकर्ता</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">कॉन्फ़िगर किया गया</string>
     <string name="integrations_status_not_set_up">स्थापित नहीं</string>
     <string name="integrations_configure_button">विन्यास</string>
-    <string name="settings_action_check_update">अद्यतनों की जाँच करें</string>
     <string name="settings_action_reset_data">डेटा रीसेट...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">निगरानी पर</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">वाहन SOH रीडआउट — परिकलित अनुमान की प्रतीक्षा है</string>
     <string name="soh_nominal_baseline">नाममात्र आधाररेखा — विश्वसनीय SOH डेटा की प्रतीक्षा है</string>
     <string name="rail_location">स्थान</string>
-    <string name="settings_about_auto_update_title">सर्वर से स्वतः-अपडेट</string>
-    <string name="settings_about_auto_update_value">स्थानीय बिल्ड का परीक्षण करते समय इसे बंद करें। GitHub अपडेट की जाँच फिर से शुरू करने के लिए इसे वापस चालू करें।</string>
     <string name="settings_drive_side_label">नेविगेशन साइड</string>
     <string name="settings_drive_side_subtitle">चुनें कि नेविगेशन मेनू स्क्रीन के किस ओर दिखे।</string>
     <string name="settings_drive_side_left">बाएँ</string>

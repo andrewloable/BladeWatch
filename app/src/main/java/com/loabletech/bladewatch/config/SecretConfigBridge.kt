@@ -17,6 +17,13 @@ object SecretConfigBridge {
 
     private val directStore = SecretConfigStore()
     private val lock = Any()
+
+    // ponytail: test seam — null = real UID-gated directStore (canWriteDirectly()
+    // requires shell UID 2000, meaningless off a real device); non-null = an
+    // injected store used unconditionally by the write methods a JVM test
+    // actually needs (putString/putLong/delete), skipping the UID check and the
+    // IPC fallback entirely. Mirrors SecretConfigStore's own legacyPathForTest seam.
+    @JvmField var directStoreForTest: SecretConfigStore? = null
     private val ipcExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "secret-config-ipc").apply { isDaemon = true }
     }
@@ -28,6 +35,7 @@ object SecretConfigBridge {
 
     @JvmStatic
     fun getString(section: String, key: String): String? {
+        directStoreForTest?.let { return it.getString(section, key) }
         val direct = synchronized(lock) {
             try { if (directStore.canReadDirectly()) directStore.getString(section, key) else Unit }
             catch (_: Exception) { Unit }
@@ -68,6 +76,7 @@ object SecretConfigBridge {
 
     @JvmStatic
     fun putString(section: String, key: String, value: String?): Boolean {
+        directStoreForTest?.let { return it.putString(section, key, value) }
         val direct = synchronized(lock) {
             try { if (directStore.canWriteDirectly() && directStore.putString(section, key, value)) true else Unit }
             catch (_: Exception) { Unit }
@@ -78,6 +87,7 @@ object SecretConfigBridge {
 
     @JvmStatic
     fun putLong(section: String, key: String, value: Long): Boolean {
+        directStoreForTest?.let { return it.putLong(section, key, value) }
         val direct = synchronized(lock) {
             try { if (directStore.canWriteDirectly() && directStore.putLong(section, key, value)) true else Unit }
             catch (_: Exception) { Unit }
@@ -98,6 +108,7 @@ object SecretConfigBridge {
 
     @JvmStatic
     fun delete(section: String, key: String): Boolean {
+        directStoreForTest?.let { return it.delete(section, key) }
         val direct = synchronized(lock) {
             try { if (directStore.canWriteDirectly() && directStore.delete(section, key)) true else Unit }
             catch (_: Exception) { Unit }

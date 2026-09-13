@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">背景服務</string>
     <string name="daemons_count_pending">這裡有許多貨物.</string>
     <string name="daemons_count_fmt">在 %1$d 的 %2$d 上行</string>
-    <string name="update_preparing">準備更新...</string>
-    <string name="update_percent_zero">沒有任何問題</string>
     <string name="battery_health_title">電池健康</string>
     <string name="battery_health_subtitle">衛生狀況</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">這樣會永久抹去%d錄音.</item>
         <item quantity="other">這樣會永久抹去%d錄音,</item>
     </plurals>
-    <string name="toast_updated_to">更新至 %1$s</string>
-    <string name="toast_update_install_failed">更新安裝失敗: %1$s</string>
-    <string name="toast_checking_for_updates">檢查是否有更新.</string>
     <string name="toast_app_up_to_date">應用程式已更新 (v%1$s)</string>
-    <string name="toast_update_check_failed">更新檢查失敗: %1$s</string>
     <string name="toast_storage_permission_required">需要存儲許可,</string>
     <string name="toast_url_copied_short">這就是 URL複製!</string>
     <string name="toast_camera_set_to_auto">攝影機設定為自動</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">完成重置</string>
     <string name="dialog_traffic_cannot_check_title">無法檢查狀況</string>
-    <string name="dialog_traffic_cannot_check_message">應用程式需要ADB接入來管理系統包. 請確認:\n\n• 在開發者選項中已啟用USB Debugging\n• ADB授權提示已被接受\n\n狀態會自动更新,一旦連接.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB 未連接,應用程式也無法自動重新連接。\n\n在這輛車上,僅開啟開發人員選項中常見的「USB 偵錯」開關是不夠的 —— 主機本身的無線 ADB(網路偵錯)設定也必須開啟,而系統更新可能會將其重設。請在主機上重新啟用無線 ADB,或改用 USB 連接。\n\n連接後,狀態將自動更新。</string>
     <string name="dialog_traffic_disable_title">關閉BYD交通監測器?</string>
     <string name="dialog_traffic_disable_message">BYD 交通監控器 (com.byd.trafficmonitor) 是一個內建系統應用程式,持續監控道路交通情況在背景下.\n\n️ 為什麼禁用它?\n\n• 使用移動數據 (即使停車時)\n• 使用CPU和電池在背景下\n• 不需要使用別的導航應用程式\n• 可以干擾Dashcam的網絡使用\n\n 這可以安全禁用.</string>
     <string name="dialog_traffic_enable_title">請重新啟動BYD交通監測器?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">關於BladeWatch</string>
     <string name="settings_about_version_label">版本</string>
     <string name="settings_about_package_label">建構</string>
-    <string name="settings_about_check_update_value">檢查最新的GitHub版本，如果較新，請安裝。</string>
     <string name="settings_about_support_section">靠像你這樣的人動力</string>
     <string name="settings_about_support_share_title">告訴另一位車主</string>
     <string name="settings_about_support_share_value">每個共享的連結都幫助另一位BYD老板發現BladeWatch.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">沒有搜尋器. URL複製: %1$s</string>
     <string name="settings_about_support_kofi_title">在下次發行中,</string>
     <string name="settings_about_support_kofi_value">咖啡讓晚上的約定持續.</string>
-    <string name="settings_about_support_kofi_url">沒有任何樓盤符合您的搜尋 -</string>
     <string name="settings_about_license_title">授權使用</string>
     <string name="settings_about_license_value">開源. 按下來查看全文.</string>
     <string name="settings_about_source_title">源代碼</string>
     <string name="settings_about_source_value">沒有任何相關資訊,</string>
-    <string name="settings_about_license_url">沒有任何樓盤符合您的搜尋 -</string>
-    <string name="settings_about_source_url">沒有任何樓盤符合您的搜尋 -</string>
     <string name="settings_about_star_title">在 GitHub 上放一個</string>
     <string name="settings_about_star_value">需要一秒, 這意味著很多.</string>
-    <string name="settings_about_star_url">沒有任何樓盤符合您的搜尋 -</string>
     <string name="settings_about_thanks_title">致謝</string>
     <string name="settings_about_thanks_subtitle">在貢獻者和支持者的幫助下打造。</string>
     <string name="settings_about_contributors_title">貢獻者</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">配置</string>
     <string name="integrations_status_not_set_up">沒有設置</string>
     <string name="integrations_configure_button">設定方式</string>
-    <string name="settings_action_check_update">查看是否有更新</string>
     <string name="settings_action_reset_data">請重新設定資料.</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">守望中</string>
@@ -563,8 +551,6 @@
     <string name="soh_oem_readout">車輛 SOH 讀數 — 等待計算估值</string>
     <string name="soh_nominal_baseline">標稱基準 — 等待可信的 SOH 資料</string>
     <string name="rail_location">位置</string>
-    <string name="settings_about_auto_update_title">從伺服器自動更新</string>
-    <string name="settings_about_auto_update_value">測試本機建置時請停用此項。重新開啟即可繼續檢查 GitHub 更新。</string>
     <string name="settings_drive_side_label">導覽側邊</string>
     <string name="settings_drive_side_subtitle">選擇導覽選單顯示在螢幕的哪一側。</string>
     <string name="settings_drive_side_left">左側</string>

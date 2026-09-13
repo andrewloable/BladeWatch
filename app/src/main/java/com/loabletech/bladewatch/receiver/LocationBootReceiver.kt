@@ -19,7 +19,7 @@ class LocationBootReceiver : BroadcastReceiver() {
     
     override fun onReceive(context: Context, intent: Intent) {
         // Skip MY_PACKAGE_REPLACED — MainActivity starts LocationSidecarService on
-        // every launch, and the post-update path needs UpdateLifecycle.hardResetDaemons
+        // every launch, and the post-install path needs DaemonHardReset.hardResetDaemons
         // to run first. Keep cold-boot path so location works without UI.
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
 

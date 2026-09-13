@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">Службы с фоном</string>
     <string name="daemons_count_pending">Услуги по загрузке...</string>
     <string name="daemons_count_fmt">%1$d из %2$d работающий</string>
-    <string name="update_preparing">Подготавливаю обновление...</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">Здоровье батареи</string>
     <string name="battery_health_subtitle">Состояние здоровья</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">Это навсегда удалит запись %d.</item>
         <item quantity="other">Это навсегда удалит записи %d.</item>
     </plurals>
-    <string name="toast_updated_to">Обновлено на %1$s</string>
-    <string name="toast_update_install_failed">Не удалось установить обновление: %1$s</string>
-    <string name="toast_checking_for_updates">Проверяю обновления...</string>
     <string name="toast_app_up_to_date">Приложение обновлено (v%1$s)</string>
-    <string name="toast_update_check_failed">Не удалось проверить обновление: %1$s</string>
     <string name="toast_storage_permission_required">Разрешение на хранение требуется для записей</string>
     <string name="toast_url_copied_short">URL скопирован!</string>
     <string name="toast_camera_set_to_auto">Камера настроена на Авто</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">Перезагрузка завершена</string>
     <string name="dialog_traffic_cannot_check_title">Не могу проверить статус</string>
-    <string name="dialog_traffic_cannot_check_message">Подключение ADB еще не готово.\n\nПриложение нуждается в доступе ADB для управления системными пакетами. Пожалуйста, убедитесь:\n\n• USB Debugging включена в параметрах разработчика\n• Просьба о разрешении ADB была принята\n\nСтатус будет обновляться автоматически после подключения.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB не подключен, и приложению не удалось переподключиться автоматически.\n\nНа этом автомобиле обычного переключателя «Отладка по USB» в параметрах разработчика недостаточно — также должна быть включена собственная настройка беспроводного ADB (отладка по сети) головного устройства, а обновление системы может её сбросить. Включите беспроводной ADB на головном устройстве заново или подключитесь через USB.\n\nСтатус обновится автоматически после подключения.</string>
     <string name="dialog_traffic_disable_title">Выключить ЗЗ0XX Монитор движения?</string>
     <string name="dialog_traffic_disable_message">BYD Traffic Monitor (com.byd.trafficmonitor) - встроенное системное приложение, которое постоянно отслеживает условия дорожного движения в фоне.\n\n️ Почему отключить его?\n\n• Потребляет мобильные данные (даже при парковке)\n• Использует CPU и батарею в фоне\n• Не требуется, если вы используете отдельное навигационное приложение\n• Может помешать использованию сети Dashcam\n\nЭто безопасно отключить  это влияет только на встроенное перекрытие дорожного движения на карте. Ваша навигация, Bluetooth и все другие функции автомобиля остаются незатронутыми.\n\nСердкий перезагрузка</string>
     <string name="dialog_traffic_enable_title">Возобновить управление на дороге BYD?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">О BladeWatch</string>
     <string name="settings_about_version_label">Версия</string>
     <string name="settings_about_package_label">Построение</string>
-    <string name="settings_about_check_update_value">Проверьте последнюю версию GitHub и установите, если она новее.</string>
     <string name="settings_about_support_section">Поддерживаются такими людьми, как ты.</string>
     <string name="settings_about_support_share_title">Расскажите другому владельцу</string>
     <string name="settings_about_support_share_value">Каждый общий ссылка помогает другому владельцу BYD обнаружить BladeWatch.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">Никакой браузер не найден. URL скопирован: %1$s</string>
     <string name="settings_about_support_kofi_title">Заправляйте следующий выпуск</string>
     <string name="settings_about_support_kofi_value">Кофе на Ко-Фи заставляет задерживаться поздней ночи.</string>
-    <string name="settings_about_support_kofi_url">https://ko-fi.com/E1E71XALHX</string>
     <string name="settings_about_license_title">Лицензия</string>
     <string name="settings_about_license_value">MIT  открытый код. Нажмите, чтобы просмотреть полный текст.</string>
     <string name="settings_about_source_title">Исходный код</string>
     <string name="settings_about_source_value">Github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">https://github.com/yash-srivastava/BladeWatch-release/blob/main/LICENSE</string>
-    <string name="settings_about_source_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_star_title">Отпустить на GitHub</string>
     <string name="settings_about_star_value">Это много значит.</string>
-    <string name="settings_about_star_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_thanks_title">Спасибо</string>
     <string name="settings_about_thanks_subtitle">Создано с помощью контрибьюторов и сторонников.</string>
     <string name="settings_about_contributors_title">Контрибьюторы</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">Конфигурированные</string>
     <string name="integrations_status_not_set_up">Не установлено</string>
     <string name="integrations_configure_button">Конфигурация</string>
-    <string name="settings_action_check_update">Проверяйте обновления</string>
     <string name="settings_action_reset_data">Перезагрузить данные...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">На страже</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">Показания SOH автомобиля — ожидание расчётной оценки</string>
     <string name="soh_nominal_baseline">Номинальная база — ожидание достоверных данных SOH</string>
     <string name="rail_location">Местоположение</string>
-    <string name="settings_about_auto_update_title">Автообновление с сервера</string>
-    <string name="settings_about_auto_update_value">Отключите при тестировании локальной сборки. Включите снова, чтобы возобновить проверку обновлений на GitHub.</string>
     <string name="settings_drive_side_label">Сторона навигации</string>
     <string name="settings_drive_side_subtitle">Выберите, с какой стороны экрана будет меню навигации.</string>
     <string name="settings_drive_side_left">Слева</string>

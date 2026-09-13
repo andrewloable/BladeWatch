@@ -13,7 +13,10 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * TCP Command Server - handles JSON commands from DaemonClient.
@@ -31,6 +34,32 @@ public class TcpCommandServer {
 
     private SecretConfigStore store() {
         return secretStoreForTest != null ? secretStoreForTest : SECRET_STORE;
+    }
+
+    // ponytail: test seam — null = real "pgrep"; non-null = a deliberately-bogus
+    // path so isProcessRunning()'s catch branch is reachable from a test.
+    static String pgrepCommandForTest = null;
+
+    // BladeWatch-1xt9: mirrors DaemonType.processName in
+    // app/src/main/java/com/loabletech/bladewatch/ui/model/DaemonType.kt — kept as a
+    // local copy rather than an import so this low-level server package doesn't take
+    // a dependency on the ui.model layer. Update both if a process name ever changes.
+    //
+    // NOTE: built with LinkedHashMap, NOT Map.of(). java.util.Map.of is a Java 9 API
+    // that Android only provides from API 30; this module is minSdk 25 and the target
+    // head unit is API 29, and core library desugaring is not enabled. Because this is
+    // a static final field, Map.of() would throw NoSuchMethodError from the static
+    // initializer — i.e. ExceptionInInitializerError for the whole class, taking the
+    // IPC command server down with it. Lint's NewApi check cannot catch this here
+    // because the module sets lint { abortOnError = false }.
+    private static final Map<String, String> DAEMON_PROCESS_NAMES;
+    static {
+        Map<String, String> names = new LinkedHashMap<>();
+        names.put("CAMERA_DAEMON", "byd_cam_daemon");
+        names.put("SENTRY_DAEMON", "sentry_daemon");
+        names.put("ACC_SENTRY_DAEMON", "acc_sentry_daemon");
+        names.put("ZROK_TUNNEL", "zrok");
+        DAEMON_PROCESS_NAMES = Collections.unmodifiableMap(names);
     }
 
     public TcpCommandServer(int port) {
@@ -485,12 +514,69 @@ public class TcpCommandServer {
             // uy93.2: "shell" (free-form sh -c over IPC) removed — RCE as UID 2000.
             // No live caller found; SentryDaemon runs its own shell commands directly.
 
+            case "daemonStatus": {
+                // BladeWatch-1xt9: process-liveness only (no ADB — this process already
+                // runs as shell UID, same as the daemons it's checking). A boolean is
+                // all an external check can honestly report; STARTING/STOPPING/ERROR
+                // are tracked client-side during an in-flight start/stop call, same as
+                // the native AdbDaemonLauncher-based check already does.
+                JSONObject daemons = new JSONObject();
+                for (Map.Entry<String, String> entry : DAEMON_PROCESS_NAMES.entrySet()) {
+                    daemons.put(entry.getKey(), isProcessRunning(entry.getValue()));
+                }
+                response.put("status", "ok");
+                response.put("daemons", daemons);
+                break;
+            }
+
             default:
                 response.put("status", "error");
                 response.put("message", "Unknown command: " + action);
         }
         
         return response;
+    }
+
+    /**
+     * True if a process named exactly {@code processName} is currently running,
+     * checked locally via {@code pgrep -x} — this process already runs as shell UID
+     * (see AdbDaemonLauncher.launchDaemon), the same UID the daemon processes run as,
+     * so no ADB round-trip is needed. Package-private so
+     * {@link DaemonStatusCommandTest} can exercise it directly.
+     */
+    boolean isProcessRunning(String processName) {
+        Process p = null;
+        try {
+            String pgrep = pgrepCommandForTest != null ? pgrepCommandForTest : "pgrep";
+            p = new ProcessBuilder(pgrep, "-x", processName)
+                    .redirectErrorStream(true)
+                    .start();
+            return p.waitFor(2, TimeUnit.SECONDS) && p.exitValue() == 0;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            // Every ProcessBuilder.start() allocates pipe file descriptors that are NOT
+            // released just because the child exited — they live until the Process is
+            // GC'd. daemonStatus spawns one of these per daemon (4) per poll, so without
+            // an explicit close this leaks FDs steadily and eventually throws EMFILE
+            // ("Too many open files") inside the daemon. destroy() also reaps the child
+            // in the waitFor-timeout case, where it is otherwise left running.
+            if (p != null) {
+                closeQuietly(p.getInputStream());
+                closeQuietly(p.getOutputStream());
+                closeQuietly(p.getErrorStream());
+                p.destroy();
+            }
+        }
+    }
+
+    private static void closeQuietly(java.io.Closeable c) {
+        if (c == null) return;
+        try {
+            c.close();
+        } catch (Exception ignored) {
+            // Closing a pipe on an already-exited child routinely throws; nothing to do.
+        }
     }
 
     // ==================== STATUS HELPERS ====================

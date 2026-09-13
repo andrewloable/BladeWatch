@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">Dịch vụ nền</string>
     <string name="daemons_count_pending">Dịch vụ tải...</string>
     <string name="daemons_count_fmt">%1$d của %2$d chạy</string>
-    <string name="update_preparing">Chuẩn bị cập nhật...</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">Sức khỏe pin</string>
     <string name="battery_health_subtitle">Tình trạng sức khỏe</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">Điều này sẽ xóa vĩnh viễn bản ghi %d.</item>
         <item quantity="other">Điều này sẽ xóa vĩnh viễn các bản ghi %d.</item>
     </plurals>
-    <string name="toast_updated_to">Được cập nhật lên %1$s</string>
-    <string name="toast_update_install_failed">Cập nhật cài đặt thất bại: %1$s</string>
-    <string name="toast_checking_for_updates">Xem xem có thông tin mới không...</string>
     <string name="toast_app_up_to_date">Ứng dụng được cập nhật (v%1$s)</string>
-    <string name="toast_update_check_failed">Kiểm tra cập nhật không thành công: %1$s</string>
     <string name="toast_storage_permission_required">Giấy phép lưu trữ cần thiết cho các bản ghi</string>
     <string name="toast_url_copied_short">URL sao chép!</string>
     <string name="toast_camera_set_to_auto">Máy ảnh được thiết lập để tự động</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">Đặt lại hoàn chỉnh</string>
     <string name="dialog_traffic_cannot_check_title">Không thể kiểm tra tình trạng</string>
-    <string name="dialog_traffic_cannot_check_message">Kết nối ADB vẫn chưa sẵn sàng.\n\n Ứng dụng cần quyền truy cập ADB để quản lý các gói hệ thống. Xin đảm bảo:\n\n• USB Debugging được bật trong Developer Options\n• Đơn xin ủy quyền ADB đã được chấp nhận\n\nHiện trạng sẽ tự động cập nhật một khi kết nối.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB chưa được kết nối và ứng dụng không thể tự động kết nối lại.\n\nTrên chiếc xe này, công tắc \"Gỡ lỗi USB\" thông thường trong Tùy chọn nhà phát triển thôi là chưa đủ — cài đặt ADB không dây (gỡ lỗi qua mạng) riêng của màn hình trung tâm cũng cần được bật, và một bản cập nhật hệ thống có thể tắt nó đi. Hãy bật lại ADB không dây trên màn hình trung tâm, hoặc kết nối qua USB.\n\nTrạng thái sẽ tự động cập nhật ngay khi kết nối được.</string>
     <string name="dialog_traffic_disable_title">Thiết lập BYD Traffic Monitor?</string>
     <string name="dialog_traffic_disable_message">BYD Traffic Monitor (com.byd.trafficmonitor) là một ứng dụng hệ thống tích hợp liên tục theo dõi tình trạng giao thông đường bộ trong nền.\n\n️ Tại sao vô hiệu hóa nó?\n\n• Sử dụng dữ liệu di động (ngay cả khi đậu xe)\n• Sử dụng CPU và pin trong nền\n• Không cần thiết nếu bạn sử dụng ứng dụng điều hướng riêng\n• Có thể can thiệp vào việc sử dụng mạng của máy ảnh hưởng.</string>
     <string name="dialog_traffic_enable_title">Khả năng kiểm tra giao thông BYD lại?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">Về BladeWatch</string>
     <string name="settings_about_version_label">Phiên bản</string>
     <string name="settings_about_package_label">Xây dựng</string>
-    <string name="settings_about_check_update_value">Kiểm tra bản phát hành GitHub mới nhất và cài đặt nếu mới hơn.</string>
     <string name="settings_about_support_section">Được vận hành bởi những người như anh</string>
     <string name="settings_about_support_share_title">Hãy nói với chủ xe khác</string>
     <string name="settings_about_support_share_value">Mỗi liên kết được chia sẻ giúp một chủ sở hữu BYD khác khám phá BladeWatch.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">Không tìm thấy trình duyệt. URL sao chép: %1$s</string>
     <string name="settings_about_support_kofi_title">Chất nhiên liệu phát hành tiếp theo</string>
     <string name="settings_about_support_kofi_value">Một tách cà phê trên Ko-fi giữ cho các cam kết đêm đến.</string>
-    <string name="settings_about_support_kofi_url">https://ko-fi.com/E1E71XALHX</string>
     <string name="settings_about_license_title">Giấy phép</string>
     <string name="settings_about_license_value">MIT  mã nguồn mở. Nhấp để xem toàn văn bản.</string>
     <string name="settings_about_source_title">Mã nguồn</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">https://github.com/yash-srivastava/BladeWatch-release/blob/main/license</string>
-    <string name="settings_about_source_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_star_title">Thả trên GitHub</string>
     <string name="settings_about_star_value">Chỉ mất một giây thôi, có nghĩa là rất nhiều.</string>
-    <string name="settings_about_star_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_thanks_title">Cảm ơn</string>
     <string name="settings_about_thanks_subtitle">Được xây dựng với sự giúp đỡ của những người đóng góp và ủng hộ.</string>
     <string name="settings_about_contributors_title">Người đóng góp</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">Định dạng</string>
     <string name="integrations_status_not_set_up">Không được thiết lập</string>
     <string name="integrations_configure_button">Thiết lập</string>
-    <string name="settings_action_check_update">Kiểm tra các bản cập nhật</string>
     <string name="settings_action_reset_data">Đặt lại dữ liệu...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">Đang canh chừng</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">Số liệu SOH của xe — đang chờ ước tính</string>
     <string name="soh_nominal_baseline">Mốc danh định — đang chờ dữ liệu SOH tin cậy</string>
     <string name="rail_location">Vị trí</string>
-    <string name="settings_about_auto_update_title">Tự động cập nhật từ máy chủ</string>
-    <string name="settings_about_auto_update_value">Tắt khi đang thử bản dựng cục bộ. Bật lại để tiếp tục kiểm tra cập nhật trên GitHub.</string>
     <string name="settings_drive_side_label">Bên điều hướng</string>
     <string name="settings_drive_side_subtitle">Chọn bên màn hình hiển thị menu điều hướng.</string>
     <string name="settings_drive_side_left">Trái</string>

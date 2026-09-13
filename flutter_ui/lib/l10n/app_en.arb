@@ -1,0 +1,2206 @@
+{
+  "@@locale": "en",
+  "app_name": "BladeWatch",
+  "@app_name": {},
+  "accessibility_service_description": "Keeps BladeWatch vehicle monitoring active in the background. This service does not read or interact with screen content.",
+  "@accessibility_service_description": {},
+  "action_cancel": "Cancel",
+  "@action_cancel": {},
+  "action_clear_plain": "Clear",
+  "@action_clear_plain": {},
+  "action_select_all": "Select all",
+  "@action_select_all": {},
+  "action_select_all_short": "All",
+  "@action_select_all_short": {},
+  "action_delete": "Delete",
+  "@action_delete": {},
+  "action_done": "DONE",
+  "@action_done": {},
+  "action_remind_me_later": "REMIND ME LATER",
+  "@action_remind_me_later": {},
+  "action_retry": "Retry",
+  "@action_retry": {},
+  "action_run": "Run",
+  "@action_run": {},
+  "action_clear_output": "Clear Output",
+  "@action_clear_output": {},
+  "cd_camera": "Camera",
+  "@cd_camera": {},
+  "cd_qr": "QR",
+  "@cd_qr": {},
+  "cd_qr_code": "QR Code",
+  "@cd_qr_code": {},
+  "cd_show_hide_token": "Show/Hide Token",
+  "@cd_show_hide_token": {},
+  "cd_copy_token": "Copy Token",
+  "@cd_copy_token": {},
+  "cd_copy_url": "Copy URL",
+  "@cd_copy_url": {},
+  "cd_clear_logs": "Clear logs",
+  "@cd_clear_logs": {},
+  "cd_expand_collapse": "Expand/Collapse",
+  "@cd_expand_collapse": {},
+  "cd_recording_status": "Recording status",
+  "@cd_recording_status": {},
+  "cd_trip_tracking_status": "Trip tracking status",
+  "@cd_trip_tracking_status": {},
+  "cd_video_thumbnail": "Video thumbnail",
+  "@cd_video_thumbnail": {},
+  "cd_play": "Play",
+  "@cd_play": {},
+  "cd_back": "Back",
+  "@cd_back": {},
+  "cd_play_pause": "Play/Pause",
+  "@cd_play_pause": {},
+  "cd_player_prev": "Previous recording",
+  "@cd_player_prev": {},
+  "cd_player_next": "Next recording",
+  "@cd_player_next": {},
+  "cd_player_maximize": "Maximize player",
+  "@cd_player_maximize": {},
+  "cd_player_minimize": "Exit fullscreen",
+  "@cd_player_minimize": {},
+  "cd_delete": "Delete",
+  "@cd_delete": {},
+  "cd_expand": "Expand",
+  "@cd_expand": {},
+  "cd_configure": "Configure",
+  "@cd_configure": {},
+  "cd_download_log": "Download log",
+  "@cd_download_log": {},
+  "cd_reset": "Reset",
+  "@cd_reset": {},
+  "cd_battery": "Battery",
+  "@cd_battery": {},
+  "cd_step_completed": "Step completed",
+  "@cd_step_completed": {},
+  "cd_permission_granted": "Permission granted",
+  "@cd_permission_granted": {},
+  "overlay_rec_inactive_label": "REC",
+  "@overlay_rec_inactive_label": {},
+  "overlay_trip_inactive_label": "TRIP",
+  "@overlay_trip_inactive_label": {},
+  "log_entry_default_timestamp": "12:34:56",
+  "@log_entry_default_timestamp": {},
+  "log_entry_default_tag": "[TAG]",
+  "@log_entry_default_tag": {},
+  "log_entry_default_message": "Log message here",
+  "@log_entry_default_message": {},
+  "daemon_card_default_name": "Service Name",
+  "@daemon_card_default_name": {},
+  "daemon_card_default_status": "Status message",
+  "@daemon_card_default_status": {},
+  "daemon_card_subprocesses": "PROCESSES",
+  "@daemon_card_subprocesses": {},
+  "logs_panel_title": "Logs",
+  "@logs_panel_title": {},
+  "url_connecting": "Connecting…",
+  "@url_connecting": {},
+  "camera_selection_title": "Camera Selection",
+  "@camera_selection_title": {},
+  "camera_selection_subtitle": "Select panoramic camera source",
+  "@camera_selection_subtitle": {},
+  "camera_current_auto": "Current: Auto",
+  "@camera_current_auto": {},
+  "camera_option_auto": "Auto (detect on startup)",
+  "@camera_option_auto": {},
+  "camera_option_0": "Camera 0 — Atto trims",
+  "@camera_option_0": {},
+  "camera_option_1": "Camera 1 — Seal (default)",
+  "@camera_option_1": {},
+  "camera_option_2": "Camera 2",
+  "@camera_option_2": {},
+  "camera_option_3": "Camera 3",
+  "@camera_option_3": {},
+  "camera_option_4": "Camera 4",
+  "@camera_option_4": {},
+  "camera_option_5": "Camera 5",
+  "@camera_option_5": {},
+  "camera_selection_hint": "Auto picks the right camera for your trim on every boot. Camera 1 = BYD Seal, Camera 0 = Atto trims. Restart the camera service after changing camera ID for the setting to take effect.",
+  "@camera_selection_hint": {},
+  "dashboard_scan_to_connect": "Scan to Connect",
+  "@dashboard_scan_to_connect": {},
+  "dashboard_qr_waiting": "Waiting for tunnel…",
+  "@dashboard_qr_waiting": {},
+  "dashboard_daemons_running_default": "0/5 Running",
+  "@dashboard_daemons_running_default": {},
+  "dashboard_device_id_loading": "…",
+  "@dashboard_device_id_loading": {},
+  "dashboard_access_code": "Access Code",
+  "@dashboard_access_code": {},
+  "dashboard_token_masked": "••••••••",
+  "@dashboard_token_masked": {},
+  "dashboard_regenerate_token": "Regenerate Token",
+  "@dashboard_regenerate_token": {},
+  "dashboard_set_password": "Set Password",
+  "@dashboard_set_password": {},
+  "cd_set_password": "Set custom password",
+  "@cd_set_password": {},
+  "dialog_set_password_title": "Set Custom Password",
+  "@dialog_set_password_title": {},
+  "dialog_set_password_message": "Enter a new access password. This replaces the auto-generated token.",
+  "@dialog_set_password_message": {},
+  "dialog_set_password_hint": "New password (min 12 characters)",
+  "@dialog_set_password_hint": {},
+  "toast_password_set": "Password updated",
+  "@toast_password_set": {},
+  "toast_password_too_short": "Password must be at least 12 characters",
+  "@toast_password_too_short": {},
+  "toast_password_save_failed": "Failed to save password — service not ready",
+  "@toast_password_save_failed": {},
+  "setup_guide_title": "Getting Started",
+  "@setup_guide_title": {},
+  "setup_guide_subtitle": "Three quick steps to get the best experience:",
+  "@setup_guide_subtitle": {},
+  "setup_step_one_label": "1",
+  "@setup_step_one_label": {},
+  "setup_step_two_label": "2",
+  "@setup_step_two_label": {},
+  "setup_step_three_label": "3",
+  "@setup_step_three_label": {},
+  "setup_language_title": "Pick Your Language",
+  "@setup_language_title": {},
+  "setup_language_body": "Defaults to your head unit's language. Tap to choose a different one for the BladeWatch app and the web tunnel.",
+  "@setup_language_body": {},
+  "setup_language_button": "Choose Language",
+  "@setup_language_button": {},
+  "setup_autostart_title": "Disable Auto-Start Restriction",
+  "@setup_autostart_title": {},
+  "setup_autostart_body": "Tap below to open BYD Auto-Start. Find BladeWatch in the list and uncheck the box. BYD wipes this on every install — you'll redo it after updates.",
+  "@setup_autostart_body": {},
+  "setup_autostart_button": "Open BYD Auto-Start",
+  "@setup_autostart_button": {},
+  "setup_overlay_title": "Allow Display Over Other Apps",
+  "@setup_overlay_title": {},
+  "setup_overlay_body": "Enable this to show a floating status indicator for recording and trip tracking on top of other apps.",
+  "@setup_overlay_body": {},
+  "setup_overlay_button": "Open Overlay Settings",
+  "@setup_overlay_button": {},
+  "cd_close": "Close",
+  "@cd_close": {},
+  "language_picker_title": "Language",
+  "@language_picker_title": {},
+  "language_picker_subtitle_fmt": "{arg1} languages available",
+  "@language_picker_subtitle_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "language_picker_subtitle_pending": "Choose a language",
+  "@language_picker_subtitle_pending": {},
+  "language_auto_title": "Auto",
+  "@language_auto_title": {},
+  "language_auto_subtitle": "Follow system · {arg1}",
+  "@language_auto_subtitle": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "language_label_auto_fmt": "{arg1} · Auto",
+  "@language_label_auto_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "adb_prompt": "$",
+  "@adb_prompt": {},
+  "adb_command_hint": "Enter command…",
+  "@adb_command_hint": {},
+  "adb_preset_commands_header": "Preset commands",
+  "@adb_preset_commands_header": {},
+  "adb_output_header": "Output",
+  "@adb_output_header": {},
+  "adb_output_ready": "$ Ready for commands…",
+  "@adb_output_ready": {},
+  "adb_console_hero_title": "ADB Console",
+  "@adb_console_hero_title": {},
+  "adb_console_hero_subtitle": "Run shell commands on the device",
+  "@adb_console_hero_subtitle": {},
+  "adb_console_unavailable_title": "ADB is not connected",
+  "@adb_console_unavailable_title": {},
+  "adb_console_unavailable_body": "On this vehicle, the standard \"USB debugging\" toggle in Developer Options is not enough by itself — the head unit's own wireless ADB (network debugging) setting also needs to be on, and a system update can reset it. Re-enable wireless ADB on the head unit, or connect via USB.",
+  "@adb_console_unavailable_body": {},
+  "adb_console_auth_pending_title": "Waiting for approval",
+  "@adb_console_auth_pending_title": {},
+  "adb_console_auth_pending_body": "Check the head unit's screen for an \"Allow USB debugging?\" prompt and accept it, then retry.",
+  "@adb_console_auth_pending_body": {},
+  "performance_connecting": "Connecting to performance monitor…",
+  "@performance_connecting": {},
+  "performance_hero_title": "System Performance",
+  "@performance_hero_title": {},
+  "performance_cpu_title": "CPU",
+  "@performance_cpu_title": {},
+  "performance_cpu_system_usage": "System Usage",
+  "@performance_cpu_system_usage": {},
+  "performance_cpu_app_usage": "App Usage",
+  "@performance_cpu_app_usage": {},
+  "performance_frequency_label": "Frequency",
+  "@performance_frequency_label": {},
+  "performance_temperature_label": "Temperature",
+  "@performance_temperature_label": {},
+  "performance_temperature_na": "N/A",
+  "@performance_temperature_na": {},
+  "performance_memory_title": "Memory",
+  "@performance_memory_title": {},
+  "performance_usage_label": "Usage",
+  "@performance_usage_label": {},
+  "performance_memory_total": "Total",
+  "@performance_memory_total": {},
+  "performance_memory_used": "Used",
+  "@performance_memory_used": {},
+  "performance_memory_app": "App",
+  "@performance_memory_app": {},
+  "performance_gpu_title": "GPU",
+  "@performance_gpu_title": {},
+  "performance_app_process_title": "App Process",
+  "@performance_app_process_title": {},
+  "performance_threads_label": "Threads",
+  "@performance_threads_label": {},
+  "performance_gc_cycles_label": "GC Cycles",
+  "@performance_gc_cycles_label": {},
+  "performance_open_fds_label": "Open FDs",
+  "@performance_open_fds_label": {},
+  "performance_refreshing_footer": "Refreshing every 3 seconds",
+  "@performance_refreshing_footer": {},
+  "webview_loading": "Loading…",
+  "@webview_loading": {},
+  "webview_camera_daemon_not_running": "Camera Not Running",
+  "@webview_camera_daemon_not_running": {},
+  "webview_start_camera_daemon": "Start the Camera service from the Services screen to access this page.",
+  "@webview_start_camera_daemon": {},
+  "zrok_enable_token_hint": "Enable Token",
+  "@zrok_enable_token_hint": {},
+  "zrok_token_storage_note": "Token is stored securely and shared between the app and background services.",
+  "@zrok_token_storage_note": {},
+  "zrok_reset_environment": "Reset Zrok Environment",
+  "@zrok_reset_environment": {},
+  "zrok_reset_environment_desc": "Removes environment and token. You will need to re-enable with your token (uses a device slot).",
+  "@zrok_reset_environment_desc": {},
+  "reset_title": "Reset Data",
+  "@reset_title": {},
+  "reset_subtitle": "Wipe accumulated data by category",
+  "@reset_subtitle": {},
+  "reset_warning": "This cannot be undone. Recordings, trips, and battery history will be permanently deleted.",
+  "@reset_warning": {},
+  "reset_cat_trips": "Trips",
+  "@reset_cat_trips": {},
+  "reset_cat_trips_desc": "Trip history, routes, weekly/monthly rollups",
+  "@reset_cat_trips_desc": {},
+  "reset_cat_soc_history": "SoC & 12V history",
+  "@reset_cat_soc_history": {},
+  "reset_cat_soc_history_desc": "SoC samples, charging sessions, voltage logs",
+  "@reset_cat_soc_history_desc": {},
+  "reset_cat_soh": "SoH calibration",
+  "@reset_cat_soh": {},
+  "reset_cat_soh_desc": "Re-detects nominal capacity, re-seeds estimate from BMS",
+  "@reset_cat_soh_desc": {},
+  "reset_cat_recordings": "Recordings (videos)",
+  "@reset_cat_recordings": {},
+  "reset_cat_recordings_desc": "All MP4s in the recordings folder",
+  "@reset_cat_recordings_desc": {},
+  "reset_cat_sentry_events": "Surveillance events",
+  "@reset_cat_sentry_events": {},
+  "reset_cat_sentry_events_desc": "Surveillance event clips and JSON sidecars",
+  "@reset_cat_sentry_events_desc": {},
+  "reset_cat_proximity": "Proximity recordings",
+  "@reset_cat_proximity": {},
+  "reset_cat_proximity_desc": "Radar-triggered event MP4s",
+  "@reset_cat_proximity_desc": {},
+  "reset_cat_trip_files": "Trip telemetry files",
+  "@reset_cat_trip_files": {},
+  "reset_cat_trip_files_desc": "Per-trip JSON telemetry on disk",
+  "@reset_cat_trip_files_desc": {},
+  "recording_lib_chip_any": "Any",
+  "@recording_lib_chip_any": {},
+  "recording_lib_chip_person": "Person",
+  "@recording_lib_chip_person": {},
+  "recording_lib_chip_vehicle": "Vehicle",
+  "@recording_lib_chip_vehicle": {},
+  "recording_lib_chip_bike": "Bike",
+  "@recording_lib_chip_bike": {},
+  "recording_lib_chip_animal": "Animal",
+  "@recording_lib_chip_animal": {},
+  "recording_lib_chip_alert": "Alert",
+  "@recording_lib_chip_alert": {},
+  "recording_lib_chip_critical": "Critical",
+  "@recording_lib_chip_critical": {},
+  "recording_lib_selected_count_zero": "0 selected",
+  "@recording_lib_selected_count_zero": {},
+  "recording_lib_no_recordings": "No recordings",
+  "@recording_lib_no_recordings": {},
+  "recording_lib_filter_button": "Filter",
+  "@recording_lib_filter_button": {},
+  "recording_lib_filter_button_active": "Filter · {arg1}",
+  "@recording_lib_filter_button_active": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "recording_lib_filter_sheet_title": "Filter recordings",
+  "@recording_lib_filter_sheet_title": {},
+  "recording_lib_filter_apply": "Apply",
+  "@recording_lib_filter_apply": {},
+  "recording_lib_filter_reset": "Reset",
+  "@recording_lib_filter_reset": {},
+  "recording_lib_filter_section_what": "What",
+  "@recording_lib_filter_section_what": {},
+  "recording_lib_filter_section_severity": "Severity",
+  "@recording_lib_filter_section_severity": {},
+  "recording_lib_filter_section_type": "Type",
+  "@recording_lib_filter_section_type": {},
+  "recording_lib_chip_type_normal": "Normal",
+  "@recording_lib_chip_type_normal": {},
+  "recording_lib_chip_type_proximity": "Proximity",
+  "@recording_lib_chip_type_proximity": {},
+  "recording_lib_date_today": "Today",
+  "@recording_lib_date_today": {},
+  "recording_lib_date_yesterday": "Yesterday",
+  "@recording_lib_date_yesterday": {},
+  "recording_lib_clip_count": "{arg1} clips",
+  "@recording_lib_clip_count": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "recording_lib_clip_count_one": "{arg1} clip",
+  "@recording_lib_clip_count_one": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "recording_lib_pick_date": "Pick a date",
+  "@recording_lib_pick_date": {},
+  "recording_lib_date_all_days": "All days",
+  "@recording_lib_date_all_days": {},
+  "cd_clear_date_filter": "Show all days",
+  "@cd_clear_date_filter": {},
+  "recording_lib_section_morning": "Morning",
+  "@recording_lib_section_morning": {},
+  "recording_lib_section_afternoon": "Afternoon",
+  "@recording_lib_section_afternoon": {},
+  "recording_lib_section_evening": "Evening",
+  "@recording_lib_section_evening": {},
+  "recording_lib_section_night": "Night",
+  "@recording_lib_section_night": {},
+  "cd_previous_day": "Previous day",
+  "@cd_previous_day": {},
+  "cd_next_day": "Next day",
+  "@cd_next_day": {},
+  "cd_open_filters": "Open filters",
+  "@cd_open_filters": {},
+  "cd_clear_filter": "Clear filter",
+  "@cd_clear_filter": {},
+  "player_title_recording": "Recording",
+  "@player_title_recording": {},
+  "player_time_zero": "0:00",
+  "@player_time_zero": {},
+  "player_time_separator": " / ",
+  "@player_time_separator": {},
+  "daemons_hero_title": "Background services",
+  "@daemons_hero_title": {},
+  "daemons_count_pending": "Loading services…",
+  "@daemons_count_pending": {},
+  "daemons_count_fmt": "{arg1} of {arg2} running",
+  "@daemons_count_fmt": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "battery_health_title": "Battery Health",
+  "@battery_health_title": {},
+  "battery_health_subtitle": "State of Health",
+  "@battery_health_subtitle": {},
+  "battery_health_dashes": "--",
+  "@battery_health_dashes": {},
+  "battery_health_waiting": "Waiting for data…",
+  "@battery_health_waiting": {},
+  "battery_health_source": "Source",
+  "@battery_health_source": {},
+  "battery_health_method": "Method",
+  "@battery_health_method": {},
+  "battery_health_capacity": "Capacity",
+  "@battery_health_capacity": {},
+  "battery_health_samples": "Samples",
+  "@battery_health_samples": {},
+  "battery_health_last_updated": "Last Updated",
+  "@battery_health_last_updated": {},
+  "battery_health_reset": "Reset SOH Estimation",
+  "@battery_health_reset": {},
+  "battery_health_reset_desc": "Clears all data and re-estimates from scratch. Use if battery was replaced or reading seems incorrect.",
+  "@battery_health_reset_desc": {},
+  "soh_dialog_model_label": "Model",
+  "@soh_dialog_model_label": {},
+  "soh_dialog_pack_capacity_label": "Pack capacity",
+  "@soh_dialog_pack_capacity_label": {},
+  "soh_dialog_estimated_capacity_label": "Effective capacity",
+  "@soh_dialog_estimated_capacity_label": {},
+  "soh_dialog_calibration_anchor_label": "Last calibrated",
+  "@soh_dialog_calibration_anchor_label": {},
+  "soh_dialog_source_user": "user-set",
+  "@soh_dialog_source_user": {},
+  "soh_dialog_source_auto": "auto-detected",
+  "@soh_dialog_source_auto": {},
+  "soh_dialog_model_not_selected": "Not selected",
+  "@soh_dialog_model_not_selected": {},
+  "soh_dialog_capacity_not_detected": "Not detected",
+  "@soh_dialog_capacity_not_detected": {},
+  "soh_dialog_calibration_format": "{arg1}% on {arg2}",
+  "@soh_dialog_calibration_format": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dialog_ok": "OK",
+  "@dialog_ok": {},
+  "recordings_deleted_count": "{arg1, plural, one{{arg1} recording deleted} other{{arg1} recordings deleted}}",
+  "@recordings_deleted_count": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "delete_recordings_title": "{arg1, plural, one{Delete {arg1} Recording} other{Delete {arg1} Recordings}}",
+  "@delete_recordings_title": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "delete_recordings_message": "{arg1, plural, one{This will permanently delete {arg1} recording. This cannot be undone.} other{This will permanently delete {arg1} recordings. This cannot be undone.}}",
+  "@delete_recordings_message": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_app_up_to_date": "App is up to date (v{arg1})",
+  "@toast_app_up_to_date": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_storage_permission_required": "Storage permission required for recordings",
+  "@toast_storage_permission_required": {},
+  "toast_url_copied_short": "URL copied!",
+  "@toast_url_copied_short": {},
+  "toast_camera_set_to_auto": "Camera set to Auto",
+  "@toast_camera_set_to_auto": {},
+  "toast_failed_to_save_short": "Failed to save",
+  "@toast_failed_to_save_short": {},
+  "toast_failed_with_message": "Failed: {arg1}",
+  "@toast_failed_with_message": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_camera_id_set": "Camera {arg1} set — next ACC cycle",
+  "@toast_camera_id_set": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_clearing_camera_config": "Clearing camera config…",
+  "@toast_clearing_camera_config": {},
+  "toast_restarting_camera_daemon": "Restarting camera service…",
+  "@toast_restarting_camera_daemon": {},
+  "toast_camera_daemon_restarting": "Camera service restarting with full probe",
+  "@toast_camera_daemon_restarting": {},
+  "toast_camera_restart_failed": "Config cleared but service restart failed. Please restart manually.",
+  "@toast_camera_restart_failed": {},
+  "toast_failed_with_message_x": "Failed: {arg1}",
+  "@toast_failed_with_message_x": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_soh_reset_success": "SOH estimation reset — will recalculate from next data",
+  "@toast_soh_reset_success": {},
+  "toast_soh_reset_failed_no_daemon": "Reset failed — service not responding and file not writable",
+  "@toast_soh_reset_failed_no_daemon": {},
+  "toast_soh_reset_failed_with_message": "Reset failed: {arg1}",
+  "@toast_soh_reset_failed_with_message": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_select_at_least_one_category": "Select at least one category",
+  "@toast_select_at_least_one_category": {},
+  "toast_reset_failed_with_error": "Reset failed: {arg1}",
+  "@toast_reset_failed_with_error": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_traffic_monitor_changing": "{arg1} traffic monitor…",
+  "@toast_traffic_monitor_changing": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dialog_close": "Close",
+  "@dialog_close": {},
+  "dialog_reset": "Reset",
+  "@dialog_reset": {},
+  "dialog_delete": "Delete",
+  "@dialog_delete": {},
+  "dialog_save": "Save",
+  "@dialog_save": {},
+  "dialog_enable": "Enable",
+  "@dialog_enable": {},
+  "dialog_disable": "Disable",
+  "@dialog_disable": {},
+  "dialog_keep_enabled": "Keep Enabled",
+  "@dialog_keep_enabled": {},
+  "dialog_keep_disabled": "Keep Disabled",
+  "@dialog_keep_disabled": {},
+  "dialog_regenerate": "Regenerate",
+  "@dialog_regenerate": {},
+  "dialog_reset_selected": "Reset Selected",
+  "@dialog_reset_selected": {},
+  "dialog_reset_soh_title": "Reset SOH Estimation?",
+  "@dialog_reset_soh_title": {},
+  "dialog_reset_soh_message": "This will clear all SOH data and force re-estimation from scratch.\n\nUse this if:\n• Battery was replaced\n• SOH reading seems incorrect\n• You want to recalibrate\n\nThe system will re-seed from the next available data source (OEM, charge calibration, or instantaneous reading).",
+  "@dialog_reset_soh_message": {},
+  "dialog_reset_following_title": "Reset the following?",
+  "@dialog_reset_following_title": {},
+  "dialog_reset_following_message": "This cannot be undone.\n\n{arg1}",
+  "@dialog_reset_following_message": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dialog_reset_complete_title": "Reset complete",
+  "@dialog_reset_complete_title": {},
+  "dialog_traffic_cannot_check_title": "Cannot Check Status",
+  "@dialog_traffic_cannot_check_title": {},
+  "dialog_traffic_cannot_check_message": "ADB is not connected, and the app could not reconnect automatically.\n\nOn this vehicle, the standard \"USB debugging\" toggle in Developer Options is not enough by itself — the head unit's own wireless ADB (network debugging) setting also needs to be on, and a system update can reset it. Re-enable wireless ADB on the head unit, or connect via USB.\n\nThe status will update automatically once connected.",
+  "@dialog_traffic_cannot_check_message": {},
+  "dialog_traffic_disable_title": "Disable BYD Traffic Monitor?",
+  "@dialog_traffic_disable_title": {},
+  "dialog_traffic_disable_message": "The BYD Traffic Monitor (com.byd.trafficmonitor) is a built-in system app that continuously monitors road traffic conditions in the background.\n\nWhy disable it?\n\n• Consumes mobile data (even when parked)\n• Uses CPU and battery in the background\n• Not needed if you use a separate navigation app\n• Can interfere with the dashcam's network usage\n\nThis is safe to disable — it only affects the built-in traffic overlay on the map. Your navigation, Bluetooth, and all other car functions remain unaffected.\n\nA hard reboot is required after disabling (hold center console button 5 seconds).",
+  "@dialog_traffic_disable_message": {},
+  "dialog_traffic_enable_title": "Re-enable BYD Traffic Monitor?",
+  "@dialog_traffic_enable_title": {},
+  "dialog_traffic_enable_message": "The BYD Traffic Monitor is currently disabled.\n\nRe-enabling it will restore the built-in traffic overlay on the navigation map. Note that it will run in the background and consume mobile data.\n\nA hard reboot is required after enabling (hold center console button 5 seconds).",
+  "@dialog_traffic_enable_message": {},
+  "dialog_traffic_status_title": "Traffic Monitor {arg1}",
+  "@dialog_traffic_status_title": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dialog_traffic_reboot_message": "The change has been applied.\n\nPlease perform a hard reboot now:\nPress and hold the central console button for 5 seconds.",
+  "@dialog_traffic_reboot_message": {},
+  "traffic_monitor_loading": "Traffic Monitor: Checking…",
+  "@traffic_monitor_loading": {},
+  "traffic_monitor_tap_to_check": "Traffic Monitor (tap to check)",
+  "@traffic_monitor_tap_to_check": {},
+  "reset_label_trips": "Trips",
+  "@reset_label_trips": {},
+  "reset_label_soc_history": "SoC + 12V history",
+  "@reset_label_soc_history": {},
+  "reset_label_soh": "SoH calibration",
+  "@reset_label_soh": {},
+  "reset_label_recordings": "Recordings",
+  "@reset_label_recordings": {},
+  "reset_label_sentry_events": "Surveillance events",
+  "@reset_label_sentry_events": {},
+  "reset_label_proximity": "Proximity recordings",
+  "@reset_label_proximity": {},
+  "reset_label_trip_files": "Trip telemetry files",
+  "@reset_label_trip_files": {},
+  "toast_access_code_copied": "Access code copied",
+  "@toast_access_code_copied": {},
+  "dialog_regenerate_token_title": "Regenerate Token",
+  "@dialog_regenerate_token_title": {},
+  "dialog_regenerate_token_message": "This will invalidate the current token. All active sessions will be logged out. Continue?",
+  "@dialog_regenerate_token_message": {},
+  "toast_token_regenerated_logged_out": "New token generated. All sessions logged out.",
+  "@toast_token_regenerated_logged_out": {},
+  "toast_token_regenerated_restart": "Token regenerated. Services may need restart to apply.",
+  "@toast_token_regenerated_restart": {},
+  "toast_token_regenerated_no_notify": "Token regenerated. Could not notify background service.",
+  "@toast_token_regenerated_no_notify": {},
+  "toast_token_regenerated": "Token regenerated",
+  "@toast_token_regenerated": {},
+  "dashboard_no_tunnel": "No tunnel running",
+  "@dashboard_no_tunnel": {},
+  "dashboard_starting_zrok": "Starting Zrok tunnel…",
+  "@dashboard_starting_zrok": {},
+  "dashboard_waiting_url": "Waiting for tunnel URL…",
+  "@dashboard_waiting_url": {},
+  "dashboard_daemons_running": "{arg1}/{arg2} Running",
+  "@dashboard_daemons_running": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "tunnel_label_zrok": "Zrok",
+  "@tunnel_label_zrok": {},
+  "clip_label_access_code": "Access Code",
+  "@clip_label_access_code": {},
+  "clip_label_url": "URL",
+  "@clip_label_url": {},
+  "toast_no_config_needed": "No configuration needed for {arg1}",
+  "@toast_no_config_needed": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dialog_zrok_token_title": "Zrok Tunnel Token",
+  "@dialog_zrok_token_title": {},
+  "dialog_zrok_token_message": "Enter your Zrok enable token.\nGet one at: zrok.io",
+  "@dialog_zrok_token_message": {},
+  "toast_token_cannot_be_empty": "Token cannot be empty",
+  "@toast_token_cannot_be_empty": {},
+  "dialog_zrok_reset_title": "Reset Zrok Environment",
+  "@dialog_zrok_reset_title": {},
+  "dialog_zrok_reset_message": "This will:\n• Stop the zrok tunnel if running\n• Remove the zrok environment from this device\n• Delete the saved token\n\nYou will need to re-enter your token and re-enable. This uses one of your 5 device slots on zrok.io.\n\nAre you sure?",
+  "@dialog_zrok_reset_message": {},
+  "toast_resetting_zrok": "Resetting zrok environment…",
+  "@toast_resetting_zrok": {},
+  "toast_zrok_reset_success": "Zrok environment reset. Enter a new token to set up again.",
+  "@toast_zrok_reset_success": {},
+  "toast_zrok_reset_partial": "Environment reset (token file may need manual cleanup)",
+  "@toast_zrok_reset_partial": {},
+  "toast_zrok_reset_warnings": "Environment reset (with warnings: {arg1})",
+  "@toast_zrok_reset_warnings": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "zrok_no_token_configured": "No token configured. Tap to set up.",
+  "@zrok_no_token_configured": {},
+  "toast_zrok_token_saved": "Token saved",
+  "@toast_zrok_token_saved": {},
+  "toast_zrok_token_save_failed": "Failed to save token",
+  "@toast_zrok_token_save_failed": {},
+  "toast_zrok_token_deleted": "Token deleted",
+  "@toast_zrok_token_deleted": {},
+  "toast_zrok_token_delete_failed": "Failed to delete token",
+  "@toast_zrok_token_delete_failed": {},
+  "toast_fetching_log": "Fetching {arg1} log…",
+  "@toast_fetching_log": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_log_empty_or_missing": "Log file is empty or not found",
+  "@toast_log_empty_or_missing": {},
+  "toast_log_empty": "Log file is empty",
+  "@toast_log_empty": {},
+  "toast_log_save_failed": "Failed to save log: {arg1}",
+  "@toast_log_save_failed": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_log_not_found": "Log file not found or unreadable",
+  "@toast_log_not_found": {},
+  "log_share_title": "{arg1} Log - {arg2}",
+  "@log_share_title": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "log_share_chooser": "Share {arg1} Log",
+  "@log_share_chooser": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "log_header_title": "=== {arg1} Log ===",
+  "@log_header_title": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "log_header_source": "Source: {arg1}",
+  "@log_header_source": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "log_header_exported": "Exported: {arg1}",
+  "@log_header_exported": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "log_header_truncated": "NOTE: Log truncated to last 10000 lines (total: {arg1} lines)",
+  "@log_header_truncated": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_cannot_play_video": "Cannot play video: {arg1}",
+  "@toast_cannot_play_video": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dialog_delete_recording_title": "Delete Recording",
+  "@dialog_delete_recording_title": {},
+  "dialog_delete_recording_message": "Delete {arg1}?\nThis cannot be undone.",
+  "@dialog_delete_recording_message": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "toast_recording_deleted": "Recording deleted",
+  "@toast_recording_deleted": {},
+  "toast_recording_delete_failed": "Failed to delete recording",
+  "@toast_recording_delete_failed": {},
+  "toast_batch_delete_partial": "{arg1} deleted, {arg2} failed",
+  "@toast_batch_delete_partial": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "play_with_chooser": "Play with",
+  "@play_with_chooser": {},
+  "setup_version_banner": "Updated to v{arg1} — re-confirm autostart, BYD wipes it on every install",
+  "@setup_version_banner": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "setup_overlay_already_granted": "Already Granted",
+  "@setup_overlay_already_granted": {},
+  "camera_current_manual": "Current: Camera {arg1} (Manual)",
+  "@camera_current_manual": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "camera_current_auto_label": "Current: Auto",
+  "@camera_current_auto_label": {},
+  "soh_estimation_active": "Estimation active",
+  "@soh_estimation_active": {},
+  "soh_oem_readout": "Vehicle SOH readout — waiting for calculated estimate",
+  "@soh_oem_readout": {},
+  "soh_nominal_baseline": "Nominal baseline — waiting for trusted SOH data",
+  "@soh_nominal_baseline": {},
+  "soh_no_estimate_yet": "No estimate yet — waiting for data",
+  "@soh_no_estimate_yet": {},
+  "recording_lib_selected_count": "{arg1} selected",
+  "@recording_lib_selected_count": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "video_player_playback_error": "Playback error",
+  "@video_player_playback_error": {},
+  "video_player_no_events": "No events",
+  "@video_player_no_events": {},
+  "daemon_configuration_required": "Configuration required",
+  "@daemon_configuration_required": {},
+  "daemon_configuration_message": "{arg1}",
+  "@daemon_configuration_message": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "nav_page_video_player": "Video Player",
+  "@nav_page_video_player": {},
+  "status_overlay_notif_title": "BladeWatch Status",
+  "@status_overlay_notif_title": {},
+  "status_overlay_notif_text": "Status overlay active",
+  "@status_overlay_notif_text": {},
+  "rail_dashboard": "Dashboard",
+  "@rail_dashboard": {},
+  "rail_live": "Live",
+  "@rail_live": {},
+  "rail_recordings": "Recordings",
+  "@rail_recordings": {},
+  "rail_vehicle": "Vehicle",
+  "@rail_vehicle": {},
+  "rail_trips": "Trips",
+  "@rail_trips": {},
+  "rail_location": "Location",
+  "@rail_location": {},
+  "rail_diagnostics": "Diagnostics",
+  "@rail_diagnostics": {},
+  "rail_settings": "Settings",
+  "@rail_settings": {},
+  "settings_section_appearance": "Appearance",
+  "@settings_section_appearance": {},
+  "settings_section_recording": "Recording",
+  "@settings_section_recording": {},
+  "settings_section_surveillance": "Surveillance",
+  "@settings_section_surveillance": {},
+  "settings_section_daemons": "Services",
+  "@settings_section_daemons": {},
+  "settings_section_privacy": "Privacy & data",
+  "@settings_section_privacy": {},
+  "settings_section_overlay": "Status overlay",
+  "@settings_section_overlay": {},
+  "settings_overlay_subtitle": "Choose which segments of the floating status pill stay visible.",
+  "@settings_overlay_subtitle": {},
+  "settings_overlay_camera_title": "Camera indicator",
+  "@settings_overlay_camera_title": {},
+  "settings_overlay_camera_subtitle": "Show the REC / PROX badge while recording is active.",
+  "@settings_overlay_camera_subtitle": {},
+  "settings_overlay_trip_title": "Trip indicator",
+  "@settings_overlay_trip_title": {},
+  "settings_overlay_trip_subtitle": "Show the TRIP badge while trip detection is running.",
+  "@settings_overlay_trip_subtitle": {},
+  "settings_section_about": "About",
+  "@settings_section_about": {},
+  "settings_subrail_overline": "SETTINGS",
+  "@settings_subrail_overline": {},
+  "cd_settings_subrail": "Settings sub-rail",
+  "@cd_settings_subrail": {},
+  "settings_privacy_title": "Privacy & data",
+  "@settings_privacy_title": {},
+  "settings_privacy_body": "Reset clears recordings index, cached credentials, service state, and on-device preferences. The action cannot be undone.",
+  "@settings_privacy_body": {},
+  "settings_about_title": "About BladeWatch",
+  "@settings_about_title": {},
+  "settings_about_version_label": "Version",
+  "@settings_about_version_label": {},
+  "settings_about_package_label": "Build",
+  "@settings_about_package_label": {},
+  "settings_about_support_section": "Powered by people like you",
+  "@settings_about_support_section": {},
+  "settings_about_support_share_title": "Tell a fellow owner",
+  "@settings_about_support_share_title": {},
+  "settings_about_support_share_value": "Every shared link helps another BYD owner discover BladeWatch.",
+  "@settings_about_support_share_value": {},
+  "settings_about_support_share_message": "Check out BladeWatch — open-source surveillance & dashcam for BYD: https://bladewatch-5lc.pages.dev/",
+  "@settings_about_support_share_message": {},
+  "settings_about_support_share_chooser": "Share BladeWatch",
+  "@settings_about_support_share_chooser": {},
+  "settings_about_open_link_failed": "Couldn't open link.",
+  "@settings_about_open_link_failed": {},
+  "settings_about_open_link_copied": "No browser found. URL copied: {arg1}",
+  "@settings_about_open_link_copied": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_about_support_kofi_title": "Fuel the next release",
+  "@settings_about_support_kofi_title": {},
+  "settings_about_support_kofi_value": "A coffee on Ko-fi keeps the late-night commits coming.",
+  "@settings_about_support_kofi_value": {},
+  "settings_about_support_kofi_url": "https://ko-fi.com/E1E71XALHX",
+  "@settings_about_support_kofi_url": {},
+  "settings_about_license_title": "License",
+  "@settings_about_license_title": {},
+  "settings_about_license_value": "MIT — open source. Tap to view full text.",
+  "@settings_about_license_value": {},
+  "settings_about_source_title": "Source code",
+  "@settings_about_source_title": {},
+  "settings_about_source_value": "github.com/yash-srivastava/BladeWatch-release",
+  "@settings_about_source_value": {},
+  "settings_about_license_url": "https://github.com/yash-srivastava/BladeWatch-release/blob/main/LICENSE",
+  "@settings_about_license_url": {},
+  "settings_about_source_url": "https://github.com/yash-srivastava/BladeWatch-release",
+  "@settings_about_source_url": {},
+  "settings_about_star_title": "Star us on GitHub",
+  "@settings_about_star_title": {},
+  "settings_about_star_value": "Takes a second. Means a lot.",
+  "@settings_about_star_value": {},
+  "settings_about_star_url": "https://github.com/yash-srivastava/BladeWatch-release",
+  "@settings_about_star_url": {},
+  "settings_about_thanks_title": "Thanks",
+  "@settings_about_thanks_title": {},
+  "settings_about_thanks_subtitle": "Built with the help of contributors and supporters.",
+  "@settings_about_thanks_subtitle": {},
+  "settings_about_contributors_title": "Contributors",
+  "@settings_about_contributors_title": {},
+  "settings_about_supporters_title": "Supporters",
+  "@settings_about_supporters_title": {},
+  "settings_about_thanks_empty": "List populates as people pitch in.",
+  "@settings_about_thanks_empty": {},
+  "settings_theme_label": "Theme",
+  "@settings_theme_label": {},
+  "settings_theme_auto": "Auto (follow system)",
+  "@settings_theme_auto": {},
+  "settings_theme_light": "Light",
+  "@settings_theme_light": {},
+  "settings_theme_dark": "Dark",
+  "@settings_theme_dark": {},
+  "settings_language_label": "Language",
+  "@settings_language_label": {},
+  "settings_drive_side_label": "Navigation Side",
+  "@settings_drive_side_label": {},
+  "settings_drive_side_subtitle": "Choose which side of the screen the navigation menu appears on.",
+  "@settings_drive_side_subtitle": {},
+  "settings_drive_side_left": "Left",
+  "@settings_drive_side_left": {},
+  "settings_drive_side_left_hint": "LHD · default",
+  "@settings_drive_side_left_hint": {},
+  "settings_drive_side_right": "Right",
+  "@settings_drive_side_right": {},
+  "settings_drive_side_right_hint": "RHD vehicles",
+  "@settings_drive_side_right_hint": {},
+  "settings_drive_side_auto": "Auto",
+  "@settings_drive_side_auto": {},
+  "settings_drive_side_auto_hint": "Detect from vehicle",
+  "@settings_drive_side_auto_hint": {},
+  "settings_drive_side_caption_left": "Navigation on left",
+  "@settings_drive_side_caption_left": {},
+  "settings_drive_side_caption_right": "Navigation on right",
+  "@settings_drive_side_caption_right": {},
+  "settings_drive_side_caption_auto_left": "Auto — vehicle reports left-hand drive",
+  "@settings_drive_side_caption_auto_left": {},
+  "settings_drive_side_caption_auto_right": "Auto — vehicle reports right-hand drive",
+  "@settings_drive_side_caption_auto_right": {},
+  "settings_drive_side_caption_auto_unknown": "Auto — vehicle unavailable, using left",
+  "@settings_drive_side_caption_auto_unknown": {},
+  "recordings_title": "Recordings",
+  "@recordings_title": {},
+  "recordings_segment_dashcam": "Dashcam",
+  "@recordings_segment_dashcam": {},
+  "recordings_segment_surveillance": "Surveillance",
+  "@recordings_segment_surveillance": {},
+  "recordings_action_settings": "Settings",
+  "@recordings_action_settings": {},
+  "recordings_summary_format": "{arg1} today · {arg2} total · {arg3}",
+  "@recordings_summary_format": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {},
+      "arg3": {}
+    }
+  },
+  "recordings_segment_dashcam_count": "Dashcam · {arg1}",
+  "@recordings_segment_dashcam_count": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "recordings_segment_surveillance_count": "Surveillance · {arg1}",
+  "@recordings_segment_surveillance_count": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "recordings_summary_pending": "—",
+  "@recordings_summary_pending": {},
+  "recordings_preview_placeholder_title": "Select a recording",
+  "@recordings_preview_placeholder_title": {},
+  "recordings_preview_placeholder_body": "Tap any item on the left to play it.",
+  "@recordings_preview_placeholder_body": {},
+  "diagnostics_section_adb_console": "ADB Console",
+  "@diagnostics_section_adb_console": {},
+  "diagnostics_section_traffic": "Traffic monitor",
+  "@diagnostics_section_traffic": {},
+  "diagnostics_section_camera_probe": "Camera probe",
+  "@diagnostics_section_camera_probe": {},
+  "diagnostics_section_battery": "Battery health",
+  "@diagnostics_section_battery": {},
+  "diagnostics_section_performance": "Performance",
+  "@diagnostics_section_performance": {},
+  "diagnostics_hero_title": "System diagnostics",
+  "@diagnostics_hero_title": {},
+  "diagnostics_hero_subtitle": "Live health, logs, and probes for the device.",
+  "@diagnostics_hero_subtitle": {},
+  "diagnostics_health_clear": "All clear",
+  "@diagnostics_health_clear": {},
+  "diagnostics_health_section": "Health",
+  "@diagnostics_health_section": {},
+  "diagnostics_health_network": "Network",
+  "@diagnostics_health_network": {},
+  "diagnostics_health_storage": "Storage",
+  "@diagnostics_health_storage": {},
+  "diagnostics_health_camera": "Camera",
+  "@diagnostics_health_camera": {},
+  "diagnostics_health_battery": "Battery",
+  "@diagnostics_health_battery": {},
+  "diagnostics_metric_pending": "—",
+  "@diagnostics_metric_pending": {},
+  "diagnostics_metric_online": "Online",
+  "@diagnostics_metric_online": {},
+  "diagnostics_network_tunnel_label": "Tunnel · {arg1}",
+  "@diagnostics_network_tunnel_label": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "diagnostics_tunnel_state_online": "Online",
+  "@diagnostics_tunnel_state_online": {},
+  "diagnostics_tunnel_state_offline": "Offline",
+  "@diagnostics_tunnel_state_offline": {},
+  "diagnostics_tunnel_state_connecting": "Connecting",
+  "@diagnostics_tunnel_state_connecting": {},
+  "diagnostics_network_mobile": "Mobile",
+  "@diagnostics_network_mobile": {},
+  "diagnostics_network_ethernet": "Ethernet",
+  "@diagnostics_network_ethernet": {},
+  "diagnostics_network_offline": "Offline",
+  "@diagnostics_network_offline": {},
+  "diagnostics_storage_used_line": "{arg1} clips · {arg2} used",
+  "@diagnostics_storage_used_line": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "diagnostics_storage_free_line": "{arg1} free",
+  "@diagnostics_storage_free_line": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "diagnostics_logs_card_title": "Live event log",
+  "@diagnostics_logs_card_title": {},
+  "diagnostics_logs_card_subtitle": "Streaming output from running services.",
+  "@diagnostics_logs_card_subtitle": {},
+  "diagnostics_tools_section": "Tools",
+  "@diagnostics_tools_section": {},
+  "diagnostics_traffic_subtitle": "Watch live network throughput.",
+  "@diagnostics_traffic_subtitle": {},
+  "diagnostics_camera_probe_subtitle": "Inspect connected camera streams.",
+  "@diagnostics_camera_probe_subtitle": {},
+  "diagnostics_adb_subtitle": "Open the on-device terminal.",
+  "@diagnostics_adb_subtitle": {},
+  "diagnostics_battery_subtitle": "Inspect cell SOH and pack stats.",
+  "@diagnostics_battery_subtitle": {},
+  "diagnostics_settings_subtitle": "App preferences, theme, and language.",
+  "@diagnostics_settings_subtitle": {},
+  "settings_action_reset_data": "Reset data…",
+  "@settings_action_reset_data": {},
+  "cd_brand_logo": "BladeWatch",
+  "@cd_brand_logo": {},
+  "dashboard_hero_headline": "On watch",
+  "@dashboard_hero_headline": {},
+  "dashboard_subtitle_all_systems": "All systems online",
+  "@dashboard_subtitle_all_systems": {},
+  "dashboard_subtitle_some_offline": "{arg1} of {arg2} services online",
+  "@dashboard_subtitle_some_offline": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dashboard_subtitle_no_tunnel": "Remote access offline",
+  "@dashboard_subtitle_no_tunnel": {},
+  "dashboard_metric_recordings": "Today's recordings",
+  "@dashboard_metric_recordings": {},
+  "dashboard_metric_storage": "Storage used",
+  "@dashboard_metric_storage": {},
+  "dashboard_metric_tunnel": "Remote access",
+  "@dashboard_metric_tunnel": {},
+  "dashboard_metric_services": "Background services",
+  "@dashboard_metric_services": {},
+  "dashboard_metric_value_pending": "—",
+  "@dashboard_metric_value_pending": {},
+  "dashboard_metric_vehicle": "Vehicle",
+  "@dashboard_metric_vehicle": {},
+  "dashboard_chip_recording_active": "Recording",
+  "@dashboard_chip_recording_active": {},
+  "dashboard_chip_recording_idle": "Idle",
+  "@dashboard_chip_recording_idle": {},
+  "dashboard_vehicle_tap_to_set": "Tap to set",
+  "@dashboard_vehicle_tap_to_set": {},
+  "dashboard_vehicle_summary": "{arg1} kWh · {arg2}",
+  "@dashboard_vehicle_summary": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "vehicle_dialog_title": "Set battery capacity",
+  "@vehicle_dialog_title": {},
+  "vehicle_dialog_capacity_label": "Capacity",
+  "@vehicle_dialog_capacity_label": {},
+  "vehicle_dialog_capacity_suffix": "kWh",
+  "@vehicle_dialog_capacity_suffix": {},
+  "vehicle_dialog_capacity_helper": "8 to 120 kWh. Leave to use the model default.",
+  "@vehicle_dialog_capacity_helper": {},
+  "vehicle_dialog_model_label": "Model",
+  "@vehicle_dialog_model_label": {},
+  "vehicle_dialog_save": "Save",
+  "@vehicle_dialog_save": {},
+  "vehicle_dialog_reset": "Reset to auto-detect",
+  "@vehicle_dialog_reset": {},
+  "vehicle_dialog_invalid_capacity": "Capacity must be 8 - 120 kWh",
+  "@vehicle_dialog_invalid_capacity": {},
+  "vehicle_dialog_summary_capacity": "Capacity: {arg1}",
+  "@vehicle_dialog_summary_capacity": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_dialog_summary_soh": "SOH: {arg1}",
+  "@vehicle_dialog_summary_soh": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_dialog_soh_source_live": "{arg1}% (live)",
+  "@vehicle_dialog_soh_source_live": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_dialog_soh_source_calibration": "{arg1}% (from last charge)",
+  "@vehicle_dialog_soh_source_calibration": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_dialog_soh_source_oem": "{arg1}% (vehicle)",
+  "@vehicle_dialog_soh_source_oem": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_dialog_soh_source_nominal": "{arg1}% (nominal)",
+  "@vehicle_dialog_soh_source_nominal": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_recording_tab_status": "Status",
+  "@settings_recording_tab_status": {},
+  "settings_recording_tab_capture": "Capture",
+  "@settings_recording_tab_capture": {},
+  "settings_recording_tab_quality": "Quality",
+  "@settings_recording_tab_quality": {},
+  "settings_recording_tab_storage": "Storage",
+  "@settings_recording_tab_storage": {},
+  "settings_recording_status_title": "Recording Status",
+  "@settings_recording_status_title": {},
+  "settings_recording_status_current_state": "Current State",
+  "@settings_recording_status_current_state": {},
+  "settings_recording_status_today_count": "Recordings Today",
+  "@settings_recording_status_today_count": {},
+  "settings_recording_mode_title": "Recording Mode (ACC ON)",
+  "@settings_recording_mode_title": {},
+  "settings_recording_mode_description": "Choose when dashcam recording should occur while driving.",
+  "@settings_recording_mode_description": {},
+  "settings_recording_mode_none_label": "None (Default)",
+  "@settings_recording_mode_none_label": {},
+  "settings_recording_mode_none_desc": "No recording — surveillance still works",
+  "@settings_recording_mode_none_desc": {},
+  "settings_recording_mode_continuous_label": "Continuous",
+  "@settings_recording_mode_continuous_label": {},
+  "settings_recording_mode_continuous_desc": "Record all the time while driving",
+  "@settings_recording_mode_continuous_desc": {},
+  "settings_recording_mode_drive_label": "Drive Mode",
+  "@settings_recording_mode_drive_label": {},
+  "settings_recording_mode_drive_desc": "Record only when vehicle is moving",
+  "@settings_recording_mode_drive_desc": {},
+  "settings_recording_mode_proximity_label": "Proximity Guard",
+  "@settings_recording_mode_proximity_label": {},
+  "settings_recording_mode_proximity_desc": "Record when motion is detected",
+  "@settings_recording_mode_proximity_desc": {},
+  "settings_recording_limit_title": "Recording Limit",
+  "@settings_recording_limit_title": {},
+  "settings_recording_limit_description": "Maximum length per file. Recordings split into new files at this interval.",
+  "@settings_recording_limit_description": {},
+  "settings_recording_limit_minutes": "{arg1} min",
+  "@settings_recording_limit_minutes": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_recording_quality_title": "Recording Quality",
+  "@settings_recording_quality_title": {},
+  "settings_recording_storage_title": "Recording Storage",
+  "@settings_recording_storage_title": {},
+  "settings_recording_storage_location_label": "Storage Location",
+  "@settings_recording_storage_location_label": {},
+  "settings_recording_storage_internal": "Internal",
+  "@settings_recording_storage_internal": {},
+  "settings_recording_storage_sd_card": "SD Card",
+  "@settings_recording_storage_sd_card": {},
+  "settings_recording_storage_sd_card_na": "SD Card (N/A)",
+  "@settings_recording_storage_sd_card_na": {},
+  "settings_recording_storage_limit_label": "Storage Limit — auto-deletes oldest when reached",
+  "@settings_recording_storage_limit_label": {},
+  "settings_recording_storage_usage": "{arg1} used / {arg2} limit",
+  "@settings_recording_storage_usage": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "settings_recording_storage_files": "{arg1} recordings",
+  "@settings_recording_storage_files": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_recording_storage_path_label": "Path",
+  "@settings_recording_storage_path_label": {},
+  "settings_recording_storage_sd_free_label": "SD Card Free",
+  "@settings_recording_storage_sd_free_label": {},
+  "settings_recording_storage_internal_free_label": "Internal Free",
+  "@settings_recording_storage_internal_free_label": {},
+  "settings_recording_format_title": "Format External Drive",
+  "@settings_recording_format_title": {},
+  "settings_recording_format_warning": "Permanently erases ALL data on the SD card or USB drive.",
+  "@settings_recording_format_warning": {},
+  "settings_recording_format_confirm": "Tap again — ALL data will be ERASED",
+  "@settings_recording_format_confirm": {},
+  "settings_recording_format_running": "Formatting… please wait",
+  "@settings_recording_format_running": {},
+  "settings_recording_format_button": "Format SD Card / USB",
+  "@settings_recording_format_button": {},
+  "settings_recording_format_no_drive": "No removable drive found",
+  "@settings_recording_format_no_drive": {},
+  "settings_recording_format_success": "Formatted successfully. New path: {arg1}",
+  "@settings_recording_format_success": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_recording_sync_title": "Database Catalog",
+  "@settings_recording_sync_title": {},
+  "settings_recording_sync_description": "Reconcile the recordings index with files on disk.",
+  "@settings_recording_sync_description": {},
+  "settings_recording_sync_running": "Syncing…",
+  "@settings_recording_sync_running": {},
+  "settings_recording_sync_button": "Sync Database",
+  "@settings_recording_sync_button": {},
+  "settings_recording_sync_success": "Synced: +{arg1} -{arg2}",
+  "@settings_recording_sync_success": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "settings_recording_sync_in_progress": "Sync already in progress",
+  "@settings_recording_sync_in_progress": {},
+  "settings_recording_sync_failed": "Sync failed: {arg1}",
+  "@settings_recording_sync_failed": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_recording_apply_button": "Apply Changes",
+  "@settings_recording_apply_button": {},
+  "settings_recording_dismiss": "Dismiss",
+  "@settings_recording_dismiss": {},
+  "settings_daemons_toggle_unsupported": "Starting/stopping {arg1} isn’t supported yet",
+  "@settings_daemons_toggle_unsupported": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_daemons_zrok_configure": "Configure",
+  "@settings_daemons_zrok_configure": {},
+  "settings_daemons_zrok_reset_button": "Reset Environment",
+  "@settings_daemons_zrok_reset_button": {},
+  "vehicle_dialog_summary_effective": "Effective: {arg1} kWh",
+  "@vehicle_dialog_summary_effective": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_dialog_summary_model": "Model: {arg1}",
+  "@vehicle_dialog_summary_model": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_dialog_summary_calibration": "Last calibrated: {arg1}% on {arg2}",
+  "@vehicle_dialog_summary_calibration": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "vehicle_dialog_soh_unavailable": "unavailable",
+  "@vehicle_dialog_soh_unavailable": {},
+  "dashboard_metric_storage_chip": "{arg1} used · {arg2} free",
+  "@dashboard_metric_storage_chip": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dashboard_metric_storage_chip_pending": "Storage —",
+  "@dashboard_metric_storage_chip_pending": {},
+  "dashboard_tunnel_offline": "Offline",
+  "@dashboard_tunnel_offline": {},
+  "dashboard_tunnel_online": "Online",
+  "@dashboard_tunnel_online": {},
+  "dashboard_tunnel_connecting": "Connecting…",
+  "@dashboard_tunnel_connecting": {},
+  "dashboard_trips_this_week": "This Week",
+  "@dashboard_trips_this_week": {},
+  "dashboard_trips_count": "{arg1} trips",
+  "@dashboard_trips_count": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_trips_distance_km": "{arg1} km",
+  "@dashboard_trips_distance_km": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_trips_distance_mi": "{arg1} mi",
+  "@dashboard_trips_distance_mi": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_trips_duration": "{arg1}",
+  "@dashboard_trips_duration": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_trips_label_trips": "Trips",
+  "@dashboard_trips_label_trips": {},
+  "dashboard_trips_label_distance": "Distance",
+  "@dashboard_trips_label_distance": {},
+  "dashboard_trips_label_time": "Drive Time",
+  "@dashboard_trips_label_time": {},
+  "dashboard_trips_no_data": "No trips recorded this week",
+  "@dashboard_trips_no_data": {},
+  "dashboard_trips_unavailable": "Start driving to see stats",
+  "@dashboard_trips_unavailable": {},
+  "dashboard_trips_loading": "Loading…",
+  "@dashboard_trips_loading": {},
+  "dashboard_trips_view_all": "View all trips",
+  "@dashboard_trips_view_all": {},
+  "dashboard_action_live": "Live",
+  "@dashboard_action_live": {},
+  "dashboard_action_live_subtitle": "Open camera view",
+  "@dashboard_action_live_subtitle": {},
+  "dashboard_action_recordings": "Recordings",
+  "@dashboard_action_recordings": {},
+  "dashboard_action_settings": "Settings",
+  "@dashboard_action_settings": {},
+  "dashboard_action_settings_subtitle": "Preferences and about",
+  "@dashboard_action_settings_subtitle": {},
+  "settings_hero_title": "Settings",
+  "@settings_hero_title": {},
+  "settings_hero_overline": "BLADEWATCH",
+  "@settings_hero_overline": {},
+  "settings_hero_subtitle": "Tune appearance, recording, surveillance, and on-device data.",
+  "@settings_hero_subtitle": {},
+  "settings_overline_preferences": "PREFERENCES",
+  "@settings_overline_preferences": {},
+  "settings_overline_about_data": "DATA",
+  "@settings_overline_about_data": {},
+  "settings_quick_theme_label": "Theme",
+  "@settings_quick_theme_label": {},
+  "settings_quick_language_label": "Language",
+  "@settings_quick_language_label": {},
+  "settings_section_recording_subtitle": "Pre/post buffers, codec, storage limits.",
+  "@settings_section_recording_subtitle": {},
+  "settings_section_surveillance_subtitle": "Detection zones, schedule, motion sensitivity.",
+  "@settings_section_surveillance_subtitle": {},
+  "settings_section_daemons_subtitle": "Zrok tunnel and background services.",
+  "@settings_section_daemons_subtitle": {},
+  "settings_about_row_title": "About BladeWatch",
+  "@settings_about_row_title": {},
+  "settings_about_row_subtitle": "Version, license, support development.",
+  "@settings_about_row_subtitle": {},
+  "settings_reset_row_subtitle": "Clear recordings, events, or all caches.",
+  "@settings_reset_row_subtitle": {},
+  "settings_footer_format": "BladeWatch {arg1} · {arg2}",
+  "@settings_footer_format": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "settings_appearance_subtitle": "Theme, language, and visual preferences.",
+  "@settings_appearance_subtitle": {},
+  "settings_theme_active_auto_caption": "Auto follows your system theme.",
+  "@settings_theme_active_auto_caption": {},
+  "settings_theme_active_light_caption": "Light theme is always on.",
+  "@settings_theme_active_light_caption": {},
+  "settings_theme_active_dark_caption": "Dark theme is always on.",
+  "@settings_theme_active_dark_caption": {},
+  "settings_language_count_format": "{arg1} of {arg2} languages available",
+  "@settings_language_count_format": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "settings_language_card_title": "Display language",
+  "@settings_language_card_title": {},
+  "settings_privacy_stance_title": "On-device by default",
+  "@settings_privacy_stance_title": {},
+  "settings_privacy_stance_body": "BladeWatch runs entirely on the head unit. No telemetry leaves your car except via the tunnels and integrations you explicitly configure.",
+  "@settings_privacy_stance_body": {},
+  "settings_privacy_overline_storage": "LOCAL STORAGE",
+  "@settings_privacy_overline_storage": {},
+  "settings_privacy_overline_reset": "DATA RESET",
+  "@settings_privacy_overline_reset": {},
+  "settings_privacy_storage_clips_label": "Clips on disk",
+  "@settings_privacy_storage_clips_label": {},
+  "settings_privacy_storage_size_label": "Total size",
+  "@settings_privacy_storage_size_label": {},
+  "settings_privacy_storage_unavailable": "Unavailable",
+  "@settings_privacy_storage_unavailable": {},
+  "settings_privacy_storage_count_format": "{arg1} clip",
+  "@settings_privacy_storage_count_format": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_privacy_storage_count_format_plural": "{arg1} clips",
+  "@settings_privacy_storage_count_format_plural": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "settings_privacy_reset_subtitle": "Choose categories: recordings, events, service configs, cached telemetry…",
+  "@settings_privacy_reset_subtitle": {},
+  "settings_developer_overline": "DEVELOPER",
+  "@settings_developer_overline": {},
+  "settings_developer_timing_logs_title": "Service timing logs",
+  "@settings_developer_timing_logs_title": {},
+  "settings_developer_timing_logs_subtitle": "Log elapsed-time markers during service startup. Disable in normal use to keep logcat clean.",
+  "@settings_developer_timing_logs_subtitle": {},
+  "settings_developer_debug_logs_title": "Developer debug logs",
+  "@settings_developer_debug_logs_title": {},
+  "settings_developer_debug_logs_subtitle": "Log all Activity and Fragment lifecycle events and startup steps to /storage/emulated/0/BladeWatch/data/debug_app.log. Crashes are always captured. Off by default.",
+  "@settings_developer_debug_logs_subtitle": {},
+  "diagnostics_camera_value_camera_n": "Camera {arg1}",
+  "@diagnostics_camera_value_camera_n": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "diagnostics_camera_value_camera_n_manual": "Camera {arg1} (manual)",
+  "@diagnostics_camera_value_camera_n_manual": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "diagnostics_camera_value_probing": "Probing…",
+  "@diagnostics_camera_value_probing": {},
+  "diagnostics_camera_value_offline": "Offline",
+  "@diagnostics_camera_value_offline": {},
+  "diagnostics_battery_value_soh": "{arg1}%",
+  "@diagnostics_battery_value_soh": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "diagnostics_battery_value_pending": "Pending data",
+  "@diagnostics_battery_value_pending": {},
+  "dashboard_recordings_value_live": "● {arg1}",
+  "@dashboard_recordings_value_live": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_welcome": "Welcome — BladeWatch is now your second pair of eyes.",
+  "@dashboard_insight_welcome": {},
+  "dashboard_insight_parked_charged_kwh": "Picked up {arg1} (≈{arg2}) while parked",
+  "@dashboard_insight_parked_charged_kwh": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dashboard_insight_parked_charged": "Picked up {arg1} while parked",
+  "@dashboard_insight_parked_charged": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_parked_drained_kwh": "Used {arg1} (≈{arg2}) since you parked",
+  "@dashboard_insight_parked_drained_kwh": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dashboard_insight_parked_drained": "Used {arg1} since you parked",
+  "@dashboard_insight_parked_drained": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_last_alert": "Last surveillance alert: {arg1}",
+  "@dashboard_insight_last_alert": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_last_charge": "Last charge: +{arg1} in {arg2}",
+  "@dashboard_insight_last_charge": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dashboard_insight_storage_milestone": "{arg1} clips · {arg2} recorded",
+  "@dashboard_insight_storage_milestone": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dashboard_insight_kwh_format": "{arg1} kWh",
+  "@dashboard_insight_kwh_format": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_percent_format": "{arg1}%",
+  "@dashboard_insight_percent_format": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_hours_minutes": "{arg1} hr {arg2} min",
+  "@dashboard_insight_hours_minutes": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dashboard_insight_today_clips": "{arg1, plural, one{{arg1} clip recorded today} other{{arg1} clips recorded today}}",
+  "@dashboard_insight_today_clips": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_uptime_days_hours": "{arg1, plural, one{BladeWatch online for {arg1} day, {arg2} hr} other{BladeWatch online for {arg1} days, {arg2} hr}}",
+  "@dashboard_insight_uptime_days_hours": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "dashboard_insight_uptime_hours": "{arg1, plural, one{BladeWatch online for {arg1} hour} other{BladeWatch online for {arg1} hours}}",
+  "@dashboard_insight_uptime_hours": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_minutes": "{arg1, plural, one{{arg1} min} other{{arg1} min}}",
+  "@dashboard_insight_minutes": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "dashboard_insight_hours": "{arg1, plural, one{{arg1} hr} other{{arg1} hr}}",
+  "@dashboard_insight_hours": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_tab_trunk": "Trunk",
+  "@vehicle_tab_trunk": {},
+  "vehicle_tab_climate": "Climate",
+  "@vehicle_tab_climate": {},
+  "vehicle_tab_seats": "Seats",
+  "@vehicle_tab_seats": {},
+  "vehicle_tab_windows": "Windows",
+  "@vehicle_tab_windows": {},
+  "vehicle_tab_lights": "Lights",
+  "@vehicle_tab_lights": {},
+  "vehicle_tab_adas": "ADAS",
+  "@vehicle_tab_adas": {},
+  "vehicle_control_charging_tab": "Charging",
+  "@vehicle_control_charging_tab": {},
+  "vehicle_locked": "Locked",
+  "@vehicle_locked": {},
+  "vehicle_unlocked": "Unlocked",
+  "@vehicle_unlocked": {},
+  "vehicle_range_label": "Range",
+  "@vehicle_range_label": {},
+  "vehicle_data_unavailable": "Vehicle data unavailable.",
+  "@vehicle_data_unavailable": {},
+  "vehicle_action_failed": "Action failed. Check vehicle connection.",
+  "@vehicle_action_failed": {},
+  "vehicle_open_trunk": "Open Trunk",
+  "@vehicle_open_trunk": {},
+  "vehicle_close_trunk": "Close Trunk",
+  "@vehicle_close_trunk": {},
+  "vehicle_trunk_info_open": "Opening the trunk will unlock the car first.",
+  "@vehicle_trunk_info_open": {},
+  "vehicle_ac_on": "AC On",
+  "@vehicle_ac_on": {},
+  "vehicle_ac_off": "AC Off",
+  "@vehicle_ac_off": {},
+  "vehicle_max_cooling_on": "Max Cooling: ON",
+  "@vehicle_max_cooling_on": {},
+  "vehicle_max_cooling_off": "Max Cooling: OFF",
+  "@vehicle_max_cooling_off": {},
+  "vehicle_temp_label": "Temperature",
+  "@vehicle_temp_label": {},
+  "vehicle_fan_speed_label": "Fan Speed",
+  "@vehicle_fan_speed_label": {},
+  "vehicle_fan_level": "Level {arg1}",
+  "@vehicle_fan_level": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_inside_temp_fmt": "Inside: {arg1}°C",
+  "@vehicle_inside_temp_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_seat_driver": "Driver",
+  "@vehicle_seat_driver": {},
+  "vehicle_seat_passenger": "Passenger",
+  "@vehicle_seat_passenger": {},
+  "vehicle_seat_no_controls": "No seat controls available for this vehicle.",
+  "@vehicle_seat_no_controls": {},
+  "vehicle_seat_heat_label": "Heat {arg1}",
+  "@vehicle_seat_heat_label": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_seat_cool_label": "Cool {arg1}",
+  "@vehicle_seat_cool_label": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_heat_off": "(Off)",
+  "@vehicle_heat_off": {},
+  "vehicle_heat_low": "(Low)",
+  "@vehicle_heat_low": {},
+  "vehicle_heat_high": "(High)",
+  "@vehicle_heat_high": {},
+  "vehicle_seat_pos_1": "Pos 1",
+  "@vehicle_seat_pos_1": {},
+  "vehicle_seat_pos_2": "Pos 2",
+  "@vehicle_seat_pos_2": {},
+  "vehicle_all_windows": "All Windows",
+  "@vehicle_all_windows": {},
+  "vehicle_window_front_left": "Front Left",
+  "@vehicle_window_front_left": {},
+  "vehicle_window_front_right": "Front Right",
+  "@vehicle_window_front_right": {},
+  "vehicle_window_rear_left": "Rear Left",
+  "@vehicle_window_rear_left": {},
+  "vehicle_window_rear_right": "Rear Right",
+  "@vehicle_window_rear_right": {},
+  "vehicle_window_close": "Close",
+  "@vehicle_window_close": {},
+  "vehicle_window_close_vent": "Close Vent",
+  "@vehicle_window_close_vent": {},
+  "vehicle_window_vent_12": "Vent 12%",
+  "@vehicle_window_vent_12": {},
+  "vehicle_window_open_all": "Open All",
+  "@vehicle_window_open_all": {},
+  "vehicle_sunroof": "Sunroof",
+  "@vehicle_sunroof": {},
+  "vehicle_sunshade": "Sunshade",
+  "@vehicle_sunshade": {},
+  "vehicle_btn_drl_title": "Daytime running lights",
+  "@vehicle_btn_drl_title": {},
+  "vehicle_btn_slw_title": "Speed limit warning",
+  "@vehicle_btn_slw_title": {},
+  "vehicle_control_section_charge_cap": "Charge limit",
+  "@vehicle_control_section_charge_cap": {},
+  "vehicle_charge_cap_not_supported": "Charge cap is not supported by this vehicle.",
+  "@vehicle_charge_cap_not_supported": {},
+  "vehicle_charge_limit_label": "Charge Limit",
+  "@vehicle_charge_limit_label": {},
+  "vehicle_enable_charge_limit": "Enable Charge Limit",
+  "@vehicle_enable_charge_limit": {},
+  "vehicle_charge_limit_range": "Minimum 50%, maximum 100%",
+  "@vehicle_charge_limit_range": {},
+  "vehicle_tyre_no_signal": "NO SIGNAL",
+  "@vehicle_tyre_no_signal": {},
+  "vehicle_tyre_slow_leak": "SLOW LEAK",
+  "@vehicle_tyre_slow_leak": {},
+  "vehicle_tyre_fast_leak": "FAST LEAK",
+  "@vehicle_tyre_fast_leak": {},
+  "vehicle_tyre_low": "LOW",
+  "@vehicle_tyre_low": {},
+  "vehicle_tyre_high": "HIGH",
+  "@vehicle_tyre_high": {},
+  "vehicle_tyre_ok": "OK",
+  "@vehicle_tyre_ok": {},
+  "vehicle_tyre_check_pressure": "Check pressure",
+  "@vehicle_tyre_check_pressure": {},
+  "vehicle_toggle_on": "ON",
+  "@vehicle_toggle_on": {},
+  "vehicle_toggle_off": "OFF",
+  "@vehicle_toggle_off": {},
+  "vehicle_err_climate_control": "Climate control failed.",
+  "@vehicle_err_climate_control": {},
+  "vehicle_err_max_cooling": "Max cooling failed.",
+  "@vehicle_err_max_cooling": {},
+  "vehicle_err_drl_control": "DRL control failed.",
+  "@vehicle_err_drl_control": {},
+  "vehicle_err_slw_control": "ADAS control failed.",
+  "@vehicle_err_slw_control": {},
+  "vehicle_err_charge_limit_toggle": "Charge limit toggle failed.",
+  "@vehicle_err_charge_limit_toggle": {},
+  "vehicle_a11y_decrease_fmt": "Decrease {arg1}",
+  "@vehicle_a11y_decrease_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_a11y_increase_fmt": "Increase {arg1}",
+  "@vehicle_a11y_increase_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_stale_connecting": "Connecting…",
+  "@vehicle_stale_connecting": {},
+  "vehicle_appearance_model_title": "Select Model",
+  "@vehicle_appearance_model_title": {},
+  "vehicle_appearance_custom_color": "Custom color",
+  "@vehicle_appearance_custom_color": {},
+  "vehicle_status_charge_fmt": "Charge: {arg1}%",
+  "@vehicle_status_charge_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_status_range_fmt": "Range: {arg1} km",
+  "@vehicle_status_range_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_status_charge_unknown": "Charge: —",
+  "@vehicle_status_charge_unknown": {},
+  "vehicle_status_range_unknown": "Range: —",
+  "@vehicle_status_range_unknown": {},
+  "startup_subtitle": "Getting your dashcam ready",
+  "@startup_subtitle": {},
+  "startup_header_preparing": "Getting things ready…",
+  "@startup_header_preparing": {},
+  "startup_header_starting": "Starting up…",
+  "@startup_header_starting": {},
+  "startup_header_verifying": "Almost ready…",
+  "@startup_header_verifying": {},
+  "startup_header_ready": "Everything's ready",
+  "@startup_header_ready": {},
+  "startup_daemon_camera": "Camera",
+  "@startup_daemon_camera": {},
+  "startup_daemon_camera_desc": "Live view & recording",
+  "@startup_daemon_camera_desc": {},
+  "startup_daemon_sentry": "Sentry Mode",
+  "@startup_daemon_sentry": {},
+  "startup_daemon_sentry_desc": "Motion detection & alerts",
+  "@startup_daemon_sentry_desc": {},
+  "startup_daemon_parking": "Parking Guard",
+  "@startup_daemon_parking": {},
+  "startup_daemon_parking_desc": "Keeps watch while parked",
+  "@startup_daemon_parking_desc": {},
+  "startup_status_waiting": "Waiting",
+  "@startup_status_waiting": {},
+  "startup_status_starting": "Starting",
+  "@startup_status_starting": {},
+  "startup_status_ready": "Ready",
+  "@startup_status_ready": {},
+  "startup_status_failed": "Failed",
+  "@startup_status_failed": {},
+  "startup_continue_anyway": "Continue anyway",
+  "@startup_continue_anyway": {},
+  "startup_continue": "Continue →",
+  "@startup_continue": {},
+  "live_retry": "Retry",
+  "@live_retry": {},
+  "live_connecting": "Connecting to camera…",
+  "@live_connecting": {},
+  "live_error_fmt": "Error: {arg1}",
+  "@live_error_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "live_camera_unavailable_fmt": "Camera unavailable\n{arg1}",
+  "@live_camera_unavailable_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "live_direction_all": "All",
+  "@live_direction_all": {},
+  "live_direction_front": "Front",
+  "@live_direction_front": {},
+  "live_direction_right": "Right",
+  "@live_direction_right": {},
+  "live_direction_rear": "Rear",
+  "@live_direction_rear": {},
+  "live_direction_left": "Left",
+  "@live_direction_left": {},
+  "trip_no_route_data": "No route data for this trip",
+  "@trip_no_route_data": {},
+  "trips_tab_trips": "Trips",
+  "@trips_tab_trips": {},
+  "trips_tab_stats": "Stats",
+  "@trips_tab_stats": {},
+  "trips_tab_storage": "Storage",
+  "@trips_tab_storage": {},
+  "trips_filter_7_days": "7 Days",
+  "@trips_filter_7_days": {},
+  "trips_filter_14_days": "14 Days",
+  "@trips_filter_14_days": {},
+  "trips_filter_30_days": "30 Days",
+  "@trips_filter_30_days": {},
+  "trips_load_error": "Error: {message}",
+  "@trips_load_error": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "trips_empty_state": "No trips recorded yet",
+  "@trips_empty_state": {},
+  "trips_period_summary_title": "Period Summary",
+  "@trips_period_summary_title": {},
+  "trips_stat_trips": "Trips",
+  "@trips_stat_trips": {},
+  "trips_stat_hours": "Hours",
+  "@trips_stat_hours": {},
+  "trips_stat_efficiency": "Efficiency",
+  "@trips_stat_efficiency": {},
+  "trips_stat_kwh": "kWh",
+  "@trips_stat_kwh": {},
+  "trips_stat_kwh_per_100km": "kWh/100km",
+  "@trips_stat_kwh_per_100km": {},
+  "trips_score_label": "Score: {score}",
+  "@trips_score_label": {
+    "placeholders": {
+      "score": {}
+    }
+  },
+  "trips_driver_score_title": "Driver Score",
+  "@trips_driver_score_title": {},
+  "trips_driver_score_overall": "Overall: {score} / 100",
+  "@trips_driver_score_overall": {
+    "placeholders": {
+      "score": {}
+    }
+  },
+  "trips_range_title": "Personalized Range",
+  "@trips_range_title": {},
+  "trips_range_byd_estimate": "BYD estimate: {km} km",
+  "@trips_range_byd_estimate": {
+    "placeholders": {
+      "km": {}
+    }
+  },
+  "trips_range_no_data": "Not enough data yet",
+  "@trips_range_no_data": {},
+  "trips_dna_title": "Driving DNA",
+  "@trips_dna_title": {},
+  "trips_dna_anticipation": "Anticipation",
+  "@trips_dna_anticipation": {},
+  "trips_dna_smoothness": "Smoothness",
+  "@trips_dna_smoothness": {},
+  "trips_dna_speed_discipline": "Speed Discipline",
+  "@trips_dna_speed_discipline": {},
+  "trips_dna_efficiency": "Efficiency",
+  "@trips_dna_efficiency": {},
+  "trips_dna_consistency": "Consistency",
+  "@trips_dna_consistency": {},
+  "trips_storage_title": "Trip Storage",
+  "@trips_storage_title": {},
+  "trips_storage_analytics_label": "Trip Analytics",
+  "@trips_storage_analytics_label": {},
+  "trips_storage_rate_label": "Electricity Rate",
+  "@trips_storage_rate_label": {},
+  "trips_storage_distance_unit_label": "Distance Unit",
+  "@trips_storage_distance_unit_label": {},
+  "trips_storage_location_label": "Storage Location",
+  "@trips_storage_location_label": {},
+  "trips_storage_internal": "Internal",
+  "@trips_storage_internal": {},
+  "trips_storage_sd_card": "SD Card",
+  "@trips_storage_sd_card": {},
+  "trips_storage_sd_card_unavailable": "SD Card (N/A)",
+  "@trips_storage_sd_card_unavailable": {},
+  "trips_storage_apply": "Apply Changes",
+  "@trips_storage_apply": {},
+  "trips_storage_usage_line": "{used} {unit} used / {limit} MB limit · {count} trips",
+  "@trips_storage_usage_line": {
+    "placeholders": {
+      "used": {},
+      "unit": {},
+      "limit": {},
+      "count": {}
+    }
+  },
+  "trips_sync_title": "Database Catalog",
+  "@trips_sync_title": {},
+  "trips_sync_description": "Reconcile the trips index with telemetry files on disk.",
+  "@trips_sync_description": {},
+  "trips_sync_button": "Sync Database",
+  "@trips_sync_button": {},
+  "trips_sync_running": "Syncing…",
+  "@trips_sync_running": {},
+  "trips_sync_success": "Synced successfully: +{added} -{removed} ({total} total)",
+  "@trips_sync_success": {
+    "placeholders": {
+      "added": {},
+      "removed": {},
+      "total": {}
+    }
+  },
+  "trips_sync_failed_generic": "Sync failed",
+  "@trips_sync_failed_generic": {},
+  "trips_detail_summary_title": "Trip Summary",
+  "@trips_detail_summary_title": {},
+  "trips_detail_distance": "Distance",
+  "@trips_detail_distance": {},
+  "trips_detail_duration": "Duration",
+  "@trips_detail_duration": {},
+  "trips_detail_energy": "Energy",
+  "@trips_detail_energy": {},
+  "trips_detail_avg_speed": "Avg Speed",
+  "@trips_detail_avg_speed": {},
+  "trips_detail_max_speed": "Max Speed",
+  "@trips_detail_max_speed": {},
+  "trips_detail_soc": "SoC",
+  "@trips_detail_soc": {},
+  "trips_detail_cost": "Cost",
+  "@trips_detail_cost": {},
+  "trips_detail_ext_temp": "Ext Temp",
+  "@trips_detail_ext_temp": {},
+  "trips_detail_elev_gain": "Elev Gain",
+  "@trips_detail_elev_gain": {},
+  "trips_detail_scores_title": "Driving Scores",
+  "@trips_detail_scores_title": {},
+  "trips_detail_unavailable": "Trip details unavailable",
+  "@trips_detail_unavailable": {},
+  "trips_detail_loading": "Loading trip…",
+  "@trips_detail_loading": {},
+  "trips_detail_route_points": "{count} GPS points recorded",
+  "@trips_detail_route_points": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "rec_severity_critical": "CRITICAL",
+  "@rec_severity_critical": {},
+  "rec_severity_alert": "ALERT",
+  "@rec_severity_alert": {},
+  "location_loading_title": "Loading map",
+  "@location_loading_title": {},
+  "location_permission_missing_title": "Location permission required",
+  "@location_permission_missing_title": {},
+  "location_permission_denied_title": "Permission denied",
+  "@location_permission_denied_title": {},
+  "location_provider_disabled_title": "GPS disabled",
+  "@location_provider_disabled_title": {},
+  "location_waiting_for_fix_title": "Waiting for GPS fix",
+  "@location_waiting_for_fix_title": {},
+  "location_car_location_title": "Car location",
+  "@location_car_location_title": {},
+  "location_stale_title": "Location stale",
+  "@location_stale_title": {},
+  "location_tile_failure_title": "Map unavailable",
+  "@location_tile_failure_title": {},
+  "location_tile_failure_subtitle": "Network unavailable",
+  "@location_tile_failure_subtitle": {},
+  "location_error_title": "Location error",
+  "@location_error_title": {},
+  "location_action_grant": "Grant",
+  "@location_action_grant": {},
+  "location_action_retry": "Retry",
+  "@location_action_retry": {},
+  "location_mode_auto": "Auto",
+  "@location_mode_auto": {},
+  "location_mode_light": "Light",
+  "@location_mode_light": {},
+  "location_mode_dark": "Dark",
+  "@location_mode_dark": {},
+  "cd_recenter_on_car": "Recenter on car",
+  "@cd_recenter_on_car": {},
+  "recording_lib_no_recordings_normal": "No normal recordings",
+  "@recording_lib_no_recordings_normal": {},
+  "recording_lib_no_recordings_sentry": "No sentry events",
+  "@recording_lib_no_recordings_sentry": {},
+  "recording_lib_no_recordings_proximity": "No proximity events",
+  "@recording_lib_no_recordings_proximity": {},
+  "recording_lib_camera_badge": "C{arg1}",
+  "@recording_lib_camera_badge": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "video_player_legend_person": "person",
+  "@video_player_legend_person": {},
+  "video_player_legend_car": "car",
+  "@video_player_legend_car": {},
+  "video_player_legend_bike": "bike",
+  "@video_player_legend_bike": {},
+  "video_player_legend_motion": "motion",
+  "@video_player_legend_motion": {},
+  "recording_lib_proximity_very_close": "very close",
+  "@recording_lib_proximity_very_close": {},
+  "recording_lib_proximity_close": "close",
+  "@recording_lib_proximity_close": {},
+  "recording_lib_proximity_mid": "mid",
+  "@recording_lib_proximity_mid": {},
+  "recording_lib_proximity_far": "far",
+  "@recording_lib_proximity_far": {},
+  "surveillance_tab_general": "General",
+  "@surveillance_tab_general": {},
+  "surveillance_tab_detection": "Detection",
+  "@surveillance_tab_detection": {},
+  "surveillance_tab_recording": "Recording",
+  "@surveillance_tab_recording": {},
+  "surveillance_tab_storage": "Storage",
+  "@surveillance_tab_storage": {},
+  "surveillance_tab_advanced": "Advanced",
+  "@surveillance_tab_advanced": {},
+  "surveillance_general_title": "Surveillance Mode",
+  "@surveillance_general_title": {},
+  "surveillance_general_enable": "Enable Surveillance",
+  "@surveillance_general_enable": {},
+  "surveillance_general_status": "Status",
+  "@surveillance_general_status": {},
+  "surveillance_general_status_running": "Running",
+  "@surveillance_general_status_running": {},
+  "surveillance_general_status_idle": "Idle",
+  "@surveillance_general_status_idle": {},
+  "surveillance_general_events_today": "Events Today",
+  "@surveillance_general_events_today": {},
+  "surveillance_safe_locations_title": "Safe Locations",
+  "@surveillance_safe_locations_title": {},
+  "surveillance_safe_locations_subtitle": "Camera won't start when parked here",
+  "@surveillance_safe_locations_subtitle": {},
+  "surveillance_safe_locations_enable": "Disable at Safe Locations",
+  "@surveillance_safe_locations_enable": {},
+  "surveillance_safe_locations_empty": "No safe locations added yet",
+  "@surveillance_safe_locations_empty": {},
+  "surveillance_safe_locations_add_current": "Add Current Location as Safe Zone",
+  "@surveillance_safe_locations_add_current": {},
+  "surveillance_safe_locations_no_gps": "GPS location not available",
+  "@surveillance_safe_locations_no_gps": {},
+  "surveillance_safe_locations_zone_label": "{arg1}  ({arg2}m)",
+  "@surveillance_safe_locations_zone_label": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "surveillance_detection_title": "Detection Settings",
+  "@surveillance_detection_title": {},
+  "surveillance_detection_preset_label": "Environment Preset",
+  "@surveillance_detection_preset_label": {},
+  "surveillance_preset_outdoor": "Outdoor",
+  "@surveillance_preset_outdoor": {},
+  "surveillance_preset_garage": "Garage",
+  "@surveillance_preset_garage": {},
+  "surveillance_preset_street": "Street",
+  "@surveillance_preset_street": {},
+  "surveillance_preset_custom": "Custom",
+  "@surveillance_preset_custom": {},
+  "surveillance_detection_sensitivity_label": "Sensitivity (1=strict, 5=sensitive): {arg1}",
+  "@surveillance_detection_sensitivity_label": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "surveillance_detection_objects_label": "Detect Objects",
+  "@surveillance_detection_objects_label": {},
+  "surveillance_detection_object_person": "Person",
+  "@surveillance_detection_object_person": {},
+  "surveillance_detection_object_car": "Car",
+  "@surveillance_detection_object_car": {},
+  "surveillance_detection_object_bike": "Bike",
+  "@surveillance_detection_object_bike": {},
+  "surveillance_recording_title": "Event Recording",
+  "@surveillance_recording_title": {},
+  "surveillance_recording_pre_label": "Pre-record (seconds before event): {arg1}",
+  "@surveillance_recording_pre_label": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "surveillance_recording_post_label": "Post-record (seconds after event): {arg1}",
+  "@surveillance_recording_post_label": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "surveillance_seconds_value": "{arg1}s",
+  "@surveillance_seconds_value": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "surveillance_storage_title": "Surveillance Storage",
+  "@surveillance_storage_title": {},
+  "surveillance_storage_location_label": "Storage Location",
+  "@surveillance_storage_location_label": {},
+  "surveillance_storage_internal": "Internal",
+  "@surveillance_storage_internal": {},
+  "surveillance_storage_sd_card": "SD Card",
+  "@surveillance_storage_sd_card": {},
+  "surveillance_storage_sd_card_na": "SD Card (N/A)",
+  "@surveillance_storage_sd_card_na": {},
+  "surveillance_storage_limit_label": "Storage Limit — auto-deletes oldest when reached",
+  "@surveillance_storage_limit_label": {},
+  "surveillance_storage_usage": "{arg1} used / {arg2} limit",
+  "@surveillance_storage_usage": {
+    "placeholders": {
+      "arg1": {},
+      "arg2": {}
+    }
+  },
+  "surveillance_storage_files": "{arg1} events",
+  "@surveillance_storage_files": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "surveillance_storage_path_label": "Path",
+  "@surveillance_storage_path_label": {},
+  "surveillance_format_title": "Format External Drive",
+  "@surveillance_format_title": {},
+  "surveillance_format_warning": "Permanently erases ALL data on the SD card or USB drive.",
+  "@surveillance_format_warning": {},
+  "surveillance_format_button": "Format SD Card / USB",
+  "@surveillance_format_button": {},
+  "surveillance_format_confirm": "Tap again — ALL data will be ERASED",
+  "@surveillance_format_confirm": {},
+  "surveillance_format_running": "Formatting… please wait",
+  "@surveillance_format_running": {},
+  "surveillance_dismiss": "Dismiss",
+  "@surveillance_dismiss": {},
+  "surveillance_sync_title": "Database Catalog",
+  "@surveillance_sync_title": {},
+  "surveillance_sync_description": "Reconcile the surveillance index with files on disk.",
+  "@surveillance_sync_description": {},
+  "surveillance_sync_button": "Sync Database",
+  "@surveillance_sync_button": {},
+  "surveillance_sync_running": "Syncing…",
+  "@surveillance_sync_running": {},
+  "surveillance_advanced_camera_title": "Camera Selection",
+  "@surveillance_advanced_camera_title": {},
+  "surveillance_advanced_camera_front": "Front",
+  "@surveillance_advanced_camera_front": {},
+  "surveillance_advanced_camera_right": "Right",
+  "@surveillance_advanced_camera_right": {},
+  "surveillance_advanced_camera_rear": "Rear",
+  "@surveillance_advanced_camera_rear": {},
+  "surveillance_advanced_camera_left": "Left",
+  "@surveillance_advanced_camera_left": {},
+  "surveillance_advanced_ai_title": "AI & Deterrent",
+  "@surveillance_advanced_ai_title": {},
+  "surveillance_advanced_ai_detection": "AI Detection",
+  "@surveillance_advanced_ai_detection": {},
+  "surveillance_advanced_night_mode": "Night Mode",
+  "@surveillance_advanced_night_mode": {},
+  "surveillance_advanced_deterrent_label": "Deterrent Action",
+  "@surveillance_advanced_deterrent_label": {},
+  "surveillance_deterrent_silent": "Silent",
+  "@surveillance_deterrent_silent": {},
+  "surveillance_deterrent_horn": "Horn",
+  "@surveillance_deterrent_horn": {},
+  "surveillance_deterrent_flash": "Flash",
+  "@surveillance_deterrent_flash": {},
+  "surveillance_apply_button": "Apply Changes",
+  "@surveillance_apply_button": {},
+  "surveillance_apply_failed": "Save failed",
+  "@surveillance_apply_failed": {}
+}

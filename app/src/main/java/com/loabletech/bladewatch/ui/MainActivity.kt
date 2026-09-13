@@ -61,7 +61,6 @@ class MainActivity : AppCompatActivity() {
     private val mainViewModel: MainViewModel by viewModels()
     private val daemonsViewModel: DaemonsViewModel by viewModels()
     private val logsViewModel: LogsViewModel by viewModels()
-    private var appUpdater: net.bladewatch.app.updater.AppUpdater? = null
 
     // Daemon startup manager
     private lateinit var daemonStartupManager: DaemonStartupManager
@@ -156,12 +155,11 @@ class MainActivity : AppCompatActivity() {
         startLocationSidecarService()
         
         // Initialize daemons after a short delay to allow ADB connection.
-        // If this is a post-update launch, run UpdateLifecycle.hardResetDaemons
+        // If the package was just replaced, run DaemonHardReset.hardResetDaemons
         // FIRST so any zombie daemons / watchdogs from the previous install are
-        // dead before the new daemon launcher starts. See UpdateLifecycle for
-        // the sentinel handshake details.
-        val isPostUpdate = net.bladewatch.app.updater.UpdateLifecycle
-            .isPostUpdateLaunch(this, intent)
+        // dead before the new daemon launcher starts.
+        val isPostInstall = net.bladewatch.app.launcher.DaemonHardReset
+            .isPostInstallLaunch(this, intent)
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             // Sync device ID to file synchronously before daemon startup
             Thread {
@@ -181,32 +179,9 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                if (isPostUpdate) {
-                    logsViewModel.info("Update", "Post-update launch — hard-resetting daemons before startup")
-                    net.bladewatch.app.updater.UpdateLifecycle.hardResetDaemons(this) {
-                        // Surface failed-install errors first. consumeJustUpdatedVersion
-                        // returns null when a failure marker is present, so the success
-                        // toast never fires on a failed install. consumeFailedUpdateError
-                        // also clears the marker so it's a one-shot.
-                        val installError = net.bladewatch.app.updater.AppUpdater
-                            .consumeFailedUpdateError(this)
-                        if (installError != null) {
-                            runOnUiThread {
-                                Toast.makeText(this, getString(R.string.toast_update_install_failed, installError), Toast.LENGTH_LONG).show()
-                                logsViewModel.warn("Update", "Install failed: $installError")
-                            }
-                        }
-                        // Consume the just-updated marker only after the cleanup
-                        // completes. A crash mid-reset will leave the sentinel
-                        // in place so the next launch retries.
-                        val updatedVersion = net.bladewatch.app.updater.AppUpdater
-                            .consumeJustUpdatedVersion(this)
-                        if (updatedVersion != null) {
-                            runOnUiThread {
-                                Toast.makeText(this, getString(R.string.toast_updated_to, updatedVersion), Toast.LENGTH_LONG).show()
-                                logsViewModel.info("Update", "App updated to $updatedVersion")
-                            }
-                        }
+                if (isPostInstall) {
+                    logsViewModel.info("Daemons", "Post-install launch — hard-resetting daemons before startup")
+                    net.bladewatch.app.launcher.DaemonHardReset.hardResetDaemons(this) {
                         startDaemons.run()
                     }
                 } else {
@@ -221,38 +196,17 @@ class MainActivity : AppCompatActivity() {
         // Check traffic monitor status early so drawer shows correct state
         checkTrafficMonitorStatus()
         
-        // Check for app updates (delayed to not block startup)
+        // One-time cleanup of the APK the removed in-app updater used to stage.
+        // Harmless once every device has been through it; costs one shell call.
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            // Clean up any leftover update APK from previous install
             val adb = net.bladewatch.app.launcher.AdbDaemonLauncher(this)
             adb.executeShellCommand("rm -f /data/local/tmp/bladewatch_update.apk", object : net.bladewatch.app.launcher.AdbDaemonLauncher.LaunchCallback {
                 override fun onLog(message: String) {}
                 override fun onLaunched() {}
                 override fun onError(error: String) {}
             })
-
-            // Surface failed-install errors first (consumeJustUpdatedVersion
-            // returns null when a failure marker is present, so the success
-            // toast never fires on a failed install).
-            val installError = net.bladewatch.app.updater.AppUpdater.consumeFailedUpdateError(this)
-            if (installError != null) {
-                Toast.makeText(this, getString(R.string.toast_update_install_failed, installError), Toast.LENGTH_LONG).show()
-                logsViewModel.warn("Update", "Install failed: $installError")
-            }
-
-            // Show post-update message if app was just updated
-            val updatedVersion = net.bladewatch.app.updater.AppUpdater.consumeJustUpdatedVersion(this)
-            if (updatedVersion != null) {
-                Toast.makeText(this, getString(R.string.toast_updated_to, updatedVersion), Toast.LENGTH_LONG).show()
-                logsViewModel.info("Update", "App updated to $updatedVersion")
-            }
-
-            checkForAppUpdate()
         }, 10000) // 10 seconds after launch
-        
-        // Schedule periodic update checks (every 6 hours)
-        schedulePeriodicUpdateCheck()
-        
+
         // Status overlay: start immediately if permission granted, show guide if not
         startStatusOverlay()
         
@@ -347,121 +301,6 @@ class MainActivity : AppCompatActivity() {
         })
     }
     
-    /**
-     * Check GitHub for app updates and show dialog if available.
-     */
-    private fun checkForAppUpdate() {
-        if (!PreferencesManager.isAutoUpdateEnabled()) {
-            logsViewModel.debug("Update", "Auto-update disabled")
-            return
-        }
-        logsViewModel.info("Update", "Checking for updates...")
-        val updater = net.bladewatch.app.updater.AppUpdater(this)
-        appUpdater = updater
-        updater.checkForUpdate(object : net.bladewatch.app.updater.AppUpdater.UpdateCallback {
-            override fun onUpdateAvailable(currentVersion: String, newVersion: String, releaseNotes: String) {
-                net.bladewatch.app.updater.UpdateDialog.showUpdateAvailable(
-                    this@MainActivity, currentVersion, newVersion, releaseNotes,
-                    { performAppUpdate(updater) },
-                    null
-                )
-            }
-
-            override fun onNoUpdate(currentVersion: String) {
-                logsViewModel.debug("Update", "App is up to date (v$currentVersion)")
-            }
-
-            override fun onError(error: String) {
-                logsViewModel.debug("Update", "Update check failed: $error")
-            }
-        })
-    }
-
-    /**
-     * Manual update check — shows toast if already up to date.
-     */
-    fun checkForAppUpdateManual() {
-        if (!PreferencesManager.isAutoUpdateEnabled()) {
-            logsViewModel.debug("Update", "Manual update check disabled")
-            return
-        }
-        Toast.makeText(this, getString(R.string.toast_checking_for_updates), Toast.LENGTH_SHORT).show()
-        val updater = net.bladewatch.app.updater.AppUpdater(this)
-        appUpdater = updater
-        updater.checkForUpdate(object : net.bladewatch.app.updater.AppUpdater.UpdateCallback {
-            override fun onUpdateAvailable(currentVersion: String, newVersion: String, releaseNotes: String) {
-                net.bladewatch.app.updater.UpdateDialog.showUpdateAvailable(
-                    this@MainActivity, currentVersion, newVersion, releaseNotes,
-                    { performAppUpdate(updater) },
-                    null
-                )
-            }
-
-            override fun onNoUpdate(currentVersion: String) {
-                Toast.makeText(this@MainActivity, getString(R.string.toast_app_up_to_date, currentVersion), Toast.LENGTH_LONG).show()
-            }
-
-            override fun onError(error: String) {
-                Toast.makeText(this@MainActivity, getString(R.string.toast_update_check_failed, error), Toast.LENGTH_LONG).show()
-            }
-        })
-    }
-
-    /**
-     * Schedule periodic update checks (every 6 hours).
-     */
-    private fun schedulePeriodicUpdateCheck() {
-        val sixHoursMs = 6 * 60 * 60 * 1000L
-        // Cancel any prior runnable (e.g. across activity recreate).
-        updateCheckRunnable?.let { mainHandler.removeCallbacks(it) }
-        val runnable = object : Runnable {
-            override fun run() {
-                checkForAppUpdate()
-                mainHandler.postDelayed(this, sixHoursMs)
-            }
-        }
-        updateCheckRunnable = runnable
-        mainHandler.postDelayed(runnable, sixHoursMs)
-    }
-
-    private fun performAppUpdate(updater: net.bladewatch.app.updater.AppUpdater) {
-        val progress = net.bladewatch.app.updater.UpdateDialog.showProgress(this) {
-            updater.cancel()
-        }
-
-        updater.downloadAndInstall(object : net.bladewatch.app.updater.AppUpdater.InstallCallback {
-            override fun onProgress(message: String) {
-                runOnUiThread {
-                    when {
-                        message.contains("Downloading") -> progress.setStep("\u2B07\uFE0F Downloading update...", 15)
-                        message.contains("Verifying") -> progress.setStep("\uD83D\uDD0D Verifying download...", 40)
-                        message.contains("Stopping") -> progress.setStep("\u23F9\uFE0F Stopping daemons...", 60)
-                        message.contains("Installing") -> progress.setStep("\uD83D\uDCE6 Installing update...", 85)
-                        message.contains("installed") -> progress.setStep("\u2705 Update installed!", 100)
-                        else -> progress.setStatus(message)
-                    }
-                }
-            }
-
-            override fun onDownloadProgress(percent: Int) {
-                // Download is via ADB shell — no granular progress
-                // Step-based progress handles this
-            }
-
-            override fun onSuccess() {
-                runOnUiThread {
-                    progress.setStep("\u2705 Restarting app...", 100)
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        progress.dismiss()
-                    }, 2000)
-                }
-            }
-
-            override fun onError(error: String) {
-                runOnUiThread { progress.showError(error) }
-            }
-        })
-    }
 
     /**
      * SOTA: Setup storage directories from the App so it becomes the owner.
@@ -1741,7 +1580,6 @@ class MainActivity : AppCompatActivity() {
     //  Behaviour identical to the old drawer items — no logic change.
     // ==========================================================
 
-    fun invokeCheckForUpdates() = checkForAppUpdateManual()
     fun invokeResetDataDialog() = showResetDataDialog()
     fun invokeBatteryHealthAction() = showBatteryHealthDialog()
     fun invokeReconfigureCameraAction() = onReconfigureCameraClicked()

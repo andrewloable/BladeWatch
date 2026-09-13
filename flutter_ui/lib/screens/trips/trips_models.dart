@@ -1,0 +1,267 @@
+import 'package:intl/intl.dart';
+
+enum TripsTab { trips, stats, storage }
+
+enum TripsDaysFilter {
+  seven(7),
+  fourteen(14),
+  thirty(30);
+
+  final int days;
+  const TripsDaysFilter(this.days);
+}
+
+String formatTripDuration(int durationSeconds) {
+  final h = durationSeconds ~/ 3600;
+  final m = (durationSeconds % 3600) ~/ 60;
+  return h > 0 ? '${h}h ${m}m' : '${m}m';
+}
+
+class TripItem {
+  final int id;
+  final DateTime startTime;
+  final DateTime endTime;
+  final double distanceKm;
+  final int durationSeconds;
+  final int overallScore;
+  final double tripCost;
+  final String currency;
+  // proto TripSummary has energyPerKm, not energyUsedKwh — native hardcodes
+  // this to 0.0 (see TripsClient.kt's own comment); reproduced as-is, not
+  // fixed here (the task's own instruction: file a separate issue if this
+  // looks like a bug, don't silently change displayed behaviour).
+  final double energyKwh;
+
+  const TripItem({
+    required this.id,
+    required this.startTime,
+    required this.endTime,
+    required this.distanceKm,
+    required this.durationSeconds,
+    required this.overallScore,
+    required this.tripCost,
+    required this.currency,
+    required this.energyKwh,
+  });
+
+  String get formattedDate => DateFormat('MMM d, yyyy HH:mm').format(startTime);
+  String get formattedDuration => formatTripDuration(durationSeconds);
+}
+
+/// Mirrors `TripsClient.fetchTripDetail`'s hardcoded 0.0 defaults for
+/// [energyUsedKwh]/[efficiencySocPerKm] and empty [telemetryFilePath] — the
+/// RPC response genuinely has no field for these (TripDetail/TripSummary
+/// proto messages checked directly), not a port gap.
+class TripDetailData {
+  final int id;
+  final DateTime startTime;
+  final DateTime endTime;
+  final double distanceKm;
+  final int durationSeconds;
+  final double avgSpeedKmh;
+  final double maxSpeedKmh;
+  final double socStart;
+  final double socEnd;
+  final double energyUsedKwh;
+  final double efficiencySocPerKm;
+  final String currency;
+  final double tripCost;
+  final String gradientProfile;
+  final double elevationGainM;
+  final double elevationLossM;
+  final double extTempC;
+  final int anticipationScore;
+  final int smoothnessScore;
+  final int speedDisciplineScore;
+  final int efficiencyScore;
+  final int consistencyScore;
+  final int overallScore;
+  final String telemetryFilePath;
+
+  const TripDetailData({
+    required this.id,
+    required this.startTime,
+    required this.endTime,
+    required this.distanceKm,
+    required this.durationSeconds,
+    required this.avgSpeedKmh,
+    required this.maxSpeedKmh,
+    required this.socStart,
+    required this.socEnd,
+    required this.energyUsedKwh,
+    required this.efficiencySocPerKm,
+    required this.currency,
+    required this.tripCost,
+    required this.gradientProfile,
+    required this.elevationGainM,
+    required this.elevationLossM,
+    required this.extTempC,
+    required this.anticipationScore,
+    required this.smoothnessScore,
+    required this.speedDisciplineScore,
+    required this.efficiencyScore,
+    required this.consistencyScore,
+    required this.overallScore,
+    required this.telemetryFilePath,
+  });
+
+  String get formattedDateTitle => DateFormat('EEEE, MMMM d').format(startTime);
+  String get formattedTimeRange => '${DateFormat('HH:mm').format(startTime)} – ${DateFormat('HH:mm').format(endTime)}';
+  String get formattedDuration => formatTripDuration(durationSeconds);
+}
+
+class TelemetryPoint {
+  final int timestampMs;
+  final int speedKmh;
+  final int accelPercent;
+  final int brakePercent;
+  final double lat;
+  final double lon;
+
+  const TelemetryPoint({
+    required this.timestampMs,
+    required this.speedKmh,
+    required this.accelPercent,
+    required this.brakePercent,
+    required this.lat,
+    required this.lon,
+  });
+
+  bool get hasGps => lat != 0.0 && lon != 0.0;
+}
+
+class TripsSummary {
+  final int tripCount;
+  final double totalDistanceKm;
+  final int totalDurationSeconds;
+  final double totalEnergyKwh;
+  final double avgEnergyPerKm;
+  final double avgEfficiency;
+
+  const TripsSummary({
+    required this.tripCount,
+    required this.totalDistanceKm,
+    required this.totalDurationSeconds,
+    required this.totalEnergyKwh,
+    required this.avgEnergyPerKm,
+    required this.avgEfficiency,
+  });
+
+  String get formattedHours {
+    final h = totalDurationSeconds ~/ 3600;
+    final m = (totalDurationSeconds % 3600) ~/ 60;
+    return '${h}h ${m}m';
+  }
+}
+
+class DnaScores {
+  final int anticipation;
+  final int smoothness;
+  final int speedDiscipline;
+  final int efficiency;
+  final int consistency;
+  final int overall;
+
+  const DnaScores({
+    required this.anticipation,
+    required this.smoothness,
+    required this.speedDiscipline,
+    required this.efficiency,
+    required this.consistency,
+    required this.overall,
+  });
+
+  /// Native's own comment: "Score out of 700 = sum of 7 axes, but we have 5
+  /// with max 100 each = 500 max. Display as out of 500 to match the 5-axis
+  /// DNA." [overall] (the proto's own field, scored against a different axis
+  /// count) is shown separately, not folded into this — reproduced exactly.
+  int get scoreOutOf500 => anticipation + smoothness + speedDiscipline + efficiency + consistency;
+}
+
+class RangeEstimate {
+  final double estimatedKm;
+  final double builtInKm;
+
+  const RangeEstimate({required this.estimatedKm, required this.builtInKm});
+}
+
+class TripsConfig {
+  final bool enabled;
+  final double electricityRate;
+  final String currency;
+  final String distanceUnit;
+
+  const TripsConfig({
+    required this.enabled,
+    required this.electricityRate,
+    required this.currency,
+    required this.distanceUnit,
+  });
+}
+
+class TripsStorage {
+  final String storageType;
+  final int limitMb;
+  final double usedMb;
+  final String usedUnit;
+  final bool sdCardAvailable;
+  final int tripsCount;
+  final String storagePath;
+
+  const TripsStorage({
+    required this.storageType,
+    required this.limitMb,
+    required this.usedMb,
+    required this.usedUnit,
+    required this.sdCardAvailable,
+    required this.tripsCount,
+    required this.storagePath,
+  });
+}
+
+/// Result of [TripsController.syncDatabase] — structured, not a composed
+/// English sentence (unlike native's `TripSyncResult.message`), so the
+/// screen can render it through the ARB catalog. [error] is a raw
+/// server-supplied message when the daemon rejected the sync (not a
+/// hardcoded literal); the screen falls back to a generic localized string
+/// when it's null, matching native's own `"Sync failed"` fallback.
+class SyncOutcome {
+  final bool success;
+  final int added;
+  final int removed;
+  final int total;
+  final String? error;
+
+  const SyncOutcome({required this.success, this.added = 0, this.removed = 0, this.total = 0, this.error});
+}
+
+sealed class TripsLoadState {
+  const TripsLoadState();
+}
+
+class TripsLoading extends TripsLoadState {
+  const TripsLoading();
+}
+
+class TripsError extends TripsLoadState {
+  final String message;
+  const TripsError(this.message);
+}
+
+class TripsLoaded extends TripsLoadState {
+  final List<TripItem> trips;
+  final TripsSummary? summary;
+  final DnaScores? dna;
+  final RangeEstimate? range;
+  final TripsConfig? config;
+  final TripsStorage? storage;
+
+  const TripsLoaded({
+    required this.trips,
+    required this.summary,
+    required this.dna,
+    required this.range,
+    required this.config,
+    required this.storage,
+  });
+}

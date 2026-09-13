@@ -1,0 +1,2999 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Italian (`it`).
+class AppLocalizationsIt extends AppLocalizations {
+  AppLocalizationsIt([String locale = 'it']) : super(locale);
+
+  @override
+  String get app_name => 'BladeWatch';
+
+  @override
+  String get accessibility_service_description =>
+      'Mantenere il monitoraggio del veicolo BladeWatch attivo in background. Questo servizio non legge né interagisce con il contenuto dello schermo.';
+
+  @override
+  String get action_cancel => 'Annulla';
+
+  @override
+  String get action_clear_plain => 'Cancella';
+
+  @override
+  String get action_select_all => 'Selezionare tutti';
+
+  @override
+  String get action_select_all_short => 'Tutti .';
+
+  @override
+  String get action_delete => 'Elimina';
+
+  @override
+  String get action_done => 'Fatto';
+
+  @override
+  String get action_remind_me_later => 'Ricordami più tardi .';
+
+  @override
+  String get action_retry => 'Riprova';
+
+  @override
+  String get action_run => 'Corri .';
+
+  @override
+  String get action_clear_output => 'Sviluppo chiaro';
+
+  @override
+  String get cd_camera => 'Fotocamera';
+
+  @override
+  String get cd_qr => 'QR';
+
+  @override
+  String get cd_qr_code => 'Codice QR';
+
+  @override
+  String get cd_show_hide_token => 'Segnale di visualizzazione/occultamento';
+
+  @override
+  String get cd_copy_token => 'Copia del token';
+
+  @override
+  String get cd_copy_url => 'Copia URL';
+
+  @override
+  String get cd_clear_logs => 'Reggi trasparenti';
+
+  @override
+  String get cd_expand_collapse => 'Espansione/collasso';
+
+  @override
+  String get cd_recording_status => 'Stato di registrazione';
+
+  @override
+  String get cd_trip_tracking_status => 'Lo stato del tracciamento dei viaggi';
+
+  @override
+  String get cd_video_thumbnail => 'Miniatura video';
+
+  @override
+  String get cd_play => 'Riproduci';
+
+  @override
+  String get cd_back => 'Indietro';
+
+  @override
+  String get cd_play_pause => 'Riproduzione/pausa';
+
+  @override
+  String get cd_player_prev => 'Registrazione precedente';
+
+  @override
+  String get cd_player_next => 'Prossima registrazione';
+
+  @override
+  String get cd_player_maximize => 'Ingrandisci lettore';
+
+  @override
+  String get cd_player_minimize => 'Esci da schermo intero';
+
+  @override
+  String get cd_delete => 'Elimina';
+
+  @override
+  String get cd_expand => 'Espandi';
+
+  @override
+  String get cd_configure => 'Configurazione';
+
+  @override
+  String get cd_download_log => 'Scaricare il registro';
+
+  @override
+  String get cd_reset => 'Ripristina';
+
+  @override
+  String get cd_battery => 'Batteria';
+
+  @override
+  String get cd_step_completed => 'Passo completato';
+
+  @override
+  String get cd_permission_granted => 'Permesso rilasciato';
+
+  @override
+  String get overlay_rec_inactive_label => 'REC';
+
+  @override
+  String get overlay_trip_inactive_label => 'TRIP';
+
+  @override
+  String get log_entry_default_timestamp => '12:34:56';
+
+  @override
+  String get log_entry_default_tag => '- Non lo so.';
+
+  @override
+  String get log_entry_default_message => 'Messaggio di registrazione qui';
+
+  @override
+  String get daemon_card_default_name => 'Nome del servizio';
+
+  @override
+  String get daemon_card_default_status => 'Messaggio di stato';
+
+  @override
+  String get daemon_card_subprocesses => 'PROCESSI';
+
+  @override
+  String get logs_panel_title => 'Reggi';
+
+  @override
+  String get url_connecting => 'Connessione...';
+
+  @override
+  String get camera_selection_title => 'Selezione della telecamera';
+
+  @override
+  String get camera_selection_subtitle =>
+      'Selezionare la fonte della fotocamera panoramica';
+
+  @override
+  String get camera_current_auto => 'Attuale: Auto';
+
+  @override
+  String get camera_option_auto => 'Auto (rilevato all\'avvio)';
+
+  @override
+  String get camera_option_0 => 'Fotocamera 0  Atto';
+
+  @override
+  String get camera_option_1 => 'Fotocamera 1  Seal (di default)';
+
+  @override
+  String get camera_option_2 => 'Camera 2';
+
+  @override
+  String get camera_option_3 => 'Camera 3';
+
+  @override
+  String get camera_option_4 => 'Camera 4';
+
+  @override
+  String get camera_option_5 => 'Camera 5';
+
+  @override
+  String get camera_selection_hint =>
+      'Auto sceglie la fotocamera giusta per il tuo allestimento a ogni avvio. Camera 1 = BYD Seal, Camera 0 = allestimenti Atto. Riavvia il servizio fotocamera dopo aver cambiato l\'ID della fotocamera affinché l\'impostazione abbia effetto.';
+
+  @override
+  String get dashboard_scan_to_connect => 'Scansione per connettere';
+
+  @override
+  String get dashboard_qr_waiting => 'Aspettando il tunnel...';
+
+  @override
+  String get dashboard_daemons_running_default => '0/5 Correre';
+
+  @override
+  String get dashboard_device_id_loading => '- Non lo so .';
+
+  @override
+  String get dashboard_access_code => 'Codice di accesso';
+
+  @override
+  String get dashboard_token_masked => '••••••••';
+
+  @override
+  String get dashboard_regenerate_token => 'Segno di riproduzione';
+
+  @override
+  String get dashboard_set_password => 'Imposta password';
+
+  @override
+  String get cd_set_password => 'Imposta password personalizzata';
+
+  @override
+  String get dialog_set_password_title => 'Imposta password personalizzata';
+
+  @override
+  String get dialog_set_password_message =>
+      'Inserisci una nuova password di accesso. Sostituisce il token generato automaticamente.';
+
+  @override
+  String get dialog_set_password_hint => 'Nuova password (min. 12 caratteri)';
+
+  @override
+  String get toast_password_set => 'Password aggiornata';
+
+  @override
+  String get toast_password_too_short =>
+      'La password deve avere almeno 12 caratteri';
+
+  @override
+  String get toast_password_save_failed =>
+      'Salvataggio password non riuscito — servizio non pronto';
+
+  @override
+  String get setup_guide_title => 'Iniziare';
+
+  @override
+  String get setup_guide_subtitle =>
+      'Tre passi veloci per ottenere la migliore esperienza:';
+
+  @override
+  String get setup_step_one_label => '1';
+
+  @override
+  String get setup_step_two_label => '2 di cui al capitolo 2';
+
+  @override
+  String get setup_step_three_label => '3 Classifica';
+
+  @override
+  String get setup_language_title => 'Scegli la tua lingua';
+
+  @override
+  String get setup_language_body => 'Applicazione BladeWatch e tunnel web.';
+
+  @override
+  String get setup_language_button => 'Scegliete la lingua';
+
+  @override
+  String get setup_autostart_title =>
+      'Disattivare la restrizione di avvio automatico';
+
+  @override
+  String get setup_autostart_body =>
+      'Tocca qui sotto per aprire BYD Auto-Start. Trova BladeWatch nell\'elenco e sbarazza la casella. BYD cancella questo su ogni installazione  lo rifarete dopo gli aggiornamenti.';
+
+  @override
+  String get setup_autostart_button => 'Apri BYD Auto-Start';
+
+  @override
+  String get setup_overlay_title =>
+      'Permettere la visualizzazione su altre app';
+
+  @override
+  String get setup_overlay_body =>
+      'Abilitare questo per mostrare un indicatore di stato fluttuante per la registrazione e il tracciamento dei viaggi in cima ad altre app.';
+
+  @override
+  String get setup_overlay_button => 'Apri le impostazioni di sovrapposizione';
+
+  @override
+  String get cd_close => 'Chiudi';
+
+  @override
+  String get language_picker_title => 'Lingua';
+
+  @override
+  String language_picker_subtitle_fmt(Object arg1) {
+    return 'Lingue disponibili $arg1';
+  }
+
+  @override
+  String get language_picker_subtitle_pending => 'Scegliere una lingua';
+
+  @override
+  String get language_auto_title => 'Autovettura';
+
+  @override
+  String language_auto_subtitle(Object arg1) {
+    return 'Sistema di seguimento · $arg1';
+  }
+
+  @override
+  String language_label_auto_fmt(Object arg1) {
+    return '$arg1 · Auto';
+  }
+
+  @override
+  String get adb_prompt => '\$';
+
+  @override
+  String get adb_command_hint => 'Entrate al comando...';
+
+  @override
+  String get adb_preset_commands_header => 'Comandi predefiniti';
+
+  @override
+  String get adb_output_header => 'Prodotto';
+
+  @override
+  String get adb_output_ready => 'Pronti per i comandi...';
+
+  @override
+  String get adb_console_hero_title => 'Consola ADB';
+
+  @override
+  String get adb_console_hero_subtitle =>
+      'Eseguire i comandi shell sul dispositivo';
+
+  @override
+  String get adb_console_unavailable_title => 'ADB non è connesso';
+
+  @override
+  String get adb_console_unavailable_body =>
+      'Su questo veicolo, il normale interruttore «Debug USB» nelle Opzioni sviluppatore non basta da solo: deve essere attiva anche l\'impostazione ADB wireless (debug di rete) dell\'head unit, e un aggiornamento di sistema può disattivarla. Riattiva l\'ADB wireless sull\'head unit, oppure collegati via USB.';
+
+  @override
+  String get adb_console_auth_pending_title => 'In attesa di approvazione';
+
+  @override
+  String get adb_console_auth_pending_body =>
+      'Controlla sullo schermo dell\'head unit la richiesta «Consentire il debug USB?» e accettala, poi riprova.';
+
+  @override
+  String get performance_connecting => 'Connecting to performance monitor…';
+
+  @override
+  String get performance_hero_title => 'Prestazioni di sistema';
+
+  @override
+  String get performance_cpu_title => 'CPU';
+
+  @override
+  String get performance_cpu_system_usage => 'System Usage';
+
+  @override
+  String get performance_cpu_app_usage => 'App Usage';
+
+  @override
+  String get performance_frequency_label => 'Frequency';
+
+  @override
+  String get performance_temperature_label => 'Temperature';
+
+  @override
+  String get performance_temperature_na => 'N/A';
+
+  @override
+  String get performance_memory_title => 'Memoria';
+
+  @override
+  String get performance_usage_label => 'Usage';
+
+  @override
+  String get performance_memory_total => 'Total';
+
+  @override
+  String get performance_memory_used => 'Used';
+
+  @override
+  String get performance_memory_app => 'App';
+
+  @override
+  String get performance_gpu_title => 'GPU';
+
+  @override
+  String get performance_app_process_title => 'Processo dell\'app';
+
+  @override
+  String get performance_threads_label => 'Threads';
+
+  @override
+  String get performance_gc_cycles_label => 'GC Cycles';
+
+  @override
+  String get performance_open_fds_label => 'Open FDs';
+
+  @override
+  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+
+  @override
+  String get webview_loading => 'Caricamento...';
+
+  @override
+  String get webview_camera_daemon_not_running =>
+      'Fotocamera non in esecuzione';
+
+  @override
+  String get webview_start_camera_daemon =>
+      'Avvia il servizio fotocamera dalla schermata Servizi per accedere a questa pagina.';
+
+  @override
+  String get zrok_enable_token_hint => 'Abilitare il token';
+
+  @override
+  String get zrok_token_storage_note =>
+      'Il token viene memorizzato in modo sicuro e condiviso tra l\'app e i servizi in background.';
+
+  @override
+  String get zrok_reset_environment => 'Ripristinare ambiente Zrok';
+
+  @override
+  String get zrok_reset_environment_desc =>
+      'Rimuove l\'ambiente e il token. Dovrai riabilitare con il tuo token (utilizza una slot del dispositivo).';
+
+  @override
+  String get reset_title => 'Ripristino dei dati';
+
+  @override
+  String get reset_subtitle => 'Pulire i dati accumulati per categoria';
+
+  @override
+  String get reset_warning =>
+      'Le registrazioni, i viaggi e la storia della batteria saranno eliminati definitivamente.';
+
+  @override
+  String get reset_cat_trips => 'Viaggi';
+
+  @override
+  String get reset_cat_trips_desc =>
+      'Storia del viaggio, percorsi, rilievi settimanali/mensili';
+
+  @override
+  String get reset_cat_soc_history => 'Storia SoC & 12V';
+
+  @override
+  String get reset_cat_soc_history_desc =>
+      'campioni SoC, sessioni di ricarica, registri di tensione';
+
+  @override
+  String get reset_cat_soh => 'Calibrazione SOH';
+
+  @override
+  String get reset_cat_soh_desc =>
+      'Ri-detezione della capacità nominale, stima delle ri-sementi dal BMS';
+
+  @override
+  String get reset_cat_recordings => 'Registrazioni (video)';
+
+  @override
+  String get reset_cat_recordings_desc =>
+      'Tutti i file MP4 nella cartella delle registrazioni';
+
+  @override
+  String get reset_cat_sentry_events => 'Eventi di sorveglianza';
+
+  @override
+  String get reset_cat_sentry_events_desc =>
+      'Clip per eventi di sorveglianza e vagoni laterali JSON';
+
+  @override
+  String get reset_cat_proximity => 'Registrazioni di prossimità';
+
+  @override
+  String get reset_cat_proximity_desc => 'Radar-triggered eventi MP4';
+
+  @override
+  String get reset_cat_trip_files => 'Archivi di telemetria di viaggio';
+
+  @override
+  String get reset_cat_trip_files_desc =>
+      'Telemetria per viaggio JSON su disco';
+
+  @override
+  String get recording_lib_chip_any => 'Qualsiasi';
+
+  @override
+  String get recording_lib_chip_person => 'Persona';
+
+  @override
+  String get recording_lib_chip_vehicle => 'Veicolo';
+
+  @override
+  String get recording_lib_chip_bike => 'Bicicletta';
+
+  @override
+  String get recording_lib_chip_animal => 'Animali';
+
+  @override
+  String get recording_lib_chip_alert => 'Avviso';
+
+  @override
+  String get recording_lib_chip_critical => 'Critico';
+
+  @override
+  String get recording_lib_selected_count_zero => '0 selezionato';
+
+  @override
+  String get recording_lib_no_recordings => 'Nessuna registrazione';
+
+  @override
+  String get recording_lib_filter_button => 'Filtro';
+
+  @override
+  String recording_lib_filter_button_active(Object arg1) {
+    return 'Filtro · $arg1';
+  }
+
+  @override
+  String get recording_lib_filter_sheet_title => 'Registrazioni di filtri';
+
+  @override
+  String get recording_lib_filter_apply => 'Applica';
+
+  @override
+  String get recording_lib_filter_reset => 'Ripristina';
+
+  @override
+  String get recording_lib_filter_section_what => '- Cosa ?';
+
+  @override
+  String get recording_lib_filter_section_severity => 'Gravità';
+
+  @override
+  String get recording_lib_filter_section_type => 'Type';
+
+  @override
+  String get recording_lib_chip_type_normal => 'Normale';
+
+  @override
+  String get recording_lib_chip_type_proximity => 'Vicinanza';
+
+  @override
+  String get recording_lib_date_today => 'Oggi';
+
+  @override
+  String get recording_lib_date_yesterday => 'Ieri.';
+
+  @override
+  String recording_lib_clip_count(Object arg1) {
+    return 'Clip $arg1';
+  }
+
+  @override
+  String recording_lib_clip_count_one(Object arg1) {
+    return 'Clip $arg1';
+  }
+
+  @override
+  String get recording_lib_pick_date => 'Scegli un appuntamento';
+
+  @override
+  String get recording_lib_date_all_days => 'Tutti i giorni';
+
+  @override
+  String get cd_clear_date_filter => 'Mostra tutto';
+
+  @override
+  String get recording_lib_section_morning => 'Domani .';
+
+  @override
+  String get recording_lib_section_afternoon => 'Buongiorno .';
+
+  @override
+  String get recording_lib_section_evening => 'La serata';
+
+  @override
+  String get recording_lib_section_night => 'Notte';
+
+  @override
+  String get cd_previous_day => 'Giorno precedente';
+
+  @override
+  String get cd_next_day => 'Il giorno dopo.';
+
+  @override
+  String get cd_open_filters => 'Filtri aperti';
+
+  @override
+  String get cd_clear_filter => 'Filtro trasparente';
+
+  @override
+  String get player_title_recording => 'Registrazione';
+
+  @override
+  String get player_time_zero => '0: 00';
+
+  @override
+  String get player_time_separator => ' / ';
+
+  @override
+  String get daemons_hero_title => 'Servizi di background';
+
+  @override
+  String get daemons_count_pending => 'Servizi di caricamento...';
+
+  @override
+  String daemons_count_fmt(Object arg1, Object arg2) {
+    return '$arg1 di $arg2 in esecuzione';
+  }
+
+  @override
+  String get battery_health_title => 'Salute della batteria';
+
+  @override
+  String get battery_health_subtitle => 'Stato di salute';
+
+  @override
+  String get battery_health_dashes => '--';
+
+  @override
+  String get battery_health_waiting => 'In attesa di dati...';
+
+  @override
+  String get battery_health_source => 'Fonte';
+
+  @override
+  String get battery_health_method => 'Metodo';
+
+  @override
+  String get battery_health_capacity => 'Capacità';
+
+  @override
+  String get battery_health_samples => 'I campioni';
+
+  @override
+  String get battery_health_last_updated => 'Ultimo aggiornamento';
+
+  @override
+  String get battery_health_reset => 'Ripristinare la stima SOH';
+
+  @override
+  String get battery_health_reset_desc =>
+      'Può essere utilizzato se la batteria è stata sostituita o se la lettura sembra sbagliata.';
+
+  @override
+  String get soh_dialog_model_label => 'Modello';
+
+  @override
+  String get soh_dialog_pack_capacity_label => 'Capacità di imballaggio';
+
+  @override
+  String get soh_dialog_estimated_capacity_label => 'Capacità effettiva';
+
+  @override
+  String get soh_dialog_calibration_anchor_label => 'Ultima calibrazione';
+
+  @override
+  String get soh_dialog_source_user => 'set utente';
+
+  @override
+  String get soh_dialog_source_auto => 'rilevato automaticamente';
+
+  @override
+  String get soh_dialog_model_not_selected => 'Non selezionato';
+
+  @override
+  String get soh_dialog_capacity_not_detected => 'Non rilevato';
+
+  @override
+  String soh_dialog_calibration_format(Object arg1, Object arg2) {
+    return '$arg1% su $arg2';
+  }
+
+  @override
+  String get dialog_ok => 'OK';
+
+  @override
+  String recordings_deleted_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Le registrazioni $arg1 sono state cancellate',
+      one: 'La registrazione $arg1 è cancellata',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String delete_recordings_title(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Cancellare le registrazioni $arg1',
+      one: 'Cancellare la registrazione $arg1',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String delete_recordings_message(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Questo cancellerà definitivamente le registrazioni $arg1.',
+      one: 'Questo cancellerà definitivamente la registrazione $arg1.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String toast_app_up_to_date(Object arg1) {
+    return 'L\'app è aggiornata (v$arg1)';
+  }
+
+  @override
+  String get toast_storage_permission_required =>
+      'Permesso di archiviazione richiesto per le registrazioni';
+
+  @override
+  String get toast_url_copied_short => 'URL copiato!';
+
+  @override
+  String get toast_camera_set_to_auto => 'Camera impostata su Auto';
+
+  @override
+  String get toast_failed_to_save_short => 'Non riuscito a salvare';
+
+  @override
+  String toast_failed_with_message(Object arg1) {
+    return 'Fallito: $arg1';
+  }
+
+  @override
+  String toast_camera_id_set(Object arg1) {
+    return 'Set di fotocamera $arg1  successivo ciclo ACC';
+  }
+
+  @override
+  String get toast_clearing_camera_config =>
+      'Riprendo la configurazione della telecamera...';
+
+  @override
+  String get toast_restarting_camera_daemon =>
+      'Riavvio del servizio fotocamera...';
+
+  @override
+  String get toast_camera_daemon_restarting =>
+      'Servizio fotocamera in riavvio con scansione completa';
+
+  @override
+  String get toast_camera_restart_failed =>
+      'Configurazione azzerata, ma il riavvio del servizio non è riuscito. Riavviare manualmente.';
+
+  @override
+  String toast_failed_with_message_x(Object arg1) {
+    return 'Fallito: $arg1';
+  }
+
+  @override
+  String get toast_soh_reset_success =>
+      'Ripristino della stima SOH  si ricalcola dai prossimi dati';
+
+  @override
+  String get toast_soh_reset_failed_no_daemon =>
+      'Ripristino non riuscito — il servizio non risponde e il file non è scrivibile';
+
+  @override
+  String toast_soh_reset_failed_with_message(Object arg1) {
+    return 'Fallito ripristino: $arg1';
+  }
+
+  @override
+  String get toast_select_at_least_one_category =>
+      'Selezionare almeno una categoria';
+
+  @override
+  String toast_reset_failed_with_error(Object arg1) {
+    return 'Fallito ripristino: $arg1';
+  }
+
+  @override
+  String toast_traffic_monitor_changing(Object arg1) {
+    return 'Il monitor del traffico $arg1...';
+  }
+
+  @override
+  String get dialog_close => 'Chiudi';
+
+  @override
+  String get dialog_reset => 'Ripristina';
+
+  @override
+  String get dialog_delete => 'Elimina';
+
+  @override
+  String get dialog_save => 'Salva';
+
+  @override
+  String get dialog_enable => 'Attiva';
+
+  @override
+  String get dialog_disable => 'Disattiva';
+
+  @override
+  String get dialog_keep_enabled => 'Continuate ad essere autorizzati';
+
+  @override
+  String get dialog_keep_disabled => 'Rimanete disabili';
+
+  @override
+  String get dialog_regenerate => 'Rigenerazione';
+
+  @override
+  String get dialog_reset_selected => 'Ripristino selezionato';
+
+  @override
+  String get dialog_reset_soh_title => 'Ripristinare la stima SOH?';
+
+  @override
+  String get dialog_reset_soh_message =>
+      'Questo cancella tutti i dati SOH e costringe la rivalutazione da zero.\n\nUtilizzare questo se:\n• Batteria è stata sostituita\n• La lettura SOH sembra sbagliata\n• Si desidera ricalibrare\n\nIl sistema si riproduce dalla prossima fonte di dati disponibile (OEM, calibrazione di carica o lettura istantanea).';
+
+  @override
+  String get dialog_reset_following_title => 'Ripristinare il seguente?';
+
+  @override
+  String dialog_reset_following_message(Object arg1) {
+    return 'This cannot be undone.\n\n$arg1';
+  }
+
+  @override
+  String get dialog_reset_complete_title => 'Ripristino completo';
+
+  @override
+  String get dialog_traffic_cannot_check_title =>
+      'Non riesce a controllare lo stato';
+
+  @override
+  String get dialog_traffic_cannot_check_message =>
+      'ADB non è connesso e l\'app non è riuscita a riconnettersi automaticamente.\n\nSu questo veicolo, il normale interruttore \"Debug USB\" nelle Opzioni sviluppatore da solo non basta: deve essere attiva anche l\'impostazione ADB wireless (debug di rete) dell\'unità centrale, che un aggiornamento di sistema può disattivare. Riattivi l\'ADB wireless sull\'unità centrale, oppure si colleghi via USB.\n\nLo stato si aggiornerà automaticamente una volta connesso.';
+
+  @override
+  String get dialog_traffic_disable_title =>
+      'Disattivare il monitor del traffico BYD?';
+
+  @override
+  String get dialog_traffic_disable_message =>
+      'Il Traffic Monitor BYD (com.byd.trafficmonitor) è un\'applicazione di sistema integrata che monitora continuamente le condizioni del traffico stradale in background.\n\n️ Perché disattivarlo?\n\n• Consuma dati mobili (anche quando parcheggiato)\n• Utilizza CPU e batteria in background\n• Non è necessario se si utilizza un\'app di navigazione separata\n• Può interferire con l\'utilizzo della rete della dashcam\n\nQuesto è sicuro da disattivare  influisce solo sulla sovrapposizione del traffico integrato sulla mappa. La navigazione, ZBluetooth e tutte le altre funzioni dell\'auto rimangono invisibili.\n\nUn reboot duro è richiesto dopo la disattivazione (con';
+
+  @override
+  String get dialog_traffic_enable_title =>
+      'Riattivare il monitor del traffico BYD?';
+
+  @override
+  String get dialog_traffic_enable_message =>
+      'Il Traffic Monitor BYD è attualmente disabilitato.\n\nRiattivarlo ripristinerà la sovrapposizione del traffico integrata sulla mappa di navigazione. Si noti che eseguirà in background e consumerà dati mobili.\n\nÈ necessario un reboot duro dopo l\'attivazione (tenere il pulsante della console centrale 5 secondi).';
+
+  @override
+  String dialog_traffic_status_title(Object arg1) {
+    return 'Monitor del traffico $arg1';
+  }
+
+  @override
+  String get dialog_traffic_reboot_message =>
+      'Il cambiamento è stato applicato. Per favore eseguite un riavvio duro ora:';
+
+  @override
+  String get traffic_monitor_loading => 'Monitor del traffico: controllo...';
+
+  @override
+  String get traffic_monitor_tap_to_check =>
+      'Monitor del traffico (toccare per controllare)';
+
+  @override
+  String get reset_label_trips => 'Viaggi';
+
+  @override
+  String get reset_label_soc_history => 'Storia SoC + 12V';
+
+  @override
+  String get reset_label_soh => 'Calibrazione SOH';
+
+  @override
+  String get reset_label_recordings => 'Registrazioni';
+
+  @override
+  String get reset_label_sentry_events => 'Eventi di sorveglianza';
+
+  @override
+  String get reset_label_proximity => 'Registrazioni di prossimità';
+
+  @override
+  String get reset_label_trip_files => 'Archivi di telemetria di viaggio';
+
+  @override
+  String get toast_access_code_copied => 'Codice di accesso copiato';
+
+  @override
+  String get dialog_regenerate_token_title => 'Segno di riproduzione';
+
+  @override
+  String get dialog_regenerate_token_message =>
+      'Questo annullerà il token corrente. Tutte le sessioni attive saranno bloccate.';
+
+  @override
+  String get toast_token_regenerated_logged_out =>
+      'Nuovo token generato, tutte le sessioni bloccate.';
+
+  @override
+  String get toast_token_regenerated_restart =>
+      'Token rigenerato. Potrebbe essere necessario riavviare i servizi per applicarlo.';
+
+  @override
+  String get toast_token_regenerated_no_notify =>
+      'Token rigenerato. Impossibile notificare il servizio in background.';
+
+  @override
+  String get toast_token_regenerated => 'Token rigenerato';
+
+  @override
+  String get dashboard_no_tunnel => 'Nessun tunnel in corso';
+
+  @override
+  String get dashboard_starting_zrok => 'Iniziare il tunnel Zrok...';
+
+  @override
+  String get dashboard_waiting_url => 'In attesa del tunnel URL...';
+
+  @override
+  String dashboard_daemons_running(Object arg1, Object arg2) {
+    return '$arg1/$arg2 in esecuzione';
+  }
+
+  @override
+  String get tunnel_label_zrok => 'Zrok';
+
+  @override
+  String get clip_label_access_code => 'Codice di accesso';
+
+  @override
+  String get clip_label_url => 'URL';
+
+  @override
+  String toast_no_config_needed(Object arg1) {
+    return 'Non è necessaria alcuna configurazione per $arg1';
+  }
+
+  @override
+  String get dialog_zrok_token_title => 'Zrok Tunnel Token';
+
+  @override
+  String get dialog_zrok_token_message =>
+      'Inserisci il tuo token di attivazione Zrok.\nNottenne uno a: zrok.io';
+
+  @override
+  String get toast_token_cannot_be_empty => 'Il token non può essere vuoto';
+
+  @override
+  String get dialog_zrok_reset_title => 'Ripristinare ambiente Zrok';
+
+  @override
+  String get dialog_zrok_reset_message =>
+      'Questo:\n• fermarà il tunnel zrok se eseguito\n• rimuovere l\'ambiente zrok da questo dispositivo\n• rimuovere il token salvato\n\nDovrai riinserire il tuo token e riabilitarlo. Questo utilizza uno dei tuoi 5 slot per dispositivi su zrok.io.\n\nSei sicuro?';
+
+  @override
+  String get toast_resetting_zrok => 'Ripristinare l\'ambiente zrok...';
+
+  @override
+  String get toast_zrok_reset_success =>
+      'Ripristino dell\'ambiente Zrok. Inserire un nuovo token per ripristinare.';
+
+  @override
+  String get toast_zrok_reset_partial =>
+      'Ripristino dell\'ambiente (il file di token potrebbe richiedere una pulizia manuale)';
+
+  @override
+  String toast_zrok_reset_warnings(Object arg1) {
+    return 'Ripristino dell\'ambiente (con avvertenze: $arg1)';
+  }
+
+  @override
+  String get zrok_no_token_configured => 'Nessun token configurato.';
+
+  @override
+  String get toast_zrok_token_saved => 'Token salvato';
+
+  @override
+  String get toast_zrok_token_save_failed => 'Non riuscito a salvare il token';
+
+  @override
+  String get toast_zrok_token_deleted => 'Token cancellato';
+
+  @override
+  String get toast_zrok_token_delete_failed =>
+      'Non è riuscito a eliminare il token';
+
+  @override
+  String toast_fetching_log(Object arg1) {
+    return 'Prendo il registro $arg1...';
+  }
+
+  @override
+  String get toast_log_empty_or_missing =>
+      'Il file log è vuoto o non è stato trovato';
+
+  @override
+  String get toast_log_empty => 'Il file log è vuoto';
+
+  @override
+  String toast_log_save_failed(Object arg1) {
+    return 'Non riuscito a salvare il registro: $arg1';
+  }
+
+  @override
+  String get toast_log_not_found =>
+      'File di registro non trovato o illeggibile';
+
+  @override
+  String log_share_title(Object arg1, Object arg2) {
+    return '$arg1 Log - $arg2';
+  }
+
+  @override
+  String log_share_chooser(Object arg1) {
+    return 'Condividere $arg1 Log';
+  }
+
+  @override
+  String log_header_title(Object arg1) {
+    return '=== $arg1 Log ===';
+  }
+
+  @override
+  String log_header_source(Object arg1) {
+    return 'Fonte: $arg1';
+  }
+
+  @override
+  String log_header_exported(Object arg1) {
+    return 'Esportazione: $arg1';
+  }
+
+  @override
+  String log_header_truncated(Object arg1) {
+    return 'NOTA: Registro troncato fino a 10000 righe (totalmente: righe $arg1)';
+  }
+
+  @override
+  String toast_cannot_play_video(Object arg1) {
+    return 'Non riesco a riprodurre video: $arg1';
+  }
+
+  @override
+  String get dialog_delete_recording_title => 'Cancellare la registrazione';
+
+  @override
+  String dialog_delete_recording_message(Object arg1) {
+    return 'Cancellare $arg1?';
+  }
+
+  @override
+  String get toast_recording_deleted => 'La registrazione è cancellata';
+
+  @override
+  String get toast_recording_delete_failed =>
+      'Non è stato possibile eliminare la registrazione';
+
+  @override
+  String toast_batch_delete_partial(Object arg1, Object arg2) {
+    return '$arg1 cancellato, $arg2 fallito';
+  }
+
+  @override
+  String get play_with_chooser => 'Giocare con';
+
+  @override
+  String setup_version_banner(Object arg1) {
+    return 'Aggiornato a v$arg1  riconferma autoavvio, BYD lo cancella su ogni installazione';
+  }
+
+  @override
+  String get setup_overlay_already_granted => 'Già concesso';
+
+  @override
+  String camera_current_manual(Object arg1) {
+    return 'Attuale: Camera $arg1 (Manuale)';
+  }
+
+  @override
+  String get camera_current_auto_label => 'Attuale: Auto';
+
+  @override
+  String get soh_estimation_active => 'Attivo di stima';
+
+  @override
+  String get soh_oem_readout =>
+      'Lettura SOH del veicolo — in attesa della stima calcolata';
+
+  @override
+  String get soh_nominal_baseline =>
+      'Riferimento nominale — in attesa di dati SOH attendibili';
+
+  @override
+  String get soh_no_estimate_yet => 'Nessuna stima ancora  attesa di dati';
+
+  @override
+  String recording_lib_selected_count(Object arg1) {
+    return '$arg1 selezionato';
+  }
+
+  @override
+  String get video_player_playback_error => 'Errore di riproduzione';
+
+  @override
+  String get video_player_no_events => 'Nessun evento';
+
+  @override
+  String get daemon_configuration_required => 'Configurazione necessaria';
+
+  @override
+  String daemon_configuration_message(Object arg1) {
+    return '$arg1';
+  }
+
+  @override
+  String get nav_page_video_player => 'Giocatore video';
+
+  @override
+  String get status_overlay_notif_title => 'BladeWatch Statuto';
+
+  @override
+  String get status_overlay_notif_text => 'Status overlay attivo';
+
+  @override
+  String get rail_dashboard => 'Disegno di controllo';
+
+  @override
+  String get rail_live => 'Vivi';
+
+  @override
+  String get rail_recordings => 'Registrazioni';
+
+  @override
+  String get rail_vehicle => 'Veicolo';
+
+  @override
+  String get rail_trips => 'Viaggi';
+
+  @override
+  String get rail_location => 'Posizione';
+
+  @override
+  String get rail_diagnostics => 'Diagnostiche';
+
+  @override
+  String get rail_settings => 'Impostazioni';
+
+  @override
+  String get settings_section_appearance => 'Apparizione';
+
+  @override
+  String get settings_section_recording => 'Registrazione';
+
+  @override
+  String get settings_section_surveillance => 'Sorveglianza';
+
+  @override
+  String get settings_section_daemons => 'Servizi';
+
+  @override
+  String get settings_section_privacy => 'Privacy & dati';
+
+  @override
+  String get settings_section_overlay => 'Overlay di stato';
+
+  @override
+  String get settings_overlay_subtitle =>
+      'Scegliere quali segmenti della pillola di stato galleggiante rimangono visibili.';
+
+  @override
+  String get settings_overlay_camera_title => 'Indicatore di telecamera';
+
+  @override
+  String get settings_overlay_camera_subtitle =>
+      'Mostra il badge REC / PROX mentre l\' registrazione è attiva.';
+
+  @override
+  String get settings_overlay_trip_title => 'Indicare Trip';
+
+  @override
+  String get settings_overlay_trip_subtitle =>
+      'Mostrate il distintivo TRIP mentre la rilevazione dei viaggi è in corso.';
+
+  @override
+  String get settings_section_about => 'Informazioni';
+
+  @override
+  String get settings_subrail_overline => 'SETTINGI';
+
+  @override
+  String get cd_settings_subrail => 'Sottocarro di impostazione';
+
+  @override
+  String get settings_privacy_title => 'Privacy & dati';
+
+  @override
+  String get settings_privacy_body =>
+      'Il ripristino elimina l\'indice di registrazione, le credenziali in cache, lo stato del servizio e le preferenze sul dispositivo. L\'operazione non può essere annullata.';
+
+  @override
+  String get settings_about_title => 'A proposito di BladeWatch';
+
+  @override
+  String get settings_about_version_label => 'Versione';
+
+  @override
+  String get settings_about_package_label => 'Costruire';
+
+  @override
+  String get settings_about_support_section => 'Spinto da persone come te.';
+
+  @override
+  String get settings_about_support_share_title =>
+      'Parlane a un altro proprietario';
+
+  @override
+  String get settings_about_support_share_value =>
+      'Ogni link condiviso aiuta un altro proprietario di BYD a scoprire BladeWatch.';
+
+  @override
+  String get settings_about_support_share_message =>
+      'Controlla BladeWatch  monitoraggio open source e dashcam per BYD: https://bladewatch-5lc.pages.dev/';
+
+  @override
+  String get settings_about_support_share_chooser => 'Condividere eccessivo';
+
+  @override
+  String get settings_about_open_link_failed =>
+      'Non ho potuto aprire il collegamento.';
+
+  @override
+  String settings_about_open_link_copied(Object arg1) {
+    return 'Nessun browser trovato. URL copiato: $arg1';
+  }
+
+  @override
+  String get settings_about_support_kofi_title => 'Fuel il prossimo rilascio';
+
+  @override
+  String get settings_about_support_kofi_value =>
+      'Un caffè su Ko-Fi fa arrivare gli impegni notturni.';
+
+  @override
+  String get settings_about_support_kofi_url => 'https://ko-fi.com/E1E71XALHX';
+
+  @override
+  String get settings_about_license_title => 'Licenza';
+
+  @override
+  String get settings_about_license_value =>
+      'MIT  open source. Tocca per visualizzare il testo completo.';
+
+  @override
+  String get settings_about_source_title => 'Codice sorgente';
+
+  @override
+  String get settings_about_source_value =>
+      'github.com/yash-srivastava/BladeWatch-release';
+
+  @override
+  String get settings_about_license_url =>
+      'https://github.com/yash-srivastava/BladeWatch-release/blob/main/LICENSE';
+
+  @override
+  String get settings_about_source_url =>
+      'https://github.com/yash-srivastava/BladeWatch-release';
+
+  @override
+  String get settings_about_star_title => 'Lanciare un su GitHub';
+
+  @override
+  String get settings_about_star_value =>
+      'Ci vuole un secondo, significa molto.';
+
+  @override
+  String get settings_about_star_url =>
+      'https://github.com/yash-srivastava/BladeWatch-release';
+
+  @override
+  String get settings_about_thanks_title => 'Grazie';
+
+  @override
+  String get settings_about_thanks_subtitle =>
+      'Realizzato con l\'aiuto di collaboratori e sostenitori.';
+
+  @override
+  String get settings_about_contributors_title => 'Collaboratori';
+
+  @override
+  String get settings_about_supporters_title => 'Sostenitori';
+
+  @override
+  String get settings_about_thanks_empty =>
+      'L\'elenco si popola man mano che le persone partecipano.';
+
+  @override
+  String get settings_theme_label => 'Tema';
+
+  @override
+  String get settings_theme_auto => 'Auto (sistema di seguimento)';
+
+  @override
+  String get settings_theme_light => 'Luce';
+
+  @override
+  String get settings_theme_dark => 'Oscuro';
+
+  @override
+  String get settings_language_label => 'Lingua';
+
+  @override
+  String get settings_drive_side_label => 'Lato di navigazione';
+
+  @override
+  String get settings_drive_side_subtitle =>
+      'Scegli su quale lato dello schermo appare il menu di navigazione.';
+
+  @override
+  String get settings_drive_side_left => 'Sinistra';
+
+  @override
+  String get settings_drive_side_left_hint => 'Guida a sinistra · predefinito';
+
+  @override
+  String get settings_drive_side_right => 'Destra';
+
+  @override
+  String get settings_drive_side_right_hint => 'Veicoli con guida a destra';
+
+  @override
+  String get settings_drive_side_auto => 'Auto';
+
+  @override
+  String get settings_drive_side_auto_hint => 'Rileva dal veicolo';
+
+  @override
+  String get settings_drive_side_caption_left => 'Navigazione a sinistra';
+
+  @override
+  String get settings_drive_side_caption_right => 'Navigazione a destra';
+
+  @override
+  String get settings_drive_side_caption_auto_left =>
+      'Auto — il veicolo indica guida a sinistra';
+
+  @override
+  String get settings_drive_side_caption_auto_right =>
+      'Auto — il veicolo indica guida a destra';
+
+  @override
+  String get settings_drive_side_caption_auto_unknown =>
+      'Auto — veicolo non disponibile, uso sinistra';
+
+  @override
+  String get recordings_title => 'Registrazioni';
+
+  @override
+  String get recordings_segment_dashcam => 'Dashcam';
+
+  @override
+  String get recordings_segment_surveillance => 'Sorveglianza';
+
+  @override
+  String get recordings_action_settings => 'Impostazioni';
+
+  @override
+  String recordings_summary_format(Object arg1, Object arg2, Object arg3) {
+    return '$arg1 oggi · $arg2 totale · $arg3';
+  }
+
+  @override
+  String recordings_segment_dashcam_count(Object arg1) {
+    return 'Dashcam · $arg1';
+  }
+
+  @override
+  String recordings_segment_surveillance_count(Object arg1) {
+    return 'Servizi di sorveglianza · $arg1';
+  }
+
+  @override
+  String get recordings_summary_pending => '—';
+
+  @override
+  String get recordings_preview_placeholder_title =>
+      'Selezionare una registrazione';
+
+  @override
+  String get recordings_preview_placeholder_body =>
+      'Tocca qualsiasi elemento sulla sinistra per riprodurlo.';
+
+  @override
+  String get diagnostics_section_adb_console => 'Consola ADB';
+
+  @override
+  String get diagnostics_section_traffic => 'Monitor del traffico';
+
+  @override
+  String get diagnostics_section_camera_probe => 'Sonda della telecamera';
+
+  @override
+  String get diagnostics_section_battery => 'Salute della batteria';
+
+  @override
+  String get diagnostics_section_performance => 'Prestazioni';
+
+  @override
+  String get diagnostics_hero_title => 'Diagnostica del sistema';
+
+  @override
+  String get diagnostics_hero_subtitle =>
+      'Salute dal vivo, registri e sonde per il dispositivo.';
+
+  @override
+  String get diagnostics_health_clear => 'Tutto pulito.';
+
+  @override
+  String get diagnostics_health_section => 'Salute';
+
+  @override
+  String get diagnostics_health_network => 'Rete';
+
+  @override
+  String get diagnostics_health_storage => 'Immagazzinamento';
+
+  @override
+  String get diagnostics_health_camera => 'Fotocamera';
+
+  @override
+  String get diagnostics_health_battery => 'Batteria';
+
+  @override
+  String get diagnostics_metric_pending => '—';
+
+  @override
+  String get diagnostics_metric_online => 'On-line';
+
+  @override
+  String diagnostics_network_tunnel_label(Object arg1) {
+    return 'Tunnel · $arg1';
+  }
+
+  @override
+  String get diagnostics_tunnel_state_online => 'On-line';
+
+  @override
+  String get diagnostics_tunnel_state_offline => 'Offline';
+
+  @override
+  String get diagnostics_tunnel_state_connecting => 'Connessione';
+
+  @override
+  String get diagnostics_network_mobile => 'Mobile';
+
+  @override
+  String get diagnostics_network_ethernet => 'Ethernet';
+
+  @override
+  String get diagnostics_network_offline => 'Offline';
+
+  @override
+  String diagnostics_storage_used_line(Object arg1, Object arg2) {
+    return 'Clips $arg1 · $arg2 utilizzati';
+  }
+
+  @override
+  String diagnostics_storage_free_line(Object arg1) {
+    return '$arg1 libero';
+  }
+
+  @override
+  String get diagnostics_logs_card_title => 'Registro di eventi in diretta';
+
+  @override
+  String get diagnostics_logs_card_subtitle =>
+      'Riproduzione in streaming da servizi in esecuzione.';
+
+  @override
+  String get diagnostics_tools_section => 'Strumenti';
+
+  @override
+  String get diagnostics_traffic_subtitle => 'Guarda la rete in diretta.';
+
+  @override
+  String get diagnostics_camera_probe_subtitle =>
+      'Controlla i flussi di telecamere collegati.';
+
+  @override
+  String get diagnostics_adb_subtitle => 'Apri il terminal sul dispositivo.';
+
+  @override
+  String get diagnostics_battery_subtitle =>
+      'Ispezionare la cellula SOH e raccogliere le statistiche.';
+
+  @override
+  String get diagnostics_settings_subtitle =>
+      'Preferenze dell\'app, tema e lingua.';
+
+  @override
+  String get settings_action_reset_data => 'Ripristinare i dati...';
+
+  @override
+  String get cd_brand_logo => 'BladeWatch';
+
+  @override
+  String get dashboard_hero_headline => 'In guardia';
+
+  @override
+  String get dashboard_subtitle_all_systems => 'Tutti i sistemi online';
+
+  @override
+  String dashboard_subtitle_some_offline(Object arg1, Object arg2) {
+    return 'Servizi online di $arg1 di $arg2';
+  }
+
+  @override
+  String get dashboard_subtitle_no_tunnel => 'Accesso remoto offline';
+
+  @override
+  String get dashboard_metric_recordings => 'Le registrazioni di oggi';
+
+  @override
+  String get dashboard_metric_storage => 'Immagazzinamento utilizzato';
+
+  @override
+  String get dashboard_metric_tunnel => 'Accesso remoto';
+
+  @override
+  String get dashboard_metric_services => 'Servizi di background';
+
+  @override
+  String get dashboard_metric_value_pending => '—';
+
+  @override
+  String get dashboard_metric_vehicle => 'Veicolo';
+
+  @override
+  String get dashboard_chip_recording_active => 'Registrazione';
+
+  @override
+  String get dashboard_chip_recording_idle => 'Inattivo';
+
+  @override
+  String get dashboard_vehicle_tap_to_set => 'Toccare per impostare';
+
+  @override
+  String dashboard_vehicle_summary(Object arg1, Object arg2) {
+    return '$arg1 kWh · $arg2';
+  }
+
+  @override
+  String get vehicle_dialog_title => 'Capacità della batteria impostata';
+
+  @override
+  String get vehicle_dialog_capacity_label => 'Capacità (kWh)';
+
+  @override
+  String get vehicle_dialog_capacity_suffix => 'kWh';
+
+  @override
+  String get vehicle_dialog_capacity_helper =>
+      '8 a 120 kWh. Lasciare per utilizzare il modello predefinito.';
+
+  @override
+  String get vehicle_dialog_model_label => 'Modello';
+
+  @override
+  String get vehicle_dialog_save => 'Salva';
+
+  @override
+  String get vehicle_dialog_reset => 'Risetto a rilevamento automatico';
+
+  @override
+  String get vehicle_dialog_invalid_capacity =>
+      'La capacità deve essere compresa tra 8 e 120 kWh';
+
+  @override
+  String vehicle_dialog_summary_capacity(Object arg1) {
+    return 'Capacità: $arg1';
+  }
+
+  @override
+  String vehicle_dialog_summary_soh(Object arg1) {
+    return 'SOH: $arg1';
+  }
+
+  @override
+  String vehicle_dialog_soh_source_live(Object arg1) {
+    return '$arg1% (live)';
+  }
+
+  @override
+  String vehicle_dialog_soh_source_calibration(Object arg1) {
+    return '$arg1% (dall\'ultima ricarica)';
+  }
+
+  @override
+  String vehicle_dialog_soh_source_oem(Object arg1) {
+    return '$arg1% (veicolo)';
+  }
+
+  @override
+  String vehicle_dialog_soh_source_nominal(Object arg1) {
+    return '$arg1% (nominale)';
+  }
+
+  @override
+  String get settings_recording_tab_status => 'Status';
+
+  @override
+  String get settings_recording_tab_capture => 'Capture';
+
+  @override
+  String get settings_recording_tab_quality => 'Quality';
+
+  @override
+  String get settings_recording_tab_storage => 'Storage';
+
+  @override
+  String get settings_recording_status_title => 'Recording Status';
+
+  @override
+  String get settings_recording_status_current_state => 'Current State';
+
+  @override
+  String get settings_recording_status_today_count => 'Recordings Today';
+
+  @override
+  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+
+  @override
+  String get settings_recording_mode_description =>
+      'Choose when dashcam recording should occur while driving.';
+
+  @override
+  String get settings_recording_mode_none_label => 'None (Default)';
+
+  @override
+  String get settings_recording_mode_none_desc =>
+      'No recording — surveillance still works';
+
+  @override
+  String get settings_recording_mode_continuous_label => 'Continuous';
+
+  @override
+  String get settings_recording_mode_continuous_desc =>
+      'Record all the time while driving';
+
+  @override
+  String get settings_recording_mode_drive_label => 'Drive Mode';
+
+  @override
+  String get settings_recording_mode_drive_desc =>
+      'Record only when vehicle is moving';
+
+  @override
+  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+
+  @override
+  String get settings_recording_mode_proximity_desc =>
+      'Record when motion is detected';
+
+  @override
+  String get settings_recording_limit_title => 'Recording Limit';
+
+  @override
+  String get settings_recording_limit_description =>
+      'Maximum length per file. Recordings split into new files at this interval.';
+
+  @override
+  String settings_recording_limit_minutes(Object arg1) {
+    return '$arg1 min';
+  }
+
+  @override
+  String get settings_recording_quality_title => 'Recording Quality';
+
+  @override
+  String get settings_recording_storage_title => 'Recording Storage';
+
+  @override
+  String get settings_recording_storage_location_label => 'Storage Location';
+
+  @override
+  String get settings_recording_storage_internal => 'Internal';
+
+  @override
+  String get settings_recording_storage_sd_card => 'SD Card';
+
+  @override
+  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+
+  @override
+  String get settings_recording_storage_limit_label =>
+      'Storage Limit — auto-deletes oldest when reached';
+
+  @override
+  String settings_recording_storage_usage(Object arg1, Object arg2) {
+    return '$arg1 used / $arg2 limit';
+  }
+
+  @override
+  String settings_recording_storage_files(Object arg1) {
+    return '$arg1 recordings';
+  }
+
+  @override
+  String get settings_recording_storage_path_label => 'Path';
+
+  @override
+  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+
+  @override
+  String get settings_recording_storage_internal_free_label => 'Internal Free';
+
+  @override
+  String get settings_recording_format_title => 'Format External Drive';
+
+  @override
+  String get settings_recording_format_warning =>
+      'Permanently erases ALL data on the SD card or USB drive.';
+
+  @override
+  String get settings_recording_format_confirm =>
+      'Tap again — ALL data will be ERASED';
+
+  @override
+  String get settings_recording_format_running => 'Formatting… please wait';
+
+  @override
+  String get settings_recording_format_button => 'Format SD Card / USB';
+
+  @override
+  String get settings_recording_format_no_drive => 'No removable drive found';
+
+  @override
+  String settings_recording_format_success(Object arg1) {
+    return 'Formatted successfully. New path: $arg1';
+  }
+
+  @override
+  String get settings_recording_sync_title => 'Database Catalog';
+
+  @override
+  String get settings_recording_sync_description =>
+      'Reconcile the recordings index with files on disk.';
+
+  @override
+  String get settings_recording_sync_running => 'Syncing…';
+
+  @override
+  String get settings_recording_sync_button => 'Sync Database';
+
+  @override
+  String settings_recording_sync_success(Object arg1, Object arg2) {
+    return 'Synced: +$arg1 -$arg2';
+  }
+
+  @override
+  String get settings_recording_sync_in_progress => 'Sync already in progress';
+
+  @override
+  String settings_recording_sync_failed(Object arg1) {
+    return 'Sync failed: $arg1';
+  }
+
+  @override
+  String get settings_recording_apply_button => 'Apply Changes';
+
+  @override
+  String get settings_recording_dismiss => 'Dismiss';
+
+  @override
+  String settings_daemons_toggle_unsupported(Object arg1) {
+    return 'Starting/stopping $arg1 isn’t supported yet';
+  }
+
+  @override
+  String get settings_daemons_zrok_configure => 'Configure';
+
+  @override
+  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+
+  @override
+  String vehicle_dialog_summary_effective(Object arg1) {
+    return 'Fatto: $arg1 kWh';
+  }
+
+  @override
+  String vehicle_dialog_summary_model(Object arg1) {
+    return 'Modello: $arg1';
+  }
+
+  @override
+  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
+    return 'Ultima calibrazione: $arg1% su $arg2';
+  }
+
+  @override
+  String get vehicle_dialog_soh_unavailable => 'non disponibile';
+
+  @override
+  String dashboard_metric_storage_chip(Object arg1, Object arg2) {
+    return '$arg1 utilizzato · $arg2 libero';
+  }
+
+  @override
+  String get dashboard_metric_storage_chip_pending => 'Immagazzinamento ';
+
+  @override
+  String get dashboard_tunnel_offline => 'Offline';
+
+  @override
+  String get dashboard_tunnel_online => 'On-line';
+
+  @override
+  String get dashboard_tunnel_connecting => 'Connessione...';
+
+  @override
+  String get dashboard_trips_this_week => 'Questa settimana';
+
+  @override
+  String dashboard_trips_count(Object arg1) {
+    return '$arg1 viaggi';
+  }
+
+  @override
+  String dashboard_trips_distance_km(Object arg1) {
+    return '$arg1 km';
+  }
+
+  @override
+  String dashboard_trips_distance_mi(Object arg1) {
+    return '$arg1 mi';
+  }
+
+  @override
+  String dashboard_trips_duration(Object arg1) {
+    return '$arg1';
+  }
+
+  @override
+  String get dashboard_trips_label_trips => 'Viaggi';
+
+  @override
+  String get dashboard_trips_label_distance => 'Distanza';
+
+  @override
+  String get dashboard_trips_label_time => 'Tempo di guida';
+
+  @override
+  String get dashboard_trips_no_data =>
+      'Nessun viaggio registrato questa settimana';
+
+  @override
+  String get dashboard_trips_unavailable =>
+      'Inizia a guidare per vedere le statistiche';
+
+  @override
+  String get dashboard_trips_loading => 'Caricamento…';
+
+  @override
+  String get dashboard_trips_view_all => 'Vedi tutti i viaggi';
+
+  @override
+  String get dashboard_action_live => 'Visualizzazione in diretta';
+
+  @override
+  String get dashboard_action_live_subtitle =>
+      'Visualizzazione della fotocamera aperta';
+
+  @override
+  String get dashboard_action_recordings => 'Registrazioni';
+
+  @override
+  String get dashboard_action_settings => 'Impostazioni';
+
+  @override
+  String get dashboard_action_settings_subtitle => 'Preferenze e circa';
+
+  @override
+  String get settings_hero_title => 'Impostazioni';
+
+  @override
+  String get settings_hero_overline => 'BLADEWATCH';
+
+  @override
+  String get settings_hero_subtitle =>
+      'Aggiungere l\'aspetto, la registrazione, la sorveglianza e i dati sul dispositivo.';
+
+  @override
+  String get settings_overline_preferences => 'Preferenze';
+
+  @override
+  String get settings_overline_about_data => 'SONO & DATI';
+
+  @override
+  String get settings_quick_theme_label => 'Tema';
+
+  @override
+  String get settings_quick_language_label => 'Lingua';
+
+  @override
+  String get settings_section_recording_subtitle =>
+      'Buffer pre/post, codec, limiti di stoccaggio.';
+
+  @override
+  String get settings_section_surveillance_subtitle =>
+      'Zone di rilevamento, programma, sensibilità al movimento.';
+
+  @override
+  String get settings_section_daemons_subtitle =>
+      'Tunnel Zrok e servizi in background.';
+
+  @override
+  String get settings_about_row_title => 'A proposito di BladeWatch';
+
+  @override
+  String get settings_about_row_subtitle =>
+      'Versione, licenza, sviluppo di supporto.';
+
+  @override
+  String get settings_reset_row_subtitle =>
+      'Clari registrazioni, eventi, o tutte le cache.';
+
+  @override
+  String settings_footer_format(Object arg1, Object arg2) {
+    return 'BladeWatch $arg1 · $arg2';
+  }
+
+  @override
+  String get settings_appearance_subtitle =>
+      'Tema, linguaggio e preferenze visive.';
+
+  @override
+  String get settings_theme_active_auto_caption =>
+      'Auto segue il tema del sistema.';
+
+  @override
+  String get settings_theme_active_light_caption =>
+      'Il tema della luce è sempre acceso.';
+
+  @override
+  String get settings_theme_active_dark_caption =>
+      'Il tema oscuro è sempre acceso.';
+
+  @override
+  String settings_language_count_format(Object arg1, Object arg2) {
+    return '$arg1 delle lingue $arg2 disponibili';
+  }
+
+  @override
+  String get settings_language_card_title => 'Lingua di visualizzazione';
+
+  @override
+  String get settings_privacy_stance_title =>
+      'On-device per impostazione predefinita';
+
+  @override
+  String get settings_privacy_stance_body =>
+      'La BladeWatch funziona interamente sull\'unità principale, nessuna telemetria lascia la tua auto, tranne attraverso i tunnel e le integrazioni che tu configuri esplicitamente.';
+
+  @override
+  String get settings_privacy_overline_storage => 'COMPRESSO LOCALE';
+
+  @override
+  String get settings_privacy_overline_reset => 'Ripristino dei dati';
+
+  @override
+  String get settings_privacy_storage_clips_label => 'Clips su disco';
+
+  @override
+  String get settings_privacy_storage_size_label => 'Dimensione totale';
+
+  @override
+  String get settings_privacy_storage_unavailable => 'Non disponibile';
+
+  @override
+  String settings_privacy_storage_count_format(Object arg1) {
+    return 'Clip $arg1';
+  }
+
+  @override
+  String settings_privacy_storage_count_format_plural(Object arg1) {
+    return 'Clip $arg1';
+  }
+
+  @override
+  String get settings_privacy_reset_subtitle =>
+      'Scegli le categorie: registrazioni, eventi, configurazioni dei servizi, telemetria in cache...';
+
+  @override
+  String get settings_developer_overline => 'SVILUPPATORE';
+
+  @override
+  String get settings_developer_timing_logs_title =>
+      'Log di temporizzazione del servizio';
+
+  @override
+  String get settings_developer_timing_logs_subtitle =>
+      'Registra i marcatori di tempo trascorso durante l\'avvio del servizio. Disattivalo nell\'uso normale per mantenere pulito il logcat.';
+
+  @override
+  String get settings_developer_debug_logs_title => 'Log di debug sviluppatore';
+
+  @override
+  String get settings_developer_debug_logs_subtitle =>
+      'Registra tutti gli eventi del ciclo di vita di Activity e Fragment e i passaggi di avvio in /storage/emulated/0/BladeWatch/data/debug_app.log. I crash vengono sempre catturati. Disattivato per impostazione predefinita.';
+
+  @override
+  String diagnostics_camera_value_camera_n(Object arg1) {
+    return 'Fotocamera $arg1';
+  }
+
+  @override
+  String diagnostics_camera_value_camera_n_manual(Object arg1) {
+    return 'Fotocamera $arg1 (manuale)';
+  }
+
+  @override
+  String get diagnostics_camera_value_probing => '- Scoprire...';
+
+  @override
+  String get diagnostics_camera_value_offline => 'Offline';
+
+  @override
+  String diagnostics_battery_value_soh(Object arg1) {
+    return '$arg1%';
+  }
+
+  @override
+  String get diagnostics_battery_value_pending => 'Dati in sospeso';
+
+  @override
+  String dashboard_recordings_value_live(Object arg1) {
+    return '● $arg1';
+  }
+
+  @override
+  String get dashboard_insight_welcome =>
+      'Benvenuto  BladeWatch è ora il tuo secondo paio di occhi.';
+
+  @override
+  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
+    return 'Presi $arg1 (≈$arg2) mentre erano parcheggiati';
+  }
+
+  @override
+  String dashboard_insight_parked_charged(Object arg1) {
+    return 'Ho preso $arg1 mentre ero parcheggiato.';
+  }
+
+  @override
+  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
+    return 'Usato $arg1 (≈$arg2) da quando ti sei parcheggiato';
+  }
+
+  @override
+  String dashboard_insight_parked_drained(Object arg1) {
+    return 'Ho usato $arg1 da quando ti sei parcheggiato.';
+  }
+
+  @override
+  String dashboard_insight_last_alert(Object arg1) {
+    return 'Ultima alerta di sorveglianza: $arg1';
+  }
+
+  @override
+  String dashboard_insight_last_charge(Object arg1, Object arg2) {
+    return 'Ultima carica: +$arg1 in $arg2';
+  }
+
+  @override
+  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
+    return 'Clip $arg1 · $arg2 registrato';
+  }
+
+  @override
+  String dashboard_insight_kwh_format(Object arg1) {
+    return '$arg1 kWh';
+  }
+
+  @override
+  String dashboard_insight_percent_format(Object arg1) {
+    return '$arg1%';
+  }
+
+  @override
+  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
+    return '$arg1 hr $arg2 min';
+  }
+
+  @override
+  String dashboard_insight_today_clips(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Clip $arg1 registrati oggi',
+      one: 'Clip $arg1 registrato oggi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'BladeWatch online per $arg1 giorni, $arg2 ore',
+      one: 'BladeWatch online per il giorno $arg1, $arg2 hr',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dashboard_insight_uptime_hours(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'BladeWatch online per $arg1 ore',
+      one: 'BladeWatch online per $arg1 ora',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dashboard_insight_minutes(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 min',
+      one: '$arg1 min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dashboard_insight_hours(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 hr',
+      one: '$arg1 hr',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get vehicle_tab_trunk => 'Treno';
+
+  @override
+  String get vehicle_tab_climate => 'Il clima';
+
+  @override
+  String get vehicle_tab_seats => 'Sedi';
+
+  @override
+  String get vehicle_tab_windows => 'Finestrini';
+
+  @override
+  String get vehicle_tab_lights => 'Luce';
+
+  @override
+  String get vehicle_tab_adas => 'ADAS';
+
+  @override
+  String get vehicle_control_charging_tab => 'Carga';
+
+  @override
+  String get vehicle_locked => 'Chiuso';
+
+  @override
+  String get vehicle_unlocked => 'Sbloccata';
+
+  @override
+  String get vehicle_range_label => 'Autonomia';
+
+  @override
+  String get vehicle_data_unavailable => 'Dati del veicolo non disponibili.';
+
+  @override
+  String get vehicle_action_failed =>
+      'Azione non riuscita. Verifica la connessione al veicolo.';
+
+  @override
+  String get vehicle_open_trunk => 'Apri bagagliaio';
+
+  @override
+  String get vehicle_close_trunk => 'Caso chiuso';
+
+  @override
+  String get vehicle_trunk_info_open =>
+      'L\'apertura del bagagliaio sbloccherà prima l\'auto.';
+
+  @override
+  String get vehicle_ac_on => 'AC Attivo';
+
+  @override
+  String get vehicle_ac_off => 'AC Off';
+
+  @override
+  String get vehicle_max_cooling_on => 'Raffreddamento max: ON';
+
+  @override
+  String get vehicle_max_cooling_off => 'Raffreddamento max: OFF';
+
+  @override
+  String get vehicle_temp_label => 'Temperatura';
+
+  @override
+  String get vehicle_fan_speed_label => 'Velocità ventola';
+
+  @override
+  String vehicle_fan_level(Object arg1) {
+    return 'Livello $arg1';
+  }
+
+  @override
+  String vehicle_inside_temp_fmt(Object arg1) {
+    return 'Interno: $arg1°C';
+  }
+
+  @override
+  String get vehicle_seat_driver => 'Conducente';
+
+  @override
+  String get vehicle_seat_passenger => 'Passeggero';
+
+  @override
+  String get vehicle_seat_no_controls =>
+      'Nessun comando sedile disponibile per questo veicolo.';
+
+  @override
+  String vehicle_seat_heat_label(Object arg1) {
+    return 'Riscaldamento $arg1';
+  }
+
+  @override
+  String vehicle_seat_cool_label(Object arg1) {
+    return 'Ventilazione $arg1';
+  }
+
+  @override
+  String get vehicle_heat_off => '(Off)';
+
+  @override
+  String get vehicle_heat_low => '(Basso)';
+
+  @override
+  String get vehicle_heat_high => '(Alto)';
+
+  @override
+  String get vehicle_seat_pos_1 => 'Posizione 1';
+
+  @override
+  String get vehicle_seat_pos_2 => 'Posizione 2';
+
+  @override
+  String get vehicle_all_windows => 'Tutte le finestre';
+
+  @override
+  String get vehicle_window_front_left => 'Anteriore sinistro';
+
+  @override
+  String get vehicle_window_front_right => 'Anteriore destro';
+
+  @override
+  String get vehicle_window_rear_left => 'Posteriore sinistro';
+
+  @override
+  String get vehicle_window_rear_right => 'Posteriore destro';
+
+  @override
+  String get vehicle_window_close => 'Chiudi';
+
+  @override
+  String get vehicle_window_close_vent => 'Chiudi fessura';
+
+  @override
+  String get vehicle_window_vent_12 => 'Fessura 12%';
+
+  @override
+  String get vehicle_window_open_all => 'Apri tutti';
+
+  @override
+  String get vehicle_sunroof => 'Sulla copertura solare';
+
+  @override
+  String get vehicle_sunshade => 'Ombrello solare';
+
+  @override
+  String get vehicle_btn_drl_title => 'Luce di corsa diurne';
+
+  @override
+  String get vehicle_btn_slw_title => 'Avviso di limite di velocità';
+
+  @override
+  String get vehicle_control_section_charge_cap => 'Limite di carica';
+
+  @override
+  String get vehicle_charge_cap_not_supported =>
+      'Il limite di ricarica non è supportato da questo veicolo.';
+
+  @override
+  String get vehicle_charge_limit_label => 'Limite di ricarica';
+
+  @override
+  String get vehicle_enable_charge_limit => 'Attiva limite di ricarica';
+
+  @override
+  String get vehicle_charge_limit_range => 'Minimo 50%, massimo 100%';
+
+  @override
+  String get vehicle_tyre_no_signal => 'Nessun segnale';
+
+  @override
+  String get vehicle_tyre_slow_leak => 'RIPORTA RILEGATO';
+
+  @override
+  String get vehicle_tyre_fast_leak => 'FAST LEAK';
+
+  @override
+  String get vehicle_tyre_low => 'Sotto';
+
+  @override
+  String get vehicle_tyre_high => 'Alti';
+
+  @override
+  String get vehicle_tyre_ok => 'OK';
+
+  @override
+  String get vehicle_tyre_check_pressure => 'Controlla pressione';
+
+  @override
+  String get vehicle_toggle_on => 'ON';
+
+  @override
+  String get vehicle_toggle_off => 'OFF';
+
+  @override
+  String get vehicle_err_climate_control =>
+      'Controllo climatizzazione non riuscito.';
+
+  @override
+  String get vehicle_err_max_cooling => 'Raffreddamento max non riuscito.';
+
+  @override
+  String get vehicle_err_drl_control => 'Controllo luci diurne non riuscito.';
+
+  @override
+  String get vehicle_err_slw_control => 'Controllo ADAS non riuscito.';
+
+  @override
+  String get vehicle_err_charge_limit_toggle =>
+      'Attivazione limite di ricarica non riuscita.';
+
+  @override
+  String vehicle_a11y_decrease_fmt(Object arg1) {
+    return 'Riduci $arg1';
+  }
+
+  @override
+  String vehicle_a11y_increase_fmt(Object arg1) {
+    return 'Aumenta $arg1';
+  }
+
+  @override
+  String get vehicle_stale_connecting => 'Connessione…';
+
+  @override
+  String get vehicle_appearance_model_title => 'Seleziona modello';
+
+  @override
+  String get vehicle_appearance_custom_color => 'Colore personalizzato';
+
+  @override
+  String vehicle_status_charge_fmt(Object arg1) {
+    return 'Carica: $arg1%';
+  }
+
+  @override
+  String vehicle_status_range_fmt(Object arg1) {
+    return 'Autonomia: $arg1 km';
+  }
+
+  @override
+  String get vehicle_status_charge_unknown => 'Carica: —';
+
+  @override
+  String get vehicle_status_range_unknown => 'Autonomia: —';
+
+  @override
+  String get startup_subtitle => 'Preparazione della dashcam';
+
+  @override
+  String get startup_header_preparing => 'Preparazione in corso…';
+
+  @override
+  String get startup_header_starting => 'Avvio in corso…';
+
+  @override
+  String get startup_header_verifying => 'Quasi pronto…';
+
+  @override
+  String get startup_header_ready => 'Tutto pronto';
+
+  @override
+  String get startup_daemon_camera => 'Fotocamera';
+
+  @override
+  String get startup_daemon_camera_desc =>
+      'Visualizzazione live e registrazione';
+
+  @override
+  String get startup_daemon_sentry => 'Modalità Sentinella';
+
+  @override
+  String get startup_daemon_sentry_desc => 'Rilevamento movimento e avvisi';
+
+  @override
+  String get startup_daemon_parking => 'Guardia parcheggio';
+
+  @override
+  String get startup_daemon_parking_desc => 'Sorveglia mentre sei parcheggiato';
+
+  @override
+  String get startup_status_waiting => 'In attesa';
+
+  @override
+  String get startup_status_starting => 'Avvio';
+
+  @override
+  String get startup_status_ready => 'Pronto';
+
+  @override
+  String get startup_status_failed => 'Fallito';
+
+  @override
+  String get startup_continue_anyway => 'Continua comunque';
+
+  @override
+  String get startup_continue => 'Continua →';
+
+  @override
+  String get live_retry => 'Riprova';
+
+  @override
+  String get live_connecting => 'Connessione alla fotocamera…';
+
+  @override
+  String live_error_fmt(Object arg1) {
+    return 'Errore: $arg1';
+  }
+
+  @override
+  String live_camera_unavailable_fmt(Object arg1) {
+    return 'Fotocamera non disponibile\n$arg1';
+  }
+
+  @override
+  String get live_direction_all => 'Tutte';
+
+  @override
+  String get live_direction_front => 'Anteriore';
+
+  @override
+  String get live_direction_right => 'Destra';
+
+  @override
+  String get live_direction_rear => 'Posteriore';
+
+  @override
+  String get live_direction_left => 'Sinistra';
+
+  @override
+  String get trip_no_route_data => 'Nessun dato di percorso per questo viaggio';
+
+  @override
+  String get trips_tab_trips => 'Viaggi';
+
+  @override
+  String get trips_tab_stats => 'Statistiche';
+
+  @override
+  String get trips_tab_storage => 'Archiviazione';
+
+  @override
+  String get trips_filter_7_days => '7 Days';
+
+  @override
+  String get trips_filter_14_days => '14 Days';
+
+  @override
+  String get trips_filter_30_days => '30 Days';
+
+  @override
+  String trips_load_error(Object message) {
+    return 'Errore: $message';
+  }
+
+  @override
+  String get trips_empty_state => 'Nessun viaggio registrato ancora';
+
+  @override
+  String get trips_period_summary_title => 'Riepilogo del periodo';
+
+  @override
+  String get trips_stat_trips => 'Trips';
+
+  @override
+  String get trips_stat_hours => 'Hours';
+
+  @override
+  String get trips_stat_efficiency => 'Efficiency';
+
+  @override
+  String get trips_stat_kwh => 'kWh';
+
+  @override
+  String get trips_stat_kwh_per_100km => 'kWh/100km';
+
+  @override
+  String trips_score_label(Object score) {
+    return 'Score: $score';
+  }
+
+  @override
+  String get trips_driver_score_title => 'Punteggio del guidatore';
+
+  @override
+  String trips_driver_score_overall(Object score) {
+    return 'Overall: $score / 100';
+  }
+
+  @override
+  String get trips_range_title => 'Autonomia personalizzata';
+
+  @override
+  String trips_range_byd_estimate(Object km) {
+    return 'BYD estimate: $km km';
+  }
+
+  @override
+  String get trips_range_no_data => 'Dati non ancora sufficienti';
+
+  @override
+  String get trips_dna_title => 'DNA di guida';
+
+  @override
+  String get trips_dna_anticipation => 'Anticipation';
+
+  @override
+  String get trips_dna_smoothness => 'Smoothness';
+
+  @override
+  String get trips_dna_speed_discipline => 'Speed Discipline';
+
+  @override
+  String get trips_dna_efficiency => 'Efficiency';
+
+  @override
+  String get trips_dna_consistency => 'Consistency';
+
+  @override
+  String get trips_storage_title => 'Archiviazione viaggi';
+
+  @override
+  String get trips_storage_analytics_label => 'Trip Analytics';
+
+  @override
+  String get trips_storage_rate_label => 'Electricity Rate';
+
+  @override
+  String get trips_storage_distance_unit_label => 'Distance Unit';
+
+  @override
+  String get trips_storage_location_label => 'Storage Location';
+
+  @override
+  String get trips_storage_internal => 'Internal';
+
+  @override
+  String get trips_storage_sd_card => 'SD Card';
+
+  @override
+  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+
+  @override
+  String get trips_storage_apply => 'Apply Changes';
+
+  @override
+  String trips_storage_usage_line(
+    Object used,
+    Object unit,
+    Object limit,
+    Object count,
+  ) {
+    return '$used $unit used / $limit MB limit · $count trips';
+  }
+
+  @override
+  String get trips_sync_title => 'Catalogo del database';
+
+  @override
+  String get trips_sync_description =>
+      'Reconcile the trips index with telemetry files on disk.';
+
+  @override
+  String get trips_sync_button => 'Sync Database';
+
+  @override
+  String get trips_sync_running => 'Syncing…';
+
+  @override
+  String trips_sync_success(Object added, Object removed, Object total) {
+    return 'Sincronizzazione riuscita: +$added -$removed ($total totali)';
+  }
+
+  @override
+  String get trips_sync_failed_generic => 'Sincronizzazione non riuscita';
+
+  @override
+  String get trips_detail_summary_title => 'Riepilogo del viaggio';
+
+  @override
+  String get trips_detail_distance => 'Distance';
+
+  @override
+  String get trips_detail_duration => 'Duration';
+
+  @override
+  String get trips_detail_energy => 'Energy';
+
+  @override
+  String get trips_detail_avg_speed => 'Avg Speed';
+
+  @override
+  String get trips_detail_max_speed => 'Max Speed';
+
+  @override
+  String get trips_detail_soc => 'SoC';
+
+  @override
+  String get trips_detail_cost => 'Cost';
+
+  @override
+  String get trips_detail_ext_temp => 'Ext Temp';
+
+  @override
+  String get trips_detail_elev_gain => 'Elev Gain';
+
+  @override
+  String get trips_detail_scores_title => 'Punteggi di guida';
+
+  @override
+  String get trips_detail_unavailable => 'Dettagli del viaggio non disponibili';
+
+  @override
+  String get trips_detail_loading => 'Caricamento viaggio…';
+
+  @override
+  String trips_detail_route_points(Object count) {
+    return '$count GPS points recorded';
+  }
+
+  @override
+  String get rec_severity_critical => 'CRITICO';
+
+  @override
+  String get rec_severity_alert => 'AVVISO';
+
+  @override
+  String get location_loading_title => 'Caricamento mappa';
+
+  @override
+  String get location_permission_missing_title =>
+      'Autorizzazione posizione richiesta';
+
+  @override
+  String get location_permission_denied_title => 'Autorizzazione negata';
+
+  @override
+  String get location_provider_disabled_title => 'GPS disattivato';
+
+  @override
+  String get location_waiting_for_fix_title => 'In attesa del segnale GPS';
+
+  @override
+  String get location_car_location_title => 'Posizione del veicolo';
+
+  @override
+  String get location_stale_title => 'Posizione non aggiornata';
+
+  @override
+  String get location_tile_failure_title => 'Mappa non disponibile';
+
+  @override
+  String get location_tile_failure_subtitle => 'Rete non disponibile';
+
+  @override
+  String get location_error_title => 'Errore di posizione';
+
+  @override
+  String get location_action_grant => 'Concedi';
+
+  @override
+  String get location_action_retry => 'Riprova';
+
+  @override
+  String get location_mode_auto => 'Automatico';
+
+  @override
+  String get location_mode_light => 'Chiaro';
+
+  @override
+  String get location_mode_dark => 'Scuro';
+
+  @override
+  String get cd_recenter_on_car => 'Ricentra sul veicolo';
+
+  @override
+  String get recording_lib_no_recordings_normal =>
+      'Nessuna registrazione normale';
+
+  @override
+  String get recording_lib_no_recordings_sentry =>
+      'Nessun evento di sorveglianza';
+
+  @override
+  String get recording_lib_no_recordings_proximity =>
+      'Nessun evento di prossimità';
+
+  @override
+  String recording_lib_camera_badge(Object arg1) {
+    return 'C$arg1';
+  }
+
+  @override
+  String get video_player_legend_person => 'persona';
+
+  @override
+  String get video_player_legend_car => 'auto';
+
+  @override
+  String get video_player_legend_bike => 'bici';
+
+  @override
+  String get video_player_legend_motion => 'movimento';
+
+  @override
+  String get recording_lib_proximity_very_close => 'molto vicino';
+
+  @override
+  String get recording_lib_proximity_close => 'vicino';
+
+  @override
+  String get recording_lib_proximity_mid => 'medio';
+
+  @override
+  String get recording_lib_proximity_far => 'lontano';
+
+  @override
+  String get surveillance_tab_general => 'Generale';
+
+  @override
+  String get surveillance_tab_detection => 'Rilevamento';
+
+  @override
+  String get surveillance_tab_recording => 'Registrazione';
+
+  @override
+  String get surveillance_tab_storage => 'Archiviazione';
+
+  @override
+  String get surveillance_tab_advanced => 'Avanzate';
+
+  @override
+  String get surveillance_general_title => 'Modalità sorveglianza';
+
+  @override
+  String get surveillance_general_enable => 'Attiva sorveglianza';
+
+  @override
+  String get surveillance_general_status => 'Stato';
+
+  @override
+  String get surveillance_general_status_running => 'In esecuzione';
+
+  @override
+  String get surveillance_general_status_idle => 'Inattivo';
+
+  @override
+  String get surveillance_general_events_today => 'Eventi di oggi';
+
+  @override
+  String get surveillance_safe_locations_title => 'Luoghi sicuri';
+
+  @override
+  String get surveillance_safe_locations_subtitle =>
+      'La fotocamera non si avvia se parcheggi qui';
+
+  @override
+  String get surveillance_safe_locations_enable =>
+      'Disattiva nei luoghi sicuri';
+
+  @override
+  String get surveillance_safe_locations_empty =>
+      'Nessun luogo sicuro ancora aggiunto';
+
+  @override
+  String get surveillance_safe_locations_add_current =>
+      'Aggiungi la posizione attuale come zona sicura';
+
+  @override
+  String get surveillance_safe_locations_no_gps =>
+      'Posizione GPS non disponibile';
+
+  @override
+  String surveillance_safe_locations_zone_label(Object arg1, Object arg2) {
+    return '$arg1  (${arg2}m)';
+  }
+
+  @override
+  String get surveillance_detection_title => 'Impostazioni di rilevamento';
+
+  @override
+  String get surveillance_detection_preset_label => 'Preimpostazione ambiente';
+
+  @override
+  String get surveillance_preset_outdoor => 'Esterno';
+
+  @override
+  String get surveillance_preset_garage => 'Garage';
+
+  @override
+  String get surveillance_preset_street => 'Strada';
+
+  @override
+  String get surveillance_preset_custom => 'Personalizzato';
+
+  @override
+  String surveillance_detection_sensitivity_label(Object arg1) {
+    return 'Sensibilità (1=rigida, 5=sensibile): $arg1';
+  }
+
+  @override
+  String get surveillance_detection_objects_label => 'Rileva oggetti';
+
+  @override
+  String get surveillance_detection_object_person => 'persona';
+
+  @override
+  String get surveillance_detection_object_car => 'auto';
+
+  @override
+  String get surveillance_detection_object_bike => 'bici';
+
+  @override
+  String get surveillance_recording_title => 'Registrazione eventi';
+
+  @override
+  String surveillance_recording_pre_label(Object arg1) {
+    return 'Pre-registrazione (secondi prima dell\'evento): $arg1';
+  }
+
+  @override
+  String surveillance_recording_post_label(Object arg1) {
+    return 'Post-registrazione (secondi dopo l\'evento): $arg1';
+  }
+
+  @override
+  String surveillance_seconds_value(Object arg1) {
+    return '${arg1}s';
+  }
+
+  @override
+  String get surveillance_storage_title => 'Archiviazione sorveglianza';
+
+  @override
+  String get surveillance_storage_location_label =>
+      'Posizione di archiviazione';
+
+  @override
+  String get surveillance_storage_internal => 'Interna';
+
+  @override
+  String get surveillance_storage_sd_card => 'Scheda SD';
+
+  @override
+  String get surveillance_storage_sd_card_na => 'Scheda SD (N/D)';
+
+  @override
+  String get surveillance_storage_limit_label =>
+      'Limite di archiviazione: elimina automaticamente i più vecchi';
+
+  @override
+  String surveillance_storage_usage(Object arg1, Object arg2) {
+    return '$arg1 used / $arg2 limit';
+  }
+
+  @override
+  String surveillance_storage_files(Object arg1) {
+    return '$arg1 eventi';
+  }
+
+  @override
+  String get surveillance_storage_path_label => 'Percorso';
+
+  @override
+  String get surveillance_format_title => 'Formatta unità esterna';
+
+  @override
+  String get surveillance_format_warning =>
+      'Cancella definitivamente TUTTI i dati sulla scheda SD o unità USB.';
+
+  @override
+  String get surveillance_format_button => 'Formatta scheda SD/USB';
+
+  @override
+  String get surveillance_format_confirm =>
+      'Tocca di nuovo — TUTTI i dati verranno CANCELLATI';
+
+  @override
+  String get surveillance_format_running => 'Formattazione in corso… attendere';
+
+  @override
+  String get surveillance_dismiss => 'Ignora';
+
+  @override
+  String get surveillance_sync_title => 'Catalogo del database';
+
+  @override
+  String get surveillance_sync_description =>
+      'Riconcilia l\'indice di sorveglianza con i file su disco.';
+
+  @override
+  String get surveillance_sync_button => 'Sincronizza database';
+
+  @override
+  String get surveillance_sync_running => 'Sincronizzazione…';
+
+  @override
+  String get surveillance_advanced_camera_title => 'Selezione fotocamera';
+
+  @override
+  String get surveillance_advanced_camera_front => 'Anteriore';
+
+  @override
+  String get surveillance_advanced_camera_right => 'Destra';
+
+  @override
+  String get surveillance_advanced_camera_rear => 'Posteriore';
+
+  @override
+  String get surveillance_advanced_camera_left => 'Sinistra';
+
+  @override
+  String get surveillance_advanced_ai_title => 'IA e deterrente';
+
+  @override
+  String get surveillance_advanced_ai_detection => 'Rilevamento IA';
+
+  @override
+  String get surveillance_advanced_night_mode => 'Modalità notturna';
+
+  @override
+  String get surveillance_advanced_deterrent_label => 'Azione deterrente';
+
+  @override
+  String get surveillance_deterrent_silent => 'Silenzioso';
+
+  @override
+  String get surveillance_deterrent_horn => 'Clacson';
+
+  @override
+  String get surveillance_deterrent_flash => 'Flash';
+
+  @override
+  String get surveillance_apply_button => 'Applica modifiche';
+
+  @override
+  String get surveillance_apply_failed => 'Salvataggio non riuscito';
+}

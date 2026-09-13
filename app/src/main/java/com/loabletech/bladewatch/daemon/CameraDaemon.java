@@ -390,7 +390,6 @@ public class CameraDaemon {
         net.bladewatch.app.server.connect.ConnectDispatcher cd =
                 httpServer.getConnectDispatcher();
         new net.bladewatch.app.server.connect.impl.AuthServiceImpl().register(cd);
-        new net.bladewatch.app.server.connect.impl.UpdateServiceImpl().register(cd);
         new net.bladewatch.app.server.connect.impl.NotificationsServiceImpl().register(cd);
         new net.bladewatch.app.server.connect.impl.SettingsServiceImpl().register(cd);
         new net.bladewatch.app.server.connect.impl.StreamServiceImpl().register(cd);
@@ -436,15 +435,10 @@ public class CameraDaemon {
         HttpServer.loadPersistedSettings();
         logT("HttpServer.loadPersistedSettings done");
         
-        // Note: we deliberately don't seed the version file here. The
-        // updater writes it after a successful install with the actual
-        // GitHub release string (e.g. "alpha-v15.6"). Until the user has
-        // run a check-for-update the file is absent and
-        // AppUpdater.getDisplayVersionFromFile() returns the
-        // DISPLAY_VERSION_FALLBACK ("Manually Installed") which is more
-        // accurate than seeding gradle's BuildConfig.VERSION_NAME stub
-        // ("11.0") that has no relationship to the release the user
-        // actually installed.
+        // Note: there is no version file any more. The in-app updater that used
+        // to write /data/local/tmp/bladewatch_version after an install has been
+        // removed, and the status endpoint now reports BuildConfig.VERSION_NAME
+        // directly.
 
 
         // ImageReader FPS probe sentinel: when /data/local/tmp/run_imagereader_probe

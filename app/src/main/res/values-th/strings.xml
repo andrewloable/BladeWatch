@@ -158,8 +158,6 @@
     <string name="daemons_hero_title">ระบบเบื้องหลัง</string>
     <string name="daemons_count_pending">กำลังโหลดระบบเบื้องหลัง…</string>
     <string name="daemons_count_fmt">ทำงาน %1$d จาก %2$d</string>
-    <string name="update_preparing">กำลังเตรียมอัปเดต…</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">สุขภาพแบตเตอรี่</string>
     <string name="battery_health_subtitle">ค่า SOH (State of Health)</string>
     <string name="battery_health_dashes">--</string>
@@ -193,11 +191,7 @@
         <item quantity="one">นี่จะเป็นการลบ %d ไฟล์วิดีโอแบบถาวร ลบแล้วกู้คืนไม่ได้นะ</item>
         <item quantity="other">นี่จะเป็นการลบ %d ไฟล์วิดีโอแบบถาวร ลบแล้วกู้คืนไม่ได้นะ</item>
     </plurals>
-    <string name="toast_updated_to">อัปเดตเป็น %1$s แล้ว</string>
-    <string name="toast_update_install_failed">ติดตั้งอัปเดตไม่สำเร็จ: %1$s</string>
-    <string name="toast_checking_for_updates">กำลังตรวจสอบอัปเดตใหม่ๆ…</string>
     <string name="toast_app_up_to_date">แอปเป็นเวอร์ชันล่าสุดแล้ว (v%1$s)</string>
-    <string name="toast_update_check_failed">ตรวจสอบอัปเดตไม่ผ่าน: %1$s</string>
     <string name="toast_storage_permission_required">ต้องอนุญาตให้เข้าถึงพื้นที่เก็บข้อมูลก่อนเพื่อบันทึกวิดีโอ</string>
     <string name="toast_url_copied_short">คัดลอก URL แล้ว!</string>
     <string name="toast_camera_set_to_auto">ตั้งค่ากล้องเป็นอัตโนมัติแล้ว</string>
@@ -231,7 +225,7 @@
     <string name="dialog_reset_following_message">ลบแล้วกู้คืนไม่ได้นะ\n\n%1$s</string>
     <string name="dialog_reset_complete_title">รีเซ็ตเสร็จเรียบร้อย</string>
     <string name="dialog_traffic_cannot_check_title">เช็กสถานะไม่ได้</string>
-    <string name="dialog_traffic_cannot_check_message">การเชื่อมต่อ ADB ยังไม่พร้อม\n\nแอปจำเป็นต้องใช้ ADB เพื่อจัดการกับระบบของเครื่อง กรุณาตรวจสอบว่า:\n\n• เปิดใช้งาน การแก้ไขจุดบกพร่อง USB (USB Debugging) ในตัวเลือกนักพัฒนาแล้ว\n• กดยอมรับหน้าต่างแจ้งเตือนของ ADB แล้ว\n\nเดี๋ยวสถานะมันจะอัปเดตเองหลังจากเชื่อมต่อได้แล้ว</string>
+    <string name="dialog_traffic_cannot_check_message">ADB ไม่ได้เชื่อมต่อ และแอปไม่สามารถเชื่อมต่อใหม่ได้โดยอัตโนมัติ\n\nสำหรับรถคันนี้ สวิตช์ \"USB Debugging\" ทั่วไปในตัวเลือกนักพัฒนาเพียงอย่างเดียวไม่เพียงพอ — ต้องเปิดการตั้งค่า ADB ไร้สาย (การดีบักผ่านเครือข่าย) ของเครื่องเล่นกลางด้วย ซึ่งการอัปเดตระบบอาจรีเซ็ตค่านี้ได้ กรุณาเปิดใช้งาน ADB ไร้สายบนเครื่องเล่นกลางอีกครั้ง หรือเชื่อมต่อผ่าน USB\n\nสถานะจะอัปเดตโดยอัตโนมัติเมื่อเชื่อมต่อสำเร็จ</string>
     <string name="dialog_traffic_disable_title">ปิดใช้งาน BYD Traffic Monitor ไหม?</string>
     <string name="dialog_traffic_disable_message">แอป BYD Traffic Monitor (com.byd.trafficmonitor) เป็นแอปติดเครื่องที่คอยเช็กสภาพการจราจรเบื้องหลังตลอดเวลา\n\nทำไมถึงควรปิดล่ะ?\n\n• มันแอบใช้เน็ต (ถึงจะจอดรถอยู่ก็เถอะ)\n• กิน CPU และแบตเตอรี่\n• ไม่จำเป็นเลยถ้าคุณใช้แอปนำทางตัวอื่นอยู่แล้ว\n• บางทีก็ไปกวนสัญญาณเน็ตของกล้องหน้ารถ\n\nปิดไปก็ไม่มีปัญหา — มันมีผลแค่แผนที่ของแอปนำทางเดิมที่ติดมากับรถ ไม่ได้เกี่ยวอะไรกับแอปนำทางตัวอื่น, บลูทูธ หรือระบบอื่นๆ ในรถเลย\n\nต้องรีบูตจอรถด้วยนะ (กดปุ่มกลางคอนโซลค้างไว้ 5 วินาที) ถึงจะเห็นผล</string>
     <string name="dialog_traffic_enable_title">เปิดใช้งาน BYD Traffic Monitor อีกครั้งไหม?</string>
@@ -335,7 +329,6 @@
     <string name="settings_about_title">เกี่ยวกับ BladeWatch</string>
     <string name="settings_about_version_label">เวอร์ชัน</string>
     <string name="settings_about_package_label">Build</string>
-    <string name="settings_about_check_update_value">ตรวจสอบเวอร์ชันล่าสุดบน GitHub แล้วลงเลยถ้ามีใหม่กว่า</string>
     <string name="settings_about_support_section">โปรเจกต์นี้เดินหน้าได้เพราะคนแบบคุณ</string>
     <string name="settings_about_support_share_title">บอกต่อให้เพื่อนเจ้าของรถคนอื่น</string>
     <string name="settings_about_support_share_value">ช่วยแชร์ลิงก์ให้คนใช้ BYD คนอื่นได้รู้จักแอปนี้กันเยอะๆ</string>
@@ -345,16 +338,12 @@
     <string name="settings_about_open_link_copied">หาเบราว์เซอร์ไม่เจอ คัดลอก URL แล้ว: %1$s</string>
     <string name="settings_about_support_kofi_title">สนับสนุนเวอร์ชันถัดไป ☕</string>
     <string name="settings_about_support_kofi_value">เลี้ยงกาแฟเราใน Ko-fi สักแก้ว จะได้มีแรงตื่นมาเขียนโค้ดต่อ</string>
-    <string name="settings_about_support_kofi_url" translatable="false">https://ko-fi.com/E1E71XALHX</string>
     <string name="settings_about_license_title">ไลเซนส์</string>
     <string name="settings_about_license_value">MIT — Open Source กดดูเต็มๆ ได้เลย</string>
     <string name="settings_about_source_title">ซอร์สโค้ด (Source Code)</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url" translatable="false">https://github.com/yash-srivastava/BladeWatch-release/blob/main/LICENSE</string>
-    <string name="settings_about_source_url" translatable="false">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_star_title">ไปกด ⭐ ให้ใน GitHub หน่อย</string>
     <string name="settings_about_star_value">ใช้เวลาแค่แป๊บเดียว แต่มันมีความหมายกับคนทำมากนะ</string>
-    <string name="settings_about_star_url" translatable="false">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_thanks_title">ขอบคุณ</string>
     <string name="settings_about_thanks_subtitle">แอปนี้สร้างขึ้นมาได้เพราะความช่วยเหลือจากผู้ร่วมพัฒนาและคนสนับสนุนทุกคนเลยนะ</string>
     <string name="settings_about_contributors_title">ผู้ร่วมพัฒนา</string>
@@ -412,7 +401,6 @@
     <string name="integrations_status_configured">ตั้งค่าแล้ว</string>
     <string name="integrations_status_not_set_up">ยังไม่ได้ตั้งค่า</string>
     <string name="integrations_configure_button">ตั้งค่า</string>
-    <string name="settings_action_check_update">เช็กอัปเดต</string>
     <string name="settings_action_reset_data">ล้างข้อมูล (Reset)…</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">พร้อมเฝ้าระวัง</string>
@@ -563,8 +551,6 @@
     <string name="soh_oem_readout">ค่า SOH จากรถ — กำลังรอผลประเมินที่คำนวณได้</string>
     <string name="soh_nominal_baseline">ค่าพื้นฐานมาตรฐาน — กำลังรอข้อมูล SOH ที่เชื่อถือได้</string>
     <string name="rail_location">ตำแหน่ง</string>
-    <string name="settings_about_auto_update_title">อัปเดตอัตโนมัติจากเซิร์ฟเวอร์</string>
-    <string name="settings_about_auto_update_value">ปิดไว้ตอนทดสอบ Build ในเครื่อง เปิดกลับเมื่อต้องการให้ระบบเช็กอัปเดตจาก GitHub ต่อ</string>
     <string name="settings_drive_side_label">ตำแหน่งเมนูนำทาง</string>
     <string name="settings_drive_side_subtitle">เลือกว่าจะให้เมนูนำทางอยู่ด้านไหนของหน้าจอ</string>
     <string name="settings_drive_side_left">ซ้าย</string>

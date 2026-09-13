@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">Backgrounddiensten</string>
     <string name="daemons_count_pending">Loading diensten...</string>
     <string name="daemons_count_fmt">%1$d van %2$d aan het draaien</string>
-    <string name="update_preparing">Ik ben bezig met het update.</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">Batterijgezondheid</string>
     <string name="battery_health_subtitle">Gezondheidstoestand</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">Dit zal de %d-opname permanent verwijderen.</item>
         <item quantity="other">Dit zal %d-opnames permanent verwijderen.</item>
     </plurals>
-    <string name="toast_updated_to">Updated naar %1$s</string>
-    <string name="toast_update_install_failed">Installatie mislukt: %1$s</string>
-    <string name="toast_checking_for_updates">Ik kijk naar updates.</string>
     <string name="toast_app_up_to_date">App is up-to-date (v%1$s)</string>
-    <string name="toast_update_check_failed">Update-controle mislukt: %1$s</string>
     <string name="toast_storage_permission_required">Voor opnames vereiste opslagtoestemmingen</string>
     <string name="toast_url_copied_short">URL gekopieerd!</string>
     <string name="toast_camera_set_to_auto">Camera ingesteld op Auto</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">Volledige reset</string>
     <string name="dialog_traffic_cannot_check_title">Kan de status niet controleren</string>
-    <string name="dialog_traffic_cannot_check_message">ADB-verbinding is nog niet klaar.\n\nDe app heeft ADB-toegang nodig om systeempakketten te beheren. Zorg ervoor dat:\n\n• USB Debugging is ingeschakeld in Developer Options\n• De ADB-autoriseringsopdracht is geaccepteerd\n\nDe status wordt automatisch bijgewerkt zodra de verbinding is gesloten.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB is niet verbonden en de app kon niet automatisch opnieuw verbinden.\n\nOp dit voertuig is de gebruikelijke \"USB-foutopsporing\"-schakelaar in Ontwikkelaarsopties niet voldoende — de eigen instelling voor draadloze ADB (netwerkfoutopsporing) van de hoofdunit moet ook aanstaan, en een systeemupdate kan deze uitschakelen. Schakel draadloze ADB opnieuw in op de hoofdunit, of maak verbinding via USB.\n\nDe status wordt automatisch bijgewerkt zodra er verbinding is.</string>
     <string name="dialog_traffic_disable_title">BYD Traffic Monitor uitschakelen?</string>
     <string name="dialog_traffic_disable_message">De BYD Traffic Monitor (com.byd.trafficmonitor) is een ingebouwde systeem-app die de verkeersomstandigheden in de achtergrond continu bewaakt.\n\n️ Waarom deze uitschakelen?\n\n• Verbrengt mobiele gegevens (zelfs wanneer geparkeerd)\n• Gebruikt CPU en batterij in de achtergrond\n• Niet nodig als u een aparte navigatie-app gebruikt\n• Kan het netwerkgebruik van de dashcam verstoren\n\nDit is veilig om te uitschakelen  het beïnvloedt alleen de ingebouwde verkeersoverlay op de kaart. Uw navigatie, Bluetooth, en alle andere autofuncties blijven onveranderd.\n\nEen harde herlaten is vereist na het uitschakelen (</string>
     <string name="dialog_traffic_enable_title">BYD-verkeersmonitor weer ingeschakeld?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">Over BladeWatch</string>
     <string name="settings_about_version_label">Versie</string>
     <string name="settings_about_package_label">Bouwen</string>
-    <string name="settings_about_check_update_value">Controleer de nieuwste GitHub-release en installeer indien nieuwer.</string>
     <string name="settings_about_support_section">Aangedreven door mensen als jij.</string>
     <string name="settings_about_support_share_title">Vertel het een andere eigenaar</string>
     <string name="settings_about_support_share_value">Elke gedeelde link helpt een andere eigenaar van BYD om BladeWatch te ontdekken.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">Geen browser gevonden. URL gekopieerd: %1$s</string>
     <string name="settings_about_support_kofi_title">Brandstof voor de volgende release</string>
     <string name="settings_about_support_kofi_value">Een koffie op Ko-Fi houdt de late-night commits aan de komst.</string>
-    <string name="settings_about_support_kofi_url">Het is een van de belangrijkste onderdelen van de Europese Unie.</string>
     <string name="settings_about_license_title">Vergunning</string>
     <string name="settings_about_license_value">MIT  open source. Tik om de volledige tekst te bekijken.</string>
     <string name="settings_about_source_title">Broncode</string>
     <string name="settings_about_source_value">Github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">Het is een van de belangrijkste programma\'s van de Europese Unie.</string>
-    <string name="settings_about_source_url">Het is de eerste keer dat een nieuwe computer wordt geproduceerd.</string>
     <string name="settings_about_star_title">Geef een op GitHub</string>
     <string name="settings_about_star_value">Het duurt even, het betekent veel.</string>
-    <string name="settings_about_star_url">Het is de eerste keer dat een nieuwe computer wordt geproduceerd.</string>
     <string name="settings_about_thanks_title">Met dank aan</string>
     <string name="settings_about_thanks_subtitle">Gebouwd met hulp van bijdragers en ondersteuners.</string>
     <string name="settings_about_contributors_title">Bijdragers</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">Geconfigureerd</string>
     <string name="integrations_status_not_set_up">Niet ingesteld</string>
     <string name="integrations_configure_button">Configuratie</string>
-    <string name="settings_action_check_update">Controleer of er updates zijn</string>
     <string name="settings_action_reset_data">- Dataten opnieuw instellen.</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">Op wacht</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">SOH-uitlezing voertuig — wacht op berekende schatting</string>
     <string name="soh_nominal_baseline">Nominale referentie — wacht op betrouwbare SOH-gegevens</string>
     <string name="rail_location">Locatie</string>
-    <string name="settings_about_auto_update_title">Auto-update vanaf server</string>
-    <string name="settings_about_auto_update_value">Schakel dit uit bij het testen van een lokale build. Zet het weer aan om opnieuw op updates op GitHub te controleren.</string>
     <string name="settings_drive_side_label">Navigatiezijde</string>
     <string name="settings_drive_side_subtitle">Kies aan welke kant van het scherm het navigatiemenu verschijnt.</string>
     <string name="settings_drive_side_left">Links</string>

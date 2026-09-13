@@ -68,27 +68,6 @@
               </div>
             </div>
 
-            <div class="card">
-              <div class="section-title">{{ 'settings.updates' | translate }}</div>
-              @if (updateInfo()) {
-                @let info = updateInfo()!;
-                @if (info.available) {
-                  <div class="update-version">{{ 'settings.version_available' | translate }} v{{ info.remoteVersion }}</div>
-                  @if (info.releaseNotes) { <div class="update-notes">{{ info.releaseNotes }}</div> }
-                  <button class="btn btn-primary" (click)="installUpdate()" [disabled]="installing()">
-                    {{ installing() ? ('settings.installing' | translate) : ('settings.install_update' | translate) }}
-                  </button>
-                } @else {
-                  <p class="up-to-date">{{ 'settings.up_to_date_running' | translate }} v{{ info.currentVersion }}.</p>
-                }
-              } @else {
-                <div class="actions">
-                  <button class="btn btn-secondary" (click)="checkUpdate()" [disabled]="checkingUpdate()">
-                    {{ checkingUpdate() ? ('settings.checking' | translate) : ('settings.check_for_updates' | translate) }}
-                  </button>
-                </div>
-              }
-            </div>
           }
 
           @case ('recording') {

@@ -23,7 +23,6 @@ import net.bladewatch.app.grpc.v1.StreamServiceClient
 import net.bladewatch.app.grpc.v1.SurveillanceServiceClient
 import net.bladewatch.app.grpc.v1.SystemServiceClient
 import net.bladewatch.app.grpc.v1.TripsServiceClient
-import net.bladewatch.app.grpc.v1.UpdateServiceClient
 import net.bladewatch.app.grpc.v1.VehicleServiceClient
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -123,7 +122,6 @@ object ConnectClientProvider {
     private val systemSvc by lazy { SystemServiceClient(protocolClient) }
     private val tripsSvc by lazy { TripsServiceClient(protocolClient) }
     private val longTripsSvc by lazy { TripsServiceClient(longTimeoutClient) }
-    private val updatesSvc by lazy { UpdateServiceClient(protocolClient) }
     private val vehicleSvc by lazy { VehicleServiceClient(protocolClient) }
 
     @JvmStatic fun authService(): AuthServiceClient = authSvc
@@ -140,7 +138,6 @@ object ConnectClientProvider {
     @JvmStatic fun systemService(): SystemServiceClient = systemSvc
     @JvmStatic fun tripsService(): TripsServiceClient = tripsSvc
     @JvmStatic fun longTripsService(): TripsServiceClient = longTripsSvc
-    @JvmStatic fun updatesService(): UpdateServiceClient = updatesSvc
     @JvmStatic fun vehicleService(): VehicleServiceClient = vehicleSvc
 
     /** Blocking helper for Java callers on background threads. */

@@ -681,11 +681,6 @@ public class HttpServer {
             return ModelsApiHandler.handle(method, path, body, out);
         }
 
-        // App Update API (check, preview, install, progress)
-        if (path.startsWith("/api/update/")) {
-            return UpdateApiHandler.handle(method, path, body, out);
-        }
-
         // Notification API — web push notifications
         if (path.startsWith("/api/notifications") || path.startsWith("/api/push")) {
             return NotificationApiHandler.handle(method, path, body, out);
@@ -744,11 +739,10 @@ public class HttpServer {
         boolean vehicleReady = waitForVehicleDataReady(1500);
         status.put("vehicleDataReady", vehicleReady);
 
-        // App version — read from the persisted version file written by
-        // AppUpdater after a successful install. Falls back to
-        // "Manually Installed" when the file is missing (fresh sideload
-        // before any check-for-update has run).
-        status.put("appVersion", net.bladewatch.app.updater.AppUpdater.getDisplayVersionFromFile());
+        // App version straight from the build. The in-app updater that used to
+        // write a release string to /data/local/tmp/bladewatch_version has been
+        // removed, so the APK's own versionName is now the only truth there is.
+        status.put("appVersion", net.bladewatch.app.BuildConfig.VERSION_NAME);
         status.put("recording", TcpCommandServer.getRecordingCameras());
         status.put("viewing", TcpCommandServer.getViewOnlyCameras());
         status.put("active", TcpCommandServer.getActiveCameras());

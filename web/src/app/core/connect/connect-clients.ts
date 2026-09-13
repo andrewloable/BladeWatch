@@ -12,7 +12,6 @@ import { StreamService } from '../../../gen/bladewatch/v1/stream_pb';
 import { SurveillanceService } from '../../../gen/bladewatch/v1/surveillance_pb';
 import { SystemService } from '../../../gen/bladewatch/v1/system_pb';
 import { TripsService } from '../../../gen/bladewatch/v1/trips_pb';
-import { UpdateService } from '../../../gen/bladewatch/v1/update_pb';
 import { VehicleService } from '../../../gen/bladewatch/v1/vehicle_pb';
 
 /**
@@ -56,9 +55,6 @@ export class ConnectClients {
 
   readonly trips: Client<typeof TripsService> =
     createClient(TripsService, this.transport);
-
-  readonly updates: Client<typeof UpdateService> =
-    createClient(UpdateService, this.transport);
 
   readonly vehicle: Client<typeof VehicleService> =
     createClient(VehicleService, this.transport);

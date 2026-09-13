@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">背景サービス</string>
     <string name="daemons_count_pending">運搬サービス...</string>
     <string name="daemons_count_fmt">%1$d の %2$d の実行</string>
-    <string name="update_preparing">更新を準備する...</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">バッテリーの健康</string>
     <string name="battery_health_subtitle">健康状態</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">%dの記録を永久に削除します これは取り消すことはできません</item>
         <item quantity="other">%dの録音は永久に削除されます.これは取り消すことはできません.</item>
     </plurals>
-    <string name="toast_updated_to">%1$s に更新されました</string>
-    <string name="toast_update_install_failed">更新インストール失敗: %1$s</string>
-    <string name="toast_checking_for_updates">更新をチェックする</string>
     <string name="toast_app_up_to_date">アプリは最新 (v%1$s)</string>
-    <string name="toast_update_check_failed">更新チェック失敗: %1$s</string>
     <string name="toast_storage_permission_required">記録に必要な保存許可</string>
     <string name="toast_url_copied_short">URLをコピーした!</string>
     <string name="toast_camera_set_to_auto">カメラを自動設定</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">セット完了</string>
     <string name="dialog_traffic_cannot_check_title">ステータスを確認できない</string>
-    <string name="dialog_traffic_cannot_check_message">ADB接続はまだ準備ができていない.\n\nアプリケーションはシステムパッケージを管理するために ADBアクセスを必要としています. 開発者オプションでは:\n\n• USB デバッグが有効になっていることを確認してください.</string>
+    <string name="dialog_traffic_cannot_check_message">ADBが接続されておらず、アプリは自動的に再接続できませんでした。\n\nこの車両では、開発者向けオプションの通常の「USBデバッグ」トグルだけでは不十分です — ヘッドユニット自体のワイヤレスADB(ネットワークデバッグ)設定もオンになっている必要があり、システムアップデートによってリセットされることがあります。ヘッドユニットでワイヤレスADBを再度有効にするか、USBで接続してください。\n\n接続されると、ステータスは自動的に更新されます。</string>
     <string name="dialog_traffic_disable_title">BYDトラフィックモニターを無効にするか?</string>
     <string name="dialog_traffic_disable_message">BYD トラフィックモニター (com.byd.trafficmonitor) は,バックグラウンドでの道路交通状態を継続的に監視する内蔵システムアプリです.\n\n️ なぜそれを無効にするのですか?\n\n• 携帯電話データを消費します (駐車している場合でも)\n• CPUとバックグラウンドのバッテリーを使用します\n• 別なナビゲーションアプリを使用している場合は不要です\n• ダッシュカメラのネットワーク使用に干渉できます\n\n これは無効にできます.</string>
     <string name="dialog_traffic_enable_title">BYDトラフィックモニターを再起動する?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">BladeWatchについて</string>
     <string name="settings_about_version_label">バージョン</string>
     <string name="settings_about_package_label">建設する</string>
-    <string name="settings_about_check_update_value">最新のGitHubリリースを確認し、新しい場合はインストールします。</string>
     <string name="settings_about_support_section">あなたのような人々によって動かす</string>
     <string name="settings_about_support_share_title">他のオーナーにも伝えよう</string>
     <string name="settings_about_support_share_value">共有されたリンクは 他のBYDのオーナーがBladeWatchを発見するのに役立ちます</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">ブラウザが見つかりませんでした. URLコピー: %1$s</string>
     <string name="settings_about_support_kofi_title">次のリリースに燃料</string>
     <string name="settings_about_support_kofi_value">カフェは夜明けの約束を支える</string>
-    <string name="settings_about_support_kofi_url">株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 株式会社 </string>
     <string name="settings_about_license_title">ライセンス</string>
     <string name="settings_about_license_value">MIT オープンソース. 完全テキストを表示するにはタップします.</string>
     <string name="settings_about_source_title">ソースコード</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">販売開始開始開始開始</string>
-    <string name="settings_about_source_url">海外の反応</string>
     <string name="settings_about_star_title">を GitHub に 落とす</string>
     <string name="settings_about_star_value">ちょっと待って 沢山の意味がある</string>
-    <string name="settings_about_star_url">海外の反応</string>
     <string name="settings_about_thanks_title">ありがとう</string>
     <string name="settings_about_thanks_subtitle">コントリビューターとサポーターの皆さんに支えられています。</string>
     <string name="settings_about_contributors_title">コントリビューター</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">構成</string>
     <string name="integrations_status_not_set_up">設置されていない</string>
     <string name="integrations_configure_button">設定</string>
-    <string name="settings_action_check_update">更新をチェック</string>
     <string name="settings_action_reset_data">データをリセットする...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">監視中</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">車両SOH値 — 推定値を計算中</string>
     <string name="soh_nominal_baseline">公称基準値 — 信頼できるSOHデータを待機中</string>
     <string name="rail_location">位置情報</string>
-    <string name="settings_about_auto_update_title">サーバーから自動更新</string>
-    <string name="settings_about_auto_update_value">ローカルビルドのテスト中は無効にします。GitHubの更新確認を再開するには再度オンにしてください。</string>
     <string name="settings_drive_side_label">ナビ表示位置</string>
     <string name="settings_drive_side_subtitle">ナビゲーションメニューを画面のどちら側に表示するか選択します。</string>
     <string name="settings_drive_side_left">左</string>

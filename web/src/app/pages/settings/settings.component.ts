@@ -3,7 +3,6 @@ import { TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { ConnectClients } from '../../core/connect/connect-clients';
-import type { CheckUpdateResponse } from '../../../gen/bladewatch/v1/update_pb';
 import type { GetStorageSettingsResponse } from '../../../gen/bladewatch/v1/storage_pb';
 import type { SafeZone } from '../../../gen/bladewatch/v1/safe_locations_pb';
 import type { PreviewCleanupResponse } from '../../../gen/bladewatch/v1/storage_pb';
@@ -80,10 +79,6 @@ export default class SettingsComponent implements OnInit {
   readonly lang = signal('en');
   readonly supportedLangs = signal<{ code: string; label: string }[]>([]);
 
-  // Updates
-  readonly updateInfo = signal<CheckUpdateResponse | null>(null);
-  readonly checkingUpdate = signal(false);
-  readonly installing = signal(false);
 
   // Surveillance
   readonly survSensitivity = signal(3);
@@ -479,32 +474,6 @@ export default class SettingsComponent implements OnInit {
     }
   }
 
-  // ---- Updates ----
-  async checkUpdate(): Promise<void> {
-    this.checkingUpdate.set(true);
-    this.statusMsg.set('');
-    try {
-      const resp = await this.clients.updates.checkUpdate({});
-      this.updateInfo.set(resp);
-      if (!resp.available) this.statusMsg.set('Already up to date');
-    } catch {
-      this.statusMsg.set('Failed to check for updates');
-    } finally {
-      this.checkingUpdate.set(false);
-    }
-  }
-
-  async installUpdate(): Promise<void> {
-    if (!confirm('Install update now? The device will reboot.')) return;
-    this.installing.set(true);
-    try {
-      await this.clients.updates.installUpdate({ confirm: true });
-      this.statusMsg.set('Update started. Device will reboot shortly.');
-    } catch {
-      this.statusMsg.set('Failed to start update');
-      this.installing.set(false);
-    }
-  }
 
   // ---- Privacy: reset data ----
   async previewCleanup(): Promise<void> {

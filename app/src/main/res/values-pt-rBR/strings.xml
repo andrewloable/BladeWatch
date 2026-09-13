@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">Serviços de fundo</string>
     <string name="daemons_count_pending">Serviços de carregamento...</string>
     <string name="daemons_count_fmt">%1$d de %2$d em execução</string>
-    <string name="update_preparing">Preparando a atualização...</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">Saúde da bateria</string>
     <string name="battery_health_subtitle">Estado de saúde</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">Isto vai excluir permanentemente a gravação %d.</item>
         <item quantity="other">Isto vai excluir permanentemente as gravações %d.</item>
     </plurals>
-    <string name="toast_updated_to">Atualizado para %1$s</string>
-    <string name="toast_update_install_failed">Instalação de atualização falhou: %1$s</string>
-    <string name="toast_checking_for_updates">Verificando as atualizações...</string>
     <string name="toast_app_up_to_date">Aplicação atualizada (v%1$s)</string>
-    <string name="toast_update_check_failed">Verificação de atualização falhou: %1$s</string>
     <string name="toast_storage_permission_required">Permissão de armazenamento necessária para gravações</string>
     <string name="toast_url_copied_short">URL copiado!</string>
     <string name="toast_camera_set_to_auto">Câmara configurada para Auto</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">Reset completo</string>
     <string name="dialog_traffic_cannot_check_title">Não pode verificar o status</string>
-    <string name="dialog_traffic_cannot_check_message">A conexão ADB ainda não está pronta.\n\nO aplicativo precisa de acesso ADB para gerenciar pacotes do sistema. Por favor, certifique-se de que:\n\n• USB Debugging está habilitado em Opções de Desenvolvedor\n• O pedido de autorização ADB foi aceito\n\nO status será atualizado automaticamente uma vez conectado.</string>
+    <string name="dialog_traffic_cannot_check_message">O ADB não está conectado, e o aplicativo não conseguiu reconectar automaticamente.\n\nNeste veículo, a opção padrão \"Depuração USB\" nas Opções do desenvolvedor não é suficiente sozinha — a própria configuração de ADB sem fio (depuração de rede) da central multimídia também precisa estar ativada, e uma atualização do sistema pode desativá-la. Reative o ADB sem fio na central multimídia, ou conecte-se via USB.\n\nO status será atualizado automaticamente assim que houver conexão.</string>
     <string name="dialog_traffic_disable_title">Desativar o monitor de tráfego BYD?</string>
     <string name="dialog_traffic_disable_message">O BYD Traffic Monitor (com.byd.trafficmonitor) é um aplicativo de sistema integrado que monitora continuamente as condições do tráfego rodoviário em segundo plano.\n\n️ Por que desativar?\n\n• Consome dados móveis (mesmo quando estacionado)\n• Utiliza CPU e bateria em segundo plano\n• Não é necessário se você usar um aplicativo de navegação separado\n• Pode interferir com o uso da rede da dashcam\n\nEsta é segura para desativar  só afeta a sobreposição de tráfego integrada no mapa. Sua navegação, Bluetooth, e todas as outras funções do carro permanecem intactas.\n\nUma reinicialização dura é necessária após a desativação</string>
     <string name="dialog_traffic_enable_title">Reactiva o monitor de tráfego BYD?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">Sobre o BladeWatch</string>
     <string name="settings_about_version_label">Versão</string>
     <string name="settings_about_package_label">Construir</string>
-    <string name="settings_about_check_update_value">Verifique a versão mais recente do GitHub e instale se for mais recente.</string>
     <string name="settings_about_support_section">Acionado por pessoas como tu</string>
     <string name="settings_about_support_share_title">Conte a outro proprietário</string>
     <string name="settings_about_support_share_value">Cada link compartilhado ajuda outro proprietário do BYD a descobrir o BladeWatch.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">Nenhum navegador encontrado. URL copiado: %1$s</string>
     <string name="settings_about_support_kofi_title">Combustível para a próxima versão</string>
     <string name="settings_about_support_kofi_value">Um café no Ko-Fi mantém os compromissos da noite chegando.</string>
-    <string name="settings_about_support_kofi_url">https://ko-fi.com/E1E71XALHX</string>
     <string name="settings_about_license_title">Licença</string>
     <string name="settings_about_license_value">MIT  código aberto. Toque para ver o texto completo.</string>
     <string name="settings_about_source_title">Código de origem</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">https://github.com/yash-srivastava/BladeWatch-release/blob/main/license</string>
-    <string name="settings_about_source_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_star_title">Deixe um no GitHub</string>
     <string name="settings_about_star_value">Demora um segundo, significa muito.</string>
-    <string name="settings_about_star_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_thanks_title">Obrigado</string>
     <string name="settings_about_thanks_subtitle">Construído com a ajuda de colaboradores e apoiadores.</string>
     <string name="settings_about_contributors_title">Colaboradores</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">Configuração</string>
     <string name="integrations_status_not_set_up">Não está instalado</string>
     <string name="integrations_configure_button">Configuração</string>
-    <string name="settings_action_check_update">Verifique para atualizações</string>
     <string name="settings_action_reset_data">Resetar dados...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">Em vigília</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">Leitura de SOH do veículo — aguardando estimativa calculada</string>
     <string name="soh_nominal_baseline">Linha de base nominal — aguardando dados confiáveis de SOH</string>
     <string name="rail_location">Localização</string>
-    <string name="settings_about_auto_update_title">Atualização automática do servidor</string>
-    <string name="settings_about_auto_update_value">Desative isto ao testar uma versão local. Ative novamente para retomar a verificação de atualizações no GitHub.</string>
     <string name="settings_drive_side_label">Lado da navegação</string>
     <string name="settings_drive_side_subtitle">Escolha em que lado da tela o menu de navegação aparece.</string>
     <string name="settings_drive_side_left">Esquerda</string>

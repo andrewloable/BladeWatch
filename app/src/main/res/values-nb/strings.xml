@@ -156,8 +156,6 @@
     <string name="daemons_hero_title">Bakgrunntjenester</string>
     <string name="daemons_count_pending">Lasting tjenester...</string>
     <string name="daemons_count_fmt">%1$d av %2$d som kjører</string>
-    <string name="update_preparing">Forbereder oppdatering...</string>
-    <string name="update_percent_zero">0%</string>
     <string name="battery_health_title">Batteri helse</string>
     <string name="battery_health_subtitle">Helsetilstand</string>
     <string name="battery_health_dashes">--</string>
@@ -191,11 +189,7 @@
         <item quantity="one">Dette vil permanent slette %d-opptak.</item>
         <item quantity="other">Dette vil permanent slette %d opptak.</item>
     </plurals>
-    <string name="toast_updated_to">Oppdatert til %1$s</string>
-    <string name="toast_update_install_failed">Oppdatering installasjon mislyktes: %1$s</string>
-    <string name="toast_checking_for_updates">Jeg sjekker etter oppdateringer...</string>
     <string name="toast_app_up_to_date">App er oppdatert (v%1$s)</string>
-    <string name="toast_update_check_failed">Oppdateringskontroll mislyktes: %1$s</string>
     <string name="toast_storage_permission_required">Lagring tillatelse som kreves for opptak</string>
     <string name="toast_url_copied_short">URL kopiert!</string>
     <string name="toast_camera_set_to_auto">Kamera satt til Auto</string>
@@ -229,7 +223,7 @@
     <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
     <string name="dialog_reset_complete_title">Omstilling fullført</string>
     <string name="dialog_traffic_cannot_check_title">Kan ikke sjekke status</string>
-    <string name="dialog_traffic_cannot_check_message">ADB-tilkoblingen er ikke klar ennå.\n\nAppen trenger ADB-tilgang for å administrere systempakker. Sørg for at:\n\n• USB Debugging er aktivert i utvikleralternativer\n• ADB-tillatelse forespørsel har blitt akseptert\n\nStatusen vil oppdateres automatisk når du er koblet.</string>
+    <string name="dialog_traffic_cannot_check_message">ADB er ikke tilkoblet, og appen klarte ikke å koble til på nytt automatisk.\n\nPå dette kjøretøyet er ikke den vanlige «USB-feilsøking»-bryteren i utvikleralternativer nok alene — hodeenhetens egen innstilling for trådløs ADB (nettverksfeilsøking) må også være på, og en systemoppdatering kan nullstille den. Slå på trådløs ADB på hodeenheten igjen, eller koble til med USB.\n\nStatusen oppdateres automatisk når tilkoblingen er på plass.</string>
     <string name="dialog_traffic_disable_title">Deaktiverer du BYD Trafikkrev?</string>
     <string name="dialog_traffic_disable_message">BYD Traffic Monitor (com.byd.trafficmonitor) er en innebygd systemapp som kontinuerlig overvåker trafikktilstanden i bakgrunnen.\n\n️ Hvorfor deaktivere den?\n\n• Forbruker mobildata (selv når parkeret)\n• Bruker CPU og batteri i bakgrunnen\n• Ikke nødvendig hvis du bruker en separat navigasjonsapp\n• Kan forstyrre dashcam\'s nettverksbruk\n\n</string>
     <string name="dialog_traffic_enable_title">Å aktivere BYD trafikkmonitor?</string>
@@ -333,7 +327,6 @@
     <string name="settings_about_title">Om BladeWatch</string>
     <string name="settings_about_version_label">Versjon</string>
     <string name="settings_about_package_label">Bygg</string>
-    <string name="settings_about_check_update_value">Sjekk den nyeste GitHub-utgivelsen og installer den hvis den er nyere.</string>
     <string name="settings_about_support_section">Styret av folk som deg</string>
     <string name="settings_about_support_share_title">Si ifra til en annen eier</string>
     <string name="settings_about_support_share_value">Hver delte lenke hjelper en annen BYD eier oppdage BladeWatch.</string>
@@ -343,16 +336,12 @@
     <string name="settings_about_open_link_copied">Ingen nettleser funnet. URL kopiert: %1$s</string>
     <string name="settings_about_support_kofi_title">Brensel til neste utgivelse</string>
     <string name="settings_about_support_kofi_value">En kaffe på Ko-Fi holder sent natt forpliktelser kommer.</string>
-    <string name="settings_about_support_kofi_url">HTTPS://ko-fi.com/E1E71XALHX</string>
     <string name="settings_about_license_title">Lisense</string>
     <string name="settings_about_license_value">MIT  åpen kildekode. Trykk for å se full tekst.</string>
     <string name="settings_about_source_title">Kildekode</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
-    <string name="settings_about_license_url">HTTPS: http://github.com/yash-srivastava/BladeWatch-release/blob/main/license</string>
-    <string name="settings_about_source_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_star_title">Drop en på GitHub</string>
     <string name="settings_about_star_value">Det tar et øyeblikk, det betyr mye.</string>
-    <string name="settings_about_star_url">https://github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_thanks_title">Takk</string>
     <string name="settings_about_thanks_subtitle">Bygget med hjelp fra bidragsytere og støttespillere.</string>
     <string name="settings_about_contributors_title">Bidragsytere</string>
@@ -410,7 +399,6 @@
     <string name="integrations_status_configured">Konfigurert</string>
     <string name="integrations_status_not_set_up">Ikke installert</string>
     <string name="integrations_configure_button">Konfigurering</string>
-    <string name="settings_action_check_update">Sjekk for oppdateringer</string>
     <string name="settings_action_reset_data">Reset data...</string>
     <string name="cd_brand_logo">BladeWatch</string>
     <string name="dashboard_hero_headline">På vakt</string>
@@ -562,8 +550,6 @@
     <string name="soh_oem_readout">SOH-avlesning fra kjøretøy — venter på beregnet estimat</string>
     <string name="soh_nominal_baseline">Nominell grunnverdi — venter på pålitelige SOH-data</string>
     <string name="rail_location">Plassering</string>
-    <string name="settings_about_auto_update_title">Auto-oppdatering fra server</string>
-    <string name="settings_about_auto_update_value">Slå av dette mens du tester en lokal build. Slå det på igjen for å fortsette å sjekke GitHub for oppdateringer.</string>
     <string name="settings_drive_side_label">Navigasjonsside</string>
     <string name="settings_drive_side_subtitle">Velg hvilken side av skjermen navigasjonsmenyen vises på.</string>
     <string name="settings_drive_side_left">Venstre</string>

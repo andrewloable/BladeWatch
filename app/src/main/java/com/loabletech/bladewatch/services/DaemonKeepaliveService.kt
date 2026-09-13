@@ -72,9 +72,9 @@ class DaemonKeepaliveService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "Service onStartCommand")
 
-        // Skip daemon startup when a post-update launch is in progress.
+        // Skip daemon startup right after the package was replaced.
         // MainActivity is the sole orchestrator after an install: it runs
-        // UpdateLifecycle.hardResetDaemons (kills zombie daemons + watchdogs +
+        // DaemonHardReset.hardResetDaemons (kills zombie daemons + watchdogs +
         // wipes lock files) and THEN calls DaemonStartupManager.initializeOnAppLaunch.
         // If we also fired startOnBoot here, two things would race:
         //   1. The bootStarted flag would block initializeOnAppLaunch's view of
@@ -83,10 +83,10 @@ class DaemonKeepaliveService : Service() {
         //   2. Daemons launched here would be killed seconds later by the
         //      hardReset sweep, then restarted again — pointless thrash and
         //      a real risk of overlapping camera handles on the AVMCamera HAL.
-        val postUpdate = net.bladewatch.app.updater.UpdateLifecycle
-            .isPostUpdateLaunch(applicationContext, null)
-        if (postUpdate) {
-            Log.i(TAG, "Post-update launch — deferring daemon startup to MainActivity")
+        val postInstall = net.bladewatch.app.launcher.DaemonHardReset
+            .isPostInstallLaunch(applicationContext, null)
+        if (postInstall) {
+            Log.i(TAG, "Post-install launch — deferring daemon startup to MainActivity")
         } else {
             try {
                 DaemonStartupManager.startOnBoot(applicationContext)

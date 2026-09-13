@@ -58,6 +58,7 @@ class AdbShellExecutor(private val context: Context) {
     
     private val executor = Executors.newSingleThreadExecutor()
     private val logger = LogManager.getInstance()
+    private val adbEnableGateway: AdbEnableGateway by lazy { SystemAdbEnableGateway(context.contentResolver) }
     
     interface ShellCallback {
         fun onSuccess(output: String)
@@ -153,7 +154,9 @@ class AdbShellExecutor(private val context: Context) {
             // Check if ADB port is even listening before trying to connect
             if (!isAdbPortOpen()) {
                 logger.warn(TAG, "ADB port $ADB_PORT not open - ADB not enabled?")
-                throw Exception("ADB port not open")
+                if (!selfHealAdb()) {
+                    throw Exception("ADB port not open")
+                }
             }
             
             val adbKeyPair = getOrCreateAdbKeyPair()
@@ -192,6 +195,23 @@ class AdbShellExecutor(private val context: Context) {
         } catch (e: Exception) {
             false
         }
+    }
+
+    /**
+     * BladeWatch-ofzb: called only when the ADB port is already found closed.
+     * Returns true if the port is open by the time this returns.
+     */
+    private fun selfHealAdb(): Boolean {
+        return AdbSelfHealer(
+            gateway = adbEnableGateway,
+            isPortOpen = { isAdbPortOpen() },
+            onHealed = {
+                logger.info(TAG, "ADB self-heal: healed — adb_enabled was 0, wrote 1, port reopened")
+            },
+            onCouldNotHeal = { reason ->
+                logger.warn(TAG, "ADB self-heal: could not heal — $reason")
+            },
+        ).attemptHeal()
     }
     
     /**
