@@ -515,7 +515,7 @@
   "dashboard_tunnel_online": "En ligne",
   "dashboard_tunnel_connecting": "Connexion…",
   "dashboard_trips_this_week": "Cette semaine",
-  "dashboard_trips_count": "{arg1} trajets",
+  "dashboard_trips_count": "{arg1, plural, one{{arg1} trajet} other{{arg1} trajets}}",
   "dashboard_trips_distance_km": "{arg1} km",
   "dashboard_trips_distance_mi": "{arg1} mi",
   "dashboard_trips_duration": "{arg1}",

@@ -820,6 +820,37 @@ tasks.register("validateArbCatalogs") {
             }
         }
 
+        // Plural-shape parity (BladeWatch-i4ap). If the English value is an ICU
+        // plural then every locale's value must be one too. gen-l10n builds each
+        // method's signature from the TEMPLATE, so a locale that supplies a plain
+        // string where app_en.arb has a plural still compiles — it just renders
+        // that string verbatim and the count silently disappears, or the noun never
+        // agrees. That is exactly what shipped: dashboard_trips_count was a plain
+        // "{arg1} trips", so English read "1 trips" and Russian could carry only one
+        // of its three forms.
+        //
+        // Structural, so it fails rather than warns: "is this value declared as a
+        // plural" has no judgement in it and no false positive to argue about. It
+        // deliberately does NOT check that the CATEGORIES match — ru needs few/many
+        // where en does not, and ja/zh/th correctly have no numeral agreement at all,
+        // so demanding identical category sets would be wrong in both directions.
+        fun isIcuPlural(v: String): Boolean =
+            Regex("""\{\s*\w+\s*,\s*plural\s*,""").containsMatchIn(v)
+        for (f in arbFiles) {
+            if (f.name == "app_en.arb") continue
+            val values = stringValuesOf(slurper.parse(f))
+            for ((k, want) in templateValues) {
+                if (!isIcuPlural(want)) continue
+                val got = values[k] ?: continue
+                if (!isIcuPlural(got)) {
+                    problems.add(
+                        "${f.name}: $k is a plain string but app_en.arb declares it an ICU " +
+                        "plural — the count will not agree. Use {argN, plural, one{..} other{..}}"
+                    )
+                }
+            }
+        }
+
         // Mixed-script check (BladeWatch-1yqg): simplified characters had leaked
         // into app_zh_TW, so seven strings read as mainland text to a Taiwanese
         // user. Each character below has a distinct traditional form, so any

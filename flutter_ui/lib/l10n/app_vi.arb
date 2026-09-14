@@ -515,7 +515,7 @@
   "dashboard_tunnel_online": "Trực tuyến",
   "dashboard_tunnel_connecting": "Đang kết nối…",
   "dashboard_trips_this_week": "Tuần này",
-  "dashboard_trips_count": "{arg1} chuyến",
+  "dashboard_trips_count": "{arg1, plural, one{{arg1} chuyến} other{{arg1} chuyến}}",
   "dashboard_trips_distance_km": "{arg1} km",
   "dashboard_trips_distance_mi": "{arg1} mi",
   "dashboard_trips_duration": "{arg1}",

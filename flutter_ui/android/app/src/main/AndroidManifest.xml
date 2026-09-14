@@ -40,6 +40,34 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- BladeWatch-x3vw: pin the rendering backend so a Flutter upgrade cannot
+             silently change it and invalidate every render-soak result recorded for
+             this app.
+
+             Measured on the head unit (BYD AUTO, Adreno 610, Android 10 / API 29):
+             the engine probes Vulkan, fails, and falls back —
+               android_context_vk_impeller.cc(62)  Using the Impeller rendering backend (Vulkan).
+               android_context_gl_impeller.cc(104) Using the Impeller rendering backend (OpenGLES).
+             so OpenGLES is what actually renders. We pin what is really running, not
+             what Phase 0 hoped for; pinning "vulkan" here would either be ignored on
+             this driver or change the measured configuration, and every soak figure
+             would have to be re-taken against it.
+
+             The engine turns these two keys into its own enable-impeller and
+             impeller-backend command-line switches
+             (io.flutter.embedding.engine.FlutterEngineFlags, verified against the
+             flutter_embedding 3.44.4 / engine a10d8ac38d jar, not assumed).
+
+             NOTE: OpenGLES on this exact GPU is the driver path the reverted Filament
+             port crashed on, so this pin makes the risk explicit and reproducible
+             rather than removing it. See docs/build-and-operations.md:58. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="true" />
+        <meta-data
+            android:name="io.flutter.embedding.android.ImpellerBackend"
+            android:value="opengles" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

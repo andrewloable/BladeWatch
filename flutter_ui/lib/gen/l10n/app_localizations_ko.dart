@@ -1807,8 +1807,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_trips_this_week => '이번 주';
 
   @override
-  String dashboard_trips_count(Object arg1) {
-    return '$arg1회 주행';
+  String dashboard_trips_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1회 주행',
+      one: '$arg1회 주행',
+    );
+    return '$_temp0';
   }
 
   @override

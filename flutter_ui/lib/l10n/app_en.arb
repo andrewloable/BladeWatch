@@ -1344,7 +1344,7 @@
   "@dashboard_tunnel_connecting": {},
   "dashboard_trips_this_week": "This Week",
   "@dashboard_trips_this_week": {},
-  "dashboard_trips_count": "{arg1} trips",
+  "dashboard_trips_count": "{arg1, plural, one{{arg1} trip} other{{arg1} trips}}",
   "@dashboard_trips_count": {
     "placeholders": {
       "arg1": {}

@@ -295,27 +295,29 @@ Sensitivity levels map to native gates:
 
 Per-quadrant overrides are supported. The native pipeline runs with the most permissive aggregate sensitivity and zone, then Java demotes results that do not satisfy each quadrant's effective stricter settings. This avoids running native detection four separate times.
 
-## ROI
+## Detection zones (ROI) — removed
 
-ROI support exists at quadrant level.
+The per-quadrant region-of-interest motion mask was removed end to end in BladeWatch-s3sf.
+It is gone from the Flutter UI, `surveillance.proto`, `SurveillanceApiHandler`,
+`SurveillanceIpcServer` (the old `GET_ROI` / `SET_ROI` commands), `SurveillanceEngineGpu`
+(`applyQuadrantRoi` / `clearQuadrantRoi`), `SurveillanceConfig`/`SurveillanceConfigManager`,
+`NativeMotion.setQuadrantRoi`, and the C++ pipeline's per-block mask.
 
-Flow:
+It was removed because it had never been usable: no client existed on any platform. Native's
+`RoiDrawingView.kt` was written but wired to nothing, the Angular SPA never referenced the
+fields, and the one client ever built for it (BladeWatch-9b0f's Flutter editor) drew on a blank
+grey box with no camera backdrop and destroyed the zone on save.
 
-```text
-Web/API config
-  -> SurveillanceConfig ROI polygon or block mask
-  -> SurveillanceEngineGpu.applyQuadrantRoi()
-  -> NativeMotion.setQuadrantRoi()
-  -> native block mask
-```
+`SurveillanceConfig` proto fields **30 to 34 are reserved** and must never be reused, so an old
+client still sending them cannot have its bytes reinterpreted as a future field.
 
-Implementation details:
+Note that this is NOT the same thing as the distance-based "detection zone"
+(`close`/`normal`/`extended`) described above, which is still live — that filters by motion
+centroid row and has nothing to do with user-drawn polygons.
 
-- ROI polygons are normalized coordinates per quadrant.
-- Polygons are rasterized into the native 10x7 block mask.
-- A block is enabled if its center lies inside the polygon.
-- Clearing ROI restores all blocks for that quadrant.
-- Persisted direct block masks can also be loaded from unified config.
+Still present and deliberately kept: `computeMOG2`'s generic `roiMask` parameter in
+`native_motion.cpp` (documented "null = full frame"). It is a different, lower-level facility
+on the motion path, and `computeMOG2` currently has no Java callers at all.
 
 ## AI Detection
 
@@ -495,8 +497,6 @@ Surveillance and config commands:
 - `GET_CONFIG`.
 - `SET_CONFIG`.
 - `GET_STATUS`.
-- `GET_ROI`.
-- `SET_ROI`.
 - `GET_SAFE_LOCATIONS`.
 - `ADD_SAFE_LOCATION`.
 - `UPDATE_SAFE_LOCATION`.

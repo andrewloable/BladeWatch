@@ -1784,8 +1784,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_trips_this_week => '本周';
 
   @override
-  String dashboard_trips_count(Object arg1) {
-    return '$arg1次行程';
+  String dashboard_trips_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1次行程',
+      one: '$arg1次行程',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4693,8 +4699,14 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dashboard_trips_this_week => '本周';
 
   @override
-  String dashboard_trips_count(Object arg1) {
-    return '$arg1次行程';
+  String dashboard_trips_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1次行程',
+      one: '$arg1次行程',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -7603,8 +7615,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dashboard_trips_this_week => '本週';
 
   @override
-  String dashboard_trips_count(Object arg1) {
-    return '$arg1 趟行程';
+  String dashboard_trips_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 趟行程',
+      one: '$arg1 趟行程',
+    );
+    return '$_temp0';
   }
 
   @override

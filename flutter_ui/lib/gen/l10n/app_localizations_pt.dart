@@ -1869,8 +1869,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get dashboard_trips_this_week => 'Esta semana';
 
   @override
-  String dashboard_trips_count(Object arg1) {
-    return '$arg1 viagens';
+  String dashboard_trips_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 viagens',
+      one: '$arg1 viagem',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4896,8 +4902,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get dashboard_trips_this_week => 'Esta semana';
 
   @override
-  String dashboard_trips_count(Object arg1) {
-    return '$arg1 viagens';
+  String dashboard_trips_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 viagens',
+      one: '$arg1 viagem',
+    );
+    return '$_temp0';
   }
 
   @override

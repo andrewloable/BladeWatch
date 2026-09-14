@@ -1850,8 +1850,14 @@ class AppLocalizationsTh extends AppLocalizations {
   String get dashboard_trips_this_week => 'สัปดาห์นี้';
 
   @override
-  String dashboard_trips_count(Object arg1) {
-    return '$arg1 ทริป';
+  String dashboard_trips_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 ทริป',
+      one: '$arg1 ทริป',
+    );
+    return '$_temp0';
   }
 
   @override

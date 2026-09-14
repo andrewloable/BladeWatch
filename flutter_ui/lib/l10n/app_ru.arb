@@ -515,7 +515,7 @@
   "dashboard_tunnel_online": "Онлайн",
   "dashboard_tunnel_connecting": "Подключение...",
   "dashboard_trips_this_week": "На этой неделе",
-  "dashboard_trips_count": "{arg1} поездок",
+  "dashboard_trips_count": "{arg1, plural, one{{arg1} поездка} few{{arg1} поездки} many{{arg1} поездок} other{{arg1} поездки}}",
   "dashboard_trips_distance_km": "{arg1} км",
   "dashboard_trips_distance_mi": "{arg1} миль",
   "dashboard_trips_duration": "{arg1}",

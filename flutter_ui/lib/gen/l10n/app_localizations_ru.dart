@@ -1867,8 +1867,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dashboard_trips_this_week => 'На этой неделе';
 
   @override
-  String dashboard_trips_count(Object arg1) {
-    return '$arg1 поездок';
+  String dashboard_trips_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 поездки',
+      many: '$arg1 поездок',
+      few: '$arg1 поездки',
+      one: '$arg1 поездка',
+    );
+    return '$_temp0';
   }
 
   @override

@@ -3354,8 +3354,8 @@ abstract class AppLocalizations {
   /// No description provided for @dashboard_trips_count.
   ///
   /// In en, this message translates to:
-  /// **'{arg1} trips'**
-  String dashboard_trips_count(Object arg1);
+  /// **'{arg1, plural, one{{arg1} trip} other{{arg1} trips}}'**
+  String dashboard_trips_count(num arg1);
 
   /// No description provided for @dashboard_trips_distance_km.
   ///

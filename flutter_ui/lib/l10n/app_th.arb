@@ -515,7 +515,7 @@
   "dashboard_tunnel_online": "ออนไลน์",
   "dashboard_tunnel_connecting": "กำลังเชื่อมต่อ…",
   "dashboard_trips_this_week": "สัปดาห์นี้",
-  "dashboard_trips_count": "{arg1} ทริป",
+  "dashboard_trips_count": "{arg1, plural, one{{arg1} ทริป} other{{arg1} ทริป}}",
   "dashboard_trips_distance_km": "{arg1} km",
   "dashboard_trips_distance_mi": "{arg1} ไมล์",
   "dashboard_trips_duration": "{arg1}",
