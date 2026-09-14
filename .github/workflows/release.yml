@@ -77,8 +77,21 @@ jobs:
       - name: Install pinned NDK and CMake
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
+          # sdkmanager is NOT on PATH on ubuntu-latest -- the SDK lives at
+          # $ANDROID_HOME with cmdline-tools under it, so invoke it by full path.
+          # Resolve "latest" first, then fall back to whatever version is present.
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | tail -1 || true)
+          fi
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "::error::sdkmanager not found under ANDROID_HOME=$ANDROID_HOME"
+            ls -la "$ANDROID_HOME/cmdline-tools" 2>&1 || true
+            exit 1
+          fi
+          echo "using $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" --install "ndk;26.1.10909125" "cmake;3.22.1"
 
       # A release built from unverified source is worse than a slow release.
       # Delete this step if you want tag builds to be build-only.
