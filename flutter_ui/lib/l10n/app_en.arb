@@ -2100,14 +2100,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Motion Zone",
-  "@surveillance_roi_title": {},
-  "surveillance_roi_description": "Tap to add a point, drag to move one. Three points minimum, eight maximum.",
-  "@surveillance_roi_description": {},
-  "surveillance_roi_enable": "Limit detection to this zone",
-  "@surveillance_roi_enable": {},
-  "action_undo": "Undo",
-  "@action_undo": {},
   "surveillance_detection_title": "Detection Settings",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Environment Preset",

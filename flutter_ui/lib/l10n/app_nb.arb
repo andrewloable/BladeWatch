@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Bevegelsessone",
-  "surveillance_roi_description": "Trykk for å legge til et punkt, dra for å flytte det. Minst tre punkter, maks åtte.",
-  "surveillance_roi_enable": "Begrens deteksjon til denne sonen",
-  "action_undo": "Angre",
   "surveillance_detection_title": "Deteksjonsinnstillinger",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Miljøforhåndsinnstilling",

@@ -1,5 +1,3 @@
-import 'dart:ui' show Offset;
-
 /// Ground truth: `SurveillanceSettingsController.kt` + `SurveillanceSettingsModels.kt`.
 /// Tab selection is pure UI state (kept in the widget, not here) — see
 /// `settings_recording_models.dart` for the sibling precedent this mirrors.
@@ -23,12 +21,6 @@ const List<int> kPostRecordOptionsSeconds = [5, 10, 15, 20, 30];
 /// Fixed name/radius used when adding a safe zone at the current GPS fix —
 /// ground truth: `client.addSafeZone("Safe Zone", currentLat, currentLng, 150)`.
 /// Native has no name/radius entry dialog; one tap adds this exact zone.
-/// The four motion quadrants, in the daemon's own order — ground truth:
-/// `MotionPipelineV2.QUADRANT_NAMES = {"front", "right", "rear", "left"}`.
-/// The wire keys are "Q0".."Q3" (`SurveillanceApiHandler`'s `qKeys`), so index
-/// and key must not drift apart (BladeWatch-9b0f).
-const List<String> kRoiQuadrantKeys = ['Q0', 'Q1', 'Q2', 'Q3'];
-
 const String kDefaultSafeZoneName = 'Safe Zone';
 const int kDefaultSafeZoneRadiusM = 150;
 
@@ -54,15 +46,7 @@ class SurveillanceConfig {
   // Also never exposed by this screen's UI — see aiConfidence above.
   final int deterrentCooldownSeconds;
 
-  /// Per-quadrant ROI polygons keyed "Q0".."Q3", in normalised 0..1
-  /// coordinates, and whether each is applied (BladeWatch-9b0f). Absent
-  /// quadrants simply have no zone.
-  final Map<String, List<Offset>> roiPolygons;
-  final Map<String, bool> roiEnabled;
-
   const SurveillanceConfig({
-    this.roiPolygons = const {},
-    this.roiEnabled = const {},
     required this.enabled,
     required this.distancePreset,
     required this.sensitivityLevel,

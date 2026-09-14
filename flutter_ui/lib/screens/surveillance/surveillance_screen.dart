@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 
 import '../../gen/l10n/app_localizations.dart';
 import '../../widgets/storage_limit.dart';
-import 'roi_editor.dart';
 import 'surveillance_controller.dart';
 import 'surveillance_models.dart';
 import '../../widgets/bw_choice_chip.dart';
@@ -29,10 +28,6 @@ class SurveillanceSettingsScreen extends StatefulWidget {
 
 class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen> {
   SurveillanceSettingsTab _tab = SurveillanceSettingsTab.general;
-
-  /// Which quadrant the ROI editor is showing (BladeWatch-9b0f). Purely view
-  /// state — which zone you are LOOKING at is not a setting to persist.
-  int _roiQuadrant = 0;
 
   @override
   void initState() {
@@ -98,92 +93,6 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
       ],
     );
   }
-
-  /// BladeWatch-9b0f: the per-quadrant motion zone. The pipeline has supported
-  /// these all along (`SurveillanceEngineGpu.applyQuadrantRoi`) and
-  /// `SurveillanceApiHandler` already persists them — there had simply never
-  /// been a client on any platform. Native's own `RoiDrawingView.kt` was
-  /// written but never wired to a fragment.
-  List<Widget> _roiSection(AppLocalizations l10n, ThemeData theme, SurveillanceSettingsController c) {
-    final quadrant = kRoiQuadrantKeys[_roiQuadrant];
-    final points = c.roiPolygonFor(quadrant);
-    return [
-      Text(l10n.surveillance_roi_title, style: theme.textTheme.titleMedium),
-      Text(
-        l10n.surveillance_roi_description,
-        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-      ),
-      const SizedBox(height: 8),
-      Wrap(
-        spacing: 8,
-        children: [
-          for (var i = 0; i < kRoiQuadrantKeys.length; i++)
-            BwChoiceChip(
-              key: ValueKey('surveillance.roi.quadrant.${kRoiQuadrantKeys[i]}'),
-              label: Text(_quadrantLabel(l10n, i)),
-              selected: _roiQuadrant == i,
-              onSelected: (_) => setState(() => _roiQuadrant = i),
-            ),
-        ],
-      ),
-      const SizedBox(height: 8),
-      SwitchListTile(
-        key: const ValueKey('surveillance.roi.enable'),
-        contentPadding: EdgeInsets.zero,
-        title: Text(l10n.surveillance_roi_enable),
-        value: c.roiEnabledFor(quadrant),
-        onChanged: (v) => c.setRoiEnabled(quadrant, v),
-      ),
-      // A fixed 16:9 box: the zone is drawn against the camera's own framing,
-      // and a box that changed shape with the pane would distort what the user
-      // drew relative to what the engine masks.
-      AspectRatio(
-        aspectRatio: 16 / 9,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            border: Border.all(color: theme.colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: RoiEditor(
-              points: points,
-              onChanged: (p) => c.setRoiPolygon(quadrant, p),
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 8),
-      Row(
-        children: [
-          Text(
-            '${points.length} / $kRoiMaxPoints',
-            key: const ValueKey('surveillance.roi.count'),
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          ),
-          const Spacer(),
-          TextButton(
-            key: const ValueKey('surveillance.roi.undo'),
-            onPressed: points.isEmpty ? null : () => c.undoRoiPoint(quadrant),
-            child: Text(l10n.action_undo),
-          ),
-          TextButton(
-            key: const ValueKey('surveillance.roi.clear'),
-            onPressed: points.isEmpty ? null : () => c.clearRoi(quadrant),
-            child: Text(l10n.action_clear_plain),
-          ),
-        ],
-      ),
-    ];
-  }
-
-  String _quadrantLabel(AppLocalizations l10n, int index) => switch (index) {
-        0 => l10n.surveillance_advanced_camera_front,
-        1 => l10n.surveillance_advanced_camera_right,
-        2 => l10n.surveillance_advanced_camera_rear,
-        _ => l10n.surveillance_advanced_camera_left,
-      };
 
   String _tabLabel(AppLocalizations l10n, SurveillanceSettingsTab tab) => switch (tab) {
         SurveillanceSettingsTab.general => l10n.surveillance_tab_general,
@@ -271,8 +180,6 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
           onChanged: c.setDetectBike,
         ),
         const SizedBox(height: 16),
-        const SizedBox(height: 16),
-        ..._roiSection(l10n, theme, c),
         const SizedBox(height: 16),
         _applyButton(l10n, c, SurveillanceSettingsTab.detection),
       ];

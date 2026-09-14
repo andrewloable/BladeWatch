@@ -2845,19 +2845,6 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'गति क्षेत्र';
-
-  @override
-  String get surveillance_roi_description =>
-      'बिंदु जोड़ने के लिए टैप करें, हिलाने के लिए खींचें। कम से कम तीन, अधिकतम आठ बिंदु।';
-
-  @override
-  String get surveillance_roi_enable => 'पहचान को इस क्षेत्र तक सीमित करें';
-
-  @override
-  String get action_undo => 'पूर्ववत करें';
-
-  @override
   String get surveillance_detection_title => 'पहचान सेटिंग्स';
 
   @override

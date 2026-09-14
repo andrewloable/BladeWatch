@@ -2774,18 +2774,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => '検知エリア';
-
-  @override
-  String get surveillance_roi_description => 'タップで点を追加、ドラッグで移動します。最小3点、最大8点です。';
-
-  @override
-  String get surveillance_roi_enable => '検知をこのエリアに限定する';
-
-  @override
-  String get action_undo => '元に戻す';
-
-  @override
   String get surveillance_detection_title => '検知設定';
 
   @override

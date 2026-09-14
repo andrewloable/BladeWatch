@@ -2830,19 +2830,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'Motion Zone';
-
-  @override
-  String get surveillance_roi_description =>
-      'Tap to add a point, drag to move one. Three points minimum, eight maximum.';
-
-  @override
-  String get surveillance_roi_enable => 'Limit detection to this zone';
-
-  @override
-  String get action_undo => 'Undo';
-
-  @override
   String get surveillance_detection_title => 'Detection Settings';
 
   @override

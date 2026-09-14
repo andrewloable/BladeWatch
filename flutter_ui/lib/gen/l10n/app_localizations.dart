@@ -5030,30 +5030,6 @@ abstract class AppLocalizations {
   /// **'{arg1}  ({arg2}m)'**
   String surveillance_safe_locations_zone_label(Object arg1, Object arg2);
 
-  /// No description provided for @surveillance_roi_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Motion Zone'**
-  String get surveillance_roi_title;
-
-  /// No description provided for @surveillance_roi_description.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to add a point, drag to move one. Three points minimum, eight maximum.'**
-  String get surveillance_roi_description;
-
-  /// No description provided for @surveillance_roi_enable.
-  ///
-  /// In en, this message translates to:
-  /// **'Limit detection to this zone'**
-  String get surveillance_roi_enable;
-
-  /// No description provided for @action_undo.
-  ///
-  /// In en, this message translates to:
-  /// **'Undo'**
-  String get action_undo;
-
   /// No description provided for @surveillance_detection_title.
   ///
   /// In en, this message translates to:

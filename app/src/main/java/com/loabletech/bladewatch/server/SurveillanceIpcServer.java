@@ -195,20 +195,6 @@ public class SurveillanceIpcServer implements Runnable {
                     response.put("data", getDrivingRangeData());
                     break;
                     
-                case "GET_ROI":
-                    response.put("success", true);
-                    response.put("roi", getRoiData());
-                    break;
-                    
-                case "SET_ROI":
-                    JSONObject roiData = request.optJSONObject("roi");
-                    if (roiData != null) {
-                        applyRoi(roiData);
-                    }
-                    response.put("success", true);
-                    response.put("message", "ROI updated");
-                    break;
-                
                 // ==================== SAFE LOCATION COMMANDS ====================
                 
                 case "GET_SAFE_LOCATIONS":
@@ -830,60 +816,6 @@ public class SurveillanceIpcServer implements Runnable {
         } catch (Exception e) {
             logger.error("Failed to apply config", e);
         }
-    }
-    
-    /**
-     * Apply ROI configuration to surveillance system.
-     */
-    private void applyRoi(JSONObject roiData) {
-        try {
-            net.bladewatch.app.surveillance.GpuSurveillancePipeline pipeline =
-                CameraDaemon.getGpuPipeline();
-            
-            if (pipeline == null || pipeline.getSentry() == null) {
-                logger.warn("Cannot apply ROI - surveillance not initialized");
-                return;
-            }
-            
-            // Parse polygon points
-            org.json.JSONArray pointsArray = roiData.optJSONArray("points");
-            if (pointsArray == null || pointsArray.length() < 3) {
-                // Clear ROI
-                pipeline.getSentry().setRoiMask(null);
-                logger.info("ROI cleared");
-                return;
-            }
-            
-            // Convert to float array
-            float[][] points = new float[pointsArray.length()][2];
-            for (int i = 0; i < pointsArray.length(); i++) {
-                org.json.JSONArray point = pointsArray.getJSONArray(i);
-                points[i][0] = (float) point.getDouble(0);
-                points[i][1] = (float) point.getDouble(1);
-            }
-            
-            // Apply to surveillance engine
-            pipeline.getSentry().setRoiFromPolygon(points);
-            logger.info("ROI applied with " + points.length + " vertices");
-            
-        } catch (Exception e) {
-            logger.error("Failed to apply ROI", e);
-        }
-    }
-    
-    /**
-     * Get current ROI data.
-     */
-    private JSONObject getRoiData() {
-        JSONObject roi = new JSONObject();
-        try {
-            // For now, return empty - would need to store ROI points
-            roi.put("enabled", false);
-            roi.put("points", new org.json.JSONArray());
-        } catch (Exception e) {
-            logger.error("Failed to get ROI data", e);
-        }
-        return roi;
     }
     
     private JSONObject getDefaultConfig() throws Exception {

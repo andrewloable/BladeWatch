@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "侦测区域",
-  "surveillance_roi_description": "点按添加顶点，拖动可移动顶点。最少三个，最多八个。",
-  "surveillance_roi_enable": "仅在此区域内侦测",
-  "action_undo": "撤销",
   "surveillance_detection_title": "检测设置",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "环境预设",

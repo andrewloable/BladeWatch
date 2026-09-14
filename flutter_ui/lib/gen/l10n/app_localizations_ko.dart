@@ -2776,19 +2776,6 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => '감지 영역';
-
-  @override
-  String get surveillance_roi_description =>
-      '탭하여 점을 추가하고 드래그하여 이동합니다. 최소 3개, 최대 8개입니다.';
-
-  @override
-  String get surveillance_roi_enable => '이 영역으로 감지 제한';
-
-  @override
-  String get action_undo => '실행 취소';
-
-  @override
   String get surveillance_detection_title => '감지 설정';
 
   @override

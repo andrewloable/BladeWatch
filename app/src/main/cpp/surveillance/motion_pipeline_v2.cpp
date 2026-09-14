@@ -70,7 +70,6 @@ void v2_initPipeline(PipelineStateV2* state) {
     for (int q = 0; q < V2_NUM_QUADRANTS; q++) {
         QuadrantState& qs = state->quadrants[q];
         qs.enabled = true;
-        qs.hasCustomRoi = false;
         qs.brightnessInitialized = false;
         qs.historyIndex = 0;
         qs.historyCount = 0;
@@ -80,9 +79,7 @@ void v2_initPipeline(PipelineStateV2* state) {
         qs.oscillationHistoryIndex = 0;
         qs.oscillationHistoryCount = 0;
         
-        // Default ROI: all blocks enabled
         for (int i = 0; i < V2_TOTAL_BLOCKS; i++) {
-            qs.blockRoiMask[i] = true;
             qs.blockConfidence[i] = 0.0f;
         }
         
@@ -327,11 +324,6 @@ static int stage2_blockAnalysis(
         for (int bx = 0; bx < V2_GRID_COLS; bx++) {
             int blockIdx = by * V2_GRID_COLS + bx;
             activeBlocks[blockIdx] = false;
-            
-            // Skip blocks outside ROI
-            if (qs->hasCustomRoi && !qs->blockRoiMask[blockIdx]) {
-                continue;
-            }
             
             int startX = bx * V2_BLOCK_SIZE;
             int startY = by * V2_BLOCK_SIZE;
@@ -1132,44 +1124,6 @@ Java_net_bladewatch_app_surveillance_NativeMotion_getQuadrantResultSize(
     JNIEnv* env, jclass clazz)
 {
     return (jint)sizeof(QuadrantResultV2);
-}
-
-// Set per-quadrant ROI block mask from Java.
-// blockMask is a byte[70] array where 1=enabled, 0=disabled.
-// Passing null or empty array clears the ROI (all blocks enabled).
-extern "C" JNIEXPORT void JNICALL
-Java_net_bladewatch_app_surveillance_NativeMotion_setQuadrantRoi(
-    JNIEnv* env, jclass clazz,
-    jint quadrant, jbyteArray blockMask)
-{
-    if (quadrant < 0 || quadrant >= V2_NUM_QUADRANTS) return;
-    
-    QuadrantState& qs = g_pipeline.quadrants[quadrant];
-    
-    if (blockMask == nullptr) {
-        // Clear ROI — all blocks enabled
-        qs.hasCustomRoi = false;
-        for (int i = 0; i < V2_TOTAL_BLOCKS; i++) {
-            qs.blockRoiMask[i] = true;
-        }
-        return;
-    }
-    
-    jsize len = env->GetArrayLength(blockMask);
-    if (len != V2_TOTAL_BLOCKS) {
-        LOGE_V2("Invalid ROI mask size: %d (expected %d)", len, V2_TOTAL_BLOCKS);
-        return;
-    }
-    
-    jbyte* mask = env->GetByteArrayElements(blockMask, nullptr);
-    if (!mask) return;
-    
-    qs.hasCustomRoi = true;
-    for (int i = 0; i < V2_TOTAL_BLOCKS; i++) {
-        qs.blockRoiMask[i] = (mask[i] != 0);
-    }
-    
-    env->ReleaseByteArrayElements(blockMask, mask, JNI_ABORT);
 }
 
 // ============================================================================

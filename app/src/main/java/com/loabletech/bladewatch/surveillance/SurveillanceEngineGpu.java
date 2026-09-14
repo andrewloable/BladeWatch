@@ -41,10 +41,6 @@ public class SurveillanceEngineGpu {
     private static final long MOTION_PROCESS_INTERVAL_MS = 100;  // 10 FPS
     private long lastMotionProcessTime = 0;
     
-    // ROI mask (null = full frame, otherwise byte array with 0/1 values)
-    private byte[] roiMask = null;
-    private int roiPixelCount = 0;  // Number of pixels in ROI (for normalization)
-    
     // Reference to downscaler for buffer recycling
     private GpuDownscaler downscaler;
     
@@ -2221,145 +2217,6 @@ public class SurveillanceEngineGpu {
     }
     
     /**
-     * Sets the Region of Interest (ROI) mask for motion detection.
-     * 
-     * @param mask Byte array (320×240) where 1 = check motion, 0 = ignore
-     *             Pass null to use entire frame (default)
-     */
-    public void setRoiMask(byte[] mask) {
-        if (mask != null && mask.length != THUMBNAIL_WIDTH * THUMBNAIL_HEIGHT) {
-            logger.error("Invalid ROI mask size: " + mask.length + 
-                       " (expected " + (THUMBNAIL_WIDTH * THUMBNAIL_HEIGHT) + ")");
-            return;
-        }
-        
-        this.roiMask = mask;
-        
-        // Count pixels in ROI for normalization
-        if (mask != null) {
-            roiPixelCount = 0;
-            for (byte b : mask) {
-                if (b != 0) roiPixelCount++;
-            }
-            logger.info("ROI mask set: " + roiPixelCount + " pixels (" + 
-                      (roiPixelCount * 100 / (THUMBNAIL_WIDTH * THUMBNAIL_HEIGHT)) + "%)");
-        } else {
-            roiPixelCount = THUMBNAIL_WIDTH * THUMBNAIL_HEIGHT;
-            logger.info("ROI mask cleared (using full frame)");
-        }
-    }
-    
-    /**
-     * Sets ROI from polygon points (normalized 0.0-1.0 coordinates).
-     * 
-     * @param points Array of [x, y] pairs defining polygon vertices
-     */
-    public void setRoiFromPolygon(float[][] points) {
-        if (points == null || points.length < 3) {
-            setRoiMask(null);  // Clear ROI
-            return;
-        }
-        
-        // Create mask by rasterizing polygon
-        byte[] mask = new byte[THUMBNAIL_WIDTH * THUMBNAIL_HEIGHT];
-        
-        for (int y = 0; y < THUMBNAIL_HEIGHT; y++) {
-            for (int x = 0; x < THUMBNAIL_WIDTH; x++) {
-                float nx = (float) x / THUMBNAIL_WIDTH;
-                float ny = (float) y / THUMBNAIL_HEIGHT;
-                
-                // Point-in-polygon test (ray casting algorithm)
-                if (isPointInPolygon(nx, ny, points)) {
-                    mask[y * THUMBNAIL_WIDTH + x] = 1;
-                }
-            }
-        }
-        
-        setRoiMask(mask);
-    }
-    
-    /**
-     * Point-in-polygon test using ray casting.
-     */
-    private boolean isPointInPolygon(float x, float y, float[][] polygon) {
-        boolean inside = false;
-        int n = polygon.length;
-        
-        for (int i = 0, j = n - 1; i < n; j = i++) {
-            float xi = polygon[i][0], yi = polygon[i][1];
-            float xj = polygon[j][0], yj = polygon[j][1];
-            
-            if (((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
-                inside = !inside;
-            }
-        }
-        
-        return inside;
-    }
-    
-    // ========================================================================
-    // Per-Quadrant ROI (Region of Interest)
-    // ========================================================================
-    
-    /**
-     * Applies a polygon ROI to a specific quadrant.
-     * Converts the polygon (normalized 0-1 coords) to a 10×7 block mask
-     * and passes it to the C++ pipeline via JNI.
-     *
-     * @param quadrant Quadrant index (0-3)
-     * @param polygon  Array of [x, y] vertex pairs in normalized coords (0.0-1.0)
-     */
-    public void applyQuadrantRoi(int quadrant, float[][] polygon) {
-        if (quadrant < 0 || quadrant >= MotionPipelineV2.NUM_QUADRANTS) return;
-        if (polygon == null || polygon.length < 3) {
-            clearQuadrantRoi(quadrant);
-            return;
-        }
-        
-        // Convert polygon to 10×7 block mask.
-        // For each block, check if its center is inside the polygon.
-        byte[] blockMask = new byte[MotionPipelineV2.TOTAL_BLOCKS];
-        int enabledCount = 0;
-        
-        for (int by = 0; by < MotionPipelineV2.GRID_ROWS; by++) {
-            for (int bx = 0; bx < MotionPipelineV2.GRID_COLS; bx++) {
-                int blockIdx = by * MotionPipelineV2.GRID_COLS + bx;
-                // Block center in normalized coordinates
-                float cx = (bx + 0.5f) / MotionPipelineV2.GRID_COLS;
-                float cy = (by + 0.5f) / MotionPipelineV2.GRID_ROWS;
-                
-                if (isPointInPolygon(cx, cy, polygon)) {
-                    blockMask[blockIdx] = 1;
-                    enabledCount++;
-                }
-            }
-        }
-        
-        try {
-            NativeMotion.setQuadrantRoi(quadrant, blockMask);
-            logger.info("ROI applied to Q" + quadrant + " [" + 
-                    MotionPipelineV2.QUADRANT_NAMES[quadrant] + "]: " + 
-                    enabledCount + "/" + MotionPipelineV2.TOTAL_BLOCKS + " blocks enabled");
-        } catch (Exception e) {
-            logger.warn("Failed to apply ROI to Q" + quadrant + ": " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Clears the ROI for a specific quadrant (all blocks enabled).
-     */
-    public void clearQuadrantRoi(int quadrant) {
-        if (quadrant < 0 || quadrant >= MotionPipelineV2.NUM_QUADRANTS) return;
-        try {
-            NativeMotion.setQuadrantRoi(quadrant, null);
-            logger.info("ROI cleared for Q" + quadrant + " [" + 
-                    MotionPipelineV2.QUADRANT_NAMES[quadrant] + "] (all blocks enabled)");
-        } catch (Exception e) {
-            logger.warn("Failed to clear ROI for Q" + quadrant + ": " + e.getMessage());
-        }
-    }
-    
-    /**
      * Sets the SOTA surveillance configuration.
      * 
      * @param config Configuration object with distance preset, flash mode, and camera calibration
@@ -2438,17 +2295,6 @@ public class SurveillanceEngineGpu {
         
         // Apply filter debug setting
         this.filterDebugEnabled = config.isFilterDebugLogEnabled();
-        
-        // Apply per-quadrant ROI from config (if surveillance is active, apply immediately)
-        if (active) {
-            for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
-                if (config.isRoiEnabled(q) && config.getRoiPolygon(q) != null) {
-                    applyQuadrantRoi(q, config.getRoiPolygon(q));
-                } else {
-                    clearQuadrantRoi(q);
-                }
-            }
-        }
         
         logger.info("Config applied: " + config.toString());
     }
@@ -3479,35 +3325,6 @@ public class SurveillanceEngineGpu {
             lastYoloDetections.set(q, null);
         }
         lastEventQuadrant = -1;
-        
-        // Apply per-quadrant ROI from persisted config
-        if (config != null) {
-            for (int q = 0; q < MotionPipelineV2.NUM_QUADRANTS; q++) {
-                if (config.isRoiEnabled(q) && config.getRoiPolygon(q) != null) {
-                    applyQuadrantRoi(q, config.getRoiPolygon(q));
-                } else {
-                    // Also check for direct block masks in unified config
-                    try {
-                        org.json.JSONObject survCfg = net.bladewatch.app.config.UnifiedConfigManager.getSurveillance();
-                        String[] qKeys = {"Q0", "Q1", "Q2", "Q3"};
-                        boolean roiEnabled = survCfg.optBoolean("roiEnabled_" + qKeys[q], false);
-                        org.json.JSONArray blockArr = survCfg.optJSONArray("roiBlocks_" + qKeys[q]);
-                        if (roiEnabled && blockArr != null && blockArr.length() == MotionPipelineV2.TOTAL_BLOCKS) {
-                            byte[] blockMask = new byte[MotionPipelineV2.TOTAL_BLOCKS];
-                            for (int i = 0; i < MotionPipelineV2.TOTAL_BLOCKS; i++) {
-                                blockMask[i] = (byte)(blockArr.optInt(i, 1) != 0 ? 1 : 0);
-                            }
-                            NativeMotion.setQuadrantRoi(q, blockMask);
-                            logger.info("ROI blocks loaded for Q" + q + " from persisted config");
-                        } else {
-                            clearQuadrantRoi(q);
-                        }
-                    } catch (Exception e) {
-                        clearQuadrantRoi(q);
-                    }
-                }
-            }
-        }
         
         // Initialize native texture tracker (YOLO + NCC hybrid VOT)
         try {

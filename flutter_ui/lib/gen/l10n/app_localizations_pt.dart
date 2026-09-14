@@ -2864,19 +2864,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'Zona de movimento';
-
-  @override
-  String get surveillance_roi_description =>
-      'Toque para adicionar um ponto, arraste para movê-lo. Mínimo de três pontos, máximo de oito.';
-
-  @override
-  String get surveillance_roi_enable => 'Limitar a deteção a esta zona';
-
-  @override
-  String get action_undo => 'Desfazer';
-
-  @override
   String get surveillance_detection_title => 'Definições de deteção';
 
   @override
@@ -5902,19 +5889,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String surveillance_safe_locations_zone_label(Object arg1, Object arg2) {
     return '$arg1  (${arg2}m)';
   }
-
-  @override
-  String get surveillance_roi_title => 'Zona de movimento';
-
-  @override
-  String get surveillance_roi_description =>
-      'Toque para adicionar um ponto, arraste para movê-lo. Mínimo de três pontos, máximo de oito.';
-
-  @override
-  String get surveillance_roi_enable => 'Limitar a detecção a esta zona';
-
-  @override
-  String get action_undo => 'Desfazer';
 
   @override
   String get surveillance_detection_title => 'Configurações de detecção';

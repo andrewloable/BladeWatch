@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Vùng chuyển động",
-  "surveillance_roi_description": "Chạm để thêm điểm, kéo để di chuyển. Tối thiểu ba điểm, tối đa tám điểm.",
-  "surveillance_roi_enable": "Giới hạn phát hiện trong vùng này",
-  "action_undo": "Hoàn tác",
   "surveillance_detection_title": "Cài đặt phát hiện",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Cấu hình môi trường",

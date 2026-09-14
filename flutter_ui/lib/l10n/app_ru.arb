@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Зона движения",
-  "surveillance_roi_description": "Нажмите, чтобы добавить точку, перетащите, чтобы переместить. Минимум три точки, максимум восемь.",
-  "surveillance_roi_enable": "Ограничить обнаружение этой зоной",
-  "action_undo": "Отменить",
   "surveillance_detection_title": "Настройки обнаружения",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Профиль окружения",

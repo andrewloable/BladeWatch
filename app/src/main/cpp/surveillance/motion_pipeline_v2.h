@@ -134,10 +134,6 @@ struct QuadrantState {
     int   suppressionCountdown;  // Frames remaining to suppress
     bool  brightnessInitialized;
     
-    // Stage 2: ROI mask (future: per-quadrant user-drawn polygon)
-    bool  blockRoiMask[V2_TOTAL_BLOCKS];
-    bool  hasCustomRoi;
-    
     // Stage 3: Per-block temporal confidence
     float blockConfidence[V2_TOTAL_BLOCKS];
     

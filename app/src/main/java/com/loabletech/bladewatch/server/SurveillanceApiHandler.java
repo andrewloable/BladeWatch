@@ -250,39 +250,6 @@ public class SurveillanceApiHandler {
             }
             config.put("quadrantOverrides", overrides);
 
-            // ROI polygons and enabled flags
-            org.json.JSONObject roiObj = new org.json.JSONObject();
-            String[] qKeys = {"Q0", "Q1", "Q2", "Q3"};
-            for (int q = 0; q < 4; q++) {
-                // Always include polygon if it exists (even when disabled)
-                float[][] poly = sentryConfig.getRoiPolygon(q);
-                if (poly != null && poly.length >= 3) {
-                    org.json.JSONArray polyArr = new org.json.JSONArray();
-                    for (float[] vertex : poly) {
-                        org.json.JSONObject pt = new org.json.JSONObject();
-                        pt.put("x", vertex[0]);
-                        pt.put("y", vertex[1]);
-                        polyArr.put(pt);
-                    }
-                    roiObj.put(qKeys[q], polyArr);
-                }
-                // Per-quadrant block mask and enabled flag from unified config (source of truth)
-                try {
-                    org.json.JSONObject survCfg = net.bladewatch.app.config.UnifiedConfigManager.getSurveillance();
-                    org.json.JSONArray blocks = survCfg.optJSONArray("roiBlocks_" + qKeys[q]);
-                    if (blocks != null) config.put("roiBlocks_" + qKeys[q], blocks);
-                    // Read enabled flag from persisted config, not in-memory sentryConfig
-                    if (survCfg.has("roiEnabled_" + qKeys[q])) {
-                        config.put("roiEnabled_" + qKeys[q], survCfg.optBoolean("roiEnabled_" + qKeys[q], false));
-                    } else {
-                        config.put("roiEnabled_" + qKeys[q], sentryConfig.isRoiEnabled(q));
-                    }
-                } catch (Exception ignored) {
-                    CameraDaemon.log("Failed to read ROI config for " + qKeys[q] + ": " + ignored.getMessage());
-                    config.put("roiEnabled_" + qKeys[q], sentryConfig.isRoiEnabled(q));
-                }
-            }
-            config.put("roiPolygons", roiObj);
             
             // Schedule — read from persisted config file (source of truth)
             try {
@@ -695,104 +662,6 @@ public class SurveillanceApiHandler {
                 if (sentry != null) sentry.setFilterDebugEnabled(val);
                 configChanged = true;
             }
-            // Per-quadrant ROI polygons
-            if (configJson.has("roiPolygons")) {
-                try {
-                    org.json.JSONObject roiObj = configJson.getJSONObject("roiPolygons");
-                    String[] quadrantKeys = {"Q0", "Q1", "Q2", "Q3"};
-                    for (int q = 0; q < 4; q++) {
-                        if (roiObj.has(quadrantKeys[q])) {
-                            org.json.JSONArray polyArr = roiObj.optJSONArray(quadrantKeys[q]);
-                            if (polyArr != null && polyArr.length() >= 3) {
-                                float[][] polygon = new float[polyArr.length()][2];
-                                for (int v = 0; v < polyArr.length(); v++) {
-                                    org.json.JSONObject pt = polyArr.getJSONObject(v);
-                                    polygon[v][0] = (float) pt.getDouble("x");
-                                    polygon[v][1] = (float) pt.getDouble("y");
-                                }
-                                sentryConfig.setRoiPolygon(q, polygon);
-                                // Only apply to C++ if ROI is enabled for this quadrant
-                                if (sentryConfig.isRoiEnabled(q) && sentry != null) {
-                                    sentry.applyQuadrantRoi(q, polygon);
-                                }
-                            } else if (polyArr == null) {
-                                // Explicit null = clear polygon data
-                                sentryConfig.clearRoi(q);
-                                if (sentry != null) sentry.clearQuadrantRoi(q);
-                            }
-                        }
-                    }
-                    configChanged = true;
-                } catch (Exception e) {
-                    CameraDaemon.log("ROI parse error: " + e.getMessage());
-                }
-            }
-            
-            // Per-quadrant ROI enabled/disabled toggle (separate from polygon data)
-            {
-                String[] quadrantKeys = {"Q0", "Q1", "Q2", "Q3"};
-                for (int q = 0; q < 4; q++) {
-                    String enabledKey = "roiEnabled_" + quadrantKeys[q];
-                    if (configJson.has(enabledKey)) {
-                        boolean enabled = configJson.optBoolean(enabledKey, false);
-                        if (enabled && sentryConfig.getRoiPolygon(q) != null) {
-                            // Enable ROI — apply the persisted polygon to C++
-                            sentryConfig.setRoiEnabled(q, true);
-                            if (sentry != null) sentry.applyQuadrantRoi(q, sentryConfig.getRoiPolygon(q));
-                        } else {
-                            // Disable ROI — clear C++ mask but keep polygon in config
-                            sentryConfig.setRoiEnabled(q, false);
-                            if (sentry != null) sentry.clearQuadrantRoi(q);
-                        }
-                        configChanged = true;
-                    }
-                }
-            }
-            
-            // Direct block mask per quadrant (from block-tap UI)
-            // Accepts roiBlocks_Q0: [1,1,0,0,...] (70 elements, 1=active 0=inactive)
-            {
-                String[] quadrantKeys = {"Q0", "Q1", "Q2", "Q3"};
-                for (int q = 0; q < 4; q++) {
-                    String blocksKey = "roiBlocks_" + quadrantKeys[q];
-                    if (configJson.has(blocksKey)) {
-                        org.json.JSONArray arr = configJson.optJSONArray(blocksKey);
-                        if (arr != null && arr.length() == 70) {
-                            byte[] blockMask = new byte[70];
-                            boolean anyActive = false;
-                            for (int i = 0; i < 70; i++) {
-                                blockMask[i] = (byte)(arr.optInt(i, 1) != 0 ? 1 : 0);
-                                if (blockMask[i] != 0) anyActive = true;
-                            }
-                            if (anyActive) {
-                                sentryConfig.setRoiEnabled(q, true);
-                                // Store block mask as a synthetic polygon (not used, blocks are direct)
-                                // Apply directly to C++ via JNI
-                                try {
-                                    net.bladewatch.app.surveillance.NativeMotion.setQuadrantRoi(q, blockMask);
-                                    CameraDaemon.log("ROI blocks applied to Q" + q + " via direct mask");
-                                } catch (Exception e) {
-                                    CameraDaemon.log("ROI blocks apply failed Q" + q + ": " + e.getMessage());
-                                }
-                            } else {
-                                sentryConfig.setRoiEnabled(q, false);
-                                if (sentry != null) sentry.clearQuadrantRoi(q);
-                            }
-                            // Persist the block array in unified config
-                            try {
-                                org.json.JSONObject survCfg = net.bladewatch.app.config.UnifiedConfigManager.getSurveillance();
-                                survCfg.put(blocksKey, arr);
-                                survCfg.put("roiEnabled_" + quadrantKeys[q], anyActive);
-                                net.bladewatch.app.config.UnifiedConfigManager.setSurveillance(survCfg);
-                            } catch (Exception e) {
-                                CameraDaemon.log("ROI blocks persist failed: " + e.getMessage());
-                            }
-                            configChanged = true;
-                        }
-                    }
-                }
-            }
-            
             // Surveillance schedule
             if (configJson.has("scheduleEnabled") || configJson.has("scheduleRules")) {
                 try {
@@ -1177,7 +1046,7 @@ public class SurveillanceApiHandler {
     }
     
     /**
-     * Serves a JPEG snapshot of a specific camera quadrant for the ROI drawing UI.
+     * Serves a JPEG snapshot of a specific camera quadrant.
      * 
      * Strategy:
      * 1. Try live mosaic frame from surveillance engine (available when sentry is running)

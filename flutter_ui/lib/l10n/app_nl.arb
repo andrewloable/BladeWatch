@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Bewegingszone",
-  "surveillance_roi_description": "Tik om een punt toe te voegen, sleep om het te verplaatsen. Minimaal drie punten, maximaal acht.",
-  "surveillance_roi_enable": "Detectie beperken tot deze zone",
-  "action_undo": "Ongedaan maken",
   "surveillance_detection_title": "Detectie-instellingen",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Omgevingsvoorinstelling",

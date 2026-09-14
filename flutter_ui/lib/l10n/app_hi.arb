@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "गति क्षेत्र",
-  "surveillance_roi_description": "बिंदु जोड़ने के लिए टैप करें, हिलाने के लिए खींचें। कम से कम तीन, अधिकतम आठ बिंदु।",
-  "surveillance_roi_enable": "पहचान को इस क्षेत्र तक सीमित करें",
-  "action_undo": "पूर्ववत करें",
   "surveillance_detection_title": "पहचान सेटिंग्स",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "पर्यावरण प्रीसेट",

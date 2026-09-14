@@ -2859,19 +2859,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'Зона движения';
-
-  @override
-  String get surveillance_roi_description =>
-      'Нажмите, чтобы добавить точку, перетащите, чтобы переместить. Минимум три точки, максимум восемь.';
-
-  @override
-  String get surveillance_roi_enable => 'Ограничить обнаружение этой зоной';
-
-  @override
-  String get action_undo => 'Отменить';
-
-  @override
   String get surveillance_detection_title => 'Настройки обнаружения';
 
   @override

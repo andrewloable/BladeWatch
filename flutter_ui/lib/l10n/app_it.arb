@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Zona di movimento",
-  "surveillance_roi_description": "Tocca per aggiungere un punto, trascina per spostarlo. Minimo tre punti, massimo otto.",
-  "surveillance_roi_enable": "Limita il rilevamento a questa zona",
-  "action_undo": "Annulla",
   "surveillance_detection_title": "Impostazioni di rilevamento",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Preimpostazione ambiente",

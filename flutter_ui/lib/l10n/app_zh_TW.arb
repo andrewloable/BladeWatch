@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "偵測區域",
-  "surveillance_roi_description": "點按新增頂點，拖曳可移動頂點。最少三個，最多八個。",
-  "surveillance_roi_enable": "僅在此區域內偵測",
-  "action_undo": "復原",
   "surveillance_detection_title": "偵測設定",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "環境預設",

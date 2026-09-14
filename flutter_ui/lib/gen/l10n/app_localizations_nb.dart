@@ -2835,19 +2835,6 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'Bevegelsessone';
-
-  @override
-  String get surveillance_roi_description =>
-      'Trykk for å legge til et punkt, dra for å flytte det. Minst tre punkter, maks åtte.';
-
-  @override
-  String get surveillance_roi_enable => 'Begrens deteksjon til denne sonen';
-
-  @override
-  String get action_undo => 'Angre';
-
-  @override
   String get surveillance_detection_title => 'Deteksjonsinnstillinger';
 
   @override

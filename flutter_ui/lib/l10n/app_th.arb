@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "โซนตรวจจับ",
-  "surveillance_roi_description": "แตะเพื่อเพิ่มจุด ลากเพื่อย้าย ต้องมีอย่างน้อยสามจุด สูงสุดแปดจุด",
-  "surveillance_roi_enable": "จำกัดการตรวจจับไว้ในโซนนี้",
-  "action_undo": "เลิกทำ",
   "surveillance_detection_title": "การตั้งค่าการตรวจจับ",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "ค่าตั้งล่วงหน้าสภาพแวดล้อม",

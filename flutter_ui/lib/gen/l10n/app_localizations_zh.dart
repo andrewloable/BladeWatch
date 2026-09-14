@@ -2751,18 +2751,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => '侦测区域';
-
-  @override
-  String get surveillance_roi_description => '点按添加顶点，拖动可移动顶点。最少三个，最多八个。';
-
-  @override
-  String get surveillance_roi_enable => '仅在此区域内侦测';
-
-  @override
-  String get action_undo => '撤销';
-
-  @override
   String get surveillance_detection_title => '检测设置';
 
   @override
@@ -5670,18 +5658,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String surveillance_safe_locations_zone_label(Object arg1, Object arg2) {
     return '$arg1  (${arg2}m)';
   }
-
-  @override
-  String get surveillance_roi_title => '侦测区域';
-
-  @override
-  String get surveillance_roi_description => '点按添加顶点，拖动可移动顶点。最少三个，最多八个。';
-
-  @override
-  String get surveillance_roi_enable => '仅在此区域内侦测';
-
-  @override
-  String get action_undo => '撤销';
 
   @override
   String get surveillance_detection_title => '检测设置';
@@ -8592,18 +8568,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String surveillance_safe_locations_zone_label(Object arg1, Object arg2) {
     return '$arg1  (${arg2}m)';
   }
-
-  @override
-  String get surveillance_roi_title => '偵測區域';
-
-  @override
-  String get surveillance_roi_description => '點按新增頂點，拖曳可移動頂點。最少三個，最多八個。';
-
-  @override
-  String get surveillance_roi_enable => '僅在此區域內偵測';
-
-  @override
-  String get action_undo => '復原';
 
   @override
   String get surveillance_detection_title => '偵測設定';

@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Zone de mouvement",
-  "surveillance_roi_description": "Appuyez pour ajouter un point, faites glisser pour le déplacer. Trois points minimum, huit maximum.",
-  "surveillance_roi_enable": "Limiter la détection à cette zone",
-  "action_undo": "Annuler",
   "surveillance_detection_title": "Paramètres de détection",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Profil d'environnement",

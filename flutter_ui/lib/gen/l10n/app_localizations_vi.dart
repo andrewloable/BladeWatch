@@ -2844,19 +2844,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'Vùng chuyển động';
-
-  @override
-  String get surveillance_roi_description =>
-      'Chạm để thêm điểm, kéo để di chuyển. Tối thiểu ba điểm, tối đa tám điểm.';
-
-  @override
-  String get surveillance_roi_enable => 'Giới hạn phát hiện trong vùng này';
-
-  @override
-  String get action_undo => 'Hoàn tác';
-
-  @override
   String get surveillance_detection_title => 'Cài đặt phát hiện';
 
   @override

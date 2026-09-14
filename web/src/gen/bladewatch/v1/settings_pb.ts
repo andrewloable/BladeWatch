@@ -201,7 +201,7 @@ export type SetQualityRequest = Message<"bladewatch.v1.SetQualityRequest"> & {
   recordingQuality: string;
 
   /**
-   * One of: H264, H265. Leave empty to keep current.
+   * H264 only. Leave empty to keep current.
    *
    * @generated from field: string codec = 2;
    */

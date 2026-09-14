@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "検知エリア",
-  "surveillance_roi_description": "タップで点を追加、ドラッグで移動します。最小3点、最大8点です。",
-  "surveillance_roi_enable": "検知をこのエリアに限定する",
-  "action_undo": "元に戻す",
   "surveillance_detection_title": "検知設定",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "環境プリセット",

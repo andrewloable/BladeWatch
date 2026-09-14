@@ -79,40 +79,12 @@ message SurveillanceConfig {
   // Minimum seconds between deterrent triggers.
   int32 deterrent_cooldown_seconds = 29;
 
-  // Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
-  //
-  // The motion pipeline has supported these all along
-  // (SurveillanceEngineGpu.applyQuadrantRoi -> NativeMotion.setQuadrantRoi), and
-  // SurveillanceApiHandler already persists and applies them — but they were
-  // absent from this message, so no ConnectRPC client could ever see or set one.
-  //
-  // Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
-  // quadrant keys exactly. A quadrant is simply absent when it has no polygon.
-  // The explicit json_name keeps the wire shape byte-identical to what that
-  // handler already reads and writes.
-  map<string, RoiPolygon> roi_polygons = 30 [json_name = "roiPolygons"];
-
-  // Whether each quadrant's polygon is actually applied. Separate from the
-  // polygon itself so a zone can be switched off without losing the shape the
-  // user drew — the REST handler already models it that way.
-  bool roi_enabled_q0 = 31 [json_name = "roiEnabled_Q0"];
-  bool roi_enabled_q1 = 32 [json_name = "roiEnabled_Q1"];
-  bool roi_enabled_q2 = 33 [json_name = "roiEnabled_Q2"];
-  bool roi_enabled_q3 = 34 [json_name = "roiEnabled_Q3"];
-}
-
-// One vertex of an ROI polygon, normalised to 0..1 within its quadrant so the
-// shape survives a resolution change.
-message RoiPoint {
-  float x = 1;
-  float y = 2;
-}
-
-// A drawn motion zone. The pipeline rasterises it to a 10x7 block mask, and
-// fewer than 3 vertices means "no zone" — that is the engine's own rule
-// (applyQuadrantRoi clears the quadrant below 3 points), not a UI convention.
-message RoiPolygon {
-  repeated RoiPoint points = 1;
+  // BladeWatch-s3sf: the per-quadrant detection-zone (ROI) feature was removed
+  // end to end. Reserved, never reused — an old client still sending 30..34
+  // must not have its bytes reinterpreted as some future field.
+  reserved 30 to 34;
+  reserved "roi_polygons", "roi_enabled_q0", "roi_enabled_q1",
+           "roi_enabled_q2", "roi_enabled_q3";
 }
 
 message GetSurveillanceConfigRequest {}

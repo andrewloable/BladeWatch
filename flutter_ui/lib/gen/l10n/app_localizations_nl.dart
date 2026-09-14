@@ -2855,19 +2855,6 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'Bewegingszone';
-
-  @override
-  String get surveillance_roi_description =>
-      'Tik om een punt toe te voegen, sleep om het te verplaatsen. Minimaal drie punten, maximaal acht.';
-
-  @override
-  String get surveillance_roi_enable => 'Detectie beperken tot deze zone';
-
-  @override
-  String get action_undo => 'Ongedaan maken';
-
-  @override
   String get surveillance_detection_title => 'Detectie-instellingen';
 
   @override

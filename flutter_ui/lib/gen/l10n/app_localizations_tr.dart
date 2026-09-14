@@ -2848,19 +2848,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'Hareket bölgesi';
-
-  @override
-  String get surveillance_roi_description =>
-      'Nokta eklemek için dokunun, taşımak için sürükleyin. En az üç, en fazla sekiz nokta.';
-
-  @override
-  String get surveillance_roi_enable => 'Algılamayı bu bölgeyle sınırla';
-
-  @override
-  String get action_undo => 'Geri al';
-
-  @override
   String get surveillance_detection_title => 'Algılama ayarları';
 
   @override

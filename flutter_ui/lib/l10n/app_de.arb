@@ -979,10 +979,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Bewegungszone",
-  "surveillance_roi_description": "Tippen zum Hinzufügen eines Punktes, ziehen zum Verschieben. Mindestens drei, höchstens acht Punkte.",
-  "surveillance_roi_enable": "Erkennung auf diese Zone begrenzen",
-  "action_undo": "Rückgängig",
   "surveillance_detection_title": "Erkennungseinstellungen",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Umgebungsprofil",

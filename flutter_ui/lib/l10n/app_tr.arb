@@ -978,10 +978,6 @@
       "arg2": {}
     }
   },
-  "surveillance_roi_title": "Hareket bölgesi",
-  "surveillance_roi_description": "Nokta eklemek için dokunun, taşımak için sürükleyin. En az üç, en fazla sekiz nokta.",
-  "surveillance_roi_enable": "Algılamayı bu bölgeyle sınırla",
-  "action_undo": "Geri al",
   "surveillance_detection_title": "Algılama ayarları",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Ortam ön ayarı",

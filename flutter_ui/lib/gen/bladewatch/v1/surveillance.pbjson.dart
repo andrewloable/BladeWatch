@@ -104,37 +104,17 @@ const SurveillanceConfig$json = {
       '5': 5,
       '10': 'deterrentCooldownSeconds'
     },
-    {
-      '1': 'roi_polygons',
-      '3': 30,
-      '4': 3,
-      '5': 11,
-      '6': '.bladewatch.v1.SurveillanceConfig.RoiPolygonsEntry',
-      '10': 'roiPolygons'
-    },
-    {'1': 'roi_enabled_q0', '3': 31, '4': 1, '5': 8, '10': 'roiEnabled_Q0'},
-    {'1': 'roi_enabled_q1', '3': 32, '4': 1, '5': 8, '10': 'roiEnabled_Q1'},
-    {'1': 'roi_enabled_q2', '3': 33, '4': 1, '5': 8, '10': 'roiEnabled_Q2'},
-    {'1': 'roi_enabled_q3', '3': 34, '4': 1, '5': 8, '10': 'roiEnabled_Q3'},
   ],
-  '3': [SurveillanceConfig_RoiPolygonsEntry$json],
-};
-
-@$core.Deprecated('Use surveillanceConfigDescriptor instead')
-const SurveillanceConfig_RoiPolygonsEntry$json = {
-  '1': 'RoiPolygonsEntry',
-  '2': [
-    {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
-    {
-      '1': 'value',
-      '3': 2,
-      '4': 1,
-      '5': 11,
-      '6': '.bladewatch.v1.RoiPolygon',
-      '10': 'value'
-    },
+  '9': [
+    {'1': 30, '2': 35},
   ],
-  '7': {'7': true},
+  '10': [
+    'roi_polygons',
+    'roi_enabled_q0',
+    'roi_enabled_q1',
+    'roi_enabled_q2',
+    'roi_enabled_q3'
+  ],
 };
 
 /// Descriptor for `SurveillanceConfig`. Decode as a `google.protobuf.DescriptorProto`.
@@ -159,46 +139,8 @@ final $typed_data.Uint8List surveillanceConfigDescriptor = $convert.base64Decode
     'EoCFILY2FtZXJhUmlnaHQSHwoLY2FtZXJhX3JlYXIYGiABKAhSCmNhbWVyYVJlYXISHwoLY2Ft'
     'ZXJhX2xlZnQYGyABKAhSCmNhbWVyYUxlZnQSKQoQZGV0ZXJyZW50X2FjdGlvbhgcIAEoCVIPZG'
     'V0ZXJyZW50QWN0aW9uEjwKGmRldGVycmVudF9jb29sZG93bl9zZWNvbmRzGB0gASgFUhhkZXRl'
-    'cnJlbnRDb29sZG93blNlY29uZHMSVQoMcm9pX3BvbHlnb25zGB4gAygLMjIuYmxhZGV3YXRjaC'
-    '52MS5TdXJ2ZWlsbGFuY2VDb25maWcuUm9pUG9seWdvbnNFbnRyeVILcm9pUG9seWdvbnMSJQoO'
-    'cm9pX2VuYWJsZWRfcTAYHyABKAhSDXJvaUVuYWJsZWRfUTASJQoOcm9pX2VuYWJsZWRfcTEYIC'
-    'ABKAhSDXJvaUVuYWJsZWRfUTESJQoOcm9pX2VuYWJsZWRfcTIYISABKAhSDXJvaUVuYWJsZWRf'
-    'UTISJQoOcm9pX2VuYWJsZWRfcTMYIiABKAhSDXJvaUVuYWJsZWRfUTMaWQoQUm9pUG9seWdvbn'
-    'NFbnRyeRIQCgNrZXkYASABKAlSA2tleRIvCgV2YWx1ZRgCIAEoCzIZLmJsYWRld2F0Y2gudjEu'
-    'Um9pUG9seWdvblIFdmFsdWU6AjgB');
-
-@$core.Deprecated('Use roiPointDescriptor instead')
-const RoiPoint$json = {
-  '1': 'RoiPoint',
-  '2': [
-    {'1': 'x', '3': 1, '4': 1, '5': 2, '10': 'x'},
-    {'1': 'y', '3': 2, '4': 1, '5': 2, '10': 'y'},
-  ],
-};
-
-/// Descriptor for `RoiPoint`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List roiPointDescriptor = $convert
-    .base64Decode('CghSb2lQb2ludBIMCgF4GAEgASgCUgF4EgwKAXkYAiABKAJSAXk=');
-
-@$core.Deprecated('Use roiPolygonDescriptor instead')
-const RoiPolygon$json = {
-  '1': 'RoiPolygon',
-  '2': [
-    {
-      '1': 'points',
-      '3': 1,
-      '4': 3,
-      '5': 11,
-      '6': '.bladewatch.v1.RoiPoint',
-      '10': 'points'
-    },
-  ],
-};
-
-/// Descriptor for `RoiPolygon`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List roiPolygonDescriptor = $convert.base64Decode(
-    'CgpSb2lQb2x5Z29uEi8KBnBvaW50cxgBIAMoCzIXLmJsYWRld2F0Y2gudjEuUm9pUG9pbnRSBn'
-    'BvaW50cw==');
+    'cnJlbnRDb29sZG93blNlY29uZHNKBAgeECNSDHJvaV9wb2x5Z29uc1IOcm9pX2VuYWJsZWRfcT'
+    'BSDnJvaV9lbmFibGVkX3ExUg5yb2lfZW5hYmxlZF9xMlIOcm9pX2VuYWJsZWRfcTM=');
 
 @$core.Deprecated('Use getSurveillanceConfigRequestDescriptor instead')
 const GetSurveillanceConfigRequest$json = {
@@ -576,10 +518,6 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.GetSurveillanceConfigResponse':
       GetSurveillanceConfigResponse$json,
   '.bladewatch.v1.SurveillanceConfig': SurveillanceConfig$json,
-  '.bladewatch.v1.SurveillanceConfig.RoiPolygonsEntry':
-      SurveillanceConfig_RoiPolygonsEntry$json,
-  '.bladewatch.v1.RoiPolygon': RoiPolygon$json,
-  '.bladewatch.v1.RoiPoint': RoiPoint$json,
   '.bladewatch.v1.SetSurveillanceConfigRequest':
       SetSurveillanceConfigRequest$json,
   '.bladewatch.v1.SetSurveillanceConfigResponse':

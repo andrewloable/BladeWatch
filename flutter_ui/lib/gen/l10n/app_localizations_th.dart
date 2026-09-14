@@ -2834,19 +2834,6 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String get surveillance_roi_title => 'โซนตรวจจับ';
-
-  @override
-  String get surveillance_roi_description =>
-      'แตะเพื่อเพิ่มจุด ลากเพื่อย้าย ต้องมีอย่างน้อยสามจุด สูงสุดแปดจุด';
-
-  @override
-  String get surveillance_roi_enable => 'จำกัดการตรวจจับไว้ในโซนนี้';
-
-  @override
-  String get action_undo => 'เลิกทำ';
-
-  @override
   String get surveillance_detection_title => 'การตั้งค่าการตรวจจับ';
 
   @override
