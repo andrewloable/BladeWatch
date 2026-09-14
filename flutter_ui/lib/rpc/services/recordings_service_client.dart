@@ -14,56 +14,56 @@ class RecordingsServiceClient {
         'RecordingsService',
         'ListRecordings',
         request,
-        (json) => ListRecordingsResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => ListRecordingsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetDatesResponse> getDates(GetDatesRequest request) => _transport.call(
         'RecordingsService',
         'GetDates',
         request,
-        (json) => GetDatesResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetDatesResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetStatsResponse> getStats(GetStatsRequest request) => _transport.call(
         'RecordingsService',
         'GetStats',
         request,
-        (json) => GetStatsResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetStatsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<DeleteRecordingResponse> deleteRecording(DeleteRecordingRequest request) => _transport.call(
         'RecordingsService',
         'DeleteRecording',
         request,
-        (json) => DeleteRecordingResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => DeleteRecordingResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<BatchDeleteResponse> batchDelete(BatchDeleteRequest request) => _transport.call(
         'RecordingsService',
         'BatchDelete',
         request,
-        (json) => BatchDeleteResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => BatchDeleteResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SyncCatalogResponse> syncCatalog(SyncCatalogRequest request) => _transport.call(
         'RecordingsService',
         'SyncCatalog',
         request,
-        (json) => SyncCatalogResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SyncCatalogResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetInflightStatusResponse> getInflightStatus(GetInflightStatusRequest request) => _transport.call(
         'RecordingsService',
         'GetInflightStatus',
         request,
-        (json) => GetInflightStatusResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetInflightStatusResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetEventTimelineResponse> getEventTimeline(GetEventTimelineRequest request) => _transport.call(
         'RecordingsService',
         'GetEventTimeline',
         request,
-        (json) => GetEventTimelineResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetEventTimelineResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
 }

@@ -14,42 +14,42 @@ class NotificationsServiceClient {
         'NotificationsService',
         'GetCategories',
         request,
-        (json) => GetCategoriesResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetCategoriesResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SubscribeResponse> subscribe(SubscribeRequest request) => _transport.call(
         'NotificationsService',
         'Subscribe',
         request,
-        (json) => SubscribeResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SubscribeResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<UnsubscribeResponse> unsubscribe(UnsubscribeRequest request) => _transport.call(
         'NotificationsService',
         'Unsubscribe',
         request,
-        (json) => UnsubscribeResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => UnsubscribeResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<ListSubscriptionsResponse> listSubscriptions(ListSubscriptionsRequest request) => _transport.call(
         'NotificationsService',
         'ListSubscriptions',
         request,
-        (json) => ListSubscriptionsResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => ListSubscriptionsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<UpdatePreferencesResponse> updatePreferences(UpdatePreferencesRequest request) => _transport.call(
         'NotificationsService',
         'UpdatePreferences',
         request,
-        (json) => UpdatePreferencesResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => UpdatePreferencesResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SendTestResponse> sendTest(SendTestRequest request) => _transport.call(
         'NotificationsService',
         'SendTest',
         request,
-        (json) => SendTestResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SendTestResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
 }

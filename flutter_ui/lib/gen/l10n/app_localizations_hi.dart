@@ -34,16 +34,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get action_done => 'किया गया';
 
   @override
-  String get action_remind_me_later => 'मुझे बाद में याद रखें';
+  String get action_remind_me_later => 'बाद में याद दिलाएँ';
 
   @override
   String get action_retry => 'पुनः प्रयास करें';
 
   @override
-  String get action_run => 'दौड़ें';
+  String get action_run => 'चलाएँ';
 
   @override
-  String get action_clear_output => 'स्पष्ट आउटपुट';
+  String get action_clear_output => 'आउटपुट साफ़ करें';
 
   @override
   String get cd_camera => 'कैमरा';
@@ -58,13 +58,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get cd_show_hide_token => 'दिखाएँ/छोड़ें टोकन';
 
   @override
-  String get cd_copy_token => 'कॉपी टोकन';
+  String get cd_copy_token => 'टोकन कॉपी करें';
 
   @override
-  String get cd_copy_url => 'कॉपी URL';
+  String get cd_copy_url => 'URL कॉपी करें';
 
   @override
-  String get cd_clear_logs => 'स्पष्ट लॉग';
+  String get cd_clear_logs => 'लॉग साफ़ करें';
 
   @override
   String get cd_expand_collapse => 'विस्तार/विघटन';
@@ -109,7 +109,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get cd_configure => 'विन्यास';
 
   @override
-  String get cd_download_log => 'डाउनलोड लॉग';
+  String get cd_download_log => 'लॉग डाउनलोड करें';
 
   @override
   String get cd_reset => 'रीसेट';
@@ -133,7 +133,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '[टैग]';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => 'लॉग संदेश यहाँ';
@@ -166,10 +166,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get camera_option_auto => 'ऑटो (स्टार्टअप पर पता लगाएं)';
 
   @override
-  String get camera_option_0 => 'कैमरा 0  Atto ट्रिम';
+  String get camera_option_0 => 'कैमरा 0 — Atto ट्रिम';
 
   @override
-  String get camera_option_1 => 'कैमरा 1  Seal (पूर्वनिर्धारित)';
+  String get camera_option_1 => 'कैमरा 1 — Seal (पूर्वनिर्धारित)';
 
   @override
   String get camera_option_2 => 'कैमरा 2';
@@ -197,7 +197,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dashboard_daemons_running_default => '0/5 चल रहा है';
 
   @override
-  String get dashboard_device_id_loading => '...';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => 'एक्सेस कोड';
@@ -266,7 +266,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'BYD ऑटो-स्टार्ट खोलने के लिए नीचे टैप करें. सूची में BladeWatch खोजें और बॉक्स को अनचेक करें. BYD प्रत्येक स्थापना पर इसे मिटा देता है  आप अद्यतन के बाद इसे फिर से करेंगे.';
+      'BYD ऑटो-स्टार्ट खोलने के लिए नीचे टैप करें. सूची में BladeWatch खोजें और बॉक्स को अनचेक करें. BYD प्रत्येक स्थापना पर इसे मिटा देता है — आप अद्यतन के बाद इसे फिर से करेंगे.';
 
   @override
   String get setup_autostart_button => 'BYD ऑटो-स्टार्ट खोलें';
@@ -302,6 +302,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String language_auto_subtitle(Object arg1) {
     return 'अनुवर्ती प्रणाली · $arg1';
   }
+
+  @override
+  String get language_not_saved =>
+      'भाषा लागू हो गई, लेकिन सहेजी नहीं जा सकी — ऐप पुनः आरंभ होने पर यह रीसेट हो जाएगी।';
 
   @override
   String language_label_auto_fmt(Object arg1) {
@@ -344,7 +348,8 @@ class AppLocalizationsHi extends AppLocalizations {
       'हेड यूनिट की स्क्रीन पर “USB डिबगिंग की अनुमति दें?” संकेत देखें और उसे स्वीकार करें, फिर पुनः प्रयास करें।';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting =>
+      'परफ़ॉर्मेंस मॉनिटर से कनेक्ट हो रहा है…';
 
   @override
   String get performance_hero_title => 'सिस्टम प्रदर्शन';
@@ -353,16 +358,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => 'सिस्टम उपयोग';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => 'ऐप उपयोग';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => 'आवृत्ति';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => 'तापमान';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -371,16 +376,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get performance_memory_title => 'मेमोरी';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => 'उपयोग';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => 'कुल';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => 'उपयोग में';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => 'ऐप';
 
   @override
   String get performance_gpu_title => 'GPU';
@@ -389,16 +394,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get performance_app_process_title => 'ऐप प्रोसेस';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => 'थ्रेड';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC चक्र';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => 'खुले FD';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => 'हर 3 सेकंड में रीफ़्रेश';
 
   @override
   String get webview_loading => 'लोड...';
@@ -432,7 +437,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get reset_warning =>
-      'इसे रद्द नहीं किया जा सकता है। रिकॉर्डिंग, यात्राएं और बैटरी इतिहास स्थायी रूप से हटा दिए जाएंगे।';
+      'इसे पूर्ववत नहीं किया जा सकता। रिकॉर्डिंग, यात्राएँ और बैटरी इतिहास स्थायी रूप से हटा दिए जाएँगे।';
 
   @override
   String get reset_cat_trips => 'यात्राएँ';
@@ -569,7 +574,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get recording_lib_section_morning => 'सुबह';
 
   @override
-  String get recording_lib_section_afternoon => 'सुप्रभात';
+  String get recording_lib_section_afternoon => 'दोपहर';
 
   @override
   String get recording_lib_section_evening => 'शाम';
@@ -584,19 +589,31 @@ class AppLocalizationsHi extends AppLocalizations {
   String get cd_next_day => 'अगले दिन';
 
   @override
-  String get cd_open_filters => 'खुले फ़िल्टर';
+  String get cd_open_filters => 'फ़िल्टर खोलें';
 
   @override
-  String get cd_clear_filter => 'साफ फ़िल्टर';
+  String get cd_clear_filter => 'फ़िल्टर हटाएँ';
 
   @override
   String get player_title_recording => 'रिकॉर्डिंग';
 
   @override
-  String get player_time_zero => '0:00 बजे';
+  String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
+
+  @override
+  String get daemon_name_camera => 'कैमरा सेवा';
+
+  @override
+  String get daemon_name_surveillance => 'निगरानी सेवा';
+
+  @override
+  String get daemon_name_acc => 'ACC निगरानी';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
 
   @override
   String get daemons_hero_title => 'पृष्ठभूमि सेवाएं';
@@ -635,6 +652,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get battery_health_last_updated => 'अंतिम अद्यतन';
+
+  @override
+  String get battery_health_unavailable => 'उपलब्ध नहीं';
+
+  @override
+  String get battery_health_unavailable_desc =>
+      'इस वाहन पर बैटरी स्वास्थ्य अनुमान उपलब्ध नहीं है।';
 
   @override
   String get battery_health_reset => 'SOH अनुमान को रीसेट करें';
@@ -703,8 +727,9 @@ class AppLocalizationsHi extends AppLocalizations {
       arg1,
       locale: localeName,
       other:
-          'यह $arg1 रिकॉर्डिंगों को स्थायी रूप से मिटा देगा. यह रद्द नहीं किया जा सकता है.',
-      one: 'यह $arg1 रिकॉर्डिंग को स्थायी रूप से मिटा देगा।',
+          'यह $arg1 रिकॉर्डिंग को स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।',
+      one:
+          'यह $arg1 रिकॉर्डिंग को स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।',
     );
     return '$_temp0';
   }
@@ -734,7 +759,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'कैमरा $arg1 सेट  अगला ACC चक्र';
+    return 'कैमरा $arg1 सेट — अगला ACC चक्र';
   }
 
   @override
@@ -760,7 +785,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get toast_soh_reset_success =>
-      'SOH अनुमान रीसेट  अगले आंकड़ों से पुनः गणना करेगा';
+      'SOH अनुमान रीसेट — अगले आंकड़ों से पुनः गणना करेगा';
 
   @override
   String get toast_soh_reset_failed_no_daemon =>
@@ -813,7 +838,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dialog_regenerate => 'पुनर्जन्म';
 
   @override
-  String get dialog_reset_selected => 'रीसेट चयनित';
+  String get dialog_reset_selected => 'चयनित को रीसेट करें';
 
   @override
   String get dialog_reset_soh_title => 'SOH अनुमान को रीसेट करें?';
@@ -827,7 +852,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return 'इसे पूर्ववत नहीं किया जा सकता।\n\n$arg1';
   }
 
   @override
@@ -846,7 +871,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dialog_traffic_disable_message =>
-      'BYD ट्रैफिक मॉनिटर (com.byd.trafficmonitor) एक अंतर्निहित सिस्टम ऐप है जो लगातार पृष्ठभूमि में सड़क यातायात की स्थिति की निगरानी करता है।\n\n️ इसे निष्क्रिय क्यों करें?\n\n• मोबाइल डेटा का उपभोग करता है (यहां तक कि जब पार्किंग की जाती है)\n• पृष्ठभूमि में CPU और बैटरी का उपयोग करता है\n• यदि आप एक अलग नेविगेशन ऐप का उपयोग करते हैं\n• डैशकैम के नेटवर्क उपयोग में हस्तक्षेप कर सकता है\n\nयह निष्क्रिय करने के लिए सुरक्षित है  यह केवल नक्शे पर अंतर्निहित यातायात ओवरले को प्रभावित करता है। आपका नेविगेशन, Bluetooth, और अन्य सभी कार कार्यों को प्रभावित नहीं करता है।\n\n\nएक हार्ड रीबूट';
+      'BYD Traffic Monitor (com.byd.trafficmonitor) एक अंतर्निहित सिस्टम ऐप है जो पृष्ठभूमि में लगातार सड़क यातायात की निगरानी करता है।\n\nइसे बंद क्यों करें?\n\n• मोबाइल डेटा खर्च करता है (खड़ी गाड़ी में भी)\n• पृष्ठभूमि में CPU और बैटरी का उपयोग करता है\n• अलग नेविगेशन ऐप इस्तेमाल करने पर इसकी ज़रूरत नहीं\n• डैशकैम के नेटवर्क उपयोग में बाधा डाल सकता है\n\nइसे बंद करना सुरक्षित है — इससे केवल मानचित्र पर अंतर्निहित ट्रैफ़िक परत प्रभावित होती है। नेविगेशन, ब्लूटूथ और कार के बाकी सभी कार्य अप्रभावित रहते हैं।\n\nबंद करने के बाद हार्ड रीबूट ज़रूरी है (सेंटर कंसोल बटन 5 सेकंड दबाए रखें)।';
 
   @override
   String get dialog_traffic_enable_title =>
@@ -929,7 +954,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2 चल रहा है';
+    return '$arg1/$arg2 चल रहे हैं';
   }
 
   @override
@@ -950,7 +975,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dialog_zrok_token_title => 'Zrok सुरंग टोकन';
 
   @override
-  String get dialog_zrok_token_message => 'अपने Zrok सक्षम टोकन दर्ज करें.';
+  String get dialog_zrok_token_message =>
+      'अपना Zrok सक्षम टोकन दर्ज करें।\nइसे यहाँ से लें: zrok.io';
 
   @override
   String get toast_token_cannot_be_empty => 'टोकन खाली नहीं हो सकता';
@@ -1053,7 +1079,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return '$arg1 हटाएं?';
+    return '$arg1 हटाएँ?\nइसे पूर्ववत नहीं किया जा सकता।';
   }
 
   @override
@@ -1072,7 +1098,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String setup_version_banner(Object arg1) {
-    return 'v$arg1 के लिए अद्यतन  फिर से पुष्टि ऑटोस्टार्ट, BYD हर स्थापना पर इसे मिटा देता है';
+    return 'v$arg1 के लिए अद्यतन — फिर से पुष्टि ऑटोस्टार्ट, BYD हर स्थापना पर इसे मिटा देता है';
   }
 
   @override
@@ -1099,7 +1125,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get soh_no_estimate_yet =>
-      'अभी कोई अनुमान नहीं  आंकड़ों की प्रतीक्षा है';
+      'अभी कोई अनुमान नहीं — आंकड़ों की प्रतीक्षा है';
 
   @override
   String recording_lib_selected_count(Object arg1) {
@@ -1133,7 +1159,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get rail_dashboard => 'डैशबोर्ड';
 
   @override
-  String get rail_live => 'जीवित';
+  String get rail_live => 'लाइव';
 
   @override
   String get rail_recordings => 'रिकॉर्डिंग';
@@ -1226,7 +1252,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_about_support_share_message =>
-      'BYD के लिए ओवरड्राइव  ओपन सोर्स निगरानी और डैशकैम देखेंः https://bladewatch-5lc.pages.dev/';
+      'BYD के लिए ओवरड्राइव — ओपन सोर्स निगरानी और डैशकैम देखेंः https://bladewatch-5lc.pages.dev/';
 
   @override
   String get settings_about_support_share_chooser => 'शेयर ओवरड्राइव';
@@ -1254,7 +1280,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_about_license_value =>
-      'MIT  ओपन सोर्स. पूर्ण पाठ देखने के लिए टैप करें.';
+      'MIT — ओपन सोर्स. पूर्ण पाठ देखने के लिए टैप करें.';
 
   @override
   String get settings_about_source_title => 'स्रोत कोड';
@@ -1303,13 +1329,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settings_theme_label => 'विषय';
 
   @override
-  String get settings_theme_auto => 'ऑटो (फॉलो सिस्टम)';
+  String get settings_theme_auto => 'ऑटो (सिस्टम के अनुसार)';
 
   @override
-  String get settings_theme_light => 'प्रकाश';
+  String get settings_theme_light => 'लाइट';
 
   @override
-  String get settings_theme_dark => 'अंधेरा';
+  String get settings_theme_dark => 'डार्क';
 
   @override
   String get settings_language_label => 'भाषा';
@@ -1609,67 +1635,67 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => 'स्थिति';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => 'कैप्चर';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => 'गुणवत्ता';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => 'संग्रहण';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => 'रिकॉर्डिंग स्थिति';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => 'वर्तमान स्थिति';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => 'आज की रिकॉर्डिंग';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => 'रिकॉर्डिंग मोड (ACC चालू)';
 
   @override
   String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+      'चुनें कि ड्राइविंग के दौरान डैशकैम रिकॉर्डिंग कब होनी चाहिए।';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => 'कोई नहीं (डिफ़ॉल्ट)';
 
   @override
   String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+      'कोई रिकॉर्डिंग नहीं — निगरानी फिर भी काम करती है';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => 'निरंतर';
 
   @override
   String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+      'ड्राइविंग के दौरान लगातार रिकॉर्ड करें';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => 'ड्राइव मोड';
 
   @override
   String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+      'केवल तब रिकॉर्ड करें जब वाहन चल रहा हो';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => 'प्रॉक्सिमिटी गार्ड';
 
   @override
   String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+      'गति का पता चलने पर रिकॉर्ड करें';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => 'रिकॉर्डिंग सीमा';
 
   @override
   String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+      'प्रति फ़ाइल अधिकतम अवधि। इस अंतराल पर रिकॉर्डिंग नई फ़ाइलों में बँट जाती है।';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1677,113 +1703,121 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => 'रिकॉर्डिंग गुणवत्ता';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => 'रिकॉर्डिंग संग्रहण';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => 'संग्रहण स्थान';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => 'आंतरिक';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SD कार्ड';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SD कार्ड (उपलब्ध नहीं)';
 
   @override
   String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+      'संग्रहण सीमा — पहुँचने पर सबसे पुराना अपने आप हटेगा';
+
+  @override
+  String get settings_recording_storage_usage_label => 'संग्रहण उपयोग';
+
+  @override
+  String get settings_recording_storage_files_label => 'फ़ाइलें';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 उपयोग / $arg2 सीमा';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 रिकॉर्डिंग';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => 'पथ';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'SD कार्ड खाली';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label => 'आंतरिक खाली';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => 'बाहरी ड्राइव फ़ॉर्मैट करें';
 
   @override
   String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+      'SD कार्ड या USB ड्राइव का सारा डेटा स्थायी रूप से मिट जाएगा।';
 
   @override
   String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+      'फिर से टैप करें — सारा डेटा मिटा दिया जाएगा';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running =>
+      'फ़ॉर्मैट हो रहा है… कृपया प्रतीक्षा करें';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => 'SD कार्ड / USB फ़ॉर्मैट करें';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive =>
+      'कोई हटाने योग्य ड्राइव नहीं मिली';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return 'सफलतापूर्वक फ़ॉर्मैट हुआ। नया पथ: $arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => 'डेटाबेस कैटलॉग';
 
   @override
   String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+      'रिकॉर्डिंग सूची को डिस्क की फ़ाइलों से मिलाएँ।';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => 'सिंक हो रहा है…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => 'डेटाबेस सिंक करें';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return 'सिंक हुआ: +$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => 'सिंक पहले से चल रहा है';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return 'सिंक विफल: $arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => 'बदलाव लागू करें';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => 'खारिज करें';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return '$arg1 को शुरू/बंद करना अभी समर्थित नहीं है';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => 'कॉन्फ़िगर करें';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => 'परिवेश रीसेट करें';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -1868,7 +1902,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dashboard_action_live => 'लाइव दृश्य';
 
   @override
-  String get dashboard_action_live_subtitle => 'कैमरा दृश्य खुला';
+  String get dashboard_action_live_subtitle => 'कैमरा दृश्य खोलें';
 
   @override
   String get dashboard_action_recordings => 'रिकॉर्डिंग';
@@ -1937,14 +1971,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_theme_active_light_caption =>
-      'प्रकाश विषय हमेशा चालू है।';
+      'लाइट थीम हमेशा चालू रहती है।';
 
   @override
-  String get settings_theme_active_dark_caption => 'अंधेरे विषय हमेशा पर है।';
+  String get settings_theme_active_dark_caption =>
+      'डार्क थीम हमेशा चालू रहती है।';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '$arg1 की उपलब्ध $arg2 भाषाएँ';
+    return '$arg2 में से $arg1 भाषाएँ उपलब्ध';
   }
 
   @override
@@ -2034,7 +2069,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dashboard_insight_welcome =>
-      'आपका स्वागत है  ओवरड्राइव अब आपकी दूसरी आँखों की जोड़ी है।';
+      'आपका स्वागत है — ओवरड्राइव अब आपकी दूसरी आँखों की जोड़ी है।';
 
   @override
   String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
@@ -2083,7 +2118,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 min';
+    return '$arg1 घं $arg2 मि';
   }
 
   @override
@@ -2142,10 +2177,10 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get vehicle_tab_trunk => 'ट्रंक';
+  String get vehicle_tab_trunk => 'डिक्की';
 
   @override
-  String get vehicle_tab_climate => 'जलवायु';
+  String get vehicle_tab_climate => 'क्लाइमेट';
 
   @override
   String get vehicle_tab_seats => 'सीटें';
@@ -2181,7 +2216,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get vehicle_open_trunk => 'ट्रंक खोलें';
 
   @override
-  String get vehicle_close_trunk => 'बंद ट्रंक';
+  String get vehicle_close_trunk => 'डिक्की बंद करें';
 
   @override
   String get vehicle_trunk_info_open =>
@@ -2278,7 +2313,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get vehicle_window_open_all => 'सभी खोलें';
 
   @override
-  String get vehicle_sunroof => 'धूप की छत';
+  String get vehicle_sunroof => 'सनरूफ';
 
   @override
   String get vehicle_sunshade => 'सनशेड';
@@ -2309,10 +2344,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get vehicle_tyre_no_signal => 'कोई संकेत नहीं';
 
   @override
-  String get vehicle_tyre_slow_leak => 'धीमी लीक';
+  String get vehicle_tyre_slow_leak => 'धीमा रिसाव';
 
   @override
-  String get vehicle_tyre_fast_leak => 'तेजी से रिसाव';
+  String get vehicle_tyre_fast_leak => 'तेज़ रिसाव';
 
   @override
   String get vehicle_tyre_low => 'कम';
@@ -2321,7 +2356,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get vehicle_tyre_high => 'उच्च';
 
   @override
-  String get vehicle_tyre_ok => 'ठीक है';
+  String get vehicle_tyre_ok => 'सामान्य';
 
   @override
   String get vehicle_tyre_check_pressure => 'दबाव जाँचें';
@@ -2477,13 +2512,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get trips_tab_storage => 'स्टोरेज';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 दिन';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 दिन';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 दिन';
 
   @override
   String trips_load_error(Object message) {
@@ -2497,13 +2532,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get trips_period_summary_title => 'अवधि सारांश';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => 'ट्रिप';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => 'घंटे';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => 'दक्षता';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2513,7 +2548,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return 'स्कोर: $score';
   }
 
   @override
@@ -2521,7 +2556,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return 'कुल: $score / 100';
   }
 
   @override
@@ -2529,7 +2564,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD अनुमान: $km km';
   }
 
   @override
@@ -2539,46 +2574,46 @@ class AppLocalizationsHi extends AppLocalizations {
   String get trips_dna_title => 'ड्राइविंग DNA';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => 'पूर्वानुमान';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => 'सहजता';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => 'गति अनुशासन';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => 'दक्षता';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => 'निरंतरता';
 
   @override
   String get trips_storage_title => 'यात्रा संग्रहण';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => 'ट्रिप विश्लेषण';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => 'बिजली दर';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => 'दूरी इकाई';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => 'संग्रहण स्थान';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => 'आंतरिक';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SD कार्ड';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SD कार्ड (उपलब्ध नहीं)';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => 'बदलाव लागू करें';
 
   @override
   String trips_storage_usage_line(
@@ -2587,7 +2622,7 @@ class AppLocalizationsHi extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '$used $unit उपयोग / $limit MB सीमा · $count ट्रिप';
   }
 
   @override
@@ -2595,13 +2630,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+      'ट्रिप सूची को डिस्क की टेलीमेट्री फ़ाइलों से मिलाएँ।';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => 'डेटाबेस सिंक करें';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => 'सिंक हो रहा है…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2615,31 +2650,31 @@ class AppLocalizationsHi extends AppLocalizations {
   String get trips_detail_summary_title => 'यात्रा सारांश';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => 'दूरी';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => 'अवधि';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => 'ऊर्जा';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => 'औसत गति';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => 'अधिकतम गति';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => 'चार्ज';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => 'लागत';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => 'बाहरी तापमान';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => 'ऊँचाई वृद्धि';
 
   @override
   String get trips_detail_scores_title => 'ड्राइविंग स्कोर';
@@ -2652,7 +2687,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return '$count GPS बिंदु दर्ज';
   }
 
   @override
@@ -2810,6 +2845,19 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => 'गति क्षेत्र';
+
+  @override
+  String get surveillance_roi_description =>
+      'बिंदु जोड़ने के लिए टैप करें, हिलाने के लिए खींचें। कम से कम तीन, अधिकतम आठ बिंदु।';
+
+  @override
+  String get surveillance_roi_enable => 'पहचान को इस क्षेत्र तक सीमित करें';
+
+  @override
+  String get action_undo => 'पूर्ववत करें';
+
+  @override
   String get surveillance_detection_title => 'पहचान सेटिंग्स';
 
   @override
@@ -2882,8 +2930,14 @@ class AppLocalizationsHi extends AppLocalizations {
       'संग्रहण सीमा — पहुंचने पर सबसे पुराना स्वतः हटा देता है';
 
   @override
+  String get surveillance_storage_usage_label => 'संग्रहण उपयोग';
+
+  @override
+  String get surveillance_storage_files_label => 'फ़ाइलें';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 उपयोग / $arg2 सीमा';
   }
 
   @override

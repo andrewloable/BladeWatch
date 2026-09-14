@@ -104,6 +104,22 @@ abstract final class BladeWatchTheme {
         elevation: 0,
         titleTextStyle: textTheme.titleLarge,
       ),
+      // Segmented controls follow the same decision as BwChoiceChip
+      // (BladeWatch-hpcd): native fills the selected segment with the primary
+      // colour. Unlike chips this CAN live in the theme, because every
+      // SegmentedButton in the app is a single-choice selector — there is no
+      // multi-select variant whose check mark carries meaning.
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? tokens.primary : tokens.surface,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? tokens.onPrimary : tokens.onSurface,
+          ),
+          side: WidgetStatePropertyAll(BorderSide(color: tokens.outlineVariant)),
+        ),
+      ),
     );
   }
 }

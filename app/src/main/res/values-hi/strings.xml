@@ -8,17 +8,17 @@
     <string name="action_select_all_short">सभी</string>
     <string name="action_delete">हटाएँ</string>
     <string name="action_done">किया गया</string>
-    <string name="action_remind_me_later">मुझे बाद में याद रखें</string>
+    <string name="action_remind_me_later">बाद में याद दिलाएँ</string>
     <string name="action_retry">पुनः प्रयास करें</string>
-    <string name="action_run">दौड़ें</string>
-    <string name="action_clear_output">स्पष्ट आउटपुट</string>
+    <string name="action_run">चलाएँ</string>
+    <string name="action_clear_output">आउटपुट साफ़ करें</string>
     <string name="cd_camera">कैमरा</string>
     <string name="cd_qr">क्युआर</string>
     <string name="cd_qr_code">क्यूआर कोड</string>
     <string name="cd_show_hide_token">दिखाएँ/छोड़ें टोकन</string>
-    <string name="cd_copy_token">कॉपी टोकन</string>
-    <string name="cd_copy_url">कॉपी URL</string>
-    <string name="cd_clear_logs">स्पष्ट लॉग</string>
+    <string name="cd_copy_token">टोकन कॉपी करें</string>
+    <string name="cd_copy_url">URL कॉपी करें</string>
+    <string name="cd_clear_logs">लॉग साफ़ करें</string>
     <string name="cd_expand_collapse">विस्तार/विघटन</string>
     <string name="cd_recording_status">रिकॉर्डिंग की स्थिति</string>
     <string name="cd_trip_tracking_status">यात्रा ट्रैकिंग की स्थिति</string>
@@ -31,7 +31,7 @@
     <string name="cd_delete">हटाएँ</string>
     <string name="cd_expand">विस्तार</string>
     <string name="cd_configure">विन्यास</string>
-    <string name="cd_download_log">डाउनलोड लॉग</string>
+    <string name="cd_download_log">लॉग डाउनलोड करें</string>
     <string name="cd_reset">रीसेट</string>
     <string name="cd_battery">बैटरी</string>
     <string name="cd_step_completed">चरण पूरा हुआ</string>
@@ -39,7 +39,7 @@
     <string name="overlay_rec_inactive_label">REC</string>
     <string name="overlay_trip_inactive_label">TRIP</string>
     <string name="log_entry_default_timestamp">12:34:56</string>
-    <string name="log_entry_default_tag">[टैग]</string>
+    <string name="log_entry_default_tag">[TAG]</string>
     <string name="log_entry_default_message">लॉग संदेश यहाँ</string>
     <string name="daemon_card_default_name">सेवा का नाम</string>
     <string name="daemon_card_default_status">स्थिति संदेश</string>
@@ -50,8 +50,8 @@
     <string name="camera_selection_subtitle">पैनोरमा कैमरा स्रोत का चयन करें</string>
     <string name="camera_current_auto">वर्तमानः ऑटो</string>
     <string name="camera_option_auto">ऑटो (स्टार्टअप पर पता लगाएं)</string>
-    <string name="camera_option_0">कैमरा 0  Atto ट्रिम</string>
-    <string name="camera_option_1">कैमरा 1  Seal (पूर्वनिर्धारित)</string>
+    <string name="camera_option_0">कैमरा 0 — Atto ट्रिम</string>
+    <string name="camera_option_1">कैमरा 1 — Seal (पूर्वनिर्धारित)</string>
     <string name="camera_option_2">कैमरा 2</string>
     <string name="camera_option_3">कैमरा 3</string>
     <string name="camera_option_4">कैमरा 4</string>
@@ -60,7 +60,7 @@
     <string name="dashboard_scan_to_connect">कनेक्ट करने के लिए स्कैन करें</string>
     <string name="dashboard_qr_waiting">सुरंग के लिए इंतजार...</string>
     <string name="dashboard_daemons_running_default">0/5 चल रहा है</string>
-    <string name="dashboard_device_id_loading">...</string>
+    <string name="dashboard_device_id_loading">…</string>
     <string name="dashboard_access_code">एक्सेस कोड</string>
     <string name="dashboard_token_masked">••••••••</string>
     <string name="dashboard_regenerate_token">पुनरुत्पादन टोकन</string>
@@ -73,7 +73,7 @@
     <string name="setup_language_body">अपनी मुख्य इकाई की भाषा में डिफ़ॉल्ट। BladeWatch ऐप और वेब सुरंग के लिए एक अलग चुनने के लिए टैप करें।</string>
     <string name="setup_language_button">भाषा चुनें</string>
     <string name="setup_autostart_title">ऑटो-स्टार्ट प्रतिबंध को अक्षम करें</string>
-    <string name="setup_autostart_body">BYD ऑटो-स्टार्ट खोलने के लिए नीचे टैप करें. सूची में BladeWatch खोजें और बॉक्स को अनचेक करें. BYD प्रत्येक स्थापना पर इसे मिटा देता है  आप अद्यतन के बाद इसे फिर से करेंगे.</string>
+    <string name="setup_autostart_body">BYD ऑटो-स्टार्ट खोलने के लिए नीचे टैप करें. सूची में BladeWatch खोजें और बॉक्स को अनचेक करें. BYD प्रत्येक स्थापना पर इसे मिटा देता है — आप अद्यतन के बाद इसे फिर से करेंगे.</string>
     <string name="setup_autostart_button">BYD ऑटो-स्टार्ट खोलें</string>
     <string name="setup_overlay_title">अन्य ऐप्स पर डिस्प्ले की अनुमति दें</string>
     <string name="setup_overlay_body">अन्य ऐप्स के शीर्ष पर रिकॉर्डिंग और यात्रा ट्रैकिंग के लिए एक फ्लोटिंग स्थिति सूचक दिखाने के लिए इसे सक्षम करें।</string>
@@ -101,7 +101,7 @@
     <string name="zrok_reset_environment_desc">पर्यावरण और टोकन को हटा देता है। आपको अपने टोकन के साथ फिर से सक्षम करना होगा (डिवाइस स्लॉट का उपयोग करता है) ।</string>
     <string name="reset_title">डेटा रीसेट करें</string>
     <string name="reset_subtitle">श्रेणी के अनुसार संचित डेटा मिटाएं</string>
-    <string name="reset_warning">इसे रद्द नहीं किया जा सकता है। रिकॉर्डिंग, यात्राएं और बैटरी इतिहास स्थायी रूप से हटा दिए जाएंगे।</string>
+    <string name="reset_warning">इसे पूर्ववत नहीं किया जा सकता। रिकॉर्डिंग, यात्राएँ और बैटरी इतिहास स्थायी रूप से हटा दिए जाएँगे।</string>
     <string name="reset_cat_trips">यात्राएँ</string>
     <string name="reset_cat_trips_desc">यात्रा इतिहास, मार्ग, साप्ताहिक/मासिक रोलअप</string>
     <string name="reset_cat_soc_history">SoC &amp; 12V इतिहास</string>
@@ -143,15 +143,15 @@
     <string name="recording_lib_date_all_days">सभी दिन</string>
     <string name="cd_clear_date_filter">सभी दिन दिखाएँ</string>
     <string name="recording_lib_section_morning">सुबह</string>
-    <string name="recording_lib_section_afternoon">सुप्रभात</string>
+    <string name="recording_lib_section_afternoon">दोपहर</string>
     <string name="recording_lib_section_evening">शाम</string>
     <string name="recording_lib_section_night">रात</string>
     <string name="cd_previous_day">पिछला दिन</string>
     <string name="cd_next_day">अगले दिन</string>
-    <string name="cd_open_filters">खुले फ़िल्टर</string>
-    <string name="cd_clear_filter">साफ फ़िल्टर</string>
+    <string name="cd_open_filters">फ़िल्टर खोलें</string>
+    <string name="cd_clear_filter">फ़िल्टर हटाएँ</string>
     <string name="player_title_recording">रिकॉर्डिंग</string>
-    <string name="player_time_zero">0:00 बजे</string>
+    <string name="player_time_zero">0:00</string>
     <string name="player_time_separator"> / </string>
     <string name="daemons_hero_title">पृष्ठभूमि सेवाएं</string>
     <string name="daemons_count_pending">लोड सेवाएं...</string>
@@ -186,8 +186,8 @@
         <item quantity="other">%d रिकॉर्डिंग को हटाएँ</item>
     </plurals>
     <plurals name="delete_recordings_message">
-        <item quantity="one">यह %d रिकॉर्डिंग को स्थायी रूप से मिटा देगा।</item>
-        <item quantity="other">यह %d रिकॉर्डिंगों को स्थायी रूप से मिटा देगा. यह रद्द नहीं किया जा सकता है.</item>
+        <item quantity="one">यह %d रिकॉर्डिंग को स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।</item>
+        <item quantity="other">यह %d रिकॉर्डिंग को स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।</item>
     </plurals>
     <string name="toast_app_up_to_date">ऐप अद्यतित है (v%1$s)</string>
     <string name="toast_storage_permission_required">रिकॉर्डिंग के लिए आवश्यक भंडारण अनुमति</string>
@@ -195,13 +195,13 @@
     <string name="toast_camera_set_to_auto">ऑटो पर कैमरा सेट</string>
     <string name="toast_failed_to_save_short">सहेजने में विफल</string>
     <string name="toast_failed_with_message">विफल: %1$s</string>
-    <string name="toast_camera_id_set">कैमरा %1$d सेट  अगला ACC चक्र</string>
+    <string name="toast_camera_id_set">कैमरा %1$d सेट — अगला ACC चक्र</string>
     <string name="toast_clearing_camera_config">कैमरा कॉन्फ़िगरेशन को साफ करना...</string>
     <string name="toast_restarting_camera_daemon">कैमरा सेवा पुनरारंभ हो रही है...</string>
     <string name="toast_camera_daemon_restarting">पूर्ण जांच के साथ कैमरा सेवा पुनः आरंभ</string>
     <string name="toast_camera_restart_failed">कॉन्फ़िगरेशन साफ किया गया है, लेकिन सेवा पुनरारंभ विफल रहा है. कृपया मैन्युअल रूप से पुनरारंभ करें.</string>
     <string name="toast_failed_with_message_x">असफलः %1$s</string>
-    <string name="toast_soh_reset_success">SOH अनुमान रीसेट  अगले आंकड़ों से पुनः गणना करेगा</string>
+    <string name="toast_soh_reset_success">SOH अनुमान रीसेट — अगले आंकड़ों से पुनः गणना करेगा</string>
     <string name="toast_soh_reset_failed_no_daemon">रीसेट विफल — सेवा प्रतिक्रिया नहीं दे रही और फ़ाइल लिखने योग्य नहीं है</string>
     <string name="toast_soh_reset_failed_with_message">रीसेट विफल: %1$s</string>
     <string name="toast_select_at_least_one_category">कम से कम एक श्रेणी का चयन करें</string>
@@ -216,16 +216,16 @@
     <string name="dialog_keep_enabled">अनुमति बनाए रखें</string>
     <string name="dialog_keep_disabled">विकलांगता बनाए रखें</string>
     <string name="dialog_regenerate">पुनर्जन्म</string>
-    <string name="dialog_reset_selected">रीसेट चयनित</string>
+    <string name="dialog_reset_selected">चयनित को रीसेट करें</string>
     <string name="dialog_reset_soh_title">SOH अनुमान को रीसेट करें?</string>
     <string name="dialog_reset_soh_message">यह सभी SOH डेटा को साफ़ करेगा और खरोंच से पुनः अनुमान लगाने के लिए मजबूर करेगा।\n\nइसका उपयोग करें यदिः\n• बैटरी को बदल दिया गया था\n• SOH रीडिंग गलत लगती है\n• आप रीकैलिब्रेट करना चाहते हैं\n\nसिस्टम अगले उपलब्ध डेटा स्रोत (OEM, चार्ज कैलिब्रेशन, या तत्काल रीडिंग) से फिर से बीज होगा।</string>
     <string name="dialog_reset_following_title">निम्नलिखित को रीसेट करें?</string>
-    <string name="dialog_reset_following_message">This cannot be undone.\n\n%1$s</string>
+    <string name="dialog_reset_following_message">इसे पूर्ववत नहीं किया जा सकता।\n\n%1$s</string>
     <string name="dialog_reset_complete_title">पूर्ण रीसेट</string>
     <string name="dialog_traffic_cannot_check_title">स्थिति की जांच नहीं कर सका</string>
     <string name="dialog_traffic_cannot_check_message">ADB कनेक्ट नहीं है, और ऐप खुद से फिर से कनेक्ट नहीं हो पाया।\n\nइस वाहन में, डेवलपर विकल्पों का सामान्य \"USB डिबगिंग\" स्विच अकेला पर्याप्त नहीं है — हेड यूनिट की अपनी वायरलेस ADB (नेटवर्क डिबगिंग) सेटिंग भी चालू होनी चाहिए, और सिस्टम अपडेट इसे बंद कर सकता है। हेड यूनिट पर वायरलेस ADB को पुनः चालू करें, या USB से कनेक्ट करें।\n\nकनेक्ट होते ही स्थिति खुद से अपडेट हो जाएगी।</string>
     <string name="dialog_traffic_disable_title">BYD ट्रैफिक मॉनिटर को निष्क्रिय करें?</string>
-    <string name="dialog_traffic_disable_message">BYD ट्रैफिक मॉनिटर (com.byd.trafficmonitor) एक अंतर्निहित सिस्टम ऐप है जो लगातार पृष्ठभूमि में सड़क यातायात की स्थिति की निगरानी करता है।\n\n️ इसे निष्क्रिय क्यों करें?\n\n• मोबाइल डेटा का उपभोग करता है (यहां तक कि जब पार्किंग की जाती है)\n• पृष्ठभूमि में CPU और बैटरी का उपयोग करता है\n• यदि आप एक अलग नेविगेशन ऐप का उपयोग करते हैं\n• डैशकैम के नेटवर्क उपयोग में हस्तक्षेप कर सकता है\n\nयह निष्क्रिय करने के लिए सुरक्षित है  यह केवल नक्शे पर अंतर्निहित यातायात ओवरले को प्रभावित करता है। आपका नेविगेशन, Bluetooth, और अन्य सभी कार कार्यों को प्रभावित नहीं करता है।\n\n\nएक हार्ड रीबूट</string>
+    <string name="dialog_traffic_disable_message">BYD Traffic Monitor (com.byd.trafficmonitor) एक अंतर्निहित सिस्टम ऐप है जो पृष्ठभूमि में लगातार सड़क यातायात की निगरानी करता है।\n\nइसे बंद क्यों करें?\n\n• मोबाइल डेटा खर्च करता है (खड़ी गाड़ी में भी)\n• पृष्ठभूमि में CPU और बैटरी का उपयोग करता है\n• अलग नेविगेशन ऐप इस्तेमाल करने पर इसकी ज़रूरत नहीं\n• डैशकैम के नेटवर्क उपयोग में बाधा डाल सकता है\n\nइसे बंद करना सुरक्षित है — इससे केवल मानचित्र पर अंतर्निहित ट्रैफ़िक परत प्रभावित होती है। नेविगेशन, ब्लूटूथ और कार के बाकी सभी कार्य अप्रभावित रहते हैं।\n\nबंद करने के बाद हार्ड रीबूट ज़रूरी है (सेंटर कंसोल बटन 5 सेकंड दबाए रखें)।</string>
     <string name="dialog_traffic_enable_title">BYD ट्रैफिक मॉनिटर को फिर से सक्षम करें?</string>
     <string name="dialog_traffic_enable_message">BYD ट्रैफिक मॉनिटर वर्तमान में अक्षम है।\n\n इसे फिर से सक्षम करने से नेविगेशन मानचित्र पर अंतर्निहित ट्रैफिक ओवरलैप को बहाल किया जाएगा। ध्यान दें कि यह पृष्ठभूमि में चलेगा और मोबाइल डेटा का उपभोग करेगा।\n\n सक्षम करने के बाद एक हार्ड रीबूट की आवश्यकता होती है (केंद्र कंसोल बटन 5 सेकंड रखें) ।</string>
     <string name="dialog_traffic_status_title">ट्रैफिक मॉनिटर %1$s</string>
@@ -249,13 +249,13 @@
     <string name="dashboard_no_tunnel">कोई सुरंग नहीं चल रही है</string>
     <string name="dashboard_starting_zrok">Zrok सुरंग शुरू...</string>
     <string name="dashboard_waiting_url">सुरंग URL के लिए इंतजार...</string>
-    <string name="dashboard_daemons_running">%1$d/%2$d चल रहा है</string>
+    <string name="dashboard_daemons_running">%1$s/%2$s चल रहे हैं</string>
     <string name="tunnel_label_zrok">Zrok</string>
     <string name="clip_label_access_code">एक्सेस कोड</string>
     <string name="clip_label_url">URL</string>
     <string name="toast_no_config_needed">%1$s के लिए कोई कॉन्फ़िगरेशन आवश्यक नहीं है</string>
     <string name="dialog_zrok_token_title">Zrok सुरंग टोकन</string>
-    <string name="dialog_zrok_token_message">अपने Zrok सक्षम टोकन दर्ज करें.</string>
+    <string name="dialog_zrok_token_message">अपना Zrok सक्षम टोकन दर्ज करें।\nइसे यहाँ से लें: zrok.io</string>
     <string name="toast_token_cannot_be_empty">टोकन खाली नहीं हो सकता</string>
     <string name="dialog_zrok_reset_title">Zrok पर्यावरण को रीसेट करें</string>
     <string name="dialog_zrok_reset_message">यह:\n• बंद कर देगा zrok सुरंग यदि चल रहा है\n• इस डिवाइस से zrok वातावरण निकालें\n• सहेजे गए टोकन को हटाएं\n\nआपको अपने टोकन को फिर से दर्ज करने और फिर से सक्षम करने की आवश्यकता होगी। यह zrok.io पर आपके 5 डिवाइस स्लॉट में से एक का उपयोग करता है।\n\nक्या आप सुनिश्चित हैं?</string>
@@ -281,17 +281,17 @@
     <string name="log_header_truncated">नोटः 10000 पंक्तियों तक काटा हुआ लॉग (कुलः %1$d पंक्तियाँ)</string>
     <string name="toast_cannot_play_video">वीडियो नहीं खेल सकतेः %1$s</string>
     <string name="dialog_delete_recording_title">रिकॉर्डिंग हटाएँ</string>
-    <string name="dialog_delete_recording_message">%1$s हटाएं?</string>
+    <string name="dialog_delete_recording_message">%1$s हटाएँ?\nइसे पूर्ववत नहीं किया जा सकता।</string>
     <string name="toast_recording_deleted">रिकॉर्डिंग हटाई गई</string>
     <string name="toast_recording_delete_failed">रिकॉर्डिंग को हटाने में विफल</string>
     <string name="toast_batch_delete_partial">%1$d हटाया गया, %2$d विफल रहा</string>
     <string name="play_with_chooser">खेलने के साथ</string>
-    <string name="setup_version_banner">v%1$s के लिए अद्यतन  फिर से पुष्टि ऑटोस्टार्ट, BYD हर स्थापना पर इसे मिटा देता है</string>
+    <string name="setup_version_banner">v%1$s के लिए अद्यतन — फिर से पुष्टि ऑटोस्टार्ट, BYD हर स्थापना पर इसे मिटा देता है</string>
     <string name="setup_overlay_already_granted">पहले से ही दी गई</string>
     <string name="camera_current_manual">वर्तमानः कैमरा %1$d (मैनुअल)</string>
     <string name="camera_current_auto_label">वर्तमानः ऑटो</string>
     <string name="soh_estimation_active">अनुमान सक्रिय</string>
-    <string name="soh_no_estimate_yet">अभी कोई अनुमान नहीं  आंकड़ों की प्रतीक्षा है</string>
+    <string name="soh_no_estimate_yet">अभी कोई अनुमान नहीं — आंकड़ों की प्रतीक्षा है</string>
     <string name="recording_lib_selected_count">%1$d चयनित</string>
     <string name="video_player_playback_error">प्लेबैक त्रुटि</string>
     <string name="video_player_no_events">कोई घटना नहीं</string>
@@ -301,7 +301,7 @@
     <string name="status_overlay_notif_title">BladeWatch स्थिति</string>
     <string name="status_overlay_notif_text">स्थिति ओवरले सक्रिय</string>
     <string name="rail_dashboard">डैशबोर्ड</string>
-    <string name="rail_live">जीवित</string>
+    <string name="rail_live">लाइव</string>
     <string name="rail_recordings">रिकॉर्डिंग</string>
     <string name="rail_vehicle">वाहन</string>
     <string name="rail_trips">यात्राएँ</string>
@@ -330,14 +330,14 @@
     <string name="settings_about_support_section">आप जैसे लोगों द्वारा संचालित</string>
     <string name="settings_about_support_share_title">किसी और मालिक को बताएं</string>
     <string name="settings_about_support_share_value">प्रत्येक साझा लिंक एक और BYD मालिक ओवरड्राइव की खोज करने में मदद करता है।</string>
-    <string name="settings_about_support_share_message">BYD के लिए ओवरड्राइव  ओपन सोर्स निगरानी और डैशकैम देखेंः https://bladewatch-5lc.pages.dev/</string>
+    <string name="settings_about_support_share_message">BYD के लिए ओवरड्राइव — ओपन सोर्स निगरानी और डैशकैम देखेंः https://bladewatch-5lc.pages.dev/</string>
     <string name="settings_about_support_share_chooser">शेयर ओवरड्राइव</string>
     <string name="settings_about_open_link_failed">लिंक नहीं खोल सका।</string>
     <string name="settings_about_open_link_copied">कोई ब्राउज़र नहीं मिला। URL कॉपीः %1$s</string>
     <string name="settings_about_support_kofi_title">अगले रिलीज को ईंधन</string>
     <string name="settings_about_support_kofi_value">Ko-fi पर एक कॉफी देर रात प्रतिबद्धताओं को आगे बढ़ाती है।</string>
     <string name="settings_about_license_title">लाइसेंस</string>
-    <string name="settings_about_license_value">MIT  ओपन सोर्स. पूर्ण पाठ देखने के लिए टैप करें.</string>
+    <string name="settings_about_license_value">MIT — ओपन सोर्स. पूर्ण पाठ देखने के लिए टैप करें.</string>
     <string name="settings_about_source_title">स्रोत कोड</string>
     <string name="settings_about_source_value">github.com/yash-srivastava/BladeWatch-release</string>
     <string name="settings_about_star_title">GitHub पर छोड़ें</string>
@@ -348,9 +348,9 @@
     <string name="settings_about_supporters_title">समर्थक</string>
     <string name="settings_about_thanks_empty">जैसे-जैसे लोग योगदान देंगे, सूची भरती जाएगी।</string>
     <string name="settings_theme_label">विषय</string>
-    <string name="settings_theme_auto">ऑटो (फॉलो सिस्टम)</string>
-    <string name="settings_theme_light">प्रकाश</string>
-    <string name="settings_theme_dark">अंधेरा</string>
+    <string name="settings_theme_auto">ऑटो (सिस्टम के अनुसार)</string>
+    <string name="settings_theme_light">लाइट</string>
+    <string name="settings_theme_dark">डार्क</string>
     <string name="settings_language_label">भाषा</string>
     <string name="recordings_title">रिकॉर्डिंग</string>
     <string name="recordings_segment_dashcam">डैशकैम</string>
@@ -435,7 +435,7 @@
     <string name="dashboard_tunnel_online">ऑनलाइन</string>
     <string name="dashboard_tunnel_connecting">कनेक्टिंग ...</string>
     <string name="dashboard_action_live">लाइव दृश्य</string>
-    <string name="dashboard_action_live_subtitle">कैमरा दृश्य खुला</string>
+    <string name="dashboard_action_live_subtitle">कैमरा दृश्य खोलें</string>
     <string name="dashboard_action_recordings">रिकॉर्डिंग</string>
     <string name="dashboard_action_settings">सेटिंग्स</string>
     <string name="dashboard_action_settings_subtitle">वरीयताओं और बारे में</string>
@@ -455,9 +455,9 @@
     <string name="settings_footer_format">BladeWatch %1$s · %2$s</string>
     <string name="settings_appearance_subtitle">विषय, भाषा और दृश्य वरीयताएँ।</string>
     <string name="settings_theme_active_auto_caption">ऑटो आपके सिस्टम विषय का पालन करता है।</string>
-    <string name="settings_theme_active_light_caption">प्रकाश विषय हमेशा चालू है।</string>
-    <string name="settings_theme_active_dark_caption">अंधेरे विषय हमेशा पर है।</string>
-    <string name="settings_language_count_format">%1$d की उपलब्ध %2$d भाषाएँ</string>
+    <string name="settings_theme_active_light_caption">लाइट थीम हमेशा चालू रहती है।</string>
+    <string name="settings_theme_active_dark_caption">डार्क थीम हमेशा चालू रहती है।</string>
+    <string name="settings_language_count_format">%2$s में से %1$s भाषाएँ उपलब्ध</string>
     <string name="settings_language_card_title">प्रदर्शन भाषा</string>
     <string name="settings_privacy_stance_title">डिफ़ॉल्ट रूप से डिवाइस पर</string>
     <string name="settings_privacy_stance_body">BladeWatch पूरी तरह से मुख्य इकाई पर चलता है. आप स्पष्ट रूप से विन्यस्त सुरंगों और एकीकरण के माध्यम से सिवाय कोई टेलीमेट्री अपनी कार छोड़ देता है.</string>
@@ -476,7 +476,7 @@
     <string name="diagnostics_battery_value_soh">%1$.0f%%</string>
     <string name="diagnostics_battery_value_pending">लंबित आंकड़े</string>
     <string name="dashboard_recordings_value_live">● %1$d</string>
-    <string name="dashboard_insight_welcome">आपका स्वागत है  ओवरड्राइव अब आपकी दूसरी आँखों की जोड़ी है।</string>
+    <string name="dashboard_insight_welcome">आपका स्वागत है — ओवरड्राइव अब आपकी दूसरी आँखों की जोड़ी है।</string>
     <string name="dashboard_insight_parked_charged_kwh">%1$s (≈%2$s) को पार्किंग के दौरान उठाया गया</string>
     <string name="dashboard_insight_parked_charged">%1$s को पार्किंग के दौरान उठाया गया</string>
     <string name="dashboard_insight_parked_drained_kwh">आप पार्किंग के बाद से इस्तेमाल किया %1$s (≈%2$s)</string>
@@ -486,7 +486,7 @@
     <string name="dashboard_insight_storage_milestone">%1$d क्लिप · %2$s रिकॉर्ड</string>
     <string name="dashboard_insight_kwh_format">%1$.1f kWh</string>
     <string name="dashboard_insight_percent_format">%1$.1f%%</string>
-    <string name="dashboard_insight_hours_minutes">%1$d hr %2$d min</string>
+    <string name="dashboard_insight_hours_minutes">%1$d घं %2$d मि</string>
     <plurals name="dashboard_insight_today_clips">
         <item quantity="one">%1$d क्लिप आज रिकॉर्ड किया गया</item>
         <item quantity="other">आज दर्ज किए गए %1$d क्लिप</item>
@@ -509,31 +509,31 @@
     </plurals>
 
 <!-- BEGIN GENERATED vehicle-view i18n — DO NOT EDIT MANUALLY -->
-    <string name="vehicle_tab_trunk">ट्रंक</string>
-    <string name="vehicle_tab_climate">जलवायु</string>
+    <string name="vehicle_tab_trunk">डिक्की</string>
+    <string name="vehicle_tab_climate">क्लाइमेट</string>
     <string name="vehicle_tab_seats">सीटें</string>
     <string name="vehicle_tab_lights">रोशनी</string>
     <string name="vehicle_tab_adas">ADAS</string>
     <string name="vehicle_control_charging_tab">चार्जिंग</string>
     <string name="vehicle_locked">बंद</string>
     <string name="vehicle_unlocked">अनलॉक किया गया</string>
-    <string name="vehicle_close_trunk">बंद ट्रंक</string>
+    <string name="vehicle_close_trunk">डिक्की बंद करें</string>
     <string name="vehicle_ac_on">AC चालू</string>
     <string name="vehicle_ac_off">AC बंद</string>
     <string name="vehicle_seat_pos_1">पद 1</string>
     <string name="vehicle_seat_pos_2">पद 2</string>
     <string name="vehicle_all_windows">सभी खिड़कियाँ</string>
-    <string name="vehicle_sunroof">धूप की छत</string>
+    <string name="vehicle_sunroof">सनरूफ</string>
     <string name="vehicle_sunshade">सनशेड</string>
     <string name="vehicle_btn_drl_title">दिन के समय चलने वाली रोशनी</string>
     <string name="vehicle_btn_slw_title">गति सीमा चेतावनी</string>
     <string name="vehicle_control_section_charge_cap">चार्ज सीमा</string>
     <string name="vehicle_tyre_no_signal">कोई संकेत नहीं</string>
-    <string name="vehicle_tyre_slow_leak">धीमी लीक</string>
-    <string name="vehicle_tyre_fast_leak">तेजी से रिसाव</string>
+    <string name="vehicle_tyre_slow_leak">धीमा रिसाव</string>
+    <string name="vehicle_tyre_fast_leak">तेज़ रिसाव</string>
     <string name="vehicle_tyre_low">कम</string>
     <string name="vehicle_tyre_high">उच्च</string>
-    <string name="vehicle_tyre_ok">ठीक है</string>
+    <string name="vehicle_tyre_ok">सामान्य</string>
 <!-- END GENERATED vehicle-view i18n -->
 
     <!-- i18n backfill: native string parity with base (BladeWatch-h9kg / 0n2n) -->
@@ -654,4 +654,13 @@
     <string name="trip_no_route_data">इस यात्रा के लिए कोई मार्ग डेटा नहीं</string>
     <string name="rec_severity_critical">गंभीर</string>
     <string name="rec_severity_alert">अलर्ट</string>
+    <!-- Background-service display names (DaemonAdapter.getDaemonDisplayName).
+         BladeWatch-def0: these were hardcoded English in the adapter, so they
+         stayed English in all 17 locales. Zrok is a product name and is not
+         translated. Keep the English wording byte-identical: it appears in the
+         docs and the daemon logs. -->
+    <string name="daemon_name_camera">कैमरा सेवा</string>
+    <string name="daemon_name_surveillance">निगरानी सेवा</string>
+    <string name="daemon_name_acc">ACC निगरानी</string>
+    <string name="daemon_name_zrok">Zrok Tunnel</string>
 </resources>

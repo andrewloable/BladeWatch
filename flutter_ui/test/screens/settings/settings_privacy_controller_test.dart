@@ -125,5 +125,26 @@ void main() {
       expect(c.debugLogsEnabled, isTrue);
       expect(calls, [('debugLogsEnabled', true)]);
     });
+
+    // BladeWatch-hygs: persistLogging is now a real IPC write — see
+    // SettingsOverlayController's matching tests.
+    test('a failed timing-logs write snaps the switch back and notifies again', () async {
+      final c = build(persistLogging: (k, v) async => throw StateError('daemon down'));
+      var notified = 0;
+      c.addListener(() => notified++);
+
+      await c.setTimingLogsEnabled(false);
+
+      expect(c.timingLogsEnabled, isTrue);
+      expect(notified, 2);
+    });
+
+    test('a failed debug-logs write snaps the switch back', () async {
+      final c = build(persistLogging: (k, v) async => throw StateError('daemon down'));
+
+      await c.setDebugLogsEnabled(true);
+
+      expect(c.debugLogsEnabled, isFalse);
+    });
   });
 }

@@ -4,10 +4,22 @@ import 'package:bladewatch_ui/screens/settings/settings_appearance_controller.da
 import 'package:bladewatch_ui/screens/settings/settings_appearance_screen.dart';
 import 'package:bladewatch_ui/shell/shell_controller.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/shell/locale_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_platform_channel.dart';
+
+class _MemLocaleStore implements LocaleStore {
+  String? _tag;
+  @override
+  Future<String?> readRaw() async => _tag;
+  @override
+  Future<bool> writeRaw(String tag) async {
+    _tag = tag;
+    return true;
+  }
+}
 
 void main() {
   late FakePlatformChannel channel;
@@ -19,7 +31,8 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
-          body: SettingsAppearanceScreen(controller: controller, onOpenLanguagePicker: () => languagePickerOpened = true),
+          body: SettingsAppearanceScreen(
+        localeController: LocaleController(store: _MemLocaleStore()),controller: controller, onOpenLanguagePicker: () => languagePickerOpened = true),
         ),
       );
 
@@ -36,14 +49,63 @@ void main() {
   SettingsAppearanceController buildController() =>
       SettingsAppearanceController(prefs: PrefsChannel(channel), shellController: shellController);
 
+  /// Selection is asserted through SEMANTICS rather than by casting to a widget
+  /// type: the theme and drive-side options are now preview/subtitle tiles
+  /// (BladeWatch-mrsc) instead of ChoiceChips, and a test that pins the widget
+  /// class breaks on every presentation change while proving nothing a user
+  /// would notice. Semantics is also what an accessibility service reads.
+  bool isSelected(WidgetTester tester, String key) =>
+      tester
+          .widget<Semantics>(
+            find.ancestor(of: find.byKey(ValueKey(key)), matching: find.byType(Semantics)).first,
+          )
+          .properties
+          .selected ??
+      false;
+
+  testWidgets('the language row shows Auto while following the system', (tester) async {
+    await tester.pumpWidget(wrap(buildController()));
+    await tester.pumpAndSettle();
+
+    // Native shows the CURRENT language on this row plus how many exist; the
+    // port used to show neither (BladeWatch-mrsc).
+    final row = find.byKey(const ValueKey('language.card'));
+    expect(find.descendant(of: row, matching: find.text('Auto')), findsOneWidget);
+    expect(find.descendant(of: row, matching: find.textContaining('languages available')), findsOneWidget);
+  });
+
+  testWidgets('the language row shows the chosen language in its own script', (tester) async {
+    final store = _MemLocaleStore();
+    await store.writeRaw('de');
+    final locales = LocaleController(store: store);
+    await locales.load();
+
+    await tester.pumpWidget(MaterialApp(
+      theme: BladeWatchTheme.light(),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: SettingsAppearanceScreen(
+          localeController: locales,
+          controller: buildController(),
+          onOpenLanguagePicker: () {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('language.card')), matching: find.text('Deutsch')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('renders the default (system, left) selections', (tester) async {
     await tester.pumpWidget(wrap(buildController()));
     await tester.pumpAndSettle();
 
-    final systemChip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('theme.system')));
-    expect(systemChip.selected, isTrue);
-    final leftChip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('driveSide.left')));
-    expect(leftChip.selected, isTrue);
+    expect(isSelected(tester, 'theme.system'), isTrue);
+    expect(isSelected(tester, 'driveSide.left'), isTrue);
   });
 
   testWidgets('tapping the System chip re-selects it and persists via the prefs channel', (tester) async {
@@ -64,8 +126,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('theme.light')));
     await tester.pump();
 
-    final lightChip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('theme.light')));
-    expect(lightChip.selected, isTrue);
+    expect(isSelected(tester, 'theme.light'), isTrue);
     final call = channel.calls.firstWhere((c) => c.method == 'setThemeMode');
     expect((call.args as Map)['value'], 'light');
   });
@@ -88,8 +149,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('theme.dark')));
     await tester.pump();
 
-    final darkChip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('theme.dark')));
-    expect(darkChip.selected, isTrue);
+    expect(isSelected(tester, 'theme.dark'), isTrue);
     final call = channel.calls.firstWhere((c) => c.method == 'setThemeMode');
     expect((call.args as Map)['value'], 'dark');
   });
@@ -101,8 +161,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('driveSide.right')));
     await tester.pump();
 
-    final rightChip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('driveSide.right')));
-    expect(rightChip.selected, isTrue);
+    expect(isSelected(tester, 'driveSide.right'), isTrue);
     expect(find.text('Navigation on right'), findsOneWidget);
   });
 
@@ -130,7 +189,8 @@ void main() {
       theme: BladeWatchTheme.dark(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: SettingsAppearanceScreen(controller: buildController(), onOpenLanguagePicker: () {})),
+      home: Scaffold(body: SettingsAppearanceScreen(
+        localeController: LocaleController(store: _MemLocaleStore()),controller: buildController(), onOpenLanguagePicker: () {})),
     ));
     await tester.pumpAndSettle();
 

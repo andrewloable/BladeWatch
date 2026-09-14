@@ -191,6 +191,8 @@
   "language_auto_title": "Auto",
   "@language_auto_title": {},
   "language_auto_subtitle": "Follow system · {arg1}",
+  "language_not_saved": "Language applied, but it could not be saved — it will reset when the app restarts.",
+  "@language_not_saved": {},
   "@language_auto_subtitle": {
     "placeholders": {
       "arg1": {}
@@ -396,6 +398,14 @@
   "@player_time_zero": {},
   "player_time_separator": " / ",
   "@player_time_separator": {},
+  "daemon_name_camera": "Camera Daemon",
+  "@daemon_name_camera": {},
+  "daemon_name_surveillance": "Surveillance Daemon",
+  "@daemon_name_surveillance": {},
+  "daemon_name_acc": "ACC Surveillance",
+  "@daemon_name_acc": {},
+  "daemon_name_zrok": "Zrok Tunnel",
+  "@daemon_name_zrok": {},
   "daemons_hero_title": "Background services",
   "@daemons_hero_title": {},
   "daemons_count_pending": "Loading services…",
@@ -425,6 +435,10 @@
   "@battery_health_samples": {},
   "battery_health_last_updated": "Last Updated",
   "@battery_health_last_updated": {},
+  "battery_health_unavailable": "Not available",
+  "@battery_health_unavailable": {},
+  "battery_health_unavailable_desc": "Battery health estimation is not available on this vehicle.",
+  "@battery_health_unavailable_desc": {},
   "battery_health_reset": "Reset SOH Estimation",
   "@battery_health_reset": {},
   "battery_health_reset_desc": "Clears all data and re-estimates from scratch. Use if battery was replaced or reading seems incorrect.",
@@ -1214,6 +1228,10 @@
   "@settings_recording_storage_sd_card_na": {},
   "settings_recording_storage_limit_label": "Storage Limit — auto-deletes oldest when reached",
   "@settings_recording_storage_limit_label": {},
+  "settings_recording_storage_usage_label": "Storage Usage",
+  "@settings_recording_storage_usage_label": {},
+  "settings_recording_storage_files_label": "Files",
+  "@settings_recording_storage_files_label": {},
   "settings_recording_storage_usage": "{arg1} used / {arg2} limit",
   "@settings_recording_storage_usage": {
     "placeholders": {
@@ -2082,6 +2100,14 @@
       "arg2": {}
     }
   },
+  "surveillance_roi_title": "Motion Zone",
+  "@surveillance_roi_title": {},
+  "surveillance_roi_description": "Tap to add a point, drag to move one. Three points minimum, eight maximum.",
+  "@surveillance_roi_description": {},
+  "surveillance_roi_enable": "Limit detection to this zone",
+  "@surveillance_roi_enable": {},
+  "action_undo": "Undo",
+  "@action_undo": {},
   "surveillance_detection_title": "Detection Settings",
   "@surveillance_detection_title": {},
   "surveillance_detection_preset_label": "Environment Preset",
@@ -2140,6 +2166,10 @@
   "@surveillance_storage_sd_card_na": {},
   "surveillance_storage_limit_label": "Storage Limit — auto-deletes oldest when reached",
   "@surveillance_storage_limit_label": {},
+  "surveillance_storage_usage_label": "Storage Usage",
+  "@surveillance_storage_usage_label": {},
+  "surveillance_storage_files_label": "Files",
+  "@surveillance_storage_files_label": {},
   "surveillance_storage_usage": "{arg1} used / {arg2} limit",
   "@surveillance_storage_usage": {
     "placeholders": {

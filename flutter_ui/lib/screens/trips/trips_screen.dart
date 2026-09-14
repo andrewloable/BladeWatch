@@ -5,6 +5,7 @@ import 'trip_detail_controller.dart';
 import 'trip_detail_screen.dart';
 import 'trips_controller.dart';
 import 'trips_models.dart';
+import '../../widgets/bw_choice_chip.dart';
 
 /// Ground truth: `TripsController.kt` (852 LOC) + `TripsFragment.kt`. Native
 /// puts its 3-tab bar at the *bottom* of the screen, content above it —
@@ -122,7 +123,7 @@ class _TabBar extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
+                  child: BwChoiceChip(
                     key: ValueKey(key),
                     label: Text(label, textAlign: TextAlign.center),
                     selected: tab == activeTab,
@@ -158,7 +159,7 @@ class _FilterRow extends StatelessWidget {
           for (final filter in TripsDaysFilter.values)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
+              child: BwChoiceChip(
                 key: ValueKey('trips.filter.${filter.days}'),
                 label: Text(labels[filter]!),
                 selected: filter == activeFilter,
@@ -502,22 +503,22 @@ class _StorageTabState extends State<_StorageTab> {
                 Text(l10n.trips_storage_distance_unit_label, style: theme.textTheme.labelMedium),
                 const SizedBox(height: 4),
                 Row(children: [
-                  ChoiceChip(key: const ValueKey('trips.storage.unit.km'), label: const Text('km'), selected: _distanceUnit == 'km', onSelected: (_) => setState(() => _distanceUnit = 'km')),
+                  BwChoiceChip(key: const ValueKey('trips.storage.unit.km'), label: const Text('km'), selected: _distanceUnit == 'km', onSelected: (_) => setState(() => _distanceUnit = 'km')),
                   const SizedBox(width: 8),
-                  ChoiceChip(key: const ValueKey('trips.storage.unit.mi'), label: const Text('mi'), selected: _distanceUnit == 'mi', onSelected: (_) => setState(() => _distanceUnit = 'mi')),
+                  BwChoiceChip(key: const ValueKey('trips.storage.unit.mi'), label: const Text('mi'), selected: _distanceUnit == 'mi', onSelected: (_) => setState(() => _distanceUnit = 'mi')),
                 ]),
                 const SizedBox(height: 12),
                 Text(l10n.trips_storage_location_label, style: theme.textTheme.labelMedium),
                 const SizedBox(height: 4),
                 Row(children: [
-                  ChoiceChip(
+                  BwChoiceChip(
                     key: const ValueKey('trips.storage.location.internal'),
                     label: Text(l10n.trips_storage_internal),
                     selected: _storageType == 'INTERNAL',
                     onSelected: (_) => setState(() => _storageType = 'INTERNAL'),
                   ),
                   const SizedBox(width: 8),
-                  ChoiceChip(
+                  BwChoiceChip(
                     key: const ValueKey('trips.storage.location.sdCard'),
                     label: Text(sdAvailable ? l10n.trips_storage_sd_card : l10n.trips_storage_sd_card_unavailable),
                     selected: _storageType == 'SD_CARD',

@@ -16,7 +16,7 @@ class FakeLocaleStore implements LocaleStore {
   @override
   Future<String?> readRaw() async => null;
   @override
-  Future<void> writeRaw(String tag) async {}
+  Future<bool> writeRaw(String tag) async => true;
 }
 
 void main() {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../widgets/storage_limit.dart';
 import 'settings_recording_controller.dart';
 import 'settings_recording_models.dart';
+import '../../widgets/bw_choice_chip.dart';
 
 /// Ground truth: `RecordingSettingsController.kt` — Status/Capture/Quality/
 /// Storage tabs. Tab selection is pure UI state (which pane is visible),
@@ -44,27 +46,13 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
     final theme = Theme.of(context);
     final c = widget.controller;
 
+    // BladeWatch-htel: the tab bar sits BELOW the content, as native's does
+    // (RecordingSettingsController.buildView adds the tab bar last) and as this
+    // app's own Trips screen already did. Having it on top here was the one
+    // structural difference between the two UIs' tab strips; the tabs
+    // themselves, their order and their contents already matched.
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              for (final tab in RecordingSettingsTab.values)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: ChoiceChip(
-                      key: ValueKey('recording.tab.${tab.name}'),
-                      label: Text(_tabLabel(l10n, tab)),
-                      selected: _tab == tab,
-                      onSelected: (_) => setState(() => _tab = tab),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
         Expanded(
           child: c.loading
               ? const Center(child: CircularProgressIndicator())
@@ -77,6 +65,25 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
                     RecordingSettingsTab.storage => _storageTab(l10n, theme, c),
                   },
                 ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              for (final tab in RecordingSettingsTab.values)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: BwChoiceChip(
+                      key: ValueKey('recording.tab.${tab.name}'),
+                      label: Text(_tabLabel(l10n, tab)),
+                      selected: _tab == tab,
+                      onSelected: (_) => setState(() => _tab = tab),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ],
     );
@@ -142,7 +149,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
           spacing: 8,
           children: [
             for (final limit in RecordingLimit.values)
-              ChoiceChip(
+              BwChoiceChip(
                 key: ValueKey('recording.limit.${limit.minutes}'),
                 label: Text(l10n.settings_recording_limit_minutes(limit.minutes)),
                 selected: c.selectedLimit == limit,
@@ -161,7 +168,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
           spacing: 8,
           children: [
             for (final q in RecordingQuality.values)
-              ChoiceChip(
+              BwChoiceChip(
                 key: ValueKey('recording.quality.${q.name}'),
                 label: Text(q.value),
                 selected: c.selectedQuality == q,
@@ -184,13 +191,13 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
       Wrap(
         spacing: 8,
         children: [
-          ChoiceChip(
+          BwChoiceChip(
             key: const ValueKey('recording.storage.internal'),
             label: Text(l10n.settings_recording_storage_internal),
             selected: c.selectedStorageType == 'INTERNAL',
             onSelected: (_) => c.selectStorageType('INTERNAL'),
           ),
-          ChoiceChip(
+          BwChoiceChip(
             key: const ValueKey('recording.storage.sdCard'),
             label: Text(sdAvailable ? l10n.settings_recording_storage_sd_card : l10n.settings_recording_storage_sd_card_na),
             selected: c.selectedStorageType == 'SD_CARD',
@@ -200,22 +207,39 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
       ),
       const SizedBox(height: 16),
       Text(l10n.settings_recording_storage_limit_label, style: theme.textTheme.labelMedium),
-      Text('${c.selectedLimitMb} MB', style: theme.textTheme.bodyMedium),
+      // formatStorageMb, not a raw megabyte count: native shows "16.0 GB"
+      // where the port used to show "16384 MB" (BladeWatch-htel).
+      Text(formatStorageMb(c.selectedLimitMb), style: theme.textTheme.bodyMedium),
       Slider(
         key: const ValueKey('recording.storage.limitSlider'),
         min: c.storageLimitMinMb.toDouble(),
         max: c.storageLimitMaxMb.toDouble(),
+        // Native's SeekBar is one notch per 100 MB; the port's slider was
+        // continuous, so dragging it produced values like 3847 MB.
+        divisions: storageSliderDivisions(c.storageLimitMinMb, c.storageLimitMaxMb),
         value: c.selectedLimitMb.toDouble().clamp(c.storageLimitMinMb.toDouble(), c.storageLimitMaxMb.toDouble()),
         onChanged: (v) => c.setStorageLimitMb(v.round()),
       ),
       const SizedBox(height: 8),
       if (storage != null) ...[
+        // BladeWatch-3118: label + right-aligned value on every row, matching
+        // native's infoRow(). Usage and Files used to show a bare value with
+        // nothing naming it, and Path put its value on a second line while the
+        // two rows below it right-aligned theirs.
         ListTile(
-          title: Text(l10n.settings_recording_storage_usage(
+          title: Text(l10n.settings_recording_storage_usage_label),
+          trailing: Text(l10n.settings_recording_storage_usage(
               '${(storage.recordingsSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB', '${storage.limitMb} MB')),
         ),
-        ListTile(title: Text(l10n.settings_recording_storage_files(storage.recordingsCount))),
-        if (storage.recordingsPath.isNotEmpty) ListTile(title: Text(l10n.settings_recording_storage_path_label), subtitle: Text(storage.recordingsPath)),
+        ListTile(
+          title: Text(l10n.settings_recording_storage_files_label),
+          trailing: Text(l10n.settings_recording_storage_files(storage.recordingsCount)),
+        ),
+        if (storage.recordingsPath.isNotEmpty)
+          ListTile(
+            title: Text(l10n.settings_recording_storage_path_label),
+            trailing: bwPathValue(storage.recordingsPath),
+          ),
         if (sdAvailable && storage.sdCardFreeFormatted.isNotEmpty)
           ListTile(title: Text(l10n.settings_recording_storage_sd_free_label), trailing: Text(storage.sdCardFreeFormatted)),
         if (storage.internalFreeFormatted.isNotEmpty)

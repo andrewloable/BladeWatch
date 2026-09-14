@@ -125,10 +125,13 @@ class LiveViewController extends ChangeNotifier {
     if (_textureId == null) {
       try {
         _textureId = await _textureChannel.createTexture();
-      } catch (_) {
+      } catch (e) {
         if (_generation != myGen) return;
         _running = false;
-        _publish(const LiveStreamStatus.unavailable('Camera starting — tap retry'));
+        // Safe to include the error here, unlike the connect path below: this
+        // is a platform-channel call carrying only a texture id, with no JWT
+        // and no URL in it.
+        _publish(LiveStreamStatus.unavailable('Camera starting — tap retry (create texture failed: $e)'));
         return;
       }
     }
@@ -141,22 +144,33 @@ class LiveViewController extends ChangeNotifier {
     LiveSocket? socket;
     var width = 640;
     var height = 480;
+    // Which step failed, so an exhausted budget says something more useful
+    // than a blanket "Camera starting". Deliberately a STAGE NAME and not the
+    // exception text: the connect URL carries `?token=<jwt>`, and a socket
+    // error normally embeds the URI it failed on, so echoing the error would
+    // put a live JWT on the screen and into logs.
+    var stage = 'start';
     while (_running && _generation == myGen && socket == null) {
       attempt++;
       try {
+        stage = 'enable stream';
         await _streamService.enable(EnableStreamRequest());
+        stage = 'set view mode';
         await _streamService.setViewMode(SetViewModeRequest(viewMode: _state.direction.viewMode));
+        stage = 'query dimensions';
         final dims = await _queryDimensions();
         width = dims.$1;
         height = dims.$2;
+        stage = 'auth';
         final jwt = await _jwtSource.mintJwt();
         if (jwt == null || jwt.isEmpty) throw StateError('auth not ready');
+        stage = 'websocket connect';
         socket = await _connect('$_wsUrl?token=${Uri.encodeComponent(jwt)}');
       } catch (_) {
         if (!_running || _generation != myGen) return;
         if (attempt >= _maxConnectAttempts) {
           _running = false;
-          _publish(const LiveStreamStatus.unavailable('Camera starting — tap retry'));
+          _publish(LiveStreamStatus.unavailable('Camera starting — tap retry (failed at: $stage)'));
           return;
         }
         _publish(const LiveStreamStatus.connecting());

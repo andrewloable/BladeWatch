@@ -31,22 +31,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get action_delete => 'Xoá';
 
   @override
-  String get action_done => 'DONE';
+  String get action_done => 'XONG';
 
   @override
-  String get action_remind_me_later => 'Hãy nhớ tôi sau này.';
+  String get action_remind_me_later => 'NHẮC TÔI SAU';
 
   @override
   String get action_retry => 'Thử lại';
 
   @override
-  String get action_run => 'Chạy đi.';
+  String get action_run => 'Chạy';
 
   @override
-  String get action_clear_output => 'Tạo ra rõ ràng';
+  String get action_clear_output => 'Xóa đầu ra';
 
   @override
-  String get cd_camera => 'Máy ảnh';
+  String get cd_camera => 'Camera';
 
   @override
   String get cd_qr => 'QR';
@@ -55,22 +55,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cd_qr_code => 'Mã QR';
 
   @override
-  String get cd_show_hide_token => 'Show/Hide Token';
+  String get cd_show_hide_token => 'Hiện/ẩn mã thông báo';
 
   @override
-  String get cd_copy_token => 'Tín hiệu sao chép';
+  String get cd_copy_token => 'Sao chép token';
 
   @override
-  String get cd_copy_url => 'Bản sao URL';
+  String get cd_copy_url => 'Sao chép URL';
 
   @override
-  String get cd_clear_logs => 'Nhìn rõ';
+  String get cd_clear_logs => 'Xóa nhật ký';
 
   @override
-  String get cd_expand_collapse => 'Sự mở rộng/sự sụp đổ';
+  String get cd_expand_collapse => 'Mở rộng/Thu gọn';
 
   @override
-  String get cd_recording_status => 'Tình trạng ghi âm';
+  String get cd_recording_status => 'Trạng thái ghi hình';
 
   @override
   String get cd_trip_tracking_status => 'Tình trạng theo dõi chuyến đi';
@@ -85,7 +85,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cd_back => 'Quay lại';
 
   @override
-  String get cd_play_pause => 'Play/Pause';
+  String get cd_play_pause => 'Phát/Tạm dừng';
 
   @override
   String get cd_player_prev => 'Bản ghi trước đó';
@@ -103,25 +103,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cd_delete => 'Xoá';
 
   @override
-  String get cd_expand => 'Tăng cường';
+  String get cd_expand => 'Mở rộng';
 
   @override
   String get cd_configure => 'Thiết lập';
 
   @override
-  String get cd_download_log => 'Lập nhật ký tải xuống';
+  String get cd_download_log => 'Tải nhật ký';
 
   @override
   String get cd_reset => 'Đặt lại';
 
   @override
-  String get cd_battery => 'Phòng pin';
+  String get cd_battery => 'Pin';
 
   @override
   String get cd_step_completed => 'Bước hoàn thành';
 
   @override
-  String get cd_permission_granted => 'Giấy phép được cấp';
+  String get cd_permission_granted => 'Đã cấp quyền';
 
   @override
   String get overlay_rec_inactive_label => 'REC';
@@ -133,7 +133,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '[THAG]';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => 'Thông báo đăng ký ở đây';
@@ -166,10 +166,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get camera_option_auto => 'Tự động (khám phá khi khởi động)';
 
   @override
-  String get camera_option_0 => 'Camera 0  Atto trims';
+  String get camera_option_0 => 'Camera 0 — Atto trims';
 
   @override
-  String get camera_option_1 => 'Máy ảnh 1  Seal (tạm dịch mặc định)';
+  String get camera_option_1 => 'Máy ảnh 1 — Seal (tạm dịch mặc định)';
 
   @override
   String get camera_option_2 => 'Camera 2';
@@ -188,16 +188,16 @@ class AppLocalizationsVi extends AppLocalizations {
       'Tự động chọn camera phù hợp cho phiên bản xe của bạn khi mỗi lần khởi động. Camera 1 = BYD Seal, Camera 0 = các phiên bản Atto. Khởi động lại dịch vụ camera sau khi thay đổi ID camera để cài đặt có hiệu lực.';
 
   @override
-  String get dashboard_scan_to_connect => 'Scan để kết nối';
+  String get dashboard_scan_to_connect => 'Quét để kết nối';
 
   @override
   String get dashboard_qr_waiting => 'Chờ đường hầm...';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 chạy';
+  String get dashboard_daemons_running_default => '0/5 đang chạy';
 
   @override
-  String get dashboard_device_id_loading => '...';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => 'Mã truy cập';
@@ -206,7 +206,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboard_token_masked => '••••••••';
 
   @override
-  String get dashboard_regenerate_token => 'Tín hiệu tái tạo';
+  String get dashboard_regenerate_token => 'Tạo lại token';
 
   @override
   String get dashboard_set_password => 'Đặt mật khẩu';
@@ -261,11 +261,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get setup_language_button => 'Chọn ngôn ngữ';
 
   @override
-  String get setup_autostart_title => 'Thiết lập hạn chế tự động khởi động';
+  String get setup_autostart_title => 'Tắt hạn chế tự khởi động';
 
   @override
   String get setup_autostart_body =>
-      'Nhấp dưới đây để mở BYD Auto-Start. Tìm BladeWatch trong danh sách và bỏ chọn hộp. BYD xóa này trên mỗi cài đặt  bạn sẽ làm lại nó sau khi cập nhật.';
+      'Nhấp dưới đây để mở BYD Auto-Start. Tìm BladeWatch trong danh sách và bỏ chọn hộp. BYD xóa này trên mỗi cài đặt — bạn sẽ làm lại nó sau khi cập nhật.';
 
   @override
   String get setup_autostart_button => 'Mở BYD Auto-Start';
@@ -278,7 +278,7 @@ class AppLocalizationsVi extends AppLocalizations {
       'Khả năng điều này để hiển thị một chỉ số trạng thái nổi để ghi lại và theo dõi chuyến đi trên đầu các ứng dụng khác.';
 
   @override
-  String get setup_overlay_button => 'Open Overlay Settings';
+  String get setup_overlay_button => 'Mở cài đặt lớp phủ';
 
   @override
   String get cd_close => 'Đóng';
@@ -303,6 +303,10 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved =>
+      'Đã áp dụng ngôn ngữ nhưng không lưu được — sẽ đặt lại khi khởi động lại ứng dụng.';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
     return '$arg1 · tự động';
   }
@@ -317,13 +321,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get adb_preset_commands_header => 'Các lệnh cài đặt trước';
 
   @override
-  String get adb_output_header => 'Tạo ra';
+  String get adb_output_header => 'Đầu ra';
 
   @override
   String get adb_output_ready => 'Sẵn sàng cho lệnh...';
 
   @override
-  String get adb_console_hero_title => 'ADB Console';
+  String get adb_console_hero_title => 'Bảng điều khiển ADB';
 
   @override
   String get adb_console_hero_subtitle => 'Động hành lệnh shell trên thiết bị';
@@ -343,7 +347,8 @@ class AppLocalizationsVi extends AppLocalizations {
       'Kiểm tra màn hình trung tâm để tìm thông báo “Cho phép gỡ lỗi USB?” và chấp nhận, sau đó thử lại.';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting =>
+      'Đang kết nối tới trình giám sát hiệu năng…';
 
   @override
   String get performance_hero_title => 'Hiệu suất hệ thống';
@@ -352,16 +357,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => 'Mức dùng của hệ thống';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => 'Mức dùng của ứng dụng';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => 'Tần số';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => 'Nhiệt độ';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -370,16 +375,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get performance_memory_title => 'Bộ nhớ';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => 'Mức sử dụng';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => 'Tổng';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => 'Đã dùng';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => 'Ứng dụng';
 
   @override
   String get performance_gpu_title => 'GPU';
@@ -388,16 +393,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get performance_app_process_title => 'Tiến trình ứng dụng';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => 'Luồng';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'Chu kỳ GC';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => 'FD đang mở';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => 'Làm mới mỗi 3 giây';
 
   @override
   String get webview_loading => 'Lái...';
@@ -410,28 +415,28 @@ class AppLocalizationsVi extends AppLocalizations {
       'Khởi động dịch vụ Camera từ màn hình Dịch Vụ để truy cập trang này.';
 
   @override
-  String get zrok_enable_token_hint => 'Khả năng token';
+  String get zrok_enable_token_hint => 'Bật token';
 
   @override
   String get zrok_token_storage_note =>
       'Token được lưu trữ an toàn và chia sẻ giữa ứng dụng và các dịch vụ nền.';
 
   @override
-  String get zrok_reset_environment => 'Tái thiết Zrok Môi trường';
+  String get zrok_reset_environment => 'Đặt lại môi trường Zrok';
 
   @override
   String get zrok_reset_environment_desc =>
       'Xóa môi trường và token. Bạn sẽ cần phải bật lại với token của bạn (sử dụng một khe thiết bị).';
 
   @override
-  String get reset_title => 'Data Reset';
+  String get reset_title => 'Đặt lại dữ liệu';
 
   @override
   String get reset_subtitle => 'Xóa dữ liệu tích lũy theo các loại';
 
   @override
   String get reset_warning =>
-      'Điều này không thể không được thực hiện. Các bản ghi, chuyến đi và lịch sử pin sẽ bị xóa vĩnh viễn.';
+      'Không thể hoàn tác. Các bản ghi, chuyến đi và lịch sử pin sẽ bị xóa vĩnh viễn.';
 
   @override
   String get reset_cat_trips => 'Chuyến đi';
@@ -498,13 +503,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get recording_lib_chip_alert => 'Cảnh báo';
 
   @override
-  String get recording_lib_chip_critical => 'Chứng quan trọng';
+  String get recording_lib_chip_critical => 'Nghiêm trọng';
 
   @override
   String get recording_lib_selected_count_zero => '0 được chọn';
 
   @override
-  String get recording_lib_no_recordings => 'Không ghi âm';
+  String get recording_lib_no_recordings => 'Không có bản ghi';
 
   @override
   String get recording_lib_filter_button => 'Bộ lọc';
@@ -515,7 +520,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_filter_sheet_title => 'Các bản ghi bộ lọc';
+  String get recording_lib_filter_sheet_title => 'Lọc bản ghi';
 
   @override
   String get recording_lib_filter_apply => 'Áp dụng';
@@ -524,7 +529,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get recording_lib_filter_reset => 'Đặt lại';
 
   @override
-  String get recording_lib_filter_section_what => 'Cái gì?';
+  String get recording_lib_filter_section_what => 'Cái gì';
 
   @override
   String get recording_lib_filter_section_severity => 'Độ nghiêm trọng';
@@ -533,16 +538,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get recording_lib_filter_section_type => 'Loại';
 
   @override
-  String get recording_lib_chip_type_normal => 'Nhóm chứng chuẩn';
+  String get recording_lib_chip_type_normal => 'Thường';
 
   @override
-  String get recording_lib_chip_type_proximity => 'Khoảng cách';
+  String get recording_lib_chip_type_proximity => 'Cận kề';
 
   @override
-  String get recording_lib_date_today => 'Ngày nay';
+  String get recording_lib_date_today => 'Hôm nay';
 
   @override
-  String get recording_lib_date_yesterday => 'Hôm qua.';
+  String get recording_lib_date_yesterday => 'Hôm qua';
 
   @override
   String recording_lib_clip_count(Object arg1) {
@@ -564,13 +569,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cd_clear_date_filter => 'Hiển thị tất cả các ngày';
 
   @override
-  String get recording_lib_section_morning => 'Sáng mai';
+  String get recording_lib_section_morning => 'Sáng';
 
   @override
-  String get recording_lib_section_afternoon => 'Chào buổi chiều.';
+  String get recording_lib_section_afternoon => 'Chiều';
 
   @override
-  String get recording_lib_section_evening => 'Tối nay';
+  String get recording_lib_section_evening => 'Tối';
 
   @override
   String get recording_lib_section_night => 'Đêm';
@@ -582,25 +587,37 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cd_next_day => 'Ngày hôm sau';
 
   @override
-  String get cd_open_filters => 'Các bộ lọc mở';
+  String get cd_open_filters => 'Mở bộ lọc';
 
   @override
-  String get cd_clear_filter => 'Bộ lọc rõ ràng';
+  String get cd_clear_filter => 'Xóa bộ lọc';
 
   @override
-  String get player_title_recording => 'Đăng ký';
+  String get player_title_recording => 'Bản ghi';
 
   @override
-  String get player_time_zero => '0: 00';
+  String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
 
   @override
+  String get daemon_name_camera => 'Dịch vụ camera';
+
+  @override
+  String get daemon_name_surveillance => 'Dịch vụ giám sát';
+
+  @override
+  String get daemon_name_acc => 'Giám sát ACC';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
+
+  @override
   String get daemons_hero_title => 'Dịch vụ nền';
 
   @override
-  String get daemons_count_pending => 'Dịch vụ tải...';
+  String get daemons_count_pending => 'Đang tải dịch vụ…';
 
   @override
   String daemons_count_fmt(Object arg1, Object arg2) {
@@ -635,14 +652,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get battery_health_last_updated => 'Được cập nhật cuối cùng';
 
   @override
-  String get battery_health_reset => 'Cài đặt lại ước tính SOH';
+  String get battery_health_unavailable => 'Không khả dụng';
+
+  @override
+  String get battery_health_unavailable_desc =>
+      'Ước tính tình trạng pin không khả dụng trên xe này.';
+
+  @override
+  String get battery_health_reset => 'Đặt lại ước tính SOH';
 
   @override
   String get battery_health_reset_desc =>
       'Xóa tất cả dữ liệu và đánh giá lại từ đầu. Sử dụng nếu pin đã được thay thế hoặc đọc có vẻ không chính xác.';
 
   @override
-  String get soh_dialog_model_label => 'Mô hình';
+  String get soh_dialog_model_label => 'Mẫu xe';
 
   @override
   String get soh_dialog_pack_capacity_label => 'Công suất đóng gói';
@@ -700,8 +724,8 @@ class AppLocalizationsVi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: 'Điều này sẽ xóa vĩnh viễn các bản ghi $arg1.',
-      one: 'Điều này sẽ xóa vĩnh viễn bản ghi $arg1.',
+      other: 'Thao tác này sẽ xóa vĩnh viễn $arg1 bản ghi. Không thể hoàn tác.',
+      one: 'Thao tác này sẽ xóa vĩnh viễn $arg1 bản ghi. Không thể hoàn tác.',
     );
     return '$_temp0';
   }
@@ -731,7 +755,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'Bộ máy ảnh $arg1  chu kỳ ACC tiếp theo';
+    return 'Bộ máy ảnh $arg1 — chu kỳ ACC tiếp theo';
   }
 
   @override
@@ -756,7 +780,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get toast_soh_reset_success =>
-      'Đặt lại ước tính SOH  sẽ tính lại từ dữ liệu tiếp theo';
+      'Đặt lại ước tính SOH — sẽ tính lại từ dữ liệu tiếp theo';
 
   @override
   String get toast_soh_reset_failed_no_daemon =>
@@ -799,16 +823,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dialog_disable => 'Tắt';
 
   @override
-  String get dialog_keep_enabled => 'Hãy giữ cho khả năng';
+  String get dialog_keep_enabled => 'Giữ bật';
 
   @override
-  String get dialog_keep_disabled => 'Giữ sự khuyết tật';
+  String get dialog_keep_disabled => 'Giữ tắt';
 
   @override
-  String get dialog_regenerate => 'Tái tạo';
+  String get dialog_regenerate => 'Tạo lại';
 
   @override
-  String get dialog_reset_selected => 'Reset được chọn';
+  String get dialog_reset_selected => 'Đặt lại mục đã chọn';
 
   @override
   String get dialog_reset_soh_title => 'Đặt lại ước tính SOH?';
@@ -818,15 +842,15 @@ class AppLocalizationsVi extends AppLocalizations {
       'Điều này sẽ xóa tất cả dữ liệu SOH và buộc tính toán lại từ đầu.\n\n Sử dụng điều này nếu:\n• Pin đã được thay thế\n• Đọc SOH dường như không chính xác\n• Bạn muốn tái chuẩn hóa\n\n Hệ thống sẽ tái phân từ nguồn dữ liệu tiếp theo có sẵn (OEM, hiệu chuẩn sạc, hoặc đọc tức thời).';
 
   @override
-  String get dialog_reset_following_title => 'Đặt lại những gì sau đây?';
+  String get dialog_reset_following_title => 'Đặt lại những mục sau?';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return 'Không thể hoàn tác thao tác này.\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => 'Đặt lại hoàn chỉnh';
+  String get dialog_reset_complete_title => 'Đã đặt lại xong';
 
   @override
   String get dialog_traffic_cannot_check_title =>
@@ -837,11 +861,11 @@ class AppLocalizationsVi extends AppLocalizations {
       'ADB chưa được kết nối và ứng dụng không thể tự động kết nối lại.\n\nTrên chiếc xe này, công tắc \"Gỡ lỗi USB\" thông thường trong Tùy chọn nhà phát triển thôi là chưa đủ — cài đặt ADB không dây (gỡ lỗi qua mạng) riêng của màn hình trung tâm cũng cần được bật, và một bản cập nhật hệ thống có thể tắt nó đi. Hãy bật lại ADB không dây trên màn hình trung tâm, hoặc kết nối qua USB.\n\nTrạng thái sẽ tự động cập nhật ngay khi kết nối được.';
 
   @override
-  String get dialog_traffic_disable_title => 'Thiết lập BYD Traffic Monitor?';
+  String get dialog_traffic_disable_title => 'Tắt BYD Traffic Monitor?';
 
   @override
   String get dialog_traffic_disable_message =>
-      'BYD Traffic Monitor (com.byd.trafficmonitor) là một ứng dụng hệ thống tích hợp liên tục theo dõi tình trạng giao thông đường bộ trong nền.\n\n️ Tại sao vô hiệu hóa nó?\n\n• Sử dụng dữ liệu di động (ngay cả khi đậu xe)\n• Sử dụng CPU và pin trong nền\n• Không cần thiết nếu bạn sử dụng ứng dụng điều hướng riêng\n• Có thể can thiệp vào việc sử dụng mạng của máy ảnh hưởng.';
+      'BYD Traffic Monitor (com.byd.trafficmonitor) là ứng dụng hệ thống tích hợp, liên tục theo dõi tình hình giao thông trong nền.\n\nTại sao nên tắt?\n\n• Tiêu tốn dữ liệu di động (kể cả khi đỗ xe)\n• Dùng CPU và pin trong nền\n• Không cần nếu bạn dùng ứng dụng dẫn đường riêng\n• Có thể cản trở việc dùng mạng của camera hành trình\n\nTắt là an toàn: chỉ ảnh hưởng đến lớp giao thông tích hợp trên bản đồ. Dẫn đường, Bluetooth và mọi chức năng khác của xe vẫn giữ nguyên.\n\nSau khi tắt cần khởi động lại cứng (giữ nút trên bảng điều khiển trung tâm 5 giây).';
 
   @override
   String get dialog_traffic_enable_title =>
@@ -858,7 +882,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get dialog_traffic_reboot_message =>
-      'Thay đổi đã được áp dụng. Xin vui lòng thực hiện một khởi động lại cứng bây giờ:';
+      'Thay đổi đã được áp dụng.\n\nHãy khởi động lại cứng ngay bây giờ:\nGiữ nút trên bảng điều khiển trung tâm trong 5 giây.';
 
   @override
   String get traffic_monitor_loading => 'Kiểm tra giao thông: kiểm tra...';
@@ -892,15 +916,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get toast_access_code_copied => 'Mã truy cập sao chép';
 
   @override
-  String get dialog_regenerate_token_title => 'Tín hiệu tái tạo';
+  String get dialog_regenerate_token_title => 'Tạo lại token';
 
   @override
   String get dialog_regenerate_token_message =>
-      'Điều này sẽ làm vô hiệu hóa token hiện tại.';
+      'Thao tác này sẽ vô hiệu hóa token hiện tại. Tất cả phiên đang hoạt động sẽ bị đăng xuất. Tiếp tục?';
 
   @override
   String get toast_token_regenerated_logged_out =>
-      'Tạo ra mã thông báo mới, tất cả các phiên đăng nhập ra.';
+      'Đã tạo token mới. Tất cả phiên đã bị đăng xuất.';
 
   @override
   String get toast_token_regenerated_restart =>
@@ -924,7 +948,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2 chạy';
+    return '$arg1/$arg2 đang chạy';
   }
 
   @override
@@ -942,17 +966,17 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok Tunnel Token';
+  String get dialog_zrok_token_title => 'Mã thông báo đường hầm Zrok';
 
   @override
   String get dialog_zrok_token_message =>
-      'Nhập mã hiệu kích hoạt Zrok của bạn.';
+      'Nhập token kích hoạt Zrok của bạn.\nLấy tại: zrok.io';
 
   @override
   String get toast_token_cannot_be_empty => 'Đơn hiệu không thể trống rỗng';
 
   @override
-  String get dialog_zrok_reset_title => 'Tái thiết Zrok Môi trường';
+  String get dialog_zrok_reset_title => 'Đặt lại môi trường Zrok';
 
   @override
   String get dialog_zrok_reset_message =>
@@ -975,7 +999,8 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get zrok_no_token_configured => 'Không có mã thông báo được cấu hình.';
+  String get zrok_no_token_configured =>
+      'Chưa cấu hình token. Chạm để thiết lập.';
 
   @override
   String get toast_zrok_token_saved => 'Đồ tín hiệu được lưu';
@@ -1012,7 +1037,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String log_share_title(Object arg1, Object arg2) {
-    return '$arg1 Log - $arg2';
+    return 'Nhật ký $arg1 - $arg2';
   }
 
   @override
@@ -1022,7 +1047,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String log_header_title(Object arg1) {
-    return '=== $arg1 Log ===';
+    return '=== Nhật ký $arg1 ===';
   }
 
   @override
@@ -1050,7 +1075,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return 'Xóa $arg1?\nĐiều này không thể hủy bỏ được.';
+    return 'Xóa $arg1?\nKhông thể hoàn tác.';
   }
 
   @override
@@ -1069,7 +1094,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String setup_version_banner(Object arg1) {
-    return 'Cập nhật v$arg1  xác nhận lại tự động khởi động, BYD xóa nó trên mỗi cài đặt';
+    return 'Cập nhật v$arg1 — xác nhận lại tự động khởi động, BYD xóa nó trên mỗi cài đặt';
   }
 
   @override
@@ -1094,7 +1119,7 @@ class AppLocalizationsVi extends AppLocalizations {
       'Mốc danh định — đang chờ dữ liệu SOH tin cậy';
 
   @override
-  String get soh_no_estimate_yet => 'Không có ước tính nào  chờ dữ liệu';
+  String get soh_no_estimate_yet => 'Không có ước tính nào — chờ dữ liệu';
 
   @override
   String recording_lib_selected_count(Object arg1) {
@@ -1116,7 +1141,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get nav_page_video_player => 'Video Player';
+  String get nav_page_video_player => 'Trình phát video';
 
   @override
   String get status_overlay_notif_title => 'BladeWatch Tình trạng';
@@ -1125,16 +1150,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get status_overlay_notif_text => 'Status overlay hoạt động';
 
   @override
-  String get rail_dashboard => 'bảng điều khiển';
+  String get rail_dashboard => 'Bảng điều khiển';
 
   @override
-  String get rail_live => 'Đời sống';
+  String get rail_live => 'Trực tiếp';
 
   @override
   String get rail_recordings => 'Bản ghi';
 
   @override
-  String get rail_vehicle => 'Chiếc xe';
+  String get rail_vehicle => 'Xe';
 
   @override
   String get rail_trips => 'Chuyến đi';
@@ -1191,7 +1216,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settings_subrail_overline => 'Định hướng';
 
   @override
-  String get cd_settings_subrail => 'Sub-rail cài đặt';
+  String get cd_settings_subrail => 'Thanh bên cài đặt';
 
   @override
   String get settings_privacy_title => 'Bảo mật & dữ liệu';
@@ -1222,7 +1247,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_about_support_share_message =>
-      'Kiểm tra BladeWatch  giám sát nguồn mở & dashcam cho BYD: https://bladewatch-5lc.pages.dev/';
+      'Kiểm tra BladeWatch — giám sát nguồn mở & dashcam cho BYD: https://bladewatch-5lc.pages.dev/';
 
   @override
   String get settings_about_support_share_chooser => 'Chia sẻ quá mức';
@@ -1251,7 +1276,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_about_license_value =>
-      'MIT  mã nguồn mở. Nhấp để xem toàn văn bản.';
+      'MIT — mã nguồn mở. Nhấp để xem toàn văn bản.';
 
   @override
   String get settings_about_source_title => 'Mã nguồn';
@@ -1300,13 +1325,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settings_theme_label => 'Chủ đề';
 
   @override
-  String get settings_theme_auto => 'tự động (chế hệ theo dõi)';
+  String get settings_theme_auto => 'Tự động (theo hệ thống)';
 
   @override
-  String get settings_theme_light => 'Ánh sáng';
+  String get settings_theme_light => 'Sáng';
 
   @override
-  String get settings_theme_dark => 'Đen tối';
+  String get settings_theme_dark => 'Tối';
 
   @override
   String get settings_language_label => 'Ngôn ngữ';
@@ -1358,7 +1383,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get recordings_title => 'Bản ghi';
 
   @override
-  String get recordings_segment_dashcam => 'Dashcam';
+  String get recordings_segment_dashcam => 'Camera hành trình';
 
   @override
   String get recordings_segment_surveillance => 'Giám sát';
@@ -1373,7 +1398,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String recordings_segment_dashcam_count(Object arg1) {
-    return 'Dashcam · $arg1';
+    return 'Camera hành trình · $arg1';
   }
 
   @override
@@ -1392,13 +1417,13 @@ class AppLocalizationsVi extends AppLocalizations {
       'Nhấn bất kỳ mục nào ở bên trái để chơi nó.';
 
   @override
-  String get diagnostics_section_adb_console => 'ADB Console';
+  String get diagnostics_section_adb_console => 'Bảng điều khiển ADB';
 
   @override
   String get diagnostics_section_traffic => 'Kiểm tra giao thông';
 
   @override
-  String get diagnostics_section_camera_probe => 'Hình ảnh';
+  String get diagnostics_section_camera_probe => 'Dò tìm camera';
 
   @override
   String get diagnostics_section_battery => 'Sức khỏe pin';
@@ -1414,28 +1439,28 @@ class AppLocalizationsVi extends AppLocalizations {
       'Sức khỏe trực tiếp, nhật ký và thăm dò cho thiết bị.';
 
   @override
-  String get diagnostics_health_clear => 'Được rồi.';
+  String get diagnostics_health_clear => 'Không có vấn đề';
 
   @override
   String get diagnostics_health_section => 'Sức khỏe';
 
   @override
-  String get diagnostics_health_network => 'Mạng lưới';
+  String get diagnostics_health_network => 'Mạng';
 
   @override
-  String get diagnostics_health_storage => 'Chất lưu trữ';
+  String get diagnostics_health_storage => 'Bộ nhớ';
 
   @override
   String get diagnostics_health_camera => 'Máy ảnh';
 
   @override
-  String get diagnostics_health_battery => 'Phòng pin';
+  String get diagnostics_health_battery => 'Pin';
 
   @override
   String get diagnostics_metric_pending => '—';
 
   @override
-  String get diagnostics_metric_online => 'Trên mạng';
+  String get diagnostics_metric_online => 'Trực tuyến';
 
   @override
   String diagnostics_network_tunnel_label(Object arg1) {
@@ -1443,10 +1468,10 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_tunnel_state_online => 'Trên mạng';
+  String get diagnostics_tunnel_state_online => 'Trực tuyến';
 
   @override
-  String get diagnostics_tunnel_state_offline => 'Không liên kết';
+  String get diagnostics_tunnel_state_offline => 'Ngoại tuyến';
 
   @override
   String get diagnostics_tunnel_state_connecting => 'Kết nối';
@@ -1458,7 +1483,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get diagnostics_network_ethernet => 'Ethernet';
 
   @override
-  String get diagnostics_network_offline => 'Không liên kết';
+  String get diagnostics_network_offline => 'Ngoại tuyến';
 
   @override
   String diagnostics_storage_used_line(Object arg1, Object arg2) {
@@ -1499,7 +1524,7 @@ class AppLocalizationsVi extends AppLocalizations {
       'Ưu tiên ứng dụng, chủ đề và ngôn ngữ.';
 
   @override
-  String get settings_action_reset_data => 'Đặt lại dữ liệu...';
+  String get settings_action_reset_data => 'Đặt lại dữ liệu…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -1522,7 +1547,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboard_metric_recordings => 'Các bản ghi âm ngày hôm nay';
 
   @override
-  String get dashboard_metric_storage => 'Kho lưu trữ được sử dụng';
+  String get dashboard_metric_storage => 'Dung lượng đã dùng';
 
   @override
   String get dashboard_metric_tunnel => 'Truy cập từ xa';
@@ -1534,10 +1559,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboard_metric_value_pending => '—';
 
   @override
-  String get dashboard_metric_vehicle => 'Chiếc xe';
+  String get dashboard_metric_vehicle => 'Xe';
 
   @override
-  String get dashboard_chip_recording_active => 'Đang ghi âm';
+  String get dashboard_chip_recording_active => 'Đang ghi hình';
 
   @override
   String get dashboard_chip_recording_idle => 'Rảnh';
@@ -1551,10 +1576,10 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get vehicle_dialog_title => 'Capacity pin được thiết lập';
+  String get vehicle_dialog_title => 'Đặt dung lượng pin';
 
   @override
-  String get vehicle_dialog_capacity_label => 'Công suất (kWh)';
+  String get vehicle_dialog_capacity_label => 'Dung lượng (kWh)';
 
   @override
   String get vehicle_dialog_capacity_suffix => 'kWh';
@@ -1564,13 +1589,13 @@ class AppLocalizationsVi extends AppLocalizations {
       '8 đến 120 kWh. Thoát để sử dụng mô hình mặc định.';
 
   @override
-  String get vehicle_dialog_model_label => 'Mô hình';
+  String get vehicle_dialog_model_label => 'Mẫu xe';
 
   @override
   String get vehicle_dialog_save => 'Lưu';
 
   @override
-  String get vehicle_dialog_reset => 'Đặt lại để tự phát hiện';
+  String get vehicle_dialog_reset => 'Đặt lại về tự động nhận diện';
 
   @override
   String get vehicle_dialog_invalid_capacity => 'Công suất phải là 8 - 120 kWh';
@@ -1606,67 +1631,67 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => 'Trạng thái';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => 'Thu hình';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => 'Chất lượng';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => 'Lưu trữ';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => 'Trạng thái ghi';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => 'Trạng thái hiện tại';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => 'Bản ghi hôm nay';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => 'Chế độ ghi (ACC BẬT)';
 
   @override
   String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+      'Chọn thời điểm camera hành trình ghi hình khi lái xe.';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => 'Không (mặc định)';
 
   @override
   String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+      'Không ghi — giám sát vẫn hoạt động';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => 'Liên tục';
 
   @override
   String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+      'Ghi liên tục khi đang lái';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => 'Chế độ lái';
 
   @override
   String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+      'Chỉ ghi khi xe đang di chuyển';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => 'Bảo vệ tiệm cận';
 
   @override
   String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+      'Ghi khi phát hiện chuyển động';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => 'Giới hạn bản ghi';
 
   @override
   String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+      'Độ dài tối đa mỗi tệp. Bản ghi sẽ tách thành tệp mới theo khoảng này.';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1674,113 +1699,122 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => 'Chất lượng ghi';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => 'Lưu trữ bản ghi';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => 'Vị trí lưu trữ';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => 'Bộ nhớ trong';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'Thẻ SD';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'Thẻ SD (không có)';
 
   @override
   String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+      'Giới hạn lưu trữ — tự động xóa bản cũ nhất khi đạt giới hạn';
+
+  @override
+  String get settings_recording_storage_usage_label => 'Dung lượng đã dùng';
+
+  @override
+  String get settings_recording_storage_files_label => 'Tệp';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return 'Đã dùng $arg1 / giới hạn $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 bản ghi';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => 'Đường dẫn';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label =>
+      'Dung lượng trống thẻ SD';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label =>
+      'Dung lượng trống bộ nhớ trong';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => 'Định dạng ổ ngoài';
 
   @override
   String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+      'Xóa vĩnh viễn TẤT CẢ dữ liệu trên thẻ SD hoặc ổ USB.';
 
   @override
   String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+      'Chạm lần nữa — TẤT CẢ dữ liệu sẽ bị XÓA';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running =>
+      'Đang định dạng… vui lòng đợi';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => 'Định dạng thẻ SD / USB';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive => 'Không tìm thấy ổ đĩa rời';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return 'Định dạng thành công. Đường dẫn mới: $arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => 'Danh mục cơ sở dữ liệu';
 
   @override
   String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+      'Đối chiếu chỉ mục bản ghi với tệp trên đĩa.';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => 'Đang đồng bộ…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => 'Đồng bộ cơ sở dữ liệu';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return 'Đã đồng bộ: +$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => 'Đang đồng bộ rồi';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return 'Đồng bộ thất bại: $arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => 'Áp dụng thay đổi';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => 'Bỏ qua';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return 'Chưa hỗ trợ bật/tắt $arg1';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => 'Cấu hình';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => 'Đặt lại môi trường';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -1789,7 +1823,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String vehicle_dialog_summary_model(Object arg1) {
-    return 'Mô hình: $arg1';
+    return 'Mẫu xe: $arg1';
   }
 
   @override
@@ -1806,16 +1840,16 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => 'Đài lưu trữ ';
+  String get dashboard_metric_storage_chip_pending => 'Bộ nhớ —';
 
   @override
-  String get dashboard_tunnel_offline => 'Không liên kết';
+  String get dashboard_tunnel_offline => 'Ngoại tuyến';
 
   @override
-  String get dashboard_tunnel_online => 'Trên mạng';
+  String get dashboard_tunnel_online => 'Trực tuyến';
 
   @override
-  String get dashboard_tunnel_connecting => 'Kết nối...';
+  String get dashboard_tunnel_connecting => 'Đang kết nối…';
 
   @override
   String get dashboard_trips_this_week => 'Tuần này';
@@ -1865,7 +1899,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboard_action_live => 'Hình ảnh trực tiếp';
 
   @override
-  String get dashboard_action_live_subtitle => 'Khám ảnh mở';
+  String get dashboard_action_live_subtitle => 'Mở chế độ xem camera';
 
   @override
   String get dashboard_action_recordings => 'Bản ghi';
@@ -1932,18 +1966,19 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_theme_active_auto_caption =>
-      'Auto theo chủ đề hệ thống của bạn.';
+      'Tự động theo giao diện hệ thống.';
 
   @override
   String get settings_theme_active_light_caption =>
-      'Điện thoại ánh sáng luôn bật.';
+      'Giao diện sáng luôn được bật.';
 
   @override
-  String get settings_theme_active_dark_caption => 'Chủ đề tối luôn được bật.';
+  String get settings_theme_active_dark_caption =>
+      'Giao diện tối luôn được bật.';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '$arg1 của các ngôn ngữ $arg2 có sẵn';
+    return '$arg1 trong $arg2 ngôn ngữ khả dụng';
   }
 
   @override
@@ -1954,7 +1989,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_privacy_stance_body =>
-      'BladeWatch chạy hoàn toàn trên đơn vị đầu, không có điện đo rời khỏi xe của bạn ngoại trừ thông qua các đường hầm và tích hợp mà bạn đã thiết lập rõ ràng.';
+      'BladeWatch chạy hoàn toàn trên màn hình trung tâm. Không có dữ liệu telemetry nào rời khỏi xe, ngoại trừ qua các đường hầm và tích hợp mà bạn thiết lập rõ ràng.';
 
   @override
   String get settings_privacy_overline_storage => 'Lưu trữ tại địa phương';
@@ -2014,10 +2049,10 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_camera_value_probing => 'Chọn tra...';
+  String get diagnostics_camera_value_probing => 'Đang dò…';
 
   @override
-  String get diagnostics_camera_value_offline => 'Không liên kết';
+  String get diagnostics_camera_value_offline => 'Ngoại tuyến';
 
   @override
   String diagnostics_battery_value_soh(Object arg1) {
@@ -2025,7 +2060,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_battery_value_pending => 'Dữ liệu chờ đợi';
+  String get diagnostics_battery_value_pending => 'Đang chờ dữ liệu';
 
   @override
   String dashboard_recordings_value_live(Object arg1) {
@@ -2034,7 +2069,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get dashboard_insight_welcome =>
-      'Chào mừng  BladeWatch giờ là đôi mắt thứ hai của bạn.';
+      'Chào mừng — BladeWatch giờ là đôi mắt thứ hai của bạn.';
 
   @override
   String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
@@ -2083,7 +2118,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 min';
+    return '$arg1 giờ $arg2 phút';
   }
 
   @override
@@ -2142,19 +2177,19 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get vehicle_tab_trunk => 'Thùng bể';
+  String get vehicle_tab_trunk => 'Cốp xe';
 
   @override
-  String get vehicle_tab_climate => 'Khí hậu';
+  String get vehicle_tab_climate => 'Điều hòa';
 
   @override
-  String get vehicle_tab_seats => 'Căn ghế';
+  String get vehicle_tab_seats => 'Ghế';
 
   @override
-  String get vehicle_tab_windows => 'Cửa sổ';
+  String get vehicle_tab_windows => 'Cửa kính';
 
   @override
-  String get vehicle_tab_lights => 'Ánh sáng';
+  String get vehicle_tab_lights => 'Đèn';
 
   @override
   String get vehicle_tab_adas => 'ADAS';
@@ -2163,10 +2198,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get vehicle_control_charging_tab => 'Sạc';
 
   @override
-  String get vehicle_locked => 'Chốt';
+  String get vehicle_locked => 'Đã khóa';
 
   @override
-  String get vehicle_unlocked => 'Không khóa';
+  String get vehicle_unlocked => 'Đã mở khóa';
 
   @override
   String get vehicle_range_label => 'Quãng đường';
@@ -2182,16 +2217,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get vehicle_open_trunk => 'Mở cốp';
 
   @override
-  String get vehicle_close_trunk => 'Thùng đóng kín';
+  String get vehicle_close_trunk => 'Đóng cốp';
 
   @override
   String get vehicle_trunk_info_open => 'Mở cốp sẽ mở khóa xe trước.';
 
   @override
-  String get vehicle_ac_on => 'AC Đăng';
+  String get vehicle_ac_on => 'AC bật';
 
   @override
-  String get vehicle_ac_off => 'AC Dừng hoạt động';
+  String get vehicle_ac_off => 'AC tắt';
 
   @override
   String get vehicle_max_cooling_on => 'Làm mát tối đa: BẬT';
@@ -2244,13 +2279,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get vehicle_heat_high => '(Cao)';
 
   @override
-  String get vehicle_seat_pos_1 => 'Bước 1';
+  String get vehicle_seat_pos_1 => 'Vị trí 1';
 
   @override
-  String get vehicle_seat_pos_2 => 'Bức ảnh 2';
+  String get vehicle_seat_pos_2 => 'Vị trí 2';
 
   @override
-  String get vehicle_all_windows => 'Tất cả cửa sổ';
+  String get vehicle_all_windows => 'Tất cả cửa kính';
 
   @override
   String get vehicle_window_front_left => 'Trước trái';
@@ -2277,10 +2312,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get vehicle_window_open_all => 'Mở tất cả';
 
   @override
-  String get vehicle_sunroof => 'Tầng mặt trời';
+  String get vehicle_sunroof => 'Cửa sổ trời';
 
   @override
-  String get vehicle_sunshade => 'Đèn nắng';
+  String get vehicle_sunshade => 'Rèm che nắng';
 
   @override
   String get vehicle_btn_drl_title => 'Đèn chạy ban ngày';
@@ -2305,22 +2340,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get vehicle_charge_limit_range => 'Tối thiểu 50%, tối đa 100%';
 
   @override
-  String get vehicle_tyre_no_signal => 'Không có tín hiệu';
+  String get vehicle_tyre_no_signal => 'KHÔNG CÓ TÍN HIỆU';
 
   @override
-  String get vehicle_tyre_slow_leak => 'SLOW LEAK';
+  String get vehicle_tyre_slow_leak => 'RÒ RỈ CHẬM';
 
   @override
-  String get vehicle_tyre_fast_leak => 'LICH nhanh chóng';
+  String get vehicle_tyre_fast_leak => 'RÒ RỈ NHANH';
 
   @override
-  String get vehicle_tyre_low => 'NN';
+  String get vehicle_tyre_low => 'THẤP';
 
   @override
-  String get vehicle_tyre_high => 'Tối cao';
+  String get vehicle_tyre_high => 'CAO';
 
   @override
-  String get vehicle_tyre_ok => 'OK';
+  String get vehicle_tyre_ok => 'Bình thường';
 
   @override
   String get vehicle_tyre_check_pressure => 'Kiểm tra áp suất';
@@ -2478,13 +2513,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get trips_tab_storage => 'Bộ nhớ';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 ngày';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 ngày';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 ngày';
 
   @override
   String trips_load_error(Object message) {
@@ -2498,13 +2533,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get trips_period_summary_title => 'Tóm tắt kỳ';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => 'Chuyến đi';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => 'Giờ';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => 'Hiệu suất';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2514,7 +2549,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return 'Điểm: $score';
   }
 
   @override
@@ -2522,7 +2557,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return 'Tổng: $score / 100';
   }
 
   @override
@@ -2530,7 +2565,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'Ước tính BYD: $km km';
   }
 
   @override
@@ -2540,46 +2575,46 @@ class AppLocalizationsVi extends AppLocalizations {
   String get trips_dna_title => 'DNA lái xe';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => 'Dự đoán';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => 'Độ mượt';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => 'Kỷ luật tốc độ';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => 'Hiệu suất';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => 'Tính nhất quán';
 
   @override
   String get trips_storage_title => 'Bộ nhớ chuyến đi';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => 'Phân tích chuyến đi';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => 'Giá điện';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => 'Đơn vị khoảng cách';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => 'Vị trí lưu trữ';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => 'Bộ nhớ trong';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'Thẻ SD';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'Thẻ SD (không có)';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => 'Áp dụng thay đổi';
 
   @override
   String trips_storage_usage_line(
@@ -2588,7 +2623,7 @@ class AppLocalizationsVi extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return 'Đã dùng $used $unit / giới hạn $limit MB · $count chuyến';
   }
 
   @override
@@ -2596,13 +2631,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+      'Đối chiếu chỉ mục chuyến đi với tệp telemetry trên đĩa.';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => 'Đồng bộ cơ sở dữ liệu';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => 'Đang đồng bộ…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2616,31 +2651,31 @@ class AppLocalizationsVi extends AppLocalizations {
   String get trips_detail_summary_title => 'Tóm tắt chuyến đi';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => 'Quãng đường';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => 'Thời lượng';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => 'Năng lượng';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => 'Tốc độ TB';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => 'Tốc độ tối đa';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => 'Mức pin';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => 'Chi phí';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => 'Nhiệt độ ngoài';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => 'Độ cao tăng';
 
   @override
   String get trips_detail_scores_title => 'Điểm số lái xe';
@@ -2653,7 +2688,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return 'Đã ghi $count điểm GPS';
   }
 
   @override
@@ -2809,6 +2844,19 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => 'Vùng chuyển động';
+
+  @override
+  String get surveillance_roi_description =>
+      'Chạm để thêm điểm, kéo để di chuyển. Tối thiểu ba điểm, tối đa tám điểm.';
+
+  @override
+  String get surveillance_roi_enable => 'Giới hạn phát hiện trong vùng này';
+
+  @override
+  String get action_undo => 'Hoàn tác';
+
+  @override
   String get surveillance_detection_title => 'Cài đặt phát hiện';
 
   @override
@@ -2881,8 +2929,14 @@ class AppLocalizationsVi extends AppLocalizations {
       'Giới hạn lưu trữ — tự động xoá tệp cũ nhất khi đầy';
 
   @override
+  String get surveillance_storage_usage_label => 'Dung lượng đã dùng';
+
+  @override
+  String get surveillance_storage_files_label => 'Tệp';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return 'Đã dùng $arg1 / giới hạn $arg2';
   }
 
   @override

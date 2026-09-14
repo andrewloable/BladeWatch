@@ -32,13 +32,14 @@ import 'dashboard_models.dart';
 ///   call, and is the daemon's own canonical device id (the one
 ///   `AuthManager`'s JWT `sub` claim uses), not a UI-only label like
 ///   `DeviceIdGenerator`'s.
-/// - **The Zrok tunnel URL has no IPC path at all** (checked: `ZrokController`
-///   only ever gets it from an ADB-launched process's stdout, cached in
-///   app-private `SharedPreferences`) — filed as BladeWatch-m1po. [tunnelUrlSource]
-///   is injected specifically so that task can wire in a real implementation
-///   later without touching this controller; the default always reports "no
-///   tunnel", which is exactly the correct, honest state for every install
-///   until that lands.
+/// - **The Zrok tunnel URL** reaches this controller through [tunnelUrlSource],
+///   wired in `main.dart` to `DaemonChannel.tunnelUrl` (the daemon's
+///   `tunnelStatus` IPC command, BladeWatch-m1po). Native reads it from an
+///   ADB-launched process's stdout and caches it in app-private
+///   `SharedPreferences`, neither of which this APK can reach; the daemon reads
+///   zrok's own log instead, and only reports a URL while the tunnel process is
+///   actually alive. The injected default still reports "no tunnel", which keeps
+///   every test free of a platform channel.
 class DashboardController extends ChangeNotifier {
   DashboardController({
     required TripsServiceClient tripsService,
@@ -159,17 +160,15 @@ class DashboardController extends ChangeNotifier {
   }
 
   Future<void> _refreshVehicleTile() async {
-    var nominalKwh = 0.0;
     String? modelId;
-    try {
-      final resp = await _systemService.getSohNominal(GetSohNominalRequest());
-      if (resp.hasNominalKwh()) nominalKwh = resp.nominalKwh;
-    } catch (_) {}
+    // BladeWatch-p7vi: GetSohNominal is a removed-feature stub that always
+    // answers "unset", so reading it only ever produced a tile stuck on
+    // "Tap to set". The tile now reflects the selected model instead.
     try {
       final resp = await _systemService.getSelectedModel(GetSelectedModelRequest());
       if (resp.modelId.isNotEmpty) modelId = resp.modelId;
     } catch (_) {}
-    _vehicleTile = VehicleTileState(loading: false, nominalKwh: nominalKwh, modelId: modelId);
+    _vehicleTile = VehicleTileState(loading: false, modelId: modelId);
   }
 
   Future<void> _refreshAccessCode() async {
@@ -220,11 +219,19 @@ class DashboardController extends ChangeNotifier {
     return true;
   }
 
+  /// `YYYY-MM-DD` — the format the daemon's date filter requires.
+  ///
+  /// `RecordingsApiHandler.dateRangeMs`
+  /// (app/src/main/java/com/loabletech/bladewatch/server/RecordingsApiHandler.java:733)
+  /// splits this on '-' and demands exactly 3 parts. A value in any other
+  /// shape is not an error: it returns the EMPTY range {0, 0}, so the response
+  /// is a perfectly well-formed `total: 0`. Sending `YYYYMMDD` therefore made
+  /// the Dashboard report "Today's recordings 0" on a day with 37 of them.
   String _todayDateString() {
     final now = DateTime.now();
     final y = now.year.toString().padLeft(4, '0');
     final m = now.month.toString().padLeft(2, '0');
     final d = now.day.toString().padLeft(2, '0');
-    return '$y$m$d';
+    return '$y-$m-$d';
   }
 }

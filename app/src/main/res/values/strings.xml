@@ -947,4 +947,13 @@
     <!-- Recording severity badges (RecordingAdapter) -->
     <string name="rec_severity_critical">CRITICAL</string>
     <string name="rec_severity_alert">ALERT</string>
+    <!-- Background-service display names (DaemonAdapter.getDaemonDisplayName).
+         BladeWatch-def0: these were hardcoded English in the adapter, so they
+         stayed English in all 17 locales. Zrok is a product name and is not
+         translated. Keep the English wording byte-identical: it appears in the
+         docs and the daemon logs. -->
+    <string name="daemon_name_camera">Camera Daemon</string>
+    <string name="daemon_name_surveillance">Surveillance Daemon</string>
+    <string name="daemon_name_acc">ACC Surveillance</string>
+    <string name="daemon_name_zrok">Zrok Tunnel</string>
 </resources>

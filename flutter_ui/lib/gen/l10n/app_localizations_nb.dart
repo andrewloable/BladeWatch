@@ -31,19 +31,19 @@ class AppLocalizationsNb extends AppLocalizations {
   String get action_delete => 'Slett';
 
   @override
-  String get action_done => 'Gjort';
+  String get action_done => 'FERDIG';
 
   @override
-  String get action_remind_me_later => 'Minn meg senere';
+  String get action_remind_me_later => 'PÅMINN MEG SENERE';
 
   @override
   String get action_retry => 'Prøv igjen';
 
   @override
-  String get action_run => 'Løp';
+  String get action_run => 'Kjør';
 
   @override
-  String get action_clear_output => 'Klar utgang';
+  String get action_clear_output => 'Tøm utdata';
 
   @override
   String get cd_camera => 'Kamera';
@@ -55,19 +55,19 @@ class AppLocalizationsNb extends AppLocalizations {
   String get cd_qr_code => 'QR-kode';
 
   @override
-  String get cd_show_hide_token => 'Vis/skjull-token';
+  String get cd_show_hide_token => 'Vis/skjul token';
 
   @override
-  String get cd_copy_token => 'Kopi-token';
+  String get cd_copy_token => 'Kopier token';
 
   @override
   String get cd_copy_url => 'Kopier URL';
 
   @override
-  String get cd_clear_logs => 'Klar logg';
+  String get cd_clear_logs => 'Tøm logg';
 
   @override
-  String get cd_expand_collapse => 'Utvidelse/kollaps';
+  String get cd_expand_collapse => 'Vis/skjul';
 
   @override
   String get cd_recording_status => 'Registreringsstatus';
@@ -85,13 +85,13 @@ class AppLocalizationsNb extends AppLocalizations {
   String get cd_back => 'Tilbake';
 
   @override
-  String get cd_play_pause => 'Spille/pause';
+  String get cd_play_pause => 'Spill av / pause';
 
   @override
   String get cd_player_prev => 'Forrige opptak';
 
   @override
-  String get cd_player_next => 'Opptak';
+  String get cd_player_next => 'Neste opptak';
 
   @override
   String get cd_player_maximize => 'Maksimer avspiller';
@@ -103,19 +103,19 @@ class AppLocalizationsNb extends AppLocalizations {
   String get cd_delete => 'Slett';
 
   @override
-  String get cd_expand => 'Utvide';
+  String get cd_expand => 'Vis mer';
 
   @override
-  String get cd_configure => 'Konfigurering';
+  String get cd_configure => 'Konfigurer';
 
   @override
-  String get cd_download_log => 'Nedlasting logg';
+  String get cd_download_log => 'Last ned logg';
 
   @override
   String get cd_reset => 'Tilbakestill';
 
   @override
-  String get cd_battery => 'Batterier';
+  String get cd_battery => 'Batteri';
 
   @override
   String get cd_step_completed => 'Trinn fullført';
@@ -133,7 +133,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '- Det er ikke noe problem.';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => 'Logg melding her';
@@ -151,7 +151,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get logs_panel_title => 'Logger';
 
   @override
-  String get url_connecting => '- Forbindelse...';
+  String get url_connecting => 'Kobler til…';
 
   @override
   String get camera_selection_title => 'Kamerautvalg';
@@ -160,16 +160,16 @@ class AppLocalizationsNb extends AppLocalizations {
   String get camera_selection_subtitle => 'Velg panorama kamera kilde';
 
   @override
-  String get camera_current_auto => 'Strøm: Auto';
+  String get camera_current_auto => 'Gjeldende: Auto';
 
   @override
   String get camera_option_auto => 'Automatisk (detekteres ved start)';
 
   @override
-  String get camera_option_0 => 'Kamera 0  Atto trimmer';
+  String get camera_option_0 => 'Kamera 0 — Atto trimmer';
 
   @override
-  String get camera_option_1 => 'Kamera 1  Seal (avhengig)';
+  String get camera_option_1 => 'Kamera 1 — Seal (avhengig)';
 
   @override
   String get camera_option_2 => 'Kamera 2';
@@ -194,10 +194,10 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dashboard_qr_waiting => 'Ventet på tunnelen...';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 Løper';
+  String get dashboard_daemons_running_default => '0/5 kjører';
 
   @override
-  String get dashboard_device_id_loading => '- Det er ikke så bra.';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => 'Tilgangskode';
@@ -206,7 +206,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dashboard_token_masked => '••••••••';
 
   @override
-  String get dashboard_regenerate_token => 'Regenerate Token';
+  String get dashboard_regenerate_token => 'Generer token på nytt';
 
   @override
   String get dashboard_set_password => 'Angi passord';
@@ -261,11 +261,11 @@ class AppLocalizationsNb extends AppLocalizations {
   String get setup_language_button => 'Velg språk';
 
   @override
-  String get setup_autostart_title => 'Inaktivere Auto-Start-begrensning';
+  String get setup_autostart_title => 'Deaktiver autostart-begrensningen';
 
   @override
   String get setup_autostart_body =>
-      'Trykk nedenfor for å åpne BYD Auto-Start. Finn BladeWatch i listen og avmelde boksen. BYD sletter dette på hver installasjon  du vil gjøre det igjen etter oppdateringer.';
+      'Trykk nedenfor for å åpne BYD Auto-Start. Finn BladeWatch i listen og avmelde boksen. BYD sletter dette på hver installasjon — du vil gjøre det igjen etter oppdateringer.';
 
   @override
   String get setup_autostart_button => 'Åpne BYD Autostart';
@@ -295,7 +295,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get language_picker_subtitle_pending => 'Velg et språk';
 
   @override
-  String get language_auto_title => 'Auto';
+  String get language_auto_title => 'Automatisk';
 
   @override
   String language_auto_subtitle(Object arg1) {
@@ -303,21 +303,25 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved =>
+      'Språket er tatt i bruk, men kunne ikke lagres — det tilbakestilles ved omstart.';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
-    return '$arg1 · Auto';
+    return '$arg1 · Automatisk';
   }
 
   @override
   String get adb_prompt => '\$';
 
   @override
-  String get adb_command_hint => 'Gå inn kommando...';
+  String get adb_command_hint => 'Skriv en kommando…';
 
   @override
   String get adb_preset_commands_header => 'Forutsette kommandoer';
 
   @override
-  String get adb_output_header => 'Utgang';
+  String get adb_output_header => 'Utdata';
 
   @override
   String get adb_output_ready => 'Klar til kommandoer...';
@@ -343,7 +347,7 @@ class AppLocalizationsNb extends AppLocalizations {
       'Se etter meldingen «Tillat USB-feilsøking?» på hovedenhetens skjerm og godta den, prøv deretter igjen.';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting => 'Kobler til ytelsesmonitor…';
 
   @override
   String get performance_hero_title => 'Systemytelse';
@@ -352,16 +356,16 @@ class AppLocalizationsNb extends AppLocalizations {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => 'Systembruk';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => 'App-bruk';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => 'Frekvens';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => 'Temperatur';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -370,13 +374,13 @@ class AppLocalizationsNb extends AppLocalizations {
   String get performance_memory_title => 'Minne';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => 'Bruk';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => 'Totalt';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => 'Brukt';
 
   @override
   String get performance_memory_app => 'App';
@@ -388,16 +392,16 @@ class AppLocalizationsNb extends AppLocalizations {
   String get performance_app_process_title => 'App-prosess';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => 'Tråder';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC-sykluser';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => 'Åpne FD-er';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => 'Oppdaterer hvert 3. sekund';
 
   @override
   String get webview_loading => 'Ladding...';
@@ -417,21 +421,21 @@ class AppLocalizationsNb extends AppLocalizations {
       'Token lagres sikkert og deles mellom appen og bakgrunnstjenestene.';
 
   @override
-  String get zrok_reset_environment => 'Reset Zrok Miljø';
+  String get zrok_reset_environment => 'Tilbakestill Zrok-miljøet';
 
   @override
   String get zrok_reset_environment_desc =>
       'Fjerner miljø og token. Du må aktivere igjen med din token (bruker en enhetslot).';
 
   @override
-  String get reset_title => 'Omstilling av data';
+  String get reset_title => 'Tilbakestill data';
 
   @override
   String get reset_subtitle => 'Slette akkumulerte data etter kategori';
 
   @override
   String get reset_warning =>
-      'Dette kan ikke gjøres. Optegnelser, reiser og batterihistorie vil bli permanent slettet.';
+      'Dette kan ikke angres. Opptak, turer og batterihistorikk blir slettet permanent.';
 
   @override
   String get reset_cat_trips => 'Turer';
@@ -480,22 +484,22 @@ class AppLocalizationsNb extends AppLocalizations {
   String get reset_cat_trip_files_desc => 'Telemetri per tur JSON på disk';
 
   @override
-  String get recording_lib_chip_any => 'En hvilken som helst';
+  String get recording_lib_chip_any => 'Alle';
 
   @override
   String get recording_lib_chip_person => 'Person';
 
   @override
-  String get recording_lib_chip_vehicle => 'Køretøy';
+  String get recording_lib_chip_vehicle => 'Kjøretøy';
 
   @override
-  String get recording_lib_chip_bike => 'Bykke';
+  String get recording_lib_chip_bike => 'Sykkel';
 
   @override
   String get recording_lib_chip_animal => 'Dyr';
 
   @override
-  String get recording_lib_chip_alert => 'Alert';
+  String get recording_lib_chip_alert => 'Varsel';
 
   @override
   String get recording_lib_chip_critical => 'Kritisk';
@@ -515,7 +519,7 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_filter_sheet_title => 'Filteropptak';
+  String get recording_lib_filter_sheet_title => 'Filtrer opptak';
 
   @override
   String get recording_lib_filter_apply => 'Bruk';
@@ -524,10 +528,10 @@ class AppLocalizationsNb extends AppLocalizations {
   String get recording_lib_filter_reset => 'Tilbakestill';
 
   @override
-  String get recording_lib_filter_section_what => 'Hva?';
+  String get recording_lib_filter_section_what => 'Hva';
 
   @override
-  String get recording_lib_filter_section_severity => 'Sværhet';
+  String get recording_lib_filter_section_severity => 'Alvorlighet';
 
   @override
   String get recording_lib_filter_section_type => 'Type';
@@ -542,7 +546,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get recording_lib_date_today => 'I dag';
 
   @override
-  String get recording_lib_date_yesterday => 'I går.';
+  String get recording_lib_date_yesterday => 'I går';
 
   @override
   String recording_lib_clip_count(Object arg1) {
@@ -567,40 +571,52 @@ class AppLocalizationsNb extends AppLocalizations {
   String get recording_lib_section_morning => 'Morgen';
 
   @override
-  String get recording_lib_section_afternoon => 'God ettermiddag.';
+  String get recording_lib_section_afternoon => 'Ettermiddag';
 
   @override
-  String get recording_lib_section_evening => 'På kvelden';
+  String get recording_lib_section_evening => 'Kveld';
 
   @override
-  String get recording_lib_section_night => 'Natten';
+  String get recording_lib_section_night => 'Natt';
 
   @override
-  String get cd_previous_day => 'Tidligere dag';
+  String get cd_previous_day => 'Forrige dag';
 
   @override
   String get cd_next_day => 'Neste dag';
 
   @override
-  String get cd_open_filters => 'Åpne filter';
+  String get cd_open_filters => 'Åpne filtre';
 
   @override
-  String get cd_clear_filter => 'Klar filter';
+  String get cd_clear_filter => 'Fjern filter';
 
   @override
   String get player_title_recording => 'Opptak';
 
   @override
-  String get player_time_zero => 'Klokken 0: 00';
+  String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
 
   @override
-  String get daemons_hero_title => 'Bakgrunntjenester';
+  String get daemon_name_camera => 'Kameratjeneste';
 
   @override
-  String get daemons_count_pending => 'Lasting tjenester...';
+  String get daemon_name_surveillance => 'Overvåkingstjeneste';
+
+  @override
+  String get daemon_name_acc => 'ACC-overvåking';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
+
+  @override
+  String get daemons_hero_title => 'Bakgrunnstjenester';
+
+  @override
+  String get daemons_count_pending => 'Laster tjenester…';
 
   @override
   String daemons_count_fmt(Object arg1, Object arg2) {
@@ -635,11 +651,18 @@ class AppLocalizationsNb extends AppLocalizations {
   String get battery_health_last_updated => 'Sist oppdatert';
 
   @override
-  String get battery_health_reset => 'Reset SOH estimasjon';
+  String get battery_health_unavailable => 'Ikke tilgjengelig';
+
+  @override
+  String get battery_health_unavailable_desc =>
+      'Estimering av batterihelse er ikke tilgjengelig på dette kjøretøyet.';
+
+  @override
+  String get battery_health_reset => 'Tilbakestill SOH-estimatet';
 
   @override
   String get battery_health_reset_desc =>
-      'Bruk hvis batteriet ble erstattet eller lesingen virker feil.';
+      'Sletter alle data og estimerer på nytt fra bunnen av. Bruk hvis batteriet er byttet eller avlesningen virker feil.';
 
   @override
   String get soh_dialog_model_label => 'Modell';
@@ -700,8 +723,8 @@ class AppLocalizationsNb extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: 'Dette vil permanent slette $arg1 opptak.',
-      one: 'Dette vil permanent slette $arg1-opptak.',
+      other: 'Dette sletter $arg1 opptak permanent. Dette kan ikke angres.',
+      one: 'Dette sletter $arg1 opptak permanent. Dette kan ikke angres.',
     );
     return '$_temp0';
   }
@@ -731,7 +754,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'Kamera $arg1 sett  neste ACC syklus';
+    return 'Kamera $arg1 sett — neste ACC syklus';
   }
 
   @override
@@ -756,7 +779,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get toast_soh_reset_success =>
-      'SOH estimate reset  vil beregne fra neste data';
+      'SOH estimate reset — vil beregne fra neste data';
 
   @override
   String get toast_soh_reset_failed_no_daemon =>
@@ -799,34 +822,34 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dialog_disable => 'Deaktiver';
 
   @override
-  String get dialog_keep_enabled => 'Hold deg i stand til å gjøre det';
+  String get dialog_keep_enabled => 'Behold aktivert';
 
   @override
-  String get dialog_keep_disabled => 'Hold deg funksjonshemmet';
+  String get dialog_keep_disabled => 'Behold deaktivert';
 
   @override
-  String get dialog_regenerate => 'Å gjenopprette';
+  String get dialog_regenerate => 'Generer på nytt';
 
   @override
-  String get dialog_reset_selected => 'Reset valgt';
+  String get dialog_reset_selected => 'Tilbakestill valgte';
 
   @override
-  String get dialog_reset_soh_title => 'Å gjeninnsette SOH estimasjon?';
+  String get dialog_reset_soh_title => 'Tilbakestille SOH-estimatet?';
 
   @override
   String get dialog_reset_soh_message =>
       'Dette vil fjerne alle SOH data og tvinge omvurdering fra bunden.\n\n Bruk dette hvis:\n• Batteriet ble erstattet\n• SOH lesing virker feil\n• Du vil rekalibrere\n\nSystemet vil re-seed fra den neste tilgjengelige datakilden (OEM, ladning kalibrering, eller øyeblikkelig lesing).';
 
   @override
-  String get dialog_reset_following_title => 'Å gjenopprette følgende?';
+  String get dialog_reset_following_title => 'Tilbakestille følgende?';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return 'Dette kan ikke angres.\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => 'Omstilling fullført';
+  String get dialog_reset_complete_title => 'Tilbakestilling fullført';
 
   @override
   String get dialog_traffic_cannot_check_title => 'Kan ikke sjekke status';
@@ -836,11 +859,11 @@ class AppLocalizationsNb extends AppLocalizations {
       'ADB er ikke tilkoblet, og appen klarte ikke å koble til på nytt automatisk.\n\nPå dette kjøretøyet er ikke den vanlige «USB-feilsøking»-bryteren i utvikleralternativer nok alene — hodeenhetens egen innstilling for trådløs ADB (nettverksfeilsøking) må også være på, og en systemoppdatering kan nullstille den. Slå på trådløs ADB på hodeenheten igjen, eller koble til med USB.\n\nStatusen oppdateres automatisk når tilkoblingen er på plass.';
 
   @override
-  String get dialog_traffic_disable_title => 'Deaktiverer du BYD Trafikkrev?';
+  String get dialog_traffic_disable_title => 'Deaktivere BYD Traffic Monitor?';
 
   @override
   String get dialog_traffic_disable_message =>
-      'BYD Traffic Monitor (com.byd.trafficmonitor) er en innebygd systemapp som kontinuerlig overvåker trafikktilstanden i bakgrunnen.\n\n️ Hvorfor deaktivere den?\n\n• Forbruker mobildata (selv når parkeret)\n• Bruker CPU og batteri i bakgrunnen\n• Ikke nødvendig hvis du bruker en separat navigasjonsapp\n• Kan forstyrre dashcam\'s nettverksbruk\n\n';
+      'BYD Traffic Monitor (com.byd.trafficmonitor) er en innebygd systemapp som kontinuerlig overvåker trafikkforholdene i bakgrunnen.\n\nHvorfor deaktivere den?\n\n• Bruker mobildata (også når bilen står parkert)\n• Bruker CPU og batteri i bakgrunnen\n• Unødvendig hvis du bruker en egen navigasjonsapp\n• Kan forstyrre dashkameraets nettverksbruk\n\nDet er trygt å deaktivere — det påvirker bare det innebygde trafikklaget på kartet. Navigasjon, Bluetooth og alle andre bilfunksjoner er upåvirket.\n\nEn hard omstart er nødvendig etter deaktivering (hold knappen på midtkonsollen inne i 5 sekunder).';
 
   @override
   String get dialog_traffic_enable_title => 'Å aktivere BYD trafikkmonitor?';
@@ -890,7 +913,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get toast_access_code_copied => 'Oppdatert tilgangskode';
 
   @override
-  String get dialog_regenerate_token_title => 'Regenerate Token';
+  String get dialog_regenerate_token_title => 'Generer token på nytt';
 
   @override
   String get dialog_regenerate_token_message =>
@@ -898,7 +921,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get toast_token_regenerated_logged_out =>
-      'Alle sesjonene er logget ut.';
+      'Nytt token generert. Alle økter er logget ut.';
 
   @override
   String get toast_token_regenerated_restart =>
@@ -922,7 +945,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2 Kjøring';
+    return '$arg1/$arg2 kjører';
   }
 
   @override
@@ -940,7 +963,7 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok Tunnel Token';
+  String get dialog_zrok_token_title => 'Zrok-tunneltoken';
 
   @override
   String get dialog_zrok_token_message =>
@@ -950,7 +973,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get toast_token_cannot_be_empty => 'Token kan ikke være tomt';
 
   @override
-  String get dialog_zrok_reset_title => 'Reset Zrok Miljø';
+  String get dialog_zrok_reset_title => 'Tilbakestill Zrok-miljøet';
 
   @override
   String get dialog_zrok_reset_message =>
@@ -973,7 +996,8 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get zrok_no_token_configured => 'Ingen token konfigurert.';
+  String get zrok_no_token_configured =>
+      'Ingen token konfigurert. Trykk for å sette opp.';
 
   @override
   String get toast_zrok_token_saved => 'Token lagret';
@@ -1008,7 +1032,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String log_share_title(Object arg1, Object arg2) {
-    return '$arg1 Log - $arg2';
+    return '$arg1-logg – $arg2';
   }
 
   @override
@@ -1018,7 +1042,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String log_header_title(Object arg1) {
-    return '=== $arg1 Log ===';
+    return '=== $arg1-logg ===';
   }
 
   @override
@@ -1042,18 +1066,18 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get dialog_delete_recording_title => 'Slett innspillingen';
+  String get dialog_delete_recording_title => 'Slett opptak';
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return 'Slette $arg1?';
+    return 'Slette $arg1?\nDette kan ikke angres.';
   }
 
   @override
   String get toast_recording_deleted => 'Registrering slettet';
 
   @override
-  String get toast_recording_delete_failed => 'Ikke slettet innspillingen';
+  String get toast_recording_delete_failed => 'Kunne ikke slette opptaket';
 
   @override
   String toast_batch_delete_partial(Object arg1, Object arg2) {
@@ -1065,11 +1089,11 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String setup_version_banner(Object arg1) {
-    return 'Oppdatert til v$arg1  bekreft automatisk start, BYD sletter det på hver installasjon';
+    return 'Oppdatert til v$arg1 — bekreft automatisk start, BYD sletter det på hver installasjon';
   }
 
   @override
-  String get setup_overlay_already_granted => 'Already Granted';
+  String get setup_overlay_already_granted => 'Allerede innvilget';
 
   @override
   String camera_current_manual(Object arg1) {
@@ -1077,7 +1101,7 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get camera_current_auto_label => 'Strøm: Auto';
+  String get camera_current_auto_label => 'Gjeldende: Auto';
 
   @override
   String get soh_estimation_active => 'Aktiv estimering';
@@ -1091,7 +1115,7 @@ class AppLocalizationsNb extends AppLocalizations {
       'Nominell grunnverdi — venter på pålitelige SOH-data';
 
   @override
-  String get soh_no_estimate_yet => 'Ingen vurdering ennå  Ventende på data';
+  String get soh_no_estimate_yet => 'Ingen vurdering ennå — Ventende på data';
 
   @override
   String recording_lib_selected_count(Object arg1) {
@@ -1122,16 +1146,16 @@ class AppLocalizationsNb extends AppLocalizations {
   String get status_overlay_notif_text => 'Status overlay aktiv';
 
   @override
-  String get rail_dashboard => 'Dashboard';
+  String get rail_dashboard => 'Oversikt';
 
   @override
-  String get rail_live => 'Leve';
+  String get rail_live => 'Direkte';
 
   @override
   String get rail_recordings => 'Opptak';
 
   @override
-  String get rail_vehicle => 'Køretøy';
+  String get rail_vehicle => 'Kjøretøy';
 
   @override
   String get rail_trips => 'Turer';
@@ -1168,7 +1192,7 @@ class AppLocalizationsNb extends AppLocalizations {
       'Velg hvilke segmenter av flytende statuspille som er synlige.';
 
   @override
-  String get settings_overlay_camera_title => 'eller kamera indikator';
+  String get settings_overlay_camera_title => 'Kameraindikator';
 
   @override
   String get settings_overlay_camera_subtitle =>
@@ -1188,7 +1212,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get settings_subrail_overline => 'Innstillinger';
 
   @override
-  String get cd_settings_subrail => 'Innstillings underbanen';
+  String get cd_settings_subrail => 'Innstillinger-sidelinje';
 
   @override
   String get settings_privacy_title => 'Personvern og data';
@@ -1218,7 +1242,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get settings_about_support_share_message =>
-      'Sjekk BladeWatch  åpen kildekode overvåking & dashcam for BYD: https://bladewatch-5lc.pages.dev/';
+      'Sjekk BladeWatch — åpen kildekode overvåking & dashcam for BYD: https://bladewatch-5lc.pages.dev/';
 
   @override
   String get settings_about_support_share_chooser => 'Del bladewatch';
@@ -1246,7 +1270,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get settings_about_license_value =>
-      'MIT  åpen kildekode. Trykk for å se full tekst.';
+      'MIT — åpen kildekode. Trykk for å se full tekst.';
 
   @override
   String get settings_about_source_title => 'Kildekode';
@@ -1294,7 +1318,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get settings_theme_label => 'Tema';
 
   @override
-  String get settings_theme_auto => 'Automatisk (folge system)';
+  String get settings_theme_auto => 'Automatisk (følg systemet)';
 
   @override
   String get settings_theme_light => 'Lys';
@@ -1325,7 +1349,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get settings_drive_side_right_hint => 'RHD-kjøretøy';
 
   @override
-  String get settings_drive_side_auto => 'Auto';
+  String get settings_drive_side_auto => 'Automatisk';
 
   @override
   String get settings_drive_side_auto_hint => 'Hent fra kjøretøy';
@@ -1352,7 +1376,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get recordings_title => 'Opptak';
 
   @override
-  String get recordings_segment_dashcam => 'Dashcam';
+  String get recordings_segment_dashcam => 'Dashkamera';
 
   @override
   String get recordings_segment_surveillance => 'Overvåking';
@@ -1367,7 +1391,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String recordings_segment_dashcam_count(Object arg1) {
-    return 'Dashcam · $arg1';
+    return 'Dashkamera · $arg1';
   }
 
   @override
@@ -1395,7 +1419,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get diagnostics_section_camera_probe => 'Kamera-sonde';
 
   @override
-  String get diagnostics_section_battery => 'Batterier';
+  String get diagnostics_section_battery => 'Batterihelse';
 
   @override
   String get diagnostics_section_performance => 'Ytelse';
@@ -1408,7 +1432,7 @@ class AppLocalizationsNb extends AppLocalizations {
       'Live helse, logger, og sonder for enheten.';
 
   @override
-  String get diagnostics_health_clear => 'Alt klar.';
+  String get diagnostics_health_clear => 'Alt i orden';
 
   @override
   String get diagnostics_health_section => 'Helse';
@@ -1423,13 +1447,13 @@ class AppLocalizationsNb extends AppLocalizations {
   String get diagnostics_health_camera => 'Kamera';
 
   @override
-  String get diagnostics_health_battery => 'Batterier';
+  String get diagnostics_health_battery => 'Batteri';
 
   @override
   String get diagnostics_metric_pending => '—';
 
   @override
-  String get diagnostics_metric_online => 'Online';
+  String get diagnostics_metric_online => 'Tilkoblet';
 
   @override
   String diagnostics_network_tunnel_label(Object arg1) {
@@ -1437,10 +1461,10 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_tunnel_state_online => 'Online';
+  String get diagnostics_tunnel_state_online => 'Tilkoblet';
 
   @override
-  String get diagnostics_tunnel_state_offline => 'Offline';
+  String get diagnostics_tunnel_state_offline => 'Frakoblet';
 
   @override
   String get diagnostics_tunnel_state_connecting => 'Forbindelse';
@@ -1452,7 +1476,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get diagnostics_network_ethernet => 'Ethernet';
 
   @override
-  String get diagnostics_network_offline => 'Offline';
+  String get diagnostics_network_offline => 'Frakoblet';
 
   @override
   String diagnostics_storage_used_line(Object arg1, Object arg2) {
@@ -1493,7 +1517,7 @@ class AppLocalizationsNb extends AppLocalizations {
       'App-innstillinger, tema og språk.';
 
   @override
-  String get settings_action_reset_data => 'Reset data...';
+  String get settings_action_reset_data => 'Tilbakestill data…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -1522,13 +1546,13 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dashboard_metric_tunnel => 'Fjerntilgang';
 
   @override
-  String get dashboard_metric_services => 'Bakgrunntjenester';
+  String get dashboard_metric_services => 'Bakgrunnstjenester';
 
   @override
   String get dashboard_metric_value_pending => '—';
 
   @override
-  String get dashboard_metric_vehicle => 'Køretøy';
+  String get dashboard_metric_vehicle => 'Kjøretøy';
 
   @override
   String get dashboard_chip_recording_active => 'Opptak';
@@ -1545,7 +1569,7 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get vehicle_dialog_title => 'Sette batterikapacitet';
+  String get vehicle_dialog_title => 'Angi batterikapasitet';
 
   @override
   String get vehicle_dialog_capacity_label => 'Kapasitet (kWh)';
@@ -1564,7 +1588,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get vehicle_dialog_save => 'Lagre';
 
   @override
-  String get vehicle_dialog_reset => 'Omsett til automatisk oppdagelse';
+  String get vehicle_dialog_reset => 'Tilbakestill til automatisk gjenkjenning';
 
   @override
   String get vehicle_dialog_invalid_capacity => 'Kapasitet må være 8 - 120 kWh';
@@ -1603,64 +1627,64 @@ class AppLocalizationsNb extends AppLocalizations {
   String get settings_recording_tab_status => 'Status';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => 'Opptak';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => 'Kvalitet';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => 'Lagring';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => 'Opptaksstatus';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => 'Gjeldende tilstand';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => 'Opptak i dag';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => 'Opptaksmodus (ACC PÅ)';
 
   @override
   String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+      'Velg når dashkameraet skal ta opp under kjøring.';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => 'Ingen (standard)';
 
   @override
   String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+      'Ingen opptak — overvåking virker fortsatt';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => 'Kontinuerlig';
 
   @override
   String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+      'Ta opp hele tiden under kjøring';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => 'Kjøremodus';
 
   @override
   String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+      'Ta bare opp når kjøretøyet er i bevegelse';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => 'Nærhetsvakt';
 
   @override
   String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+      'Ta opp når bevegelse oppdages';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => 'Opptaksgrense';
 
   @override
   String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+      'Maksimal lengde per fil. Opptak deles i nye filer ved dette intervallet.';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1668,113 +1692,121 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => 'Opptakskvalitet';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => 'Opptakslagring';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => 'Lagringsplassering';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => 'Intern';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SD-kort';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SD-kort (utilgj.)';
 
   @override
   String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+      'Lagringsgrense — sletter eldste automatisk når den nås';
+
+  @override
+  String get settings_recording_storage_usage_label => 'Lagringsbruk';
+
+  @override
+  String get settings_recording_storage_files_label => 'Filer';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 brukt / grense $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 opptak';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => 'Bane';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'Ledig på SD-kort';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label => 'Ledig internt';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => 'Formater ekstern stasjon';
 
   @override
   String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+      'Sletter ALLE data på SD-kortet eller USB-stasjonen permanent.';
 
   @override
   String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+      'Trykk igjen — ALLE data blir SLETTET';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running => 'Formaterer… vent litt';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => 'Formater SD-kort / USB';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive =>
+      'Fant ingen flyttbar stasjon';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return 'Formatering fullført. Ny bane: $arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => 'Databasekatalog';
 
   @override
   String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+      'Avstem opptaksindeksen mot filene på disken.';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => 'Synkroniserer…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => 'Synkroniser database';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return 'Synkronisert: +$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress =>
+      'Synkronisering pågår allerede';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return 'Synkronisering mislyktes: $arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => 'Bruk endringer';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => 'Lukk';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return 'Å starte/stoppe $arg1 støttes ikke ennå';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => 'Konfigurer';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => 'Tilbakestill miljø';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -1800,16 +1832,16 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => 'Lagring ';
+  String get dashboard_metric_storage_chip_pending => 'Lagring —';
 
   @override
-  String get dashboard_tunnel_offline => 'Offline';
+  String get dashboard_tunnel_offline => 'Frakoblet';
 
   @override
-  String get dashboard_tunnel_online => 'Online';
+  String get dashboard_tunnel_online => 'Tilkoblet';
 
   @override
-  String get dashboard_tunnel_connecting => '- Forbindelse...';
+  String get dashboard_tunnel_connecting => 'Kobler til…';
 
   @override
   String get dashboard_trips_this_week => 'Denne uken';
@@ -1857,10 +1889,10 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dashboard_trips_view_all => 'Vis alle turer';
 
   @override
-  String get dashboard_action_live => 'Livsvisning';
+  String get dashboard_action_live => 'Direktevisning';
 
   @override
-  String get dashboard_action_live_subtitle => 'Åpen kamera visning';
+  String get dashboard_action_live_subtitle => 'Åpne kameravisning';
 
   @override
   String get dashboard_action_recordings => 'Opptak';
@@ -1925,13 +1957,14 @@ class AppLocalizationsNb extends AppLocalizations {
       'Tema, språk og visuelle preferanser.';
 
   @override
-  String get settings_theme_active_auto_caption => 'Auto følger systemet tema.';
+  String get settings_theme_active_auto_caption =>
+      'Automatisk følger systemets tema.';
 
   @override
-  String get settings_theme_active_light_caption => 'Lys tema er alltid på.';
+  String get settings_theme_active_light_caption => 'Lyst tema er alltid på.';
 
   @override
-  String get settings_theme_active_dark_caption => 'Det er alltid mørkt tema.';
+  String get settings_theme_active_dark_caption => 'Mørkt tema er alltid på.';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
@@ -2006,10 +2039,10 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_camera_value_probing => 'Sonde...';
+  String get diagnostics_camera_value_probing => 'Undersøker…';
 
   @override
-  String get diagnostics_camera_value_offline => 'Offline';
+  String get diagnostics_camera_value_offline => 'Frakoblet';
 
   @override
   String diagnostics_battery_value_soh(Object arg1) {
@@ -2026,7 +2059,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get dashboard_insight_welcome =>
-      'Velkommen  BladeWatch er nå ditt andre øyepar.';
+      'Velkommen — BladeWatch er nå ditt andre øyepar.';
 
   @override
   String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
@@ -2075,7 +2108,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 min';
+    return '$arg1 t $arg2 min';
   }
 
   @override
@@ -2134,13 +2167,13 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get vehicle_tab_trunk => 'Trunk';
+  String get vehicle_tab_trunk => 'Bagasjerom';
 
   @override
   String get vehicle_tab_climate => 'Klima';
 
   @override
-  String get vehicle_tab_seats => 'Steder';
+  String get vehicle_tab_seats => 'Seter';
 
   @override
   String get vehicle_tab_windows => 'Vinduer';
@@ -2152,7 +2185,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get vehicle_tab_adas => 'ADAS';
 
   @override
-  String get vehicle_control_charging_tab => 'Ladding';
+  String get vehicle_control_charging_tab => 'Lading';
 
   @override
   String get vehicle_locked => 'Låst';
@@ -2174,7 +2207,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get vehicle_open_trunk => 'Åpne bagasjerom';
 
   @override
-  String get vehicle_close_trunk => 'Slåt trunk';
+  String get vehicle_close_trunk => 'Lukk bagasjerom';
 
   @override
   String get vehicle_trunk_info_open =>
@@ -2184,7 +2217,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get vehicle_ac_on => 'AC På';
 
   @override
-  String get vehicle_ac_off => 'AC Avgang';
+  String get vehicle_ac_off => 'AC av';
 
   @override
   String get vehicle_max_cooling_on => 'Maks kjøling: PÅ';
@@ -2271,10 +2304,10 @@ class AppLocalizationsNb extends AppLocalizations {
   String get vehicle_window_open_all => 'Åpne alle';
 
   @override
-  String get vehicle_sunroof => 'Sunroof';
+  String get vehicle_sunroof => 'Soltak';
 
   @override
-  String get vehicle_sunshade => 'Solskjerm';
+  String get vehicle_sunshade => 'Solgardin';
 
   @override
   String get vehicle_btn_drl_title => 'Tidstidens løpende lys';
@@ -2299,19 +2332,19 @@ class AppLocalizationsNb extends AppLocalizations {
   String get vehicle_charge_limit_range => 'Minimum 50%, maksimum 100%';
 
   @override
-  String get vehicle_tyre_no_signal => 'Ingen signal';
+  String get vehicle_tyre_no_signal => 'INGEN SIGNAL';
 
   @override
-  String get vehicle_tyre_slow_leak => 'SLOW LEAK';
+  String get vehicle_tyre_slow_leak => 'SAKTE LEKKASJE';
 
   @override
-  String get vehicle_tyre_fast_leak => 'FAST utløp';
+  String get vehicle_tyre_fast_leak => 'RASK LEKKASJE';
 
   @override
-  String get vehicle_tyre_low => 'LIG';
+  String get vehicle_tyre_low => 'LAV';
 
   @override
-  String get vehicle_tyre_high => 'Høy';
+  String get vehicle_tyre_high => 'HØY';
 
   @override
   String get vehicle_tyre_ok => 'OK';
@@ -2471,13 +2504,13 @@ class AppLocalizationsNb extends AppLocalizations {
   String get trips_tab_storage => 'Lagring';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 dager';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 dager';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 dager';
 
   @override
   String trips_load_error(Object message) {
@@ -2491,13 +2524,13 @@ class AppLocalizationsNb extends AppLocalizations {
   String get trips_period_summary_title => 'Periodesammendrag';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => 'Turer';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => 'Timer';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => 'Effektivitet';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2507,7 +2540,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return 'Poeng: $score';
   }
 
   @override
@@ -2515,7 +2548,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return 'Totalt: $score / 100';
   }
 
   @override
@@ -2523,7 +2556,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD-estimat: $km km';
   }
 
   @override
@@ -2533,46 +2566,46 @@ class AppLocalizationsNb extends AppLocalizations {
   String get trips_dna_title => 'Kjøre-DNA';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => 'Forutseenhet';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => 'Jevnhet';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => 'Fartsdisiplin';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => 'Effektivitet';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => 'Konsistens';
 
   @override
   String get trips_storage_title => 'Turlagring';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => 'Turanalyse';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => 'Strømpris';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => 'Distanseenhet';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => 'Lagringsplassering';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => 'Intern';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SD-kort';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SD-kort (utilgj.)';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => 'Bruk endringer';
 
   @override
   String trips_storage_usage_line(
@@ -2581,7 +2614,7 @@ class AppLocalizationsNb extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '$used $unit brukt / grense $limit MB · $count turer';
   }
 
   @override
@@ -2589,13 +2622,13 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+      'Avstemmer turindeksen mot telemetrifilene på disken.';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => 'Synkroniser database';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => 'Synkroniserer…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2609,31 +2642,31 @@ class AppLocalizationsNb extends AppLocalizations {
   String get trips_detail_summary_title => 'Tursammendrag';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => 'Distanse';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => 'Varighet';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => 'Energi';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => 'Gj.sn. fart';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => 'Maks. fart';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => 'Ladenivå';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => 'Kostnad';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => 'Utetemp.';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => 'Stigning';
 
   @override
   String get trips_detail_scores_title => 'Kjørepoeng';
@@ -2646,7 +2679,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return '$count GPS-punkter registrert';
   }
 
   @override
@@ -2692,7 +2725,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get location_action_retry => 'Prøv igjen';
 
   @override
-  String get location_mode_auto => 'Auto';
+  String get location_mode_auto => 'Automatisk';
 
   @override
   String get location_mode_light => 'Lys';
@@ -2802,6 +2835,19 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => 'Bevegelsessone';
+
+  @override
+  String get surveillance_roi_description =>
+      'Trykk for å legge til et punkt, dra for å flytte det. Minst tre punkter, maks åtte.';
+
+  @override
+  String get surveillance_roi_enable => 'Begrens deteksjon til denne sonen';
+
+  @override
+  String get action_undo => 'Angre';
+
+  @override
   String get surveillance_detection_title => 'Deteksjonsinnstillinger';
 
   @override
@@ -2874,8 +2920,14 @@ class AppLocalizationsNb extends AppLocalizations {
       'Lagringsgrense – sletter eldste automatisk ved grensen';
 
   @override
+  String get surveillance_storage_usage_label => 'Lagringsbruk';
+
+  @override
+  String get surveillance_storage_files_label => 'Filer';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 brukt / grense $arg2';
   }
 
   @override

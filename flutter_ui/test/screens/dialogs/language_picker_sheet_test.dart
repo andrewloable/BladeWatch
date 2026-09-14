@@ -9,11 +9,19 @@ class FakeLocaleStore implements LocaleStore {
   String? stored;
   final writes = <String>[];
 
+  /// Set false to model a store that cannot persist (BladeWatch-vcur).
+  bool writable = true;
+
   @override
   Future<String?> readRaw() async => stored;
 
   @override
-  Future<void> writeRaw(String tag) async => writes.add(tag);
+  Future<bool> writeRaw(String tag) async {
+    writes.add(tag);
+    if (!writable) return false;
+    stored = tag;
+    return true;
+  }
 }
 
 void main() {
@@ -179,5 +187,29 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+  });
+
+  // ── BladeWatch-vcur: a language that could not be saved must say so. The
+  // old store wrote to a directory the app UID cannot create, applied the
+  // language anyway, and let the user discover the loss on next launch. ────
+  testWidgets('tells the user when the choice could not be saved', (tester) async {
+    store.writable = false;
+    await pumpSheet(tester);
+
+    await tester.tap(find.text('Deutsch'));
+    await tester.pumpAndSettle();
+
+    expect(controller.rawTag, 'de', reason: 'still applied for this session');
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.textContaining('could not be saved'), findsOneWidget);
+  });
+
+  testWidgets('says nothing when the choice saved normally', (tester) async {
+    await pumpSheet(tester);
+
+    await tester.tap(find.text('Deutsch'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SnackBar), findsNothing);
   });
 }

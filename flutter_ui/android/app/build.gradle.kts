@@ -122,19 +122,9 @@ kover {
                     // real FlutterEngine), not unit-testable without Robolectric,
                     // which this refactor deliberately does not use. Keep this
                     // class thin (wiring only) and put all real logic in plain
-                    // Kotlin classes under ipc/, auth/, daemon/, config/, update/
+                    // Kotlin classes under ipc/, auth/, daemon/, config/
                     // instead, which ARE unit-tested.
                     classes("net.bladewatch.bladewatch_ui.MainActivity")
-                    // Real network I/O boundaries — no branching logic of their
-                    // own (mirrors flutter_ui/lib/rpc/raw_http_sender.dart and
-                    // the main app's SystemAdbEnableGateway); proven by real
-                    // usage, not unit-testable meaningfully without re-testing
-                    // HttpURLConnection itself.
-                    classes("net.bladewatch.bladewatch_ui.update.HttpConnectionsKt")
-                    // PackageInstaller session API: Context/PackageManager-bound,
-                    // not unit-testable without Robolectric; verified on-device
-                    // in BladeWatch-imh6.6. See its own doc comment.
-                    classes("net.bladewatch.bladewatch_ui.update.PackageInstallerBridge")
                     // ConnectivityManager/WifiManager-bound diagnostic probe, same
                     // reason as PackageInstallerBridge above. See its own doc
                     // comment; verified on-device in BladeWatch-imh6.

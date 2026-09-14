@@ -78,5 +78,56 @@ void main() {
 
       await expectLater(() => DaemonChannel(fake).processStatus(), throwsA(isA<ChannelTimeoutException>()));
     });
+
+    test('tunnelUrl returns the share URL the daemon reports', () async {
+      final fake = FakePlatformChannel()
+        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{
+          'status': 'ok',
+          'running': true,
+          'url': 'https://bladewatch1a2b3c.share.zrok.io',
+        });
+
+      expect(await DaemonChannel(fake).tunnelUrl(), 'https://bladewatch1a2b3c.share.zrok.io');
+      expect(fake.calls.single.method, 'tunnelStatus');
+    });
+
+    test('tunnelUrl returns null when the tunnel is up but has published no URL yet', () async {
+      final fake = FakePlatformChannel()
+        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{'status': 'ok', 'running': true, 'url': null});
+
+      expect(await DaemonChannel(fake).tunnelUrl(), isNull);
+    });
+
+    test('tunnelUrl returns null when no tunnel is running', () async {
+      final fake = FakePlatformChannel()
+        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{'status': 'ok', 'running': false, 'url': null});
+
+      expect(await DaemonChannel(fake).tunnelUrl(), isNull);
+    });
+
+    test('tunnelUrl treats an empty URL string as no tunnel', () async {
+      final fake = FakePlatformChannel()
+        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{'status': 'ok', 'running': true, 'url': ''});
+
+      expect(await DaemonChannel(fake).tunnelUrl(), isNull);
+    });
+
+    test('setDaemonEnabled sends the native key and the flag, and reports success', () async {
+      final fake = FakePlatformChannel()
+        ..stub('daemon', 'setEnabled', <Object?, Object?>{'status': 'ok', 'enabled': true, 'killed': 0});
+
+      expect(await DaemonChannel(fake).setDaemonEnabled('ZROK_TUNNEL', true), isTrue);
+      expect(fake.calls.single.method, 'setEnabled');
+      expect(fake.calls.single.args, {'type': 'ZROK_TUNNEL', 'enabled': true});
+    });
+
+    test('setDaemonEnabled reports false when the daemon refuses the type', () async {
+      // The allow-list is enforced daemon-side; a refusal must not read as success.
+      final fake = FakePlatformChannel()
+        ..stub('daemon', 'setEnabled',
+            <Object?, Object?>{'status': 'error', 'message': 'Daemon not toggleable over IPC: CAMERA_DAEMON'});
+
+      expect(await DaemonChannel(fake).setDaemonEnabled('CAMERA_DAEMON', false), isFalse);
+    });
   });
 }

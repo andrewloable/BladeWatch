@@ -24,15 +24,39 @@ The app cannot write to `/data/local/tmp` and cannot read files that are mode
 | File | Primary path (current) | Owner / mode | Why | Who reads it |
 |---|---|---|---|---|
 | config | `/storage/emulated/0/BladeWatch/data/bladewatch_config.json` | world-rw (`setReadable/Writable(true, false)`) | non-secret config | app + daemon (direct) |
-| secrets | `/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json` | `rw-------` (owner-only) | device secret, tunnel tokens, cloud creds | **daemon only**; app fetches values over IPC |
+| secrets | `/data/local/tmp/bladewatch_secrets.json` | `shell` `rw-------` (owner-only, and **actually enforced** — see below) | device secret, tunnel tokens, cloud creds | **daemon only**; app fetches values over IPC |
 | IPC token | `/data/local/tmp/bladewatch_ipc_token` | `shell` `644` (world-readable) | shared token that authenticates loopback IPC | **app + daemon** — app MUST be able to read it |
 
-> **Path migration.** Config and secrets used to live directly in
-> `/data/local/tmp`. They now live in shared/app-external storage as their
-> *primary* path, with a best-effort `/data/local/tmp` *legacy mirror*
-> (`/data/local/tmp/bladewatch_config.json`, created `0666`;
-> `/data/local/tmp/bladewatch_secrets.json`, owner-only) kept only for older
-> hardcoded readers. The **IPC token stays in `/data/local/tmp`** — it is the
+> **Why the secrets file is back in `/data/local/tmp` (BladeWatch-078u).**
+> It briefly lived at
+> `/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json`,
+> and while there the documented `rw-------` was **not merely unenforceable, it
+> was false**. That path is `sdcardfs`, which SYNTHESISES permissions from its
+> mount options (`mask=6`, `gid=1015`) instead of storing them per file, so
+> `chmod 600` is a silent no-op. Measured on the head unit:
+>
+> ```
+> $ chmod 600 .../files/.perm_probe && ls -l .../files/.perm_probe
+> -rw-rw---- 1 u0_a72 sdcard_rw          # unchanged
+> $ chmod 600 /data/local/tmp/.perm_probe && ls -l /data/local/tmp/.perm_probe
+> -rw------- 1 shell  shell              # takes effect
+> ```
+>
+> and `shell` — a **non-owner uid** — could read the sdcardfs copy. The store
+> now reads the sdcardfs path as a *legacy fallback* so an upgraded device
+> keeps its paired `deviceSecret`, and `CameraDaemon` migrates it forward at
+> startup (`SecretConfigStore.migrateFromLegacyIfNeeded()`), which deletes the
+> exposed copy. Only the daemon can do that: `canWriteDirectly()` refuses any
+> uid but 2000, and the app reaches secrets over token-gated IPC.
+>
+> **Do not move it back onto `/storage/emulated/**` for convenience.** Any path
+> under that mount silently loses the owner-only property, which is what the
+> IPC token's "not a trust boundary" reasoning depends on.
+>
+> **Path migration.** Config still lives in shared storage as its *primary*
+> path, with a best-effort `/data/local/tmp` *legacy mirror*
+> (`/data/local/tmp/bladewatch_config.json`, created `0666`) kept only for
+> older hardcoded readers. The **IPC token stays in `/data/local/tmp`** — it is the
 > one cross-process file that must be world-readable on a path both UIDs agree
 > on regardless of external-storage state.
 
@@ -81,13 +105,110 @@ App needs deviceSecret
 - The client sends `IpcTokenManager.refreshToken()` (a fresh disk read, not the process cache) as the first message, so a token the daemon rewrote since this process last cached one is picked up automatically — the self-healing path across a daemon restart / app reinstall.
 - The IPC token is the **bootstrap**: if the app can't read the token file, the entire fallback path is dead, so secrets/JWTs are unavailable.
 
+## Public (non-secret) config over IPC
+
+`UnifiedConfigManager`'s store is a **separate** store from the secret one and
+has its own command pair on 19876 (BladeWatch-hygs):
+
+| Command | Does |
+|---|---|
+| `config_get_section` `{section}` | returns `{section: {…}}` — the section's current values |
+| `config_put` `{section, key, value}` | merges one key into the section |
+
+These exist because the Flutter APK (`net.bladewatch.flutter`) has no path to
+`/storage/emulated/0/BladeWatch/data/bladewatch_config.json`, which is where the
+Status-overlay and Privacy settings live. Reads go through the same typed
+accessors the native UI uses (`getStatusOverlay()`, `isTimingLogsEnabled()`,
+`isDebugLogsEnabled()`) so the DEFAULT for an absent key is identical on both
+UIs — `cameraVisible`/`tripVisible`/`timingLogsEnabled` default true,
+`debugLogsEnabled` false.
+
+**They are allow-listed, deliberately.** `TcpCommandServer.PUBLIC_CONFIG_SECTIONS`
+admits exactly `statusOverlay` and `developerOptions`; every other section is
+refused with `Section not exposed over IPC: <name>`, reads included. Without
+that, this pair would be a generic "write anything to the public config"
+primitive — enough to flip `network.lanHttpEnabled` (which decides whether the
+HTTP server binds beyond loopback) or set `surveillance.surveillanceEnabled`
+false, neither of which gets any validation on this path. **If a new section
+needs to be reachable, add it to the allow-list only after checking what a
+caller could do by writing every key in it.**
+
+Both commands sit behind the same caller-UID gate and IPC token as `secret_*` —
+they are not a separate trust boundary, just a narrower command.
+
+No cross-process notification is needed after a write: `StatusOverlayService
+.updateUI()` re-reads the config on every poll, and `UnifiedConfigManager
+.loadConfig()` invalidates its cache on the file's mtime, so a write from the
+daemon is visible to the app process (and vice versa) without a restart.
+
+## Tunnel URL over IPC
+
+`tunnelStatus` on 19876 (BladeWatch-m1po) answers
+`{"status":"ok","running":<bool>,"url":<string|null>}`.
+
+The Flutter APK cannot reach either place native keeps this value — `ZrokController`'s
+in-memory `LiveData`, or `PreferencesManager`'s app-private `SharedPreferences` — so
+the daemon reads zrok's own log (`/data/local/tmp/zrok.log`) instead. No shell and no
+ADB: the daemon already runs as shell UID, the same UID zrok was launched under.
+
+**The URL is gated on the tunnel process being alive**, mirroring native, which only
+calls `ZrokLauncher.getTunnelUrl()` inside an `isTunnelRunning { if (isRunning) … }`
+branch. The log is appended to across launches, so without that gate a URL from a dead
+session would be republished as a live tunnel — including into the Dashboard's QR code.
+Liveness itself is an **argv[0]** match read from procfs, not a `pgrep -f` over whole
+command lines: `-f` matched any process that merely mentioned a daemon name, which
+defeated this gate (BladeWatch-xzhv — observed with a shell that only wrote to
+`zrok.log`). `app_process --nice-name=<n>` overwrites argv[0] with the nice-name, and
+zrok is exec'd by path, so the comparison is on the basename of argv[0], by exact
+equality — which also keeps `sentry_daemon` from matching `acc_sentry_daemon`.
+
+Two deliberate differences from native's `grep -o … | head -1`: it takes the **last**
+match, because the first can be an older session's name (the drift native patches up
+afterwards with `reconcileTunnelUrl`), and it never loads the log into memory — it
+streams, reading only the tail of a large file.
+
+`running=true` with `url=null` is a real state (tunnel up, banner not yet written), not
+an error. `DaemonChannel.tunnelUrl()` collapses it to null because the Dashboard renders
+only online/offline.
+
+## Daemon enable/disable over IPC
+
+`daemon_set_enabled` on 19876 takes `{type, enabled}` and answers
+`{"status":"ok","enabled":<bool>,"killed":<int>}`.
+
+**`type` is checked against a fixed allow-list before anything happens**
+(`TcpCommandServer.TOGGLEABLE_DAEMONS`), and nothing from the request ever reaches a
+shell. The PIDs it signals come from this server's own procfs scan, keyed by a process
+name looked up from the enum — never from the wire.
+
+The allow-list currently holds **ZROK_TUNNEL alone** (BladeWatch-abcx), and the other
+three are excluded for structural reasons, not missing work:
+
+| Daemon | Why not |
+|---|---|
+| `CAMERA_DAEMON` | Hosts this server. Stopping it kills the socket answering the request, and the Flutter APK has no ADB, so nothing could start it again. |
+| `SENTRY_DAEMON`, `ACC_SENTRY_DAEMON` | Core daemons. `DaemonStartupManager`'s health check relaunches them within 30 s unless they are in `userStoppedDaemons` — an in-memory set in the *app* process that the daemon cannot reach — so a stop here would silently undo itself. |
+
+Enabling only **records the intent**: `DaemonStartupManager`'s health check performs the
+launch through the full `ZrokLauncher` flow (tokens, reserved mode) within ~30 s.
+Disabling records the intent **and kills the process**, because that health check only
+ever relaunches, never kills — without the kill the tunnel would keep serving until the
+next reboot while the switch read "off".
+
+The shared state is `UnifiedConfigManager`'s `daemons` section
+(`{"ZROK_TUNNEL": <bool>}`), which both APKs can reach. `DaemonStartupManager` prefers it
+and falls back to `PreferencesManager` (app-private SharedPreferences, invisible to the
+Flutter APK) when the key is unset, so an install predating the section keeps its
+existing setting.
+
 ## Caller-UID gate (defence in depth on top of the token)
 
 Because `bladewatch_ipc_token` is **world-readable by design** (the app UID must
 read it), the token alone is not a trust boundary: any local process that can
-read it could otherwise drive privileged IPC — `shell` (arbitrary command exec
-as UID 2000) and `secret_get/put/delete` on 19876, and `GET_VEHICLE_DATA`,
-`UPDATE_GPS`, `INSTALL_UPDATE` on 19877.
+read it could otherwise drive privileged IPC — `secret_get/put/delete` and
+`config_put` on 19876, and `GET_VEHICLE_DATA`, `UPDATE_GPS`, `INSTALL_UPDATE`
+on 19877. (The `shell` command — free-form `sh -c` as UID 2000 — was removed in
+uy93.2; do not reintroduce it.)
 
 Both servers therefore verify the **connecting socket's owning UID** before
 processing any command, in addition to the token check:
@@ -122,8 +243,8 @@ accept() → PeerCredentials.resolvePeerUid(socket)   // map (clientPort, server
   3. The token gate still rejects invalid/absent tokens after the UID check.
 - An unresolved UID (-1) from a procfs lookup race (accept→procfs race) is still
   never trusted (fail-closed, after a brief retry to absorb the race).
-- This is what gates the privileged `shell` / `secret_*` / GPS / update commands
-  — the 644 token is **not** loosened or changed.
+- This is what gates the privileged `secret_*` / `config_put` / GPS / update
+  commands — the 644 token is **not** loosened or changed.
 
 ## JWT + live-view flow
 
@@ -170,7 +291,7 @@ throttled log line looks like:
 ## Rules for future changes (prevent regressions)
 
 1. **Any file the app must read from `/data/local/tmp` must be world- or group-readable.** Never rely on a bare `FileWriter`/`FileOutputStream` for such files — they default to mode `600`. chmod (`setReadable(true, false)` or `Files.setPosixFilePermissions`) immediately after writing.
-2. **Secrets the app must NOT read directly stay owner-only** (`rw-------`) and are fetched over IPC (the token-gated `secret_get` path). Don't loosen `bladewatch_secrets.json` or its legacy `/data/local/tmp` mirror.
+2. **Secrets the app must NOT read directly stay owner-only** (`rw-------`) and are fetched over IPC (the token-gated `secret_get` path). Don't loosen `bladewatch_secrets.json`, and don't move it onto `/storage/emulated/**` — that mount cannot enforce the mode at all (BladeWatch-078u).
 3. **The IPC token must be readable by the app** — it is the bootstrap for the whole secret/JWT chain. Keep it `644`; the real trust boundary is the caller-UID gate below, **not** the token.
 4. **Keep `IpcTokenManager.generate()` idempotent.** It runs every daemon boot; it must reuse an existing well-formed token (and only repair its perms), not rotate it. Rotating each boot strands any process still holding the old token (the app, or a stale reinstall-surviving daemon) with `Unauthorized` failures and "Camera unavailable". Clients re-read via `refreshToken()`, but only the daemon mints — so the daemon must not churn the value.
 5. **Don't weaken the caller-UID gate for resolved UIDs.** Both IPC servers reject any peer whose UID is not root/system/shell/app (`PeerCredentials.isTrusted`). If you add a new local client (another daemon UID), add it to the allow-list rather than removing the check. The gate must stay fail-closed on an unresolved UID **from a procfs race**; but when the app UID itself cannot be resolved (`createAppContext` returned a null-safe fallback), it falls back to trusting any app UID (≥ 10000) with a warning — the token gate remains active.

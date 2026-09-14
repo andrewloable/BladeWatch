@@ -28,33 +28,43 @@ Locale parseLocaleTag(String tag) {
 /// only test seam. [FileLocaleStore] is the real implementation.
 abstract class LocaleStore {
   Future<String?> readRaw();
-  Future<void> writeRaw(String tag);
+  /// Returns whether the tag reached disk.
+  Future<bool> writeRaw(String tag);
 }
 
-/// Real [LocaleStore] — ground truth: `LocaleManager.java`. Reads/writes a
-/// plain UTF-8 text file at `/data/local/tmp/.bladewatch/locale`, the same
-/// path native's own Kotlin/Java UI code reads and writes *directly* (no
-/// IPC — this is deliberately not app-private storage). Native explicitly
-/// calls `setReadable(true, false)`/relies on the directory's default
-/// world-executable permissions to make this file readable and writable by
-/// both processes despite living outside either app's private data
-/// directory; the Flutter and main APKs share a UID
-/// (`android:sharedUserId="net.bladewatch.app"` in both manifests), so the
-/// same file is equally reachable from here via plain `dart:io`.
+/// Real [LocaleStore] — ground truth: `LocaleManager.java`, which must keep
+/// pointing at the same file: the daemon, the native UI and this app are three
+/// readers of one contract, and the contract IS the path.
+///
+/// `/storage/emulated/0/BladeWatch/data/locale`, NOT the old
+/// `/data/local/tmp/.bladewatch/locale` (BladeWatch-vcur). That directory is
+/// `0771 shell:shell`, so the app UID can traverse in and read but cannot
+/// create anything — every write from either in-car UI failed, silently, and
+/// the chosen language came back English on the next launch. This directory is
+/// created by `setupStorageDirectories()`, both APKs already write
+/// `bladewatch_config.json` into it, and the daemon can read it because shell
+/// is in `sdcard_rw`.
+///
+/// [legacyPath] is still READ so a device whose web UI persisted a language
+/// keeps it — the web picker goes through the daemon, which runs as shell and
+/// so could always write the old location.
 ///
 /// Covered by a real-file integration test (`file_locale_store_test.dart`),
 /// the same approach `raw_http_sender_test.dart`/`io_live_socket_test.dart`
 /// use for their own thin real-I/O wrappers, against a temp path rather than
-/// the real `/data/local/tmp` (which doesn't exist on a dev machine).
+/// the real device paths (which don't exist on a dev machine).
 class FileLocaleStore implements LocaleStore {
   final String path;
+  final String legacyPath;
 
-  const FileLocaleStore([this.path = '/data/local/tmp/.bladewatch/locale']);
+  const FileLocaleStore([
+    this.path = '/storage/emulated/0/BladeWatch/data/locale',
+    this.legacyPath = '/data/local/tmp/.bladewatch/locale',
+  ]);
 
-  @override
-  Future<String?> readRaw() async {
+  static Future<String?> _read(String p) async {
     try {
-      final file = File(path);
+      final file = File(p);
       if (!await file.exists()) return null;
       final content = (await file.readAsString()).trim();
       return content.isEmpty ? null : content;
@@ -64,10 +74,20 @@ class FileLocaleStore implements LocaleStore {
   }
 
   @override
-  Future<void> writeRaw(String tag) async {
-    final file = File(path);
-    await file.parent.create(recursive: true);
-    await file.writeAsString(tag);
+  Future<String?> readRaw() async => await _read(path) ?? await _read(legacyPath);
+
+  /// Returns whether the tag reached disk. It really can fail — that is the
+  /// whole of BladeWatch-vcur — so the caller is expected to look.
+  @override
+  Future<bool> writeRaw(String tag) async {
+    try {
+      final file = File(path);
+      await file.parent.create(recursive: true);
+      await file.writeAsString(tag);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
@@ -103,14 +123,21 @@ class LocaleController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Whether the last [select] reached disk. False means the language is
+  /// applied for this session only and will be gone on the next launch — the
+  /// picker shows that rather than letting the user find out later
+  /// (BladeWatch-vcur).
+  bool get lastPersistSucceeded => _lastPersistSucceeded;
+  bool _lastPersistSucceeded = true;
+
   /// Persists [tag] ([kAutoLocaleTag] or one of [kSupportedLocaleTags]).
-  /// Applies immediately (optimistic) and persists fire-and-forget — ground
-  /// truth: `LocaleManager.set()` itself has no failure/revert path either,
-  /// just a caught-and-logged exception.
+  /// Applies immediately — the UI should not wait on the disk — then records
+  /// whether persisting actually worked.
   Future<void> select(String tag) async {
     if (tag == _rawTag) return;
     _rawTag = tag;
     notifyListeners();
-    await _store.writeRaw(tag);
+    _lastPersistSucceeded = await _store.writeRaw(tag);
+    if (!_lastPersistSucceeded) notifyListeners();
   }
 }

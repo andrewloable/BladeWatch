@@ -7,13 +7,18 @@ class FakeLocaleStore implements LocaleStore {
   String? stored;
   final writes = <String>[];
 
+  /// Set false to model a store that cannot persist (BladeWatch-vcur).
+  bool writable = true;
+
   @override
   Future<String?> readRaw() async => stored;
 
   @override
-  Future<void> writeRaw(String tag) async {
+  Future<bool> writeRaw(String tag) async {
     writes.add(tag);
+    if (!writable) return false;
     stored = tag;
+    return true;
   }
 }
 
@@ -101,6 +106,30 @@ void main() {
 
       expect(store.writes, ['ja']);
       expect(notified, 0);
+    });
+  });
+
+  // ── BladeWatch-vcur: a write that cannot persist must be visible. ────────
+  group('persist failure', () {
+    test('select() reports when the choice could not be saved', () async {
+      final store = FakeLocaleStore()..writable = false;
+      final c = LocaleController(store: store);
+      await c.load();
+
+      await c.select('de');
+
+      expect(c.rawTag, 'de', reason: 'still applied for this session');
+      expect(c.lastPersistSucceeded, isFalse,
+          reason: 'the picker needs this to tell the user it will not survive a restart');
+    });
+
+    test('select() reports success on a store that can persist', () async {
+      final c = LocaleController(store: FakeLocaleStore());
+      await c.load();
+
+      await c.select('de');
+
+      expect(c.lastPersistSucceeded, isTrue);
     });
   });
 }

@@ -10,6 +10,12 @@ import '../../shell/route_stubs.dart' show BwRoutes;
 import 'dashboard_controller.dart';
 import 'dashboard_models.dart';
 import 'vehicle_dialog_controller.dart';
+import '../../widgets/bw_choice_chip.dart';
+
+/// Width at which the dashboard uses native's two-column arrangement (hero
+/// beside Scan-to-Connect) and a five-across metric row. The head unit is
+/// 1920 logical pixels wide; below this the screen stacks and wraps instead.
+const double _twoColumnBreakpoint = 1100;
 
 /// Ported from `app/src/main/java/com/loabletech/bladewatch/ui/fragment/DashboardFragment.kt`
 /// + `fragment_dashboard.xml`. Renders [DashboardController] state; forwards
@@ -55,30 +61,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final theme = Theme.of(context);
     final c = widget.controller;
 
+    final hero = _TripStatsCard(
+      state: c.tripStats,
+      l10n: l10n,
+      theme: theme,
+      onViewAllTrips: () => widget.onNavigate(BwRoutes.trips),
+    );
+    final connect = _ConnectCard(controller: c, l10n: l10n, theme: theme);
+    final metrics = _MetricRow(
+      controller: c,
+      l10n: l10n,
+      theme: theme,
+      onRecordingsTap: () => widget.onNavigate(BwRoutes.recordings),
+      onTunnelTap: () => widget.onNavigate(BwRoutes.diagnostics),
+      onDaemonsTap: () => widget.onNavigate(BwRoutes.diagnostics),
+      onVehicleTap: _openVehicleDialog,
+      onLiveTap: () => widget.onNavigate(BwRoutes.liveView),
+    );
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _TripStatsCard(state: c.tripStats, l10n: l10n, theme: theme, onViewAllTrips: () => widget.onNavigate(BwRoutes.trips)),
-            const SizedBox(height: 12),
-            _HeroChips(controller: c, l10n: l10n, theme: theme),
-            const SizedBox(height: 16),
-            _MetricGrid(
-              controller: c,
-              l10n: l10n,
-              theme: theme,
-              onRecordingsTap: () => widget.onNavigate(BwRoutes.recordings),
-              onTunnelTap: () => widget.onNavigate(BwRoutes.diagnostics),
-              onDaemonsTap: () => widget.onNavigate(BwRoutes.diagnostics),
-              onVehicleTap: _openVehicleDialog,
-            ),
-            const SizedBox(height: 16),
-            _ConnectCard(controller: c, l10n: l10n, theme: theme),
-            const SizedBox(height: 16),
-            _QuickActions(l10n: l10n, theme: theme, onLive: () => widget.onNavigate(BwRoutes.liveView)),
-          ],
+        // LayoutBuilder rather than a hardcoded two-column layout: the head
+        // unit is 1920x1080, but the same screen has to degrade sensibly if the
+        // window is ever narrower.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= _twoColumnBreakpoint;
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Native puts the hero and Scan-to-Connect side by side so the
+                // whole dashboard fits above the fold; stacking them pushed the
+                // access code two swipes down (BladeWatch-ya6f).
+                if (wide)
+                  // Deliberately NOT wrapped in IntrinsicHeight to equalise the
+                  // two columns: the Connect card sizes its QR with a
+                  // LayoutBuilder, and IntrinsicHeight cannot measure through
+                  // one ("LayoutBuilder does not support returning intrinsic
+                  // dimensions"). Each column sizes to its own content instead.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 3, child: hero),
+                      const SizedBox(width: 16),
+                      Expanded(flex: 2, child: connect),
+                    ],
+                  )
+                else ...[
+                  hero,
+                  const SizedBox(height: 16),
+                  connect,
+                ],
+                const SizedBox(height: 12),
+                _HeroChips(controller: c, l10n: l10n, theme: theme),
+                const SizedBox(height: 16),
+                metrics,
+              ],
+            );
+          },
         ),
       ),
     );
@@ -107,17 +148,25 @@ class _TripStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Native's headline combines count and distance on one line
+    // ("3 trips · 21.0 km"). DashboardFragment builds it by hand with English
+    // "trip"/"trips" hardcoded; composing it from the localised plural here
+    // gives the same result without inheriting that bug.
     final headline = state.loading
         ? l10n.dashboard_trips_loading
         : !state.available
             ? l10n.dashboard_trips_unavailable
             : state.tripCount == 0
                 ? l10n.dashboard_trips_no_data
-                : l10n.dashboard_trips_count(state.tripCount);
+                : '${l10n.dashboard_trips_count(state.tripCount)} · ${state.distanceLabel}';
     final pending = l10n.dashboard_metric_value_pending;
+    // The hero is the focal point of the screen, so it takes the filled
+    // primaryContainer role as native does. Everything inside it must therefore
+    // read against onPrimaryContainer, not onSurface.
+    final onHero = theme.colorScheme.onPrimaryContainer;
 
     return Card(
-      color: theme.colorScheme.surfaceContainer,
+      color: theme.colorScheme.primaryContainer,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
@@ -125,42 +174,57 @@ class _TripStatsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.dashboard_trips_this_week,
-                style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            const SizedBox(height: 4),
-            Text(headline, style: theme.textTheme.headlineSmall?.copyWith(color: theme.colorScheme.onSurface)),
-            const SizedBox(height: 16),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: _Stat(
-                    label: l10n.dashboard_trips_label_trips,
-                    value: state.available ? state.tripCount.toString() : pending,
-                    theme: theme,
+                  child: Text(
+                    l10n.dashboard_trips_this_week.toUpperCase(),
+                    style: theme.textTheme.labelLarge?.copyWith(color: onHero),
                   ),
                 ),
-                Expanded(
-                  child: _Stat(
-                    label: l10n.dashboard_trips_label_distance,
-                    value: state.available ? state.distanceLabel : pending,
-                    theme: theme,
-                  ),
-                ),
-                Expanded(
-                  child: _Stat(
-                    label: l10n.dashboard_trips_label_time,
-                    value: state.available ? state.driveTimeLabel : pending,
-                    theme: theme,
-                  ),
+                // Top-right, on the label's baseline, as native has it.
+                TextButton(
+                  key: const ValueKey('tripStats.viewAll'),
+                  onPressed: onViewAllTrips,
+                  style: TextButton.styleFrom(foregroundColor: onHero),
+                  child: Text(l10n.dashboard_trips_view_all),
                 ),
               ],
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                key: const ValueKey('tripStats.viewAll'),
-                onPressed: onViewAllTrips,
-                child: Text(l10n.dashboard_trips_view_all),
+            Text(headline, style: theme.textTheme.headlineMedium?.copyWith(color: onHero)),
+            const SizedBox(height: 16),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _Stat(
+                      label: l10n.dashboard_trips_label_trips,
+                      value: state.available ? state.tripCount.toString() : pending,
+                      theme: theme,
+                      color: onHero,
+                    ),
+                  ),
+                  _StatDivider(color: onHero),
+                  Expanded(
+                    child: _Stat(
+                      label: l10n.dashboard_trips_label_distance,
+                      value: state.available ? state.distanceLabel : pending,
+                      theme: theme,
+                      color: onHero,
+                    ),
+                  ),
+                  _StatDivider(color: onHero),
+                  Expanded(
+                    child: _Stat(
+                      label: l10n.dashboard_trips_label_time,
+                      value: state.available ? state.driveTimeLabel : pending,
+                      theme: theme,
+                      color: onHero,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -170,19 +234,38 @@ class _TripStatsCard extends StatelessWidget {
   }
 }
 
+/// The vertical rule native draws between the three hero stats.
+class _StatDivider extends StatelessWidget {
+  final Color color;
+
+  const _StatDivider({required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 1,
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        color: color.withValues(alpha: 0.3),
+      );
+}
+
 class _Stat extends StatelessWidget {
   final String label;
   final String value;
   final ThemeData theme;
 
-  const _Stat({required this.label, required this.value, required this.theme});
+  /// Foreground role of whatever surface the stat sits on — the hero is a
+  /// filled primaryContainer, so onSurface would be unreadable there.
+  final Color color;
+
+  const _Stat({required this.label, required this.value, required this.theme, required this.color});
 
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(value, style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface)),
-          Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(value, style: theme.textTheme.headlineSmall?.copyWith(color: color)),
+          Text(label, style: theme.textTheme.labelSmall?.copyWith(color: color.withValues(alpha: 0.8))),
         ],
       );
 }
@@ -213,7 +296,13 @@ class _HeroChips extends StatelessWidget {
   }
 }
 
-class _MetricGrid extends StatelessWidget {
+/// Native's five metric cards in ONE row, each with a leading icon:
+/// recordings, remote access, background services, Live, vehicle.
+///
+/// This replaces a 2-up grid that pushed the last three cards below the fold,
+/// and it absorbs what used to be a separate full-width "quick action" card for
+/// Live — native has never had that as a separate row (BladeWatch-ya6f).
+class _MetricRow extends StatelessWidget {
   final DashboardController controller;
   final AppLocalizations l10n;
   final ThemeData theme;
@@ -221,8 +310,9 @@ class _MetricGrid extends StatelessWidget {
   final VoidCallback onTunnelTap;
   final VoidCallback onDaemonsTap;
   final VoidCallback onVehicleTap;
+  final VoidCallback onLiveTap;
 
-  const _MetricGrid({
+  const _MetricRow({
     required this.controller,
     required this.l10n,
     required this.theme,
@@ -230,6 +320,7 @@ class _MetricGrid extends StatelessWidget {
     required this.onTunnelTap,
     required this.onDaemonsTap,
     required this.onVehicleTap,
+    required this.onLiveTap,
   });
 
   @override
@@ -249,64 +340,114 @@ class _MetricGrid extends StatelessWidget {
 
     final vehicle = controller.vehicleTile;
     final String vehicleValue;
+    // BladeWatch-p7vi: the capacity half is gone (removed-feature stubs), so the
+    // tile shows the selected MODEL. "Tap to set" stays meaningful — tapping
+    // still opens the dialog, which now picks a model.
     if (vehicle.loading) {
       vehicleValue = l10n.dashboard_metric_value_pending;
-    } else if (!vehicle.hasCapacity) {
-      vehicleValue = l10n.dashboard_vehicle_tap_to_set;
-    } else if (vehicle.modelId != null) {
-      vehicleValue = l10n.dashboard_vehicle_summary(vehicle.nominalKwh.toStringAsFixed(1), modelDisplayName(vehicle.modelId));
+    } else if (vehicle.hasModel) {
+      vehicleValue = modelDisplayName(vehicle.modelId);
     } else {
-      vehicleValue = '${vehicle.nominalKwh.toStringAsFixed(1)} ${l10n.vehicle_dialog_capacity_suffix}';
+      vehicleValue = l10n.dashboard_vehicle_tap_to_set;
     }
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 2.4,
-      children: [
-        _MetricTile(
-          key: const ValueKey('tile.recordings'),
-          title: l10n.dashboard_metric_recordings,
-          value: recordingsValue,
-          theme: theme,
-          onTap: onRecordingsTap,
-        ),
-        _MetricTile(
-          key: const ValueKey('tile.tunnel'),
-          title: l10n.dashboard_metric_tunnel,
-          value: tunnelValue,
-          theme: theme,
-          onTap: onTunnelTap,
-        ),
-        _MetricTile(
-          key: const ValueKey('tile.daemons'),
-          title: l10n.dashboard_metric_services,
-          value: daemonsValue,
-          theme: theme,
-          onTap: onDaemonsTap,
-        ),
-        _MetricTile(
-          key: const ValueKey('tile.vehicle'),
-          title: l10n.dashboard_metric_vehicle,
-          value: vehicleValue,
-          theme: theme,
-          onTap: onVehicleTap,
-        ),
-      ],
+    final tiles = <Widget>[
+      _MetricTile(
+        key: const ValueKey('tile.recordings'),
+        icon: Icons.videocam_outlined,
+        title: l10n.dashboard_metric_recordings,
+        value: recordingsValue,
+        theme: theme,
+        onTap: onRecordingsTap,
+      ),
+      _MetricTile(
+        key: const ValueKey('tile.tunnel'),
+        icon: Icons.dashboard_outlined,
+        title: l10n.dashboard_metric_tunnel,
+        value: tunnelValue,
+        theme: theme,
+        onTap: onTunnelTap,
+        // Native's remote-access card is the only one with a status dot.
+        showStatusDot: controller.tunnel.phase == TunnelPhase.online,
+      ),
+      _MetricTile(
+        key: const ValueKey('tile.daemons'),
+        icon: Icons.memory_outlined,
+        title: l10n.dashboard_metric_services,
+        value: daemonsValue,
+        theme: theme,
+        onTap: onDaemonsTap,
+      ),
+      _MetricTile(
+        // Key preserved from the old standalone quick-action card so existing
+        // tests and any muscle memory keep working.
+        key: const ValueKey('quickAction.live'),
+        icon: Icons.play_circle_outline,
+        title: l10n.dashboard_action_live_subtitle,
+        value: l10n.dashboard_action_live,
+        theme: theme,
+        onTap: onLiveTap,
+      ),
+      _MetricTile(
+        key: const ValueKey('tile.vehicle'),
+        icon: Icons.directions_car_outlined,
+        title: l10n.dashboard_metric_vehicle,
+        value: vehicleValue,
+        theme: theme,
+        onTap: onVehicleTap,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Five across only where they actually fit; below that, wrap rather
+        // than squeeze each card into an unreadable sliver.
+        if (constraints.maxWidth >= _twoColumnBreakpoint) {
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < tiles.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 12),
+                  Expanded(child: tiles[i]),
+                ],
+              ],
+            ),
+          );
+        }
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final tile in tiles)
+              SizedBox(width: (constraints.maxWidth - 12) / 2, child: tile),
+          ],
+        );
+      },
     );
   }
 }
 
+/// Native's metric card: icon on top, the VALUE large beneath it, then the
+/// label. The port previously had label-then-value, which reads as a form field
+/// rather than a status readout.
 class _MetricTile extends StatelessWidget {
+  final IconData icon;
   final String title;
   final String value;
   final ThemeData theme;
   final VoidCallback onTap;
+  final bool showStatusDot;
 
-  const _MetricTile({super.key, required this.title, required this.value, required this.theme, required this.onTap});
+  const _MetricTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.theme,
+    required this.onTap,
+    this.showStatusDot = false,
+  });
 
   @override
   Widget build(BuildContext context) => Card(
@@ -320,13 +461,33 @@ class _MetricTile extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                const SizedBox(height: 4),
-                Text(value,
-                    style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface),
-                    overflow: TextOverflow.ellipsis),
+                Row(
+                  children: [
+                    Icon(icon, size: 22, color: theme.colorScheme.onSurfaceVariant),
+                    const Spacer(),
+                    if (showStatusDot)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  value,
+                  style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  title,
+                  style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -574,44 +735,6 @@ class _SetPasswordDialogState extends State<_SetPasswordDialog> {
   }
 }
 
-class _QuickActions extends StatelessWidget {
-  final AppLocalizations l10n;
-  final ThemeData theme;
-  final VoidCallback onLive;
-
-  const _QuickActions({required this.l10n, required this.theme, required this.onLive});
-
-  @override
-  Widget build(BuildContext context) => Card(
-        key: const ValueKey('quickAction.live'),
-        color: theme.colorScheme.primaryContainer,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onLive,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.videocam, color: theme.colorScheme.onPrimaryContainer),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l10n.dashboard_action_live,
-                        style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer)),
-                    Text(l10n.dashboard_action_live_subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onPrimaryContainer)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-}
-
 /// Ground truth: `showVehicleCapacityDialog()`. The model picker is a row of
 /// choice chips rather than native's `MaterialAutoCompleteTextView` dropdown —
 /// visual parity is Phase 3's job (see this screen's task notes), and BYD's
@@ -626,48 +749,42 @@ class _VehicleCapacityDialog extends StatefulWidget {
 }
 
 class _VehicleCapacityDialogState extends State<_VehicleCapacityDialog> {
-  late final TextEditingController _textController;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
-    _textController = TextEditingController(text: widget.controller.state.capacityText);
     widget.controller.load();
   }
 
   void _onChanged() {
-    if (!mounted) return;
-    if (_textController.text != widget.controller.state.capacityText) {
-      _textController.text = widget.controller.state.capacityText;
-    }
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_onChanged);
-    _textController.dispose();
     super.dispose();
   }
 
   Future<void> _save(AppLocalizations l10n) async {
-    widget.controller.setCapacityText(_textController.text);
     final result = await widget.controller.save();
     if (!mounted) return;
     if (result == VehicleSaveResult.success) {
       Navigator.of(context).pop();
     } else {
       setState(() {
-        _error = result == VehicleSaveResult.invalidCapacity ? l10n.vehicle_dialog_invalid_capacity : l10n.toast_password_save_failed;
+        // BladeWatch-p7vi: prefer the daemon's own reason when it gave one,
+        // rather than a generic failure. toast_failed_to_save_short, not
+        // toast_password_save_failed — this dialog saves no password, and that
+        // string ("Failed to save password — service not ready") was simply the
+        // wrong message.
+        _error = (widget.controller.lastError?.isNotEmpty ?? false)
+            ? widget.controller.lastError!
+            : l10n.toast_failed_to_save_short;
       });
     }
-  }
-
-  Future<void> _reset() async {
-    await widget.controller.reset();
-    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -682,17 +799,6 @@ class _VehicleCapacityDialogState extends State<_VehicleCapacityDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _textController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: l10n.vehicle_dialog_capacity_label,
-                suffixText: l10n.vehicle_dialog_capacity_suffix,
-                helperText: l10n.vehicle_dialog_capacity_helper,
-                errorText: _error,
-              ),
-            ),
-            const SizedBox(height: 12),
             if (state.models.isNotEmpty) ...[
               Text(l10n.vehicle_dialog_model_label),
               const SizedBox(height: 4),
@@ -700,45 +806,31 @@ class _VehicleCapacityDialogState extends State<_VehicleCapacityDialog> {
                 spacing: 8,
                 children: [
                   for (final model in state.models)
-                    ChoiceChip(
+                    BwChoiceChip(
+                      key: ValueKey('vehicleDialog.model.${model.id}'),
                       label: Text(model.title),
                       selected: state.selectedModelId == model.id,
                       onSelected: (_) => widget.controller.selectModel(model.id),
                     ),
                 ],
               ),
-              const SizedBox(height: 12),
             ],
-            if (state.hasCapacitySummary || state.hasSohSummary) const Divider(),
-            if (state.hasCapacitySummary)
-              Text(l10n.vehicle_dialog_summary_capacity(
-                  '${state.nominalKwh.toStringAsFixed(1)} ${l10n.vehicle_dialog_capacity_suffix}${_sourceSuffix(l10n, state.nominalSource)}')),
-            if (state.hasSohSummary) Text(l10n.vehicle_dialog_summary_soh(_sohText(l10n, state))),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                key: const ValueKey('vehicleDialog.error'),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: _reset, child: Text(l10n.vehicle_dialog_reset)),
         TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.action_cancel)),
         TextButton(onPressed: () => _save(l10n), child: Text(l10n.vehicle_dialog_save)),
       ],
     );
   }
 
-  String _sourceSuffix(AppLocalizations l10n, String nominalSource) => switch (nominalSource) {
-        'user' => ' (${l10n.soh_dialog_source_user})',
-        'auto' => ' (${l10n.soh_dialog_source_auto})',
-        _ => '',
-      };
-
-  String _sohText(AppLocalizations l10n, VehicleDialogState state) {
-    final pct = state.displaySoh.toStringAsFixed(1);
-    return switch (state.displaySource) {
-      'live' => l10n.vehicle_dialog_soh_source_live(pct),
-      'calibration' => l10n.vehicle_dialog_soh_source_calibration(pct),
-      'oem' => l10n.vehicle_dialog_soh_source_oem(pct),
-      'nominal' => l10n.vehicle_dialog_soh_source_nominal(pct),
-      _ => l10n.vehicle_dialog_soh_unavailable,
-    };
-  }
 }

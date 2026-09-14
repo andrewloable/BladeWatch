@@ -142,7 +142,27 @@ class AppShell extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: _screenFor(controller.selectedRoute) ?? StubScreen(routeName: controller.selectedRoute),
+              // A Navigator scoped to the STAGE, not the whole window. Native
+              // keeps the nav rail visible when you open a sub-screen (ADB
+              // Console, Performance) and shows a back arrow in the toolbar;
+              // pushing on the root navigator covered the rail and left the
+              // user with no sense of place (BladeWatch-mrsc).
+              //
+              // Dialogs are unaffected: showDialog defaults to
+              // useRootNavigator: true, so they still cover the whole window
+              // rather than being trapped inside the stage.
+              child: Navigator(
+                // Keyed by route so switching rail destination rebuilds the
+                // stage navigator, discarding any sub-screen that was open.
+                // Without this, leaving Diagnostics while the ADB Console was
+                // pushed would keep showing the console under the new title.
+                key: ValueKey('stageNav.${controller.selectedRoute}'),
+                onGenerateRoute: (settings) => MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) =>
+                      _screenFor(controller.selectedRoute) ?? StubScreen(routeName: controller.selectedRoute),
+                ),
+              ),
             ),
           ],
         );

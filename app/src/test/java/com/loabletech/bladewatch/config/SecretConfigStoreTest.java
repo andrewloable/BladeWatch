@@ -209,4 +209,123 @@ public class SecretConfigStoreTest {
         }
         file.delete();
     }
+
+    // ── BladeWatch-078u: the store must live where rw------- can actually
+    // take effect. It used to sit on sdcardfs, which synthesises permissions
+    // from its mount options, so chmod 600 there was a silent no-op and a
+    // non-owner uid (shell) could read the file on the head unit. ───────────
+
+    @Test
+    public void defaultPathIsOnARealFilesystemNotSdcardfs() {
+        Assert.assertEquals(
+                "the store must be somewhere POSIX permissions are honoured",
+                "/data/local/tmp/bladewatch_secrets.json",
+                SecretConfigStore.DEFAULT_PATH);
+        Assert.assertFalse(
+                "sdcardfs cannot enforce owner-only, so it must not be the primary path",
+                SecretConfigStore.DEFAULT_PATH.startsWith("/storage/emulated/"));
+        Assert.assertTrue(
+                "the sdcardfs location stays readable so an upgraded device keeps its deviceSecret",
+                SecretConfigStore.LEGACY_PATH.startsWith("/storage/emulated/"));
+    }
+
+    @Test
+    public void migrationCarriesAnExistingSecretForwardAndRemovesTheExposedCopy() throws Exception {
+        File legacy = tempDir.resolve("legacy-secrets.json").toFile();
+        Files.write(legacy.toPath(),
+                "{\"auth\":{\"deviceSecret\":\"carried-forward\"}}".getBytes(StandardCharsets.UTF_8));
+
+        SecretConfigStore store = new SecretConfigStore(storeFile);
+        store.legacyPathForTest = legacy.getAbsolutePath();
+
+        // The read fallback finds it even before any migration runs — that is
+        // what keeps a paired device working across the upgrade.
+        Assert.assertEquals("carried-forward", store.getString("auth", "deviceSecret"));
+
+        // A write migrates it forward and removes the exposed copy.
+        store.putString("auth", "tokenEpoch", "7");
+
+        Assert.assertTrue("the primary file must now exist", storeFile.exists());
+        Assert.assertFalse("the legacy plaintext copy must not linger", legacy.exists());
+
+        SecretConfigStore reopened = new SecretConfigStore(storeFile);
+        Assert.assertEquals("the paired secret must survive the move",
+                "carried-forward", reopened.getString("auth", "deviceSecret"));
+        Assert.assertEquals("7", reopened.getString("auth", "tokenEpoch"));
+    }
+
+    @Test
+    public void migrationIsANoOpWhenThePrimaryAlreadyExists() throws Exception {
+        SecretConfigStore store = new SecretConfigStore(storeFile);
+        store.putString("auth", "deviceSecret", "already-here");
+
+        File legacy = tempDir.resolve("legacy-secrets.json").toFile();
+        Files.write(legacy.toPath(),
+                "{\"auth\":{\"deviceSecret\":\"stale\"}}".getBytes(StandardCharsets.UTF_8));
+        store.legacyPathForTest = legacy.getAbsolutePath();
+
+        store.canWriteDirectlyForTest = Boolean.TRUE; // else the uid gate makes this vacuous
+        Assert.assertFalse("an existing primary must never be overwritten by a stale legacy copy",
+                store.migrateFromLegacyIfNeeded());
+        Assert.assertEquals("already-here", store.getString("auth", "deviceSecret"));
+    }
+
+    @Test
+    public void migrationIsANoOpWhenThereIsNothingToCarry() {
+        SecretConfigStore store = new SecretConfigStore(storeFile);
+        store.legacyPathForTest = tempDir.resolve("does-not-exist.json").toString();
+        store.canWriteDirectlyForTest = Boolean.TRUE;
+        Assert.assertFalse(store.migrateFromLegacyIfNeeded());
+    }
+
+    @Test
+    public void migrationMovesTheStoreAndLeavesItOwnerOnly() throws Exception {
+        File legacy = tempDir.resolve("legacy-secrets.json").toFile();
+        Files.write(legacy.toPath(),
+                "{\"auth\":{\"deviceSecret\":\"paired-device\"}}".getBytes(StandardCharsets.UTF_8));
+        // sdcardfs cannot hold 600; model the loose mode the real file had.
+        if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+            Files.setPosixFilePermissions(legacy.toPath(), EnumSet.of(
+                    PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_WRITE));
+        }
+
+        SecretConfigStore store = new SecretConfigStore(storeFile);
+        store.legacyPathForTest = legacy.getAbsolutePath();
+        store.canWriteDirectlyForTest = Boolean.TRUE; // stand in for the daemon's uid 2000
+
+        Assert.assertTrue("the migration must report that it moved something",
+                store.migrateFromLegacyIfNeeded());
+
+        Assert.assertTrue(storeFile.exists());
+        Assert.assertFalse("the exposed sdcardfs copy must be gone", legacy.exists());
+        Assert.assertEquals("the paired deviceSecret must survive",
+                "paired-device", new SecretConfigStore(storeFile).getString("auth", "deviceSecret"));
+
+        if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+            Set<PosixFilePermission> perms = Files.getPosixFilePermissions(storeFile.toPath());
+            Assert.assertEquals("the migrated file must be owner-only, which is the point of 078u",
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
+                    perms);
+        }
+    }
+
+    @Test
+    public void migrationRefusesToRunFromAProcessThatMayNotWriteTheStore() throws Exception {
+        File legacy = tempDir.resolve("legacy-secrets.json").toFile();
+        Files.write(legacy.toPath(),
+                "{\"auth\":{\"deviceSecret\":\"paired-device\"}}".getBytes(StandardCharsets.UTF_8));
+
+        SecretConfigStore store = new SecretConfigStore(storeFile);
+        store.legacyPathForTest = legacy.getAbsolutePath();
+        // The app process: canWriteDirectly() is false for any uid but 2000.
+        store.canWriteDirectlyForTest = Boolean.FALSE;
+
+        Assert.assertFalse("only the daemon may write the secret store directly",
+                store.migrateFromLegacyIfNeeded());
+        Assert.assertFalse("nothing may be created in /data/local/tmp from the app uid",
+                storeFile.exists());
+        Assert.assertTrue("and the legacy copy must be left for the daemon to migrate",
+                legacy.exists());
+    }
 }

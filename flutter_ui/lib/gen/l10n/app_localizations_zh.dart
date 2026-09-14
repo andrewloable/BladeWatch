@@ -25,7 +25,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get action_select_all => '选择所有';
 
   @override
-  String get action_select_all_short => '所有的';
+  String get action_select_all_short => '全部';
 
   @override
   String get action_delete => '删除';
@@ -34,40 +34,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get action_done => '完成';
 
   @override
-  String get action_remind_me_later => '提醒我之后';
+  String get action_remind_me_later => '稍后提醒';
 
   @override
   String get action_retry => '重试';
 
   @override
-  String get action_run => '跑步';
+  String get action_run => '运行';
 
   @override
-  String get action_clear_output => '清晰的输出';
+  String get action_clear_output => '清除输出';
 
   @override
   String get cd_camera => '摄像头';
 
   @override
-  String get cd_qr => '问题问题';
+  String get cd_qr => 'QR';
 
   @override
-  String get cd_qr_code => '问答方式';
+  String get cd_qr_code => '二维码';
 
   @override
   String get cd_show_hide_token => '显示/隐藏标志';
 
   @override
-  String get cd_copy_token => '复制标志';
+  String get cd_copy_token => '复制令牌';
 
   @override
   String get cd_copy_url => '复制 URL';
 
   @override
-  String get cd_clear_logs => '清晰的日志';
+  String get cd_clear_logs => '清除日志';
 
   @override
-  String get cd_expand_collapse => '扩张/崩';
+  String get cd_expand_collapse => '展开/折叠';
 
   @override
   String get cd_recording_status => '记录状态';
@@ -85,7 +85,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cd_back => '返回';
 
   @override
-  String get cd_play_pause => '播放/休息';
+  String get cd_play_pause => '播放/暂停';
 
   @override
   String get cd_player_prev => '上一个录制';
@@ -103,7 +103,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cd_delete => '删除';
 
   @override
-  String get cd_expand => '扩展';
+  String get cd_expand => '展开';
 
   @override
   String get cd_configure => '配置';
@@ -118,7 +118,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cd_battery => '电池';
 
   @override
-  String get cd_step_completed => '完成的步骤';
+  String get cd_step_completed => '步骤已完成';
 
   @override
   String get cd_permission_granted => '授权';
@@ -130,10 +130,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get overlay_trip_inactive_label => '旅行';
 
   @override
-  String get log_entry_default_timestamp => '时间:12:34:56';
+  String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '现在,我们要做什么呢?';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => '在此记录消息';
@@ -160,7 +160,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get camera_selection_subtitle => '选择全景摄像头源';
 
   @override
-  String get camera_current_auto => '电流:自动';
+  String get camera_current_auto => '当前：自动';
 
   @override
   String get camera_option_auto => '自动 (启动时检测)';
@@ -169,7 +169,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get camera_option_0 => '摄像头0 Atto剪装';
 
   @override
-  String get camera_option_1 => '摄像头 1  Seal (默认)';
+  String get camera_option_1 => '摄像头 1 — Seal (默认)';
 
   @override
   String get camera_option_2 => '摄像头2';
@@ -188,16 +188,16 @@ class AppLocalizationsZh extends AppLocalizations {
       '每次启动时自动选择适合您车型的摄像头。摄像头1 = BYD Seal，摄像头0 = Atto车型。更改摄像头ID后，请重启摄像头服务使设置生效。';
 
   @override
-  String get dashboard_scan_to_connect => '扫描到连接';
+  String get dashboard_scan_to_connect => '扫码连接';
 
   @override
   String get dashboard_qr_waiting => '等待道...';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 运行';
+  String get dashboard_daemons_running_default => '0/5 运行中';
 
   @override
-  String get dashboard_device_id_loading => '现在,';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => '访问代码';
@@ -239,19 +239,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get setup_guide_subtitle => '获得最佳体验的三个快速步骤:';
 
   @override
-  String get setup_step_one_label => '其他';
+  String get setup_step_one_label => '1';
 
   @override
-  String get setup_step_two_label => '其他类型';
+  String get setup_step_two_label => '2';
 
   @override
-  String get setup_step_three_label => '其他类型';
+  String get setup_step_three_label => '3';
 
   @override
   String get setup_language_title => '选择自己的语言';
 
   @override
-  String get setup_language_body => '按键选择一个不同的BladeWatch应用程序和网络道.';
+  String get setup_language_body => '默认使用车机的语言。点按可为 BladeWatch 应用和网页隧道选择其他语言。';
 
   @override
   String get setup_language_button => '选择语言';
@@ -298,27 +298,30 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved => '语言已应用，但未能保存 — 重启应用后会恢复。';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
     return '$arg1 · 自动';
   }
 
   @override
-  String get adb_prompt => '其他类型';
+  String get adb_prompt => '\$';
 
   @override
-  String get adb_command_hint => '进入命令...';
+  String get adb_command_hint => '输入命令…';
 
   @override
   String get adb_preset_commands_header => '预设命令';
 
   @override
-  String get adb_output_header => '产量';
+  String get adb_output_header => '输出';
 
   @override
   String get adb_output_ready => '准备命令...';
 
   @override
-  String get adb_console_hero_title => '电脑控制台';
+  String get adb_console_hero_title => 'ADB 控制台';
 
   @override
   String get adb_console_hero_subtitle => '在设备上运行 shell 命令';
@@ -338,7 +341,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '查看中控屏屏幕上的“允许 USB 调试吗？”提示并接受，然后重试。';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting => '正在连接性能监视器…';
 
   @override
   String get performance_hero_title => '系统性能';
@@ -347,16 +350,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => '系统使用率';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => '应用使用率';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => '频率';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => '温度';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -365,16 +368,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get performance_memory_title => '内存';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => '使用率';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => '总计';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => '已用';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => '应用';
 
   @override
   String get performance_gpu_title => 'GPU';
@@ -383,16 +386,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get performance_app_process_title => '应用进程';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => '线程数';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC 次数';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => '打开的 FD';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => '每 3 秒刷新一次';
 
   @override
   String get webview_loading => '装载...';
@@ -404,7 +407,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webview_start_camera_daemon => '请在\"服务\"页面启动摄像头服务以访问此页面。';
 
   @override
-  String get zrok_enable_token_hint => '启用代码';
+  String get zrok_enable_token_hint => '启用令牌';
 
   @override
   String get zrok_token_storage_note => '令牌已安全存储，并在应用与后台服务之间共享。';
@@ -413,16 +416,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get zrok_reset_environment => '重置Zrok环境';
 
   @override
-  String get zrok_reset_environment_desc => '您需要使用您的代币重新启用 (使用设备插槽).';
+  String get zrok_reset_environment_desc => '移除环境和令牌。您需要用令牌重新启用（会占用一个设备名额）。';
 
   @override
-  String get reset_title => '重新设置数据';
+  String get reset_title => '重置数据';
 
   @override
   String get reset_subtitle => '按类别清除积累的数据';
 
   @override
-  String get reset_warning => '这不能撤销.记录,旅行和电池历史将永久删除.';
+  String get reset_warning => '此操作无法撤销。录像、行程和电池历史记录将被永久删除。';
 
   @override
   String get reset_cat_trips => '行程';
@@ -443,10 +446,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reset_cat_soh_desc => '从BMS中重新检测名额容量,重新种植估计';
 
   @override
-  String get reset_cat_recordings => '录音 (视频)';
+  String get reset_cat_recordings => '录像 (视频)';
 
   @override
-  String get reset_cat_recordings_desc => '在录音文件中的所有MP4';
+  String get reset_cat_recordings_desc => '在录像文件中的所有MP4';
 
   @override
   String get reset_cat_sentry_events => '监控活动';
@@ -467,16 +470,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reset_cat_trip_files_desc => '每次旅行JSON电磁盘遥测';
 
   @override
-  String get recording_lib_chip_any => '任何一个';
+  String get recording_lib_chip_any => '全部';
 
   @override
-  String get recording_lib_chip_person => '个人';
+  String get recording_lib_chip_person => '人';
 
   @override
   String get recording_lib_chip_vehicle => '车辆';
 
   @override
-  String get recording_lib_chip_bike => '骑自行车';
+  String get recording_lib_chip_bike => '自行车';
 
   @override
   String get recording_lib_chip_animal => '动物';
@@ -491,18 +494,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recording_lib_selected_count_zero => '0 选择';
 
   @override
-  String get recording_lib_no_recordings => '没有录音';
+  String get recording_lib_no_recordings => '没有录像';
 
   @override
-  String get recording_lib_filter_button => '过器';
+  String get recording_lib_filter_button => '筛选';
 
   @override
   String recording_lib_filter_button_active(Object arg1) {
-    return '过器 · $arg1';
+    return '筛选 · $arg1';
   }
 
   @override
-  String get recording_lib_filter_sheet_title => '过记录';
+  String get recording_lib_filter_sheet_title => '筛选录像';
 
   @override
   String get recording_lib_filter_apply => '应用';
@@ -511,7 +514,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recording_lib_filter_reset => '重置';
 
   @override
-  String get recording_lib_filter_section_what => '什么?';
+  String get recording_lib_filter_section_what => '对象';
 
   @override
   String get recording_lib_filter_section_severity => '严重性';
@@ -542,7 +545,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_pick_date => '选择一个约会';
+  String get recording_lib_pick_date => '选择日期';
 
   @override
   String get recording_lib_date_all_days => '所有日期';
@@ -551,16 +554,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cd_clear_date_filter => '显示所有日子';
 
   @override
-  String get recording_lib_section_morning => '早晨';
+  String get recording_lib_section_morning => '上午';
 
   @override
-  String get recording_lib_section_afternoon => '晚上好好';
+  String get recording_lib_section_afternoon => '下午';
 
   @override
-  String get recording_lib_section_evening => '晚上';
+  String get recording_lib_section_evening => '傍晚';
 
   @override
-  String get recording_lib_section_night => '晚上';
+  String get recording_lib_section_night => '夜间';
 
   @override
   String get cd_previous_day => '前一天';
@@ -569,19 +572,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cd_next_day => '第二天';
 
   @override
-  String get cd_open_filters => '开放过器';
+  String get cd_open_filters => '打开筛选';
 
   @override
-  String get cd_clear_filter => '清晰的过器';
+  String get cd_clear_filter => '清除筛选';
 
   @override
   String get player_title_recording => '录制';
 
   @override
-  String get player_time_zero => '时间:';
+  String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
+
+  @override
+  String get daemon_name_camera => '摄像头服务';
+
+  @override
+  String get daemon_name_surveillance => '监控服务';
+
+  @override
+  String get daemon_name_acc => 'ACC 监控';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
 
   @override
   String get daemons_hero_title => '背景服务';
@@ -622,13 +637,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get battery_health_last_updated => '最后更新';
 
   @override
+  String get battery_health_unavailable => '不可用';
+
+  @override
+  String get battery_health_unavailable_desc => '此车辆不支持电池健康度估算。';
+
+  @override
   String get battery_health_reset => '重置SOH估计';
 
   @override
-  String get battery_health_reset_desc => '如果电池被更换或读数看起来不正确,使用.';
+  String get battery_health_reset_desc =>
+      '清除所有数据并从零重新估算。如果更换了电池或读数看起来不正确，请使用此功能。';
 
   @override
-  String get soh_dialog_model_label => '模型';
+  String get soh_dialog_model_label => '车型';
 
   @override
   String get soh_dialog_pack_capacity_label => '包装容量';
@@ -664,7 +686,7 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '删除了$arg1录音',
+      other: '删除了$arg1录像',
       one: '删除$arg1记录',
     );
     return '$_temp0';
@@ -675,8 +697,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '删除$arg1录音',
-      one: '删除$arg1录音',
+      other: '删除$arg1录像',
+      one: '删除$arg1录像',
     );
     return '$_temp0';
   }
@@ -686,8 +708,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '这将永久删除$arg1录音.',
-      one: '这将永久删除$arg1录音.',
+      other: '将永久删除 $arg1 个录像。此操作无法撤销。',
+      one: '将永久删除 $arg1 个录像。此操作无法撤销。',
     );
     return '$_temp0';
   }
@@ -698,7 +720,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get toast_storage_permission_required => '录音所需的存储许可';
+  String get toast_storage_permission_required => '录像所需的存储许可';
 
   @override
   String get toast_url_copied_short => '已复制了URL!';
@@ -779,16 +801,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dialog_disable => '停用';
 
   @override
-  String get dialog_keep_enabled => '让你能做到';
+  String get dialog_keep_enabled => '保持启用';
 
   @override
-  String get dialog_keep_disabled => '保持残疾';
+  String get dialog_keep_disabled => '保持停用';
 
   @override
-  String get dialog_regenerate => '复兴';
+  String get dialog_regenerate => '重新生成';
 
   @override
-  String get dialog_reset_selected => '选择重置';
+  String get dialog_reset_selected => '重置所选项';
 
   @override
   String get dialog_reset_soh_title => '设置SOH估计?';
@@ -798,15 +820,15 @@ class AppLocalizationsZh extends AppLocalizations {
       '这将清除所有SOH数据并从零开始强迫重新估计.\n\n如果:\n•电池被更换\n•SOH读取似乎不正确\n•您想重新校准\n\n系统将从下一个可用的数据源 (OEM,充电校准或即时读取) 中重新播放.';
 
   @override
-  String get dialog_reset_following_title => '设置下面的设置?';
+  String get dialog_reset_following_title => '重置以下项目？';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return '此操作无法撤销。\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => '完成重新设置';
+  String get dialog_reset_complete_title => '重置完成';
 
   @override
   String get dialog_traffic_cannot_check_title => '无法检查状态';
@@ -820,7 +842,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dialog_traffic_disable_message =>
-      'BYD交通监测器 (com.byd.trafficmonitor) 是一个内置系统应用程序,持续监测后台道路交通状况.\n\n️ 为什么禁用它?\n\n• 消耗移动数据 (即使停车时)\n• 使用CPU和电池在后台\n• 不需要使用单独的导航应用程序\n• 可以干扰仪表摄像头的网络使用\n\n 这可以安全禁用 它只影响地图上的内置交通覆盖.您的导航,Bluetooth和所有其他汽车功能都不受影响.\n\n 禁用后需要硬重启 (保持中部控制台按 5 秒).';
+      'BYD Traffic Monitor (com.byd.trafficmonitor) 是内置系统应用，会在后台持续监测道路交通状况。\n\n为什么要禁用？\n\n• 消耗移动数据（即使停车时也是）\n• 在后台占用 CPU 和电量\n• 如果您使用其他导航应用则不需要\n• 可能干扰行车记录仪的网络使用\n\n禁用是安全的：它只影响地图上的内置路况图层。导航、蓝牙和其他所有车辆功能均不受影响。\n\n禁用后需要硬重启（长按中控台按键 5 秒）。';
 
   @override
   String get dialog_traffic_enable_title => '再启用BYD交通监测器?';
@@ -835,7 +857,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dialog_traffic_reboot_message => '现在请重启: 按下并保持中央控制台按5秒.';
+  String get dialog_traffic_reboot_message =>
+      '更改已应用。\n\n请立即执行硬重启:\n长按中控台按键 5 秒。';
 
   @override
   String get traffic_monitor_loading => '交通监视器:检查...';
@@ -871,10 +894,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dialog_regenerate_token_title => '复兴标志';
 
   @override
-  String get dialog_regenerate_token_message => '这将使当前的代币无效.所有活跃的会议将被登录.继续?';
+  String get dialog_regenerate_token_message => '当前令牌将失效。所有活动会话都将被登出。是否继续？';
 
   @override
-  String get toast_token_regenerated_logged_out => '创建了新代币,所有会议都登录了.';
+  String get toast_token_regenerated_logged_out => '已生成新令牌。所有会话均已登出。';
 
   @override
   String get toast_token_regenerated_restart => '令牌已重新生成。各服务可能需要重启才能生效。';
@@ -883,7 +906,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get toast_token_regenerated_no_notify => '令牌已重新生成。无法通知后台服务。';
 
   @override
-  String get toast_token_regenerated => '代币再生';
+  String get toast_token_regenerated => '令牌再生';
 
   @override
   String get dashboard_no_tunnel => '没有道运行';
@@ -896,7 +919,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2 运行';
+    return '$arg1/$arg2 运行中';
   }
 
   @override
@@ -917,7 +940,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dialog_zrok_token_title => 'Zrok道标志';
 
   @override
-  String get dialog_zrok_token_message => '输入Zrok启用代币.';
+  String get dialog_zrok_token_message => '请输入 Zrok 启用令牌。\n获取地址: zrok.io';
 
   @override
   String get toast_token_cannot_be_empty => '标签不能空';
@@ -927,16 +950,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dialog_zrok_reset_message =>
-      '这将:\n• 停止zrok道如果运行\n• 从该设备中删除zrok环境\n• 删除保存的代币\n\n您需要重新输入代币并重新启用.';
+      '此操作将:\n• 停止正在运行的 zrok 隧道\n• 从本设备移除 zrok 环境\n• 删除已保存的令牌\n\n您需要重新输入令牌并重新启用。这会占用您在 zrok.io 上 5 个设备名额中的 1 个。\n\n确定吗？';
 
   @override
   String get toast_resetting_zrok => '重新设置zrok环境...';
 
   @override
-  String get toast_zrok_reset_success => 'Zrok环境重置. 输入一个新的代币,重新设置.';
+  String get toast_zrok_reset_success => 'Zrok环境重置. 输入一个新的令牌,重新设置.';
 
   @override
-  String get toast_zrok_reset_partial => '环境重置 (代币文件可能需要手动清理)';
+  String get toast_zrok_reset_partial => '环境重置 (令牌文件可能需要手动清理)';
 
   @override
   String toast_zrok_reset_warnings(Object arg1) {
@@ -944,19 +967,19 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get zrok_no_token_configured => '没有配置的代币.';
+  String get zrok_no_token_configured => '未配置令牌。点按进行设置。';
 
   @override
-  String get toast_zrok_token_saved => '存储的代币';
+  String get toast_zrok_token_saved => '存储的令牌';
 
   @override
-  String get toast_zrok_token_save_failed => '未能保存代币';
+  String get toast_zrok_token_save_failed => '未能保存令牌';
 
   @override
   String get toast_zrok_token_deleted => '删除的标志';
 
   @override
-  String get toast_zrok_token_delete_failed => '未能删除代币';
+  String get toast_zrok_token_delete_failed => '未能删除令牌';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -989,7 +1012,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String log_header_title(Object arg1) {
-    return '=== $arg1 Log ===';
+    return '=== $arg1 日志 ===';
   }
 
   @override
@@ -1013,18 +1036,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dialog_delete_recording_title => '删除录音';
+  String get dialog_delete_recording_title => '删除录像';
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return '删除$arg1?';
+    return '删除 $arg1？\n此操作无法撤销。';
   }
 
   @override
   String get toast_recording_deleted => '删除记录';
 
   @override
-  String get toast_recording_delete_failed => '无法删除记录';
+  String get toast_recording_delete_failed => '无法删除录像';
 
   @override
   String toast_batch_delete_partial(Object arg1, Object arg2) {
@@ -1048,7 +1071,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get camera_current_auto_label => '电流:自动';
+  String get camera_current_auto_label => '当前：自动';
 
   @override
   String get soh_estimation_active => '估计活动';
@@ -1094,7 +1117,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get rail_dashboard => '仪表板';
 
   @override
-  String get rail_live => '活着';
+  String get rail_live => '实时';
 
   @override
   String get rail_recordings => '录像';
@@ -1139,7 +1162,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_overlay_camera_title => '摄像头指标';
 
   @override
-  String get settings_overlay_camera_subtitle => '在录音活动期间显示REC/ PROX标志.';
+  String get settings_overlay_camera_subtitle => '在录像活动期间显示REC/ PROX标志.';
 
   @override
   String get settings_overlay_trip_title => '指向旅行';
@@ -1154,13 +1177,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_subrail_overline => '设置';
 
   @override
-  String get cd_settings_subrail => '设置子轨道';
+  String get cd_settings_subrail => '设置侧栏';
 
   @override
   String get settings_privacy_title => '隐私与数据';
 
   @override
-  String get settings_privacy_body => '重置将清除录音索引、缓存凭证、服务状态及设备端偏好设置。此操作不可撤销。';
+  String get settings_privacy_body => '重置将清除录像索引、缓存凭证、服务状态及设备端偏好设置。此操作不可撤销。';
 
   @override
   String get settings_about_title => '关于BladeWatch';
@@ -1215,7 +1238,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_about_source_title => '源代码';
 
   @override
-  String get settings_about_source_value => '其他类型的设备:';
+  String get settings_about_source_value =>
+      'github.com/yash-srivastava/BladeWatch-release';
 
   @override
   String get settings_about_license_url =>
@@ -1254,13 +1278,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_theme_label => '主题';
 
   @override
-  String get settings_theme_auto => '自动 (跟踪系统)';
+  String get settings_theme_auto => '自动（跟随系统）';
 
   @override
-  String get settings_theme_light => '灯光';
+  String get settings_theme_light => '浅色';
 
   @override
-  String get settings_theme_dark => '黑暗';
+  String get settings_theme_dark => '深色';
 
   @override
   String get settings_language_label => '语言';
@@ -1308,7 +1332,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recordings_title => '录像';
 
   @override
-  String get recordings_segment_dashcam => '幕';
+  String get recordings_segment_dashcam => '行车记录';
 
   @override
   String get recordings_segment_surveillance => '监控';
@@ -1323,7 +1347,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String recordings_segment_dashcam_count(Object arg1) {
-    return '达什卡姆 · $arg1';
+    return '行车记录 · $arg1';
   }
 
   @override
@@ -1335,13 +1359,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recordings_summary_pending => '—';
 
   @override
-  String get recordings_preview_placeholder_title => '选择录音';
+  String get recordings_preview_placeholder_title => '选择录像';
 
   @override
   String get recordings_preview_placeholder_body => '在左边点击任何东西来播放.';
 
   @override
-  String get diagnostics_section_adb_console => '电脑控制台';
+  String get diagnostics_section_adb_console => 'ADB 控制台';
 
   @override
   String get diagnostics_section_traffic => '交通监视器';
@@ -1362,16 +1386,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagnostics_hero_subtitle => '现场健康,记录和探测器.';
 
   @override
-  String get diagnostics_health_clear => '一切都清了.';
+  String get diagnostics_health_clear => '一切正常';
 
   @override
-  String get diagnostics_health_section => '卫生';
+  String get diagnostics_health_section => '运行状况';
 
   @override
   String get diagnostics_health_network => '网络';
 
   @override
-  String get diagnostics_health_storage => '存储';
+  String get diagnostics_health_storage => '存储空间';
 
   @override
   String get diagnostics_health_camera => '摄像头';
@@ -1394,19 +1418,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagnostics_tunnel_state_online => '在线';
 
   @override
-  String get diagnostics_tunnel_state_offline => '在线';
+  String get diagnostics_tunnel_state_offline => '离线';
 
   @override
-  String get diagnostics_tunnel_state_connecting => '连接';
+  String get diagnostics_tunnel_state_connecting => '连接中';
 
   @override
   String get diagnostics_network_mobile => '移动';
 
   @override
-  String get diagnostics_network_ethernet => '互联网';
+  String get diagnostics_network_ethernet => '以太网';
 
   @override
-  String get diagnostics_network_offline => '在线';
+  String get diagnostics_network_offline => '离线';
 
   @override
   String diagnostics_storage_used_line(Object arg1, Object arg2) {
@@ -1434,7 +1458,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagnostics_camera_probe_subtitle => '检查连接的摄像头流.';
 
   @override
-  String get diagnostics_adb_subtitle => '打开设备上的终端.';
+  String get diagnostics_adb_subtitle => '打开设备上的终端。';
 
   @override
   String get diagnostics_battery_subtitle => '检查细胞SOH和数据包.';
@@ -1443,7 +1467,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagnostics_settings_subtitle => '应用程序偏好,主题和语言.';
 
   @override
-  String get settings_action_reset_data => '设置数据...';
+  String get settings_action_reset_data => '重置数据…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -1463,7 +1487,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_subtitle_no_tunnel => '离线远程访问';
 
   @override
-  String get dashboard_metric_recordings => '今天的录音';
+  String get dashboard_metric_recordings => '今天的录像';
 
   @override
   String get dashboard_metric_storage => '使用的存储';
@@ -1481,13 +1505,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_metric_vehicle => '车辆';
 
   @override
-  String get dashboard_chip_recording_active => '收音';
+  String get dashboard_chip_recording_active => '录制中';
 
   @override
   String get dashboard_chip_recording_idle => '空闲';
 
   @override
-  String get dashboard_vehicle_tap_to_set => '按下设置';
+  String get dashboard_vehicle_tap_to_set => '点按以设置';
 
   @override
   String dashboard_vehicle_summary(Object arg1, Object arg2) {
@@ -1498,7 +1522,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_dialog_title => '设置电池容量';
 
   @override
-  String get vehicle_dialog_capacity_label => '产能 (kWh)';
+  String get vehicle_dialog_capacity_label => '容量 (kWh)';
 
   @override
   String get vehicle_dialog_capacity_suffix => 'kWh';
@@ -1507,13 +1531,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_dialog_capacity_helper => '8至120 kWh。保留以使用模型默认值。';
 
   @override
-  String get vehicle_dialog_model_label => '模型';
+  String get vehicle_dialog_model_label => '车型';
 
   @override
   String get vehicle_dialog_save => '保存';
 
   @override
-  String get vehicle_dialog_reset => '重新设置为自动检测';
+  String get vehicle_dialog_reset => '重置为自动检测';
 
   @override
   String get vehicle_dialog_invalid_capacity => '容量必须为8-120kWh';
@@ -1549,67 +1573,61 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => '状态';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => '采集';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => '画质';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => '存储';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => '录制状态';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => '当前状态';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => '今日录制数';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => '录制模式（ACC 开启）';
 
   @override
-  String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+  String get settings_recording_mode_description => '选择行车时行车记录仪何时录制。';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => '不录制（默认）';
 
   @override
-  String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+  String get settings_recording_mode_none_desc => '不录制 — 监控仍然工作';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => '持续录制';
 
   @override
-  String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+  String get settings_recording_mode_continuous_desc => '行车时全程录制';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => '行驶模式';
 
   @override
-  String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+  String get settings_recording_mode_drive_desc => '仅在车辆行驶时录制';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => '接近守卫';
 
   @override
-  String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+  String get settings_recording_mode_proximity_desc => '检测到移动时录制';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => '录制时长上限';
 
   @override
-  String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+  String get settings_recording_limit_description => '每个文件的最大时长。录制会按此间隔分割为新文件。';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1617,113 +1635,115 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => '录制画质';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => '录制存储';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => '存储位置';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => '内部存储';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SD 卡';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SD 卡（不可用）';
 
   @override
-  String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+  String get settings_recording_storage_limit_label => '存储上限 — 达到后自动删除最旧的';
+
+  @override
+  String get settings_recording_storage_usage_label => '存储使用量';
+
+  @override
+  String get settings_recording_storage_files_label => '文件';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '已用 $arg1 / 上限 $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 个录制';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => '路径';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'SD 卡可用空间';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label => '内部可用空间';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => '格式化外部存储';
 
   @override
-  String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+  String get settings_recording_format_warning => '将永久擦除 SD 卡或 USB 驱动器上的所有数据。';
 
   @override
-  String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+  String get settings_recording_format_confirm => '再次点按 — 所有数据将被擦除';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running => '正在格式化… 请稍候';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => '格式化 SD 卡 / USB';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive => '未找到可移动存储';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return '格式化成功。新路径：$arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => '数据库目录';
 
   @override
-  String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+  String get settings_recording_sync_description => '将录制索引与磁盘上的文件核对。';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => '正在同步…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => '同步数据库';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return '已同步：+$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => '同步已在进行中';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return '同步失败：$arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => '应用更改';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => '关闭';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return '暂不支持启动/停止 $arg1';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => '配置';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => '重置环境';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -1732,7 +1752,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String vehicle_dialog_summary_model(Object arg1) {
-    return '型号:$arg1';
+    return '车型: $arg1';
   }
 
   @override
@@ -1741,7 +1761,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get vehicle_dialog_soh_unavailable => '无法使用';
+  String get vehicle_dialog_soh_unavailable => '无法获取';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -1749,16 +1769,16 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => '存储';
+  String get dashboard_metric_storage_chip_pending => '存储空间 —';
 
   @override
-  String get dashboard_tunnel_offline => '在线';
+  String get dashboard_tunnel_offline => '离线';
 
   @override
   String get dashboard_tunnel_online => '在线';
 
   @override
-  String get dashboard_tunnel_connecting => '连接...';
+  String get dashboard_tunnel_connecting => '连接中…';
 
   @override
   String get dashboard_trips_this_week => '本周';
@@ -1808,7 +1828,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_action_live => '现场视频';
 
   @override
-  String get dashboard_action_live_subtitle => '开放式摄像头视图';
+  String get dashboard_action_live_subtitle => '打开摄像头画面';
 
   @override
   String get dashboard_action_recordings => '录像';
@@ -1826,7 +1846,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_hero_overline => '过度驱动';
 
   @override
-  String get settings_hero_subtitle => '调整外观,录音,监控和设备上的数据.';
+  String get settings_hero_subtitle => '调整外观,录像,监控和设备上的数据.';
 
   @override
   String get settings_overline_preferences => '预见';
@@ -1856,7 +1876,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_about_row_subtitle => '版本,许可证,支持开发.';
 
   @override
-  String get settings_reset_row_subtitle => '清晰的录音,事件,或所有隐藏.';
+  String get settings_reset_row_subtitle => '清晰的录像,事件,或所有隐藏.';
 
   @override
   String settings_footer_format(Object arg1, Object arg2) {
@@ -1867,17 +1887,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_appearance_subtitle => '的主题,语言和视觉偏好.';
 
   @override
-  String get settings_theme_active_auto_caption => '自动跟踪你的系统主题.';
+  String get settings_theme_active_auto_caption => '自动跟随系统主题。';
 
   @override
-  String get settings_theme_active_light_caption => '灯光主题总是开放.';
+  String get settings_theme_active_light_caption => '始终使用浅色主题。';
 
   @override
-  String get settings_theme_active_dark_caption => '黑暗的主题总是开放.';
+  String get settings_theme_active_dark_caption => '始终使用深色主题。';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '可用的$arg1的$arg2语言';
+    return '$arg2 种语言中有 $arg1 种可用';
   }
 
   @override
@@ -1887,7 +1907,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_privacy_stance_title => '默认的设备上';
 
   @override
-  String get settings_privacy_stance_body => '只有通过你明确配置的道和集成器才能从你的车出走.';
+  String get settings_privacy_stance_body =>
+      'BladeWatch 完全在车机上运行。除了您明确配置的隧道和集成之外，没有任何遥测数据离开您的车辆。';
 
   @override
   String get settings_privacy_overline_storage => '地方储存';
@@ -1915,7 +1936,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get settings_privacy_reset_subtitle => '选择类别：录音、事件、服务配置、缓存遥测数据…';
+  String get settings_privacy_reset_subtitle => '选择类别：录像、事件、服务配置、缓存遥测数据…';
 
   @override
   String get settings_developer_overline => '开发者';
@@ -1945,10 +1966,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_camera_value_probing => '探测...';
+  String get diagnostics_camera_value_probing => '探测中…';
 
   @override
-  String get diagnostics_camera_value_offline => '在线';
+  String get diagnostics_camera_value_offline => '离线';
 
   @override
   String diagnostics_battery_value_soh(Object arg1) {
@@ -1960,7 +1981,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String dashboard_recordings_value_live(Object arg1) {
-    return '●$arg1';
+    return '● $arg1';
   }
 
   @override
@@ -2072,10 +2093,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get vehicle_tab_trunk => '箱子';
+  String get vehicle_tab_trunk => '后备箱';
 
   @override
-  String get vehicle_tab_climate => '气候';
+  String get vehicle_tab_climate => '空调';
 
   @override
   String get vehicle_tab_seats => '座椅';
@@ -2096,7 +2117,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_locked => '锁定';
 
   @override
-  String get vehicle_unlocked => '没有锁定';
+  String get vehicle_unlocked => '已解锁';
 
   @override
   String get vehicle_range_label => '续航';
@@ -2111,16 +2132,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_open_trunk => '打开后备箱';
 
   @override
-  String get vehicle_close_trunk => '关闭箱子';
+  String get vehicle_close_trunk => '关闭后备箱';
 
   @override
   String get vehicle_trunk_info_open => '打开后备箱将先解锁车辆。';
 
   @override
-  String get vehicle_ac_on => 'AC 启动';
+  String get vehicle_ac_on => 'AC 开启';
 
   @override
-  String get vehicle_ac_off => '已关闭';
+  String get vehicle_ac_off => 'AC 关闭';
 
   @override
   String get vehicle_max_cooling_on => '最大制冷：开';
@@ -2179,7 +2200,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_seat_pos_2 => '位置 2';
 
   @override
-  String get vehicle_all_windows => '所有窗户';
+  String get vehicle_all_windows => '所有车窗';
 
   @override
   String get vehicle_window_front_left => '左前';
@@ -2206,10 +2227,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_window_open_all => '全部打开';
 
   @override
-  String get vehicle_sunroof => '阳光屋顶';
+  String get vehicle_sunroof => '天窗';
 
   @override
-  String get vehicle_sunshade => '阳光遮阳';
+  String get vehicle_sunshade => '遮阳帘';
 
   @override
   String get vehicle_btn_drl_title => '白天运行灯';
@@ -2233,22 +2254,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_charge_limit_range => '最低50%，最高100%';
 
   @override
-  String get vehicle_tyre_no_signal => '没有信号';
+  String get vehicle_tyre_no_signal => '无信号';
 
   @override
-  String get vehicle_tyre_slow_leak => '缓慢的泄漏';
+  String get vehicle_tyre_slow_leak => '缓慢漏气';
 
   @override
-  String get vehicle_tyre_fast_leak => '快速泄漏';
+  String get vehicle_tyre_fast_leak => '快速漏气';
 
   @override
-  String get vehicle_tyre_low => '低水平';
+  String get vehicle_tyre_low => '偏低';
 
   @override
-  String get vehicle_tyre_high => '高度';
+  String get vehicle_tyre_high => '偏高';
 
   @override
-  String get vehicle_tyre_ok => '确定';
+  String get vehicle_tyre_ok => '正常';
 
   @override
   String get vehicle_tyre_check_pressure => '检查胎压';
@@ -2404,13 +2425,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trips_tab_storage => '存储';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 天';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 天';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 天';
 
   @override
   String trips_load_error(Object message) {
@@ -2424,13 +2445,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trips_period_summary_title => '周期摘要';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => '行程';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => '小时';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => '效率';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2440,7 +2461,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return '评分：$score';
   }
 
   @override
@@ -2448,7 +2469,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return '总分：$score / 100';
   }
 
   @override
@@ -2456,7 +2477,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD 估算：$km 公里';
   }
 
   @override
@@ -2466,46 +2487,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trips_dna_title => '驾驶 DNA';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => '预判';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => '平顺度';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => '速度遵守';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => '效率';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => '稳定性';
 
   @override
   String get trips_storage_title => '行程存储';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => '行程分析';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => '电价';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => '距离单位';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => '存储位置';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => '内部存储';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SD 卡';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SD 卡（不可用）';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => '应用更改';
 
   @override
   String trips_storage_usage_line(
@@ -2514,21 +2535,20 @@ class AppLocalizationsZh extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '已用 $used $unit / 上限 $limit MB · $count 次行程';
   }
 
   @override
   String get trips_sync_title => '数据库目录';
 
   @override
-  String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+  String get trips_sync_description => '将行程索引与磁盘上的遥测文件核对。';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => '同步数据库';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => '正在同步…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2542,31 +2562,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get trips_detail_summary_title => '行程摘要';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => '距离';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => '时长';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => '能耗';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => '平均速度';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => '最高速度';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => '电量';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => '费用';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => '外部温度';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => '爬升高度';
 
   @override
   String get trips_detail_scores_title => '驾驶评分';
@@ -2579,7 +2599,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return '已记录 $count 个 GPS 点';
   }
 
   @override
@@ -2731,6 +2751,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => '侦测区域';
+
+  @override
+  String get surveillance_roi_description => '点按添加顶点，拖动可移动顶点。最少三个，最多八个。';
+
+  @override
+  String get surveillance_roi_enable => '仅在此区域内侦测';
+
+  @override
+  String get action_undo => '撤销';
+
+  @override
   String get surveillance_detection_title => '检测设置';
 
   @override
@@ -2802,8 +2834,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get surveillance_storage_limit_label => '存储上限 — 达到上限时自动删除最旧的文件';
 
   @override
+  String get surveillance_storage_usage_label => '存储使用量';
+
+  @override
+  String get surveillance_storage_files_label => '文件';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '已用 $arg1 / 上限 $arg2';
   }
 
   @override
@@ -2908,7 +2946,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get action_select_all => '选择所有';
 
   @override
-  String get action_select_all_short => '所有的';
+  String get action_select_all_short => '全部';
 
   @override
   String get action_delete => '删除';
@@ -2917,40 +2955,40 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get action_done => '完成';
 
   @override
-  String get action_remind_me_later => '提醒我之后';
+  String get action_remind_me_later => '稍后提醒';
 
   @override
   String get action_retry => '重试';
 
   @override
-  String get action_run => '跑步';
+  String get action_run => '运行';
 
   @override
-  String get action_clear_output => '清晰的输出';
+  String get action_clear_output => '清除输出';
 
   @override
   String get cd_camera => '摄像头';
 
   @override
-  String get cd_qr => '问题问题';
+  String get cd_qr => 'QR';
 
   @override
-  String get cd_qr_code => '问答方式';
+  String get cd_qr_code => '二维码';
 
   @override
   String get cd_show_hide_token => '显示/隐藏标志';
 
   @override
-  String get cd_copy_token => '复制标志';
+  String get cd_copy_token => '复制令牌';
 
   @override
   String get cd_copy_url => '复制 URL';
 
   @override
-  String get cd_clear_logs => '清晰的日志';
+  String get cd_clear_logs => '清除日志';
 
   @override
-  String get cd_expand_collapse => '扩张/崩';
+  String get cd_expand_collapse => '展开/折叠';
 
   @override
   String get cd_recording_status => '记录状态';
@@ -2968,7 +3006,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get cd_back => '返回';
 
   @override
-  String get cd_play_pause => '播放/休息';
+  String get cd_play_pause => '播放/暂停';
 
   @override
   String get cd_player_prev => '上一个录制';
@@ -2986,7 +3024,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get cd_delete => '删除';
 
   @override
-  String get cd_expand => '扩展';
+  String get cd_expand => '展开';
 
   @override
   String get cd_configure => '配置';
@@ -3001,7 +3039,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get cd_battery => '电池';
 
   @override
-  String get cd_step_completed => '完成的步骤';
+  String get cd_step_completed => '步骤已完成';
 
   @override
   String get cd_permission_granted => '授权';
@@ -3013,10 +3051,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get overlay_trip_inactive_label => '旅行';
 
   @override
-  String get log_entry_default_timestamp => '时间:12:34:56';
+  String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '现在,我们要做什么呢?';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => '在此记录消息';
@@ -3043,7 +3081,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get camera_selection_subtitle => '选择全景摄像头源';
 
   @override
-  String get camera_current_auto => '电流:自动';
+  String get camera_current_auto => '当前：自动';
 
   @override
   String get camera_option_auto => '自动 (启动时检测)';
@@ -3052,7 +3090,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get camera_option_0 => '摄像头0 Atto剪装';
 
   @override
-  String get camera_option_1 => '摄像头 1  Seal (默认)';
+  String get camera_option_1 => '摄像头 1 — Seal (默认)';
 
   @override
   String get camera_option_2 => '摄像头2';
@@ -3071,16 +3109,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
       '每次启动时自动选择适合您车型的摄像头。摄像头1 = BYD Seal，摄像头0 = Atto车型。更改摄像头ID后，请重启摄像头服务使设置生效。';
 
   @override
-  String get dashboard_scan_to_connect => '扫描到连接';
+  String get dashboard_scan_to_connect => '扫码连接';
 
   @override
   String get dashboard_qr_waiting => '等待道...';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 运行';
+  String get dashboard_daemons_running_default => '0/5 运行中';
 
   @override
-  String get dashboard_device_id_loading => '现在,';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => '访问代码';
@@ -3122,19 +3160,19 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get setup_guide_subtitle => '获得最佳体验的三个快速步骤:';
 
   @override
-  String get setup_step_one_label => '其他';
+  String get setup_step_one_label => '1';
 
   @override
-  String get setup_step_two_label => '其他类型';
+  String get setup_step_two_label => '2';
 
   @override
-  String get setup_step_three_label => '其他类型';
+  String get setup_step_three_label => '3';
 
   @override
   String get setup_language_title => '选择自己的语言';
 
   @override
-  String get setup_language_body => '按键选择一个不同的BladeWatch应用程序和网络道.';
+  String get setup_language_body => '默认使用车机的语言。点按可为 BladeWatch 应用和网页隧道选择其他语言。';
 
   @override
   String get setup_language_button => '选择语言';
@@ -3181,27 +3219,30 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
+  String get language_not_saved => '语言已应用，但未能保存 — 重启应用后会恢复。';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
     return '$arg1 · 自动';
   }
 
   @override
-  String get adb_prompt => '其他类型';
+  String get adb_prompt => '\$';
 
   @override
-  String get adb_command_hint => '进入命令...';
+  String get adb_command_hint => '输入命令…';
 
   @override
   String get adb_preset_commands_header => '预设命令';
 
   @override
-  String get adb_output_header => '产量';
+  String get adb_output_header => '输出';
 
   @override
   String get adb_output_ready => '准备命令...';
 
   @override
-  String get adb_console_hero_title => '电脑控制台';
+  String get adb_console_hero_title => 'ADB 控制台';
 
   @override
   String get adb_console_hero_subtitle => '在设备上运行 shell 命令';
@@ -3221,7 +3262,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
       '查看中控屏屏幕上的“允许 USB 调试吗？”提示并接受，然后重试。';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting => '正在连接性能监视器…';
 
   @override
   String get performance_hero_title => '系统性能';
@@ -3230,16 +3271,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => '系统使用率';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => '应用使用率';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => '频率';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => '温度';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -3248,16 +3289,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get performance_memory_title => '内存';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => '使用率';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => '总计';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => '已用';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => '应用';
 
   @override
   String get performance_gpu_title => 'GPU';
@@ -3266,16 +3307,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get performance_app_process_title => '应用进程';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => '线程数';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC 次数';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => '打开的 FD';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => '每 3 秒刷新一次';
 
   @override
   String get webview_loading => '装载...';
@@ -3287,7 +3328,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get webview_start_camera_daemon => '请在\"服务\"页面启动摄像头服务以访问此页面。';
 
   @override
-  String get zrok_enable_token_hint => '启用代码';
+  String get zrok_enable_token_hint => '启用令牌';
 
   @override
   String get zrok_token_storage_note => '令牌已安全存储，并在应用与后台服务之间共享。';
@@ -3296,16 +3337,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get zrok_reset_environment => '重置Zrok环境';
 
   @override
-  String get zrok_reset_environment_desc => '您需要使用您的代币重新启用 (使用设备插槽).';
+  String get zrok_reset_environment_desc => '移除环境和令牌。您需要用令牌重新启用（会占用一个设备名额）。';
 
   @override
-  String get reset_title => '重新设置数据';
+  String get reset_title => '重置数据';
 
   @override
   String get reset_subtitle => '按类别清除积累的数据';
 
   @override
-  String get reset_warning => '这不能撤销.记录,旅行和电池历史将永久删除.';
+  String get reset_warning => '此操作无法撤销。录像、行程和电池历史记录将被永久删除。';
 
   @override
   String get reset_cat_trips => '行程';
@@ -3326,10 +3367,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get reset_cat_soh_desc => '从BMS中重新检测名额容量,重新种植估计';
 
   @override
-  String get reset_cat_recordings => '录音 (视频)';
+  String get reset_cat_recordings => '录像 (视频)';
 
   @override
-  String get reset_cat_recordings_desc => '在录音文件中的所有MP4';
+  String get reset_cat_recordings_desc => '在录像文件中的所有MP4';
 
   @override
   String get reset_cat_sentry_events => '监控活动';
@@ -3350,16 +3391,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get reset_cat_trip_files_desc => '每次旅行JSON电磁盘遥测';
 
   @override
-  String get recording_lib_chip_any => '任何一个';
+  String get recording_lib_chip_any => '全部';
 
   @override
-  String get recording_lib_chip_person => '个人';
+  String get recording_lib_chip_person => '人';
 
   @override
   String get recording_lib_chip_vehicle => '车辆';
 
   @override
-  String get recording_lib_chip_bike => '骑自行车';
+  String get recording_lib_chip_bike => '自行车';
 
   @override
   String get recording_lib_chip_animal => '动物';
@@ -3374,18 +3415,18 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get recording_lib_selected_count_zero => '0 选择';
 
   @override
-  String get recording_lib_no_recordings => '没有录音';
+  String get recording_lib_no_recordings => '没有录像';
 
   @override
-  String get recording_lib_filter_button => '过器';
+  String get recording_lib_filter_button => '筛选';
 
   @override
   String recording_lib_filter_button_active(Object arg1) {
-    return '过器 · $arg1';
+    return '筛选 · $arg1';
   }
 
   @override
-  String get recording_lib_filter_sheet_title => '过记录';
+  String get recording_lib_filter_sheet_title => '筛选录像';
 
   @override
   String get recording_lib_filter_apply => '应用';
@@ -3394,7 +3435,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get recording_lib_filter_reset => '重置';
 
   @override
-  String get recording_lib_filter_section_what => '什么?';
+  String get recording_lib_filter_section_what => '对象';
 
   @override
   String get recording_lib_filter_section_severity => '严重性';
@@ -3425,7 +3466,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get recording_lib_pick_date => '选择一个约会';
+  String get recording_lib_pick_date => '选择日期';
 
   @override
   String get recording_lib_date_all_days => '所有日期';
@@ -3434,16 +3475,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get cd_clear_date_filter => '显示所有日子';
 
   @override
-  String get recording_lib_section_morning => '早晨';
+  String get recording_lib_section_morning => '上午';
 
   @override
-  String get recording_lib_section_afternoon => '晚上好好';
+  String get recording_lib_section_afternoon => '下午';
 
   @override
-  String get recording_lib_section_evening => '晚上';
+  String get recording_lib_section_evening => '傍晚';
 
   @override
-  String get recording_lib_section_night => '晚上';
+  String get recording_lib_section_night => '夜间';
 
   @override
   String get cd_previous_day => '前一天';
@@ -3452,19 +3493,31 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get cd_next_day => '第二天';
 
   @override
-  String get cd_open_filters => '开放过器';
+  String get cd_open_filters => '打开筛选';
 
   @override
-  String get cd_clear_filter => '清晰的过器';
+  String get cd_clear_filter => '清除筛选';
 
   @override
   String get player_title_recording => '录制';
 
   @override
-  String get player_time_zero => '时间:';
+  String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
+
+  @override
+  String get daemon_name_camera => '摄像头服务';
+
+  @override
+  String get daemon_name_surveillance => '监控服务';
+
+  @override
+  String get daemon_name_acc => 'ACC 监控';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
 
   @override
   String get daemons_hero_title => '背景服务';
@@ -3505,13 +3558,20 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get battery_health_last_updated => '最后更新';
 
   @override
+  String get battery_health_unavailable => '不可用';
+
+  @override
+  String get battery_health_unavailable_desc => '此车辆不支持电池健康度估算。';
+
+  @override
   String get battery_health_reset => '重置SOH估计';
 
   @override
-  String get battery_health_reset_desc => '如果电池被更换或读数看起来不正确,使用.';
+  String get battery_health_reset_desc =>
+      '清除所有数据并从零重新估算。如果更换了电池或读数看起来不正确，请使用此功能。';
 
   @override
-  String get soh_dialog_model_label => '模型';
+  String get soh_dialog_model_label => '车型';
 
   @override
   String get soh_dialog_pack_capacity_label => '包装容量';
@@ -3547,7 +3607,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '删除了$arg1录音',
+      other: '删除了$arg1录像',
       one: '删除$arg1记录',
     );
     return '$_temp0';
@@ -3558,8 +3618,8 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '删除$arg1录音',
-      one: '删除$arg1录音',
+      other: '删除$arg1录像',
+      one: '删除$arg1录像',
     );
     return '$_temp0';
   }
@@ -3569,8 +3629,8 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '这将永久删除$arg1录音.',
-      one: '这将永久删除$arg1录音.',
+      other: '将永久删除 $arg1 个录像。此操作无法撤销。',
+      one: '将永久删除 $arg1 个录像。此操作无法撤销。',
     );
     return '$_temp0';
   }
@@ -3581,7 +3641,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get toast_storage_permission_required => '录音所需的存储许可';
+  String get toast_storage_permission_required => '录像所需的存储许可';
 
   @override
   String get toast_url_copied_short => '已复制了URL!';
@@ -3662,16 +3722,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dialog_disable => '停用';
 
   @override
-  String get dialog_keep_enabled => '让你能做到';
+  String get dialog_keep_enabled => '保持启用';
 
   @override
-  String get dialog_keep_disabled => '保持残疾';
+  String get dialog_keep_disabled => '保持停用';
 
   @override
-  String get dialog_regenerate => '复兴';
+  String get dialog_regenerate => '重新生成';
 
   @override
-  String get dialog_reset_selected => '选择重置';
+  String get dialog_reset_selected => '重置所选项';
 
   @override
   String get dialog_reset_soh_title => '设置SOH估计?';
@@ -3681,15 +3741,15 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
       '这将清除所有SOH数据并从零开始强迫重新估计.\n\n如果:\n•电池被更换\n•SOH读取似乎不正确\n•您想重新校准\n\n系统将从下一个可用的数据源 (OEM,充电校准或即时读取) 中重新播放.';
 
   @override
-  String get dialog_reset_following_title => '设置下面的设置?';
+  String get dialog_reset_following_title => '重置以下项目？';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return '此操作无法撤销。\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => '完成重新设置';
+  String get dialog_reset_complete_title => '重置完成';
 
   @override
   String get dialog_traffic_cannot_check_title => '无法检查状态';
@@ -3703,7 +3763,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get dialog_traffic_disable_message =>
-      'BYD交通监测器 (com.byd.trafficmonitor) 是一个内置系统应用程序,持续监测后台道路交通状况.\n\n️ 为什么禁用它?\n\n• 消耗移动数据 (即使停车时)\n• 使用CPU和电池在后台\n• 不需要使用单独的导航应用程序\n• 可以干扰仪表摄像头的网络使用\n\n 这可以安全禁用 它只影响地图上的内置交通覆盖.您的导航,Bluetooth和所有其他汽车功能都不受影响.\n\n 禁用后需要硬重启 (保持中部控制台按 5 秒).';
+      'BYD Traffic Monitor (com.byd.trafficmonitor) 是内置系统应用，会在后台持续监测道路交通状况。\n\n为什么要禁用？\n\n• 消耗移动数据（即使停车时也是）\n• 在后台占用 CPU 和电量\n• 如果您使用其他导航应用则不需要\n• 可能干扰行车记录仪的网络使用\n\n禁用是安全的：它只影响地图上的内置路况图层。导航、蓝牙和其他所有车辆功能均不受影响。\n\n禁用后需要硬重启（长按中控台按键 5 秒）。';
 
   @override
   String get dialog_traffic_enable_title => '再启用BYD交通监测器?';
@@ -3718,7 +3778,8 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get dialog_traffic_reboot_message => '现在请重启: 按下并保持中央控制台按5秒.';
+  String get dialog_traffic_reboot_message =>
+      '更改已应用。\n\n请立即执行硬重启:\n长按中控台按键 5 秒。';
 
   @override
   String get traffic_monitor_loading => '交通监视器:检查...';
@@ -3754,10 +3815,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dialog_regenerate_token_title => '复兴标志';
 
   @override
-  String get dialog_regenerate_token_message => '这将使当前的代币无效.所有活跃的会议将被登录.继续?';
+  String get dialog_regenerate_token_message => '当前令牌将失效。所有活动会话都将被登出。是否继续？';
 
   @override
-  String get toast_token_regenerated_logged_out => '创建了新代币,所有会议都登录了.';
+  String get toast_token_regenerated_logged_out => '已生成新令牌。所有会话均已登出。';
 
   @override
   String get toast_token_regenerated_restart => '令牌已重新生成。各服务可能需要重启才能生效。';
@@ -3766,7 +3827,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get toast_token_regenerated_no_notify => '令牌已重新生成。无法通知后台服务。';
 
   @override
-  String get toast_token_regenerated => '代币再生';
+  String get toast_token_regenerated => '令牌再生';
 
   @override
   String get dashboard_no_tunnel => '没有道运行';
@@ -3779,7 +3840,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2 运行';
+    return '$arg1/$arg2 运行中';
   }
 
   @override
@@ -3800,7 +3861,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dialog_zrok_token_title => 'Zrok道标志';
 
   @override
-  String get dialog_zrok_token_message => '输入Zrok启用代币.';
+  String get dialog_zrok_token_message => '请输入 Zrok 启用令牌。\n获取地址: zrok.io';
 
   @override
   String get toast_token_cannot_be_empty => '标签不能空';
@@ -3810,16 +3871,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get dialog_zrok_reset_message =>
-      '这将:\n• 停止zrok道如果运行\n• 从该设备中删除zrok环境\n• 删除保存的代币\n\n您需要重新输入代币并重新启用.';
+      '此操作将:\n• 停止正在运行的 zrok 隧道\n• 从本设备移除 zrok 环境\n• 删除已保存的令牌\n\n您需要重新输入令牌并重新启用。这会占用您在 zrok.io 上 5 个设备名额中的 1 个。\n\n确定吗？';
 
   @override
   String get toast_resetting_zrok => '重新设置zrok环境...';
 
   @override
-  String get toast_zrok_reset_success => 'Zrok环境重置. 输入一个新的代币,重新设置.';
+  String get toast_zrok_reset_success => 'Zrok环境重置. 输入一个新的令牌,重新设置.';
 
   @override
-  String get toast_zrok_reset_partial => '环境重置 (代币文件可能需要手动清理)';
+  String get toast_zrok_reset_partial => '环境重置 (令牌文件可能需要手动清理)';
 
   @override
   String toast_zrok_reset_warnings(Object arg1) {
@@ -3827,19 +3888,19 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get zrok_no_token_configured => '没有配置的代币.';
+  String get zrok_no_token_configured => '未配置令牌。点按进行设置。';
 
   @override
-  String get toast_zrok_token_saved => '存储的代币';
+  String get toast_zrok_token_saved => '存储的令牌';
 
   @override
-  String get toast_zrok_token_save_failed => '未能保存代币';
+  String get toast_zrok_token_save_failed => '未能保存令牌';
 
   @override
   String get toast_zrok_token_deleted => '删除的标志';
 
   @override
-  String get toast_zrok_token_delete_failed => '未能删除代币';
+  String get toast_zrok_token_delete_failed => '未能删除令牌';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -3872,7 +3933,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String log_header_title(Object arg1) {
-    return '=== $arg1 Log ===';
+    return '=== $arg1 日志 ===';
   }
 
   @override
@@ -3896,18 +3957,18 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get dialog_delete_recording_title => '删除录音';
+  String get dialog_delete_recording_title => '删除录像';
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return '删除$arg1?';
+    return '删除 $arg1？\n此操作无法撤销。';
   }
 
   @override
   String get toast_recording_deleted => '删除记录';
 
   @override
-  String get toast_recording_delete_failed => '无法删除记录';
+  String get toast_recording_delete_failed => '无法删除录像';
 
   @override
   String toast_batch_delete_partial(Object arg1, Object arg2) {
@@ -3931,7 +3992,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get camera_current_auto_label => '电流:自动';
+  String get camera_current_auto_label => '当前：自动';
 
   @override
   String get soh_estimation_active => '估计活动';
@@ -3977,7 +4038,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get rail_dashboard => '仪表板';
 
   @override
-  String get rail_live => '活着';
+  String get rail_live => '实时';
 
   @override
   String get rail_recordings => '录像';
@@ -4022,7 +4083,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_overlay_camera_title => '摄像头指标';
 
   @override
-  String get settings_overlay_camera_subtitle => '在录音活动期间显示REC/ PROX标志.';
+  String get settings_overlay_camera_subtitle => '在录像活动期间显示REC/ PROX标志.';
 
   @override
   String get settings_overlay_trip_title => '指向旅行';
@@ -4037,13 +4098,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_subrail_overline => '设置';
 
   @override
-  String get cd_settings_subrail => '设置子轨道';
+  String get cd_settings_subrail => '设置侧栏';
 
   @override
   String get settings_privacy_title => '隐私与数据';
 
   @override
-  String get settings_privacy_body => '重置将清除录音索引、缓存凭证、服务状态及设备端偏好设置。此操作不可撤销。';
+  String get settings_privacy_body => '重置将清除录像索引、缓存凭证、服务状态及设备端偏好设置。此操作不可撤销。';
 
   @override
   String get settings_about_title => '关于BladeWatch';
@@ -4098,7 +4159,8 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_about_source_title => '源代码';
 
   @override
-  String get settings_about_source_value => '其他类型的设备:';
+  String get settings_about_source_value =>
+      'github.com/yash-srivastava/BladeWatch-release';
 
   @override
   String get settings_about_license_url =>
@@ -4137,13 +4199,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_theme_label => '主题';
 
   @override
-  String get settings_theme_auto => '自动 (跟踪系统)';
+  String get settings_theme_auto => '自动（跟随系统）';
 
   @override
-  String get settings_theme_light => '灯光';
+  String get settings_theme_light => '浅色';
 
   @override
-  String get settings_theme_dark => '黑暗';
+  String get settings_theme_dark => '深色';
 
   @override
   String get settings_language_label => '语言';
@@ -4191,7 +4253,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get recordings_title => '录像';
 
   @override
-  String get recordings_segment_dashcam => '幕';
+  String get recordings_segment_dashcam => '行车记录';
 
   @override
   String get recordings_segment_surveillance => '监控';
@@ -4206,7 +4268,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String recordings_segment_dashcam_count(Object arg1) {
-    return '达什卡姆 · $arg1';
+    return '行车记录 · $arg1';
   }
 
   @override
@@ -4218,13 +4280,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get recordings_summary_pending => '—';
 
   @override
-  String get recordings_preview_placeholder_title => '选择录音';
+  String get recordings_preview_placeholder_title => '选择录像';
 
   @override
   String get recordings_preview_placeholder_body => '在左边点击任何东西来播放.';
 
   @override
-  String get diagnostics_section_adb_console => '电脑控制台';
+  String get diagnostics_section_adb_console => 'ADB 控制台';
 
   @override
   String get diagnostics_section_traffic => '交通监视器';
@@ -4245,16 +4307,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get diagnostics_hero_subtitle => '现场健康,记录和探测器.';
 
   @override
-  String get diagnostics_health_clear => '一切都清了.';
+  String get diagnostics_health_clear => '一切正常';
 
   @override
-  String get diagnostics_health_section => '卫生';
+  String get diagnostics_health_section => '运行状况';
 
   @override
   String get diagnostics_health_network => '网络';
 
   @override
-  String get diagnostics_health_storage => '存储';
+  String get diagnostics_health_storage => '存储空间';
 
   @override
   String get diagnostics_health_camera => '摄像头';
@@ -4277,19 +4339,19 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get diagnostics_tunnel_state_online => '在线';
 
   @override
-  String get diagnostics_tunnel_state_offline => '在线';
+  String get diagnostics_tunnel_state_offline => '离线';
 
   @override
-  String get diagnostics_tunnel_state_connecting => '连接';
+  String get diagnostics_tunnel_state_connecting => '连接中';
 
   @override
   String get diagnostics_network_mobile => '移动';
 
   @override
-  String get diagnostics_network_ethernet => '互联网';
+  String get diagnostics_network_ethernet => '以太网';
 
   @override
-  String get diagnostics_network_offline => '在线';
+  String get diagnostics_network_offline => '离线';
 
   @override
   String diagnostics_storage_used_line(Object arg1, Object arg2) {
@@ -4317,7 +4379,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get diagnostics_camera_probe_subtitle => '检查连接的摄像头流.';
 
   @override
-  String get diagnostics_adb_subtitle => '打开设备上的终端.';
+  String get diagnostics_adb_subtitle => '打开设备上的终端。';
 
   @override
   String get diagnostics_battery_subtitle => '检查细胞SOH和数据包.';
@@ -4326,7 +4388,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get diagnostics_settings_subtitle => '应用程序偏好,主题和语言.';
 
   @override
-  String get settings_action_reset_data => '设置数据...';
+  String get settings_action_reset_data => '重置数据…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -4346,7 +4408,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dashboard_subtitle_no_tunnel => '离线远程访问';
 
   @override
-  String get dashboard_metric_recordings => '今天的录音';
+  String get dashboard_metric_recordings => '今天的录像';
 
   @override
   String get dashboard_metric_storage => '使用的存储';
@@ -4364,13 +4426,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dashboard_metric_vehicle => '车辆';
 
   @override
-  String get dashboard_chip_recording_active => '收音';
+  String get dashboard_chip_recording_active => '录制中';
 
   @override
   String get dashboard_chip_recording_idle => '空闲';
 
   @override
-  String get dashboard_vehicle_tap_to_set => '按下设置';
+  String get dashboard_vehicle_tap_to_set => '点按以设置';
 
   @override
   String dashboard_vehicle_summary(Object arg1, Object arg2) {
@@ -4381,7 +4443,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_dialog_title => '设置电池容量';
 
   @override
-  String get vehicle_dialog_capacity_label => '产能 (kWh)';
+  String get vehicle_dialog_capacity_label => '容量 (kWh)';
 
   @override
   String get vehicle_dialog_capacity_suffix => 'kWh';
@@ -4390,13 +4452,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_dialog_capacity_helper => '8至120 kWh。保留以使用模型默认值。';
 
   @override
-  String get vehicle_dialog_model_label => '模型';
+  String get vehicle_dialog_model_label => '车型';
 
   @override
   String get vehicle_dialog_save => '保存';
 
   @override
-  String get vehicle_dialog_reset => '重新设置为自动检测';
+  String get vehicle_dialog_reset => '重置为自动检测';
 
   @override
   String get vehicle_dialog_invalid_capacity => '容量必须为8-120kWh';
@@ -4432,67 +4494,61 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => '状态';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => '采集';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => '画质';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => '存储';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => '录制状态';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => '当前状态';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => '今日录制数';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => '录制模式（ACC 开启）';
 
   @override
-  String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+  String get settings_recording_mode_description => '选择行车时行车记录仪何时录制。';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => '不录制（默认）';
 
   @override
-  String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+  String get settings_recording_mode_none_desc => '不录制 — 监控仍然工作';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => '持续录制';
 
   @override
-  String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+  String get settings_recording_mode_continuous_desc => '行车时全程录制';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => '行驶模式';
 
   @override
-  String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+  String get settings_recording_mode_drive_desc => '仅在车辆行驶时录制';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => '接近守卫';
 
   @override
-  String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+  String get settings_recording_mode_proximity_desc => '检测到移动时录制';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => '录制时长上限';
 
   @override
-  String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+  String get settings_recording_limit_description => '每个文件的最大时长。录制会按此间隔分割为新文件。';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -4500,113 +4556,115 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => '录制画质';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => '录制存储';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => '存储位置';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => '内部存储';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SD 卡';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SD 卡（不可用）';
 
   @override
-  String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+  String get settings_recording_storage_limit_label => '存储上限 — 达到后自动删除最旧的';
+
+  @override
+  String get settings_recording_storage_usage_label => '存储使用量';
+
+  @override
+  String get settings_recording_storage_files_label => '文件';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '已用 $arg1 / 上限 $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 个录制';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => '路径';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'SD 卡可用空间';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label => '内部可用空间';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => '格式化外部存储';
 
   @override
-  String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+  String get settings_recording_format_warning => '将永久擦除 SD 卡或 USB 驱动器上的所有数据。';
 
   @override
-  String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+  String get settings_recording_format_confirm => '再次点按 — 所有数据将被擦除';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running => '正在格式化… 请稍候';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => '格式化 SD 卡 / USB';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive => '未找到可移动存储';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return '格式化成功。新路径：$arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => '数据库目录';
 
   @override
-  String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+  String get settings_recording_sync_description => '将录制索引与磁盘上的文件核对。';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => '正在同步…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => '同步数据库';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return '已同步：+$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => '同步已在进行中';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return '同步失败：$arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => '应用更改';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => '关闭';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return '暂不支持启动/停止 $arg1';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => '配置';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => '重置环境';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -4615,7 +4673,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String vehicle_dialog_summary_model(Object arg1) {
-    return '型号:$arg1';
+    return '车型: $arg1';
   }
 
   @override
@@ -4624,7 +4682,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get vehicle_dialog_soh_unavailable => '无法使用';
+  String get vehicle_dialog_soh_unavailable => '无法获取';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -4632,16 +4690,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => '存储';
+  String get dashboard_metric_storage_chip_pending => '存储空间 —';
 
   @override
-  String get dashboard_tunnel_offline => '在线';
+  String get dashboard_tunnel_offline => '离线';
 
   @override
   String get dashboard_tunnel_online => '在线';
 
   @override
-  String get dashboard_tunnel_connecting => '连接...';
+  String get dashboard_tunnel_connecting => '连接中…';
 
   @override
   String get dashboard_trips_this_week => '本周';
@@ -4691,7 +4749,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dashboard_action_live => '现场视频';
 
   @override
-  String get dashboard_action_live_subtitle => '开放式摄像头视图';
+  String get dashboard_action_live_subtitle => '打开摄像头画面';
 
   @override
   String get dashboard_action_recordings => '录像';
@@ -4709,7 +4767,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_hero_overline => '过度驱动';
 
   @override
-  String get settings_hero_subtitle => '调整外观,录音,监控和设备上的数据.';
+  String get settings_hero_subtitle => '调整外观,录像,监控和设备上的数据.';
 
   @override
   String get settings_overline_preferences => '预见';
@@ -4739,7 +4797,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_about_row_subtitle => '版本,许可证,支持开发.';
 
   @override
-  String get settings_reset_row_subtitle => '清晰的录音,事件,或所有隐藏.';
+  String get settings_reset_row_subtitle => '清晰的录像,事件,或所有隐藏.';
 
   @override
   String settings_footer_format(Object arg1, Object arg2) {
@@ -4750,17 +4808,17 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_appearance_subtitle => '的主题,语言和视觉偏好.';
 
   @override
-  String get settings_theme_active_auto_caption => '自动跟踪你的系统主题.';
+  String get settings_theme_active_auto_caption => '自动跟随系统主题。';
 
   @override
-  String get settings_theme_active_light_caption => '灯光主题总是开放.';
+  String get settings_theme_active_light_caption => '始终使用浅色主题。';
 
   @override
-  String get settings_theme_active_dark_caption => '黑暗的主题总是开放.';
+  String get settings_theme_active_dark_caption => '始终使用深色主题。';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '可用的$arg1的$arg2语言';
+    return '$arg2 种语言中有 $arg1 种可用';
   }
 
   @override
@@ -4770,7 +4828,8 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_privacy_stance_title => '默认的设备上';
 
   @override
-  String get settings_privacy_stance_body => '只有通过你明确配置的道和集成器才能从你的车出走.';
+  String get settings_privacy_stance_body =>
+      'BladeWatch 完全在车机上运行。除了您明确配置的隧道和集成之外，没有任何遥测数据离开您的车辆。';
 
   @override
   String get settings_privacy_overline_storage => '地方储存';
@@ -4798,7 +4857,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get settings_privacy_reset_subtitle => '选择类别：录音、事件、服务配置、缓存遥测数据…';
+  String get settings_privacy_reset_subtitle => '选择类别：录像、事件、服务配置、缓存遥测数据…';
 
   @override
   String get settings_developer_overline => '开发者';
@@ -4828,10 +4887,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get diagnostics_camera_value_probing => '探测...';
+  String get diagnostics_camera_value_probing => '探测中…';
 
   @override
-  String get diagnostics_camera_value_offline => '在线';
+  String get diagnostics_camera_value_offline => '离线';
 
   @override
   String diagnostics_battery_value_soh(Object arg1) {
@@ -4843,7 +4902,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String dashboard_recordings_value_live(Object arg1) {
-    return '●$arg1';
+    return '● $arg1';
   }
 
   @override
@@ -4955,10 +5014,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get vehicle_tab_trunk => '箱子';
+  String get vehicle_tab_trunk => '后备箱';
 
   @override
-  String get vehicle_tab_climate => '气候';
+  String get vehicle_tab_climate => '空调';
 
   @override
   String get vehicle_tab_seats => '座椅';
@@ -4979,7 +5038,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_locked => '锁定';
 
   @override
-  String get vehicle_unlocked => '没有锁定';
+  String get vehicle_unlocked => '已解锁';
 
   @override
   String get vehicle_range_label => '续航';
@@ -4994,16 +5053,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_open_trunk => '打开后备箱';
 
   @override
-  String get vehicle_close_trunk => '关闭箱子';
+  String get vehicle_close_trunk => '关闭后备箱';
 
   @override
   String get vehicle_trunk_info_open => '打开后备箱将先解锁车辆。';
 
   @override
-  String get vehicle_ac_on => 'AC 启动';
+  String get vehicle_ac_on => 'AC 开启';
 
   @override
-  String get vehicle_ac_off => '已关闭';
+  String get vehicle_ac_off => 'AC 关闭';
 
   @override
   String get vehicle_max_cooling_on => '最大制冷：开';
@@ -5062,7 +5121,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_seat_pos_2 => '位置 2';
 
   @override
-  String get vehicle_all_windows => '所有窗户';
+  String get vehicle_all_windows => '所有车窗';
 
   @override
   String get vehicle_window_front_left => '左前';
@@ -5089,10 +5148,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_window_open_all => '全部打开';
 
   @override
-  String get vehicle_sunroof => '阳光屋顶';
+  String get vehicle_sunroof => '天窗';
 
   @override
-  String get vehicle_sunshade => '阳光遮阳';
+  String get vehicle_sunshade => '遮阳帘';
 
   @override
   String get vehicle_btn_drl_title => '白天运行灯';
@@ -5116,22 +5175,22 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_charge_limit_range => '最低50%，最高100%';
 
   @override
-  String get vehicle_tyre_no_signal => '没有信号';
+  String get vehicle_tyre_no_signal => '无信号';
 
   @override
-  String get vehicle_tyre_slow_leak => '缓慢的泄漏';
+  String get vehicle_tyre_slow_leak => '缓慢漏气';
 
   @override
-  String get vehicle_tyre_fast_leak => '快速泄漏';
+  String get vehicle_tyre_fast_leak => '快速漏气';
 
   @override
-  String get vehicle_tyre_low => '低水平';
+  String get vehicle_tyre_low => '偏低';
 
   @override
-  String get vehicle_tyre_high => '高度';
+  String get vehicle_tyre_high => '偏高';
 
   @override
-  String get vehicle_tyre_ok => '确定';
+  String get vehicle_tyre_ok => '正常';
 
   @override
   String get vehicle_tyre_check_pressure => '检查胎压';
@@ -5287,13 +5346,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get trips_tab_storage => '存储';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 天';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 天';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 天';
 
   @override
   String trips_load_error(Object message) {
@@ -5307,13 +5366,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get trips_period_summary_title => '周期摘要';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => '行程';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => '小时';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => '效率';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -5323,7 +5382,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return '评分：$score';
   }
 
   @override
@@ -5331,7 +5390,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return '总分：$score / 100';
   }
 
   @override
@@ -5339,7 +5398,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD 估算：$km 公里';
   }
 
   @override
@@ -5349,46 +5408,46 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get trips_dna_title => '驾驶 DNA';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => '预判';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => '平顺度';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => '速度遵守';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => '效率';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => '稳定性';
 
   @override
   String get trips_storage_title => '行程存储';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => '行程分析';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => '电价';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => '距离单位';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => '存储位置';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => '内部存储';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SD 卡';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SD 卡（不可用）';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => '应用更改';
 
   @override
   String trips_storage_usage_line(
@@ -5397,21 +5456,20 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '已用 $used $unit / 上限 $limit MB · $count 次行程';
   }
 
   @override
   String get trips_sync_title => '数据库目录';
 
   @override
-  String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+  String get trips_sync_description => '将行程索引与磁盘上的遥测文件核对。';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => '同步数据库';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => '正在同步…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -5425,31 +5483,31 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get trips_detail_summary_title => '行程摘要';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => '距离';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => '时长';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => '能耗';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => '平均速度';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => '最高速度';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => '电量';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => '费用';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => '外部温度';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => '爬升高度';
 
   @override
   String get trips_detail_scores_title => '驾驶评分';
@@ -5462,7 +5520,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return '已记录 $count 个 GPS 点';
   }
 
   @override
@@ -5614,6 +5672,18 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
+  String get surveillance_roi_title => '侦测区域';
+
+  @override
+  String get surveillance_roi_description => '点按添加顶点，拖动可移动顶点。最少三个，最多八个。';
+
+  @override
+  String get surveillance_roi_enable => '仅在此区域内侦测';
+
+  @override
+  String get action_undo => '撤销';
+
+  @override
   String get surveillance_detection_title => '检测设置';
 
   @override
@@ -5685,8 +5755,14 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get surveillance_storage_limit_label => '存储上限 — 达到上限时自动删除最旧的文件';
 
   @override
+  String get surveillance_storage_usage_label => '存储使用量';
+
+  @override
+  String get surveillance_storage_files_label => '文件';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '已用 $arg1 / 上限 $arg2';
   }
 
   @override
@@ -5778,7 +5854,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get app_name => 'BladeWatch';
 
   @override
-  String get accessibility_service_description => '這項服務不會閱讀或與屏幕內容互動.';
+  String get accessibility_service_description =>
+      '讓 BladeWatch 車輛監控在背景持續執行。本服務不會讀取螢幕內容，也不會與其互動。';
 
   @override
   String get action_cancel => '取消';
@@ -5790,7 +5867,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get action_select_all => '選擇所有';
 
   @override
-  String get action_select_all_short => '所有的';
+  String get action_select_all_short => '全部';
 
   @override
   String get action_delete => '刪除';
@@ -5799,40 +5876,40 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get action_done => '已完成';
 
   @override
-  String get action_remind_me_later => '記得我後來';
+  String get action_remind_me_later => '稍後提醒';
 
   @override
   String get action_retry => '重試';
 
   @override
-  String get action_run => '跑步';
+  String get action_run => '執行';
 
   @override
-  String get action_clear_output => '清晰的輸出';
+  String get action_clear_output => '清除輸出';
 
   @override
   String get cd_camera => '攝影機';
 
   @override
-  String get cd_qr => '沒有任何問題';
+  String get cd_qr => 'QR';
 
   @override
-  String get cd_qr_code => '如何使用QR圖碼';
+  String get cd_qr_code => 'QR 碼';
 
   @override
   String get cd_show_hide_token => '顯示/隱藏符號';
 
   @override
-  String get cd_copy_token => '複製標記';
+  String get cd_copy_token => '複製權杖';
 
   @override
   String get cd_copy_url => '複製 URL';
 
   @override
-  String get cd_clear_logs => '清晰的日志';
+  String get cd_clear_logs => '清除日誌';
 
   @override
-  String get cd_expand_collapse => '擴張/崩';
+  String get cd_expand_collapse => '展開/收合';
 
   @override
   String get cd_recording_status => '記錄狀態';
@@ -5850,7 +5927,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get cd_back => '返回';
 
   @override
-  String get cd_play_pause => '播放/休息';
+  String get cd_play_pause => '播放/暫停';
 
   @override
   String get cd_player_prev => '上一次錄制';
@@ -5868,19 +5945,19 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get cd_delete => '刪除';
 
   @override
-  String get cd_expand => '擴展';
+  String get cd_expand => '展開';
 
   @override
-  String get cd_configure => '設定方式';
+  String get cd_configure => '設定';
 
   @override
-  String get cd_download_log => '下載日志';
+  String get cd_download_log => '下載日誌';
 
   @override
   String get cd_reset => '重設';
 
   @override
-  String get cd_battery => '沒有電池';
+  String get cd_battery => '電池';
 
   @override
   String get cd_step_completed => '完成步骤';
@@ -5889,16 +5966,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get cd_permission_granted => '授予許可';
 
   @override
-  String get overlay_rec_inactive_label => '其他國家';
+  String get overlay_rec_inactive_label => 'REC';
 
   @override
   String get overlay_trip_inactive_label => '旅行';
 
   @override
-  String get log_entry_default_timestamp => '這是一場非常棒的遊戲.';
+  String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '這就是我想要的東西.';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => '這裡的帳號訊息';
@@ -5916,7 +5993,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get logs_panel_title => '記錄時間';
 
   @override
-  String get url_connecting => '聯繫我們.';
+  String get url_connecting => '連線中…';
 
   @override
   String get camera_selection_title => '攝影機選擇';
@@ -5925,16 +6002,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get camera_selection_subtitle => '選擇全景攝影機來源';
 
   @override
-  String get camera_current_auto => '目前: 自動';
+  String get camera_current_auto => '目前：自動';
 
   @override
   String get camera_option_auto => '自動 (啟動時檢測)';
 
   @override
-  String get camera_option_0 => '攝影機0  Atto 裝飾';
+  String get camera_option_0 => '攝影機0 — Atto 裝飾';
 
   @override
-  String get camera_option_1 => '攝影機 1  Seal (默認)';
+  String get camera_option_1 => '攝影機 1 — Seal (默認)';
 
   @override
   String get camera_option_2 => '攝影機 2';
@@ -5953,19 +6030,19 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
       '每次開機時自動選取適合您車款的攝影機。攝影機 1 = BYD Seal，攝影機 0 = Atto 車款。變更攝影機 ID 後，請重新啟動攝影機服務使設定生效。';
 
   @override
-  String get dashboard_scan_to_connect => '掃描至連接';
+  String get dashboard_scan_to_connect => '掃碼連線';
 
   @override
   String get dashboard_qr_waiting => '在等待道...';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 運行';
+  String get dashboard_daemons_running_default => '0/5 執行中';
 
   @override
-  String get dashboard_device_id_loading => '沒有人知道.';
+  String get dashboard_device_id_loading => '…';
 
   @override
-  String get dashboard_access_code => '接入代碼';
+  String get dashboard_access_code => '存取碼';
 
   @override
   String get dashboard_token_masked => '••••••••';
@@ -6004,19 +6081,20 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get setup_guide_subtitle => '快速取得最佳體驗的三步:';
 
   @override
-  String get setup_step_one_label => '其他國家';
+  String get setup_step_one_label => '1';
 
   @override
-  String get setup_step_two_label => '其他國家';
+  String get setup_step_two_label => '2';
 
   @override
-  String get setup_step_three_label => '其他國家';
+  String get setup_step_three_label => '3';
 
   @override
   String get setup_language_title => '選擇自己的語言';
 
   @override
-  String get setup_language_body => '請按一下,選擇不同的語言,';
+  String get setup_language_body =>
+      '預設使用車機的語言。點按可為 BladeWatch 應用程式和網頁通道選擇其他語言。';
 
   @override
   String get setup_language_button => '選擇語言';
@@ -6026,7 +6104,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get setup_autostart_body =>
-      '按下來打開BYD自动啟動. 在列表中找到BladeWatch,然後卸下欄位.BYD在每次安裝都擦除了這個.';
+      '點按下方開啟 BYD 自動啟動。在清單中找到 BladeWatch 並取消勾選。BYD 每次安裝都會清除這項設定 — 更新後需要重做一次。';
 
   @override
   String get setup_autostart_button => '打開BYD自動啟動';
@@ -6063,27 +6141,30 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String get language_not_saved => '語言已套用，但無法儲存 — 重新啟動應用程式後會還原。';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
-    return '$arg1 · Auto';
+    return '$arg1 · 自動';
   }
 
   @override
-  String get adb_prompt => '其他國家';
+  String get adb_prompt => '\$';
 
   @override
-  String get adb_command_hint => '進入指令...';
+  String get adb_command_hint => '輸入指令…';
 
   @override
   String get adb_preset_commands_header => '預設命令';
 
   @override
-  String get adb_output_header => '產量';
+  String get adb_output_header => '輸出';
 
   @override
-  String get adb_output_ready => '准备使用命令.';
+  String get adb_output_ready => '\$ 已準備好接收指令…';
 
   @override
-  String get adb_console_hero_title => '網路控制台';
+  String get adb_console_hero_title => 'ADB 主控台';
 
   @override
   String get adb_console_hero_subtitle => '在裝置上執行 shell 命令';
@@ -6103,7 +6184,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
       '查看中控螢幕上的「允許 USB 除錯嗎？」提示並接受，然後重試。';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting => '正在連線至效能監視器…';
 
   @override
   String get performance_hero_title => '系統效能';
@@ -6112,16 +6193,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => '系統使用率';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => '應用程式使用率';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => '頻率';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => '溫度';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -6130,16 +6211,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get performance_memory_title => '記憶體';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => '使用率';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => '總計';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => '已用';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => '應用程式';
 
   @override
   String get performance_gpu_title => 'GPU';
@@ -6148,16 +6229,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get performance_app_process_title => '應用程式程序';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => '執行緒數';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC 次數';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => '開啟的 FD';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => '每 3 秒重新整理一次';
 
   @override
   String get webview_loading => '接收了這些東西.';
@@ -6169,7 +6250,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get webview_start_camera_daemon => '請從「服務」畫面啟動攝影機服務，以存取此頁面。';
 
   @override
-  String get zrok_enable_token_hint => '啟動令牌';
+  String get zrok_enable_token_hint => '啟動權杖';
 
   @override
   String get zrok_token_storage_note => '權杖已安全儲存，並在應用程式與後台服務之間共用。';
@@ -6178,16 +6259,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get zrok_reset_environment => '重置Zrok環境';
 
   @override
-  String get zrok_reset_environment_desc => '您需要使用您的代號重新啟用 (使用裝置插槽).';
+  String get zrok_reset_environment_desc => '移除環境和權杖。您需要用權杖重新啟用（會佔用一個裝置名額）。';
 
   @override
-  String get reset_title => '復元數據';
+  String get reset_title => '重置資料';
 
   @override
   String get reset_subtitle => '按類別清除累積的數據';
 
   @override
-  String get reset_warning => '這樣的情況無法取消.';
+  String get reset_warning => '此操作無法復原。錄影、行程和電池記錄將被永久刪除。';
 
   @override
   String get reset_cat_trips => '行程';
@@ -6208,10 +6289,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get reset_cat_soh_desc => '在 BMS 中重新檢測名稱容量,重新種植估計';
 
   @override
-  String get reset_cat_recordings => '錄音 (影片)';
+  String get reset_cat_recordings => '錄影 (影片)';
 
   @override
-  String get reset_cat_recordings_desc => '在錄音文件中的所有MP4';
+  String get reset_cat_recordings_desc => '在錄影文件中的所有MP4';
 
   @override
   String get reset_cat_sentry_events => '監控活動';
@@ -6232,42 +6313,42 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get reset_cat_trip_files_desc => '在磁盤上進行 JSON 每次旅行遠隔測量';
 
   @override
-  String get recording_lib_chip_any => '沒有任何問題';
+  String get recording_lib_chip_any => '全部';
 
   @override
   String get recording_lib_chip_person => '人';
 
   @override
-  String get recording_lib_chip_vehicle => '汽車';
+  String get recording_lib_chip_vehicle => '車輛';
 
   @override
   String get recording_lib_chip_bike => '單車';
 
   @override
-  String get recording_lib_chip_animal => '其他動物';
+  String get recording_lib_chip_animal => '動物';
 
   @override
   String get recording_lib_chip_alert => '警示';
 
   @override
-  String get recording_lib_chip_critical => '關鍵的';
+  String get recording_lib_chip_critical => '嚴重';
 
   @override
   String get recording_lib_selected_count_zero => '0 選擇';
 
   @override
-  String get recording_lib_no_recordings => '沒有錄音';
+  String get recording_lib_no_recordings => '沒有錄影';
 
   @override
-  String get recording_lib_filter_button => '濾網';
+  String get recording_lib_filter_button => '篩選';
 
   @override
   String recording_lib_filter_button_active(Object arg1) {
-    return '濾鏡 · $arg1';
+    return '篩選 · $arg1';
   }
 
   @override
-  String get recording_lib_filter_sheet_title => '濾鏡錄音';
+  String get recording_lib_filter_sheet_title => '篩選錄影';
 
   @override
   String get recording_lib_filter_apply => '套用';
@@ -6276,7 +6357,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get recording_lib_filter_reset => '重設';
 
   @override
-  String get recording_lib_filter_section_what => '該怎麼辦?';
+  String get recording_lib_filter_section_what => '對象';
 
   @override
   String get recording_lib_filter_section_severity => '嚴重性';
@@ -6294,7 +6375,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get recording_lib_date_today => '今天';
 
   @override
-  String get recording_lib_date_yesterday => '沒有任何問題.';
+  String get recording_lib_date_yesterday => '昨天';
 
   @override
   String recording_lib_clip_count(Object arg1) {
@@ -6310,43 +6391,55 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get recording_lib_pick_date => '選擇一個日期';
 
   @override
-  String get recording_lib_date_all_days => '每天';
+  String get recording_lib_date_all_days => '所有日期';
 
   @override
   String get cd_clear_date_filter => '顯示所有日期';
 
   @override
-  String get recording_lib_section_morning => '您的位置:';
+  String get recording_lib_section_morning => '上午';
 
   @override
-  String get recording_lib_section_afternoon => '您的位置: 首頁';
+  String get recording_lib_section_afternoon => '下午';
 
   @override
-  String get recording_lib_section_evening => '晚上';
+  String get recording_lib_section_evening => '傍晚';
 
   @override
-  String get recording_lib_section_night => '晚上';
+  String get recording_lib_section_night => '夜間';
 
   @override
   String get cd_previous_day => '前一天';
 
   @override
-  String get cd_next_day => '接下來的一天';
+  String get cd_next_day => '次日';
 
   @override
-  String get cd_open_filters => '打開過濾器';
+  String get cd_open_filters => '開啟篩選';
 
   @override
-  String get cd_clear_filter => '清晰的濾鏡';
+  String get cd_clear_filter => '清除篩選';
 
   @override
-  String get player_title_recording => '錄音';
+  String get player_title_recording => '錄影';
 
   @override
-  String get player_time_zero => '沒有人知道.';
+  String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
+
+  @override
+  String get daemon_name_camera => '攝影機服務';
+
+  @override
+  String get daemon_name_surveillance => '監控服務';
+
+  @override
+  String get daemon_name_acc => 'ACC 監控';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
 
   @override
   String get daemons_hero_title => '背景服務';
@@ -6387,13 +6480,20 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get battery_health_last_updated => '最新更新';
 
   @override
+  String get battery_health_unavailable => '不可用';
+
+  @override
+  String get battery_health_unavailable_desc => '此車輛不支援電池健康度估算。';
+
+  @override
   String get battery_health_reset => '重置SOH估值';
 
   @override
-  String get battery_health_reset_desc => '清除所有數據,從零開始重新估算. 如果電池被更換或看起來不正確,';
+  String get battery_health_reset_desc =>
+      '清除所有資料並從零重新估算。如果更換了電池或讀值看起來不正確，請使用此功能。';
 
   @override
-  String get soh_dialog_model_label => '模型';
+  String get soh_dialog_model_label => '車型';
 
   @override
   String get soh_dialog_pack_capacity_label => '包裝容量';
@@ -6418,7 +6518,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
-    return '$arg1% on $arg2';
+    return '$arg1%（$arg2）';
   }
 
   @override
@@ -6429,8 +6529,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '已取消$arg1錄音',
-      one: '已取消$arg1錄音',
+      other: '已取消$arg1錄影',
+      one: '已取消$arg1錄影',
     );
     return '$_temp0';
   }
@@ -6440,8 +6540,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '删除$arg1錄音',
-      one: '删除$arg1錄音',
+      other: '刪除 $arg1 部錄影',
+      one: '刪除 $arg1 部錄影',
     );
     return '$_temp0';
   }
@@ -6451,8 +6551,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '這樣會永久抹去$arg1錄音,',
-      one: '這樣會永久抹去$arg1錄音.',
+      other: '將永久刪除 $arg1 個錄影。此操作無法復原。',
+      one: '將永久刪除 $arg1 個錄影。此操作無法復原。',
     );
     return '$_temp0';
   }
@@ -6544,34 +6644,34 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dialog_disable => '停用';
 
   @override
-  String get dialog_keep_enabled => '保持自己的權力';
+  String get dialog_keep_enabled => '保持啟用';
 
   @override
-  String get dialog_keep_disabled => '保持殘疾';
+  String get dialog_keep_disabled => '保持停用';
 
   @override
-  String get dialog_regenerate => '恢復生產';
+  String get dialog_regenerate => '重新產生';
 
   @override
-  String get dialog_reset_selected => '選擇重置';
+  String get dialog_reset_selected => '重置所選項目';
 
   @override
   String get dialog_reset_soh_title => '預算的 SOH 預算?';
 
   @override
   String get dialog_reset_soh_message =>
-      '這樣會清除所有SOH數據,並從零開始強制重新估算.\n\n如果:\n• 電池被更換\n• SOH閱讀似乎不正確\n•您想要重新校准\n\n';
+      '此操作將清除所有 SOH 資料，並從頭強制重新估算。\n\n在下列情況下使用:\n• 電池已更換\n• SOH 讀值看起來不正確\n• 您想重新校正\n\n系統會從下一個可用的資料來源 (OEM、充電校正或即時讀值) 重新取得基準。';
 
   @override
-  String get dialog_reset_following_title => '請重置下列?';
+  String get dialog_reset_following_title => '重置下列項目？';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return '此操作無法復原。\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => '完成重置';
+  String get dialog_reset_complete_title => '重置完成';
 
   @override
   String get dialog_traffic_cannot_check_title => '無法檢查狀況';
@@ -6585,7 +6685,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get dialog_traffic_disable_message =>
-      'BYD 交通監控器 (com.byd.trafficmonitor) 是一個內建系統應用程式,持續監控道路交通情況在背景下.\n\n️ 為什麼禁用它?\n\n• 使用移動數據 (即使停車時)\n• 使用CPU和電池在背景下\n• 不需要使用別的導航應用程式\n• 可以干擾Dashcam的網絡使用\n\n 這可以安全禁用.';
+      'BYD Traffic Monitor (com.byd.trafficmonitor) 是內建系統應用程式，會在背景持續監測道路交通狀況。\n\n為什麼要停用？\n\n• 消耗行動數據（即使停車時也是）\n• 在背景占用 CPU 和電量\n• 如果您使用其他導航應用程式則不需要\n• 可能干擾行車記錄器的網路使用\n\n停用是安全的：只會影響地圖上的內建路況圖層。導航、藍牙和其他所有車輛功能都不受影響。\n\n停用後需要硬重開機（長按中控台按鍵 5 秒）。';
 
   @override
   String get dialog_traffic_enable_title => '請重新啟動BYD交通監測器?';
@@ -6600,7 +6700,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get dialog_traffic_reboot_message => '請重新啟動: 按下中央控制台按5秒.';
+  String get dialog_traffic_reboot_message =>
+      '變更已套用。\n\n請立即執行硬重開機:\n長按中控台按鍵 5 秒。';
 
   @override
   String get traffic_monitor_loading => '交通監測:檢查...';
@@ -6636,10 +6737,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dialog_regenerate_token_title => '恢復代號';
 
   @override
-  String get dialog_regenerate_token_message => '這將取消當前的代碼. 所有活跃的會議將會被關閉.';
+  String get dialog_regenerate_token_message =>
+      '目前的權杖將失效。所有使用中的工作階段都會被登出。要繼續嗎？';
 
   @override
-  String get toast_token_regenerated_logged_out => '已創建新的代碼, 所有會議都被關閉.';
+  String get toast_token_regenerated_logged_out => '已產生新的權杖。所有工作階段皆已登出。';
 
   @override
   String get toast_token_regenerated_restart => '權杖已重新產生，服務可能需要重新啟動以套用變更。';
@@ -6661,14 +6763,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '運行的 $arg1/$arg2';
+    return '$arg1/$arg2 執行中';
   }
 
   @override
   String get tunnel_label_zrok => 'Zrok';
 
   @override
-  String get clip_label_access_code => '接入代碼';
+  String get clip_label_access_code => '存取碼';
 
   @override
   String get clip_label_url => 'URL';
@@ -6682,7 +6784,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dialog_zrok_token_title => 'Zrok道標記';
 
   @override
-  String get dialog_zrok_token_message => '請輸入Zrok啟用代號.';
+  String get dialog_zrok_token_message => '請輸入 Zrok 啟用權杖。\n取得位置: zrok.io';
 
   @override
   String get toast_token_cannot_be_empty => '符號不能空';
@@ -6692,16 +6794,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get dialog_zrok_reset_message =>
-      '這會:\n•停止zrok道如果運行\n•從這個裝置中移除zrok環境\n•删除保存的令牌\n\n你需要重新輸入你的令牌,重新啟動.';
+      '此操作將:\n• 停止正在執行的 zrok 通道\n• 從本裝置移除 zrok 環境\n• 刪除已儲存的權杖\n\n您需要重新輸入權杖並重新啟用。這會佔用您在 zrok.io 上 5 個裝置名額中的 1 個。\n\n確定嗎？';
 
   @override
   String get toast_resetting_zrok => '還原zrok環境...';
 
   @override
-  String get toast_zrok_reset_success => 'Zrok環境重置. 輸入新的令牌,重新設定.';
+  String get toast_zrok_reset_success => 'Zrok環境重置. 輸入新的權杖,重新設定.';
 
   @override
-  String get toast_zrok_reset_partial => '環境重置 (令牌檔案可能需要手動清理)';
+  String get toast_zrok_reset_partial => '環境重置 (權杖檔案可能需要手動清理)';
 
   @override
   String toast_zrok_reset_warnings(Object arg1) {
@@ -6709,19 +6811,19 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get zrok_no_token_configured => '沒有設定的代碼.';
+  String get zrok_no_token_configured => '尚未設定權杖。點按以進行設定。';
 
   @override
-  String get toast_zrok_token_saved => '存儲的代碼';
+  String get toast_zrok_token_saved => '存儲的權杖';
 
   @override
-  String get toast_zrok_token_save_failed => '沒有儲存令牌';
+  String get toast_zrok_token_save_failed => '沒有儲存權杖';
 
   @override
   String get toast_zrok_token_deleted => '已取消的標籤';
 
   @override
-  String get toast_zrok_token_delete_failed => '未能删除令牌';
+  String get toast_zrok_token_delete_failed => '無法刪除權杖';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -6754,7 +6856,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String log_header_title(Object arg1) {
-    return '=== $arg1 Log ===';
+    return '=== $arg1 日誌 ===';
   }
 
   @override
@@ -6778,22 +6880,22 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get dialog_delete_recording_title => '删除錄音';
+  String get dialog_delete_recording_title => '刪除錄影';
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return 'Delete $arg1?\nThis cannot be undone.';
+    return '要刪除 $arg1 嗎？\n此操作無法復原。';
   }
 
   @override
-  String get toast_recording_deleted => '已取消錄音';
+  String get toast_recording_deleted => '已取消錄影';
 
   @override
-  String get toast_recording_delete_failed => '沒有删除錄音';
+  String get toast_recording_delete_failed => '無法刪除錄影';
 
   @override
   String toast_batch_delete_partial(Object arg1, Object arg2) {
-    return '$arg1 已被删除, $arg2 失败';
+    return '已刪除 $arg1 個，$arg2 個失敗';
   }
 
   @override
@@ -6801,7 +6903,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String setup_version_banner(Object arg1) {
-    return '更新至v$arg1 重新確認自动啟動,BYD在每次安裝都擦除它';
+    return '已更新至 v$arg1 — 請重新確認自動啟動，BYD 每次安裝都會清除它';
   }
 
   @override
@@ -6813,7 +6915,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get camera_current_auto_label => '目前: 自動';
+  String get camera_current_auto_label => '目前：自動';
 
   @override
   String get soh_estimation_active => '估算活動';
@@ -6856,16 +6958,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get status_overlay_notif_text => '狀態覆蓋活動';
 
   @override
-  String get rail_dashboard => '顯示板';
+  String get rail_dashboard => '儀表板';
 
   @override
-  String get rail_live => '活下去';
+  String get rail_live => '即時';
 
   @override
   String get rail_recordings => '錄影';
 
   @override
-  String get rail_vehicle => '汽車';
+  String get rail_vehicle => '車輛';
 
   @override
   String get rail_trips => '行程';
@@ -6874,7 +6976,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get rail_location => '位置';
 
   @override
-  String get rail_diagnostics => '診斷結果';
+  String get rail_diagnostics => '診斷';
 
   @override
   String get rail_settings => '設定';
@@ -6883,7 +6985,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_section_appearance => '這樣的外觀';
 
   @override
-  String get settings_section_recording => '錄音';
+  String get settings_section_recording => '錄影';
 
   @override
   String get settings_section_surveillance => '監控';
@@ -6904,7 +7006,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_overlay_camera_title => '攝影機表示';
 
   @override
-  String get settings_overlay_camera_subtitle => '在錄音活動中顯示REC/ PROX標志.';
+  String get settings_overlay_camera_subtitle => '在錄影活動中顯示REC/ PROX標志.';
 
   @override
   String get settings_overlay_trip_title => '表示 Trip';
@@ -6919,13 +7021,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_subrail_overline => '設定方式';
 
   @override
-  String get cd_settings_subrail => '設定子線';
+  String get cd_settings_subrail => '設定側欄';
 
   @override
   String get settings_privacy_title => '隱私與資料';
 
   @override
-  String get settings_privacy_body => '重置將清除錄音索引、已快取的憑證、服務狀態及裝置上的偏好設定，此操作無法復原。';
+  String get settings_privacy_body => '重置將清除錄影索引、已快取的憑證、服務狀態及裝置上的偏好設定，此操作無法復原。';
 
   @override
   String get settings_about_title => '關於BladeWatch';
@@ -6958,7 +7060,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String settings_about_open_link_copied(Object arg1) {
-    return '沒有搜尋器. URL複製: $arg1';
+    return '找不到瀏覽器。已複製網址: $arg1';
   }
 
   @override
@@ -7019,13 +7121,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_theme_label => '主題:';
 
   @override
-  String get settings_theme_auto => '自動 (跟蹤系統)';
+  String get settings_theme_auto => '自動（跟隨系統）';
 
   @override
-  String get settings_theme_light => '燈光';
+  String get settings_theme_light => '淺色';
 
   @override
-  String get settings_theme_dark => '黑暗的時間';
+  String get settings_theme_dark => '深色';
 
   @override
   String get settings_language_label => '語言';
@@ -7073,7 +7175,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get recordings_title => '錄影';
 
   @override
-  String get recordings_segment_dashcam => '沒有任何樓盤符合您的搜尋';
+  String get recordings_segment_dashcam => '行車記錄';
 
   @override
   String get recordings_segment_surveillance => '監控';
@@ -7088,7 +7190,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String recordings_segment_dashcam_count(Object arg1) {
-    return '幕 · $arg1';
+    return '行車記錄 · $arg1';
   }
 
   @override
@@ -7097,16 +7199,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get recordings_summary_pending => ' 其他國家';
+  String get recordings_summary_pending => '—';
 
   @override
-  String get recordings_preview_placeholder_title => '選擇錄音';
+  String get recordings_preview_placeholder_title => '選擇錄影';
 
   @override
   String get recordings_preview_placeholder_body => '請按左邊任何項目的鍵,';
 
   @override
-  String get diagnostics_section_adb_console => '網路控制台';
+  String get diagnostics_section_adb_console => 'ADB 主控台';
 
   @override
   String get diagnostics_section_traffic => '交通監測器';
@@ -7115,7 +7217,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get diagnostics_section_camera_probe => '攝影機探測器';
 
   @override
-  String get diagnostics_section_battery => '電池健康';
+  String get diagnostics_section_battery => '電池健康度';
 
   @override
   String get diagnostics_section_performance => '效能';
@@ -7127,28 +7229,28 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get diagnostics_hero_subtitle => '檢查了該裝置的情況,';
 
   @override
-  String get diagnostics_health_clear => '沒有任何問題.';
+  String get diagnostics_health_clear => '一切正常';
 
   @override
-  String get diagnostics_health_section => '衛生問題';
+  String get diagnostics_health_section => '運作狀況';
 
   @override
   String get diagnostics_health_network => '網路';
 
   @override
-  String get diagnostics_health_storage => '存儲時間';
+  String get diagnostics_health_storage => '儲存空間';
 
   @override
   String get diagnostics_health_camera => '攝影機';
 
   @override
-  String get diagnostics_health_battery => '沒有電池';
+  String get diagnostics_health_battery => '電池';
 
   @override
-  String get diagnostics_metric_pending => ' 其他國家';
+  String get diagnostics_metric_pending => '—';
 
   @override
-  String get diagnostics_metric_online => '在網路上';
+  String get diagnostics_metric_online => '線上';
 
   @override
   String diagnostics_network_tunnel_label(Object arg1) {
@@ -7156,22 +7258,22 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get diagnostics_tunnel_state_online => '在網路上';
+  String get diagnostics_tunnel_state_online => '線上';
 
   @override
-  String get diagnostics_tunnel_state_offline => '沒有線上';
+  String get diagnostics_tunnel_state_offline => '離線';
 
   @override
-  String get diagnostics_tunnel_state_connecting => '聯繫';
+  String get diagnostics_tunnel_state_connecting => '連線中';
 
   @override
-  String get diagnostics_network_mobile => '移動式';
+  String get diagnostics_network_mobile => '行動網路';
 
   @override
-  String get diagnostics_network_ethernet => '網際網路';
+  String get diagnostics_network_ethernet => '乙太網路';
 
   @override
-  String get diagnostics_network_offline => '沒有線上';
+  String get diagnostics_network_offline => '離線';
 
   @override
   String diagnostics_storage_used_line(Object arg1, Object arg2) {
@@ -7199,7 +7301,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get diagnostics_camera_probe_subtitle => '檢查連接的攝影機流量.';
 
   @override
-  String get diagnostics_adb_subtitle => '打開上裝置的終端.';
+  String get diagnostics_adb_subtitle => '開啟裝置上的終端機。';
 
   @override
   String get diagnostics_battery_subtitle => '檢查SOH的細胞,';
@@ -7208,7 +7310,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get diagnostics_settings_subtitle => '應用程式偏好,主題和語言.';
 
   @override
-  String get settings_action_reset_data => '請重新設定資料.';
+  String get settings_action_reset_data => '重置資料…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -7228,7 +7330,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dashboard_subtitle_no_tunnel => '遠端接入無線';
 
   @override
-  String get dashboard_metric_recordings => '這就是今天的錄音.';
+  String get dashboard_metric_recordings => '這就是今天的錄影.';
 
   @override
   String get dashboard_metric_storage => '使用的儲存';
@@ -7240,13 +7342,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dashboard_metric_services => '背景服務';
 
   @override
-  String get dashboard_metric_value_pending => ' 其他國家';
+  String get dashboard_metric_value_pending => '—';
 
   @override
-  String get dashboard_metric_vehicle => '汽車';
+  String get dashboard_metric_vehicle => '車輛';
 
   @override
-  String get dashboard_chip_recording_active => '正在錄音\n';
+  String get dashboard_chip_recording_active => '正在錄影\n';
 
   @override
   String get dashboard_chip_recording_idle => '閒置';
@@ -7272,13 +7374,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_dialog_capacity_helper => '8至120 kWh。保留以使用模型預設值。';
 
   @override
-  String get vehicle_dialog_model_label => '模型';
+  String get vehicle_dialog_model_label => '車型';
 
   @override
   String get vehicle_dialog_save => '儲存';
 
   @override
-  String get vehicle_dialog_reset => '預定自动檢測';
+  String get vehicle_dialog_reset => '重設為自動偵測';
 
   @override
   String get vehicle_dialog_invalid_capacity => '容量必須為 8 - 120 kWh';
@@ -7314,67 +7416,61 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => '狀態';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => '擷取';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => '畫質';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => '儲存';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => '錄影狀態';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => '目前狀態';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => '今日錄影數';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => '錄影模式（ACC 開啟）';
 
   @override
-  String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+  String get settings_recording_mode_description => '選擇行車時行車記錄器何時錄影。';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => '不錄影（預設）';
 
   @override
-  String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+  String get settings_recording_mode_none_desc => '不錄影 — 監控仍然運作';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => '持續錄影';
 
   @override
-  String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+  String get settings_recording_mode_continuous_desc => '行車時全程錄影';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => '行駛模式';
 
   @override
-  String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+  String get settings_recording_mode_drive_desc => '僅在車輛行駛時錄影';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => '接近守衛';
 
   @override
-  String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+  String get settings_recording_mode_proximity_desc => '偵測到移動時錄影';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => '錄影長度上限';
 
   @override
-  String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+  String get settings_recording_limit_description => '每個檔案的最大長度。錄影會依此間隔分割為新檔案。';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -7382,113 +7478,115 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => '錄影畫質';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => '錄影儲存';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => '儲存位置';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => '內部儲存';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SD 卡';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SD 卡（不可用）';
 
   @override
-  String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+  String get settings_recording_storage_limit_label => '儲存上限 — 達到後自動刪除最舊的';
+
+  @override
+  String get settings_recording_storage_usage_label => '儲存空間使用量';
+
+  @override
+  String get settings_recording_storage_files_label => '檔案';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '已用 $arg1 / 上限 $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 個錄影';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => '路徑';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'SD 卡可用空間';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label => '內部可用空間';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => '格式化外接儲存裝置';
 
   @override
-  String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+  String get settings_recording_format_warning => '將永久清除 SD 卡或 USB 裝置上的所有資料。';
 
   @override
-  String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+  String get settings_recording_format_confirm => '再次點按 — 所有資料將被清除';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running => '正在格式化… 請稍候';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => '格式化 SD 卡 / USB';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive => '找不到可卸除式裝置';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return '格式化成功。新路徑：$arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => '資料庫目錄';
 
   @override
-  String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+  String get settings_recording_sync_description => '將錄影索引與磁碟上的檔案核對。';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => '正在同步…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => '同步資料庫';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return '已同步：+$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => '同步已在進行中';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return '同步失敗：$arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => '套用變更';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => '關閉';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return '暫不支援啟動/停止 $arg1';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => '設定';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => '重設環境';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -7497,7 +7595,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String vehicle_dialog_summary_model(Object arg1) {
-    return '模型:$arg1';
+    return '車型: $arg1';
   }
 
   @override
@@ -7506,7 +7604,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get vehicle_dialog_soh_unavailable => '沒有使用';
+  String get vehicle_dialog_soh_unavailable => '無法取得';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -7514,16 +7612,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => '存儲 ';
+  String get dashboard_metric_storage_chip_pending => '儲存空間 —';
 
   @override
-  String get dashboard_tunnel_offline => '沒有線上';
+  String get dashboard_tunnel_offline => '離線';
 
   @override
-  String get dashboard_tunnel_online => '在網路上';
+  String get dashboard_tunnel_online => '線上';
 
   @override
-  String get dashboard_tunnel_connecting => '聯繫我們.';
+  String get dashboard_tunnel_connecting => '連線中…';
 
   @override
   String get dashboard_trips_this_week => '本週';
@@ -7573,7 +7671,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dashboard_action_live => '在線觀看';
 
   @override
-  String get dashboard_action_live_subtitle => '打開相機顯示器';
+  String get dashboard_action_live_subtitle => '開啟攝影機畫面';
 
   @override
   String get dashboard_action_recordings => '錄影';
@@ -7591,10 +7689,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_hero_overline => '超越使用量';
 
   @override
-  String get settings_hero_subtitle => '調節外觀,錄音,監控和裝置上的數據.';
+  String get settings_hero_subtitle => '調節外觀,錄影,監控和裝置上的數據.';
 
   @override
-  String get settings_overline_preferences => '首頁 > 列表';
+  String get settings_overline_preferences => '偏好設定';
 
   @override
   String get settings_overline_about_data => '關於 & 資料';
@@ -7632,17 +7730,17 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_appearance_subtitle => '標題,語言和視覺偏好.';
 
   @override
-  String get settings_theme_active_auto_caption => '自動追蹤您的系統主題.';
+  String get settings_theme_active_auto_caption => '自動跟隨系統主題。';
 
   @override
-  String get settings_theme_active_light_caption => '燈光主題總是開啟.';
+  String get settings_theme_active_light_caption => '一律使用淺色主題。';
 
   @override
-  String get settings_theme_active_dark_caption => '黑色的主題總是開啟.';
+  String get settings_theme_active_dark_caption => '一律使用深色主題。';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '在 $arg2 語言中可用的 $arg1';
+    return '$arg2 種語言中有 $arg1 種可用';
   }
 
   @override
@@ -7652,7 +7750,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_privacy_stance_title => '預設在裝置上';
 
   @override
-  String get settings_privacy_stance_body => '沒有遠隔測量能離開您的車輛, 除了透過您明顯配置的道和集成.';
+  String get settings_privacy_stance_body =>
+      'BladeWatch 完全在車機上執行。除了您明確設定的通道和整合之外，沒有任何遙測資料離開您的車輛。';
 
   @override
   String get settings_privacy_overline_storage => '地方儲存';
@@ -7710,10 +7809,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get diagnostics_camera_value_probing => '檢查這些問題.';
+  String get diagnostics_camera_value_probing => '偵測中…';
 
   @override
-  String get diagnostics_camera_value_offline => '沒有線上';
+  String get diagnostics_camera_value_offline => '離線';
 
   @override
   String diagnostics_battery_value_soh(Object arg1) {
@@ -7778,7 +7877,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 min';
+    return '$arg1 小時 $arg2 分';
   }
 
   @override
@@ -7837,10 +7936,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get vehicle_tab_trunk => '箱子';
+  String get vehicle_tab_trunk => '後車廂';
 
   @override
-  String get vehicle_tab_climate => '氣候變化';
+  String get vehicle_tab_climate => '空調';
 
   @override
   String get vehicle_tab_seats => '座位';
@@ -7849,7 +7948,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_tab_windows => '車窗';
 
   @override
-  String get vehicle_tab_lights => '燈具';
+  String get vehicle_tab_lights => '燈光';
 
   @override
   String get vehicle_tab_adas => 'ADAS';
@@ -7861,7 +7960,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_locked => '鎖定';
 
   @override
-  String get vehicle_unlocked => '沒有鎖定';
+  String get vehicle_unlocked => '已解鎖';
 
   @override
   String get vehicle_range_label => '續航里程';
@@ -7876,16 +7975,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_open_trunk => '開啟後車廂';
 
   @override
-  String get vehicle_close_trunk => '封閉的箱子';
+  String get vehicle_close_trunk => '關閉後車廂';
 
   @override
   String get vehicle_trunk_info_open => '開啟後車廂將先解鎖車輛。';
 
   @override
-  String get vehicle_ac_on => '在 AC 上';
+  String get vehicle_ac_on => 'AC 開啟';
 
   @override
-  String get vehicle_ac_off => 'AC 已關閉';
+  String get vehicle_ac_off => 'AC 關閉';
 
   @override
   String get vehicle_max_cooling_on => '最大冷氣：開';
@@ -7938,13 +8037,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_heat_high => '（高）';
 
   @override
-  String get vehicle_seat_pos_1 => '排名第 1';
+  String get vehicle_seat_pos_1 => '位置 1';
 
   @override
-  String get vehicle_seat_pos_2 => '排名第 2';
+  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
-  String get vehicle_all_windows => '所有的窗戶';
+  String get vehicle_all_windows => '所有車窗';
 
   @override
   String get vehicle_window_front_left => '左前';
@@ -7971,10 +8070,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_window_open_all => '全部開啟';
 
   @override
-  String get vehicle_sunroof => '陽光屋頂';
+  String get vehicle_sunroof => '天窗';
 
   @override
-  String get vehicle_sunshade => '遮陽罩';
+  String get vehicle_sunshade => '遮陽簾';
 
   @override
   String get vehicle_btn_drl_title => '日子運行燈';
@@ -7998,22 +8097,22 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_charge_limit_range => '最低 50%，最高 100%';
 
   @override
-  String get vehicle_tyre_no_signal => '沒有訊號';
+  String get vehicle_tyre_no_signal => '無訊號';
 
   @override
-  String get vehicle_tyre_slow_leak => '緩慢的泄漏';
+  String get vehicle_tyre_slow_leak => '緩慢漏氣';
 
   @override
-  String get vehicle_tyre_fast_leak => '快速泄漏';
+  String get vehicle_tyre_fast_leak => '快速漏氣';
 
   @override
-  String get vehicle_tyre_low => '低價';
+  String get vehicle_tyre_low => '偏低';
 
   @override
-  String get vehicle_tyre_high => '很高';
+  String get vehicle_tyre_high => '偏高';
 
   @override
-  String get vehicle_tyre_ok => '確定';
+  String get vehicle_tyre_ok => '正常';
 
   @override
   String get vehicle_tyre_check_pressure => '檢查胎壓';
@@ -8169,13 +8268,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get trips_tab_storage => '儲存空間';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 天';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 天';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 天';
 
   @override
   String trips_load_error(Object message) {
@@ -8189,13 +8288,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get trips_period_summary_title => '期間摘要';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => '行程';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => '小時';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => '效率';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -8205,7 +8304,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return '評分：$score';
   }
 
   @override
@@ -8213,7 +8312,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return '總分：$score / 100';
   }
 
   @override
@@ -8221,7 +8320,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD 估算：$km 公里';
   }
 
   @override
@@ -8231,46 +8330,46 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get trips_dna_title => '駕駛 DNA';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => '預判';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => '平順度';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => '速度遵守';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => '效率';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => '穩定性';
 
   @override
   String get trips_storage_title => '行程儲存空間';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => '行程分析';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => '電價';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => '距離單位';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => '儲存位置';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => '內部儲存';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SD 卡';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SD 卡（不可用）';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => '套用變更';
 
   @override
   String trips_storage_usage_line(
@@ -8279,21 +8378,20 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '已用 $used $unit / 上限 $limit MB · $count 次行程';
   }
 
   @override
   String get trips_sync_title => '資料庫目錄';
 
   @override
-  String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+  String get trips_sync_description => '將行程索引與磁碟上的遙測檔案核對。';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => '同步資料庫';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => '正在同步…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -8307,31 +8405,31 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get trips_detail_summary_title => '行程摘要';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => '距離';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => '時長';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => '能耗';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => '平均速度';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => '最高速度';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => '電量';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => '費用';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => '外部溫度';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => '爬升高度';
 
   @override
   String get trips_detail_scores_title => '駕駛評分';
@@ -8344,7 +8442,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return '已記錄 $count 個 GPS 點';
   }
 
   @override
@@ -8496,6 +8594,18 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String get surveillance_roi_title => '偵測區域';
+
+  @override
+  String get surveillance_roi_description => '點按新增頂點，拖曳可移動頂點。最少三個，最多八個。';
+
+  @override
+  String get surveillance_roi_enable => '僅在此區域內偵測';
+
+  @override
+  String get action_undo => '復原';
+
+  @override
   String get surveillance_detection_title => '偵測設定';
 
   @override
@@ -8567,8 +8677,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get surveillance_storage_limit_label => '儲存上限 — 達到上限時自動刪除最舊的檔案';
 
   @override
+  String get surveillance_storage_usage_label => '儲存空間使用量';
+
+  @override
+  String get surveillance_storage_files_label => '檔案';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '已用 $arg1 / 上限 $arg2';
   }
 
   @override

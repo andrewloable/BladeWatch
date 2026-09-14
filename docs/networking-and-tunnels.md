@@ -148,6 +148,19 @@ Zrok runs directly against `http://127.0.0.1:8080` with no intermediate proxy la
 
 Zrok tokens and identity data are secrets. Keep them in the secret store or Zrok runtime directory only.
 
+### Reading the current tunnel URL
+
+Two consumers, two paths:
+
+- The **native** UI gets it from `ZrokLauncher`'s callback into `ZrokController`, which
+  holds it in an in-memory `LiveData` and mirrors it to app-private `SharedPreferences`.
+- The **Flutter** UI cannot reach either (different APK, and `SharedPreferences` is
+  app-private even under the shared UID), so it asks the daemon over IPC:
+  `{"cmd":"tunnelStatus"}` on 19876, which reads `/data/local/tmp/zrok.log` directly and
+  only reports a URL while the tunnel process is alive. See
+  [ipc-auth-and-secrets.md](ipc-auth-and-secrets.md) for the response shape and the
+  reasons it takes the last URL in the log rather than the first.
+
 ## Remote Access Security Model
 
 Recommended exposure order:

@@ -95,16 +95,6 @@ class DiagnosticsController extends ChangeNotifier {
   bool _cameraManualOverride = false;
   bool get cameraManualOverride => _cameraManualOverride;
 
-  BatteryHealthLevel _batteryLevel = BatteryHealthLevel.pending;
-  BatteryHealthLevel get batteryLevel => _batteryLevel;
-  double? _batterySohPercent;
-  double? get batterySohPercent => _batterySohPercent;
-  double _batteryNominalCapacityKwh = 0;
-  double get batteryNominalCapacityKwh => _batteryNominalCapacityKwh;
-  String _batteryNominalSource = 'unset';
-  String get batteryNominalSource => _batteryNominalSource;
-  String _batteryDisplaySource = 'unavailable';
-  String get batteryDisplaySource => _batteryDisplaySource;
 
   Future<void> refresh() async {
     final daemons = await _safeProcessStatus();
@@ -187,41 +177,12 @@ class DiagnosticsController extends ChangeNotifier {
     _cameraStatus = config.probedCameraId < 0 ? CameraTileStatus.probing : CameraTileStatus.active;
   }
 
-  /// [batteryNominalCapacityKwh]/[batteryNominalSource]/[batteryDisplaySource]
-  /// back the Battery Health dialog's Source/Method/Capacity rows —
-  /// BladeWatch-yz1e.11. Ground truth: `MainActivity.showBatteryHealthDialog()`.
-  /// That dialog also shows modelId/pack-capacity/estimated-capacity/
-  /// calibration-anchor, all read from `/data/local/tmp/abrp_soh_estimate.properties`
-  /// directly — unavailable here for the same reason [resetBattery]'s doc
-  /// comment already gives, so this port omits them rather than guessing.
-  /// Native's own "estimation active" banner is driven by that same file's
-  /// `soh_percent` (`hasEstimate`), which this port cannot read either; a
-  /// `displaySource` of `live`/`calibration` is used as the RPC-only
-  /// equivalent signal instead, since those are exactly the two sources that
-  /// represent a real calculated estimate rather than an OEM/nominal fallback.
-  Future<void> _refreshBattery() async {
-    try {
-      final resp = await _systemService.getSohStatus(GetSohStatusRequest());
-      _batteryNominalCapacityKwh = resp.nominalCapacityKwh;
-      _batteryNominalSource = resp.nominalSource.isNotEmpty ? resp.nominalSource : 'unset';
-      _batteryDisplaySource = resp.success ? resp.displaySource : 'unavailable';
-      if (!resp.success || resp.displaySoh < 60.0 || resp.displaySoh > 110.0) {
-        _batteryLevel = BatteryHealthLevel.pending;
-        _batterySohPercent = null;
-        return;
-      }
-      _batterySohPercent = resp.displaySoh;
-      _batteryLevel = resp.displaySource == 'nominal'
-          ? BatteryHealthLevel.neutral
-          : (resp.displaySoh >= 80.0 ? BatteryHealthLevel.good : BatteryHealthLevel.moderate);
-    } catch (_) {
-      _batteryLevel = BatteryHealthLevel.pending;
-      _batterySohPercent = null;
-      _batteryNominalCapacityKwh = 0;
-      _batteryNominalSource = 'unset';
-      _batteryDisplaySource = 'unavailable';
-    }
-  }
+  /// BladeWatch-p7vi: SoH estimation was removed from the daemon.
+  /// `handleSohGetNominal`/`GetSohStatus` are stubs that answer nothing, so
+  /// this used to leave the battery card pending forever. Nothing is fetched
+  /// any more and the card says the feature is unavailable instead.
+  Future<void> _refreshBattery() async {}
+
 
   /// Camera Selection dialog — ground truth `MainActivity.onReconfigureCameraClicked()`.
   /// [cameraId] null means "Auto"; native's own request omits `config`

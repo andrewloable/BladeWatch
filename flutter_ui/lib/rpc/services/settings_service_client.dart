@@ -14,49 +14,49 @@ class SettingsServiceClient {
         'SettingsService',
         'GetQuality',
         request,
-        (json) => GetQualityResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetQualityResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SetQualityResponse> setQuality(SetQualityRequest request) => _transport.call(
         'SettingsService',
         'SetQuality',
         request,
-        (json) => SetQualityResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SetQualityResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetAppearanceResponse> getAppearance(GetAppearanceRequest request) => _transport.call(
         'SettingsService',
         'GetAppearance',
         request,
-        (json) => GetAppearanceResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetAppearanceResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SetAppearanceResponse> setAppearance(SetAppearanceRequest request) => _transport.call(
         'SettingsService',
         'SetAppearance',
         request,
-        (json) => SetAppearanceResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SetAppearanceResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetLocaleResponse> getLocale(GetLocaleRequest request) => _transport.call(
         'SettingsService',
         'GetLocale',
         request,
-        (json) => GetLocaleResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetLocaleResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SetLocaleResponse> setLocale(SetLocaleRequest request) => _transport.call(
         'SettingsService',
         'SetLocale',
         request,
-        (json) => SetLocaleResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SetLocaleResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SetRecordingModeResponse> setRecordingMode(SetRecordingModeRequest request) => _transport.call(
         'SettingsService',
         'SetRecordingMode',
         request,
-        (json) => SetRecordingModeResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SetRecordingModeResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
 }

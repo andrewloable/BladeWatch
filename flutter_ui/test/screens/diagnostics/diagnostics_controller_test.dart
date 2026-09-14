@@ -235,97 +235,13 @@ void main() {
     });
   });
 
-  group('refresh — battery tile', () {
-    test('is pending when the SOH RPC fails', () async {
-      rpc.stubError('SystemService', 'GetSohStatus', const ConnectError('unavailable', 'no daemon'));
-
+  // BladeWatch-p7vi: SoH estimation was removed from the daemon, so the
+  // controller no longer fetches it — there is nothing to classify.
+  group('refresh — battery', () {
+    test('does not call the removed SOH endpoint', () async {
       await controller.refresh();
 
-      expect(controller.batteryLevel, BatteryHealthLevel.pending);
-      expect(controller.batterySohPercent, isNull);
-    });
-
-    test('is pending when success is false', () async {
-      stubBattery(success: false);
-
-      await controller.refresh();
-
-      expect(controller.batteryLevel, BatteryHealthLevel.pending);
-    });
-
-    test('is pending when displaySoh is outside the accepted 60-110 band', () async {
-      stubBattery(displaySoh: 40.0);
-
-      await controller.refresh();
-
-      expect(controller.batteryLevel, BatteryHealthLevel.pending);
-    });
-
-    test('is neutral when the source is "nominal", regardless of the percentage', () async {
-      stubBattery(displaySoh: 95.0, displaySource: 'nominal');
-
-      await controller.refresh();
-
-      expect(controller.batteryLevel, BatteryHealthLevel.neutral);
-      expect(controller.batterySohPercent, 95.0);
-    });
-
-    test('is good at 85% or above', () async {
-      stubBattery(displaySoh: 85.0, displaySource: 'live');
-      await controller.refresh();
-      expect(controller.batteryLevel, BatteryHealthLevel.good);
-    });
-
-    test('is moderate between 60% (the lowest accepted reading) and 80%', () async {
-      stubBattery(displaySoh: 65.0, displaySource: 'live');
-      await controller.refresh();
-      expect(controller.batteryLevel, BatteryHealthLevel.moderate);
-    });
-
-    test('is moderate at exactly the 60% acceptance floor', () async {
-      stubBattery(displaySoh: 60.0, displaySource: 'oem');
-      await controller.refresh();
-      expect(controller.batteryLevel, BatteryHealthLevel.moderate);
-    });
-
-    test('captures nominal capacity, nominal source, and display source for the dialog', () async {
-      stubBattery(displaySoh: 90.0, displaySource: 'live', nominalCapacityKwh: 61.4, nominalSource: 'user');
-
-      await controller.refresh();
-
-      expect(controller.batteryNominalCapacityKwh, 61.4);
-      expect(controller.batteryNominalSource, 'user');
-      expect(controller.batteryDisplaySource, 'live');
-    });
-
-    test('nominal capacity/source and display source are still captured when displaySoh is out of band', () async {
-      stubBattery(displaySoh: 40.0, displaySource: 'oem', nominalCapacityKwh: 61.4, nominalSource: 'auto');
-
-      await controller.refresh();
-
-      expect(controller.batteryLevel, BatteryHealthLevel.pending);
-      expect(controller.batteryNominalCapacityKwh, 61.4);
-      expect(controller.batteryNominalSource, 'auto');
-      expect(controller.batteryDisplaySource, 'oem');
-    });
-
-    test('nominal source defaults to "unset" and display source to "unavailable" when unset/failed', () async {
-      stubBattery(success: false);
-
-      await controller.refresh();
-
-      expect(controller.batteryNominalSource, 'unset');
-      expect(controller.batteryDisplaySource, 'unavailable');
-    });
-
-    test('resets nominal/display fields to their defaults when the RPC throws', () async {
-      rpc.stubError('SystemService', 'GetSohStatus', const ConnectError('unavailable', 'no daemon'));
-
-      await controller.refresh();
-
-      expect(controller.batteryNominalCapacityKwh, 0);
-      expect(controller.batteryNominalSource, 'unset');
-      expect(controller.batteryDisplaySource, 'unavailable');
+      expect(rpc.calls.where((c) => c.method == 'GetSohStatus'), isEmpty);
     });
   });
 

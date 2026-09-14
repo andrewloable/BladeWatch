@@ -34,16 +34,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get action_done => '完成';
 
   @override
-  String get action_remind_me_later => '後で思い出してください';
+  String get action_remind_me_later => '後で通知';
 
   @override
   String get action_retry => '再試行';
 
   @override
-  String get action_run => '走る';
+  String get action_run => '実行';
 
   @override
-  String get action_clear_output => '清潔な出力';
+  String get action_clear_output => '出力をクリア';
 
   @override
   String get cd_camera => 'カメラ';
@@ -58,25 +58,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cd_show_hide_token => '表示/隠すトークン';
 
   @override
-  String get cd_copy_token => 'コピー・トークン';
+  String get cd_copy_token => 'トークンをコピー';
 
   @override
-  String get cd_copy_url => 'URLのコピー';
+  String get cd_copy_url => 'URLをコピー';
 
   @override
-  String get cd_clear_logs => '清潔な日記';
+  String get cd_clear_logs => 'ログをクリア';
 
   @override
-  String get cd_expand_collapse => '拡大/崩壊';
+  String get cd_expand_collapse => '展開/折りたたみ';
 
   @override
-  String get cd_recording_status => '記録状態';
+  String get cd_recording_status => '録画状態';
 
   @override
   String get cd_trip_tracking_status => '旅行追跡状況';
 
   @override
-  String get cd_video_thumbnail => 'ビデオミニカー';
+  String get cd_video_thumbnail => '動画のサムネイル';
 
   @override
   String get cd_play => '再生';
@@ -85,7 +85,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cd_back => '戻る';
 
   @override
-  String get cd_play_pause => '演奏/休憩';
+  String get cd_play_pause => '再生/一時停止';
 
   @override
   String get cd_player_prev => '前の録画';
@@ -103,13 +103,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cd_delete => '削除';
 
   @override
-  String get cd_expand => '拡大する';
+  String get cd_expand => '展開';
 
   @override
   String get cd_configure => '設定';
 
   @override
-  String get cd_download_log => 'ダウンロードログ';
+  String get cd_download_log => 'ログをダウンロード';
 
   @override
   String get cd_reset => 'リセット';
@@ -130,10 +130,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get overlay_trip_inactive_label => 'トリップ';
 
   @override
-  String get log_entry_default_timestamp => '12時34分56分';
+  String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '[タグ]';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => 'ログメッセージ';
@@ -166,10 +166,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get camera_option_auto => '自動 (起動時に検出)';
 
   @override
-  String get camera_option_0 => 'カメラ 0  Atto トリム';
+  String get camera_option_0 => 'カメラ 0 — Atto トリム';
 
   @override
-  String get camera_option_1 => 'カメラ 1  Seal (デフォルト)';
+  String get camera_option_1 => 'カメラ 1 — Seal (デフォルト)';
 
   @override
   String get camera_option_2 => 'カメラ2';
@@ -188,16 +188,16 @@ class AppLocalizationsJa extends AppLocalizations {
       '起動時に車種に合ったカメラを自動選択します。カメラ1 = BYD Seal、カメラ0 = Attoシリーズ。カメラIDを変更した後は、設定を反映させるためにカメラサービスを再起動してください。';
 
   @override
-  String get dashboard_scan_to_connect => '接続をスキャンする';
+  String get dashboard_scan_to_connect => 'スキャンして接続';
 
   @override
   String get dashboard_qr_waiting => 'トンネルを待ってる';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 走る';
+  String get dashboard_daemons_running_default => '0/5 実行中';
 
   @override
-  String get dashboard_device_id_loading => '...';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => 'アクセスコード';
@@ -243,7 +243,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get setup_step_one_label => '1';
 
   @override
-  String get setup_step_two_label => '2 について';
+  String get setup_step_two_label => '2';
 
   @override
   String get setup_step_three_label => '3';
@@ -252,7 +252,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get setup_language_title => '言語 を 選ぶ';
 
   @override
-  String get setup_language_body => 'BladeWatch アプリとウェブトンネルで別の言語を選択するにはタップします.';
+  String get setup_language_body =>
+      '既定ではヘッドユニットの言語を使用します。BladeWatch アプリとウェブトンネルで別の言語を選ぶにはタップしてください。';
 
   @override
   String get setup_language_button => '言語 を 選ぶ';
@@ -299,6 +300,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved => '言語を適用しましたが保存できませんでした。アプリを再起動すると元に戻ります。';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
     return '$arg1 · オート';
   }
@@ -307,13 +311,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get adb_prompt => '\$';
 
   @override
-  String get adb_command_hint => '命令を入力する...';
+  String get adb_command_hint => 'コマンドを入力…';
 
   @override
   String get adb_preset_commands_header => '前設定コマンド';
 
   @override
-  String get adb_output_header => '輸出';
+  String get adb_output_header => '出力';
 
   @override
   String get adb_output_ready => '命令を準備する';
@@ -339,7 +343,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'ヘッドユニットの画面に表示される「USBデバッグを許可しますか？」というプロンプトを確認して承認し、もう一度お試しください。';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting => 'パフォーマンスモニターに接続中…';
 
   @override
   String get performance_hero_title => 'システムパフォーマンス';
@@ -348,16 +352,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => 'システム使用率';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => 'アプリ使用率';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => 'クロック周波数';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => '温度';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -366,16 +370,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get performance_memory_title => 'メモリ';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => '使用率';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => '合計';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => '使用中';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => 'アプリ';
 
   @override
   String get performance_gpu_title => 'GPU';
@@ -384,16 +388,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get performance_app_process_title => 'アプリプロセス';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => 'スレッド数';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC 回数';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => 'オープン FD 数';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => '3秒ごとに更新';
 
   @override
   String get webview_loading => '荷物...';
@@ -426,7 +430,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get reset_subtitle => 'カテゴリー別で蓄積されたデータを消す';
 
   @override
-  String get reset_warning => '記録,旅行,バッテリー履歴は永久に削除されます.';
+  String get reset_warning => 'この操作は元に戻せません。録画、走行履歴、バッテリー履歴は完全に削除されます。';
 
   @override
   String get reset_cat_trips => '走行履歴';
@@ -447,10 +451,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get reset_cat_soh_desc => 'BMSからの名容量,再種植の推定を再検出する';
 
   @override
-  String get reset_cat_recordings => '録音 (ビデオ)';
+  String get reset_cat_recordings => '録画 (ビデオ)';
 
   @override
-  String get reset_cat_recordings_desc => '録音フォルダのMP4すべて';
+  String get reset_cat_recordings_desc => '録画フォルダのMP4すべて';
 
   @override
   String get reset_cat_sentry_events => '監視イベント';
@@ -471,7 +475,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get reset_cat_trip_files_desc => 'ドライブで1回のJSONテレメトリ';
 
   @override
-  String get recording_lib_chip_any => 'どれか';
+  String get recording_lib_chip_any => 'すべて';
 
   @override
   String get recording_lib_chip_person => '人';
@@ -489,7 +493,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recording_lib_chip_alert => '警告';
 
   @override
-  String get recording_lib_chip_critical => '批判的';
+  String get recording_lib_chip_critical => '重大';
 
   @override
   String get recording_lib_selected_count_zero => '0 選択した';
@@ -506,7 +510,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_filter_sheet_title => 'フィルター録音';
+  String get recording_lib_filter_sheet_title => '録画を絞り込む';
 
   @override
   String get recording_lib_filter_apply => '適用';
@@ -515,7 +519,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recording_lib_filter_reset => 'リセット';
 
   @override
-  String get recording_lib_filter_section_what => '何で?';
+  String get recording_lib_filter_section_what => '対象';
 
   @override
   String get recording_lib_filter_section_severity => '重度';
@@ -527,13 +531,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recording_lib_chip_type_normal => '標準';
 
   @override
-  String get recording_lib_chip_type_proximity => '距離';
+  String get recording_lib_chip_type_proximity => '近接';
 
   @override
   String get recording_lib_date_today => '今日';
 
   @override
-  String get recording_lib_date_yesterday => '昨日は';
+  String get recording_lib_date_yesterday => '昨日';
 
   @override
   String recording_lib_clip_count(Object arg1) {
@@ -555,16 +559,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cd_clear_date_filter => 'すべての日を表示';
 
   @override
-  String get recording_lib_section_morning => '午前中';
+  String get recording_lib_section_morning => '午前';
 
   @override
-  String get recording_lib_section_afternoon => 'こんばんは';
+  String get recording_lib_section_afternoon => '午後';
 
   @override
   String get recording_lib_section_evening => '夕方';
 
   @override
-  String get recording_lib_section_night => '夜';
+  String get recording_lib_section_night => '夜間';
 
   @override
   String get cd_previous_day => '前日';
@@ -573,19 +577,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cd_next_day => '翌日';
 
   @override
-  String get cd_open_filters => 'オープンフィルター';
+  String get cd_open_filters => 'フィルターを開く';
 
   @override
-  String get cd_clear_filter => '透明なフィルター';
+  String get cd_clear_filter => 'フィルターをクリア';
 
   @override
-  String get player_title_recording => '記録';
+  String get player_title_recording => '録画';
 
   @override
   String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
+
+  @override
+  String get daemon_name_camera => 'カメラサービス';
+
+  @override
+  String get daemon_name_surveillance => '監視サービス';
+
+  @override
+  String get daemon_name_acc => 'ACC監視';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
 
   @override
   String get daemons_hero_title => '背景サービス';
@@ -626,11 +642,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get battery_health_last_updated => '最新更新された';
 
   @override
+  String get battery_health_unavailable => '利用できません';
+
+  @override
+  String get battery_health_unavailable_desc => 'この車両ではバッテリー劣化度の推定を利用できません。';
+
+  @override
   String get battery_health_reset => 'SOH推定をリセットする';
 
   @override
   String get battery_health_reset_desc =>
-      'バッテリー交換された場合,または読み書きが間違っている場合は使用します.';
+      'すべてのデータを消去し、最初から推定し直します。バッテリーを交換した場合や、表示値が正しくないと思われる場合に使用します。';
 
   @override
   String get soh_dialog_model_label => 'モデル';
@@ -680,7 +702,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '$arg1録音を削除する',
+      other: '$arg1録画を削除する',
       one: '$arg1 レコーディングを削除する',
     );
     return '$_temp0';
@@ -691,8 +713,8 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '$arg1の録音は永久に削除されます.これは取り消すことはできません.',
-      one: '$arg1の記録を永久に削除します これは取り消すことはできません',
+      other: '$arg1件の録画を完全に削除します。この操作は元に戻せません。',
+      one: '$arg1件の録画を完全に削除します。この操作は元に戻せません。',
     );
     return '$_temp0';
   }
@@ -786,34 +808,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dialog_disable => '無効';
 
   @override
-  String get dialog_keep_enabled => '許可 を 持っ て ください';
+  String get dialog_keep_enabled => '有効のままにする';
 
   @override
-  String get dialog_keep_disabled => '障害 を 維持 する';
+  String get dialog_keep_disabled => '無効のままにする';
 
   @override
-  String get dialog_regenerate => '再生する';
+  String get dialog_regenerate => '再生成';
 
   @override
-  String get dialog_reset_selected => 'セットをリセットする';
+  String get dialog_reset_selected => '選択項目をリセット';
 
   @override
   String get dialog_reset_soh_title => 'SOH推定をリセットする?';
 
   @override
   String get dialog_reset_soh_message =>
-      'SOHの読み方は誤りに見えます システムはその次の利用可能なデータ源 (OEM,充電キャリブレーション,即時読み) から再種を出す.';
+      'すべての SOH データを消去し、最初から再推定します。\n\n次の場合に使用します:\n• バッテリーを交換した\n• SOH の値が正しくないと思われる\n• 再校正したい\n\n次に利用できるデータソース (OEM、充電キャリブレーション、または瞬時値) から再取得します。';
 
   @override
   String get dialog_reset_following_title => '次の設定をリセットしますか?';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return 'この操作は取り消せません。\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => 'セット完了';
+  String get dialog_reset_complete_title => 'リセット完了';
 
   @override
   String get dialog_traffic_cannot_check_title => 'ステータスを確認できない';
@@ -823,11 +845,11 @@ class AppLocalizationsJa extends AppLocalizations {
       'ADBが接続されておらず、アプリは自動的に再接続できませんでした。\n\nこの車両では、開発者向けオプションの通常の「USBデバッグ」トグルだけでは不十分です — ヘッドユニット自体のワイヤレスADB(ネットワークデバッグ)設定もオンになっている必要があり、システムアップデートによってリセットされることがあります。ヘッドユニットでワイヤレスADBを再度有効にするか、USBで接続してください。\n\n接続されると、ステータスは自動的に更新されます。';
 
   @override
-  String get dialog_traffic_disable_title => 'BYDトラフィックモニターを無効にするか?';
+  String get dialog_traffic_disable_title => 'BYD Traffic Monitor を無効にしますか？';
 
   @override
   String get dialog_traffic_disable_message =>
-      'BYD トラフィックモニター (com.byd.trafficmonitor) は,バックグラウンドでの道路交通状態を継続的に監視する内蔵システムアプリです.\n\n️ なぜそれを無効にするのですか?\n\n• 携帯電話データを消費します (駐車している場合でも)\n• CPUとバックグラウンドのバッテリーを使用します\n• 別なナビゲーションアプリを使用している場合は不要です\n• ダッシュカメラのネットワーク使用に干渉できます\n\n これは無効にできます.';
+      'BYD Traffic Monitor (com.byd.trafficmonitor) は、バックグラウンドで道路交通状況を継続的に監視する内蔵システムアプリです。\n\n無効にする理由\n\n• モバイルデータを消費します (駐車中でも)\n• バックグラウンドで CPU とバッテリーを使用します\n• 別のナビアプリを使う場合は不要です\n• ドライブレコーダーの通信を妨げることがあります\n\n無効にしても安全です。影響するのは地図上の内蔵交通情報レイヤーだけで、ナビ、Bluetooth、その他の車両機能はそのまま使えます。\n\n無効化後はハードリブートが必要です (センターコンソールのボタンを 5 秒長押し)。';
 
   @override
   String get dialog_traffic_enable_title => 'BYDトラフィックモニターを再起動する?';
@@ -880,11 +902,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dialog_regenerate_token_message =>
-      '実行中のトークンが無効になる. すべてのアクティブセッションがログアウトされます.';
+      '現在のトークンは無効になります。アクティブなセッションはすべてログアウトされます。続行しますか？';
 
   @override
   String get toast_token_regenerated_logged_out =>
-      '新しいトークンが生成された すべてのセッションがログアウトされた';
+      '新しいトークンを生成しました。すべてのセッションがログアウトされました。';
 
   @override
   String get toast_token_regenerated_restart =>
@@ -908,7 +930,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2 実行';
+    return '$arg1/$arg2 実行中';
   }
 
   @override
@@ -929,7 +951,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dialog_zrok_token_title => 'Zrokトンネルトークン';
 
   @override
-  String get dialog_zrok_token_message => 'Zrokの有効化トークンを入力します.';
+  String get dialog_zrok_token_message =>
+      'Zrok の有効化トークンを入力してください。\n取得先: zrok.io';
 
   @override
   String get toast_token_cannot_be_empty => '符号は空きすることはできません';
@@ -939,7 +962,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dialog_zrok_reset_message =>
-      'このデバイスから zrok 環境を削除します 保存されたトークンを削除します 再びトークンを入力して有効化する必要があります. これはzrok.ioのデバイスの5つのスロットの1つを使用します.';
+      '次の処理を行います:\n• 実行中であれば zrok トンネルを停止します\n• このデバイスから zrok 環境を削除します\n• 保存されたトークンを削除します\n\nトークンを再入力して有効化し直す必要があります。zrok.io の 5 つのデバイス枠のうち 1 つを使用します。\n\nよろしいですか？';
 
   @override
   String get toast_resetting_zrok => 'Zrok環境をリセットする...';
@@ -957,7 +980,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get zrok_no_token_configured => 'トークン設定なし 設定をタップする';
+  String get zrok_no_token_configured => 'トークンが設定されていません。タップして設定してください。';
 
   @override
   String get toast_zrok_token_saved => '保存されたトークン';
@@ -1030,14 +1053,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return '$arg1を削除する';
+    return '$arg1を削除しますか？\nこの操作は元に戻せません。';
   }
 
   @override
   String get toast_recording_deleted => '記録は削除された';
 
   @override
-  String get toast_recording_delete_failed => '記録を削除できなかった';
+  String get toast_recording_delete_failed => '録画を削除できませんでした';
 
   @override
   String toast_batch_delete_partial(Object arg1, Object arg2) {
@@ -1073,7 +1096,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get soh_nominal_baseline => '公称基準値 — 信頼できるSOHデータを待機中';
 
   @override
-  String get soh_no_estimate_yet => '推定はまだありません  データを待っています';
+  String get soh_no_estimate_yet => '推定はまだありません — データを待っています';
 
   @override
   String recording_lib_selected_count(Object arg1) {
@@ -1104,10 +1127,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get status_overlay_notif_text => 'ステータスオーバーレイ アクティブ';
 
   @override
-  String get rail_dashboard => 'デッシュボード';
+  String get rail_dashboard => 'ダッシュボード';
 
   @override
-  String get rail_live => '生きている';
+  String get rail_live => 'ライブ';
 
   @override
   String get rail_recordings => '録画';
@@ -1153,7 +1176,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settings_overlay_camera_subtitle =>
-      '録音が動いている間に REC/ PROX バッジを表示します.';
+      '録画が動いている間に REC/ PROX バッジを表示します.';
 
   @override
   String get settings_overlay_trip_title => 'Trip を表示する';
@@ -1168,7 +1191,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_subrail_overline => '設定';
 
   @override
-  String get cd_settings_subrail => '設定サブレール';
+  String get cd_settings_subrail => '設定サイドバー';
 
   @override
   String get settings_privacy_title => 'プライバシーとデータ';
@@ -1246,7 +1269,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_about_star_title => 'を GitHub に 落とす';
 
   @override
-  String get settings_about_star_value => 'ちょっと待って 沢山の意味がある';
+  String get settings_about_star_value => 'ほんの一瞬で終わります。とても励みになります。';
 
   @override
   String get settings_about_star_url =>
@@ -1271,13 +1294,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_theme_label => 'テーマ';
 
   @override
-  String get settings_theme_auto => '自動 (フォローシステム)';
+  String get settings_theme_auto => '自動 (システムに合わせる)';
 
   @override
   String get settings_theme_light => 'ライト';
 
   @override
-  String get settings_theme_dark => '暗闇';
+  String get settings_theme_dark => 'ダーク';
 
   @override
   String get settings_language_label => '言語';
@@ -1364,10 +1387,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnostics_section_traffic => '交通モニター';
 
   @override
-  String get diagnostics_section_camera_probe => 'カメラ探査機';
+  String get diagnostics_section_camera_probe => 'カメラ検出';
 
   @override
-  String get diagnostics_section_battery => 'バッテリーの健康';
+  String get diagnostics_section_battery => 'バッテリー状態';
 
   @override
   String get diagnostics_section_performance => 'パフォーマンス';
@@ -1379,16 +1402,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnostics_hero_subtitle => '生体健康 記録 探査機';
 
   @override
-  String get diagnostics_health_clear => '清潔だ';
+  String get diagnostics_health_clear => '異常なし';
 
   @override
-  String get diagnostics_health_section => '健康';
+  String get diagnostics_health_section => '状態';
 
   @override
   String get diagnostics_health_network => 'ネットワーク';
 
   @override
-  String get diagnostics_health_storage => '貯蔵';
+  String get diagnostics_health_storage => 'ストレージ';
 
   @override
   String get diagnostics_health_camera => 'カメラ';
@@ -1420,7 +1443,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnostics_network_mobile => 'モバイル';
 
   @override
-  String get diagnostics_network_ethernet => 'エサネット';
+  String get diagnostics_network_ethernet => 'イーサネット';
 
   @override
   String get diagnostics_network_offline => 'オフライン';
@@ -1451,7 +1474,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnostics_camera_probe_subtitle => '接続されたカメラのストリームを検査する';
 
   @override
-  String get diagnostics_adb_subtitle => '端末を開け';
+  String get diagnostics_adb_subtitle => 'デバイス上のターミナルを開きます。';
 
   @override
   String get diagnostics_battery_subtitle => 'SOHを検査して 統計をまとめて';
@@ -1460,7 +1483,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnostics_settings_subtitle => 'アプリの好み テーマ 言語';
 
   @override
-  String get settings_action_reset_data => 'データをリセットする...';
+  String get settings_action_reset_data => 'データをリセット…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -1480,7 +1503,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboard_subtitle_no_tunnel => '遠隔アクセスオフライン';
 
   @override
-  String get dashboard_metric_recordings => '今日の録音';
+  String get dashboard_metric_recordings => '今日の録画';
 
   @override
   String get dashboard_metric_storage => '使用された貯蔵庫';
@@ -1504,7 +1527,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboard_chip_recording_idle => '待機中';
 
   @override
-  String get dashboard_vehicle_tap_to_set => 'セットをタップする';
+  String get dashboard_vehicle_tap_to_set => 'タップして設定';
 
   @override
   String dashboard_vehicle_summary(Object arg1, Object arg2) {
@@ -1567,67 +1590,63 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => 'ステータス';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => 'キャプチャ';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => '画質';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => 'ストレージ';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => '録画ステータス';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => '現在の状態';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => '本日の録画数';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => '録画モード（ACC ON）';
 
   @override
   String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+      '走行中にドライブレコーダーが録画するタイミングを選びます。';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => 'なし（既定）';
 
   @override
-  String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+  String get settings_recording_mode_none_desc => '録画しない — 監視は引き続き動作します';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => '常時録画';
 
   @override
-  String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+  String get settings_recording_mode_continuous_desc => '走行中は常に録画';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => '走行モード';
 
   @override
-  String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+  String get settings_recording_mode_drive_desc => '車両の走行中のみ録画';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => '近接ガード';
 
   @override
-  String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+  String get settings_recording_mode_proximity_desc => '動きを検知したときに録画';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => '録画の分割長';
 
   @override
   String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+      '1ファイルあたりの最大長。この間隔で新しいファイルに分割されます。';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1635,113 +1654,118 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => '録画品質';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => '録画の保存先';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => '保存先';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => '内部ストレージ';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SDカード';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SDカード（なし）';
 
   @override
   String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+      '保存容量の上限 — 到達すると古いものから自動削除';
+
+  @override
+  String get settings_recording_storage_usage_label => 'ストレージ使用量';
+
+  @override
+  String get settings_recording_storage_files_label => 'ファイル';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 使用 / 上限 $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '録画 $arg1 件';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => 'パス';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'SDカードの空き';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label => '内部ストレージの空き';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => '外部ドライブをフォーマット';
 
   @override
   String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+      'SDカードまたはUSBドライブ上のすべてのデータを完全に消去します。';
 
   @override
-  String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+  String get settings_recording_format_confirm => 'もう一度タップ — すべてのデータが消去されます';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running => 'フォーマット中… お待ちください';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => 'SDカード / USB をフォーマット';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive => 'リムーバブルドライブが見つかりません';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return 'フォーマットが完了しました。新しいパス: $arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => 'データベースカタログ';
 
   @override
   String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+      '録画インデックスをディスク上のファイルと照合します。';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => '同期中…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => 'データベースを同期';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return '同期完了: +$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => 'すでに同期中です';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return '同期に失敗しました: $arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => '変更を適用';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => '閉じる';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return '$arg1 の開始/停止はまだ対応していません';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => '設定';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => '環境をリセット';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -1755,11 +1779,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return 'Last calibrated: $arg1% on $arg2';
+    return '前回の校正: $arg2 に $arg1%';
   }
 
   @override
-  String get vehicle_dialog_soh_unavailable => '入手できない';
+  String get vehicle_dialog_soh_unavailable => '取得不可';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -1767,7 +1791,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => '保存 ';
+  String get dashboard_metric_storage_chip_pending => 'ストレージ —';
 
   @override
   String get dashboard_tunnel_offline => 'オフライン';
@@ -1776,7 +1800,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboard_tunnel_online => 'オンライン';
 
   @override
-  String get dashboard_tunnel_connecting => '接続する...';
+  String get dashboard_tunnel_connecting => '接続中…';
 
   @override
   String get dashboard_trips_this_week => '今週';
@@ -1826,7 +1850,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboard_action_live => 'ライブビュー';
 
   @override
-  String get dashboard_action_live_subtitle => 'オープンカメラビュー';
+  String get dashboard_action_live_subtitle => 'カメラビューを開く';
 
   @override
   String get dashboard_action_recordings => '録画';
@@ -1885,17 +1909,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_appearance_subtitle => 'テーマ,言語,視覚の好み';
 
   @override
-  String get settings_theme_active_auto_caption => '自動はシステムテーマをフォローします';
+  String get settings_theme_active_auto_caption => '自動はシステムのテーマに従います。';
 
   @override
-  String get settings_theme_active_light_caption => 'ライトテーマは常にオンです';
+  String get settings_theme_active_light_caption => 'ライトテーマは常に有効です。';
 
   @override
-  String get settings_theme_active_dark_caption => '暗黒のテーマはいつも';
+  String get settings_theme_active_dark_caption => 'ダークテーマは常に有効です。';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '$arg1 の $arg2 の言語が利用可能';
+    return '$arg2 言語中 $arg1 言語が利用可能';
   }
 
   @override
@@ -1906,7 +1930,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settings_privacy_stance_body =>
-      'BladeWatchは完全にヘッドユニットで動きます 電気測定は 明らかに設定したトンネルや統合以外は 車から出ません';
+      'BladeWatch はヘッドユニット上で完結して動作します。明示的に設定したトンネルと連携機能を除き、テレメトリが車外に出ることはありません。';
 
   @override
   String get settings_privacy_overline_storage => 'ローカル ストレージ';
@@ -1965,7 +1989,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_camera_value_probing => '探査...';
+  String get diagnostics_camera_value_probing => '検出中…';
 
   @override
   String get diagnostics_camera_value_offline => 'オフライン';
@@ -2018,7 +2042,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return '$arg1クリップ · $arg2録音';
+    return '$arg1クリップ · $arg2録画';
   }
 
   @override
@@ -2033,7 +2057,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 min';
+    return '$arg1 時間 $arg2 分';
   }
 
   @override
@@ -2041,8 +2065,8 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '今日録音された$arg1クリップ',
-      one: '$arg1クリップは今日録音されました',
+      other: '今日録画された$arg1クリップ',
+      one: '$arg1クリップは今日録画されました',
     );
     return '$_temp0';
   }
@@ -2095,7 +2119,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vehicle_tab_trunk => 'トランク';
 
   @override
-  String get vehicle_tab_climate => '気候';
+  String get vehicle_tab_climate => 'エアコン';
 
   @override
   String get vehicle_tab_seats => '座席';
@@ -2113,10 +2137,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vehicle_control_charging_tab => '充電';
 
   @override
-  String get vehicle_locked => '鍵を閉じる';
+  String get vehicle_locked => '施錠';
 
   @override
-  String get vehicle_unlocked => '解鎖された';
+  String get vehicle_unlocked => '解錠';
 
   @override
   String get vehicle_range_label => '航続距離';
@@ -2131,7 +2155,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vehicle_open_trunk => 'トランクを開ける';
 
   @override
-  String get vehicle_close_trunk => 'ストックを閉じる';
+  String get vehicle_close_trunk => 'トランクを閉める';
 
   @override
   String get vehicle_trunk_info_open => 'トランクを開けると先に車のロックが解除されます。';
@@ -2140,7 +2164,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vehicle_ac_on => 'AC オン';
 
   @override
-  String get vehicle_ac_off => 'AC 終了';
+  String get vehicle_ac_off => 'AC オフ';
 
   @override
   String get vehicle_max_cooling_on => '最大冷房: オン';
@@ -2193,13 +2217,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vehicle_heat_high => '（強）';
 
   @override
-  String get vehicle_seat_pos_1 => 'ポイント1';
+  String get vehicle_seat_pos_1 => '位置 1';
 
   @override
-  String get vehicle_seat_pos_2 => '2 位';
+  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
-  String get vehicle_all_windows => 'すべてのウィンドウ';
+  String get vehicle_all_windows => '全ウィンドウ';
 
   @override
   String get vehicle_window_front_left => '前左';
@@ -2226,10 +2250,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vehicle_window_open_all => 'すべて開ける';
 
   @override
-  String get vehicle_sunroof => '屋根';
+  String get vehicle_sunroof => 'サンルーフ';
 
   @override
-  String get vehicle_sunshade => 'シャドウ';
+  String get vehicle_sunshade => 'サンシェード';
 
   @override
   String get vehicle_btn_drl_title => '日中の走行灯';
@@ -2253,22 +2277,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vehicle_charge_limit_range => '最小50%、最大100%';
 
   @override
-  String get vehicle_tyre_no_signal => '信号がない';
+  String get vehicle_tyre_no_signal => '信号なし';
 
   @override
-  String get vehicle_tyre_slow_leak => 'スローリーク';
+  String get vehicle_tyre_slow_leak => 'ゆるやかな空気漏れ';
 
   @override
-  String get vehicle_tyre_fast_leak => '迅速な漏れ';
+  String get vehicle_tyre_fast_leak => '急速な空気漏れ';
 
   @override
-  String get vehicle_tyre_low => '低値';
+  String get vehicle_tyre_low => '低圧';
 
   @override
-  String get vehicle_tyre_high => '高い';
+  String get vehicle_tyre_high => '高圧';
 
   @override
-  String get vehicle_tyre_ok => 'OK';
+  String get vehicle_tyre_ok => '正常';
 
   @override
   String get vehicle_tyre_check_pressure => '空気圧を確認';
@@ -2424,13 +2448,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trips_tab_storage => 'ストレージ';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7日間';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14日間';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30日間';
 
   @override
   String trips_load_error(Object message) {
@@ -2444,13 +2468,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trips_period_summary_title => '期間サマリー';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => '走行';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => '時間';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => '効率';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2460,7 +2484,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return 'スコア: $score';
   }
 
   @override
@@ -2468,7 +2492,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return '総合: $score / 100';
   }
 
   @override
@@ -2476,7 +2500,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD推定: $km km';
   }
 
   @override
@@ -2486,46 +2510,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trips_dna_title => '運転DNA';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => '先読み';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => 'スムーズさ';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => '速度遵守';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => '効率';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => '一貫性';
 
   @override
   String get trips_storage_title => 'トリップストレージ';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => '走行分析';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => '電気料金';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => '距離の単位';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => '保存先';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => '内部ストレージ';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SDカード';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SDカード（なし）';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => '変更を適用';
 
   @override
   String trips_storage_usage_line(
@@ -2534,21 +2558,20 @@ class AppLocalizationsJa extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '$used $unit 使用 / 上限 $limit MB・$count 件の走行';
   }
 
   @override
   String get trips_sync_title => 'データベースカタログ';
 
   @override
-  String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+  String get trips_sync_description => '走行履歴のインデックスをディスク上のテレメトリファイルと照合します。';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => 'データベースを同期';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => '同期中…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2562,31 +2585,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trips_detail_summary_title => 'トリップサマリー';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => '走行距離';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => '所要時間';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => '消費電力';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => '平均速度';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => '最高速度';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => '充電残量';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => '費用';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => '外気温';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => '獲得標高';
 
   @override
   String get trips_detail_scores_title => '運転スコア';
@@ -2599,7 +2622,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return 'GPSポイント $count 件を記録';
   }
 
   @override
@@ -2751,6 +2774,18 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => '検知エリア';
+
+  @override
+  String get surveillance_roi_description => 'タップで点を追加、ドラッグで移動します。最小3点、最大8点です。';
+
+  @override
+  String get surveillance_roi_enable => '検知をこのエリアに限定する';
+
+  @override
+  String get action_undo => '元に戻す';
+
+  @override
   String get surveillance_detection_title => '検知設定';
 
   @override
@@ -2822,8 +2857,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get surveillance_storage_limit_label => 'ストレージ上限 — 上限到達で最も古いものを自動削除';
 
   @override
+  String get surveillance_storage_usage_label => 'ストレージ使用量';
+
+  @override
+  String get surveillance_storage_files_label => 'ファイル';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 使用 / 上限 $arg2';
   }
 
   @override

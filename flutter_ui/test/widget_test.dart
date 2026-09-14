@@ -18,6 +18,8 @@ import 'package:bladewatch_ui/screens/location/location_screen.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_about_controller.dart' show AppVersionInfo;
 import 'package:bladewatch_ui/screens/settings/settings_about_screen.dart';
+import 'package:bladewatch_ui/screens/settings/settings_appearance_controller.dart';
+import 'package:bladewatch_ui/screens/settings/settings_appearance_models.dart';
 import 'package:bladewatch_ui/screens/settings/settings_screen.dart';
 import 'package:bladewatch_ui/screens/startup/startup_controller.dart';
 import 'package:bladewatch_ui/screens/startup/startup_screen.dart';
@@ -199,7 +201,14 @@ void main() {
     // own doc comment) — exercises main.dart's onShowSetupGuide wiring.
     await tester.tap(find.byKey(const ValueKey('about.setupGuide')));
     await tester.pumpAndSettle();
-    expect(find.text('Getting Started'), findsOneWidget);
+    // Scoped to the dialog on purpose: the About row that opens it is now
+    // labelled "Getting Started" too (it previously carried the Settings hub's
+    // "About BladeWatch" strings by mistake), so an unscoped finder matches
+    // both the row behind and the dialog's own title.
+    expect(
+      find.descendant(of: find.byType(AlertDialog), matching: find.text('Getting Started')),
+      findsOneWidget,
+    );
     expect(find.byKey(const ValueKey('setupGuide.versionBanner')), findsNothing);
     await tester.tap(find.byKey(const ValueKey('setupGuide.skip')));
     await tester.pumpAndSettle();
@@ -421,5 +430,45 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     await tester.pumpWidget(const SizedBox());
+  });
+
+  // ── BladeWatch-imh6.7: the theme the user picks must actually reach
+  // MaterialApp. It used to be persisted to prefs and then ignored, because
+  // MaterialApp set theme/darkTheme but never themeMode — which defaults to
+  // ThemeMode.system, so the app silently followed the head unit instead. ───
+  group('theme mode reaches MaterialApp', () {
+    ThemeMode themeModeOf(WidgetTester tester) =>
+        tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode ?? ThemeMode.system;
+
+    Future<void> pumpWith(WidgetTester tester, AppThemeMode mode) async {
+      final prefs = PrefsChannel(FakePlatformChannel()
+        ..stub('prefs', 'getThemeMode', themeModeToPref(mode))
+        ..stub('prefs', 'getDriveSide', 'left'));
+      final controller = SettingsAppearanceController(prefs: prefs, shellController: ShellController());
+      await controller.load();
+      await tester.pumpWidget(BladeWatchApp(appearanceController: controller));
+      await tester.pump();
+    }
+
+    testWidgets('dark', (tester) async {
+      await pumpWith(tester, AppThemeMode.dark);
+      expect(themeModeOf(tester), ThemeMode.dark);
+    });
+
+    testWidgets('light', (tester) async {
+      await pumpWith(tester, AppThemeMode.light);
+      expect(themeModeOf(tester), ThemeMode.light);
+    });
+
+    testWidgets('system follows the platform, as before', (tester) async {
+      await pumpWith(tester, AppThemeMode.system);
+      expect(themeModeOf(tester), ThemeMode.system);
+    });
+
+    test('every AppThemeMode maps to its Flutter counterpart', () {
+      expect(materialThemeMode(AppThemeMode.light), ThemeMode.light);
+      expect(materialThemeMode(AppThemeMode.dark), ThemeMode.dark);
+      expect(materialThemeMode(AppThemeMode.system), ThemeMode.system);
+    });
   });
 }

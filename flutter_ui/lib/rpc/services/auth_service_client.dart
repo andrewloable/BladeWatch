@@ -14,28 +14,28 @@ class AuthServiceClient {
         'AuthService',
         'Login',
         request,
-        (json) => LoginResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => LoginResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<LogoutResponse> logout(LogoutRequest request) => _transport.call(
         'AuthService',
         'Logout',
         request,
-        (json) => LogoutResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => LogoutResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetAuthStatusResponse> getAuthStatus(GetAuthStatusRequest request) => _transport.call(
         'AuthService',
         'GetAuthStatus',
         request,
-        (json) => GetAuthStatusResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetAuthStatusResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<InvalidateAuthCacheResponse> invalidateAuthCache(InvalidateAuthCacheRequest request) => _transport.call(
         'AuthService',
         'InvalidateAuthCache',
         request,
-        (json) => InvalidateAuthCacheResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => InvalidateAuthCacheResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
 }

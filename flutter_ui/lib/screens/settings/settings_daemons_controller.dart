@@ -43,12 +43,26 @@ class SettingsDaemonsController extends ChangeNotifier {
   List<DaemonRowState> _rows = const [];
   List<DaemonRowState> get rows => _rows;
 
+  /// Whether a Zrok token is configured. Native's row does not just say the
+  /// tunnel is down, it says WHY and what to do ("No token configured. Tap to
+  /// set up."), which is the only actionable state on this screen.
+  bool _zrokHasToken = false;
+  bool get zrokHasToken => _zrokHasToken;
+
   Future<void> load() async {
     try {
       final statuses = await _daemonChannel.processStatus();
       _rows = DaemonKind.values.map((k) => DaemonRowState(kind: k, running: statuses[k.nativeKey] ?? false)).toList();
     } catch (_) {
       _rows = DaemonKind.values.map((k) => DaemonRowState(kind: k, running: false)).toList();
+    }
+    try {
+      final token = await getZrokToken();
+      _zrokHasToken = token != null && token.isNotEmpty;
+    } catch (_) {
+      // Treat an unreadable config as "not configured" rather than claiming a
+      // token exists — the row then tells the user how to fix it.
+      _zrokHasToken = false;
     }
     _loading = false;
     notifyListeners();
@@ -57,7 +71,18 @@ class SettingsDaemonsController extends ChangeNotifier {
   /// Returns true on success (and refreshes [rows] from the daemon so the
   /// switch reflects reality rather than an optimistic guess); false if
   /// unsupported or the daemon rejected it — the row is left unchanged.
+  /// Adapts [DaemonChannel]'s string-keyed API to this controller's
+  /// [DaemonKind]-typed seam. A named factory rather than an inline closure at the
+  /// call site so the DaemonKind -> nativeKey mapping lives somewhere a test can
+  /// reach — main.dart's wiring closures are not exercised by any test.
+  static Future<bool> Function(DaemonKind, bool) enabledSetterFor(DaemonChannel channel) =>
+      (kind, enabled) => channel.setDaemonEnabled(kind.nativeKey, enabled);
+
   Future<bool> toggle(DaemonKind kind, bool enabled) async {
+    // Answered here rather than by the daemon: the daemon refuses these too, but
+    // there is no reason to spend an IPC round trip discovering a fact this process
+    // already knows (BladeWatch-abcx, see DaemonKind.canToggle).
+    if (!kind.canToggle) return false;
     final ok = await _setDaemonEnabled(kind, enabled);
     if (ok) await load();
     return ok;

@@ -1,5 +1,10 @@
 import 'package:fixnum/fixnum.dart';
+import 'dart:ui' show Offset;
+
 import 'package:flutter/foundation.dart';
+
+import '../../widgets/storage_limit.dart';
+import 'roi_editor.dart' show roiIsApplied;
 
 import '../../gen/bladewatch/v1/recordings.pb.dart' show GetStatsRequest;
 import '../../gen/bladewatch/v1/safe_locations.pb.dart' as sl;
@@ -72,6 +77,41 @@ class SurveillanceSettingsController extends ChangeNotifier {
 
   String _editPreset = 'OUTDOOR';
   String get editPreset => _editPreset;
+
+  /// Per-quadrant ROI polygons, keyed "Q0".."Q3", in normalised 0..1
+  /// coordinates (BladeWatch-9b0f). A quadrant absent from the map has no zone.
+  final Map<String, List<Offset>> _editRoiPolygons = {};
+
+  /// Whether each quadrant's polygon is actually applied. Kept separate from the
+  /// polygon so switching a zone off does not discard the shape the user drew —
+  /// the daemon models it the same way.
+  final Map<String, bool> _editRoiEnabled = {};
+  bool roiEnabledFor(String quadrant) => _editRoiEnabled[quadrant] ?? false;
+  List<Offset> roiPolygonFor(String quadrant) => _editRoiPolygons[quadrant] ?? const [];
+
+  void setRoiPolygon(String quadrant, List<Offset> points) {
+    _editRoiPolygons[quadrant] = points;
+    notifyListeners();
+  }
+
+  void setRoiEnabled(String quadrant, bool enabled) {
+    _editRoiEnabled[quadrant] = enabled;
+    notifyListeners();
+  }
+
+  /// Drops the last vertex — `RoiDrawingView.undoLastPoint()`.
+  void undoRoiPoint(String quadrant) {
+    final points = _editRoiPolygons[quadrant];
+    if (points == null || points.isEmpty) return;
+    _editRoiPolygons[quadrant] = points.sublist(0, points.length - 1);
+    notifyListeners();
+  }
+
+  /// Removes the zone entirely — `RoiDrawingView.clearRoi()`.
+  void clearRoi(String quadrant) {
+    _editRoiPolygons[quadrant] = const [];
+    notifyListeners();
+  }
 
   int _editSensitivity = 3;
   int get editSensitivity => _editSensitivity;
@@ -168,6 +208,16 @@ class SurveillanceSettingsController extends ChangeNotifier {
           cameraLeft: c.cameraLeft,
           deterrentAction: c.deterrentAction.isNotEmpty ? c.deterrentAction : 'silent',
           deterrentCooldownSeconds: c.deterrentCooldownSeconds > 0 ? c.deterrentCooldownSeconds : 60,
+          roiPolygons: {
+            for (final entry in c.roiPolygons.entries)
+              entry.key: [for (final p in entry.value.points) Offset(p.x, p.y)],
+          },
+          roiEnabled: {
+            'Q0': c.roiEnabledQ0,
+            'Q1': c.roiEnabledQ1,
+            'Q2': c.roiEnabledQ2,
+            'Q3': c.roiEnabledQ3,
+          },
         );
       }
     } catch (_) {
@@ -191,6 +241,12 @@ class SurveillanceSettingsController extends ChangeNotifier {
       _editCameraLeft = config.cameraLeft;
       _editDeterrent = config.deterrentAction;
       _editDeterrentCooldown = config.deterrentCooldownSeconds;
+      _editRoiPolygons
+        ..clear()
+        ..addAll(config.roiPolygons);
+      _editRoiEnabled
+        ..clear()
+        ..addAll(config.roiEnabled);
     }
 
     // Status is never genuinely absent in native (fetchStatus() always
@@ -380,7 +436,8 @@ class SurveillanceSettingsController extends ChangeNotifier {
   }
 
   void setStorageLimitMb(int mb) {
-    _editStorageLimitMb = mb.clamp(storageLimitMinMb, storageLimitMaxMb);
+    // See SettingsRecordingController.setStorageLimitMb (BladeWatch-htel).
+    _editStorageLimitMb = snapStorageMb(mb, storageLimitMinMb, storageLimitMaxMb);
     notifyListeners();
   }
 
@@ -479,6 +536,21 @@ class SurveillanceSettingsController extends ChangeNotifier {
         cameraLeft: _editCameraLeft,
         deterrentAction: _editDeterrent,
         deterrentCooldownSeconds: _editDeterrentCooldown,
+        // Only polygons the engine would actually accept are sent. Fewer than 3
+        // vertices is not a partial zone — applyQuadrantRoi treats it as "clear
+        // this quadrant" — so sending one would silently wipe the saved shape.
+        roiPolygons: [
+          for (final entry in _editRoiPolygons.entries)
+            if (roiIsApplied(entry.value))
+              MapEntry(
+                entry.key,
+                pb.RoiPolygon(points: [for (final p in entry.value) pb.RoiPoint(x: p.dx, y: p.dy)]),
+              ),
+        ],
+        roiEnabledQ0: roiEnabledFor('Q0'),
+        roiEnabledQ1: roiEnabledFor('Q1'),
+        roiEnabledQ2: roiEnabledFor('Q2'),
+        roiEnabledQ3: roiEnabledFor('Q3'),
       );
       final resp = await _surveillanceService.setConfig(pb.SetSurveillanceConfigRequest(config: proto));
       return ApplyResult(ok: resp.success, error: resp.error.isNotEmpty ? resp.error : null);

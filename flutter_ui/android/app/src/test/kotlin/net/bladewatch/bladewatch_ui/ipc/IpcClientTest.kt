@@ -181,6 +181,35 @@ class IpcClientTest {
     }
 
     @Test
+    fun `throws DaemonNotListening when the peer resets the connection mid-exchange`() {
+        // The two close-based tests around this one do NOT reach the
+        // IOException branch in writeAndReadLine: PrintWriter never throws
+        // (it swallows IOException into an internal error flag), so a plain
+        // close surfaces as readLine() returning null — the clean-EOF path.
+        // Only an ABORTIVE close (SO_LINGER 0, with unread data in the
+        // server's receive buffer) sends a RST, which makes the client's read
+        // throw "Connection reset" and exercises the IOException mapping.
+        //
+        // This is a real daemon failure mode, not a contrivance: it is what a
+        // crashing or killed CameraDaemon looks like to the app mid-command.
+        val server = loopbackServerSocket()
+        this.server = server
+        Thread {
+            val client = server.accept()
+            // Let the client's two writes land unread, so closing forces RST
+            // rather than an orderly FIN.
+            Thread.sleep(150)
+            client.setSoLinger(true, 0)
+            client.close()
+        }.start()
+        val client = IpcClient(port = server.localPort, tokenFile = tokenFile(), readTimeoutMs = 5_000)
+
+        assertThrows(IpcException.DaemonNotListening::class.java) {
+            client.sendCommand(JSONObject().put("cmd", "ping"))
+        }
+    }
+
+    @Test
     fun `throws DaemonNotListening when the server reads the command then closes with no response`() {
         // Distinct from the immediate-close case above: here the write
         // succeeds (the server reads both lines) and readLine() cleanly

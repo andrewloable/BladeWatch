@@ -1,6 +1,8 @@
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../widgets/storage_limit.dart';
+
 import '../../gen/bladewatch/v1/recordings.pb.dart';
 import '../../gen/bladewatch/v1/settings.pb.dart';
 import '../../gen/bladewatch/v1/storage.pb.dart';
@@ -174,7 +176,9 @@ class RecordingSettingsController extends ChangeNotifier {
   }
 
   void setStorageLimitMb(int mb) {
-    _selectedLimitMb = mb.clamp(storageLimitMinMb, storageLimitMaxMb);
+    // Snapped to native's 100 MB step so the same drag always yields the same
+    // value (BladeWatch-htel).
+    _selectedLimitMb = snapStorageMb(mb, storageLimitMinMb, storageLimitMaxMb);
     _dirty = true;
     notifyListeners();
   }

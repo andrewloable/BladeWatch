@@ -14,35 +14,35 @@ class SafeLocationsServiceClient {
         'SafeLocationsService',
         'ListZones',
         request,
-        (json) => ListZonesResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => ListZonesResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<AddZoneResponse> addZone(AddZoneRequest request) => _transport.call(
         'SafeLocationsService',
         'AddZone',
         request,
-        (json) => AddZoneResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => AddZoneResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<UpdateZoneResponse> updateZone(UpdateZoneRequest request) => _transport.call(
         'SafeLocationsService',
         'UpdateZone',
         request,
-        (json) => UpdateZoneResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => UpdateZoneResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<DeleteZoneResponse> deleteZone(DeleteZoneRequest request) => _transport.call(
         'SafeLocationsService',
         'DeleteZone',
         request,
-        (json) => DeleteZoneResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => DeleteZoneResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<ToggleSafeLocationsResponse> toggle(ToggleSafeLocationsRequest request) => _transport.call(
         'SafeLocationsService',
         'Toggle',
         request,
-        (json) => ToggleSafeLocationsResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => ToggleSafeLocationsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
 }

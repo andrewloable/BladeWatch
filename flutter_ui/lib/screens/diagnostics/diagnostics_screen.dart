@@ -60,22 +60,33 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     super.dispose();
   }
 
-  void _openAdbConsole() {
-    Navigator.of(context).push(MaterialPageRoute(
+  /// Pushes onto the STAGE navigator (AppShell), not the root one, so the nav
+  /// rail stays visible exactly as it does in native. The title goes in the
+  /// sub-screen's own app bar beside the back arrow, again matching native,
+  /// which never showed a bare unlabelled AppBar here.
+  void _pushSubScreen(String title, Widget body) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => Scaffold(
-        appBar: AppBar(),
-        body: AdbConsoleScreen(controller: widget.adbConsoleControllerFactory()),
+        appBar: AppBar(title: Text(title)),
+        body: body,
       ),
     ));
   }
 
+  void _openAdbConsole() {
+    final l10n = AppLocalizations.of(context)!;
+    _pushSubScreen(
+      l10n.diagnostics_section_adb_console,
+      AdbConsoleScreen(controller: widget.adbConsoleControllerFactory()),
+    );
+  }
+
   void _openPerformance() {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => Scaffold(
-        appBar: AppBar(),
-        body: PerformanceScreen(controller: widget.performanceControllerFactory()),
-      ),
-    ));
+    final l10n = AppLocalizations.of(context)!;
+    _pushSubScreen(
+      l10n.diagnostics_section_performance,
+      PerformanceScreen(controller: widget.performanceControllerFactory()),
+    );
   }
 
   @override
@@ -246,18 +257,13 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   }
 
   Widget _batteryHealthTile(BuildContext context, AppLocalizations l10n, ThemeData theme, DiagnosticsController c) {
-    final color = switch (c.batteryLevel) {
-      BatteryHealthLevel.pending => theme.colorScheme.outline,
-      BatteryHealthLevel.neutral => theme.colorScheme.outline,
-      BatteryHealthLevel.good => theme.colorScheme.primary,
-      BatteryHealthLevel.moderate => Colors.amber,
-    };
-    final text = c.batterySohPercent == null
-        ? l10n.diagnostics_battery_value_pending
-        // diagnostics_battery_value_soh's placeholder has no numeric format
-        // (untyped `Object`, unlike native's own `%1$.0f`) — round here so
-        // the rendered text still matches native's whole-percent display.
-        : l10n.diagnostics_battery_value_soh(c.batterySohPercent!.round());
+    // BladeWatch-p7vi: there is no SoH reading to colour-code any more, so the
+    // dot is the neutral outline rather than a health signal it cannot compute.
+    final color = theme.colorScheme.outline;
+    // BladeWatch-p7vi: SoH estimation was removed from the daemon, so this card
+    // sat on "Pending data" forever waiting for a value that can never arrive.
+    // Saying so is more useful than an indefinite pending state.
+    final text = l10n.battery_health_unavailable;
     return _healthCard(
       theme,
       key: 'diag.cardBatteryHealth',
@@ -382,25 +388,8 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
 
   // ─────────────────────────── Battery Health dialog ──────────────────────
 
-  // Native's `soh_percent > 0` file-derived "hasEstimate" (see
-  // DiagnosticsController._refreshBattery's doc comment) has no RPC
-  // equivalent; live/calibration displaySource is the closest honest signal
-  // this port can read.
-  String _batteryStatusText(AppLocalizations l10n, DiagnosticsController c) => switch (c.batteryDisplaySource) {
-        'live' || 'calibration' => l10n.soh_estimation_active,
-        'oem' => l10n.soh_oem_readout,
-        'nominal' => l10n.soh_nominal_baseline,
-        _ => l10n.soh_no_estimate_yet,
-      };
-
-  String _batteryNominalSourceSuffix(AppLocalizations l10n, String source) => switch (source) {
-        'user' => ' (${l10n.soh_dialog_source_user})',
-        'auto' => ' (${l10n.soh_dialog_source_auto})',
-        _ => '',
-      };
 
   void _showBatteryHealthDialog(BuildContext context, AppLocalizations l10n, ThemeData theme) {
-    final c = widget.controller;
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -410,84 +399,31 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                c.batterySohPercent == null
-                    ? l10n.diagnostics_battery_value_pending
-                    : l10n.diagnostics_battery_value_soh(c.batterySohPercent!.round()),
-                style: theme.textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(_batteryStatusText(l10n, c), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                  child: _batteryDetail(theme, l10n.battery_health_source, c.batteryNominalSource),
-                ),
-                Expanded(
-                  child: _batteryDetail(theme, l10n.battery_health_method, c.batteryDisplaySource),
-                ),
-              ]),
+              Text(l10n.battery_health_unavailable, style: theme.textTheme.headlineMedium),
               const SizedBox(height: 8),
-              _batteryDetail(
-                theme,
-                l10n.battery_health_capacity,
-                c.batteryNominalCapacityKwh > 0
-                    ? '${c.batteryNominalCapacityKwh.toStringAsFixed(1)} kWh${_batteryNominalSourceSuffix(l10n, c.batteryNominalSource)}'
-                    : l10n.soh_dialog_capacity_not_detected,
+              // BladeWatch-p7vi: the Source/Method/Capacity rows and the
+              // "Reset SOH Estimation" action are gone with the feature — the
+              // daemon's endpoints are stubs that refuse every call, so the
+              // reset could never do anything either.
+              Text(
+                l10n.battery_health_unavailable_desc,
+                key: const ValueKey('diag.battery.unavailable'),
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              const SizedBox(height: 12),
-              Text(l10n.battery_health_reset_desc, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             ],
           ),
         ),
         actions: [
-          TextButton(key: const ValueKey('diag.battery.close'), onPressed: () => Navigator.of(dialogContext).pop(), child: Text(l10n.dialog_close)),
           TextButton(
-            key: const ValueKey('diag.battery.reset'),
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              _confirmBatteryReset(context, l10n);
-            },
-            child: Text(l10n.battery_health_reset),
+            key: const ValueKey('diag.battery.close'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.dialog_close),
           ),
         ],
       ),
     );
   }
 
-  Widget _batteryDetail(ThemeData theme, String label, String value) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label.toUpperCase(), style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          Text(value, style: theme.textTheme.bodyLarge),
-        ],
-      );
-
-  void _confirmBatteryReset(BuildContext context, AppLocalizations l10n) {
-    final c = widget.controller;
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.dialog_reset_soh_title),
-        content: SingleChildScrollView(child: Text(l10n.dialog_reset_soh_message)),
-        actions: [
-          TextButton(key: const ValueKey('diag.battery.resetCancel'), onPressed: () => Navigator.of(dialogContext).pop(), child: Text(l10n.action_cancel)),
-          TextButton(
-            key: const ValueKey('diag.battery.resetConfirm'),
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final ok = await c.resetBattery();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(ok ? l10n.toast_soh_reset_success : l10n.toast_soh_reset_failed_no_daemon),
-              ));
-            },
-            child: Text(l10n.dialog_reset),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ─────────────────────────── Traffic Monitor dialog ─────────────────────
 

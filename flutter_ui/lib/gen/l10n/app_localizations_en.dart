@@ -304,6 +304,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved =>
+      'Language applied, but it could not be saved — it will reset when the app restarts.';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
     return '$arg1 · Auto';
   }
@@ -598,6 +602,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get player_time_separator => ' / ';
 
   @override
+  String get daemon_name_camera => 'Camera Daemon';
+
+  @override
+  String get daemon_name_surveillance => 'Surveillance Daemon';
+
+  @override
+  String get daemon_name_acc => 'ACC Surveillance';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
+
+  @override
   String get daemons_hero_title => 'Background services';
 
   @override
@@ -634,6 +650,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get battery_health_last_updated => 'Last Updated';
+
+  @override
+  String get battery_health_unavailable => 'Not available';
+
+  @override
+  String get battery_health_unavailable_desc =>
+      'Battery health estimation is not available on this vehicle.';
 
   @override
   String get battery_health_reset => 'Reset SOH Estimation';
@@ -1689,6 +1712,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settings_recording_storage_limit_label =>
       'Storage Limit — auto-deletes oldest when reached';
+
+  @override
+  String get settings_recording_storage_usage_label => 'Storage Usage';
+
+  @override
+  String get settings_recording_storage_files_label => 'Files';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
@@ -2801,6 +2830,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => 'Motion Zone';
+
+  @override
+  String get surveillance_roi_description =>
+      'Tap to add a point, drag to move one. Three points minimum, eight maximum.';
+
+  @override
+  String get surveillance_roi_enable => 'Limit detection to this zone';
+
+  @override
+  String get action_undo => 'Undo';
+
+  @override
   String get surveillance_detection_title => 'Detection Settings';
 
   @override
@@ -2871,6 +2913,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get surveillance_storage_limit_label =>
       'Storage Limit — auto-deletes oldest when reached';
+
+  @override
+  String get surveillance_storage_usage_label => 'Storage Usage';
+
+  @override
+  String get surveillance_storage_files_label => 'Files';
 
   @override
   String surveillance_storage_usage(Object arg1, Object arg2) {

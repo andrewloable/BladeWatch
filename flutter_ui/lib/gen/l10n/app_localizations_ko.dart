@@ -13,7 +13,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get accessibility_service_description =>
-      '이 서비스는 스크린 콘텐츠를 읽거나 상호 작용하지 않습니다.';
+      'BladeWatch 차량 모니터링을 백그라운드에서 계속 실행합니다. 이 서비스는 화면 내용을 읽거나 상호작용하지 않습니다.';
 
   @override
   String get action_cancel => '취소';
@@ -25,7 +25,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get action_select_all => '모든 것을 선택';
 
   @override
-  String get action_select_all_short => '모두들';
+  String get action_select_all_short => '모두';
 
   @override
   String get action_delete => '삭제';
@@ -34,16 +34,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get action_done => '완료';
 
   @override
-  String get action_remind_me_later => '나중에 기억해';
+  String get action_remind_me_later => '나중에 알림';
 
   @override
   String get action_retry => '다시 시도';
 
   @override
-  String get action_run => '도망쳐';
+  String get action_run => '실행';
 
   @override
-  String get action_clear_output => '명확한 출력';
+  String get action_clear_output => '출력 지우기';
 
   @override
   String get cd_camera => '카메라';
@@ -58,16 +58,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cd_show_hide_token => '표시/숨기 표기';
 
   @override
-  String get cd_copy_token => '복제 표기';
+  String get cd_copy_token => '토큰 복사';
 
   @override
-  String get cd_copy_url => '복사 URL';
+  String get cd_copy_url => 'URL 복사';
 
   @override
-  String get cd_clear_logs => '맑은 로그';
+  String get cd_clear_logs => '로그 지우기';
 
   @override
-  String get cd_expand_collapse => '확장/ 붕괴';
+  String get cd_expand_collapse => '펼치기/접기';
 
   @override
   String get cd_recording_status => '기록 상태';
@@ -85,7 +85,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cd_back => '뒤로';
 
   @override
-  String get cd_play_pause => '플레이/파우즈';
+  String get cd_play_pause => '재생/일시정지';
 
   @override
   String get cd_player_prev => '이전 녹화본';
@@ -109,7 +109,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cd_configure => '구성';
 
   @override
-  String get cd_download_log => '다운로드 로그';
+  String get cd_download_log => '로그 다운로드';
 
   @override
   String get cd_reset => '재설정';
@@ -130,10 +130,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get overlay_trip_inactive_label => '트립';
 
   @override
-  String get log_entry_default_timestamp => '12시 34분56분';
+  String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '[ TAG]';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => '로그 메시지는 여기';
@@ -166,10 +166,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get camera_option_auto => '자동 (실동 시 감지)';
 
   @override
-  String get camera_option_0 => '카메라 0  Atto 트림';
+  String get camera_option_0 => '카메라 0 — Atto 트림';
 
   @override
-  String get camera_option_1 => '카메라 1  Seal (전설)';
+  String get camera_option_1 => '카메라 1 — Seal (전설)';
 
   @override
   String get camera_option_2 => '카메라 2';
@@ -194,10 +194,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_qr_waiting => '터널을 기다렸어';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 실행';
+  String get dashboard_daemons_running_default => '0/5 실행 중';
 
   @override
-  String get dashboard_device_id_loading => '...';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => '액세스 코드';
@@ -253,7 +253,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get setup_language_body =>
-      'BladeWatch 앱과 웹 터널에 다른 언어를 선택하기 위해 버튼을 누르십시오.';
+      '기본값은 헤드유닛의 언어입니다. BladeWatch 앱과 웹 터널에 다른 언어를 사용하려면 탭하세요.';
 
   @override
   String get setup_language_button => '언어 를 선택 하십시오';
@@ -276,7 +276,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '다른 앱에 녹화 및 여행 추적을 위한 부동 상태 지표를 표시하기 위해 이것을 활성화하십시오.';
 
   @override
-  String get setup_overlay_button => '겹치기 설정을 열';
+  String get setup_overlay_button => '오버레이 설정 열기';
 
   @override
   String get cd_close => '닫기';
@@ -301,6 +301,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved => '언어를 적용했지만 저장하지 못했습니다. 앱을 다시 시작하면 되돌아갑니다.';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
     return '$arg1 · 자동';
   }
@@ -309,7 +312,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get adb_prompt => '\$';
 
   @override
-  String get adb_command_hint => '명령에 들어가...';
+  String get adb_command_hint => '명령어를 입력하세요…';
 
   @override
   String get adb_preset_commands_header => '미리 설정 명령어';
@@ -341,7 +344,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '헤드유닛 화면에서 “USB 디버깅을 허용하시겠습니까?” 메시지를 확인하고 승인한 다음 다시 시도하세요.';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting => '성능 모니터에 연결 중…';
 
   @override
   String get performance_hero_title => '시스템 성능';
@@ -350,16 +353,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => '시스템 사용률';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => '앱 사용률';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => '주파수';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => '온도';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -368,16 +371,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get performance_memory_title => '메모리';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => '사용률';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => '전체';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => '사용 중';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => '앱';
 
   @override
   String get performance_gpu_title => 'GPU';
@@ -386,16 +389,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get performance_app_process_title => '앱 프로세스';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => '스레드';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC 횟수';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => '열린 FD';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => '3초마다 새로 고침';
 
   @override
   String get webview_loading => '로딩...';
@@ -421,14 +424,14 @@ class AppLocalizationsKo extends AppLocalizations {
       '환경과 토큰을 제거합니다. 토큰으로 다시 활성화해야 합니다 (기기 슬롯을 사용합니다).';
 
   @override
-  String get reset_title => '재설정 데이터';
+  String get reset_title => '데이터 초기화';
 
   @override
   String get reset_subtitle => '축적된 데이터를 카테고리별로 삭제';
 
   @override
   String get reset_warning =>
-      '이 작업 을 취소 할 수 없습니다. 녹음, 여행 및 배터리 역사 는 영구 히 삭제 됩니다.';
+      '이 작업은 취소할 수 없습니다. 녹화, 주행 기록, 배터리 기록이 영구적으로 삭제됩니다.';
 
   @override
   String get reset_cat_trips => '주행 기록';
@@ -449,10 +452,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get reset_cat_soh_desc => 'BMS에서 명칭 용량을 재발견, 재배량 추정';
 
   @override
-  String get reset_cat_recordings => '녹음 (비디오)';
+  String get reset_cat_recordings => '녹화 (비디오)';
 
   @override
-  String get reset_cat_recordings_desc => '녹음 폴더의 모든 MP4';
+  String get reset_cat_recordings_desc => '녹화 폴더의 모든 MP4';
 
   @override
   String get reset_cat_sentry_events => '감시 이벤트';
@@ -473,10 +476,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get reset_cat_trip_files_desc => '디스크에 있는 여행당 JSON 텔레메트리';
 
   @override
-  String get recording_lib_chip_any => '어떤 것도';
+  String get recording_lib_chip_any => '전체';
 
   @override
-  String get recording_lib_chip_person => '개인';
+  String get recording_lib_chip_person => '사람';
 
   @override
   String get recording_lib_chip_vehicle => '차량';
@@ -491,13 +494,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recording_lib_chip_alert => '경고';
 
   @override
-  String get recording_lib_chip_critical => '비평적';
+  String get recording_lib_chip_critical => '심각';
 
   @override
   String get recording_lib_selected_count_zero => '0 선택';
 
   @override
-  String get recording_lib_no_recordings => '녹음도 없다';
+  String get recording_lib_no_recordings => '녹화 없음';
 
   @override
   String get recording_lib_filter_button => '필터';
@@ -508,7 +511,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_filter_sheet_title => '필터 녹음';
+  String get recording_lib_filter_sheet_title => '녹화 필터';
 
   @override
   String get recording_lib_filter_apply => '적용';
@@ -517,7 +520,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recording_lib_filter_reset => '재설정';
 
   @override
-  String get recording_lib_filter_section_what => '무슨 일이야?';
+  String get recording_lib_filter_section_what => '대상';
 
   @override
   String get recording_lib_filter_section_severity => '심각성';
@@ -529,10 +532,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recording_lib_chip_type_normal => '보통';
 
   @override
-  String get recording_lib_chip_type_proximity => '거리';
+  String get recording_lib_chip_type_proximity => '근접';
 
   @override
-  String get recording_lib_date_today => '오늘날';
+  String get recording_lib_date_today => '오늘';
 
   @override
   String get recording_lib_date_yesterday => '어제';
@@ -548,25 +551,25 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_pick_date => '데이트를 선택하세요';
+  String get recording_lib_pick_date => '날짜 선택';
 
   @override
-  String get recording_lib_date_all_days => '종일';
+  String get recording_lib_date_all_days => '모든 날짜';
 
   @override
   String get cd_clear_date_filter => '모든 요일 표시';
 
   @override
-  String get recording_lib_section_morning => '아침';
+  String get recording_lib_section_morning => '오전';
 
   @override
-  String get recording_lib_section_afternoon => '안녕하세요';
+  String get recording_lib_section_afternoon => '오후';
 
   @override
   String get recording_lib_section_evening => '저녁';
 
   @override
-  String get recording_lib_section_night => '밤';
+  String get recording_lib_section_night => '야간';
 
   @override
   String get cd_previous_day => '전날';
@@ -575,19 +578,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cd_next_day => '다음 날';
 
   @override
-  String get cd_open_filters => '열 필터';
+  String get cd_open_filters => '필터 열기';
 
   @override
-  String get cd_clear_filter => '맑은 필터';
+  String get cd_clear_filter => '필터 지우기';
 
   @override
-  String get player_title_recording => '녹음';
+  String get player_title_recording => '녹화';
 
   @override
   String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
+
+  @override
+  String get daemon_name_camera => '카메라 서비스';
+
+  @override
+  String get daemon_name_surveillance => '감시 서비스';
+
+  @override
+  String get daemon_name_acc => 'ACC 감시';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
 
   @override
   String get daemons_hero_title => '배경 서비스';
@@ -626,6 +641,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get battery_health_last_updated => '마지막 업데이트';
+
+  @override
+  String get battery_health_unavailable => '사용할 수 없음';
+
+  @override
+  String get battery_health_unavailable_desc =>
+      '이 차량에서는 배터리 상태 추정을 사용할 수 없습니다.';
 
   @override
   String get battery_health_reset => 'SOH 추정값을 재설정';
@@ -682,8 +704,8 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '$arg1 녹음을 삭제',
-      one: '$arg1 녹음을 삭제',
+      other: '$arg1 녹화을 삭제',
+      one: '$arg1 녹화을 삭제',
     );
     return '$_temp0';
   }
@@ -693,8 +715,8 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '이것은 $arg1 녹음을 영구적으로 삭제합니다. 이것은 취소할 수 없습니다.',
-      one: '이것은 $arg1 녹음을 영구적으로 삭제합니다. 이것은 취소할 수 없습니다.',
+      other: '녹화 $arg1개를 영구적으로 삭제합니다. 이 작업은 취소할 수 없습니다.',
+      one: '녹화 $arg1개를 영구적으로 삭제합니다. 이 작업은 취소할 수 없습니다.',
     );
     return '$_temp0';
   }
@@ -723,7 +745,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return '카메라 $arg1 세트  다음 ACC 사이클';
+    return '카메라 $arg1 세트 — 다음 ACC 사이클';
   }
 
   @override
@@ -745,7 +767,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get toast_soh_reset_success => 'SOH 추정 재설정  다음 데이터에서 재 계산됩니다';
+  String get toast_soh_reset_success => 'SOH 추정 재설정 — 다음 데이터에서 재 계산됩니다';
 
   @override
   String get toast_soh_reset_failed_no_daemon =>
@@ -788,16 +810,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dialog_disable => '사용 안 함';
 
   @override
-  String get dialog_keep_enabled => '계속 사용 할 수 있게 하라';
+  String get dialog_keep_enabled => '활성 유지';
 
   @override
-  String get dialog_keep_disabled => '장애 를 유지 하십시오';
+  String get dialog_keep_disabled => '비활성 유지';
 
   @override
-  String get dialog_regenerate => '재생';
+  String get dialog_regenerate => '새로 생성';
 
   @override
-  String get dialog_reset_selected => '재설정 선택';
+  String get dialog_reset_selected => '선택 항목 초기화';
 
   @override
   String get dialog_reset_soh_title => 'SOH 추정값을 재설정하세요?';
@@ -807,15 +829,15 @@ class AppLocalizationsKo extends AppLocalizations {
       '이 방법은 모든 SOH 데이터를 삭제하고 처음부터 재평가를 강요합니다. 이 경우:\n\n• 배터리가 교체되었습니다.\n• SOH 판독은 잘못된 것 같습니다.\n• 당신은 재계열을 원하고 있습니다.\n\n시스템은 다음 사용할 수 있는 데이터 소스에서 재계열됩니다. (OEM, 충전 캘리브레이션, 또는 즉각적인 판독).';
 
   @override
-  String get dialog_reset_following_title => '다음을 다시 설정하세요?';
+  String get dialog_reset_following_title => '다음 항목을 초기화할까요?';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return '이 작업은 되돌릴 수 없습니다.\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => '다시 설정 완료';
+  String get dialog_reset_complete_title => '초기화 완료';
 
   @override
   String get dialog_traffic_cannot_check_title => '상태 확인 불가능';
@@ -825,11 +847,11 @@ class AppLocalizationsKo extends AppLocalizations {
       'ADB가 연결되어 있지 않으며, 앱이 자동으로 다시 연결하지 못했습니다.\n\n이 차량에서는 개발자 옵션의 일반적인 \"USB 디버깅\" 스위치만으로는 충분하지 않습니다 — 헤드 유닛 자체의 무선 ADB(네트워크 디버깅) 설정도 켜져 있어야 하며, 시스템 업데이트로 인해 꺼질 수 있습니다. 헤드 유닛에서 무선 ADB를 다시 활성화하거나 USB로 연결하십시오.\n\n연결되면 상태가 자동으로 업데이트됩니다.';
 
   @override
-  String get dialog_traffic_disable_title => 'BYD 트래픽 모니터를 비활성화하세요?';
+  String get dialog_traffic_disable_title => 'BYD 트래픽 모니터를 비활성화할까요?';
 
   @override
   String get dialog_traffic_disable_message =>
-      'BYD 트래픽 모니터 (com.byd.trafficmonitor) 는 백그라운드에서 도로 교통 상태를 지속적으로 모니터링하는 내장 시스템 응용 프로그램입니다. \n\n️ 왜 비활성화해야합니까?\n\n• 모바일 데이터를 소비합니다 (파크 할 때에도) \n• 배경에서 CPU와 배터리를 사용합니다\n• 별도의 내비게이션 응용 프로그램을 사용하면 필요하지 않습니다\n• 대시캠 네트워크 사용에 방해를 줄 수 있습니다\n\n이 안전하게 비활성화 할 수 있습니다.';
+      'BYD Traffic Monitor (com.byd.trafficmonitor)는 백그라운드에서 도로 교통 상황을 계속 모니터링하는 내장 시스템 앱입니다.\n\n왜 끄나요?\n\n• 모바일 데이터를 소모합니다 (주차 중에도)\n• 백그라운드에서 CPU와 배터리를 사용합니다\n• 별도의 내비게이션 앱을 쓴다면 필요 없습니다\n• 대시캠의 네트워크 사용을 방해할 수 있습니다\n\n꺼도 안전합니다. 지도의 내장 교통 정보 레이어에만 영향을 주며 내비게이션, 블루투스 등 다른 차량 기능은 그대로입니다.\n\n끈 뒤에는 하드 재부팅이 필요합니다 (센터 콘솔 버튼을 5초간 길게 누르세요).';
 
   @override
   String get dialog_traffic_enable_title => 'BYD 트래픽 모니터를 다시 활성화하세요?';
@@ -882,7 +904,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dialog_regenerate_token_message =>
-      '이것은 현재 토큰을 무효화합니다. 모든 활성 세션이 로그 아웃됩니다. 계속하세요?';
+      '현재 토큰이 무효화됩니다. 활성 세션이 모두 로그아웃됩니다. 계속할까요?';
 
   @override
   String get toast_token_regenerated_logged_out =>
@@ -910,7 +932,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2 실행';
+    return '$arg1/$arg2 실행 중';
   }
 
   @override
@@ -931,7 +953,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dialog_zrok_token_title => 'Zrok 터널 토큰';
 
   @override
-  String get dialog_zrok_token_message => 'Zrok 활성화 토큰을 입력합니다.';
+  String get dialog_zrok_token_message => 'Zrok 활성화 토큰을 입력하세요.\n발급처: zrok.io';
 
   @override
   String get toast_token_cannot_be_empty => '지표는 빈이 될 수 없습니다';
@@ -1028,18 +1050,18 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get dialog_delete_recording_title => '녹음을 삭제';
+  String get dialog_delete_recording_title => '녹화을 삭제';
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return '$arg1를 삭제하세요';
+    return '$arg1을(를) 삭제할까요?\n이 작업은 취소할 수 없습니다.';
   }
 
   @override
-  String get toast_recording_deleted => '녹음 삭제';
+  String get toast_recording_deleted => '녹화 삭제';
 
   @override
-  String get toast_recording_delete_failed => '녹음을 삭제하지 못함';
+  String get toast_recording_delete_failed => '녹화를 삭제하지 못했습니다';
 
   @override
   String toast_batch_delete_partial(Object arg1, Object arg2) {
@@ -1051,7 +1073,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String setup_version_banner(Object arg1) {
-    return 'v$arg1에 업데이트  자동 시작을 다시 확인, BYD는 모든 설치에서 그것을 지워';
+    return 'v$arg1에 업데이트 — 자동 시작을 다시 확인, BYD는 모든 설치에서 그것을 지워';
   }
 
   @override
@@ -1075,7 +1097,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get soh_nominal_baseline => '공칭 기준값 — 신뢰할 수 있는 SOH 데이터 대기 중';
 
   @override
-  String get soh_no_estimate_yet => '아직 추정치 없습니다  자료를 기다리고 있습니다';
+  String get soh_no_estimate_yet => '아직 추정치 없습니다 — 자료를 기다리고 있습니다';
 
   @override
   String recording_lib_selected_count(Object arg1) {
@@ -1109,7 +1131,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rail_dashboard => '대시보드';
 
   @override
-  String get rail_live => '생생하게';
+  String get rail_live => '라이브';
 
   @override
   String get rail_recordings => '녹화';
@@ -1133,7 +1155,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_section_appearance => '겉모습';
 
   @override
-  String get settings_section_recording => '녹음';
+  String get settings_section_recording => '녹화';
 
   @override
   String get settings_section_surveillance => '감시';
@@ -1171,7 +1193,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_subrail_overline => '설정';
 
   @override
-  String get cd_settings_subrail => '설정 하부 철도';
+  String get cd_settings_subrail => '설정 사이드바';
 
   @override
   String get settings_privacy_title => '개인 정보 보호 & 데이터';
@@ -1228,7 +1250,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_about_license_title => '라이센스';
 
   @override
-  String get settings_about_license_value => 'MIT  오픈소스. 전체 텍스트를 보기 위해 누르십시오.';
+  String get settings_about_license_value => 'MIT — 오픈소스. 전체 텍스트를 보기 위해 누르십시오.';
 
   @override
   String get settings_about_source_title => '소스 코드';
@@ -1249,7 +1271,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_about_star_title => 'GitHub에 를 던지십시오';
 
   @override
-  String get settings_about_star_value => '잠깐만요, 많은 것을 의미하죠';
+  String get settings_about_star_value => '잠깐이면 됩니다. 큰 힘이 됩니다.';
 
   @override
   String get settings_about_star_url =>
@@ -1274,13 +1296,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_theme_label => '주제';
 
   @override
-  String get settings_theme_auto => '자동 (따르기 시스템)';
+  String get settings_theme_auto => '자동 (시스템 설정 따르기)';
 
   @override
-  String get settings_theme_light => '빛';
+  String get settings_theme_light => '라이트';
 
   @override
-  String get settings_theme_dark => '어둠';
+  String get settings_theme_dark => '다크';
 
   @override
   String get settings_language_label => '언어';
@@ -1355,7 +1377,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recordings_summary_pending => '—';
 
   @override
-  String get recordings_preview_placeholder_title => '녹음을 선택';
+  String get recordings_preview_placeholder_title => '녹화을 선택';
 
   @override
   String get recordings_preview_placeholder_body =>
@@ -1368,10 +1390,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get diagnostics_section_traffic => '교통 모니터';
 
   @override
-  String get diagnostics_section_camera_probe => '카메라 탐사선';
+  String get diagnostics_section_camera_probe => '카메라 점검';
 
   @override
-  String get diagnostics_section_battery => '배터리 건강';
+  String get diagnostics_section_battery => '배터리 상태';
 
   @override
   String get diagnostics_section_performance => '성능';
@@ -1383,16 +1405,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get diagnostics_hero_subtitle => '생체 건강, 로그, 그리고 기기의 탐사.';
 
   @override
-  String get diagnostics_health_clear => '모든 것이 정해졌어요';
+  String get diagnostics_health_clear => '이상 없음';
 
   @override
-  String get diagnostics_health_section => '건강';
+  String get diagnostics_health_section => '상태';
 
   @override
   String get diagnostics_health_network => '네트워크';
 
   @override
-  String get diagnostics_health_storage => '저장';
+  String get diagnostics_health_storage => '저장공간';
 
   @override
   String get diagnostics_health_camera => '카메라';
@@ -1455,7 +1477,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get diagnostics_camera_probe_subtitle => '연결된 카메라 스트림을 검사하세요.';
 
   @override
-  String get diagnostics_adb_subtitle => '장치에 연결된 터미널을 열고';
+  String get diagnostics_adb_subtitle => '기기의 터미널을 엽니다.';
 
   @override
   String get diagnostics_battery_subtitle => 'SOH 셀을 검사하고 통계를 포장하세요.';
@@ -1464,7 +1486,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get diagnostics_settings_subtitle => '앱 선호도, 테마, 언어';
 
   @override
-  String get settings_action_reset_data => '데이터 리셋...';
+  String get settings_action_reset_data => '데이터 초기화…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -1484,7 +1506,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_subtitle_no_tunnel => '오프라인에서 원격 액세스';
 
   @override
-  String get dashboard_metric_recordings => '오늘 녹음';
+  String get dashboard_metric_recordings => '오늘 녹화';
 
   @override
   String get dashboard_metric_storage => '사용된 저장장치';
@@ -1502,13 +1524,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_metric_vehicle => '차량';
 
   @override
-  String get dashboard_chip_recording_active => '등기';
+  String get dashboard_chip_recording_active => '녹화 중';
 
   @override
   String get dashboard_chip_recording_idle => '유휴';
 
   @override
-  String get dashboard_vehicle_tap_to_set => '설정하기 위해 탭';
+  String get dashboard_vehicle_tap_to_set => '탭하여 설정';
 
   @override
   String dashboard_vehicle_summary(Object arg1, Object arg2) {
@@ -1535,7 +1557,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_dialog_save => '저장';
 
   @override
-  String get vehicle_dialog_reset => '자동 탐지 설정';
+  String get vehicle_dialog_reset => '자동 감지로 초기화';
 
   @override
   String get vehicle_dialog_invalid_capacity => '용량은 8 ~ 120 kWh';
@@ -1571,67 +1593,62 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => '상태';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => '캡처';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => '품질';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => '저장소';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => '녹화 상태';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => '현재 상태';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => '오늘 녹화 수';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => '녹화 모드 (ACC ON)';
 
   @override
-  String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+  String get settings_recording_mode_description => '주행 중 블랙박스가 녹화할 시점을 선택하세요.';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => '없음 (기본값)';
 
   @override
-  String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+  String get settings_recording_mode_none_desc => '녹화 안 함 — 감시는 계속 작동합니다';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => '상시 녹화';
 
   @override
-  String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+  String get settings_recording_mode_continuous_desc => '주행 중 항상 녹화';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => '주행 모드';
 
   @override
-  String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+  String get settings_recording_mode_drive_desc => '차량이 움직일 때만 녹화';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => '근접 감시';
 
   @override
-  String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+  String get settings_recording_mode_proximity_desc => '움직임이 감지되면 녹화';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => '녹화 길이 제한';
 
   @override
   String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+      '파일당 최대 길이입니다. 이 간격으로 새 파일로 나뉩니다.';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1639,113 +1656,117 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => '녹화 품질';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => '녹화 저장소';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => '저장 위치';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => '내부 저장소';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SD 카드';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SD 카드 (없음)';
 
   @override
   String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+      '저장 한도 — 도달하면 오래된 것부터 자동 삭제';
+
+  @override
+  String get settings_recording_storage_usage_label => '저장공간 사용량';
+
+  @override
+  String get settings_recording_storage_files_label => '파일';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 사용 / 한도 $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '녹화 $arg1개';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => '경로';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'SD 카드 여유 공간';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label => '내부 저장소 여유 공간';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => '외장 드라이브 포맷';
 
   @override
   String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+      'SD 카드 또는 USB 드라이브의 모든 데이터를 영구적으로 지웁니다.';
 
   @override
-  String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+  String get settings_recording_format_confirm => '다시 탭하세요 — 모든 데이터가 삭제됩니다';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running => '포맷 중… 잠시 기다려 주세요';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => 'SD 카드 / USB 포맷';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive => '이동식 드라이브를 찾을 수 없음';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return '포맷이 완료되었습니다. 새 경로: $arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => '데이터베이스 카탈로그';
 
   @override
-  String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+  String get settings_recording_sync_description => '녹화 목록을 디스크의 파일과 대조합니다.';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => '동기화 중…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => '데이터베이스 동기화';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return '동기화됨: +$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => '이미 동기화 중입니다';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return '동기화 실패: $arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => '변경 사항 적용';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => '닫기';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return '$arg1 시작/중지는 아직 지원되지 않습니다';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => '구성';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => '환경 초기화';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -1771,7 +1792,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => '저장 ';
+  String get dashboard_metric_storage_chip_pending => '저장공간 —';
 
   @override
   String get dashboard_tunnel_offline => '오프라인';
@@ -1780,7 +1801,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_tunnel_online => '온라인';
 
   @override
-  String get dashboard_tunnel_connecting => '연결...';
+  String get dashboard_tunnel_connecting => '연결 중…';
 
   @override
   String get dashboard_trips_this_week => '이번 주';
@@ -1830,7 +1851,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_action_live => '라이브 뷰';
 
   @override
-  String get dashboard_action_live_subtitle => '카메라 뷰 오픈';
+  String get dashboard_action_live_subtitle => '카메라 화면 열기';
 
   @override
   String get dashboard_action_recordings => '녹화';
@@ -1848,7 +1869,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_hero_overline => '과잉 운전';
 
   @override
-  String get settings_hero_subtitle => '외모, 녹음, 감시 및 장치에 있는 데이터를 조정하십시오.';
+  String get settings_hero_subtitle => '외모, 녹화, 감시 및 장치에 있는 데이터를 조정하십시오.';
 
   @override
   String get settings_overline_preferences => '우선순위';
@@ -1878,7 +1899,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_about_row_subtitle => '버전, 라이선스, 지원 개발.';
 
   @override
-  String get settings_reset_row_subtitle => '녹음, 사건, 또는 모든 캐시';
+  String get settings_reset_row_subtitle => '녹화, 사건, 또는 모든 캐시';
 
   @override
   String settings_footer_format(Object arg1, Object arg2) {
@@ -1892,14 +1913,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_theme_active_auto_caption => '자동으로 시스템 테마를 따라갑니다.';
 
   @override
-  String get settings_theme_active_light_caption => '빛의 주제는 항상 켜져 있습니다.';
+  String get settings_theme_active_light_caption => '라이트 테마가 항상 켜져 있습니다.';
 
   @override
-  String get settings_theme_active_dark_caption => '어두운 테마는 항상 켜져 있어요.';
+  String get settings_theme_active_dark_caption => '다크 테마가 항상 켜져 있습니다.';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '사용 가능한 $arg1의 $arg2 언어';
+    return '$arg2개 언어 중 $arg1개 사용 가능';
   }
 
   @override
@@ -1969,7 +1990,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_camera_value_probing => '탐구...';
+  String get diagnostics_camera_value_probing => '확인 중…';
 
   @override
   String get diagnostics_camera_value_offline => '오프라인';
@@ -1980,7 +2001,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_battery_value_pending => '대기하는 자료';
+  String get diagnostics_battery_value_pending => '데이터 대기 중';
 
   @override
   String dashboard_recordings_value_live(Object arg1) {
@@ -1988,7 +2009,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get dashboard_insight_welcome => '환영합니다  오버드라이브는 이제 두 번째 눈입니다.';
+  String get dashboard_insight_welcome => '환영합니다 — 오버드라이브는 이제 두 번째 눈입니다.';
 
   @override
   String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
@@ -2022,7 +2043,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return '$arg1 클립 · $arg2 녹음';
+    return '$arg1 클립 · $arg2 녹화';
   }
 
   @override
@@ -2037,7 +2058,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 min';
+    return '$arg1시간 $arg2분';
   }
 
   @override
@@ -2045,8 +2066,8 @@ class AppLocalizationsKo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '오늘 녹음된 $arg1 클립',
-      one: '오늘 녹음된 $arg1 클립',
+      other: '오늘 녹화된 $arg1 클립',
+      one: '오늘 녹화된 $arg1 클립',
     );
     return '$_temp0';
   }
@@ -2099,7 +2120,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_tab_trunk => '트렁크';
 
   @override
-  String get vehicle_tab_climate => '기후';
+  String get vehicle_tab_climate => '공조';
 
   @override
   String get vehicle_tab_seats => '좌석';
@@ -2135,16 +2156,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_open_trunk => '트렁크 열기';
 
   @override
-  String get vehicle_close_trunk => '닫힌 트렁크';
+  String get vehicle_close_trunk => '트렁크 닫기';
 
   @override
   String get vehicle_trunk_info_open => '트렁크를 열면 차량 잠금이 먼저 해제됩니다.';
 
   @override
-  String get vehicle_ac_on => 'AC 가동';
+  String get vehicle_ac_on => 'AC 켜짐';
 
   @override
-  String get vehicle_ac_off => 'AC 종료';
+  String get vehicle_ac_off => 'AC 꺼짐';
 
   @override
   String get vehicle_max_cooling_on => '최대 냉방: 켜짐';
@@ -2197,13 +2218,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_heat_high => '(강)';
 
   @override
-  String get vehicle_seat_pos_1 => '포지션 1';
+  String get vehicle_seat_pos_1 => '위치 1';
 
   @override
-  String get vehicle_seat_pos_2 => '포지션 2';
+  String get vehicle_seat_pos_2 => '위치 2';
 
   @override
-  String get vehicle_all_windows => '모든 창';
+  String get vehicle_all_windows => '전체 창문';
 
   @override
   String get vehicle_window_front_left => '앞 왼쪽';
@@ -2230,10 +2251,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_window_open_all => '모두 열기';
 
   @override
-  String get vehicle_sunroof => '태양 지붕';
+  String get vehicle_sunroof => '선루프';
 
   @override
-  String get vehicle_sunshade => '햇빛 보호막';
+  String get vehicle_sunshade => '햇빛 가리개';
 
   @override
   String get vehicle_btn_drl_title => '낮에 가동하는 조명';
@@ -2257,7 +2278,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_charge_limit_range => '최소 50%, 최대 100%';
 
   @override
-  String get vehicle_tyre_no_signal => '신호가 없습니다';
+  String get vehicle_tyre_no_signal => '신호 없음';
 
   @override
   String get vehicle_tyre_slow_leak => '느린 누출';
@@ -2266,13 +2287,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_tyre_fast_leak => '빠른 누출';
 
   @override
-  String get vehicle_tyre_low => '낮은';
+  String get vehicle_tyre_low => '낮음';
 
   @override
-  String get vehicle_tyre_high => '높은';
+  String get vehicle_tyre_high => '높음';
 
   @override
-  String get vehicle_tyre_ok => '확인';
+  String get vehicle_tyre_ok => '정상';
 
   @override
   String get vehicle_tyre_check_pressure => '공기압 확인';
@@ -2428,13 +2449,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trips_tab_storage => '저장공간';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7일';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14일';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30일';
 
   @override
   String trips_load_error(Object message) {
@@ -2448,13 +2469,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trips_period_summary_title => '기간 요약';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => '주행';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => '시간';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => '효율';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2464,7 +2485,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return '점수: $score';
   }
 
   @override
@@ -2472,7 +2493,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return '종합: $score / 100';
   }
 
   @override
@@ -2480,7 +2501,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD 추정: $km km';
   }
 
   @override
@@ -2490,46 +2511,46 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trips_dna_title => '운전 DNA';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => '예측 주행';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => '부드러움';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => '속도 준수';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => '효율';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => '일관성';
 
   @override
   String get trips_storage_title => '주행 저장공간';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => '주행 분석';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => '전기 요금';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => '거리 단위';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => '저장 위치';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => '내부 저장소';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SD 카드';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SD 카드 (없음)';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => '변경 사항 적용';
 
   @override
   String trips_storage_usage_line(
@@ -2538,21 +2559,20 @@ class AppLocalizationsKo extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '$used $unit 사용 / 한도 $limit MB · 주행 $count회';
   }
 
   @override
   String get trips_sync_title => '데이터베이스 카탈로그';
 
   @override
-  String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+  String get trips_sync_description => '주행 목록을 디스크의 텔레메트리 파일과 대조합니다.';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => '데이터베이스 동기화';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => '동기화 중…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2566,31 +2586,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trips_detail_summary_title => '주행 요약';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => '거리';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => '소요 시간';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => '에너지';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => '평균 속도';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => '최고 속도';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => '충전 상태';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => '비용';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => '외기 온도';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => '고도 상승';
 
   @override
   String get trips_detail_scores_title => '운전 점수';
@@ -2603,7 +2623,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return 'GPS 포인트 $count개 기록됨';
   }
 
   @override
@@ -2756,6 +2776,19 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => '감지 영역';
+
+  @override
+  String get surveillance_roi_description =>
+      '탭하여 점을 추가하고 드래그하여 이동합니다. 최소 3개, 최대 8개입니다.';
+
+  @override
+  String get surveillance_roi_enable => '이 영역으로 감지 제한';
+
+  @override
+  String get action_undo => '실행 취소';
+
+  @override
   String get surveillance_detection_title => '감지 설정';
 
   @override
@@ -2827,8 +2860,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get surveillance_storage_limit_label => '저장 한도 — 도달 시 가장 오래된 항목 자동 삭제';
 
   @override
+  String get surveillance_storage_usage_label => '저장공간 사용량';
+
+  @override
+  String get surveillance_storage_files_label => '파일';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 사용 / 한도 $arg2';
   }
 
   @override

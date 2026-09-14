@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
+
+import '../../widgets/osm_tile_layer.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../gen/l10n/app_localizations.dart';
@@ -107,10 +109,6 @@ class _LocationScreenState extends State<LocationScreen> {
   }
 
   Widget _buildMap(LocationCarGps? loc) {
-    final tileLayer = TileLayer(
-      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      userAgentPackageName: 'net.bladewatch.flutter',
-    );
     return FlutterMap(
       key: const ValueKey('location.map'),
       mapController: _mapController,
@@ -123,7 +121,7 @@ class _LocationScreenState extends State<LocationScreen> {
         },
       ),
       children: [
-        _useNightTiles ? ColorFiltered(colorFilter: _nightInvertFilter, child: tileLayer) : tileLayer,
+        bwTileLayerFor(night: _useNightTiles),
         if (loc != null)
           MarkerLayer(markers: [
             Marker(
@@ -185,6 +183,7 @@ class _LocationScreenState extends State<LocationScreen> {
 
   Widget _buildModeSelector(AppLocalizations l10n, LocationController c) {
     return SegmentedButton<LocationUiModePreference>(
+            showSelectedIcon: false,
       key: const ValueKey('location.modeSelector'),
       segments: [
         ButtonSegment(value: LocationUiModePreference.auto, label: Text(l10n.location_mode_auto)),
@@ -290,13 +289,6 @@ _BannerInfo _bannerFor(AppLocalizations l10n, LocationUiState state) => switch (
 
 String _formatLatLng(LocationCarGps location) =>
     '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}';
-
-const _nightInvertFilter = ColorFilter.matrix(<double>[
-  -1, 0, 0, 0, 255,
-  0, -1, 0, 0, 255,
-  0, 0, -1, 0, 255,
-  0, 0, 0, 1, 0,
-]);
 
 class _CarMarker extends StatelessWidget {
   const _CarMarker();

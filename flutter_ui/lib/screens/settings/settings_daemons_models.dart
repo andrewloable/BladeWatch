@@ -8,6 +8,21 @@ enum DaemonKind {
 
   final String nativeKey;
   const DaemonKind(this.nativeKey);
+
+  /// Whether this daemon can be started/stopped from this UI (BladeWatch-abcx).
+  ///
+  /// Only the Zrok tunnel can, and the reasons are structural, not missing work:
+  ///
+  /// - **Camera** hosts the loopback IPC server this app talks to. Stopping it kills
+  ///   the only channel that could start it again — this APK has no ADB.
+  /// - **Surveillance / ACC Surveillance** are core daemons. `DaemonStartupManager`'s
+  ///   health check relaunches them within 30s unless they are in an in-memory set that
+  ///   lives in the OTHER APK's process, so a stop issued here would silently undo
+  ///   itself. Showing a switch that reverts is worse than showing no switch.
+  ///
+  /// The daemon enforces the same list; this is what lets the UI say so up front
+  /// instead of letting the user discover it by toggling.
+  bool get canToggle => this == DaemonKind.zrokTunnel;
 }
 
 /// Ground truth: `DaemonAdapter.kt`'s per-row bind logic, reduced to what

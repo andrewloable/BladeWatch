@@ -107,7 +107,6 @@ void main() {
     expect(find.text('5 clips · 1.5 KB used'), findsOneWidget);
     expect(find.byKey(const ValueKey('diag.cardCameraHealth')), findsOneWidget);
     expect(find.byKey(const ValueKey('diag.cardBatteryHealth')), findsOneWidget);
-    expect(find.text('90%'), findsOneWidget);
   });
 
   testWidgets('renders the camera health tile in its active (manual) state', (tester) async {
@@ -142,12 +141,22 @@ void main() {
     expect(find.text('Camera 1'), findsOneWidget);
   });
 
-  testWidgets('renders the battery health tile in its moderate state', (tester) async {
+  // BladeWatch-p7vi: there is no SoH reading to classify any more, so the tile
+  // has no good/moderate/neutral states — it reports the feature as unavailable
+  // whatever the (stubbed) daemon would have said.
+  testWidgets('the battery health tile reports unavailable regardless of any SOH stub', (tester) async {
     rpc.stubJson('SystemService', 'GetSohStatus', {'success': true, 'displaySoh': 65.0, 'displaySource': 'live'});
 
     await pumpScreen(tester);
 
-    expect(find.text('65%'), findsOneWidget);
+    expect(find.text('65%'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('diag.cardBatteryHealth')),
+        matching: find.text('Not available'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('renders all 6 tool cards', (tester) async {
@@ -259,85 +268,53 @@ void main() {
     });
   });
 
+  // BladeWatch-p7vi: SoH estimation was removed from the daemon, so the dialog
+  // no longer shows a reading, the Source/Method/Capacity rows, or a Reset
+  // action that could never do anything.
   group('Battery Health dialog', () {
-    testWidgets('opens and shows the current SOH', (tester) async {
+    testWidgets('says the feature is unavailable rather than sitting on pending', (tester) async {
       await pumpScreen(tester);
 
       await tester.tap(find.byKey(const ValueKey('diag.cardBattery')));
       await tester.pumpAndSettle();
 
       expect(find.text('Battery Health'), findsOneWidget);
-      expect(find.text('90%'), findsWidgets);
+      expect(find.byKey(const ValueKey('diag.battery.unavailable')), findsOneWidget);
+      expect(find.text('Pending data'), findsNothing);
     });
 
-    testWidgets('shows the estimation-active status and the source/method/capacity rows', (tester) async {
+    testWidgets('no longer offers the reset action', (tester) async {
       await pumpScreen(tester);
 
       await tester.tap(find.byKey(const ValueKey('diag.cardBattery')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Estimation active'), findsOneWidget);
-      expect(find.text('user'), findsOneWidget);
-      expect(find.text('live'), findsOneWidget);
-      expect(find.text('61.4 kWh (user-set)'), findsOneWidget);
+      expect(find.byKey(const ValueKey('diag.battery.reset')), findsNothing);
+      expect(find.byKey(const ValueKey('diag.battery.close')), findsOneWidget);
     });
 
-    testWidgets('shows the auto-detected suffix for an auto-sourced capacity', (tester) async {
-      rpc.stubJson('SystemService', 'GetSohStatus',
-          {'success': true, 'displaySoh': 90.0, 'displaySource': 'live', 'nominalCapacityKwh': 61.4, 'nominalSource': 'auto'});
-      await pumpScreen(tester);
-
-      await tester.tap(find.byKey(const ValueKey('diag.cardBattery')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('61.4 kWh (auto-detected)'), findsOneWidget);
-    });
-
-    testWidgets('shows "Not detected" for capacity and the oem-readout status when nominal capacity is unset', (tester) async {
-      rpc.stubJson('SystemService', 'GetSohStatus',
-          {'success': true, 'displaySoh': 90.0, 'displaySource': 'oem', 'nominalCapacityKwh': 0.0, 'nominalSource': ''});
-      await pumpScreen(tester);
-
-      await tester.tap(find.byKey(const ValueKey('diag.cardBattery')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Vehicle SOH readout — waiting for calculated estimate'), findsOneWidget);
-      expect(find.text('Not detected'), findsOneWidget);
-    });
-
-    testWidgets('reset flow: confirm dialog then success snackbar', (tester) async {
-      rpc.stubJson('SystemService', 'ResetSoh', {'success': true});
-      await pumpScreen(tester);
-      await tester.tap(find.byKey(const ValueKey('diag.cardBattery')));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const ValueKey('diag.battery.reset')));
-      await tester.pumpAndSettle();
-      expect(find.text('Reset SOH Estimation?'), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey('diag.battery.resetConfirm')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('SOH estimation reset — will recalculate from next data'), findsOneWidget);
-    });
-
-    testWidgets('the health tile also opens the dialog', (tester) async {
+    testWidgets('the health card opens the same dialog, and Close dismisses it', (tester) async {
       await pumpScreen(tester);
 
       await tester.tap(find.byKey(const ValueKey('diag.cardBatteryHealth')));
       await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('diag.battery.unavailable')), findsOneWidget);
 
-      expect(find.text('Battery Health'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('diag.battery.close')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('diag.battery.unavailable')), findsNothing);
     });
 
-    testWidgets('shows the pending placeholder when no SOH reading is available', (tester) async {
-      rpc.stubError('SystemService', 'GetSohStatus', const ConnectError('unavailable', 'no daemon'));
+    testWidgets('the battery card says unavailable too', (tester) async {
       await pumpScreen(tester);
 
-      await tester.tap(find.byKey(const ValueKey('diag.cardBattery')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Pending data'), findsWidgets);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('diag.cardBatteryHealth')),
+          matching: find.text('Not available'),
+        ),
+        findsOneWidget,
+      );
     });
   });
 

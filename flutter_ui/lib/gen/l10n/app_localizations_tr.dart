@@ -13,7 +13,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get accessibility_service_description =>
-      'Bu hizmet ekran içeriğini okumamaktadır veya etkileşime girmez.';
+      'BladeWatch araç izlemeyi arka planda etkin tutar. Bu hizmet ekran içeriğini okumaz ve onunla etkileşime girmez.';
 
   @override
   String get action_cancel => 'İptal';
@@ -25,25 +25,25 @@ class AppLocalizationsTr extends AppLocalizations {
   String get action_select_all => 'Tümünü seç';
 
   @override
-  String get action_select_all_short => 'Hepsi .';
+  String get action_select_all_short => 'Hepsi';
 
   @override
   String get action_delete => 'Sil';
 
   @override
-  String get action_done => 'Yapıldı';
+  String get action_done => 'TAMAM';
 
   @override
-  String get action_remind_me_later => 'Beni daha sonra hatırla .';
+  String get action_remind_me_later => 'DAHA SONRA HATIRLAT';
 
   @override
   String get action_retry => 'Tekrar dene';
 
   @override
-  String get action_run => 'Kaç .';
+  String get action_run => 'Çalıştır';
 
   @override
-  String get action_clear_output => 'Açık Çıkış';
+  String get action_clear_output => 'Çıktıyı temizle';
 
   @override
   String get cd_camera => 'Kamera';
@@ -55,19 +55,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cd_qr_code => 'QR kodu';
 
   @override
-  String get cd_show_hide_token => 'Göster / Sakla İşaret';
+  String get cd_show_hide_token => 'Token’ı göster/gizle';
 
   @override
-  String get cd_copy_token => 'Kopya Tokeni';
+  String get cd_copy_token => 'Token’ı kopyala';
 
   @override
-  String get cd_copy_url => 'Kopya URL';
+  String get cd_copy_url => 'URL’yi kopyala';
 
   @override
-  String get cd_clear_logs => 'Açık kütükler';
+  String get cd_clear_logs => 'Günlükleri temizle';
 
   @override
-  String get cd_expand_collapse => 'Genişleme / çökme';
+  String get cd_expand_collapse => 'Genişlet/Daralt';
 
   @override
   String get cd_recording_status => 'Kayıt durumu';
@@ -85,7 +85,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cd_back => 'Geri';
 
   @override
-  String get cd_play_pause => 'Çalışma/Aravalı';
+  String get cd_play_pause => 'Oynat/Duraklat';
 
   @override
   String get cd_player_prev => 'Önceki kayıt';
@@ -103,13 +103,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cd_delete => 'Sil';
 
   @override
-  String get cd_expand => 'Genişle';
+  String get cd_expand => 'Genişlet';
 
   @override
-  String get cd_configure => 'Yapılandırma';
+  String get cd_configure => 'Yapılandır';
 
   @override
-  String get cd_download_log => 'İndirme günlüğü';
+  String get cd_download_log => 'Günlüğü indir';
 
   @override
   String get cd_reset => 'Sıfırla';
@@ -121,7 +121,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cd_step_completed => 'Adım tamamlandı';
 
   @override
-  String get cd_permission_granted => 'Verilmiş izin';
+  String get cd_permission_granted => 'İzin verildi';
 
   @override
   String get overlay_rec_inactive_label => 'REC';
@@ -130,10 +130,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get overlay_trip_inactive_label => 'TRIP';
 
   @override
-  String get log_entry_default_timestamp => '12:34:56\'da.';
+  String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => '- Hayır, hayır.';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => 'Kayıt mesajı buraya';
@@ -160,16 +160,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get camera_selection_subtitle => 'Panoramik kamera kaynağını seçin';
 
   @override
-  String get camera_current_auto => 'Akım: Otomatik';
+  String get camera_current_auto => 'Geçerli: Otomatik';
 
   @override
   String get camera_option_auto => 'Otomatik (başlatma sırasında tespit)';
 
   @override
-  String get camera_option_0 => 'Kamera 0  Atto süsleri';
+  String get camera_option_0 => 'Kamera 0 — Atto süsleri';
 
   @override
-  String get camera_option_1 => 'Kamera 1  Seal (öntemli olarak)';
+  String get camera_option_1 => 'Kamera 1 — Seal (öntemli olarak)';
 
   @override
   String get camera_option_2 => 'Kamera 2';
@@ -188,16 +188,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'Otomatik, her açılışta trim\'iniz için doğru kamerayı seçer. Kamera 1 = BYD Seal, Kamera 0 = Atto trim\'leri. Ayarın geçerli olması için kamera kimliğini değiştirdikten sonra kamera servisini yeniden başlatın.';
 
   @override
-  String get dashboard_scan_to_connect => 'Bağlantı için taray';
+  String get dashboard_scan_to_connect => 'Bağlanmak için tarayın';
 
   @override
   String get dashboard_qr_waiting => 'Tünel için bekliyordum...';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 Çıkıyor';
+  String get dashboard_daemons_running_default => '0/5 çalışıyor';
 
   @override
-  String get dashboard_device_id_loading => '- Evet .';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => 'Erişim Kodu';
@@ -206,7 +206,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dashboard_token_masked => '••••••••';
 
   @override
-  String get dashboard_regenerate_token => 'Yeniden Yükleme İşaretleri';
+  String get dashboard_regenerate_token => 'Token’ı yeniden oluştur';
 
   @override
   String get dashboard_set_password => 'Şifre Belirle';
@@ -255,17 +255,17 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get setup_language_body =>
-      'BladeWatch uygulaması ve web tüneli için farklı bir dil seçmek için basın.';
+      'Varsayılan olarak ana ünitenin dilini kullanır. BladeWatch uygulaması ve web tüneli için farklı bir dil seçmek üzere dokunun.';
 
   @override
   String get setup_language_button => 'Dil Seç';
 
   @override
-  String get setup_autostart_title => 'Otomatik Başlatma Sınırını Engelle';
+  String get setup_autostart_title => 'Otomatik başlatma kısıtlamasını kaldır';
 
   @override
   String get setup_autostart_body =>
-      'BYD Otomatik Başlatma açmak için aşağıdakine tıklayın. BladeWatch listesinde bulun ve kutuyu açın. BYD bunu her yüklemede siler  güncelleştirmelerden sonra yeniden yapacaksınız.';
+      'BYD Otomatik Başlatma açmak için aşağıdakine tıklayın. BladeWatch listesinde bulun ve kutuyu açın. BYD bunu her yüklemede siler — güncelleştirmelerden sonra yeniden yapacaksınız.';
 
   @override
   String get setup_autostart_button => 'BYD Otomatik Başlatma Aç';
@@ -279,7 +279,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Diğer uygulamalar üzerinde kaydetme ve seyahat izleme için yüzen bir durum göstergesi göstermek için bunu etkinleştirin.';
 
   @override
-  String get setup_overlay_button => 'Açık Ekleme Ayarları';
+  String get setup_overlay_button => 'Yer paylaşımı ayarlarını aç';
 
   @override
   String get cd_close => 'Kapat';
@@ -304,6 +304,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved =>
+      'Dil uygulandı ancak kaydedilemedi — uygulama yeniden başlatıldığında sıfırlanacak.';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
     return '$arg1 · Otomatik';
   }
@@ -312,7 +316,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get adb_prompt => '\$';
 
   @override
-  String get adb_command_hint => 'Komutanlığı girin...';
+  String get adb_command_hint => 'Bir komut girin…';
 
   @override
   String get adb_preset_commands_header => 'Öntanımlı komutlar';
@@ -344,7 +348,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Baş ünitenin ekranında “USB hata ayıklamaya izin verilsin mi?” istemini kontrol edip kabul edin, sonra tekrar deneyin.';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting => 'Performans izleyicisine bağlanılıyor…';
 
   @override
   String get performance_hero_title => 'Sistem Performansı';
@@ -353,16 +357,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get performance_cpu_title => 'İşlemci';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => 'Sistem kullanımı';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => 'Uygulama kullanımı';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => 'Frekans';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => 'Sıcaklık';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -371,16 +375,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get performance_memory_title => 'Bellek';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => 'Kullanım';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => 'Toplam';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => 'Kullanılan';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => 'Uygulama';
 
   @override
   String get performance_gpu_title => 'GPU';
@@ -389,16 +393,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get performance_app_process_title => 'Uygulama Süreci';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => 'İş parçacıkları';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC döngüleri';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => 'Açık FD’ler';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => '3 saniyede bir yenileniyor';
 
   @override
   String get webview_loading => 'Karga...';
@@ -411,21 +415,21 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu sayfaya erişmek için Kamera servisini Servisler ekranından başlatın.';
 
   @override
-  String get zrok_enable_token_hint => 'İşaret etkinleştir';
+  String get zrok_enable_token_hint => 'Token’ı etkinleştir';
 
   @override
   String get zrok_token_storage_note =>
       'Token güvenli bir şekilde saklanır ve uygulama ile arka plan servisleri arasında paylaşılır.';
 
   @override
-  String get zrok_reset_environment => 'Zrok Çevresini Yeniden Oturt';
+  String get zrok_reset_environment => 'Zrok ortamını sıfırla';
 
   @override
   String get zrok_reset_environment_desc =>
       'Çevre ve token çıkarır. token ile yeniden etkinleştirmeniz gerekir (bir cihaz yuvasını kullanır).';
 
   @override
-  String get reset_title => 'Verileri Yeniden Oturt';
+  String get reset_title => 'Verileri sıfırla';
 
   @override
   String get reset_subtitle => 'Toplanan verileri kategoriye göre sil';
@@ -486,7 +490,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get recording_lib_chip_any => 'Herhangi bir';
 
   @override
-  String get recording_lib_chip_person => 'Kişiler';
+  String get recording_lib_chip_person => 'Kişi';
 
   @override
   String get recording_lib_chip_vehicle => 'Araç';
@@ -518,7 +522,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_filter_sheet_title => 'Filtre kayıtları';
+  String get recording_lib_filter_sheet_title => 'Kayıtları filtrele';
 
   @override
   String get recording_lib_filter_apply => 'Uygula';
@@ -527,10 +531,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get recording_lib_filter_reset => 'Sıfırla';
 
   @override
-  String get recording_lib_filter_section_what => 'Ne oldu?';
+  String get recording_lib_filter_section_what => 'Ne';
 
   @override
-  String get recording_lib_filter_section_severity => 'Ağırlık';
+  String get recording_lib_filter_section_severity => 'Önem derecesi';
 
   @override
   String get recording_lib_filter_section_type => 'Tür';
@@ -545,7 +549,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get recording_lib_date_today => 'Bugün';
 
   @override
-  String get recording_lib_date_yesterday => '- Dün .';
+  String get recording_lib_date_yesterday => 'Dün';
 
   @override
   String recording_lib_clip_count(Object arg1) {
@@ -558,7 +562,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_pick_date => 'Bir randevu seç .';
+  String get recording_lib_pick_date => 'Bir tarih seçin';
 
   @override
   String get recording_lib_date_all_days => 'Tüm Günler';
@@ -567,16 +571,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cd_clear_date_filter => 'Tüm günleri göster';
 
   @override
-  String get recording_lib_section_morning => 'Sabah .';
+  String get recording_lib_section_morning => 'Sabah';
 
   @override
-  String get recording_lib_section_afternoon => 'Günaydın .';
+  String get recording_lib_section_afternoon => 'Öğleden sonra';
 
   @override
   String get recording_lib_section_evening => 'Akşam';
 
   @override
-  String get recording_lib_section_night => 'Gece .';
+  String get recording_lib_section_night => 'Gece';
 
   @override
   String get cd_previous_day => 'Önceki gün';
@@ -585,25 +589,37 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cd_next_day => 'Ertesi gün';
 
   @override
-  String get cd_open_filters => 'Açık filtreler';
+  String get cd_open_filters => 'Filtreleri aç';
 
   @override
-  String get cd_clear_filter => 'Açık filtre';
+  String get cd_clear_filter => 'Filtreyi temizle';
 
   @override
   String get player_title_recording => 'Kayıt';
 
   @override
-  String get player_time_zero => 'Saat 0: 00';
+  String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
 
   @override
+  String get daemon_name_camera => 'Kamera servisi';
+
+  @override
+  String get daemon_name_surveillance => 'Gözetim servisi';
+
+  @override
+  String get daemon_name_acc => 'ACC gözetim';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
+
+  @override
   String get daemons_hero_title => 'Arka plan hizmetleri';
 
   @override
-  String get daemons_count_pending => 'Kargo hizmetleri...';
+  String get daemons_count_pending => 'Hizmetler yükleniyor…';
 
   @override
   String daemons_count_fmt(Object arg1, Object arg2) {
@@ -638,11 +654,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get battery_health_last_updated => 'Son Güncelleştirilmiş';
 
   @override
-  String get battery_health_reset => 'SOH Tahmini Yeniden Değiştir';
+  String get battery_health_unavailable => 'Kullanılamıyor';
+
+  @override
+  String get battery_health_unavailable_desc =>
+      'Bu araçta batarya sağlığı tahmini kullanılamıyor.';
+
+  @override
+  String get battery_health_reset => 'SOH tahminini sıfırla';
 
   @override
   String get battery_health_reset_desc =>
-      'Tüm verileri temizler ve sıfırdan yeniden değerlendirir.';
+      'Tüm verileri temizler ve sıfırdan yeniden tahmin eder. Batarya değiştiyse veya okuma yanlış görünüyorsa kullanın.';
 
   @override
   String get soh_dialog_model_label => 'Model';
@@ -703,8 +726,8 @@ class AppLocalizationsTr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: 'Bu $arg1 kayıtlarını kalıcı olarak siler.',
-      one: '$arg1 kayıtlarını kalıcı olarak siler.',
+      other: 'Bu, $arg1 kaydı kalıcı olarak siler. Bu işlem geri alınamaz.',
+      one: 'Bu, $arg1 kaydı kalıcı olarak siler. Bu işlem geri alınamaz.',
     );
     return '$_temp0';
   }
@@ -734,7 +757,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'Kamera $arg1 seti  sonraki ACC döngüsü';
+    return 'Kamera $arg1 seti — sonraki ACC döngüsü';
   }
 
   @override
@@ -760,7 +783,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get toast_soh_reset_success =>
-      'SOH tahminini yeniden ayarlamak  sonraki verilerden yeniden hesaplanacak';
+      'SOH tahminini yeniden ayarlamak — sonraki verilerden yeniden hesaplanacak';
 
   @override
   String get toast_soh_reset_failed_no_daemon =>
@@ -803,35 +826,34 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dialog_disable => 'Devre dışı';
 
   @override
-  String get dialog_keep_enabled => 'İzin Vermeye Devam Edin';
+  String get dialog_keep_enabled => 'Etkin bırak';
 
   @override
-  String get dialog_keep_disabled => 'Engelli Kalın';
+  String get dialog_keep_disabled => 'Devre dışı bırak';
 
   @override
-  String get dialog_regenerate => 'Yenilenme';
+  String get dialog_regenerate => 'Yeniden oluştur';
 
   @override
-  String get dialog_reset_selected => 'Seçili Yeniden Oturtma';
+  String get dialog_reset_selected => 'Seçilenleri sıfırla';
 
   @override
-  String get dialog_reset_soh_title => 'SOH Tahmini yeniden ayarlayalım mı?';
+  String get dialog_reset_soh_title => 'SOH tahmini sıfırlansın mı?';
 
   @override
   String get dialog_reset_soh_message =>
       'Bu, tüm SOH verilerini temizleyecek ve sıfırdan yeniden değerlendirmeyi zorlayacaktır.\n\nBattery değiştirildiyse bunu kullanın\n• SOH okuma yanlış görünüyor\n• Yeniden kalibrlemek isterseniz\n\nSistem bir sonraki mevcut veri kaynağından (OEM, şarj kalibrasyonu veya anlık okuma) yeniden üretecektir.';
 
   @override
-  String get dialog_reset_following_title =>
-      'Aşağıdakileri yeniden ayarlıyor musun?';
+  String get dialog_reset_following_title => 'Aşağıdakiler sıfırlansın mı?';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return 'Bu işlem geri alınamaz.\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => 'Yeniden ayarlama tamamlandı';
+  String get dialog_reset_complete_title => 'Sıfırlama tamamlandı';
 
   @override
   String get dialog_traffic_cannot_check_title => 'Durumu kontrol edemiyorum';
@@ -842,7 +864,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dialog_traffic_disable_title =>
-      'BYD Trafik Gözlemini devre dışı bırakmak mı?';
+      'BYD Trafik İzleyici devre dışı bırakılsın mı?';
 
   @override
   String get dialog_traffic_disable_message =>
@@ -863,7 +885,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dialog_traffic_reboot_message =>
-      'Değişim uygulandı. Lütfen şimdi sert bir yeniden başlatma yapın:';
+      'Değişiklik uygulandı.\n\nŞimdi zorlamalı yeniden başlatma yapın:\nOrta konsol düğmesini 5 saniye basılı tutun.';
 
   @override
   String get traffic_monitor_loading => 'Trafik monitörü: Kontrol...';
@@ -897,15 +919,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get toast_access_code_copied => 'Giriş kodu kopyalandı';
 
   @override
-  String get dialog_regenerate_token_title => 'Yeniden Yükleme İşaretleri';
+  String get dialog_regenerate_token_title => 'Token’ı yeniden oluştur';
 
   @override
   String get dialog_regenerate_token_message =>
-      'Bu, mevcut token\'ı geçersiz kılacak.';
+      'Bu, mevcut token’ı geçersiz kılar. Tüm etkin oturumlar kapatılır. Devam edilsin mi?';
 
   @override
   String get toast_token_regenerated_logged_out =>
-      'Yeni bir token oluşturuldu.';
+      'Yeni token oluşturuldu. Tüm oturumlar kapatıldı.';
 
   @override
   String get toast_token_regenerated_restart =>
@@ -919,7 +941,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get toast_token_regenerated => 'Token Yenilenmiş';
 
   @override
-  String get dashboard_no_tunnel => 'Hiç tünel yürümedi .';
+  String get dashboard_no_tunnel => 'Çalışan tünel yok';
 
   @override
   String get dashboard_starting_zrok => 'Zrok tünelini başlatıyorum...';
@@ -929,7 +951,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2 Çalışma';
+    return '$arg1/$arg2 çalışıyor';
   }
 
   @override
@@ -951,13 +973,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dialog_zrok_token_message =>
-      'Zrok etkinleştirme simgelerinizi girin.';
+      'Zrok etkinleştirme token’ınızı girin.\nBuradan alın: zrok.io';
 
   @override
-  String get toast_token_cannot_be_empty => 'İşaret boş olamaz .';
+  String get toast_token_cannot_be_empty => 'Token boş olamaz';
 
   @override
-  String get dialog_zrok_reset_title => 'Zrok Çevresini Yeniden Oturt';
+  String get dialog_zrok_reset_title => 'Zrok ortamını sıfırla';
 
   @override
   String get dialog_zrok_reset_message =>
@@ -980,7 +1002,8 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get zrok_no_token_configured => 'İşaret yapılandırılmamış.';
+  String get zrok_no_token_configured =>
+      'Token yapılandırılmamış. Ayarlamak için dokunun.';
 
   @override
   String get toast_zrok_token_saved => 'Kaydedilen token';
@@ -1015,7 +1038,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String log_share_title(Object arg1, Object arg2) {
-    return '$arg1 Log - $arg2';
+    return '$arg1 günlüğü - $arg2';
   }
 
   @override
@@ -1049,11 +1072,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get dialog_delete_recording_title => 'Kayıtları Sil';
+  String get dialog_delete_recording_title => 'Kaydı sil';
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return '$arg1\'i sil?';
+    return '$arg1 silinsin mi?\nBu işlem geri alınamaz.';
   }
 
   @override
@@ -1068,11 +1091,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get play_with_chooser => 'Oynayın .';
+  String get play_with_chooser => 'Şununla oynat';
 
   @override
   String setup_version_banner(Object arg1) {
-    return 'V$arg1\'ye güncellenmiş  Otomatik başlatmayı yeniden onaylayın, BYD onu her kurulumda siler';
+    return 'V$arg1\'ye güncellenmiş — Otomatik başlatmayı yeniden onaylayın, BYD onu her kurulumda siler';
   }
 
   @override
@@ -1084,7 +1107,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get camera_current_auto_label => 'Akım: Otomatik';
+  String get camera_current_auto_label => 'Geçerli: Otomatik';
 
   @override
   String get soh_estimation_active => 'Değerlendirme etkinliği';
@@ -1098,7 +1121,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Nominal referans — güvenilir SOH verisi bekleniyor';
 
   @override
-  String get soh_no_estimate_yet => 'Henüz bir tahmin yok  Veriler bekliyor';
+  String get soh_no_estimate_yet => 'Henüz bir tahmin yok — Veriler bekliyor';
 
   @override
   String recording_lib_selected_count(Object arg1) {
@@ -1109,7 +1132,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get video_player_playback_error => 'Çalışma hatası';
 
   @override
-  String get video_player_no_events => 'Hiçbir olay yok .';
+  String get video_player_no_events => 'Olay yok';
 
   @override
   String get daemon_configuration_required => 'Yapılandırma Gerekli';
@@ -1129,7 +1152,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get status_overlay_notif_text => 'Durum üstü aktif';
 
   @override
-  String get rail_dashboard => 'Tablo';
+  String get rail_dashboard => 'Panel';
 
   @override
   String get rail_live => 'Canlı';
@@ -1141,7 +1164,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rail_vehicle => 'Araç';
 
   @override
-  String get rail_trips => 'Seyahatler';
+  String get rail_trips => 'Yolculuklar';
 
   @override
   String get rail_location => 'Konum';
@@ -1195,7 +1218,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_subrail_overline => 'SETIMLER';
 
   @override
-  String get cd_settings_subrail => 'Yapılandırma alt demiryolu';
+  String get cd_settings_subrail => 'Ayarlar yan çubuğu';
 
   @override
   String get settings_privacy_title => 'Gizlilik & Veriler';
@@ -1227,7 +1250,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_about_support_share_message =>
-      'BYD için BladeWatch  açık kaynaklı gözetim & dashcam\'ı kontrol edin: https://bladewatch-5lc.pages.dev/';
+      'BYD için BladeWatch — açık kaynaklı gözetim & dashcam\'ı kontrol edin: https://bladewatch-5lc.pages.dev/';
 
   @override
   String get settings_about_support_share_chooser => 'Paylaşım Aşırı Sürüş';
@@ -1255,7 +1278,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_about_license_value =>
-      'MIT  açık kaynak. Tam metni görüntülemek için dokunun.';
+      'MIT — açık kaynak. Tam metni görüntülemek için dokunun.';
 
   @override
   String get settings_about_source_title => 'Kaynak kodu';
@@ -1304,13 +1327,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_theme_label => 'Tema';
 
   @override
-  String get settings_theme_auto => 'Otomatik (önderleme sistemi)';
+  String get settings_theme_auto => 'Otomatik (sistemi izle)';
 
   @override
-  String get settings_theme_light => 'Işık';
+  String get settings_theme_light => 'Açık';
 
   @override
-  String get settings_theme_dark => 'Karanlık';
+  String get settings_theme_dark => 'Koyu';
 
   @override
   String get settings_language_label => 'Dil';
@@ -1362,7 +1385,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get recordings_title => 'Kayıtlar';
 
   @override
-  String get recordings_segment_dashcam => 'Dashcam';
+  String get recordings_segment_dashcam => 'Araç kamerası';
 
   @override
   String get recordings_segment_surveillance => 'Gözetim';
@@ -1377,7 +1400,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String recordings_segment_dashcam_count(Object arg1) {
-    return 'Dashcam · $arg1';
+    return 'Araç kamerası · $arg1';
   }
 
   @override
@@ -1418,7 +1441,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Sağlık kayıtları ve cihazın sondajları.';
 
   @override
-  String get diagnostics_health_clear => 'Her şey açık .';
+  String get diagnostics_health_clear => 'Sorun yok';
 
   @override
   String get diagnostics_health_section => 'Sağlık';
@@ -1450,7 +1473,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get diagnostics_tunnel_state_online => 'Çevrimiçi';
 
   @override
-  String get diagnostics_tunnel_state_offline => 'İletişimden uzak';
+  String get diagnostics_tunnel_state_offline => 'Çevrimdışı';
 
   @override
   String get diagnostics_tunnel_state_connecting => 'Bağlantı';
@@ -1462,7 +1485,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get diagnostics_network_ethernet => 'Ethernet';
 
   @override
-  String get diagnostics_network_offline => 'İletişimden uzak';
+  String get diagnostics_network_offline => 'Çevrimdışı';
 
   @override
   String diagnostics_storage_used_line(Object arg1, Object arg2) {
@@ -1503,7 +1526,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Uygulama tercihleri, tema ve dil.';
 
   @override
-  String get settings_action_reset_data => 'Verileri yeniden ayarlayın...';
+  String get settings_action_reset_data => 'Verileri sıfırla…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -1523,7 +1546,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dashboard_subtitle_no_tunnel => 'Uzaktan erişim çevrimdışı';
 
   @override
-  String get dashboard_metric_recordings => 'Bugünün kayıtları .';
+  String get dashboard_metric_recordings => 'Bugünün kayıtları';
 
   @override
   String get dashboard_metric_storage => 'Kullanılan depolama';
@@ -1547,7 +1570,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dashboard_chip_recording_idle => 'Boşta';
 
   @override
-  String get dashboard_vehicle_tap_to_set => 'Yapılandırmaya dokun';
+  String get dashboard_vehicle_tap_to_set => 'Ayarlamak için dokunun';
 
   @override
   String dashboard_vehicle_summary(Object arg1, Object arg2) {
@@ -1574,7 +1597,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vehicle_dialog_save => 'Kaydet';
 
   @override
-  String get vehicle_dialog_reset => 'Otomatik tespit için yeniden ayarlayın';
+  String get vehicle_dialog_reset => 'Otomatik algılamaya sıfırla';
 
   @override
   String get vehicle_dialog_invalid_capacity =>
@@ -1611,67 +1634,67 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => 'Durum';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => 'Yakalama';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => 'Kalite';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => 'Depolama';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => 'Kayıt durumu';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => 'Mevcut durum';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => 'Bugünkü kayıtlar';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => 'Kayıt modu (ACC AÇIK)';
 
   @override
   String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+      'Sürüş sırasında kaydın ne zaman yapılacağını seçin.';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => 'Yok (varsayılan)';
 
   @override
   String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+      'Kayıt yok — gözetim çalışmaya devam eder';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => 'Sürekli';
 
   @override
   String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+      'Sürüş boyunca sürekli kaydet';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => 'Sürüş modu';
 
   @override
   String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+      'Yalnızca araç hareket hâlindeyken kaydet';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => 'Yakınlık koruması';
 
   @override
   String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+      'Hareket algılandığında kaydet';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => 'Kayıt sınırı';
 
   @override
   String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+      'Dosya başına en uzun süre. Kayıtlar bu aralıkta yeni dosyalara bölünür.';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1679,113 +1702,122 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => 'Kayıt kalitesi';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => 'Kayıt depolama';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => 'Depolama konumu';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => 'Dahili';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SD kart';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SD kart (yok)';
 
   @override
   String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+      'Depolama sınırı — dolduğunda en eskiler otomatik silinir';
+
+  @override
+  String get settings_recording_storage_usage_label => 'Depolama kullanımı';
+
+  @override
+  String get settings_recording_storage_files_label => 'Dosyalar';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 kullanıldı / $arg2 sınır';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 kayıt';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => 'Yol';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'SD kartta boş alan';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label =>
+      'Dahili boş alan';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => 'Harici sürücüyü biçimlendir';
 
   @override
   String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+      'SD karttaki veya USB sürücüdeki TÜM veriler kalıcı olarak silinir.';
 
   @override
   String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+      'Tekrar dokunun — TÜM veriler SİLİNECEK';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running =>
+      'Biçimlendiriliyor… lütfen bekleyin';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => 'SD kartı / USB biçimlendir';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive =>
+      'Çıkarılabilir sürücü bulunamadı';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return 'Biçimlendirme başarılı. Yeni yol: $arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => 'Veritabanı kataloğu';
 
   @override
   String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+      'Kayıt dizinini diskteki dosyalarla eşleştirir.';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => 'Eşitleniyor…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => 'Veritabanını eşitle';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return 'Eşitlendi: +$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => 'Eşitleme zaten sürüyor';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return 'Eşitleme başarısız: $arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => 'Değişiklikleri uygula';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => 'Kapat';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return '$arg1 başlatma/durdurma henüz desteklenmiyor';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => 'Yapılandır';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => 'Ortamı sıfırla';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -1811,16 +1843,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => 'Depolama ';
+  String get dashboard_metric_storage_chip_pending => 'Depolama —';
 
   @override
-  String get dashboard_tunnel_offline => 'İletişimden uzak';
+  String get dashboard_tunnel_offline => 'Çevrimdışı';
 
   @override
   String get dashboard_tunnel_online => 'Çevrimiçi';
 
   @override
-  String get dashboard_tunnel_connecting => 'Bağlantı...';
+  String get dashboard_tunnel_connecting => 'Bağlanıyor…';
 
   @override
   String get dashboard_trips_this_week => 'Bu Hafta';
@@ -1871,7 +1903,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dashboard_action_live => 'Canlı görüntü';
 
   @override
-  String get dashboard_action_live_subtitle => 'Açık kamera görüntüsü';
+  String get dashboard_action_live_subtitle => 'Kamera görünümünü aç';
 
   @override
   String get dashboard_action_recordings => 'Kayıtlar';
@@ -1941,15 +1973,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_theme_active_light_caption =>
-      'Işık teması her zaman açık.';
+      'Açık tema her zaman açıktır.';
 
   @override
   String get settings_theme_active_dark_caption =>
-      'Karanlık konu her zaman açık.';
+      'Koyu tema her zaman açıktır.';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '$arg1\'den $arg2 dillerinde mevcut';
+    return '$arg2 dilden $arg1 tanesi mevcut';
   }
 
   @override
@@ -2021,10 +2053,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_camera_value_probing => 'Araştıran...';
+  String get diagnostics_camera_value_probing => 'Araştırılıyor…';
 
   @override
-  String get diagnostics_camera_value_offline => 'İletişimden uzak';
+  String get diagnostics_camera_value_offline => 'Çevrimdışı';
 
   @override
   String diagnostics_battery_value_soh(Object arg1) {
@@ -2041,7 +2073,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dashboard_insight_welcome =>
-      'Hoşgeldiniz  BladeWatch şimdi ikinci göz çiftiniz.';
+      'Hoşgeldiniz — BladeWatch şimdi ikinci göz çiftiniz.';
 
   @override
   String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
@@ -2090,7 +2122,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 min';
+    return '$arg1 sa $arg2 dk';
   }
 
   @override
@@ -2149,10 +2181,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get vehicle_tab_trunk => 'Çanta';
+  String get vehicle_tab_trunk => 'Bagaj';
 
   @override
-  String get vehicle_tab_climate => 'İklim';
+  String get vehicle_tab_climate => 'Klima';
 
   @override
   String get vehicle_tab_seats => 'Koltuklar';
@@ -2170,7 +2202,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vehicle_control_charging_tab => 'Şarj';
 
   @override
-  String get vehicle_locked => 'Kilitli .';
+  String get vehicle_locked => 'Kilitli';
 
   @override
   String get vehicle_unlocked => 'Kilitlenmemiş';
@@ -2189,7 +2221,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vehicle_open_trunk => 'Bagajı Aç';
 
   @override
-  String get vehicle_close_trunk => 'Kapalı Çanta';
+  String get vehicle_close_trunk => 'Bagajı Kapat';
 
   @override
   String get vehicle_trunk_info_open =>
@@ -2199,7 +2231,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vehicle_ac_on => 'AC Açık';
 
   @override
-  String get vehicle_ac_off => 'AC Açık';
+  String get vehicle_ac_off => 'AC Kapalı';
 
   @override
   String get vehicle_max_cooling_on => 'Maks Soğutma: AÇIK';
@@ -2285,10 +2317,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vehicle_window_open_all => 'Tümünü Aç';
 
   @override
-  String get vehicle_sunroof => 'Güneş çatısı';
+  String get vehicle_sunroof => 'Açılır tavan';
 
   @override
-  String get vehicle_sunshade => 'Güneş gölgesi';
+  String get vehicle_sunshade => 'Güneşlik';
 
   @override
   String get vehicle_btn_drl_title => 'Gündüz çalışan ışıklar';
@@ -2313,22 +2345,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vehicle_charge_limit_range => 'En az 50%, en fazla 100%';
 
   @override
-  String get vehicle_tyre_no_signal => 'İNSANLAR yok .';
+  String get vehicle_tyre_no_signal => 'SİNYAL YOK';
 
   @override
-  String get vehicle_tyre_slow_leak => 'SLOW LEAK';
+  String get vehicle_tyre_slow_leak => 'YAVAŞ SIZINTI';
 
   @override
-  String get vehicle_tyre_fast_leak => 'Hızlı sızıntı';
+  String get vehicle_tyre_fast_leak => 'HIZLI SIZINTI';
 
   @override
-  String get vehicle_tyre_low => 'Düşük';
+  String get vehicle_tyre_low => 'DÜŞÜK';
 
   @override
-  String get vehicle_tyre_high => 'Yüksek';
+  String get vehicle_tyre_high => 'YÜKSEK';
 
   @override
-  String get vehicle_tyre_ok => 'Tamam';
+  String get vehicle_tyre_ok => 'NORMAL';
 
   @override
   String get vehicle_tyre_check_pressure => 'Basıncı kontrol et';
@@ -2485,13 +2517,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get trips_tab_storage => 'Depolama';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 gün';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 gün';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 gün';
 
   @override
   String trips_load_error(Object message) {
@@ -2505,13 +2537,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get trips_period_summary_title => 'Dönem Özeti';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => 'Yolculuk';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => 'Saat';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => 'Verimlilik';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2521,7 +2553,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return 'Puan: $score';
   }
 
   @override
@@ -2529,7 +2561,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return 'Genel: $score / 100';
   }
 
   @override
@@ -2537,7 +2569,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD tahmini: $km km';
   }
 
   @override
@@ -2547,46 +2579,46 @@ class AppLocalizationsTr extends AppLocalizations {
   String get trips_dna_title => 'Sürüş DNA\'sı';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => 'Öngörü';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => 'Yumuşaklık';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => 'Hız disiplini';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => 'Verimlilik';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => 'Tutarlılık';
 
   @override
   String get trips_storage_title => 'Yolculuk Depolama';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => 'Yolculuk analizi';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => 'Elektrik tarifesi';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => 'Mesafe birimi';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => 'Depolama konumu';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => 'Dahili';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SD kart';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SD kart (yok)';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => 'Değişiklikleri uygula';
 
   @override
   String trips_storage_usage_line(
@@ -2595,7 +2627,7 @@ class AppLocalizationsTr extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '$used $unit kullanıldı / $limit MB sınır · $count yolculuk';
   }
 
   @override
@@ -2603,13 +2635,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+      'Yolculuk dizinini diskteki telemetri dosyalarıyla eşleştirir.';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => 'Veritabanını eşitle';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => 'Eşitleniyor…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2623,31 +2655,31 @@ class AppLocalizationsTr extends AppLocalizations {
   String get trips_detail_summary_title => 'Yolculuk Özeti';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => 'Mesafe';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => 'Süre';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => 'Enerji';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => 'Ort. hız';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => 'Maks. hız';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => 'Şarj';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => 'Maliyet';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => 'Dış sıcaklık';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => 'Yükselti kazancı';
 
   @override
   String get trips_detail_scores_title => 'Sürüş Puanları';
@@ -2660,7 +2692,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return '$count GPS noktası kaydedildi';
   }
 
   @override
@@ -2816,6 +2848,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => 'Hareket bölgesi';
+
+  @override
+  String get surveillance_roi_description =>
+      'Nokta eklemek için dokunun, taşımak için sürükleyin. En az üç, en fazla sekiz nokta.';
+
+  @override
+  String get surveillance_roi_enable => 'Algılamayı bu bölgeyle sınırla';
+
+  @override
+  String get action_undo => 'Geri al';
+
+  @override
   String get surveillance_detection_title => 'Algılama ayarları';
 
   @override
@@ -2888,8 +2933,14 @@ class AppLocalizationsTr extends AppLocalizations {
       'Depolama sınırı — sınıra ulaşınca en eskisini otomatik siler';
 
   @override
+  String get surveillance_storage_usage_label => 'Depolama kullanımı';
+
+  @override
+  String get surveillance_storage_files_label => 'Dosyalar';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 kullanıldı / $arg2 sınır';
   }
 
   @override

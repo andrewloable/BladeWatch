@@ -376,6 +376,23 @@ public class CameraDaemon {
         // disrupt the BYD dashcam. Camera ID is auto-detected in GpuSurveillancePipeline.init()
         // scanCameras();
 
+        // BladeWatch-078u: move the secret store off the legacy sdcardfs path
+        // before anything reads it. Only this process can — the app UID cannot
+        // create files in /data/local/tmp — and a device that only ever READS
+        // would otherwise leave the plaintext copy on sdcardfs, where any
+        // process in sdcard_rw can read it. Deliberately before the servers
+        // start, so the first auth read already sees the owner-only file.
+        try {
+            if (new net.bladewatch.app.config.SecretConfigStore().migrateFromLegacyIfNeeded()) {
+                logT("SecretConfigStore migrated off the legacy sdcardfs path");
+            }
+        } catch (Exception e) {
+            // Never fatal: a failed migration leaves the legacy file in place
+            // and the read fallback still finds it. NOTE no secret value is
+            // logged here, only the fact of failure.
+            log("SecretConfigStore migration failed: " + e.getMessage());
+        }
+
         // Generate IPC shared-secret before starting servers
         IpcTokenManager.generate();
         logT("IpcTokenManager.generate done");

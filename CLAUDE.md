@@ -20,7 +20,13 @@ Do **not** run `git add`, `git commit`, or `git push` automatically. All commits
 
 ## Device Connection
 
-The test device (BYD head unit) is at **$CAR_IP:5555** over ADB TCP.
+The test device (BYD head unit) is reached over ADB TCP at **`$CAR_IP:5555`**.
+Export `CAR_IP` with your own head unit's LAN address before running any of the
+commands below — it is deliberately not hardcoded in this repo:
+
+```bash
+export CAR_IP=<your head unit's LAN IP>
+```
 
 ```bash
 # Connect to device

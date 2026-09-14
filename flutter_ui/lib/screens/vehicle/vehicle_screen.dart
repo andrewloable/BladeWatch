@@ -6,6 +6,7 @@ import '../../gen/l10n/app_localizations.dart';
 import 'vehicle_controller.dart';
 import 'vehicle_hero.dart';
 import 'vehicle_models.dart';
+import '../../widgets/bw_choice_chip.dart';
 
 /// Ground truth: `VehicleController.kt` (root layout/status/appearance/
 /// polling), `VehiclePanels.kt` (Climate/Seats/Windows), `TyreOverlay.kt`
@@ -272,7 +273,7 @@ class _BottomPanel extends StatelessWidget {
                 for (final t in availableTabs)
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
+                    child: BwChoiceChip(
                       key: ValueKey('vehicle.tab.${t.name}'),
                       label: Text(_tabLabel(l10n, t)),
                       selected: t == effectiveTab,

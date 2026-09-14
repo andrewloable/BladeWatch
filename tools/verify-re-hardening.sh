@@ -9,7 +9,7 @@
 #
 #   Defaults:
 #     APK_PATH  = app/build/outputs/apk/release/net.bladewatch.app-*.apk
-#     ADB_TARGET = $CAR_IP:5555
+#     ADB_TARGET = from $ADB_TARGET env var (no default)
 #
 # CHECKS:
 #   1. libsurveillance.so exports ONLY JNI entry points (no internal symbols)
@@ -22,7 +22,7 @@
 
 set -euo pipefail
 
-DEVICE="${2:-$CAR_IP:5555}"
+DEVICE="${2:-${ADB_TARGET:?pass the head unit as arg 2 or set ADB_TARGET, e.g. 10.0.0.5:5555}}"
 ADB="adb -s $DEVICE"
 
 # Find APK

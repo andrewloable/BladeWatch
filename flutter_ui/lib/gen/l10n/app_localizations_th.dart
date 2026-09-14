@@ -52,7 +52,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get cd_qr => 'QR';
 
   @override
-  String get cd_qr_code => 'QR Code';
+  String get cd_qr_code => 'คิวอาร์โค้ด';
 
   @override
   String get cd_show_hide_token => 'แสดง/ซ่อน Token';
@@ -148,7 +148,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get daemon_card_subprocesses => 'กระบวนการ';
 
   @override
-  String get logs_panel_title => 'Logs';
+  String get logs_panel_title => 'บันทึก';
 
   @override
   String get url_connecting => 'กำลังเชื่อมต่อ…';
@@ -302,6 +302,10 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved =>
+      'เปลี่ยนภาษาแล้ว แต่บันทึกไม่ได้ — จะกลับค่าเดิมเมื่อเปิดแอปใหม่';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
     return '$arg1 · อัตโนมัติ';
   }
@@ -322,7 +326,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get adb_output_ready => '\$ พร้อมรับคำสั่ง…';
 
   @override
-  String get adb_console_hero_title => 'ADB Console';
+  String get adb_console_hero_title => 'คอนโซล ADB';
 
   @override
   String get adb_console_hero_subtitle => 'รันคำสั่ง Shell บนอุปกรณ์';
@@ -342,7 +346,8 @@ class AppLocalizationsTh extends AppLocalizations {
       'ตรวจสอบหน้าจอเครื่องเล่นกลางว่ามีข้อความ “อนุญาตการแก้ไขข้อบกพร่องผ่าน USB หรือไม่” แล้วกดยอมรับ จากนั้นลองใหม่อีกครั้ง';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting =>
+      'กำลังเชื่อมต่อกับตัวตรวจสอบประสิทธิภาพ…';
 
   @override
   String get performance_hero_title => 'ประสิทธิภาพของระบบ';
@@ -351,16 +356,16 @@ class AppLocalizationsTh extends AppLocalizations {
   String get performance_cpu_title => 'ซีพียู';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => 'การใช้งานของระบบ';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => 'การใช้งานของแอป';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => 'ความถี่';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => 'อุณหภูมิ';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -369,16 +374,16 @@ class AppLocalizationsTh extends AppLocalizations {
   String get performance_memory_title => 'หน่วยความจำ';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => 'การใช้งาน';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => 'ทั้งหมด';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => 'ใช้ไป';
 
   @override
-  String get performance_memory_app => 'App';
+  String get performance_memory_app => 'แอป';
 
   @override
   String get performance_gpu_title => 'จีพียู';
@@ -387,16 +392,16 @@ class AppLocalizationsTh extends AppLocalizations {
   String get performance_app_process_title => 'โปรเซสของแอป';
 
   @override
-  String get performance_threads_label => 'Threads';
+  String get performance_threads_label => 'เธรด';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'รอบ GC';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => 'FD ที่เปิดอยู่';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => 'รีเฟรชทุก 3 วินาที';
 
   @override
   String get webview_loading => 'กำลังโหลด…';
@@ -564,16 +569,16 @@ class AppLocalizationsTh extends AppLocalizations {
   String get cd_clear_date_filter => 'แสดงทุกวัน';
 
   @override
-  String get recording_lib_section_morning => 'ตอนเช้า';
+  String get recording_lib_section_morning => 'เช้า';
 
   @override
-  String get recording_lib_section_afternoon => 'ตอนบ่าย';
+  String get recording_lib_section_afternoon => 'บ่าย';
 
   @override
-  String get recording_lib_section_evening => 'ตอนเย็น';
+  String get recording_lib_section_evening => 'เย็น';
 
   @override
-  String get recording_lib_section_night => 'ตอนกลางคืน';
+  String get recording_lib_section_night => 'กลางคืน';
 
   @override
   String get cd_previous_day => 'วันก่อนหน้า';
@@ -595,6 +600,18 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get player_time_separator => ' / ';
+
+  @override
+  String get daemon_name_camera => 'บริการกล้อง';
+
+  @override
+  String get daemon_name_surveillance => 'บริการเฝ้าระวัง';
+
+  @override
+  String get daemon_name_acc => 'การเฝ้าระวัง ACC';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
 
   @override
   String get daemons_hero_title => 'ระบบเบื้องหลัง';
@@ -633,6 +650,13 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get battery_health_last_updated => 'อัปเดตล่าสุด';
+
+  @override
+  String get battery_health_unavailable => 'ไม่พร้อมใช้งาน';
+
+  @override
+  String get battery_health_unavailable_desc =>
+      'การประเมินสุขภาพแบตเตอรี่ไม่พร้อมใช้งานในรถคันนี้';
 
   @override
   String get battery_health_reset => 'รีเซ็ตค่า SOH';
@@ -853,7 +877,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String dialog_traffic_status_title(Object arg1) {
-    return 'Traffic Monitor $arg1';
+    return 'ตัวตรวจสอบการจราจร $arg1';
   }
 
   @override
@@ -942,7 +966,7 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok Tunnel Token';
+  String get dialog_zrok_token_title => 'โทเค็นอุโมงค์ Zrok';
 
   @override
   String get dialog_zrok_token_message =>
@@ -1010,7 +1034,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String log_share_title(Object arg1, Object arg2) {
-    return '$arg1 Log - $arg2';
+    return 'บันทึก $arg1 - $arg2';
   }
 
   @override
@@ -1020,7 +1044,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String log_header_title(Object arg1) {
-    return '=== $arg1 Log ===';
+    return '=== บันทึก $arg1 ===';
   }
 
   @override
@@ -1205,7 +1229,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get settings_about_version_label => 'เวอร์ชัน';
 
   @override
-  String get settings_about_package_label => 'Build';
+  String get settings_about_package_label => 'บิลด์';
 
   @override
   String get settings_about_support_section =>
@@ -1390,7 +1414,7 @@ class AppLocalizationsTh extends AppLocalizations {
       'กดเลือกวิดีโอทางซ้ายเพื่อเล่นได้เลย';
 
   @override
-  String get diagnostics_section_adb_console => 'ADB Console';
+  String get diagnostics_section_adb_console => 'คอนโซล ADB';
 
   @override
   String get diagnostics_section_traffic => 'Traffic Monitor';
@@ -1437,7 +1461,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String diagnostics_network_tunnel_label(Object arg1) {
-    return 'Tunnel · $arg1';
+    return 'อุโมงค์ · $arg1';
   }
 
   @override
@@ -1604,67 +1628,67 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_tab_status => 'Status';
+  String get settings_recording_tab_status => 'สถานะ';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => 'การบันทึกภาพ';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => 'คุณภาพ';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => 'ที่จัดเก็บ';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => 'สถานะการบันทึก';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => 'สถานะปัจจุบัน';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => 'การบันทึกวันนี้';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => 'โหมดบันทึก (ACC เปิด)';
 
   @override
   String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+      'เลือกว่าจะให้กล้องบันทึกเมื่อใดขณะขับขี่';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => 'ไม่บันทึก (ค่าเริ่มต้น)';
 
   @override
   String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+      'ไม่บันทึก — ระบบเฝ้าระวังยังทำงานอยู่';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => 'ต่อเนื่อง';
 
   @override
   String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+      'บันทึกตลอดเวลาขณะขับขี่';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => 'โหมดขับขี่';
 
   @override
   String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+      'บันทึกเฉพาะเมื่อรถเคลื่อนที่';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => 'การเฝ้าระวังระยะใกล้';
 
   @override
   String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+      'บันทึกเมื่อตรวจพบการเคลื่อนไหว';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => 'ขีดจำกัดการบันทึก';
 
   @override
   String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+      'ความยาวสูงสุดต่อไฟล์ การบันทึกจะแยกเป็นไฟล์ใหม่ตามช่วงเวลานี้';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1672,113 +1696,120 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => 'คุณภาพการบันทึก';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => 'ที่จัดเก็บการบันทึก';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => 'ตำแหน่งจัดเก็บ';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => 'ที่จัดเก็บภายใน';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'การ์ด SD';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'การ์ด SD (ไม่มี)';
 
   @override
   String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+      'ขีดจำกัดพื้นที่ — ลบรายการเก่าที่สุดอัตโนมัติเมื่อถึงขีดจำกัด';
+
+  @override
+  String get settings_recording_storage_usage_label => 'การใช้พื้นที่จัดเก็บ';
+
+  @override
+  String get settings_recording_storage_files_label => 'ไฟล์';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return 'ใช้ $arg1 / จำกัด $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 รายการบันทึก';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => 'เส้นทาง';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'พื้นที่ว่างการ์ด SD';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label =>
+      'พื้นที่ว่างภายใน';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => 'ฟอร์แมตไดรฟ์ภายนอก';
 
   @override
   String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+      'ลบข้อมูลทั้งหมดในการ์ด SD หรือไดรฟ์ USB อย่างถาวร';
 
   @override
   String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+      'แตะอีกครั้ง — ข้อมูลทั้งหมดจะถูกลบ';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running => 'กำลังฟอร์แมต… โปรดรอ';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => 'ฟอร์แมตการ์ด SD / USB';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive => 'ไม่พบไดรฟ์แบบถอดได้';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return 'ฟอร์แมตสำเร็จ เส้นทางใหม่: $arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => 'แคตตาล็อกฐานข้อมูล';
 
   @override
   String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+      'ปรับรายการบันทึกให้ตรงกับไฟล์บนดิสก์';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => 'กำลังซิงค์…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => 'ซิงค์ฐานข้อมูล';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return 'ซิงค์แล้ว: +$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress => 'กำลังซิงค์อยู่แล้ว';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return 'ซิงค์ล้มเหลว: $arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => 'ใช้การเปลี่ยนแปลง';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => 'ปิด';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return 'ยังไม่รองรับการเริ่ม/หยุด $arg1';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => 'กำหนดค่า';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => 'รีเซ็ตสภาพแวดล้อม';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -2178,7 +2209,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get vehicle_open_trunk => 'เปิดฝาท้าย';
 
   @override
-  String get vehicle_close_trunk => 'ปิดท้ายรถ';
+  String get vehicle_close_trunk => 'ปิดฝากระโปรงท้าย';
 
   @override
   String get vehicle_trunk_info_open => 'การเปิดฝาท้ายจะปลดล็อกรถก่อน';
@@ -2472,13 +2503,13 @@ class AppLocalizationsTh extends AppLocalizations {
   String get trips_tab_storage => 'พื้นที่จัดเก็บ';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 วัน';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 วัน';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 วัน';
 
   @override
   String trips_load_error(Object message) {
@@ -2492,13 +2523,13 @@ class AppLocalizationsTh extends AppLocalizations {
   String get trips_period_summary_title => 'สรุปช่วงเวลา';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => 'ทริป';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => 'ชั่วโมง';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => 'ประสิทธิภาพ';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2508,7 +2539,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String trips_score_label(Object score) {
-    return 'Score: $score';
+    return 'คะแนน: $score';
   }
 
   @override
@@ -2516,7 +2547,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return 'รวม: $score / 100';
   }
 
   @override
@@ -2524,7 +2555,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'ค่าประมาณ BYD: $km กม.';
   }
 
   @override
@@ -2534,46 +2565,46 @@ class AppLocalizationsTh extends AppLocalizations {
   String get trips_dna_title => 'DNA การขับขี่';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => 'การคาดการณ์';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => 'ความนุ่มนวล';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => 'วินัยความเร็ว';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => 'ประสิทธิภาพ';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => 'ความสม่ำเสมอ';
 
   @override
   String get trips_storage_title => 'พื้นที่จัดเก็บการเดินทาง';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => 'การวิเคราะห์ทริป';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => 'อัตราค่าไฟ';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => 'หน่วยระยะทาง';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => 'ตำแหน่งจัดเก็บ';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => 'ที่จัดเก็บภายใน';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'การ์ด SD';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'การ์ด SD (ไม่มี)';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => 'ใช้การเปลี่ยนแปลง';
 
   @override
   String trips_storage_usage_line(
@@ -2582,7 +2613,7 @@ class AppLocalizationsTh extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return 'ใช้ $used $unit / จำกัด $limit MB · $count ทริป';
   }
 
   @override
@@ -2590,13 +2621,13 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+      'ปรับรายการทริปให้ตรงกับไฟล์เทเลเมทรีบนดิสก์';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => 'ซิงค์ฐานข้อมูล';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => 'กำลังซิงค์…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2610,31 +2641,31 @@ class AppLocalizationsTh extends AppLocalizations {
   String get trips_detail_summary_title => 'สรุปการเดินทาง';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => 'ระยะทาง';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => 'ระยะเวลา';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => 'พลังงาน';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => 'ความเร็วเฉลี่ย';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => 'ความเร็วสูงสุด';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => 'ระดับแบตเตอรี่';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => 'ค่าใช้จ่าย';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => 'อุณหภูมิภายนอก';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => 'ความสูงที่ไต่';
 
   @override
   String get trips_detail_scores_title => 'คะแนนการขับขี่';
@@ -2647,7 +2678,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return 'บันทึกจุด GPS $count จุด';
   }
 
   @override
@@ -2803,6 +2834,19 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => 'โซนตรวจจับ';
+
+  @override
+  String get surveillance_roi_description =>
+      'แตะเพื่อเพิ่มจุด ลากเพื่อย้าย ต้องมีอย่างน้อยสามจุด สูงสุดแปดจุด';
+
+  @override
+  String get surveillance_roi_enable => 'จำกัดการตรวจจับไว้ในโซนนี้';
+
+  @override
+  String get action_undo => 'เลิกทำ';
+
+  @override
   String get surveillance_detection_title => 'การตั้งค่าการตรวจจับ';
 
   @override
@@ -2876,8 +2920,14 @@ class AppLocalizationsTh extends AppLocalizations {
       'ขีดจำกัดที่เก็บข้อมูล — ลบไฟล์เก่าสุดอัตโนมัติเมื่อถึงขีดจำกัด';
 
   @override
+  String get surveillance_storage_usage_label => 'การใช้พื้นที่จัดเก็บ';
+
+  @override
+  String get surveillance_storage_files_label => 'ไฟล์';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return 'ใช้ $arg1 / จำกัด $arg2';
   }
 
   @override

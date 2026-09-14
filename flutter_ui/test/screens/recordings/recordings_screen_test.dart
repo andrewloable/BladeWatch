@@ -542,7 +542,56 @@ void main() {
     expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsNothing);
   });
 
-  testWidgets('tapping a card opens the player with the visible list as the playlist', (tester) async {
+  testWidgets('tapping a card plays it in the detail pane, keeping the list on screen', (tester) async {
+    rpc.stubJson('RecordingsService', 'ListRecordings', {
+      'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
+    });
+    stubStats(total: 1, recordings: 1);
+    // pumpScreen is 1400 wide, i.e. above the master-detail breakpoint.
+    await pumpScreen(tester);
+
+    // Nothing selected yet: native's placeholder pane.
+    expect(find.byKey(const ValueKey('recordings.detail.empty')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
+    await settle(tester);
+
+    expect(find.byType(RecordingsPlayerScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('recordings.detail.empty')), findsNothing);
+    // The point of master-detail: the list did NOT go away. A pushed
+    // full-screen player would have covered the header.
+    expect(find.text('Recordings'), findsWidgets);
+    expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsOneWidget);
+  });
+
+  testWidgets('below the breakpoint tapping a card pushes the full-screen player instead', (tester) async {
+    rpc.stubJson('RecordingsService', 'ListRecordings', {
+      'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
+    });
+    stubStats(total: 1, recordings: 1);
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(wrap(buildScreen()));
+    await settle(tester);
+
+    // No pane exists at this width.
+    expect(find.byKey(const ValueKey('recordings.detail.empty')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
+    // pumpAndSettle, not the local settle helper: this path pushes a route, and
+    // the transition needs to finish before the old screen is really gone.
+    await tester.pumpAndSettle();
+
+    // The pushed route covers the list entirely.
+    expect(find.byType(RecordingsPlayerScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsNothing);
+  });
+
+  testWidgets('closing the detail pane returns it to the placeholder', (tester) async {
     rpc.stubJson('RecordingsService', 'ListRecordings', {
       'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
     });
@@ -551,8 +600,41 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
     await settle(tester);
-
     expect(find.byType(RecordingsPlayerScreen), findsOneWidget);
+
+    // In the pane the player's back control clears the selection rather than
+    // popping a route — there is no route of its own to pop here.
+    await tester.tap(find.byKey(const ValueKey('recordings.player.back')));
+    await settle(tester);
+
+    expect(find.byType(RecordingsPlayerScreen), findsNothing);
+    expect(find.byKey(const ValueKey('recordings.detail.empty')), findsOneWidget);
+    // The list is untouched by closing the pane.
+    expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsOneWidget);
+  });
+
+  testWidgets('the card being played is outlined in the list', (tester) async {
+    rpc.stubJson('RecordingsService', 'ListRecordings', {
+      'recordings': [
+        _entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
+        _entry(filename: 'cam_b.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
+      ],
+    });
+    stubStats(total: 2, recordings: 2);
+    await pumpScreen(tester);
+
+    await tester.tap(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
+    await settle(tester);
+
+    // The ValueKey is on the _RecordingCard widget; the Card it builds is a
+    // DESCENDANT of it, not an ancestor.
+    Card cardFor(String name) => tester.widget<Card>(
+          find.descendant(of: find.byKey(ValueKey('recordings.card.$name')), matching: find.byType(Card)).first,
+        );
+    // The selected card gets an outline; the other keeps the default shape, so
+    // the list and the pane stay visually connected.
+    expect(cardFor('cam_a.mp4').shape, isA<RoundedRectangleBorder>());
+    expect(cardFor('cam_b.mp4').shape, isNull);
   });
 
   testWidgets('section headers cover every time-of-day bucket', (tester) async {

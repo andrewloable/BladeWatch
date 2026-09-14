@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../../widgets/osm_tile_layer.dart';
 
 import '../../gen/l10n/app_localizations.dart';
 import 'trip_detail_controller.dart';
+import 'trip_route.dart';
 import 'trips_models.dart';
 
-/// Ground truth: `TripDetailController.kt` (457 LOC). Native's route map
-/// (OSMDroid) is not ported here — `flutter_map` is BladeWatch-yz1e.6's own
-/// dependency to introduce (its task title: "Port Location screen to
-/// Flutter with flutter_map"); adding map tile rendering ad hoc in this
-/// task risked duplicating/conflicting with that dedicated task's design.
-/// The route data itself is still fetched and shown (GPS point count, or
-/// the same "no route data" message natively shown below 2 points) rather
-/// than silently dropped — see this task's closing notes for yz1e.6 to pick
-/// up: retrofit an actual map into this card.
+/// Ground truth: `TripDetailController.kt` (457 LOC), including its route map
+/// — see [_RouteCard]. The map was deferred when this screen was first ported
+/// (flutter_map was BladeWatch-yz1e.6's dependency to introduce) and retrofitted
+/// in BladeWatch-fj8c once that had landed, reusing the same tile source the
+/// Location screen uses rather than a second one.
 class TripDetailScreen extends StatefulWidget {
   final TripDetailController controller;
   final int tripId;
@@ -98,6 +99,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 }
 
+/// The trip's route drawn on a map. Ground truth: `TripDetailController.kt`'s
+/// `renderRoute()` (line 221) and the map card it builds (line 180) — same
+/// MAPNIK tiles, same accent-coloured polyline, same accent start dot and
+/// error-coloured end dot, same "fewer than 2 GPS points shows the message and
+/// no map" threshold, same padded fit to the route's bounding box.
+///
+/// Native's map is also pannable inside its ScrollView (it calls
+/// `requestDisallowInterceptTouchEvent` on touch); `flutter_map` handles that
+/// gesture arena itself, so no equivalent is needed here.
 class _RouteCard extends StatelessWidget {
   final List<TelemetryPoint> telemetry;
   const _RouteCard({required this.telemetry});
@@ -106,23 +116,95 @@ class _RouteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final gpsPoints = telemetry.where((t) => t.hasGps).length;
+    final points = tripRoutePoints(telemetry);
 
     return Card(
       key: const ValueKey('tripDetail.routeCard'),
       color: theme.colorScheme.surfaceContainer,
       elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: Text(
-            gpsPoints >= 2 ? l10n.trips_detail_route_points(gpsPoints) : l10n.trip_no_route_data,
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-          ),
-        ),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        height: 260,
+        // Native hides the MapView entirely below 2 points rather than showing
+        // an empty world map, and says so in words.
+        child: points.length < 2
+            ? Center(
+                key: const ValueKey('tripDetail.route.empty'),
+                child: Text(
+                  l10n.trip_no_route_data,
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              )
+            : _RouteMap(points: points),
       ),
     );
   }
+}
+
+class _RouteMap extends StatelessWidget {
+  final List<LatLng> points;
+  const _RouteMap({required this.points});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final night = theme.brightness == Brightness.dark;
+
+    return FlutterMap(
+      key: const ValueKey('tripDetail.route.map'),
+      options: MapOptions(
+        // Fitting the CAMERA to the route's bounds is what makes the trip
+        // visible at all; native does the same with zoomToBoundingBox, and the
+        // padding is its increaseByScale(1.4f) equivalent.
+        initialCameraFit: CameraFit.bounds(
+          bounds: tripRouteBounds(points),
+          padding: const EdgeInsets.all(28),
+        ),
+      ),
+      children: [
+        bwTileLayerFor(night: night),
+        PolylineLayer(
+          polylines: [
+            Polyline(points: points, strokeWidth: 4, color: theme.colorScheme.primary),
+          ],
+        ),
+        MarkerLayer(
+          markers: [
+            Marker(
+              point: points.first,
+              width: 18,
+              height: 18,
+              child: _RouteDot(color: theme.colorScheme.primary),
+            ),
+            Marker(
+              point: points.last,
+              width: 18,
+              height: 18,
+              child: _RouteDot(color: theme.colorScheme.error),
+            ),
+          ],
+        ),
+        const SimpleAttributionWidget(source: Text('© OpenStreetMap contributors')),
+      ],
+    );
+  }
+}
+
+/// Native draws these as a filled circle with a white ring
+/// (`TripDetailController.dotMarker`), which is what keeps an accent-coloured
+/// dot visible against an accent-coloured polyline.
+class _RouteDot extends StatelessWidget {
+  final Color color;
+  const _RouteDot({required this.color});
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 2),
+    ),
+  );
 }
 
 class _SummaryCard extends StatelessWidget {

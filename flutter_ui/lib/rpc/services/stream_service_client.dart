@@ -14,49 +14,49 @@ class StreamServiceClient {
         'StreamService',
         'Enable',
         request,
-        (json) => EnableStreamResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => EnableStreamResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<DisableStreamResponse> disable(DisableStreamRequest request) => _transport.call(
         'StreamService',
         'Disable',
         request,
-        (json) => DisableStreamResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => DisableStreamResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetStreamStatusResponse> getStatus(GetStreamStatusRequest request) => _transport.call(
         'StreamService',
         'GetStatus',
         request,
-        (json) => GetStreamStatusResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetStreamStatusResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetStreamQualityResponse> getQuality(GetStreamQualityRequest request) => _transport.call(
         'StreamService',
         'GetQuality',
         request,
-        (json) => GetStreamQualityResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetStreamQualityResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SetStreamQualityResponse> setQuality(SetStreamQualityRequest request) => _transport.call(
         'StreamService',
         'SetQuality',
         request,
-        (json) => SetStreamQualityResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SetStreamQualityResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SetViewModeResponse> setViewMode(SetViewModeRequest request) => _transport.call(
         'StreamService',
         'SetViewMode',
         request,
-        (json) => SetViewModeResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SetViewModeResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetViewModeResponse> getViewMode(GetViewModeRequest request) => _transport.call(
         'StreamService',
         'GetViewMode',
         request,
-        (json) => GetViewModeResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetViewModeResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
 }

@@ -4,12 +4,14 @@ import '../../gen/l10n/app_localizations.dart';
 import '../../platform/config_channel.dart';
 import '../../platform/daemon_channel.dart';
 import '../../platform/prefs_channel.dart';
+import '../../platform/public_config_channel.dart';
 import '../../rpc/services/recordings_service_client.dart';
 import '../../rpc/services/safe_locations_service_client.dart';
 import '../../rpc/services/settings_service_client.dart';
 import '../../rpc/services/storage_service_client.dart';
 import '../../rpc/services/surveillance_service_client.dart';
 import '../../rpc/services/system_service_client.dart';
+import '../../shell/locale_controller.dart';
 import '../../shell/shell_controller.dart';
 import '../surveillance/surveillance_controller.dart';
 import '../surveillance/surveillance_screen.dart';
@@ -32,6 +34,11 @@ import 'settings_recording_screen.dart';
 class SettingsHubDependencies {
   final PrefsChannel prefs;
   final ShellController shellController;
+
+  /// Owned by the app root, not by this screen: `MaterialApp.themeMode` reads
+  /// it, so a per-section instance created here could never drive the theme
+  /// (BladeWatch-imh6.7).
+  final SettingsAppearanceController appearanceController;
   final SystemServiceClient systemService;
   final RecordingsServiceClient recordingsService;
   final SettingsServiceClient settingsService;
@@ -41,12 +48,22 @@ class SettingsHubDependencies {
   final SafeLocationsServiceClient safeLocationsService;
   final DaemonChannel daemonChannel;
   final ConfigChannel configChannel;
+
+  /// BladeWatch-hygs: the daemon's PUBLIC config store, which backs the
+  /// Status-overlay and Privacy logging switches. Distinct from
+  /// [configChannel], which is the SECRET store.
+  final PublicConfigChannel publicConfigChannel;
   final Future<bool> Function(DaemonKind kind, bool enabled)? setDaemonEnabled;
   final VoidCallback onOpenLanguagePicker;
+
+  /// Lets the Appearance pane show the CURRENT language on its row, as native
+  /// does, instead of a bare "Display language >".
+  final LocaleController localeController;
 
   const SettingsHubDependencies({
     required this.prefs,
     required this.shellController,
+    required this.appearanceController,
     required this.systemService,
     required this.recordingsService,
     required this.settingsService,
@@ -56,10 +73,18 @@ class SettingsHubDependencies {
     required this.safeLocationsService,
     required this.daemonChannel,
     required this.configChannel,
+    required this.publicConfigChannel,
     this.setDaemonEnabled,
     required this.onOpenLanguagePicker,
+    required this.localeController,
   });
 }
+
+// The two UnifiedConfigManager sections the daemon's config_get_section /
+// config_put allowlist accepts (TcpCommandServer.PUBLIC_CONFIG_SECTIONS). Any
+// other name is refused there, so these strings must match exactly.
+const String _statusOverlaySection = 'statusOverlay';
+const String _developerOptionsSection = 'developerOptions';
 
 enum _Section { appearance, recording, surveillance, overlay, daemons, privacy }
 
@@ -112,9 +137,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Widget content;
     switch (section) {
       case _Section.appearance:
-        final c = SettingsAppearanceController(prefs: deps.prefs, shellController: deps.shellController);
-        controller = c;
-        content = SettingsAppearanceScreen(controller: c, onOpenLanguagePicker: deps.onOpenLanguagePicker);
+        // Deliberately NOT assigned to `controller`: this instance belongs to
+        // the app root and outlives this pane, so the dispose below must not
+        // take it (BladeWatch-imh6.7).
+        final c = deps.appearanceController;
+        content = SettingsAppearanceScreen(
+          controller: c,
+          onOpenLanguagePicker: deps.onOpenLanguagePicker,
+          localeController: deps.localeController,
+        );
       case _Section.recording:
         final c = RecordingSettingsController(
           systemService: deps.systemService,
@@ -135,7 +166,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         controller = c;
         content = SurveillanceSettingsScreen(controller: c);
       case _Section.overlay:
-        final c = SettingsOverlayController();
+        final c = SettingsOverlayController(
+          loadSettings: () async {
+            final section = await deps.publicConfigChannel.getSection(_statusOverlaySection);
+            // An empty map means the read failed; native's own fallback is
+            // "both visible", which is what the controller defaults to anyway.
+            return (
+              cameraVisible: section['cameraVisible'] ?? true,
+              tripVisible: section['tripVisible'] ?? true,
+            );
+          },
+          persist: (key, value) => deps.publicConfigChannel.putBoolean(_statusOverlaySection, key, value),
+        );
         controller = c;
         content = SettingsOverlayScreen(controller: c);
       case _Section.daemons:
@@ -147,7 +189,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         controller = c;
         content = SettingsDaemonsScreen(controller: c);
       case _Section.privacy:
-        final c = SettingsPrivacyController(storageService: deps.storageService);
+        final c = SettingsPrivacyController(
+          storageService: deps.storageService,
+          loadLoggingSettings: () async {
+            final section = await deps.publicConfigChannel.getSection(_developerOptionsSection);
+            // Native's own defaults (UnifiedConfigManager.isTimingLogsEnabled /
+            // isDebugLogsEnabled) — timing on, debug off.
+            return (
+              timingLogsEnabled: section['timingLogsEnabled'] ?? true,
+              debugLogsEnabled: section['debugLogsEnabled'] ?? false,
+            );
+          },
+          persistLogging: (key, value) =>
+              deps.publicConfigChannel.putBoolean(_developerOptionsSection, key, value),
+        );
         controller = c;
         content = SettingsPrivacyScreen(controller: c, systemService: deps.systemService);
     }
@@ -165,6 +220,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _Section.overlay => l10n.settings_section_overlay,
         _Section.daemons => l10n.settings_section_daemons,
         _Section.privacy => l10n.settings_section_privacy,
+      };
+
+  /// Native marks Recording and Surveillance with `navigates = true` purely for
+  /// the trailing chevron affordance (SettingsFragment.Section) — they read as
+  /// drill-downs even though both UIs host them inline. The other rows have no
+  /// chevron.
+  bool _navigates(_Section section) => section == _Section.recording || section == _Section.surveillance;
+
+  /// The one-line description native puts under each pane's title. Privacy is
+  /// absent on purpose: that pane opens with its own "On-device by default"
+  /// heading in both UIs, so a generic header would duplicate it.
+  String? _paneSubtitle(AppLocalizations l10n, _Section section) => switch (section) {
+        _Section.appearance => l10n.settings_appearance_subtitle,
+        _Section.recording => l10n.settings_section_recording_subtitle,
+        _Section.surveillance => l10n.settings_section_surveillance_subtitle,
+        _Section.overlay => l10n.settings_overlay_subtitle,
+        _Section.daemons => l10n.settings_section_daemons_subtitle,
+        _Section.privacy => null,
       };
 
   IconData _icon(_Section section) => switch (section) {
@@ -187,6 +260,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 220,
           child: ListView(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(
+                  l10n.settings_subrail_overline,
+                  style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ),
               for (final section in _Section.values)
                 ListTile(
                   key: ValueKey('settings.section.${section.name}'),
@@ -194,13 +274,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   selectedTileColor: theme.colorScheme.secondaryContainer,
                   leading: Icon(_icon(section)),
                   title: Text(_label(l10n, section)),
+                  trailing: _navigates(section) ? const Icon(Icons.chevron_right) : null,
                   onTap: () => _select(section),
                 ),
             ],
           ),
         ),
         const VerticalDivider(width: 1),
-        Expanded(child: _content ?? const SizedBox.shrink()),
+        Expanded(
+          child: _content == null
+              ? const SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Native opens every pane with its title and a one-line
+                    // description; the port rendered the content bare.
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _label(l10n, _section),
+                            key: const ValueKey('settings.pane.title'),
+                            style: theme.textTheme.headlineSmall,
+                          ),
+                          if (_paneSubtitle(l10n, _section) != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              _paneSubtitle(l10n, _section)!,
+                              key: const ValueKey('settings.pane.subtitle'),
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Expanded(child: _content!),
+                  ],
+                ),
+        ),
       ],
     );
   }

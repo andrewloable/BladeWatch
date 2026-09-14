@@ -67,6 +67,24 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
 
+  # PLATFORM: android only.
+  #
+  # This app targets exactly ONE thing: an arm64 Android head unit (BYD DiLink
+  # v3, Android 10 / API 29). There is no BladeWatch on a desktop, phone or
+  # browser.
+  #
+  # This is a COMMENT and not a `platforms:` key on purpose. `platforms:` under
+  # `flutter:` is valid for PLUGINS only; on an application Flutter rejects it
+  # outright -- `flutter pub get` fails with
+  #   Unexpected child "platforms" found under "flutter".
+  # (verified, not assumed). So there is no machine-readable way for an app to
+  # declare its platform set.
+  #
+  # The ENFORCEMENT is therefore the `validateFlutterAndroidOnly` Gradle task in
+  # app/build.gradle.kts, which fails the build if
+  # flutter_ui/{ios,macos,windows,linux,web} reappears, backed by .gitignore
+  # entries so a regenerated tree cannot be committed.
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

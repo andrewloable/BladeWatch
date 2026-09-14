@@ -225,7 +225,37 @@ void main() {
 
       expect(attempts, 3);
       expect(c.state.status.phase, LiveStreamPhase.unavailable);
-      expect(c.state.status.reason, 'Camera starting — tap retry');
+      // The reason names the stage that failed. Every failure used to collapse
+      // to one generic string, so a missing plugin, a rejected JWT, a failing
+      // StreamService RPC and a refused socket were indistinguishable — on
+      // device that left "Camera unavailable" with nothing to go on.
+      expect(c.state.status.reason, startsWith('Camera starting — tap retry'));
+      expect(c.state.status.reason, contains('websocket connect'));
+    });
+
+    test('the failure reason never contains the JWT', () async {
+      // The connect URL carries ?token=<jwt>, and a socket error normally
+      // embeds the URI it failed on. The reason must therefore never be built
+      // from the exception text — it would put a live token on the screen and
+      // into logs. CLAUDE.md: never log or copy secret values.
+      stubHappyRpcPath();
+      const secret = 'SUPER-SECRET-JWT-VALUE';
+      jwt.next = secret;
+      final c = LiveViewController(
+        streamService: StreamServiceClient(rpc),
+        jwtSource: jwt,
+        textureChannel: LiveViewTextureChannel(channel),
+        retryDelay: Duration.zero,
+        maxConnectAttempts: 2,
+        // The real dart:io WebSocket error embeds the URI; reproduce that shape.
+        connect: (url) async => throw SocketException('refused on $url'),
+      );
+
+      await c.start();
+
+      expect(c.state.status.phase, LiveStreamPhase.unavailable);
+      expect(c.state.status.reason, isNot(contains(secret)));
+      expect(c.state.status.reason, isNot(contains('token=')));
     });
 
     test('succeeds after some failed attempts', () async {

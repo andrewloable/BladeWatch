@@ -32,4 +32,28 @@ class DaemonControl(private val ipc: IpcCommandSender) {
      * <bool>, ...}}`.
      */
     fun processStatus(): JSONObject = ipc.sendCommand(JSONObject().put("cmd", "daemonStatus"))
+
+    /**
+     * BladeWatch-m1po: the current Zrok tunnel URL, for the Dashboard's remote-access
+     * tile. Response shape: `{"status":"ok","running":<bool>,"url":<string|null>}`.
+     *
+     * The daemon gates the URL on the tunnel process actually running, so
+     * `running=true, url=null` means "up, but it has not published its share URL yet"
+     * — a real state, distinct from offline, and the caller should render it as
+     * connecting rather than collapsing both to "no tunnel".
+     */
+    fun tunnelStatus(): JSONObject = ipc.sendCommand(JSONObject().put("cmd", "tunnelStatus"))
+
+    /**
+     * BladeWatch-abcx: enable or disable an OPTIONAL daemon. The daemon refuses any type
+     * outside its own allow-list — currently ZROK_TUNNEL alone — so passing anything else
+     * comes back as an error rather than doing something partial.
+     *
+     * Enabling only RECORDS the intent: DaemonStartupManager's health check performs the
+     * actual launch through the full ZrokLauncher flow within ~30s. Disabling records the
+     * intent AND kills the running process, because that health check only ever relaunches.
+     */
+    fun setDaemonEnabled(type: String, enabled: Boolean): JSONObject = ipc.sendCommand(
+        JSONObject().put("cmd", "daemon_set_enabled").put("type", type).put("enabled", enabled),
+    )
 }

@@ -46,17 +46,51 @@ class _SettingsAboutScreenState extends State<SettingsAboutScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('BladeWatch', style: theme.textTheme.headlineSmall),
+        // Page header, matching native: title plus the one-line description.
+        // These are also the strings behind the Settings hub's About row, which
+        // is why the setup-guide card below must NOT reuse them.
+        Text(l10n.settings_about_title, style: theme.textTheme.headlineSmall),
+        const SizedBox(height: 4),
+        Text(
+          l10n.settings_about_row_subtitle,
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
         const SizedBox(height: 16),
-        ListTile(title: Text(l10n.settings_about_version_label), trailing: Text(c.versionInfo?.version ?? pending)),
-        ListTile(title: Text(l10n.settings_about_package_label), trailing: Text(c.versionInfo?.packageName ?? pending)),
+        // App identity grouped into one card with the app mark, as native does,
+        // rather than two bare rows floating on the page background.
+        Card(
+          color: theme.colorScheme.surfaceContainer,
+          elevation: 0,
+          child: Column(
+            children: [
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: theme.colorScheme.primary,
+                  child: Icon(Icons.shield_moon, color: theme.colorScheme.onPrimary),
+                ),
+                // The product name is a proper noun; native does not localise it.
+                title: Text('BladeWatch', style: theme.textTheme.titleLarge),
+              ),
+              ListTile(
+                title: Text(l10n.settings_about_version_label),
+                trailing: Text(c.versionInfo?.version ?? pending),
+              ),
+              ListTile(
+                title: Text(l10n.settings_about_package_label),
+                trailing: Text(c.versionInfo?.packageName ?? pending),
+              ),
+            ],
+          ),
+        ),
         Card(
           color: theme.colorScheme.surfaceContainer,
           elevation: 0,
           child: ListTile(
             key: const ValueKey('about.license'),
+            leading: const Icon(Icons.check),
             title: Text(l10n.settings_about_license_title),
             subtitle: Text(l10n.settings_about_license_value),
+            trailing: const Icon(Icons.chevron_right),
             onTap: () => _showLicenseDialog(context, l10n),
           ),
         ),
@@ -65,8 +99,16 @@ class _SettingsAboutScreenState extends State<SettingsAboutScreen> {
           elevation: 0,
           child: ListTile(
             key: const ValueKey('about.setupGuide'),
-            title: Text(l10n.settings_about_row_title),
-            subtitle: Text(l10n.settings_about_row_subtitle),
+            leading: const Icon(Icons.star_border),
+            // setup_guide_*, NOT settings_about_row_* — the latter are the
+            // Settings hub's About ROW strings ("About BladeWatch / Version,
+            // license, support development."), and using them here made this
+            // read as a duplicate page header instead of the way back into the
+            // setup guide. The guide matters after a BYD update, which wipes
+            // the auto-start exemption its step 2 restores.
+            title: Text(l10n.setup_guide_title),
+            subtitle: Text(l10n.setup_guide_subtitle),
+            trailing: const Icon(Icons.chevron_right),
             onTap: widget.onShowSetupGuide,
           ),
         ),

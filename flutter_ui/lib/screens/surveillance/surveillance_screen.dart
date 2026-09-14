@@ -3,8 +3,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../widgets/storage_limit.dart';
+import 'roi_editor.dart';
 import 'surveillance_controller.dart';
 import 'surveillance_models.dart';
+import '../../widgets/bw_choice_chip.dart';
 
 /// Ground truth: `SurveillanceSettingsController.kt` — General/Detection/
 /// Recording/Storage/Advanced tabs. Tab selection is pure UI state (kept in
@@ -26,6 +29,10 @@ class SurveillanceSettingsScreen extends StatefulWidget {
 
 class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen> {
   SurveillanceSettingsTab _tab = SurveillanceSettingsTab.general;
+
+  /// Which quadrant the ROI editor is showing (BladeWatch-9b0f). Purely view
+  /// state — which zone you are LOOKING at is not a setting to persist.
+  int _roiQuadrant = 0;
 
   @override
   void initState() {
@@ -50,27 +57,11 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
     final theme = Theme.of(context);
     final c = widget.controller;
 
+    // BladeWatch-htel: tab bar BELOW the content, matching native
+    // (SurveillanceSettingsController.buildView adds it last) and the
+    // Trips screen's existing bottom tab row.
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              for (final tab in SurveillanceSettingsTab.values)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: ChoiceChip(
-                      key: ValueKey('surveillance.tab.${tab.name}'),
-                      label: Text(_tabLabel(l10n, tab)),
-                      selected: _tab == tab,
-                      onSelected: (_) => setState(() => _tab = tab),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
         Expanded(
           child: c.loading
               ? const Center(child: CircularProgressIndicator())
@@ -85,9 +76,114 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
                   },
                 ),
         ),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              for (final tab in SurveillanceSettingsTab.values)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: BwChoiceChip(
+                      key: ValueKey('surveillance.tab.${tab.name}'),
+                      label: Text(_tabLabel(l10n, tab)),
+                      selected: _tab == tab,
+                      onSelected: (_) => setState(() => _tab = tab),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ],
     );
   }
+
+  /// BladeWatch-9b0f: the per-quadrant motion zone. The pipeline has supported
+  /// these all along (`SurveillanceEngineGpu.applyQuadrantRoi`) and
+  /// `SurveillanceApiHandler` already persists them — there had simply never
+  /// been a client on any platform. Native's own `RoiDrawingView.kt` was
+  /// written but never wired to a fragment.
+  List<Widget> _roiSection(AppLocalizations l10n, ThemeData theme, SurveillanceSettingsController c) {
+    final quadrant = kRoiQuadrantKeys[_roiQuadrant];
+    final points = c.roiPolygonFor(quadrant);
+    return [
+      Text(l10n.surveillance_roi_title, style: theme.textTheme.titleMedium),
+      Text(
+        l10n.surveillance_roi_description,
+        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        children: [
+          for (var i = 0; i < kRoiQuadrantKeys.length; i++)
+            BwChoiceChip(
+              key: ValueKey('surveillance.roi.quadrant.${kRoiQuadrantKeys[i]}'),
+              label: Text(_quadrantLabel(l10n, i)),
+              selected: _roiQuadrant == i,
+              onSelected: (_) => setState(() => _roiQuadrant = i),
+            ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      SwitchListTile(
+        key: const ValueKey('surveillance.roi.enable'),
+        contentPadding: EdgeInsets.zero,
+        title: Text(l10n.surveillance_roi_enable),
+        value: c.roiEnabledFor(quadrant),
+        onChanged: (v) => c.setRoiEnabled(quadrant, v),
+      ),
+      // A fixed 16:9 box: the zone is drawn against the camera's own framing,
+      // and a box that changed shape with the pane would distort what the user
+      // drew relative to what the engine masks.
+      AspectRatio(
+        aspectRatio: 16 / 9,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: RoiEditor(
+              points: points,
+              onChanged: (p) => c.setRoiPolygon(quadrant, p),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          Text(
+            '${points.length} / $kRoiMaxPoints',
+            key: const ValueKey('surveillance.roi.count'),
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const Spacer(),
+          TextButton(
+            key: const ValueKey('surveillance.roi.undo'),
+            onPressed: points.isEmpty ? null : () => c.undoRoiPoint(quadrant),
+            child: Text(l10n.action_undo),
+          ),
+          TextButton(
+            key: const ValueKey('surveillance.roi.clear'),
+            onPressed: points.isEmpty ? null : () => c.clearRoi(quadrant),
+            child: Text(l10n.action_clear_plain),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  String _quadrantLabel(AppLocalizations l10n, int index) => switch (index) {
+        0 => l10n.surveillance_advanced_camera_front,
+        1 => l10n.surveillance_advanced_camera_right,
+        2 => l10n.surveillance_advanced_camera_rear,
+        _ => l10n.surveillance_advanced_camera_left,
+      };
 
   String _tabLabel(AppLocalizations l10n, SurveillanceSettingsTab tab) => switch (tab) {
         SurveillanceSettingsTab.general => l10n.surveillance_tab_general,
@@ -131,7 +227,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
           spacing: 8,
           children: [
             for (final preset in kEnvironmentPresets)
-              ChoiceChip(
+              BwChoiceChip(
                 key: ValueKey('surveillance.preset.$preset'),
                 label: Text(_presetLabel(l10n, preset)),
                 selected: c.editPreset == preset,
@@ -146,7 +242,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
           spacing: 8,
           children: [
             for (final level in [1, 2, 3, 4, 5])
-              ChoiceChip(
+              BwChoiceChip(
                 key: ValueKey('surveillance.sensitivity.$level'),
                 label: Text('$level'),
                 selected: c.editSensitivity == level,
@@ -174,6 +270,9 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
           value: c.editDetectBike,
           onChanged: c.setDetectBike,
         ),
+        const SizedBox(height: 16),
+        const SizedBox(height: 16),
+        ..._roiSection(l10n, theme, c),
         const SizedBox(height: 16),
         _applyButton(l10n, c, SurveillanceSettingsTab.detection),
       ];
@@ -255,7 +354,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
           spacing: 8,
           children: [
             for (final seconds in kPreRecordOptionsSeconds)
-              ChoiceChip(
+              BwChoiceChip(
                 key: ValueKey('surveillance.preRecord.$seconds'),
                 label: Text(l10n.surveillance_seconds_value(seconds)),
                 selected: c.editPreRecord == seconds,
@@ -270,7 +369,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
           spacing: 8,
           children: [
             for (final seconds in kPostRecordOptionsSeconds)
-              ChoiceChip(
+              BwChoiceChip(
                 key: ValueKey('surveillance.postRecord.$seconds'),
                 label: Text(l10n.surveillance_seconds_value(seconds)),
                 selected: c.editPostRecord == seconds,
@@ -295,13 +394,13 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
       Wrap(
         spacing: 8,
         children: [
-          ChoiceChip(
+          BwChoiceChip(
             key: const ValueKey('surveillance.storage.internal'),
             label: Text(l10n.surveillance_storage_internal),
             selected: c.editStorageType == 'INTERNAL',
             onSelected: (_) => c.selectStorageType('INTERNAL'),
           ),
-          ChoiceChip(
+          BwChoiceChip(
             key: const ValueKey('surveillance.storage.sdCard'),
             label: Text(sdAvailable ? l10n.surveillance_storage_sd_card : l10n.surveillance_storage_sd_card_na),
             selected: c.editStorageType == 'SD_CARD',
@@ -311,21 +410,33 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
       ),
       const SizedBox(height: 16),
       Text(l10n.surveillance_storage_limit_label, style: theme.textTheme.labelMedium),
-      Text('${c.editStorageLimitMb} MB', style: theme.textTheme.bodyMedium),
+      // See the Recording tab's matching comment (BladeWatch-htel).
+      Text(formatStorageMb(c.editStorageLimitMb), style: theme.textTheme.bodyMedium),
       Slider(
         key: const ValueKey('surveillance.storage.limitSlider'),
         min: c.storageLimitMinMb.toDouble(),
         max: c.storageLimitMaxMb.toDouble(),
+        divisions: storageSliderDivisions(c.storageLimitMinMb, c.storageLimitMaxMb),
         value: c.editStorageLimitMb.toDouble().clamp(c.storageLimitMinMb.toDouble(), c.storageLimitMaxMb.toDouble()),
         onChanged: (v) => c.setStorageLimitMb(v.round()),
       ),
       const SizedBox(height: 8),
       if (storage != null) ...[
+        // See the Recording tab's matching rows (BladeWatch-3118).
         ListTile(
-          title: Text(l10n.surveillance_storage_usage('${(storage.surveillanceSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB', '${storage.limitMb} MB')),
+          title: Text(l10n.surveillance_storage_usage_label),
+          trailing: Text(l10n.surveillance_storage_usage(
+              '${(storage.surveillanceSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB', '${storage.limitMb} MB')),
         ),
-        ListTile(title: Text(l10n.surveillance_storage_files(storage.surveillanceCount))),
-        if (storage.path.isNotEmpty) ListTile(title: Text(l10n.surveillance_storage_path_label), subtitle: Text(storage.path)),
+        ListTile(
+          title: Text(l10n.surveillance_storage_files_label),
+          trailing: Text(l10n.surveillance_storage_files(storage.surveillanceCount)),
+        ),
+        if (storage.path.isNotEmpty)
+          ListTile(
+            title: Text(l10n.surveillance_storage_path_label),
+            trailing: bwPathValue(storage.path),
+          ),
       ],
       const SizedBox(height: 16),
       _applyButton(l10n, c, SurveillanceSettingsTab.storage),
@@ -387,7 +498,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
           spacing: 8,
           children: [
             for (final action in kDeterrentActions)
-              ChoiceChip(
+              BwChoiceChip(
                 key: ValueKey('surveillance.deterrent.$action'),
                 label: Text(_deterrentLabel(l10n, action)),
                 selected: c.editDeterrent == action,

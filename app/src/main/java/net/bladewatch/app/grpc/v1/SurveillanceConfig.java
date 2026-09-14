@@ -48,6 +48,18 @@ private static final long serialVersionUID = 0L;
     return net.bladewatch.app.grpc.v1.Surveillance.internal_static_bladewatch_v1_SurveillanceConfig_descriptor;
   }
 
+  @SuppressWarnings({"rawtypes"})
+  @java.lang.Override
+  protected com.google.protobuf.MapFieldReflectionAccessor internalGetMapFieldReflection(
+      int number) {
+    switch (number) {
+      case 30:
+        return internalGetRoiPolygons();
+      default:
+        throw new RuntimeException(
+            "Invalid map field number: " + number);
+    }
+  }
   @java.lang.Override
   protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internalGetFieldAccessorTable() {
@@ -531,6 +543,191 @@ private static final long serialVersionUID = 0L;
     return deterrentCooldownSeconds_;
   }
 
+  public static final int ROI_POLYGONS_FIELD_NUMBER = 30;
+  private static final class RoiPolygonsDefaultEntryHolder {
+    static final com.google.protobuf.MapEntry<
+        java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> defaultEntry =
+            com.google.protobuf.MapEntry
+            .<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon>newDefaultInstance(
+                net.bladewatch.app.grpc.v1.Surveillance.internal_static_bladewatch_v1_SurveillanceConfig_RoiPolygonsEntry_descriptor, 
+                com.google.protobuf.WireFormat.FieldType.STRING,
+                "",
+                com.google.protobuf.WireFormat.FieldType.MESSAGE,
+                net.bladewatch.app.grpc.v1.RoiPolygon.getDefaultInstance());
+  }
+  @SuppressWarnings("serial")
+  private com.google.protobuf.MapField<
+      java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> roiPolygons_;
+  private com.google.protobuf.MapField<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon>
+  internalGetRoiPolygons() {
+    if (roiPolygons_ == null) {
+      return com.google.protobuf.MapField.emptyMapField(
+          RoiPolygonsDefaultEntryHolder.defaultEntry);
+    }
+    return roiPolygons_;
+  }
+  public int getRoiPolygonsCount() {
+    return internalGetRoiPolygons().getMap().size();
+  }
+  /**
+   * <pre>
+   * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+   *
+   * The motion pipeline has supported these all along
+   * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+   * SurveillanceApiHandler already persists and applies them — but they were
+   * absent from this message, so no ConnectRPC client could ever see or set one.
+   *
+   * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+   * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+   * The explicit json_name keeps the wire shape byte-identical to what that
+   * handler already reads and writes.
+   * </pre>
+   *
+   * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+   */
+  @java.lang.Override
+  public boolean containsRoiPolygons(
+      java.lang.String key) {
+    if (key == null) { throw new NullPointerException("map key"); }
+    return internalGetRoiPolygons().getMap().containsKey(key);
+  }
+  /**
+   * Use {@link #getRoiPolygonsMap()} instead.
+   */
+  @java.lang.Override
+  @java.lang.Deprecated
+  public java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> getRoiPolygons() {
+    return getRoiPolygonsMap();
+  }
+  /**
+   * <pre>
+   * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+   *
+   * The motion pipeline has supported these all along
+   * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+   * SurveillanceApiHandler already persists and applies them — but they were
+   * absent from this message, so no ConnectRPC client could ever see or set one.
+   *
+   * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+   * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+   * The explicit json_name keeps the wire shape byte-identical to what that
+   * handler already reads and writes.
+   * </pre>
+   *
+   * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+   */
+  @java.lang.Override
+  public java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> getRoiPolygonsMap() {
+    return internalGetRoiPolygons().getMap();
+  }
+  /**
+   * <pre>
+   * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+   *
+   * The motion pipeline has supported these all along
+   * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+   * SurveillanceApiHandler already persists and applies them — but they were
+   * absent from this message, so no ConnectRPC client could ever see or set one.
+   *
+   * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+   * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+   * The explicit json_name keeps the wire shape byte-identical to what that
+   * handler already reads and writes.
+   * </pre>
+   *
+   * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+   */
+  @java.lang.Override
+  public /* nullable */
+net.bladewatch.app.grpc.v1.RoiPolygon getRoiPolygonsOrDefault(
+      java.lang.String key,
+      /* nullable */
+net.bladewatch.app.grpc.v1.RoiPolygon defaultValue) {
+    if (key == null) { throw new NullPointerException("map key"); }
+    java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> map =
+        internalGetRoiPolygons().getMap();
+    return map.containsKey(key) ? map.get(key) : defaultValue;
+  }
+  /**
+   * <pre>
+   * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+   *
+   * The motion pipeline has supported these all along
+   * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+   * SurveillanceApiHandler already persists and applies them — but they were
+   * absent from this message, so no ConnectRPC client could ever see or set one.
+   *
+   * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+   * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+   * The explicit json_name keeps the wire shape byte-identical to what that
+   * handler already reads and writes.
+   * </pre>
+   *
+   * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+   */
+  @java.lang.Override
+  public net.bladewatch.app.grpc.v1.RoiPolygon getRoiPolygonsOrThrow(
+      java.lang.String key) {
+    if (key == null) { throw new NullPointerException("map key"); }
+    java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> map =
+        internalGetRoiPolygons().getMap();
+    if (!map.containsKey(key)) {
+      throw new java.lang.IllegalArgumentException();
+    }
+    return map.get(key);
+  }
+
+  public static final int ROI_ENABLED_Q0_FIELD_NUMBER = 31;
+  private boolean roiEnabledQ0_ = false;
+  /**
+   * <pre>
+   * Whether each quadrant's polygon is actually applied. Separate from the
+   * polygon itself so a zone can be switched off without losing the shape the
+   * user drew — the REST handler already models it that way.
+   * </pre>
+   *
+   * <code>bool roi_enabled_q0 = 31 [json_name = "roiEnabled_Q0"];</code>
+   * @return The roiEnabledQ0.
+   */
+  @java.lang.Override
+  public boolean getRoiEnabledQ0() {
+    return roiEnabledQ0_;
+  }
+
+  public static final int ROI_ENABLED_Q1_FIELD_NUMBER = 32;
+  private boolean roiEnabledQ1_ = false;
+  /**
+   * <code>bool roi_enabled_q1 = 32 [json_name = "roiEnabled_Q1"];</code>
+   * @return The roiEnabledQ1.
+   */
+  @java.lang.Override
+  public boolean getRoiEnabledQ1() {
+    return roiEnabledQ1_;
+  }
+
+  public static final int ROI_ENABLED_Q2_FIELD_NUMBER = 33;
+  private boolean roiEnabledQ2_ = false;
+  /**
+   * <code>bool roi_enabled_q2 = 33 [json_name = "roiEnabled_Q2"];</code>
+   * @return The roiEnabledQ2.
+   */
+  @java.lang.Override
+  public boolean getRoiEnabledQ2() {
+    return roiEnabledQ2_;
+  }
+
+  public static final int ROI_ENABLED_Q3_FIELD_NUMBER = 34;
+  private boolean roiEnabledQ3_ = false;
+  /**
+   * <code>bool roi_enabled_q3 = 34 [json_name = "roiEnabled_Q3"];</code>
+   * @return The roiEnabledQ3.
+   */
+  @java.lang.Override
+  public boolean getRoiEnabledQ3() {
+    return roiEnabledQ3_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -631,6 +828,24 @@ private static final long serialVersionUID = 0L;
     }
     if (deterrentCooldownSeconds_ != 0) {
       output.writeInt32(29, deterrentCooldownSeconds_);
+    }
+    com.google.protobuf.GeneratedMessage
+      .serializeStringMapTo(
+        output,
+        internalGetRoiPolygons(),
+        RoiPolygonsDefaultEntryHolder.defaultEntry,
+        30);
+    if (roiEnabledQ0_ != false) {
+      output.writeBool(31, roiEnabledQ0_);
+    }
+    if (roiEnabledQ1_ != false) {
+      output.writeBool(32, roiEnabledQ1_);
+    }
+    if (roiEnabledQ2_ != false) {
+      output.writeBool(33, roiEnabledQ2_);
+    }
+    if (roiEnabledQ3_ != false) {
+      output.writeBool(34, roiEnabledQ3_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -748,6 +963,36 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(29, deterrentCooldownSeconds_);
     }
+    for (java.util.Map.Entry<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> entry
+         : internalGetRoiPolygons().getMap().entrySet()) {
+      com.google.protobuf.MapEntry<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon>
+      roiPolygons__ = RoiPolygonsDefaultEntryHolder.defaultEntry.newBuilderForType()
+          .setKey(entry.getKey())
+          .setValue(entry.getValue())
+          .buildPartial();
+      size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(30, roiPolygons__);
+    }
+    if (roiEnabledQ0_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(31, roiEnabledQ0_);
+    }
+    if (roiEnabledQ1_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(32, roiEnabledQ1_);
+    }
+    return size;
+  }
+  private int computeSerializedSize_1() {
+    int size = 0;
+    if (roiEnabledQ2_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(33, roiEnabledQ2_);
+    }
+    if (roiEnabledQ3_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(34, roiEnabledQ3_);
+    }
     return size;
   }
   @java.lang.Override
@@ -757,6 +1002,7 @@ private static final long serialVersionUID = 0L;
 
     size = 0;
     size += computeSerializedSize_0();
+    size += computeSerializedSize_1();
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -836,6 +1082,16 @@ private static final long serialVersionUID = 0L;
         .equals(other.getDeterrentAction())) return false;
     if (getDeterrentCooldownSeconds()
         != other.getDeterrentCooldownSeconds()) return false;
+    if (!internalGetRoiPolygons().equals(
+        other.internalGetRoiPolygons())) return false;
+    if (getRoiEnabledQ0()
+        != other.getRoiEnabledQ0()) return false;
+    if (getRoiEnabledQ1()
+        != other.getRoiEnabledQ1()) return false;
+    if (getRoiEnabledQ2()
+        != other.getRoiEnabledQ2()) return false;
+    if (getRoiEnabledQ3()
+        != other.getRoiEnabledQ3()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -921,6 +1177,22 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getDeterrentAction().hashCode();
     hash = (37 * hash) + DETERRENT_COOLDOWN_SECONDS_FIELD_NUMBER;
     hash = (53 * hash) + getDeterrentCooldownSeconds();
+    if (!internalGetRoiPolygons().getMap().isEmpty()) {
+      hash = (37 * hash) + ROI_POLYGONS_FIELD_NUMBER;
+      hash = (53 * hash) + internalGetRoiPolygons().hashCode();
+    }
+    hash = (37 * hash) + ROI_ENABLED_Q0_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getRoiEnabledQ0());
+    hash = (37 * hash) + ROI_ENABLED_Q1_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getRoiEnabledQ1());
+    hash = (37 * hash) + ROI_ENABLED_Q2_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getRoiEnabledQ2());
+    hash = (37 * hash) + ROI_ENABLED_Q3_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getRoiEnabledQ3());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -1034,6 +1306,28 @@ private static final long serialVersionUID = 0L;
       return net.bladewatch.app.grpc.v1.Surveillance.internal_static_bladewatch_v1_SurveillanceConfig_descriptor;
     }
 
+    @SuppressWarnings({"rawtypes"})
+    protected com.google.protobuf.MapFieldReflectionAccessor internalGetMapFieldReflection(
+        int number) {
+      switch (number) {
+        case 30:
+          return internalGetRoiPolygons();
+        default:
+          throw new RuntimeException(
+              "Invalid map field number: " + number);
+      }
+    }
+    @SuppressWarnings({"rawtypes"})
+    protected com.google.protobuf.MapFieldReflectionAccessor internalGetMutableMapFieldReflection(
+        int number) {
+      switch (number) {
+        case 30:
+          return internalGetMutableRoiPolygons();
+        default:
+          throw new RuntimeException(
+              "Invalid map field number: " + number);
+      }
+    }
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
@@ -1056,6 +1350,7 @@ private static final long serialVersionUID = 0L;
     public Builder clear() {
       super.clear();
       bitField0_ = 0;
+      bitField1_ = 0;
       enabled_ = false;
       sensitivity_ = 0;
       distance_ = 0;
@@ -1085,6 +1380,11 @@ private static final long serialVersionUID = 0L;
       cameraLeft_ = false;
       deterrentAction_ = "";
       deterrentCooldownSeconds_ = 0;
+      internalGetMutableRoiPolygons().clear();
+      roiEnabledQ0_ = false;
+      roiEnabledQ1_ = false;
+      roiEnabledQ2_ = false;
+      roiEnabledQ3_ = false;
       return this;
     }
 
@@ -1112,6 +1412,7 @@ private static final long serialVersionUID = 0L;
     public net.bladewatch.app.grpc.v1.SurveillanceConfig buildPartial() {
       net.bladewatch.app.grpc.v1.SurveillanceConfig result = new net.bladewatch.app.grpc.v1.SurveillanceConfig(this);
       if (bitField0_ != 0) { buildPartial0(result); }
+      if (bitField1_ != 0) { buildPartial1(result); }
       onBuilt();
       return result;
     }
@@ -1204,6 +1505,25 @@ private static final long serialVersionUID = 0L;
       }
       if (((from_bitField0_ & 0x10000000) != 0)) {
         result.deterrentCooldownSeconds_ = deterrentCooldownSeconds_;
+      }
+      if (((from_bitField0_ & 0x20000000) != 0)) {
+        result.roiPolygons_ = internalGetRoiPolygons().build(RoiPolygonsDefaultEntryHolder.defaultEntry);
+      }
+      if (((from_bitField0_ & 0x40000000) != 0)) {
+        result.roiEnabledQ0_ = roiEnabledQ0_;
+      }
+      if (((from_bitField0_ & 0x80000000) != 0)) {
+        result.roiEnabledQ1_ = roiEnabledQ1_;
+      }
+    }
+
+    private void buildPartial1(net.bladewatch.app.grpc.v1.SurveillanceConfig result) {
+      int from_bitField1_ = bitField1_;
+      if (((from_bitField1_ & 0x00000001) != 0)) {
+        result.roiEnabledQ2_ = roiEnabledQ2_;
+      }
+      if (((from_bitField1_ & 0x00000002) != 0)) {
+        result.roiEnabledQ3_ = roiEnabledQ3_;
       }
     }
 
@@ -1313,6 +1633,21 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getDeterrentCooldownSeconds() != 0) {
         setDeterrentCooldownSeconds(other.getDeterrentCooldownSeconds());
+      }
+      internalGetMutableRoiPolygons().mergeFrom(
+          other.internalGetRoiPolygons());
+      bitField0_ |= 0x20000000;
+      if (other.getRoiEnabledQ0() != false) {
+        setRoiEnabledQ0(other.getRoiEnabledQ0());
+      }
+      if (other.getRoiEnabledQ1() != false) {
+        setRoiEnabledQ1(other.getRoiEnabledQ1());
+      }
+      if (other.getRoiEnabledQ2() != false) {
+        setRoiEnabledQ2(other.getRoiEnabledQ2());
+      }
+      if (other.getRoiEnabledQ3() != false) {
+        setRoiEnabledQ3(other.getRoiEnabledQ3());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1485,6 +1820,35 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x10000000;
               break;
             } // case 232
+            case 242: {
+              com.google.protobuf.MapEntry<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon>
+              roiPolygons__ = input.readMessage(
+                  RoiPolygonsDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
+              internalGetMutableRoiPolygons().ensureBuilderMap().put(
+                  roiPolygons__.getKey(), roiPolygons__.getValue());
+              bitField0_ |= 0x20000000;
+              break;
+            } // case 242
+            case 248: {
+              roiEnabledQ0_ = input.readBool();
+              bitField0_ |= 0x40000000;
+              break;
+            } // case 248
+            case 256: {
+              roiEnabledQ1_ = input.readBool();
+              bitField0_ |= 0x80000000;
+              break;
+            } // case 256
+            case 264: {
+              roiEnabledQ2_ = input.readBool();
+              bitField1_ |= 0x00000001;
+              break;
+            } // case 264
+            case 272: {
+              roiEnabledQ3_ = input.readBool();
+              bitField1_ |= 0x00000002;
+              break;
+            } // case 272
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1501,6 +1865,7 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     private int bitField0_;
+    private int bitField1_;
 
     private boolean enabled_ ;
     /**
@@ -2706,6 +3071,419 @@ private static final long serialVersionUID = 0L;
     public Builder clearDeterrentCooldownSeconds() {
       bitField0_ = (bitField0_ & ~0x10000000);
       deterrentCooldownSeconds_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private static final class RoiPolygonsConverter implements com.google.protobuf.MapFieldBuilder.Converter<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder, net.bladewatch.app.grpc.v1.RoiPolygon> {
+      @java.lang.Override
+      public net.bladewatch.app.grpc.v1.RoiPolygon build(net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder val) {
+        if (val instanceof net.bladewatch.app.grpc.v1.RoiPolygon) { return (net.bladewatch.app.grpc.v1.RoiPolygon) val; }
+        return ((net.bladewatch.app.grpc.v1.RoiPolygon.Builder) val).build();
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.MapEntry<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> defaultEntry() {
+        return RoiPolygonsDefaultEntryHolder.defaultEntry;
+      }
+    };
+    private static final RoiPolygonsConverter roiPolygonsConverter = new RoiPolygonsConverter();
+
+    private com.google.protobuf.MapFieldBuilder<
+        java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder, net.bladewatch.app.grpc.v1.RoiPolygon, net.bladewatch.app.grpc.v1.RoiPolygon.Builder> roiPolygons_;
+    private com.google.protobuf.MapFieldBuilder<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder, net.bladewatch.app.grpc.v1.RoiPolygon, net.bladewatch.app.grpc.v1.RoiPolygon.Builder>
+        internalGetRoiPolygons() {
+      if (roiPolygons_ == null) {
+        return new com.google.protobuf.MapFieldBuilder<>(roiPolygonsConverter);
+      }
+      return roiPolygons_;
+    }
+    private com.google.protobuf.MapFieldBuilder<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder, net.bladewatch.app.grpc.v1.RoiPolygon, net.bladewatch.app.grpc.v1.RoiPolygon.Builder>
+        internalGetMutableRoiPolygons() {
+      if (roiPolygons_ == null) {
+        roiPolygons_ = new com.google.protobuf.MapFieldBuilder<>(roiPolygonsConverter);
+      }
+      bitField0_ |= 0x20000000;
+      onChanged();
+      return roiPolygons_;
+    }
+    public int getRoiPolygonsCount() {
+      return internalGetRoiPolygons().ensureBuilderMap().size();
+    }
+    /**
+     * <pre>
+     * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+     *
+     * The motion pipeline has supported these all along
+     * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+     * SurveillanceApiHandler already persists and applies them — but they were
+     * absent from this message, so no ConnectRPC client could ever see or set one.
+     *
+     * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+     * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+     * The explicit json_name keeps the wire shape byte-identical to what that
+     * handler already reads and writes.
+     * </pre>
+     *
+     * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+     */
+    @java.lang.Override
+    public boolean containsRoiPolygons(
+        java.lang.String key) {
+      if (key == null) { throw new NullPointerException("map key"); }
+      return internalGetRoiPolygons().ensureBuilderMap().containsKey(key);
+    }
+    /**
+     * Use {@link #getRoiPolygonsMap()} instead.
+     */
+    @java.lang.Override
+    @java.lang.Deprecated
+    public java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> getRoiPolygons() {
+      return getRoiPolygonsMap();
+    }
+    /**
+     * <pre>
+     * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+     *
+     * The motion pipeline has supported these all along
+     * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+     * SurveillanceApiHandler already persists and applies them — but they were
+     * absent from this message, so no ConnectRPC client could ever see or set one.
+     *
+     * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+     * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+     * The explicit json_name keeps the wire shape byte-identical to what that
+     * handler already reads and writes.
+     * </pre>
+     *
+     * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+     */
+    @java.lang.Override
+    public java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> getRoiPolygonsMap() {
+      return internalGetRoiPolygons().getImmutableMap();
+    }
+    /**
+     * <pre>
+     * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+     *
+     * The motion pipeline has supported these all along
+     * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+     * SurveillanceApiHandler already persists and applies them — but they were
+     * absent from this message, so no ConnectRPC client could ever see or set one.
+     *
+     * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+     * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+     * The explicit json_name keeps the wire shape byte-identical to what that
+     * handler already reads and writes.
+     * </pre>
+     *
+     * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+     */
+    @java.lang.Override
+    public /* nullable */
+net.bladewatch.app.grpc.v1.RoiPolygon getRoiPolygonsOrDefault(
+        java.lang.String key,
+        /* nullable */
+net.bladewatch.app.grpc.v1.RoiPolygon defaultValue) {
+      if (key == null) { throw new NullPointerException("map key"); }
+      java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder> map = internalGetMutableRoiPolygons().ensureBuilderMap();
+      return map.containsKey(key) ? roiPolygonsConverter.build(map.get(key)) : defaultValue;
+    }
+    /**
+     * <pre>
+     * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+     *
+     * The motion pipeline has supported these all along
+     * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+     * SurveillanceApiHandler already persists and applies them — but they were
+     * absent from this message, so no ConnectRPC client could ever see or set one.
+     *
+     * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+     * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+     * The explicit json_name keeps the wire shape byte-identical to what that
+     * handler already reads and writes.
+     * </pre>
+     *
+     * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+     */
+    @java.lang.Override
+    public net.bladewatch.app.grpc.v1.RoiPolygon getRoiPolygonsOrThrow(
+        java.lang.String key) {
+      if (key == null) { throw new NullPointerException("map key"); }
+      java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder> map = internalGetMutableRoiPolygons().ensureBuilderMap();
+      if (!map.containsKey(key)) {
+        throw new java.lang.IllegalArgumentException();
+      }
+      return roiPolygonsConverter.build(map.get(key));
+    }
+    public Builder clearRoiPolygons() {
+      bitField0_ = (bitField0_ & ~0x20000000);
+      internalGetMutableRoiPolygons().clear();
+      return this;
+    }
+    /**
+     * <pre>
+     * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+     *
+     * The motion pipeline has supported these all along
+     * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+     * SurveillanceApiHandler already persists and applies them — but they were
+     * absent from this message, so no ConnectRPC client could ever see or set one.
+     *
+     * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+     * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+     * The explicit json_name keeps the wire shape byte-identical to what that
+     * handler already reads and writes.
+     * </pre>
+     *
+     * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+     */
+    public Builder removeRoiPolygons(
+        java.lang.String key) {
+      if (key == null) { throw new NullPointerException("map key"); }
+      internalGetMutableRoiPolygons().ensureBuilderMap()
+          .remove(key);
+      return this;
+    }
+    /**
+     * Use alternate mutation accessors instead.
+     */
+    @java.lang.Deprecated
+    public java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon>
+        getMutableRoiPolygons() {
+      bitField0_ |= 0x20000000;
+      return internalGetMutableRoiPolygons().ensureMessageMap();
+    }
+    /**
+     * <pre>
+     * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+     *
+     * The motion pipeline has supported these all along
+     * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+     * SurveillanceApiHandler already persists and applies them — but they were
+     * absent from this message, so no ConnectRPC client could ever see or set one.
+     *
+     * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+     * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+     * The explicit json_name keeps the wire shape byte-identical to what that
+     * handler already reads and writes.
+     * </pre>
+     *
+     * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+     */
+    public Builder putRoiPolygons(
+        java.lang.String key,
+        net.bladewatch.app.grpc.v1.RoiPolygon value) {
+      if (key == null) { throw new NullPointerException("map key"); }
+      if (value == null) { throw new NullPointerException("map value"); }
+      internalGetMutableRoiPolygons().ensureBuilderMap()
+          .put(key, value);
+      bitField0_ |= 0x20000000;
+      return this;
+    }
+    /**
+     * <pre>
+     * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+     *
+     * The motion pipeline has supported these all along
+     * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+     * SurveillanceApiHandler already persists and applies them — but they were
+     * absent from this message, so no ConnectRPC client could ever see or set one.
+     *
+     * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+     * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+     * The explicit json_name keeps the wire shape byte-identical to what that
+     * handler already reads and writes.
+     * </pre>
+     *
+     * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+     */
+    public Builder putAllRoiPolygons(
+        java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> values) {
+      for (java.util.Map.Entry<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygon> e : values.entrySet()) {
+        if (e.getKey() == null || e.getValue() == null) {
+          throw new NullPointerException();
+        }
+      }
+      internalGetMutableRoiPolygons().ensureBuilderMap()
+          .putAll(values);
+      bitField0_ |= 0x20000000;
+      return this;
+    }
+    /**
+     * <pre>
+     * Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+     *
+     * The motion pipeline has supported these all along
+     * (SurveillanceEngineGpu.applyQuadrantRoi -&gt; NativeMotion.setQuadrantRoi), and
+     * SurveillanceApiHandler already persists and applies them — but they were
+     * absent from this message, so no ConnectRPC client could ever see or set one.
+     *
+     * Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+     * quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+     * The explicit json_name keeps the wire shape byte-identical to what that
+     * handler already reads and writes.
+     * </pre>
+     *
+     * <code>map&lt;string, .bladewatch.v1.RoiPolygon&gt; roi_polygons = 30 [json_name = "roiPolygons"];</code>
+     */
+    public net.bladewatch.app.grpc.v1.RoiPolygon.Builder putRoiPolygonsBuilderIfAbsent(
+        java.lang.String key) {
+      java.util.Map<java.lang.String, net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder> builderMap = internalGetMutableRoiPolygons().ensureBuilderMap();
+      net.bladewatch.app.grpc.v1.RoiPolygonOrBuilder entry = builderMap.get(key);
+      if (entry == null) {
+        entry = net.bladewatch.app.grpc.v1.RoiPolygon.newBuilder();
+        builderMap.put(key, entry);
+      }
+      if (entry instanceof net.bladewatch.app.grpc.v1.RoiPolygon) {
+        entry = ((net.bladewatch.app.grpc.v1.RoiPolygon) entry).toBuilder();
+        builderMap.put(key, entry);
+      }
+      return (net.bladewatch.app.grpc.v1.RoiPolygon.Builder) entry;
+    }
+
+    private boolean roiEnabledQ0_ ;
+    /**
+     * <pre>
+     * Whether each quadrant's polygon is actually applied. Separate from the
+     * polygon itself so a zone can be switched off without losing the shape the
+     * user drew — the REST handler already models it that way.
+     * </pre>
+     *
+     * <code>bool roi_enabled_q0 = 31 [json_name = "roiEnabled_Q0"];</code>
+     * @return The roiEnabledQ0.
+     */
+    @java.lang.Override
+    public boolean getRoiEnabledQ0() {
+      return roiEnabledQ0_;
+    }
+    /**
+     * <pre>
+     * Whether each quadrant's polygon is actually applied. Separate from the
+     * polygon itself so a zone can be switched off without losing the shape the
+     * user drew — the REST handler already models it that way.
+     * </pre>
+     *
+     * <code>bool roi_enabled_q0 = 31 [json_name = "roiEnabled_Q0"];</code>
+     * @param value The roiEnabledQ0 to set.
+     * @return This builder for chaining.
+     */
+    public Builder setRoiEnabledQ0(boolean value) {
+
+      roiEnabledQ0_ = value;
+      bitField0_ |= 0x40000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Whether each quadrant's polygon is actually applied. Separate from the
+     * polygon itself so a zone can be switched off without losing the shape the
+     * user drew — the REST handler already models it that way.
+     * </pre>
+     *
+     * <code>bool roi_enabled_q0 = 31 [json_name = "roiEnabled_Q0"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearRoiEnabledQ0() {
+      bitField0_ = (bitField0_ & ~0x40000000);
+      roiEnabledQ0_ = false;
+      onChanged();
+      return this;
+    }
+
+    private boolean roiEnabledQ1_ ;
+    /**
+     * <code>bool roi_enabled_q1 = 32 [json_name = "roiEnabled_Q1"];</code>
+     * @return The roiEnabledQ1.
+     */
+    @java.lang.Override
+    public boolean getRoiEnabledQ1() {
+      return roiEnabledQ1_;
+    }
+    /**
+     * <code>bool roi_enabled_q1 = 32 [json_name = "roiEnabled_Q1"];</code>
+     * @param value The roiEnabledQ1 to set.
+     * @return This builder for chaining.
+     */
+    public Builder setRoiEnabledQ1(boolean value) {
+
+      roiEnabledQ1_ = value;
+      bitField0_ |= 0x80000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool roi_enabled_q1 = 32 [json_name = "roiEnabled_Q1"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearRoiEnabledQ1() {
+      bitField0_ = (bitField0_ & ~0x80000000);
+      roiEnabledQ1_ = false;
+      onChanged();
+      return this;
+    }
+
+    private boolean roiEnabledQ2_ ;
+    /**
+     * <code>bool roi_enabled_q2 = 33 [json_name = "roiEnabled_Q2"];</code>
+     * @return The roiEnabledQ2.
+     */
+    @java.lang.Override
+    public boolean getRoiEnabledQ2() {
+      return roiEnabledQ2_;
+    }
+    /**
+     * <code>bool roi_enabled_q2 = 33 [json_name = "roiEnabled_Q2"];</code>
+     * @param value The roiEnabledQ2 to set.
+     * @return This builder for chaining.
+     */
+    public Builder setRoiEnabledQ2(boolean value) {
+
+      roiEnabledQ2_ = value;
+      bitField1_ |= 0x00000001;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool roi_enabled_q2 = 33 [json_name = "roiEnabled_Q2"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearRoiEnabledQ2() {
+      bitField1_ = (bitField1_ & ~0x00000001);
+      roiEnabledQ2_ = false;
+      onChanged();
+      return this;
+    }
+
+    private boolean roiEnabledQ3_ ;
+    /**
+     * <code>bool roi_enabled_q3 = 34 [json_name = "roiEnabled_Q3"];</code>
+     * @return The roiEnabledQ3.
+     */
+    @java.lang.Override
+    public boolean getRoiEnabledQ3() {
+      return roiEnabledQ3_;
+    }
+    /**
+     * <code>bool roi_enabled_q3 = 34 [json_name = "roiEnabled_Q3"];</code>
+     * @param value The roiEnabledQ3 to set.
+     * @return This builder for chaining.
+     */
+    public Builder setRoiEnabledQ3(boolean value) {
+
+      roiEnabledQ3_ = value;
+      bitField1_ |= 0x00000002;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool roi_enabled_q3 = 34 [json_name = "roiEnabled_Q3"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearRoiEnabledQ3() {
+      bitField1_ = (bitField1_ & ~0x00000002);
+      roiEnabledQ3_ = false;
       onChanged();
       return this;
     }

@@ -73,15 +73,34 @@ class SettingsPrivacyController extends ChangeNotifier {
   }
 
   Future<void> setTimingLogsEnabled(bool value) async {
+    final previous = _timingLogsEnabled;
     _timingLogsEnabled = value;
     notifyListeners();
-    await _persistLogging('timingLogsEnabled', value);
+    if (!await _tryPersist('timingLogsEnabled', value)) {
+      _timingLogsEnabled = previous;
+      notifyListeners();
+    }
   }
 
   Future<void> setDebugLogsEnabled(bool value) async {
+    final previous = _debugLogsEnabled;
     _debugLogsEnabled = value;
     notifyListeners();
-    await _persistLogging('debugLogsEnabled', value);
+    if (!await _tryPersist('debugLogsEnabled', value)) {
+      _debugLogsEnabled = previous;
+      notifyListeners();
+    }
+  }
+
+  /// Same snap-back-on-failed-write rule as `SettingsOverlayController` — see
+  /// its `_tryPersist` for why writing over IPC makes this necessary.
+  Future<bool> _tryPersist(String key, bool value) async {
+    try {
+      await _persistLogging(key, value);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Compact "B / KB / MB / GB / TB" formatter — ports

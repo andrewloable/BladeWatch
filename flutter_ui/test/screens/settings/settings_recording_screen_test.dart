@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_ui/widgets/bw_choice_chip.dart';
 
 void main() {
   late FakeRpcClient rpc;
@@ -145,7 +146,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('recording.limit.1')));
     await tester.pumpAndSettle();
 
-    final chip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('recording.limit.1')));
+    final chip = tester.widget<BwChoiceChip>(find.byKey(const ValueKey('recording.limit.1')));
     expect(chip.selected, isTrue);
   });
 
@@ -187,11 +188,11 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('recording.storage.sdCard')));
     await tester.pumpAndSettle();
-    expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('recording.storage.sdCard'))).selected, isTrue);
+    expect(tester.widget<BwChoiceChip>(find.byKey(const ValueKey('recording.storage.sdCard'))).selected, isTrue);
 
     await tester.tap(find.byKey(const ValueKey('recording.storage.internal')));
     await tester.pumpAndSettle();
-    expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('recording.storage.internal'))).selected, isTrue);
+    expect(tester.widget<BwChoiceChip>(find.byKey(const ValueKey('recording.storage.internal'))).selected, isTrue);
   });
 
   testWidgets('Storage tab disables the SD card chip when unavailable and hides the format card', (tester) async {
@@ -201,7 +202,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
     await tester.pumpAndSettle();
 
-    final sdChip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('recording.storage.sdCard')));
+    final sdChip = tester.widget<BwChoiceChip>(find.byKey(const ValueKey('recording.storage.sdCard')));
     expect(sdChip.onSelected, isNull);
     expect(find.byKey(const ValueKey('recording.format.start')), findsNothing);
   });
@@ -219,6 +220,110 @@ void main() {
 
     final applyButton = tester.widget<FilledButton>(find.byKey(const ValueKey('recording.apply.storage')));
     expect(applyButton.onPressed, isNotNull);
+  });
+
+  // ── BladeWatch-3118: every storage row is label + value, as native's
+  // infoRow() renders them. Usage and Files used to show a bare value.
+  testWidgets('the storage rows name what they are showing', (tester) async {
+    stubHappyPath();
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+    await tester.pumpAndSettle();
+
+    for (final label in ['Storage Usage', 'Files']) {
+      expect(find.text(label), findsOneWidget, reason: '$label row must be labelled');
+    }
+  });
+
+  testWidgets('the storage values are right-aligned beside their labels', (tester) async {
+    stubHappyPath();
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+    await tester.pumpAndSettle();
+
+    // A trailing value, not a title-only row — that is what makes the column
+    // of values line up the way native's does.
+    final usageRow = tester.widget<ListTile>(
+      find.ancestor(of: find.text('Storage Usage'), matching: find.byType(ListTile)),
+    );
+    expect(usageRow.trailing, isNotNull);
+    final filesRow = tester.widget<ListTile>(
+      find.ancestor(of: find.text('Files'), matching: find.byType(ListTile)),
+    );
+    expect(filesRow.trailing, isNotNull);
+  });
+
+  // Path was the one row left on a second line. Native right-aligns it too —
+  // confirmed on the head unit, where the full path fits without ellipsis —
+  // so the earlier note that native would ellipsise it was wrong.
+  testWidgets('the storage path is right-aligned like the other rows, not a subtitle', (tester) async {
+    stubHappyPath();
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+    await tester.pumpAndSettle();
+
+    final pathRow = tester.widget<ListTile>(
+      find.ancestor(of: find.text('Path'), matching: find.byType(ListTile)),
+    );
+    expect(pathRow.trailing, isNotNull, reason: 'the path belongs beside its label, as native renders it');
+    expect(pathRow.subtitle, isNull, reason: 'the second-line form is what BladeWatch-3118 reported');
+    expect(find.text('/storage/emulated/0/BladeWatch/recordings'), findsOneWidget);
+  });
+
+  // ── BladeWatch-htel: the two ways the Storage tab differed from native ────
+
+  testWidgets('the storage limit is shown in GB above 1024 MB, as native formats it', (tester) async {
+    stubHappyPath();
+    // Override the happy-path 800 MB with a limit that actually crosses the
+    // GB threshold — otherwise this asserts nothing about the formatting.
+    rpc.stubJson('StorageService', 'GetStorageSettings', {
+      'recordingsStorageType': 'INTERNAL',
+      'recordingsLimitMb': 16384,
+      'recordingsCount': 0,
+      'recordingsSizeBytes': '0',
+      'recordingsPath': '',
+      'minLimitMb': 100,
+      'maxLimitMb': 100000,
+      'maxLimitMbSdCard': 100000,
+    });
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('16.0 GB'), findsOneWidget);
+    expect(find.text('16384 MB'), findsNothing, reason: 'the raw megabyte count is what the port used to print');
+  });
+
+  testWidgets('the storage slider is stepped, not continuous', (tester) async {
+    stubHappyPath();
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+    await tester.pumpAndSettle();
+
+    // Native's SeekBar is one notch per 100 MB. Without divisions a drag lands
+    // on arbitrary values that cannot be reproduced by touch.
+    final slider = tester.widget<Slider>(find.byKey(const ValueKey('recording.storage.limitSlider')));
+    expect(slider.divisions, isNotNull);
+    expect(slider.divisions, greaterThan(0));
+  });
+
+  testWidgets('dragging the slider lands on a whole 100 MB step', (tester) async {
+    stubHappyPath();
+    final c = buildController();
+    await pump(tester, c);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byKey(const ValueKey('recording.storage.limitSlider')), const Offset(120, 0));
+    await tester.pumpAndSettle();
+
+    expect((c.selectedLimitMb - c.storageLimitMinMb) % 100, 0);
   });
 
   group('format drive flow', () {
@@ -302,4 +407,17 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+  testWidgets('the tab bar sits BELOW the content, as native places it', (tester) async {
+    // BladeWatch-htel: native adds its tab bar last (at the bottom of the
+    // pane) and this app's own Trips screen already did the same; these two
+    // screens were the only ones putting it on top.
+    stubHappyPath();
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+
+    final tabBarY = tester.getCenter(find.byKey(const ValueKey('recording.tab.status'))).dy;
+    final contentY = tester.getCenter(find.byType(ListView).first).dy;
+    expect(tabBarY, greaterThan(contentY));
+  });
+
 }

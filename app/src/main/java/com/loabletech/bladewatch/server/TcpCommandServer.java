@@ -16,7 +16,6 @@ import java.net.Socket;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * TCP Command Server - handles JSON commands from DaemonClient.
@@ -35,10 +34,6 @@ public class TcpCommandServer {
     private SecretConfigStore store() {
         return secretStoreForTest != null ? secretStoreForTest : SECRET_STORE;
     }
-
-    // ponytail: test seam — null = real "pgrep"; non-null = a deliberately-bogus
-    // path so isProcessRunning()'s catch branch is reachable from a test.
-    static String pgrepCommandForTest = null;
 
     // BladeWatch-1xt9: mirrors DaemonType.processName in
     // app/src/main/java/com/loabletech/bladewatch/ui/model/DaemonType.kt — kept as a
@@ -511,6 +506,116 @@ public class TcpCommandServer {
                 break;
             }
 
+            // BladeWatch-hygs: PUBLIC (non-secret) config sections over IPC.
+            // Deliberately NOT a generic "write anything to bladewatch_config.json"
+            // primitive: only the sections a Settings screen actually owns are
+            // reachable (PUBLIC_CONFIG_SECTIONS), so this command cannot be used to
+            // reconfigure recording, surveillance or the network binding. The secret
+            // store is unreachable from here — that stays on the secret_* family.
+            case "config_get_section": {
+                String section = cmd.optString("section", "");
+                if (!isPublicConfigSectionAllowed(section)) {
+                    response.put("status", "error");
+                    response.put("message", "Section not exposed over IPC: " + section);
+                    break;
+                }
+                response.put("status", "ok");
+                response.put("section", publicConfigSection(section));
+                break;
+            }
+
+            case "config_put": {
+                String section = cmd.optString("section", "");
+                String key = cmd.optString("key", "");
+                if (!isPublicConfigSectionAllowed(section)) {
+                    response.put("status", "error");
+                    response.put("message", "Section not exposed over IPC: " + section);
+                    break;
+                }
+                Object value = cmd.has("value") ? cmd.get("value") : null;
+                if (key.isEmpty() || value == null || value == JSONObject.NULL) {
+                    response.put("status", "error");
+                    response.put("message", "config_put needs a non-empty key and a value");
+                    break;
+                }
+                boolean ok = net.bladewatch.app.config.UnifiedConfigManager.updateValues(
+                        section, Collections.singletonMap(key, value));
+                response.put("status", ok ? "ok" : "error");
+                if (!ok) {
+                    response.put("message", "Failed to write " + section + "." + key);
+                }
+                break;
+            }
+
+            // BladeWatch-m1po: the current Zrok tunnel URL, for the Dashboard's
+            // remote-access tile / QR code in the Flutter APK, which has no path to
+            // ZrokController's in-memory LiveData or to the app-private
+            // SharedPreferences copy.
+            //
+            // Gated on the process actually running, exactly as native is:
+            // ZrokLauncher.launchZrok only calls getTunnelUrl() inside an
+            // isTunnelRunning { if (isRunning) … } branch. Without that gate a URL
+            // left in the log by a previous session would make the UI report a live
+            // tunnel that nothing is listening on.
+            case "tunnelStatus": {
+                boolean tunnelRunning = isProcessRunning(DAEMON_PROCESS_NAMES.get("ZROK_TUNNEL"));
+                String tunnelUrl = tunnelRunning ? readZrokTunnelUrl() : null;
+                response.put("status", "ok");
+                response.put("running", tunnelRunning);
+                // running && url == null is a real, distinct state — the tunnel
+                // process is up but has not yet written its share banner. The client
+                // renders that as "connecting", not "offline".
+                response.put("url", tunnelUrl == null ? JSONObject.NULL : tunnelUrl);
+                break;
+            }
+
+            // BladeWatch-abcx: enable/disable an OPTIONAL daemon from a UI that has no
+            // ADB. Deliberately NOT a generic "run this daemon command" primitive:
+            // `type` is checked against a fixed allow-list before anything happens, and
+            // no part of it ever reaches a shell.
+            //
+            // Scope is ZROK_TUNNEL only, on purpose (decided on this issue):
+            //
+            //  - CAMERA_DAEMON hosts THIS server. Stopping it kills the socket answering
+            //    the request, and the Flutter APK has no ADB, so nothing could start it
+            //    again — a one-way door out of that UI's reach.
+            //  - SENTRY_DAEMON / ACC_SENTRY_DAEMON are CORE daemons. DaemonStartupManager's
+            //    health check relaunches every core daemon within 30 s unless it is in an
+            //    in-memory, app-process-only `userStoppedDaemons` set that this process
+            //    cannot reach, so a stop here would silently undo itself. Making those
+            //    stoppable needs a cross-process decision about whether a stopped DASHCAM
+            //    should stay stopped across a reboot — see this issue.
+            //
+            // ZROK_TUNNEL has none of those problems: it is an OPTIONAL daemon whose
+            // enabled state native ALREADY persists, and the health check both starts it
+            // (through the full ZrokLauncher flow, tokens and all) and leaves it alone
+            // when disabled. So enabling is just recording the intent and letting the
+            // existing launcher do the work; only disabling additionally has to kill the
+            // running process, because the health check never kills, it only relaunches.
+            case "daemon_set_enabled": {
+                String daemonType = cmd.optString("type", "");
+                if (!TOGGLEABLE_DAEMONS.contains(daemonType)) {
+                    response.put("status", "error");
+                    response.put("message", "Daemon not toggleable over IPC: " + daemonType);
+                    break;
+                }
+                boolean enable = cmd.optBoolean("enabled", false);
+                boolean recorded = recordDaemonEnabled(daemonType, enable);
+                int killed = 0;
+                if (!enable) {
+                    // The health check only ever relaunches; without this the tunnel would
+                    // keep serving until the next reboot despite the switch reading "off".
+                    killed = killDaemonProcesses(DAEMON_PROCESS_NAMES.get(daemonType));
+                }
+                response.put("status", recorded ? "ok" : "error");
+                response.put("enabled", enable);
+                response.put("killed", killed);
+                if (!recorded) {
+                    response.put("message", "Failed to record daemon state for " + daemonType);
+                }
+                break;
+            }
+
             // uy93.2: "shell" (free-form sh -c over IPC) removed — RCE as UID 2000.
             // No live caller found; SentryDaemon runs its own shell commands directly.
 
@@ -538,45 +643,300 @@ public class TcpCommandServer {
     }
 
     /**
-     * True if a process named exactly {@code processName} is currently running,
-     * checked locally via {@code pgrep -x} — this process already runs as shell UID
-     * (see AdbDaemonLauncher.launchDaemon), the same UID the daemon processes run as,
-     * so no ADB round-trip is needed. Package-private so
-     * {@link DaemonStatusCommandTest} can exercise it directly.
+     * The only {@link net.bladewatch.app.config.UnifiedConfigManager} sections the
+     * {@code config_get_section}/{@code config_put} commands will touch.
+     *
+     * <p>BladeWatch-hygs: the Flutter APK needs the two sections its Settings screens
+     * own — {@code statusOverlay} (the floating pill's per-segment visibility, read by
+     * {@link net.bladewatch.app.overlay.StatusOverlayService#updateUI}) and
+     * {@code developerOptions} (the two logging toggles). Everything else in that file
+     * — recording, surveillance, streaming, network — is set through a purpose-built
+     * command or an RPC that validates its input, and must stay that way: a generic
+     * section write would let any IPC caller flip {@code network.lanHttpEnabled} or
+     * disable surveillance with no validation at all.
+     *
+     * <p>Built with LinkedHashSet, not {@code Set.of} — same API-29 reason as
+     * {@link #DAEMON_PROCESS_NAMES} above.
      */
-    boolean isProcessRunning(String processName) {
-        Process p = null;
-        try {
-            String pgrep = pgrepCommandForTest != null ? pgrepCommandForTest : "pgrep";
-            p = new ProcessBuilder(pgrep, "-x", processName)
-                    .redirectErrorStream(true)
-                    .start();
-            return p.waitFor(2, TimeUnit.SECONDS) && p.exitValue() == 0;
-        } catch (Exception e) {
-            return false;
-        } finally {
-            // Every ProcessBuilder.start() allocates pipe file descriptors that are NOT
-            // released just because the child exited — they live until the Process is
-            // GC'd. daemonStatus spawns one of these per daemon (4) per poll, so without
-            // an explicit close this leaks FDs steadily and eventually throws EMFILE
-            // ("Too many open files") inside the daemon. destroy() also reaps the child
-            // in the waitFor-timeout case, where it is otherwise left running.
-            if (p != null) {
-                closeQuietly(p.getInputStream());
-                closeQuietly(p.getOutputStream());
-                closeQuietly(p.getErrorStream());
-                p.destroy();
+    private static final java.util.Set<String> PUBLIC_CONFIG_SECTIONS;
+    static {
+        java.util.Set<String> sections = new java.util.LinkedHashSet<>();
+        sections.add("statusOverlay");
+        sections.add("developerOptions");
+        PUBLIC_CONFIG_SECTIONS = Collections.unmodifiableSet(sections);
+    }
+
+    /** Package-private so {@code PublicConfigCommandTest} can pin the allowlist. */
+    static boolean isPublicConfigSectionAllowed(String section) {
+        return PUBLIC_CONFIG_SECTIONS.contains(section);
+    }
+
+    /**
+     * The daemons {@code daemon_set_enabled} will act on. See that command's comment for
+     * why the other three are excluded; this is the enforcement, not the documentation.
+     */
+    private static final java.util.Set<String> TOGGLEABLE_DAEMONS;
+    static {
+        java.util.Set<String> toggleable = new java.util.LinkedHashSet<>();
+        toggleable.add("ZROK_TUNNEL");
+        TOGGLEABLE_DAEMONS = Collections.unmodifiableSet(toggleable);
+    }
+
+    /**
+     * ponytail: test seam — non-null records the intent instead of writing the real
+     * config, which needs {@code android.util.Log} and a file under /storage.
+     */
+    static java.util.Map<String, Boolean> daemonEnabledWritesForTest = null;
+
+    private static boolean recordDaemonEnabled(String daemonType, boolean enabled) {
+        if (daemonEnabledWritesForTest != null) {
+            daemonEnabledWritesForTest.put(daemonType, enabled);
+            return true;
+        }
+        return net.bladewatch.app.config.UnifiedConfigManager.setDaemonEnabled(daemonType, enabled);
+    }
+
+    /**
+     * ponytail: test seam — non-null diverts kills into this list instead of signalling
+     * anything, so the allow-list and the kill decision are testable off-device.
+     */
+    static java.util.List<Integer> killedPidsForTest = null;
+
+    /**
+     * SIGKILLs every process whose argv[0] basename is {@code processName}, returning how
+     * many were signalled.
+     *
+     * <p>The PIDs come from this class's own procfs scan, never from the request — the
+     * caller supplies an enum-constrained daemon TYPE, which is mapped through
+     * {@link #DAEMON_PROCESS_NAMES} to a fixed process name. Nothing from the wire reaches
+     * this method.
+     *
+     * <p>{@code android.os.Process.killProcess} is a direct syscall wrapper, not a shell
+     * invocation — signalling a same-UID process is permitted, and this daemon runs as the
+     * same shell UID the tunnel was launched under.
+     */
+    private static int killDaemonProcesses(String processName) {
+        if (processName == null) return 0;
+        int killed = 0;
+        for (Integer pid : findPidsByProcessName(processName)) {
+            try {
+                if (killedPidsForTest != null) {
+                    killedPidsForTest.add(pid);
+                } else {
+                    android.os.Process.killProcess(pid);
+                }
+                killed++;
+            } catch (Exception e) {
+                CameraDaemon.log("daemon_set_enabled: could not kill pid " + pid + ": " + e.getMessage());
             }
+        }
+        return killed;
+    }
+
+    /**
+     * Where {@code ZrokLauncher} points the tunnel's stdout — mirrors its private
+     * {@code ZROK_LOG} constant
+     * ({@code app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt}).
+     * Kept as a local copy rather than an import so this low-level server package
+     * takes no dependency on the launcher layer; update both if it ever moves.
+     */
+    static String zrokLogPathForTest = null;
+
+    private static String zrokLogPath() {
+        return zrokLogPathForTest != null ? zrokLogPathForTest : "/data/local/tmp/zrok.log";
+    }
+
+    /** The share URL zrok prints when it brings a tunnel up. Same shape native greps for. */
+    private static final java.util.regex.Pattern ZROK_URL =
+            java.util.regex.Pattern.compile("https://[a-z0-9]+\\.share\\.zrok\\.io");
+
+    /**
+     * Only ever read this much of the tail of a large log — see {@link #readZrokTunnelUrl}.
+     */
+    private static final int ZROK_LOG_TAIL_BYTES = 256 * 1024;
+
+    /**
+     * The tunnel URL from zrok's own log, or null if none is recorded.
+     *
+     * <p>Two deliberate differences from native's
+     * {@code grep -o … | head -1} ({@code ZrokLauncher.getTunnelUrl}):
+     *
+     * <p>1. It takes the <b>last</b> match, not the first. The log is appended to
+     * across launches, so the first match can be a URL from an earlier session that
+     * bound a different name — the exact "drift" native has to paper over afterwards
+     * with {@code reconcileTunnelUrl}. The most recent banner is the live one.
+     *
+     * <p>2. It never loads the whole file into memory. Native's own comment notes the
+     * 85 MB+ allocations that caused; this streams, and on a log larger than
+     * {@link #ZROK_LOG_TAIL_BYTES} it reads only the tail (skipping a partial first
+     * line, which cannot be a complete banner). A quiet tunnel writes its banner once
+     * at startup and little after, so the tail is where the live URL is.
+     *
+     * <p>Reading the file directly needs no shell and no ADB: this process already runs
+     * as shell UID, the same UID zrok was launched under, and the log lives in
+     * {@code /data/local/tmp}. Package-private for {@code TunnelStatusCommandTest}.
+     */
+    static String readZrokTunnelUrl() {
+        java.io.File log = new java.io.File(zrokLogPath());
+        if (!log.isFile() || log.length() == 0) return null;
+        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(log, "r")) {
+            long start = Math.max(0, raf.length() - ZROK_LOG_TAIL_BYTES);
+            raf.seek(start);
+            if (start > 0) raf.readLine(); // drop the partial line the seek landed inside
+            String found = null;
+            String line;
+            while ((line = raf.readLine()) != null) {
+                java.util.regex.Matcher m = ZROK_URL.matcher(line);
+                while (m.find()) {
+                    found = m.group();
+                }
+            }
+            return found;
+        } catch (Exception e) {
+            CameraDaemon.log("tunnelStatus: could not read zrok log: " + e.getMessage());
+            return null;
         }
     }
 
-    private static void closeQuietly(java.io.Closeable c) {
-        if (c == null) return;
-        try {
-            c.close();
-        } catch (Exception ignored) {
-            // Closing a pipe on an already-exited child routinely throws; nothing to do.
+    /**
+     * The section's current values, read through the same typed accessors the native
+     * UI uses so the DEFAULTS for an absent key match exactly ({@code cameraVisible}/
+     * {@code tripVisible} default true, {@code timingLogsEnabled} true,
+     * {@code debugLogsEnabled} false). Reading the raw JSON object instead would hand
+     * the caller an empty object on a fresh install and make every client re-derive
+     * those defaults.
+     */
+    private static JSONObject publicConfigSection(String section) throws Exception {
+        switch (section) {
+            case "statusOverlay": {
+                JSONObject cfg = net.bladewatch.app.config.UnifiedConfigManager.getStatusOverlay();
+                return new JSONObject()
+                        .put("cameraVisible", cfg.optBoolean("cameraVisible", true))
+                        .put("tripVisible", cfg.optBoolean("tripVisible", true));
+            }
+            case "developerOptions":
+                return new JSONObject()
+                        .put("timingLogsEnabled",
+                                net.bladewatch.app.config.UnifiedConfigManager.isTimingLogsEnabled())
+                        .put("debugLogsEnabled",
+                                net.bladewatch.app.config.UnifiedConfigManager.isDebugLogsEnabled());
+            default:
+                // Unreachable: every caller checks isPublicConfigSectionAllowed first.
+                return new JSONObject();
         }
+    }
+
+    /**
+     * True if a daemon process named exactly {@code processName} is currently running.
+     *
+     * <p>Matches on <b>argv[0] only</b>, compared by basename and by exact equality —
+     * never a substring of the whole command line. BladeWatch-xzhv: the previous
+     * implementation shelled out to {@code pgrep -f "(^|[^_[:alnum:]])<name>"}, and
+     * {@code -f} matches the FULL command line, so <i>any</i> process that merely
+     * mentioned a daemon name reported that daemon as running. Observed on the head
+     * unit: an {@code adb shell} one-liner that only wrote to
+     * {@code /data/local/tmp/zrok.log} made {@code tunnelStatus} answer
+     * {@code running=true} with no zrok anywhere — which defeats the whole point of
+     * that command's liveness gate (it exists so a URL left in the log by a dead
+     * session is never republished as a live tunnel).
+     *
+     * <p>argv[0] is the right discriminator because of how these processes are
+     * launched, verified by reading {@code /proc/<pid>/cmdline} on the device:
+     * <ul>
+     *   <li>{@code app_process --nice-name=byd_cam_daemon …} overwrites argv[0] with
+     *       the nice-name, so the live daemon's cmdline is literally
+     *       {@code "byd_cam_daemon"} (NUL/space padded) — while the {@code sh -c}
+     *       that launched it keeps its own argv[0] of {@code "sh"}. Exactly the
+     *       distinction the old pattern could not draw.</li>
+     *   <li>zrok is exec'd by path, so its argv[0] is {@code /data/local/tmp/zrok} —
+     *       hence the basename comparison rather than raw equality.</li>
+     * </ul>
+     *
+     * <p>Exact equality also preserves the property the old leading-boundary group
+     * existed for: {@code sentry_daemon} does not match {@code acc_sentry_daemon}.
+     *
+     * <p>Reading procfs directly replaces a {@code ProcessBuilder} fork per daemon per
+     * poll, which removes the file-descriptor leak the previous implementation had to
+     * guard against by hand. This process runs as shell UID and can read other
+     * processes' {@code cmdline} (confirmed on device, same UID the daemons run as).
+     */
+    boolean isProcessRunning(String processName) {
+        return !findPidsByProcessName(processName).isEmpty();
+    }
+
+    /**
+     * Every PID whose argv[0] basename is exactly {@code processName} — see
+     * {@link #isProcessRunning} for why argv[0] and not the whole command line.
+     * A daemon can legitimately have more than one PID (a forked child keeps the
+     * parent's argv), so this returns all of them rather than the first.
+     */
+    static java.util.List<Integer> findPidsByProcessName(String processName) {
+        java.util.List<Integer> pids = new java.util.ArrayList<>();
+        if (processName == null || processName.isEmpty()) return pids;
+        java.io.File[] entries = procRoot().listFiles();
+        if (entries == null) return pids;
+        for (java.io.File entry : entries) {
+            if (!isPid(entry.getName())) continue;
+            String argv0 = readArgv0(new java.io.File(entry, "cmdline"));
+            if (argv0 == null) continue;
+            if (processName.equals(basename(argv0))) {
+                try {
+                    pids.add(Integer.parseInt(entry.getName()));
+                } catch (NumberFormatException ignored) {
+                    // isPid() already screened this; belt and braces.
+                }
+            }
+        }
+        return pids;
+    }
+
+    // ponytail: test seam — null = the real /proc; non-null = a fake tree a unit test
+    // can populate, which is what makes the matching rules above testable off-device.
+    static java.io.File procRootForTest = null;
+
+    private static java.io.File procRoot() {
+        return procRootForTest != null ? procRootForTest : new java.io.File("/proc");
+    }
+
+    private static boolean isPid(String name) {
+        if (name.isEmpty()) return false;
+        for (int i = 0; i < name.length(); i++) {
+            if (name.charAt(i) < '0' || name.charAt(i) > '9') return false;
+        }
+        return true;
+    }
+
+    /**
+     * The first NUL-separated element of {@code /proc/<pid>/cmdline}, or null when the
+     * process is gone or unreadable (both routine: PIDs vanish mid-scan, and kernel
+     * threads have an empty cmdline).
+     *
+     * <p>Trailing spaces are stripped because {@code app_process} pads the argv[0]
+     * region — the live daemon's cmdline is the nice-name followed by filler, not a
+     * bare string.
+     */
+    private static String readArgv0(java.io.File cmdline) {
+        try (java.io.InputStream in = new java.io.FileInputStream(cmdline)) {
+            // argv[0] alone; no need to read a whole command line to compare one token.
+            byte[] buf = new byte[256];
+            int n = in.read(buf);
+            if (n <= 0) return null;
+            int end = 0;
+            while (end < n && buf[end] != 0) end++;
+            String first = new String(buf, 0, end, java.nio.charset.StandardCharsets.UTF_8);
+            int trimEnd = first.length();
+            while (trimEnd > 0 && first.charAt(trimEnd - 1) == ' ') trimEnd--;
+            String trimmed = first.substring(0, trimEnd);
+            return trimmed.isEmpty() ? null : trimmed;
+        } catch (Exception e) {
+            // A PID that exited between listFiles() and the open is the common case.
+            return null;
+        }
+    }
+
+    private static String basename(String path) {
+        int slash = path.lastIndexOf('/');
+        return slash < 0 ? path : path.substring(slash + 1);
     }
 
     // ==================== STATUS HELPERS ====================

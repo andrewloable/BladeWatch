@@ -51,6 +51,11 @@ class SurveillanceConfig extends $pb.GeneratedMessage {
     $core.bool? cameraLeft,
     $core.String? deterrentAction,
     $core.int? deterrentCooldownSeconds,
+    $core.Iterable<$core.MapEntry<$core.String, RoiPolygon>>? roiPolygons,
+    $core.bool? roiEnabledQ0,
+    $core.bool? roiEnabledQ1,
+    $core.bool? roiEnabledQ2,
+    $core.bool? roiEnabledQ3,
   }) {
     final result = SurveillanceConfig._();
     if (enabled != null) result.enabled = enabled;
@@ -84,6 +89,11 @@ class SurveillanceConfig extends $pb.GeneratedMessage {
     if (deterrentAction != null) result.deterrentAction = deterrentAction;
     if (deterrentCooldownSeconds != null)
       result.deterrentCooldownSeconds = deterrentCooldownSeconds;
+    if (roiPolygons != null) result.roiPolygons.addEntries(roiPolygons);
+    if (roiEnabledQ0 != null) result.roiEnabledQ0 = roiEnabledQ0;
+    if (roiEnabledQ1 != null) result.roiEnabledQ1 = roiEnabledQ1;
+    if (roiEnabledQ2 != null) result.roiEnabledQ2 = roiEnabledQ2;
+    if (roiEnabledQ3 != null) result.roiEnabledQ3 = roiEnabledQ3;
     return result;
   }
 
@@ -129,6 +139,21 @@ class SurveillanceConfig extends $pb.GeneratedMessage {
     ..aOB(27, _omitFieldNames ? '' : 'cameraLeft')
     ..aOS(28, _omitFieldNames ? '' : 'deterrentAction')
     ..aI(29, _omitFieldNames ? '' : 'deterrentCooldownSeconds')
+    ..m<$core.String, RoiPolygon>(30, _omitFieldNames ? '' : 'roiPolygons',
+        entryClassName: 'SurveillanceConfig.RoiPolygonsEntry',
+        keyFieldType: $pb.PbFieldType.OS,
+        valueFieldType: $pb.PbFieldType.OM,
+        valueCreator: RoiPolygon.$_createMessage,
+        valueDefaultOrMaker: RoiPolygon.getDefault,
+        packageName: const $pb.PackageName('bladewatch.v1'))
+    ..aOB(31, _omitFieldNames ? '' : 'roiEnabled_Q0',
+        protoName: 'roi_enabled_q0')
+    ..aOB(32, _omitFieldNames ? '' : 'roiEnabled_Q1',
+        protoName: 'roi_enabled_q1')
+    ..aOB(33, _omitFieldNames ? '' : 'roiEnabled_Q2',
+        protoName: 'roi_enabled_q2')
+    ..aOB(34, _omitFieldNames ? '' : 'roiEnabled_Q3',
+        protoName: 'roi_enabled_q3')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -421,6 +446,181 @@ class SurveillanceConfig extends $pb.GeneratedMessage {
   $core.bool hasDeterrentCooldownSeconds() => $_has(28);
   @$pb.TagNumber(29)
   void clearDeterrentCooldownSeconds() => $_clearField(29);
+
+  /// Per-quadrant region-of-interest motion masks (BladeWatch-9b0f).
+  ///
+  /// The motion pipeline has supported these all along
+  /// (SurveillanceEngineGpu.applyQuadrantRoi -> NativeMotion.setQuadrantRoi), and
+  /// SurveillanceApiHandler already persists and applies them — but they were
+  /// absent from this message, so no ConnectRPC client could ever see or set one.
+  ///
+  /// Keyed "Q0".."Q3" (front/right/rear/left), matching the REST handler's own
+  /// quadrant keys exactly. A quadrant is simply absent when it has no polygon.
+  /// The explicit json_name keeps the wire shape byte-identical to what that
+  /// handler already reads and writes.
+  @$pb.TagNumber(30)
+  $pb.PbMap<$core.String, RoiPolygon> get roiPolygons => $_getMap(29);
+
+  /// Whether each quadrant's polygon is actually applied. Separate from the
+  /// polygon itself so a zone can be switched off without losing the shape the
+  /// user drew — the REST handler already models it that way.
+  @$pb.TagNumber(31)
+  $core.bool get roiEnabledQ0 => $_getBF(30);
+  @$pb.TagNumber(31)
+  set roiEnabledQ0($core.bool value) => $_setBool(30, value);
+  @$pb.TagNumber(31)
+  $core.bool hasRoiEnabledQ0() => $_has(30);
+  @$pb.TagNumber(31)
+  void clearRoiEnabledQ0() => $_clearField(31);
+
+  @$pb.TagNumber(32)
+  $core.bool get roiEnabledQ1 => $_getBF(31);
+  @$pb.TagNumber(32)
+  set roiEnabledQ1($core.bool value) => $_setBool(31, value);
+  @$pb.TagNumber(32)
+  $core.bool hasRoiEnabledQ1() => $_has(31);
+  @$pb.TagNumber(32)
+  void clearRoiEnabledQ1() => $_clearField(32);
+
+  @$pb.TagNumber(33)
+  $core.bool get roiEnabledQ2 => $_getBF(32);
+  @$pb.TagNumber(33)
+  set roiEnabledQ2($core.bool value) => $_setBool(32, value);
+  @$pb.TagNumber(33)
+  $core.bool hasRoiEnabledQ2() => $_has(32);
+  @$pb.TagNumber(33)
+  void clearRoiEnabledQ2() => $_clearField(33);
+
+  @$pb.TagNumber(34)
+  $core.bool get roiEnabledQ3 => $_getBF(33);
+  @$pb.TagNumber(34)
+  set roiEnabledQ3($core.bool value) => $_setBool(33, value);
+  @$pb.TagNumber(34)
+  $core.bool hasRoiEnabledQ3() => $_has(33);
+  @$pb.TagNumber(34)
+  void clearRoiEnabledQ3() => $_clearField(34);
+}
+
+/// One vertex of an ROI polygon, normalised to 0..1 within its quadrant so the
+/// shape survives a resolution change.
+class RoiPoint extends $pb.GeneratedMessage {
+  factory RoiPoint({
+    $core.double? x,
+    $core.double? y,
+  }) {
+    final result = RoiPoint._();
+    if (x != null) result.x = x;
+    if (y != null) result.y = y;
+    return result;
+  }
+
+  RoiPoint._();
+
+  factory RoiPoint.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      RoiPoint()..mergeFromBuffer(data, registry);
+  factory RoiPoint.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      RoiPoint()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RoiPoint',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: RoiPoint.$_createMessage)
+    ..aD(1, _omitFieldNames ? '' : 'x', fieldType: $pb.PbFieldType.OF)
+    ..aD(2, _omitFieldNames ? '' : 'y', fieldType: $pb.PbFieldType.OF)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoiPoint clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoiPoint copyWith(void Function(RoiPoint) updates) =>
+      super.copyWith((message) => updates(message as RoiPoint)) as RoiPoint;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated('Use RoiPoint() / RoiPoint.new instead')
+  static RoiPoint create() => RoiPoint._();
+  static $pb.GeneratedMessage $_createMessage() => RoiPoint._();
+  @$core.override
+  RoiPoint createEmptyInstance() => RoiPoint._();
+  @$core.pragma('dart2js:noInline')
+  static RoiPoint getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RoiPoint>(RoiPoint.$_createMessage);
+  static RoiPoint? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.double get x => $_getN(0);
+  @$pb.TagNumber(1)
+  set x($core.double value) => $_setFloat(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasX() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearX() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.double get y => $_getN(1);
+  @$pb.TagNumber(2)
+  set y($core.double value) => $_setFloat(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasY() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearY() => $_clearField(2);
+}
+
+/// A drawn motion zone. The pipeline rasterises it to a 10x7 block mask, and
+/// fewer than 3 vertices means "no zone" — that is the engine's own rule
+/// (applyQuadrantRoi clears the quadrant below 3 points), not a UI convention.
+class RoiPolygon extends $pb.GeneratedMessage {
+  factory RoiPolygon({
+    $core.Iterable<RoiPoint>? points,
+  }) {
+    final result = RoiPolygon._();
+    if (points != null) result.points.addAll(points);
+    return result;
+  }
+
+  RoiPolygon._();
+
+  factory RoiPolygon.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      RoiPolygon()..mergeFromBuffer(data, registry);
+  factory RoiPolygon.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      RoiPolygon()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RoiPolygon',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: RoiPolygon.$_createMessage)
+    ..pPM<RoiPoint>(1, _omitFieldNames ? '' : 'points',
+        subBuilder: RoiPoint.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoiPolygon clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoiPolygon copyWith(void Function(RoiPolygon) updates) =>
+      super.copyWith((message) => updates(message as RoiPolygon)) as RoiPolygon;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated('Use RoiPolygon() / RoiPolygon.new instead')
+  static RoiPolygon create() => RoiPolygon._();
+  static $pb.GeneratedMessage $_createMessage() => RoiPolygon._();
+  @$core.override
+  RoiPolygon createEmptyInstance() => RoiPolygon._();
+  @$core.pragma('dart2js:noInline')
+  static RoiPolygon getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RoiPolygon>(RoiPolygon.$_createMessage);
+  static RoiPolygon? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $pb.PbList<RoiPoint> get points => $_getList(0);
 }
 
 class GetSurveillanceConfigRequest extends $pb.GeneratedMessage {

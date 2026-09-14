@@ -68,18 +68,57 @@ void main() {
     expect(s.url, isNull);
   });
 
+  group('VehicleDialogState', () {
+    test('loading() sentinel', () {
+      // Deliberately NOT `const`: a const invocation is folded at compile time
+      // and the constructor body never runs, so it would look covered without
+      // ever executing.
+      final s = VehicleDialogState.loading();
+      expect(s.loading, isTrue);
+      expect(s.models, isEmpty);
+      expect(s.selectedModelId, isNull);
+    });
+
+    test('copyWith replaces only what it is given', () {
+      final base = VehicleDialogState(
+        loading: false,
+        models: const [VehicleModelEntry(id: 'seal', title: 'BYD Seal', nominalKwh: 82.5)],
+        selectedModelId: null,
+      );
+
+      final picked = base.copyWith(selectedModelId: 'seal');
+
+      expect(picked.selectedModelId, 'seal');
+      expect(picked.loading, isFalse);
+      expect(picked.models, base.models);
+    });
+
+    test('copyWith keeps the existing selection when not given one', () {
+      final base = VehicleDialogState(loading: false, models: const [], selectedModelId: 'seal');
+
+      final reloaded = base.copyWith(loading: true);
+
+      expect(reloaded.loading, isTrue);
+      expect(reloaded.selectedModelId, 'seal');
+    });
+  });
+
   group('VehicleTileState', () {
     test('loading() sentinel', () {
       const s = VehicleTileState.loading();
       expect(s.loading, isTrue);
-      expect(s.hasCapacity, isFalse);
+      expect(s.hasModel, isFalse);
     });
 
-    test('hasCapacity is true only when nominalKwh is positive', () {
-      const withCapacity = VehicleTileState(loading: false, nominalKwh: 82.5);
-      const withoutCapacity = VehicleTileState(loading: false, nominalKwh: 0);
-      expect(withCapacity.hasCapacity, isTrue);
-      expect(withoutCapacity.hasCapacity, isFalse);
+    // BladeWatch-p7vi: the tile tracks the selected MODEL now. It used to track
+    // nominal capacity, which the daemon can no longer supply at all.
+    test('hasModel is true only when a model id is actually set', () {
+      const withModel = VehicleTileState(loading: false, modelId: 'seal');
+      const noModel = VehicleTileState(loading: false);
+      const emptyModel = VehicleTileState(loading: false, modelId: '');
+      expect(withModel.hasModel, isTrue);
+      expect(noModel.hasModel, isFalse);
+      expect(emptyModel.hasModel, isFalse, reason: 'an empty id is not a selection');
     });
   });
 

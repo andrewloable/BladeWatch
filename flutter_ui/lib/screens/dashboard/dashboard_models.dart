@@ -104,16 +104,19 @@ class TunnelState {
 }
 
 /// Vehicle metric tile — ground truth: `refreshVehicleTile()`.
+/// BladeWatch-p7vi: the tile used to show the nominal capacity, which the
+/// daemon can no longer supply (the SoH endpoints are removed-feature stubs
+/// returning nothing), so it showed "Tap to set" permanently. It now reflects
+/// the selected vehicle MODEL, which is real, persisted state.
 class VehicleTileState {
   final bool loading;
-  final double nominalKwh;
   final String? modelId;
 
-  const VehicleTileState({required this.loading, required this.nominalKwh, this.modelId});
+  const VehicleTileState({required this.loading, this.modelId});
 
-  const VehicleTileState.loading() : loading = true, nominalKwh = 0, modelId = null;
+  const VehicleTileState.loading() : loading = true, modelId = null;
 
-  bool get hasCapacity => nominalKwh > 0;
+  bool get hasModel => modelId != null && modelId!.isNotEmpty;
 }
 
 /// Access-code (auth) tile — ground truth: `loadAuthState()`/
@@ -148,66 +151,37 @@ class VehicleModelEntry {
 
 /// State for the vehicle-capacity dialog — ground truth:
 /// `DashboardFragment.showVehicleCapacityDialog()`.
+/// BladeWatch-p7vi: battery State-of-Health estimation was removed from the
+/// daemon, and its two endpoints are stubs that refuse every write. The dialog
+/// therefore no longer carries a capacity field or an SoH summary — it would be
+/// offering an operation that cannot succeed. What remains is the vehicle MODEL
+/// selection, which `ModelsApiHandler` genuinely persists.
 class VehicleDialogState {
   final bool loading;
   final List<VehicleModelEntry> models;
   final String? selectedModelId;
 
-  /// The capacity text field's current value — a string (not a double)
-  /// because it is user-edited input, same as the native `TextInputEditText`.
-  final String capacityText;
-
-  // Summary section — each shown only when its backing data is meaningful,
-  // mirroring the native's per-line `visibility = View.VISIBLE` gating.
-  final double nominalKwh;
-  final String nominalSource;
-  final double displaySoh;
-  final String displaySource;
-
   const VehicleDialogState({
     required this.loading,
     required this.models,
     required this.selectedModelId,
-    required this.capacityText,
-    required this.nominalKwh,
-    required this.nominalSource,
-    required this.displaySoh,
-    required this.displaySource,
   });
 
   const VehicleDialogState.loading()
       : loading = true,
         models = const [],
-        selectedModelId = null,
-        capacityText = '',
-        nominalKwh = 0,
-        nominalSource = 'unset',
-        displaySoh = -1,
-        displaySource = 'unavailable';
+        selectedModelId = null;
 
   VehicleDialogState copyWith({
     bool? loading,
     List<VehicleModelEntry>? models,
     String? selectedModelId,
-    String? capacityText,
-    double? nominalKwh,
-    String? nominalSource,
-    double? displaySoh,
-    String? displaySource,
   }) =>
       VehicleDialogState(
         loading: loading ?? this.loading,
         models: models ?? this.models,
         selectedModelId: selectedModelId ?? this.selectedModelId,
-        capacityText: capacityText ?? this.capacityText,
-        nominalKwh: nominalKwh ?? this.nominalKwh,
-        nominalSource: nominalSource ?? this.nominalSource,
-        displaySoh: displaySoh ?? this.displaySoh,
-        displaySource: displaySource ?? this.displaySource,
       );
-
-  bool get hasCapacitySummary => nominalKwh > 0;
-  bool get hasSohSummary => displaySoh > 0;
 }
 
 /// Human-readable display name for a model id — ground truth:

@@ -49,14 +49,9 @@ void main() {
     channel.stub('auth', 'getAccessCode', 'shh-fake-secret');
   }
 
+  // BladeWatch-p7vi: the dialog no longer reads GetSohStatus — SoH was removed
+  // from the daemon — so only the model manifest is needed here.
   void stubVehicleDialog() {
-    rpc.stubJson('SystemService', 'GetSohStatus', {
-      'success': true,
-      'nominalCapacityKwh': 82.5,
-      'nominalSource': 'user',
-      'displaySoh': 97.2,
-      'displaySource': 'live',
-    });
     rpc.stubJson('SystemService', 'GetModelsManifest', {
       'manifestJson': '{"models":[{"id":"seal","name":"BYD Seal","nominalKwh":82.5}]}',
     });
@@ -226,13 +221,16 @@ void main() {
     expect(find.text('Tap to set'), findsOneWidget);
   });
 
-  testWidgets('vehicle tile shows capacity and model when both are set', (tester) async {
+  // BladeWatch-p7vi: the tile showed the nominal capacity, which the daemon can
+  // no longer supply at all — so it sat on "Tap to set" permanently. It now
+  // shows the selected model.
+  testWidgets('vehicle tile shows the selected model', (tester) async {
     stubHappyPath();
     final controller = buildController();
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
 
-    expect(find.text('82.5 kWh · BYD Seal'), findsOneWidget);
+    expect(find.text('BYD Seal'), findsOneWidget);
   });
 
   testWidgets('access code starts masked; toggling reveals then re-masks it', (tester) async {
@@ -404,8 +402,12 @@ void main() {
     expect(navigated, ['trips']);
   });
 
-  group('vehicle capacity dialog', () {
-    testWidgets('opens from the vehicle tile, pre-filled with the current capacity', (tester) async {
+  // BladeWatch-p7vi: battery State-of-Health was removed from the daemon, so
+  // the capacity field, its Reset action and the SoH summary are gone — they
+  // offered an operation that could not succeed. The dialog now picks the
+  // vehicle MODEL, which is really persisted.
+  group('vehicle model dialog', () {
+    testWidgets('opens from the vehicle tile and shows the model choices', (tester) async {
       stubHappyPath();
       stubVehicleDialog();
       final controller = buildController();
@@ -415,11 +417,10 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('tile.vehicle')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Set battery capacity'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '82.5'), findsOneWidget);
+      expect(find.byKey(const ValueKey('vehicleDialog.model.seal')), findsOneWidget);
     });
 
-    testWidgets('an invalid capacity is rejected without saving', (tester) async {
+    testWidgets('no longer offers a capacity field or a reset action', (tester) async {
       stubHappyPath();
       stubVehicleDialog();
       final controller = buildController();
@@ -428,145 +429,88 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('tile.vehicle')));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextField, '82.5'), '3');
+      expect(find.byType(TextField), findsNothing, reason: 'the capacity field cannot be saved');
+      expect(find.widgetWithText(TextButton, 'Reset to auto-detect'), findsNothing);
+    });
+
+    testWidgets('saving persists the chosen model and closes', (tester) async {
+      stubHappyPath();
+      stubVehicleDialog();
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': true});
+      final controller = buildController();
+      await pumpDashboard(tester, controller);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('tile.vehicle')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicleDialog.model.seal')));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Save'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Capacity must be 8 - 120 kWh'), findsOneWidget);
+      expect(find.byKey(const ValueKey('vehicleDialog.model.seal')), findsNothing);
+      final call = rpc.calls.firstWhere((c) => c.method == 'SetSelectedModel');
+      expect((call.request as dynamic).modelId, 'seal');
+    });
+
+    testWidgets('the removed SOH endpoints are never called', (tester) async {
+      stubHappyPath();
+      stubVehicleDialog();
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': true});
+      final controller = buildController();
+      await pumpDashboard(tester, controller);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('tile.vehicle')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('vehicleDialog.model.seal')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Save'));
+      await tester.pumpAndSettle();
+
       expect(rpc.calls.where((c) => c.method == 'SetSohNominal'), isEmpty);
+      expect(rpc.calls.where((c) => c.method == 'GetSohNominal'), isEmpty);
     });
 
-    testWidgets('saving a valid capacity calls SetSohNominal and closes the dialog', (tester) async {
+    // A refusal arrives as HTTP 200 with ok:false, so nothing throws. Closing
+    // the dialog on that would look exactly like a successful save — the
+    // original BladeWatch-p7vi defect.
+    testWidgets('a refused save keeps the dialog open and shows the reason', (tester) async {
       stubHappyPath();
       stubVehicleDialog();
-      rpc.stubJson('SystemService', 'SetSohNominal', {'success': true});
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': false, 'error': 'unknown model'});
       final controller = buildController();
       await pumpDashboard(tester, controller);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('tile.vehicle')));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextField, '82.5'), '75.0');
+      await tester.tap(find.byKey(const ValueKey('vehicleDialog.model.seal')));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Save'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Set battery capacity'), findsNothing);
-      final call = rpc.calls.firstWhere((c) => c.method == 'SetSohNominal');
-      expect((call.request as dynamic).nominalKwh, closeTo(75.0, 0.001));
+      expect(find.byKey(const ValueKey('vehicleDialog.model.seal')), findsOneWidget,
+          reason: 'closing would look like it saved');
+      expect(find.text('unknown model'), findsOneWidget);
     });
 
-    testWidgets('reset clears the override and closes the dialog', (tester) async {
+    testWidgets('a transport failure falls back to the generic message', (tester) async {
       stubHappyPath();
       stubVehicleDialog();
-      rpc.stubJson('SystemService', 'SetSohNominal', {'success': true});
+      rpc.stubError('SystemService', 'SetSelectedModel', const ConnectError('unavailable', 'down'));
       final controller = buildController();
       await pumpDashboard(tester, controller);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('tile.vehicle')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(TextButton, 'Reset to auto-detect'));
+      await tester.tap(find.byKey(const ValueKey('vehicleDialog.model.seal')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Save'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Set battery capacity'), findsNothing);
-      final call = rpc.calls.firstWhere((c) => c.method == 'SetSohNominal');
-      expect((call.request as dynamic).hasNominalKwh(), isFalse);
-    });
-
-    testWidgets('selecting a model auto-fills its manifest capacity', (tester) async {
-      stubHappyPath();
-      rpc.stubJson('SystemService', 'GetSohStatus', {'success': true});
-      rpc.stubJson('SystemService', 'GetModelsManifest', {
-        'manifestJson':
-            '{"models":[{"id":"seal","name":"BYD Seal","nominalKwh":82.5},{"id":"atto3","name":"BYD Atto 3","nominalKwh":60.5}]}',
-      });
-      // Override stubHappyPath's pre-selected model so the dialog opens with
-      // nothing chosen yet — keeps "BYD Atto 3" unambiguous in the tree (no
-      // pre-selected chip already showing it elsewhere).
-      rpc.stubJson('SystemService', 'GetSelectedModel', {});
-      final controller = buildController();
-      await pumpDashboard(tester, controller);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('tile.vehicle')));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(find.widgetWithText(TextField, '82.5'), '10.0');
-      await tester.tap(find.widgetWithText(ChoiceChip, 'BYD Atto 3'));
-      await tester.pumpAndSettle();
-
-      expect(find.widgetWithText(TextField, '60.5'), findsOneWidget);
-    });
-
-    Future<void> openDialogWithSohStatus(WidgetTester tester, Map<String, Object?> sohStatus) async {
-      stubHappyPath();
-      rpc.stubJson('SystemService', 'GetSohStatus', sohStatus);
-      rpc.stubJson('SystemService', 'GetModelsManifest', {'manifestJson': '{"models":[]}'});
-      rpc.stubJson('SystemService', 'GetSelectedModel', {});
-      final controller = buildController();
-      await pumpDashboard(tester, controller);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('tile.vehicle')));
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('an auto-detected capacity is labelled accordingly in the summary', (tester) async {
-      await openDialogWithSohStatus(tester, {
-        'success': true,
-        'nominalCapacityKwh': 82.5,
-        'nominalSource': 'auto',
-        'displaySoh': 0.0,
-        'displaySource': 'unavailable',
-      });
-
-      expect(find.text('Capacity: 82.5 kWh (auto-detected)'), findsOneWidget);
-    });
-
-    testWidgets('a calibration-sourced SOH reading is labelled "from last charge"', (tester) async {
-      await openDialogWithSohStatus(tester, {
-        'success': true,
-        'nominalCapacityKwh': 0.0,
-        'nominalSource': 'unset',
-        'displaySoh': 88.0,
-        'displaySource': 'calibration',
-      });
-
-      expect(find.text('SOH: 88.0% (from last charge)'), findsOneWidget);
-    });
-
-    testWidgets('an OEM-sourced SOH reading is labelled "vehicle"', (tester) async {
-      await openDialogWithSohStatus(tester, {
-        'success': true,
-        'nominalCapacityKwh': 0.0,
-        'nominalSource': 'unset',
-        'displaySoh': 91.0,
-        'displaySource': 'oem',
-      });
-
-      expect(find.text('SOH: 91.0% (vehicle)'), findsOneWidget);
-    });
-
-    testWidgets('a nominal-sourced SOH reading is labelled "nominal"', (tester) async {
-      await openDialogWithSohStatus(tester, {
-        'success': true,
-        'nominalCapacityKwh': 0.0,
-        'nominalSource': 'unset',
-        'displaySoh': 95.0,
-        'displaySource': 'nominal',
-      });
-
-      expect(find.text('SOH: 95.0% (nominal)'), findsOneWidget);
-    });
-
-    testWidgets('an unrecognized SOH source falls back to "unavailable", matching native', (tester) async {
-      await openDialogWithSohStatus(tester, {
-        'success': true,
-        'nominalCapacityKwh': 0.0,
-        'nominalSource': 'unset',
-        'displaySoh': 50.0,
-        'displaySource': 'something-unexpected',
-      });
-
-      expect(find.text('SOH: unavailable'), findsOneWidget);
+      expect(find.byKey(const ValueKey('vehicleDialog.error')), findsOneWidget);
+      expect(find.text('Failed to save'), findsOneWidget);
     });
   });
 
@@ -577,7 +521,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('82.5 kWh · BYD Seal'), findsOneWidget);
+    expect(find.text('BYD Seal'), findsOneWidget);
   });
 
   testWidgets('renders without error in a CJK locale (Japanese)', (tester) async {
@@ -588,5 +532,133 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('今週'), findsOneWidget); // dashboard_trips_this_week
+  });
+
+  // ── BladeWatch-ya6f: native layout parity ──────────────────────────────
+  //
+  // Compared against a freshly re-captured screenshots/native/01_startup.png.
+  // Native fits the whole dashboard above the fold; the port previously stacked
+  // everything into roughly three screens of scrolling.
+
+  group('native layout parity', () {
+    /// Head-unit geometry. Distinct from pumpDashboard's tall virtual surface,
+    /// which exists so off-screen tiles still build — here the REAL height is
+    /// the point.
+    Future<void> pumpHeadUnit(WidgetTester tester, DashboardController controller) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(wrap(controller));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the hero card is filled with the primaryContainer role', (tester) async {
+      stubHappyPath();
+      await pumpHeadUnit(tester, buildController());
+
+      // It was rendered on the ordinary surface grey, leaving the screen with
+      // no focal point at all.
+      final heroCard = tester.widget<Card>(
+        find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(Card)).first,
+      );
+      expect(heroCard.color, BladeWatchTheme.light().colorScheme.primaryContainer);
+    });
+
+    testWidgets('the hero headline combines trip count and distance on one line', (tester) async {
+      stubHappyPath();
+      await pumpHeadUnit(tester, buildController());
+
+      // Native reads "2 trips · 12.2 km"; the port showed only "2 trips" and
+      // dropped the distance from the headline.
+      expect(find.text('2 trips · 12.2 km'), findsOneWidget);
+    });
+
+    testWidgets('View all trips sits above the hero stats, not below them', (tester) async {
+      stubHappyPath();
+      await pumpHeadUnit(tester, buildController());
+
+      final action = tester.getTopLeft(find.byKey(const ValueKey('tripStats.viewAll')));
+      final distanceStat = tester.getTopLeft(find.text('12.2 km'));
+      expect(action.dy, lessThan(distanceStat.dy));
+    });
+
+    testWidgets('all five metric cards render in one row at head-unit width', (tester) async {
+      stubHappyPath();
+      await pumpHeadUnit(tester, buildController());
+
+      const keys = [
+        ValueKey('tile.recordings'),
+        ValueKey('tile.tunnel'),
+        ValueKey('tile.daemons'),
+        ValueKey('quickAction.live'),
+        ValueKey('tile.vehicle'),
+      ];
+      // Same row => same vertical offset. Previously these were a 2-up grid
+      // plus a separate full-width Live card.
+      final tops = [for (final k in keys) tester.getTopLeft(find.byKey(k)).dy];
+      expect(tops.toSet(), hasLength(1), reason: 'all five tiles should share one row');
+
+      final lefts = [for (final k in keys) tester.getTopLeft(find.byKey(k)).dx];
+      expect(lefts, orderedEquals(List<double>.from(lefts)..sort()), reason: 'tiles should be in native order');
+    });
+
+    testWidgets('every metric card carries a leading icon', (tester) async {
+      stubHappyPath();
+      await pumpHeadUnit(tester, buildController());
+
+      for (final k in const [
+        ValueKey('tile.recordings'),
+        ValueKey('tile.tunnel'),
+        ValueKey('tile.daemons'),
+        ValueKey('quickAction.live'),
+        ValueKey('tile.vehicle'),
+      ]) {
+        expect(find.descendant(of: find.byKey(k), matching: find.byType(Icon)), findsWidgets, reason: '$k needs an icon');
+      }
+    });
+
+    testWidgets('Scan to Connect sits beside the hero and is visible without scrolling', (tester) async {
+      stubHappyPath();
+      await pumpHeadUnit(tester, buildController());
+
+      // The access code was two swipes down; on a head unit that is the whole
+      // point of the card.
+      final heroTop = tester.getTopLeft(find.byKey(const ValueKey('tripStats.viewAll'))).dy;
+      final codeRect = tester.getRect(find.byKey(const ValueKey('accessCode.toggle')));
+
+      expect(codeRect.top, lessThan(heroTop + 400), reason: 'Scan to Connect should be level with the hero');
+      expect(codeRect.bottom, lessThanOrEqualTo(1080), reason: 'it must be on screen at 1080 tall');
+    });
+
+    testWidgets('the whole dashboard fits on one screen at head-unit size', (tester) async {
+      stubHappyPath();
+      await pumpHeadUnit(tester, buildController());
+
+      // The last thing down the page is the metric row; if it is on screen,
+      // nothing needs scrolling.
+      final lastTile = tester.getRect(find.byKey(const ValueKey('tile.vehicle')));
+      expect(lastTile.bottom, lessThanOrEqualTo(1080));
+    });
+
+    testWidgets('a narrow window stacks instead of forcing two columns', (tester) async {
+      stubHappyPath();
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(wrap(buildController()));
+      await tester.pumpAndSettle();
+
+      // Below the breakpoint the Connect card drops BELOW the hero rather than
+      // being squeezed into an unreadable column.
+      final heroLeft = tester.getTopLeft(find.byKey(const ValueKey('tripStats.viewAll')));
+      final codeTop = tester.getTopLeft(find.byKey(const ValueKey('accessCode.toggle')));
+      expect(codeTop.dy, greaterThan(heroLeft.dy));
+    });
   });
 }

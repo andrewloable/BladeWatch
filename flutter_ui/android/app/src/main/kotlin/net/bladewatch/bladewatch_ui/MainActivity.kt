@@ -15,6 +15,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMethodCodec
 import net.bladewatch.bladewatch_ui.adb.AdbKeyChannel
 import net.bladewatch.bladewatch_ui.auth.JwtMinter
+import net.bladewatch.bladewatch_ui.config.PublicConfigChannel
 import net.bladewatch.bladewatch_ui.config.SecretConfigChannel
 import net.bladewatch.bladewatch_ui.daemon.DaemonControl
 import net.bladewatch.bladewatch_ui.ipc.IpcClient
@@ -22,6 +23,7 @@ import net.bladewatch.bladewatch_ui.liveview.LiveViewTexturePlugin
 import net.bladewatch.bladewatch_ui.location.LocationServiceChannel
 import net.bladewatch.bladewatch_ui.network.NetworkInfoChannel
 import net.bladewatch.bladewatch_ui.ipc.IpcException
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
@@ -42,6 +44,7 @@ class MainActivity : FlutterActivity() {
     private val jwtMinter = JwtMinter(ipcClient)
     private val daemonControl = DaemonControl(ipcClient)
     private val secretConfig = SecretConfigChannel(ipcClient)
+    private val publicConfig = PublicConfigChannel(ipcClient)
 
     // BladeWatch-yz1e.4 (ADB Console): this APK's own ADB key pair — see
     // AdbKeyChannel's doc comment for why it's separate from the main app's.
@@ -77,8 +80,28 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "net.bladewatch.flutter/privileged")
-            .setMethodCallHandler(::handleMethodCall)
+        // The privileged channel MUST run off the platform/UI thread. Nearly every
+        // method on it (auth.*, daemon.*, config.*) ends in IpcClient opening a
+        // blocking TCP socket to the daemon on 127.0.0.1:19876, and Android kills
+        // any network I/O on the main thread with NetworkOnMainThreadException —
+        // whose getMessage() is null, which is why this surfaced on device as the
+        // unhelpful "connect to 127.0.0.1:19876 failed: null". JVM unit tests
+        // cannot catch this: there is no main-thread policy off-device.
+        //
+        // Serial (the default) is deliberate: it preserves the ordering the
+        // daemon's single-connection-per-command IPC expects, e.g. secret_put
+        // followed by auth_invalidate in JwtMinter.putDeviceSecret.
+        //
+        // The handful of methods that genuinely need the Activity thread hop back
+        // explicitly with runOnUiThread -- see location.requestPermission and
+        // setup.* in handleMethodCall.
+        val privilegedTaskQueue = flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "net.bladewatch.flutter/privileged",
+            StandardMethodCodec.INSTANCE,
+            privilegedTaskQueue,
+        ).setMethodCallHandler(::handleMethodCall)
 
         liveViewTexturePlugin = LiveViewTexturePlugin(flutterEngine.renderer)
         // A dedicated channel on a background TaskQueue, unlike the shared
@@ -117,6 +140,13 @@ class MainActivity : FlutterActivity() {
                 "daemon.stop" -> result.success(jsonToMap(daemonControl.stop()))
                 "daemon.status" -> result.success(jsonToMap(daemonControl.status()))
                 "daemon.processStatus" -> result.success(jsonToMap(daemonControl.processStatus()))
+                "daemon.tunnelStatus" -> result.success(jsonToMap(daemonControl.tunnelStatus()))
+                "daemon.setEnabled" -> {
+                    val args = requireArgs(call)
+                    result.success(
+                        jsonToMap(daemonControl.setDaemonEnabled(args.string("type"), args.bool("enabled"))),
+                    )
+                }
 
                 "config.get" -> {
                     val args = requireArgs(call)
@@ -131,6 +161,22 @@ class MainActivity : FlutterActivity() {
                     result.success(secretConfig.delete(args.string("section"), args.string("key")))
                 }
 
+                // BladeWatch-hygs: the PUBLIC config store, deliberately a separate
+                // group from config.* above so no call site can reach the secret
+                // store by typo.
+                "publicConfig.getSection" ->
+                    result.success(publicConfig.getSection(requireArgs(call).string("section")))
+                "publicConfig.putBoolean" -> {
+                    val args = requireArgs(call)
+                    result.success(
+                        publicConfig.putBoolean(
+                            args.string("section"),
+                            args.string("key"),
+                            args.bool("value"),
+                        ),
+                    )
+                }
+
                 "adb.getPublicKey" -> result.success(adbKeyChannel.getPublicKey())
                 "adb.sign" -> {
                     val args = requireArgs(call)
@@ -141,12 +187,19 @@ class MainActivity : FlutterActivity() {
 
                 "location.hasPermission" -> result.success(locationServiceChannel.hasPermission())
                 "location.requestPermission" -> {
-                    pendingLocationPermissionResult = result
-                    ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                        LOCATION_PERMISSION_REQUEST_CODE,
-                    )
+                    // Back to the Activity thread: the channel now runs on a
+                    // background TaskQueue, and requestPermissions drives UI.
+                    // pendingLocationPermissionResult is also read from
+                    // onRequestPermissionsResult, which is delivered on main, so
+                    // writing it here keeps that access single-threaded.
+                    runOnUiThread {
+                        pendingLocationPermissionResult = result
+                        ActivityCompat.requestPermissions(
+                            this,
+                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                            LOCATION_PERMISSION_REQUEST_CODE,
+                        )
+                    }
                 }
                 "location.providerEnabled" -> result.success(locationServiceChannel.providerEnabled())
                 "location.startUpdates" -> {
@@ -180,12 +233,14 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
 
+                // Both start activities, so they hop back to the Activity thread
+                // now that this channel runs on a background TaskQueue.
                 "setup.openAutoStartSettings" -> {
-                    openAutoStartSettings()
+                    runOnUiThread { openAutoStartSettings() }
                     result.success(null)
                 }
                 "setup.openOverlaySettings" -> {
-                    openOverlaySettings()
+                    runOnUiThread { openOverlaySettings() }
                     result.success(null)
                 }
 
@@ -213,7 +268,18 @@ class MainActivity : FlutterActivity() {
     private fun handleLiveViewMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
-                "liveView.createTexture" -> result.success(liveViewTexturePlugin.createTexture())
+                // TextureRegistry.createSurfaceProducer is @UiThread, but this
+                // channel runs on a background TaskQueue so a MediaCodec call
+                // never blocks the platform thread. Both constraints are real,
+                // so the two kinds of call are split: the TextureRegistry ones
+                // hop to the main thread, the MediaCodec ones stay off it.
+                // Without this hop the very first call failed with
+                // "Methods marked with @UiThread must be executed on the main
+                // thread. Current thread: flutter-worker-2", so Live View could
+                // never start at all.
+                "liveView.createTexture" -> runOnUiThreadCatching(result) {
+                    result.success(liveViewTexturePlugin.createTexture())
+                }
                 "liveView.configure" -> {
                     val args = requireArgs(call)
                     liveViewTexturePlugin.configure(args.long("textureId"), args.int("width"), args.int("height"))
@@ -225,8 +291,13 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
                 "liveView.dispose" -> {
-                    liveViewTexturePlugin.dispose(requireArgs(call).long("textureId"))
-                    result.success(null)
+                    // Releases the SurfaceProducer, so same @UiThread rule as
+                    // createTexture above.
+                    val textureId = requireArgs(call).long("textureId")
+                    runOnUiThreadCatching(result) {
+                        liveViewTexturePlugin.dispose(textureId)
+                        result.success(null)
+                    }
                 }
                 else -> result.notImplemented()
             }
@@ -236,6 +307,26 @@ class MainActivity : FlutterActivity() {
             // daemon-connectivity condition, so a single generic error code
             // is correct, unlike handleMethodCall's IpcException mapping above.
             result.error("LIVE_VIEW_ERROR", e.message ?: e.javaClass.simpleName, null)
+        }
+    }
+
+    /**
+     * Runs [block] on the main thread, reporting any failure through [result].
+     *
+     * The enclosing try/catch cannot do this: by the time the posted block
+     * runs, [handleLiveViewMethodCall] has already returned, so a throw inside
+     * it would reach the main looper's uncaught handler and leave the Dart
+     * side awaiting a reply that never comes. Catches Throwable rather than
+     * Exception because the failure that motivated this — a @UiThread
+     * violation — surfaces as an Error, which `catch (e: Exception)` misses.
+     */
+    private fun runOnUiThreadCatching(result: MethodChannel.Result, block: () -> Unit) {
+        runOnUiThread {
+            try {
+                block()
+            } catch (t: Throwable) {
+                result.error("LIVE_VIEW_ERROR", t.message ?: t.javaClass.simpleName, null)
+            }
         }
     }
 
@@ -337,10 +428,31 @@ class MainActivity : FlutterActivity() {
     private fun Map<*, *>.bool(key: String): Boolean =
         this[key] as? Boolean ?: throw IllegalArgumentException("missing or non-Boolean argument '$key'")
 
+    /**
+     * Converts a daemon IPC response into something StandardMethodCodec can encode.
+     *
+     * This has to recurse. A shallow copy leaves nested values as org.json types,
+     * and the codec supports only primitives, String, byte arrays, List and Map --
+     * anything else fails the whole call with "Unsupported value: ... of type class
+     * org.json.JSONObject". That is not hypothetical: daemonStatus replies
+     * {"status":"ok","daemons":{...}}, so the nested "daemons" object broke every
+     * call to it on device while the JVM tests passed, because the test fake never
+     * runs the codec.
+     *
+     * JSONObject.NULL is a sentinel singleton, not Kotlin null, and would itself be
+     * an unsupported value -- map it to null.
+     */
     private fun jsonToMap(json: JSONObject): Map<String, Any?> {
         val map = mutableMapOf<String, Any?>()
-        json.keys().forEach { key -> map[key] = json.get(key) }
+        json.keys().forEach { key -> map[key] = jsonToCodecValue(json.get(key)) }
         return map
+    }
+
+    private fun jsonToCodecValue(value: Any?): Any? = when (value) {
+        null, JSONObject.NULL -> null
+        is JSONObject -> jsonToMap(value)
+        is JSONArray -> (0 until value.length()).map { jsonToCodecValue(value.get(it)) }
+        else -> value
     }
 
 

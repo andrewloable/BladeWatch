@@ -452,7 +452,9 @@ class DashboardFragment : Fragment() {
 
     private fun labelFor(type: DaemonType): String = when (type) {
         DaemonType.ZROK_TUNNEL -> getString(R.string.tunnel_label_zrok)
-        else -> type.displayName
+        // BladeWatch-9rjg: was type.displayName — hardcoded English, and a
+        // different set of words from the Services list.
+        else -> net.bladewatch.app.ui.adapter.DaemonAdapter.displayNameOf(requireContext(), type)
     }
 
     private fun renderQr(url: String?) {

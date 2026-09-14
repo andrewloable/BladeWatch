@@ -38,24 +38,39 @@ class _SettingsOverlayScreenState extends State<SettingsOverlayScreen> {
     final theme = Theme.of(context);
     final c = widget.controller;
 
+    // The pane title and description are supplied by the Settings hub's shared
+    // header (BladeWatch-mrsc), so this pane renders only its content.
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(l10n.settings_overlay_subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 16),
-        SwitchListTile(
-          key: const ValueKey('overlay.camera'),
-          title: Text(l10n.settings_overlay_camera_title),
-          subtitle: Text(l10n.settings_overlay_camera_subtitle),
-          value: c.cameraVisible,
-          onChanged: c.loading ? null : c.setCameraVisible,
-        ),
-        SwitchListTile(
-          key: const ValueKey('overlay.trip'),
-          title: Text(l10n.settings_overlay_trip_title),
-          subtitle: Text(l10n.settings_overlay_trip_subtitle),
-          value: c.tripVisible,
-          onChanged: c.loading ? null : c.setTripVisible,
+        // Native groups the two toggles in one rounded container with a divider
+        // between them, and gives each row a leading icon. The port rendered
+        // them as bare rows on the page background.
+        Card(
+          color: theme.colorScheme.surfaceContainer,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Column(
+            children: [
+              SwitchListTile(
+                key: const ValueKey('overlay.camera'),
+                secondary: const Icon(Icons.videocam_outlined),
+                title: Text(l10n.settings_overlay_camera_title),
+                subtitle: Text(l10n.settings_overlay_camera_subtitle),
+                value: c.cameraVisible,
+                onChanged: c.loading ? null : c.setCameraVisible,
+              ),
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              SwitchListTile(
+                key: const ValueKey('overlay.trip'),
+                secondary: const Icon(Icons.navigation_outlined),
+                title: Text(l10n.settings_overlay_trip_title),
+                subtitle: Text(l10n.settings_overlay_trip_subtitle),
+                value: c.tripVisible,
+                onChanged: c.loading ? null : c.setTripVisible,
+              ),
+            ],
+          ),
         ),
       ],
     );

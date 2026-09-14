@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_ui/widgets/bw_choice_chip.dart';
 
 /// A [RpcTransport] whose calls stay pending until [gate] is completed —
 /// FakeRpcClient resolves on the next microtask with no real delay, too
@@ -197,7 +198,7 @@ void main() {
 
       final sw = tester.widget<SwitchListTile>(find.byKey(const ValueKey('trips.storage.analytics')));
       expect(sw.value, isTrue);
-      final unitChip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('trips.storage.unit.mi')));
+      final unitChip = tester.widget<BwChoiceChip>(find.byKey(const ValueKey('trips.storage.unit.mi')));
       expect(unitChip.selected, isTrue);
     });
 
@@ -208,7 +209,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('SD Card (N/A)'), findsOneWidget);
-      final chip = tester.widget<ChoiceChip>(find.byKey(const ValueKey('trips.storage.location.sdCard')));
+      final chip = tester.widget<BwChoiceChip>(find.byKey(const ValueKey('trips.storage.location.sdCard')));
       expect(chip.onSelected, isNull);
     });
 

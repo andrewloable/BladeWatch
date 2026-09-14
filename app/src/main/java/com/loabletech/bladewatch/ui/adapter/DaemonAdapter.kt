@@ -204,14 +204,10 @@ class DaemonAdapter(
             }
         }
         
-        private fun getDaemonDisplayName(type: DaemonType): String {
-            return when (type) {
-                DaemonType.CAMERA_DAEMON -> "Camera Daemon"
-                DaemonType.SENTRY_DAEMON -> "Surveillance Daemon"
-                DaemonType.ACC_SENTRY_DAEMON -> "ACC Surveillance"
-                DaemonType.ZROK_TUNNEL -> "Zrok Tunnel"
-            }
-        }
+        // BladeWatch-def0: from string resources, not literals — these were
+        // hardcoded English and so stayed English in all 17 locales.
+        private fun getDaemonDisplayName(type: DaemonType): String =
+            DaemonAdapter.displayNameOf(itemView.context, type)
 
         @androidx.annotation.DrawableRes
         private fun getDaemonIcon(type: DaemonType): Int = when (type) {
@@ -227,6 +223,30 @@ class DaemonAdapter(
     }
     
     companion object {
+        /**
+         * The user-facing service name for a daemon type — the ONE place this
+         * maps to a string resource (BladeWatch-def0 / -9rjg).
+         *
+         * Four other call sites used to print `DaemonType.displayName` instead:
+         * hardcoded English, and a DIFFERENT set of words ("Sentry Daemon" vs
+         * this list's "Surveillance Daemon"), so native showed two names for
+         * the same daemon depending on where you looked.
+         *
+         * `DaemonType.displayName` itself must stay an English, ASCII
+         * identifier — `DaemonsFragment` derives the exported log FILENAME
+         * from it.
+         */
+        @JvmStatic
+        fun displayNameOf(context: android.content.Context, type: DaemonType): String =
+            context.getString(
+                when (type) {
+                    DaemonType.CAMERA_DAEMON -> R.string.daemon_name_camera
+                    DaemonType.SENTRY_DAEMON -> R.string.daemon_name_surveillance
+                    DaemonType.ACC_SENTRY_DAEMON -> R.string.daemon_name_acc
+                    DaemonType.ZROK_TUNNEL -> R.string.daemon_name_zrok
+                },
+            )
+
         /**
          * Map daemon types to their log file paths.
          * Returns null for daemons without a known log file.

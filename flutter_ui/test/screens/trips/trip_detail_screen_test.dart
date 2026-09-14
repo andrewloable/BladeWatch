@@ -4,6 +4,7 @@ import 'package:bladewatch_ui/screens/trips/trip_detail_controller.dart';
 import 'package:bladewatch_ui/screens/trips/trip_detail_screen.dart';
 import 'package:bladewatch_ui/screens/trips/trips_models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
@@ -93,16 +94,93 @@ void main() {
     expect(find.byKey(const ValueKey('tripDetail.summaryCard')), findsOneWidget);
     expect(find.byKey(const ValueKey('tripDetail.routeCard')), findsOneWidget);
     expect(find.byKey(const ValueKey('tripDetail.scoresCard')), findsOneWidget);
-    expect(find.text('2 GPS points recorded'), findsOneWidget);
   });
 
-  testWidgets('shows "no route data" when fewer than 2 GPS points are present', (tester) async {
+  // ── BladeWatch-fj8c: the route MAP, which native has always drawn ──────────
+
+  testWidgets('draws the route on a map, with a polyline and start/end markers', (tester) async {
+    rpc.stubJson('TripsService', 'GetTrip', aTripDetailResponse());
+    rpc.stubJson('TripsService', 'GetTelemetry', {
+      'success': true,
+      'telemetry': [
+        {'sampleJson': '{"t":1,"s":1,"a":1,"b":1,"la":37.1,"lo":-122.1}'},
+        {'sampleJson': '{"t":2,"s":1,"a":1,"b":1,"la":37.2,"lo":-122.2}'},
+        {'sampleJson': '{"t":3,"s":1,"a":1,"b":1,"la":37.3,"lo":-122.3}'},
+      ],
+    });
+
+    await pumpScreen(tester);
+
+    expect(find.byKey(const ValueKey('tripDetail.route.map')), findsOneWidget);
+    expect(find.byKey(const ValueKey('tripDetail.route.empty')), findsNothing);
+
+    final polyline = tester.widget<PolylineLayer>(find.byType(PolylineLayer)).polylines.single;
+    expect(polyline.points.length, 3);
+
+    // Start and end dots — native's accent/error pair.
+    expect(tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.length, 2);
+  });
+
+  testWidgets('shows "no route data" and NO map when fewer than 2 GPS points are present', (tester) async {
+    // Native hides the MapView outright below 2 points rather than showing an
+    // empty world map (TripDetailController.renderRoute).
     rpc.stubJson('TripsService', 'GetTrip', aTripDetailResponse());
     rpc.stubJson('TripsService', 'GetTelemetry', {'success': true, 'telemetry': []});
 
     await pumpScreen(tester);
 
     expect(find.text('No route data for this trip'), findsOneWidget);
+    expect(find.byKey(const ValueKey('tripDetail.route.map')), findsNothing);
+  });
+
+  testWidgets('a single GPS point is not a route', (tester) async {
+    // One point yields a zero-area bounding box that no camera fit can resolve,
+    // so the 2-point threshold is load-bearing, not cosmetic.
+    rpc.stubJson('TripsService', 'GetTrip', aTripDetailResponse());
+    rpc.stubJson('TripsService', 'GetTelemetry', {
+      'success': true,
+      'telemetry': [
+        {'sampleJson': '{"t":1,"s":1,"a":1,"b":1,"la":37.1,"lo":-122.1}'},
+      ],
+    });
+
+    await pumpScreen(tester);
+
+    expect(find.byKey(const ValueKey('tripDetail.route.empty')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('samples without a GPS fix are dropped, not drawn at (0,0)', (tester) async {
+    // Telemetry is sampled on a timer whether or not GPS has a lock; without the
+    // filter the route would run from the Gulf of Guinea to the real position.
+    rpc.stubJson('TripsService', 'GetTrip', aTripDetailResponse());
+    rpc.stubJson('TripsService', 'GetTelemetry', {
+      'success': true,
+      'telemetry': [
+        {'sampleJson': '{"t":1,"s":1,"a":1,"b":1,"la":0,"lo":0}'},
+        {'sampleJson': '{"t":2,"s":1,"a":1,"b":1,"la":37.2,"lo":-122.2}'},
+        {'sampleJson': '{"t":3,"s":1,"a":1,"b":1,"la":37.3,"lo":-122.3}'},
+      ],
+    });
+
+    await pumpScreen(tester);
+
+    final polyline = tester.widget<PolylineLayer>(find.byType(PolylineLayer)).polylines.single;
+    expect(polyline.points.length, 2);
+    expect(polyline.points.any((p) => p.latitude == 0 && p.longitude == 0), isFalse);
+  });
+
+  testWidgets('a failed telemetry fetch still renders the rest of the detail', (tester) async {
+    rpc.stubJson('TripsService', 'GetTrip', aTripDetailResponse());
+    rpc.stubError('TripsService', 'GetTelemetry', const ConnectError('unavailable', 'no daemon'));
+
+    await pumpScreen(tester);
+
+    // The controller treats a telemetry failure as a whole-detail failure today
+    // (hasError), which is native's own behaviour; what must NOT happen is a
+    // crash or a permanently spinning panel.
+    expect(tester.takeException(), isNull);
+    expect(controller.loading, isFalse);
   });
 
   testWidgets('formats distance/speed in miles when the config distance unit is "mi"', (tester) async {

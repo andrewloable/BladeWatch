@@ -166,63 +166,82 @@ class _AdbConsoleScreenState extends State<AdbConsoleScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Native groups the command field and its presets in one card headed
+        // "PRESET COMMANDS", with a LABELLED Run button rather than a bare
+        // send arrow (BladeWatch-mrsc).
+        Card(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          color: theme.colorScheme.surfaceContainer,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: const ValueKey('adb.commandField'),
+                        controller: _commandController,
+                        enabled: !c.isExecuting,
+                        decoration: InputDecoration(
+                          prefixText: '${l10n.adb_prompt} ',
+                          hintText: l10n.adb_command_hint,
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _submit(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton.icon(
+                      key: const ValueKey('adb.executeButton'),
+                      onPressed: c.isExecuting ? null : _submit,
+                      icon: const Icon(Icons.play_arrow, size: 18),
+                      label: Text(l10n.action_run),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.adb_preset_commands_header.toUpperCase(),
+                  style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 40,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: adbPresetCommands.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final preset = adbPresetCommands[index];
+                      return ActionChip(
+                        key: ValueKey('adb.preset.$index'),
+                        label: Text(preset.label),
+                        onPressed: () => _selectPreset(preset),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  key: const ValueKey('adb.commandField'),
-                  controller: _commandController,
-                  enabled: !c.isExecuting,
-                  decoration: InputDecoration(
-                    prefixText: '${l10n.adb_prompt} ',
-                    hintText: l10n.adb_command_hint,
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _submit(),
+                child: Text(
+                  l10n.adb_output_header.toUpperCase(),
+                  style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                key: const ValueKey('adb.executeButton'),
-                onPressed: c.isExecuting ? null : _submit,
-                icon: const Icon(Icons.send),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(l10n.adb_preset_commands_header, style: theme.textTheme.labelMedium),
-        ),
-        SizedBox(
-          height: 40,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: adbPresetCommands.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final preset = adbPresetCommands[index];
-              return ActionChip(
-                key: ValueKey('adb.preset.$index'),
-                label: Text(preset.label),
-                onPressed: () => _selectPreset(preset),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(child: Text(l10n.adb_output_header, style: theme.textTheme.labelMedium)),
-              TextButton(
+              OutlinedButton(
                 key: const ValueKey('adb.clearButton'),
                 onPressed: c.clearOutput,
                 child: Text(l10n.action_clear_output),
@@ -236,7 +255,9 @@ class _AdbConsoleScreenState extends State<AdbConsoleScreen> {
             padding: const EdgeInsets.all(12),
             width: double.infinity,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
+              // Outlined, as native has it, rather than a filled grey slab.
+              color: theme.colorScheme.surface,
+              border: Border.all(color: theme.colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(8),
             ),
             child: SingleChildScrollView(

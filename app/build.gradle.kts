@@ -644,7 +644,14 @@ tasks.register("validateAndroidStrings") {
 
     // keys == null means the file failed to parse — callers must not treat that
     // as "zero keys" (which would falsely report every master key as missing).
-    data class ParsedStrings(val keys: Set<String>?, val problems: List<String>)
+    data class ParsedStrings(val keys: Set<String>?, val problems: List<String>,
+                             val values: Map<String, String> = emptyMap())
+
+    // Every %1$s / %2$d / %s / %d a value uses. A translation that drops one
+    // silently loses the number or name it was supposed to show; one that
+    // invents a slot throws at format time. Neither is caught by key parity.
+    fun formatSlots(text: String): List<String> =
+        Regex("""%(?:\d+\\$)?[sd]""").findAll(text).map { it.value }.sorted().toList()
 
     fun parseStrings(f: File): ParsedStrings {
         val doc = try {
@@ -654,17 +661,19 @@ tasks.register("validateAndroidStrings") {
         }
         val problems = mutableListOf<String>()
         val keys = mutableSetOf<String>()
+        val values = mutableMapOf<String, String>()
         val nodes = doc.getElementsByTagName("string")
         for (i in 0 until nodes.length) {
             val el = nodes.item(i) as org.w3c.dom.Element
             if (el.getAttribute("translatable") == "false") continue
             val name = el.getAttribute("name")
             keys.add(name)
+            values[name] = el.textContent ?: ""
             if (hasUnescapedApostrophe(el.textContent ?: "")) {
                 problems.add("$name: unescaped apostrophe (use \\' or wrap the whole value in double quotes)")
             }
         }
-        return ParsedStrings(keys, problems)
+        return ParsedStrings(keys, problems, values)
     }
 
     doLast {
@@ -699,13 +708,22 @@ tasks.register("validateAndroidStrings") {
                             "(${missing.sorted().take(5).joinToString(", ")}${if (missing.size > 5) ", …" else ""})"
                     )
                 }
+                // Format-slot parity (BladeWatch-1yqg): a Spanish value had lost
+                // its %1$s outright, so the clip count never rendered.
+                for ((k, v) in parsed.values) {
+                    val want = formatSlots(master.values[k] ?: continue)
+                    val got = formatSlots(v)
+                    if (want != got) {
+                        problems.add("${dir.name}/strings.xml: $k has slots $got, English has $want")
+                    }
+                }
             }
         }
 
         if (problems.isNotEmpty()) {
             throw GradleException("Android strings validation FAILED:\n" + problems.joinToString("\n") { "  - $it" })
         }
-        logger.lifecycle("Android strings: ${localeDirs.size} locales, full key parity with values/strings.xml (${masterKeys.size} keys), valid XML, no unescaped apostrophes ✓")
+        logger.lifecycle("Android strings: ${localeDirs.size} locales, full key parity with values/strings.xml (${masterKeys.size} keys), valid XML, matching format slots, no unescaped apostrophes ✓")
     }
 }
 tasks.named("preBuild") { dependsOn("validateAndroidStrings") }
@@ -726,6 +744,13 @@ tasks.register("validateArbCatalogs") {
             val map = obj as? Map<String, Any?> ?: return emptySet()
             return map.keys.filter { !it.startsWith("@") }.toSortedSet()
         }
+        // The argument names app_en.arb declares for a value: {arg1} and the
+        // leading name of an ICU form such as {count, plural, ...}. Read from
+        // ENGLISH only, so ICU branch bodies in a translation are never
+        // mistaken for placeholders.
+        fun placeholdersIn(v: String): List<String> =
+            Regex("""\{(\w+)[,}]""").findAll(v).map { it.groupValues[1] }.distinct().toList()
+
         val templateFile = arbDir.resolve("app_en.arb")
         if (!templateFile.exists()) throw GradleException("ARB: app_en.arb missing at ${templateFile.path}")
         val templateKeys = try {
@@ -733,6 +758,13 @@ tasks.register("validateArbCatalogs") {
         } catch (e: Exception) {
             throw GradleException("ARB: app_en.arb is not valid JSON — ${e.message}")
         }
+        @Suppress("UNCHECKED_CAST")
+        fun stringValuesOf(obj: Any?): Map<String, String> =
+            (obj as? Map<String, Any?>)?.entries
+                ?.filter { !it.key.startsWith("@") && it.value is String }
+                ?.associate { it.key to it.value as String } ?: emptyMap()
+
+        val templateValues = stringValuesOf(slurper.parse(templateFile))
         val arbFiles = arbDir.listFiles { f -> f.name.endsWith(".arb") }?.sortedBy { it.name } ?: emptyList()
         val problems = mutableListOf<String>()
         for (f in arbFiles) {
@@ -751,11 +783,168 @@ tasks.register("validateArbCatalogs") {
             if (extra.isNotEmpty()) {
                 problems.add("${f.name}: ${extra.size} extra key(s) not in app_en.arb (e.g. ${extra.take(5).joinToString(", ")})")
             }
+            // Placeholder parity (BladeWatch-1yqg). Only the "English slot is
+            // missing" direction is checked: a translation that drops {arg1}
+            // silently shows no count at all, and nothing else catches it.
+            // The opposite direction needs no check here — gen-l10n already
+            // fails the build on a placeholder app_en.arb does not declare.
+            val values = stringValuesOf(parsed)
+            for ((k, want) in templateValues) {
+                val got = values[k] ?: continue
+                val lost = placeholdersIn(want).filter { !got.contains("{$it") }
+                if (lost.isNotEmpty()) {
+                    problems.add("${f.name}: $k drops placeholder(s) ${lost.joinToString(", ") { "{$it}" }}")
+                }
+            }
         }
+        // Letterless values must be byte-identical (BladeWatch-1yqg). A value
+        // with no letters — "$", "[TAG]", "12:34:56", "—", "1" — has nothing to
+        // translate, so any difference is corruption rather than localisation.
+        // It is worth failing on because of WHAT came back: the pass returned
+        // Europarl corpus fragments ("2 - Les Etats membres", "3 El Parlamento
+        // Europeo") for these keys, i.e. the model emitted training data when
+        // handed nothing translatable.
+        fun letterless(v: String): Boolean {
+            val stripped = v.replace(Regex("""\{[^}]*\}"""), "").trim()
+            return stripped.isEmpty() || stripped.none { it.isLetter() }
+        }
+        for (f in arbFiles) {
+            if (f.name == "app_en.arb") continue
+            val values = stringValuesOf(slurper.parse(f))
+            for ((k, want) in templateValues) {
+                if (!letterless(want)) continue
+                val got = values[k] ?: continue
+                if (got != want) {
+                    problems.add("${f.name}: $k should be exactly ${'"'}$want${'"'} (nothing to translate), got ${'"'}$got${'"'}")
+                }
+            }
+        }
+
+        // Mixed-script check (BladeWatch-1yqg): simplified characters had leaked
+        // into app_zh_TW, so seven strings read as mainland text to a Taiwanese
+        // user. Each character below has a distinct traditional form, so any
+        // occurrence is wrong by construction — there is no false positive to
+        // argue about, which is why this fails rather than warns.
+        val simplifiedOnly = "设备选择关闭开录视频图数据语汉时间层页网络连断应处显删载传输转动态检测监报声" +
+            "车辆电压灯门锁键摄机统权认证级严误调试结确记单双总类别组线进运远达过还这说长见东马问头" +
+            "实现点学对会样发员务无书变让请询题验编码准败华丰临举义乐习乡亲价众优伟传伤体余" +
+            "俭修个们从仓仅凤仪价仿伙伪传伞坏块坚坛垒够奋妆妇妈娱娘婴嫒宁宝实审宪宫宽宾寝对寻导寿将尔尘尝"
+        val simpSet = simplifiedOnly.toSet()
+        val tw = arbDir.resolve("app_zh_TW.arb")
+        if (tw.exists()) {
+            for ((k, v) in stringValuesOf(slurper.parse(tw))) {
+                val found = v.filter { it in simpSet }.toSortedSet()
+                if (found.isNotEmpty()) {
+                    problems.add("app_zh_TW.arb: $k mixes simplified characters (${found.joinToString("")})")
+                }
+            }
+        }
+
         if (problems.isNotEmpty()) {
             throw GradleException("ARB catalog validation FAILED:\n" + problems.joinToString("\n") { "  - $it" })
         }
-        logger.lifecycle("ARB: ${arbFiles.size} catalogs valid, full key parity with app_en.arb (${templateKeys.size} keys) ✓")
+        logger.lifecycle("ARB: ${arbFiles.size} catalogs valid, full key parity and placeholder parity with app_en.arb (${templateKeys.size} keys) ✓")
+
+        // BladeWatch-aklv: key parity says nothing about VALUES. A catalog can
+        // carry every key while its text is still English, and that is the
+        // actual state of several locales — which is invisible to the check
+        // above and only shows up on the head unit.
+        //
+        // A WARNING, never a failure: there is a real backlog, and failing the
+        // build would block every unrelated change until it is cleared. The
+        // point is that the number is visible and trending down.
+        // Values that SHOULD read identically everywhere: pure placeholders,
+        // URLs, and text with no letters at all (separators, ellipses).
+        fun alwaysIdentical(v: String): Boolean {
+            val stripped = v.replace(Regex("\\{[^}]*\\}"), "").trim()
+            return stripped.isEmpty() || v.startsWith("http") || !stripped.any { it.isLetter() }
+        }
+
+        // Keys reviewed key-by-key against every locale that still shows them
+        // and confirmed to be intentionally identical (BladeWatch-aklv): the
+        // product name, unit symbols, acronyms, the short status badges the
+        // native overlay also renders untranslated, and loanwords that really
+        // are the correct word in the Latin-script locales (German "Status",
+        // French "Surveillance", Dutch "Score", Spanish "Error"...).
+        //
+        // Exempting them is what makes the remaining count meaningful — a number
+        // that is mostly brand names can never be argued down to zero, so nobody
+        // would watch it. Adding a key here is a claim that it is correct in
+        // EVERY locale; check before you add one, because it silences the key
+        // everywhere and a genuine gap then ships unnoticed. This set was built
+        // by inspecting the actual value in each locale, not by pattern.
+        val intentionallyIdentical = setOf(
+            // Product and brand
+            "app_name", "cd_brand_logo", "settings_hero_overline", "settings_footer_format",
+            "status_overlay_notif_title", "settings_about_source_value",
+            "daemon_name_zrok", "tunnel_label_zrok",
+            // Unit symbols and unit-only formats
+            "vehicle_dialog_capacity_suffix", "trips_stat_kwh", "trips_stat_kwh_per_100km",
+            "dashboard_insight_kwh_format", "dashboard_vehicle_summary",
+            "dashboard_trips_distance_km", "dashboard_trips_distance_mi",
+            "dashboard_insight_hours", "dashboard_insight_minutes",
+            "settings_recording_limit_minutes", "surveillance_seconds_value",
+            "surveillance_safe_locations_zone_label",
+            // Acronyms shown as-is on the head unit, matching native
+            "performance_temperature_na", "performance_cpu_title", "performance_gpu_title",
+            "clip_label_url", "cd_qr", "vehicle_tab_adas", "vehicle_dialog_summary_soh",
+            "recording_lib_camera_badge", "log_entry_default_tag",
+            "dialog_ok", "vehicle_tyre_ok", "diagnostics_network_ethernet",
+            "vehicle_dialog_soh_source_live", "vehicle_dialog_soh_source_nominal",
+            "adb_output_header",
+            // Status badges the floating overlay draws untranslated (REC / TRIP)
+            "overlay_rec_inactive_label", "overlay_trip_inactive_label",
+            // Online / Offline — the loanword pair, correct in de, it, nb, nl
+            "diagnostics_metric_online", "diagnostics_tunnel_state_online",
+            "diagnostics_tunnel_state_offline", "diagnostics_network_offline",
+            "diagnostics_camera_value_offline", "dashboard_tunnel_online",
+            "dashboard_tunnel_offline",
+            // Loanwords that are the correct word in the Latin-script locales
+            "performance_memory_app", "performance_memory_total", "performance_threads_label",
+            "settings_recording_tab_status", "surveillance_general_status",
+            "settings_about_version_label", "recording_lib_filter_button",
+            "recording_lib_filter_button_active", "recording_lib_filter_section_type",
+            "recording_lib_chip_type_normal", "recording_lib_chip_person",
+            "surveillance_detection_object_person", "video_player_legend_person",
+            "recordings_segment_dashcam", "recordings_segment_dashcam_count",
+            "diagnostics_network_tunnel_label", "surveillance_preset_garage",
+            "settings_section_daemons", "settings_section_surveillance",
+            "recordings_segment_surveillance", "recordings_segment_surveillance_count",
+            "soh_dialog_model_label", "vehicle_dialog_model_label",
+            "vehicle_dialog_summary_model", "rail_dashboard", "rail_diagnostics",
+            "camera_option_2", "camera_option_3", "camera_option_4", "camera_option_5",
+            "diagnostics_camera_value_camera_n", "startup_daemon_camera",
+            "recording_lib_clip_count_one", "settings_privacy_storage_count_format",
+            "trips_score_label", "log_header_source", "live_error_fmt", "trips_load_error",
+            "surveillance_tab_general", "settings_recording_tab_capture",
+            "dashboard_trips_label_distance", "trips_detail_distance",
+            "trips_dna_anticipation", "surveillance_deterrent_horn",
+        )
+        // This count is 0 today (BladeWatch-aklv closed it out), so it is a real
+        // signal rather than background noise: anything it reports is either a
+        // new English string awaiting translation, or a locale that regressed.
+        // It WARNS and never fails — adding an English key legitimately comes
+        // before its translations, and blocking that would just teach people to
+        // paste English into all 17 catalogs to get a build.
+        val untranslated = mutableListOf<String>()
+        for (f in arbFiles) {
+            if (f.name == "app_en.arb") continue
+            val values = stringValuesOf(slurper.parse(f))
+            val same = templateValues.filter { (k, v) ->
+                values[k] == v && !alwaysIdentical(v) && k !in intentionallyIdentical
+            }.keys
+            if (same.isNotEmpty()) {
+                untranslated.add("${f.name}: ${same.size} — ${same.sorted().joinToString(", ")}")
+            }
+        }
+        if (untranslated.isNotEmpty()) {
+            logger.warn(
+                "ARB: values identical to English (BladeWatch-aklv). Translate them, or — if " +
+                    "the word really is the same in that language — add the key to " +
+                    "intentionallyIdentical in this file with a reason:\n" +
+                    untranslated.joinToString("\n") { "  ! $it" },
+            )
+        }
     }
 }
 tasks.named("preBuild") { dependsOn("validateArbCatalogs") }
@@ -796,3 +985,41 @@ kover {
         }
     }
 }
+
+// ── Android-only enforcement (BladeWatch-7965.5) ──────────────────────────────
+//
+// The Flutter UI targets exactly one thing: an arm64 Android head unit (BYD
+// DiLink v3, API 29). iOS, macOS, Windows, Linux and web are not targets.
+//
+// `flutter create` scaffolds all six platforms, and they REGENERATE: running
+// `flutter create .`, some `flutter pub get` paths, or adding a plugin that runs
+// platform scaffolding will silently recreate them. They then invite someone to
+// "fix" an iOS build that should not exist, and a plugin that supports only
+// desktop/web resolves fine on a dev machine and fails only at APK build time.
+//
+// Deliberately a FILESYSTEM CHECK ONLY, with no `flutter` invocation: the main
+// app must still build on a machine with no Flutter toolchain installed.
+tasks.register("validateFlutterAndroidOnly") {
+    description = "Fail the build if non-Android Flutter platform directories reappear under flutter_ui/"
+    group = "verification"
+    val flutterRoot = file("../flutter_ui")
+    val forbidden = listOf("ios", "macos", "windows", "linux", "web")
+    doLast {
+        val present = forbidden.filter { flutterRoot.resolve(it).isDirectory }
+        if (present.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    append("Flutter platform validation FAILED — this project is Android-only.\n")
+                    present.forEach { append("  - found flutter_ui/$it\n") }
+                    append("\nDelete the directory (rm -rf flutter_ui/<name>) and do NOT run\n")
+                    append("`flutter create` inside flutter_ui/ — it re-scaffolds every platform.\n")
+                    append("The in-car UI ships only as the arm64 Android APK net.bladewatch.flutter.\n")
+                    append("Note: web/ at the REPO ROOT is the Angular SPA and is unrelated — this\n")
+                    append("check only looks inside flutter_ui/.")
+                }
+            )
+        }
+        logger.lifecycle("Flutter: Android-only ✓ (none of ${forbidden.joinToString(", ")} present under flutter_ui/)")
+    }
+}
+tasks.named("preBuild") { dependsOn("validateFlutterAndroidOnly") }

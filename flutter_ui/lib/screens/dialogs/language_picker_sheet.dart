@@ -41,6 +41,23 @@ Future<void> showLanguagePickerSheet(BuildContext context, LocaleController cont
   );
 }
 
+
+/// Apply a language and, if it could not be persisted, say so.
+///
+/// BladeWatch-vcur: the old store wrote to a directory the app UID cannot
+/// create, so the choice silently reverted on the next launch. Applying and
+/// then going quiet is exactly what hid that, so a failed write is surfaced.
+Future<void> _selectAndReport(BuildContext context, LocaleController controller, String tag) async {
+  // Resolve both the messenger and the message BEFORE awaiting: the sheet is
+  // popped straight away, so its BuildContext must not be touched afterwards.
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final message = AppLocalizations.of(context)!.language_not_saved;
+  Navigator.of(context).pop();
+  await controller.select(tag);
+  if (controller.lastPersistSucceeded || messenger == null) return;
+  messenger.showSnackBar(SnackBar(content: Text(message)));
+}
+
 class LanguagePickerSheet extends StatelessWidget {
   final LocaleController controller;
 
@@ -95,10 +112,7 @@ class LanguagePickerSheet extends StatelessWidget {
                     title: l10n.language_auto_title,
                     subtitle: l10n.language_auto_subtitle(kLocaleNativeNames[_systemNameKey(context)] ?? 'English'),
                     tag: null,
-                    onTap: () {
-                      controller.select(kAutoLocaleTag);
-                      Navigator.of(context).pop();
-                    },
+                    onTap: () => _selectAndReport(context, controller, kAutoLocaleTag),
                   ),
                   for (final tag in kSupportedLocaleTags)
                     _Row(
@@ -106,10 +120,7 @@ class LanguagePickerSheet extends StatelessWidget {
                       title: kLocaleNativeNames[tag] ?? tag,
                       subtitle: null,
                       tag: tag,
-                      onTap: () {
-                        controller.select(tag);
-                        Navigator.of(context).pop();
-                      },
+                      onTap: () => _selectAndReport(context, controller, tag),
                     ),
                 ],
               ),

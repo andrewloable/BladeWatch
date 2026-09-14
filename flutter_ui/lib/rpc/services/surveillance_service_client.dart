@@ -14,63 +14,63 @@ class SurveillanceServiceClient {
         'SurveillanceService',
         'GetConfig',
         request,
-        (json) => GetSurveillanceConfigResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetSurveillanceConfigResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SetSurveillanceConfigResponse> setConfig(SetSurveillanceConfigRequest request) => _transport.call(
         'SurveillanceService',
         'SetConfig',
         request,
-        (json) => SetSurveillanceConfigResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SetSurveillanceConfigResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetSurveillanceStatusResponse> getStatus(GetSurveillanceStatusRequest request) => _transport.call(
         'SurveillanceService',
         'GetStatus',
         request,
-        (json) => GetSurveillanceStatusResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetSurveillanceStatusResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<EnableSurveillanceResponse> enable(EnableSurveillanceRequest request) => _transport.call(
         'SurveillanceService',
         'Enable',
         request,
-        (json) => EnableSurveillanceResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => EnableSurveillanceResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<DisableSurveillanceResponse> disable(DisableSurveillanceRequest request) => _transport.call(
         'SurveillanceService',
         'Disable',
         request,
-        (json) => DisableSurveillanceResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => DisableSurveillanceResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetHeatmapResponse> getHeatmap(GetHeatmapRequest request) => _transport.call(
         'SurveillanceService',
         'GetHeatmap',
         request,
-        (json) => GetHeatmapResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetHeatmapResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetSnapshotResponse> getSnapshot(GetSnapshotRequest request) => _transport.call(
         'SurveillanceService',
         'GetSnapshot',
         request,
-        (json) => GetSnapshotResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetSnapshotResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<GetFilterLogResponse> getFilterLog(GetFilterLogRequest request) => _transport.call(
         'SurveillanceService',
         'GetFilterLog',
         request,
-        (json) => GetFilterLogResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => GetFilterLogResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
   Future<SyncSurveillanceCatalogResponse> syncCatalog(SyncSurveillanceCatalogRequest request) => _transport.call(
         'SurveillanceService',
         'SyncCatalog',
         request,
-        (json) => SyncSurveillanceCatalogResponse()..mergeFromProto3Json(json ?? const {}),
+        (json) => SyncSurveillanceCatalogResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
 }

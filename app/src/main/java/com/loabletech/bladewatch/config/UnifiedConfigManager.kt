@@ -665,6 +665,32 @@ object UnifiedConfigManager {
     }
 
     /**
+     * Whether an OPTIONAL daemon is enabled, from the cross-process `daemons`
+     * section, or null when nothing has recorded a preference yet.
+     *
+     * BladeWatch-abcx: [net.bladewatch.app.ui.util.PreferencesManager] is the historical
+     * home for this, but it is app-private SharedPreferences — unreachable from the
+     * Flutter APK even under the shared UID. This section is the value BOTH UIs and the
+     * daemon agree on. Null (not false) means "unset", so an existing install keeps
+     * whatever SharedPreferences already says instead of silently flipping to disabled.
+     */
+    @JvmStatic
+    fun isDaemonEnabled(daemonType: String): Boolean? {
+        val daemons = loadConfig().optJSONObject("daemons") ?: return null
+        if (!daemons.has(daemonType)) return null
+        return daemons.optBoolean(daemonType, false)
+    }
+
+    /**
+     * Record whether an OPTIONAL daemon should be running. Read by
+     * `DaemonStartupManager`'s health check, which is what actually starts it.
+     */
+    @JvmStatic
+    fun setDaemonEnabled(daemonType: String, enabled: Boolean): Boolean {
+        return updateValues("daemons", mapOf(daemonType to enabled))
+    }
+
+    /**
      * Get vehicle appearance config section (selected 3D model + body color).
      */
     @JvmStatic

@@ -170,6 +170,19 @@ It accepts JSON commands for local control. Known command areas include:
 - Storage.
 - Auth invalidation.
 - Secret get, put, delete, and section operations.
+- Public (non-secret) config read/write, allow-listed to the `statusOverlay` and
+  `developerOptions` sections (`config_get_section`, `config_put`).
+- Daemon process liveness (`daemonStatus`) and the Zrok tunnel URL (`tunnelStatus`).
+- Enable/disable an optional daemon (`daemon_set_enabled`), allow-listed to
+  `ZROK_TUNNEL`.
+
+The last four exist because the Flutter UI ships as a separate APK with no ADB; each is
+deliberately narrow rather than a general-purpose escape hatch. See
+`ipc-auth-and-secrets.md` for the allow-lists and why the other daemons are excluded.
+
+Liveness (`daemonStatus`, and the gate inside `tunnelStatus`) is an **argv[0]** match read
+from procfs, not a `pgrep -f` over whole command lines — `-f` matched any process that
+merely mentioned a daemon name.
 
 Every connection is gated twice before any command runs: the connecting socket's owning UID must be trusted (`PeerCredentials.isTrusted`), and the first message must carry a valid IPC token (`IpcTokenManager.isValid`). See `ipc-auth-and-secrets.md`.
 

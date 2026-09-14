@@ -64,6 +64,29 @@ void main() {
     expect(setupGuideShown, isTrue);
   });
 
+  testWidgets('the setup-guide row is labelled as the setup guide, not as the About page', (tester) async {
+    // It was wired to the right callback but labelled with
+    // settings_about_row_title/subtitle — the strings for the Settings hub's
+    // "About BladeWatch / Version, license, support development." ROW. On
+    // device that made it read as a duplicate of the page header, so there was
+    // no discoverable way to reopen the guide. Native labels it
+    // setup_guide_title/subtitle. The older test above only asserted the tap
+    // fired, which is why the wrong label went unnoticed.
+    await pumpTall(tester, wrap(buildController()));
+    await tester.pumpAndSettle();
+
+    final row = find.byKey(const ValueKey('about.setupGuide'));
+    expect(find.descendant(of: row, matching: find.text('Getting Started')), findsOneWidget);
+    expect(
+      find.descendant(of: row, matching: find.text('Three quick steps to get the best experience:')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: row, matching: find.text('Version, license, support development.')),
+      findsNothing,
+    );
+  });
+
   testWidgets('renders without error in dark theme', (tester) async {
     await pumpTall(
       tester,

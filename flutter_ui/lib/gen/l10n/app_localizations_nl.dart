@@ -25,28 +25,28 @@ class AppLocalizationsNl extends AppLocalizations {
   String get action_select_all => 'Selecteer alle';
 
   @override
-  String get action_select_all_short => 'Allemaal .';
+  String get action_select_all_short => 'Alles';
 
   @override
   String get action_delete => 'Verwijderen';
 
   @override
-  String get action_done => 'Gedaan';
+  String get action_done => 'KLAAR';
 
   @override
-  String get action_remind_me_later => 'Herinner mij later.';
+  String get action_remind_me_later => 'LATER HERINNEREN';
 
   @override
   String get action_retry => 'Opnieuw proberen';
 
   @override
-  String get action_run => 'Rennen .';
+  String get action_run => 'Uitvoeren';
 
   @override
-  String get action_clear_output => 'Een duidelijke uitgang';
+  String get action_clear_output => 'Uitvoer wissen';
 
   @override
-  String get cd_camera => 'Camera .';
+  String get cd_camera => 'Camera';
 
   @override
   String get cd_qr => 'QR';
@@ -55,19 +55,19 @@ class AppLocalizationsNl extends AppLocalizations {
   String get cd_qr_code => 'QR-code';
 
   @override
-  String get cd_show_hide_token => 'Toon/Verberg-token';
+  String get cd_show_hide_token => 'Token tonen/verbergen';
 
   @override
-  String get cd_copy_token => 'Kopie-token';
+  String get cd_copy_token => 'Token kopiëren';
 
   @override
-  String get cd_copy_url => 'Kopie URL';
+  String get cd_copy_url => 'URL kopiëren';
 
   @override
-  String get cd_clear_logs => 'Schone boeken';
+  String get cd_clear_logs => 'Logboek wissen';
 
   @override
-  String get cd_expand_collapse => 'Uitbreiding/kollaps';
+  String get cd_expand_collapse => 'Uitklappen/Inklappen';
 
   @override
   String get cd_recording_status => 'Opnamestatus';
@@ -76,7 +76,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get cd_trip_tracking_status => 'Status van het volgen van reizen';
 
   @override
-  String get cd_video_thumbnail => 'Miniatuur van de video\'s';
+  String get cd_video_thumbnail => 'Videominiatuur';
 
   @override
   String get cd_play => 'Afspelen';
@@ -85,7 +85,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get cd_back => 'Terug';
 
   @override
-  String get cd_play_pause => 'Speel/Pause';
+  String get cd_play_pause => 'Afspelen/Pauzeren';
 
   @override
   String get cd_player_prev => 'Vorige opname';
@@ -103,13 +103,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get cd_delete => 'Verwijderen';
 
   @override
-  String get cd_expand => 'Uitbreiden';
+  String get cd_expand => 'Uitklappen';
 
   @override
-  String get cd_configure => 'Configuratie';
+  String get cd_configure => 'Configureren';
 
   @override
-  String get cd_download_log => 'Download log';
+  String get cd_download_log => 'Logboek downloaden';
 
   @override
   String get cd_reset => 'Resetten';
@@ -118,7 +118,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get cd_battery => 'Batterij';
 
   @override
-  String get cd_step_completed => 'Voltooide stap';
+  String get cd_step_completed => 'Stap voltooid';
 
   @override
   String get cd_permission_granted => 'Toestemming verleend';
@@ -130,10 +130,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get overlay_trip_inactive_label => 'TRIP';
 
   @override
-  String get log_entry_default_timestamp => '- Ik heb geen idee.';
+  String get log_entry_default_timestamp => '12:34:56';
 
   @override
-  String get log_entry_default_tag => 'Ik heb het niet gedaan.';
+  String get log_entry_default_tag => '[TAG]';
 
   @override
   String get log_entry_default_message => 'Log bericht hier';
@@ -161,16 +161,16 @@ class AppLocalizationsNl extends AppLocalizations {
       'Selecteer de bron van de panoramische camera';
 
   @override
-  String get camera_current_auto => 'Stroom: Auto';
+  String get camera_current_auto => 'Huidig: Auto';
 
   @override
   String get camera_option_auto => 'Automatische (opstart detecteerbaar)';
 
   @override
-  String get camera_option_0 => 'Camera 0  Atto trimmen';
+  String get camera_option_0 => 'Camera 0 — Atto trimmen';
 
   @override
-  String get camera_option_1 => 'Camera 1  Seal (voorafgaande)';
+  String get camera_option_1 => 'Camera 1 — Seal (voorafgaande)';
 
   @override
   String get camera_option_2 => 'Camera 2';
@@ -195,10 +195,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_qr_waiting => 'Wachtend op de tunnel...';
 
   @override
-  String get dashboard_daemons_running_default => '0/5 Rennen';
+  String get dashboard_daemons_running_default => '0/5 actief';
 
   @override
-  String get dashboard_device_id_loading => '- Ik heb het niet gedaan .';
+  String get dashboard_device_id_loading => '…';
 
   @override
   String get dashboard_access_code => 'Toegangscode';
@@ -207,7 +207,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_token_masked => '••••••••';
 
   @override
-  String get dashboard_regenerate_token => 'Regeneratie-token';
+  String get dashboard_regenerate_token => 'Token opnieuw genereren';
 
   @override
   String get dashboard_set_password => 'Wachtwoord instellen';
@@ -250,14 +250,14 @@ class AppLocalizationsNl extends AppLocalizations {
   String get setup_step_two_label => '2';
 
   @override
-  String get setup_step_three_label => '3 Vrouwen en kinderen';
+  String get setup_step_three_label => '3';
 
   @override
   String get setup_language_title => 'Kies uw taal';
 
   @override
   String get setup_language_body =>
-      'Tast om een andere taal te kiezen voor de BladeWatch-app en de webtunnel.';
+      'Standaard de taal van je head unit. Tik om een andere taal te kiezen voor de BladeWatch-app en de webtunnel.';
 
   @override
   String get setup_language_button => 'Kies taal';
@@ -267,10 +267,10 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'Klik hieronder om BYD Auto-Start te openen. Zoek BladeWatch in de lijst en verwijder het vak. BYD verwijdert dit bij elke installatie  je zult het opnieuw na updates.';
+      'Klik hieronder om BYD Auto-Start te openen. Zoek BladeWatch in de lijst en verwijder het vak. BYD verwijdert dit bij elke installatie — je zult het opnieuw na updates.';
 
   @override
-  String get setup_autostart_button => 'Open BYD Auto-Start';
+  String get setup_autostart_button => 'BYD Auto-Start openen';
 
   @override
   String get setup_overlay_title => 'Laat het weergeven via andere apps toe';
@@ -280,7 +280,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Hiermee kan je een zwevende statusindicator tonen voor het opnemen en volgen van reizen bovenop andere apps.';
 
   @override
-  String get setup_overlay_button => 'Open overlaysinstellingen';
+  String get setup_overlay_button => 'Overlay-instellingen openen';
 
   @override
   String get cd_close => 'Sluiten';
@@ -305,27 +305,31 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
+  String get language_not_saved =>
+      'Taal toegepast, maar niet opgeslagen — hij wordt hersteld bij het opnieuw starten.';
+
+  @override
   String language_label_auto_fmt(Object arg1) {
-    return '$arg1 · Auto';
+    return '$arg1 · Automatisch';
   }
 
   @override
-  String get adb_prompt => '- \$';
+  String get adb_prompt => '\$';
 
   @override
-  String get adb_command_hint => 'Kom in opdracht...';
+  String get adb_command_hint => 'Voer een opdracht in…';
 
   @override
   String get adb_preset_commands_header => 'Vooraf ingestelde opdrachten';
 
   @override
-  String get adb_output_header => 'Output';
+  String get adb_output_header => 'Uitvoer';
 
   @override
   String get adb_output_ready => 'Klaar voor commando\'s...';
 
   @override
-  String get adb_console_hero_title => 'ADB Console';
+  String get adb_console_hero_title => 'ADB-console';
 
   @override
   String get adb_console_hero_subtitle =>
@@ -346,7 +350,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Controleer op het scherm van de hoofdeenheid op de melding ‘USB-foutopsporing toestaan?’ en accepteer deze, probeer het daarna opnieuw.';
 
   @override
-  String get performance_connecting => 'Connecting to performance monitor…';
+  String get performance_connecting => 'Verbinden met prestatiemonitor…';
 
   @override
   String get performance_hero_title => 'Systeemprestaties';
@@ -355,16 +359,16 @@ class AppLocalizationsNl extends AppLocalizations {
   String get performance_cpu_title => 'CPU';
 
   @override
-  String get performance_cpu_system_usage => 'System Usage';
+  String get performance_cpu_system_usage => 'Systeemgebruik';
 
   @override
-  String get performance_cpu_app_usage => 'App Usage';
+  String get performance_cpu_app_usage => 'App-gebruik';
 
   @override
-  String get performance_frequency_label => 'Frequency';
+  String get performance_frequency_label => 'Frequentie';
 
   @override
-  String get performance_temperature_label => 'Temperature';
+  String get performance_temperature_label => 'Temperatuur';
 
   @override
   String get performance_temperature_na => 'N/A';
@@ -373,13 +377,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get performance_memory_title => 'Geheugen';
 
   @override
-  String get performance_usage_label => 'Usage';
+  String get performance_usage_label => 'Gebruik';
 
   @override
-  String get performance_memory_total => 'Total';
+  String get performance_memory_total => 'Totaal';
 
   @override
-  String get performance_memory_used => 'Used';
+  String get performance_memory_used => 'Gebruikt';
 
   @override
   String get performance_memory_app => 'App';
@@ -394,13 +398,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get performance_threads_label => 'Threads';
 
   @override
-  String get performance_gc_cycles_label => 'GC Cycles';
+  String get performance_gc_cycles_label => 'GC-cycli';
 
   @override
-  String get performance_open_fds_label => 'Open FDs';
+  String get performance_open_fds_label => 'Open FD’s';
 
   @override
-  String get performance_refreshing_footer => 'Refreshing every 3 seconds';
+  String get performance_refreshing_footer => 'Elke 3 seconden vernieuwen';
 
   @override
   String get webview_loading => 'Het laden...';
@@ -413,28 +417,28 @@ class AppLocalizationsNl extends AppLocalizations {
       'Start de cameraservice via het Services-scherm om toegang te krijgen tot deze pagina.';
 
   @override
-  String get zrok_enable_token_hint => 'Toegang Token';
+  String get zrok_enable_token_hint => 'Token activeren';
 
   @override
   String get zrok_token_storage_note =>
       'Token wordt veilig opgeslagen en gedeeld tussen de app en achtergrondservices.';
 
   @override
-  String get zrok_reset_environment => 'Zrok omgeving opnieuw instellen';
+  String get zrok_reset_environment => 'Zrok-omgeving resetten';
 
   @override
   String get zrok_reset_environment_desc =>
       'Verwijdert omgeving en token. Je zult opnieuw moeten activeren met je token (gebruikt een apparaat slot).';
 
   @override
-  String get reset_title => 'Resetgegevens';
+  String get reset_title => 'Gegevens resetten';
 
   @override
   String get reset_subtitle => 'Verwijder de verzamelde gegevens per categorie';
 
   @override
   String get reset_warning =>
-      'Dit kan niet worden ongedaan gemaakt. Opnames, reizen en batterijgeschiedenis worden permanent verwijderd.';
+      'Dit kan niet ongedaan worden gemaakt. Opnames, ritten en batterijgeschiedenis worden permanent verwijderd.';
 
   @override
   String get reset_cat_trips => 'Ritten';
@@ -483,7 +487,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get reset_cat_trip_files_desc => 'Telemetrie per reis JSON op schijf';
 
   @override
-  String get recording_lib_chip_any => 'Enige';
+  String get recording_lib_chip_any => 'Alle';
 
   @override
   String get recording_lib_chip_person => 'Persoon';
@@ -518,7 +522,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_filter_sheet_title => 'Filteropnames';
+  String get recording_lib_filter_sheet_title => 'Opnames filteren';
 
   @override
   String get recording_lib_filter_apply => 'Toepassen';
@@ -527,10 +531,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get recording_lib_filter_reset => 'Resetten';
 
   @override
-  String get recording_lib_filter_section_what => 'Wat is dat ?';
+  String get recording_lib_filter_section_what => 'Wat';
 
   @override
-  String get recording_lib_filter_section_severity => 'Zwaarheid';
+  String get recording_lib_filter_section_severity => 'Ernst';
 
   @override
   String get recording_lib_filter_section_type => 'Type';
@@ -542,10 +546,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get recording_lib_chip_type_proximity => 'Nabijheid';
 
   @override
-  String get recording_lib_date_today => 'Vandaag de dag';
+  String get recording_lib_date_today => 'Vandaag';
 
   @override
-  String get recording_lib_date_yesterday => 'Gisteren .';
+  String get recording_lib_date_yesterday => 'Gisteren';
 
   @override
   String recording_lib_clip_count(Object arg1) {
@@ -558,7 +562,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get recording_lib_pick_date => 'Kies een date.';
+  String get recording_lib_pick_date => 'Kies een datum';
 
   @override
   String get recording_lib_date_all_days => 'Alle dagen';
@@ -567,43 +571,55 @@ class AppLocalizationsNl extends AppLocalizations {
   String get cd_clear_date_filter => 'Toon alle dagen';
 
   @override
-  String get recording_lib_section_morning => 'Morgen .';
+  String get recording_lib_section_morning => 'Ochtend';
 
   @override
-  String get recording_lib_section_afternoon => 'Goedenavond .';
+  String get recording_lib_section_afternoon => 'Middag';
 
   @override
-  String get recording_lib_section_evening => 'Af en toe .';
+  String get recording_lib_section_evening => 'Avond';
 
   @override
-  String get recording_lib_section_night => 'De nacht';
+  String get recording_lib_section_night => 'Nacht';
 
   @override
   String get cd_previous_day => 'Vorige dag';
 
   @override
-  String get cd_next_day => 'De volgende dag.';
+  String get cd_next_day => 'Volgende dag';
 
   @override
-  String get cd_open_filters => 'Open filters';
+  String get cd_open_filters => 'Filters openen';
 
   @override
-  String get cd_clear_filter => 'Doorzichtig filter';
+  String get cd_clear_filter => 'Filter wissen';
 
   @override
   String get player_title_recording => 'Opname';
 
   @override
-  String get player_time_zero => '0:00 uur';
+  String get player_time_zero => '0:00';
 
   @override
   String get player_time_separator => ' / ';
 
   @override
-  String get daemons_hero_title => 'Backgrounddiensten';
+  String get daemon_name_camera => 'Cameraservice';
 
   @override
-  String get daemons_count_pending => 'Loading diensten...';
+  String get daemon_name_surveillance => 'Bewakingsservice';
+
+  @override
+  String get daemon_name_acc => 'ACC-bewaking';
+
+  @override
+  String get daemon_name_zrok => 'Zrok Tunnel';
+
+  @override
+  String get daemons_hero_title => 'Achtergronddiensten';
+
+  @override
+  String get daemons_count_pending => 'Services laden…';
 
   @override
   String daemons_count_fmt(Object arg1, Object arg2) {
@@ -638,11 +654,18 @@ class AppLocalizationsNl extends AppLocalizations {
   String get battery_health_last_updated => 'Laatste bijgewerkt';
 
   @override
-  String get battery_health_reset => 'Reset SOH Schatting';
+  String get battery_health_unavailable => 'Niet beschikbaar';
+
+  @override
+  String get battery_health_unavailable_desc =>
+      'Schatting van de batterijconditie is niet beschikbaar op dit voertuig.';
+
+  @override
+  String get battery_health_reset => 'SOH-schatting resetten';
 
   @override
   String get battery_health_reset_desc =>
-      'Gebruik als de batterij is vervangen of het lezen onjuist lijkt.';
+      'Wist alle gegevens en schat opnieuw vanaf nul. Gebruik dit als de accu is vervangen of de meetwaarde onjuist lijkt.';
 
   @override
   String get soh_dialog_model_label => 'Model';
@@ -703,8 +726,10 @@ class AppLocalizationsNl extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: 'Dit zal $arg1-opnames permanent verwijderen.',
-      one: 'Dit zal de $arg1-opname permanent verwijderen.',
+      other:
+          'Hiermee worden $arg1 opnames permanent verwijderd. Dit kan niet ongedaan worden gemaakt.',
+      one:
+          'Hiermee wordt $arg1 opname permanent verwijderd. Dit kan niet ongedaan worden gemaakt.',
     );
     return '$_temp0';
   }
@@ -734,7 +759,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'Camera $arg1 set  volgende ACC cyclus';
+    return 'Camera $arg1 set — volgende ACC cyclus';
   }
 
   @override
@@ -759,7 +784,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get toast_soh_reset_success =>
-      'SOH schatting reset  zal opnieuw berekenen uit de volgende gegevens';
+      'SOH schatting reset — zal opnieuw berekenen uit de volgende gegevens';
 
   @override
   String get toast_soh_reset_failed_no_daemon =>
@@ -803,34 +828,34 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dialog_disable => 'Uitschakelen';
 
   @override
-  String get dialog_keep_enabled => 'Blijf toegestaan';
+  String get dialog_keep_enabled => 'Ingeschakeld laten';
 
   @override
-  String get dialog_keep_disabled => 'Blijf gehandicapt';
+  String get dialog_keep_disabled => 'Uitgeschakeld laten';
 
   @override
-  String get dialog_regenerate => 'Regeneratie';
+  String get dialog_regenerate => 'Opnieuw genereren';
 
   @override
-  String get dialog_reset_selected => 'Reset geselecteerd';
+  String get dialog_reset_selected => 'Selectie resetten';
 
   @override
-  String get dialog_reset_soh_title => 'SOH Schatting opnieuw instellen?';
+  String get dialog_reset_soh_title => 'SOH-schatting resetten?';
 
   @override
   String get dialog_reset_soh_message =>
       'Dit zal alle SOH-gegevens verwijderen en de herbeoordeling van het begin af dwingen.\n\n Gebruik dit als:\n• Batterij is vervangen\n• SOH-lezing lijkt onjuist\n• U wilt opnieuw kalibreren\n\nHet systeem zal opnieuw uit de volgende beschikbare gegevensbron (OEM, lading kalibratie of onmiddellijke lezing) voortkomen.';
 
   @override
-  String get dialog_reset_following_title => 'De volgende instellen?';
+  String get dialog_reset_following_title => 'Het volgende resetten?';
 
   @override
   String dialog_reset_following_message(Object arg1) {
-    return 'This cannot be undone.\n\n$arg1';
+    return 'Dit kan niet ongedaan worden gemaakt.\n\n$arg1';
   }
 
   @override
-  String get dialog_reset_complete_title => 'Volledige reset';
+  String get dialog_reset_complete_title => 'Resetten voltooid';
 
   @override
   String get dialog_traffic_cannot_check_title =>
@@ -846,7 +871,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get dialog_traffic_disable_message =>
-      'De BYD Traffic Monitor (com.byd.trafficmonitor) is een ingebouwde systeem-app die de verkeersomstandigheden in de achtergrond continu bewaakt.\n\n️ Waarom deze uitschakelen?\n\n• Verbrengt mobiele gegevens (zelfs wanneer geparkeerd)\n• Gebruikt CPU en batterij in de achtergrond\n• Niet nodig als u een aparte navigatie-app gebruikt\n• Kan het netwerkgebruik van de dashcam verstoren\n\nDit is veilig om te uitschakelen  het beïnvloedt alleen de ingebouwde verkeersoverlay op de kaart. Uw navigatie, Bluetooth, en alle andere autofuncties blijven onveranderd.\n\nEen harde herlaten is vereist na het uitschakelen (';
+      'De BYD Traffic Monitor (com.byd.trafficmonitor) is een ingebouwde systeem-app die doorlopend de verkeerssituatie op de achtergrond volgt.\n\nWaarom uitschakelen?\n\n• Verbruikt mobiele data (ook geparkeerd)\n• Gebruikt CPU en accu op de achtergrond\n• Niet nodig als je een aparte navigatie-app gebruikt\n• Kan het netwerkgebruik van de dashcam verstoren\n\nUitschakelen is veilig: het raakt alleen de ingebouwde verkeerslaag op de kaart. Navigatie, Bluetooth en alle andere autofuncties blijven ongewijzigd.\n\nNa het uitschakelen is een harde herstart nodig (houd de knop op de middenconsole 5 seconden ingedrukt).';
 
   @override
   String get dialog_traffic_enable_title =>
@@ -897,15 +922,15 @@ class AppLocalizationsNl extends AppLocalizations {
   String get toast_access_code_copied => 'Toegangscode gekopieerd';
 
   @override
-  String get dialog_regenerate_token_title => 'Regeneratie-token';
+  String get dialog_regenerate_token_title => 'Token opnieuw genereren';
 
   @override
   String get dialog_regenerate_token_message =>
-      'Hiermee wordt de huidige token ongeldig gemaakt en alle actieve sessies worden uitgeschakeld.';
+      'Hiermee wordt het huidige token ongeldig. Alle actieve sessies worden afgemeld. Doorgaan?';
 
   @override
   String get toast_token_regenerated_logged_out =>
-      'Alle sessies zijn ingetrokken.';
+      'Nieuw token gegenereerd. Alle sessies zijn afgemeld.';
 
   @override
   String get toast_token_regenerated_restart =>
@@ -929,7 +954,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
-    return '$arg1/$arg2';
+    return '$arg1/$arg2 actief';
   }
 
   @override
@@ -947,7 +972,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok Tunnel Token';
+  String get dialog_zrok_token_title => 'Zrok-tunneltoken';
 
   @override
   String get dialog_zrok_token_message =>
@@ -957,7 +982,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get toast_token_cannot_be_empty => 'De token mag niet leeg zijn';
 
   @override
-  String get dialog_zrok_reset_title => 'Zrok omgeving opnieuw instellen';
+  String get dialog_zrok_reset_title => 'Zrok-omgeving resetten';
 
   @override
   String get dialog_zrok_reset_message =>
@@ -967,7 +992,8 @@ class AppLocalizationsNl extends AppLocalizations {
   String get toast_resetting_zrok => 'Zrok-omgeving opnieuw instellen...';
 
   @override
-  String get toast_zrok_reset_success => 'Zrok omgeving opnieuw instellen.';
+  String get toast_zrok_reset_success =>
+      'Zrok-omgeving opnieuw ingesteld. Voer een nieuw token in om opnieuw in te stellen.';
 
   @override
   String get toast_zrok_reset_partial =>
@@ -979,7 +1005,8 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get zrok_no_token_configured => 'Geen token geconfigureerd.';
+  String get zrok_no_token_configured =>
+      'Geen token geconfigureerd. Tik om in te stellen.';
 
   @override
   String get toast_zrok_token_saved => 'Gewaarborgd token';
@@ -1016,7 +1043,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String log_share_title(Object arg1, Object arg2) {
-    return '$arg1 Log - $arg2';
+    return '$arg1-logboek - $arg2';
   }
 
   @override
@@ -1026,7 +1053,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String log_header_title(Object arg1) {
-    return '=== $arg1 Log ===';
+    return '=== $arg1-logboek ===';
   }
 
   @override
@@ -1050,11 +1077,11 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get dialog_delete_recording_title => 'Verwijder de opname';
+  String get dialog_delete_recording_title => 'Opname verwijderen';
 
   @override
   String dialog_delete_recording_message(Object arg1) {
-    return '$arg1 verwijderen? Dit kan niet worden ongedaan gemaakt.';
+    return '$arg1 verwijderen?\nDit kan niet ongedaan worden gemaakt.';
   }
 
   @override
@@ -1074,7 +1101,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String setup_version_banner(Object arg1) {
-    return 'Updated to v$arg1  herbevestigen autostart, BYD verwijdert het bij elke installatie';
+    return 'Updated to v$arg1 — herbevestigen autostart, BYD verwijdert het bij elke installatie';
   }
 
   @override
@@ -1086,7 +1113,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get camera_current_auto_label => 'Stroom: Auto';
+  String get camera_current_auto_label => 'Huidig: Auto';
 
   @override
   String get soh_estimation_active => 'Schatting actief';
@@ -1100,7 +1127,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Nominale referentie — wacht op betrouwbare SOH-gegevens';
 
   @override
-  String get soh_no_estimate_yet => 'Nog geen schatting  wacht op gegevens';
+  String get soh_no_estimate_yet => 'Nog geen schatting — wacht op gegevens';
 
   @override
   String recording_lib_selected_count(Object arg1) {
@@ -1134,7 +1161,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get rail_dashboard => 'Dashboard';
 
   @override
-  String get rail_live => 'Leven';
+  String get rail_live => 'Live';
 
   @override
   String get rail_recordings => 'Opnames';
@@ -1177,7 +1204,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Kies welke segmenten van de drijvende statuspil zichtbaar blijven.';
 
   @override
-  String get settings_overlay_camera_title => 'Camera indicator';
+  String get settings_overlay_camera_title => 'Camera-indicator';
 
   @override
   String get settings_overlay_camera_subtitle =>
@@ -1197,7 +1224,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settings_subrail_overline => 'Instellingen';
 
   @override
-  String get cd_settings_subrail => 'Opstelling sub-rail';
+  String get cd_settings_subrail => 'Instellingen-subbalk';
 
   @override
   String get settings_privacy_title => 'Privacy & gegevens';
@@ -1229,7 +1256,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_about_support_share_message =>
-      'Bekijk BladeWatch  open source surveillance & dashcam voor BYD: https://bladewatch-5lc.pages.dev/';
+      'Bekijk BladeWatch — open source surveillance & dashcam voor BYD: https://bladewatch-5lc.pages.dev/';
 
   @override
   String get settings_about_support_share_chooser => 'Deel BladeWatch';
@@ -1258,7 +1285,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_about_license_value =>
-      'MIT  open source. Tik om de volledige tekst te bekijken.';
+      'MIT — open source. Tik om de volledige tekst te bekijken.';
 
   @override
   String get settings_about_source_title => 'Broncode';
@@ -1306,13 +1333,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settings_theme_label => 'Thema';
 
   @override
-  String get settings_theme_auto => 'Automatisch (volgensysteem)';
+  String get settings_theme_auto => 'Automatisch (systeem volgen)';
 
   @override
   String get settings_theme_light => 'Licht';
 
   @override
-  String get settings_theme_dark => 'Duister';
+  String get settings_theme_dark => 'Donker';
 
   @override
   String get settings_language_label => 'Taal';
@@ -1337,7 +1364,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settings_drive_side_right_hint => 'RHD-voertuigen';
 
   @override
-  String get settings_drive_side_auto => 'Auto';
+  String get settings_drive_side_auto => 'Automatisch';
 
   @override
   String get settings_drive_side_auto_hint => 'Detecteren via voertuig';
@@ -1398,13 +1425,13 @@ class AppLocalizationsNl extends AppLocalizations {
       'Tik op elk item aan de linkerkant om het te spelen.';
 
   @override
-  String get diagnostics_section_adb_console => 'ADB Console';
+  String get diagnostics_section_adb_console => 'ADB-console';
 
   @override
   String get diagnostics_section_traffic => 'Verkeersmonitor';
 
   @override
-  String get diagnostics_section_camera_probe => 'Camera-sonde';
+  String get diagnostics_section_camera_probe => 'Camera-controle';
 
   @override
   String get diagnostics_section_battery => 'Batterijgezondheid';
@@ -1420,7 +1447,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Live gezondheid, logs, en sondes voor het apparaat.';
 
   @override
-  String get diagnostics_health_clear => 'Het is duidelijk.';
+  String get diagnostics_health_clear => 'Alles in orde';
 
   @override
   String get diagnostics_health_section => 'Gezondheid';
@@ -1429,10 +1456,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get diagnostics_health_network => 'Netwerk';
 
   @override
-  String get diagnostics_health_storage => 'Opberging';
+  String get diagnostics_health_storage => 'Opslag';
 
   @override
-  String get diagnostics_health_camera => 'Camera .';
+  String get diagnostics_health_camera => 'Camera';
 
   @override
   String get diagnostics_health_battery => 'Batterij';
@@ -1458,7 +1485,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get diagnostics_tunnel_state_connecting => 'Verbinding';
 
   @override
-  String get diagnostics_network_mobile => 'Bewegbaar';
+  String get diagnostics_network_mobile => 'Mobiel';
 
   @override
   String get diagnostics_network_ethernet => 'Ethernet';
@@ -1484,7 +1511,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Streaming-output van de uitgevoerde diensten.';
 
   @override
-  String get diagnostics_tools_section => 'Tools';
+  String get diagnostics_tools_section => 'Hulpmiddelen';
 
   @override
   String get diagnostics_traffic_subtitle => 'Bekijk de live netwerk doorvoer.';
@@ -1494,7 +1521,7 @@ class AppLocalizationsNl extends AppLocalizations {
       'Controleer de aangesloten camera-stromen.';
 
   @override
-  String get diagnostics_adb_subtitle => 'Maak de terminal open.';
+  String get diagnostics_adb_subtitle => 'Open de terminal op het apparaat.';
 
   @override
   String get diagnostics_battery_subtitle =>
@@ -1504,7 +1531,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get diagnostics_settings_subtitle => 'Appvoorkeuren, thema en taal.';
 
   @override
-  String get settings_action_reset_data => '- Dataten opnieuw instellen.';
+  String get settings_action_reset_data => 'Gegevens resetten…';
 
   @override
   String get cd_brand_logo => 'BladeWatch';
@@ -1524,16 +1551,16 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_subtitle_no_tunnel => 'Afgelegen toegang offline';
 
   @override
-  String get dashboard_metric_recordings => 'De opnames van vandaag .';
+  String get dashboard_metric_recordings => 'Opnames van vandaag';
 
   @override
   String get dashboard_metric_storage => 'Gebruikte opslag';
 
   @override
-  String get dashboard_metric_tunnel => 'Afstandsbeveiliging';
+  String get dashboard_metric_tunnel => 'Externe toegang';
 
   @override
-  String get dashboard_metric_services => 'Backgrounddiensten';
+  String get dashboard_metric_services => 'Achtergronddiensten';
 
   @override
   String get dashboard_metric_value_pending => '—';
@@ -1542,13 +1569,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_metric_vehicle => 'Voertuig';
 
   @override
-  String get dashboard_chip_recording_active => 'Aan het opnemen';
+  String get dashboard_chip_recording_active => 'Opname bezig';
 
   @override
   String get dashboard_chip_recording_idle => 'Inactief';
 
   @override
-  String get dashboard_vehicle_tap_to_set => 'Tast om te instellen';
+  String get dashboard_vehicle_tap_to_set => 'Tik om in te stellen';
 
   @override
   String dashboard_vehicle_summary(Object arg1, Object arg2) {
@@ -1556,7 +1583,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get vehicle_dialog_title => 'Stel de batterijcapaciteit';
+  String get vehicle_dialog_title => 'Batterijcapaciteit instellen';
 
   @override
   String get vehicle_dialog_capacity_label => 'Capaciteit (kWh)';
@@ -1575,7 +1602,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get vehicle_dialog_save => 'Opslaan';
 
   @override
-  String get vehicle_dialog_reset => 'Herstellen op automatische detectie';
+  String get vehicle_dialog_reset => 'Terugzetten op automatische detectie';
 
   @override
   String get vehicle_dialog_invalid_capacity =>
@@ -1615,64 +1642,64 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settings_recording_tab_status => 'Status';
 
   @override
-  String get settings_recording_tab_capture => 'Capture';
+  String get settings_recording_tab_capture => 'Vastleggen';
 
   @override
-  String get settings_recording_tab_quality => 'Quality';
+  String get settings_recording_tab_quality => 'Kwaliteit';
 
   @override
-  String get settings_recording_tab_storage => 'Storage';
+  String get settings_recording_tab_storage => 'Opslag';
 
   @override
-  String get settings_recording_status_title => 'Recording Status';
+  String get settings_recording_status_title => 'Opnamestatus';
 
   @override
-  String get settings_recording_status_current_state => 'Current State';
+  String get settings_recording_status_current_state => 'Huidige status';
 
   @override
-  String get settings_recording_status_today_count => 'Recordings Today';
+  String get settings_recording_status_today_count => 'Opnamen vandaag';
 
   @override
-  String get settings_recording_mode_title => 'Recording Mode (ACC ON)';
+  String get settings_recording_mode_title => 'Opnamemodus (ACC AAN)';
 
   @override
   String get settings_recording_mode_description =>
-      'Choose when dashcam recording should occur while driving.';
+      'Kies wanneer de dashcam moet opnemen tijdens het rijden.';
 
   @override
-  String get settings_recording_mode_none_label => 'None (Default)';
+  String get settings_recording_mode_none_label => 'Geen (standaard)';
 
   @override
   String get settings_recording_mode_none_desc =>
-      'No recording — surveillance still works';
+      'Geen opname — bewaking blijft werken';
 
   @override
-  String get settings_recording_mode_continuous_label => 'Continuous';
+  String get settings_recording_mode_continuous_label => 'Continu';
 
   @override
   String get settings_recording_mode_continuous_desc =>
-      'Record all the time while driving';
+      'Altijd opnemen tijdens het rijden';
 
   @override
-  String get settings_recording_mode_drive_label => 'Drive Mode';
+  String get settings_recording_mode_drive_label => 'Rijmodus';
 
   @override
   String get settings_recording_mode_drive_desc =>
-      'Record only when vehicle is moving';
+      'Alleen opnemen als het voertuig rijdt';
 
   @override
-  String get settings_recording_mode_proximity_label => 'Proximity Guard';
+  String get settings_recording_mode_proximity_label => 'Nabijheidsbewaking';
 
   @override
   String get settings_recording_mode_proximity_desc =>
-      'Record when motion is detected';
+      'Opnemen wanneer beweging wordt gedetecteerd';
 
   @override
-  String get settings_recording_limit_title => 'Recording Limit';
+  String get settings_recording_limit_title => 'Opnamelimiet';
 
   @override
   String get settings_recording_limit_description =>
-      'Maximum length per file. Recordings split into new files at this interval.';
+      'Maximale lengte per bestand. Opnamen worden bij dit interval in nieuwe bestanden gesplitst.';
 
   @override
   String settings_recording_limit_minutes(Object arg1) {
@@ -1680,113 +1707,122 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get settings_recording_quality_title => 'Recording Quality';
+  String get settings_recording_quality_title => 'Opnamekwaliteit';
 
   @override
-  String get settings_recording_storage_title => 'Recording Storage';
+  String get settings_recording_storage_title => 'Opnameopslag';
 
   @override
-  String get settings_recording_storage_location_label => 'Storage Location';
+  String get settings_recording_storage_location_label => 'Opslaglocatie';
 
   @override
-  String get settings_recording_storage_internal => 'Internal';
+  String get settings_recording_storage_internal => 'Intern';
 
   @override
-  String get settings_recording_storage_sd_card => 'SD Card';
+  String get settings_recording_storage_sd_card => 'SD-kaart';
 
   @override
-  String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+  String get settings_recording_storage_sd_card_na => 'SD-kaart (n.v.t.)';
 
   @override
   String get settings_recording_storage_limit_label =>
-      'Storage Limit — auto-deletes oldest when reached';
+      'Opslaglimiet — verwijdert automatisch de oudste bij bereiken';
+
+  @override
+  String get settings_recording_storage_usage_label => 'Opslaggebruik';
+
+  @override
+  String get settings_recording_storage_files_label => 'Bestanden';
 
   @override
   String settings_recording_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 gebruikt / limiet $arg2';
   }
 
   @override
   String settings_recording_storage_files(Object arg1) {
-    return '$arg1 recordings';
+    return '$arg1 opnamen';
   }
 
   @override
-  String get settings_recording_storage_path_label => 'Path';
+  String get settings_recording_storage_path_label => 'Pad';
 
   @override
-  String get settings_recording_storage_sd_free_label => 'SD Card Free';
+  String get settings_recording_storage_sd_free_label => 'Vrij op SD-kaart';
 
   @override
-  String get settings_recording_storage_internal_free_label => 'Internal Free';
+  String get settings_recording_storage_internal_free_label => 'Vrij intern';
 
   @override
-  String get settings_recording_format_title => 'Format External Drive';
+  String get settings_recording_format_title => 'Externe schijf formatteren';
 
   @override
   String get settings_recording_format_warning =>
-      'Permanently erases ALL data on the SD card or USB drive.';
+      'Wist ALLE gegevens op de SD-kaart of USB-schijf permanent.';
 
   @override
   String get settings_recording_format_confirm =>
-      'Tap again — ALL data will be ERASED';
+      'Tik nogmaals — ALLE gegevens worden GEWIST';
 
   @override
-  String get settings_recording_format_running => 'Formatting… please wait';
+  String get settings_recording_format_running =>
+      'Bezig met formatteren… even geduld';
 
   @override
-  String get settings_recording_format_button => 'Format SD Card / USB';
+  String get settings_recording_format_button => 'SD-kaart / USB formatteren';
 
   @override
-  String get settings_recording_format_no_drive => 'No removable drive found';
+  String get settings_recording_format_no_drive =>
+      'Geen verwisselbare schijf gevonden';
 
   @override
   String settings_recording_format_success(Object arg1) {
-    return 'Formatted successfully. New path: $arg1';
+    return 'Formatteren gelukt. Nieuw pad: $arg1';
   }
 
   @override
-  String get settings_recording_sync_title => 'Database Catalog';
+  String get settings_recording_sync_title => 'Databasecatalogus';
 
   @override
   String get settings_recording_sync_description =>
-      'Reconcile the recordings index with files on disk.';
+      'Stem de opname-index af op de bestanden op schijf.';
 
   @override
-  String get settings_recording_sync_running => 'Syncing…';
+  String get settings_recording_sync_running => 'Bezig met synchroniseren…';
 
   @override
-  String get settings_recording_sync_button => 'Sync Database';
+  String get settings_recording_sync_button => 'Database synchroniseren';
 
   @override
   String settings_recording_sync_success(Object arg1, Object arg2) {
-    return 'Synced: +$arg1 -$arg2';
+    return 'Gesynchroniseerd: +$arg1 -$arg2';
   }
 
   @override
-  String get settings_recording_sync_in_progress => 'Sync already in progress';
+  String get settings_recording_sync_in_progress =>
+      'Synchronisatie is al bezig';
 
   @override
   String settings_recording_sync_failed(Object arg1) {
-    return 'Sync failed: $arg1';
+    return 'Synchronisatie mislukt: $arg1';
   }
 
   @override
-  String get settings_recording_apply_button => 'Apply Changes';
+  String get settings_recording_apply_button => 'Wijzigingen toepassen';
 
   @override
-  String get settings_recording_dismiss => 'Dismiss';
+  String get settings_recording_dismiss => 'Sluiten';
 
   @override
   String settings_daemons_toggle_unsupported(Object arg1) {
-    return 'Starting/stopping $arg1 isn’t supported yet';
+    return '$arg1 starten/stoppen wordt nog niet ondersteund';
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configure';
+  String get settings_daemons_zrok_configure => 'Configureren';
 
   @override
-  String get settings_daemons_zrok_reset_button => 'Reset Environment';
+  String get settings_daemons_zrok_reset_button => 'Omgeving resetten';
 
   @override
   String vehicle_dialog_summary_effective(Object arg1) {
@@ -1812,7 +1848,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get dashboard_metric_storage_chip_pending => 'Opberging ';
+  String get dashboard_metric_storage_chip_pending => 'Opslag —';
 
   @override
   String get dashboard_tunnel_offline => 'Offline';
@@ -1821,7 +1857,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_tunnel_online => 'Online';
 
   @override
-  String get dashboard_tunnel_connecting => 'Verbinding...';
+  String get dashboard_tunnel_connecting => 'Verbinden…';
 
   @override
   String get dashboard_trips_this_week => 'Deze week';
@@ -1868,10 +1904,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_trips_view_all => 'Alle ritten bekijken';
 
   @override
-  String get dashboard_action_live => 'Een live kijkje .';
+  String get dashboard_action_live => 'Livebeeld';
 
   @override
-  String get dashboard_action_live_subtitle => 'Open beeld van de camera';
+  String get dashboard_action_live_subtitle => 'Camerabeeld openen';
 
   @override
   String get dashboard_action_recordings => 'Opnames';
@@ -1938,19 +1974,19 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_theme_active_auto_caption =>
-      'Auto volgt uw systeem thema.';
+      'Automatisch volgt uw systeemthema.';
 
   @override
   String get settings_theme_active_light_caption =>
-      'Het licht thema is altijd aan.';
+      'Het lichte thema staat altijd aan.';
 
   @override
   String get settings_theme_active_dark_caption =>
-      'Het duistere thema is altijd aan.';
+      'Het donkere thema staat altijd aan.';
 
   @override
   String settings_language_count_format(Object arg1, Object arg2) {
-    return '$arg1 van de beschikbare talen $arg2';
+    return '$arg1 van $arg2 talen beschikbaar';
   }
 
   @override
@@ -2020,7 +2056,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_camera_value_probing => 'Onderzoeken...';
+  String get diagnostics_camera_value_probing => 'Onderzoeken…';
 
   @override
   String get diagnostics_camera_value_offline => 'Offline';
@@ -2031,7 +2067,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get diagnostics_battery_value_pending => 'Opwaartse gegevens';
+  String get diagnostics_battery_value_pending => 'Gegevens in afwachting';
 
   @override
   String dashboard_recordings_value_live(Object arg1) {
@@ -2040,7 +2076,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get dashboard_insight_welcome =>
-      'Welkom  BladeWatch is nu je tweede oogpar.';
+      'Welkom — BladeWatch is nu je tweede oogpar.';
 
   @override
   String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
@@ -2089,7 +2125,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 min';
+    return '$arg1 u $arg2 min';
   }
 
   @override
@@ -2169,7 +2205,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get vehicle_control_charging_tab => 'Opladen';
 
   @override
-  String get vehicle_locked => 'Op slot.';
+  String get vehicle_locked => 'Op slot';
 
   @override
   String get vehicle_unlocked => 'Geopend';
@@ -2188,7 +2224,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get vehicle_open_trunk => 'Kofferbak openen';
 
   @override
-  String get vehicle_close_trunk => 'Sluit de kofferbak';
+  String get vehicle_close_trunk => 'Kofferbak sluiten';
 
   @override
   String get vehicle_trunk_info_open =>
@@ -2285,10 +2321,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get vehicle_window_open_all => 'Alles openen';
 
   @override
-  String get vehicle_sunroof => 'Zonne dak';
+  String get vehicle_sunroof => 'Zonnedak';
 
   @override
-  String get vehicle_sunshade => 'Zonnebrand';
+  String get vehicle_sunshade => 'Zonnescherm';
 
   @override
   String get vehicle_btn_drl_title => 'Daglicht';
@@ -2313,20 +2349,19 @@ class AppLocalizationsNl extends AppLocalizations {
   String get vehicle_charge_limit_range => 'Minimaal 50%, maximaal 100%';
 
   @override
-  String get vehicle_tyre_no_signal => 'Geen signaal';
+  String get vehicle_tyre_no_signal => 'GEEN SIGNAAL';
 
   @override
-  String get vehicle_tyre_slow_leak => 'SLOW LEAK';
+  String get vehicle_tyre_slow_leak => 'TRAAG LEK';
 
   @override
-  String get vehicle_tyre_fast_leak => 'Snel lekken';
+  String get vehicle_tyre_fast_leak => 'SNEL LEK';
 
   @override
-  String get vehicle_tyre_low => 'Bespraak';
+  String get vehicle_tyre_low => 'LAAG';
 
   @override
-  String get vehicle_tyre_high =>
-      'HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET HET';
+  String get vehicle_tyre_high => 'HOOG';
 
   @override
   String get vehicle_tyre_ok => 'OK';
@@ -2486,13 +2521,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trips_tab_storage => 'Opslag';
 
   @override
-  String get trips_filter_7_days => '7 Days';
+  String get trips_filter_7_days => '7 dagen';
 
   @override
-  String get trips_filter_14_days => '14 Days';
+  String get trips_filter_14_days => '14 dagen';
 
   @override
-  String get trips_filter_30_days => '30 Days';
+  String get trips_filter_30_days => '30 dagen';
 
   @override
   String trips_load_error(Object message) {
@@ -2506,13 +2541,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trips_period_summary_title => 'Periodeoverzicht';
 
   @override
-  String get trips_stat_trips => 'Trips';
+  String get trips_stat_trips => 'Ritten';
 
   @override
-  String get trips_stat_hours => 'Hours';
+  String get trips_stat_hours => 'Uren';
 
   @override
-  String get trips_stat_efficiency => 'Efficiency';
+  String get trips_stat_efficiency => 'Efficiëntie';
 
   @override
   String get trips_stat_kwh => 'kWh';
@@ -2530,7 +2565,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String trips_driver_score_overall(Object score) {
-    return 'Overall: $score / 100';
+    return 'Totaal: $score / 100';
   }
 
   @override
@@ -2538,7 +2573,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD estimate: $km km';
+    return 'BYD-schatting: $km km';
   }
 
   @override
@@ -2548,46 +2583,46 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trips_dna_title => 'Rij-DNA';
 
   @override
-  String get trips_dna_anticipation => 'Anticipation';
+  String get trips_dna_anticipation => 'Anticipatie';
 
   @override
-  String get trips_dna_smoothness => 'Smoothness';
+  String get trips_dna_smoothness => 'Vloeiendheid';
 
   @override
-  String get trips_dna_speed_discipline => 'Speed Discipline';
+  String get trips_dna_speed_discipline => 'Snelheidsdiscipline';
 
   @override
-  String get trips_dna_efficiency => 'Efficiency';
+  String get trips_dna_efficiency => 'Efficiëntie';
 
   @override
-  String get trips_dna_consistency => 'Consistency';
+  String get trips_dna_consistency => 'Consistentie';
 
   @override
   String get trips_storage_title => 'Ritopslag';
 
   @override
-  String get trips_storage_analytics_label => 'Trip Analytics';
+  String get trips_storage_analytics_label => 'Ritanalyse';
 
   @override
-  String get trips_storage_rate_label => 'Electricity Rate';
+  String get trips_storage_rate_label => 'Elektriciteitstarief';
 
   @override
-  String get trips_storage_distance_unit_label => 'Distance Unit';
+  String get trips_storage_distance_unit_label => 'Afstandseenheid';
 
   @override
-  String get trips_storage_location_label => 'Storage Location';
+  String get trips_storage_location_label => 'Opslaglocatie';
 
   @override
-  String get trips_storage_internal => 'Internal';
+  String get trips_storage_internal => 'Intern';
 
   @override
-  String get trips_storage_sd_card => 'SD Card';
+  String get trips_storage_sd_card => 'SD-kaart';
 
   @override
-  String get trips_storage_sd_card_unavailable => 'SD Card (N/A)';
+  String get trips_storage_sd_card_unavailable => 'SD-kaart (n.v.t.)';
 
   @override
-  String get trips_storage_apply => 'Apply Changes';
+  String get trips_storage_apply => 'Wijzigingen toepassen';
 
   @override
   String trips_storage_usage_line(
@@ -2596,7 +2631,7 @@ class AppLocalizationsNl extends AppLocalizations {
     Object limit,
     Object count,
   ) {
-    return '$used $unit used / $limit MB limit · $count trips';
+    return '$used $unit gebruikt / limiet $limit MB · $count ritten';
   }
 
   @override
@@ -2604,13 +2639,13 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trips_sync_description =>
-      'Reconcile the trips index with telemetry files on disk.';
+      'Stemt de ritindex af op de telemetriebestanden op schijf.';
 
   @override
-  String get trips_sync_button => 'Sync Database';
+  String get trips_sync_button => 'Database synchroniseren';
 
   @override
-  String get trips_sync_running => 'Syncing…';
+  String get trips_sync_running => 'Bezig met synchroniseren…';
 
   @override
   String trips_sync_success(Object added, Object removed, Object total) {
@@ -2624,31 +2659,31 @@ class AppLocalizationsNl extends AppLocalizations {
   String get trips_detail_summary_title => 'Ritoverzicht';
 
   @override
-  String get trips_detail_distance => 'Distance';
+  String get trips_detail_distance => 'Afstand';
 
   @override
-  String get trips_detail_duration => 'Duration';
+  String get trips_detail_duration => 'Duur';
 
   @override
-  String get trips_detail_energy => 'Energy';
+  String get trips_detail_energy => 'Energie';
 
   @override
-  String get trips_detail_avg_speed => 'Avg Speed';
+  String get trips_detail_avg_speed => 'Gem. snelheid';
 
   @override
-  String get trips_detail_max_speed => 'Max Speed';
+  String get trips_detail_max_speed => 'Max. snelheid';
 
   @override
-  String get trips_detail_soc => 'SoC';
+  String get trips_detail_soc => 'Laadniveau';
 
   @override
-  String get trips_detail_cost => 'Cost';
+  String get trips_detail_cost => 'Kosten';
 
   @override
-  String get trips_detail_ext_temp => 'Ext Temp';
+  String get trips_detail_ext_temp => 'Buitentemp.';
 
   @override
-  String get trips_detail_elev_gain => 'Elev Gain';
+  String get trips_detail_elev_gain => 'Hoogtewinst';
 
   @override
   String get trips_detail_scores_title => 'Rijscores';
@@ -2661,7 +2696,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String trips_detail_route_points(Object count) {
-    return '$count GPS points recorded';
+    return '$count GPS-punten vastgelegd';
   }
 
   @override
@@ -2820,6 +2855,19 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
+  String get surveillance_roi_title => 'Bewegingszone';
+
+  @override
+  String get surveillance_roi_description =>
+      'Tik om een punt toe te voegen, sleep om het te verplaatsen. Minimaal drie punten, maximaal acht.';
+
+  @override
+  String get surveillance_roi_enable => 'Detectie beperken tot deze zone';
+
+  @override
+  String get action_undo => 'Ongedaan maken';
+
+  @override
   String get surveillance_detection_title => 'Detectie-instellingen';
 
   @override
@@ -2892,8 +2940,14 @@ class AppLocalizationsNl extends AppLocalizations {
       'Opslaglimiet — verwijdert automatisch de oudste bij bereiken';
 
   @override
+  String get surveillance_storage_usage_label => 'Opslaggebruik';
+
+  @override
+  String get surveillance_storage_files_label => 'Bestanden';
+
+  @override
   String surveillance_storage_usage(Object arg1, Object arg2) {
-    return '$arg1 used / $arg2 limit';
+    return '$arg1 gebruikt / limiet $arg2';
   }
 
   @override

@@ -63,6 +63,57 @@ class DaemonControlTest {
     }
 
     @Test
+    fun `tunnelStatus sends the tunnelStatus command and returns the url`() {
+        val ipc = FakeIpc {
+            JSONObject().put("status", "ok").put("running", true)
+                .put("url", "https://bladewatch1a2b3c.share.zrok.io")
+        }
+        val response = DaemonControl(ipc).tunnelStatus()
+
+        assertEquals("tunnelStatus", ipc.sentCommands.single().optString("cmd"))
+        assertEquals(true, response.getBoolean("running"))
+        assertEquals("https://bladewatch1a2b3c.share.zrok.io", response.getString("url"))
+    }
+
+    @Test
+    fun `tunnelStatus passes through the running-but-no-url state`() {
+        // The daemon reports this while the tunnel is coming up; collapsing it to
+        // "offline" here would lose the distinction the Dashboard renders.
+        val ipc = FakeIpc {
+            JSONObject().put("status", "ok").put("running", true).put("url", JSONObject.NULL)
+        }
+        val response = DaemonControl(ipc).tunnelStatus()
+
+        assertEquals(true, response.getBoolean("running"))
+        assertEquals(true, response.isNull("url"))
+    }
+
+    @Test
+    fun `setDaemonEnabled sends the type and the flag`() {
+        val ipc = FakeIpc { JSONObject().put("status", "ok").put("enabled", false).put("killed", 1) }
+
+        val response = DaemonControl(ipc).setDaemonEnabled("ZROK_TUNNEL", false)
+
+        val sent = ipc.sentCommands.single()
+        assertEquals("daemon_set_enabled", sent.optString("cmd"))
+        assertEquals("ZROK_TUNNEL", sent.optString("type"))
+        assertEquals(false, sent.getBoolean("enabled"))
+        assertEquals("ok", response.optString("status"))
+    }
+
+    @Test
+    fun `setDaemonEnabled surfaces the daemon's refusal rather than masking it`() {
+        // The allow-list lives in the daemon; this wrapper must not pretend success.
+        val ipc = FakeIpc {
+            JSONObject().put("status", "error").put("message", "Daemon not toggleable over IPC: CAMERA_DAEMON")
+        }
+
+        val response = DaemonControl(ipc).setDaemonEnabled("CAMERA_DAEMON", false)
+
+        assertEquals("error", response.optString("status"))
+    }
+
+    @Test
     fun `propagates TokenUnreadable so the UI can show a specific message`() {
         val ipc = FakeIpc { throw IpcException.TokenUnreadable("no token") }
         assertThrows(IpcException.TokenUnreadable::class.java) { DaemonControl(ipc).status() }

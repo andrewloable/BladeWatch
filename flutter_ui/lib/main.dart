@@ -13,6 +13,7 @@ import 'platform/location_channel.dart';
 import 'platform/method_channel_bridge.dart';
 import 'platform/network_channel.dart';
 import 'platform/prefs_channel.dart';
+import 'platform/public_config_channel.dart';
 import 'platform/setup_channel.dart';
 import 'rpc/connect_client.dart';
 import 'rpc/raw_http_sender.dart';
@@ -40,8 +41,11 @@ import 'screens/location/location_controller.dart';
 import 'screens/location/location_screen.dart';
 import 'screens/recordings/recordings_controller.dart';
 import 'screens/recordings/recordings_screen.dart';
+import 'screens/settings/settings_appearance_controller.dart';
+import 'screens/settings/settings_appearance_models.dart';
 import 'screens/settings/settings_about_controller.dart';
 import 'screens/settings/settings_about_screen.dart';
+import 'screens/settings/settings_daemons_controller.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/startup/startup_controller.dart';
 import 'screens/startup/startup_health_check.dart';
@@ -77,6 +81,21 @@ void main() {
 /// implementations; tests inject fakes so the full app — including the
 /// Startup-to-shell transition — is drivable without a real platform channel
 /// or daemon.
+/// [AppThemeMode] as Flutter's own [ThemeMode], for `MaterialApp.themeMode`.
+///
+/// Lives here rather than beside [AppThemeMode] because
+/// `settings_appearance_models.dart` is deliberately Flutter-free.
+///
+/// BladeWatch-imh6.7: MaterialApp used to set `theme` and `darkTheme` but no
+/// `themeMode`, which defaults to [ThemeMode.system] — so the app always
+/// followed the head unit's own theme and the user's explicit Light/Dark
+/// choice was written to prefs and then ignored.
+ThemeMode materialThemeMode(AppThemeMode mode) => switch (mode) {
+      AppThemeMode.light => ThemeMode.light,
+      AppThemeMode.dark => ThemeMode.dark,
+      AppThemeMode.system => ThemeMode.system,
+    };
+
 class BladeWatchApp extends StatefulWidget {
   final ShellController? shellController;
   final StartupController? startupController;
@@ -84,6 +103,12 @@ class BladeWatchApp extends StatefulWidget {
   final SettingsAboutController? settingsAboutController;
   final TripsController? tripsController;
   final SetupGuideController? setupGuideController;
+
+  /// Owned HERE rather than by the Settings screen because `MaterialApp`
+  /// needs it: the theme the user picked has to reach `themeMode`, and a
+  /// controller created inside a settings pane cannot do that
+  /// (BladeWatch-imh6.7 — the choice was persisted and then ignored).
+  final SettingsAppearanceController? appearanceController;
 
   const BladeWatchApp({
     super.key,
@@ -93,6 +118,7 @@ class BladeWatchApp extends StatefulWidget {
     this.settingsAboutController,
     this.tripsController,
     this.setupGuideController,
+    this.appearanceController,
   });
 
   @override
@@ -105,11 +131,14 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
       widget.startupController ??
       StartupController(daemonChannel: DaemonChannel(MethodChannelBridge()), healthCheck: checkDaemonHealth);
   late final LocaleController _localeController = LocaleController(store: const FileLocaleStore());
+  late final SettingsAppearanceController _appearanceController = widget.appearanceController ??
+      SettingsAppearanceController(prefs: _prefsChannel, shellController: _shellController);
 
   @override
   void initState() {
     super.initState();
     _localeController.load();
+    _appearanceController.load();
   }
 
   // Shared by every RPC-owning controller below (Dashboard, its vehicle
@@ -144,6 +173,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
   late final SurveillanceServiceClient _longSurveillanceService = SurveillanceServiceClient(_longRpcTransport);
   late final DaemonChannel _daemonChannel = DaemonChannel(MethodChannelBridge());
   late final ConfigChannel _configChannel = ConfigChannel(MethodChannelBridge());
+  late final PublicConfigChannel _publicConfigChannel = PublicConfigChannel(MethodChannelBridge());
   late final PrefsChannel _prefsChannel = PrefsChannel(MethodChannelBridge());
   late final AdbKeyChannel _adbKeyChannel = AdbKeyChannel(MethodChannelBridge());
   late final NetworkChannel _networkChannel = NetworkChannel(MethodChannelBridge());
@@ -163,8 +193,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
         systemService: _systemService,
         daemonChannel: _daemonChannel,
         authChannel: _authChannel,
-        // tunnelUrlSource stays at its "no tunnel" default until
-        // BladeWatch-m1po adds a daemon.tunnelStatus IPC command.
+        tunnelUrlSource: _daemonChannel.tunnelUrl,
       );
 
   late final SettingsAboutController _settingsAboutController =
@@ -261,11 +290,14 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _localeController,
+      // The appearance controller is in here too: without it a theme change
+      // would be persisted but never rebuild MaterialApp.
+      listenable: Listenable.merge([_localeController, _appearanceController]),
       builder: (context, _) => MaterialApp(
         title: 'BladeWatch',
         theme: BladeWatchTheme.light(),
         darkTheme: BladeWatchTheme.dark(),
+        themeMode: materialThemeMode(_appearanceController.themeMode),
         locale: _localeController.locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -292,7 +324,9 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                     ),
                     settingsScreen: SettingsScreen(
                       deps: SettingsHubDependencies(
+                        localeController: _localeController,
                         prefs: _prefsChannel,
+                        appearanceController: _appearanceController,
                         shellController: _shellController,
                         systemService: _systemService,
                         recordingsService: _recordingsService,
@@ -303,6 +337,8 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                         safeLocationsService: _safeLocationsService,
                         daemonChannel: _daemonChannel,
                         configChannel: _configChannel,
+                        publicConfigChannel: _publicConfigChannel,
+                        setDaemonEnabled: SettingsDaemonsController.enabledSetterFor(_daemonChannel),
                         onOpenLanguagePicker: () => _showLanguagePicker(context),
                       ),
                     ),

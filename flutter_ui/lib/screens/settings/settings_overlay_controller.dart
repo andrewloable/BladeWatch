@@ -47,14 +47,36 @@ class SettingsOverlayController extends ChangeNotifier {
   }
 
   Future<void> setCameraVisible(bool value) async {
+    final previous = _cameraVisible;
     _cameraVisible = value;
     notifyListeners();
-    await _persist('cameraVisible', value);
+    if (!await _tryPersist('cameraVisible', value)) {
+      _cameraVisible = previous;
+      notifyListeners();
+    }
   }
 
   Future<void> setTripVisible(bool value) async {
+    final previous = _tripVisible;
     _tripVisible = value;
     notifyListeners();
-    await _persist('tripVisible', value);
+    if (!await _tryPersist('tripVisible', value)) {
+      _tripVisible = previous;
+      notifyListeners();
+    }
+  }
+
+  /// The switch moves first (so it feels instant) but SNAPS BACK if the write
+  /// did not land. Native never needed this — it wrote the config file in
+  /// process — but this port writes it over IPC to the daemon, which can be
+  /// down. Leaving the switch in its new position after a failed write would
+  /// show a setting that silently reverts on the next app start.
+  Future<bool> _tryPersist(String key, bool value) async {
+    try {
+      await _persist(key, value);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }

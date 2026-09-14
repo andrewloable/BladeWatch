@@ -32,7 +32,7 @@ public interface SetQualityRequestOrBuilder extends
 
   /**
    * <pre>
-   * One of: H264, H265. Leave empty to keep current.
+   * H264 only. Leave empty to keep current.
    * </pre>
    *
    * <code>string codec = 2 [json_name = "codec"];</code>
@@ -41,7 +41,7 @@ public interface SetQualityRequestOrBuilder extends
   java.lang.String getCodec();
   /**
    * <pre>
-   * One of: H264, H265. Leave empty to keep current.
+   * H264 only. Leave empty to keep current.
    * </pre>
    *
    * <code>string codec = 2 [json_name = "codec"];</code>

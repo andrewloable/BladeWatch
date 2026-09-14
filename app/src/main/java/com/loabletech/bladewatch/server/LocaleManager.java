@@ -38,13 +38,93 @@ public final class LocaleManager {
     private static final Set<String> SUPPORTED_SET = new HashSet<>(SUPPORTED);
     private static final String DEFAULT_LANG = "en";
 
-    private static final String STATE_DIR = "/data/local/tmp/.bladewatch";
+    /**
+     * Where the chosen locale lives (BladeWatch-vcur).
+     *
+     * <p>NOT {@code /data/local/tmp/.bladewatch/} any more. That directory is
+     * {@code 0771 shell:shell}: the app UID gets {@code --x}, so it may traverse
+     * in and read a world-readable file but may NOT create anything. The daemon
+     * (uid 2000) could write there, the two in-car UIs could not, and the failure
+     * was swallowed — so picking a language appeared to work and was silently
+     * lost on the next launch.
+     *
+     * <p>This directory is created by {@code setupStorageDirectories()} and both
+     * APKs already write {@code bladewatch_config.json} into it; the daemon can
+     * read it because shell is in {@code sdcard_rw}. A locale tag is not a
+     * secret, so the sdcardfs permission weakness tracked in BladeWatch-078u
+     * does not apply.
+     */
+    private static final String STATE_DIR = "/storage/emulated/0/BladeWatch/data";
     private static final String STATE_FILE = STATE_DIR + "/locale";
+
+    /**
+     * The pre-BladeWatch-vcur location, still READ so a device whose web UI
+     * already persisted a language keeps it. The web picker goes through the
+     * daemon, which runs as shell and so could always write here.
+     */
+    private static final String LEGACY_STATE_FILE = "/data/local/tmp/.bladewatch/locale";
+
+    /**
+     * Whether the last {@link #set}/{@link #setAuto} actually reached disk.
+     * Exposed so the picker can tell the user instead of reverting silently,
+     * which is what made BladeWatch-vcur hard to notice.
+     */
+    private static volatile boolean lastPersistOk = true;
 
     /** In-memory cache so we don't disk-read on every request. */
     private static volatile String cachedLocale;
     private static volatile long cachedAt;
     private static final long CACHE_TTL_MS = 5_000L;
+
+
+    /** The raw persisted tag, preferring the current path over the legacy one. */
+    private static String readRawFile() {
+        for (String path : new String[] { STATE_FILE, LEGACY_STATE_FILE }) {
+            try {
+                File f = new File(path);
+                if (!f.exists() || !f.canRead()) continue;
+                try (FileInputStream fis = new FileInputStream(f)) {
+                    byte[] buf = new byte[16];
+                    int n = fis.read(buf);
+                    if (n > 0) {
+                        String tag = new String(buf, 0, n, "UTF-8").trim();
+                        if (!tag.isEmpty()) return tag;
+                    }
+                }
+            } catch (Exception e) {
+                CameraDaemon.log("LocaleManager.readRawFile(" + path + "): " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Write the tag, returning whether it reached disk. Callers must not assume
+     * success: the whole point of BladeWatch-vcur is that this can fail.
+     */
+    private static boolean writeRawFile(String tag) {
+        try {
+            File dir = new File(STATE_DIR);
+            if (!dir.exists() && !dir.mkdirs()) {
+                CameraDaemon.log("LocaleManager: cannot create " + STATE_DIR);
+                return false;
+            }
+            try (FileOutputStream fos = new FileOutputStream(STATE_FILE)) {
+                fos.write(tag.getBytes("UTF-8"));
+            }
+            // Readable by the other process too — daemon and both UIs share it.
+            new File(STATE_FILE).setReadable(true, false);
+            return true;
+        } catch (Exception e) {
+            CameraDaemon.log("LocaleManager.writeRawFile: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** True when the last persist attempt reached disk. */
+    public static boolean lastPersistSucceeded() {
+        return lastPersistOk;
+    }
 
     private LocaleManager() {}
 
@@ -94,21 +174,8 @@ public final class LocaleManager {
      */
     public static String getRaw() {
         synchronized (LocaleManager.class) {
-            try {
-                File f = new File(STATE_FILE);
-                if (f.exists() && f.canRead()) {
-                    try (FileInputStream fis = new FileInputStream(f)) {
-                        byte[] buf = new byte[16];
-                        int n = fis.read(buf);
-                        if (n > 0) {
-                            String tag = new String(buf, 0, n, "UTF-8").trim();
-                            if (AUTO_TAG.equals(tag) || isSupported(tag)) return tag;
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                CameraDaemon.log("LocaleManager.getRaw: " + e.getMessage());
-            }
+            String tag = readRawFile();
+            if (tag != null && (AUTO_TAG.equals(tag) || isSupported(tag))) return tag;
             return null;
         }
     }
@@ -129,19 +196,10 @@ public final class LocaleManager {
      */
     public static void setAuto() {
         synchronized (LocaleManager.class) {
-            try {
-                File dir = new File(STATE_DIR);
-                if (!dir.exists()) dir.mkdirs();
-                try (FileOutputStream fos = new FileOutputStream(STATE_FILE)) {
-                    fos.write(AUTO_TAG.getBytes("UTF-8"));
-                }
-                new File(STATE_FILE).setReadable(true, false);
-                cachedLocale = null;
-                cachedAt = 0L;
-                Messages.invalidate();
-            } catch (Exception e) {
-                CameraDaemon.log("LocaleManager.setAuto: " + e.getMessage());
-            }
+            lastPersistOk = writeRawFile(AUTO_TAG);
+            cachedLocale = null;
+            cachedAt = 0L;
+            Messages.invalidate();
         }
     }
 
@@ -188,15 +246,7 @@ public final class LocaleManager {
         synchronized (LocaleManager.class) {
             String resolved = DEFAULT_LANG;
             try {
-                File f = new File(STATE_FILE);
-                String raw = null;
-                if (f.exists() && f.canRead()) {
-                    try (FileInputStream fis = new FileInputStream(f)) {
-                        byte[] buf = new byte[16];
-                        int n = fis.read(buf);
-                        if (n > 0) raw = new String(buf, 0, n, "UTF-8").trim();
-                    }
-                }
+                String raw = readRawFile();
                 if (raw != null && !raw.isEmpty() && !AUTO_TAG.equals(raw) && isSupported(raw)) {
                     resolved = raw;
                 } else {
@@ -233,22 +283,12 @@ public final class LocaleManager {
         }
         String resolved = resolve(tag);
         synchronized (LocaleManager.class) {
-            try {
-                File dir = new File(STATE_DIR);
-                if (!dir.exists()) dir.mkdirs();
-                try (FileOutputStream fos = new FileOutputStream(STATE_FILE)) {
-                    fos.write(resolved.getBytes("UTF-8"));
-                }
-                // World-readable so the Android UI process can read it too.
-                new File(STATE_FILE).setReadable(true, false);
-                cachedLocale = resolved;
-                cachedAt = System.currentTimeMillis();
-                // Drop any cached Messages catalog so the next server-side
-                // i18n lookup loads the new locale's JSON.
-                Messages.invalidate();
-            } catch (Exception e) {
-                CameraDaemon.log("LocaleManager.set: " + e.getMessage());
-            }
+            lastPersistOk = writeRawFile(resolved);
+            cachedLocale = resolved;
+            cachedAt = System.currentTimeMillis();
+            // Drop any cached Messages catalog so the next server-side
+            // i18n lookup loads the new locale's JSON.
+            Messages.invalidate();
         }
         return resolved;
     }

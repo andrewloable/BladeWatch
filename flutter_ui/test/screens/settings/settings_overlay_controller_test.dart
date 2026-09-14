@@ -65,5 +65,27 @@ void main() {
 
       expect(calls, [('tripVisible', false)]);
     });
+
+    // BladeWatch-hygs: persist is now a real IPC write to the daemon, which can
+    // be down. A switch that stays flipped after a failed write shows a setting
+    // that silently reverts on the next app start.
+    test('a failed camera write snaps the switch back and notifies again', () async {
+      final c = SettingsOverlayController(persist: (key, value) async => throw StateError('daemon down'));
+      var notified = 0;
+      c.addListener(() => notified++);
+
+      await c.setCameraVisible(false);
+
+      expect(c.cameraVisible, isTrue, reason: 'the write failed, so the setting did not change');
+      expect(notified, 2, reason: 'once optimistically, once on the revert');
+    });
+
+    test('a failed trip write snaps the switch back', () async {
+      final c = SettingsOverlayController(persist: (key, value) async => throw StateError('daemon down'));
+
+      await c.setTripVisible(false);
+
+      expect(c.tripVisible, isTrue);
+    });
   });
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The launcher name. Matches the native app's app_name so both entries read
+      "BladeWatch" while they coexist, and so the Flutter APK is named correctly
+      once it becomes the only user-visible app in Phase 4 (BladeWatch-81g9.1).
+
+      It previously inherited Flutter's project name, "bladewatch_ui", straight
+      from `flutter create`.
+    -->
+    <string name="app_name">BladeWatch</string>
+</resources>

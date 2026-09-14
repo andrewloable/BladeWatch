@@ -8,7 +8,8 @@
 # USAGE:
 #   ./tools/smoke-test.sh [ADB_TARGET]
 #
-#   ADB_TARGET defaults to $CAR_IP:5555 (BYD head unit).
+#   ADB_TARGET may also be supplied via the $ADB_TARGET environment
+#   variable, e.g. ADB_TARGET=<head-unit-ip>:5555. There is no default.
 #
 # OUTPUT: PASS/FAIL per check; overall exit code 0 = all pass, 1 = any fail.
 #
@@ -25,7 +26,7 @@
 
 set -euo pipefail
 
-DEVICE="${1:-$CAR_IP:5555}"
+DEVICE="${1:-${ADB_TARGET:?pass the head unit as arg 1 or set ADB_TARGET, e.g. 10.0.0.5:5555}}"
 ADB="adb -s $DEVICE"
 PASS=0
 FAIL=0

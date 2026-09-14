@@ -33,7 +33,18 @@ class RecordingsPlayerScreen extends StatefulWidget {
   final RecordingsPlayerController controller;
   final JwtSource jwtSource;
 
-  const RecordingsPlayerScreen({super.key, required this.controller, required this.jwtSource});
+  /// What the back control does. Null (the pushed, full-screen case) pops the
+  /// route, as before. The recordings screen's embedded detail pane passes a
+  /// callback instead, because there is no route of its own to pop there and
+  /// the button would otherwise be dead.
+  final VoidCallback? onClose;
+
+  const RecordingsPlayerScreen({
+    super.key,
+    required this.controller,
+    required this.jwtSource,
+    this.onClose,
+  });
 
   @override
   State<RecordingsPlayerScreen> createState() => _RecordingsPlayerScreenState();
@@ -178,7 +189,7 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
                 key: const ValueKey('recordings.player.back'),
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 tooltip: l10n.cd_back,
-                onPressed: () => Navigator.of(context).maybePop(),
+                onPressed: widget.onClose ?? () => Navigator.of(context).maybePop(),
               ),
               Expanded(
                 child: Text(

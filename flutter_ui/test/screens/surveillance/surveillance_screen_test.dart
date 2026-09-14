@@ -7,6 +7,7 @@ import 'package:bladewatch_ui/screens/surveillance/surveillance_controller.dart'
 import 'package:bladewatch_ui/screens/surveillance/surveillance_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:bladewatch_ui/screens/surveillance/roi_editor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
@@ -215,6 +216,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('surveillance.detect.bike')));
       await tester.pumpAndSettle();
+      // The ROI editor (BladeWatch-9b0f) sits between the detect toggles and
+      // Apply, so the button is off-screen at test size until we scroll.
+      await tester.scrollUntilVisible(find.byKey(const ValueKey('surveillance.apply.detection')), 200);
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('surveillance.apply.detection')));
       await tester.pumpAndSettle();
 
@@ -232,6 +237,10 @@ void main() {
       await tester.pumpAndSettle();
       await openDetection(tester);
 
+      // The ROI editor (BladeWatch-9b0f) sits between the detect toggles and
+      // Apply, so the button is off-screen at test size until we scroll.
+      await tester.scrollUntilVisible(find.byKey(const ValueKey('surveillance.apply.detection')), 200);
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('surveillance.apply.detection')));
       await tester.pumpAndSettle();
 
@@ -262,11 +271,180 @@ void main() {
     });
   });
 
+  // BladeWatch-9b0f: the motion-zone editor lives at the bottom of Detection.
+  group('ROI editor', () {
+    Future<void> openDetection(WidgetTester tester) async {
+      await tester.tap(find.byKey(const ValueKey('surveillance.tab.detection')));
+      await tester.pumpAndSettle();
+    }
+
+    /// The section sits below the fold, and revealing one part of it can push
+    /// another off-screen — including upwards — so each interaction brings its
+    /// own target into view. ensureVisible scrolls whichever way is needed;
+    /// scrollUntilVisible only goes one way.
+    Future<void> reveal(WidgetTester tester, String key, {double delta = 150}) async {
+      final finder = find.byKey(ValueKey(key));
+      // ListView(children:) still builds lazily, so a widget far below the fold
+      // does not exist yet and ensureVisible alone would find nothing. Scroll
+      // down to build it first, then ensureVisible, which unlike
+      // scrollUntilVisible will also scroll back UP when the target is above.
+      if (finder.evaluate().isEmpty) {
+        await tester.scrollUntilVisible(finder, delta);
+        await tester.pumpAndSettle();
+      }
+      await tester.ensureVisible(finder);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets("switching quadrant shows that quadrant's own zone", (tester) async {
+      stubHappyPath();
+      final controller = buildController();
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      await openDetection(tester);
+
+      controller.setRoiPolygon('Q0', const [Offset(0, 0), Offset(1, 0), Offset(1, 1)]);
+      await tester.pumpAndSettle();
+      await reveal(tester, 'surveillance.roi.count');
+      expect(find.text('3 / $kRoiMaxPoints'), findsOneWidget);
+
+      // The quadrant chips sit ABOVE the canvas, so revealing the count can
+      // scroll them out of the lazily-built range — go back up for them.
+      await reveal(tester, 'surveillance.roi.quadrant.Q1', delta: -150);
+      await tester.tap(find.byKey(const ValueKey('surveillance.roi.quadrant.Q1')));
+      await tester.pumpAndSettle();
+
+      // Q1 has no zone, so the count must follow the selection rather than
+      // lingering on Q0's.
+      await reveal(tester, 'surveillance.roi.count');
+      expect(find.text('0 / $kRoiMaxPoints'), findsOneWidget);
+    });
+
+    testWidgets('tapping the canvas records a vertex on the selected quadrant', (tester) async {
+      stubHappyPath();
+      final controller = buildController();
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      await openDetection(tester);
+      await reveal(tester, 'roi.canvas');
+
+      await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('roi.canvas'))));
+      await tester.pumpAndSettle();
+
+      expect(controller.roiPolygonFor('Q0').length, 1);
+      expect(controller.roiPolygonFor('Q1'), isEmpty, reason: 'only the selected quadrant is drawn on');
+    });
+
+    testWidgets('the enable switch drives that quadrant only', (tester) async {
+      stubHappyPath();
+      final controller = buildController();
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      await openDetection(tester);
+      await reveal(tester, 'surveillance.roi.enable');
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.roi.enable')));
+      await tester.pumpAndSettle();
+
+      expect(controller.roiEnabledFor('Q0'), isTrue);
+      expect(controller.roiEnabledFor('Q1'), isFalse);
+    });
+
+    testWidgets('Undo and Clear are disabled until there is something to remove', (tester) async {
+      stubHappyPath();
+      final controller = buildController();
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      await openDetection(tester);
+      await reveal(tester, 'surveillance.roi.undo');
+
+      expect(tester.widget<TextButton>(find.byKey(const ValueKey('surveillance.roi.undo'))).onPressed, isNull);
+      expect(tester.widget<TextButton>(find.byKey(const ValueKey('surveillance.roi.clear'))).onPressed, isNull);
+
+      controller.setRoiPolygon('Q0', const [Offset(0, 0), Offset(1, 0), Offset(1, 1)]);
+      await tester.pumpAndSettle();
+      await reveal(tester, 'surveillance.roi.undo');
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.roi.undo')));
+      await tester.pumpAndSettle();
+      expect(controller.roiPolygonFor('Q0').length, 2);
+
+      await reveal(tester, 'surveillance.roi.clear');
+      await tester.tap(find.byKey(const ValueKey('surveillance.roi.clear')));
+      await tester.pumpAndSettle();
+      expect(controller.roiPolygonFor('Q0'), isEmpty);
+    });
+  });
+
   group('Storage tab', () {
     Future<void> openStorage(WidgetTester tester) async {
       await tester.tap(find.byKey(const ValueKey('surveillance.tab.storage')));
       await tester.pumpAndSettle();
     }
+
+    // BladeWatch-3118: same labelling as the Recording tab's storage rows.
+    testWidgets('the storage rows name what they are showing', (tester) async {
+      stubHappyPath();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await openStorage(tester);
+
+      for (final label in ['Storage Usage', 'Files']) {
+        final row = tester.widget<ListTile>(
+          find.ancestor(of: find.text(label), matching: find.byType(ListTile)),
+        );
+        expect(row.trailing, isNotNull, reason: '$label must be a label + right-aligned value');
+      }
+    });
+
+    // Path is the same row the Recording tab had on a second line; native
+    // right-aligns it in both screens.
+    testWidgets('the storage path is right-aligned, not a subtitle', (tester) async {
+      stubHappyPath();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await openStorage(tester);
+
+      final row = tester.widget<ListTile>(
+        find.ancestor(of: find.text('Path'), matching: find.byType(ListTile)),
+      );
+      expect(row.trailing, isNotNull);
+      expect(row.subtitle, isNull);
+    });
+
+    // BladeWatch-htel: the same two Storage-tab differences the Recording tab
+    // had — this tab is meant to behave identically to it.
+    testWidgets('the storage limit is shown in GB above 1024 MB, as native formats it', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'GetStorageSettings', {
+        'surveillanceStorageType': 'INTERNAL',
+        'surveillanceLimitMb': 16384,
+        'surveillanceSize': 0,
+        'surveillanceCount': 0,
+        'sdCardAvailable': false,
+        'surveillancePath': '',
+        'minLimitMb': 100,
+        'maxLimitMb': 100000,
+        'maxLimitMbSdCard': 100000,
+      });
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await openStorage(tester);
+
+      expect(find.text('16.0 GB'), findsOneWidget);
+      expect(find.text('16384 MB'), findsNothing);
+    });
+
+    testWidgets('the storage slider is stepped, not continuous', (tester) async {
+      stubHappyPath();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await openStorage(tester);
+
+      final slider = tester.widget<Slider>(find.byKey(const ValueKey('surveillance.storage.limitSlider')));
+      expect(slider.divisions, isNotNull);
+      expect(slider.divisions, greaterThan(0));
+    });
 
     testWidgets('shows usage info and the format card when SD is available', (tester) async {
       stubHappyPath(sdCardAvailable: true);
@@ -413,4 +591,17 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+  testWidgets('the tab bar sits BELOW the content, as native places it', (tester) async {
+    // BladeWatch-htel: native adds its tab bar last (at the bottom of the
+    // pane) and this app's own Trips screen already did the same; these two
+    // screens were the only ones putting it on top.
+    stubHappyPath();
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+
+    final tabBarY = tester.getCenter(find.byKey(const ValueKey('surveillance.tab.general'))).dy;
+    final contentY = tester.getCenter(find.byType(ListView).first).dy;
+    expect(tabBarY, greaterThan(contentY));
+  });
+
 }

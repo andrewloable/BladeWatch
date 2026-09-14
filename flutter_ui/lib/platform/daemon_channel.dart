@@ -28,6 +28,31 @@ class DaemonChannel {
     return daemons.map((key, value) => MapEntry(key, value as bool));
   }
 
+  /// BladeWatch-m1po: the current Zrok tunnel URL, or null when no tunnel is
+  /// serving one. Backs the Dashboard's remote-access tile.
+  ///
+  /// The daemon gates the URL on the tunnel PROCESS being alive, so a URL left
+  /// in zrok's log by a previous session never comes back as a live tunnel. It
+  /// also reports a `running` flag, distinguishing "up but has not published a
+  /// URL yet" from "offline" — not surfaced here, because the Dashboard renders
+  /// only online/offline. Widen the return type if a caller ever needs it.
+  Future<String?> tunnelUrl() async {
+    final response = await _asStringMap(_channel.invoke('daemon', 'tunnelStatus'));
+    final url = response['url'] as String?;
+    return (url == null || url.isEmpty) ? null : url;
+  }
+
+  /// BladeWatch-abcx: enable or disable an optional daemon, returning true only if
+  /// the daemon accepted it. Anything outside its allow-list (currently ZROK_TUNNEL
+  /// alone) comes back false rather than silently doing nothing — see
+  /// [SettingsDaemonsController] for why the other three are not toggleable.
+  Future<bool> setDaemonEnabled(String nativeKey, bool enabled) async {
+    final response = await _asStringMap(
+      _channel.invoke('daemon', 'setEnabled', {'type': nativeKey, 'enabled': enabled}),
+    );
+    return response['status'] == 'ok';
+  }
+
   // The real MethodChannel's standard codec deserializes a Kotlin Map as
   // Map<Object?, Object?>, not Map<String, dynamic> — Map.from() copies
   // entries into the right static type regardless of which PlatformChannel

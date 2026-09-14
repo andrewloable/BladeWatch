@@ -23,14 +23,58 @@ class SecretConfigStore @JvmOverloads constructor(
     private val file: File = File(DEFAULT_PATH)
 ) {
     companion object {
-        const val DEFAULT_PATH = "/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json"
-        const val LEGACY_PATH = "/data/local/tmp/bladewatch_secrets.json"
+        /**
+         * Where the secret store lives (BladeWatch-078u).
+         *
+         * `/data/local/tmp` is a REAL filesystem, so `rw-------` actually
+         * takes effect here: the file ends up `600 shell:shell` and only the
+         * daemon (uid 2000) can read it. That is the custody model the rest of
+         * the auth design is built on — the world-readable IPC token is
+         * explicitly "not a trust boundary" BECAUSE the secrets themselves are
+         * owner-only (see `PeerCredentials`' class doc and
+         * `CoResidentAttackerTest`).
+         *
+         * It must NOT go back to `/storage/emulated/0/Android/data/...`.
+         * That path is `sdcardfs`, which SYNTHESISES permissions from its mount
+         * options (`mask=6`, `gid=1015`) rather than storing them per file, so
+         * `chmod 600` there is a silent no-op. Measured on the head unit:
+         *
+         *     $ chmod 600 .../files/.perm_probe && ls -l .../files/.perm_probe
+         *     -rw-rw---- u0_a72 sdcard_rw          <- unchanged
+         *     $ chmod 600 /data/local/tmp/.perm_probe && ls -l ...
+         *     -rw------- shell shell               <- takes effect
+         *
+         * and shell — a NON-owner uid — could read the sdcardfs copy, so the
+         * documented `rw-------` was not merely unenforceable, it was false.
+         *
+         * The app UID cannot read this path, which is deliberate and already
+         * assumed by the code around it: [canWriteDirectly] refuses any process
+         * that is not uid 2000, and [SecretConfigBridge] falls back to
+         * token-gated IPC when direct access is unavailable.
+         */
+        const val DEFAULT_PATH = "/data/local/tmp/bladewatch_secrets.json"
+
+        /**
+         * The sdcardfs location the store used between the package rename and
+         * BladeWatch-078u. Still READ when the primary is absent, and deleted
+         * by [deleteLegacyIfPresent] on the first successful primary write, so
+         * an upgraded device keeps its paired `deviceSecret` and the exposed
+         * copy does not linger.
+         */
+        const val LEGACY_PATH = "/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json"
     }
 
     private val lock = Any()
 
     // ponytail: test seam — null = real LEGACY_PATH; non-null = injected path (test-only)
     @JvmField var legacyPathForTest: String? = null
+
+    // ponytail: test seam — null = the real uid gate in canWriteDirectly(),
+    // which requires shell uid 2000 and is therefore never true in a JVM test;
+    // non-null forces the answer so migrateFromLegacyIfNeeded() can actually be
+    // exercised. Without this the migration tests pass vacuously — verified by
+    // probe, which is how this seam came to exist.
+    @JvmField var canWriteDirectlyForTest: Boolean? = null
     private val effectiveLegacyPath: String get() = legacyPathForTest ?: LEGACY_PATH
 
     fun exists(): Boolean = file.exists()
@@ -42,6 +86,7 @@ class SecretConfigStore @JvmOverloads constructor(
     }
 
     fun canWriteDirectly(): Boolean {
+        canWriteDirectlyForTest?.let { return it }
         // Only the shell-owned daemon process should ever write the secret
         // file directly. The app process must go through IPC so we don't
         // depend on /data/local/tmp permissions from an app UID.
@@ -154,6 +199,32 @@ class SecretConfigStore @JvmOverloads constructor(
                 throw IllegalStateException("Failed to create secret store directory: ${parent.absolutePath}")
             }
         }
+    }
+
+    /**
+     * Move an existing store off the legacy sdcardfs path (BladeWatch-078u).
+     *
+     * [readRootMap] already FALLS BACK to the legacy file, and [writeRootMap]
+     * already deletes it after a successful primary write — so a device that
+     * writes a secret migrates itself. This exists because a device that only
+     * ever READS would leave the plaintext copy sitting on sdcardfs, readable
+     * by any process in `sdcard_rw`, which is the whole exposure being closed.
+     *
+     * Only the daemon can do this: the app UID cannot create files in
+     * `/data/local/tmp`. Callers that are not uid 2000 are a no-op, which is
+     * why [canWriteDirectly] is the guard rather than a bare file check.
+     *
+     * Returns true when something was actually migrated.
+     */
+    fun migrateFromLegacyIfNeeded(): Boolean = synchronized(lock) {
+        if (file.exists()) return false
+        val legacyFile = File(effectiveLegacyPath)
+        if (!legacyFile.exists() || legacyFile.absolutePath == file.absolutePath) return false
+        if (!canWriteDirectly()) return false
+        val carried = readRootMapFromFile(legacyFile)
+        if (carried.isEmpty()) return false
+        // writeRootMap applies rw------- and deletes the legacy copy for us.
+        return writeRootMap(carried)
     }
 
     private fun readRootMap(): MutableMap<String, Any?> {

@@ -6,10 +6,16 @@ import '../../gen/l10n/app_localizations.dart';
 import '../../rpc/jwt_source.dart';
 import '../../rpc/services/recordings_service_client.dart';
 import 'recordings_controller.dart';
-import 'recordings_media_urls.dart';
+import 'thumbnail_image.dart';
 import 'recordings_models.dart';
 import 'recordings_player_controller.dart';
 import 'recordings_player_screen.dart';
+
+/// Width at which Recordings uses native's master-detail arrangement: clip
+/// list on the left, persistent player pane on the right. Below this there is
+/// no room for both, so the list stays full-width and tapping pushes the
+/// player as its own route.
+const double _masterDetailBreakpoint = 1100;
 
 /// Ground truth: `RecordingsFragment.kt` (895 LOC — header/segment/date/chip
 /// chrome) + `RecordingLibraryFragment.kt` (926 LOC — the grid, multi-select,
@@ -73,23 +79,112 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
     super.dispose();
   }
 
+  /// The clip shown in the embedded detail pane, at head-unit width. Null means
+  /// nothing is selected and the pane shows native's "Select a recording"
+  /// placeholder. Unused below the breakpoint, where tapping still pushes the
+  /// full-screen player instead.
+  RecordingItem? _selected;
+
+  /// Rebuilt whenever the selection changes so the pane starts on the right
+  /// clip; disposed with the state.
+  RecordingsPlayerController? _paneController;
+
+  void _selectForPane(RecordingItem item) {
+    final visible = widget.controller.visible;
+    final index = visible.indexWhere((r) => r.filename == item.filename);
+    _paneController?.dispose();
+    setState(() {
+      _selected = item;
+      _paneController = RecordingsPlayerController(
+        recordingsService: widget.recordingsService,
+        playlist: visible,
+        initialIndex: index < 0 ? 0 : index,
+      );
+    });
+  }
+
+  void _clearPane() {
+    _paneController?.dispose();
+    setState(() {
+      _selected = null;
+      _paneController = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            _Header(controller: c, onOpenSettings: widget.onOpenSettings),
-            Expanded(child: _buildBody(context, c)),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Native is master-detail: the clip list on the left, a persistent
+            // player pane on the right. Below the breakpoint there is no room
+            // for both, so the list stays full-width and tapping pushes the
+            // player as a route (BladeWatch-3odo).
+            final split = constraints.maxWidth >= _masterDetailBreakpoint;
+            return Column(
+              children: [
+                _Header(controller: c, onOpenSettings: widget.onOpenSettings),
+                Expanded(
+                  child: split
+                      ? Row(
+                          children: [
+                            Expanded(flex: 11, child: _buildBody(context, c, split: true)),
+                            const VerticalDivider(width: 1),
+                            Expanded(flex: 9, child: _buildDetailPane(context)),
+                          ],
+                        )
+                      : _buildBody(context, c, split: false),
+                ),
+              ],
+            );
+          },
         ),
       ),
       bottomNavigationBar: c.selectMode ? _SelectToolbar(controller: c) : null,
     );
   }
 
-  Widget _buildBody(BuildContext context, RecordingsController c) {
+  Widget _buildDetailPane(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final paneController = _paneController;
+
+    if (_selected == null || paneController == null) {
+      return Container(
+        key: const ValueKey('recordings.detail.empty'),
+        color: theme.colorScheme.surfaceContainer,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.play_circle_outline, size: 64, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(height: 16),
+            Text(l10n.recordings_preview_placeholder_title, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              l10n.recordings_preview_placeholder_body,
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RecordingsPlayerScreen(
+      // Keyed by filename so selecting a different clip rebuilds the player
+      // rather than reusing the previous clip's video controller.
+      key: ValueKey('recordings.detail.${_selected!.filename}'),
+      controller: paneController,
+      jwtSource: widget.jwtSource,
+      onClose: _clearPane,
+    );
+  }
+
+  Widget _buildBody(BuildContext context, RecordingsController c, {required bool split}) {
     final l10n = AppLocalizations.of(context)!;
     switch (c.state) {
       case RecordingsLoading():
@@ -117,7 +212,8 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
           controller: c,
           items: visible,
           jwt: _jwt,
-          onTapItem: (item) => _openPlayer(context, item),
+          selectedFilename: split ? _selected?.filename : null,
+          onTapItem: (item) => split ? _selectForPane(item) : _openPlayer(context, item),
         );
     }
   }
@@ -190,26 +286,29 @@ class _Header extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(l10n.recordings_title, style: theme.textTheme.headlineSmall)),
-              IconButton(
+              Text(
+                loaded == null
+                    ? l10n.recordings_summary_pending
+                    : l10n.recordings_summary_format(
+                        loaded.stats.todayCount,
+                        loaded.stats.totalCount,
+                        _formatBytes(loaded.stats.totalBytes),
+                      ),
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(width: 12),
+              // A labelled button, not a bare gear: native names this control.
+              FilledButton.tonalIcon(
                 key: const ValueKey('recordings.settings'),
-                icon: const Icon(Icons.settings),
-                tooltip: l10n.recordings_action_settings,
+                icon: const Icon(Icons.settings, size: 18),
+                label: Text(l10n.recordings_action_settings),
                 onPressed: onOpenSettings,
               ),
             ],
           ),
-          Text(
-            loaded == null
-                ? l10n.recordings_summary_pending
-                : l10n.recordings_summary_format(
-                    loaded.stats.todayCount,
-                    loaded.stats.totalCount,
-                    _formatBytes(loaded.stats.totalBytes),
-                  ),
-            style: theme.textTheme.bodyMedium,
-          ),
           const SizedBox(height: 12),
           SegmentedButton<RecordingSource>(
+            showSelectedIcon: false,
             key: const ValueKey('recordings.segments'),
             segments: [
               ButtonSegment(
@@ -268,6 +367,12 @@ class _DateRow extends StatelessWidget {
 
     return Row(
       children: [
+        // Native puts a calendar icon beside the date control so the row reads
+        // as a date picker rather than a generic pager.
+        const Padding(
+          padding: EdgeInsets.only(right: 4),
+          child: Icon(Icons.calendar_today, size: 18),
+        ),
         if (c.filter.dateNarrowed)
           IconButton(
             key: const ValueKey('recordings.prevDay'),
@@ -328,10 +433,16 @@ class _TypeChipRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final c = controller;
+    final theme = Theme.of(context);
     return Wrap(
       spacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        // Native labels this row "TYPE"; without it the chips have no heading.
+        Text(
+          l10n.recording_lib_filter_section_type.toUpperCase(),
+          style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
         FilterChip(
           key: const ValueKey('recordings.chip.typeNormal'),
           label: Text(l10n.recording_lib_chip_type_normal),
@@ -593,7 +704,17 @@ class _RecordingsGrid extends StatelessWidget {
   final String? jwt;
   final ValueChanged<RecordingItem> onTapItem;
 
-  const _RecordingsGrid({required this.controller, required this.items, required this.jwt, required this.onTapItem});
+  /// Which clip the detail pane is showing, so the list can mark it. Null in
+  /// the narrow layout, where there is no pane to be in sync with.
+  final String? selectedFilename;
+
+  const _RecordingsGrid({
+    required this.controller,
+    required this.items,
+    required this.jwt,
+    required this.onTapItem,
+    required this.selectedFilename,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -626,6 +747,7 @@ class _RecordingsGrid extends StatelessWidget {
                     controller: controller,
                     item: item,
                     jwt: jwt,
+                    isPlaying: selectedFilename == item.filename,
                     onTap: () => onTapItem(item),
                   );
                 },
@@ -699,12 +821,17 @@ class _RecordingCard extends StatelessWidget {
   final String? jwt;
   final VoidCallback onTap;
 
+  /// True when this clip is the one in the detail pane — native outlines the
+  /// playing card so the list and the pane stay visually connected.
+  final bool isPlaying;
+
   const _RecordingCard({
     super.key,
     required this.controller,
     required this.item,
     required this.jwt,
     required this.onTap,
+    this.isPlaying = false,
   });
 
   @override
@@ -713,9 +840,18 @@ class _RecordingCard extends StatelessWidget {
     final theme = Theme.of(context);
     final c = controller;
     final selected = c.selected.contains(item.filename);
+    // Local so the null check below promotes — `jwt` is a public final field,
+    // which Dart's field promotion does not cover.
+    final jwt = this.jwt;
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      shape: isPlaying
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: theme.colorScheme.primary, width: 2),
+            )
+          : null,
       child: InkWell(
         onTap: c.selectMode ? () => c.toggleSelected(item.filename) : onTap,
         onLongPress: () {
@@ -733,12 +869,10 @@ class _RecordingCard extends StatelessWidget {
                     children: [
                       ColoredBox(color: theme.colorScheme.surfaceContainerHighest),
                       if (jwt != null)
-                        Image.network(
-                          thumbUrl(item.filename).toString(),
-                          headers: {'Authorization': 'Bearer $jwt'},
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-                        ),
+                        // Not Image.network: the daemon answers an uncached
+                        // thumbnail with 202 + Retry-After while it generates
+                        // one in the background. See thumbnail_image.dart.
+                        ThumbnailImage(filename: item.filename, jwt: jwt),
                       if (item.severity != null)
                         Positioned(
                           top: 0,
@@ -747,6 +881,16 @@ class _RecordingCard extends StatelessWidget {
                           child: Container(
                             height: 4,
                             color: item.severity == 'CRITICAL' ? const Color(0xFFEF4444) : const Color(0xFFFF9B3D),
+                          ),
+                        ),
+                      // Native overlays a circular play button so the card
+                      // reads as playable; without it a thumbnail looks inert.
+                      if (!c.selectMode)
+                        Center(
+                          child: Container(
+                            decoration: const BoxDecoration(color: Color(0x66000000), shape: BoxShape.circle),
+                            padding: const EdgeInsets.all(6),
+                            child: const Icon(Icons.play_arrow, color: Colors.white, size: 28),
                           ),
                         ),
                       Positioned(

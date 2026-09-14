@@ -151,7 +151,14 @@ void main() {
       final call = rpc.calls.firstWhere((c) => c.method == 'ListRecordings');
       final req = call.request as dynamic;
       expect(req.date, isNotEmpty);
-      expect(req.date.length, 8); // YYYYMMDD
+      // MUST be YYYY-MM-DD, not YYYYMMDD. `RecordingsApiHandler.dateRangeMs`
+      // (app/src/main/java/com/loabletech/bladewatch/server/RecordingsApiHandler.java:733)
+      // splits on '-' and requires exactly 3 parts; anything else returns the
+      // EMPTY range {0,0} rather than an error, so a wrongly-formatted date
+      // yields a silent, plausible-looking 0. This test originally asserted
+      // length 8 and so pinned the bug: on device the Dashboard read
+      // "Today's recordings 0" while the Recordings screen said "37 today".
+      expect(req.date, matches(RegExp(r'^\d{4}-\d{2}-\d{2}$')));
     });
 
     test('isRecording reflects GetStatus().recording being non-empty', () async {
@@ -279,22 +286,23 @@ void main() {
   });
 
   group('refresh() — vehicle tile', () {
-    test('populates nominal capacity and model when both are set', () async {
+    // BladeWatch-p7vi: the tile reflects the selected MODEL. It used to read
+    // GetSohNominal, a removed-feature stub that always answers "unset", so the
+    // tile sat on "Tap to set" forever no matter what the user did.
+    test('populates the selected model', () async {
       stubHappyPath();
       final c = buildController();
 
       await c.refresh();
 
-      expect(c.vehicleTile.hasCapacity, isTrue);
-      expect(c.vehicleTile.nominalKwh, closeTo(82.5, 0.001));
+      expect(c.vehicleTile.hasModel, isTrue);
       expect(c.vehicleTile.modelId, 'seal');
     });
 
-    test('hasCapacity is false when no nominal kWh has ever been set', () async {
+    test('hasModel is false when no model has been selected', () async {
       rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': []});
       rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': [], 'total': 0});
       rpc.stubJson('SystemService', 'GetStatus', {'deviceId': 'd', 'recording': []});
-      rpc.stubJson('SystemService', 'GetSohNominal', {}); // nominalKwh absent (optional, unset)
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
@@ -305,7 +313,16 @@ void main() {
 
       await c.refresh();
 
-      expect(c.vehicleTile.hasCapacity, isFalse);
+      expect(c.vehicleTile.hasModel, isFalse);
+    });
+
+    test('does not call the removed SOH endpoint at all', () async {
+      stubHappyPath();
+      final c = buildController();
+
+      await c.refresh();
+
+      expect(rpc.calls.where((call) => call.method == 'GetSohNominal'), isEmpty);
     });
   });
 

@@ -693,6 +693,12 @@ abstract class AppLocalizations {
   /// **'Follow system · {arg1}'**
   String language_auto_subtitle(Object arg1);
 
+  /// No description provided for @language_not_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Language applied, but it could not be saved — it will reset when the app restarts.'**
+  String get language_not_saved;
+
   /// No description provided for @language_label_auto_fmt.
   ///
   /// In en, this message translates to:
@@ -1245,6 +1251,30 @@ abstract class AppLocalizations {
   /// **' / '**
   String get player_time_separator;
 
+  /// No description provided for @daemon_name_camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Daemon'**
+  String get daemon_name_camera;
+
+  /// No description provided for @daemon_name_surveillance.
+  ///
+  /// In en, this message translates to:
+  /// **'Surveillance Daemon'**
+  String get daemon_name_surveillance;
+
+  /// No description provided for @daemon_name_acc.
+  ///
+  /// In en, this message translates to:
+  /// **'ACC Surveillance'**
+  String get daemon_name_acc;
+
+  /// No description provided for @daemon_name_zrok.
+  ///
+  /// In en, this message translates to:
+  /// **'Zrok Tunnel'**
+  String get daemon_name_zrok;
+
   /// No description provided for @daemons_hero_title.
   ///
   /// In en, this message translates to:
@@ -1316,6 +1346,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last Updated'**
   String get battery_health_last_updated;
+
+  /// No description provided for @battery_health_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get battery_health_unavailable;
+
+  /// No description provided for @battery_health_unavailable_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery health estimation is not available on this vehicle.'**
+  String get battery_health_unavailable_desc;
 
   /// No description provided for @battery_health_reset.
   ///
@@ -3092,6 +3134,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Storage Limit — auto-deletes oldest when reached'**
   String get settings_recording_storage_limit_label;
+
+  /// No description provided for @settings_recording_storage_usage_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Usage'**
+  String get settings_recording_storage_usage_label;
+
+  /// No description provided for @settings_recording_storage_files_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get settings_recording_storage_files_label;
 
   /// No description provided for @settings_recording_storage_usage.
   ///
@@ -4976,6 +5030,30 @@ abstract class AppLocalizations {
   /// **'{arg1}  ({arg2}m)'**
   String surveillance_safe_locations_zone_label(Object arg1, Object arg2);
 
+  /// No description provided for @surveillance_roi_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Motion Zone'**
+  String get surveillance_roi_title;
+
+  /// No description provided for @surveillance_roi_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to add a point, drag to move one. Three points minimum, eight maximum.'**
+  String get surveillance_roi_description;
+
+  /// No description provided for @surveillance_roi_enable.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit detection to this zone'**
+  String get surveillance_roi_enable;
+
+  /// No description provided for @action_undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get action_undo;
+
   /// No description provided for @surveillance_detection_title.
   ///
   /// In en, this message translates to:
@@ -5101,6 +5179,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Storage Limit — auto-deletes oldest when reached'**
   String get surveillance_storage_limit_label;
+
+  /// No description provided for @surveillance_storage_usage_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Usage'**
+  String get surveillance_storage_usage_label;
+
+  /// No description provided for @surveillance_storage_files_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get surveillance_storage_files_label;
 
   /// No description provided for @surveillance_storage_usage.
   ///

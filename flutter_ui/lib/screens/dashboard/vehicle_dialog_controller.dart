@@ -6,58 +6,47 @@ import '../../gen/bladewatch/v1/system.pb.dart';
 import '../../rpc/services/system_service_client.dart';
 import 'dashboard_models.dart';
 
-/// Outcome of [VehicleDialogController.save] — ground truth:
-/// `DashboardFragment`'s positive-button handler (invalid capacity shows a
-/// Toast and returns without calling the RPC at all) plus `postNominalAndModel`'s
-/// try/catch (an RPC failure is otherwise silent in the native fragment; this
-/// port surfaces it so the widget can show its own error state).
-enum VehicleSaveResult { success, invalidCapacity, rpcFailed }
+/// Outcome of [VehicleDialogController.save].
+///
+/// BladeWatch-p7vi: there is no longer an `invalidCapacity` case — the capacity
+/// field is gone, because the daemon's SoH endpoints are removed-feature stubs
+/// that refuse every write. [rpcFailed] covers BOTH a thrown transport error and
+/// a transport-level success whose body says the write was refused; checking only
+/// for a thrown error is what previously reported a rejected save as a success.
+enum VehicleSaveResult { success, rpcFailed }
 
-/// Pure-Dart port of `DashboardFragment.showVehicleCapacityDialog()`'s
-/// pre-populate/save/reset logic (native:
-/// app/src/main/java/com/loabletech/bladewatch/ui/fragment/DashboardFragment.kt,
-/// lines ~859-1042). SoH-summary-text formatting (nominal-source suffixes,
-/// live/calibration/oem/nominal display-source labels) is left to the widget
-/// layer, same split as `AccessCodeState.displayValue`/`DaemonsSummaryState` —
-/// this controller exposes only the raw fields.
+/// Pure-Dart port of `DashboardFragment.showVehicleCapacityDialog()`, reduced to
+/// the half that still works.
+///
+/// BladeWatch-p7vi: battery State-of-Health estimation was removed from the
+/// daemon. `handleSohSetNominal`/`handleSohGetNominal` are stubs — the setter
+/// refuses every write and the getter always answers "unset" — so the capacity
+/// field, its Reset action and the SoH summary offered operations that could not
+/// succeed, and were removed rather than left to fail. The vehicle MODEL
+/// selection remains, because `ModelsApiHandler` genuinely persists it.
 class VehicleDialogController extends ChangeNotifier {
   VehicleDialogController({required SystemServiceClient systemService})
       : _systemService = systemService; // ignore: prefer_initializing_formals
-
-  static const double minCapacityKwh = 8.0;
-  static const double maxCapacityKwh = 120.0;
 
   final SystemServiceClient _systemService;
 
   VehicleDialogState _state = const VehicleDialogState.loading();
   VehicleDialogState get state => _state;
 
-  /// Loads all four sections in parallel-ish (each independently try/caught,
-  /// same as native): capacity input value, SoH summary, model manifest, and
-  /// the currently-selected model.
+  String? _lastError;
+
+  /// The daemon's own explanation for the last refused save or reset, or null
+  /// when the failure carried none (a thrown transport error) or nothing has
+  /// failed. Lets the dialog say WHY rather than showing a generic failure.
+  String? get lastError => _lastError;
+
+  /// Loads the model manifest and the current selection. The two SoH reads this
+  /// used to make were dropped with the capacity field (BladeWatch-p7vi) —
+  /// `GetSohNominal` unconditionally answers "unset" and `GetSohStatus` answers
+  /// nothing, so calling them only produced a permanently pending display.
   Future<void> load() async {
-    var capacityText = '';
-    var nominalKwh = 0.0;
-    var nominalSource = 'unset';
-    var displaySoh = -1.0;
-    var displaySource = 'unavailable';
     var models = const <VehicleModelEntry>[];
     String? selectedModelId;
-
-    try {
-      final resp = await _systemService.getSohNominal(GetSohNominalRequest());
-      if (resp.hasNominalKwh() && resp.nominalKwh > 0) {
-        capacityText = resp.nominalKwh.toStringAsFixed(1);
-      }
-    } catch (_) {}
-
-    try {
-      final resp = await _systemService.getSohStatus(GetSohStatusRequest());
-      nominalKwh = resp.nominalCapacityKwh;
-      if (resp.nominalSource.isNotEmpty) nominalSource = resp.nominalSource;
-      displaySoh = resp.displaySoh;
-      if (resp.displaySource.isNotEmpty) displaySource = resp.displaySource;
-    } catch (_) {}
 
     try {
       final resp = await _systemService.getModelsManifest(GetModelsManifestRequest());
@@ -73,16 +62,7 @@ class VehicleDialogController extends ChangeNotifier {
       }
     } catch (_) {}
 
-    _state = VehicleDialogState(
-      loading: false,
-      models: models,
-      selectedModelId: selectedModelId,
-      capacityText: capacityText,
-      nominalKwh: nominalKwh,
-      nominalSource: nominalSource,
-      displaySoh: displaySoh,
-      displaySource: displaySource,
-    );
+    _state = VehicleDialogState(loading: false, models: models, selectedModelId: selectedModelId);
     notifyListeners();
   }
 
@@ -111,59 +91,38 @@ class VehicleDialogController extends ChangeNotifier {
     return null;
   }
 
-  /// Selecting a model auto-fills the capacity field with its manifest kWh —
-  /// ground truth: the dropdown's `setOnItemClickListener` — but only when
-  /// the manifest actually has a kWh value for it; otherwise the field is
-  /// left untouched.
+  /// Selecting a model records the choice. It used to auto-fill the capacity
+  /// field from the manifest's kWh; that field is gone (BladeWatch-p7vi), and
+  /// the manifest kWh is still what the daemon uses internally.
   void selectModel(String modelId) {
-    final entry = _findModel(modelId);
-    if (entry == null) return;
-    _state = _state.copyWith(
-      selectedModelId: modelId,
-      capacityText: entry.nominalKwh > 0 ? entry.nominalKwh.toStringAsFixed(1) : null,
-    );
+    if (_findModel(modelId) == null) return;
+    _state = _state.copyWith(selectedModelId: modelId);
     notifyListeners();
   }
 
-  void setCapacityText(String text) {
-    _state = _state.copyWith(capacityText: text);
-    notifyListeners();
-  }
-
-  /// Validates locally first (native: the positive-button handler's
-  /// 8.0-120.0 kWh bound, shown as a Toast on failure without ever calling
-  /// the RPC), then saves. A `SetSelectedModel` failure is swallowed exactly
-  /// like native's independent try/catch — only the capacity RPC failing is
-  /// reported back to the caller.
+  /// Persists the selected model.
+  ///
+  /// Checks the response's `ok` flag, not merely the absence of a thrown error:
+  /// this server answers HTTP 200 with a body saying whether the write landed,
+  /// so a refusal never throws. Reporting one as a success is the exact defect
+  /// BladeWatch-p7vi was filed for, on the sibling SoH endpoint.
   Future<VehicleSaveResult> save() async {
-    final kwh = double.tryParse(_state.capacityText.trim());
-    if (kwh == null || kwh < minCapacityKwh || kwh > maxCapacityKwh) {
-      return VehicleSaveResult.invalidCapacity;
+    final modelId = _state.selectedModelId;
+    if (modelId == null || modelId.isEmpty) {
+      _lastError = null;
+      return VehicleSaveResult.success;
     }
     try {
-      await _systemService.setSohNominal(SetSohNominalRequest(nominalKwh: kwh));
+      final resp = await _systemService.setSelectedModel(SetSelectedModelRequest(modelId: modelId));
+      if (!resp.ok) {
+        _lastError = resp.error;
+        return VehicleSaveResult.rpcFailed;
+      }
     } catch (_) {
+      _lastError = null;
       return VehicleSaveResult.rpcFailed;
     }
-    final modelId = _state.selectedModelId;
-    if (modelId != null && modelId.isNotEmpty) {
-      try {
-        await _systemService.setSelectedModel(SetSelectedModelRequest(modelId: modelId));
-      } catch (_) {}
-    }
+    _lastError = null;
     return VehicleSaveResult.success;
-  }
-
-  /// Clears the user override — ground truth: the dialog's neutral
-  /// ("Reset") button calls `postNominal(null)`, i.e. `SetSohNominal` with no
-  /// value set, not the unrelated `ResetSoh` RPC (that one backs a separate,
-  /// bulk-reset dialog in `MainActivity`).
-  Future<bool> reset() async {
-    try {
-      await _systemService.setSohNominal(SetSohNominalRequest());
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 }

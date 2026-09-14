@@ -358,8 +358,26 @@ class DaemonStartupManager(
             val state = if (enabled) "ON" else "OFF"
             log.info(TAG, "User toggled ${type.displayName} to $state - saving preference")
             PreferencesManager.setDaemonEnabled(type, enabled)
+            // BladeWatch-abcx: mirror into the cross-process config so the Flutter UI
+            // (a different APK, which cannot read this app's SharedPreferences even under
+            // the shared UID) sees the same state, and so a toggle made there and a toggle
+            // made here cannot drift apart.
+            UnifiedConfigManager.setDaemonEnabled(type.name, enabled)
         }
     }
+
+    /**
+     * Whether an optional daemon should be running.
+     *
+     * BladeWatch-abcx: the cross-process `daemons` config section WINS when it has an
+     * entry, because that is the only place the Flutter APK can write — otherwise a
+     * tunnel switched off there would be relaunched here within 30 s and the switch would
+     * appear to undo itself. SharedPreferences remains the fallback so an install that
+     * pre-dates the config section keeps its existing setting instead of silently
+     * flipping off.
+     */
+    private fun isOptionalDaemonEnabled(type: DaemonType): Boolean =
+        UnifiedConfigManager.isDaemonEnabled(type.name) ?: PreferencesManager.isDaemonEnabled(type)
 
     private fun createLogCallback(name: String): AdbDaemonLauncher.LaunchCallback {
         return object : AdbDaemonLauncher.LaunchCallback {
@@ -438,10 +456,10 @@ class DaemonStartupManager(
             checkAndRelaunchDaemon(type)
         }
 
-        // Optional daemons: only restart if user had them enabled in preferences
+        // Optional daemons: only restart if the user had them enabled.
         for (type in OPTIONAL_DAEMONS) {
             if (type in userStoppedDaemons) continue
-            if (!PreferencesManager.isDaemonEnabled(type)) continue
+            if (!isOptionalDaemonEnabled(type)) continue
             checkAndRelaunchDaemon(type)
         }
     }
