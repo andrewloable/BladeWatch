@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../platform/daemon_channel.dart';
 import 'startup_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Pure-Dart port of `StartupFragment`'s behaviour (no Flutter imports).
 ///
@@ -23,7 +24,7 @@ import 'startup_models.dart';
 /// ONLY, no device. Noted for Phase 3 (`BladeWatch-imh6`) to check on a real
 /// device; the "Continue anyway" escape hatch (120s) means the screen is
 /// still usable either way.
-class StartupController extends ChangeNotifier {
+class StartupController extends ChangeNotifier with DisposedSafeNotifier {
   StartupController({
     required DaemonChannel daemonChannel,
     DateTime Function() clock = DateTime.now,

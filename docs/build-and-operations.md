@@ -14,10 +14,20 @@ app/src/main/assets/
 app/src/main/cpp/
 proto/                       # buf workspace (.proto contracts + buf.gen.yaml)
 web/                         # Angular 19 + Vite web UI (ConnectRPC client)
+flutter_ui/                  # Flutter in-car UI -- its OWN standalone project
 docs/
 ```
 
-Gradle is a single Android module named `:app`. There is no root `build.gradle.kts`; all build logic, native-download tasks, and codegen/web tasks live in `app/build.gradle.kts`, with plugin and dependency versions pinned in `gradle/libs.versions.toml`.
+The `:app` Gradle module builds the **service host** APK (`net.bladewatch.app`).
+There is no root `build.gradle.kts`; all build logic, native-download tasks, and
+codegen/web tasks live in `app/build.gradle.kts`, with plugin and dependency
+versions pinned in `gradle/libs.versions.toml`.
+
+`flutter_ui/` is an **independent** standalone Flutter project with its own
+Gradle build under `flutter_ui/android/`, producing the **in-car UI** APK
+(`net.bladewatch.flutter`). It is not an add-to-app module and is not part of
+`:app`'s build. Its dependency set is entirely separate — do not confuse the two
+when adding or removing a library.
 
 The repository also contains two non-Gradle build inputs that feed the Android build:
 
@@ -42,7 +52,7 @@ Important build settings:
 
 Key dependency families:
 
-- AndroidX core, appcompat, lifecycle, navigation, WorkManager.
+- AndroidX core, appcompat, lifecycle/LiveData, WorkManager.
 - Material Components.
 - Dadb (ADB client for daemon launching).
 - OkHttp (used by the OTA updater).
@@ -51,9 +61,15 @@ Key dependency families:
 - Android security crypto.
 - H2 database (pure-Java embedded trip storage).
 - RTMP client (RootEncoder) for pushing to MediaMTX.
-- ZXing core (QR generation).
-- osmdroid (native Location-screen map tiles).
 - Protobuf-java and ConnectRPC Kotlin runtime + OkHttp transport + Google-Java JSON ext.
+
+Dropped in Phase 4 (`BladeWatch-81g9.3`), with the native UI that needed them:
+**Navigation** (nav is Dart), **ZXing core** (QR is `qr_flutter`), **osmdroid**
+(the map is `flutter_map`). appcompat, Material and lifecycle stayed and are not
+droppable: `AppCompatDelegate` drives the night mode `StatusOverlayService`
+reads, `SetupGuideDialog` builds a Material `AlertDialog` from
+`dialog_setup_guide.xml`, and `ZrokController` / `DaemonsViewModel` publish
+daemon state as `LiveData`.
 
 The Vehicle hero renders via Three.js inside an embedded WebView (`app/src/main/assets/web/hero/hero.html`). A native Filament port was tried and removed — the BYD head unit's Adreno 610 GL driver crashes under continuous gltfio rendering, so Filament must not be reintroduced for the hero.
 
@@ -123,7 +139,23 @@ Local web development can run the Vite dev server (`cd web && npm run dev`), whi
 
 ### Flutter i18n / ARB catalogs (BladeWatch-ncbb.3)
 
-`flutter_ui/lib/l10n/app_<locale>.arb` are generated from `app/src/main/res/values*/strings.xml` by `tools/i18n/xml_to_arb.py` (run from the repo root; idempotent — rewrites all files from scratch every run). 19 files total: the 17 Android locales, plus `app_pt.arb` and `app_zh.arb` — synthesized copies of `app_pt_BR.arb` and `app_zh_CN.arb`, which `flutter gen-l10n` requires as a bare-language fallback whenever a region-qualified locale (`pt_BR`, `zh_CN`, `zh_TW`) has no such fallback of its own; Android has no equivalent requirement, so these 2 files don't correspond to any `values-*` directory. Key names are kept identical to the Android resource names (e.g. `rail_dashboard`, not `railDashboard`) so parity between the native and Flutter UIs stays mechanical — Dart tolerates snake_case identifiers here without an analyzer warning because gen-l10n's generated files carry their own `// ignore_for_file: type=lint`.
+> **Phase 4 update.** The ARBs are now the **in-car catalog**, at 862 keys.
+> `res/values*/strings.xml` was pruned from 620 keys to **29** in
+> `BladeWatch-81g9.2` and no longer backs any screen — its only consumers are
+> `StatusOverlayService`, `SetupGuideDialog`, the notification channel and the
+> app label, each named in that file's header comment. New UI strings go in the
+> ARB, never in `strings.xml`. The generation direction described below is
+> therefore historical: it was a one-time port, not a pipeline to re-run.
+>
+> Three i18n gates run in `preBuild` and all three fail the build:
+> `validateArbCatalogs` (ARB: valid JSON, key parity, **placeholder and
+> plural-shape** parity vs `app_en.arb`), `validateAndroidStrings` (the 17
+> `strings.xml` locales: key parity, valid XML, matching format slots, no
+> unescaped apostrophes), and `validateI18nCatalogs` (the web JSON). The middle
+> one did not exist when the 620-key catalog was written, which is how the
+> corruption described below survived into the shipped app.
+
+`flutter_ui/lib/l10n/app_<locale>.arb` were generated from `app/src/main/res/values*/strings.xml` by `tools/i18n/xml_to_arb.py` (run from the repo root; idempotent — rewrites all files from scratch every run). 19 files total: the 17 Android locales, plus `app_pt.arb` and `app_zh.arb` — synthesized copies of `app_pt_BR.arb` and `app_zh_CN.arb`, which `flutter gen-l10n` requires as a bare-language fallback whenever a region-qualified locale (`pt_BR`, `zh_CN`, `zh_TW`) has no such fallback of its own; Android has no equivalent requirement, so these 2 files don't correspond to any `values-*` directory. Key names are kept identical to the Android resource names (e.g. `rail_dashboard`, not `railDashboard`) so parity between the native and Flutter UIs stays mechanical — Dart tolerates snake_case identifiers here without an analyzer warning because gen-l10n's generated files carry their own `// ignore_for_file: type=lint`.
 
 Android `%1$s` / `%2$d` / `%1$.1f`-style positional format specifiers become ARB `{argN}` placeholders (untyped `Object` — precision such as the `.1f` is dropped; formatting a number for display is the calling Dart code's job, same as it is Kotlin/Java's job today via `String.format` at each call site). `<plurals>` become one ICU `{argN, plural, one{...} other{...}}` clause per key, `argN` being the lowest-numbered placeholder in the text (the one being pluralized).
 
@@ -143,11 +175,20 @@ Separately, every translated locale's `strings.xml` carries 7 keys (`rail_integr
 
 ### Flutter Startup screen (BladeWatch-yz1e.1)
 
-`flutter_ui/lib/screens/startup/` — the first Epic 2 screen, and the app's real entry point (`nav_graph.xml`'s `app:startDestination`). `startup_controller.dart` (`StartupController`) polls the `daemon.processStatus` channel (BladeWatch-1xt9) once a second (the `Timer.periodic` lives in `startup_screen.dart`, plain plumbing — the controller itself has no Flutter imports and is driven directly via `tick()` in tests, no fake-timer machinery needed) and tracks the 3 core daemons through `StartupPhase.preparing → starting → verifying → ready`.
+`flutter_ui/lib/screens/startup/` — the first Epic 2 screen, and the app's real entry point. `startup_controller.dart` (`StartupController`) polls the `daemon.processStatus` channel (BladeWatch-1xt9) once a second (the `Timer.periodic` lives in `startup_screen.dart`, plain plumbing — the controller itself has no Flutter imports and is driven directly via `tick()` in tests, no fake-timer machinery needed) and tracks the 3 core daemons through `StartupPhase.preparing → starting → verifying → ready`.
 
 **This does not reproduce `StartupFragment`'s STARTING state 1:1** — see `StartupController`'s doc comment for the full reasoning: the native screen only *observes* daemon state that `DaemonStartupManager` (in the main APK's process) actively drives via ADB; the Flutter APK cannot launch daemons (Epic 1's IPC-only rule) and a process-liveness poll can't distinguish "starting" from "not yet observed running." `StartupPhase.starting` is a real, honest substitute instead: it fires when *some but not all* core daemons are observed running.
 
-**Open question for Phase 3 to verify on a real device**: whether daemons actually start at all if the Flutter APK is launched without the native app ever having run first (so `DaemonStartupManager` never started). The "Continue anyway" escape hatch (120s) means the screen is usable either way, but this affects whether the screen ever leaves `preparing` on its own.
+**Answered in Phase 4.** They would not have, so the Flutter APK now starts the
+service host explicitly: `flutter_ui/android/.../MainActivity.kt`'s
+`wakeServiceHost()` runs once on first `onResume` and does
+`startActivity(net.bladewatch.app/.ui.MainActivity)` with `minimize_on_start`,
+which runs `DaemonStartupManager`. This is an explicit component start, not a
+broadcast — BYD's `ssc_skip` suppresses broadcasts to the app package, which is
+also why `BOOT_COMPLETED` never fires here (`BladeWatch-5rew`). It is
+deliberately in `onResume` and **not** in `configureFlutterEngine`, where
+starting an Activity interrupts engine setup. The "Continue anyway" escape hatch
+(120s) remains.
 
 ### Flutter Dashboard screen (BladeWatch-yz1e.2)
 
@@ -302,7 +343,7 @@ Separately, `docs/surveillance-implementation.md`'s own "ROI" section confirms t
 
 `flutter_ui/lib/screens/vehicle/` — status card, appearance bar (color presets + custom RGB picker + model picker), Climate/Seats/Windows tabs, tyre-pressure cards, and the 3D hero. Ground truth: `VehicleController.kt` (745 LOC), `VehiclePanels.kt` (549), `VehicleClient.kt` (349), `VehicleViewFactory.kt` (317), `VehicleStateCache.kt` (192), `VehicleModels.kt` (106), `VehicleFormatters.kt`, `TyreOverlay.kt` (270), `VehicleHeroView.kt` (214) — all 9 files read in full before writing any Dart. No new platform channel; the screen is entirely RPC-driven (`VehicleServiceClient`, already-generated; `SystemServiceClient` for appearance).
 
-**Only Climate/Seats/Windows are ported — the task's own "8 tabs" description is stale, confirmed by a git diff, not inferred.** The task describes Security/Trunk/Climate/Seats/Windows/Lights/ADAS/Charging. `VehicleModels.kt`'s `VehicleTab` enum has only 3 values today. `git log` on it shows why: commit `59c3b91` ("update vehicle UI to enhance climate control and window management features", 2026-06-12, three months before this task) removed `TRUNK`/`LIGHTS`/`ADAS`/`CHARGING` from the enum with a clean, matched diff (4 enum entries removed, the matching 4 `when`-arms removed from `renderTabContent()`, `currentTab`'s default changed from `TRUNK` to `CLIMATE`) — not leftover cruft. The baseline reference screenshots (`screenshots/native/05_vehicle.png`, `05b_vehicle_windows.png`) visually confirm the current app shows only Climate and Windows (Seats hidden — that test vehicle reports no seat capability), matching the trimmed enum exactly. `VehiclePanels.kt` still has complete, RPC-backed `buildTrunkTab()`/`buildLightsTab()`/`buildAdasTab()`/`buildChargingTab()` functions — real, working code, just orphaned by the enum trim — but porting them would mean building UI for something the app's own maintainer deliberately removed 3 months ago, not filling a gap. "Security" was never a real tab in any version of `VehicleTab`; it maps to the persistent lock-status display in the status card, which this port keeps.
+**Only Climate/Seats/Windows are ported — the task's own "8 tabs" description is stale, confirmed by a git diff, not inferred.** The task describes Security/Trunk/Climate/Seats/Windows/Lights/ADAS/Charging. `VehicleModels.kt`'s `VehicleTab` enum has only 3 values today. `git log` on it shows why: commit `59c3b91` ("update vehicle UI to enhance climate control and window management features", 2026-06-12, three months before this task) removed `TRUNK`/`LIGHTS`/`ADAS`/`CHARGING` from the enum with a clean, matched diff (4 enum entries removed, the matching 4 `when`-arms removed from `renderTabContent()`, `currentTab`'s default changed from `TRUNK` to `CLIMATE`) — not leftover cruft. The baseline reference screenshots (`screenshots/native/05_vehicle.png`, `05b_vehicle_windows.png` — captured at the time; screenshots are no longer versioned, see `.gitignore`) visually confirmed the app showed only Climate and Windows (Seats hidden — that test vehicle reports no seat capability), matching the trimmed enum exactly. `VehiclePanels.kt` still has complete, RPC-backed `buildTrunkTab()`/`buildLightsTab()`/`buildAdasTab()`/`buildChargingTab()` functions — real, working code, just orphaned by the enum trim — but porting them would mean building UI for something the app's own maintainer deliberately removed 3 months ago, not filling a gap. "Security" was never a real tab in any version of `VehicleTab`; it maps to the persistent lock-status display in the status card, which this port keeps.
 
 **`VehicleService` has 20 RPCs (Lock/Unlock/Flash/FindCar/SetBatteryHeat/charging-schedule/GPS included); `VehicleClient.kt` — the Vehicle screen's own RPC mapping — calls only 9 of them: `GetState`, `GetChargeCap`, `Trunk`, `SetClimate`, `SetSeat`, `MoveWindow`, `SetLights`, `SetAdas`, `SetChargeCap`.** Of those 9, only `GetState`/`SetClimate`/`SetSeat`/`MoveWindow` back the 3 ported tabs — `Trunk`/`SetLights`/`SetAdas`/`GetChargeCap`/`SetChargeCap` exist solely for the unported Trunk/Lights/ADAS/Charging tabs (see above) and are not called by this port either, for the identical reason. `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`GetChargingSchedule`/`SetChargingSchedule`/`GetGpsLocation`/`StartGps`/`StopGps` have zero call sites anywhere in `VehicleClient.kt` in any version of the file — not trimmed, never wired to this screen at all. `vehicleState.chargeCap`/`lights`/`adas`/`trunk`/`sunroof` (`GetVehicleStateResponse` fields with no consumer among the 3 ported tabs) are likewise not mapped into this port's `VehicleState` model — dead weight matching data nothing renders, not an oversight.
 
@@ -395,6 +436,39 @@ Common local commands:
 ./gradlew buildAngularWebUI        # build the Angular SPA and copy it into assets
 ```
 
+Flutter in-car UI commands, run from `flutter_ui/`:
+
+```bash
+flutter analyze
+flutter test                                         # 1403 tests, zero skipped
+flutter test --coverage                              # then: tools/check_flutter_coverage.sh
+flutter build apk --target-platform android-arm64 --debug
+flutter run -d "$CAR_IP:5555"                        # hot reload, no Gradle, no daemon restart
+```
+
+**Deploying the two APKs is asymmetric.** The Flutter APK installs over itself
+with nothing else required:
+
+```bash
+adb -s "$CAR_IP:5555" install flutter_ui/build/app/outputs/flutter-apk/app-debug.apk
+```
+
+The service host APK must use the **full daemon-kill + uninstall procedure in
+[CLAUDE.md](../CLAUDE.md)** first — stale `app_process` daemons survive an
+`install -r` and block the fresh build, and `sharedUserId` forces an uninstall
+rather than an upgrade. Note that **uninstalling wipes the app's ADB key pair**
+from its `filesDir`, so the head unit will show the USB-debugging authorization
+dialog on the next launch and **no daemon will start until someone taps OK on
+the car's screen** (`BladeWatch-ssoh`). Do a service-host reinstall with the car
+awake.
+
+Both packages must report the same UID or privileged IPC is refused:
+
+```bash
+adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.app | grep userId'
+adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.flutter | grep userId'
+```
+
 Web app (Angular) commands, run from `web/`:
 
 ```bash
@@ -432,6 +506,16 @@ JVM unit tests live in `app/src/test/java/com/loabletech/bladewatch/` and run wi
 - Connect server: `ConnectContentTypeNegotiationTest`, `ConnectWireParityTest`, `SurveillanceConfigTogglesTest`.
 - Server handlers: `LightsAdasParserTest`, `ModelsApiHandlerValidationTest`.
 - Vehicle: `TyreTierTest`, `VehicleClientCommandResultTest`, `VehicleClientMapTest`, `VehicleClientTyreMapTest`, `VehicleFormattersTest`, `VehicleI18nParityTest`.
+- Service-host structural guards (Phase 4): `ServiceHostManifestTest` (no
+  launcher entry; `MainActivity` still declared and still `exported`),
+  `NoSelfLaunchIntentTest` (nothing may call
+  `getLaunchIntentForPackage` on its own package — it returns null now, and
+  feeding null to `PendingIntent.getActivity` killed the process 2s into boot).
+  Both read files that are **not on the test classpath**, so
+  `app/build.gradle.kts` declares the manifest and `src/main/java` as explicit
+  test `inputs`. Without that Gradle keeps the test task UP-TO-DATE and the
+  guards silently never run — which happened, and left the suite green against a
+  mutated manifest.
 
 Run a single class, e.g.:
 
@@ -445,15 +529,15 @@ The Angular app has a Playwright suite under `web/e2e/` (`login.spec.ts`, `navig
 
 ### Coverage gates (BladeWatch-ncbb.5)
 
-Two independent, build-failing coverage gates — each may only ever be **raised**, never lowered:
+Three independent, build-failing coverage gates — each may only ever be **raised**, never lowered:
 
 | | Gate | Current threshold | Measured | Excludes |
 |---|---|---|---|---|
-| Kotlin (main app) | `./gradlew koverVerify` | `minBound(2)` in `app/build.gradle.kts` | 2.10% (1020/48610 lines), 2026-09-12 | `net.bladewatch.app.grpc.v1` (generated ConnectRPC/protobuf, ~1,100 files), `android.hardware.*` / `android.os.*` (BYD SDK compile-time stubs — see "BYD SDK Stub Pattern" above) |
+| Kotlin (main app) | `./gradlew koverVerify` | `minBound(3)` in `app/build.gradle.kts` | 3.10% (1144/36930 lines), 2026-09-14 — ratcheted from 2.10% (1020/48610), 2026-09-12. **Both halves moved:** Phase 4 deleted the native in-car UI, removing ~11,700 almost entirely UNTESTED lines, and this session's guards added covered ones. Deleting untested code raises the percentage without improving anything, so this is a new floor to hold, not progress | `net.bladewatch.app.grpc.v1` (generated ConnectRPC/protobuf, ~1,100 files), `android.hardware.*` / `android.os.*` (BYD SDK compile-time stubs — see "BYD SDK Stub Pattern" above) |
 | Kotlin (Flutter APK, `flutter_ui/android/app/`) | `./gradlew koverVerify` (separate Gradle project, own Kover application) | `minBound(100)` in `flutter_ui/android/app/build.gradle.kts` | 100%, 2026-09-13, BladeWatch-yz1e.11 — unchanged from yz1e.10: the 2 new `setup.*` intent-launching functions live in `MainActivity.kt`, already wholesale-excluded below, so they add no new exclusion entries and no new testable surface | `io.flutter.plugins.GeneratedPluginRegistrant` (Flutter's own generated glue), `net.bladewatch.bladewatch_ui.MainActivity`, `...update.PackageInstallerBridge`, `...network.NetworkInfoChannel`, `...location.LocationServiceChannel*` (Android-framework-bound, not unit-testable without Robolectric — verified on-device in BladeWatch-imh6.6), `...update.HttpConnectionsKt` (real network I/O boundary, no branching logic), and (BladeWatch-yz1e.10) `...liveview.MediaCodecFrameDecoder` (real `MediaCodec`/`Surface` calls — throws "not mocked" in a plain JVM unit test; its own decision logic lives in the separately-tested `LiveViewTexturePlugin` instead) |
-| Dart (`flutter_ui/`) | `tools/check_flutter_coverage.sh` (wired into `flutter_ui/android/app/build.gradle.kts`'s `check` task as `checkFlutterCoverage`) | `99` (`THRESHOLD` default in the script) | 99.97% (6547/6549 lines, 99.9695% unrounded), 2026-09-13, BladeWatch-yz1e.11 — up from 99.9679% at BladeWatch-yz1e.10 (6226/6228) after enriching Battery Health and adding `lib/shell/locale_controller.dart`, `lib/screens/dialogs/**`, and `lib/platform/setup_channel.dart` (all at 100%). `FileLocaleStore` needed no gate exclusion — covered by a real-file integration test (`file_locale_store_test.dart`), the same approach already used for `IoLiveSocket`/`raw_http_sender.dart`. The only 2 permanently-uncovered *counted* lines remain `main.dart`'s literal `void main()` | `lib/gen/**` (generated protobuf and l10n), plus one named file: `lib/screens/vehicle/vehicle_hero.dart` (the 3D hero's `webview_flutter` wrapper — constructing a real `WebViewController` throws `WebViewPlatform.instance != null` in any plain `flutter test` run, confirmed empirically; mirrors the Kotlin gate's own `LocationServiceChannel*`/`HttpConnectionsKt` exclusions for the identical reason) |
+| Dart (`flutter_ui/`) | `tools/check_flutter_coverage.sh` (wired into `flutter_ui/android/app/build.gradle.kts`'s `check` task as `checkFlutterCoverage`) | `99` (`THRESHOLD` default in the script) | 99.87% (7128/7137 lines), 2026-09-14 — the remaining 9 are all unreachable at runtime: `main.dart`'s literal `void main()` (2) and seven const-constructor bodies in `dashboard_models.dart` that every call site constructs as `const`, so they are folded at compile time and never execute. Previously 99.97% (6547/6549), 2026-09-13, BladeWatch-yz1e.11 — up from 99.9679% at BladeWatch-yz1e.10 (6226/6228) after enriching Battery Health and adding `lib/shell/locale_controller.dart`, `lib/screens/dialogs/**`, and `lib/platform/setup_channel.dart` (all at 100%). `FileLocaleStore` needed no gate exclusion — covered by a real-file integration test (`file_locale_store_test.dart`), the same approach already used for `IoLiveSocket`/`raw_http_sender.dart`. The only 2 permanently-uncovered *counted* lines remain `main.dart`'s literal `void main()` | `lib/gen/**` (generated protobuf and l10n), plus one named file: `lib/screens/vehicle/vehicle_hero.dart` (the 3D hero's `webview_flutter` wrapper — constructing a real `WebViewController` throws `WebViewPlatform.instance != null` in any plain `flutter test` run, confirmed empirically; mirrors the Kotlin gate's own `LocationServiceChannel*`/`HttpConnectionsKt` exclusions for the identical reason) |
 
-Both are driven by the actual measured JVM/Dart suite at the time each gate was added — not chosen numbers — and are proved to actually fail (by temporarily raising the threshold, observing the failure, then restoring) rather than trusted blindly; see the git history / task notes on BladeWatch-ncbb.5 for that proof. Raise a threshold only after adding tests that justify it, in the same commit.
+All three are driven by the actual measured JVM/Dart suite at the time each gate was added — not chosen numbers — and are proved to actually fail (by temporarily raising the threshold, observing the failure, then restoring) rather than trusted blindly; see the git history / task notes on BladeWatch-ncbb.5 for that proof. Raise a threshold only after adding tests that justify it, in the same commit.
 
 ### Recommended checks after code changes
 
@@ -556,11 +640,11 @@ Suggested mapping:
 ## Source References
 
 - Gradle namespace, SDK, version, ABI split, and signing: [build.gradle.kts:264](../app/build.gradle.kts#L264), [build.gradle.kts:268](../app/build.gradle.kts#L268), [build.gradle.kts:345](../app/build.gradle.kts#L345), [build.gradle.kts:256](../app/build.gradle.kts#L256).
-- Dependencies (TFLite, ConnectRPC, osmdroid, H2, RTMP) and Filament-removed note: [build.gradle.kts:412](../app/build.gradle.kts#L412), [build.gradle.kts:444](../app/build.gradle.kts#L444), [build.gradle.kts:465](../app/build.gradle.kts#L465).
+- Dependencies (TFLite, ConnectRPC, H2, RTMP) and Filament-removed note: [build.gradle.kts:412](../app/build.gradle.kts#L412), [build.gradle.kts:444](../app/build.gradle.kts#L444), [build.gradle.kts:465](../app/build.gradle.kts#L465).
 - Verified native downloads and asset extraction tasks: [build.gradle.kts:72](../app/build.gradle.kts#L72), [build.gradle.kts:124](../app/build.gradle.kts#L124), [build.gradle.kts:138](../app/build.gradle.kts#L138), [build.gradle.kts:226](../app/build.gradle.kts#L226).
 - Angular web build and proto codegen tasks: [build.gradle.kts:487](../app/build.gradle.kts#L487), [build.gradle.kts:497](../app/build.gradle.kts#L497), [build.gradle.kts:520](../app/build.gradle.kts#L520), [buf.gen.yaml:1](../proto/buf.gen.yaml#L1), [package.json:5](../web/package.json#L5), [playwright.config.ts:17](../web/playwright.config.ts#L17).
 - Plugin and library versions: [libs.versions.toml:1](../gradle/libs.versions.toml#L1).
 - BYD stub compile/runtime behavior: [build.gradle.kts:413](../app/build.gradle.kts#L413), [IAccModeManager.java:5](../app/src/main/java/android/os/IAccModeManager.java#L5).
 - Native build and hardening: [CMakeLists.txt:50](../app/src/main/cpp/CMakeLists.txt#L50), [CMakeLists.txt:98](../app/src/main/cpp/CMakeLists.txt#L98).
-- Update APIs and post-update daemon reset: [UpdateApiHandler.java:43](../app/src/main/java/com/loabletech/bladewatch/server/UpdateApiHandler.java#L43), [BootReceiver.kt:24](../app/src/main/java/com/loabletech/bladewatch/receiver/BootReceiver.kt#L24), [DaemonStartupManager.kt:15](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L15).
+- Post-update daemon reset: [BootReceiver.kt:24](../app/src/main/java/com/loabletech/bladewatch/receiver/BootReceiver.kt#L24), [DaemonStartupManager.kt:15](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L15).
 - Operational files, logs, config, and storage: [UnifiedConfigManager.kt:30](../app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt#L30), [SecretConfigStore.kt:22](../app/src/main/java/com/loabletech/bladewatch/config/SecretConfigStore.kt#L22), [StorageManager.java:100](../app/src/main/java/com/loabletech/bladewatch/storage/StorageManager.java#L100), [DaemonLogger.java:382](../app/src/main/java/com/loabletech/bladewatch/logging/DaemonLogger.java#L382).

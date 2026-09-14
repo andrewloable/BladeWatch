@@ -595,11 +595,13 @@ class _AccessCodeRow extends StatelessWidget {
             ),
             IconButton(
               key: const ValueKey('accessCode.toggle'),
+              tooltip: l10n.cd_show_hide_token,
               icon: Icon(state.visible ? Icons.visibility_off : Icons.visibility),
               onPressed: controller.toggleAccessCodeVisibility,
             ),
             IconButton(
               key: const ValueKey('accessCode.copy'),
+              tooltip: l10n.cd_copy_token,
               icon: const Icon(Icons.copy),
               // Fire-and-forget the clipboard write (Android's ClipboardManager
               // is sync; Flutter's Clipboard.setData is Future-based only

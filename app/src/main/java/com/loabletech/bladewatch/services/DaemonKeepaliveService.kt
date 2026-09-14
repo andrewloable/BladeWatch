@@ -31,6 +31,7 @@ class DaemonKeepaliveService : Service() {
     
     companion object {
         private const val TAG = "DaemonKeepalive"
+        private const val FLUTTER_UI_PACKAGE = "net.bladewatch.flutter"
         private const val NOTIFICATION_ID = 19876
         private const val CHANNEL_ID = "daemon_keepalive_channel"
         
@@ -151,11 +152,27 @@ class DaemonKeepaliveService : Service() {
         Log.i(TAG, "Foreground service started")
     }
     
+    /**
+     * BladeWatch-81g9.1: tapping the keepalive notification opens the FLUTTER UI, not
+     * this APK's bootstrap activity.
+     *
+     * MainActivity is no longer something a user should ever see — it exists only to run
+     * the startup bootstrap. Sending a tap there would show the user a screen that is on
+     * its way to having no content at all (BladeWatch-81g9.2 strips its layout).
+     *
+     * Falls back to the old target if the Flutter APK is not installed, so the
+     * notification is never inert: on a device with only the daemon host, tapping it
+     * still reaches something.
+     */
+    private fun uiLaunchIntent(): Intent =
+        packageManager.getLaunchIntentForPackage(FLUTTER_UI_PACKAGE)
+            ?: Intent(this, MainActivity::class.java)
+
     private fun buildNotification(): Notification {
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, MainActivity::class.java),
+            uiLaunchIntent(),
             PendingIntent.FLAG_IMMUTABLE
         )
         

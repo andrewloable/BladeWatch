@@ -11,6 +11,7 @@ import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
 import 'package:fixnum/fixnum.dart';
 
 import 'trips_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Controller behind the Trips screen's 3 tabs (Trips/Stats/Storage) —
 /// BladeWatch-yz1e.5. Ground truth: `TripsController.kt` (852 LOC). The trip
@@ -24,7 +25,7 @@ import 'trips_models.dart';
 /// `createIoHttpSender(readTimeout: Duration(seconds: 120))`) — `SyncTrips`
 /// can take ~120s, and the default 10s client would time it out. Mirrors
 /// `ConnectClientProvider.longTripsService()`.
-class TripsController extends ChangeNotifier {
+class TripsController extends ChangeNotifier with DisposedSafeNotifier {
   final TripsServiceClient _tripsService;
   final TripsServiceClient _longTripsService;
 

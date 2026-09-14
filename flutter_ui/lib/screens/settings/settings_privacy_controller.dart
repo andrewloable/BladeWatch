@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../gen/bladewatch/v1/storage.pb.dart';
 import '../../rpc/services/storage_service_client.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Ground truth: `SettingsPrivacyFragment.kt`. The reset-data action opens a
 /// dialog (BladeWatch-yz1e.11's job; this screen only needs a callback to
@@ -12,7 +13,7 @@ import '../../rpc/services/storage_service_client.dart';
 /// `UnifiedConfigManager`'s `developerOptions` section — see
 /// `SettingsOverlayController`'s doc comment for why [loadLoggingSettings]/
 /// [persistLogging] are injected (no generic public-config IPC exists yet).
-class SettingsPrivacyController extends ChangeNotifier {
+class SettingsPrivacyController extends ChangeNotifier with DisposedSafeNotifier {
   SettingsPrivacyController({
     required StorageServiceClient storageService,
     Future<({bool timingLogsEnabled, bool debugLogsEnabled})> Function()? loadLoggingSettings,

@@ -62,6 +62,14 @@
   "@cd_player_minimize": {},
   "cd_delete": "Delete",
   "@cd_delete": {},
+  "cd_decrease": "Decrease",
+  "@cd_decrease": {
+    "description": "Accessible label for an icon-only stepper button. Impersonal."
+  },
+  "cd_increase": "Increase",
+  "@cd_increase": {
+    "description": "Accessible label for an icon-only stepper button. Impersonal."
+  },
   "cd_expand": "Expand",
   "@cd_expand": {},
   "cd_configure": "Configure",
@@ -80,22 +88,14 @@
   "@overlay_rec_inactive_label": {},
   "overlay_trip_inactive_label": "TRIP",
   "@overlay_trip_inactive_label": {},
-  "log_entry_default_timestamp": "12:34:56",
-  "@log_entry_default_timestamp": {},
-  "log_entry_default_tag": "[TAG]",
-  "@log_entry_default_tag": {},
-  "log_entry_default_message": "Log message here",
-  "@log_entry_default_message": {},
-  "daemon_card_default_name": "Service Name",
-  "@daemon_card_default_name": {},
-  "daemon_card_default_status": "Status message",
-  "@daemon_card_default_status": {},
   "daemon_card_subprocesses": "PROCESSES",
   "@daemon_card_subprocesses": {},
   "logs_panel_title": "Logs",
   "@logs_panel_title": {},
   "url_connecting": "Connecting…",
-  "@url_connecting": {},
+  "@url_connecting": {
+    "description": "An action in progress. Impersonal, never 'I'."
+  },
   "camera_selection_title": "Camera Selection",
   "@camera_selection_title": {},
   "camera_selection_subtitle": "Select panoramic camera source",
@@ -121,7 +121,9 @@
   "dashboard_scan_to_connect": "Scan to Connect",
   "@dashboard_scan_to_connect": {},
   "dashboard_qr_waiting": "Waiting for tunnel…",
-  "@dashboard_qr_waiting": {},
+  "@dashboard_qr_waiting": {
+    "description": "An action in progress. Impersonal, never 'I'."
+  },
   "dashboard_daemons_running_default": "0/5 Running",
   "@dashboard_daemons_running_default": {},
   "dashboard_device_id_loading": "…",
@@ -166,7 +168,7 @@
   "@setup_language_button": {},
   "setup_autostart_title": "Disable Auto-Start Restriction",
   "@setup_autostart_title": {},
-  "setup_autostart_body": "Tap below to open BYD Auto-Start. Find BladeWatch in the list and uncheck the box. BYD wipes this on every install — you'll redo it after updates.",
+  "setup_autostart_body": "Tap below to open BYD Auto-Start, then uncheck BOTH BladeWatch and BladeWatch Service. Without this, recording does not start when you switch the car on — you have to open the app every time. BYD wipes this on every install, so redo it after updates.",
   "@setup_autostart_body": {},
   "setup_autostart_button": "Open BYD Auto-Start",
   "@setup_autostart_button": {},
@@ -266,10 +268,6 @@
   "@performance_refreshing_footer": {},
   "webview_loading": "Loading…",
   "@webview_loading": {},
-  "webview_camera_daemon_not_running": "Camera Not Running",
-  "@webview_camera_daemon_not_running": {},
-  "webview_start_camera_daemon": "Start the Camera service from the Services screen to access this page.",
-  "@webview_start_camera_daemon": {},
   "zrok_enable_token_hint": "Enable Token",
   "@zrok_enable_token_hint": {},
   "zrok_token_storage_note": "Token is stored securely and shared between the app and background services.",
@@ -299,7 +297,9 @@
   "reset_cat_sentry_events": "Surveillance events",
   "@reset_cat_sentry_events": {},
   "reset_cat_sentry_events_desc": "Surveillance event clips and JSON sidecars",
-  "@reset_cat_sentry_events_desc": {},
+  "@reset_cat_sentry_events_desc": {
+    "description": "A 'sidecar' is a companion JSON metadata file written next to each clip, NOT a motorcycle sidecar."
+  },
   "reset_cat_proximity": "Proximity recordings",
   "@reset_cat_proximity": {},
   "reset_cat_proximity_desc": "Radar-triggered event MP4s",
@@ -354,13 +354,13 @@
   "@recording_lib_date_today": {},
   "recording_lib_date_yesterday": "Yesterday",
   "@recording_lib_date_yesterday": {},
-  "recording_lib_clip_count": "{arg1} clips",
+  "recording_lib_clip_count": "{arg1, plural, one{{arg1} clip} other{{arg1} clips}}",
   "@recording_lib_clip_count": {
     "placeholders": {
       "arg1": {}
-    }
+    },
+    "description": "'clips' are recorded video files."
   },
-  "recording_lib_clip_count_one": "{arg1} clip",
   "@recording_lib_clip_count_one": {
     "placeholders": {
       "arg1": {}
@@ -415,46 +415,10 @@
   },
   "battery_health_title": "Battery Health",
   "@battery_health_title": {},
-  "battery_health_subtitle": "State of Health",
-  "@battery_health_subtitle": {},
-  "battery_health_dashes": "--",
-  "@battery_health_dashes": {},
-  "battery_health_waiting": "Waiting for data…",
-  "@battery_health_waiting": {},
-  "battery_health_source": "Source",
-  "@battery_health_source": {},
-  "battery_health_method": "Method",
-  "@battery_health_method": {},
-  "battery_health_capacity": "Capacity",
-  "@battery_health_capacity": {},
-  "battery_health_samples": "Samples",
-  "@battery_health_samples": {},
-  "battery_health_last_updated": "Last Updated",
-  "@battery_health_last_updated": {},
   "battery_health_unavailable": "Not available",
   "@battery_health_unavailable": {},
   "battery_health_unavailable_desc": "Battery health estimation is not available.",
   "@battery_health_unavailable_desc": {},
-  "battery_health_reset": "Reset SOH Estimation",
-  "@battery_health_reset": {},
-  "battery_health_reset_desc": "Clears all data and re-estimates from scratch. Use if battery was replaced or reading seems incorrect.",
-  "@battery_health_reset_desc": {},
-  "soh_dialog_model_label": "Model",
-  "@soh_dialog_model_label": {},
-  "soh_dialog_pack_capacity_label": "Pack capacity",
-  "@soh_dialog_pack_capacity_label": {},
-  "soh_dialog_estimated_capacity_label": "Effective capacity",
-  "@soh_dialog_estimated_capacity_label": {},
-  "soh_dialog_calibration_anchor_label": "Last calibrated",
-  "@soh_dialog_calibration_anchor_label": {},
-  "soh_dialog_source_user": "user-set",
-  "@soh_dialog_source_user": {},
-  "soh_dialog_source_auto": "auto-detected",
-  "@soh_dialog_source_auto": {},
-  "soh_dialog_model_not_selected": "Not selected",
-  "@soh_dialog_model_not_selected": {},
-  "soh_dialog_capacity_not_detected": "Not detected",
-  "@soh_dialog_capacity_not_detected": {},
   "soh_dialog_calibration_format": "{arg1}% on {arg2}",
   "@soh_dialog_calibration_format": {
     "placeholders": {
@@ -495,7 +459,9 @@
   "toast_camera_set_to_auto": "Camera set to Auto",
   "@toast_camera_set_to_auto": {},
   "toast_failed_to_save_short": "Failed to save",
-  "@toast_failed_to_save_short": {},
+  "@toast_failed_to_save_short": {
+    "description": "'save' means WRITE TO STORAGE, not rescue. Impersonal."
+  },
   "toast_failed_with_message": "Failed: {arg1}",
   "@toast_failed_with_message": {
     "placeholders": {
@@ -506,10 +472,13 @@
   "@toast_camera_id_set": {
     "placeholders": {
       "arg1": {}
-    }
+    },
+    "description": "'set' is a PAST PARTICIPLE (has been set/selected), NOT the noun 'a set'. Impersonal."
   },
   "toast_clearing_camera_config": "Clearing camera config…",
-  "@toast_clearing_camera_config": {},
+  "@toast_clearing_camera_config": {
+    "description": "An action in progress. Impersonal, never 'I'."
+  },
   "toast_restarting_camera_daemon": "Restarting camera service…",
   "@toast_restarting_camera_daemon": {},
   "toast_camera_daemon_restarting": "Camera service restarting with full probe",
@@ -518,16 +487,6 @@
   "@toast_camera_restart_failed": {},
   "toast_failed_with_message_x": "Failed: {arg1}",
   "@toast_failed_with_message_x": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "toast_soh_reset_success": "SOH estimation reset — will recalculate from next data",
-  "@toast_soh_reset_success": {},
-  "toast_soh_reset_failed_no_daemon": "Reset failed — service not responding and file not writable",
-  "@toast_soh_reset_failed_no_daemon": {},
-  "toast_soh_reset_failed_with_message": "Reset failed: {arg1}",
-  "@toast_soh_reset_failed_with_message": {
     "placeholders": {
       "arg1": {}
     }
@@ -544,7 +503,8 @@
   "@toast_traffic_monitor_changing": {
     "placeholders": {
       "arg1": {}
-    }
+    },
+    "description": "arg1 is a verb form such as Enabling/Disabling; keep it leading the phrase. Impersonal."
   },
   "dialog_close": "Close",
   "@dialog_close": {},
@@ -577,7 +537,9 @@
   "dialog_reset_complete_title": "Reset complete",
   "@dialog_reset_complete_title": {},
   "dialog_traffic_cannot_check_title": "Cannot Check Status",
-  "@dialog_traffic_cannot_check_title": {},
+  "@dialog_traffic_cannot_check_title": {
+    "description": "Impersonal, never 'I cannot'."
+  },
   "dialog_traffic_cannot_check_message": "ADB is not connected, and the app could not reconnect automatically.\n\nOn this vehicle, the standard \"USB debugging\" toggle in Developer Options is not enough by itself — the head unit's own wireless ADB (network debugging) setting also needs to be on, and a system update can reset it. Re-enable wireless ADB on the head unit, or connect via USB.\n\nThe status will update automatically once connected.",
   "@dialog_traffic_cannot_check_message": {},
   "dialog_traffic_disable_title": "Disable BYD Traffic Monitor?",
@@ -629,9 +591,13 @@
   "dashboard_no_tunnel": "No tunnel running",
   "@dashboard_no_tunnel": {},
   "dashboard_starting_zrok": "Starting Zrok tunnel…",
-  "@dashboard_starting_zrok": {},
+  "@dashboard_starting_zrok": {
+    "description": "An action in progress. Impersonal, never 'I'."
+  },
   "dashboard_waiting_url": "Waiting for tunnel URL…",
-  "@dashboard_waiting_url": {},
+  "@dashboard_waiting_url": {
+    "description": "An action in progress. Impersonal, never 'I'."
+  },
   "dashboard_daemons_running": "{arg1}/{arg2} Running",
   "@dashboard_daemons_running": {
     "placeholders": {
@@ -678,7 +644,9 @@
   "toast_zrok_token_saved": "Token saved",
   "@toast_zrok_token_saved": {},
   "toast_zrok_token_save_failed": "Failed to save token",
-  "@toast_zrok_token_save_failed": {},
+  "@toast_zrok_token_save_failed": {
+    "description": "'save' means WRITE TO STORAGE, not rescue. Impersonal."
+  },
   "toast_zrok_token_deleted": "Token deleted",
   "@toast_zrok_token_deleted": {},
   "toast_zrok_token_delete_failed": "Failed to delete token",
@@ -687,7 +655,8 @@
   "@toast_fetching_log": {
     "placeholders": {
       "arg1": {}
-    }
+    },
+    "description": "An action IN PROGRESS (retrieving a log file over IPC). Not an imperative, not first person, and 'fetch' means retrieve, not carry or bring."
   },
   "toast_log_empty_or_missing": "Log file is empty or not found",
   "@toast_log_empty_or_missing": {},
@@ -732,17 +701,19 @@
       "arg1": {}
     }
   },
-  "log_header_truncated": "NOTE: Log truncated to last 10000 lines (total: {arg1} lines)",
+  "log_header_truncated": "{arg1, plural, one{NOTE: Log truncated to last 10000 lines (total: {arg1} line)} other{NOTE: Log truncated to last 10000 lines (total: {arg1} lines)}}",
   "@log_header_truncated": {
     "placeholders": {
       "arg1": {}
-    }
+    },
+    "description": "The 10000 is a fixed limit and is ALWAYS plural; only the {arg1} noun agrees with the count. 'Log' is a log FILE."
   },
   "toast_cannot_play_video": "Cannot play video: {arg1}",
   "@toast_cannot_play_video": {
     "placeholders": {
       "arg1": {}
-    }
+    },
+    "description": "Impersonal, never 'I cannot'."
   },
   "dialog_delete_recording_title": "Delete Recording",
   "@dialog_delete_recording_title": {},
@@ -878,7 +849,9 @@
   "settings_about_support_share_chooser": "Share BladeWatch",
   "@settings_about_support_share_chooser": {},
   "settings_about_open_link_failed": "Couldn't open link.",
-  "@settings_about_open_link_failed": {},
+  "@settings_about_open_link_failed": {
+    "description": "Impersonal, never 'I couldn't'."
+  },
   "settings_about_open_link_copied": "No browser found. URL copied: {arg1}",
   "@settings_about_open_link_copied": {
     "placeholders": {
@@ -1037,7 +1010,7 @@
   "@diagnostics_network_ethernet": {},
   "diagnostics_network_offline": "Offline",
   "@diagnostics_network_offline": {},
-  "diagnostics_storage_used_line": "{arg1} clips · {arg2} used",
+  "diagnostics_storage_used_line": "{arg1, plural, one{{arg1} clip · {arg2} used} other{{arg1} clips · {arg2} used}}",
   "@diagnostics_storage_used_line": {
     "placeholders": {
       "arg1": {},
@@ -1110,56 +1083,10 @@
   },
   "vehicle_dialog_title": "Set battery capacity",
   "@vehicle_dialog_title": {},
-  "vehicle_dialog_capacity_label": "Capacity",
-  "@vehicle_dialog_capacity_label": {},
-  "vehicle_dialog_capacity_suffix": "kWh",
-  "@vehicle_dialog_capacity_suffix": {},
-  "vehicle_dialog_capacity_helper": "8 to 120 kWh. Leave to use the model default.",
-  "@vehicle_dialog_capacity_helper": {},
   "vehicle_dialog_model_label": "Model",
   "@vehicle_dialog_model_label": {},
   "vehicle_dialog_save": "Save",
   "@vehicle_dialog_save": {},
-  "vehicle_dialog_reset": "Reset to auto-detect",
-  "@vehicle_dialog_reset": {},
-  "vehicle_dialog_invalid_capacity": "Capacity must be 8 - 120 kWh",
-  "@vehicle_dialog_invalid_capacity": {},
-  "vehicle_dialog_summary_capacity": "Capacity: {arg1}",
-  "@vehicle_dialog_summary_capacity": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_dialog_summary_soh": "SOH: {arg1}",
-  "@vehicle_dialog_summary_soh": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_dialog_soh_source_live": "{arg1}% (live)",
-  "@vehicle_dialog_soh_source_live": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_dialog_soh_source_calibration": "{arg1}% (from last charge)",
-  "@vehicle_dialog_soh_source_calibration": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_dialog_soh_source_oem": "{arg1}% (vehicle)",
-  "@vehicle_dialog_soh_source_oem": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_dialog_soh_source_nominal": "{arg1}% (nominal)",
-  "@vehicle_dialog_soh_source_nominal": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
   "settings_recording_tab_status": "Status",
   "@settings_recording_tab_status": {},
   "settings_recording_tab_capture": "Capture",
@@ -1229,7 +1156,7 @@
       "arg2": {}
     }
   },
-  "settings_recording_storage_files": "{arg1} recordings",
+  "settings_recording_storage_files": "{arg1, plural, one{{arg1} recording} other{{arg1} recordings}}",
   "@settings_recording_storage_files": {
     "placeholders": {
       "arg1": {}
@@ -1296,27 +1223,6 @@
   "@settings_daemons_zrok_configure": {},
   "settings_daemons_zrok_reset_button": "Reset Environment",
   "@settings_daemons_zrok_reset_button": {},
-  "vehicle_dialog_summary_effective": "Effective: {arg1} kWh",
-  "@vehicle_dialog_summary_effective": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_dialog_summary_model": "Model: {arg1}",
-  "@vehicle_dialog_summary_model": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_dialog_summary_calibration": "Last calibrated: {arg1}% on {arg2}",
-  "@vehicle_dialog_summary_calibration": {
-    "placeholders": {
-      "arg1": {},
-      "arg2": {}
-    }
-  },
-  "vehicle_dialog_soh_unavailable": "unavailable",
-  "@vehicle_dialog_soh_unavailable": {},
   "dashboard_metric_storage_chip": "{arg1} used · {arg2} free",
   "@dashboard_metric_storage_chip": {
     "placeholders": {
@@ -1446,17 +1352,17 @@
   "@settings_privacy_storage_size_label": {},
   "settings_privacy_storage_unavailable": "Unavailable",
   "@settings_privacy_storage_unavailable": {},
-  "settings_privacy_storage_count_format": "{arg1} clip",
   "@settings_privacy_storage_count_format": {
     "placeholders": {
       "arg1": {}
     }
   },
-  "settings_privacy_storage_count_format_plural": "{arg1} clips",
+  "settings_privacy_storage_count_format_plural": "{arg1, plural, one{{arg1} clip} other{{arg1} clips}}",
   "@settings_privacy_storage_count_format_plural": {
     "placeholders": {
       "arg1": {}
-    }
+    },
+    "description": "'clips' are recorded video files."
   },
   "settings_privacy_reset_subtitle": "Choose categories: recordings, events, service configs, cached telemetry…",
   "@settings_privacy_reset_subtitle": {},
@@ -1506,102 +1412,11 @@
       "arg1": {}
     }
   },
-  "dashboard_insight_welcome": "Welcome — BladeWatch is now your second pair of eyes.",
-  "@dashboard_insight_welcome": {},
-  "dashboard_insight_parked_charged_kwh": "Picked up {arg1} (≈{arg2}) while parked",
-  "@dashboard_insight_parked_charged_kwh": {
-    "placeholders": {
-      "arg1": {},
-      "arg2": {}
-    }
-  },
-  "dashboard_insight_parked_charged": "Picked up {arg1} while parked",
-  "@dashboard_insight_parked_charged": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "dashboard_insight_parked_drained_kwh": "Used {arg1} (≈{arg2}) since you parked",
-  "@dashboard_insight_parked_drained_kwh": {
-    "placeholders": {
-      "arg1": {},
-      "arg2": {}
-    }
-  },
-  "dashboard_insight_parked_drained": "Used {arg1} since you parked",
-  "@dashboard_insight_parked_drained": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "dashboard_insight_last_alert": "Last surveillance alert: {arg1}",
-  "@dashboard_insight_last_alert": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "dashboard_insight_last_charge": "Last charge: +{arg1} in {arg2}",
-  "@dashboard_insight_last_charge": {
-    "placeholders": {
-      "arg1": {},
-      "arg2": {}
-    }
-  },
-  "dashboard_insight_storage_milestone": "{arg1} clips · {arg2} recorded",
+  "dashboard_insight_storage_milestone": "{arg1, plural, one{{arg1} clip · {arg2} recorded} other{{arg1} clips · {arg2} recorded}}",
   "@dashboard_insight_storage_milestone": {
     "placeholders": {
       "arg1": {},
       "arg2": {}
-    }
-  },
-  "dashboard_insight_kwh_format": "{arg1} kWh",
-  "@dashboard_insight_kwh_format": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "dashboard_insight_percent_format": "{arg1}%",
-  "@dashboard_insight_percent_format": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "dashboard_insight_hours_minutes": "{arg1} hr {arg2} min",
-  "@dashboard_insight_hours_minutes": {
-    "placeholders": {
-      "arg1": {},
-      "arg2": {}
-    }
-  },
-  "dashboard_insight_today_clips": "{arg1, plural, one{{arg1} clip recorded today} other{{arg1} clips recorded today}}",
-  "@dashboard_insight_today_clips": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "dashboard_insight_uptime_days_hours": "{arg1, plural, one{BladeWatch online for {arg1} day, {arg2} hr} other{BladeWatch online for {arg1} days, {arg2} hr}}",
-  "@dashboard_insight_uptime_days_hours": {
-    "placeholders": {
-      "arg1": {},
-      "arg2": {}
-    }
-  },
-  "dashboard_insight_uptime_hours": "{arg1, plural, one{BladeWatch online for {arg1} hour} other{BladeWatch online for {arg1} hours}}",
-  "@dashboard_insight_uptime_hours": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "dashboard_insight_minutes": "{arg1, plural, one{{arg1} min} other{{arg1} min}}",
-  "@dashboard_insight_minutes": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "dashboard_insight_hours": "{arg1, plural, one{{arg1} hr} other{{arg1} hr}}",
-  "@dashboard_insight_hours": {
-    "placeholders": {
-      "arg1": {}
     }
   },
   "vehicle_tab_trunk": "Trunk",
@@ -1688,6 +1503,8 @@
   "@vehicle_seat_pos_2": {},
   "vehicle_all_windows": "All Windows",
   "@vehicle_all_windows": {},
+  "vehicle_window_awake_note": "Works only while the car is awake.",
+  "@vehicle_window_awake_note": {},
   "vehicle_window_front_left": "Front Left",
   "@vehicle_window_front_left": {},
   "vehicle_window_front_right": "Front Right",
@@ -1791,7 +1608,9 @@
   "startup_header_starting": "Starting up…",
   "@startup_header_starting": {},
   "startup_header_verifying": "Almost ready…",
-  "@startup_header_verifying": {},
+  "@startup_header_verifying": {
+    "description": "Impersonal status text."
+  },
   "startup_header_ready": "Everything's ready",
   "@startup_header_ready": {},
   "startup_daemon_camera": "Camera",
@@ -1894,7 +1713,7 @@
   },
   "trips_range_title": "Personalized Range",
   "@trips_range_title": {},
-  "trips_range_byd_estimate": "BYD estimate: {km} km",
+  "trips_range_byd_estimate": "BYD estimate: {km}",
   "@trips_range_byd_estimate": {
     "placeholders": {
       "km": {}
@@ -2165,7 +1984,7 @@
       "arg2": {}
     }
   },
-  "surveillance_storage_files": "{arg1} events",
+  "surveillance_storage_files": "{arg1, plural, one{{arg1} event} other{{arg1} events}}",
   "@surveillance_storage_files": {
     "placeholders": {
       "arg1": {}

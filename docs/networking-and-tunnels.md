@@ -110,21 +110,26 @@ Streaming behavior includes:
 - Fragmenting large frames into smaller chunks.
 - Separate streaming encoder path from recording.
 
-## Android WebView Networking
+## Android WebView Networking (REMOVED — historical)
 
-`WebViewFragment` loads local pages from:
+`WebViewFragment` was deleted in Phase 4 (`BladeWatch-81g9.2`) along with the rest
+of the native UI. **Nothing in the app loads the SPA in a WebView any more** — the
+in-car UI is Flutter and calls the daemon over ConnectRPC directly, and the SPA is
+served only to remote browser / tunnel clients.
 
-```text
-http://127.0.0.1:8080/<page>
-```
+What it used to do is recorded here because the underlying head-unit quirks have
+not gone away and will bite anything that puts a WebView on `127.0.0.1:8080`
+again. It loaded `http://127.0.0.1:8080/<page>` and:
 
-It handles several BYD head-unit networking issues:
+- Injected the auth JWT cookie.
+- Cleared/restored WebView proxy state around local server access.
+- Injected JavaScript routing mutating API requests through `AndroidBridge.httpRequest`.
+- Left normal GET navigation asynchronous.
+- Bypassed the proxy for local server requests.
 
-- Injects auth JWT cookie.
-- Clears/restores WebView proxy state around local server access.
-- Injects JavaScript that routes mutating API requests through `AndroidBridge.httpRequest`.
-- Leaves normal GET navigation asynchronous.
-- Bypasses proxy for local server requests.
+The one WebView left is the Vehicle hero (`webview_flutter` on
+`assets/web/hero/hero.html`), which loads a Flutter asset over `file://` and does
+**not** talk to the daemon, so none of the above applies to it.
 
 ## Zrok Tunnel
 
@@ -184,5 +189,5 @@ Risk notes:
 - Auth middleware, public paths, JWTs, and cookies: [AuthMiddleware.java:40](../app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java#L40), [AuthMiddleware.java:95](../app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java#L95), [AuthApiHandler.java:170](../app/src/main/java/com/loabletech/bladewatch/server/AuthApiHandler.java#L170), [AuthManager.java:446](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L446), [AuthManager.java:561](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L561).
 - IPC token bootstrap: [IpcTokenManager.java:54](../app/src/main/java/com/loabletech/bladewatch/server/IpcTokenManager.java#L54).
 - WebSocket streaming path: [HttpServer.java:344](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L344), [HttpServer.java:1042](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L1042), [WebSocketStreamServer.java:19](../app/src/main/java/com/loabletech/bladewatch/streaming/WebSocketStreamServer.java#L19).
-- Android WebView proxy bypass and cookie injection: [WebViewFragment.kt:33](../app/src/main/java/com/loabletech/bladewatch/ui/fragment/WebViewFragment.kt#L33), [WebViewFragment.kt:336](../app/src/main/java/com/loabletech/bladewatch/ui/fragment/WebViewFragment.kt#L336), [WebViewFragment.kt:375](../app/src/main/java/com/loabletech/bladewatch/ui/fragment/WebViewFragment.kt#L375).
+- Android WebView proxy bypass and cookie injection: `WebViewFragment.kt`, deleted in `BladeWatch-81g9.2` — recover from git history if the behaviour is ever needed again.
 - Zrok launch path and tokens (only `libzrok.so` ships in `jniLibs/arm64-v8a/`): [ZrokLauncher.kt:27](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L27), [ZrokLauncher.kt:36](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L36), [ZrokLauncher.kt:338](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L338), [ZrokLauncher.kt:425](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L425).

@@ -77,11 +77,17 @@ void main() {
 
   test('nowMs defaults to the real wall clock when not injected', () async {
     final c = VehicleController(vehicleService: VehicleServiceClient(rpc), systemService: SystemServiceClient(rpc));
-    // Exercises the real-clock lambda via the debounce check inside
-    // incTemp(); the RPC itself is unstubbed and its failure is swallowed,
-    // same as every other fire-and-forget climate action.
-    await c.incTemp();
-    expect(c.setpointC, 23);
+    // The SUBJECT here is the real-clock lambda, reached through the debounce
+    // check inside incTemp(). The RPC is unstubbed, so it throws.
+    //
+    // This used to assert `setpointC == 23` — that the optimistic value SURVIVED
+    // a failed command. That was the fire-and-forget bug, not the clock. It now
+    // asserts what the test is actually for: the call got past the debounce and
+    // attempted the RPC, which is only possible if the default clock works.
+    final error = await c.incTemp();
+
+    expect(error, isNotNull, reason: 'got past the debounce and the RPC failed');
+    expect(c.setpointC, 22, reason: 'a failed command reverts');
   });
 
   group('load()/poll()', () {
@@ -297,7 +303,7 @@ void main() {
     });
 
     test('selectColor updates and calls SetSelectedModel', () async {
-      rpc.stubJson('SystemService', 'SetSelectedModel', {});
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': true});
       final c = build();
 
       await c.selectColor('#1A1A1E');
@@ -307,13 +313,16 @@ void main() {
       expect(req.color, '#1A1A1E');
     });
 
-    test('selectColor throwing does not crash (color already applied optimistically)', () async {
+    test('selectColor reverts and reports when the write fails', () async {
       rpc.stubError('SystemService', 'SetSelectedModel', const ConnectError('unavailable', 'down'));
       final c = build();
+      final before = c.selectedColor;
 
-      await c.selectColor('#1A1A1E');
-
-      expect(c.selectedColor, '#1A1A1E');
+      // Was: "does not crash (already applied optimistically)" — asserting the
+      // new value should SURVIVE a failed write. BladeWatch-p7vi fixed exactly
+      // this on the dialog's call site and missed this one.
+      expect(await c.selectColor('#1A1A1E'), isNotNull);
+      expect(c.selectedColor, before, reason: 'a failed write must not keep the selection');
     });
 
     test('selectModel is a no-op when unchanged', () async {
@@ -323,7 +332,7 @@ void main() {
     });
 
     test('selectModel updates and calls SetSelectedModel', () async {
-      rpc.stubJson('SystemService', 'SetSelectedModel', {});
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': true});
       final c = build();
 
       await c.selectModel('tang');
@@ -333,13 +342,25 @@ void main() {
       expect(req.modelId, 'tang');
     });
 
-    test('selectModel throwing does not crash', () async {
+    test('selectModel reverts and reports when the write fails', () async {
       rpc.stubError('SystemService', 'SetSelectedModel', const ConnectError('unavailable', 'down'));
       final c = build();
+      final before = c.selectedModelId;
 
-      await c.selectModel('tang');
+      // Was: "does not crash" with expect(c.selectedModelId, 'tang') — the model
+      // was meant to STAY selected after the write failed.
+      expect(await c.selectModel('tang'), isNotNull);
+      expect(c.selectedModelId, before, reason: 'a failed write must not keep the selection');
+    });
 
-      expect(c.selectedModelId, 'tang');
+    // The refusal path: SetSelectedModel answers ok:false rather than throwing.
+    test('a REFUSED appearance write reverts', () async {
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': false, 'error': 'Model not available'});
+      final c = build();
+      final before = c.selectedColor;
+
+      expect(await c.selectColor('#1A1A1E'), 'Model not available');
+      expect(c.selectedColor, before);
     });
   });
 
@@ -470,19 +491,49 @@ void main() {
     });
   });
 
-  group('climate: temp/fan steppers (fire-and-forget)', () {
+  // These used to be "fire-and-forget": the stepper applied the new value
+  // optimistically, sent the command, and discarded the outcome. The daemon
+  // answers HTTP 200 with success:false when it REFUSES a command, so nothing
+  // threw, nothing reverted, and the driver saw 25 C while the car stayed at 24.
+  // The same defect BladeWatch-p7vi fixed on the SoH writes.
+  //
+  // The first test below is why it survived: it stubbed {'success': false} and
+  // then asserted the value STAYED — encoding the bug as the expectation.
+  group('climate: temp/fan steppers', () {
     test('incTemp increases and sends set_temp', () async {
       stubState(setpointC: 24);
-      rpc.stubJson('VehicleService', 'SetClimate', {'success': false});
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': true});
       final c = build();
       await c.load();
 
-      await c.incTemp();
+      expect(await c.incTemp(), isNull);
 
       expect(c.setpointC, 25);
       final req = rpc.calls.last.request as SetClimateRequest;
       expect(req.action, 'set_temp');
       expect(req.setpointC, 25.0);
+    });
+
+    // THE bug. The daemon returns 200 with success:false to refuse; nothing
+    // throws, so a catch-only guard never runs.
+    test('a REFUSED set_temp reverts the optimistic value', () async {
+      stubState(setpointC: 24);
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': false, 'message': 'Climate unavailable'});
+      final c = build();
+      await c.load();
+
+      expect(await c.incTemp(), 'Climate unavailable');
+      expect(c.setpointC, 24, reason: 'a refused command must not leave 25 on screen');
+    });
+
+    test('a REFUSED set_fan reverts the optimistic value', () async {
+      stubState(fanLevel: 3);
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': false});
+      final c = build();
+      await c.load();
+
+      await c.incFan();
+      expect(c.fanLevel, 3, reason: 'a refused command must not leave 4 on screen');
     });
 
     test('incTemp is clamped at 33 and does not call the RPC past the bound', () async {
@@ -520,15 +571,16 @@ void main() {
       expect(c.setpointC, 19);
     });
 
-    test('a throw from incTemp/decTemp is swallowed (no crash, no revert)', () async {
+    test('a THROWN failure reverts and reports, rather than being swallowed', () async {
       stubState(setpointC: 24);
       rpc.stubError('VehicleService', 'SetClimate', const ConnectError('unavailable', 'down'));
       final c = build();
       await c.load();
 
-      await c.incTemp();
-
-      expect(c.setpointC, 25);
+      // Was: `await c.incTemp(); expect(c.setpointC, 25);` — the old assertion
+      // said the value should stay at 25 after the command FAILED.
+      expect(await c.incTemp(), isNotNull, reason: 'the caller needs something to show');
+      expect(c.setpointC, 24, reason: 'a failed command must not leave 25 on screen');
     });
 
     test('incFan increases and is clamped at 7', () async {
@@ -580,15 +632,14 @@ void main() {
       expect(c.fanLevel, 2);
     });
 
-    test('a throw from incFan/decFan is swallowed', () async {
+    test('a THROWN fan failure reverts and reports', () async {
       stubState(fanLevel: 3);
       rpc.stubError('VehicleService', 'SetClimate', const ConnectError('unavailable', 'down'));
       final c = build();
       await c.load();
 
-      await c.decFan();
-
-      expect(c.fanLevel, 2);
+      expect(await c.decFan(), isNotNull);
+      expect(c.fanLevel, 3, reason: 'a failed command must not leave 2 on screen');
     });
   });
 
@@ -653,15 +704,30 @@ void main() {
       expect(req.action, 'ventilation');
     });
 
-    test('a throw from cycleSeatHeat/Cool is swallowed', () async {
+    test('a THROWN seat failure reverts and reports', () async {
       stubState();
       rpc.stubError('VehicleService', 'SetSeat', const ConnectError('unavailable', 'down'));
       final c = build();
       await c.load();
 
-      await c.cycleSeatHeat(1);
+      // Was: `await c.cycleSeatHeat(1); expect(c.driverHeat, 1);` — asserting the
+      // UI should show heat level 1 on a seat whose command FAILED.
+      expect(await c.cycleSeatHeat(1), isNotNull);
+      expect(c.driverHeat, 0, reason: 'a failed command must not show the seat as heated');
+    });
 
-      expect(c.driverHeat, 1);
+    // The refusal path: the daemon returns 200 with success:false, so nothing
+    // throws and a catch-only guard never runs.
+    test('a REFUSED seat command reverts every seat field', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetSeat', {'success': false, 'message': 'Seat unavailable'});
+      final c = build();
+      await c.load();
+
+      expect(await c.cycleSeatCool(1), 'Seat unavailable');
+      // cycleSeatCool clears heat when it turns vent on, so BOTH must come back.
+      expect(c.driverVent, 0);
+      expect(c.driverHeat, 0);
     });
 
     test('is debounced per seat/action key independently', () async {
@@ -710,7 +776,16 @@ void main() {
       expect(c.isPending('seat_mem2'), isFalse);
     });
 
-    test('failure with no message falls back to outcome, then "failed"', () async {
+    /// Was: `expect(..., 'failed')`. That pinned a hardcoded English literal as
+    /// the user-visible reason — on a screen that ships in 17 locales, where no
+    /// catalog could ever translate it. The fallback is now the empty string,
+    /// which `showVehicleCommandError` renders as the localised
+    /// `vehicle_action_failed`.
+    ///
+    /// It must stay NON-null either way: null is how every call site spells
+    /// success, so returning null for a refusal reverts the control and then
+    /// tells the driver nothing.
+    test('failure with no message falls back to outcome, then to the localised generic', () async {
       stubState();
       rpc.stubJson('VehicleService', 'SetSeat', {'success': false, 'outcome': 'not_supported'});
       final c = build();
@@ -719,7 +794,9 @@ void main() {
 
       rpc.stubJson('VehicleService', 'SetSeat', {'success': false});
       fakeNow += 1000;
-      expect(await c.recallSeatPosition(1), 'failed');
+      final blank = await c.recallSeatPosition(1);
+      expect(blank, isNotNull, reason: 'null would be read as success by every caller');
+      expect(blank, isEmpty, reason: 'the screen substitutes vehicle_action_failed');
     });
 
     test('throwing returns the exception text', () async {
@@ -818,6 +895,44 @@ void main() {
       expect(c.isPending('win_1_50'), isTrue);
       await future;
       expect(c.isPending('win_1_50'), isFalse);
+    });
+  });
+
+  /// The revert paths of the BladeWatch success:false sweep, completing the
+  /// halves each command was missing. Both failure shapes must revert, and
+  /// every command had only ONE of them pinned: cycleSeatHeat proved the thrown
+  /// path, cycleSeatCool the refused path, and decTemp neither. A revert that is
+  /// only exercised in one direction is a revert that has been half-checked.
+  group('refusal/throw symmetry', () {
+    test('a REFUSED cycleSeatHeat reverts, like the thrown path does', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetSeat', {'success': false, 'message': 'Seat refused'});
+      final c = build();
+      await c.load();
+
+      expect(await c.cycleSeatHeat(1), 'Seat refused');
+      expect(c.driverHeat, 0, reason: 'a refused command must not show the seat as heated');
+    });
+
+    test('a THROWN cycleSeatCool reverts, like the refused path does', () async {
+      stubState();
+      rpc.stubError('VehicleService', 'SetSeat', const ConnectError('unavailable', 'down'));
+      final c = build();
+      await c.load();
+
+      expect(await c.cycleSeatCool(1), isNotNull);
+      expect(c.driverVent, 0, reason: 'a failed command must not show the seat as vented');
+      expect(c.driverHeat, 0);
+    });
+
+    test('a REFUSED decTemp restores the temperature it decremented', () async {
+      stubState(setpointC: 24);
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': false, 'message': 'Climate unavailable'});
+      final c = build();
+      await c.load();
+
+      expect(await c.decTemp(), 'Climate unavailable');
+      expect(c.setpointC, 24, reason: 'a refused decrement must not leave 23 on screen');
     });
   });
 }

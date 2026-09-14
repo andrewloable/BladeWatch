@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../theme/color_tokens.dart';
+
 import '../../gen/l10n/app_localizations.dart';
 import '../../rpc/jwt_source.dart';
 import '../../rpc/services/recordings_service_client.dart';
@@ -376,6 +378,7 @@ class _DateRow extends StatelessWidget {
         if (c.filter.dateNarrowed)
           IconButton(
             key: const ValueKey('recordings.prevDay'),
+            tooltip: l10n.cd_previous_day,
             icon: const Icon(Icons.chevron_left),
             onPressed: () => c.shiftDay(-1),
           ),
@@ -389,6 +392,7 @@ class _DateRow extends StatelessWidget {
         if (c.filter.dateNarrowed)
           IconButton(
             key: const ValueKey('recordings.nextDay'),
+            tooltip: l10n.cd_next_day,
             icon: const Icon(Icons.chevron_right),
             onPressed: c.filter.selectedDayMs < today ? () => c.shiftDay(1) : null,
           ),
@@ -880,7 +884,9 @@ class _RecordingCard extends StatelessWidget {
                           right: 0,
                           child: Container(
                             height: 4,
-                            color: item.severity == 'CRITICAL' ? const Color(0xFFEF4444) : const Color(0xFFFF9B3D),
+                            color: item.severity == 'CRITICAL'
+                                ? theme.extension<BwStatusColors>()!.danger
+                                : theme.extension<BwStatusColors>()!.warning,
                           ),
                         ),
                       // Native overlays a circular play button so the card
@@ -904,9 +910,10 @@ class _RecordingCard extends StatelessWidget {
                           right: 6,
                           child: _Badge(
                             text: item.severity == 'CRITICAL' ? l10n.rec_severity_critical : l10n.rec_severity_alert,
-                            color: item.severity == 'CRITICAL'
-                                ? const Color(0xCCEF4444)
-                                : const Color(0xCCFF8800),
+                            color: (item.severity == 'CRITICAL'
+                                    ? theme.extension<BwStatusColors>()!.danger
+                                    : theme.extension<BwStatusColors>()!.warning)
+                                .withValues(alpha: 0.8),
                           ),
                         ),
                       if (c.selectMode)
@@ -953,6 +960,7 @@ class _RecordingCard extends StatelessWidget {
                 right: 4,
                 child: IconButton(
                   key: ValueKey('recordings.delete.${item.filename}'),
+                  tooltip: l10n.cd_delete,
                   icon: const Icon(Icons.delete_outline, size: 18),
                   visualDensity: VisualDensity.compact,
                   onPressed: () => _confirmDelete(context, c, item),

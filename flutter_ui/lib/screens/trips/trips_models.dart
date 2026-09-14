@@ -265,3 +265,26 @@ class TripsLoaded extends TripsLoadState {
     required this.storage,
   });
 }
+
+/// Miles in a kilometre.
+const double kMilesPerKm = 0.621371;
+
+/// Formats a distance in the user's chosen unit.
+///
+/// [unit] is `TripConfig.distanceUnit` as the daemon reports it — `'mi'` or
+/// `'km'`. Anything else falls back to kilometres, which is what the daemon does
+/// too (`HttpServer` defaults `distanceUnit` to `"km"` when the probe fails).
+///
+/// This exists because the conversion was inlined at five call sites and MISSED
+/// at a sixth: the Trips → Stats range card rendered `'$km km'` unconditionally,
+/// so a miles user saw their trips in `mi` and the range estimate in `km` on the
+/// same screen.
+String formatDistance(double km, String unit, {int decimals = 1}) => unit == 'mi'
+    ? '${(km * kMilesPerKm).toStringAsFixed(decimals)} mi'
+    : '${km.toStringAsFixed(decimals)} km';
+
+/// Formats a speed in the user's chosen unit. Same [unit] values as
+/// [formatDistance].
+String formatSpeed(double kmh, String unit, {int decimals = 0}) => unit == 'mi'
+    ? '${(kmh * kMilesPerKm).toStringAsFixed(decimals)} mph'
+    : '${kmh.toStringAsFixed(decimals)} km/h';

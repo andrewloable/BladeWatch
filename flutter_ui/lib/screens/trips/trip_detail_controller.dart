@@ -7,6 +7,7 @@ import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
 import 'package:fixnum/fixnum.dart';
 
 import 'trips_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Controller behind the trip detail overlay — BladeWatch-yz1e.5. Ground
 /// truth: `TripDetailController.kt` (457 LOC). The route map itself
@@ -23,7 +24,7 @@ import 'trips_models.dart';
 /// as a `ResponseMessage.Failure` value rather than a thrown exception, so
 /// native's own `!is ResponseMessage.Success` check already treats them
 /// the same way this class's try/catch does.
-class TripDetailController extends ChangeNotifier {
+class TripDetailController extends ChangeNotifier with DisposedSafeNotifier {
   final TripsServiceClient _tripsService;
 
   TripDetailController({required TripsServiceClient tripsService}) : _tripsService = tripsService; // ignore: prefer_initializing_formals

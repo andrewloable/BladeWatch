@@ -232,6 +232,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
             title: Text(l10n.surveillance_safe_locations_zone_label(zone.name, zone.radiusM)),
             trailing: IconButton(
               key: ValueKey('surveillance.safeLocations.zone.delete.${zone.id}'),
+              tooltip: l10n.cd_delete,
               icon: const Icon(Icons.close),
               onPressed: () => c.deleteSafeZone(zone.id),
             ),

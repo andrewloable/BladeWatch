@@ -7,6 +7,7 @@ import '../../gen/bladewatch/v1/vehicle.pb.dart' as pb;
 import '../../rpc/services/system_service_client.dart';
 import '../../rpc/services/vehicle_service_client.dart';
 import 'vehicle_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Ground truth: `VehicleController.kt` (behaviour) + `VehicleClient.kt`
 /// (RPC mapping). See `vehicle_models.dart`'s doc comment for why only
@@ -21,7 +22,7 @@ import 'vehicle_models.dart';
 /// screen simply starts in a loading state until the first live poll
 /// succeeds, same graceful-degradation shape native itself falls back to
 /// on a cold cache miss.
-class VehicleController extends ChangeNotifier {
+class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
   VehicleController({
     required VehicleServiceClient vehicleService,
     required SystemServiceClient systemService,
@@ -213,22 +214,56 @@ class VehicleController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> selectColor(String hex) async {
-    if (hex == _selectedColor) return;
+  /// Returns an error message to show, or null on success.
+  ///
+  /// SetSelectedModel answers with `ok`/`error`, NOT the success/message shape the
+  /// vehicle commands use. BladeWatch-p7vi fixed this same RPC in
+  /// `vehicle_dialog_controller.dart` and missed this call site, so the swatch
+  /// stayed selected whether or not the daemon accepted it. There is no
+  /// reconciling reload here to paper over it.
+  Future<String?> selectColor(String hex) async {
+    if (hex == _selectedColor) return null;
+    final previous = _selectedColor;
     _selectedColor = hex;
     notifyListeners();
-    try {
-      await _systemService.setSelectedModel(sys.SetSelectedModelRequest(color: hex));
-    } catch (_) {}
+    return _persistAppearance(
+      () => sys.SetSelectedModelRequest(color: hex),
+      () => _selectedColor = previous,
+    );
   }
 
-  Future<void> selectModel(String id) async {
-    if (id == _selectedModelId) return;
+  Future<String?> selectModel(String id) async {
+    if (id == _selectedModelId) return null;
+    final previous = _selectedModelId;
     _selectedModelId = id;
     notifyListeners();
+    return _persistAppearance(
+      () => sys.SetSelectedModelRequest(modelId: id),
+      () => _selectedModelId = previous,
+    );
+  }
+
+  Future<String?> _persistAppearance(
+    sys.SetSelectedModelRequest Function() request,
+    void Function() revert,
+  ) async {
     try {
-      await _systemService.setSelectedModel(sys.SetSelectedModelRequest(modelId: id));
-    } catch (_) {}
+      final resp = await _systemService.setSelectedModel(request());
+      if (!resp.ok) {
+        revert();
+        notifyListeners();
+        // Empty, NOT null: a refusal with no reason is still a refusal, and
+        // returning null made the caller treat it as success and show nothing
+        // while the swatch snapped back. The screen substitutes
+        // `vehicle_action_failed` for a blank message.
+        return resp.error;
+      }
+    } catch (e) {
+      revert();
+      notifyListeners();
+      return e.toString();
+    }
+    return null;
   }
 
   // ─────────────────────────── Climate ────────────────────────────────
@@ -246,7 +281,7 @@ class VehicleController extends ChangeNotifier {
       if (!result.ok) {
         _acOn = !nowOn;
         notifyListeners();
-        return result.message;
+        return result.failure;
       }
     } catch (e) {
       _acOn = !nowOn;
@@ -280,7 +315,7 @@ class VehicleController extends ChangeNotifier {
       if (!result.ok) {
         _maxCooling = !nowMax;
         notifyListeners();
-        return result.message;
+        return result.failure;
       } else if (nowMax) {
         _acOn = true;
         _setpointC = 17;
@@ -297,40 +332,72 @@ class VehicleController extends ChangeNotifier {
 
   /// Fire-and-forget, like native's temp stepper: no error feedback, no
   /// revert on failure.
-  Future<void> incTemp() async {
-    if (!_debounce('temp_plus') || _setpointC >= 33) return;
-    _setpointC += 1;
+  /// One climate stepper press: apply optimistically, send, and REVERT if the
+  /// car refused.
+  ///
+  /// The refusal path is the one that was missing. The daemon answers HTTP 200
+  /// with `success:false` when a command is declined, so nothing throws — the old
+  /// code's `catch (_) {}` never ran and the optimistic value stayed on screen.
+  /// This is the same defect BladeWatch-p7vi fixed on the SoH writes.
+  Future<String?> _stepClimate({
+    required void Function() apply,
+    required void Function() revert,
+    required pb.SetClimateRequest Function() request,
+  }) async {
+    apply();
     notifyListeners();
     try {
-      await _vehicleService.setClimate(pb.SetClimateRequest(action: 'set_temp', setpointC: _setpointC.toDouble()));
-    } catch (_) {}
+      final result = _mapCommand(await _vehicleService.setClimate(request()));
+      if (!result.ok) {
+        revert();
+        notifyListeners();
+        // Same as toggleAc/toggleMaxCooling: return whatever the daemon said.
+        // A refusal with no message still reverts, and the value snapping
+        // back IS the feedback.
+        return result.failure;
+      }
+    } catch (e) {
+      revert();
+      notifyListeners();
+      return e.toString();
+    }
+    return null;
   }
 
-  Future<void> decTemp() async {
-    if (!_debounce('temp_minus') || _setpointC <= 17) return;
-    _setpointC -= 1;
-    notifyListeners();
-    try {
-      await _vehicleService.setClimate(pb.SetClimateRequest(action: 'set_temp', setpointC: _setpointC.toDouble()));
-    } catch (_) {}
+  Future<String?> incTemp() async {
+    if (!_debounce('temp_plus') || _setpointC >= 33) return null;
+    return _stepClimate(
+      apply: () => _setpointC += 1,
+      revert: () => _setpointC -= 1,
+      request: () => pb.SetClimateRequest(action: 'set_temp', setpointC: _setpointC.toDouble()),
+    );
   }
 
-  Future<void> incFan() async {
-    if (!_debounce('fan_plus') || _fanLevel >= 7) return;
-    _fanLevel += 1;
-    notifyListeners();
-    try {
-      await _vehicleService.setClimate(pb.SetClimateRequest(action: 'set_fan', fanLevel: _fanLevel));
-    } catch (_) {}
+  Future<String?> decTemp() async {
+    if (!_debounce('temp_minus') || _setpointC <= 17) return null;
+    return _stepClimate(
+      apply: () => _setpointC -= 1,
+      revert: () => _setpointC += 1,
+      request: () => pb.SetClimateRequest(action: 'set_temp', setpointC: _setpointC.toDouble()),
+    );
   }
 
-  Future<void> decFan() async {
-    if (!_debounce('fan_minus') || _fanLevel <= 1) return;
-    _fanLevel -= 1;
-    notifyListeners();
-    try {
-      await _vehicleService.setClimate(pb.SetClimateRequest(action: 'set_fan', fanLevel: _fanLevel));
-    } catch (_) {}
+  Future<String?> incFan() async {
+    if (!_debounce('fan_plus') || _fanLevel >= 7) return null;
+    return _stepClimate(
+      apply: () => _fanLevel += 1,
+      revert: () => _fanLevel -= 1,
+      request: () => pb.SetClimateRequest(action: 'set_fan', fanLevel: _fanLevel),
+    );
+  }
+
+  Future<String?> decFan() async {
+    if (!_debounce('fan_minus') || _fanLevel <= 1) return null;
+    return _stepClimate(
+      apply: () => _fanLevel -= 1,
+      revert: () => _fanLevel += 1,
+      request: () => pb.SetClimateRequest(action: 'set_fan', fanLevel: _fanLevel),
+    );
   }
 
   static pb.SetClimateRequest _climateOnRequest(int temp) => pb.SetClimateRequest(action: 'power_on', on: true, setpointC: temp.toDouble());
@@ -341,9 +408,12 @@ class VehicleController extends ChangeNotifier {
   /// Fire-and-forget cycle 0->1->2->0, like native's seat heat/cool
   /// buttons: no error feedback, no revert on failure. Heat and vent are
   /// mutually exclusive per seat (enabling one zeroes the other).
-  Future<void> cycleSeatHeat(int position) async {
+  Future<String?> cycleSeatHeat(int position) async {
     final key = 'seat_heat_$position';
-    if (!_debounce(key)) return;
+    if (!_debounce(key)) return null;
+    // Snapshot all four: a heat press can clear vent and vice versa, so
+    // reverting only the pressed field would leave the other one wrong.
+    final before = [_driverHeat, _driverVent, _passengerHeat, _passengerVent];
     final current = position == 1 ? _driverHeat : _passengerHeat;
     final newLevel = (current + 1) % 3;
     if (position == 1) {
@@ -354,8 +424,15 @@ class VehicleController extends ChangeNotifier {
       if (newLevel > 0) _passengerVent = 0;
     }
     notifyListeners();
+    void revert() {
+      _driverHeat = before[0];
+      _driverVent = before[1];
+      _passengerHeat = before[2];
+      _passengerVent = before[3];
+      notifyListeners();
+    }
     try {
-      await _vehicleService.setSeat(pb.SetSeatRequest(
+      final result = _mapCommand(await _vehicleService.setSeat(pb.SetSeatRequest(
         seatIndex: position,
         action: 'heating',
         level: newLevel,
@@ -363,13 +440,24 @@ class VehicleController extends ChangeNotifier {
         driverVent: _driverVent,
         passengerHeat: _passengerHeat,
         passengerVent: _passengerVent,
-      ));
-    } catch (_) {}
+      )));
+      if (!result.ok) {
+        revert();
+        return result.failure;
+      }
+    } catch (e) {
+      revert();
+      return e.toString();
+    }
+    return null;
   }
 
-  Future<void> cycleSeatCool(int position) async {
+  Future<String?> cycleSeatCool(int position) async {
     final key = 'seat_cool_$position';
-    if (!_debounce(key)) return;
+    if (!_debounce(key)) return null;
+    // Snapshot all four: a heat press can clear vent and vice versa, so
+    // reverting only the pressed field would leave the other one wrong.
+    final before = [_driverHeat, _driverVent, _passengerHeat, _passengerVent];
     final current = position == 1 ? _driverVent : _passengerVent;
     final newLevel = (current + 1) % 3;
     if (position == 1) {
@@ -380,8 +468,15 @@ class VehicleController extends ChangeNotifier {
       if (newLevel > 0) _passengerHeat = 0;
     }
     notifyListeners();
+    void revert() {
+      _driverHeat = before[0];
+      _driverVent = before[1];
+      _passengerHeat = before[2];
+      _passengerVent = before[3];
+      notifyListeners();
+    }
     try {
-      await _vehicleService.setSeat(pb.SetSeatRequest(
+      final result = _mapCommand(await _vehicleService.setSeat(pb.SetSeatRequest(
         seatIndex: position,
         action: 'ventilation',
         level: newLevel,
@@ -389,8 +484,16 @@ class VehicleController extends ChangeNotifier {
         driverVent: _driverVent,
         passengerHeat: _passengerHeat,
         passengerVent: _passengerVent,
-      ));
-    } catch (_) {}
+      )));
+      if (!result.ok) {
+        revert();
+        return result.failure;
+      }
+    } catch (e) {
+      revert();
+      return e.toString();
+    }
+    return null;
   }
 
   /// Uses the pending/inFlight-tracked pattern (native: `doVehicleAction`) —
@@ -437,7 +540,7 @@ class VehicleController extends ChangeNotifier {
     String? error;
     try {
       final result = await action();
-      if (!result.ok) error = result.message ?? result.outcome ?? 'failed';
+      if (!result.ok) error = result.failure;
     } catch (e) {
       error = '$e';
     }

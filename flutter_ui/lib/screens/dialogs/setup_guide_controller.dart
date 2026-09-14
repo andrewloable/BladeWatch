@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 import '../../platform/prefs_channel.dart';
 import '../../platform/setup_channel.dart';
 import '../settings/settings_about_controller.dart' show AppVersionInfo;
+import '../../shell/disposed_safe_notifier.dart';
 
 /// First-launch / post-update setup guide — BladeWatch-yz1e.11. Ground
 /// truth: `SetupGuideDialog.java`. Two guided steps beyond the language
@@ -15,7 +16,7 @@ import '../settings/settings_about_controller.dart' show AppVersionInfo;
 /// this app's version/build come from the widget layer via
 /// `package_info_plus`, not this controller, so it needs no platform-channel
 /// mocking of its own beyond [prefs]/[setup].
-class SetupGuideController extends ChangeNotifier {
+class SetupGuideController extends ChangeNotifier with DisposedSafeNotifier {
   SetupGuideController({
     required PrefsChannel prefs,
     required SetupChannel setup,

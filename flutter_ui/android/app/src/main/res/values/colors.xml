@@ -10,4 +10,17 @@
       tables. A shared UID does not give one access to the other's resources.
     -->
     <color name="ic_launcher_background">#0B0F14</color>
+
+    <!--
+      BladeWatch-ez0z: splash colours. The owner's requirement is a PLAIN WHITE
+      background in light mode and PLAIN BLACK in dark mode, NOT the M3 surface
+      tokens, so these are literal #FFFFFF / #000000 rather than a copy of
+      color_tokens.dart.
+
+      splash_foreground tints the wordmark (and nothing else). One white wordmark
+      PNG is shipped and tinted per mode, rather than two colour variants of the
+      same asset in drawable/ and drawable-night/.
+    -->
+    <color name="splash_background">#FFFFFF</color>
+    <color name="splash_foreground">#191C1D</color>
 </resources>

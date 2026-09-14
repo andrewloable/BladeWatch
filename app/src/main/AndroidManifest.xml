@@ -205,28 +205,46 @@
     <!-- Overlay permission for floating status indicator (user must grant manually) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- BladeWatch-8h7m: the application label is service_host_label, NOT app_name.
+         This APK has no launcher icon, so its label only ever appears in system
+         surfaces: BYD's app-start management dialog, Settings then Apps, permission
+         dialogs. Sharing "BladeWatch" with net.bladewatch.flutter put two identical
+         rows in the autostart dialog with no way to tell which one gates the daemons. -->
     <application
         android:name="net.bladewatch.app.BladeWatchApplication"
         android:allowBackup="false"
-        android:label="@string/app_name"
+        android:label="@string/service_host_label"
         android:theme="@style/Theme.BladeWatch.M3"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
 
-        <!-- Launcher activity: must remain exported so the system can start the app from the home screen. -->
+        <!-- BladeWatch-81g9.1: NO LONGER A LAUNCHER ACTIVITY.
+             `net.bladewatch.flutter` is the only in-car UI the user sees and the only
+             package with a launcher entry. This activity survives because it is not
+             only UI: its onCreate runs the bootstrap nothing else runs — storage setup,
+             DeviceIdGenerator.init/generateDeviceId (which MUST complete before any
+             daemon starts, since the daemon reads the synced device-id file), the BYD
+             ACC/data-cache whitelist, DaemonStartupManager's staggered launch, and the
+             periodic update check.
+
+             Still `exported="true"` deliberately. BootReceiver starts it on
+             BOOT_COMPLETED and on MY_PACKAGE_REPLACED, and DaemonKeepaliveService
+             targets it — but it is also the recovery path a developer reaches with
+             `am start` over ADB when the Flutter APK is broken or absent. With the
+             launcher entry gone there is no other way in.
+
+             Removing the intent-filter, not the activity: the bootstrap has no other
+             home yet. See the close reason on BladeWatch-81g9.1 for why a Service was
+             not chosen. -->
         <activity 
             android:name="net.bladewatch.app.ui.MainActivity"
             android:exported="true"
+            android:excludeFromRecents="true"
             android:screenOrientation="unspecified"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:launchMode="singleTop">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:launchMode="singleTop" />
 
 
 

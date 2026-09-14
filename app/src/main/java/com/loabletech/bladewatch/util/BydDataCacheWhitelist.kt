@@ -18,6 +18,21 @@ object BydDataCacheWhitelist {
     
     private const val TAG = "BydDataCacheWhitelist"
     private const val PKG = "net.bladewatch.app"
+
+    /**
+     * The Flutter UI APK (BladeWatch-81g9.1). Once the native UI is gone this is the
+     * package the user actually sees, and BYD will background-kill it exactly as it
+     * would the daemon host.
+     *
+     * ACC whitelisting is BY PACKAGE NAME (`setPkg2AccWhiteList`), so it must be applied
+     * to both. The data-cache whitelist is NOT listed here on purpose: it keys on UID,
+     * and the two APKs share one UID via `android:sharedUserId`, so whitelisting either
+     * one already covers both. Adding it there would be a no-op that implied otherwise.
+     */
+    private const val FLUTTER_PKG = "net.bladewatch.flutter"
+
+    /** Packages needing ACC whitelisting, in the order they are applied. */
+    private val ACC_PACKAGES = listOf(PKG, FLUTTER_PKG)
     
     /**
      * Apply all BYD whitelist mechanisms.
@@ -105,8 +120,8 @@ object BydDataCacheWhitelist {
      * @param context Application or Activity context
      */
     fun whitelistAccPackage(context: Context) {
-        Log.i(TAG, "Whitelisting package $PKG via accmodemanager...")
-        
+        Log.i(TAG, "Whitelisting ${ACC_PACKAGES.joinToString()} via accmodemanager...")
+
         try {
             // Use PermissionBypassContext for BYD service access
             val permissiveContext = PermissionBypassContext(context)
@@ -125,9 +140,18 @@ object BydDataCacheWhitelist {
             // Call setPkg2AccWhiteList on mService
             val method = mService.javaClass.getDeclaredMethod("setPkg2AccWhiteList", String::class.java)
             method.isAccessible = true
-            method.invoke(mService, PKG)
-            
-            Log.i(TAG, "Whitelisted successfully via mService reflection!")
+            // Each package is whitelisted independently: one failing must not stop the
+            // other. Losing the Flutter APK to BYD's killer is a blank screen for the
+            // user; losing the daemon host stops recording. Neither should take the
+            // other down with it.
+            for (pkg in ACC_PACKAGES) {
+                try {
+                    method.invoke(mService, pkg)
+                    Log.i(TAG, "ACC whitelisted $pkg")
+                } catch (e: Exception) {
+                    Log.w(TAG, "ACC whitelist failed for $pkg: ${e.message ?: e.javaClass.simpleName}")
+                }
+            }
         } catch (e: Exception) {
             val errorMsg = e.message ?: e.javaClass.simpleName
             Log.w(TAG, "ACC Whitelist failed: $errorMsg")
@@ -142,7 +166,9 @@ object BydDataCacheWhitelist {
      * @param context Application or Activity context
      */
     fun applyDataCache(context: Context) {
-        Log.i(TAG, "Setting app data cache whitelist for $PKG...")
+        // Keyed on UID, and both APKs share one UID (android:sharedUserId), so this
+        // single call covers the Flutter UI too — see FLUTTER_PKG above.
+        Log.i(TAG, "Setting app data cache whitelist for $PKG (shared UID covers $FLUTTER_PKG)...")
         
         try {
             // Use PermissionBypassContext for BYD service access

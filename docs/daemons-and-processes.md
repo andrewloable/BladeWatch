@@ -16,7 +16,13 @@ BladeWatch is built around long-running processes that survive normal Android UI
 
 ### Activities
 
-- `MainActivity`: launcher activity and main Material navigation shell.
+- `MainActivity`: the **startup bootstrap**, not UI. Since Phase 4 it extends
+  `Activity`, never calls `setContentView`, and calls `moveTaskToBack(true)`
+  immediately. It has **no launcher `intent-filter`** — `net.bladewatch.flutter`
+  is the only launcher icon — but stays `exported="true"` so
+  `am start -n net.bladewatch.app/.ui.MainActivity` remains the ADB recovery path.
+  It is started in normal operation by the Flutter APK's `wakeServiceHost()` on
+  first resume. `ServiceHostManifestTest` pins both manifest properties.
 - `BlockerActivity`: internal activity.
 - `LocationStarterActivity`: internal activity.
 
@@ -90,7 +96,6 @@ The health check is stale-aware for the camera daemon: instead of a plain proces
 
 - `AdbShellExecutor`.
 - `DaemonLauncher`.
-- `TunnelLauncher`.
 - `ServiceLauncher`.
 
 It can start:
@@ -260,14 +265,15 @@ Zrok fronts the local HTTP server at `http://127.0.0.1:8080` and supports public
 ## Process Interaction Summary
 
 ```text
-BootReceiver / MainActivity
+BootReceiver / MainActivity (woken by the Flutter APK)
   -> DaemonKeepaliveService
   -> DaemonStartupManager
   -> AdbDaemonLauncher
   -> app_process Java daemons and extracted Zrok native binary
 
-Android UI
-  -> TCP 19876 and WebView HTTP 8080
+Flutter in-car UI (net.bladewatch.flutter, same UID)
+  -> TCP 19876 (privileged ops, via its own Kotlin MethodChannels)
+  -> HTTP 8080 (all 109 ConnectRPC methods, JWT-authenticated)
 
 Location sidecar / app helpers
   -> TCP 19877 surveillance IPC
@@ -288,4 +294,4 @@ Camera daemon
 - Daemon readiness sentinel and probe: [CameraDaemon.java:242](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L242), [CameraDaemon.java:633](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L633), [DaemonReadinessChecker.java:33](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.java#L33), [DaemonReadinessChecker.java:59](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.java#L59).
 - TCP and surveillance IPC commands: [CameraDaemonClient.java:61](../app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.java#L61), [TcpCommandServer.java:93](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L93), [TcpCommandServer.java:108](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L108), [SurveillanceIpcServer.java:75](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L75), [SurveillanceIpcServer.java:107](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L107).
 - Location sidecar IPC: [LocationSidecarService.java:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.java#L32), [AccSentryDaemon.java:2078](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.java#L2078).
-- Zrok tunnel process: [TunnelLauncher.kt:12](../app/src/main/java/com/loabletech/bladewatch/launcher/TunnelLauncher.kt#L12), [ZrokLauncher.kt:27](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L27), [ZrokLauncher.kt:1079](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L1079).
+- Zrok tunnel process: [ZrokLauncher.kt:27](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L27), [ZrokLauncher.kt:1079](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L1079).

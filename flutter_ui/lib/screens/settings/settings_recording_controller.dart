@@ -12,6 +12,7 @@ import '../../rpc/services/settings_service_client.dart';
 import '../../rpc/services/storage_service_client.dart';
 import '../../rpc/services/system_service_client.dart';
 import 'settings_recording_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 class ApplyResult {
   final bool ok;
@@ -27,7 +28,7 @@ class ApplyResult {
 /// backed by a rail icon, so this Flutter port mounts this controller only
 /// from the Settings sub-rail; the native standalone nav destination has no
 /// Flutter equivalent surface yet (documented gap, not silently dropped).
-class RecordingSettingsController extends ChangeNotifier {
+class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifier {
   RecordingSettingsController({
     required SystemServiceClient systemService,
     required RecordingsServiceClient recordingsService,

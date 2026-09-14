@@ -13,6 +13,7 @@ import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 
 import 'diagnostics_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Matches native's exact command string — see
 /// `MainActivity.kt.checkTrafficMonitorStatus()`. `pm` exit codes vary by
@@ -40,7 +41,7 @@ const _trafficMonitorStatusCommand =
 /// (running or not): "connecting" here means the tunnel daemon process is up
 /// but hasn't minted a URL yet, not literally adbd's STARTING status value,
 /// which this port has no channel to read.
-class DiagnosticsController extends ChangeNotifier {
+class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
   final DaemonChannel _daemonChannel;
   final StorageServiceClient _storageService;
   final SystemServiceClient _systemService;

@@ -92,27 +92,11 @@ public final class VehicleCommandRouter {
     }
 
     // ── Concrete commands ───────────────────────────────────────────────
-    // Commands with no local primitive on this generation keep their
-    // class/constructor for API compatibility but have
-    // no SDK path, so they resolve to NOT_SUPPORTED.
-
-    public static final class LockCommand extends VehicleCommand {
-        public String name() { return "lock"; }
-    }
-
-    public static final class UnlockCommand extends VehicleCommand {
-        public String name() { return "unlock"; }
-    }
-
-    /** Horn + lights — no local FINDCAR primitive on this gen. */
-    public static final class FindCarCommand extends VehicleCommand {
-        public String name() { return "find-car"; }
-    }
-
-    /** Lights-only flash — no local flash primitive on this gen. */
-    public static final class FlashLightsCommand extends VehicleCommand {
-        public String name() { return "flash"; }
-    }
+    // REMOVED with the BYD cloud path (BladeWatch-c2h1): Lock, Unlock, FindCar,
+    // FlashLights, BatteryHeat, ChargeSchedule and TrunkOpen. Each had NO local SDK
+    // primitive on this generation, so after 61b4d7f deleted the cloud they could
+    // only ever return NOT_SUPPORTED. Keeping them was dead surface that read like a
+    // capability. Do not reintroduce them without a real local primitive.
 
     public static final class ClimateOnCommand extends VehicleCommand {
         public final double tempCelsius;
@@ -136,18 +120,14 @@ public final class VehicleCommandRouter {
         }
     }
 
-    public static final class BatteryHeatCommand extends VehicleCommand {
-        public final boolean enabled;
-        public BatteryHeatCommand(boolean on) { this.enabled = on; }
-        public String name() { return "battery-heat"; }
-    }
-
     // ── Trunk ───────────────────────────────────────────────────────────
 
-    public static final class TrunkOpenCommand extends VehicleCommand {
-        // Treated specially in execute() — see executeTrunkOpen().
-        public String name() { return "trunk-open"; }
-    }
+    // NO TrunkOpenCommand. Opening used to be cloud unlock followed by the SDK
+    // tailgate motor, with the router firing the motor ONLY on unlock SUCCESS. The
+    // cloud unlock died in 61b4d7f, leaving an UNGATED openTailgate() that could be
+    // declined by the body controller or trip the alarm on a locked car. Removed in
+    // BladeWatch-c2h1 rather than shipped ungated. Close and stop stay: both are
+    // real local primitives and neither opens anything.
 
     public static final class TrunkCloseCommand extends VehicleCommand {
         public String name() { return "trunk-close"; }
@@ -266,21 +246,6 @@ public final class VehicleCommandRouter {
         public boolean executeViaSdk(BydDataCollector c) { return c.setSpeedLimitWarning(enabled); }
     }
 
-    /** Smart-charging schedule was a cloud-only feature — no local primitive. */
-    public static final class ChargeScheduleCommand extends VehicleCommand {
-        public final String startChargeTime;
-        public final String endChargeTime;
-        public final String chargeWay;
-        public final boolean enabled;
-        public ChargeScheduleCommand(String start, String end, String chargeWay, boolean enabled) {
-            this.startChargeTime = start;
-            this.endChargeTime = end;
-            this.chargeWay = chargeWay;
-            this.enabled = enabled;
-        }
-        public String name() { return "charge-schedule"; }
-    }
-
     /**
      * BEV charge cap — BYDAutoChargingDevice.setChargeStopCapacityState (50..100%).
      * Collector probes the framework on first write and reports false if the
@@ -313,9 +278,6 @@ public final class VehicleCommandRouter {
     // ── Routing ─────────────────────────────────────────────────────────
 
     public CommandResult execute(VehicleCommand cmd) {
-        if (cmd instanceof TrunkOpenCommand) {
-            return executeTrunkOpen();
-        }
         if (!cmd.hasSdkPath()) {
             return CommandResult.notSupported(msg("not_supported"));
         }
@@ -324,24 +286,6 @@ public final class VehicleCommandRouter {
         long elapsed = System.currentTimeMillis() - start;
         if (leg.success) return CommandResult.success(Path.SDK, msg("local_sent"), elapsed);
         return CommandResult.failed(Path.SDK, msg("not_supported"), elapsed, leg.error);
-    }
-
-    /**
-     * Trunk open via the local tailgate motor. There is no remote-unlock
-     * pre-step, so on locked vehicles the body controller may decline the
-     * motor or trip the alarm — the local primitive is invoked as-is.
-     */
-    private CommandResult executeTrunkOpen() {
-        long start = System.currentTimeMillis();
-        try {
-            boolean ok = BydDataCollector.getInstance().openTailgate();
-            long elapsed = System.currentTimeMillis() - start;
-            if (ok) return CommandResult.success(Path.SDK, msg("local_sent"), elapsed);
-            return CommandResult.failed(Path.SDK, msg("not_supported"), elapsed, null);
-        } catch (Exception e) {
-            long elapsed = System.currentTimeMillis() - start;
-            return CommandResult.failed(Path.SDK, msg("not_supported"), elapsed, e);
-        }
     }
 
     private static final class SdkLeg {
@@ -363,5 +307,15 @@ public final class VehicleCommandRouter {
 
     private static String msg(String key) {
         return net.bladewatch.app.server.Messages.get("vehicle_control." + key);
+    }
+
+    /**
+     * The localized "not supported" string, for callers that reject a command
+     * before it ever reaches {@link #execute} — e.g. trunk OPEN, which has no
+     * command class at all since BladeWatch-c2h1. Keeps those responses worded
+     * identically to the ones the router produces itself.
+     */
+    public static String notSupportedMessage() {
+        return msg("not_supported");
     }
 }

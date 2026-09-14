@@ -103,6 +103,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cd_delete => 'Xoá';
 
   @override
+  String get cd_decrease => 'Giảm';
+
+  @override
+  String get cd_increase => 'Tăng';
+
+  @override
   String get cd_expand => 'Mở rộng';
 
   @override
@@ -128,21 +134,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get overlay_trip_inactive_label => 'TRIP';
-
-  @override
-  String get log_entry_default_timestamp => '12:34:56';
-
-  @override
-  String get log_entry_default_tag => '[TAG]';
-
-  @override
-  String get log_entry_default_message => 'Thông báo đăng ký ở đây';
-
-  @override
-  String get daemon_card_default_name => 'Tên Dịch Vụ';
-
-  @override
-  String get daemon_card_default_status => 'Thông báo trạng thái';
 
   @override
   String get daemon_card_subprocesses => 'TIẾN TRÌNH';
@@ -265,7 +256,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'Nhấn vào bên dưới để mở BYD Auto-Start. Tìm BladeWatch trong danh sách và bỏ chọn ô. BYD sẽ đặt lại lựa chọn này sau mỗi lần cài đặt — bạn sẽ phải thực hiện lại sau khi cập nhật.';
+      'Nhấn bên dưới để mở BYD Auto-Start, sau đó bỏ chọn CẢ BladeWatch VÀ Dịch vụ BladeWatch. Nếu không, việc ghi hình sẽ không bắt đầu khi bạn khởi động xe — bạn phải mở ứng dụng mỗi lần. BYD xóa cài đặt này sau mỗi lần cài đặt.';
 
   @override
   String get setup_autostart_button => 'Mở BYD Auto-Start';
@@ -408,13 +399,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get webview_loading => 'Lái...';
 
   @override
-  String get webview_camera_daemon_not_running => 'Camera Chưa Chạy';
-
-  @override
-  String get webview_start_camera_daemon =>
-      'Khởi động dịch vụ Camera từ màn hình Dịch Vụ để truy cập trang này.';
-
-  @override
   String get zrok_enable_token_hint => 'Bật token';
 
   @override
@@ -463,7 +447,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get reset_cat_sentry_events_desc =>
-      'Các clip sự kiện giám sát và xe phụ JSON';
+      'Clip sự kiện giám sát và tệp JSON đi kèm';
 
   @override
   String get reset_cat_proximity => 'Các bản ghi gần gũi';
@@ -543,13 +527,14 @@ class AppLocalizationsVi extends AppLocalizations {
   String get recording_lib_date_yesterday => 'Hôm qua';
 
   @override
-  String recording_lib_clip_count(Object arg1) {
-    return 'Các clip $arg1';
-  }
-
-  @override
-  String recording_lib_clip_count_one(Object arg1) {
-    return 'Clip $arg1';
+  String recording_lib_clip_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clip',
+      one: '$arg1 clip',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -621,66 +606,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get battery_health_title => 'Sức khỏe pin';
 
   @override
-  String get battery_health_subtitle => 'Tình trạng sức khỏe';
-
-  @override
-  String get battery_health_dashes => '--';
-
-  @override
-  String get battery_health_waiting => 'Chờ đợi dữ liệu...';
-
-  @override
-  String get battery_health_source => 'Nguồn';
-
-  @override
-  String get battery_health_method => 'Phương pháp';
-
-  @override
-  String get battery_health_capacity => 'Công suất';
-
-  @override
-  String get battery_health_samples => 'Các mẫu';
-
-  @override
-  String get battery_health_last_updated => 'Được cập nhật cuối cùng';
-
-  @override
   String get battery_health_unavailable => 'Không khả dụng';
 
   @override
   String get battery_health_unavailable_desc =>
       'Ước tính tình trạng pin không khả dụng.';
-
-  @override
-  String get battery_health_reset => 'Đặt lại ước tính SOH';
-
-  @override
-  String get battery_health_reset_desc =>
-      'Xóa tất cả dữ liệu và đánh giá lại từ đầu. Sử dụng nếu pin đã được thay thế hoặc đọc có vẻ không chính xác.';
-
-  @override
-  String get soh_dialog_model_label => 'Mẫu xe';
-
-  @override
-  String get soh_dialog_pack_capacity_label => 'Công suất đóng gói';
-
-  @override
-  String get soh_dialog_estimated_capacity_label => 'Công suất hiệu quả';
-
-  @override
-  String get soh_dialog_calibration_anchor_label => 'Đường độ cuối cùng';
-
-  @override
-  String get soh_dialog_source_user => 'User-set';
-
-  @override
-  String get soh_dialog_source_auto => 'tự phát hiện';
-
-  @override
-  String get soh_dialog_model_not_selected => 'Không được chọn';
-
-  @override
-  String get soh_dialog_capacity_not_detected => 'Không được phát hiện';
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
@@ -748,7 +678,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'Bộ máy ảnh $arg1 — chu kỳ ACC tiếp theo';
+    return 'Đã đặt camera $arg1 — chu kỳ ACC tiếp theo';
   }
 
   @override
@@ -769,19 +699,6 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String toast_failed_with_message_x(Object arg1) {
     return 'Không thành công: $arg1';
-  }
-
-  @override
-  String get toast_soh_reset_success =>
-      'Đặt lại ước tính SOH — sẽ tính lại từ dữ liệu tiếp theo';
-
-  @override
-  String get toast_soh_reset_failed_no_daemon =>
-      'Đặt lại thất bại — dịch vụ không phản hồi và không thể ghi file';
-
-  @override
-  String toast_soh_reset_failed_with_message(Object arg1) {
-    return 'Đặt lại không thành công: $arg1';
   }
 
   @override
@@ -1044,8 +961,16 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String log_header_truncated(Object arg1) {
-    return 'LƯU Ý: Nhóm nhật ký được cắt ngắn để kéo dài 10000 dòng (tổng số: $arg1 dòng)';
+  String log_header_truncated(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other:
+          'LƯU Ý: nhật ký đã bị cắt, chỉ còn 10000 dòng cuối (tổng cộng: $arg1 dòng)',
+      one:
+          'LƯU Ý: nhật ký đã bị cắt, chỉ còn 10000 dòng cuối (tổng cộng: $arg1 dòng)',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1469,8 +1394,14 @@ class AppLocalizationsVi extends AppLocalizations {
   String get diagnostics_network_offline => 'Ngoại tuyến';
 
   @override
-  String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return 'Các clip $arg1 · $arg2 được sử dụng';
+  String diagnostics_storage_used_line(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clip · $arg2 đã dùng',
+      one: '$arg1 clip · $arg2 đã dùng',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1562,56 +1493,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get vehicle_dialog_title => 'Đặt dung lượng pin';
 
   @override
-  String get vehicle_dialog_capacity_label => 'Dung lượng (kWh)';
-
-  @override
-  String get vehicle_dialog_capacity_suffix => 'kWh';
-
-  @override
-  String get vehicle_dialog_capacity_helper =>
-      '8 đến 120 kWh. Thoát để sử dụng mô hình mặc định.';
-
-  @override
   String get vehicle_dialog_model_label => 'Mẫu xe';
 
   @override
   String get vehicle_dialog_save => 'Lưu';
-
-  @override
-  String get vehicle_dialog_reset => 'Đặt lại về tự động nhận diện';
-
-  @override
-  String get vehicle_dialog_invalid_capacity => 'Công suất phải là 8 - 120 kWh';
-
-  @override
-  String vehicle_dialog_summary_capacity(Object arg1) {
-    return 'Công suất: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_soh(Object arg1) {
-    return 'SOH: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_live(Object arg1) {
-    return '$arg1% (trực tiếp)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_calibration(Object arg1) {
-    return '$arg1% (từ lần sạc gần nhất)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_oem(Object arg1) {
-    return '$arg1% (xe)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_nominal(Object arg1) {
-    return '$arg1% (danh nghĩa)';
-  }
 
   @override
   String get settings_recording_tab_status => 'Trạng thái';
@@ -1715,8 +1600,14 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String settings_recording_storage_files(Object arg1) {
-    return '$arg1 bản ghi';
+  String settings_recording_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 bản ghi',
+      one: '$arg1 bản ghi',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1798,24 +1689,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_daemons_zrok_reset_button => 'Đặt lại môi trường';
-
-  @override
-  String vehicle_dialog_summary_effective(Object arg1) {
-    return 'Tính hiệu quả: $arg1 kWh';
-  }
-
-  @override
-  String vehicle_dialog_summary_model(Object arg1) {
-    return 'Mẫu xe: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return 'Đường độ cuối cùng: $arg1% trên $arg2';
-  }
-
-  @override
-  String get vehicle_dialog_soh_unavailable => 'không có sẵn';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -1996,13 +1869,14 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settings_privacy_storage_unavailable => 'Không có sẵn';
 
   @override
-  String settings_privacy_storage_count_format(Object arg1) {
-    return 'Clip $arg1';
-  }
-
-  @override
-  String settings_privacy_storage_count_format_plural(Object arg1) {
-    return 'Các clip $arg1';
+  String settings_privacy_storage_count_format_plural(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clip',
+      one: '$arg1 clip',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2062,110 +1936,12 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get dashboard_insight_welcome =>
-      'Chào mừng — BladeWatch giờ là đôi mắt thứ hai của bạn.';
-
-  @override
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
-    return 'Nhặt $arg1 (≈$arg2) trong khi đỗ xe';
-  }
-
-  @override
-  String dashboard_insight_parked_charged(Object arg1) {
-    return 'Nhặt $arg1 trong khi đỗ xe';
-  }
-
-  @override
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
-    return 'Sử dụng $arg1 (≈$arg2) kể từ khi bạn đậu xe';
-  }
-
-  @override
-  String dashboard_insight_parked_drained(Object arg1) {
-    return 'Tôi đã sử dụng $arg1 kể từ khi bạn đỗ xe.';
-  }
-
-  @override
-  String dashboard_insight_last_alert(Object arg1) {
-    return 'Báo cảnh giám sát cuối cùng: $arg1';
-  }
-
-  @override
-  String dashboard_insight_last_charge(Object arg1, Object arg2) {
-    return 'Lạc cuối cùng: +$arg1 trong $arg2';
-  }
-
-  @override
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return 'Các clip $arg1 · $arg2 ghi lại';
-  }
-
-  @override
-  String dashboard_insight_kwh_format(Object arg1) {
-    return '$arg1 kWh';
-  }
-
-  @override
-  String dashboard_insight_percent_format(Object arg1) {
-    return '$arg1%';
-  }
-
-  @override
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 giờ $arg2 phút';
-  }
-
-  @override
-  String dashboard_insight_today_clips(num arg1) {
+  String dashboard_insight_storage_milestone(num arg1, Object arg2) {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: 'Các đoạn phim $arg1 được ghi lại hôm nay',
-      one: 'Video $arg1 được ghi lại hôm nay',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: 'Chuyển đường trên mạng trong $arg1 ngày, $arg2 giờ',
-      one: 'Chuyển trên mạng cho ngày $arg1, $arg2 giờ',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: 'Chuyển đường trên mạng trong $arg1 giờ',
-      one: 'Chuyển đường trên mạng trong giờ $arg1',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_minutes(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 min',
-      one: '$arg1 min',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 hr',
-      one: '$arg1 hr',
+      other: '$arg1 clip · đã ghi $arg2',
+      one: '$arg1 clip · đã ghi $arg2',
     );
     return '$_temp0';
   }
@@ -2280,6 +2056,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get vehicle_all_windows => 'Tất cả cửa kính';
+
+  @override
+  String get vehicle_window_awake_note => 'Chỉ hoạt động khi xe đang thức.';
 
   @override
   String get vehicle_window_front_left => 'Trước trái';
@@ -2559,7 +2338,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'Ước tính BYD: $km km';
+    return 'Ước tính BYD: $km';
   }
 
   @override
@@ -2921,8 +2700,14 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String surveillance_storage_files(Object arg1) {
-    return '$arg1 sự kiện';
+  String surveillance_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 sự kiện',
+      one: '$arg1 sự kiện',
+    );
+    return '$_temp0';
   }
 
   @override

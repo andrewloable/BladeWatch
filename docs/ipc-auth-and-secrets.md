@@ -118,20 +118,37 @@ has its own command pair on 19876 (BladeWatch-hygs):
 These exist because the Flutter APK (`net.bladewatch.flutter`) has no path to
 `/storage/emulated/0/BladeWatch/data/bladewatch_config.json`, which is where the
 Status-overlay and Privacy settings live. Reads go through the same typed
-accessors the native UI uses (`getStatusOverlay()`, `isTimingLogsEnabled()`,
-`isDebugLogsEnabled()`) so the DEFAULT for an absent key is identical on both
-UIs — `cameraVisible`/`tripVisible`/`timingLogsEnabled` default true,
-`debugLogsEnabled` false.
+accessors `StatusOverlayService` itself uses (`getStatusOverlay()`,
+`isTimingLogsEnabled()`, `isDebugLogsEnabled()`) so the DEFAULT for an absent key
+is identical on both sides of the UID — `cameraVisible`/`tripVisible`/
+`timingLogsEnabled` default true, `debugLogsEnabled` false.
 
-**They are allow-listed, deliberately.** `TcpCommandServer.PUBLIC_CONFIG_SECTIONS`
-admits exactly `statusOverlay` and `developerOptions`; every other section is
-refused with `Section not exposed over IPC: <name>`, reads included. Without
-that, this pair would be a generic "write anything to the public config"
-primitive — enough to flip `network.lanHttpEnabled` (which decides whether the
-HTTP server binds beyond loopback) or set `surveillance.surveillanceEnabled`
-false, neither of which gets any validation on this path. **If a new section
-needs to be reachable, add it to the allow-list only after checking what a
-caller could do by writing every key in it.**
+**They are allow-listed, deliberately, and READ and WRITE have separate lists
+(`BladeWatch-i2wv`).**
+
+| Gate | Set | Sections |
+|---|---|---|
+| Write (`config_put`) | `PUBLIC_CONFIG_SECTIONS` | `statusOverlay`, `developerOptions` |
+| Read (`config_get_section`) | `PUBLIC_CONFIG_READABLE_SECTIONS` | the two above **plus** `camera` |
+
+Every other section is refused with `Section not exposed over IPC: <name>`, reads
+included. Without that, `config_put` would be a generic "write anything to the
+public config" primitive — enough to flip `network.lanHttpEnabled` (which decides
+whether the HTTP server binds beyond loopback) or set
+`surveillance.surveillanceEnabled` false, neither of which gets any validation on
+this path.
+
+`camera` is **readable but not writable**: the Diagnostics camera-probe tile needs
+to read it, and putting it in the single old list would have handed every IPC
+caller unvalidated *write* access to camera configuration to satisfy a read-only
+tile. The read also **projects only `probedCameraId` and `manualOverride`** — the
+raw section additionally carries `firmwareFingerprint`, `buildDisplay` and
+`productDevice`, which are not returned. Anything that genuinely needs to change
+camera config uses its purpose-built, validating command.
+
+**If a new section needs to be reachable, add it to the narrower list that
+actually covers the need, and only after checking what a caller could do with
+every key in it.**
 
 Both commands sit behind the same caller-UID gate and IPC token as `secret_*` —
 they are not a separate trust boundary, just a narrower command.

@@ -69,17 +69,10 @@ public class VehicleControlApiHandler {
             return true;
         }
 
-        // POST /api/vehicle/lock
-        if (cleanPath.equals("/api/vehicle/lock") && method.equals("POST")) {
-            handleLock(out);
-            return true;
-        }
-
-        // POST /api/vehicle/unlock
-        if (cleanPath.equals("/api/vehicle/unlock") && method.equals("POST")) {
-            handleUnlock(out);
-            return true;
-        }
+        // REMOVED in BladeWatch-c2h1 with the rest of the cloud-only surface:
+        //   /api/vehicle/{lock,unlock,flash,find-car,battery-heat,charging-schedule}
+        // None had a local SDK primitive, so after 61b4d7f deleted the BYD cloud they
+        // could only ever answer NOT_SUPPORTED. Trunk OPEN went too — see handleTrunk.
 
         // POST /api/vehicle/trunk
         if (cleanPath.equals("/api/vehicle/trunk") && method.equals("POST")) {
@@ -90,12 +83,6 @@ public class VehicleControlApiHandler {
         // POST /api/vehicle/window
         if (cleanPath.equals("/api/vehicle/window") && method.equals("POST")) {
             handleWindow(out, body);
-            return true;
-        }
-
-        // POST /api/vehicle/flash
-        if (cleanPath.equals("/api/vehicle/flash") && method.equals("POST")) {
-            handleFlash(out);
             return true;
         }
 
@@ -120,30 +107,6 @@ public class VehicleControlApiHandler {
         // POST /api/vehicle/adas
         if (cleanPath.equals("/api/vehicle/adas") && method.equals("POST")) {
             handleAdas(out, body);
-            return true;
-        }
-
-        // POST /api/vehicle/find-car
-        if (cleanPath.equals("/api/vehicle/find-car") && method.equals("POST")) {
-            handleFindCar(out);
-            return true;
-        }
-
-        // POST /api/vehicle/battery-heat
-        if (cleanPath.equals("/api/vehicle/battery-heat") && method.equals("POST")) {
-            handleBatteryHeat(out, body);
-            return true;
-        }
-
-        // GET /api/vehicle/charging-schedule
-        if (cleanPath.equals("/api/vehicle/charging-schedule") && method.equals("GET")) {
-            handleGetChargingSchedule(out);
-            return true;
-        }
-
-        // POST /api/vehicle/charging-schedule
-        if (cleanPath.equals("/api/vehicle/charging-schedule") && method.equals("POST")) {
-            handleChargingSchedule(out, body);
             return true;
         }
 
@@ -432,85 +395,42 @@ public class VehicleControlApiHandler {
     }
 
     /**
-     * Lock the car via the routing layer (cloud-first → SDK fallback).
-     */
-    private static void handleLock(OutputStream out) throws Exception {
-        CommandResult r = VehicleCommandRouter.getInstance()
-                .execute(new VehicleCommandRouter.LockCommand());
-        logger.info("Lock: routed result=" + r.outcome + " path=" + r.path);
-        HttpResponse.sendJson(out, routedResponse(r, "lock").toString());
-    }
-
-    /**
-     * Unlock the car via the routing layer.
-     */
-    private static void handleUnlock(OutputStream out) throws Exception {
-        CommandResult r = VehicleCommandRouter.getInstance()
-                .execute(new VehicleCommandRouter.UnlockCommand());
-        logger.info("Unlock: routed result=" + r.outcome + " path=" + r.path);
-        HttpResponse.sendJson(out, routedResponse(r, "unlock").toString());
-    }
-
-    /**
-     * Find car (horn + lights) — cloud-only on this BYD generation.
-     */
-    private static void handleFindCar(OutputStream out) throws Exception {
-        CommandResult r = VehicleCommandRouter.getInstance()
-                .execute(new VehicleCommandRouter.FindCarCommand());
-        logger.info("FindCar: routed result=" + r.outcome + " path=" + r.path);
-        HttpResponse.sendJson(out, routedResponse(r, "find-car").toString());
-    }
-
-    /**
-     * Battery preconditioning heat — cloud-only.
-     * Body: { "on": bool }  (ConnectRPC, proto field name)
-     *    or { "enabled": bool } (legacy REST)
-     */
-    private static void handleBatteryHeat(OutputStream out, String body) throws Exception {
-        boolean enabled = false;
-        if (body != null && !body.isEmpty()) {
-            try {
-                JSONObject req = new JSONObject(body);
-                // Accept proto "on" first (explicit-presence optional bool — always sent
-                // even when false now that the field is optional in the proto), then
-                // fall back to legacy "enabled".
-                if (req.has("on")) {
-                    enabled = req.optBoolean("on", false);
-                } else {
-                    enabled = req.optBoolean("enabled", false);
-                }
-            } catch (Exception ignored) {
-                logger.warn("Failed to parse batteryHeat body: " + ignored.getMessage());
-            }
-        }
-        CommandResult r = VehicleCommandRouter.getInstance()
-                .execute(new VehicleCommandRouter.BatteryHeatCommand(enabled));
-        logger.info("BatteryHeat: routed result=" + r.outcome + " enabled=" + enabled);
-        JSONObject resp = routedResponse(r, "battery-heat");
-        try { resp.put("enabled", enabled); } catch (Exception ignored) {
-            logger.warn("Failed to set enabled in batteryHeat response: " + ignored.getMessage());
-        }
-        HttpResponse.sendJson(out, resp.toString());
-    }
-
-    /**
-     * Trunk control routed via the command router.
-     * Open: cloud unlock → SDK tailgate (router enforces the safety: motor only fires on unlock SUCCESS).
-     * Close / stop: SDK direct.
-     * Body: { "action": "open" | "close" | "stop" }
+     * Trunk CLOSE and STOP, routed via the command router. Both are local SDK.
+     *
+     * <p><b>OPEN IS NOT SUPPORTED and must not be reintroduced without a real
+     * interlock.</b> Open used to be cloud unlock then SDK tailgate, with the
+     * router firing the motor ONLY on unlock SUCCESS. Commit 61b4d7f deleted the
+     * cloud unlock, which left {@code openTailgate()} being called unconditionally:
+     * on a locked car the body controller may decline the motor or set off the
+     * alarm, with nothing warning the driver. Removed in BladeWatch-c2h1.
+     *
+     * <p>Close and stop are safe by construction: neither opens anything, and both
+     * map to real local primitives ({@code closeTailgate} / {@code stopTailgate}).
+     *
+     * Body: { "action": "close" | "stop" }. Anything else answers NOT_SUPPORTED.
      */
     private static void handleTrunk(OutputStream out, String body) throws Exception {
-        String action = "open";
+        String action = "";
         if (body != null && !body.isEmpty()) {
-            try { action = new JSONObject(body).optString("action", "open"); }
+            try { action = new JSONObject(body).optString("action", ""); }
             catch (Exception ignored) {
                 logger.warn("Failed to parse trunk body: " + ignored.getMessage());
             }
         }
         VehicleCommand cmd;
-        if ("close".equals(action)) cmd = new VehicleCommandRouter.TrunkCloseCommand();
-        else if ("stop".equals(action)) cmd = new VehicleCommandRouter.TrunkStopCommand();
-        else cmd = new VehicleCommandRouter.TrunkOpenCommand();
+        if ("close".equals(action)) {
+            cmd = new VehicleCommandRouter.TrunkCloseCommand();
+        } else if ("stop".equals(action)) {
+            cmd = new VehicleCommandRouter.TrunkStopCommand();
+        } else {
+            // Includes "open" and the previous default of "open" on a missing action.
+            logger.info("Trunk: action=" + action + " not supported");
+            HttpResponse.sendJson(out, routedResponse(
+                    CommandResult.notSupported(
+                            VehicleCommandRouter.notSupportedMessage()),
+                    action.isEmpty() ? "trunk" : action).toString());
+            return;
+        }
 
         CommandResult r = VehicleCommandRouter.getInstance().execute(cmd);
         logger.info("Trunk: action=" + action + " routed result=" + r.outcome + " path=" + r.path);
@@ -526,8 +446,9 @@ public class VehicleControlApiHandler {
      *   { "area": 1-4,                              "targetPercent": 0..100 }
      *   { "area": 5-6, (Sunroof and Sunshade),      "targetPercent": 0..100 }
      *
-     * area=0 + command=2 routes through CloseAllWindowsCommand (CLOUD_FIRST,
-     * with cloud CLOSEWINDOW). All other paths are SDK_ONLY.
+     * area=0 + command=2 routes through CloseAllWindowsCommand, which has its own
+     * local primitive (setAllWindowsCommand(2)). Every path here is local SDK —
+     * the cloud CLOSEWINDOW strategy was removed in 61b4d7f.
      */
     private static void handleWindow(OutputStream out, String body) throws Exception {
         JSONObject response = new JSONObject();
@@ -568,7 +489,9 @@ public class VehicleControlApiHandler {
                 command = req.optInt("command", 2); // default close
             }
             VehicleCommand cmd;
-            // "Close all" gets the cloud CLOSEWINDOW path (works while car is asleep).
+            // "Close all" has its own SDK primitive (setAllWindowsCommand) rather than
+            // looping the four windows. It no longer works while the car is asleep —
+            // that came from the cloud CLOSEWINDOW command, removed in 61b4d7f.
             if (area == 0 && command == 2) {
                 cmd = new VehicleCommandRouter.CloseAllWindowsCommand();
             } else {
@@ -589,19 +512,10 @@ public class VehicleControlApiHandler {
     }
 
     /**
-     * Flash lights routed via the router.
-     */
-    private static void handleFlash(OutputStream out) throws Exception {
-        CommandResult r = VehicleCommandRouter.getInstance()
-                .execute(new VehicleCommandRouter.FlashLightsCommand());
-        logger.info("Flash: routed result=" + r.outcome + " path=" + r.path);
-        HttpResponse.sendJson(out, routedResponse(r, "flash").toString());
-    }
-
-    /**
      * Climate control routed through the command router.
-     * power_on / power_off → CLOUD_FIRST (OPENAIR / CLOSEAIR with SDK fallback).
-     * set_temp / set_fan / max_cooling → SDK_ONLY (no granular cloud command exposed).
+     * Every action is local SDK. power_on / power_off used to be cloud-first
+     * (OPENAIR / CLOSEAIR) with an SDK fallback; the cloud leg was removed in
+     * 61b4d7f, leaving only what was the fallback.
      * Body: { "action": "power_on"|"power_off"|"set_temp"|"set_fan"|"max_cooling",
      *         "zone": 1|2, "temp": 17-33, "fan": 1-7,
      *         "enabled": true|false, "restoreTemp": 17-33, "restoreFan": 1-7, "restorePowerOn": true|false }
@@ -677,10 +591,13 @@ public class VehicleControlApiHandler {
     }
 
     /**
-     * Seat heating / ventilation / memory-recall — cloud-first (VENTILATIONHEATING)
-     * with SDK fallback. The cloud command is stateful, so heat+vent commands need
-     * the FULL state of driver+passenger seats. The JS keeps that state and sends
-     * it on every seat command.
+     * Seat heating / ventilation / memory-recall — local SDK. This was cloud-first
+     * (VENTILATIONHEATING) with an SDK fallback until 61b4d7f removed the cloud leg.
+     *
+     * <p>The full-state payload below is a leftover of that: the cloud command was
+     * stateful, so heat+vent commands carried the FULL state of driver+passenger
+     * seats, and the client still sends it on every seat command. Harmless, but do
+     * not mistake it for something the SDK path needs.
      *
      * Body: { "action": "heating"|"ventilation"|"position",
      *         "position": 1-4, "level": 0-3,
@@ -845,94 +762,6 @@ public class VehicleControlApiHandler {
     }
 
     /**
-     * Charging schedule — CLOUD_ONLY. Wraps BYD's saveOrUpdate (window + repeat)
-     * and changeChargeStatue (master switch). Payload mirrors pyBYD:
-     * <pre>
-     *   { startChargeTime: "HH:MM",
-     *     endChargeTime:   "HH:MM" | "full",
-     *     chargeWay:       "s" | "e" | "0,1,2,3,4",
-     *     enabled:         boolean }
-     * </pre>
-     * If only {@code enabled} is provided, the master toggle runs alone.
-     */
-    private static void handleChargingSchedule(OutputStream out, String body) throws Exception {
-        JSONObject response = new JSONObject();
-        try {
-            JSONObject req = (body == null || body.isEmpty()) ? new JSONObject() : new JSONObject(body);
-            boolean hasStart = req.has("startChargeTime");
-            boolean hasEnd = req.has("endChargeTime");
-            boolean hasWay = req.has("chargeWay");
-            boolean hasEnabled = req.has("enabled");
-            boolean scheduleFields = hasStart || hasEnd || hasWay;
-            if (!scheduleFields && !hasEnabled) {
-                response.put("success", false);
-                response.put("error", Messages.get("errors.vehicle_unknown_action_with_action", "charging-schedule"));
-                HttpResponse.sendJson(out, response.toString());
-                return;
-            }
-            if (scheduleFields && !(hasStart && hasEnd && hasWay)) {
-                response.put("success", false);
-                response.put("error", "startChargeTime, endChargeTime, and chargeWay must be provided together");
-                HttpResponse.sendJson(out, response.toString());
-                return;
-            }
-
-            // Toggle-only request — just hit changeChargeStatue.
-            if (!scheduleFields) {
-                boolean enabled = req.getBoolean("enabled");
-                CommandResult r = VehicleCommandRouter.getInstance()
-                        .execute(new VehicleCommandRouter.SmartChargingToggleCommand(enabled));
-                logger.info("ChargingSchedule: toggle enabled=" + enabled + " " + r.outcome);
-                JSONObject resp = routedResponse(r, "smart-charging-toggle");
-                resp.put("enabled", enabled);
-                HttpResponse.sendJson(out, resp.toString());
-                return;
-            }
-
-            // Full save — saveOrUpdate carries its own status, no pre-toggle needed.
-            String start = req.getString("startChargeTime");
-            String end = req.getString("endChargeTime");
-            String way = req.getString("chargeWay");
-            boolean enabled = hasEnabled ? req.getBoolean("enabled") : true;
-            CommandResult r = VehicleCommandRouter.getInstance()
-                    .execute(new VehicleCommandRouter.ChargeScheduleCommand(start, end, way, enabled));
-            logger.info("ChargingSchedule: save start=" + start + " end=" + end
-                    + " way=" + way + " enabled=" + enabled + " " + r.outcome);
-            JSONObject resp = routedResponse(r, "charge-schedule");
-            resp.put("startChargeTime", start);
-            resp.put("endChargeTime", end);
-            resp.put("chargeWay", way);
-            resp.put("enabled", enabled);
-            HttpResponse.sendJson(out, resp.toString());
-        } catch (Exception e) {
-            logger.warn("ChargingSchedule command failed: " + e.getMessage());
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            HttpResponse.sendJson(out, response.toString());
-        }
-    }
-
-    /**
-     * Charging-schedule state. The readback source (BYD cloud) has been
-     * removed, so this now always reports unsupported.
-     */
-    private static void handleGetChargingSchedule(OutputStream out) throws Exception {
-        JSONObject resp = new JSONObject();
-        try {
-            // Charging-schedule readback was sourced from BYD cloud, which has
-            // been removed. Report unsupported so the UI hides the section.
-            resp.put("success", true);
-            resp.put("supported", false);
-            resp.put("reason", "cloud_not_configured");
-        } catch (Exception e) {
-            logger.warn("ChargingSchedule read failed: " + e.getMessage());
-            resp.put("success", false);
-            resp.put("error", e.getMessage());
-        }
-        HttpResponse.sendJson(out, resp.toString());
-    }
-
-    /**
      * BEV charge cap — SDK_ONLY via BYDAutoChargingDevice
      * setChargeStopCapacityState + setChargeStopSwitchState. The Seal HAL
      * historically reports getChargeStopSupportConfig=0; the collector probes
@@ -1093,7 +922,9 @@ public class VehicleControlApiHandler {
      * Build the response JSON shape the new vehicle-control UI expects:
      *   { success, path, latencyMs, message, action, outcome, commandSuccess }
      * — `success` is true on routed SUCCESS,
-     * — `path` is "cloud" / "local" / "cloud-then-local" / "none",
+     * — `path` is "local" or "none" (CommandResult.pathString maps Path.SDK to
+     *   "local", everything else to "none"; the old "cloud" / "cloud-then-local"
+     *   values went with the cloud path in 61b4d7f),
      * — `message` is a localized user-facing string,
      * — `commandSuccess` mirrors `success` so legacy UI branches still work.
      */

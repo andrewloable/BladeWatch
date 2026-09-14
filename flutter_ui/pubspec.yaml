@@ -106,6 +106,10 @@ flutter:
   # resolve unmodified under webview_flutter's loadFlutterAsset().
   assets:
     - assets/LICENSE.txt
+    # BladeWatch-ez0z: the app icon, for the in-app brand lockup shown while
+    # the app starts. Android mipmaps are not reachable from Dart, so the
+    # xxxhdpi foreground is shipped as a Flutter asset and scaled down.
+    - assets/brand/app_icon.png
     - assets/web/hero/hero.html
     - assets/web/shared/vendor/
     - assets/web/shared/vendor/draco/

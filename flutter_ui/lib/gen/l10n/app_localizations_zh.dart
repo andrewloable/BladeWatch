@@ -103,6 +103,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cd_delete => '删除';
 
   @override
+  String get cd_decrease => '减少';
+
+  @override
+  String get cd_increase => '增加';
+
+  @override
   String get cd_expand => '展开';
 
   @override
@@ -128,21 +134,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get overlay_trip_inactive_label => '旅行';
-
-  @override
-  String get log_entry_default_timestamp => '12:34:56';
-
-  @override
-  String get log_entry_default_tag => '[TAG]';
-
-  @override
-  String get log_entry_default_message => '在此记录消息';
-
-  @override
-  String get daemon_card_default_name => '服务名称';
-
-  @override
-  String get daemon_card_default_status => '状态信息';
 
   @override
   String get daemon_card_subprocesses => '进程';
@@ -261,7 +252,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      '按下来打开BYD自动启动. 在列表中找到BladeWatch,并打消框.BYD在每次安装时都会擦除它.';
+      '点击下方打开 BYD 自启动管理，取消勾选 BladeWatch 和 BladeWatch 服务两项。否则车辆通电后不会自动开始录制，每次都需要手动打开应用。BYD 在每次安装后都会重置此设置。';
 
   @override
   String get setup_autostart_button => '开启BYD自动启动';
@@ -401,12 +392,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webview_loading => '装载...';
 
   @override
-  String get webview_camera_daemon_not_running => '摄像头未运行';
-
-  @override
-  String get webview_start_camera_daemon => '请在\"服务\"页面启动摄像头服务以访问此页面。';
-
-  @override
   String get zrok_enable_token_hint => '启用令牌';
 
   @override
@@ -449,7 +434,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reset_cat_sentry_events => '监控活动';
 
   @override
-  String get reset_cat_sentry_events_desc => '监视活动剪辑和JSON侧车';
+  String get reset_cat_sentry_events_desc => '监控事件片段和配套 JSON 文件';
 
   @override
   String get reset_cat_proximity => '近距离记录';
@@ -529,13 +514,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recording_lib_date_yesterday => '昨天';
 
   @override
-  String recording_lib_clip_count(Object arg1) {
-    return '片$arg1';
-  }
-
-  @override
-  String recording_lib_clip_count_one(Object arg1) {
-    return '$arg1剪辑';
+  String recording_lib_clip_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 个片段',
+      one: '$arg1 个片段',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -607,65 +593,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get battery_health_title => '电池健康';
 
   @override
-  String get battery_health_subtitle => '卫生状况';
-
-  @override
-  String get battery_health_dashes => '--';
-
-  @override
-  String get battery_health_waiting => '在等待数据...';
-
-  @override
-  String get battery_health_source => '来源';
-
-  @override
-  String get battery_health_method => '方法';
-
-  @override
-  String get battery_health_capacity => '产能';
-
-  @override
-  String get battery_health_samples => '样本';
-
-  @override
-  String get battery_health_last_updated => '最后更新';
-
-  @override
   String get battery_health_unavailable => '不可用';
 
   @override
   String get battery_health_unavailable_desc => '电池健康度估算不可用。';
-
-  @override
-  String get battery_health_reset => '重置SOH估计';
-
-  @override
-  String get battery_health_reset_desc =>
-      '清除所有数据并从零重新估算。如果更换了电池或读数看起来不正确，请使用此功能。';
-
-  @override
-  String get soh_dialog_model_label => '车型';
-
-  @override
-  String get soh_dialog_pack_capacity_label => '包装容量';
-
-  @override
-  String get soh_dialog_estimated_capacity_label => '有效产能';
-
-  @override
-  String get soh_dialog_calibration_anchor_label => '最后校准';
-
-  @override
-  String get soh_dialog_source_user => '用户组';
-
-  @override
-  String get soh_dialog_source_auto => '自动检测';
-
-  @override
-  String get soh_dialog_model_not_selected => '没有选择';
-
-  @override
-  String get soh_dialog_capacity_not_detected => '没有发现';
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
@@ -732,7 +663,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return '摄像头$arg1设置 下一个ACC周期';
+    return '已设置摄像头 $arg1 — 下一个 ACC 周期生效';
   }
 
   @override
@@ -750,17 +681,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String toast_failed_with_message_x(Object arg1) {
     return '失败:$arg1';
-  }
-
-  @override
-  String get toast_soh_reset_success => 'SOH估计重置 将从下一个数据中重新计算';
-
-  @override
-  String get toast_soh_reset_failed_no_daemon => '重置失败——服务无响应且文件不可写';
-
-  @override
-  String toast_soh_reset_failed_with_message(Object arg1) {
-    return '重置失败:$arg1';
   }
 
   @override
@@ -1010,8 +930,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String log_header_truncated(Object arg1) {
-    return '注:截至10000行的日志 (总数:$arg1行)';
+  String log_header_truncated(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '注：日志已截断为最后 10000 行（共 $arg1 行）',
+      one: '注：日志已截断为最后 10000 行（共 $arg1 行）',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1417,8 +1343,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagnostics_network_offline => '离线';
 
   @override
-  String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return '使用的$arg1剪辑 ·$arg2';
+  String diagnostics_storage_used_line(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 个片段 · 已用 $arg2',
+      one: '$arg1 个片段 · 已用 $arg2',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1506,55 +1438,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_dialog_title => '设置电池容量';
 
   @override
-  String get vehicle_dialog_capacity_label => '容量 (kWh)';
-
-  @override
-  String get vehicle_dialog_capacity_suffix => 'kWh';
-
-  @override
-  String get vehicle_dialog_capacity_helper => '8至120 kWh。保留以使用模型默认值。';
-
-  @override
   String get vehicle_dialog_model_label => '车型';
 
   @override
   String get vehicle_dialog_save => '保存';
-
-  @override
-  String get vehicle_dialog_reset => '重置为自动检测';
-
-  @override
-  String get vehicle_dialog_invalid_capacity => '容量必须为8-120kWh';
-
-  @override
-  String vehicle_dialog_summary_capacity(Object arg1) {
-    return '容量:$arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_soh(Object arg1) {
-    return 'SOH: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_live(Object arg1) {
-    return '$arg1%(实时)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_calibration(Object arg1) {
-    return '$arg1%(上次充电)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_oem(Object arg1) {
-    return '$arg1%(车辆)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_nominal(Object arg1) {
-    return '$arg1%(标称)';
-  }
 
   @override
   String get settings_recording_tab_status => '状态';
@@ -1651,8 +1538,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String settings_recording_storage_files(Object arg1) {
-    return '$arg1 个录制';
+  String settings_recording_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 段录像',
+      one: '$arg1 段录像',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1728,24 +1621,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settings_daemons_zrok_reset_button => '重置环境';
-
-  @override
-  String vehicle_dialog_summary_effective(Object arg1) {
-    return '有效:$arg1 kWh';
-  }
-
-  @override
-  String vehicle_dialog_summary_model(Object arg1) {
-    return '车型: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return '最后校准:$arg1% 在$arg2';
-  }
-
-  @override
-  String get vehicle_dialog_soh_unavailable => '无法获取';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -1916,13 +1791,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_privacy_storage_unavailable => '无法使用';
 
   @override
-  String settings_privacy_storage_count_format(Object arg1) {
-    return '$arg1剪辑';
-  }
-
-  @override
-  String settings_privacy_storage_count_format_plural(Object arg1) {
-    return '片$arg1';
+  String settings_privacy_storage_count_format_plural(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 个片段',
+      one: '$arg1 个片段',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1980,109 +1856,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dashboard_insight_welcome => '欢迎您 过度驱动是您的第二双眼睛.';
-
-  @override
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
-    return '在停车时拿到$arg1 (≈$arg2)';
-  }
-
-  @override
-  String dashboard_insight_parked_charged(Object arg1) {
-    return '在停车时拿到$arg1';
-  }
-
-  @override
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
-    return '自从你停车以来,一直使用$arg1 (≈$arg2)';
-  }
-
-  @override
-  String dashboard_insight_parked_drained(Object arg1) {
-    return '自从你停车以来,一直使用$arg1';
-  }
-
-  @override
-  String dashboard_insight_last_alert(Object arg1) {
-    return '最后的监控警报:$arg1';
-  }
-
-  @override
-  String dashboard_insight_last_charge(Object arg1, Object arg2) {
-    return '最后的电荷:$arg2中的$arg1';
-  }
-
-  @override
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return '记录的$arg1剪辑 · 记录的$arg2';
-  }
-
-  @override
-  String dashboard_insight_kwh_format(Object arg1) {
-    return '$arg1 kWh';
-  }
-
-  @override
-  String dashboard_insight_percent_format(Object arg1) {
-    return '$arg1%';
-  }
-
-  @override
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '时间:$arg1小时$arg2分钟';
-  }
-
-  @override
-  String dashboard_insight_today_clips(num arg1) {
+  String dashboard_insight_storage_milestone(num arg1, Object arg2) {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '今天录制的$arg1片段',
-      one: '今天录制的$arg1片段',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '在线开车$arg1天,$arg2小时',
-      one: '在线开车$arg1天,$arg2小时',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '在线开车$arg1小时',
-      one: '在$arg1小时上网过车',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_minutes(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 min',
-      one: '$arg1 min',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 hr',
-      one: '$arg1 hr',
+      other: '$arg1 个片段 · 已录制 $arg2',
+      one: '$arg1 个片段 · 已录制 $arg2',
     );
     return '$_temp0';
   }
@@ -2196,6 +1975,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get vehicle_all_windows => '所有车窗';
+
+  @override
+  String get vehicle_window_awake_note => '仅在车辆唤醒时可用。';
 
   @override
   String get vehicle_window_front_left => '左前';
@@ -2472,7 +2254,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD 估算：$km 公里';
+    return 'BYD 估算：$km';
   }
 
   @override
@@ -2828,8 +2610,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String surveillance_storage_files(Object arg1) {
-    return '$arg1 个事件';
+  String surveillance_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 个事件',
+      one: '$arg1 个事件',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3007,6 +2795,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get cd_delete => '删除';
 
   @override
+  String get cd_decrease => '减少';
+
+  @override
+  String get cd_increase => '增加';
+
+  @override
   String get cd_expand => '展开';
 
   @override
@@ -3032,21 +2826,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get overlay_trip_inactive_label => '旅行';
-
-  @override
-  String get log_entry_default_timestamp => '12:34:56';
-
-  @override
-  String get log_entry_default_tag => '[TAG]';
-
-  @override
-  String get log_entry_default_message => '在此记录消息';
-
-  @override
-  String get daemon_card_default_name => '服务名称';
-
-  @override
-  String get daemon_card_default_status => '状态信息';
 
   @override
   String get daemon_card_subprocesses => '进程';
@@ -3165,7 +2944,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get setup_autostart_body =>
-      '按下来打开BYD自动启动. 在列表中找到BladeWatch,并打消框.BYD在每次安装时都会擦除它.';
+      '点击下方打开 BYD 自启动管理，取消勾选 BladeWatch 和 BladeWatch 服务两项。否则车辆通电后不会自动开始录制，每次都需要手动打开应用。BYD 在每次安装后都会重置此设置。';
 
   @override
   String get setup_autostart_button => '开启BYD自动启动';
@@ -3305,12 +3084,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get webview_loading => '装载...';
 
   @override
-  String get webview_camera_daemon_not_running => '摄像头未运行';
-
-  @override
-  String get webview_start_camera_daemon => '请在\"服务\"页面启动摄像头服务以访问此页面。';
-
-  @override
   String get zrok_enable_token_hint => '启用令牌';
 
   @override
@@ -3353,7 +3126,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get reset_cat_sentry_events => '监控活动';
 
   @override
-  String get reset_cat_sentry_events_desc => '监视活动剪辑和JSON侧车';
+  String get reset_cat_sentry_events_desc => '监控事件片段和配套 JSON 文件';
 
   @override
   String get reset_cat_proximity => '近距离记录';
@@ -3433,13 +3206,14 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get recording_lib_date_yesterday => '昨天';
 
   @override
-  String recording_lib_clip_count(Object arg1) {
-    return '片$arg1';
-  }
-
-  @override
-  String recording_lib_clip_count_one(Object arg1) {
-    return '$arg1剪辑';
+  String recording_lib_clip_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 个片段',
+      one: '$arg1 个片段',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3511,65 +3285,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get battery_health_title => '电池健康';
 
   @override
-  String get battery_health_subtitle => '卫生状况';
-
-  @override
-  String get battery_health_dashes => '--';
-
-  @override
-  String get battery_health_waiting => '在等待数据...';
-
-  @override
-  String get battery_health_source => '来源';
-
-  @override
-  String get battery_health_method => '方法';
-
-  @override
-  String get battery_health_capacity => '产能';
-
-  @override
-  String get battery_health_samples => '样本';
-
-  @override
-  String get battery_health_last_updated => '最后更新';
-
-  @override
   String get battery_health_unavailable => '不可用';
 
   @override
   String get battery_health_unavailable_desc => '电池健康度估算不可用。';
-
-  @override
-  String get battery_health_reset => '重置SOH估计';
-
-  @override
-  String get battery_health_reset_desc =>
-      '清除所有数据并从零重新估算。如果更换了电池或读数看起来不正确，请使用此功能。';
-
-  @override
-  String get soh_dialog_model_label => '车型';
-
-  @override
-  String get soh_dialog_pack_capacity_label => '包装容量';
-
-  @override
-  String get soh_dialog_estimated_capacity_label => '有效产能';
-
-  @override
-  String get soh_dialog_calibration_anchor_label => '最后校准';
-
-  @override
-  String get soh_dialog_source_user => '用户组';
-
-  @override
-  String get soh_dialog_source_auto => '自动检测';
-
-  @override
-  String get soh_dialog_model_not_selected => '没有选择';
-
-  @override
-  String get soh_dialog_capacity_not_detected => '没有发现';
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
@@ -3636,7 +3355,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return '摄像头$arg1设置 下一个ACC周期';
+    return '已设置摄像头 $arg1 — 下一个 ACC 周期生效';
   }
 
   @override
@@ -3654,17 +3373,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   @override
   String toast_failed_with_message_x(Object arg1) {
     return '失败:$arg1';
-  }
-
-  @override
-  String get toast_soh_reset_success => 'SOH估计重置 将从下一个数据中重新计算';
-
-  @override
-  String get toast_soh_reset_failed_no_daemon => '重置失败——服务无响应且文件不可写';
-
-  @override
-  String toast_soh_reset_failed_with_message(Object arg1) {
-    return '重置失败:$arg1';
   }
 
   @override
@@ -3914,8 +3622,14 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String log_header_truncated(Object arg1) {
-    return '注:截至10000行的日志 (总数:$arg1行)';
+  String log_header_truncated(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '注：日志已截断为最后 10000 行（共 $arg1 行）',
+      one: '注：日志已截断为最后 10000 行（共 $arg1 行）',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4321,8 +4035,14 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get diagnostics_network_offline => '离线';
 
   @override
-  String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return '使用的$arg1剪辑 ·$arg2';
+  String diagnostics_storage_used_line(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 个片段 · 已用 $arg2',
+      one: '$arg1 个片段 · 已用 $arg2',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4410,55 +4130,10 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_dialog_title => '设置电池容量';
 
   @override
-  String get vehicle_dialog_capacity_label => '容量 (kWh)';
-
-  @override
-  String get vehicle_dialog_capacity_suffix => 'kWh';
-
-  @override
-  String get vehicle_dialog_capacity_helper => '8至120 kWh。保留以使用模型默认值。';
-
-  @override
   String get vehicle_dialog_model_label => '车型';
 
   @override
   String get vehicle_dialog_save => '保存';
-
-  @override
-  String get vehicle_dialog_reset => '重置为自动检测';
-
-  @override
-  String get vehicle_dialog_invalid_capacity => '容量必须为8-120kWh';
-
-  @override
-  String vehicle_dialog_summary_capacity(Object arg1) {
-    return '容量:$arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_soh(Object arg1) {
-    return 'SOH: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_live(Object arg1) {
-    return '$arg1%(实时)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_calibration(Object arg1) {
-    return '$arg1%(上次充电)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_oem(Object arg1) {
-    return '$arg1%(车辆)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_nominal(Object arg1) {
-    return '$arg1%(标称)';
-  }
 
   @override
   String get settings_recording_tab_status => '状态';
@@ -4555,8 +4230,14 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String settings_recording_storage_files(Object arg1) {
-    return '$arg1 个录制';
+  String settings_recording_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 段录像',
+      one: '$arg1 段录像',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4632,24 +4313,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get settings_daemons_zrok_reset_button => '重置环境';
-
-  @override
-  String vehicle_dialog_summary_effective(Object arg1) {
-    return '有效:$arg1 kWh';
-  }
-
-  @override
-  String vehicle_dialog_summary_model(Object arg1) {
-    return '车型: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return '最后校准:$arg1% 在$arg2';
-  }
-
-  @override
-  String get vehicle_dialog_soh_unavailable => '无法获取';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -4820,13 +4483,14 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_privacy_storage_unavailable => '无法使用';
 
   @override
-  String settings_privacy_storage_count_format(Object arg1) {
-    return '$arg1剪辑';
-  }
-
-  @override
-  String settings_privacy_storage_count_format_plural(Object arg1) {
-    return '片$arg1';
+  String settings_privacy_storage_count_format_plural(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 个片段',
+      one: '$arg1 个片段',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4884,109 +4548,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get dashboard_insight_welcome => '欢迎您 过度驱动是您的第二双眼睛.';
-
-  @override
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
-    return '在停车时拿到$arg1 (≈$arg2)';
-  }
-
-  @override
-  String dashboard_insight_parked_charged(Object arg1) {
-    return '在停车时拿到$arg1';
-  }
-
-  @override
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
-    return '自从你停车以来,一直使用$arg1 (≈$arg2)';
-  }
-
-  @override
-  String dashboard_insight_parked_drained(Object arg1) {
-    return '自从你停车以来,一直使用$arg1';
-  }
-
-  @override
-  String dashboard_insight_last_alert(Object arg1) {
-    return '最后的监控警报:$arg1';
-  }
-
-  @override
-  String dashboard_insight_last_charge(Object arg1, Object arg2) {
-    return '最后的电荷:$arg2中的$arg1';
-  }
-
-  @override
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return '记录的$arg1剪辑 · 记录的$arg2';
-  }
-
-  @override
-  String dashboard_insight_kwh_format(Object arg1) {
-    return '$arg1 kWh';
-  }
-
-  @override
-  String dashboard_insight_percent_format(Object arg1) {
-    return '$arg1%';
-  }
-
-  @override
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '时间:$arg1小时$arg2分钟';
-  }
-
-  @override
-  String dashboard_insight_today_clips(num arg1) {
+  String dashboard_insight_storage_milestone(num arg1, Object arg2) {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '今天录制的$arg1片段',
-      one: '今天录制的$arg1片段',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '在线开车$arg1天,$arg2小时',
-      one: '在线开车$arg1天,$arg2小时',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '在线开车$arg1小时',
-      one: '在$arg1小时上网过车',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_minutes(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 min',
-      one: '$arg1 min',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 hr',
-      one: '$arg1 hr',
+      other: '$arg1 个片段 · 已录制 $arg2',
+      one: '$arg1 个片段 · 已录制 $arg2',
     );
     return '$_temp0';
   }
@@ -5100,6 +4667,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get vehicle_all_windows => '所有车窗';
+
+  @override
+  String get vehicle_window_awake_note => '仅在车辆唤醒时可用。';
 
   @override
   String get vehicle_window_front_left => '左前';
@@ -5376,7 +4946,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD 估算：$km 公里';
+    return 'BYD 估算：$km';
   }
 
   @override
@@ -5732,8 +5302,14 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String surveillance_storage_files(Object arg1) {
-    return '$arg1 个事件';
+  String surveillance_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 个事件',
+      one: '$arg1 个事件',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5911,6 +5487,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get cd_delete => '刪除';
 
   @override
+  String get cd_decrease => '減少';
+
+  @override
+  String get cd_increase => '增加';
+
+  @override
   String get cd_expand => '展開';
 
   @override
@@ -5936,21 +5518,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get overlay_trip_inactive_label => '旅行';
-
-  @override
-  String get log_entry_default_timestamp => '12:34:56';
-
-  @override
-  String get log_entry_default_tag => '[TAG]';
-
-  @override
-  String get log_entry_default_message => '這裡的帳號訊息';
-
-  @override
-  String get daemon_card_default_name => '服務名稱';
-
-  @override
-  String get daemon_card_default_status => '狀況訊息';
 
   @override
   String get daemon_card_subprocesses => '處理程序';
@@ -6070,7 +5637,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get setup_autostart_body =>
-      '點按下方開啟 BYD 自動啟動。在清單中找到 BladeWatch 並取消勾選。BYD 每次安裝都會清除這項設定 — 更新後需要重做一次。';
+      '點擊下方開啟 BYD 自啟動管理，取消勾選 BladeWatch 和 BladeWatch 服務兩項。否則車輛通電後不會自動開始錄製，每次都需要手動開啟應用程式。BYD 在每次安裝後都會重設此設定。';
 
   @override
   String get setup_autostart_button => '打開BYD自動啟動';
@@ -6210,12 +5777,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get webview_loading => '接收了這些東西.';
 
   @override
-  String get webview_camera_daemon_not_running => '攝影機未運行';
-
-  @override
-  String get webview_start_camera_daemon => '請從「服務」畫面啟動攝影機服務，以存取此頁面。';
-
-  @override
   String get zrok_enable_token_hint => '啟動權杖';
 
   @override
@@ -6258,7 +5819,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get reset_cat_sentry_events => '監控活動';
 
   @override
-  String get reset_cat_sentry_events_desc => '監控活動剪貼和JSON側車';
+  String get reset_cat_sentry_events_desc => '監控事件片段和配套 JSON 檔案';
 
   @override
   String get reset_cat_proximity => '靠近的記錄';
@@ -6338,13 +5899,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get recording_lib_date_yesterday => '昨天';
 
   @override
-  String recording_lib_clip_count(Object arg1) {
-    return '片 $arg1';
-  }
-
-  @override
-  String recording_lib_clip_count_one(Object arg1) {
-    return '片 $arg1';
+  String recording_lib_clip_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 個片段',
+      one: '$arg1 個片段',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -6416,65 +5978,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get battery_health_title => '電池健康';
 
   @override
-  String get battery_health_subtitle => '衛生狀況';
-
-  @override
-  String get battery_health_dashes => '--';
-
-  @override
-  String get battery_health_waiting => '在等待數據...';
-
-  @override
-  String get battery_health_source => '來源';
-
-  @override
-  String get battery_health_method => '方法';
-
-  @override
-  String get battery_health_capacity => '容量';
-
-  @override
-  String get battery_health_samples => '標本';
-
-  @override
-  String get battery_health_last_updated => '最新更新';
-
-  @override
   String get battery_health_unavailable => '不可用';
 
   @override
   String get battery_health_unavailable_desc => '電池健康度估算無法使用。';
-
-  @override
-  String get battery_health_reset => '重置SOH估值';
-
-  @override
-  String get battery_health_reset_desc =>
-      '清除所有資料並從零重新估算。如果更換了電池或讀值看起來不正確，請使用此功能。';
-
-  @override
-  String get soh_dialog_model_label => '車型';
-
-  @override
-  String get soh_dialog_pack_capacity_label => '包裝容量';
-
-  @override
-  String get soh_dialog_estimated_capacity_label => '有效的容量';
-
-  @override
-  String get soh_dialog_calibration_anchor_label => '最后校準';
-
-  @override
-  String get soh_dialog_source_user => '使用者集合';
-
-  @override
-  String get soh_dialog_source_auto => '自動檢測';
-
-  @override
-  String get soh_dialog_model_not_selected => '沒有選擇';
-
-  @override
-  String get soh_dialog_capacity_not_detected => '沒有發現';
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
@@ -6541,7 +6048,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return '$arg1相機組 下一個 ACC週期';
+    return '已設定相機 $arg1 — 下一個 ACC 週期生效';
   }
 
   @override
@@ -6559,17 +6066,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   @override
   String toast_failed_with_message_x(Object arg1) {
     return '失敗:$arg1';
-  }
-
-  @override
-  String get toast_soh_reset_success => 'SOH估算重置 將從下一步數據中重新計算';
-
-  @override
-  String get toast_soh_reset_failed_no_daemon => '重置失敗 — 服務未回應且檔案無法寫入';
-
-  @override
-  String toast_soh_reset_failed_with_message(Object arg1) {
-    return '重置失敗: $arg1';
   }
 
   @override
@@ -6820,8 +6316,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String log_header_truncated(Object arg1) {
-    return '註: 截圖截圖為10000行 (總數:$arg1行)';
+  String log_header_truncated(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '註：日誌已截斷為最後 10000 行（共 $arg1 行）',
+      one: '註：日誌已截斷為最後 10000 行（共 $arg1 行）',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -7226,8 +6728,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get diagnostics_network_offline => '離線';
 
   @override
-  String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return '使用的$arg1剪辑 ·$arg2';
+  String diagnostics_storage_used_line(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 個片段 · 已用 $arg2',
+      one: '$arg1 個片段 · 已用 $arg2',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -7315,55 +6823,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_dialog_title => '設定電池容量';
 
   @override
-  String get vehicle_dialog_capacity_label => '容量 (kWh)';
-
-  @override
-  String get vehicle_dialog_capacity_suffix => 'kWh';
-
-  @override
-  String get vehicle_dialog_capacity_helper => '8至120 kWh。保留以使用模型預設值。';
-
-  @override
   String get vehicle_dialog_model_label => '車型';
 
   @override
   String get vehicle_dialog_save => '儲存';
-
-  @override
-  String get vehicle_dialog_reset => '重設為自動偵測';
-
-  @override
-  String get vehicle_dialog_invalid_capacity => '容量必須為 8 - 120 kWh';
-
-  @override
-  String vehicle_dialog_summary_capacity(Object arg1) {
-    return '容量:$arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_soh(Object arg1) {
-    return 'SOH: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_live(Object arg1) {
-    return '$arg1%(即時)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_calibration(Object arg1) {
-    return '$arg1%(上次充電)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_oem(Object arg1) {
-    return '$arg1%(車輛)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_nominal(Object arg1) {
-    return '$arg1%(標稱)';
-  }
 
   @override
   String get settings_recording_tab_status => '狀態';
@@ -7460,8 +6923,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String settings_recording_storage_files(Object arg1) {
-    return '$arg1 個錄影';
+  String settings_recording_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 個錄影檔',
+      one: '$arg1 個錄影檔',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -7537,24 +7006,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get settings_daemons_zrok_reset_button => '重設環境';
-
-  @override
-  String vehicle_dialog_summary_effective(Object arg1) {
-    return '有效: $arg1 kWh';
-  }
-
-  @override
-  String vehicle_dialog_summary_model(Object arg1) {
-    return '車型: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return '最后校準:$arg1% 在$arg2';
-  }
-
-  @override
-  String get vehicle_dialog_soh_unavailable => '無法取得';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -7725,13 +7176,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_privacy_storage_unavailable => '沒有提供';
 
   @override
-  String settings_privacy_storage_count_format(Object arg1) {
-    return '片 $arg1';
-  }
-
-  @override
-  String settings_privacy_storage_count_format_plural(Object arg1) {
-    return '片 $arg1';
+  String settings_privacy_storage_count_format_plural(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 個片段',
+      one: '$arg1 個片段',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -7789,109 +7241,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get dashboard_insight_welcome => '歡迎您來! 超駕駛是您的第二雙眼睛.';
-
-  @override
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
-    return '在停車場上, 接收了$arg1 (≈$arg2)';
-  }
-
-  @override
-  String dashboard_insight_parked_charged(Object arg1) {
-    return '在停車場上拿起$arg1';
-  }
-
-  @override
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
-    return '自從你停車後使用了$arg1 (≈$arg2)';
-  }
-
-  @override
-  String dashboard_insight_parked_drained(Object arg1) {
-    return '自從你停車後使用了$arg1';
-  }
-
-  @override
-  String dashboard_insight_last_alert(Object arg1) {
-    return '最后的監控警報: $arg1';
-  }
-
-  @override
-  String dashboard_insight_last_charge(Object arg1, Object arg2) {
-    return '最后一次充電: +$arg1 在 $arg2';
-  }
-
-  @override
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return '$arg1剪辑 · $arg2錄製';
-  }
-
-  @override
-  String dashboard_insight_kwh_format(Object arg1) {
-    return '$arg1 kWh';
-  }
-
-  @override
-  String dashboard_insight_percent_format(Object arg1) {
-    return '$arg1%';
-  }
-
-  @override
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 小時 $arg2 分';
-  }
-
-  @override
-  String dashboard_insight_today_clips(num arg1) {
+  String dashboard_insight_storage_milestone(num arg1, Object arg2) {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '今天拍攝的$arg1片段',
-      one: '截圖是今天錄製的 $arg1',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '在網路上駕駛超過$arg1天,$arg2小時',
-      one: '在 $arg1日, $arg2小時上線駕駛',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '在網路上駕駛超過$arg1小時',
-      one: '在 $arg1小時內開車',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_minutes(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 min',
-      one: '$arg1 min',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 hr',
-      one: '$arg1 hr',
+      other: '$arg1 個片段 · 已錄製 $arg2',
+      one: '$arg1 個片段 · 已錄製 $arg2',
     );
     return '$_temp0';
   }
@@ -8005,6 +7360,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get vehicle_all_windows => '所有車窗';
+
+  @override
+  String get vehicle_window_awake_note => '僅在車輛喚醒時可用。';
 
   @override
   String get vehicle_window_front_left => '左前';
@@ -8281,7 +7639,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD 估算：$km 公里';
+    return 'BYD 估算：$km';
   }
 
   @override
@@ -8637,8 +7995,14 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String surveillance_storage_files(Object arg1) {
-    return '$arg1 個事件';
+  String surveillance_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 個事件',
+      one: '$arg1 個事件',
+    );
+    return '$_temp0';
   }
 
   @override

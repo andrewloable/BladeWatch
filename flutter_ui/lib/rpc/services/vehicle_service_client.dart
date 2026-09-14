@@ -31,19 +31,7 @@ class VehicleServiceClient {
         (json) => GetSeatDiagnosticsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
-  Future<VehicleCommandResponse> lock(LockRequest request) => _transport.call(
-        'VehicleService',
-        'Lock',
-        request,
-        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
 
-  Future<VehicleCommandResponse> unlock(UnlockRequest request) => _transport.call(
-        'VehicleService',
-        'Unlock',
-        request,
-        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
 
   Future<VehicleCommandResponse> trunk(TrunkRequest request) => _transport.call(
         'VehicleService',
@@ -59,19 +47,7 @@ class VehicleServiceClient {
         (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
-  Future<VehicleCommandResponse> flash(FlashRequest request) => _transport.call(
-        'VehicleService',
-        'Flash',
-        request,
-        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
 
-  Future<VehicleCommandResponse> findCar(FindCarRequest request) => _transport.call(
-        'VehicleService',
-        'FindCar',
-        request,
-        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
 
   Future<VehicleCommandResponse> setClimate(SetClimateRequest request) => _transport.call(
         'VehicleService',
@@ -101,26 +77,8 @@ class VehicleServiceClient {
         (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
-  Future<VehicleCommandResponse> setBatteryHeat(SetBatteryHeatRequest request) => _transport.call(
-        'VehicleService',
-        'SetBatteryHeat',
-        request,
-        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
 
-  Future<GetChargingScheduleResponse> getChargingSchedule(GetChargingScheduleRequest request) => _transport.call(
-        'VehicleService',
-        'GetChargingSchedule',
-        request,
-        (json) => GetChargingScheduleResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
 
-  Future<VehicleCommandResponse> setChargingSchedule(SetChargingScheduleRequest request) => _transport.call(
-        'VehicleService',
-        'SetChargingSchedule',
-        request,
-        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
 
   Future<GetChargeCapResponse> getChargeCap(GetChargeCapRequest request) => _transport.call(
         'VehicleService',

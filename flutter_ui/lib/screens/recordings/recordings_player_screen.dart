@@ -268,6 +268,7 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
                     ),
                   IconButton(
                     key: const ValueKey('recordings.player.playPause'),
+                    tooltip: l10n.cd_play_pause,
                     iconSize: 40,
                     icon: Icon(
                       (video?.value.isPlaying ?? false) ? Icons.pause_circle : Icons.play_circle,

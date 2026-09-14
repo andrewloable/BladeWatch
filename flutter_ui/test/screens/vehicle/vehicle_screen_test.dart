@@ -345,6 +345,20 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    // BladeWatch-c2h1: "close all" used to route through the BYD cloud CLOSEWINDOW
+    // command, which worked with the car asleep. 61b4d7f deleted that path, so every
+    // control on this tab is now the local SDK primitive and needs the head unit
+    // awake. Without the note a remote tap just looks like it silently did nothing.
+    testWidgets('the windows tab says the controls need the car awake', (tester) async {
+      stubState();
+      stubAppearance();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await openWindows(tester);
+
+      expect(find.byKey(const ValueKey('vehicle.window.awakeNote')), findsOneWidget);
+    });
+
     testWidgets('tapping a preset calls MoveWindow with the right area/percent', (tester) async {
       stubState();
       stubAppearance();
@@ -407,7 +421,7 @@ void main() {
     testWidgets('tapping a color swatch calls SetSelectedModel', (tester) async {
       stubState();
       stubAppearance();
-      rpc.stubJson('SystemService', 'SetSelectedModel', {});
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': true});
       await pump(tester, buildController());
       await tester.pumpAndSettle();
 
@@ -420,7 +434,7 @@ void main() {
     testWidgets('the custom color dialog applies a composed hex', (tester) async {
       stubState();
       stubAppearance();
-      rpc.stubJson('SystemService', 'SetSelectedModel', {});
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': true});
       await pump(tester, buildController());
       await tester.pumpAndSettle();
 
@@ -457,7 +471,7 @@ void main() {
         {'id': 'seal5-dmi-dynamic', 'name': 'BYD Seal 5 DM-i Dynamic', 'file': 'destroyer.glb', 'bundled': true},
         {'id': 'tang', 'name': 'BYD Tang', 'file': 'tang.glb', 'bundled': true},
       ]);
-      rpc.stubJson('SystemService', 'SetSelectedModel', {});
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': true});
       await pump(tester, buildController());
       await tester.pumpAndSettle();
 
@@ -542,6 +556,73 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  /// The daemon refuses by answering 200 with success:false — and it can do so
+  /// with NO message. Every path must still tell the driver something.
+  ///
+  /// Before this, the appearance writes returned null for a blank refusal, so
+  /// `error != null` was false and nothing was shown at all: the swatch snapped
+  /// back with no explanation, which reads as a broken tap rather than a refused
+  /// command. The climate/seat paths showed a snackbar containing empty text.
+  group('a refusal with no reason still reports', () {
+    testWidgets('a blank appearance refusal shows the generic message', (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': false});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.color.#1A1A1E')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Action failed. Check vehicle connection.'), findsOneWidget);
+    });
+
+    testWidgets('an appearance refusal WITH a reason shows that reason', (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('SystemService', 'SetSelectedModel', {'ok': false, 'error': 'Model locked'});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.color.#1A1A1E')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Model locked'), findsOneWidget);
+      expect(find.text('Action failed. Check vehicle connection.'), findsNothing);
+    });
+
+    testWidgets('a blank seat refusal shows the generic message', (tester) async {
+      stubState(capDriverHeat: true, heat: [0, 0]);
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetSeat', {'success': false});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('vehicle.tab.seats')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.seat.heat.1')));
+      await tester.pumpAndSettle();
+      expect(find.text('Action failed. Check vehicle connection.'), findsOneWidget);
+    });
+
+    /// The cool button is a hand-copied twin of the heat one, so it gets its own
+    /// case: every seat defect so far has been present in exactly one of the two.
+    testWidgets('a blank seat COOL refusal reports too, not just heat', (tester) async {
+      stubState(capDriverCool: true, cool: [0, 0]);
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetSeat', {'success': false});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('vehicle.tab.seats')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.seat.cool.1')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Action failed. Check vehicle connection.'), findsOneWidget);
+    });
+  });
 }
 
 String _jsonList(List<Map<String, Object?>> models) {
@@ -554,4 +635,5 @@ String _jsonList(List<Map<String, Object?>> models) {
     return '{$parts}';
   }).join(',');
   return '[$entries]';
+
 }

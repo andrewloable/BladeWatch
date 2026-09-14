@@ -78,17 +78,14 @@ public class SetupGuideDialog {
         // Step 1: Language. Always shown as "complete" because Auto is a valid
         // selection out of the box; the row exists so users can opt in to a
         // specific language before they hit Done.
+        // BladeWatch-81g9.2: language now belongs to the Flutter UI, which owns every
+        // in-car string. The native LanguagePickerDialog went with the rest of the
+        // native UI, so this row opens the Flutter app instead of a picker this APK no
+        // longer has. Steps 2 and 3 below stay here because they are device-permission
+        // flows only this package can drive.
         TextView btnLanguage = view.findViewById(R.id.btnOpenLanguage);
         if (btnLanguage != null) {
-            btnLanguage.setOnClickListener(v ->
-                net.bladewatch.app.ui.dialog.LanguagePickerDialog.show(context, picked -> {
-                    // After a pick, recreate the host activity so AppCompat
-                    // re-applies the locale and the setup dialog re-inflates
-                    // in the new language. Cheaper than juggling two dialogs.
-                    if (context instanceof android.app.Activity) {
-                        ((android.app.Activity) context).recreate();
-                    }
-                }));
+            btnLanguage.setOnClickListener(v -> openFlutterUi(context));
         }
 
         // Step 2: Auto-start restriction
@@ -153,6 +150,21 @@ public class SetupGuideDialog {
      *   3. ACTION_APPLICATION_DETAILS_SETTINGS for BladeWatch (legacy fallback)
      *   4. ACTION_APPLICATION_SETTINGS / ACTION_SETTINGS
      */
+    /**
+     * Open the Flutter in-car UI, where the language picker lives after
+     * BladeWatch-81g9.2. Silent no-op if that APK is absent — the setup guide must not
+     * crash on a device that only has the daemon host.
+     */
+    private static void openFlutterUi(Context context) {
+        try {
+            android.content.Intent i = context.getPackageManager()
+                    .getLaunchIntentForPackage("net.bladewatch.flutter");
+            if (i != null) context.startActivity(i);
+        } catch (Exception e) {
+            android.util.Log.w("SetupGuideDialog", "Could not open the Flutter UI: " + e.getMessage());
+        }
+    }
+
     private static void openAutoStartSettings(Context context) {
         // 1) Canonical BYD deep link.
         try {

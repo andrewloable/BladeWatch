@@ -1,13 +1,25 @@
-# WebView Migration
+# WebView Migration (RETIRED — historical only)
+
+> **This document describes a superseded architecture. Nothing in it is current.**
+>
+> It records the 2024-25 migration of the in-car UI from WebView-hosted pages to
+> native Kotlin fragments. Those native fragments were themselves deleted in
+> Phase 4 of the Flutter refactor (`BladeWatch-81g9.2`), along with
+> `WebViewFragment` — which this document describes as "still present" and which
+> no longer exists.
+>
+> **The in-car UI is now Flutter** (`flutter_ui/`, `net.bladewatch.flutter`). See
+> [Architecture](architecture.md) and
+> [UI/UX Design Language](ui-ux-design-language.md).
+>
+> Kept because the WebView-era bug notes below (BYD WebView quirks, focus-ring
+> and reload hazards, narrow-landscape layout traps) are still the only written
+> record of how this head unit's WebView behaves — and the Vehicle hero still
+> renders three.js in a WebView via `webview_flutter`.
 
 Findings and reference for the WebView-backed screens in the BladeWatch Android
 app: where they were, how the WebView host is implemented, and how each screen
 was migrated to native.
-
-> **Status: Migration complete.** All WebView destinations have been migrated to
-> native. This document is retained for historical reference and as a guide to
-> the `WebViewFragment` architecture, which is still present for the remote
-> tunnel / browser UI path.
 
 ---
 

@@ -70,9 +70,6 @@
 -keep class dadb.** { *; }
 -dontwarn dadb.**
 
-# ==================== ZXing (QR codes) ====================
--keep class com.google.zxing.** { *; }
-
 # ==================== Eclipse Paho MQTT ====================
 # Paho uses java.util.logging internally and loads logging resource bundles
 # by class name via reflection. ProGuard strips these, causing
@@ -104,7 +101,6 @@
 # AndroidX - only keep what's needed, not everything
 -keep class androidx.core.content.FileProvider { *; }
 -keep class androidx.work.** { *; }
--keep class androidx.navigation.** { *; }
 -keepnames class androidx.** { }
 -dontwarn androidx.**
 

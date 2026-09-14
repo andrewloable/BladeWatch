@@ -9,6 +9,7 @@ import '../../rpc/services/recordings_service_client.dart';
 import '../../rpc/services/system_service_client.dart';
 import '../../rpc/services/trips_service_client.dart';
 import 'dashboard_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Pure-Dart port of `DashboardFragment`'s behaviour (no Flutter imports).
 /// Ground truth: `app/src/main/java/com/loabletech/bladewatch/ui/fragment/DashboardFragment.kt`.
@@ -40,7 +41,7 @@ import 'dashboard_models.dart';
 ///   zrok's own log instead, and only reports a URL while the tunnel process is
 ///   actually alive. The injected default still reports "no tunnel", which keeps
 ///   every test free of a platform channel.
-class DashboardController extends ChangeNotifier {
+class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   DashboardController({
     required TripsServiceClient tripsService,
     required RecordingsServiceClient recordingsService,

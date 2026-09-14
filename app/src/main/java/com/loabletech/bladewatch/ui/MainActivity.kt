@@ -1,92 +1,70 @@
 package net.bladewatch.app.ui
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.ImageButton
-import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.NavController
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupWithNavController
-import net.bladewatch.app.logging.DebugAppLogger
-import net.bladewatch.app.logging.LogLevel
-import net.bladewatch.app.logging.LogManager
-// import net.bladewatch.app.shell.PrivilegedShellSetup
+import net.bladewatch.app.R
+import net.bladewatch.app.launcher.AdbDaemonLauncher
 import net.bladewatch.app.storage.StorageSetup
 import net.bladewatch.app.ui.daemon.DaemonStartupManager
-import net.bladewatch.app.ui.model.DaemonStatus
-import net.bladewatch.app.ui.model.DaemonType
-import net.bladewatch.app.ui.util.PreferencesManager
-import net.bladewatch.app.ui.viewmodel.DaemonsViewModel
-import net.bladewatch.app.ui.viewmodel.LogsViewModel
-import net.bladewatch.app.ui.viewmodel.MainViewModel
-import net.bladewatch.app.launcher.AdbDaemonLauncher
-import com.google.android.material.appbar.MaterialToolbar
-import android.widget.ImageView
-import android.widget.LinearLayout
-import com.connectrpc.ResponseMessage
-import net.bladewatch.app.client.ConnectClientProvider
-import kotlinx.coroutines.runBlocking
-import net.bladewatch.app.R
-import net.bladewatch.app.grpc.v1.GetSohStatusRequest
-import net.bladewatch.app.grpc.v1.ResetPerformanceRequest
-import net.bladewatch.app.grpc.v1.ResetSohRequest
-import net.bladewatch.app.grpc.v1.SetSurveillanceConfigRequest
 import net.bladewatch.app.util.BydDataCacheWhitelist
 
 /**
- * Main activity hosting the M3 navigation-rail shell.
+ * The daemon APK's startup bootstrap. **This is not a UI.**
  *
- * Top-level destinations are wired via the rail in setupNavigation(). The
- * old drawer-action handlers (check-update, reset, battery-health,
- * camera-probe, traffic-monitor) are kept private but exposed via
- * `invoke*Action` thin wrappers that the new SettingsFragment / Diagnostics
- * fragment call.
+ * BladeWatch-81g9.2 deleted the native in-car UI; `net.bladewatch.flutter` is the only
+ * in-car UI now. What survives here is the work nothing else does, in the order it has
+ * to happen:
+ *
+ *  1. `setupStorageDirectories()`, posted off the onCreate critical path — a failure (a
+ *     ROM lacking the All-Files-Access settings activity, as on BYD SL7) must not abort
+ *     launch.
+ *  2. `DeviceIdGenerator.init` then `generateDeviceId`, **before any daemon starts**,
+ *     because the daemon reads the synced device-id file.
+ *  3. `BydDataCacheWhitelist.applyAll` on a background thread — `ActivityThread.systemMain()`
+ *     can block for over a minute waiting for system services.
+ *  4. `DaemonStartupManager` with its staggered timing (core ~45s, optional ~60s, health
+ *     checks from ~90s every 30s).
+ *  5. The one-shot cleanup of the APK the removed in-app updater used to stage.
+ *
+ * It has NO launcher entry (BladeWatch-81g9.1). It is started explicitly: by the Flutter
+ * UI when the user opens it, by `BootReceiver`, by `DaemonKeepaliveService`, and by a
+ * developer over ADB — which is the only remaining way in if the Flutter APK is broken.
+ *
+ * It carries no layout. `minimize_on_start` sends it straight to the back so the user
+ * never sees a blank screen; without that extra it still shows nothing, because
+ * `setContentView` is never called.
+ *
+ * **`DaemonStartupManager` is constructed with no ViewModel on purpose.** It is designed
+ * for that — `startCoreDaemons()` falls back to `startCoreDaemonsViaAdb()` with
+ * "ViewModel not available, using ADB launcher". That path is what the service host wants,
+ * and it is what `BootReceiver.startOnBoot` has always used. Verified on the head unit:
+ * all three daemons start.
+ *
+ * Extends `Activity`, not `AppCompatActivity` — there is no AppCompat UI left to host, and
+ * this keeps the daemon APK off a dependency BladeWatch-81g9.3 can then drop.
  */
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
 
-    private lateinit var navController: NavController
-    private lateinit var appBarConfiguration: AppBarConfiguration
-
-    private val mainViewModel: MainViewModel by viewModels()
-    private val daemonsViewModel: DaemonsViewModel by viewModels()
-    private val logsViewModel: LogsViewModel by viewModels()
-
-    // Daemon startup manager
     private lateinit var daemonStartupManager: DaemonStartupManager
 
-    // Handler + runnable owned by the activity so they can be cancelled in
-    // onDestroy() — prevents the periodic update check from leaking the
-    // activity instance after recreate.
+    // Everything posted here is deliberately NOT cancelled in onDestroy(), for the same
+    // reason the daemons are not stopped there: this activity exists only to kick off
+    // work that must outlive it. It calls moveTaskToBack() immediately, so if the system
+    // then reclaims it, cancelling would mean daemon startup (posted at +1s) silently
+    // never happens — the one failure this activity cannot afford. The cost is holding
+    // the instance until the last runnable fires, ~10s, on a device running one app.
+    //
+    // A previous `updateCheckRunnable` field lived here, cleared in onDestroy() under a
+    // comment about cancelling "the periodic work". It was never assigned — the periodic
+    // update check went with the in-app OTA updater — so it cancelled nothing while
+    // reading as though pending work were handled.
     private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private var updateCheckRunnable: Runnable? = null
-    private var setupGuideShown = false
 
-    // UI elements
-    private lateinit var toolbar: MaterialToolbar
-    private lateinit var navigationRail: LinearLayout
-    private lateinit var tvCurrentUrl: TextView
-    private lateinit var urlBar: View
-    private lateinit var statusIndicator: View
-    private lateinit var urlStatusDot: View
-    private lateinit var btnCopyUrl: ImageButton
-    private lateinit var shellContainer: LinearLayout
-    private lateinit var mainStage: View
-    private var navigationRailScrollContainer: View? = null
-    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main_new)
+        // Deliberately no setContentView: this activity has no UI.
 
         // Storage setup is posted off the onCreate critical path so a failure
         // (e.g. ROM lacking the All-Files-Access Settings activity on BYD SL7)
@@ -102,12 +80,12 @@ class MainActivity : AppCompatActivity() {
         // Initialize DeviceIdGenerator with ADB executor for file sync
         val adbExecutor = net.bladewatch.app.launcher.AdbShellExecutor(this)
         net.bladewatch.app.util.DeviceIdGenerator.init(adbExecutor)
-        
+
         // Generate device ID early - this syncs to file for daemon compatibility
         // Must happen BEFORE any daemon starts
         val deviceId = net.bladewatch.app.util.DeviceIdGenerator.generateDeviceId(this)
         android.util.Log.i("MainActivity", "Device ID initialized: $deviceId")
-        
+
         // Apply BYD whitelist (ACC + data cache) to prevent background killing
         // CRITICAL: Run on background thread to avoid blocking UI on boot
         // ActivityThread.systemMain() can block for 1+ minute waiting for system services
@@ -118,23 +96,14 @@ class MainActivity : AppCompatActivity() {
                 android.util.Log.e("MainActivity", "BYD whitelist error: ${e.message}")
             }
         }.start()
-        
-        initViews()
-        applyDriveSide()
-        setupNavigation(savedInstanceState)
-        setupCopyButton()
-        setupLogListener()
-        observeViewModels()
-        
-        // Initialize daemon startup manager
-        daemonStartupManager = DaemonStartupManager(this, daemonsViewModel)
-        daemonsViewModel.setStartupManager(daemonStartupManager)
-        
+
+        // Initialize daemon startup manager (no ViewModel — see the class comment)
+        daemonStartupManager = DaemonStartupManager(this)
+
         // Setup ADB auth callback to re-initialize when auth is granted
         setupAdbAuthCallback()
-        
-        // Log app start
-        logsViewModel.info("App", "BladeWatch started")
+
+        android.util.Log.i("MainActivity", "BladeWatch service host started")
 
         // Seed out-of-process revival watchdog so the process gets resurrected
         // if it ever gets force-stopped or OOM-killed without an external event.
@@ -143,24 +112,17 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             android.util.Log.w("MainActivity", "ProcessRevivalReceiver.schedule failed: ${e.message}")
         }
-        
-        // Setup privileged shell (UID 1000) - required for daemon management
-        // setupPrivilegedShell()
-        
-        // Start daemons and services
-        // Device ID is already synced above via generateDeviceId() which writes to file async
-        // The daemon will reload from file when getState() is called
-        
+
         // Start Location Sidecar service (establishes ADB connection)
         startLocationSidecarService()
-        
+
         // Initialize daemons after a short delay to allow ADB connection.
         // If the package was just replaced, run DaemonHardReset.hardResetDaemons
         // FIRST so any zombie daemons / watchdogs from the previous install are
         // dead before the new daemon launcher starts.
         val isPostInstall = net.bladewatch.app.launcher.DaemonHardReset
             .isPostInstallLaunch(this, intent)
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+        mainHandler.postDelayed({
             // Sync device ID to file synchronously before daemon startup
             Thread {
                 try {
@@ -173,14 +135,14 @@ class MainActivity : AppCompatActivity() {
                 val startDaemons = Runnable {
                     runOnUiThread {
                         daemonStartupManager.initializeOnAppLaunch()
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        mainHandler.postDelayed({
                             daemonStartupManager.checkAllDaemonStatuses()
                         }, 3000)
                     }
                 }
 
                 if (isPostInstall) {
-                    logsViewModel.info("Daemons", "Post-install launch — hard-resetting daemons before startup")
+                    android.util.Log.i("MainActivity", "Post-install launch — hard-resetting daemons before startup")
                     net.bladewatch.app.launcher.DaemonHardReset.hardResetDaemons(this) {
                         startDaemons.run()
                     }
@@ -189,62 +151,47 @@ class MainActivity : AppCompatActivity() {
                 }
             }.start()
         }, 1000)
-        
+
         // Handle Location start intent (from SentryDaemon restart)
         handleLocationStartIntent(intent)
-        
-        // Check traffic monitor status early so drawer shows correct state
-        checkTrafficMonitorStatus()
-        
+
         // One-time cleanup of the APK the removed in-app updater used to stage.
         // Harmless once every device has been through it; costs one shell call.
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            val adb = net.bladewatch.app.launcher.AdbDaemonLauncher(this)
-            adb.executeShellCommand("rm -f /data/local/tmp/bladewatch_update.apk", object : net.bladewatch.app.launcher.AdbDaemonLauncher.LaunchCallback {
+        mainHandler.postDelayed({
+            val adb = AdbDaemonLauncher(this)
+            adb.executeShellCommand("rm -f /data/local/tmp/bladewatch_update.apk", object : AdbDaemonLauncher.LaunchCallback {
                 override fun onLog(message: String) {}
                 override fun onLaunched() {}
                 override fun onError(error: String) {}
             })
         }, 10000) // 10 seconds after launch
 
-        // Status overlay: start immediately if permission granted, show guide if not
+        // Status overlay: start immediately if permission granted
         startStatusOverlay()
-        
-        // If launched from boot receiver with minimize flag, move to back immediately.
-        // This keeps the process alive (important for daemon stability) without
-        // showing the app UI over the BYD home screen.
+
+        // There is no UI to show. Whether or not the caller asked for it, get out of the
+        // way — a visible blank activity over the BYD home screen is worse than nothing.
+        // The extra is kept because callers still set it and it documents the intent.
         if (intent?.getBooleanExtra("minimize_on_start", false) == true) {
             android.util.Log.i("MainActivity", "Boot launch — minimizing to background")
-            moveTaskToBack(true)
         }
+        moveTaskToBack(true)
     }
-    
-    /**
-     * Start the status overlay service if overlay permission is granted, and
-     * show the setup guide whenever the install/update marker has advanced.
-     * The guide must reappear on every install/replace because BYD wipes the
-     * autostart whitelist on each install.
-     */
+
+    /** Start the status overlay service if overlay permission is granted. */
     private fun startStatusOverlay() {
         val hasPermission = net.bladewatch.app.overlay.StatusOverlayService.hasOverlayPermission(this)
         android.util.Log.i("MainActivity", "Overlay permission: $hasPermission")
-        logsViewModel.info("Overlay", "Overlay permission: $hasPermission")
-
         if (hasPermission) {
             net.bladewatch.app.overlay.StatusOverlayService.startIfPermitted(this)
-            logsViewModel.info("Overlay", "Status overlay service started")
         }
-
-        // Setup guide is deferred until all daemons are confirmed running.
-        // It is shown from the destination-changed listener when the nav
-        // controller first lands on dashboardFragment (see setupCustomRail).
     }
-    
-    override fun onNewIntent(intent: android.content.Intent?) {
+
+    override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         intent?.let { handleLocationStartIntent(it) }
     }
-    
+
     override fun onResume() {
         super.onResume()
         // Try to start overlay if permission was just granted (user returned from settings)
@@ -259,54 +206,40 @@ class MainActivity : AppCompatActivity() {
             if (!sm.isSdCardAvailable()) sm.refreshSdCard()
         } catch (_: Throwable) {}
     }
-    
+
     /**
-     * Setup ADB auth callback to re-initialize daemons when auth is granted.
-     * This handles the case where user grants ADB auth after the initial connection attempt failed.
+     * Re-initialize daemons when ADB auth is granted. This handles the case where the
+     * user accepts the USB-debugging prompt after the initial connection attempt failed —
+     * common right after a reinstall, which wipes the ADB key.
      */
     private fun setupAdbAuthCallback() {
         net.bladewatch.app.launcher.AdbShellExecutor.setAuthCallback(object : net.bladewatch.app.launcher.AdbShellExecutor.AdbAuthCallback {
             override fun onAuthPending() {
-                runOnUiThread {
-                    logsViewModel.info("ADB", "⏳ Waiting for ADB authorization...")
-                    logsViewModel.info("ADB", "Please accept the USB debugging prompt")
-                }
+                android.util.Log.i("MainActivity", "Waiting for ADB authorization...")
             }
-            
+
             override fun onAuthGranted() {
                 runOnUiThread {
-                    logsViewModel.info("ADB", "ADB authorization granted")
-                    logsViewModel.info("ADB", "Re-initializing daemons...")
-                    
-                    // Re-run daemon initialization now that ADB is authorized
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    android.util.Log.i("MainActivity", "ADB authorization granted — re-initializing daemons")
+                    mainHandler.postDelayed({
                         daemonStartupManager.initializeOnAppLaunch()
-                        
-                        // Check daemon statuses after startup
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        mainHandler.postDelayed({
                             daemonStartupManager.checkAllDaemonStatuses()
                         }, 3000)
                     }, 500)
-                    
-                    // Re-check traffic monitor now that ADB is available
-                    checkTrafficMonitorStatus()
                 }
             }
-            
+
             override fun onAuthFailed(error: String) {
-                runOnUiThread {
-                    logsViewModel.error("ADB", "ADB connection failed: $error")
-                }
+                android.util.Log.e("MainActivity", "ADB connection failed: $error")
             }
         })
     }
-    
 
     /**
-     * SOTA: Setup storage directories from the App so it becomes the owner.
-     * This ensures both app and daemon can read/write to the directories.
-     * On Android 11+, requires MANAGE_EXTERNAL_STORAGE permission.
-     * On Android 10 and below, requires WRITE_EXTERNAL_STORAGE runtime permission.
+     * Setup storage directories from the app so it becomes the owner, so both app and
+     * daemon can read/write them. Android 11+ needs MANAGE_EXTERNAL_STORAGE; Android 10
+     * and below needs the WRITE_EXTERNAL_STORAGE runtime permission.
      */
     private fun setupStorageDirectories() {
         android.util.Log.i("MainActivity", "========== CHECKING STORAGE PERMISSION ==========")
@@ -381,1211 +314,102 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        
+
         if (requestCode == StorageSetup.REQUEST_CODE_STORAGE_PERMISSION) {
             // Android 11+ Settings result
             if (StorageSetup.checkStoragePermission(this)) {
                 android.util.Log.i("MainActivity", "Storage permission granted! Creating directories...")
-                val success = StorageSetup.setupDirectories()
-                if (success) {
-                    logsViewModel.info("Storage", "Storage directories created (App is owner)")
-                } else {
-                    logsViewModel.warn("Storage", "Some directories could not be created")
-                }
+                StorageSetup.setupDirectories()
             } else {
                 android.util.Log.e("MainActivity", "Storage permission denied by user")
-                logsViewModel.error("Storage", "Storage permission denied - recordings may not work")
                 Toast.makeText(this, getString(R.string.toast_storage_permission_required), Toast.LENGTH_LONG).show()
             }
         }
     }
-    
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        
+
         if (requestCode == StorageSetup.REQUEST_CODE_RUNTIME_PERMISSION) {
             // Android 10 and below runtime permission result
-            val granted = grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val granted = grantResults.isNotEmpty() &&
+                grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
             android.util.Log.i("MainActivity", "Runtime permission result: granted=$granted")
-            
+
             if (granted) {
                 android.util.Log.i("MainActivity", "Storage permission granted! Creating directories...")
-                val success = StorageSetup.setupDirectories()
-                if (success) {
-                    logsViewModel.info("Storage", "Storage directories created (App is owner)")
-                } else {
-                    logsViewModel.warn("Storage", "Some directories could not be created")
-                }
+                StorageSetup.setupDirectories()
             } else {
                 android.util.Log.e("MainActivity", "Storage permission denied by user")
-                logsViewModel.error("Storage", "Storage permission denied - recordings may not work")
                 Toast.makeText(this, getString(R.string.toast_storage_permission_required), Toast.LENGTH_LONG).show()
             }
         }
     }
-    
+
     /**
-     * Auto-start Location Sidecar service for GPS tracking.
-     * Uses daemonsViewModel's adbLauncher to avoid multiple ADB auth popups.
-     * This runs silently in the background and is monitored by SentryDaemon.
+     * Auto-start the Location Sidecar service for GPS tracking. Runs silently in the
+     * background and is monitored by SentryDaemon.
+     *
+     * Calls `AdbDaemonLauncher` directly. It used to route through DaemonsViewModel,
+     * which only forwarded to the same launcher — and that ViewModel went with the UI.
      */
     private fun startLocationSidecarService() {
-        logsViewModel.info("Location", "Auto-starting Location Sidecar service via ADB...")
-        
-        daemonsViewModel.startLocationSidecarService(object : AdbDaemonLauncher.LaunchCallback {
+        android.util.Log.i("MainActivity", "Auto-starting Location Sidecar service via ADB...")
+        AdbDaemonLauncher(this).startLocationSidecarService(object : AdbDaemonLauncher.LaunchCallback {
             override fun onLog(message: String) {
-                logsViewModel.debug("Location", message)
+                android.util.Log.d("MainActivity", "Location: $message")
             }
-            
+
             override fun onLaunched() {
-                logsViewModel.info("Location", "Location Sidecar service started successfully")
+                android.util.Log.i("MainActivity", "Location Sidecar service started successfully")
             }
-            
+
             override fun onError(error: String) {
-                logsViewModel.error("Location", "Failed to start Location Sidecar: $error")
+                android.util.Log.e("MainActivity", "Failed to start Location Sidecar: $error")
             }
         })
     }
-    
+
     /**
-     * Handle Location start intent from SentryDaemon or boot receiver.
-     * This is called when the daemon detects Location service died and launches the app to restart it.
+     * Handle the Location start intent from SentryDaemon or the boot receiver — sent when
+     * the daemon detects the Location service died and launches the app to restart it.
      */
-    private fun handleLocationStartIntent(intent: android.content.Intent) {
+    private fun handleLocationStartIntent(intent: Intent) {
         val action = intent.action
         val startLocation = intent.getBooleanExtra("start_location", false)
-        
+
         if (action == "net.bladewatch.app.START_LOCATION_ACTIVITY" || startLocation) {
-            logsViewModel.info("Location", "Received Location start intent from SentryDaemon")
-            
-            // Start LocationSidecarService directly
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                logsViewModel.info("Location", "Auto-starting Location service...")
+            android.util.Log.i("MainActivity", "Received Location start intent from SentryDaemon")
+
+            mainHandler.postDelayed({
+                android.util.Log.i("MainActivity", "Auto-starting Location service...")
                 try {
-                    val serviceIntent = android.content.Intent(this, net.bladewatch.app.services.LocationSidecarService::class.java)
+                    val serviceIntent = Intent(this, net.bladewatch.app.services.LocationSidecarService::class.java)
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                         startForegroundService(serviceIntent)
                     } else {
                         startService(serviceIntent)
                     }
-                    logsViewModel.info("Location", "Location service start requested")
+                    android.util.Log.i("MainActivity", "Location service start requested")
                 } catch (e: Exception) {
-                    logsViewModel.error("Location", "Failed to start Location service: ${e.message}")
+                    android.util.Log.e("MainActivity", "Failed to start Location service: ${e.message}")
                 }
             }, 1000)
         }
     }
-    
-    /**
-     * Setup the privileged shell (UID 1000) for daemon management.
-     * This must be done before starting any daemons that need elevated privileges.
-     */
-    private fun setupPrivilegedShell() {
-        logsViewModel.info("Shell", "Setting up privileged shell...")
-        
-        // PrivilegedShellSetup disabled — all daemons now run via ADB shell (UID 2000)
-        // PrivilegedShellSetup.init(this)
-        // 
-        // PrivilegedShellSetup.setup(object : PrivilegedShellSetup.SetupCallback {
-        //     override fun onSuccess() {
-        //         runOnUiThread {
-        //             logsViewModel.info("Shell", "✓ Privileged shell ready (UID 1000)")
-        //             daemonStartupManager.checkAllDaemonStatuses()
-        //         }
-        //     }
-        //     
-        //     override fun onFailure(reason: String) {
-        //         runOnUiThread {
-        //             logsViewModel.warn("Shell", "⚠ Privileged shell setup failed: $reason")
-        //             logsViewModel.info("Shell", "Falling back to ADB shell for daemon management")
-        //             daemonStartupManager.checkAllDaemonStatuses()
-        //         }
-        //     }
-        //     
-        //     override fun onProgress(message: String) {
-        //         runOnUiThread {
-        //             logsViewModel.debug("Shell", "→ $message")
-        //         }
-        //     }
-        // })
-    }
-    
-    private fun initViews() {
-        toolbar = findViewById(R.id.toolbar)
-        navigationRail = findViewById(R.id.navigationRail)
-        tvCurrentUrl = findViewById(R.id.tvCurrentUrl)
-        urlBar = findViewById(R.id.urlBar)
-        statusIndicator = findViewById(R.id.statusIndicator)
-        urlStatusDot = findViewById(R.id.urlStatusDot)
-        btnCopyUrl = findViewById(R.id.btnCopyUrl)
-        shellContainer = findViewById(R.id.shellContainer)
-        mainStage = findViewById(R.id.mainStage)
-        navigationRailScrollContainer = shellContainer.findViewById(R.id.navigationRailScroll)
 
-        // Brand version + device id used to live in the drawer header; in the
-        // rail-based shell they're surfaced on the Dashboard card instead.
-    }
-    
-    private fun setupNavigation(savedInstanceState: Bundle?) {
-        setSupportActionBar(toolbar)
-
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.navHostFragment) as NavHostFragment
-        navController = navHostFragment.navController
-
-        // Register fragment lifecycle callbacks so debug logging captures every
-        // Fragment lifecycle method when the developer debug logs toggle is on.
-        navHostFragment.childFragmentManager.registerFragmentLifecycleCallbacks(
-            object : FragmentManager.FragmentLifecycleCallbacks() {
-                override fun onFragmentCreated(fm: FragmentManager, f: Fragment, b: android.os.Bundle?) =
-                    DebugAppLogger.logLifecycle(f.javaClass.simpleName, "onFragmentCreated")
-                override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: android.view.View, b: android.os.Bundle?) =
-                    DebugAppLogger.logLifecycle(f.javaClass.simpleName, "onViewCreated")
-                override fun onFragmentStarted(fm: FragmentManager, f: Fragment) =
-                    DebugAppLogger.logLifecycle(f.javaClass.simpleName, "onStart")
-                override fun onFragmentResumed(fm: FragmentManager, f: Fragment) =
-                    DebugAppLogger.logLifecycle(f.javaClass.simpleName, "onResume")
-                override fun onFragmentPaused(fm: FragmentManager, f: Fragment) =
-                    DebugAppLogger.logLifecycle(f.javaClass.simpleName, "onPause")
-                override fun onFragmentStopped(fm: FragmentManager, f: Fragment) =
-                    DebugAppLogger.logLifecycle(f.javaClass.simpleName, "onStop")
-                override fun onFragmentViewDestroyed(fm: FragmentManager, f: Fragment) =
-                    DebugAppLogger.logLifecycle(f.javaClass.simpleName, "onDestroyView")
-                override fun onFragmentDestroyed(fm: FragmentManager, f: Fragment) =
-                    DebugAppLogger.logLifecycle(f.javaClass.simpleName, "onDestroy")
-            },
-            true // recursive = true so child fragment managers are also covered
-        )
-
-        // Top-level destinations on the rail — no back arrow on these.
-        appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.dashboardFragment,
-                R.id.locationFragment,
-                R.id.liveViewFragment,
-                R.id.recordingsFragment,
-                R.id.vehicleControlFragment,
-                R.id.tripsFragment,
-                R.id.diagnosticsFragment,
-                R.id.settingsFragment,
-                R.id.settingsAboutFragment
-            )
-        )
-
-        toolbar.setupWithNavController(navController, appBarConfiguration)
-
-        setupCustomRail()
-    }
-
-    /**
-     * Bind the custom navigation rail (LinearLayout of @layout/item_rail_destination
-     * includes). Material's NavigationRailView caps menu items at 7 in
-     * collapsed mode, so we use a plain vertical list of icon+label rows
-     * instead. Each row's destination, icon, and label are wired here.
-     *
-     * Selection sync is driven from the NavController so deep links and
-     * code-driven nav also light up the right rail item.
-     */
-    private fun setupCustomRail() {
-        // Visual order is defined by the <include> order in
-        // activity_main_new.xml; this list only maps each row to its
-        // destination, icon, and label (kept in the same order for clarity).
-        val items = listOf(
-            RailItem(R.id.railDestDashboard, R.id.dashboardFragment,
-                R.drawable.ic_dashboard, R.string.rail_dashboard),
-            RailItem(R.id.railDestLocation, R.id.locationFragment,
-                R.drawable.ic_location, R.string.rail_location),
-            RailItem(R.id.railDestLive, R.id.liveViewFragment,
-                R.drawable.ic_live, R.string.rail_live),
-            RailItem(R.id.railDestRecordings, R.id.recordingsFragment,
-                R.drawable.ic_recording, R.string.rail_recordings),
-            RailItem(R.id.railDestVehicle, R.id.vehicleControlFragment,
-                R.drawable.ic_vehicle_control, R.string.rail_vehicle),
-            RailItem(R.id.railDestTrips, R.id.tripsFragment,
-                R.drawable.ic_trips, R.string.rail_trips),
-            RailItem(R.id.railDestDiagnostics, R.id.diagnosticsFragment,
-                R.drawable.ic_diagnostics, R.string.rail_diagnostics),
-            RailItem(R.id.railDestSettings, R.id.settingsFragment,
-                R.drawable.ic_settings, R.string.rail_settings),
-            RailItem(R.id.railDestAbout, R.id.settingsAboutFragment,
-                R.drawable.ic_update, R.string.settings_section_about)
-        )
-
-        // Bind icon + label and click handler per row.
-        items.forEach { item ->
-            val row = navigationRail.findViewById<View>(item.rowId) ?: return@forEach
-            row.findViewById<ImageView>(R.id.railItemIcon)?.setImageResource(item.iconRes)
-            row.findViewById<TextView>(R.id.railItemLabel)?.setText(item.labelRes)
-            row.setOnClickListener {
-                navigateToRailDestination(item.destinationId)
-            }
-        }
-
-        // Selection sync — light up the row whose destinationId matches
-        // the current nav destination (or any of its ancestors).
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            val isStartup = destination.id == R.id.startupFragment
-            val shellVisibility = if (isStartup) View.GONE else View.VISIBLE
-            navigationRailScrollContainer?.visibility = shellVisibility
-            toolbar.visibility = shellVisibility
-            // Show the "Getting Started" setup guide the first time the dashboard
-            // is reached — which only happens after StartupFragment confirms all
-            // daemons are running. One-shot per session.
-            if (destination.id == R.id.dashboardFragment && !setupGuideShown) {
-                setupGuideShown = true
-                mainHandler.postDelayed({
-                    net.bladewatch.app.overlay.SetupGuideDialog.showIfNeeded(this@MainActivity)
-                }, 1000)
-            }
-            var node: androidx.navigation.NavDestination? = destination
-            while (node != null) {
-                val match = items.firstOrNull { it.destinationId == node!!.id }
-                if (match != null) {
-                    items.forEach { item ->
-                        navigationRail.findViewById<View>(item.rowId)?.isSelected =
-                            (item.destinationId == match.destinationId)
-                    }
-                    return@addOnDestinationChangedListener
-                }
-                node = node.parent
-            }
-        }
-
-        // Language picker — moved to the toolbar end-cluster so it's
-        // reachable from the top-right at every screen size. Falls back
-        // to the legacy rail-header button if a downstream layout ever
-        // restores it; the dialog itself is the same.
-        val languageClick = View.OnClickListener {
-            net.bladewatch.app.ui.dialog.LanguagePickerDialog.show(this) {
-                recreate()
-            }
-        }
-        findViewById<View>(R.id.toolbarLanguageButton)?.setOnClickListener(languageClick)
-        navigationRail.findViewById<View>(R.id.railLanguageButton)?.setOnClickListener(languageClick)
-    }
-
-    private data class RailItem(
-        val rowId: Int,
-        val destinationId: Int,
-        val iconRes: Int,
-        val labelRes: Int
-    )
-
-    /**
-     * Navigate to a rail destination, popping any sub-pages so the tab
-     * resets to its root. Uses M3 expressive fade-through (the incoming
-     * destination scales up slightly while the outgoing fades) so the
-     * switch reads as motion, not just a cross-fade.
-     */
-    private fun navigateToRailDestination(destinationId: Int) {
-        val options = androidx.navigation.NavOptions.Builder()
-            .setLaunchSingleTop(true)
-            .setRestoreState(false)
-            .setPopUpTo(destinationId, /* inclusive = */ false, /* saveState = */ false)
-            .setEnterAnim(R.anim.m3_fade_through_enter)
-            .setExitAnim(R.anim.m3_fade_through_exit)
-            .setPopEnterAnim(R.anim.m3_fade_through_enter)
-            .setPopExitAnim(R.anim.m3_fade_through_exit)
-            .build()
-        try {
-            navController.navigate(destinationId, /* args = */ null, options)
-        } catch (_: IllegalArgumentException) {
-            // Destination not in graph — defensive only.
-        }
-    }
-    
-    private fun setupCopyButton() {
-        btnCopyUrl.setOnClickListener {
-            val url = tvCurrentUrl.text.toString()
-            if (url.isNotEmpty() && !url.startsWith("No tunnel") && !url.startsWith("Waiting") && !url.startsWith("Starting") && url != "Connecting...") {
-                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText(getString(R.string.clip_label_url), url)
-                clipboard.setPrimaryClip(clip)
-                Toast.makeText(this, getString(R.string.toast_url_copied_short), Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-    
-    private fun setupLogListener() {
-        // Wire LogManager to LogsViewModel
-        LogManager.setLogListener(object : LogManager.LogListener {
-            override fun onLog(tag: String, message: String, level: LogLevel) {
-                // Convert LogManager.LogLevel to UI LogLevel
-                val uiLevel = when (level) {
-                    LogLevel.DEBUG -> net.bladewatch.app.ui.model.LogLevel.DEBUG
-                    LogLevel.INFO -> net.bladewatch.app.ui.model.LogLevel.INFO
-                    LogLevel.WARN -> net.bladewatch.app.ui.model.LogLevel.WARN
-                    LogLevel.ERROR -> net.bladewatch.app.ui.model.LogLevel.ERROR
-                }
-                logsViewModel.addLog(tag, message, uiLevel)
-            }
-        })
-    }
-    
-    private fun observeViewModels() {
-        // Observe tunnel URL from zrok controller (the only supported tunnel).
-        daemonsViewModel.zrokController.tunnelUrl.observe(this) { url ->
-            if (!url.isNullOrEmpty()) {
-                mainViewModel.setTunnelUrl(url)
-            }
-            updateUrlDisplay()
-        }
-
-        // Observe daemon states for zrok tunnel status.
-        daemonsViewModel.daemonStates.observe(this) { states ->
-            val zrokState = states[DaemonType.ZROK_TUNNEL]
-            val tunnelStatus = when (zrokState?.status) {
-                DaemonStatus.RUNNING -> DaemonStatus.RUNNING
-                DaemonStatus.STARTING -> DaemonStatus.STARTING
-                else -> DaemonStatus.STOPPED
-            }
-            updateStatusIndicator(tunnelStatus)
-            updateUrlDisplay()
-        }
-    }
-
-    private fun updateUrlDisplay() {
-        val tunnelUrl = daemonsViewModel.zrokController.tunnelUrl.value
-        if (tunnelUrl.isNullOrEmpty()) {
-            // No active tunnel URL — hide the pill entirely. The dashboard
-            // connect card already surfaces the "No tunnel running" state.
-            urlBar.visibility = android.view.View.GONE
-            mainViewModel.setCurrentUrl(null)
-        } else {
-            urlBar.visibility = android.view.View.VISIBLE
-            tvCurrentUrl.text = tunnelUrl
-            urlStatusDot.setBackgroundResource(R.drawable.status_dot_online)
-            mainViewModel.setCurrentUrl(tunnelUrl)
-        }
-    }
-    
-    private fun updateStatusIndicator(status: DaemonStatus?) {
-        // Single status pill replaced the standalone toolbar dot. Both the
-        // legacy `statusIndicator` and the in-pill `urlStatusDot` IDs are
-        // updated for safety: the legacy dot is now a 0×0 invisible View
-        // (so updates are no-ops visually) and the pill dot is what users
-        // actually see. Keeping both write paths means future layout swaps
-        // don't need MainActivity edits.
-        val drawableRes = when (status) {
-            DaemonStatus.RUNNING -> R.drawable.status_dot_online
-            DaemonStatus.STARTING, DaemonStatus.STOPPING -> R.drawable.status_dot_starting
-            else -> R.drawable.status_dot_offline
-        }
-        statusIndicator.setBackgroundResource(drawableRes)
-        urlStatusDot.setBackgroundResource(drawableRes)
-    }
-    
-    /**
-     * Read the drive-side preference and reposition the navigation rail.
-     * "left" (default): rail on left, main stage on right.
-     * "right": main stage on left, rail on right.
-     * "auto": detect via BYD vehicle API; fall back to left on failure.
-     *
-     * Safe to call any time the preference changes — detects the current
-     * arrangement before touching the view tree so redundant calls are no-ops.
-     */
-    fun applyDriveSide() {
-        val pref = PreferencesManager.getDriveSide()
-        val railOnRight = when (pref) {
-            "right" -> true
-            "auto" -> detectVehicleRailOnRight()
-            else -> false
-        }
-
-        val rail = shellContainer.getChildAt(0)
-        val currentRailOnRight = rail?.id != R.id.navigationRailScroll
-        if (currentRailOnRight == railOnRight) return  // already correct
-
-        val railScroll = shellContainer.findViewById<android.view.View>(R.id.navigationRailScroll)
-            ?: return
-        val stage = shellContainer.findViewById<android.view.View>(R.id.mainStage) ?: return
-
-        shellContainer.removeAllViews()
-        if (railOnRight) {
-            shellContainer.addView(stage)
-            shellContainer.addView(railScroll)
-        } else {
-            shellContainer.addView(railScroll)
-            shellContainer.addView(stage)
-        }
-    }
-
-    /**
-     * True when the main navigation rail currently sits on the right edge.
-     * Reflects the live view arrangement (after [applyDriveSide] has resolved
-     * "left"/"right"/"auto"), so callers don't have to re-run vehicle
-     * detection. Screens with their own sub-rail (e.g. Settings) read this to
-     * keep their sub-rail adjacent to the main rail.
-     */
-    fun isMainRailOnRight(): Boolean {
-        if (!::shellContainer.isInitialized) return false
-        val first = shellContainer.getChildAt(0) ?: return false
-        return first.id != R.id.navigationRailScroll
-    }
-
-    private fun detectVehicleRailOnRight(): Boolean {
-        return try {
-            val cls = Class.forName("android.widget.CustomVehicleConfig")
-            val getInstance = cls.getMethod("getInstance", android.content.Context::class.java)
-            val config = getInstance.invoke(null, applicationContext)
-            val isRight = cls.getMethod("isRightDriver").invoke(config) as? Boolean
-            isRight == true
-        } catch (_: Throwable) {
-            false
-        }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
-    }
-    
-    @Deprecated("Default back behavior is handled by NavController + the activity")
-    override fun onBackPressed() {
-        @Suppress("DEPRECATION")
-        super.onBackPressed()
-    }
-    
-    // ==================== Camera Reconfiguration ====================
-    
-    /**
-     * No-op since the rail shell doesn't have a drawer-side menu item to
-     * retitle — Camera probe status is shown inside the dialog itself.
-     */
-    private fun updateCameraProbeMenuItem() { /* intentionally empty */ }
-
-
-    /**
-     * Handle "Reconfigure Camera" menu item click.
-     * Shows a styled dialog to manually select camera ID or use auto-detection.
-     */
-    private fun onReconfigureCameraClicked() {
-        var currentId = -1
-        var isManual = false
-        try {
-            val config = net.bladewatch.app.config.UnifiedConfigManager.loadConfig()
-            val cameraConfig = config.optJSONObject("camera")
-            if (cameraConfig != null) {
-                currentId = cameraConfig.optInt("probedCameraId", -1)
-                isManual = cameraConfig.optBoolean("manualOverride", false)
-            }
-        } catch (e: Exception) { /* ignore */ }
-
-        val dialogView = layoutInflater.inflate(R.layout.dialog_camera_selection, null)
-        
-        // Set current status
-        val statusText = dialogView.findViewById<TextView>(R.id.tvCurrentCamera)
-        if (isManual && currentId >= 0) {
-            statusText.text = getString(R.string.camera_current_manual, currentId)
-        } else {
-            statusText.text = getString(R.string.camera_current_auto_label)
-        }
-        
-        // Set radio button selection
-        val radioGroup = dialogView.findViewById<android.widget.RadioGroup>(R.id.rgCameraOptions)
-        val radioIds = arrayOf(
-            R.id.rbCameraAuto, R.id.rbCamera0, R.id.rbCamera1,
-            R.id.rbCamera2, R.id.rbCamera3, R.id.rbCamera4, R.id.rbCamera5
-        )
-        val currentSelection = if (isManual && currentId >= 0) currentId + 1 else 0
-        radioGroup.check(radioIds[currentSelection])
-        
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-            .setView(dialogView)
-            .setNegativeButton(getString(R.string.dialog_close), null)
-            .create()
-        
-        // Save immediately on radio button selection — no Apply button needed
-        radioGroup.setOnCheckedChangeListener { _, checkedId ->
-            val selectedIndex = radioIds.indexOf(checkedId)
-            if (selectedIndex < 0) return@setOnCheckedChangeListener
-            
-            // Don't re-save if user tapped the already-selected option
-            if (selectedIndex == currentSelection) return@setOnCheckedChangeListener
-            
-            if (selectedIndex == 0) {
-                // Auto mode
-                Thread {
-                    try {
-                        val req = SetSurveillanceConfigRequest.newBuilder()
-                            .setClearManualCameraId(true)
-                            .build()
-                        val resp = runBlocking { ConnectClientProvider.surveillanceService().setConfig(req, emptyMap()) }
-                        runOnUiThread {
-                            if (resp is ResponseMessage.Success && resp.message.success) {
-                                Toast.makeText(this, getString(R.string.toast_camera_set_to_auto), Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(this, getString(R.string.toast_failed_to_save_short), Toast.LENGTH_SHORT).show()
-                            }
-                            updateCameraProbeMenuItem()
-                        }
-                    } catch (e: Exception) {
-                        runOnUiThread { Toast.makeText(this, getString(R.string.toast_failed_with_message, e.message ?: ""), Toast.LENGTH_SHORT).show() }
-                    }
-                }.start()
-            } else {
-                // Manual camera ID
-                val selectedCamId = selectedIndex - 1
-                Thread {
-                    try {
-                        val req = SetSurveillanceConfigRequest.newBuilder()
-                            .setManualCameraId(selectedCamId)
-                            .build()
-                        val resp = runBlocking { ConnectClientProvider.surveillanceService().setConfig(req, emptyMap()) }
-                        runOnUiThread {
-                            if (resp is ResponseMessage.Success && resp.message.success) {
-                                Toast.makeText(this, getString(R.string.toast_camera_id_set, selectedCamId), Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(this, getString(R.string.toast_failed_to_save_short), Toast.LENGTH_SHORT).show()
-                            }
-                            updateCameraProbeMenuItem()
-                        }
-                    } catch (e: Exception) {
-                        runOnUiThread { Toast.makeText(this, getString(R.string.toast_failed_with_message, e.message ?: ""), Toast.LENGTH_SHORT).show() }
-                    }
-                }.start()
-            }
-        }
-        
-        dialog.show()
-    }
-    
-    /**
-     * Clear saved camera config and restart the camera daemon.
-     */
-    private fun performCameraReconfigure() {
-        Toast.makeText(this, getString(R.string.toast_clearing_camera_config), Toast.LENGTH_SHORT).show()
-        logsViewModel.info("Camera", "Clearing saved camera probe config for re-probe")
-        
-        Thread {
-            try {
-                // Clear the camera section from unified config
-                val emptyCameraConfig = org.json.JSONObject()
-                emptyCameraConfig.put("probedCameraId", -1)
-                emptyCameraConfig.put("probedSurfaceMode", -1)
-                net.bladewatch.app.config.UnifiedConfigManager.updateSection("camera", emptyCameraConfig)
-                
-                runOnUiThread {
-                    logsViewModel.info("Camera", "Camera config cleared — restarting daemon")
-                    Toast.makeText(this, getString(R.string.toast_restarting_camera_daemon), Toast.LENGTH_SHORT).show()
-                }
-                
-                // Kill the camera daemon — DaemonLauncher's watchdog will auto-restart it
-                val adb = net.bladewatch.app.launcher.AdbDaemonLauncher(this)
-                adb.killDaemon(object : net.bladewatch.app.launcher.AdbDaemonLauncher.LaunchCallback {
-                    override fun onLog(message: String) {
-                        logsViewModel.debug("Camera", message)
-                    }
-                    
-                    override fun onLaunched() {
-                        runOnUiThread {
-                            logsViewModel.info("Camera", "Camera daemon stopped — will auto-restart with full probe")
-                            Toast.makeText(this@MainActivity,
-                                getString(R.string.toast_camera_daemon_restarting), Toast.LENGTH_LONG).show()
-                            
-                            // Re-launch the daemon after a brief delay
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                daemonStartupManager.initializeOnAppLaunch()
-                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                    daemonStartupManager.checkAllDaemonStatuses()
-                                }, 5000)
-                            }, 3000)
-                        }
-                    }
-                    
-                    override fun onError(error: String) {
-                        runOnUiThread {
-                            logsViewModel.error("Camera", "Failed to stop daemon: $error")
-                            Toast.makeText(this@MainActivity,
-                                getString(R.string.toast_camera_restart_failed),
-                                Toast.LENGTH_LONG).show()
-                        }
-                    }
-                })
-                
-            } catch (e: Exception) {
-                runOnUiThread {
-                    logsViewModel.error("Camera", "Reconfigure failed: ${e.message}")
-                    Toast.makeText(this, getString(R.string.toast_failed_with_message_x, e.message ?: ""), Toast.LENGTH_LONG).show()
-                }
-            }
-        }.start()
-    }
-    
-    // ==================== Battery Health (SOH) Dialog ====================
-
-    /**
-     * Shows a styled dialog with SOH status details and a reset button.
-     * Reads directly from the persisted properties file (no HTTP/auth needed).
-     */
-    private fun showBatteryHealthDialog() {
-        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
-
-        executor.execute {
-            var sohPercent = "--"
-            var source = "--"
-            var method = "live"
-            var nominalKwh = "--"
-            var samples = "--"
-            var lastUpdated = "--"
-            var hasEstimate = false
-            var displaySource = "unavailable"
-
-            // Vehicle section state. Populated from /api/performance/soh status JSON
-            // when available; falls back to legacy properties-file values otherwise.
-            var modelId: String? = null
-            var nominalKwhValue = 0.0
-            var nominalSourceVal = "unset"
-            var estimatedKwhValue = 0.0
-            var calibrationSoh = 0.0
-            var calibrationTs = 0L
-
-            try {
-                val sohFile = java.io.File("/data/local/tmp/abrp_soh_estimate.properties")
-                if (sohFile.exists()) {
-                    val props = java.util.Properties()
-                    java.io.FileInputStream(sohFile).use { props.load(it) }
-
-                    val soh = props.getProperty("soh_percent")?.toDoubleOrNull()
-                    if (soh != null && soh > 0 && soh <= 110) {
-                        sohPercent = String.format("%.1f%%", soh)
-                        hasEstimate = true
-                    }
-
-                    // Shape B: live formula + calibration anchor (separate, not blended).
-                    val cal = props.getProperty("calibration_soh")?.toDoubleOrNull()
-                    samples = if (cal != null && cal > 0) String.format("calib %.1f%%", cal) else "—"
-
-                    val nominal = props.getProperty("nominal_capacity_kwh")?.toDoubleOrNull()
-                    if (nominal != null && nominal > 0) {
-                        nominalKwh = String.format("%.1f kWh", nominal)
-                        nominalKwhValue = nominal
-                    }
-
-                    val ts = props.getProperty("last_updated")?.toLongOrNull()
-                    if (ts != null && ts > 0) {
-                        lastUpdated = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
-                            .format(java.util.Date(ts))
-                    }
-
-                    source = props.getProperty("nominal_source") ?: "unset"
-                    nominalSourceVal = source
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("MainActivity", "SOH file read failed: ${e.message}")
-            }
-
-            // Fetch full SOH status (modelId, calibration anchor, estimated capacity) —
-            // properties file alone doesn't carry modelId or live calibration shape.
-            try {
-                val req = GetSohStatusRequest.newBuilder().build()
-                val resp = runBlocking { ConnectClientProvider.systemService().getSohStatus(req, emptyMap()) }
-                if (resp is ResponseMessage.Success) {
-                    val apiDisplaySoh = resp.message.displaySoh
-                    val apiDisplaySource = resp.message.displaySource
-                    if (apiDisplaySoh > 0) {
-                        sohPercent = String.format("%.1f%%", apiDisplaySoh)
-                        method = apiDisplaySource.ifEmpty { method }
-                        displaySource = apiDisplaySource.ifEmpty { displaySource }
-                    }
-                    if (resp.message.nominalCapacityKwh > 0) nominalKwhValue = resp.message.nominalCapacityKwh
-                    if (resp.message.nominalSource.isNotEmpty()) nominalSourceVal = resp.message.nominalSource
-                    source = nominalSourceVal
-                    if (nominalKwhValue > 0) nominalKwh = String.format("%.1f kWh", nominalKwhValue)
-                    // modelId, estimatedCapacityKwh, calibration not in this RPC — remain from file fallback
-                }
-            } catch (_: Throwable) { /* keep legacy file fallback values */ }
-
-            val finalSoh = sohPercent
-            val finalSource = source
-            val finalMethod = method
-            val finalNominal = nominalKwh
-            val finalSamples = samples
-            val finalLastUpdated = lastUpdated
-            val finalHasEstimate = hasEstimate
-            val finalDisplaySource = displaySource
-            val finalModelId = modelId
-            val finalNominalKwh = nominalKwhValue
-            val finalNominalSource = nominalSourceVal
-            val finalEstimatedKwh = estimatedKwhValue
-            val finalCalSoh = calibrationSoh
-            val finalCalTs = calibrationTs
-
-            runOnUiThread {
-                val dialogView = layoutInflater.inflate(R.layout.dialog_battery_health, null)
-
-                // Populate fields
-                dialogView.findViewById<TextView>(R.id.tvSohPercent).text = finalSoh
-                dialogView.findViewById<TextView>(R.id.tvSohSource).text = finalSource
-                dialogView.findViewById<TextView>(R.id.tvSohMethod).text = finalMethod
-                dialogView.findViewById<TextView>(R.id.tvSohCapacity).text = finalNominal
-                dialogView.findViewById<TextView>(R.id.tvSohSamples).text = finalSamples
-                dialogView.findViewById<TextView>(R.id.tvSohLastUpdated).text = finalLastUpdated
-
-                // Vehicle section
-                dialogView.findViewById<TextView>(R.id.tvSohModel).text =
-                    if (finalModelId != null) modelDisplayName(finalModelId)
-                    else getString(R.string.soh_dialog_model_not_selected)
-
-                val packCapView = dialogView.findViewById<TextView>(R.id.tvSohPackCapacity)
-                val packBadgeView = dialogView.findViewById<TextView>(R.id.tvSohPackCapacityBadge)
-                if (finalNominalKwh > 0) {
-                    packCapView.text = String.format("%.1f kWh", finalNominalKwh)
-                    val badgeText = when (finalNominalSource) {
-                        "user" -> getString(R.string.soh_dialog_source_user)
-                        "auto" -> getString(R.string.soh_dialog_source_auto)
-                        else -> null
-                    }
-                    if (badgeText != null) {
-                        packBadgeView.text = "(" + badgeText + ")"
-                        packBadgeView.visibility = View.VISIBLE
-                    } else {
-                        packBadgeView.visibility = View.GONE
-                    }
-                } else {
-                    packCapView.text = getString(R.string.soh_dialog_capacity_not_detected)
-                    packBadgeView.visibility = View.GONE
-                }
-
-                val rowEst = dialogView.findViewById<View>(R.id.rowSohEstimatedCapacity)
-                if (finalEstimatedKwh > 0) {
-                    dialogView.findViewById<TextView>(R.id.tvSohEstimatedCapacity).text =
-                        String.format("%.1f kWh", finalEstimatedKwh)
-                    rowEst.visibility = View.VISIBLE
-                } else {
-                    rowEst.visibility = View.GONE
-                }
-
-                val rowCal = dialogView.findViewById<View>(R.id.rowSohCalibrationAnchor)
-                if (finalCalSoh > 0 && finalCalTs > 0) {
-                    val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                        .format(java.util.Date(finalCalTs))
-                    dialogView.findViewById<TextView>(R.id.tvSohCalibrationAnchor).text =
-                        getString(R.string.soh_dialog_calibration_format, finalCalSoh, date)
-                    rowCal.visibility = View.VISIBLE
-                } else {
-                    rowCal.visibility = View.GONE
-                }
-
-                // Status text
-                val statusView = dialogView.findViewById<TextView>(R.id.tvSohStatus)
-                if (finalHasEstimate) {
-                    statusView.text = getString(R.string.soh_estimation_active)
-                    statusView.setTextColor(resources.getColor(R.color.brand_primary, null))
-                } else if (finalDisplaySource == "oem") {
-                    statusView.text = getString(R.string.soh_oem_readout)
-                    statusView.setTextColor(resources.getColor(R.color.text_muted, null))
-                } else if (finalDisplaySource == "nominal") {
-                    statusView.text = getString(R.string.soh_nominal_baseline)
-                    statusView.setTextColor(resources.getColor(R.color.text_muted, null))
-                } else {
-                    statusView.text = getString(R.string.soh_no_estimate_yet)
-                    statusView.setTextColor(resources.getColor(R.color.text_muted, null))
-                }
-
-                // SOH percent color based on health
-                val sohView = dialogView.findViewById<TextView>(R.id.tvSohPercent)
-                // OEM and nominal fallbacks are still visible percentages, but
-                // only finalHasEstimate means BladeWatch calculated capacity SOH.
-                if (finalHasEstimate || finalDisplaySource == "oem" || finalDisplaySource == "nominal") {
-                    val sohVal = finalSoh.replace("%", "").toDoubleOrNull() ?: 0.0
-                    val colorRes = when {
-                        sohVal >= 85 -> R.color.brand_primary   // Good
-                        sohVal >= 70 -> R.color.status_starting // Moderate
-                        else -> R.color.status_error            // Degraded
-                    }
-                    sohView.setTextColor(resources.getColor(colorRes, null))
-                }
-
-                val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-                    .setView(dialogView)
-                    .setPositiveButton(getString(R.string.dialog_close), null)
-                    .create()
-
-                // Wire up reset button
-                dialogView.findViewById<TextView>(R.id.btnResetSoh).setOnClickListener {
-                    dialog.dismiss()
-                    confirmSohReset()
-                }
-
-                dialog.show()
-            }
-        }
-    }
-
-    private fun modelDisplayName(modelId: String?): String {
-        return when (modelId?.lowercase()) {
-            null -> "—"
-            "seal" -> "BYD Seal"
-            "atto3", "atto-3" -> "BYD Atto 3"
-            "atto2", "atto-2" -> "BYD Atto 2"
-            "atto1", "atto-1" -> "BYD Atto 1"
-            "han" -> "BYD Han"
-            "tang" -> "BYD Tang"
-            "song" -> "BYD Song"
-            "qin" -> "BYD Qin"
-            "dolphin" -> "BYD Dolphin"
-            "seagull" -> "BYD Seagull"
-            "sealion6" -> "BYD Sealion 6"
-            "sealion7" -> "BYD Sealion 7"
-            "sealu", "seal-u" -> "BYD Seal U"
-            "seal5-dmi-dynamic" -> "BYD Seal 5 DM-i Dynamic"
-            "seal5-dmi-premium" -> "BYD Seal 5 DM-i Premium"
-            else -> modelId.replaceFirstChar { it.uppercase() }
-        }
-    }
-    
-    /**
-     * Confirmation dialog before resetting SOH estimation.
-     */
-    private fun confirmSohReset() {
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-            .setIcon(R.drawable.ic_warning)
-            .setTitle(getString(R.string.dialog_reset_soh_title))
-            .setMessage(getString(R.string.dialog_reset_soh_message))
-            .setPositiveButton(getString(R.string.dialog_reset)) { _, _ ->
-                performSohReset()
-            }
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .show()
-    }
-    
-    /**
-     * Perform the actual SOH reset by deleting the properties file.
-     * The daemon's SohEstimator will detect the missing file and re-seed.
-     */
-    private fun performSohReset() {
-        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
-        executor.execute {
-            try {
-                val req = ResetSohRequest.newBuilder().build()
-                val resp = runBlocking { ConnectClientProvider.systemService().resetSoh(req, emptyMap()) }
-                if (resp is ResponseMessage.Success && resp.message.success) {
-                    runOnUiThread {
-                        Toast.makeText(this, getString(R.string.toast_soh_reset_success), Toast.LENGTH_LONG).show()
-                        logsViewModel.info("SOH", "SOH estimation reset by user")
-                    }
-                } else {
-                    // Fallback: try direct file delete (works if app has permissions)
-                    val sohFile = java.io.File("/data/local/tmp/abrp_soh_estimate.properties")
-                    val deleted = if (sohFile.exists()) sohFile.delete() else true
-                    runOnUiThread {
-                        if (deleted) {
-                            Toast.makeText(this, getString(R.string.toast_soh_reset_success), Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(this, getString(R.string.toast_soh_reset_failed_no_daemon), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(this, getString(R.string.toast_soh_reset_failed_with_message, e.message ?: ""), Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    // ==================== Reset Data Dialog ====================
-
-    /** Map drawer menu category id → API category name (must match server). */
-    private val resetCategoryMapping = listOf(
-        R.id.cbResetTrips to "trips",
-        R.id.cbResetSocHistory to "socHistory",
-        R.id.cbResetSoh to "soh",
-        R.id.cbResetMediaRecordings to "mediaRecordings",
-        R.id.cbResetMediaSurveillance to "mediaSurveillance",
-        R.id.cbResetMediaProximity to "mediaProximity",
-        R.id.cbResetMediaTrips to "mediaTrips"
-    )
-
-    private fun showResetDataDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_reset_data, null)
-
-        val checkboxes: List<Pair<com.google.android.material.checkbox.MaterialCheckBox, String>> =
-            resetCategoryMapping.map { (id, cat) ->
-                dialogView.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(id) to cat
-            }
-
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-            .setView(dialogView)
-            .setPositiveButton(getString(R.string.dialog_reset_selected), null)  // Wired below to allow keep-open on validate
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .create()
-
-        // Quick toggles
-        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnResetSelectAll)
-            .setOnClickListener {
-                checkboxes.forEach { it.first.isChecked = true }
-            }
-        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnResetClearAll)
-            .setOnClickListener {
-                checkboxes.forEach { it.first.isChecked = false }
-            }
-
-        dialog.setOnShowListener {
-            val ok = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
-            ok.setTextColor(resources.getColor(R.color.status_error, null))
-            ok.setOnClickListener {
-                val selected = checkboxes.filter { it.first.isChecked }.map { it.second }
-                if (selected.isEmpty()) {
-                    Toast.makeText(this, getString(R.string.toast_select_at_least_one_category), Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                dialog.dismiss()
-                confirmAndPerformReset(selected)
-            }
-        }
-
-        dialog.show()
-    }
-
-    private fun confirmAndPerformReset(categories: List<String>) {
-        val labels = mapOf(
-            "trips" to getString(R.string.reset_label_trips),
-            "socHistory" to getString(R.string.reset_label_soc_history),
-            "soh" to getString(R.string.reset_label_soh),
-            "mediaRecordings" to getString(R.string.reset_label_recordings),
-            "mediaSurveillance" to getString(R.string.reset_label_sentry_events),
-            "mediaProximity" to getString(R.string.reset_label_proximity),
-            "mediaTrips" to getString(R.string.reset_label_trip_files)
-        )
-        val list = categories.joinToString("\n") { "• " + (labels[it] ?: it) }
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-            .setIcon(R.drawable.ic_warning)
-            .setTitle(getString(R.string.dialog_reset_following_title))
-            .setMessage(getString(R.string.dialog_reset_following_message, list))
-            .setPositiveButton(getString(R.string.dialog_reset)) { _, _ -> performReset(categories, labels) }
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .show()
-    }
-
-    private fun performReset(
-        categories: List<String>,
-        labels: Map<String, String>
-    ) {
-        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
-        executor.execute {
-            try {
-                val req = ResetPerformanceRequest.newBuilder()
-                    .addAllCategories(categories)
-                    .build()
-                val resp = runBlocking { ConnectClientProvider.systemService().resetPerformance(req, emptyMap()) }
-                runOnUiThread {
-                    if (resp is ResponseMessage.Success && resp.message.success) {
-                        val results = try { org.json.JSONObject(resp.message.resultsJson) } catch (e: Exception) { null }
-                        val lines = StringBuilder()
-                        for (cat in categories) {
-                            val r = results?.optJSONObject(cat)
-                            val label = labels[cat] ?: cat
-                            if (r != null && r.optBoolean("success", false)) {
-                                val detail = when {
-                                    r.has("rowsDeleted") -> " (${r.optLong("rowsDeleted")} rows)"
-                                    r.has("filesDeleted") -> " (${r.optLong("filesDeleted")} files)"
-                                    else -> ""
-                                }
-                                lines.append("• ").append(label).append(detail).append("\n")
-                            } else {
-                                val err = r?.optString("error", "failed") ?: "failed"
-                                lines.append("• ").append(label).append(" — ").append(err).append("\n")
-                            }
-                        }
-                        com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-                            .setIcon(R.drawable.ic_check_circle)
-                            .setTitle(getString(R.string.dialog_reset_complete_title))
-                            .setMessage(lines.toString().trim())
-                            .setPositiveButton(getString(R.string.dialog_ok), null)
-                            .show()
-                        logsViewModel.info("Reset", "Categories: ${categories.joinToString(",")}")
-                    } else {
-                        val err = if (resp is ResponseMessage.Success) resp.message.error else "Request failed"
-                        Toast.makeText(this, getString(R.string.toast_reset_failed_with_error, err), Toast.LENGTH_LONG).show()
-                    }
-                }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(this, getString(R.string.toast_reset_failed_with_error, e.message ?: ""), Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    // ==================== Traffic Monitor Management ====================
-
-    /** Track current traffic monitor state to show correct button */
-    private var trafficMonitorEnabled: Boolean? = null
-    
-    /**
-     * Check if BYD Traffic Monitor app is currently enabled or disabled.
-     * Updates the drawer menu item title accordingly.
-     * 
-     * Uses ADB shell — if ADB isn't connected yet, shows a "checking" state
-     * and retries automatically when the drawer is opened.
-     */
-    private fun checkTrafficMonitorStatus() {
-        // Show loading state while we check
-        updateTrafficMonitorMenuItemText(getString(R.string.traffic_monitor_loading))
-        
-        val adb = AdbDaemonLauncher(this)
-        // Use 'grep ... || echo NOT_DISABLED' to ensure exit code 0 regardless of grep result
-        adb.executeShellCommand(
-            "pm list packages -d 2>/dev/null | grep com.byd.trafficmonitor || echo NOT_DISABLED",
-            object : AdbDaemonLauncher.LaunchCallback {
-                override fun onLog(message: String) {
-                    val isDisabled = message.contains("com.byd.trafficmonitor") && !message.contains("NOT_DISABLED")
-                    runOnUiThread {
-                        trafficMonitorEnabled = !isDisabled
-                        updateTrafficMonitorMenuItem(!isDisabled)
-                    }
-                }
-                override fun onLaunched() {
-                    // Command completed — if onLog wasn't called, default to enabled
-                    if (trafficMonitorEnabled == null) {
-                        runOnUiThread {
-                            trafficMonitorEnabled = true
-                            updateTrafficMonitorMenuItem(true)
-                        }
-                    }
-                }
-                override fun onError(error: String) {
-                    runOnUiThread {
-                        // Actual ADB connection failure
-                        trafficMonitorEnabled = null
-                        updateTrafficMonitorMenuItemText(getString(R.string.traffic_monitor_tap_to_check))
-                    }
-                }
-            }
-        )
-    }
-    
-    /**
-     * Drawer-era helpers — kept as no-ops because checkTrafficMonitorStatus()
-     * still calls them, and we want behavior parity (the status check still
-     * runs; it just doesn't have a drawer menu item to retitle anymore).
-     * Settings → Diagnostics shows the traffic monitor in dialog form.
-     */
-    private fun updateTrafficMonitorMenuItem(enabled: Boolean) { /* no-op in rail shell */ }
-    private fun updateTrafficMonitorMenuItemText(text: String) { /* no-op in rail shell */ }
-    
-    /**
-     * Handle traffic monitor menu item click.
-     * Shows an informational dialog explaining what the traffic monitor is,
-     * why disabling it is recommended, and lets the user take action.
-     */
-    private fun onTrafficMonitorClicked() {
-        val currentlyEnabled = trafficMonitorEnabled
-        
-        if (currentlyEnabled == null) {
-            // ADB not connected — retry the check and show explanation
-            checkTrafficMonitorStatus()
-            
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-                .setIcon(R.drawable.ic_warning)
-                .setTitle(getString(R.string.dialog_traffic_cannot_check_title))
-                .setMessage(getString(R.string.dialog_traffic_cannot_check_message))
-                .setPositiveButton(getString(R.string.dialog_ok), null)
-                .show()
-            return
-        }
-
-        if (currentlyEnabled) {
-            // Currently enabled — offer to disable with full explanation
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-                .setIcon(R.drawable.ic_traffic_monitor)
-                .setTitle(getString(R.string.dialog_traffic_disable_title))
-                .setMessage(getString(R.string.dialog_traffic_disable_message))
-                .setPositiveButton(getString(R.string.dialog_disable)) { _, _ ->
-                    setTrafficMonitorEnabled(false)
-                }
-                .setNegativeButton(getString(R.string.dialog_keep_enabled), null)
-                .show()
-        } else {
-            // Currently disabled — offer to re-enable
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this, R.style.Theme_BladeWatch_M3_Dialog)
-                .setIcon(R.drawable.ic_traffic_monitor)
-                .setTitle(getString(R.string.dialog_traffic_enable_title))
-                .setMessage(getString(R.string.dialog_traffic_enable_message))
-                .setPositiveButton(getString(R.string.dialog_enable)) { _, _ ->
-                    setTrafficMonitorEnabled(true)
-                }
-                .setNegativeButton(getString(R.string.dialog_keep_disabled), null)
-                .show()
-        }
-    }
-    
-    /**
-     * Enable or disable the BYD Traffic Monitor package via ADB shell.
-     */
-    private fun setTrafficMonitorEnabled(enable: Boolean) {
-        val cmd = if (enable) {
-            "pm enable com.byd.trafficmonitor 2>&1"
-        } else {
-            "pm disable-user --user 0 com.byd.trafficmonitor 2>&1"
-        }
-        
-        val action = if (enable) "Enabling" else "Disabling"
-        Toast.makeText(this, getString(R.string.toast_traffic_monitor_changing, action), Toast.LENGTH_SHORT).show()
-        
-        val adb = AdbDaemonLauncher(this)
-        adb.executeShellCommand(cmd, object : AdbDaemonLauncher.LaunchCallback {
-            override fun onLog(message: String) {
-                android.util.Log.i("TrafficMonitor", "$action result: $message")
-            }
-            
-            override fun onLaunched() {
-                runOnUiThread {
-                    trafficMonitorEnabled = enable
-                    updateTrafficMonitorMenuItem(enable)
-                    
-                    val state = if (enable) "enabled" else "disabled"
-                    logsViewModel.info("TrafficMonitor", "BYD Traffic Monitor $state")
-                    
-                    // Show reboot reminder
-                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity, R.style.Theme_BladeWatch_M3_Dialog)
-                        .setIcon(R.drawable.ic_check_circle)
-                        .setTitle(getString(R.string.dialog_traffic_status_title, state.replaceFirstChar { it.uppercase() }))
-                        .setMessage(getString(R.string.dialog_traffic_reboot_message))
-                        .setPositiveButton(getString(R.string.dialog_ok), null)
-                        .show()
-                }
-            }
-
-            override fun onError(error: String) {
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, getString(R.string.toast_failed_with_message_x, error), Toast.LENGTH_LONG).show()
-                    logsViewModel.error("TrafficMonitor", "Failed to ${if (enable) "enable" else "disable"}: $error")
-                }
-            }
-        })
-    }
-    
     override fun onDestroy() {
-        // Remove log listener
-        LogManager.setLogListener(null)
-        // Remove ADB auth callback
+        // Remove ADB auth callback — this one IS cleared, because it is a static field on
+        // AdbShellExecutor and would otherwise hold this activity for the process's life,
+        // not merely until a pending runnable fires.
         net.bladewatch.app.launcher.AdbShellExecutor.setAuthCallback(null)
-        // Cancel the periodic update check so the Runnable doesn't leak the
-        // activity reference after recreate.
-        updateCheckRunnable?.let { mainHandler.removeCallbacks(it) }
-        updateCheckRunnable = null
-        // Note: We intentionally do NOT call cleanupAll() here
-        // Daemons should persist after app closure
+        // Pending mainHandler work is deliberately left to run — see the field comment.
+        // Note: We intentionally do NOT stop the daemons here.
+        // Daemons must persist after the activity goes away — that is the whole point.
         super.onDestroy()
-    }
-
-    // ==========================================================
-    //  Public shims invoked by SettingsFragment / DiagnosticsFragment
-    //  Behaviour identical to the old drawer items — no logic change.
-    // ==========================================================
-
-    fun invokeResetDataDialog() = showResetDataDialog()
-    fun invokeBatteryHealthAction() = showBatteryHealthDialog()
-    fun invokeReconfigureCameraAction() = onReconfigureCameraClicked()
-    fun invokeTrafficMonitorAction() {
-        // Match drawer-open behavior: refresh status before showing dialog.
-        checkTrafficMonitorStatus()
-        onTrafficMonitorClicked()
     }
 }

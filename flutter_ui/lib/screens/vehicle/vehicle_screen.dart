@@ -8,6 +8,25 @@ import 'vehicle_hero.dart';
 import 'vehicle_models.dart';
 import '../../widgets/bw_choice_chip.dart';
 
+/// Shows why a vehicle command failed.
+///
+/// The daemon can refuse WITHOUT a reason: it answers 200 with success:false and
+/// an empty message. Three call sites handled that three different ways. The
+/// appearance writes returned null and showed NOTHING — the colour swatch simply
+/// snapped back with no explanation, which reads as a broken tap. The
+/// climate/seat/window ones showed a snackbar with empty text. And the same
+/// two-line snackbar was hand-copied eight times.
+///
+/// `vehicle_action_failed` was ported from Android for precisely this case and
+/// had never been wired to anything.
+void showVehicleCommandError(BuildContext context, String message) {
+  final l10n = AppLocalizations.of(context)!;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message.isEmpty ? l10n.vehicle_action_failed : message)),
+  );
+}
+
+
 /// Ground truth: `VehicleController.kt` (root layout/status/appearance/
 /// polling), `VehiclePanels.kt` (Climate/Seats/Windows), `TyreOverlay.kt`
 /// (the tyre cards — plain styled widgets in native too, not a Canvas
@@ -259,7 +278,14 @@ class _BottomPanel extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.92),
+        // BladeWatch-9c7d: OPAQUE, not alpha 0.92. This panel sits in a Stack over
+        // the 3D hero and the four tyre cards, which are Positioned at fixed
+        // offsets. At 0.92 the high-contrast text behind it read straight through —
+        // "242 kPa" and "OK" were legible under the tab chips and the window rows,
+        // which looks like a rendering fault rather than a design. The rounded top
+        // corners already carry the bottom-sheet-over-content idea without the
+        // bleed-through.
+        color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -329,7 +355,10 @@ class _AppearanceBar extends StatelessWidget {
               padding: const EdgeInsets.only(right: 6),
               child: GestureDetector(
                 key: ValueKey('vehicle.color.$hex'),
-                onTap: () => controller.selectColor(hex),
+                onTap: () async {
+                  final error = await controller.selectColor(hex);
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
+                },
                 child: Container(
                   width: 28,
                   height: 28,
@@ -357,6 +386,7 @@ class _AppearanceBar extends StatelessWidget {
     );
   }
 
+
   void _showModelPicker(BuildContext context) {
     showDialog<void>(
       context: context,
@@ -368,7 +398,12 @@ class _AppearanceBar extends StatelessWidget {
             groupValue: controller.selectedModelId,
             onChanged: (id) {
               Navigator.of(dialogContext).pop();
-              if (id != null) controller.selectModel(id);
+              if (id != null) {
+                // The outer context, not dialogContext — that one is gone.
+                controller.selectModel(id).then((error) {
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
+                });
+              }
             },
             child: ListView(
               shrinkWrap: true,
@@ -411,7 +446,9 @@ class _AppearanceBar extends StatelessWidget {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 final hex = '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
-                controller.selectColor(hex);
+                controller.selectColor(hex).then((error) {
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
+                });
               },
               child: Text(MaterialLocalizations.of(context).okButtonLabel),
             ),
@@ -466,7 +503,7 @@ class _ClimateTab extends StatelessWidget {
                 style: FilledButton.styleFrom(backgroundColor: c.acOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
                 onPressed: () async {
                   final error = await c.toggleAc();
-                  if (context.mounted && error != null) _showError(context, error);
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
                 },
                 child: Text(c.acOn ? l10n.vehicle_ac_on : l10n.vehicle_ac_off),
               ),
@@ -478,7 +515,7 @@ class _ClimateTab extends StatelessWidget {
                 style: FilledButton.styleFrom(backgroundColor: c.maxCooling ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
                 onPressed: () async {
                   final error = await c.toggleMaxCooling();
-                  if (context.mounted && error != null) _showError(context, error);
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
                 },
                 child: Text(c.maxCooling ? l10n.vehicle_max_cooling_on : l10n.vehicle_max_cooling_off),
               ),
@@ -488,28 +525,50 @@ class _ClimateTab extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _stepper(l10n.vehicle_temp_label, '${c.setpointC}°C', 'vehicle.climate.temp', c.decTemp, c.incTemp)),
+            Expanded(child: _stepper(context, l10n.vehicle_temp_label, '${c.setpointC}°C', 'vehicle.climate.temp', c.decTemp, c.incTemp)),
             const SizedBox(width: 8),
-            Expanded(child: _stepper(l10n.vehicle_fan_speed_label, l10n.vehicle_fan_level(c.fanLevel), 'vehicle.climate.fan', c.decFan, c.incFan)),
+            Expanded(child: _stepper(context, l10n.vehicle_fan_speed_label, l10n.vehicle_fan_level(c.fanLevel), 'vehicle.climate.fan', c.decFan, c.incFan)),
           ],
         ),
       ],
     );
   }
 
-  void _showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
 
-  Widget _stepper(String label, String value, String keyPrefix, VoidCallback onMinus, VoidCallback onPlus) => Container(
+  /// Climate stepper. The callbacks return an error message (null on success) so
+  /// a refused command can be SHOWN — they used to be bare VoidCallbacks, which
+  /// is why a refusal was silent and the optimistic value stayed on screen.
+  Widget _stepper(
+    BuildContext context,
+    String label,
+    String value,
+    String keyPrefix,
+    Future<String?> Function() onMinus,
+    Future<String?> Function() onPlus,
+  ) =>
+      Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
         child: Row(
           children: [
             Expanded(child: Text(label, style: theme.textTheme.bodySmall)),
-            IconButton(key: ValueKey('$keyPrefix.minus'), icon: const Icon(Icons.remove_circle), onPressed: onMinus),
+            IconButton(
+                key: ValueKey('$keyPrefix.minus'),
+                tooltip: l10n.cd_decrease,
+                icon: const Icon(Icons.remove_circle),
+                onPressed: () async {
+                  final error = await onMinus();
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
+                }),
             Text(value),
-            IconButton(key: ValueKey('$keyPrefix.plus'), icon: const Icon(Icons.add_circle), onPressed: onPlus),
+            IconButton(
+                key: ValueKey('$keyPrefix.plus'),
+                tooltip: l10n.cd_increase,
+                icon: const Icon(Icons.add_circle),
+                onPressed: () async {
+                  final error = await onPlus();
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
+                }),
           ],
         ),
       );
@@ -561,14 +620,24 @@ class _SeatsTab extends StatelessWidget {
             if (hasHeat)
               FilledButton(
                 key: ValueKey('vehicle.seat.heat.$position'),
-                onPressed: () => c.cycleSeatHeat(position),
+                onPressed: () async {
+                  final error = await c.cycleSeatHeat(position);
+                  if (context.mounted && error != null) {
+                    showVehicleCommandError(context, error);
+                  }
+                },
                 child: Text(l10n.vehicle_seat_heat_label(_heatLabel(heat))),
               ),
             if (hasHeat) const SizedBox(width: 8),
             if (hasCool)
               FilledButton(
                 key: ValueKey('vehicle.seat.cool.$position'),
-                onPressed: () => c.cycleSeatCool(position),
+                onPressed: () async {
+                  final error = await c.cycleSeatCool(position);
+                  if (context.mounted && error != null) {
+                    showVehicleCommandError(context, error);
+                  }
+                },
                 child: Text(l10n.vehicle_seat_cool_label(_heatLabel(cool))),
               ),
             if (hasMemory && position == 1) ...[
@@ -577,7 +646,7 @@ class _SeatsTab extends StatelessWidget {
                 key: const ValueKey('vehicle.seat.recall.1'),
                 onPressed: () async {
                   final error = await c.recallSeatPosition(1);
-                  if (context.mounted && error != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
                 },
                 child: Text(l10n.vehicle_seat_pos_1),
               ),
@@ -586,7 +655,7 @@ class _SeatsTab extends StatelessWidget {
                 key: const ValueKey('vehicle.seat.recall.2'),
                 onPressed: () async {
                   final error = await c.recallSeatPosition(2);
-                  if (context.mounted && error != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
                 },
                 child: Text(l10n.vehicle_seat_pos_2),
               ),
@@ -650,6 +719,18 @@ class _WindowsTab extends StatelessWidget {
             _actionChip(context, l10n.vehicle_window_open_all, 'vehicle.window.openAll', () => c.openAllWindows()),
           ],
         ),
+        // BladeWatch-c2h1: "close all" used to run through the BYD cloud CLOSEWINDOW
+        // command, which worked with the car asleep. That path was deleted in 61b4d7f,
+        // so every control here is now the local SDK primitive and needs the head unit
+        // awake. Say so rather than let a remote tap look like it silently failed.
+        const SizedBox(height: 6),
+        Text(
+          l10n.vehicle_window_awake_note,
+          key: const ValueKey('vehicle.window.awakeNote'),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         if (caps.sunroof || caps.sunshade) ...[
           const SizedBox(height: 8),
           Row(
@@ -669,7 +750,7 @@ class _WindowsTab extends StatelessWidget {
         label: Text(label),
         onPressed: () async {
           final error = await onTap();
-          if (context.mounted && error != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+          if (context.mounted && error != null) showVehicleCommandError(context, error);
         },
       );
 
@@ -713,7 +794,7 @@ class _WindowsTab extends StatelessWidget {
         ),
         onPressed: () async {
           final error = await c.setWindowPercent(area, pct);
-          if (context.mounted && error != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+          if (context.mounted && error != null) showVehicleCommandError(context, error);
         },
         child: Text('$pct%', style: const TextStyle(fontSize: 11)),
       ),

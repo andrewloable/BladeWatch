@@ -8,6 +8,7 @@ import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 
 import 'performance_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 enum PerformanceViewState { connecting, ready }
 
@@ -33,7 +34,7 @@ enum PerformanceViewState { connecting, ready }
 /// The 3-second poll timer itself is owned by the screen widget, not this
 /// controller — same convention as every other periodic-refresh screen in
 /// this port.
-class PerformanceController extends ChangeNotifier {
+class PerformanceController extends ChangeNotifier with DisposedSafeNotifier {
   final SystemServiceClient _systemService;
   final JwtSource _jwtSource;
   final RawHttpSender _send;

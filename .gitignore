@@ -15,12 +15,23 @@
 *.db
 recovered
 *.apk
-# Ad-hoc debug captures under screenshots/ stay ignored, but the Flutter-vs-
-# native parity baseline (BladeWatch-imh6.1/.2 gate deletion of the native UI
-# on it) must be versioned so a fresh clone has it.
-screenshots/*
-!screenshots/native/
-!screenshots/flutter/
+# Screenshots are never versioned. They are captures of a real head unit in a
+# real car, so they carry things no text search can find: a Wi-Fi SSID in the
+# diagnostics NETWORK tile, map tiles around where the car actually parks, and
+# whatever the cameras saw. One committed baseline
+# (screenshots/flutter/07b_diagnostics_scrolled.png) did carry the SSID in
+# plain text past a review, which is what retired this exception.
+#
+# native/ and flutter/ used to be versioned so a fresh clone had the parity
+# baseline that gated deleting the native UI. That gate has been passed — the
+# native UI is gone and the Flutter UI is verified on the device — so the
+# reason for versioning them is spent.
+#
+# Captures are still useful locally; they just stay on the machine that took
+# them. Anything that genuinely needs to ship gets redacted first (solid box
+# over text, pixelate faces/plates — not blur, which can be undone) and added
+# deliberately with `git add -f`.
+screenshots/
 
 # Beads / Dolt files (added by bd init)
 .beads-credential-key

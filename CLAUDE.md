@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **BladeWatch** is an advanced sentry mode / dashcam Android app for BYD vehicles with DiLink v3. It targets `arm64-v8a` only (BYD head units), runs on Android 10+ (API 29+), and deploys to the car's head unit via ADB.
 
+It ships as **two APKs that share one UID**:
+
+| APK | Package | Built from | Role |
+|---|---|---|---|
+| Service host | `net.bladewatch.app` | `app/` (Gradle `:app`) | Daemons, receivers, foreground services, BYD integration. **No launcher entry, no UI.** |
+| In-car UI | `net.bladewatch.flutter` | `flutter_ui/` (its own Flutter project) | The Flutter app the driver opens. The only launcher icon. |
+
+Both are signed with the same key and declare `android:sharedUserId="net.bladewatch.app"`. That is **load-bearing**: the daemon's loopback IPC on 19876/19877 authorises by peer UID (`PeerCredentials.isTrusted`), and `CoResidentAttackerTest` pins that a separate app holding the world-readable IPC token is rejected. A shared UID lets the Flutter APK pass that gate unchanged — **never widen the gate instead.**
+
 This project was forked from "Overdrive" and rebranded to BladeWatch (package `com.loabletech.bladewatch`). The legacy BladeWatch app is kept at `/Volumes/mandark-1Tb/projects/loabletech/BladeWatch-Legacy` for reference only — do not modify it.
 
 ## Execution Mode
@@ -43,7 +52,16 @@ Always pass `-s $CAR_IP:5555` to every `adb` command to avoid ambiguity if a USB
 
 ## Build Commands
 
+The two APKs build independently. `./gradlew` builds the **service host** only;
+the Flutter APK is built from `flutter_ui/` with the Flutter toolchain.
+
 ```bash
+# --- in-car UI (net.bladewatch.flutter), from flutter_ui/ ---
+cd flutter_ui && flutter analyze && flutter test
+cd flutter_ui && flutter build apk --target-platform android-arm64 --debug
+cd flutter_ui && flutter run -d "$CAR_IP:5555"   # hot reload; no Gradle, no daemon restart
+
+# --- service host (net.bladewatch.app), from the repo root ---
 # Debug build
 ./gradlew assembleDebug
 
@@ -96,6 +114,37 @@ adb -s $CAR_IP:5555 uninstall net.bladewatch.app
 # APK filename includes the branch name (e.g. flutter-refactor):
 adb -s $CAR_IP:5555 install "app/build/outputs/apk/debug/bladewatch-$(git rev-parse --abbrev-ref HEAD)-arm64-v8a-debug.apk"
 
+# !! UNINSTALLING WIPES THE APP'S ADB KEY PAIR from its filesDir (AdbShellExecutor
+# !! stores it at files/adbkey + files/adbkey.pub). The next launch generates a NEW,
+# !! unauthorized key, so every AdbShellExecutor call fails with "ADB auth pending"
+# !! and NO DAEMON STARTS until someone taps OK on the car's screen. It cannot be
+# !! dismissed remotely: with the panel asleep, screencap is all black, uiautomator
+# !! returns "null root node", and key events do not reach the dialog -- even though
+# !! dumpsys power still reports "Display Power: state=ON". See BladeWatch-ssoh.
+#
+# PRESERVE THE KEY ACROSS THE REINSTALL and no tap is needed. Verified working on
+# this device 2026-09-14, byte-exact in both directions. DEBUG BUILDS ONLY --
+# run-as requires DEBUGGABLE, so a release reinstall always needs the tap.
+#
+#   # BEFORE the uninstall:
+#   adb -s $CAR_IP:5555 exec-out run-as net.bladewatch.app cat files/adbkey     > /tmp/adbkey
+#   adb -s $CAR_IP:5555 exec-out run-as net.bladewatch.app cat files/adbkey.pub > /tmp/adbkey.pub
+#
+#   # ... uninstall + install ... then launch once so filesDir exists, then:
+#   adb -s $CAR_IP:5555 shell "run-as net.bladewatch.app sh -c 'cat > files/adbkey'"     < /tmp/adbkey
+#   adb -s $CAR_IP:5555 shell "run-as net.bladewatch.app sh -c 'cat > files/adbkey.pub'" < /tmp/adbkey.pub
+#   rm -f /tmp/adbkey /tmp/adbkey.pub       # it is a private key -- do not leave it lying around
+#
+# NEVER move this key to shared storage to "solve" this. A world-readable ADB
+# private key hands any installed app shell-level ADB on the head unit.
+
+# The FLUTTER APK needs none of the above -- it installs over itself:
+adb -s $CAR_IP:5555 install flutter_ui/build/app/outputs/flutter-apk/app-debug.apk
+
+# Both packages MUST report the same UID or privileged IPC is refused:
+adb -s $CAR_IP:5555 shell 'dumpsys package net.bladewatch.app | grep userId'
+adb -s $CAR_IP:5555 shell 'dumpsys package net.bladewatch.flutter | grep userId'
+
 # Clear all logs (logcat buffer + daemon log files + debug app log)
 adb -s $CAR_IP:5555 logcat -c
 adb -s $CAR_IP:5555 shell 'rm -f /data/local/tmp/*.log /data/local/tmp/*.log.*; rm -f /storage/emulated/0/BladeWatch/data/debug_app.log'
@@ -114,17 +163,19 @@ Native dependencies (OpenH264, opencv-mobile) are auto-downloaded by Gradle befo
 
 BladeWatch is a hybrid Android + shell-daemon + embedded web app. The critical design split:
 
-**Android app process** — UI shell only: `BladeWatchApplication`, `MainActivity`, fragments, WebView wrapper, boot/power receivers, `DaemonKeepaliveService`, `DaemonStartupManager`.
+**Flutter UI process** (`net.bladewatch.flutter`) — every screen, in Dart under `flutter_ui/lib/`, with plain `ChangeNotifier` controllers (no Riverpod/BLoC). Talks to the daemon over ConnectRPC on 8080 with a JWT; privileged operations go through MethodChannels to a small Kotlin layer **in the same APK**, which uses loopback IPC on 19876. On first `onResume` it explicitly starts the service host's `MainActivity` (`wakeServiceHost()`) — an explicit component start, because BYD's `ssc_skip` suppresses broadcasts to the app package.
+
+**Service host process** (`net.bladewatch.app`) — no UI: `BladeWatchApplication`, `MainActivity` (startup bootstrap only — extends `Activity`, never calls `setContentView`, `moveTaskToBack(true)` immediately; kept `exported` as the ADB recovery path), boot/power receivers, `DaemonKeepaliveService`, `DaemonStartupManager`, `StatusOverlayService`.
 
 **Shell-launched daemon processes** — launched via `app_process` ADB shell, run outside Activity lifecycle:
-- `CameraDaemon` — the central long-running process. Owns the camera/GPU pipeline, H.264/H.265 recording, WebSocket live streaming, HTTP API server (`127.0.0.1:8080`), TCP command server (`127.0.0.1:19876`), surveillance IPC server (`127.0.0.1:19877`), telemetry, trips, BYD cloud, MQTT.
+- `CameraDaemon` — the central long-running process. Owns the camera/GPU pipeline, H.264/H.265 recording, WebSocket live streaming, HTTP API server (`127.0.0.1:8080`), TCP command server (`127.0.0.1:19876`), surveillance IPC server (`127.0.0.1:19877`), telemetry, trips.
 - `SentryDaemon` / `AccSentryDaemon` — surveillance orchestration.
-- Tunnel daemons — Zrok, Cloudflared, Tailscale (native `.so` binaries in `jniLibs/`).
+- Zrok tunnel daemon (native `.so` in `jniLibs/`) — the only remaining tunnel; Cloudflared, Tailscale, sing-box and the Telegram daemon were removed.
 - sing-box proxy daemon.
 
-**Embedded web UI** — static JS/CSS/HTML under `app/src/main/assets/web/`, extracted to `/data/local/tmp/web` at runtime. Talks to CameraDaemon over HTTP. WebView injects auth cookies and a JS bridge for mutating calls to avoid proxy interference.
+**Embedded web UI** — the Angular 19 SPA under `web/`, built into `app/src/main/assets/web/angular/` and extracted to `/data/local/tmp/web` at runtime. Talks to CameraDaemon over ConnectRPC. It serves **remote browser / tunnel clients only** — the in-car UI is Flutter and does not embed it.
 
-**BYD integrations** — local firmware APIs accessed via reflection (stubs in `android.hardware.*` and `android.os.*` compile against stubs; real classes loaded at runtime from boot classloader). BYD cloud via HTTPS + MQTT v5 with Bangcle white-box AES encryption.
+**BYD integrations** — local firmware APIs accessed via reflection (stubs in `android.hardware.*` and `android.os.*` compile against stubs; real classes loaded at runtime from boot classloader). **Local SDK only — there is no BYD cloud path.** The whole `byd/cloud/` package (client, MQTT subscriber, Bangcle white-box crypto) was deleted in `61b4d7f`; `VehicleCommandRouter.Path` is now `{SDK, NONE}`, and commands that only ever had a cloud implementation (Lock, Unlock, Flash, FindCar, SetBatteryHeat, charging schedule) resolve to `NOT_SUPPORTED`. See `docs/byd-integrations.md`.
 
 ### Startup Timing
 
@@ -151,21 +202,22 @@ C++17 sources in `app/src/main/cpp/`:
 ```
 Camera frame → GPU downscale → native motion pipeline → per-quadrant state
   → optional TFLite YOLO11n gate → event decision
-  → event recording + Web Push notification + optional BYD cloud deterrent
+  → event recording + Web Push notification
 ```
 
 ## Key Source Locations
 
-- App entry: [BladeWatchApplication.kt](app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt), [MainActivity.kt](app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt)
+- In-car UI (Flutter): [flutter_ui/lib/main.dart](flutter_ui/lib/main.dart), [flutter_ui/lib/shell/](flutter_ui/lib/shell/), [flutter_ui/lib/screens/](flutter_ui/lib/screens/), [flutter_ui/lib/theme/](flutter_ui/lib/theme/), [flutter_ui/lib/rpc/](flutter_ui/lib/rpc/), [flutter_ui/lib/l10n/](flutter_ui/lib/l10n/)
+- Flutter-side Kotlin (MethodChannels + Live View texture plugin): [flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt](flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt)
+- Service host entry: [BladeWatchApplication.kt](app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt), [MainActivity.kt](app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt) (bootstrap only)
 - Daemon launch: [DaemonStartupManager.kt](app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt), [AdbDaemonLauncher.kt](app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt), [DaemonBootstrap.java](app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.java)
 - Central daemon: [CameraDaemon.java](app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java)
 - HTTP server: [HttpServer.java](app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java)
 - Auth: [AuthManager.java](app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java), [AuthMiddleware.java](app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java)
 - GPU pipeline: [GpuSurveillancePipeline.java](app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.java), [PanoramicCameraGpu.java](app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.java)
 - BYD local: [BydDataCollector.java](app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java)
-- BYD cloud: [BydCloudClient.java](app/src/main/java/com/loabletech/bladewatch/byd/cloud/BydCloudClient.java), [BydCloudMqttSubscriber.java](app/src/main/java/com/loabletech/bladewatch/byd/cloud/BydCloudMqttSubscriber.java)
 - Config: [UnifiedConfigManager.kt](app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt), [SecretConfigStore.kt](app/src/main/java/com/loabletech/bladewatch/config/SecretConfigStore.kt)
-- Web UI assets: [app/src/main/assets/web/](app/src/main/assets/web/)
+- Web UI (remote clients): [web/](web/), built into [app/src/main/assets/web/](app/src/main/assets/web/)
 
 ## BYD SDK Stub Pattern
 
@@ -177,12 +229,41 @@ Classes in `android.hardware.*` and `android.os.*` are **compile-time stubs only
 
 ## Testing
 
-Unit tests are in `app/src/test/java/com/loabletech/bladewatch/`:
-- `AuthMiddlewareTest`, `AuthManagerTest` — auth behavior
-- `SecretConfigStoreTest` — secret storage
-- `SecretRedactorTest` — log redaction
+**Service host (Kotlin/Java)** — 23 JVM test files under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
 
-Run a single test class: `./gradlew test --tests "com.loabletech.bladewatch.auth.AuthManagerTest"`
+```bash
+# NOTE: `:app:test` is an aggregate lifecycle task and does NOT accept --tests
+# ("Unknown command-line option '--tests'"). Target the variant task:
+./gradlew :app:testDebugUnitTest --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
+```
+
+**In-car UI (Dart)** — 105 test files under `flutter_ui/test/`, ~1400 tests. There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
+
+```bash
+cd flutter_ui && flutter analyze && flutter test
+cd flutter_ui && flutter test --coverage && cd .. && tools/check_flutter_coverage.sh
+```
+
+**In-car UI (Kotlin)** — the Flutter APK's privileged layer (IPC client, JWT
+minting, daemon control, secret/public config, the Live View texture plugin) has
+its own test suite under `flutter_ui/android/app/src/test/kotlin/`, gated by
+Kover at a **100%** bound with documented per-class exclusions.
+
+`flutter_ui/android` is a **separate Gradle build** with its own wrapper. The
+repo-root `./gradlew koverVerify` verifies the SERVICE HOST only and will pass
+while this gate is failing, so it has to be run on its own:
+
+```bash
+cd flutter_ui/android && ./gradlew koverVerify
+```
+
+This was not previously written down, and the gate had silently dropped to 96.2%
+— `PublicConfigChannel.getCameraProbe()` shipped for the Diagnostics camera tile
+with no test. Run it whenever you touch `flutter_ui/android/app/src/main/kotlin/`.
+
+All three coverage gates **ratchet upward and may never be lowered**.
+
+**Gradle up-to-date blindness:** a test that reads a file which is not on the classpath (a manifest, a source tree scanned as data) will not re-run when that file changes, so it can pass against a mutation. Declare such files as explicit test `inputs` — `app/build.gradle.kts` does this for `AndroidManifest.xml` and `src/main/java`. A guard that cannot fail is worse than no guard.
 
 ## Shell Command Safety
 
@@ -203,23 +284,27 @@ When creating a `bd` task, write the `--description` for a **low-context impleme
 
 ## Documentation Maintenance
 
-When changing route handlers, daemon ports, config paths, startup timing, tunnel behavior, BYD cloud behavior, or storage paths, update the relevant file in `docs/`:
+When changing route handlers, daemon ports, config paths, startup timing, tunnel behavior, BYD vehicle behavior, or storage paths, update the relevant file in `docs/`:
 - Runtime/lifecycle changes → `architecture.md`, `daemons-and-processes.md`
 - HTTP route changes → `http-api-reference.md`
 - Tunnel/proxy/network changes → `networking-and-tunnels.md`
-- BYD local or cloud changes → `byd-integrations.md`
+- BYD local SDK / vehicle-control changes → `byd-integrations.md`
 - Storage/config/media changes → `data-flow-and-storage.md`
 - Auth / IPC token / secret store / cross-process file permission changes → `ipc-auth-and-secrets.md`
 - User-facing changes → `features.md`
 - UI/UX, design-language, theme, or color/typography/shape/motion token changes → `ui-ux-design-language.md`
 
+`docs/webview-migration.md` is **retired** — it describes a superseded
+architecture (WebView → native fragments, both since replaced by Flutter). Do not
+update it; read it only for its WebView-quirk notes.
+
 ## Security Notes
 
-- `/data/local/tmp/bladewatch_secrets.json` contains device tokens, tunnel tokens, cloud credentials. Never log or copy these values. It is mode `600` (shell-only); the app fetches values it needs over token-gated IPC, not by reading this file.
+- `/data/local/tmp/bladewatch_secrets.json` contains device tokens and tunnel tokens. Never log or copy these values. It is mode `600` (shell-only); the app fetches values it needs over token-gated IPC, not by reading this file.
 - `/data/local/tmp/bladewatch_ipc_token` MUST stay world-readable (`644`). It is the bootstrap token the app uses to authenticate IPC to the daemon; if it reverts to `600`, every app→daemon secret fetch fails and the UI shows "Camera unavailable". See `docs/ipc-auth-and-secrets.md`.
 - LAN HTTP (`http://<car-ip>:8080`) is disabled by default and must remain opt-in. The server binds to `127.0.0.1` by default.
 - Tunnel URLs are only safe when paired with JWT token auth.
-- BYD cloud vehicle control APIs affect the physical car — test conservatively.
+- **BYD vehicle control APIs affect the physical car — test conservatively.** This applies to the local SDK commands that still exist (climate, windows, seats, trunk, lights, ADAS, charge cap), which actuate real hardware. The cloud control path is gone (see Architecture above), so the risk now lives entirely in `VehicleCommandRouter`'s SDK path — not a reason to relax the rule.
 - VLESS proxy credentials use encrypted `Safe.s("...")` values — use `generate_safe_enc.py` to encrypt before committing.
 
 <!-- rtk-instructions v2 -->

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Current app identity — sourced from `package_info_plus` by the widget
 /// layer and injected here so this controller needs no platform-channel
@@ -26,7 +27,7 @@ class AppVersionInfo {
 /// again" row are both faithfully ported; the setup-guide dialog itself is
 /// BladeWatch-yz1e.11's job, same split as the language picker elsewhere in
 /// Settings — this screen only needs a callback to open it.
-class SettingsAboutController extends ChangeNotifier {
+class SettingsAboutController extends ChangeNotifier with DisposedSafeNotifier {
   SettingsAboutController({required Future<AppVersionInfo> Function() versionSource})
     : _versionSource = versionSource; // ignore: prefer_initializing_formals
 

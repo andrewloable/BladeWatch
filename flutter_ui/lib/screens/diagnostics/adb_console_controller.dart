@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 
 import 'package:bladewatch_ui/adb/adb_client.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 enum AdbConsoleConnectionState { connecting, unavailable, authPending, connected }
 
@@ -18,7 +19,7 @@ enum AdbConsoleConnectionState { connecting, unavailable, authPending, connected
 /// shows on an empty transcript is an ARB-resolved string the screen renders
 /// when [output] is empty, not something this (Flutter-import-free) class
 /// can produce itself.
-class AdbConsoleController extends ChangeNotifier {
+class AdbConsoleController extends ChangeNotifier with DisposedSafeNotifier {
   final AdbConnection _connection;
 
   AdbConsoleController({required AdbConnection connection}) : _connection = connection; // ignore: prefer_initializing_formals

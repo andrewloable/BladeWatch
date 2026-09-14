@@ -296,6 +296,12 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
     _vehicleController.dispose();
     _liveViewController.dispose();
     _localeController.dispose();
+    // Same ownership rule as _shellController and _startupController above,
+    // which are also `widget.X ?? new` and are disposed here. This one was
+    // missed: it is a ChangeNotifier held by the Listenable.merge that drives
+    // MaterialApp's themeMode, so leaking it leaks a listener on every rebuild
+    // of the app root.
+    _appearanceController.dispose();
     _setupGuideController.dispose();
     super.dispose();
   }

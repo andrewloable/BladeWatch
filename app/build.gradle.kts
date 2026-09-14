@@ -450,22 +450,19 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    // appcompat: AppCompatDelegate drives the night-mode setting the status
+    // overlay reads (BladeWatchApplication, PreferencesManager,
+    // StatusOverlayService) and SetupGuideDialog builds an AppCompat AlertDialog.
+    // material: dialog_setup_guide.xml inflates MaterialButton and the dialog
+    // uses MaterialAlertDialogBuilder. Both survive Phase 4 for those alone.
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     
-    // Navigation
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
-    
-    // Lifecycle & ViewModel
+    // Lifecycle & LiveData. Phase 4 deleted the native UI, but these are NOT
+    // UI-only: ZrokController and DaemonsViewModel publish daemon state as
+    // LiveData and both still run in this (UI-less) service host.
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
-    
-    // QR Code generation
-    implementation(libs.zxing.core)
-
-    // OSMDroid map tiles for the Location screen
-    implementation(libs.osmdroid.android)
     
     // RTMP streaming client for pushing to MediaMTX
     implementation(libs.rtmp.client)
@@ -981,7 +978,7 @@ tasks.register("validateArbCatalogs") {
 tasks.named("preBuild") { dependsOn("validateArbCatalogs") }
 
 // Kotlin coverage gate (BladeWatch-ncbb.5). koverVerify fails the build below
-// minBound — baselined against the existing ~20-file/~3,100 LOC suite under
+// minBound — measured against the 24-file JVM suite under
 // app/src/test/java/com/loabletech/bladewatch/, see docs/build-and-operations.md
 // for the current figure and the ratchet policy (may only ever go up).
 // Excludes: generated ConnectRPC/protobuf code, and the android.hardware.*/
@@ -1006,11 +1003,17 @@ kover {
             }
             verify {
                 rule {
-                    // Baseline measured 2026-09-12 against the existing ~20-file JVM
-                    // suite: 1020/48610 lines covered (~2.10%) after excluding
-                    // generated protobuf and the BYD stubs above. Floor of that
-                    // real figure — raise this as tests are added; never lower it.
-                    minBound(2)
+                    // Ratcheted 2026-09-14: 1144/36930 lines (~3.10%) after excluding
+                    // generated protobuf and the BYD stubs above. Floor of that real
+                    // figure — raise this as tests are added; never lower it.
+                    //
+                    // Both halves of that ratio moved since the 2026-09-12 baseline of
+                    // 1020/48610 (~2.10%): Phase 4 deleted the native in-car UI, which
+                    // removed ~11,700 lines that were almost entirely UNTESTED, and this
+                    // session's guards added covered ones. Deleting untested code raises
+                    // the percentage without improving anything, so treat a jump like
+                    // this as a new floor to hold, not as progress.
+                    minBound(3)
                 }
             }
         }
@@ -1054,3 +1057,24 @@ tasks.register("validateFlutterAndroidOnly") {
     }
 }
 tasks.named("preBuild") { dependsOn("validateFlutterAndroidOnly") }
+
+// BladeWatch-81g9.1: ServiceHostManifestTest reads AndroidManifest.xml from source to pin that
+// the daemon APK has NO launcher entry and still declares MainActivity (which hosts the startup
+// bootstrap). Gradle cannot infer that dependency — the manifest is not on the test classpath —
+// so without this the test task stays UP-TO-DATE when the manifest changes and the guard never
+// re-runs.
+//
+// Found the hard way: mutating the manifest to re-add the launcher entry left the suite GREEN,
+// because the test simply did not execute. A guard that cannot fail is worse than no guard, since
+// it is believed.
+tasks.withType<Test>().configureEach {
+    inputs.file("src/main/AndroidManifest.xml")
+        .withPropertyName("appManifest")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    // NoSelfLaunchIntentTest scans the app sources as DATA, not as a classpath, so the
+    // same up-to-date blindness applies — it would not re-run when the code it guards
+    // changes, which is precisely when it matters.
+    inputs.dir("src/main/java")
+        .withPropertyName("appSourcesForStaticChecks")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}

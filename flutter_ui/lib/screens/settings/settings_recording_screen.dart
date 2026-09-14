@@ -263,7 +263,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
                 final result = await c.applyChanges(tab);
                 if (!mounted) return;
                 if (!result.ok) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.error ?? 'Save failed')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.error ?? l10n.toast_failed_to_save_short)));
                 }
               }
             : null,

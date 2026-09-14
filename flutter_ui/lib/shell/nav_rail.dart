@@ -145,6 +145,7 @@ class _LanguageHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
       child: IconButton(
+        tooltip: AppLocalizations.of(context)!.language_picker_title,
         icon: const Icon(Icons.language),
         color: Theme.of(context).colorScheme.onSurfaceVariant,
         onPressed: onTap,

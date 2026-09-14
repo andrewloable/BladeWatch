@@ -15,7 +15,7 @@ These are the primary logs. Each daemon's stdout/stderr is redirected to a fixed
 | `/data/local/tmp/bladewatch_install.log` | Install/bootstrap scripts | Daemon install/startup bootstrap trace. |
 | `/data/local/tmp/sentry_network_diag.log` | Sentry network diagnostics | Network reachability diagnostics (when enabled). |
 
-Defined in [DaemonLauncher.kt:28-31](app/src/main/java/com/loabletech/bladewatch/launcher/DaemonLauncher.kt#L28-L31) and surfaced in the UI by [DaemonAdapter.kt:236-239](app/src/main/java/com/loabletech/bladewatch/ui/adapter/DaemonAdapter.kt#L236-L239).
+Defined in [DaemonLauncher.kt:28-31](app/src/main/java/com/loabletech/bladewatch/launcher/DaemonLauncher.kt#L28-L31) and surfaced in the UI by the Flutter Daemons settings section, [flutter_ui/lib/screens/settings/settings_daemons_screen.dart](flutter_ui/lib/screens/settings/settings_daemons_screen.dart).
 
 ### System-dir fallback (sentry)
 

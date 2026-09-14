@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
+import '../../theme/color_tokens.dart';
+
 import '../../gen/l10n/app_localizations.dart';
 import 'settings_daemons_controller.dart';
 import 'settings_daemons_models.dart';
@@ -178,14 +180,16 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
     );
   }
 
-  /// Semantic status colours. The theme has no success/warning role, so these
-  /// mirror the severity colours already used on the recordings cards rather
-  /// than inventing a third palette.
-  Color _successColor(ThemeData theme) =>
-      theme.brightness == Brightness.dark ? const Color(0xFF6EE7A8) : const Color(0xFF1B7F4B);
+  /// Semantic status colours, from the theme.
+  ///
+  /// These used to branch on `theme.brightness` by hand, with a comment saying
+  /// "the theme has no success/warning role". That was true but not inevitable:
+  /// BwColorTokens has carried statusSuccess/Warning since the port, they were
+  /// simply unreachable — one of the hardcoded values, 0xFFFFB870, WAS
+  /// statusWarning for dark, verbatim. They are now a theme extension.
+  Color _successColor(ThemeData theme) => theme.extension<BwStatusColors>()!.success;
 
-  Color _warningColor(ThemeData theme) =>
-      theme.brightness == Brightness.dark ? const Color(0xFFFFB870) : const Color(0xFFB35C00);
+  Color _warningColor(ThemeData theme) => theme.extension<BwStatusColors>()!.warning;
 
   /// Shows the tail of one service's log, matching native's per-service log
   /// button. Reads the file directly by exact path — see [_daemonLogPath] for

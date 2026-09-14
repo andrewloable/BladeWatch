@@ -988,7 +988,8 @@ public class AccSentryDaemon {
 
         // CRITICAL: Always notify CameraDaemon that ACC is ON.
         // CameraDaemon handles all surveillance cleanup (door lock gate, unlock poll,
-        // cloud listener, pipeline stop) in its ACC ON path.
+        // pipeline stop) in its ACC ON path. The cloud listener that used to be part
+        // of that cleanup went with the BYD cloud removal in 61b4d7f.
         notifyAccState(false);  // accOff=false → ACC is ON
         
         // Clear safe zone suppression flag (clean slate for next sentry session)

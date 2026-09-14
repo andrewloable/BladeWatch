@@ -193,3 +193,57 @@ class BwColorTokens {
     statusInfo: Color(0xFF85CFFF),
   );
 }
+
+/// The four BladeWatch status roles, exposed to widgets.
+///
+/// [BwColorTokens] has carried `statusSuccess/Warning/Danger/Info` since the
+/// theme was ported — they mirror Android's `bladewatch_status_*` colours and are
+/// parity-tested against that XML. But they were never mapped into `ColorScheme`
+/// (which has no success/warning slot) and never registered as a theme
+/// extension, so **no widget could reach them**.
+///
+/// The predictable happened: screens hand-rolled their own. `settings_daemons_screen.dart`
+/// branched on `theme.brightness` to produce `0xFF6EE7A8` / `0xFFFFB870`, with a
+/// comment saying "the theme has no success/warning role" — and `0xFFFFB870` is
+/// `statusWarning` for dark, verbatim. The token was being reimplemented by hand,
+/// one screen at a time, which is how a design system quietly stops being one.
+///
+/// Reach these with `Theme.of(context).extension<BwStatusColors>()!`.
+@immutable
+class BwStatusColors extends ThemeExtension<BwStatusColors> {
+  final Color success, warning, danger, info;
+
+  const BwStatusColors({
+    required this.success,
+    required this.warning,
+    required this.danger,
+    required this.info,
+  });
+
+  factory BwStatusColors.from(BwColorTokens tokens) => BwStatusColors(
+        success: tokens.statusSuccess,
+        warning: tokens.statusWarning,
+        danger: tokens.statusDanger,
+        info: tokens.statusInfo,
+      );
+
+  @override
+  BwStatusColors copyWith({Color? success, Color? warning, Color? danger, Color? info}) =>
+      BwStatusColors(
+        success: success ?? this.success,
+        warning: warning ?? this.warning,
+        danger: danger ?? this.danger,
+        info: info ?? this.info,
+      );
+
+  @override
+  BwStatusColors lerp(ThemeExtension<BwStatusColors>? other, double t) {
+    if (other is! BwStatusColors) return this;
+    return BwStatusColors(
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      danger: Color.lerp(danger, other.danger, t)!,
+      info: Color.lerp(info, other.info, t)!,
+    );
+  }
+}

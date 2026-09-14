@@ -4,6 +4,7 @@ import '../../platform/prefs_channel.dart';
 import '../../shell/drive_side.dart';
 import '../../shell/shell_controller.dart';
 import 'settings_appearance_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Ground truth: `SettingsAppearanceFragment.kt`. Theme mode is this
 /// controller's own state; drive side is delegated straight to
@@ -11,7 +12,7 @@ import 'settings_appearance_models.dart';
 /// rail mirroring) — this controller only adds persistence on top of it.
 /// The language picker is opened, not modeled, here — its dialog is
 /// BladeWatch-yz1e.11's job; this screen only needs a callback to show it.
-class SettingsAppearanceController extends ChangeNotifier {
+class SettingsAppearanceController extends ChangeNotifier with DisposedSafeNotifier {
   SettingsAppearanceController({required PrefsChannel prefs, required ShellController shellController})
       : _prefs = prefs, // ignore: prefer_initializing_formals
         _shellController = shellController; // ignore: prefer_initializing_formals

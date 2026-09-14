@@ -4,6 +4,7 @@ import '../../platform/location_channel.dart';
 import '../../platform/network_channel.dart';
 import '../../platform/prefs_channel.dart';
 import 'location_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 int _defaultNowMs() => DateTime.now().millisecondsSinceEpoch;
 
@@ -32,7 +33,7 @@ const tileFailureReasonNetworkUnavailable = 'networkUnavailable';
 /// when offline while [LocationFresh]/[LocationStale] — a render-time
 /// transform in native, never stored back into its controller's own state,
 /// reproduced here as a separate getter for the same reason.
-class LocationController extends ChangeNotifier {
+class LocationController extends ChangeNotifier with DisposedSafeNotifier {
   LocationController({
     required LocationChannel channel,
     required PrefsChannel prefs,

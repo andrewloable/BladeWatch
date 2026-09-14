@@ -1,12 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
+<!--
+  BladeWatch-ez0z: the window background shown from the first frame, before the
+  Flutter engine has drawn anything.
 
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+  This was the untouched `flutter create` template: a plain white rectangle with
+  the image slot commented out. That is why launching the app showed a blank white
+  screen for the whole of engine startup, and why it stayed white in dark mode.
+
+  @color/splash_background is white in values/ and black in values-night/, so this
+  one file serves both modes. The wordmark ships once, in white, and is tinted by
+  @color/splash_foreground rather than shipping a second colour variant.
+
+  NOTE: the icon is ic_launcher_FOREGROUND, not ic_launcher. On API 26+ the latter
+  resolves to the adaptive-icon XML, which a <bitmap> cannot wrap.
+
+  NOTE: no android:width/android:height on the items. Insets plus the bitmap's own
+  gravity position these reliably; adding explicit item sizing stopped them
+  drawing at all on this head unit while the background still painted.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+
+    <!-- App icon, lifted above centre by the bottom inset. -->
+    <item android:bottom="140dp">
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@mipmap/ic_launcher_foreground" />
+    </item>
+
+    <!-- "BladeWatch", dropped below centre by the top inset. -->
+    <item android:top="150dp">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/wordmark_bladewatch"
+            android:tint="@color/splash_foreground" />
+    </item>
 </layer-list>

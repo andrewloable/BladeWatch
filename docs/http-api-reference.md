@@ -10,8 +10,8 @@ http://127.0.0.1:8080
 
 The server exposes two parallel API surfaces over the same port:
 
-1. **REST** — plain JSON over `/api/*`, plus `/status`, `/video/*`, `/thumb/*`, etc. This is the original surface; the in-app WebView calls it directly.
-2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by the Angular SPA. See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers to keep the two surfaces in 1:1 parity, so the REST families below are the source of truth for behaviour.
+1. **REST** — plain JSON over `/api/*`, plus `/status`, `/video/*`, `/thumb/*`, etc. This is the original surface. It has **no first-party client left** since Phase 4 deleted the in-app WebView: the Flutter in-car UI and the Angular SPA both use Connect. It stays because the Connect handlers wrap it and because `/video/*` and `/thumb/*` are plain URLs a browser or player can hit directly.
+2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by both the Flutter in-car UI (Dart client, `flutter_ui/lib/rpc/`) and the Angular SPA. See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers to keep the two surfaces in 1:1 parity, so the REST families below are the source of truth for behaviour.
 
 ## Auth
 
@@ -296,7 +296,7 @@ return the not-supported responses described under
 
 `POST /api/vehicle/window` accepts two request forms:
 
-1. **Command form** — `{ "area": 0–6, "command": 1=open | 2=close | 3=stop }`. `area=0` + `command=2` routes through `CloseAllWindowsCommand` (CLOUD_FIRST). All other combinations are SDK_ONLY.
+1. **Command form** — `{ "area": 0–6, "command": 1=open | 2=close | 3=stop }`. `area=0` + `command=2` routes through `CloseAllWindowsCommand`, which has its own local SDK primitive (`setAllWindowsCommand(2)`). All combinations are local-SDK only — the cloud-first strategy this route once used no longer exists.
 2. **Target-percent form** — `{ "area": 0–6, "targetPercent": 0–100 }`. SDK closed-loop positioning. `area` must be 0–6; omitting it returns an error.
 
 Area mapping: 0=all, 1=LF, 2=RF, 3=LR, 4=RR, 5=sunroof, 6=sunshade.
@@ -318,7 +318,7 @@ All write endpoints return the `routedResponse` shape built by `VehicleControlAp
 ```
 
 - `success` / `commandSuccess` — both true on `SUCCESS`; `commandSuccess` is included for legacy UI branches.
-- `path` — one of `"cloud"`, `"local"`, `"cloud-then-local"`, `"none"`.
+- `path` — `"local"` or `"none"`. (`CommandResult.pathString()` maps `Path.SDK` to `"local"` and everything else to `"none"`. The former `"cloud"` and `"cloud-then-local"` values are gone with the cloud path.)
 - `outcome` — lowercase `CommandResult.Outcome` name: `"success"`, `"not_supported"`, `"error"`, etc.
 - `message` — localized user-facing string.
 - `error` — present when `success` is false; the exception message or display message.
@@ -331,13 +331,24 @@ The following endpoints existed previously but are no longer supported:
 
 - `GET /api/vehicle/cloud-status` — removed (required BYD cloud).
 - `GET /api/vehicle/cloud-lock` — removed (required BYD cloud MQTT lock source).
-- `POST /api/vehicle/lock` — not supported (cloud-only action).
-- `POST /api/vehicle/unlock` — not supported (cloud-only action).
-- `POST /api/vehicle/flash` — not supported (cloud-only action).
-- `POST /api/vehicle/find-car` — not supported (cloud-only action).
-- `POST /api/vehicle/battery-heat` — not supported (cloud-only action).
-- `GET /api/vehicle/charging-schedule` — returns `{ success: true, supported: false, reason: "cloud_not_configured" }`.
-- `POST /api/vehicle/charging-schedule` — not supported (cloud-only action).
+- `POST /api/vehicle/lock` — **route removed** (`BladeWatch-c2h1`).
+- `POST /api/vehicle/unlock` — **route removed**.
+- `POST /api/vehicle/flash` — **route removed**.
+- `POST /api/vehicle/find-car` — **route removed**.
+- `POST /api/vehicle/battery-heat` — **route removed**.
+- `GET` / `POST /api/vehicle/charging-schedule` — **routes removed**.
+
+Those six previously existed and answered `NOT_SUPPORTED`, because each was cloud-only
+and the cloud went in `61b4d7f`. Keeping them was dead surface that read like a
+capability, so the handlers, routes and Connect registrations were deleted. The `.proto`
+still declares the corresponding RPCs, so the wire contract is unchanged, but the daemon
+no longer registers them.
+
+`POST /api/vehicle/trunk` still exists, but accepts **only** `{"action": "close"}` or
+`{"action": "stop"}`. `"open"` — and a missing action, which used to default to open —
+answers `NOT_SUPPORTED`. Open had lost its unlock-first interlock when the cloud was
+removed and could trip the car alarm on a locked vehicle; see
+[byd-integrations.md](byd-integrations.md).
 
 All supported vehicle actions use local SDK paths only.
 
@@ -437,10 +448,10 @@ stubs (`cd proto && buf generate`). Tracked by BladeWatch-852m.
 - Use the local base URL from the Android app or tunnel URL from the Zrok launcher.
 - Avoid assuming response schemas from this list alone — read the handler class
   (REST) or `proto/bladewatch/v1/*.proto` (Connect) for the authoritative shape.
-- New Angular clients should prefer the Connect API (`/bladewatch.v1.*`, with
-  `Connect-Protocol-Version: 1` and a JSON content-type). REST remains the
-  source of truth and is still used by the in-app WebView.
-- Do not send mutating calls from WebView through a proxy path; use the injected bridge pattern already implemented by the app.
+- New clients — Dart or Angular — should use the Connect API (`/bladewatch.v1.*`,
+  with `Connect-Protocol-Version: 1` and a JSON content-type). REST remains the
+  behavioural source of truth because the Connect handlers wrap it, but it has no
+  first-party client any more.
 - Prefer the `/ws` WebSocket stream for live video rather than polling snapshots.
 
 ## Source References
@@ -453,5 +464,5 @@ stubs (`cd proto && buf generate`). Tracked by BladeWatch-852m.
 - Surveillance and safe-location APIs and IPC crossover: [SurveillanceApiHandler.java:22](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceApiHandler.java#L22), [SafeLocationApiHandler.java:24](../app/src/main/java/com/loabletech/bladewatch/server/SafeLocationApiHandler.java#L24), [SurveillanceIpcServer.java:276](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L276).
 - Streaming APIs: [StreamingApiHandler.java:32](../app/src/main/java/com/loabletech/bladewatch/server/StreamingApiHandler.java#L32), [WebSocketStreamServer.java:19](../app/src/main/java/com/loabletech/bladewatch/streaming/WebSocketStreamServer.java#L19), [HttpServer.java:1042](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L1042).
 - GPS, quality/settings, storage: [GpsApiHandler.java:24](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.java#L24), [QualitySettingsApiHandler.java:48](../app/src/main/java/com/loabletech/bladewatch/server/QualitySettingsApiHandler.java#L48), [ExternalStorageApiHandler.java:42](../app/src/main/java/com/loabletech/bladewatch/server/ExternalStorageApiHandler.java#L42), [FormatStorageApiHandler.java:32](../app/src/main/java/com/loabletech/bladewatch/server/FormatStorageApiHandler.java#L32).
-- Trips, performance, models, updates, notifications: [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [PerformanceApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/PerformanceApiHandler.java#L30), [ModelsApiHandler.java:38](../app/src/main/java/com/loabletech/bladewatch/server/ModelsApiHandler.java#L38), [UpdateApiHandler.java:55](../app/src/main/java/com/loabletech/bladewatch/server/UpdateApiHandler.java#L55), [NotificationApiHandler.java:47](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L47).
+- Trips, performance, models, updates, notifications: [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [PerformanceApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/PerformanceApiHandler.java#L30), [ModelsApiHandler.java:38](../app/src/main/java/com/loabletech/bladewatch/server/ModelsApiHandler.java#L38), [NotificationApiHandler.java:47](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L47).
 - Vehicle control APIs: [VehicleControlApiHandler.java:43](../app/src/main/java/com/loabletech/bladewatch/server/VehicleControlApiHandler.java#L43).

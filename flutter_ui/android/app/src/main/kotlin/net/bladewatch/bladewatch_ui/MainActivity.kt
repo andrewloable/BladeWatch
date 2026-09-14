@@ -22,6 +22,7 @@ import net.bladewatch.bladewatch_ui.ipc.IpcClient
 import net.bladewatch.bladewatch_ui.liveview.LiveViewTexturePlugin
 import net.bladewatch.bladewatch_ui.location.LocationServiceChannel
 import net.bladewatch.bladewatch_ui.network.NetworkInfoChannel
+import android.util.Log
 import net.bladewatch.bladewatch_ui.ipc.IpcException
 import org.json.JSONArray
 import org.json.JSONObject
@@ -38,6 +39,10 @@ import java.io.File
  * channel error codes `MethodChannelBridge` (flutter_ui/lib/platform/) maps
  * back on the Dart side.
  */
+private const val SERVICE_HOST_PACKAGE = "net.bladewatch.app"
+private const val SERVICE_HOST_ACTIVITY = "net.bladewatch.app.ui.MainActivity"
+private const val TAG = "BladeWatchFlutter"
+
 class MainActivity : FlutterActivity() {
 
     private val ipcClient = IpcClient()
@@ -77,6 +82,67 @@ class MainActivity : FlutterActivity() {
     // once configureFlutterEngine() runs — unlike every `by lazy` channel
     // above, which only need `this` (the Activity, available immediately).
     private lateinit var liveViewTexturePlugin: LiveViewTexturePlugin
+
+    /**
+     * BladeWatch-81g9.1: wake the daemon host's bootstrap.
+     *
+     * The daemon APK (`net.bladewatch.app`) is a UI-less service host. Its
+     * MainActivity.onCreate is the ONLY thing that runs the startup bootstrap —
+     * storage setup, `DeviceIdGenerator.generateDeviceId` (which must complete before
+     * any daemon starts, because the daemon reads the synced device-id file), the BYD
+     * whitelist, and `DaemonStartupManager`'s staggered launch.
+     *
+     * It used to be reached two ways: the user tapping its launcher icon, and
+     * `BootReceiver` on BOOT_COMPLETED. Phase 4 removed the launcher entry, and the
+     * boot path DOES NOT WORK ON THIS HEAD UNIT — verified by a real reboot:
+     *
+     *     BroadcastQueue: ssc_skip reciever for uid 10073 name = net.bladewatch.app
+     *     BroadcastQueue: ssc_skip reciever for uid 10073 name = ... ignored !!!
+     *
+     * BYD's `ssc_skip` suppresses broadcasts to the app, so BootReceiver never fires
+     * here. After a cold boot with nothing touched, no daemon started.
+     *
+     * So the UI the user DOES open has to drive it. An explicit component start is not
+     * a broadcast, so ssc_skip does not apply — this is the same path `am start` uses,
+     * which works on this device. `minimize_on_start` makes the host call
+     * `moveTaskToBack` the moment it is up, so the user never sees it.
+     *
+     * Fire-and-forget and never fatal: if the daemon APK is missing or refuses to
+     * start, the Flutter UI must still open. It will simply have no daemon to talk to,
+     * which its screens already handle.
+     */
+    private fun wakeServiceHost() {
+        try {
+            val intent = Intent().apply {
+                setClassName(SERVICE_HOST_PACKAGE, SERVICE_HOST_ACTIVITY)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra("minimize_on_start", true)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not wake the service host: ${e.message}")
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // BladeWatch-81g9.2: deferred to onResume, NOT configureFlutterEngine.
+        //
+        // Calling startActivity() during engine configuration brings another activity to
+        // the front while this one is still being set up. The Flutter surface never
+        // recovered from that — the engine loaded, Impeller initialised, the Dart VM came
+        // up and viewport metrics were sent, but the screen stayed BLACK. Caught on the
+        // head unit; nothing in the logs said "error".
+        //
+        // By onResume the Flutter UI is up, so the host can be woken behind it.
+        if (!serviceHostWoken) {
+            serviceHostWoken = true
+            wakeServiceHost()
+        }
+    }
+
+    /** Once per process — the host does not need waking on every resume. */
+    private var serviceHostWoken = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

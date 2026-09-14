@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      BladeWatch-ez0z: dark-mode splash. Plain BLACK background per the owner's
+      requirement; the wordmark tint flips to the light on-surface tone so it
+      stays legible. See values/colors.xml for why these are literals.
+    -->
+    <color name="splash_background">#000000</color>
+    <color name="splash_foreground">#E1E3E4</color>
+</resources>

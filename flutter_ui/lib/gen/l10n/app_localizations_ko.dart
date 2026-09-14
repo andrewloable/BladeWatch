@@ -103,6 +103,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cd_delete => '삭제';
 
   @override
+  String get cd_decrease => '낮추기';
+
+  @override
+  String get cd_increase => '높이기';
+
+  @override
   String get cd_expand => '확장';
 
   @override
@@ -128,21 +134,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get overlay_trip_inactive_label => '트립';
-
-  @override
-  String get log_entry_default_timestamp => '12:34:56';
-
-  @override
-  String get log_entry_default_tag => '[TAG]';
-
-  @override
-  String get log_entry_default_message => '로그 메시지는 여기';
-
-  @override
-  String get daemon_card_default_name => '서비스 이름';
-
-  @override
-  String get daemon_card_default_status => '상태 메시지';
 
   @override
   String get daemon_card_subprocesses => '프로세스';
@@ -263,7 +254,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      '아래를 누르면 BYD 자동 시작을 열 수 있습니다. 목록에서 BladeWatch를 찾아 상자를 삭제합니다. BYD는 모든 설치에서 이것을 삭제합니다. 업데이트 후에 다시 할 것입니다.';
+      '아래를 눌러 BYD Auto-Start를 열고 BladeWatch와 BladeWatch 서비스의 체크를 모두 해제하세요. 이 설정을 하지 않으면 차량 시동 시 녹화가 시작되지 않아 매번 앱을 열어야 합니다. BYD는 설치할 때마다 이 설정을 초기화합니다.';
 
   @override
   String get setup_autostart_button => 'BYD 자동 시작 열';
@@ -404,13 +395,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get webview_loading => '로딩...';
 
   @override
-  String get webview_camera_daemon_not_running => '카메라가 실행 중이지 않습니다';
-
-  @override
-  String get webview_start_camera_daemon =>
-      '이 페이지에 접속하려면 서비스 화면에서 카메라 서비스를 시작하세요.';
-
-  @override
   String get zrok_enable_token_hint => '토큰을 활성화';
 
   @override
@@ -455,7 +439,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get reset_cat_sentry_events => '감시 이벤트';
 
   @override
-  String get reset_cat_sentry_events_desc => '감시 이벤트 클립과 JSON 사이드카르';
+  String get reset_cat_sentry_events_desc => '감시 이벤트 클립 및 관련 JSON 파일';
 
   @override
   String get reset_cat_proximity => '근접 기록';
@@ -535,13 +519,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recording_lib_date_yesterday => '어제';
 
   @override
-  String recording_lib_clip_count(Object arg1) {
-    return '$arg1 클립';
-  }
-
-  @override
-  String recording_lib_clip_count_one(Object arg1) {
-    return '$arg1 클립';
+  String recording_lib_clip_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '클립 $arg1개',
+      one: '클립 $arg1개',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -613,65 +598,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get battery_health_title => '배터리 건강';
 
   @override
-  String get battery_health_subtitle => '건강 상태';
-
-  @override
-  String get battery_health_dashes => '--';
-
-  @override
-  String get battery_health_waiting => '자료를 기다리고 있어...';
-
-  @override
-  String get battery_health_source => '출처';
-
-  @override
-  String get battery_health_method => '방법';
-
-  @override
-  String get battery_health_capacity => '용량';
-
-  @override
-  String get battery_health_samples => '표본';
-
-  @override
-  String get battery_health_last_updated => '마지막 업데이트';
-
-  @override
   String get battery_health_unavailable => '사용할 수 없음';
 
   @override
   String get battery_health_unavailable_desc => '배터리 상태 추정을 사용할 수 없습니다.';
-
-  @override
-  String get battery_health_reset => 'SOH 추정값을 재설정';
-
-  @override
-  String get battery_health_reset_desc =>
-      '모든 데이터를 삭제하고 처음부터 재평가합니다. 배터리가 교체되거나 읽기 잘못 된 경우 사용하십시오.';
-
-  @override
-  String get soh_dialog_model_label => '모델';
-
-  @override
-  String get soh_dialog_pack_capacity_label => '포장 용량은';
-
-  @override
-  String get soh_dialog_estimated_capacity_label => '효율적인 용량';
-
-  @override
-  String get soh_dialog_calibration_anchor_label => '마지막 캘리브레이션';
-
-  @override
-  String get soh_dialog_source_user => '사용자 집합';
-
-  @override
-  String get soh_dialog_source_auto => '자동 감지';
-
-  @override
-  String get soh_dialog_model_not_selected => '선택되지 않았습니다';
-
-  @override
-  String get soh_dialog_capacity_not_detected => '발견되지 않았습니다.';
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
@@ -729,7 +659,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get toast_camera_set_to_auto => '자동으로 설정된 카메라';
 
   @override
-  String get toast_failed_to_save_short => '구하지 못했어요';
+  String get toast_failed_to_save_short => '저장하지 못했습니다';
 
   @override
   String toast_failed_with_message(Object arg1) {
@@ -738,7 +668,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return '카메라 $arg1 세트 — 다음 ACC 사이클';
+    return '카메라 $arg1 설정됨 — 다음 ACC 사이클';
   }
 
   @override
@@ -757,18 +687,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String toast_failed_with_message_x(Object arg1) {
     return '실패: $arg1';
-  }
-
-  @override
-  String get toast_soh_reset_success => 'SOH 추정 재설정 — 다음 데이터에서 재 계산됩니다';
-
-  @override
-  String get toast_soh_reset_failed_no_daemon =>
-      '재설정 실패 — 서비스가 응답하지 않고 파일을 쓸 수 없습니다';
-
-  @override
-  String toast_soh_reset_failed_with_message(Object arg1) {
-    return '재설정 실패: $arg1';
   }
 
   @override
@@ -911,7 +829,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_starting_zrok => 'Zrok 터널 시작...';
 
   @override
-  String get dashboard_waiting_url => '터널 URL를 기다렸어요';
+  String get dashboard_waiting_url => '터널 URL 대기 중…';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
@@ -1023,8 +941,14 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String log_header_truncated(Object arg1) {
-    return '참고: 줄여서 10000 라인까지의 로그 (전체: $arg1 라인)';
+  String log_header_truncated(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '참고: 로그가 마지막 10000줄로 잘렸습니다 (전체: $arg1줄)',
+      one: '참고: 로그가 마지막 10000줄로 잘렸습니다 (전체: $arg1줄)',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1212,7 +1136,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_about_support_share_chooser => '공유 과장';
 
   @override
-  String get settings_about_open_link_failed => '링크를 열지 못했어요';
+  String get settings_about_open_link_failed => '링크를 열 수 없습니다.';
 
   @override
   String settings_about_open_link_copied(Object arg1) {
@@ -1435,8 +1359,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get diagnostics_network_offline => '오프라인';
 
   @override
-  String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return '$arg1 클립 · $arg2 사용';
+  String diagnostics_storage_used_line(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '클립 $arg1개 · 사용량 $arg2',
+      one: '클립 $arg1개 · 사용량 $arg2',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1524,56 +1454,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_dialog_title => '배터리 용량을 설정';
 
   @override
-  String get vehicle_dialog_capacity_label => '용량 (kWh)';
-
-  @override
-  String get vehicle_dialog_capacity_suffix => 'kWh';
-
-  @override
-  String get vehicle_dialog_capacity_helper =>
-      '8 ~ 120kWh. 모델 기본값을 사용하려면 그대로 둡니다.';
-
-  @override
   String get vehicle_dialog_model_label => '모델';
 
   @override
   String get vehicle_dialog_save => '저장';
-
-  @override
-  String get vehicle_dialog_reset => '자동 감지로 초기화';
-
-  @override
-  String get vehicle_dialog_invalid_capacity => '용량은 8 ~ 120 kWh';
-
-  @override
-  String vehicle_dialog_summary_capacity(Object arg1) {
-    return '용량: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_soh(Object arg1) {
-    return 'SOH: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_live(Object arg1) {
-    return '$arg1% (실시간)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_calibration(Object arg1) {
-    return '$arg1% (마지막 충전 기준)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_oem(Object arg1) {
-    return '$arg1% (차량)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_nominal(Object arg1) {
-    return '$arg1% (공칭)';
-  }
 
   @override
   String get settings_recording_tab_status => '상태';
@@ -1672,8 +1556,14 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String settings_recording_storage_files(Object arg1) {
-    return '녹화 $arg1개';
+  String settings_recording_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '녹화본 $arg1개',
+      one: '녹화본 $arg1개',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1750,24 +1640,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settings_daemons_zrok_reset_button => '환경 초기화';
-
-  @override
-  String vehicle_dialog_summary_effective(Object arg1) {
-    return '유효성: $arg1 kWh';
-  }
-
-  @override
-  String vehicle_dialog_summary_model(Object arg1) {
-    return '모델: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return '마지막 캘리브레이션: $arg1% $arg2';
-  }
-
-  @override
-  String get vehicle_dialog_soh_unavailable => '사용할 수 없습니다';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -1938,13 +1810,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_privacy_storage_unavailable => '가용되지 않습니다';
 
   @override
-  String settings_privacy_storage_count_format(Object arg1) {
-    return '$arg1 클립';
-  }
-
-  @override
-  String settings_privacy_storage_count_format_plural(Object arg1) {
-    return '$arg1 클립';
+  String settings_privacy_storage_count_format_plural(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '클립 $arg1개',
+      one: '클립 $arg1개',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2003,109 +1876,12 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get dashboard_insight_welcome => '환영합니다 — 오버드라이브는 이제 두 번째 눈입니다.';
-
-  @override
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
-    return '주차 중 $arg1 (≈$arg2) 를 가져왔습니다';
-  }
-
-  @override
-  String dashboard_insight_parked_charged(Object arg1) {
-    return '주차 중 $arg1를 가져왔어요';
-  }
-
-  @override
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
-    return '주차한 이후로 $arg1 (≈$arg2) 를 사용했어요';
-  }
-
-  @override
-  String dashboard_insight_parked_drained(Object arg1) {
-    return '주차한 이후로 $arg1를 사용했어요';
-  }
-
-  @override
-  String dashboard_insight_last_alert(Object arg1) {
-    return '마지막 감시 경보: $arg1';
-  }
-
-  @override
-  String dashboard_insight_last_charge(Object arg1, Object arg2) {
-    return '마지막 충전: $arg2에서 +$arg1';
-  }
-
-  @override
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return '$arg1 클립 · $arg2 녹화';
-  }
-
-  @override
-  String dashboard_insight_kwh_format(Object arg1) {
-    return '$arg1 kWh';
-  }
-
-  @override
-  String dashboard_insight_percent_format(Object arg1) {
-    return '$arg1%';
-  }
-
-  @override
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1시간 $arg2분';
-  }
-
-  @override
-  String dashboard_insight_today_clips(num arg1) {
+  String dashboard_insight_storage_milestone(num arg1, Object arg2) {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: '오늘 녹화된 $arg1 클립',
-      one: '오늘 녹화된 $arg1 클립',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 일 동안 온라인에서 오버 드라이브, $arg2 hr',
-      one: '$arg1 일, $arg2 시간 동안 오프라인 운전',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 시간 동안 오프라인 운전',
-      one: '$arg1 시간 동안 오버 드라이브 온라인',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_minutes(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 분',
-      one: '$arg1 분',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 hr',
-      one: '$arg1 hr',
+      other: '클립 $arg1개 · $arg2 녹화됨',
+      one: '클립 $arg1개 · $arg2 녹화됨',
     );
     return '$_temp0';
   }
@@ -2219,6 +1995,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get vehicle_all_windows => '전체 창문';
+
+  @override
+  String get vehicle_window_awake_note => '차량이 켜져 있을 때만 작동합니다.';
 
   @override
   String get vehicle_window_front_left => '앞 왼쪽';
@@ -2358,7 +2137,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get startup_header_starting => '시작하는 중…';
 
   @override
-  String get startup_header_verifying => '거의 다 됐어요…';
+  String get startup_header_verifying => '거의 준비되었습니다…';
 
   @override
   String get startup_header_ready => '모든 준비가 완료되었습니다';
@@ -2495,7 +2274,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'BYD 추정: $km km';
+    return 'BYD 추정: $km';
   }
 
   @override
@@ -2852,8 +2631,14 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String surveillance_storage_files(Object arg1) {
-    return '이벤트 $arg1개';
+  String surveillance_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '이벤트 $arg1개',
+      one: '이벤트 $arg1개',
+    );
+    return '$_temp0';
   }
 
   @override

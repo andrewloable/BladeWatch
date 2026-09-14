@@ -30,25 +30,22 @@ public class VehicleServiceImpl {
                 this::handleGetAcDiagnostics);
         dispatcher.register("bladewatch.v1.VehicleService", "GetSeatDiagnostics",
                 this::handleGetSeatDiagnostics);
-        dispatcher.register("bladewatch.v1.VehicleService", "Lock", this::handleLock);
-        dispatcher.register("bladewatch.v1.VehicleService", "Unlock", this::handleUnlock);
+        // NOT REGISTERED (BladeWatch-c2h1): Lock, Unlock, Flash, FindCar,
+        // SetBatteryHeat, Get/SetChargingSchedule. The proto still declares them so
+        // the wire contract is unchanged for existing clients, but none had a local
+        // SDK primitive once 61b4d7f removed the BYD cloud, so they could only ever
+        // answer NOT_SUPPORTED. No first-party client calls them: web/ dropped the
+        // Lock/Unlock/Flash controls by decision (see web/src/app/pages/vehicle/
+        // vehicle.component.ts) and the Flutter UI never had them.
         dispatcher.register("bladewatch.v1.VehicleService", "Trunk", this::handleTrunk);
         dispatcher.register("bladewatch.v1.VehicleService", "MoveWindow",
                 this::handleMoveWindow);
-        dispatcher.register("bladewatch.v1.VehicleService", "Flash", this::handleFlash);
-        dispatcher.register("bladewatch.v1.VehicleService", "FindCar", this::handleFindCar);
         dispatcher.register("bladewatch.v1.VehicleService", "SetClimate",
                 this::handleSetClimate);
         dispatcher.register("bladewatch.v1.VehicleService", "SetSeat", this::handleSetSeat);
         dispatcher.register("bladewatch.v1.VehicleService", "SetLights",
                 this::handleSetLights);
         dispatcher.register("bladewatch.v1.VehicleService", "SetAdas", this::handleSetAdas);
-        dispatcher.register("bladewatch.v1.VehicleService", "SetBatteryHeat",
-                this::handleSetBatteryHeat);
-        dispatcher.register("bladewatch.v1.VehicleService", "GetChargingSchedule",
-                this::handleGetChargingSchedule);
-        dispatcher.register("bladewatch.v1.VehicleService", "SetChargingSchedule",
-                this::handleSetChargingSchedule);
         dispatcher.register("bladewatch.v1.VehicleService", "GetChargeCap",
                 this::handleGetChargeCap);
         dispatcher.register("bladewatch.v1.VehicleService", "SetChargeCap",
@@ -82,16 +79,6 @@ public class VehicleServiceImpl {
         return reshapeObjectToJsonString(body, "seats", "rawJson");
     }
 
-    private ConnectResponse handleLock(String req, String clientIdentity) throws ConnectException {
-        return ConnectHandlerUtil.captureString(out ->
-                VehicleControlApiHandler.handle("POST", "/api/vehicle/lock", req, out));
-    }
-
-    private ConnectResponse handleUnlock(String req, String clientIdentity) throws ConnectException {
-        return ConnectHandlerUtil.captureString(out ->
-                VehicleControlApiHandler.handle("POST", "/api/vehicle/unlock", req, out));
-    }
-
     private ConnectResponse handleTrunk(String req, String clientIdentity) throws ConnectException {
         return ConnectHandlerUtil.captureString(out ->
                 VehicleControlApiHandler.handle("POST", "/api/vehicle/trunk", req, out));
@@ -100,16 +87,6 @@ public class VehicleServiceImpl {
     private ConnectResponse handleMoveWindow(String req, String clientIdentity) throws ConnectException {
         return ConnectHandlerUtil.captureString(out ->
                 VehicleControlApiHandler.handle("POST", "/api/vehicle/window", req, out));
-    }
-
-    private ConnectResponse handleFlash(String req, String clientIdentity) throws ConnectException {
-        return ConnectHandlerUtil.captureString(out ->
-                VehicleControlApiHandler.handle("POST", "/api/vehicle/flash", req, out));
-    }
-
-    private ConnectResponse handleFindCar(String req, String clientIdentity) throws ConnectException {
-        return ConnectHandlerUtil.captureString(out ->
-                VehicleControlApiHandler.handle("POST", "/api/vehicle/find-car", req, out));
     }
 
     private ConnectResponse handleSetClimate(String req, String clientIdentity) throws ConnectException {
@@ -130,21 +107,6 @@ public class VehicleServiceImpl {
     private ConnectResponse handleSetAdas(String req, String clientIdentity) throws ConnectException {
         return ConnectHandlerUtil.captureString(out ->
                 VehicleControlApiHandler.handle("POST", "/api/vehicle/adas", req, out));
-    }
-
-    private ConnectResponse handleSetBatteryHeat(String req, String clientIdentity) throws ConnectException {
-        return ConnectHandlerUtil.captureString(out ->
-                VehicleControlApiHandler.handle("POST", "/api/vehicle/battery-heat", req, out));
-    }
-
-    private ConnectResponse handleGetChargingSchedule(String req, String clientIdentity) throws ConnectException {
-        return ConnectHandlerUtil.captureString(out ->
-                VehicleControlApiHandler.handle("GET", "/api/vehicle/charging-schedule", null, out));
-    }
-
-    private ConnectResponse handleSetChargingSchedule(String req, String clientIdentity) throws ConnectException {
-        return ConnectHandlerUtil.captureString(out ->
-                VehicleControlApiHandler.handle("POST", "/api/vehicle/charging-schedule", req, out));
     }
 
     private ConnectResponse handleGetChargeCap(String req, String clientIdentity) throws ConnectException {

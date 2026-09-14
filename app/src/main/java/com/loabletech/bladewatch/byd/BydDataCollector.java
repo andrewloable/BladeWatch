@@ -2438,7 +2438,8 @@ public class BydDataCollector {
             // The recovered legacy daemon uses getDoorLockStatus(1) first and
             // falls back to getDoorLockState(). Here we poll all known lock
             // areas so the vehicle page can derive an accurate local "all
-            // locked" state even when BYD cloud is disabled or unconfigured.
+            // locked" state. This is now the ONLY source — the BYD cloud lock
+            // readback was removed in 61b4d7f.
             for (int area = 1; area <= 5; area++) {
                 Object raw = BydDeviceHelper.callGetter(doorLockDevice, "getDoorLockStatus", area);
                 rawStates[area - 1] = sdkLockInt(raw);

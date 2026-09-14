@@ -2,13 +2,19 @@
 
 This directory is the project reference for the BladeWatch Android app, its native daemons, embedded web UI, BYD integrations, tunnels, APIs, and operational workflows.
 
-BladeWatch is an Android application for BYD DiLink vehicles. The app coordinates Android UI screens, foreground services, privileged shell-launched daemons, camera and surveillance pipelines, local and remote web access, BYD vehicle telemetry, trip analytics, Web Push notifications, and the Zrok tunnel process.
+BladeWatch is an Android application for BYD DiLink vehicles, shipped as **two
+APKs that share one UID**: `net.bladewatch.flutter` (the Flutter in-car UI, the
+only launcher icon) and `net.bladewatch.app` (the UI-less service host that runs
+the foreground services, receivers and privileged shell-launched daemons). It
+coordinates the in-car UI, camera and surveillance pipelines, local and remote
+web access, BYD vehicle telemetry, trip analytics, Web Push notifications, and
+the Zrok tunnel process.
 
 ## Document Map
 
 - [Architecture](architecture.md) describes the major modules, runtime boundaries, startup lifecycle, and component relationships.
 - [Features](features.md) catalogs the user-facing and system-facing features implemented by the app.
-- [UI/UX Design Language](ui-ux-design-language.md) documents the Material 3 design system shared by the native Android shell and the embedded web UI — color roles, typography, shape, elevation, motion, components, and the cross-layer token pipeline.
+- [UI/UX Design Language](ui-ux-design-language.md) documents the Material 3 design system shared by the Flutter in-car UI (the source of truth), the Android status overlay, and the embedded web UI — color roles, typography, shape, elevation, motion, components, and the cross-layer token pipeline.
 - [Data Flow and Storage](data-flow-and-storage.md) explains where data comes from, how it moves between components, and where it is persisted.
 - [Daemons and Processes](daemons-and-processes.md) documents Android components, app-process daemons, watchdogs, foreground services, and local IPC ports.
 - [IPC, Authentication & Secrets](ipc-auth-and-secrets.md) explains the app/daemon UID split, the IPC token bootstrap, the secret-fetch and JWT flows, the **required `/data/local/tmp` file permissions**, and the failure modes that surface as "Camera unavailable".
@@ -22,11 +28,20 @@ BladeWatch is an Android application for BYD DiLink vehicles. The app coordinate
 
 ## Source Areas
 
-- `app/src/main/java/com/loabletech/bladewatch/` contains Android app code, daemons, local servers, BYD integrations, telemetry, storage, and UI fragments.
+- `flutter_ui/lib/` contains the in-car UI: Dart screens, `ChangeNotifier`
+  controllers, theme tokens, ARB catalogs, and the generated ConnectRPC client.
+- `flutter_ui/android/app/src/main/kotlin/` contains that APK's small Kotlin
+  layer — the privileged-operation MethodChannels and the Live View texture plugin.
+- `app/src/main/java/com/loabletech/bladewatch/` contains the service host:
+  daemons, local servers, BYD integrations, telemetry, storage, and the startup
+  bootstrap.
 - `app/src/main/assets/web/` contains the local web app and PWA assets served by the camera daemon.
 - `app/src/main/assets/models/` contains AI model assets used by surveillance.
 - `app/src/main/cpp/` contains native camera, surveillance, and OpenCV/OpenH264 build integration.
-- `app/build.gradle.kts` defines Android, Kotlin, CMake, embedded native downloads, and asset extraction tasks.
+- `app/build.gradle.kts` defines Android, Kotlin, CMake, embedded native
+  downloads, asset extraction, and the i18n/ARB validation gates.
+- `flutter_ui/android/app/build.gradle.kts` is the Flutter APK's independent
+  build, including the Dart and Kotlin coverage gates.
 - `docs/security-smoke-test.md` documents the security smoke-test plan that existed before this documentation set.
 
 Each detailed document includes a `Source References` section. References use `filename:line` labels and GitHub-style line anchors so refactors can jump from documentation to the implementation point being described.

@@ -103,6 +103,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cd_delete => 'Excluir';
 
   @override
+  String get cd_decrease => 'Diminuir';
+
+  @override
+  String get cd_increase => 'Aumentar';
+
+  @override
   String get cd_expand => 'Expandir';
 
   @override
@@ -128,21 +134,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get overlay_trip_inactive_label => 'TRIP';
-
-  @override
-  String get log_entry_default_timestamp => '12:34:56';
-
-  @override
-  String get log_entry_default_tag => '[TAG]';
-
-  @override
-  String get log_entry_default_message => 'Mensagem de registro aqui';
-
-  @override
-  String get daemon_card_default_name => 'Nome do serviço';
-
-  @override
-  String get daemon_card_default_status => 'Mensagem de estado';
 
   @override
   String get daemon_card_subprocesses => 'PROCESSOS';
@@ -268,7 +259,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'Toque abaixo para abrir BYD Auto-Start. Encontre BladeWatch na lista e desmarque a caixa. BYD limpa isso em cada instalação.';
+      'Toque abaixo para abrir o BYD Auto-Start e desmarque BladeWatch E Serviço BladeWatch. Sem isso, a gravação não inicia ao ligar o carro — terá de abrir a aplicação todas as vezes. A BYD apaga isto a cada instalação.';
 
   @override
   String get setup_autostart_button => 'Abrir BYD Auto-Start';
@@ -411,13 +402,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get webview_loading => 'Carregando...';
 
   @override
-  String get webview_camera_daemon_not_running => 'Câmera não está em execução';
-
-  @override
-  String get webview_start_camera_daemon =>
-      'Inicie o serviço de câmera pela tela de Serviços para acessar esta página.';
-
-  @override
   String get zrok_enable_token_hint => 'Ativar Token';
 
   @override
@@ -466,7 +450,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get reset_cat_sentry_events_desc =>
-      'Clipes de eventos de vigilância e vagões laterais JSON';
+      'Clipes de eventos de vigilância e ficheiros JSON associados';
 
   @override
   String get reset_cat_proximity => 'Registros de proximidade';
@@ -547,13 +531,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get recording_lib_date_yesterday => 'Ontem';
 
   @override
-  String recording_lib_clip_count(Object arg1) {
-    return 'Clipes $arg1';
-  }
-
-  @override
-  String recording_lib_clip_count_one(Object arg1) {
-    return 'Clip $arg1';
+  String recording_lib_clip_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clipes',
+      one: '$arg1 clipe',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -625,66 +610,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get battery_health_title => 'Saúde da bateria';
 
   @override
-  String get battery_health_subtitle => 'Estado de saúde';
-
-  @override
-  String get battery_health_dashes => '--';
-
-  @override
-  String get battery_health_waiting => 'À espera de dados...';
-
-  @override
-  String get battery_health_source => 'Fonte';
-
-  @override
-  String get battery_health_method => 'Método';
-
-  @override
-  String get battery_health_capacity => 'Capacidade';
-
-  @override
-  String get battery_health_samples => 'amostras';
-
-  @override
-  String get battery_health_last_updated => 'Última atualização';
-
-  @override
   String get battery_health_unavailable => 'Não disponível';
 
   @override
   String get battery_health_unavailable_desc =>
       'A estimativa da saúde da bateria não está disponível.';
-
-  @override
-  String get battery_health_reset => 'Repor a estimativa de SOH';
-
-  @override
-  String get battery_health_reset_desc =>
-      'Apaga todos os dados e volta a estimar do zero. Use se a bateria foi substituída ou a leitura parecer incorreta.';
-
-  @override
-  String get soh_dialog_model_label => 'Modelo';
-
-  @override
-  String get soh_dialog_pack_capacity_label => 'Capacidade de embalagem';
-
-  @override
-  String get soh_dialog_estimated_capacity_label => 'Capacidade efetiva';
-
-  @override
-  String get soh_dialog_calibration_anchor_label => 'Última calibração';
-
-  @override
-  String get soh_dialog_source_user => 'conjunto de utilizadores';
-
-  @override
-  String get soh_dialog_source_auto => 'detecção automática';
-
-  @override
-  String get soh_dialog_model_not_selected => 'Não selecionado';
-
-  @override
-  String get soh_dialog_capacity_not_detected => 'Não detectado';
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
@@ -754,7 +684,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'Set de câmera $arg1 — próximo ciclo ACC';
+    return 'Câmara $arg1 definida — próximo ciclo ACC';
   }
 
   @override
@@ -776,19 +706,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String toast_failed_with_message_x(Object arg1) {
     return 'Falha: $arg1';
-  }
-
-  @override
-  String get toast_soh_reset_success =>
-      'Reset estimativa SOH — recalculará a partir dos próximos dados';
-
-  @override
-  String get toast_soh_reset_failed_no_daemon =>
-      'Reset falhou — serviço não responde e arquivo não pode ser gravado';
-
-  @override
-  String toast_soh_reset_failed_with_message(Object arg1) {
-    return 'Reset falhou: $arg1';
   }
 
   @override
@@ -1052,8 +969,16 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String log_header_truncated(Object arg1) {
-    return 'NOTA: Registo truncado para 10000 linhas (total: linhas $arg1)';
+  String log_header_truncated(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other:
+          'NOTA: registo truncado para as últimas 10000 linhas (total: $arg1 linhas)',
+      one:
+          'NOTA: registo truncado para as últimas 10000 linhas (total: $arg1 linha)',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1117,7 +1042,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String recording_lib_selected_count(Object arg1) {
-    return 'Selecionado $arg1';
+    return '$arg1 selecionado';
   }
 
   @override
@@ -1479,8 +1404,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get diagnostics_network_offline => 'Offline';
 
   @override
-  String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return 'Clips $arg1 · $arg2 utilizados';
+  String diagnostics_storage_used_line(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clipes · $arg2 utilizados',
+      one: '$arg1 clipe · $arg2 utilizados',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1573,57 +1504,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get vehicle_dialog_title => 'Definir a capacidade da bateria';
 
   @override
-  String get vehicle_dialog_capacity_label => 'Capacidade (kWh)';
-
-  @override
-  String get vehicle_dialog_capacity_suffix => 'kWh';
-
-  @override
-  String get vehicle_dialog_capacity_helper =>
-      '8 a 120 kWh. Deixe para usar o padrão do modelo.';
-
-  @override
   String get vehicle_dialog_model_label => 'Modelo';
 
   @override
   String get vehicle_dialog_save => 'Salvar';
-
-  @override
-  String get vehicle_dialog_reset => 'Repor para deteção automática';
-
-  @override
-  String get vehicle_dialog_invalid_capacity =>
-      'A capacidade deve ser de 8 a 120 kWh';
-
-  @override
-  String vehicle_dialog_summary_capacity(Object arg1) {
-    return 'Capacidade: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_soh(Object arg1) {
-    return 'SOH: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_live(Object arg1) {
-    return '$arg1% (ao vivo)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_calibration(Object arg1) {
-    return '$arg1% (da última carga)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_oem(Object arg1) {
-    return '$arg1% (veículo)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_nominal(Object arg1) {
-    return '$arg1% (nominal)';
-  }
 
   @override
   String get settings_recording_tab_status => 'Estado';
@@ -1729,8 +1613,14 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String settings_recording_storage_files(Object arg1) {
-    return '$arg1 gravações';
+  String settings_recording_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 gravações',
+      one: '$arg1 gravação',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1812,24 +1702,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settings_daemons_zrok_reset_button => 'Repor ambiente';
-
-  @override
-  String vehicle_dialog_summary_effective(Object arg1) {
-    return 'Eficaz: $arg1 kWh';
-  }
-
-  @override
-  String vehicle_dialog_summary_model(Object arg1) {
-    return 'Modelo: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return 'Última calibração: $arg1% em $arg2';
-  }
-
-  @override
-  String get vehicle_dialog_soh_unavailable => 'Não disponível';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -2012,13 +1884,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settings_privacy_storage_unavailable => 'Não disponível';
 
   @override
-  String settings_privacy_storage_count_format(Object arg1) {
-    return 'Clip $arg1';
-  }
-
-  @override
-  String settings_privacy_storage_count_format_plural(Object arg1) {
-    return 'Clipes $arg1';
+  String settings_privacy_storage_count_format_plural(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clipes',
+      one: '$arg1 clipe',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2078,110 +1951,12 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get dashboard_insight_welcome =>
-      'Bem-vindo. O BladeWatch é agora o teu segundo par de olhos.';
-
-  @override
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
-    return 'Recuperado $arg1 (≈$arg2) enquanto estacionado';
-  }
-
-  @override
-  String dashboard_insight_parked_charged(Object arg1) {
-    return 'Apanhou o $arg1 enquanto estacionou.';
-  }
-
-  @override
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
-    return 'Usado $arg1 (≈$arg2) desde que estacionou';
-  }
-
-  @override
-  String dashboard_insight_parked_drained(Object arg1) {
-    return 'Usou o $arg1 desde que estacionou.';
-  }
-
-  @override
-  String dashboard_insight_last_alert(Object arg1) {
-    return 'Última alerta de vigilância: $arg1';
-  }
-
-  @override
-  String dashboard_insight_last_charge(Object arg1, Object arg2) {
-    return 'Última carga: +$arg1 em $arg2';
-  }
-
-  @override
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return 'Clips $arg1 · $arg2 gravados';
-  }
-
-  @override
-  String dashboard_insight_kwh_format(Object arg1) {
-    return '$arg1 kWh';
-  }
-
-  @override
-  String dashboard_insight_percent_format(Object arg1) {
-    return '$arg1%';
-  }
-
-  @override
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 h $arg2 min';
-  }
-
-  @override
-  String dashboard_insight_today_clips(num arg1) {
+  String dashboard_insight_storage_milestone(num arg1, Object arg2) {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: 'Clips $arg1 gravados hoje',
-      one: 'Clip $arg1 gravado hoje',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: 'Excesso de velocidade em linha durante $arg1 dias, $arg2 horas',
-      one: 'Excesso de condução online para dia $arg1, $arg2 horas',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: 'Excesso de condução em linha durante $arg1 horas',
-      one: 'Excesso de velocidade em linha durante a hora $arg1',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_minutes(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 min',
-      one: '$arg1 min',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 hr',
-      one: '$arg1 hr',
+      other: '$arg1 clipes · $arg2 gravados',
+      one: '$arg1 clipe · $arg2 gravados',
     );
     return '$_temp0';
   }
@@ -2298,6 +2073,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get vehicle_all_windows => 'Todas as janelas';
+
+  @override
+  String get vehicle_window_awake_note => 'Só funciona com o carro ativo.';
 
   @override
   String get vehicle_window_front_left => 'Dianteiro esquerdo';
@@ -2576,7 +2354,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'Estimativa BYD: $km km';
+    return 'Estimativa BYD: $km';
   }
 
   @override
@@ -2942,8 +2720,14 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String surveillance_storage_files(Object arg1) {
-    return '$arg1 eventos';
+  String surveillance_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 eventos',
+      one: '$arg1 evento',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3124,6 +2908,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get cd_delete => 'Excluir';
 
   @override
+  String get cd_decrease => 'Diminuir';
+
+  @override
+  String get cd_increase => 'Aumentar';
+
+  @override
   String get cd_expand => 'Expandir';
 
   @override
@@ -3149,21 +2939,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get overlay_trip_inactive_label => 'TRIP';
-
-  @override
-  String get log_entry_default_timestamp => '12:34:56';
-
-  @override
-  String get log_entry_default_tag => '[TAG]';
-
-  @override
-  String get log_entry_default_message => 'Mensagem de registro aqui';
-
-  @override
-  String get daemon_card_default_name => 'Nome do serviço';
-
-  @override
-  String get daemon_card_default_status => 'Mensagem de estado';
 
   @override
   String get daemon_card_subprocesses => 'PROCESSOS';
@@ -3289,7 +3064,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get setup_autostart_body =>
-      'Toque abaixo para abrir BYD Auto-Start. Encontre BladeWatch na lista e desmarque a caixa. BYD limpa isso em cada instalação.';
+      'Toque abaixo para abrir o BYD Auto-Start e desmarque BladeWatch E Serviço BladeWatch. Sem isso, a gravação não inicia ao ligar o carro — você terá que abrir o aplicativo toda vez. A BYD apaga isso a cada instalação.';
 
   @override
   String get setup_autostart_button => 'Abrir BYD Auto-Start';
@@ -3432,13 +3207,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get webview_loading => 'Carregando...';
 
   @override
-  String get webview_camera_daemon_not_running => 'Câmera não está em execução';
-
-  @override
-  String get webview_start_camera_daemon =>
-      'Inicie o serviço de câmera pela tela de Serviços para acessar esta página.';
-
-  @override
   String get zrok_enable_token_hint => 'Ativar Token';
 
   @override
@@ -3487,7 +3255,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get reset_cat_sentry_events_desc =>
-      'Clipes de eventos de vigilância e vagões laterais JSON';
+      'Clipes de eventos de vigilância e arquivos JSON associados';
 
   @override
   String get reset_cat_proximity => 'Registros de proximidade';
@@ -3568,13 +3336,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get recording_lib_date_yesterday => 'Ontem';
 
   @override
-  String recording_lib_clip_count(Object arg1) {
-    return 'Clipes $arg1';
-  }
-
-  @override
-  String recording_lib_clip_count_one(Object arg1) {
-    return 'Clip $arg1';
+  String recording_lib_clip_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clipes',
+      one: '$arg1 clipe',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3646,66 +3415,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get battery_health_title => 'Saúde da bateria';
 
   @override
-  String get battery_health_subtitle => 'Estado de saúde';
-
-  @override
-  String get battery_health_dashes => '--';
-
-  @override
-  String get battery_health_waiting => 'À espera de dados...';
-
-  @override
-  String get battery_health_source => 'Fonte';
-
-  @override
-  String get battery_health_method => 'Método';
-
-  @override
-  String get battery_health_capacity => 'Capacidade';
-
-  @override
-  String get battery_health_samples => 'amostras';
-
-  @override
-  String get battery_health_last_updated => 'Última atualização';
-
-  @override
   String get battery_health_unavailable => 'Não disponível';
 
   @override
   String get battery_health_unavailable_desc =>
       'A estimativa da saúde da bateria não está disponível.';
-
-  @override
-  String get battery_health_reset => 'Redefinir a estimativa de SOH';
-
-  @override
-  String get battery_health_reset_desc =>
-      'Apaga todos os dados e reestima do zero. Use se a bateria foi substituída ou a leitura parecer incorreta.';
-
-  @override
-  String get soh_dialog_model_label => 'Modelo';
-
-  @override
-  String get soh_dialog_pack_capacity_label => 'Capacidade de embalagem';
-
-  @override
-  String get soh_dialog_estimated_capacity_label => 'Capacidade efetiva';
-
-  @override
-  String get soh_dialog_calibration_anchor_label => 'Última calibração';
-
-  @override
-  String get soh_dialog_source_user => 'conjunto de utilizadores';
-
-  @override
-  String get soh_dialog_source_auto => 'detecção automática';
-
-  @override
-  String get soh_dialog_model_not_selected => 'Não selecionado';
-
-  @override
-  String get soh_dialog_capacity_not_detected => 'Não detectado';
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
@@ -3775,7 +3489,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'Set de câmera $arg1 — próximo ciclo ACC';
+    return 'Câmera $arg1 definida — próximo ciclo ACC';
   }
 
   @override
@@ -3797,19 +3511,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String toast_failed_with_message_x(Object arg1) {
     return 'Falha: $arg1';
-  }
-
-  @override
-  String get toast_soh_reset_success =>
-      'Reset estimativa SOH — recalculará a partir dos próximos dados';
-
-  @override
-  String get toast_soh_reset_failed_no_daemon =>
-      'Reset falhou — serviço não responde e arquivo não pode ser gravado';
-
-  @override
-  String toast_soh_reset_failed_with_message(Object arg1) {
-    return 'Reset falhou: $arg1';
   }
 
   @override
@@ -4073,8 +3774,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String log_header_truncated(Object arg1) {
-    return 'NOTA: Registo truncado para 10000 linhas (total: linhas $arg1)';
+  String log_header_truncated(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other:
+          'NOTA: registro truncado para as últimas 10000 linhas (total: $arg1 linhas)',
+      one:
+          'NOTA: registro truncado para as últimas 10000 linhas (total: $arg1 linha)',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4138,7 +3847,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String recording_lib_selected_count(Object arg1) {
-    return 'Selecionado $arg1';
+    return '$arg1 selecionado';
   }
 
   @override
@@ -4500,8 +4209,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get diagnostics_network_offline => 'Offline';
 
   @override
-  String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return 'Clips $arg1 · $arg2 utilizados';
+  String diagnostics_storage_used_line(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clipes · $arg2 utilizados',
+      one: '$arg1 clipe · $arg2 utilizados',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4594,57 +4309,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get vehicle_dialog_title => 'Definir a capacidade da bateria';
 
   @override
-  String get vehicle_dialog_capacity_label => 'Capacidade (kWh)';
-
-  @override
-  String get vehicle_dialog_capacity_suffix => 'kWh';
-
-  @override
-  String get vehicle_dialog_capacity_helper =>
-      '8 a 120 kWh. Deixe para usar o padrão do modelo.';
-
-  @override
   String get vehicle_dialog_model_label => 'Modelo';
 
   @override
   String get vehicle_dialog_save => 'Salvar';
-
-  @override
-  String get vehicle_dialog_reset => 'Redefinir para detecção automática';
-
-  @override
-  String get vehicle_dialog_invalid_capacity =>
-      'A capacidade deve ser de 8 a 120 kWh';
-
-  @override
-  String vehicle_dialog_summary_capacity(Object arg1) {
-    return 'Capacidade: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_soh(Object arg1) {
-    return 'SOH: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_live(Object arg1) {
-    return '$arg1% (ao vivo)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_calibration(Object arg1) {
-    return '$arg1% (da última carga)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_oem(Object arg1) {
-    return '$arg1% (veículo)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_nominal(Object arg1) {
-    return '$arg1% (nominal)';
-  }
 
   @override
   String get settings_recording_tab_status => 'Status';
@@ -4749,8 +4417,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String settings_recording_storage_files(Object arg1) {
-    return '$arg1 gravações';
+  String settings_recording_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 gravações',
+      one: '$arg1 gravação',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4833,24 +4507,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settings_daemons_zrok_reset_button => 'Redefinir ambiente';
-
-  @override
-  String vehicle_dialog_summary_effective(Object arg1) {
-    return 'Eficaz: $arg1 kWh';
-  }
-
-  @override
-  String vehicle_dialog_summary_model(Object arg1) {
-    return 'Modelo: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return 'Última calibração: $arg1% em $arg2';
-  }
-
-  @override
-  String get vehicle_dialog_soh_unavailable => 'Não disponível';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -5033,13 +4689,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get settings_privacy_storage_unavailable => 'Não disponível';
 
   @override
-  String settings_privacy_storage_count_format(Object arg1) {
-    return 'Clip $arg1';
-  }
-
-  @override
-  String settings_privacy_storage_count_format_plural(Object arg1) {
-    return 'Clipes $arg1';
+  String settings_privacy_storage_count_format_plural(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 clipes',
+      one: '$arg1 clipe',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5099,110 +4756,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get dashboard_insight_welcome =>
-      'Bem-vindo. O BladeWatch é agora o teu segundo par de olhos.';
-
-  @override
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
-    return 'Recuperado $arg1 (≈$arg2) enquanto estacionado';
-  }
-
-  @override
-  String dashboard_insight_parked_charged(Object arg1) {
-    return 'Apanhou o $arg1 enquanto estacionou.';
-  }
-
-  @override
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
-    return 'Usado $arg1 (≈$arg2) desde que estacionou';
-  }
-
-  @override
-  String dashboard_insight_parked_drained(Object arg1) {
-    return 'Usou o $arg1 desde que estacionou.';
-  }
-
-  @override
-  String dashboard_insight_last_alert(Object arg1) {
-    return 'Última alerta de vigilância: $arg1';
-  }
-
-  @override
-  String dashboard_insight_last_charge(Object arg1, Object arg2) {
-    return 'Última carga: +$arg1 em $arg2';
-  }
-
-  @override
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return 'Clips $arg1 · $arg2 gravados';
-  }
-
-  @override
-  String dashboard_insight_kwh_format(Object arg1) {
-    return '$arg1 kWh';
-  }
-
-  @override
-  String dashboard_insight_percent_format(Object arg1) {
-    return '$arg1%';
-  }
-
-  @override
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 h $arg2 min';
-  }
-
-  @override
-  String dashboard_insight_today_clips(num arg1) {
+  String dashboard_insight_storage_milestone(num arg1, Object arg2) {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: 'Clips $arg1 gravados hoje',
-      one: 'Clip $arg1 gravado hoje',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: 'Excesso de velocidade em linha durante $arg1 dias, $arg2 horas',
-      one: 'Excesso de condução online para dia $arg1, $arg2 horas',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: 'Excesso de condução em linha durante $arg1 horas',
-      one: 'Excesso de velocidade em linha durante a hora $arg1',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_minutes(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 min',
-      one: '$arg1 min',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 hr',
-      one: '$arg1 hr',
+      other: '$arg1 clipes · $arg2 gravados',
+      one: '$arg1 clipe · $arg2 gravados',
     );
     return '$_temp0';
   }
@@ -5319,6 +4878,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get vehicle_all_windows => 'Todas as janelas';
+
+  @override
+  String get vehicle_window_awake_note => 'Só funciona com o carro ativo.';
 
   @override
   String get vehicle_window_front_left => 'Dianteiro esquerdo';
@@ -5597,7 +5159,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'Estimativa BYD: $km km';
+    return 'Estimativa BYD: $km';
   }
 
   @override
@@ -5962,8 +5524,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String surveillance_storage_files(Object arg1) {
-    return '$arg1 eventos';
+  String surveillance_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 eventos',
+      one: '$arg1 evento',
+    );
+    return '$_temp0';
   }
 
   @override

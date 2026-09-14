@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../platform/config_channel.dart';
 import '../../platform/daemon_channel.dart';
 import 'settings_daemons_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Ground truth: `DaemonsFragment.kt` + `DaemonAdapter.kt`. Per-daemon
 /// start/stop has no IPC path today — `daemon.start`/`daemon.stop`
@@ -20,7 +21,7 @@ import 'settings_daemons_models.dart';
 /// deliberately NOT ported — it shells out via ADB and shares a file via
 /// `FileProvider`, a developer convenience gated to `BuildConfig.DEBUG`
 /// builds, not a release end-user feature.
-class SettingsDaemonsController extends ChangeNotifier {
+class SettingsDaemonsController extends ChangeNotifier with DisposedSafeNotifier {
   SettingsDaemonsController({
     required DaemonChannel daemonChannel,
     required ConfigChannel configChannel,

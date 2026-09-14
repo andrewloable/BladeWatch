@@ -13,6 +13,7 @@ import '../../rpc/services/safe_locations_service_client.dart';
 import '../../rpc/services/storage_service_client.dart';
 import '../../rpc/services/surveillance_service_client.dart';
 import 'surveillance_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Ground truth: `SurveillanceSettingsController.kt`, the shared controller
 /// behind BOTH the standalone `surveillanceSettingsWebFragment` destination
@@ -24,7 +25,7 @@ import 'surveillance_models.dart';
 /// saves, and Apply on any non-Storage tab saves the FULL merged state
 /// regardless of which tab is on screen (`applyChanges()`'s single shared
 /// `config.copy(...)`).
-class SurveillanceSettingsController extends ChangeNotifier {
+class SurveillanceSettingsController extends ChangeNotifier with DisposedSafeNotifier {
   SurveillanceSettingsController({
     required SurveillanceServiceClient surveillanceService,
     required SurveillanceServiceClient longSurveillanceService,

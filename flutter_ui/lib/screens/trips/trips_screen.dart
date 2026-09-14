@@ -221,7 +221,7 @@ class _SummaryCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final distDisplay = distanceUnit == 'mi'
-        ? '${(summary.totalDistanceKm * 0.621371).toStringAsFixed(1)} mi'
+        ? formatDistance(summary.totalDistanceKm, distanceUnit)
         : '${summary.totalDistanceKm.toStringAsFixed(1)} km';
 
     return Card(
@@ -274,7 +274,7 @@ class _TripRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final dist = distanceUnit == 'mi' ? '${(trip.distanceKm * 0.621371).toStringAsFixed(1)} mi' : '${trip.distanceKm.toStringAsFixed(1)} km';
+    final dist = formatDistance(trip.distanceKm, distanceUnit);
 
     return Card(
       key: ValueKey('trips.row.${trip.id}'),
@@ -315,6 +315,8 @@ class _StatsTab extends StatelessWidget {
     final theme = Theme.of(context);
     final dna = state.dna;
     final range = state.range;
+    // Same source the trips list uses; the range card previously ignored it.
+    final distanceUnit = state.config?.distanceUnit ?? 'km';
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -344,8 +346,18 @@ class _StatsTab extends StatelessWidget {
               Text(l10n.trips_range_title, style: theme.textTheme.labelLarge),
               const SizedBox(height: 8),
               if (range != null && range.estimatedKm > 0) ...[
-                Center(child: Text('${range.estimatedKm.toStringAsFixed(0)} km', style: theme.textTheme.headlineMedium)),
-                if (range.builtInKm > 0) Center(child: Text(l10n.trips_range_byd_estimate(range.builtInKm.toStringAsFixed(0)), style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
+                // BladeWatch: these two rendered raw kilometres regardless of the
+                // user's unit, on the same screen whose trip rows convert — so a
+                // miles user saw "13.0 mi" above and "85 km" here.
+                Center(
+                    child: Text(formatDistance(range.estimatedKm, distanceUnit, decimals: 0),
+                        style: theme.textTheme.headlineMedium)),
+                if (range.builtInKm > 0)
+                  Center(
+                      child: Text(
+                          l10n.trips_range_byd_estimate(
+                              formatDistance(range.builtInKm, distanceUnit, decimals: 0)),
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
               ] else
                 Center(child: Text(l10n.trips_range_no_data, style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
             ]),

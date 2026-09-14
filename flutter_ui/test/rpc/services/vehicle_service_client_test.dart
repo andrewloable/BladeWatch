@@ -56,33 +56,7 @@ void main() {
       expect(fake.calls.single.request, isA<GetSeatDiagnosticsRequest>());
     });
 
-    test('lock sends VehicleService/Lock and decodes a real proto3Json response', () async {
-      // stubJson (not stub) so the wrapper's own decode closure — 
-      // '(json) => VehicleCommandResponse()..mergeFromProto3Json(json)' — actually runs.
-      fake.stubJson('VehicleService', 'Lock', <String, dynamic>{});
 
-      final result = await client.lock(LockRequest());
-
-      expect(result, isA<VehicleCommandResponse>());
-      expect(fake.calls, hasLength(1));
-      expect(fake.calls.single.service, 'VehicleService');
-      expect(fake.calls.single.method, 'Lock');
-      expect(fake.calls.single.request, isA<LockRequest>());
-    });
-
-    test('unlock sends VehicleService/Unlock and decodes a real proto3Json response', () async {
-      // stubJson (not stub) so the wrapper's own decode closure — 
-      // '(json) => VehicleCommandResponse()..mergeFromProto3Json(json)' — actually runs.
-      fake.stubJson('VehicleService', 'Unlock', <String, dynamic>{});
-
-      final result = await client.unlock(UnlockRequest());
-
-      expect(result, isA<VehicleCommandResponse>());
-      expect(fake.calls, hasLength(1));
-      expect(fake.calls.single.service, 'VehicleService');
-      expect(fake.calls.single.method, 'Unlock');
-      expect(fake.calls.single.request, isA<UnlockRequest>());
-    });
 
     test('trunk sends VehicleService/Trunk and decodes a real proto3Json response', () async {
       // stubJson (not stub) so the wrapper's own decode closure — 
@@ -112,33 +86,7 @@ void main() {
       expect(fake.calls.single.request, isA<MoveWindowRequest>());
     });
 
-    test('flash sends VehicleService/Flash and decodes a real proto3Json response', () async {
-      // stubJson (not stub) so the wrapper's own decode closure — 
-      // '(json) => VehicleCommandResponse()..mergeFromProto3Json(json)' — actually runs.
-      fake.stubJson('VehicleService', 'Flash', <String, dynamic>{});
 
-      final result = await client.flash(FlashRequest());
-
-      expect(result, isA<VehicleCommandResponse>());
-      expect(fake.calls, hasLength(1));
-      expect(fake.calls.single.service, 'VehicleService');
-      expect(fake.calls.single.method, 'Flash');
-      expect(fake.calls.single.request, isA<FlashRequest>());
-    });
-
-    test('findCar sends VehicleService/FindCar and decodes a real proto3Json response', () async {
-      // stubJson (not stub) so the wrapper's own decode closure — 
-      // '(json) => VehicleCommandResponse()..mergeFromProto3Json(json)' — actually runs.
-      fake.stubJson('VehicleService', 'FindCar', <String, dynamic>{});
-
-      final result = await client.findCar(FindCarRequest());
-
-      expect(result, isA<VehicleCommandResponse>());
-      expect(fake.calls, hasLength(1));
-      expect(fake.calls.single.service, 'VehicleService');
-      expect(fake.calls.single.method, 'FindCar');
-      expect(fake.calls.single.request, isA<FindCarRequest>());
-    });
 
     test('setClimate sends VehicleService/SetClimate and decodes a real proto3Json response', () async {
       // stubJson (not stub) so the wrapper's own decode closure — 
@@ -196,47 +144,8 @@ void main() {
       expect(fake.calls.single.request, isA<SetAdasRequest>());
     });
 
-    test('setBatteryHeat sends VehicleService/SetBatteryHeat and decodes a real proto3Json response', () async {
-      // stubJson (not stub) so the wrapper's own decode closure — 
-      // '(json) => VehicleCommandResponse()..mergeFromProto3Json(json)' — actually runs.
-      fake.stubJson('VehicleService', 'SetBatteryHeat', <String, dynamic>{});
 
-      final result = await client.setBatteryHeat(SetBatteryHeatRequest());
 
-      expect(result, isA<VehicleCommandResponse>());
-      expect(fake.calls, hasLength(1));
-      expect(fake.calls.single.service, 'VehicleService');
-      expect(fake.calls.single.method, 'SetBatteryHeat');
-      expect(fake.calls.single.request, isA<SetBatteryHeatRequest>());
-    });
-
-    test('getChargingSchedule sends VehicleService/GetChargingSchedule and decodes a real proto3Json response', () async {
-      // stubJson (not stub) so the wrapper's own decode closure — 
-      // '(json) => GetChargingScheduleResponse()..mergeFromProto3Json(json)' — actually runs.
-      fake.stubJson('VehicleService', 'GetChargingSchedule', <String, dynamic>{});
-
-      final result = await client.getChargingSchedule(GetChargingScheduleRequest());
-
-      expect(result, isA<GetChargingScheduleResponse>());
-      expect(fake.calls, hasLength(1));
-      expect(fake.calls.single.service, 'VehicleService');
-      expect(fake.calls.single.method, 'GetChargingSchedule');
-      expect(fake.calls.single.request, isA<GetChargingScheduleRequest>());
-    });
-
-    test('setChargingSchedule sends VehicleService/SetChargingSchedule and decodes a real proto3Json response', () async {
-      // stubJson (not stub) so the wrapper's own decode closure — 
-      // '(json) => VehicleCommandResponse()..mergeFromProto3Json(json)' — actually runs.
-      fake.stubJson('VehicleService', 'SetChargingSchedule', <String, dynamic>{});
-
-      final result = await client.setChargingSchedule(SetChargingScheduleRequest());
-
-      expect(result, isA<VehicleCommandResponse>());
-      expect(fake.calls, hasLength(1));
-      expect(fake.calls.single.service, 'VehicleService');
-      expect(fake.calls.single.method, 'SetChargingSchedule');
-      expect(fake.calls.single.request, isA<SetChargingScheduleRequest>());
-    });
 
     test('getChargeCap sends VehicleService/GetChargeCap and decodes a real proto3Json response', () async {
       // stubJson (not stub) so the wrapper's own decode closure — 

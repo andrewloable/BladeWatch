@@ -103,6 +103,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cd_delete => 'Удалить';
 
   @override
+  String get cd_decrease => 'Уменьшить';
+
+  @override
+  String get cd_increase => 'Увеличить';
+
+  @override
   String get cd_expand => 'Развернуть';
 
   @override
@@ -128,21 +134,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get overlay_trip_inactive_label => 'ТРИП';
-
-  @override
-  String get log_entry_default_timestamp => '12:34:56';
-
-  @override
-  String get log_entry_default_tag => '[TAG]';
-
-  @override
-  String get log_entry_default_message => 'Сообщение в журнале здесь';
-
-  @override
-  String get daemon_card_default_name => 'Имя службы';
-
-  @override
-  String get daemon_card_default_status => 'Сообщение о состоянии';
 
   @override
   String get daemon_card_subprocesses => 'ПРОЦЕССЫ';
@@ -266,7 +257,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'Нажмите ниже, чтобы открыть BYD Auto-Start. Найдите BladeWatch в списке и снимите флажок. BYD сбрасывает эту настройку при каждой установке — после обновлений процедуру придется повторить.';
+      'Нажмите ниже, чтобы открыть BYD Auto-Start, и снимите флажки И с BladeWatch, И со Службы BladeWatch. Без этого запись не начнётся при включении автомобиля — придётся открывать приложение каждый раз. BYD сбрасывает эту настройку при каждой установке.';
 
   @override
   String get setup_autostart_button => 'Откройте BYD Автозапуск';
@@ -411,13 +402,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get webview_loading => 'Загрузка...';
 
   @override
-  String get webview_camera_daemon_not_running => 'Камера не работает';
-
-  @override
-  String get webview_start_camera_daemon =>
-      'Запустите службу камеры на экране «Службы», чтобы открыть эту страницу.';
-
-  @override
   String get zrok_enable_token_hint => 'Включить токен';
 
   @override
@@ -466,7 +450,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reset_cat_sentry_events_desc =>
-      'Клип для событий наблюдения и боковые вагоны JSON';
+      'Клипы событий наблюдения и сопутствующие JSON-файлы';
 
   @override
   String get reset_cat_proximity => 'Записи приближения';
@@ -547,13 +531,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get recording_lib_date_yesterday => 'Вчера';
 
   @override
-  String recording_lib_clip_count(Object arg1) {
-    return 'Клипки $arg1';
-  }
-
-  @override
-  String recording_lib_clip_count_one(Object arg1) {
-    return 'Клип $arg1';
+  String recording_lib_clip_count(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 клипов',
+      many: '$arg1 клипов',
+      few: '$arg1 клипа',
+      one: '$arg1 клип',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -625,67 +612,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get battery_health_title => 'Здоровье батареи';
 
   @override
-  String get battery_health_subtitle => 'Состояние здоровья';
-
-  @override
-  String get battery_health_dashes => '--';
-
-  @override
-  String get battery_health_waiting => 'Ждём данных...';
-
-  @override
-  String get battery_health_source => 'Источник';
-
-  @override
-  String get battery_health_method => 'Метод';
-
-  @override
-  String get battery_health_capacity => 'Пропускная способность';
-
-  @override
-  String get battery_health_samples => 'Образцы';
-
-  @override
-  String get battery_health_last_updated => 'Последнее обновление';
-
-  @override
   String get battery_health_unavailable => 'Недоступно';
 
   @override
   String get battery_health_unavailable_desc =>
       'Оценка состояния батареи недоступна.';
-
-  @override
-  String get battery_health_reset => 'Сбросить оценку SOH';
-
-  @override
-  String get battery_health_reset_desc =>
-      'Убирает все данные и переоценивает с нуля. Используйте, если батарея была заменена или чтение кажется неверным.';
-
-  @override
-  String get soh_dialog_model_label => 'Модель';
-
-  @override
-  String get soh_dialog_pack_capacity_label =>
-      'Пропускная способность упаковки';
-
-  @override
-  String get soh_dialog_estimated_capacity_label => 'Эффективная способность';
-
-  @override
-  String get soh_dialog_calibration_anchor_label => 'Последняя калибровка';
-
-  @override
-  String get soh_dialog_source_user => 'пользовательский набор';
-
-  @override
-  String get soh_dialog_source_auto => 'автоматически обнаруживается';
-
-  @override
-  String get soh_dialog_model_not_selected => 'Не отобрано';
-
-  @override
-  String get soh_dialog_capacity_not_detected => 'Не обнаружено';
 
   @override
   String soh_dialog_calibration_format(Object arg1, Object arg2) {
@@ -755,7 +686,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String toast_camera_id_set(Object arg1) {
-    return 'Набор камеры $arg1 — следующий цикл ACC';
+    return 'Камера $arg1 выбрана — следующий цикл ACC';
   }
 
   @override
@@ -775,19 +706,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String toast_failed_with_message_x(Object arg1) {
     return 'Не удалось: $arg1';
-  }
-
-  @override
-  String get toast_soh_reset_success =>
-      'Перезагрузка оценки SOH — будет пересчитываться из следующих данных';
-
-  @override
-  String get toast_soh_reset_failed_no_daemon =>
-      'Сброс не удался — служба не отвечает и файл недоступен для записи';
-
-  @override
-  String toast_soh_reset_failed_with_message(Object arg1) {
-    return 'Не удалось перезагрузить: $arg1';
   }
 
   @override
@@ -1049,8 +967,20 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String log_header_truncated(Object arg1) {
-    return 'Примечание: Журнал, сокращенный до 10000 строк (всего: $arg1 строк)';
+  String log_header_truncated(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other:
+          'ПРИМЕЧАНИЕ: журнал сокращён до последних 10000 строк (всего: $arg1 строк)',
+      many:
+          'ПРИМЕЧАНИЕ: журнал сокращён до последних 10000 строк (всего: $arg1 строк)',
+      few:
+          'ПРИМЕЧАНИЕ: журнал сокращён до последних 10000 строк (всего: $arg1 строки)',
+      one:
+          'ПРИМЕЧАНИЕ: журнал сокращён до последних 10000 строк (всего: $arg1 строка)',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1476,8 +1406,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get diagnostics_network_offline => 'Оффлайн';
 
   @override
-  String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return 'Используемые клипы $arg1 · $arg2';
+  String diagnostics_storage_used_line(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 клипов · занято $arg2',
+      many: '$arg1 клипов · занято $arg2',
+      few: '$arg1 клипа · занято $arg2',
+      one: '$arg1 клип · занято $arg2',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1570,57 +1508,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get vehicle_dialog_title => 'Задать ёмкость батареи';
 
   @override
-  String get vehicle_dialog_capacity_label => 'Ёмкость (kWh)';
-
-  @override
-  String get vehicle_dialog_capacity_suffix => 'kWh';
-
-  @override
-  String get vehicle_dialog_capacity_helper =>
-      'от 8 до 120 kWh. Оставьте, чтобы использовать модель по умолчанию.';
-
-  @override
   String get vehicle_dialog_model_label => 'Модель';
 
   @override
   String get vehicle_dialog_save => 'Сохранить';
-
-  @override
-  String get vehicle_dialog_reset => 'Сбросить до автоопределения';
-
-  @override
-  String get vehicle_dialog_invalid_capacity =>
-      'Пропускная способность должна быть 8 - 120 kWh';
-
-  @override
-  String vehicle_dialog_summary_capacity(Object arg1) {
-    return 'Пропускная способность: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_soh(Object arg1) {
-    return 'SOH: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_live(Object arg1) {
-    return '$arg1% (в реальном времени)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_calibration(Object arg1) {
-    return '$arg1% (с последней зарядки)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_oem(Object arg1) {
-    return '$arg1% (автомобиль)';
-  }
-
-  @override
-  String vehicle_dialog_soh_source_nominal(Object arg1) {
-    return '$arg1% (номинально)';
-  }
 
   @override
   String get settings_recording_tab_status => 'Состояние';
@@ -1726,8 +1617,16 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String settings_recording_storage_files(Object arg1) {
-    return 'Записей: $arg1';
+  String settings_recording_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 записей',
+      many: '$arg1 записей',
+      few: '$arg1 записи',
+      one: '$arg1 запись',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1810,24 +1709,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settings_daemons_zrok_reset_button => 'Сбросить окружение';
-
-  @override
-  String vehicle_dialog_summary_effective(Object arg1) {
-    return 'Эффективность: $arg1 kWh';
-  }
-
-  @override
-  String vehicle_dialog_summary_model(Object arg1) {
-    return 'Модель: $arg1';
-  }
-
-  @override
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2) {
-    return 'Последняя калибровка: $arg1% на $arg2';
-  }
-
-  @override
-  String get vehicle_dialog_soh_unavailable => 'недоступна';
 
   @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
@@ -2010,13 +1891,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings_privacy_storage_unavailable => 'Недоступная';
 
   @override
-  String settings_privacy_storage_count_format(Object arg1) {
-    return 'Клип $arg1';
-  }
-
-  @override
-  String settings_privacy_storage_count_format_plural(Object arg1) {
-    return 'Клипки $arg1';
+  String settings_privacy_storage_count_format_plural(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 клипов',
+      many: '$arg1 клипов',
+      few: '$arg1 клипа',
+      one: '$arg1 клип',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2076,111 +1960,14 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get dashboard_insight_welcome =>
-      'Добро пожаловать — Овердрайв теперь ваш второй пара глаз.';
-
-  @override
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2) {
-    return 'Взял $arg1 (≈$arg2) во время парковки';
-  }
-
-  @override
-  String dashboard_insight_parked_charged(Object arg1) {
-    return 'Взял $arg1, когда был на парковке.';
-  }
-
-  @override
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2) {
-    return 'Использую $arg1 (≈$arg2) с тех пор, как вы парковали';
-  }
-
-  @override
-  String dashboard_insight_parked_drained(Object arg1) {
-    return 'Использую $arg1 с тех пор, как ты остановился.';
-  }
-
-  @override
-  String dashboard_insight_last_alert(Object arg1) {
-    return 'Последнее предупреждение по наблюдению: $arg1';
-  }
-
-  @override
-  String dashboard_insight_last_charge(Object arg1, Object arg2) {
-    return 'Последний заряд: +$arg1 в $arg2';
-  }
-
-  @override
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2) {
-    return 'Клип $arg1 · Запись $arg2';
-  }
-
-  @override
-  String dashboard_insight_kwh_format(Object arg1) {
-    return '$arg1 kWh';
-  }
-
-  @override
-  String dashboard_insight_percent_format(Object arg1) {
-    return '$arg1%';
-  }
-
-  @override
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2) {
-    return '$arg1 hr $arg2 мин';
-  }
-
-  @override
-  String dashboard_insight_today_clips(num arg1) {
+  String dashboard_insight_storage_milestone(num arg1, Object arg2) {
     String _temp0 = intl.Intl.pluralLogic(
       arg1,
       locale: localeName,
-      other: 'Клип $arg1, записанный сегодня.',
-      one: 'Клип $arg1 записан сегодня',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: 'Перегонка в режиме онлайн в течение $arg1 дней, $arg2 часов',
-      one: 'Перегонка в режиме онлайн на $arg1 день, $arg2 ч',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_uptime_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other:
-          'Превышение скорости движения в режиме онлайн в течение $arg1 часов',
-      one: 'Перегонка в режиме $arg1 часа',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_minutes(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 минуты',
-      one: '$arg1 минуты',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String dashboard_insight_hours(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 hr',
-      one: '$arg1 hr',
+      other: '$arg1 клипов · записано $arg2',
+      many: '$arg1 клипов · записано $arg2',
+      few: '$arg1 клипа · записано $arg2',
+      one: '$arg1 клип · записано $arg2',
     );
     return '$_temp0';
   }
@@ -2296,6 +2083,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get vehicle_all_windows => 'Все окна';
+
+  @override
+  String get vehicle_window_awake_note =>
+      'Работает, только когда автомобиль активен.';
 
   @override
   String get vehicle_window_front_left => 'Перед. левое';
@@ -2574,7 +2365,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String trips_range_byd_estimate(Object km) {
-    return 'Оценка BYD: $km км';
+    return 'Оценка BYD: $km';
   }
 
   @override
@@ -2938,8 +2729,16 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String surveillance_storage_files(Object arg1) {
-    return '$arg1 событий';
+  String surveillance_storage_files(num arg1) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '$arg1 событий',
+      many: '$arg1 событий',
+      few: '$arg1 события',
+      one: '$arg1 событие',
+    );
+    return '$_temp0';
   }
 
   @override

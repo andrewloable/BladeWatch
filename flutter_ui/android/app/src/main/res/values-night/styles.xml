@@ -13,6 +13,17 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <!-- BladeWatch-ez0z: the SAME drawable as LaunchTheme, not a plain
+             colour. LaunchTheme only paints the brief "starting window";
+             NormalTheme replaces it as soon as the process starts and stays
+             until Flutter paints its first frame. With a plain colour there,
+             the icon and wordmark vanished almost immediately and the user saw
+             an empty screen for the whole engine init. Flutter draws opaque
+             content over this once it is ready. -->
+        <!-- BladeWatch-ez0z: explicit, not ?android:colorBackground. This is the
+             window behind Flutter while the engine initialises; leaving it on the
+             theme attribute is what let a white frame through between the launch
+             drawable and Flutter's first paint. -->
     </style>
 </resources>

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../gen/bladewatch/v1/recordings.pb.dart';
 import '../../rpc/services/recordings_service_client.dart';
 import 'recordings_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 int _defaultNowMs() => DateTime.now().millisecondsSinceEpoch;
 
@@ -75,7 +76,7 @@ class BatchDeleteOutcome {
 /// same screen) -- `RecordingsApiHandler` clamps `pageSize` to 50 server-side
 /// regardless of what is requested, a real, already-accepted limit neither
 /// reference client works around.
-class RecordingsController extends ChangeNotifier {
+class RecordingsController extends ChangeNotifier with DisposedSafeNotifier {
   RecordingsController({
     required RecordingsServiceClient recordingsService,
     int Function() nowMs = _defaultNowMs,

@@ -1,12 +1,36 @@
 # Architecture
 
-BladeWatch is a hybrid Android, native, and web application. The installed Android app owns user interaction and lifecycle hooks, while privileged shell-launched daemon processes do long-running camera, recording, surveillance, networking, telemetry, and web-server work.
+BladeWatch is a hybrid Android, native, and web application shipped as **two APKs
+that share one UID**:
+
+| APK | Package | Role |
+|---|---|---|
+| Service host | `net.bladewatch.app` | Daemons, receivers, foreground services, BYD integration. **No user-visible UI and no launcher entry.** |
+| In-car UI | `net.bladewatch.flutter` | The Flutter app the driver opens. The only launcher icon. |
+
+Both are signed with the same key and declare `android:sharedUserId="net.bladewatch.app"`,
+so they run as one UID (10073 on the test head unit). That is load-bearing, not a
+convenience: the daemon's loopback IPC servers on 19876/19877 authorise by **peer UID**
+(`PeerCredentials.isTrusted`), and `CoResidentAttackerTest` pins that a separate app
+holding the world-readable IPC token is rejected. A shared UID makes the Flutter APK pass
+that gate unchanged. Never widen the gate instead.
+
+Privileged shell-launched daemon processes do the long-running camera, recording,
+surveillance, networking, telemetry, and web-server work.
 
 ## High-Level Shape
 
 ```text
-Android launcher UI (native shell)
-  -> MainActivity, M3 navigation rail, native Kotlin fragments
+In-car UI APK (net.bladewatch.flutter)
+  -> Flutter/Dart: nav rail, screens, ChangeNotifier controllers
+  -> Dart ConnectRPC client -> 127.0.0.1:8080 (JWT)
+  -> MethodChannels -> Kotlin in the SAME APK -> loopback IPC 19876
+  -> wakes the service host on first resume (explicit component start,
+     not a broadcast -- BYD ssc_skip suppresses broadcasts to the app)
+
+Service host APK (net.bladewatch.app) -- no launcher entry
+  -> MainActivity: startup bootstrap only, never calls setContentView,
+     moveTaskToBack immediately
   -> foreground services and boot receivers
   -> DaemonStartupManager
   -> ADB shell / app_process launchers
@@ -26,7 +50,7 @@ Embedded web UI (Angular 19 SPA)
      /data/local/tmp/web/angular and served by the daemon at /
   -> talks to CameraDaemon over ConnectRPC (@connectrpc/connect-web)
   -> uses WebSocket streaming for live H.264 frames
-  -> used for remote browser / tunnel access (the in-app UI is native)
+  -> used for remote browser / tunnel access ONLY (the in-car UI is Flutter)
 
 BYD integrations
   -> local BYD framework reflection and listeners
@@ -38,7 +62,11 @@ BYD integrations
 The repository is a single Android Gradle project:
 
 - Root project: `BladeWatch`.
-- Android module: `:app`.
+- Android module: `:app` -- the service host APK.
+- `flutter_ui/` -- an independent standalone Flutter project (its own Gradle
+  build under `flutter_ui/android/`), not an add-to-app module. It sets its own
+  `minSdk = 29` (the head unit is API 29; Impeller Vulkan needs it) rather than
+  inheriting the service host's legacy 25.
 - Namespace and application id: `net.bladewatch.app` (source dirs still live
   under `com/loabletech/bladewatch/` for historical reasons).
 - Minimum SDK: 25.
@@ -47,7 +75,13 @@ The repository is a single Android Gradle project:
 - Native ABI split: `arm64-v8a`.
 - Java and Kotlin target: 11.
 
-The app uses AndroidX, Material, Navigation, lifecycle, WorkManager, Dadb, OkHttp, TensorFlow Lite, H2, WebSocket support, and native CMake builds.
+The service host uses AndroidX core, appcompat, Material, lifecycle/LiveData,
+WorkManager, Dadb, OkHttp, ConnectRPC-Kotlin, protobuf-java, TensorFlow Lite, H2,
+WebSocket support, and native CMake builds. Navigation, osmdroid and ZXing were
+dropped with the native UI (`BladeWatch-81g9.3`). appcompat, Material and
+lifecycle stayed: `AppCompatDelegate` drives the night mode the status overlay
+reads, `SetupGuideDialog` builds a Material AlertDialog, and `ZrokController` /
+`DaemonsViewModel` publish daemon state as `LiveData`.
 
 The embedded web UI is a separate Angular 19 project under `web/` (Vite +
 `@analogjs/vite-plugin-angular`, ConnectRPC, Leaflet, `@ngx-translate`, qrcode).
@@ -61,19 +95,32 @@ tree.
 
 ## Runtime Boundaries
 
-### Android App Process
+### Service Host App Process (`net.bladewatch.app`)
 
 The ordinary Android app process hosts:
 
 - `BladeWatchApplication`.
-- `MainActivity`.
-- Native Android fragments and view models (the in-app UI is fully native —
-  M3 navigation rail + Kotlin fragments wired through `nav_graph.xml`).
-- A `WebViewFragment` host retained for the remote tunnel / browser path; it is
-  no longer a nav destination.
+- `MainActivity` — the **startup bootstrap, not UI**. It extends `Activity`,
+  never calls `setContentView`, and calls `moveTaskToBack(true)` unconditionally.
+  It has no launcher `intent-filter` but stays `exported="true"` as the ADB
+  recovery path (`am start -n net.bladewatch.app/.ui.MainActivity`) when the
+  Flutter APK is broken or absent. `ServiceHostManifestTest` pins both properties.
 - Boot, power, location, and process-revival receivers.
 - Foreground services used to keep the system alive.
 - Shell launch orchestration for daemon processes.
+- The status overlay (`StatusOverlayService`) and `SetupGuideDialog` — the only
+  two surfaces this APK still draws.
+
+### In-Car UI App Process (`net.bladewatch.flutter`)
+
+- The Flutter engine and all screens, in Dart.
+- A small Kotlin layer in the same APK for the privileged operations a
+  `MethodChannel` can reach (`ipc.*`, `auth.*`, `daemon.*`, `config.*`,
+  `update.*`) plus the Live View texture plugin.
+- On first `onResume` it explicitly starts the service host's `MainActivity`
+  with `minimize_on_start`, which is how the daemons get launched when the user
+  opens the app. Deliberately **not** in `configureFlutterEngine` — starting an
+  Activity there interrupts engine setup.
 
 ### Shell-Launched Daemon Processes
 
@@ -102,7 +149,10 @@ Important native areas:
 
 1. Android starts `BladeWatchApplication`.
 2. The application initializes logging, preferences, locale/theme, and starts `DaemonKeepaliveService`.
-3. `MainActivity` initializes device identity, storage, BYD whitelist behavior, daemon startup management, native fragment navigation, and update checks.
+3. The service host's `MainActivity` initializes storage, device identity
+   (`DeviceIdGenerator` **before any daemon starts**), the BYD data-cache /
+   ACC whitelist on a background thread, daemon startup management, the location
+   sidecar, and the status overlay — then immediately backgrounds itself.
 4. `BootReceiver` handles boot, package replacement, screen, power, network, and BYD ACC events.
 5. `DaemonKeepaliveService` runs as a sticky foreground service, holds a partial wake lock, and schedules process revival.
 6. `DaemonStartupManager` delays launch to let the vehicle head unit settle, then starts core daemons and the optional Zrok tunnel.
@@ -126,13 +176,12 @@ Initializes global app concerns:
 - Preferences manager.
 - Foreground keepalive service.
 
-### `MainActivity`
+### `MainActivity` (service host)
 
-Owns the Android shell:
+Owns the startup bootstrap. It draws nothing — the in-car UI is Flutter, see
+[UI/UX Design Language](ui-ux-design-language.md).
 
-- Material navigation rail (Material 3 — see [UI/UX Design Language](ui-ux-design-language.md)).
-- Native fragment navigation via `nav_graph.xml`.
-- Storage setup.
+- Storage setup (kept deferred via `window.decorView.post`).
 - Device ID initialization.
 - BYD whitelist application.
 - Daemon startup manager initialization.
@@ -182,8 +231,8 @@ The main local BYD telemetry collector. It discovers BYD framework devices throu
 - Reflection is used heavily for BYD local APIs so the app can compile with stubs but run against the vehicle firmware classes.
 - Shared JSON files under `/data/local/tmp` are used for cross-process config and secrets.
 - Daemons expose local TCP/HTTP IPC rather than relying on Activity-bound Android services.
-- The embedded web UI is an Angular 19 SPA that talks to the daemon over ConnectRPC; the in-app UI is native fragments, so the SPA primarily serves remote browser / tunnel clients.
-- The retained `WebViewFragment` host bypasses proxy issues by injecting a bridge for mutating API calls while allowing normal GET navigation (used only on the tunnel/browser path).
+- The embedded web UI is an Angular 19 SPA that talks to the daemon over ConnectRPC; the in-car UI is Flutter, so the SPA serves remote browser / tunnel clients only.
+- Two UIs track the same 12 ConnectRPC services by convention: Flutter in the car, Angular in the browser. There is no shared UI code between them — only the protos.
 - Optional remote access is layered over the local web server through the Zrok tunnel instead of exposing internet-facing server code directly.
 - Surveillance and camera paths prioritize long-running stability over tight coupling with Android UI lifecycle.
 
@@ -197,7 +246,8 @@ The main local BYD telemetry collector. It discovers BYD framework devices throu
 
 ## Source References
 
-- Application startup: [BladeWatchApplication.kt:18](../app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt#L18), [MainActivity.kt:46](../app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt#L46).
+- Application startup: [BladeWatchApplication.kt:18](../app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt#L18), [MainActivity.kt](../app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt) (service host bootstrap).
+- In-car UI: [flutter_ui/lib/main.dart](../flutter_ui/lib/main.dart), [flutter_ui/lib/shell/app_shell.dart](../flutter_ui/lib/shell/app_shell.dart), and the Flutter-side [MainActivity.kt](../flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt) that wakes the service host.
 - Boot and foreground survival: [BootReceiver.kt:24](../app/src/main/java/com/loabletech/bladewatch/receiver/BootReceiver.kt#L24), [DaemonKeepaliveService.kt:30](../app/src/main/java/com/loabletech/bladewatch/services/DaemonKeepaliveService.kt#L30).
 - Daemon orchestration and shell launch: [DaemonStartupManager.kt:15](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L15), [AdbDaemonLauncher.kt:17](../app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt#L17), [DaemonBootstrap.java:22](../app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.java#L22).
 - Camera daemon and local servers: [CameraDaemon.java:35](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L35), [TcpCommandServer.java:22](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L22), [HttpServer.java:49](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L49), [SurveillanceIpcServer.java:22](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L22).

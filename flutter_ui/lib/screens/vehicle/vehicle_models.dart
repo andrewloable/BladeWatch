@@ -144,6 +144,20 @@ class VehicleCommandResult {
   final String? message;
 
   const VehicleCommandResult({required this.ok, this.outcome, this.message});
+
+  /// The reason to show for a refused command — never null.
+  ///
+  /// The daemon can refuse with an EMPTY message, and `_mapCommand` maps an
+  /// empty message to null. So `return result.message` handed the caller null,
+  /// and every call site reads null as success: the command had already been
+  /// reverted, so the control visibly snapped back with NO explanation. That
+  /// applied to the AC toggle, temperature, fan, and both seat commands.
+  ///
+  /// Falls back to `outcome`, then to the empty string, which
+  /// `showVehicleCommandError` renders as the localised
+  /// `vehicle_action_failed`. The window path used to end in a hardcoded
+  /// English 'failed' instead, which no locale could translate.
+  String get failure => message ?? outcome ?? '';
 }
 
 class ModelEntry {

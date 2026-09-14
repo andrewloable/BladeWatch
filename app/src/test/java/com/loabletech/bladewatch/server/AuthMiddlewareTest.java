@@ -33,7 +33,7 @@ public class AuthMiddlewareTest {
     public void protectedApiWithoutJwtIsRejected() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/unlock", null, null, out, null, false);
+                "/api/vehicle/trunk", null, null, out, null, false);
         Assert.assertFalse(allowed);
         Assert.assertTrue(out.toString("UTF-8").contains("401 Unauthorized"));
     }
@@ -43,7 +43,7 @@ public class AuthMiddlewareTest {
         AuthMiddleware.setLoopbackBypassOverride(Boolean.FALSE);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/unlock", null, null, out,
+                "/api/vehicle/trunk", null, null, out,
                 new InetSocketAddress("127.0.0.1", 8080), false);
         Assert.assertFalse(allowed);
         Assert.assertTrue(out.toString("UTF-8").contains("401 Unauthorized"));

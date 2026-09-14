@@ -220,9 +220,9 @@ class _SummaryCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    final distStr = distanceUnit == 'mi' ? '${(trip.distanceKm * 0.621371).toStringAsFixed(1)} mi' : '${trip.distanceKm.toStringAsFixed(1)} km';
-    final avgSpd = distanceUnit == 'mi' ? '${(trip.avgSpeedKmh * 0.621371).toStringAsFixed(0)} mph' : '${trip.avgSpeedKmh.toStringAsFixed(0)} km/h';
-    final maxSpd = distanceUnit == 'mi' ? '${(trip.maxSpeedKmh * 0.621371).toStringAsFixed(0)} mph' : '${trip.maxSpeedKmh.toStringAsFixed(0)} km/h';
+    final distStr = formatDistance(trip.distanceKm, distanceUnit);
+    final avgSpd = formatSpeed(trip.avgSpeedKmh, distanceUnit);
+    final maxSpd = formatSpeed(trip.maxSpeedKmh, distanceUnit);
     final energyStr = trip.energyUsedKwh > 0 ? '${trip.energyUsedKwh.toStringAsFixed(1)} kWh' : '--';
     final costStr = trip.tripCost > 0 && trip.currency.isNotEmpty ? '${trip.currency} ${trip.tripCost.toStringAsFixed(2)}' : '--';
     final socStr = '${trip.socStart.toStringAsFixed(0)} → ${trip.socEnd.toStringAsFixed(0)}%';

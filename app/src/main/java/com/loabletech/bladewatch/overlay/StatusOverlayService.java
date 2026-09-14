@@ -49,6 +49,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class StatusOverlayService extends Service {
 
+    /** The Flutter UI APK — the only package with a launcher entry after Phase 4. */
+    private static final String FLUTTER_UI_PACKAGE = "net.bladewatch.flutter";
+
     private static final String TAG = "StatusOverlay";
     private static final String CHANNEL_ID = "status_overlay";
     private static final int NOTIFICATION_ID = 9001;
@@ -603,22 +606,22 @@ public class StatusOverlayService extends Service {
                 // not continuous/drive recording.
                 if (isProximity) {
                     ivRecIcon.setImageResource(R.drawable.ic_overlay_rec_active);
-                    tvRecLabel.setText("PROX");
+                    tvRecLabel.setText(getString(R.string.overlay_prox_label));
                     tvRecLabel.setTextColor(getColor(R.color.status_warning));
                 } else {
                     ivRecIcon.setImageResource(R.drawable.ic_overlay_rec_active);
-                    tvRecLabel.setText("REC");
+                    tvRecLabel.setText(getString(R.string.overlay_rec_inactive_label));
                     tvRecLabel.setTextColor(getColor(R.color.status_success));
                 }
             } else if (shouldBeRecording) {
                 // Problem — should be recording but isn't
                 if (isProximity) {
                     ivRecIcon.setImageResource(R.drawable.ic_overlay_rec_inactive);
-                    tvRecLabel.setText("PROX");
+                    tvRecLabel.setText(getString(R.string.overlay_prox_label));
                     tvRecLabel.setTextColor(getColor(R.color.status_danger));
                 } else {
                     ivRecIcon.setImageResource(R.drawable.ic_overlay_rec_inactive);
-                    tvRecLabel.setText("REC");
+                    tvRecLabel.setText(getString(R.string.overlay_rec_inactive_label));
                     tvRecLabel.setTextColor(getColor(R.color.status_danger));
                 }
             } else if (isProximity) {
@@ -626,7 +629,7 @@ public class StatusOverlayService extends Service {
                 // Show an armed/idle indicator instead of hiding — users want to know
                 // the car is being watched even when nothing has triggered yet.
                 ivRecIcon.setImageResource(R.drawable.ic_overlay_rec_inactive);
-                tvRecLabel.setText("PROX");
+                tvRecLabel.setText(getString(R.string.overlay_prox_label));
                 tvRecLabel.setTextColor(getColor(R.color.status_warning));
             } else {
                 // Not recording, but that's expected (e.g., drive mode in P gear)
@@ -643,11 +646,11 @@ public class StatusOverlayService extends Service {
             tripContainer.setVisibility(View.VISIBLE);
             if (tripActive) {
                 ivTripIcon.setImageResource(R.drawable.ic_overlay_trip_active);
-                tvTripLabel.setText("TRIP");
+                tvTripLabel.setText(getString(R.string.overlay_trip_inactive_label));
                 tvTripLabel.setTextColor(getColor(R.color.status_success));
             } else {
                 ivTripIcon.setImageResource(R.drawable.ic_overlay_trip_inactive);
-                tvTripLabel.setText("TRIP");
+                tvTripLabel.setText(getString(R.string.overlay_trip_inactive_label));
                 tvTripLabel.setTextColor(getColor(R.color.status_danger));
             }
         } else {
@@ -768,9 +771,32 @@ public class StatusOverlayService extends Service {
         if (nm != null) nm.createNotificationChannel(channel);
     }
 
+    /**
+     * Where tapping the overlay notification should go.
+     *
+     * <p>BladeWatch-81g9.1: this used to be
+     * {@code getLaunchIntentForPackage(getPackageName())}. Once Phase 4 removed THIS
+     * package's launcher entry that returns <b>null</b>, and
+     * {@code PendingIntent.getActivity} with a null Intent throws
+     * {@code NullPointerException} inside {@code migrateExtraStreamToClipData} — which
+     * crashed the whole process from {@code onStartCommand}, taking the startup
+     * bootstrap and the daemon launch down with it. Caught by a real cold-boot test.
+     *
+     * <p>Now it targets the Flutter UI, which is what the user should actually see, and
+     * falls back to this app's bootstrap activity by explicit component so the result is
+     * NEVER null. A notification that cannot be built is a dead process, not a dead tap.
+     */
+    private Intent notificationTarget() {
+        Intent flutter = getPackageManager().getLaunchIntentForPackage(FLUTTER_UI_PACKAGE);
+        if (flutter != null) return flutter;
+        Intent fallback = new Intent();
+        fallback.setClassName(getPackageName(), "net.bladewatch.app.ui.MainActivity");
+        fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return fallback;
+    }
+
     private Notification buildNotification() {
-        Intent intent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-        PendingIntent pi = PendingIntent.getActivity(this, 0, intent,
+        PendingIntent pi = PendingIntent.getActivity(this, 0, notificationTarget(),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         return new Notification.Builder(this, CHANNEL_ID)

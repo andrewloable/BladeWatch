@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../../gen/bladewatch/v1/recordings.pb.dart';
 import '../../rpc/services/recordings_service_client.dart';
 import 'recordings_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// One detection-event span on the timeline, relative to the clip start.
 /// Mirrors native's `EventTimelineView.TimelineEvent`.
@@ -94,7 +95,7 @@ SpanColorKey spanColorKey(String type) => switch (type) {
 /// same split as `LocationScreen` owning `flutter_map`'s `MapController`
 /// directly, since neither is a plain-Dart-testable object this controller
 /// could hold without pulling in a Flutter-coupled dependency.
-class RecordingsPlayerController extends ChangeNotifier {
+class RecordingsPlayerController extends ChangeNotifier with DisposedSafeNotifier {
   RecordingsPlayerController({
     required RecordingsServiceClient recordingsService,
     required List<RecordingItem> playlist,

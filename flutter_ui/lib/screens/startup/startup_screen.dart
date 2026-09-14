@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../widgets/brand_lockup.dart';
+
 import '../../gen/l10n/app_localizations.dart';
 import 'startup_controller.dart';
 import 'startup_models.dart';
@@ -61,7 +63,12 @@ class _StartupScreenState extends State<StartupScreen> {
               padding: const EdgeInsets.only(top: 48),
               child: Column(
                 children: [
-                  Text('BladeWatch', style: theme.textTheme.headlineMedium?.copyWith(color: theme.colorScheme.primary)),
+                  // BladeWatch-ez0z: icon + wordmark, matching the native launch
+                  // drawable so the handoff from the window background to
+                  // Flutter's first frame does not drop the branding. This
+                  // screen is what the user actually stares at while the daemons
+                  // come up, so it is where the brand needs to be.
+                  BrandLockup(iconSize: 88, color: theme.colorScheme.primary),
                   const SizedBox(height: 4),
                   Text(l10n.startup_subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   Padding(

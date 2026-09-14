@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' show Locale;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier;
+import 'disposed_safe_notifier.dart';
 
 /// The 17 languages BladeWatch ships translations for — ground truth:
 /// `LocaleManager.SUPPORTED` (native). Deliberately narrower than
@@ -97,7 +98,7 @@ class FileLocaleStore implements LocaleStore {
 /// new language; this port needs no such workaround; `MaterialApp` simply
 /// rebuilds under a `Locale` change like any other reactive value, driven by
 /// this `ChangeNotifier`.
-class LocaleController extends ChangeNotifier {
+class LocaleController extends ChangeNotifier with DisposedSafeNotifier {
   LocaleController({required LocaleStore store}) : _store = store; // ignore: prefer_initializing_formals
 
   final LocaleStore _store;

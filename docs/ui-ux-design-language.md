@@ -1,10 +1,19 @@
 # UI/UX Design Language
 
 BladeWatch's interface follows **Material 3** (Material You), as defined at
-<https://m3.material.io/>. The **native Android shell** is the canonical M3
-surface — color roles, type scale, shape scale, elevation model, and motion
-curves — and additionally adopts **Material 3 Expressive** refinements (tighter
-type tracking, tonal active indicators) tuned for a large in-car display.
+<https://m3.material.io/>. The **Flutter in-car UI** (`flutter_ui/`,
+`net.bladewatch.flutter`) is the canonical M3 surface — color roles, type scale,
+shape scale, elevation model, and motion curves — and additionally adopts
+**Material 3 Expressive** refinements (tighter type tracking, tonal active
+indicators) tuned for a large in-car display.
+
+> **This changed in Phase 4.** The native Kotlin shell that used to be the source
+> of truth was deleted (`BladeWatch-81g9.2`). `flutter_ui/lib/theme/*_tokens.dart`
+> is now authoritative; the Android XML themes survive only for the two surfaces
+> the service host still draws (the status overlay and `SetupGuideDialog`) and
+> must be kept in step with Dart, not the other way round. The parity tests under
+> `flutter_ui/test/theme/` read the XML and assert it matches the Dart tokens, so
+> drift fails the build without a device.
 
 The **embedded web UI** is the **Angular 19 SPA** (`web/`), with its own
 component-scoped SCSS. The older generation — static HTML pages styled through a
@@ -20,20 +29,22 @@ be updated by hand when a role changes.
 > Material 3 version: **1.13.0** (Android Material Components), per
 > [libs.versions.toml:9](../gradle/libs.versions.toml#L9).
 
-## Two layers, one language
+## Three layers, one language
 
-| Layer | Renders | M3 source of truth |
-|-------|---------|--------------------|
-| **Android** (native shell) | `MainActivity`, fragments, dialogs, navigation rail | [themes_bladewatch.xml](../app/src/main/res/values/themes_bladewatch.xml) (roles + widgets), [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (+ `values-night`), [dimens_bladewatch.xml](../app/src/main/res/values/dimens_bladewatch.xml) (shape/spacing) |
-| **Web SPA** (Angular 19, `web/`) | the embedded web UI / browser / tunnel client | component-scoped SCSS under `web/src` (own values; same visual language, not wired to `design-tokens.css`) |
+| Layer | Renders | Role |
+|-------|---------|------|
+| **Flutter** (`flutter_ui/`, `net.bladewatch.flutter`) | the whole in-car UI: nav rail, every screen, every dialog | **M3 source of truth** — [color_tokens.dart](../flutter_ui/lib/theme/color_tokens.dart), [type_tokens.dart](../flutter_ui/lib/theme/type_tokens.dart), [dimens_tokens.dart](../flutter_ui/lib/theme/dimens_tokens.dart), assembled in [bladewatch_theme.dart](../flutter_ui/lib/theme/bladewatch_theme.dart) |
+| **Android XML** (`net.bladewatch.app`) | the status overlay and `SetupGuideDialog` **only** | **Derived.** [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (+ `values-night`), [themes_bladewatch.xml](../app/src/main/res/values/themes_bladewatch.xml), [dimens_bladewatch.xml](../app/src/main/res/values/dimens_bladewatch.xml). Kept in step by the parity tests in `flutter_ui/test/theme/` |
+| **Web SPA** (Angular 19, `web/`) | remote browser / tunnel client | **Derived, by hand.** Component-scoped SCSS under `web/src`, not wired to `design-tokens.css` |
 
-A third layer, the in-progress Flutter port (`flutter_ui/`, `net.bladewatch.flutter`), is **derived from** the Android layer rather than an independent source of truth: `flutter_ui/lib/theme/*_tokens.dart` are ported 1:1 from `colors_m3.xml` / `dimens_bladewatch.xml` / `themes_bladewatch.xml`'s `TextAppearance.BladeWatch.*` letter-tracking overrides, each cross-checked in a unit test against the actual XML so drift is caught without a device (`flutter_ui/test/theme/`). Icons there use Flutter's built-in Material Icons font by semantic name (`Icons.dashboard`, `Icons.directions_car`, …), not the Material Symbols Rounded font this doc's icon table specifies — closest available equivalent for **Phase 1 (code only)**; pixel-exact icon parity is verified on-device in Phase 3 (`BladeWatch-imh6`) alongside every other visual check in that migration. See `docs/build-and-operations.md`'s "Flutter theme and navigation shell" section for what's ported where.
+Icons in Flutter use the built-in Material Icons font by semantic name
+(`Icons.dashboard`, `Icons.directions_car`, …) rather than the Material Symbols
+Rounded font the icon table below specifies — the closest available equivalent.
+The XML drawables in that table are still the overlay's icons.
 
-With the legacy pages retired, `colors_m3.xml` (light) and its `values-night`
-counterpart (dark) are the only M3 role definitions that matter — see
-[Theming & token pipeline](#theming--token-pipeline). The Angular SPA carries its
-own SCSS values and must be updated by hand to keep visual parity when roles
-change.
+When a role changes, change the Dart token first. The XML parity tests will fail
+until the overlay follows; the Angular SPA has no automated gate and must be
+updated by hand.
 
 **Target device.** BYD Seal 15.6″ rotatable infotainment — landscape
 `1920×1080` (`960×540dp`), portrait `1080×1920` (`540×960dp`). The design
@@ -41,8 +52,12 @@ language is tuned for this large, bright, glanceable surface, not a phone.
 
 ## UI Refactor Ground Rules
 
-> Read this before starting any task under the **BladeWatch UI → Material 3**
-> initiative. These rules are non-negotiable.
+> **Historical.** These governed the 2025 native-Android M3 refactor, whose
+> subject — the Kotlin fragments and XML layouts — was deleted in Phase 4
+> (`BladeWatch-81g9.2`). They still apply verbatim to the status overlay and
+> `SetupGuideDialog`, the only XML surfaces left. For the Flutter UI the
+> equivalent rule is simpler: visual changes never alter behaviour, never change
+> which RPC a control calls, and never change a user-visible string's meaning.
 
 **Scope: visual / UI refactor ONLY.** The app is in production and runs
 perfectly today. This initiative changes only the *appearance* of the UI to the
@@ -120,7 +135,16 @@ complete; dark is the default on the head unit.
 `status-success`, `status-warning`, `status-danger`, `status-info` — SOC/battery
 state, sentry state, alerts.
 
-- Android: [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (light) and
+- Flutter (source of truth): [color_tokens.dart](../flutter_ui/lib/theme/color_tokens.dart).
+- **Reaching them from a widget:** `Theme.of(context).extension<BwStatusColors>()!`.
+  `ColorScheme` has no success/warning slot, so these four are registered as a
+  `ThemeExtension` on both themes rather than being squeezed into an M3 role.
+  Use the extension — do **not** re-derive a status colour by branching on
+  `theme.brightness` and writing the hex inline. That is what
+  `settings_daemons_screen.dart` had done, reproducing `statusWarning`'s dark
+  value verbatim under a comment noting the theme had no such role; a token
+  reimplemented by hand has stopped being a token.
+- Android (derived, overlay + setup dialog only): [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (light) and
   [values-night/colors_m3.xml](../app/src/main/res/values-night/colors_m3.xml)
   (dark), bound to theme attributes in
   [themes_bladewatch.xml](../app/src/main/res/values/themes_bladewatch.xml).
@@ -260,8 +284,9 @@ the same component vocabulary in its own SCSS
 - **Top app bar & accent stripe** — an optional glass top app bar; a `3px`
   `primary → tertiary` gradient **accent stripe** anchors the brand at the top
   of every page (the native toolbar and the web sidebar share the same
-  gradient). See
-  [app-shell.css](../app/src/main/assets/web/shared/app-shell.css).
+  gradient). The Flutter shell builds it in
+  [app_shell.dart](../flutter_ui/lib/shell/app_shell.dart); the old
+  `app-shell.css` was retired with the legacy static pages in `c970b59`.
 
 ## Icons
 
@@ -281,8 +306,11 @@ Android vector drawables use one of two approaches:
    path itself.
 2. **Direct 960 viewport** (e.g. `ic_notifications`) — `viewportWidth/Height`
    is `960`; the `<group>` applies only `translateY=960`. This avoids a
-   Chrome-58 / Android 7.1 clip bug that occasionally crops the trailing edge
-   of paths rendered through an inner-group scale transform.
+   vector clip bug on this head unit's renderer that occasionally crops the
+   trailing edge of paths rendered through an inner-group scale transform.
+   (Measured platform: **Android 10 / API 29, WebView 74, Vulkan 1.1** — earlier
+   revisions of this doc said Android 7.1 / Chrome 58, which was never true of
+   the hardware.)
 
 All M3 icons carry `android:tint="?attr/colorOnSurfaceVariant"` so they
 auto-flip between light and dark themes. The navigation rail additionally
@@ -369,11 +397,13 @@ These files live in `drawable/` but are **not** Material Symbols icons and must
 
 ### Light / dark
 
+- **Flutter** — `BladeWatchTheme.light()` / `.dark()` build the two `ThemeData`
+  objects from the Dart tokens; mode follows the app's own setting.
 - **Android** — `Theme.BladeWatch.M3` extends
   `Theme.Material3.Light.NoActionBar`; the dark variant lives in `values-night/`.
-  Mode is driven by `AppCompatDelegate.setDefaultNightMode`. Component widget
-  styles reference `?attr/color*`, so they auto-flip; system bars, window
-  background, and text colors are all wired to M3 roles.
+  Mode is driven by `AppCompatDelegate.setDefaultNightMode` (which is why
+  appcompat survives in the service host APK). Applies to the status overlay and
+  `SetupGuideDialog` only.
 - **Legacy web** (`design-tokens.css`) — dark is the `:root` default;
   `:root[data-theme="light"]` overrides the roles. Components reference only CSS
   vars, so they are theme-agnostic.
@@ -383,8 +413,11 @@ These files live in `drawable/` but are **not** Material Symbols icons and must
 
 ### Token pipeline
 
-- [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (+ `values-night`)
-  is the **Android source of truth** for color roles.
+- [color_tokens.dart](../flutter_ui/lib/theme/color_tokens.dart) is the
+  **source of truth** for color roles.
+  [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (+ `values-night`)
+  mirrors it for the status overlay; `flutter_ui/test/theme/color_tokens_test.dart`
+  parses the XML and fails if the two drift.
 - [design-tokens.css](../app/src/main/assets/web/shared/design-tokens.css) is
   **generated** — per its header, by `dev/build_design_tokens.py` from
   `dev/design-tokens.json`, which mirrors `colors_m3.xml` plus its night variant.
@@ -398,8 +431,10 @@ These files live in `drawable/` but are **not** Material Symbols icons and must
 ### Authoring rules
 
 - Use **roles / tokens**, never raw hex or hard-coded `dp`.
-- Native: inherit `Widget.BladeWatch.M3.*` / `TextAppearance.BladeWatch.*`;
-  reference `?attr/color*` and `@dimen/*`.
+- Flutter: reference `BladeWatchColors` / `BladeWatchType` / `BladeWatchDimens`
+  or `Theme.of(context)`, never a literal `Color(0x…)` or a bare number.
+- Android (overlay / setup dialog): inherit `Widget.BladeWatch.M3.*` /
+  `TextAppearance.BladeWatch.*`; reference `?attr/color*` and `@dimen/*`.
 - Legacy web pages: reference `var(--role)` / `var(--radius-*)` /
   `var(--duration-*)` from `design-tokens.css`.
 - Angular SPA: keep its component SCSS visually aligned with the same M3 roles
@@ -408,7 +443,13 @@ These files live in `drawable/` but are **not** Material Symbols icons and must
 
 ## Source References
 
-- M3 theme parent, color roles, and component widgets:
+- Flutter theme (source of truth):
+  [bladewatch_theme.dart](../flutter_ui/lib/theme/bladewatch_theme.dart),
+  [color_tokens.dart](../flutter_ui/lib/theme/color_tokens.dart),
+  [type_tokens.dart](../flutter_ui/lib/theme/type_tokens.dart),
+  [dimens_tokens.dart](../flutter_ui/lib/theme/dimens_tokens.dart).
+- Dart ↔ XML parity gates: [flutter_ui/test/theme/](../flutter_ui/test/theme/).
+- M3 theme parent, color roles, and component widgets (overlay / setup dialog):
   [themes_bladewatch.xml:15](../app/src/main/res/values/themes_bladewatch.xml#L15)
   (theme parent),
   [themes_bladewatch.xml:95](../app/src/main/res/values/themes_bladewatch.xml#L95)
@@ -434,7 +475,7 @@ These files live in `drawable/` but are **not** Material Symbols icons and must
   [design-tokens.css:107](../app/src/main/assets/web/shared/design-tokens.css#L107)
   (light `:root[data-theme="light"]`).
 - App-shell identity (accent stripe, app bar, nav affordance):
-  [app-shell.css](../app/src/main/assets/web/shared/app-shell.css).
+  [flutter_ui/lib/shell/app_shell.dart](../flutter_ui/lib/shell/app_shell.dart).
 - Angular SPA styling (own SCSS, not the token pipeline):
   [web/src/styles.scss](../web/src/styles.scss),
   [web/src/app/shared/page-shared.scss](../web/src/app/shared/page-shared.scss).

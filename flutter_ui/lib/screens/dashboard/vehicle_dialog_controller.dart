@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../gen/bladewatch/v1/system.pb.dart';
 import '../../rpc/services/system_service_client.dart';
 import 'dashboard_models.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Outcome of [VehicleDialogController.save].
 ///
@@ -24,7 +25,7 @@ enum VehicleSaveResult { success, rpcFailed }
 /// field, its Reset action and the SoH summary offered operations that could not
 /// succeed, and were removed rather than left to fail. The vehicle MODEL
 /// selection remains, because `ModelsApiHandler` genuinely persists it.
-class VehicleDialogController extends ChangeNotifier {
+class VehicleDialogController extends ChangeNotifier with DisposedSafeNotifier {
   VehicleDialogController({required SystemServiceClient systemService})
       : _systemService = systemService; // ignore: prefer_initializing_formals
 

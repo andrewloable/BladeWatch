@@ -90,6 +90,10 @@ abstract final class BladeWatchTheme {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
+      // BladeWatch-mtnk follow-up: the four status roles have no ColorScheme
+      // slot, so they ride as a theme extension. Without this they were
+      // unreachable and screens hand-rolled their own brightness branches.
+      extensions: [BwStatusColors.from(tokens)],
       scaffoldBackgroundColor: tokens.surface,
       textTheme: textTheme,
       dividerColor: tokens.outlineVariant,

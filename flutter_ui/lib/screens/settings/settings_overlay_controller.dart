@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../shell/disposed_safe_notifier.dart';
 
 /// Ground truth: `SettingsOverlayFragment.kt`. Backed by
 /// `UnifiedConfigManager`'s `statusOverlay` section — a **public**, non-secret
@@ -11,7 +12,7 @@ import 'package:flutter/foundation.dart';
 /// follow-up landing; the defaults mirror native's own fallback values
 /// (`optBoolean(key, true)`) and quietly no-op on write, exactly the same
 /// shape as `DashboardController.tunnelUrlSource`.
-class SettingsOverlayController extends ChangeNotifier {
+class SettingsOverlayController extends ChangeNotifier with DisposedSafeNotifier {
   SettingsOverlayController({
     Future<({bool cameraVisible, bool tripVisible})> Function()? loadSettings,
     Future<void> Function(String key, bool value)? persist,

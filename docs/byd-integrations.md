@@ -126,16 +126,52 @@ Do not change door lock mapping without checking both local SDK behavior and web
 
 The bodywork range and battery SOC, door/window/trunk/sunroof status, light/ADAS state, seat heat/cool levels, climate setpoint, and tyre pressures are all returned by `GetState` for the UI to render.
 
-### Commands with no local primitive
+### Commands removed with the BYD cloud
 
-The following actions were previously implemented through a BYD cloud path that no longer exists in this codebase. Their RPCs and request types are kept for API compatibility, but they have no local SDK path and resolve to `NOT_SUPPORTED`:
+These were implemented only through the BYD cloud path deleted in `61b4d7f`. They had
+no local SDK primitive, so they could answer nothing but `NOT_SUPPORTED`. In
+`BladeWatch-c2h1` the dead implementations were **removed** — the command classes, the
+REST routes and the Connect registrations:
 
 - Lock and unlock (`Lock`, `Unlock`).
 - Flash lights (`Flash`).
 - Find car (`FindCar`).
 - Battery heat (`SetBatteryHeat`).
-- Charging schedule (`GetChargingSchedule`/`SetChargingSchedule` — readback reports `supported=false` with reason `cloud_not_configured` so the UI hides the section).
+- Charging schedule (`GetChargingSchedule`/`SetChargingSchedule`).
 - Smart charging master switch.
+- **Trunk OPEN** — see below; this one was not merely dead, it was dangerous.
+
+The `.proto` still declares these RPCs, so the wire contract is unchanged for any
+existing client, but the daemon no longer registers handlers for them. No first-party
+client calls them: `web/` removed the Lock/Unlock/Flash controls by decision (see
+`web/src/app/pages/vehicle/vehicle.component.ts`) and the Flutter in-car UI never had
+them. `web/`'s remaining `lock` references are a **read-only lock status pill**, not a
+command.
+
+### Trunk open: removed, not merely unsupported
+
+Trunk open was a two-leg command — BYD cloud unlock, then the SDK tailgate motor, with
+`VehicleCommandRouter` firing the motor **only if the unlock leg returned SUCCESS**.
+Deleting the cloud removed the unlock leg but left the motor call, so `openTailgate()`
+was being invoked unconditionally. On a locked car the body controller may decline it
+or **set off the alarm**, and nothing warned the driver.
+
+It is now gone: no `TrunkOpenCommand`, no `executeTrunkOpen()`, no `open` action.
+`BydDataCollector.openTailgate()` is deliberately KEPT — it is the BYD SDK surface a
+future implementation with a real lock-state interlock will need — but
+`NoUngatedTrunkOpenTest` pins that **nothing calls it**, so wiring it back up fails the
+build. `BydDataCollector` already polls all five lock areas, so the interlock is
+implementable when someone wants it.
+
+Trunk **close** and **stop** are unaffected and still work: neither opens anything, and
+both map to real local primitives.
+
+### Close-all-windows needs the car awake
+
+`area=0 + command=2` used to route through the cloud `CLOSEWINDOW` command, which worked
+while the car was asleep. It now uses the local `setAllWindowsCommand(2)`, which needs
+the head unit awake — so remote "close my windows, it is raining" no longer works. The
+Flutter Windows tab states this inline (`vehicle_window_awake_note`).
 
 `VehicleCommandRouter` only exposes `Outcome.{SUCCESS, FAILED, NOT_SUPPORTED, ...}` and `Path.{SDK, NONE}`. Every dispatch returns a structured `CommandResult` whose `outcome`/`path` are surfaced in the JSON response so the UI can render a "sent via direct connection" (local) badge. Cloud-first and cloud-only routing strategies are no longer present.
 
@@ -176,9 +212,9 @@ History note: an earlier change integrated a native **Filament** 3D engine for t
 - BYD manifest permissions: [AndroidManifest.xml:35](../app/src/main/AndroidManifest.xml#L35), [AndroidManifest.xml:120](../app/src/main/AndroidManifest.xml#L120), [AndroidManifest.xml:193](../app/src/main/AndroidManifest.xml#L193).
 - BYD SDK stub strategy and dependencies: [build.gradle.kts:413](../app/build.gradle.kts#L413), [build.gradle.kts:476](../app/build.gradle.kts#L476), [IAccModeManager.java:5](../app/src/main/java/android/os/IAccModeManager.java#L5).
 - Local telemetry collector and reflection-based device access: [BydDataCollector.java:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L20), [BydDataCollector.java:247](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L247), [BydDataCollector.java:3907](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L3907).
-- ACC, gear, and event plumbing: [BydConstants.java:10](../app/src/main/java/com/loabletech/bladewatch/byd/BydConstants.java#L10), [GearMonitor.java:132](../app/src/main/java/com/loabletech/bladewatch/monitor/GearMonitor.java#L132), [CameraDaemon.java:1905](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L1905), [CameraDaemon.java:2206](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L2206).
+- ACC, gear, and event plumbing: [BydFeatureIds.java](../app/src/main/java/com/loabletech/bladewatch/byd/BydFeatureIds.java) (replaced `BydConstants.java`, removed in `8e98aaf`), [GearMonitor.java:132](../app/src/main/java/com/loabletech/bladewatch/monitor/GearMonitor.java#L132), [CameraDaemon.java:1905](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L1905), [CameraDaemon.java:2206](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L2206).
 - Door lock and surveillance gating: [CameraDaemon.java:1764](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L1764), [CameraDaemon.java:1439](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L1439), [AccSentryDaemon.java:1900](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.java#L1900).
 - Vehicle control contract and routing: [vehicle.proto:32](../proto/bladewatch/v1/vehicle.proto#L32), [VehicleControlApiHandler.java:43](../app/src/main/java/com/loabletech/bladewatch/server/VehicleControlApiHandler.java#L43), [VehicleCommandRouter.java:17](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.java#L17), [VehicleCommandRouter.java:315](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.java#L315).
 - Local SDK control primitives: [BydDataCollector.java:3839](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L3839), [BydDataCollector.java:4803](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L4803), [BydDataCollector.java:5064](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L5064).
 - GPS / location: [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51), [GpsApiHandler.java:18](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.java#L18), [GpsApiHandler.java:24](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.java#L24), [GpsMonitor.java:23](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.java#L23), [GpsMonitor.java:84](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.java#L84), [GpsMonitor.java:253](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.java#L253).
-- 3D vehicle hero (web/native, Three.js — not Filament): [hero.html:15](../app/src/main/assets/web/hero/hero.html#L15), [hero.html:20](../app/src/main/assets/web/hero/hero.html#L20), [VehicleHeroView.kt:18](../app/src/main/java/com/loabletech/bladewatch/ui/fragment/vehicle/VehicleHeroView.kt#L18), [VehicleHeroView.kt:33](../app/src/main/java/com/loabletech/bladewatch/ui/fragment/vehicle/VehicleHeroView.kt#L33), [TyreOverlay.kt:33](../app/src/main/java/com/loabletech/bladewatch/ui/fragment/vehicle/TyreOverlay.kt#L33).
+- 3D vehicle hero (Three.js in a WebView — **not** Filament, see the Adreno 610 note in [build-and-operations.md](build-and-operations.md)): [hero.html:15](../app/src/main/assets/web/hero/hero.html#L15), [hero.html:20](../app/src/main/assets/web/hero/hero.html#L20), [flutter_ui/lib/screens/vehicle/vehicle_hero.dart](../flutter_ui/lib/screens/vehicle/vehicle_hero.dart).

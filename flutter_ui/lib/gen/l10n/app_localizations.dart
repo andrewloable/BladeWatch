@@ -315,6 +315,18 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get cd_delete;
 
+  /// Accessible label for an icon-only stepper button. Impersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease'**
+  String get cd_decrease;
+
+  /// Accessible label for an icon-only stepper button. Impersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase'**
+  String get cd_increase;
+
   /// No description provided for @cd_expand.
   ///
   /// In en, this message translates to:
@@ -369,36 +381,6 @@ abstract class AppLocalizations {
   /// **'TRIP'**
   String get overlay_trip_inactive_label;
 
-  /// No description provided for @log_entry_default_timestamp.
-  ///
-  /// In en, this message translates to:
-  /// **'12:34:56'**
-  String get log_entry_default_timestamp;
-
-  /// No description provided for @log_entry_default_tag.
-  ///
-  /// In en, this message translates to:
-  /// **'[TAG]'**
-  String get log_entry_default_tag;
-
-  /// No description provided for @log_entry_default_message.
-  ///
-  /// In en, this message translates to:
-  /// **'Log message here'**
-  String get log_entry_default_message;
-
-  /// No description provided for @daemon_card_default_name.
-  ///
-  /// In en, this message translates to:
-  /// **'Service Name'**
-  String get daemon_card_default_name;
-
-  /// No description provided for @daemon_card_default_status.
-  ///
-  /// In en, this message translates to:
-  /// **'Status message'**
-  String get daemon_card_default_status;
-
   /// No description provided for @daemon_card_subprocesses.
   ///
   /// In en, this message translates to:
@@ -411,7 +393,7 @@ abstract class AppLocalizations {
   /// **'Logs'**
   String get logs_panel_title;
 
-  /// No description provided for @url_connecting.
+  /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
   /// **'Connecting…'**
@@ -489,7 +471,7 @@ abstract class AppLocalizations {
   /// **'Scan to Connect'**
   String get dashboard_scan_to_connect;
 
-  /// No description provided for @dashboard_qr_waiting.
+  /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
   /// **'Waiting for tunnel…'**
@@ -630,7 +612,7 @@ abstract class AppLocalizations {
   /// No description provided for @setup_autostart_body.
   ///
   /// In en, this message translates to:
-  /// **'Tap below to open BYD Auto-Start. Find BladeWatch in the list and uncheck the box. BYD wipes this on every install — you\'ll redo it after updates.'**
+  /// **'Tap below to open BYD Auto-Start, then uncheck BOTH BladeWatch and BladeWatch Service. Without this, recording does not start when you switch the car on — you have to open the app every time. BYD wipes this on every install, so redo it after updates.'**
   String get setup_autostart_body;
 
   /// No description provided for @setup_autostart_button.
@@ -891,18 +873,6 @@ abstract class AppLocalizations {
   /// **'Loading…'**
   String get webview_loading;
 
-  /// No description provided for @webview_camera_daemon_not_running.
-  ///
-  /// In en, this message translates to:
-  /// **'Camera Not Running'**
-  String get webview_camera_daemon_not_running;
-
-  /// No description provided for @webview_start_camera_daemon.
-  ///
-  /// In en, this message translates to:
-  /// **'Start the Camera service from the Services screen to access this page.'**
-  String get webview_start_camera_daemon;
-
   /// No description provided for @zrok_enable_token_hint.
   ///
   /// In en, this message translates to:
@@ -987,7 +957,7 @@ abstract class AppLocalizations {
   /// **'Surveillance events'**
   String get reset_cat_sentry_events;
 
-  /// No description provided for @reset_cat_sentry_events_desc.
+  /// A 'sidecar' is a companion JSON metadata file written next to each clip, NOT a motorcycle sidecar.
   ///
   /// In en, this message translates to:
   /// **'Surveillance event clips and JSON sidecars'**
@@ -1143,17 +1113,11 @@ abstract class AppLocalizations {
   /// **'Yesterday'**
   String get recording_lib_date_yesterday;
 
-  /// No description provided for @recording_lib_clip_count.
+  /// 'clips' are recorded video files.
   ///
   /// In en, this message translates to:
-  /// **'{arg1} clips'**
-  String recording_lib_clip_count(Object arg1);
-
-  /// No description provided for @recording_lib_clip_count_one.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1} clip'**
-  String recording_lib_clip_count_one(Object arg1);
+  /// **'{arg1, plural, one{{arg1} clip} other{{arg1} clips}}'**
+  String recording_lib_clip_count(num arg1);
 
   /// No description provided for @recording_lib_pick_date.
   ///
@@ -1287,54 +1251,6 @@ abstract class AppLocalizations {
   /// **'Battery Health'**
   String get battery_health_title;
 
-  /// No description provided for @battery_health_subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'State of Health'**
-  String get battery_health_subtitle;
-
-  /// No description provided for @battery_health_dashes.
-  ///
-  /// In en, this message translates to:
-  /// **'--'**
-  String get battery_health_dashes;
-
-  /// No description provided for @battery_health_waiting.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for data…'**
-  String get battery_health_waiting;
-
-  /// No description provided for @battery_health_source.
-  ///
-  /// In en, this message translates to:
-  /// **'Source'**
-  String get battery_health_source;
-
-  /// No description provided for @battery_health_method.
-  ///
-  /// In en, this message translates to:
-  /// **'Method'**
-  String get battery_health_method;
-
-  /// No description provided for @battery_health_capacity.
-  ///
-  /// In en, this message translates to:
-  /// **'Capacity'**
-  String get battery_health_capacity;
-
-  /// No description provided for @battery_health_samples.
-  ///
-  /// In en, this message translates to:
-  /// **'Samples'**
-  String get battery_health_samples;
-
-  /// No description provided for @battery_health_last_updated.
-  ///
-  /// In en, this message translates to:
-  /// **'Last Updated'**
-  String get battery_health_last_updated;
-
   /// No description provided for @battery_health_unavailable.
   ///
   /// In en, this message translates to:
@@ -1346,66 +1262,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Battery health estimation is not available.'**
   String get battery_health_unavailable_desc;
-
-  /// No description provided for @battery_health_reset.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset SOH Estimation'**
-  String get battery_health_reset;
-
-  /// No description provided for @battery_health_reset_desc.
-  ///
-  /// In en, this message translates to:
-  /// **'Clears all data and re-estimates from scratch. Use if battery was replaced or reading seems incorrect.'**
-  String get battery_health_reset_desc;
-
-  /// No description provided for @soh_dialog_model_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Model'**
-  String get soh_dialog_model_label;
-
-  /// No description provided for @soh_dialog_pack_capacity_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Pack capacity'**
-  String get soh_dialog_pack_capacity_label;
-
-  /// No description provided for @soh_dialog_estimated_capacity_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Effective capacity'**
-  String get soh_dialog_estimated_capacity_label;
-
-  /// No description provided for @soh_dialog_calibration_anchor_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Last calibrated'**
-  String get soh_dialog_calibration_anchor_label;
-
-  /// No description provided for @soh_dialog_source_user.
-  ///
-  /// In en, this message translates to:
-  /// **'user-set'**
-  String get soh_dialog_source_user;
-
-  /// No description provided for @soh_dialog_source_auto.
-  ///
-  /// In en, this message translates to:
-  /// **'auto-detected'**
-  String get soh_dialog_source_auto;
-
-  /// No description provided for @soh_dialog_model_not_selected.
-  ///
-  /// In en, this message translates to:
-  /// **'Not selected'**
-  String get soh_dialog_model_not_selected;
-
-  /// No description provided for @soh_dialog_capacity_not_detected.
-  ///
-  /// In en, this message translates to:
-  /// **'Not detected'**
-  String get soh_dialog_capacity_not_detected;
 
   /// No description provided for @soh_dialog_calibration_format.
   ///
@@ -1461,7 +1317,7 @@ abstract class AppLocalizations {
   /// **'Camera set to Auto'**
   String get toast_camera_set_to_auto;
 
-  /// No description provided for @toast_failed_to_save_short.
+  /// 'save' means WRITE TO STORAGE, not rescue. Impersonal.
   ///
   /// In en, this message translates to:
   /// **'Failed to save'**
@@ -1473,13 +1329,13 @@ abstract class AppLocalizations {
   /// **'Failed: {arg1}'**
   String toast_failed_with_message(Object arg1);
 
-  /// No description provided for @toast_camera_id_set.
+  /// 'set' is a PAST PARTICIPLE (has been set/selected), NOT the noun 'a set'. Impersonal.
   ///
   /// In en, this message translates to:
   /// **'Camera {arg1} set — next ACC cycle'**
   String toast_camera_id_set(Object arg1);
 
-  /// No description provided for @toast_clearing_camera_config.
+  /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
   /// **'Clearing camera config…'**
@@ -1509,24 +1365,6 @@ abstract class AppLocalizations {
   /// **'Failed: {arg1}'**
   String toast_failed_with_message_x(Object arg1);
 
-  /// No description provided for @toast_soh_reset_success.
-  ///
-  /// In en, this message translates to:
-  /// **'SOH estimation reset — will recalculate from next data'**
-  String get toast_soh_reset_success;
-
-  /// No description provided for @toast_soh_reset_failed_no_daemon.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset failed — service not responding and file not writable'**
-  String get toast_soh_reset_failed_no_daemon;
-
-  /// No description provided for @toast_soh_reset_failed_with_message.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset failed: {arg1}'**
-  String toast_soh_reset_failed_with_message(Object arg1);
-
   /// No description provided for @toast_select_at_least_one_category.
   ///
   /// In en, this message translates to:
@@ -1539,7 +1377,7 @@ abstract class AppLocalizations {
   /// **'Reset failed: {arg1}'**
   String toast_reset_failed_with_error(Object arg1);
 
-  /// No description provided for @toast_traffic_monitor_changing.
+  /// arg1 is a verb form such as Enabling/Disabling; keep it leading the phrase. Impersonal.
   ///
   /// In en, this message translates to:
   /// **'{arg1} traffic monitor…'**
@@ -1623,7 +1461,7 @@ abstract class AppLocalizations {
   /// **'Reset complete'**
   String get dialog_reset_complete_title;
 
-  /// No description provided for @dialog_traffic_cannot_check_title.
+  /// Impersonal, never 'I cannot'.
   ///
   /// In en, this message translates to:
   /// **'Cannot Check Status'**
@@ -1767,13 +1605,13 @@ abstract class AppLocalizations {
   /// **'No tunnel running'**
   String get dashboard_no_tunnel;
 
-  /// No description provided for @dashboard_starting_zrok.
+  /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
   /// **'Starting Zrok tunnel…'**
   String get dashboard_starting_zrok;
 
-  /// No description provided for @dashboard_waiting_url.
+  /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
   /// **'Waiting for tunnel URL…'**
@@ -1875,7 +1713,7 @@ abstract class AppLocalizations {
   /// **'Token saved'**
   String get toast_zrok_token_saved;
 
-  /// No description provided for @toast_zrok_token_save_failed.
+  /// 'save' means WRITE TO STORAGE, not rescue. Impersonal.
   ///
   /// In en, this message translates to:
   /// **'Failed to save token'**
@@ -1893,7 +1731,7 @@ abstract class AppLocalizations {
   /// **'Failed to delete token'**
   String get toast_zrok_token_delete_failed;
 
-  /// No description provided for @toast_fetching_log.
+  /// An action IN PROGRESS (retrieving a log file over IPC). Not an imperative, not first person, and 'fetch' means retrieve, not carry or bring.
   ///
   /// In en, this message translates to:
   /// **'Fetching {arg1} log…'**
@@ -1953,13 +1791,13 @@ abstract class AppLocalizations {
   /// **'Exported: {arg1}'**
   String log_header_exported(Object arg1);
 
-  /// No description provided for @log_header_truncated.
+  /// The 10000 is a fixed limit and is ALWAYS plural; only the {arg1} noun agrees with the count. 'Log' is a log FILE.
   ///
   /// In en, this message translates to:
-  /// **'NOTE: Log truncated to last 10000 lines (total: {arg1} lines)'**
-  String log_header_truncated(Object arg1);
+  /// **'{arg1, plural, one{NOTE: Log truncated to last 10000 lines (total: {arg1} line)} other{NOTE: Log truncated to last 10000 lines (total: {arg1} lines)}}'**
+  String log_header_truncated(num arg1);
 
-  /// No description provided for @toast_cannot_play_video.
+  /// Impersonal, never 'I cannot'.
   ///
   /// In en, this message translates to:
   /// **'Cannot play video: {arg1}'**
@@ -2289,7 +2127,7 @@ abstract class AppLocalizations {
   /// **'Share BladeWatch'**
   String get settings_about_support_share_chooser;
 
-  /// No description provided for @settings_about_open_link_failed.
+  /// Impersonal, never 'I couldn't'.
   ///
   /// In en, this message translates to:
   /// **'Couldn\'t open link.'**
@@ -2706,8 +2544,8 @@ abstract class AppLocalizations {
   /// No description provided for @diagnostics_storage_used_line.
   ///
   /// In en, this message translates to:
-  /// **'{arg1} clips · {arg2} used'**
-  String diagnostics_storage_used_line(Object arg1, Object arg2);
+  /// **'{arg1, plural, one{{arg1} clip · {arg2} used} other{{arg1} clips · {arg2} used}}'**
+  String diagnostics_storage_used_line(num arg1, Object arg2);
 
   /// No description provided for @diagnostics_storage_free_line.
   ///
@@ -2865,24 +2703,6 @@ abstract class AppLocalizations {
   /// **'Set battery capacity'**
   String get vehicle_dialog_title;
 
-  /// No description provided for @vehicle_dialog_capacity_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Capacity'**
-  String get vehicle_dialog_capacity_label;
-
-  /// No description provided for @vehicle_dialog_capacity_suffix.
-  ///
-  /// In en, this message translates to:
-  /// **'kWh'**
-  String get vehicle_dialog_capacity_suffix;
-
-  /// No description provided for @vehicle_dialog_capacity_helper.
-  ///
-  /// In en, this message translates to:
-  /// **'8 to 120 kWh. Leave to use the model default.'**
-  String get vehicle_dialog_capacity_helper;
-
   /// No description provided for @vehicle_dialog_model_label.
   ///
   /// In en, this message translates to:
@@ -2894,54 +2714,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get vehicle_dialog_save;
-
-  /// No description provided for @vehicle_dialog_reset.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset to auto-detect'**
-  String get vehicle_dialog_reset;
-
-  /// No description provided for @vehicle_dialog_invalid_capacity.
-  ///
-  /// In en, this message translates to:
-  /// **'Capacity must be 8 - 120 kWh'**
-  String get vehicle_dialog_invalid_capacity;
-
-  /// No description provided for @vehicle_dialog_summary_capacity.
-  ///
-  /// In en, this message translates to:
-  /// **'Capacity: {arg1}'**
-  String vehicle_dialog_summary_capacity(Object arg1);
-
-  /// No description provided for @vehicle_dialog_summary_soh.
-  ///
-  /// In en, this message translates to:
-  /// **'SOH: {arg1}'**
-  String vehicle_dialog_summary_soh(Object arg1);
-
-  /// No description provided for @vehicle_dialog_soh_source_live.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1}% (live)'**
-  String vehicle_dialog_soh_source_live(Object arg1);
-
-  /// No description provided for @vehicle_dialog_soh_source_calibration.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1}% (from last charge)'**
-  String vehicle_dialog_soh_source_calibration(Object arg1);
-
-  /// No description provided for @vehicle_dialog_soh_source_oem.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1}% (vehicle)'**
-  String vehicle_dialog_soh_source_oem(Object arg1);
-
-  /// No description provided for @vehicle_dialog_soh_source_nominal.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1}% (nominal)'**
-  String vehicle_dialog_soh_source_nominal(Object arg1);
 
   /// No description provided for @settings_recording_tab_status.
   ///
@@ -3126,8 +2898,8 @@ abstract class AppLocalizations {
   /// No description provided for @settings_recording_storage_files.
   ///
   /// In en, this message translates to:
-  /// **'{arg1} recordings'**
-  String settings_recording_storage_files(Object arg1);
+  /// **'{arg1, plural, one{{arg1} recording} other{{arg1} recordings}}'**
+  String settings_recording_storage_files(num arg1);
 
   /// No description provided for @settings_recording_storage_path_label.
   ///
@@ -3260,30 +3032,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset Environment'**
   String get settings_daemons_zrok_reset_button;
-
-  /// No description provided for @vehicle_dialog_summary_effective.
-  ///
-  /// In en, this message translates to:
-  /// **'Effective: {arg1} kWh'**
-  String vehicle_dialog_summary_effective(Object arg1);
-
-  /// No description provided for @vehicle_dialog_summary_model.
-  ///
-  /// In en, this message translates to:
-  /// **'Model: {arg1}'**
-  String vehicle_dialog_summary_model(Object arg1);
-
-  /// No description provided for @vehicle_dialog_summary_calibration.
-  ///
-  /// In en, this message translates to:
-  /// **'Last calibrated: {arg1}% on {arg2}'**
-  String vehicle_dialog_summary_calibration(Object arg1, Object arg2);
-
-  /// No description provided for @vehicle_dialog_soh_unavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'unavailable'**
-  String get vehicle_dialog_soh_unavailable;
 
   /// No description provided for @dashboard_metric_storage_chip.
   ///
@@ -3579,17 +3327,11 @@ abstract class AppLocalizations {
   /// **'Unavailable'**
   String get settings_privacy_storage_unavailable;
 
-  /// No description provided for @settings_privacy_storage_count_format.
+  /// 'clips' are recorded video files.
   ///
   /// In en, this message translates to:
-  /// **'{arg1} clip'**
-  String settings_privacy_storage_count_format(Object arg1);
-
-  /// No description provided for @settings_privacy_storage_count_format_plural.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1} clips'**
-  String settings_privacy_storage_count_format_plural(Object arg1);
+  /// **'{arg1, plural, one{{arg1} clip} other{{arg1} clips}}'**
+  String settings_privacy_storage_count_format_plural(num arg1);
 
   /// No description provided for @settings_privacy_reset_subtitle.
   ///
@@ -3675,101 +3417,11 @@ abstract class AppLocalizations {
   /// **'● {arg1}'**
   String dashboard_recordings_value_live(Object arg1);
 
-  /// No description provided for @dashboard_insight_welcome.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome — BladeWatch is now your second pair of eyes.'**
-  String get dashboard_insight_welcome;
-
-  /// No description provided for @dashboard_insight_parked_charged_kwh.
-  ///
-  /// In en, this message translates to:
-  /// **'Picked up {arg1} (≈{arg2}) while parked'**
-  String dashboard_insight_parked_charged_kwh(Object arg1, Object arg2);
-
-  /// No description provided for @dashboard_insight_parked_charged.
-  ///
-  /// In en, this message translates to:
-  /// **'Picked up {arg1} while parked'**
-  String dashboard_insight_parked_charged(Object arg1);
-
-  /// No description provided for @dashboard_insight_parked_drained_kwh.
-  ///
-  /// In en, this message translates to:
-  /// **'Used {arg1} (≈{arg2}) since you parked'**
-  String dashboard_insight_parked_drained_kwh(Object arg1, Object arg2);
-
-  /// No description provided for @dashboard_insight_parked_drained.
-  ///
-  /// In en, this message translates to:
-  /// **'Used {arg1} since you parked'**
-  String dashboard_insight_parked_drained(Object arg1);
-
-  /// No description provided for @dashboard_insight_last_alert.
-  ///
-  /// In en, this message translates to:
-  /// **'Last surveillance alert: {arg1}'**
-  String dashboard_insight_last_alert(Object arg1);
-
-  /// No description provided for @dashboard_insight_last_charge.
-  ///
-  /// In en, this message translates to:
-  /// **'Last charge: +{arg1} in {arg2}'**
-  String dashboard_insight_last_charge(Object arg1, Object arg2);
-
   /// No description provided for @dashboard_insight_storage_milestone.
   ///
   /// In en, this message translates to:
-  /// **'{arg1} clips · {arg2} recorded'**
-  String dashboard_insight_storage_milestone(Object arg1, Object arg2);
-
-  /// No description provided for @dashboard_insight_kwh_format.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1} kWh'**
-  String dashboard_insight_kwh_format(Object arg1);
-
-  /// No description provided for @dashboard_insight_percent_format.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1}%'**
-  String dashboard_insight_percent_format(Object arg1);
-
-  /// No description provided for @dashboard_insight_hours_minutes.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1} hr {arg2} min'**
-  String dashboard_insight_hours_minutes(Object arg1, Object arg2);
-
-  /// No description provided for @dashboard_insight_today_clips.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1, plural, one{{arg1} clip recorded today} other{{arg1} clips recorded today}}'**
-  String dashboard_insight_today_clips(num arg1);
-
-  /// No description provided for @dashboard_insight_uptime_days_hours.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1, plural, one{BladeWatch online for {arg1} day, {arg2} hr} other{BladeWatch online for {arg1} days, {arg2} hr}}'**
-  String dashboard_insight_uptime_days_hours(num arg1, Object arg2);
-
-  /// No description provided for @dashboard_insight_uptime_hours.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1, plural, one{BladeWatch online for {arg1} hour} other{BladeWatch online for {arg1} hours}}'**
-  String dashboard_insight_uptime_hours(num arg1);
-
-  /// No description provided for @dashboard_insight_minutes.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1, plural, one{{arg1} min} other{{arg1} min}}'**
-  String dashboard_insight_minutes(num arg1);
-
-  /// No description provided for @dashboard_insight_hours.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1, plural, one{{arg1} hr} other{{arg1} hr}}'**
-  String dashboard_insight_hours(num arg1);
+  /// **'{arg1, plural, one{{arg1} clip · {arg2} recorded} other{{arg1} clips · {arg2} recorded}}'**
+  String dashboard_insight_storage_milestone(num arg1, Object arg2);
 
   /// No description provided for @vehicle_tab_trunk.
   ///
@@ -3974,6 +3626,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All Windows'**
   String get vehicle_all_windows;
+
+  /// No description provided for @vehicle_window_awake_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Works only while the car is awake.'**
+  String get vehicle_window_awake_note;
 
   /// No description provided for @vehicle_window_front_left.
   ///
@@ -4233,7 +3891,7 @@ abstract class AppLocalizations {
   /// **'Starting up…'**
   String get startup_header_starting;
 
-  /// No description provided for @startup_header_verifying.
+  /// Impersonal status text.
   ///
   /// In en, this message translates to:
   /// **'Almost ready…'**
@@ -4488,7 +4146,7 @@ abstract class AppLocalizations {
   /// No description provided for @trips_range_byd_estimate.
   ///
   /// In en, this message translates to:
-  /// **'BYD estimate: {km} km'**
+  /// **'BYD estimate: {km}'**
   String trips_range_byd_estimate(Object km);
 
   /// No description provided for @trips_range_no_data.
@@ -5153,8 +4811,8 @@ abstract class AppLocalizations {
   /// No description provided for @surveillance_storage_files.
   ///
   /// In en, this message translates to:
-  /// **'{arg1} events'**
-  String surveillance_storage_files(Object arg1);
+  /// **'{arg1, plural, one{{arg1} event} other{{arg1} events}}'**
+  String surveillance_storage_files(num arg1);
 
   /// No description provided for @surveillance_storage_path_label.
   ///
