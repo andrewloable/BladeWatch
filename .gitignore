@@ -72,3 +72,23 @@ test-results/
 
 # Python bytecode cache — tools/i18n/*.py
 __pycache__/
+
+# macOS Finder / filesystem cruft. Never useful in a repo, and easy to commit by
+# accident — a .DS_Store was tracked at the repo root before this rule existed.
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
