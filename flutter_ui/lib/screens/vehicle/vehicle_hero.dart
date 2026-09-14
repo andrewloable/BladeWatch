@@ -84,6 +84,11 @@ class _VehicleHeroState extends State<VehicleHero> {
   /// later attempt. The hero stayed blank while `setColor` appeared to work.
   bool _pageReady = false;
 
+  /// Set before the WebView is blanked in [dispose]. The blank navigation fires
+  /// `onPageStarted` one more time, and by then `_loadState` has been disposed —
+  /// notifying a disposed ChangeNotifier throws. See BladeWatch-w9vi.
+  bool _disposed = false;
+
   @override
   void initState() {
     super.initState();
@@ -93,6 +98,7 @@ class _VehicleHeroState extends State<VehicleHero> {
       ..addJavaScriptChannel('FlutterHero', onMessageReceived: _onHeroMessage)
       ..setNavigationDelegate(NavigationDelegate(
         onPageStarted: (_) {
+          if (_disposed) return; // the about:blank teardown navigation
           // A reload invalidates whatever was in the old document.
           _pageReady = false;
           _loadState.onPageRestarted();
@@ -104,7 +110,7 @@ class _VehicleHeroState extends State<VehicleHero> {
         // and the 'ready' message never arrives. onPageFinished is the
         // race-free signal that the document (and so `window.Hero`) exists, so
         // readiness never depends on the shim winning.
-        onPageFinished: (_) => _markReady(),
+        onPageFinished: (_) => _disposed ? null : _markReady(),
       ));
     // NOT loadFlutterAsset: that serves a file:// origin, and WebView's Fetch
     // API refuses file:// URLs, so GLTFLoader could never pull the .glb (see
@@ -208,8 +214,31 @@ class _VehicleHeroState extends State<VehicleHero> {
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
     _loadState.removeListener(_onLoadStateChanged);
+    // Order matters: flag first, so the blank navigation's own onPageStarted
+    // cannot touch _loadState after it is disposed.
+    _disposed = true;
+    // BladeWatch-w9vi: measured on the head unit, leaving the Vehicle screen left
+    // roughly 24 MB of graphics memory allocated — `Graphics` in
+    // `dumpsys meminfo net.bladewatch.flutter` stayed at ~40 MB instead of falling
+    // back to Live View's ~16 MB, and stayed there for minutes. Removing the widget
+    // is supposed to tear the platform WebView down, but on this Adreno 610 driver
+    // the three.js WebGL context outlived it after repeated navigation.
+    //
+    // Loading about:blank destroys the document, which releases that context
+    // deterministically instead of depending on platform-view teardown timing.
+    // Fire-and-forget: dispose cannot await, and this is best-effort cleanup.
+    unawaited(_releaseWebView());
     _loadState.dispose();
     super.dispose();
+  }
+
+  /// Best-effort teardown of the hero page's GPU resources — see [dispose].
+  Future<void> _releaseWebView() async {
+    try {
+      await _webViewController.loadRequest(Uri.parse('about:blank'));
+    } catch (_) {
+      // The platform view may already be gone; nothing left to release.
+    }
   }
 
   @override

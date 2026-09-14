@@ -453,13 +453,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'SoC samples, charging sessions, voltage logs';
 
   @override
-  String get reset_cat_soh => 'SoH calibration';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Re-detects nominal capacity, re-seeds estimate from BMS';
-
-  @override
   String get reset_cat_recordings => 'Recordings (videos)';
 
   @override
@@ -656,7 +649,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'Battery health estimation is not available on this vehicle.';
+      'Battery health estimation is not available.';
 
   @override
   String get battery_health_reset => 'Reset SOH Estimation';
@@ -837,13 +830,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dialog_reset_selected => 'Reset Selected';
 
   @override
-  String get dialog_reset_soh_title => 'Reset SOH Estimation?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'This will clear all SOH data and force re-estimation from scratch.\n\nUse this if:\n• Battery was replaced\n• SOH reading seems incorrect\n• You want to recalibrate\n\nThe system will re-seed from the next available data source (OEM, charge calibration, or instantaneous reading).';
-
-  @override
   String get dialog_reset_following_title => 'Reset the following?';
 
   @override
@@ -895,9 +881,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V history';
-
-  @override
-  String get reset_label_soh => 'SoH calibration';
 
   @override
   String get reset_label_recordings => 'Recordings';
@@ -1934,7 +1917,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Detection zones, schedule, motion sensitivity.';
+      'Schedule, motion sensitivity, object detection.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2054,6 +2037,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Pending data';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

@@ -163,7 +163,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get camera_current_auto => 'वर्तमानः ऑटो';
 
   @override
-  String get camera_option_auto => 'ऑटो (स्टार्टअप पर पता लगाएं)';
+  String get camera_option_auto => 'ऑटो (स्टार्टअप पर स्वतः पहचान)';
 
   @override
   String get camera_option_0 => 'कैमरा 0 — Atto ट्रिम';
@@ -266,7 +266,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'BYD ऑटो-स्टार्ट खोलने के लिए नीचे टैप करें. सूची में BladeWatch खोजें और बॉक्स को अनचेक करें. BYD प्रत्येक स्थापना पर इसे मिटा देता है — आप अद्यतन के बाद इसे फिर से करेंगे.';
+      'BYD ऑटो-स्टार्ट खोलने के लिए नीचे टैप करें। सूची में BladeWatch ढूँढें और बॉक्स से निशान हटाएँ। BYD हर इंस्टॉल के बाद यह सेटिंग रीसेट कर देता है—अपडेट के बाद आपको इसे फिर से करना होगा।';
 
   @override
   String get setup_autostart_button => 'BYD ऑटो-स्टार्ट खोलें';
@@ -300,7 +300,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String language_auto_subtitle(Object arg1) {
-    return 'अनुवर्ती प्रणाली · $arg1';
+    return 'सिस्टम के अनुसार · $arg1';
   }
 
   @override
@@ -452,13 +452,6 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get reset_cat_soc_history_desc =>
       'SoC नमूने, चार्जिंग सत्र, वोल्टेज लॉग';
-
-  @override
-  String get reset_cat_soh => 'SOH कालीब्रेशन';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'BMS से नाममात्र क्षमता का पुनः पता लगाना, पुनः बीज का अनुमान';
 
   @override
   String get reset_cat_recordings => 'रिकॉर्डिंग (वीडियो)';
@@ -658,7 +651,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'इस वाहन पर बैटरी स्वास्थ्य अनुमान उपलब्ध नहीं है।';
+      'बैटरी स्वास्थ्य अनुमान उपलब्ध नहीं है।';
 
   @override
   String get battery_health_reset => 'SOH अनुमान को रीसेट करें';
@@ -841,13 +834,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dialog_reset_selected => 'चयनित को रीसेट करें';
 
   @override
-  String get dialog_reset_soh_title => 'SOH अनुमान को रीसेट करें?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'यह सभी SOH डेटा को साफ़ करेगा और खरोंच से पुनः अनुमान लगाने के लिए मजबूर करेगा।\n\nइसका उपयोग करें यदिः\n• बैटरी को बदल दिया गया था\n• SOH रीडिंग गलत लगती है\n• आप रीकैलिब्रेट करना चाहते हैं\n\nसिस्टम अगले उपलब्ध डेटा स्रोत (OEM, चार्ज कैलिब्रेशन, या तत्काल रीडिंग) से फिर से बीज होगा।';
-
-  @override
   String get dialog_reset_following_title => 'निम्नलिखित को रीसेट करें?';
 
   @override
@@ -902,9 +888,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V इतिहास';
-
-  @override
-  String get reset_label_soh => 'SOH कालीब्रेशन';
 
   @override
   String get reset_label_recordings => 'रिकॉर्डिंग';
@@ -1174,13 +1157,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get rail_location => 'स्थान';
 
   @override
-  String get rail_diagnostics => 'निदान';
+  String get rail_diagnostics => 'जाँच';
 
   @override
   String get rail_settings => 'सेटिंग्स';
 
   @override
-  String get settings_section_appearance => 'उपस्थिति';
+  String get settings_section_appearance => 'दिखावट';
 
   @override
   String get settings_section_recording => 'रिकॉर्डिंग';
@@ -1947,7 +1930,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'पता लगाने के क्षेत्रों, कार्यक्रम, गति संवेदनशीलता.';
+      'शेड्यूल, गति संवेदनशीलता, वस्तु पहचान.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2067,6 +2050,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'लंबित आंकड़े';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

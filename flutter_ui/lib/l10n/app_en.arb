@@ -292,10 +292,6 @@
   "@reset_cat_soc_history": {},
   "reset_cat_soc_history_desc": "SoC samples, charging sessions, voltage logs",
   "@reset_cat_soc_history_desc": {},
-  "reset_cat_soh": "SoH calibration",
-  "@reset_cat_soh": {},
-  "reset_cat_soh_desc": "Re-detects nominal capacity, re-seeds estimate from BMS",
-  "@reset_cat_soh_desc": {},
   "reset_cat_recordings": "Recordings (videos)",
   "@reset_cat_recordings": {},
   "reset_cat_recordings_desc": "All MP4s in the recordings folder",
@@ -437,7 +433,7 @@
   "@battery_health_last_updated": {},
   "battery_health_unavailable": "Not available",
   "@battery_health_unavailable": {},
-  "battery_health_unavailable_desc": "Battery health estimation is not available on this vehicle.",
+  "battery_health_unavailable_desc": "Battery health estimation is not available.",
   "@battery_health_unavailable_desc": {},
   "battery_health_reset": "Reset SOH Estimation",
   "@battery_health_reset": {},
@@ -570,10 +566,6 @@
   "@dialog_regenerate": {},
   "dialog_reset_selected": "Reset Selected",
   "@dialog_reset_selected": {},
-  "dialog_reset_soh_title": "Reset SOH Estimation?",
-  "@dialog_reset_soh_title": {},
-  "dialog_reset_soh_message": "This will clear all SOH data and force re-estimation from scratch.\n\nUse this if:\n• Battery was replaced\n• SOH reading seems incorrect\n• You want to recalibrate\n\nThe system will re-seed from the next available data source (OEM, charge calibration, or instantaneous reading).",
-  "@dialog_reset_soh_message": {},
   "dialog_reset_following_title": "Reset the following?",
   "@dialog_reset_following_title": {},
   "dialog_reset_following_message": "This cannot be undone.\n\n{arg1}",
@@ -612,8 +604,6 @@
   "@reset_label_trips": {},
   "reset_label_soc_history": "SoC + 12V history",
   "@reset_label_soc_history": {},
-  "reset_label_soh": "SoH calibration",
-  "@reset_label_soh": {},
   "reset_label_recordings": "Recordings",
   "@reset_label_recordings": {},
   "reset_label_sentry_events": "Surveillance events",
@@ -1408,7 +1398,7 @@
   "@settings_quick_language_label": {},
   "settings_section_recording_subtitle": "Pre/post buffers, codec, storage limits.",
   "@settings_section_recording_subtitle": {},
-  "settings_section_surveillance_subtitle": "Detection zones, schedule, motion sensitivity.",
+  "settings_section_surveillance_subtitle": "Schedule, motion sensitivity, object detection.",
   "@settings_section_surveillance_subtitle": {},
   "settings_section_daemons_subtitle": "Zrok tunnel and background services.",
   "@settings_section_daemons_subtitle": {},
@@ -1503,6 +1493,12 @@
     }
   },
   "diagnostics_battery_value_pending": "Pending data",
+  "diagnostics_battery_value_charge": "{arg1}%",
+  "@diagnostics_battery_value_charge": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
   "@diagnostics_battery_value_pending": {},
   "dashboard_recordings_value_live": "● {arg1}",
   "@dashboard_recordings_value_live": {

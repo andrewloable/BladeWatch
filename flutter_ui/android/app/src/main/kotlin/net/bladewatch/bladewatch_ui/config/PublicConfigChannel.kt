@@ -36,6 +36,35 @@ class PublicConfigChannel(private val ipc: IpcCommandSender) {
         return data.keys().asSequence().associateWith { data.optBoolean(it) }
     }
 
+    /**
+     * The Diagnostics Camera health tile's two fields (BladeWatch-i2wv), typed,
+     * because `probedCameraId` is an Int and [getSection] coerces everything to
+     * Boolean. This is the "add a typed method" the class comment calls for, not a
+     * generic `Any`-valued read.
+     *
+     * Mirrors what native's `DiagnosticsFragment.updateCameraTile()` reads straight
+     * off `UnifiedConfigManager`: `camera.probedCameraId` and `camera.manualOverride`.
+     *
+     * Returns null when the read fails, which the caller must NOT confuse with
+     * "probe returned -1" — the first means unknown, the second means genuinely not
+     * probed yet.
+     *
+     * READ ONLY. `camera` is on the daemon's readable allowlist but deliberately not
+     * its writable one, so there is no matching setter here and there must not be.
+     */
+    fun getCameraProbe(): CameraProbe? {
+        val response = ipc.sendCommand(
+            JSONObject().put("cmd", "config_get_section").put("section", "camera"),
+        )
+        val data = response.optJSONObject("section") ?: return null
+        return CameraProbe(
+            probedCameraId = data.optInt("probedCameraId", -1),
+            manualOverride = data.optBoolean("manualOverride", false),
+        )
+    }
+
+    data class CameraProbe(val probedCameraId: Int, val manualOverride: Boolean)
+
     fun putBoolean(section: String, key: String, value: Boolean): Boolean {
         val command = JSONObject()
             .put("cmd", "config_put")

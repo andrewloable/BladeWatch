@@ -163,7 +163,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get camera_current_auto => 'Hiện tại: tự động';
 
   @override
-  String get camera_option_auto => 'Tự động (khám phá khi khởi động)';
+  String get camera_option_auto => 'Tự động (phát hiện khi khởi động)';
 
   @override
   String get camera_option_0 => 'Camera 0 — Atto trims';
@@ -265,7 +265,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'Nhấp dưới đây để mở BYD Auto-Start. Tìm BladeWatch trong danh sách và bỏ chọn hộp. BYD xóa này trên mỗi cài đặt — bạn sẽ làm lại nó sau khi cập nhật.';
+      'Nhấn vào bên dưới để mở BYD Auto-Start. Tìm BladeWatch trong danh sách và bỏ chọn ô. BYD sẽ đặt lại lựa chọn này sau mỗi lần cài đặt — bạn sẽ phải thực hiện lại sau khi cập nhật.';
 
   @override
   String get setup_autostart_button => 'Mở BYD Auto-Start';
@@ -288,7 +288,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String language_picker_subtitle_fmt(Object arg1) {
-    return 'Các ngôn ngữ có sẵn $arg1';
+    return 'Có sẵn $arg1 ngôn ngữ';
   }
 
   @override
@@ -299,7 +299,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String language_auto_subtitle(Object arg1) {
-    return 'Hệ thống theo dõi · $arg1';
+    return 'Theo cài đặt hệ thống · $arg1';
   }
 
   @override
@@ -451,13 +451,6 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get reset_cat_soc_history_desc =>
       'Các mẫu SoC, các phiên sạc, nhật ký điện áp';
-
-  @override
-  String get reset_cat_soh => 'Tích chuẩn SoH';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Khám phá lại năng lực danh nghĩa, ước tính hạt giống mới từ BMS';
 
   @override
   String get reset_cat_recordings => 'Các bản ghi âm (video)';
@@ -656,7 +649,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'Ước tính tình trạng pin không khả dụng trên xe này.';
+      'Ước tính tình trạng pin không khả dụng.';
 
   @override
   String get battery_health_reset => 'Đặt lại ước tính SOH';
@@ -835,13 +828,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dialog_reset_selected => 'Đặt lại mục đã chọn';
 
   @override
-  String get dialog_reset_soh_title => 'Đặt lại ước tính SOH?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Điều này sẽ xóa tất cả dữ liệu SOH và buộc tính toán lại từ đầu.\n\n Sử dụng điều này nếu:\n• Pin đã được thay thế\n• Đọc SOH dường như không chính xác\n• Bạn muốn tái chuẩn hóa\n\n Hệ thống sẽ tái phân từ nguồn dữ liệu tiếp theo có sẵn (OEM, hiệu chuẩn sạc, hoặc đọc tức thời).';
-
-  @override
   String get dialog_reset_following_title => 'Đặt lại những mục sau?';
 
   @override
@@ -896,9 +882,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'lịch sử SoC + 12V';
-
-  @override
-  String get reset_label_soh => 'Tích chuẩn SoH';
 
   @override
   String get reset_label_recordings => 'Bản ghi';
@@ -1174,10 +1157,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get rail_settings => 'Cài đặt';
 
   @override
-  String get settings_section_appearance => 'Nhìn hình';
+  String get settings_section_appearance => 'Giao diện';
 
   @override
-  String get settings_section_recording => 'Đăng ký';
+  String get settings_section_recording => 'Ghi hình';
 
   @override
   String get settings_section_surveillance => 'Giám sát';
@@ -1186,10 +1169,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settings_section_daemons => 'Dịch Vụ';
 
   @override
-  String get settings_section_privacy => 'Bảo mật & dữ liệu';
+  String get settings_section_privacy => 'Quyền riêng tư & dữ liệu';
 
   @override
-  String get settings_section_overlay => 'Lắp xếp trạng thái';
+  String get settings_section_overlay => 'Lớp phủ trạng thái';
 
   @override
   String get settings_overlay_subtitle =>
@@ -1940,11 +1923,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_section_recording_subtitle =>
-      'Các bộ đệm trước / sau, codec, giới hạn lưu trữ.';
+      'Bộ đệm trước/sau, codec, giới hạn lưu trữ.';
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Khu vực phát hiện, lịch trình, độ nhạy chuyển động.';
+      'Lịch trình, độ nhạy chuyển động, phát hiện đối tượng.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2067,6 +2050,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Đang chờ dữ liệu';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

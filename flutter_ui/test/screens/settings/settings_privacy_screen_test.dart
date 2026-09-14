@@ -90,10 +90,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Reset Data'), findsOneWidget);
-      for (final id in ['trips', 'socHistory', 'soh', 'mediaRecordings', 'mediaSurveillance', 'mediaProximity', 'mediaTrips']) {
+      // BladeWatch-uuo6: 'soh' is deliberately absent — state-of-health estimation
+      // was removed from the daemon in BladeWatch-p7vi, so offering to recalibrate
+      // it promised a repair the product cannot perform.
+      for (final id in ['trips', 'socHistory', 'mediaRecordings', 'mediaSurveillance', 'mediaProximity', 'mediaTrips']) {
         final tile = tester.widget<CheckboxListTile>(find.byKey(ValueKey('reset.cat.$id')));
         expect(tile.value, isFalse);
       }
+      expect(find.byKey(const ValueKey('reset.cat.soh')), findsNothing,
+          reason: 'SoH calibration was removed with the feature itself');
       final confirmButton = tester.widget<TextButton>(find.byKey(const ValueKey('reset.confirmSelection')));
       expect(confirmButton.onPressed, isNull);
     });
@@ -141,13 +146,13 @@ void main() {
     testWidgets('confirming the final prompt calls ResetPerformance with exactly the selected categories', (tester) async {
       rpc.stubJson('SystemService', 'ResetPerformance', {
         'success': true,
-        'resultsJson': '{"trips":{"success":true,"rowsDeleted":12},"soh":{"success":true}}',
+        'resultsJson': '{"trips":{"success":true,"rowsDeleted":12},"socHistory":{"success":true}}',
       });
       await openStorage(tester);
       await tester.tap(find.byKey(const ValueKey('privacy.resetData')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('reset.cat.trips')));
-      await tester.tap(find.byKey(const ValueKey('reset.cat.soh')));
+      await tester.tap(find.byKey(const ValueKey('reset.cat.socHistory')));
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey('reset.confirmSelection')));
       await tester.pumpAndSettle();
@@ -156,7 +161,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final call = rpc.calls.singleWhere((c) => c.method == 'ResetPerformance');
-      expect((call.request as ResetPerformanceRequest).categories.toList(), ['trips', 'soh']);
+      expect((call.request as ResetPerformanceRequest).categories.toList(), ['trips', 'socHistory']);
       expect(find.text('Reset complete'), findsOneWidget);
       expect(find.textContaining('Trips (12 rows)'), findsOneWidget);
     });

@@ -257,13 +257,21 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   }
 
   Widget _batteryHealthTile(BuildContext context, AppLocalizations l10n, ThemeData theme, DiagnosticsController c) {
-    // BladeWatch-p7vi: there is no SoH reading to colour-code any more, so the
-    // dot is the neutral outline rather than a health signal it cannot compute.
+    // BladeWatch-1ovy: the dot stays the neutral outline deliberately. This is
+    // state of CHARGE, not state of health — coding it red at low charge would
+    // invent a health signal out of a number that only says the pack is due a
+    // plug. BladeWatch-p7vi removed the SoH reading that could have earned a
+    // colour, and it is not coming back.
     final color = theme.colorScheme.outline;
-    // BladeWatch-p7vi: SoH estimation was removed from the daemon, so this card
-    // sat on "Pending data" forever waiting for a value that can never arrive.
-    // Saying so is more useful than an indefinite pending state.
-    final text = l10n.battery_health_unavailable;
+    // BladeWatch-1ovy: this said "Not available" unconditionally — a leftover
+    // from the SoH removal — while the Vehicle screen showed the charge
+    // percentage on the same device at the same moment. Null (read failed, or
+    // the vehicle reported nothing) still falls back to the unavailable string
+    // rather than rendering 0%, which would look like a flat pack.
+    final soc = c.batterySoc;
+    final text = soc == null
+        ? l10n.battery_health_unavailable
+        : l10n.diagnostics_battery_value_charge(soc);
     return _healthCard(
       theme,
       key: 'diag.cardBatteryHealth',

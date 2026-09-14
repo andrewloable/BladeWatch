@@ -456,13 +456,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Amostra de SoC, sessões de carregamento, registos de voltagem';
 
   @override
-  String get reset_cat_soh => 'Calibração de SOH';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Re-detecta capacidade nominal, estimativa de re-sementes do BMS';
-
-  @override
   String get reset_cat_recordings => 'Gravações (vídeos)';
 
   @override
@@ -660,7 +653,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'A estimativa da saúde da bateria não está disponível neste veículo.';
+      'A estimativa da saúde da bateria não está disponível.';
 
   @override
   String get battery_health_reset => 'Repor a estimativa de SOH';
@@ -843,13 +836,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get dialog_reset_selected => 'Repor selecionados';
 
   @override
-  String get dialog_reset_soh_title => 'Repor a estimativa de SOH?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Isso limpará todos os dados SOH e forçará a reestimação do zero.\n\nUse isso se:\n• Bateria foi substituída\n• A leitura SOH parece incorreta\n• Você quer recalibrar\n\nO sistema será re-seed da próxima fonte de dados disponível (OEM, calibração de carga ou leitura instantânea).';
-
-  @override
   String get dialog_reset_following_title => 'Repor o seguinte?';
 
   @override
@@ -904,9 +890,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'História de SoC + 12V';
-
-  @override
-  String get reset_label_soh => 'Calibração de SOH';
 
   @override
   String get reset_label_recordings => 'Gravações';
@@ -1959,7 +1942,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Zonas de detecção, horário, sensibilidade ao movimento.';
+      'Horário, sensibilidade ao movimento, detecção de objetos.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2083,6 +2066,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Dados pendentes';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {
@@ -3489,13 +3477,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Amostra de SoC, sessões de carregamento, registos de voltagem';
 
   @override
-  String get reset_cat_soh => 'Calibração de SOH';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Re-detecta capacidade nominal, estimativa de re-sementes do BMS';
-
-  @override
   String get reset_cat_recordings => 'Gravações (vídeos)';
 
   @override
@@ -3693,7 +3674,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get battery_health_unavailable_desc =>
-      'A estimativa da saúde da bateria não está disponível neste veículo.';
+      'A estimativa da saúde da bateria não está disponível.';
 
   @override
   String get battery_health_reset => 'Redefinir a estimativa de SOH';
@@ -3876,13 +3857,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get dialog_reset_selected => 'Redefinir selecionados';
 
   @override
-  String get dialog_reset_soh_title => 'Redefinir a estimativa de SOH?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Isso limpará todos os dados SOH e forçará a reestimação do zero.\n\nUse isso se:\n• Bateria foi substituída\n• A leitura SOH parece incorreta\n• Você quer recalibrar\n\nO sistema será re-seed da próxima fonte de dados disponível (OEM, calibração de carga ou leitura instantânea).';
-
-  @override
   String get dialog_reset_following_title => 'Redefinir o seguinte?';
 
   @override
@@ -3937,9 +3911,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get reset_label_soc_history => 'História de SoC + 12V';
-
-  @override
-  String get reset_label_soh => 'Calibração de SOH';
 
   @override
   String get reset_label_recordings => 'Gravações';
@@ -4992,7 +4963,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Zonas de detecção, horário, sensibilidade ao movimento.';
+      'Horário, sensibilidade ao movimento, detecção de objetos.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -5116,6 +5087,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get diagnostics_battery_value_pending => 'Dados pendentes';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

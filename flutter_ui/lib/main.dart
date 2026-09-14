@@ -30,6 +30,7 @@ import 'screens/dashboard/dashboard_controller.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/diagnostics/adb_console_controller.dart';
 import 'screens/diagnostics/diagnostics_controller.dart';
+import 'screens/diagnostics/diagnostics_models.dart';
 import 'screens/diagnostics/diagnostics_screen.dart';
 import 'screens/diagnostics/performance_controller.dart';
 import 'screens/dialogs/language_picker_sheet.dart';
@@ -228,9 +229,23 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
     networkChannel: _networkChannel,
     surveillanceService: _surveillanceService,
     adbConnectionFactory: () => AdbClient(keys: _adbKeyChannel),
-    // tunnelUrlSource/cameraConfigSource stay at their defaults until
-    // BladeWatch-m1po/BladeWatch-hygs add the IPC paths they need.
+    // BladeWatch-i2wv: the real tunnel source, the same one DashboardController
+    // uses. It was left on the always-null default here long after
+    // BladeWatch-m1po built it, so the Diagnostics Network card reported the
+    // tunnel offline unconditionally.
+    tunnelUrlSource: _daemonChannel.tunnelUrl,
+    // BladeWatch-i2wv: the real probed-camera read. `camera` was added to the
+    // daemon's READABLE config allowlist only — it stays unwritable over IPC,
+    // because this tile needs to read it and nothing more.
+    cameraConfigSource: _cameraProbeSource.read,
+    // BladeWatch-1ovy: the charge percentage, from the same RPC the Vehicle
+    // screen reads, so the two cannot disagree.
+    batterySocSource: _batterySocSource.read,
   );
+
+  late final BatterySocSource _batterySocSource = BatterySocSource(_vehicleService);
+
+  late final CameraProbeSource _cameraProbeSource = CameraProbeSource(_publicConfigChannel);
 
   late final TripsController _tripsController =
       widget.tripsController ?? TripsController(tripsService: _tripsService, longTripsService: _longTripsService);
@@ -317,6 +332,9 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                 ? AppShell(
                     controller: _shellController,
                     onLanguageTap: () => _showLanguagePicker(context),
+                    // BladeWatch-0kru: real tunnel URL, so the pill shows the
+                    // actual address or nothing at all.
+                    tunnelUrlSource: _daemonChannel.tunnelUrl,
                     dashboardScreen: DashboardScreen(
                       controller: _dashboardController,
                       systemService: _systemService,

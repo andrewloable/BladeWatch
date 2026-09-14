@@ -452,13 +452,6 @@ class AppLocalizationsNb extends AppLocalizations {
       'SoC-prøver, ladesessioner, spenningslogger';
 
   @override
-  String get reset_cat_soh => 'SoH kalibrering';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Detekterer om nominell kapasitet, omsædingsvurdering fra BMS';
-
-  @override
   String get reset_cat_recordings => 'Opptagelser (videoer)';
 
   @override
@@ -655,7 +648,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'Estimering av batterihelse er ikke tilgjengelig på dette kjøretøyet.';
+      'Estimering av batterihelse er ikke tilgjengelig.';
 
   @override
   String get battery_health_reset => 'Tilbakestill SOH-estimatet';
@@ -834,13 +827,6 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dialog_reset_selected => 'Tilbakestill valgte';
 
   @override
-  String get dialog_reset_soh_title => 'Tilbakestille SOH-estimatet?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Dette vil fjerne alle SOH data og tvinge omvurdering fra bunden.\n\n Bruk dette hvis:\n• Batteriet ble erstattet\n• SOH lesing virker feil\n• Du vil rekalibrere\n\nSystemet vil re-seed fra den neste tilgjengelige datakilden (OEM, ladning kalibrering, eller øyeblikkelig lesing).';
-
-  @override
   String get dialog_reset_following_title => 'Tilbakestille følgende?';
 
   @override
@@ -893,9 +879,6 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V historie';
-
-  @override
-  String get reset_label_soh => 'SoH kalibrering';
 
   @override
   String get reset_label_recordings => 'Opptak';
@@ -1937,7 +1920,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Oppdagelseszoner, tidsplan, bevegelsesfølsomhet.';
+      'Tidsplan, bevegelsesfølsomhet, objektdeteksjon.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2057,6 +2040,11 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Ventelige data';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

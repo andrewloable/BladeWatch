@@ -108,11 +108,18 @@ void main() {
     expect(find.byKey(const ValueKey('accentStripe')), findsOneWidget);
   });
 
-  testWidgets('shows the default (not-yet-connected) status pill text', (tester) async {
+  // BladeWatch-0kru: this used to assert the opposite — that the pill always
+  // showed the placeholder "Connecting…". That WAS the bug: native hides the bar
+  // entirely with no tunnel, and the app has no tunnel configured here, so
+  // nothing is connecting. Inverted rather than deleted, so the regression it
+  // now guards is explicit. Full coverage lives in status_pill_test.dart.
+  testWidgets('shows no status pill when there is no tunnel', (tester) async {
     final controller = ShellController();
     await tester.pumpWidget(_wrap(AppShell(controller: controller, onLanguageTap: () {})));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Connecting…'), findsOneWidget);
+    expect(find.text('Connecting…'), findsNothing);
+    expect(find.byKey(const ValueKey('shell.statusPill.url')), findsNothing);
   });
 
   testWidgets('toolbar title reflects the currently selected rail destination', (tester) async {

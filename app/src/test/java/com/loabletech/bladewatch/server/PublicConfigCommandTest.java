@@ -44,6 +44,96 @@ public class PublicConfigCommandTest {
         }
     }
 
+    // BladeWatch-i2wv: the Diagnostics Camera tile needs to READ camera config. The
+    // tempting fix was to add "camera" to the write allowlist, which would have handed
+    // out unvalidated write access to satisfy a read-only tile. These pin the split.
+
+    @Test
+    public void cameraSectionIsReadableButNotWritable() {
+        Assert.assertTrue(
+                "Diagnostics' camera tile must be able to read it",
+                TcpCommandServer.isPublicConfigSectionReadable("camera"));
+        Assert.assertFalse(
+                "camera config must NOT be writable over IPC",
+                TcpCommandServer.isPublicConfigSectionAllowed("camera"));
+    }
+
+    @Test
+    public void everyWritableSectionIsAlsoReadable() {
+        for (String section : new String[] {"statusOverlay", "developerOptions"}) {
+            Assert.assertTrue(
+                    "writable implies readable: " + section,
+                    TcpCommandServer.isPublicConfigSectionReadable(section));
+        }
+    }
+
+    @Test
+    public void theReadAllowlistIsStillNarrow() {
+        // Widening the READ gate is cheaper than widening the write gate, but it is
+        // not free — config sections carry device detail. Everything outside the
+        // named set stays unreadable too.
+        for (String section : new String[] {
+                "network", "surveillance", "recording", "streaming", "proximityGuard",
+                "vehicle", "tripAnalytics", "telemetryOverlay", "auth", "",
+        }) {
+            Assert.assertFalse(
+                    "section should not be readable over IPC: " + section,
+                    TcpCommandServer.isPublicConfigSectionReadable(section));
+        }
+    }
+
+    @Test
+    public void configPutStillRefusesTheCameraSection() throws Exception {
+        JSONObject resp = server.processCommand(new JSONObject()
+                .put("cmd", "config_put")
+                .put("section", "camera")
+                .put("key", "probedCameraId")
+                .put("value", 3));
+
+        Assert.assertEquals("error", resp.getString("status"));
+    }
+
+    @Test
+    public void cameraSectionExposesOnlyTheTwoTileFields() throws Exception {
+        // A realistic section, including the device-identifying strings the real one
+        // carries — the whole point is that those do NOT come back out.
+        TcpCommandServer.cameraConfigForTest = new JSONObject()
+                .put("probedCameraId", 0)
+                .put("manualOverride", false)
+                .put("firmwareFingerprint", "BYD-AUTO/DiLink3.0/...:user/release-keys")
+                .put("buildDisplay", "QKQ1.210910.001 release-keys")
+                .put("buildIncremental", "eng.build.20251023.052448")
+                .put("roBuildIncremental", "eng.build.20251023.052448")
+                .put("productDevice", "DiLink3.0")
+                .put("nativeProbeReport", "some internal probe detail");
+        JSONObject resp;
+        try {
+            resp = server.processCommand(
+                    new JSONObject().put("cmd", "config_get_section").put("section", "camera"));
+        } finally {
+            TcpCommandServer.cameraConfigForTest = null;
+        }
+
+        Assert.assertEquals("ok", resp.getString("status"));
+        JSONObject section = resp.getJSONObject("section");
+
+        // Exactly the two fields the Diagnostics tile renders, and nothing else.
+        // The real camera config also holds firmwareFingerprint, buildDisplay,
+        // buildIncremental and productDevice — device-identifying strings that must
+        // not cross this boundary to satisfy a status tile. A future change that
+        // returns the section wholesale fails here.
+        Assert.assertTrue(section.has("probedCameraId"));
+        Assert.assertTrue(section.has("manualOverride"));
+        Assert.assertEquals(2, section.length());
+        for (String leaked : new String[] {
+                "firmwareFingerprint", "buildDisplay", "buildIncremental",
+                "roBuildIncremental", "productDevice", "nativeProbeReport",
+        }) {
+            Assert.assertFalse(
+                    "must not be exposed over IPC: " + leaked, section.has(leaked));
+        }
+    }
+
     @Test
     public void getSectionRejectsANonAllowlistedSection() throws Exception {
         JSONObject resp = server.processCommand(

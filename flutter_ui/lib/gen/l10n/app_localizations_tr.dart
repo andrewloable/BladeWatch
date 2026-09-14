@@ -163,7 +163,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get camera_current_auto => 'Geçerli: Otomatik';
 
   @override
-  String get camera_option_auto => 'Otomatik (başlatma sırasında tespit)';
+  String get camera_option_auto => 'Otomatik (başlangıçta algıla)';
 
   @override
   String get camera_option_0 => 'Kamera 0 — Atto süsleri';
@@ -265,7 +265,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'BYD Otomatik Başlatma açmak için aşağıdakine tıklayın. BladeWatch listesinde bulun ve kutuyu açın. BYD bunu her yüklemede siler — güncelleştirmelerden sonra yeniden yapacaksınız.';
+      'BYD Otomatik Başlatma ayarını açmak için aşağıdaki düğmeye dokunun. Listede BladeWatch uygulamasını bulun ve kutunun işaretini kaldırın. BYD bunu her kurulumda sıfırlar; güncellemelerden sonra bu işlemi tekrarlamanız gerekir.';
 
   @override
   String get setup_autostart_button => 'BYD Otomatik Başlatma Aç';
@@ -289,7 +289,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String language_picker_subtitle_fmt(Object arg1) {
-    return '$arg1 dilleri mevcut';
+    return '$arg1 dil mevcut';
   }
 
   @override
@@ -300,7 +300,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String language_auto_subtitle(Object arg1) {
-    return 'İzleme sistemi · $arg1';
+    return 'Sistem dilini kullan · $arg1';
   }
 
   @override
@@ -451,13 +451,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get reset_cat_soc_history_desc =>
       'SoC örnekleri, şarj seansları, voltaj kayıtları';
-
-  @override
-  String get reset_cat_soh => 'SoH kalibrasyonu';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'İsimsel kapasiteyi yeniden tespit eder, BMS\'den yeniden tohumların tahminini';
 
   @override
   String get reset_cat_recordings => 'Kayıtlar (videolar)';
@@ -658,7 +651,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'Bu araçta batarya sağlığı tahmini kullanılamıyor.';
+      'Batarya sağlığı tahmini kullanılamıyor.';
 
   @override
   String get battery_health_reset => 'SOH tahminini sıfırla';
@@ -838,13 +831,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dialog_reset_selected => 'Seçilenleri sıfırla';
 
   @override
-  String get dialog_reset_soh_title => 'SOH tahmini sıfırlansın mı?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Bu, tüm SOH verilerini temizleyecek ve sıfırdan yeniden değerlendirmeyi zorlayacaktır.\n\nBattery değiştirildiyse bunu kullanın\n• SOH okuma yanlış görünüyor\n• Yeniden kalibrlemek isterseniz\n\nSistem bir sonraki mevcut veri kaynağından (OEM, şarj kalibrasyonu veya anlık okuma) yeniden üretecektir.';
-
-  @override
   String get dialog_reset_following_title => 'Aşağıdakiler sıfırlansın mı?';
 
   @override
@@ -899,9 +885,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V tarihi';
-
-  @override
-  String get reset_label_soh => 'SoH kalibrasyonu';
 
   @override
   String get reset_label_recordings => 'Kayıtlar';
@@ -1170,7 +1153,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rail_location => 'Konum';
 
   @override
-  String get rail_diagnostics => 'Teşhisler';
+  String get rail_diagnostics => 'Tanılama';
 
   @override
   String get rail_settings => 'Ayarlar';
@@ -1191,7 +1174,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_section_privacy => 'Gizlilik & Veriler';
 
   @override
-  String get settings_section_overlay => 'Durum örtüsü';
+  String get settings_section_overlay => 'Durum göstergesi';
 
   @override
   String get settings_overlay_subtitle =>
@@ -1944,11 +1927,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_section_recording_subtitle =>
-      'Ön / sonrası tamponlar, kodekler, depolama sınırları.';
+      'Kayıt öncesi/sonrası tampon süreleri, kodek, depolama sınırları.';
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Deteksiyon bölgeleri, program, hareket hassasiyeti.';
+      'Program, hareket hassasiyeti, nesne algılama.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2071,6 +2054,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Bekleyen veriler';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

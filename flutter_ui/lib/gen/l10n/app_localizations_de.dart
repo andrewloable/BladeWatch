@@ -458,13 +458,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'SoC-Proben, Ladevorgänge, Spannungsprotokolle';
 
   @override
-  String get reset_cat_soh => 'SoH-Kalibrierung';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Nachweis der nominellen Kapazität, Nachsättigungsschätzung aus BMS';
-
-  @override
   String get reset_cat_recordings => 'Aufnahmen (Videos)';
 
   @override
@@ -558,7 +551,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String recording_lib_clip_count(Object arg1) {
-    return '$arg1-Klippen';
+    return '$arg1 Clips';
   }
 
   @override
@@ -663,7 +656,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'Die Schätzung des Batteriezustands ist für dieses Fahrzeug nicht verfügbar.';
+      'Die Schätzung des Batteriezustands ist nicht verfügbar.';
 
   @override
   String get battery_health_reset => 'SOH-Schätzung zurücksetzen';
@@ -846,13 +839,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dialog_reset_selected => 'Ausgewählte zurücksetzen';
 
   @override
-  String get dialog_reset_soh_title => 'SOH-Schätzung zurücksetzen?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Dies wird alle SOH-Daten löschen und die Neuauswertung von Grund auf zwingen.\n\nVerwenden Sie dies, wenn:\n• Batterie ersetzt wurde\n• SOH-Lese scheint falsch\n• Sie möchten neu kalibrieren\n\nDas System wird von der nächsten verfügbaren Datenquelle (OEM, Ladekalibrierung oder Sofortlesung) neu ausgesät.';
-
-  @override
   String get dialog_reset_following_title => 'Folgendes zurücksetzen?';
 
   @override
@@ -907,9 +893,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V-Geschichte';
-
-  @override
-  String get reset_label_soh => 'SoH-Kalibrierung';
 
   @override
   String get reset_label_recordings => 'Aufnahmen';
@@ -1503,7 +1486,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String diagnostics_storage_used_line(Object arg1, Object arg2) {
-    return '$arg1-Klippen · $arg2 verwendet';
+    return '$arg1 Clips · $arg2 verwendet';
   }
 
   @override
@@ -1962,7 +1945,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Erkennungszonen, Zeitplan, Bewegungsempfindlichkeit.';
+      'Zeitplan, Bewegungsempfindlichkeit, Objekterkennung.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2037,7 +2020,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String settings_privacy_storage_count_format_plural(Object arg1) {
-    return '$arg1-Klippen';
+    return '$arg1 Clips';
   }
 
   @override
@@ -2085,6 +2068,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Ausstehende Daten';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

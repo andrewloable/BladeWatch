@@ -447,7 +447,7 @@
     <string name="settings_quick_theme_label">Temática</string>
     <string name="settings_quick_language_label">Lenguaje</string>
     <string name="settings_section_recording_subtitle">Buffers pre/post, codec, límites de almacenamiento.</string>
-    <string name="settings_section_surveillance_subtitle">Zonas de detección, horario, sensibilidad al movimiento.</string>
+    <string name="settings_section_surveillance_subtitle">Horario, sensibilidad al movimiento, detección de objetos.</string>
     <string name="settings_section_daemons_subtitle">Túnel Zrok y servicios en segundo plano.</string>
     <string name="settings_about_row_title">Sobre BladeWatch</string>
     <string name="settings_about_row_subtitle">Versión, licencia, desarrollo de soporte.</string>

@@ -440,12 +440,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reset_cat_soc_history_desc => '电源电源样本,充电会议,电压记录';
 
   @override
-  String get reset_cat_soh => 'SOH校准';
-
-  @override
-  String get reset_cat_soh_desc => '从BMS中重新检测名额容量,重新种植估计';
-
-  @override
   String get reset_cat_recordings => '录像 (视频)';
 
   @override
@@ -640,7 +634,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get battery_health_unavailable => '不可用';
 
   @override
-  String get battery_health_unavailable_desc => '此车辆不支持电池健康度估算。';
+  String get battery_health_unavailable_desc => '电池健康度估算不可用。';
 
   @override
   String get battery_health_reset => '重置SOH估计';
@@ -813,13 +807,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dialog_reset_selected => '重置所选项';
 
   @override
-  String get dialog_reset_soh_title => '设置SOH估计?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      '这将清除所有SOH数据并从零开始强迫重新估计.\n\n如果:\n•电池被更换\n•SOH读取似乎不正确\n•您想重新校准\n\n系统将从下一个可用的数据源 (OEM,充电校准或即时读取) 中重新播放.';
-
-  @override
   String get dialog_reset_following_title => '重置以下项目？';
 
   @override
@@ -871,9 +858,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V 历史记录';
-
-  @override
-  String get reset_label_soh => 'SOH校准';
 
   @override
   String get reset_label_recordings => '录像';
@@ -1870,7 +1854,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_section_recording_subtitle => '预/后缓冲器,代码,存储限制.';
 
   @override
-  String get settings_section_surveillance_subtitle => '检测区域,时间表,运动敏感性.';
+  String get settings_section_surveillance_subtitle => '时间表,移动检测灵敏度,目标检测.';
 
   @override
   String get settings_section_daemons_subtitle => 'Zrok 隧道与后台服务。';
@@ -1984,6 +1968,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => '待定数据';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {
@@ -3355,12 +3344,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get reset_cat_soc_history_desc => '电源电源样本,充电会议,电压记录';
 
   @override
-  String get reset_cat_soh => 'SOH校准';
-
-  @override
-  String get reset_cat_soh_desc => '从BMS中重新检测名额容量,重新种植估计';
-
-  @override
   String get reset_cat_recordings => '录像 (视频)';
 
   @override
@@ -3555,7 +3538,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get battery_health_unavailable => '不可用';
 
   @override
-  String get battery_health_unavailable_desc => '此车辆不支持电池健康度估算。';
+  String get battery_health_unavailable_desc => '电池健康度估算不可用。';
 
   @override
   String get battery_health_reset => '重置SOH估计';
@@ -3728,13 +3711,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dialog_reset_selected => '重置所选项';
 
   @override
-  String get dialog_reset_soh_title => '设置SOH估计?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      '这将清除所有SOH数据并从零开始强迫重新估计.\n\n如果:\n•电池被更换\n•SOH读取似乎不正确\n•您想重新校准\n\n系统将从下一个可用的数据源 (OEM,充电校准或即时读取) 中重新播放.';
-
-  @override
   String get dialog_reset_following_title => '重置以下项目？';
 
   @override
@@ -3786,9 +3762,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V 历史记录';
-
-  @override
-  String get reset_label_soh => 'SOH校准';
 
   @override
   String get reset_label_recordings => '录像';
@@ -4785,7 +4758,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_section_recording_subtitle => '预/后缓冲器,代码,存储限制.';
 
   @override
-  String get settings_section_surveillance_subtitle => '检测区域,时间表,运动敏感性.';
+  String get settings_section_surveillance_subtitle => '时间表,移动检测灵敏度,目标检测.';
 
   @override
   String get settings_section_daemons_subtitle => 'Zrok 隧道与后台服务。';
@@ -4899,6 +4872,11 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get diagnostics_battery_value_pending => '待定数据';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {
@@ -6271,12 +6249,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get reset_cat_soc_history_desc => '接收時間,電壓記錄';
 
   @override
-  String get reset_cat_soh => '顯示的數量';
-
-  @override
-  String get reset_cat_soh_desc => '在 BMS 中重新檢測名稱容量,重新種植估計';
-
-  @override
   String get reset_cat_recordings => '錄影 (影片)';
 
   @override
@@ -6471,7 +6443,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get battery_health_unavailable => '不可用';
 
   @override
-  String get battery_health_unavailable_desc => '此車輛不支援電池健康度估算。';
+  String get battery_health_unavailable_desc => '電池健康度估算無法使用。';
 
   @override
   String get battery_health_reset => '重置SOH估值';
@@ -6644,13 +6616,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dialog_reset_selected => '重置所選項目';
 
   @override
-  String get dialog_reset_soh_title => '預算的 SOH 預算?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      '此操作將清除所有 SOH 資料，並從頭強制重新估算。\n\n在下列情況下使用:\n• 電池已更換\n• SOH 讀值看起來不正確\n• 您想重新校正\n\n系統會從下一個可用的資料來源 (OEM、充電校正或即時讀值) 重新取得基準。';
-
-  @override
   String get dialog_reset_following_title => '重置下列項目？';
 
   @override
@@ -6702,9 +6667,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get reset_label_soc_history => '關於 SoC + 12V 的歷史';
-
-  @override
-  String get reset_label_soh => '顯示的數量';
 
   @override
   String get reset_label_recordings => '錄影';
@@ -7701,7 +7663,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_section_recording_subtitle => '預備/後期緩衝器,代克,存儲限制.';
 
   @override
-  String get settings_section_surveillance_subtitle => '檢測區域,時間表,運動敏感性.';
+  String get settings_section_surveillance_subtitle => '時間表,移動偵測靈敏度,物件偵測.';
 
   @override
   String get settings_section_daemons_subtitle => 'Zrok 隧道與後台服務。';
@@ -7815,6 +7777,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get diagnostics_battery_value_pending => '目前的數據';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

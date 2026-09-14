@@ -163,7 +163,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get camera_current_auto => 'Текущий: Авто';
 
   @override
-  String get camera_option_auto => 'Автомобильный (отчет при запуске)';
+  String get camera_option_auto => 'Авто (определяется при запуске)';
 
   @override
   String get camera_option_0 => 'Камера 0 — Atto отделки';
@@ -266,7 +266,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get setup_autostart_body =>
-      'Нажмите ниже, чтобы открыть BYD Auto-Start. Найдите BladeWatch в списке и отберите поле. BYD стирает это при каждой установке — Вы будете переделать его после обновлений.';
+      'Нажмите ниже, чтобы открыть BYD Auto-Start. Найдите BladeWatch в списке и снимите флажок. BYD сбрасывает эту настройку при каждой установке — после обновлений процедуру придется повторить.';
 
   @override
   String get setup_autostart_button => 'Откройте BYD Автозапуск';
@@ -290,18 +290,18 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String language_picker_subtitle_fmt(Object arg1) {
-    return 'Языки $arg1 доступны';
+    return 'Доступно языков: $arg1';
   }
 
   @override
   String get language_picker_subtitle_pending => 'Выберите язык';
 
   @override
-  String get language_auto_title => 'Автомобиль';
+  String get language_auto_title => 'Авто';
 
   @override
   String language_auto_subtitle(Object arg1) {
-    return 'Следующая система · $arg1';
+    return 'Использовать язык системы · $arg1';
   }
 
   @override
@@ -454,13 +454,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get reset_cat_soc_history_desc =>
       'Образцы СОК, зарядные сеансы, журналы напряжения';
-
-  @override
-  String get reset_cat_soh => 'калибровка SOH';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Вновь обнаруживает номинальную мощность, оценку пересева из BMS';
 
   @override
   String get reset_cat_recordings => 'Записи (видео)';
@@ -660,7 +653,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'Оценка состояния батареи недоступна на этом автомобиле.';
+      'Оценка состояния батареи недоступна.';
 
   @override
   String get battery_health_reset => 'Сбросить оценку SOH';
@@ -842,13 +835,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dialog_reset_selected => 'Сбросить выбранное';
 
   @override
-  String get dialog_reset_soh_title => 'Сбросить оценку SOH?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Это очистит все данные SOH и заставит переоценку с нуля.\n\nИспользуйте это, если:\n• батарея была заменена\n• чтение SOH кажется неверным\n• Вы хотите перекалибрировать\n\nСистема будет пересеять из следующего доступного источника данных (OEM, калибровка заряда или мгновенное чтение).';
-
-  @override
   String get dialog_reset_following_title => 'Сбросить следующее?';
 
   @override
@@ -903,9 +889,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'История SoC + 12V';
-
-  @override
-  String get reset_label_soh => 'калибровка SOH';
 
   @override
   String get reset_label_recordings => 'Записи';
@@ -1186,7 +1169,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings_section_recording => 'Запись';
 
   @override
-  String get settings_section_surveillance => 'Наблюдение';
+  String get settings_section_surveillance => 'Видеонаблюдение';
 
   @override
   String get settings_section_daemons => 'Службы';
@@ -1195,7 +1178,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings_section_privacy => 'Конфиденциальность и данные';
 
   @override
-  String get settings_section_overlay => 'Переложение состояния';
+  String get settings_section_overlay => 'Наложение статуса';
 
   @override
   String get settings_overlay_subtitle =>
@@ -1955,11 +1938,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settings_section_recording_subtitle =>
-      'Пре/пост буферы, кодеки, ограничения хранения.';
+      'Буферы до/после записи, кодек, лимиты хранилища.';
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Зон обнаружения, график, чувствительность к движению.';
+      'График, чувствительность к движению, обнаружение объектов.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2081,6 +2064,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Ожидаемые данные';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

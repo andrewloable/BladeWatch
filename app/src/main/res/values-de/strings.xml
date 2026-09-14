@@ -137,7 +137,7 @@
     <string name="recording_lib_chip_type_proximity">Nähe</string>
     <string name="recording_lib_date_today">Heute</string>
     <string name="recording_lib_date_yesterday">Gestern</string>
-    <string name="recording_lib_clip_count">%1$d-Klippen</string>
+    <string name="recording_lib_clip_count">%1$d Clips</string>
     <string name="recording_lib_clip_count_one">%1$d-Clip</string>
     <string name="recording_lib_pick_date">Datum wählen</string>
     <string name="recording_lib_date_all_days">Alle Tage</string>
@@ -383,7 +383,7 @@
     <string name="diagnostics_network_mobile">Mobilfunk</string>
     <string name="diagnostics_network_ethernet">Ethernet</string>
     <string name="diagnostics_network_offline">Offline</string>
-    <string name="diagnostics_storage_used_line">%1$d-Klippen · %2$s verwendet</string>
+    <string name="diagnostics_storage_used_line">%1$d Clips · %2$s verwendet</string>
     <string name="diagnostics_storage_free_line">%1$s frei</string>
     <string name="diagnostics_logs_card_title">Live-Veranstaltungsprotokoll</string>
     <string name="diagnostics_logs_card_subtitle">Streaming-Ausgabe von laufenden Diensten.</string>
@@ -447,7 +447,7 @@
     <string name="settings_quick_theme_label">Thema</string>
     <string name="settings_quick_language_label">Sprache</string>
     <string name="settings_section_recording_subtitle">Vor- und Nachbuffer, Codec, Speicherbegrenzungen.</string>
-    <string name="settings_section_surveillance_subtitle">Erkennungszonen, Zeitplan, Bewegungsempfindlichkeit.</string>
+    <string name="settings_section_surveillance_subtitle">Zeitplan, Bewegungsempfindlichkeit, Objekterkennung.</string>
     <string name="settings_section_daemons_subtitle">Zrok-Tunnel und Hintergrunddienste.</string>
     <string name="settings_about_row_title">Über BladeWatch</string>
     <string name="settings_about_row_subtitle">Version, Lizenz, Supportentwicklung.</string>
@@ -467,7 +467,7 @@
     <string name="settings_privacy_storage_size_label">Gesamtgröße</string>
     <string name="settings_privacy_storage_unavailable">Nicht verfügbar</string>
     <string name="settings_privacy_storage_count_format">%1$d-Clip</string>
-    <string name="settings_privacy_storage_count_format_plural">%1$d-Klippen</string>
+    <string name="settings_privacy_storage_count_format_plural">%1$d Clips</string>
     <string name="settings_privacy_reset_subtitle">Kategorien auswählen: Aufnahmen, Ereignisse, Dienstkonfigurationen, gespeicherte Telemetrie...</string>
     <string name="diagnostics_camera_value_camera_n">Kamera %1$d</string>
     <string name="diagnostics_camera_value_camera_n_manual">Kamera %1$d (Handbuch)</string>

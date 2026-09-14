@@ -144,12 +144,64 @@ void main() {
   // BladeWatch-p7vi: there is no SoH reading to classify any more, so the tile
   // has no good/moderate/neutral states — it reports the feature as unavailable
   // whatever the (stubbed) daemon would have said.
+  // BladeWatch-1ovy: still true, and still worth pinning — a SOH stub must not
+  // resurrect the removed state-of-HEALTH reading. What the tile shows now is
+  // state of CHARGE, which is a different number from a different RPC.
   testWidgets('the battery health tile reports unavailable regardless of any SOH stub', (tester) async {
     rpc.stubJson('SystemService', 'GetSohStatus', {'success': true, 'displaySoh': 65.0, 'displaySource': 'live'});
 
     await pumpScreen(tester);
 
     expect(find.text('65%'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('diag.cardBatteryHealth')),
+        matching: find.text('Not available'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  // BladeWatch-1ovy: the charge percentage, which the user asked for after seeing
+  // "Not available" here while the Vehicle screen showed "Charge: 61%".
+  testWidgets('the battery tile shows the charge percentage when one is available', (tester) async {
+    controller = DiagnosticsController(
+      daemonChannel: DaemonChannel(platform),
+      storageService: StorageServiceClient(rpc),
+      systemService: SystemServiceClient(rpc),
+      networkChannel: NetworkChannel(platform),
+      surveillanceService: SurveillanceServiceClient(rpc),
+      adbConnectionFactory: () => adbConnection,
+      batterySocSource: () async => 61,
+    );
+
+    await pumpScreen(tester);
+
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('diag.cardBatteryHealth')),
+        matching: find.text('61%'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  // The fallback matters as much as the value: 0% would read as a flat pack.
+  testWidgets('the battery tile falls back to unavailable, never 0%, when there is no reading',
+      (tester) async {
+    controller = DiagnosticsController(
+      daemonChannel: DaemonChannel(platform),
+      storageService: StorageServiceClient(rpc),
+      systemService: SystemServiceClient(rpc),
+      networkChannel: NetworkChannel(platform),
+      surveillanceService: SurveillanceServiceClient(rpc),
+      adbConnectionFactory: () => adbConnection,
+      batterySocSource: () async => null,
+    );
+
+    await pumpScreen(tester);
+
+    expect(find.text('0%'), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('diag.cardBatteryHealth')),

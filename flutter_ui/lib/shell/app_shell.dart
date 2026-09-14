@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../gen/l10n/app_localizations.dart';
 import 'nav_rail.dart';
@@ -78,10 +81,18 @@ class AppShell extends StatelessWidget {
   /// [dashboardScreen] — see its doc comment for why.
   final Widget? liveViewScreen;
 
+  /// Live Zrok tunnel URL for the toolbar status pill (BladeWatch-0kru). Null
+  /// source, or a source that answers null, means NO pill at all — native's
+  /// `MainActivity.updateUrlDisplay()` sets `urlBar` to `View.GONE` when there is
+  /// no tunnel, because the Dashboard connect card already says "No tunnel
+  /// running". Showing a placeholder instead is what this replaced.
+  final Future<String?> Function()? tunnelUrlSource;
+
   const AppShell({
     super.key,
     required this.controller,
     required this.onLanguageTap,
+    this.tunnelUrlSource,
     this.dashboardScreen,
     this.settingsScreen,
     this.settingsAboutScreen,
@@ -127,6 +138,7 @@ class AppShell extends StatelessWidget {
         final stage = Column(
           children: [
             _Toolbar(
+              tunnelUrlSource: tunnelUrlSource,
               compact: isLandscape,
               title: _currentTitle(l10n),
               showLanguageButton: !isLandscape,
@@ -193,12 +205,14 @@ class AppShell extends StatelessWidget {
 /// `MaterialToolbar` + its end-cluster status pill, ported from both
 /// `activity_main_new.xml` variants (see class doc above for what differs).
 class _Toolbar extends StatelessWidget implements PreferredSizeWidget {
+  final Future<String?> Function()? tunnelUrlSource;
   final bool compact;
   final String title;
   final bool showLanguageButton;
   final VoidCallback onLanguageTap;
 
   const _Toolbar({
+    this.tunnelUrlSource,
     required this.compact,
     required this.title,
     required this.showLanguageButton,
@@ -217,7 +231,7 @@ class _Toolbar extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: preferredSize.height,
       title: Text(title, style: compact ? theme.textTheme.titleMedium : theme.textTheme.titleLarge),
       actions: [
-        _StatusPill(),
+        _StatusPill(source: tunnelUrlSource),
         if (showLanguageButton)
           IconButton(
             icon: const Icon(Icons.language),
@@ -231,12 +245,68 @@ class _Toolbar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 /// Tunnel-connection status pill — `statusPill`/`urlStatusDot`/`tvCurrentUrl`/
-/// `btnCopyUrl` in `activity_main_new.xml`. Shown here in its default
-/// (not-yet-connected) state; wiring it to live daemon status is a
-/// screen-owning task in Epic 2, not this shell.
-class _StatusPill extends StatelessWidget {
+/// `btnCopyUrl` in `activity_main_new.xml`.
+///
+/// BladeWatch-0kru: this used to be a hardcoded placeholder that said
+/// "Connecting…" forever, with a grey dot and a dead copy button, on every
+/// screen. That was not merely unfinished, it was WRONG — with no zrok token
+/// configured nothing is connecting and nothing ever will, so it read as an app
+/// stuck mid-connect.
+///
+/// It now mirrors `MainActivity.updateUrlDisplay()` exactly: **no URL means no
+/// pill.** The Dashboard connect card is the one place that explains the
+/// "No tunnel running" state, and native deliberately does not duplicate it here.
+class _StatusPill extends StatefulWidget {
+  final Future<String?> Function()? source;
+
+  const _StatusPill({this.source});
+
+  @override
+  State<_StatusPill> createState() => _StatusPillState();
+}
+
+class _StatusPillState extends State<_StatusPill> {
+  /// Matches the cadence the Dashboard already refreshes tunnel state at. A
+  /// tunnel comes up or drops on a human timescale, so polling faster buys
+  /// nothing and costs an IPC round-trip each time.
+  static const _pollInterval = Duration(seconds: 10);
+
+  String? _url;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.source == null) return;
+    unawaited(_refresh());
+    _timer = Timer.periodic(_pollInterval, (_) => unawaited(_refresh()));
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    String? url;
+    try {
+      url = await widget.source!();
+    } catch (_) {
+      // An IPC failure is indistinguishable from "no tunnel" as far as this
+      // pill is concerned, and native hides the bar in both cases.
+      url = null;
+    }
+    if (!mounted || url == _url) return;
+    setState(() => _url = url);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final url = _url;
+    // The whole point of BladeWatch-0kru: render NOTHING rather than a placeholder.
+    if (url == null) return const SizedBox.shrink();
+
     final colors = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
@@ -253,23 +323,28 @@ class _StatusPill extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
+                key: const ValueKey('shell.statusPill.dot'),
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(color: colors.outline, shape: BoxShape.circle),
+                // Online, matching native's status_dot_online — a URL only
+                // reaches here when the tunnel process is alive.
+                decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle),
               ),
               const SizedBox(width: 10),
               Text(
-                l10n.url_connecting,
+                url,
+                key: const ValueKey('shell.statusPill.url'),
                 style: Theme.of(context)
                     .textTheme
                     .labelLarge
                     ?.copyWith(color: colors.primary, fontFamily: 'monospace'),
               ),
               IconButton(
+                key: const ValueKey('shell.statusPill.copy'),
                 icon: const Icon(Icons.copy, size: 18),
                 tooltip: l10n.cd_copy_url,
                 color: colors.onSurfaceVariant,
-                onPressed: null,
+                onPressed: () => Clipboard.setData(ClipboardData(text: url)),
               ),
             ],
           ),

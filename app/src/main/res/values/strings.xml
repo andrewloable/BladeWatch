@@ -711,7 +711,7 @@
 
     <!-- Section row subtitles (portrait) -->
     <string name="settings_section_recording_subtitle">Pre/post buffers, codec, storage limits.</string>
-    <string name="settings_section_surveillance_subtitle">Detection zones, schedule, motion sensitivity.</string>
+    <string name="settings_section_surveillance_subtitle">Schedule, motion sensitivity, object detection.</string>
     <string name="settings_section_daemons_subtitle">Zrok tunnel and background services.</string>
 
     <!-- About / data row subtitles -->

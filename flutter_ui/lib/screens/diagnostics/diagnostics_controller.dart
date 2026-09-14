@@ -49,6 +49,7 @@ class DiagnosticsController extends ChangeNotifier {
   final AdbConnection Function() _adbConnectionFactory;
   final Future<String?> Function() _tunnelUrlSource;
   final Future<CameraProbeConfig> Function() _cameraConfigSource;
+  final Future<int?> Function() _batterySocSource;
 
   DiagnosticsController({
     required DaemonChannel daemonChannel,
@@ -59,6 +60,7 @@ class DiagnosticsController extends ChangeNotifier {
     required AdbConnection Function() adbConnectionFactory,
     Future<String?> Function() tunnelUrlSource = _noTunnelUrl,
     Future<CameraProbeConfig> Function() cameraConfigSource = _defaultCameraConfig,
+    Future<int?> Function() batterySocSource = _noBatterySoc,
   })  : _daemonChannel = daemonChannel, // ignore: prefer_initializing_formals
         _storageService = storageService, // ignore: prefer_initializing_formals
         _systemService = systemService, // ignore: prefer_initializing_formals
@@ -66,10 +68,12 @@ class DiagnosticsController extends ChangeNotifier {
         _surveillanceService = surveillanceService, // ignore: prefer_initializing_formals
         _adbConnectionFactory = adbConnectionFactory, // ignore: prefer_initializing_formals
         _tunnelUrlSource = tunnelUrlSource, // ignore: prefer_initializing_formals
-        _cameraConfigSource = cameraConfigSource; // ignore: prefer_initializing_formals
+        _cameraConfigSource = cameraConfigSource, // ignore: prefer_initializing_formals
+        _batterySocSource = batterySocSource; // ignore: prefer_initializing_formals
 
   static Future<String?> _noTunnelUrl() async => null;
   static Future<CameraProbeConfig> _defaultCameraConfig() async => const CameraProbeConfig();
+  static Future<int?> _noBatterySoc() async => null;
 
   bool _loading = true;
   bool get loading => _loading;
@@ -177,11 +181,28 @@ class DiagnosticsController extends ChangeNotifier {
     _cameraStatus = config.probedCameraId < 0 ? CameraTileStatus.probing : CameraTileStatus.active;
   }
 
-  /// BladeWatch-p7vi: SoH estimation was removed from the daemon.
-  /// `handleSohGetNominal`/`GetSohStatus` are stubs that answer nothing, so
-  /// this used to leave the battery card pending forever. Nothing is fetched
-  /// any more and the card says the feature is unavailable instead.
-  Future<void> _refreshBattery() async {}
+  /// Battery state of CHARGE, 0-100, or null when it could not be read.
+  ///
+  /// BladeWatch-1ovy. Not to be confused with state of HEALTH, which
+  /// BladeWatch-p7vi removed from the daemon and which is NOT coming back —
+  /// SoH is how degraded the pack is, this is how full it is right now.
+  int? _batterySoc;
+  int? get batterySoc => _batterySoc;
+
+  /// BladeWatch-1ovy: the tile used to say "Not available" unconditionally,
+  /// left over from the SoH removal, while the Vehicle screen displayed the
+  /// charge percentage on the same device at the same moment. Same source as
+  /// Vehicle uses (`VehicleService.GetVehicleState` -> `battery.soc`).
+  ///
+  /// Null on any failure, which the tile renders as "Not available" — never as
+  /// 0%, which would be indistinguishable from a flat pack.
+  Future<void> _refreshBattery() async {
+    try {
+      _batterySoc = await _batterySocSource();
+    } catch (_) {
+      _batterySoc = null;
+    }
+  }
 
 
   /// Camera Selection dialog — ground truth `MainActivity.onReconfigureCameraClicked()`.

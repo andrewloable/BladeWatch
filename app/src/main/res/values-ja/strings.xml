@@ -447,7 +447,7 @@
     <string name="settings_quick_theme_label">テーマ</string>
     <string name="settings_quick_language_label">言語</string>
     <string name="settings_section_recording_subtitle">預設/後設バッファ,コードック,保存制限</string>
-    <string name="settings_section_surveillance_subtitle">検出ゾーン スケジュール 動き感</string>
+    <string name="settings_section_surveillance_subtitle">スケジュール、動体検知感度、物体検知。</string>
     <string name="settings_section_daemons_subtitle">Zrokトンネルとバックグラウンドサービス。</string>
     <string name="settings_about_row_title">BladeWatchについて</string>
     <string name="settings_about_row_subtitle">バージョン ライセンス サポート開発</string>

@@ -446,12 +446,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get reset_cat_soc_history_desc => 'SoC 샘플, 충전 세션, 전압 로그';
 
   @override
-  String get reset_cat_soh => 'SOH 캘리브레이션';
-
-  @override
-  String get reset_cat_soh_desc => 'BMS에서 명칭 용량을 재발견, 재배량 추정';
-
-  @override
   String get reset_cat_recordings => '녹화 (비디오)';
 
   @override
@@ -646,8 +640,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get battery_health_unavailable => '사용할 수 없음';
 
   @override
-  String get battery_health_unavailable_desc =>
-      '이 차량에서는 배터리 상태 추정을 사용할 수 없습니다.';
+  String get battery_health_unavailable_desc => '배터리 상태 추정을 사용할 수 없습니다.';
 
   @override
   String get battery_health_reset => 'SOH 추정값을 재설정';
@@ -822,13 +815,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dialog_reset_selected => '선택 항목 초기화';
 
   @override
-  String get dialog_reset_soh_title => 'SOH 추정값을 재설정하세요?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      '이 방법은 모든 SOH 데이터를 삭제하고 처음부터 재평가를 강요합니다. 이 경우:\n\n• 배터리가 교체되었습니다.\n• SOH 판독은 잘못된 것 같습니다.\n• 당신은 재계열을 원하고 있습니다.\n\n시스템은 다음 사용할 수 있는 데이터 소스에서 재계열됩니다. (OEM, 충전 캘리브레이션, 또는 즉각적인 판독).';
-
-  @override
   String get dialog_reset_following_title => '다음 항목을 초기화할까요?';
 
   @override
@@ -880,9 +866,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V의 역사';
-
-  @override
-  String get reset_label_soh => 'SOH 캘리브레이션';
 
   @override
   String get reset_label_recordings => '녹화';
@@ -1893,7 +1876,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_section_recording_subtitle => '전/후 버퍼, 코덱, 저장 제한';
 
   @override
-  String get settings_section_surveillance_subtitle => '탐지 구역, 일정, 움직임 감수성';
+  String get settings_section_surveillance_subtitle => '일정, 동작 감도, 객체 감지.';
 
   @override
   String get settings_section_daemons_subtitle => 'Zrok 터널 및 백그라운드 서비스.';
@@ -2008,6 +1991,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => '데이터 대기 중';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

@@ -455,13 +455,6 @@ class AppLocalizationsNl extends AppLocalizations {
       'SoC-monsters, oplaadsessies, spanningslogs';
 
   @override
-  String get reset_cat_soh => 'SoH-kalibratie';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'De nominale capaciteit wordt opnieuw gedetecteerd, de raming van de nieuwe zaden van het BMS';
-
-  @override
   String get reset_cat_recordings => 'Opnames (video\'s)';
 
   @override
@@ -658,7 +651,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'Schatting van de batterijconditie is niet beschikbaar op dit voertuig.';
+      'Schatting van de batterijconditie is niet beschikbaar.';
 
   @override
   String get battery_health_reset => 'SOH-schatting resetten';
@@ -840,13 +833,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dialog_reset_selected => 'Selectie resetten';
 
   @override
-  String get dialog_reset_soh_title => 'SOH-schatting resetten?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Dit zal alle SOH-gegevens verwijderen en de herbeoordeling van het begin af dwingen.\n\n Gebruik dit als:\n• Batterij is vervangen\n• SOH-lezing lijkt onjuist\n• U wilt opnieuw kalibreren\n\nHet systeem zal opnieuw uit de volgende beschikbare gegevensbron (OEM, lading kalibratie of onmiddellijke lezing) voortkomen.';
-
-  @override
   String get dialog_reset_following_title => 'Het volgende resetten?';
 
   @override
@@ -902,9 +888,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V geschiedenis';
-
-  @override
-  String get reset_label_soh => 'SoH-kalibratie';
 
   @override
   String get reset_label_recordings => 'Opnames';
@@ -1952,7 +1935,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Detectiezonen, schema, bewegingsgevoeligheid.';
+      'Schema, bewegingsgevoeligheid, objectdetectie.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2074,6 +2057,11 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Gegevens in afwachting';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

@@ -298,7 +298,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String language_auto_subtitle(Object arg1) {
-    return 'ตามระบบเครื่อง · $arg1';
+    return 'ใช้ตามระบบ · $arg1';
   }
 
   @override
@@ -450,13 +450,6 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get reset_cat_soc_history_desc =>
       'ข้อมูลระดับแบตเตอรี่, ประวัติชาร์จ, แรงดันแบต 12V';
-
-  @override
-  String get reset_cat_soh => 'รีเซ็ตค่า SOH';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'ล้างประวัติการคำนวณ SOH ทิ้งให้ระบบเริ่มนับใหม่ตั้งแต่ศูนย์';
 
   @override
   String get reset_cat_recordings => 'ไฟล์วิดีโอทั้งหมด';
@@ -656,7 +649,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'การประเมินสุขภาพแบตเตอรี่ไม่พร้อมใช้งานในรถคันนี้';
+      'การประเมินสุขภาพแบตเตอรี่ไม่พร้อมใช้งาน';
 
   @override
   String get battery_health_reset => 'รีเซ็ตค่า SOH';
@@ -835,13 +828,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get dialog_reset_selected => 'รีเซ็ตที่เลือกไว้';
 
   @override
-  String get dialog_reset_soh_title => 'รีเซ็ตค่า SOH ไหม?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'การทำแบบนี้จะลบประวัติ SOH ทิ้งหมดแล้วเริ่มคำนวณใหม่เลยนะ\n\nใช้ตัวเลือกนี้เมื่อ:\n• เพิ่งเปลี่ยนแบตเตอรี่ลูกใหม่\n• รู้สึกว่าค่า SOH ที่คำนวณได้มันเพี้ยน\n• อยากให้ระบบปรับตั้งค่าใหม่ (Recalibrate)\n\nระบบจะเริ่มเก็บข้อมูลใหม่จากแหล่งข้อมูลล่าสุดที่ดึงได้ (ข้อมูลจาก OEM, รอบการชาร์จ หรือค่าที่อ่านได้ ณ ปัจจุบัน)';
-
-  @override
   String get dialog_reset_following_title => 'รีเซ็ตข้อมูลตามนี้ไหม?';
 
   @override
@@ -896,9 +882,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'ประวัติ SoC และแบต 12V';
-
-  @override
-  String get reset_label_soh => 'รีเซ็ตค่า SOH';
 
   @override
   String get reset_label_recordings => 'ไฟล์วิดีโอทั้งหมด';
@@ -1147,7 +1130,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get status_overlay_notif_text => 'แถบสถานะทำงานอยู่';
 
   @override
-  String get rail_dashboard => 'หน้าหลัก';
+  String get rail_dashboard => 'ภาพรวม';
 
   @override
   String get rail_live => 'ภาพสด';
@@ -1156,7 +1139,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get rail_recordings => 'วิดีโอ';
 
   @override
-  String get rail_vehicle => 'สถานะรถ';
+  String get rail_vehicle => 'รถ';
 
   @override
   String get rail_trips => 'ทริป';
@@ -1165,13 +1148,13 @@ class AppLocalizationsTh extends AppLocalizations {
   String get rail_location => 'ตำแหน่ง';
 
   @override
-  String get rail_diagnostics => 'วิเคราะห์ระบบ';
+  String get rail_diagnostics => 'ตรวจระบบ';
 
   @override
   String get rail_settings => 'ตั้งค่า';
 
   @override
-  String get settings_section_appearance => 'หน้าตาและรูปแบบ';
+  String get settings_section_appearance => 'รูปลักษณ์';
 
   @override
   String get settings_section_recording => 'การบันทึกวิดีโอ';
@@ -1186,7 +1169,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get settings_section_privacy => 'ความเป็นส่วนตัวและข้อมูล';
 
   @override
-  String get settings_section_overlay => 'แถบสถานะ';
+  String get settings_section_overlay => 'ข้อมูลสถานะบนภาพ';
 
   @override
   String get settings_overlay_subtitle =>
@@ -1935,11 +1918,11 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get settings_section_recording_subtitle =>
-      'ระยะเวลา Buffer, โคเดกวิดีโอ, ขีดจำกัดพื้นที่';
+      'บัฟเฟอร์ก่อน/หลัง, โคเดก, ขีดจำกัดพื้นที่จัดเก็บ';
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'โซนตรวจจับ, การตั้งเวลา, ความไวต่อความเคลื่อนไหว';
+      'การตั้งเวลา, ความไวต่อการเคลื่อนไหว, การตรวจจับวัตถุ';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2059,6 +2042,11 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'กำลังรอข้อมูล';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

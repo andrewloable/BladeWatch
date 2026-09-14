@@ -49,7 +49,7 @@
     <string name="camera_selection_title">कैमरा चयन</string>
     <string name="camera_selection_subtitle">पैनोरमा कैमरा स्रोत का चयन करें</string>
     <string name="camera_current_auto">वर्तमानः ऑटो</string>
-    <string name="camera_option_auto">ऑटो (स्टार्टअप पर पता लगाएं)</string>
+    <string name="camera_option_auto">ऑटो (स्टार्टअप पर स्वतः पहचान)</string>
     <string name="camera_option_0">कैमरा 0 — Atto ट्रिम</string>
     <string name="camera_option_1">कैमरा 1 — Seal (पूर्वनिर्धारित)</string>
     <string name="camera_option_2">कैमरा 2</string>
@@ -73,7 +73,7 @@
     <string name="setup_language_body">अपनी मुख्य इकाई की भाषा में डिफ़ॉल्ट। BladeWatch ऐप और वेब सुरंग के लिए एक अलग चुनने के लिए टैप करें।</string>
     <string name="setup_language_button">भाषा चुनें</string>
     <string name="setup_autostart_title">ऑटो-स्टार्ट प्रतिबंध को अक्षम करें</string>
-    <string name="setup_autostart_body">BYD ऑटो-स्टार्ट खोलने के लिए नीचे टैप करें. सूची में BladeWatch खोजें और बॉक्स को अनचेक करें. BYD प्रत्येक स्थापना पर इसे मिटा देता है — आप अद्यतन के बाद इसे फिर से करेंगे.</string>
+    <string name="setup_autostart_body">BYD ऑटो-स्टार्ट खोलने के लिए नीचे टैप करें। सूची में BladeWatch ढूँढें और बॉक्स से निशान हटाएँ। BYD हर इंस्टॉल के बाद यह सेटिंग रीसेट कर देता है—अपडेट के बाद आपको इसे फिर से करना होगा।</string>
     <string name="setup_autostart_button">BYD ऑटो-स्टार्ट खोलें</string>
     <string name="setup_overlay_title">अन्य ऐप्स पर डिस्प्ले की अनुमति दें</string>
     <string name="setup_overlay_body">अन्य ऐप्स के शीर्ष पर रिकॉर्डिंग और यात्रा ट्रैकिंग के लिए एक फ्लोटिंग स्थिति सूचक दिखाने के लिए इसे सक्षम करें।</string>
@@ -83,7 +83,7 @@
     <string name="language_picker_subtitle_fmt">%1$d उपलब्ध भाषाएँ</string>
     <string name="language_picker_subtitle_pending">भाषा चुनें</string>
     <string name="language_auto_title">ऑटो</string>
-    <string name="language_auto_subtitle">अनुवर्ती प्रणाली · %1$s</string>
+    <string name="language_auto_subtitle">सिस्टम के अनुसार · %1$s</string>
     <string name="language_label_auto_fmt">%1$s · ऑटो</string>
     <string name="adb_prompt">$</string>
     <string name="adb_command_hint">कमांड दर्ज करें...</string>
@@ -306,9 +306,9 @@
     <string name="rail_vehicle">वाहन</string>
     <string name="rail_trips">यात्राएँ</string>
     <string name="rail_integrations">एकीकरण</string>
-    <string name="rail_diagnostics">निदान</string>
+    <string name="rail_diagnostics">जाँच</string>
     <string name="rail_settings">सेटिंग्स</string>
-    <string name="settings_section_appearance">उपस्थिति</string>
+    <string name="settings_section_appearance">दिखावट</string>
     <string name="settings_section_recording">रिकॉर्डिंग</string>
     <string name="settings_section_surveillance">निगरानी</string>
     <string name="settings_section_daemons">सेवाएं</string>
@@ -447,7 +447,7 @@
     <string name="settings_quick_theme_label">विषय</string>
     <string name="settings_quick_language_label">भाषा</string>
     <string name="settings_section_recording_subtitle">पूर्व/पश्चात बफर, कोडेक, भंडारण सीमा।</string>
-    <string name="settings_section_surveillance_subtitle">पता लगाने के क्षेत्रों, कार्यक्रम, गति संवेदनशीलता.</string>
+    <string name="settings_section_surveillance_subtitle">शेड्यूल, गति संवेदनशीलता, वस्तु पहचान.</string>
     <string name="settings_section_daemons_subtitle">Zrok टनल और पृष्ठभूमि सेवाएं।</string>
     <string name="settings_about_row_title">BladeWatch के बारे में</string>
     <string name="settings_about_row_subtitle">संस्करण, लाइसेंस, समर्थन विकास.</string>

@@ -969,18 +969,6 @@ abstract class AppLocalizations {
   /// **'SoC samples, charging sessions, voltage logs'**
   String get reset_cat_soc_history_desc;
 
-  /// No description provided for @reset_cat_soh.
-  ///
-  /// In en, this message translates to:
-  /// **'SoH calibration'**
-  String get reset_cat_soh;
-
-  /// No description provided for @reset_cat_soh_desc.
-  ///
-  /// In en, this message translates to:
-  /// **'Re-detects nominal capacity, re-seeds estimate from BMS'**
-  String get reset_cat_soh_desc;
-
   /// No description provided for @reset_cat_recordings.
   ///
   /// In en, this message translates to:
@@ -1356,7 +1344,7 @@ abstract class AppLocalizations {
   /// No description provided for @battery_health_unavailable_desc.
   ///
   /// In en, this message translates to:
-  /// **'Battery health estimation is not available on this vehicle.'**
+  /// **'Battery health estimation is not available.'**
   String get battery_health_unavailable_desc;
 
   /// No description provided for @battery_health_reset.
@@ -1617,18 +1605,6 @@ abstract class AppLocalizations {
   /// **'Reset Selected'**
   String get dialog_reset_selected;
 
-  /// No description provided for @dialog_reset_soh_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset SOH Estimation?'**
-  String get dialog_reset_soh_title;
-
-  /// No description provided for @dialog_reset_soh_message.
-  ///
-  /// In en, this message translates to:
-  /// **'This will clear all SOH data and force re-estimation from scratch.\n\nUse this if:\n• Battery was replaced\n• SOH reading seems incorrect\n• You want to recalibrate\n\nThe system will re-seed from the next available data source (OEM, charge calibration, or instantaneous reading).'**
-  String get dialog_reset_soh_message;
-
   /// No description provided for @dialog_reset_following_title.
   ///
   /// In en, this message translates to:
@@ -1718,12 +1694,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SoC + 12V history'**
   String get reset_label_soc_history;
-
-  /// No description provided for @reset_label_soh.
-  ///
-  /// In en, this message translates to:
-  /// **'SoH calibration'**
-  String get reset_label_soh;
 
   /// No description provided for @reset_label_recordings.
   ///
@@ -3498,7 +3468,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_section_surveillance_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Detection zones, schedule, motion sensitivity.'**
+  /// **'Schedule, motion sensitivity, object detection.'**
   String get settings_section_surveillance_subtitle;
 
   /// No description provided for @settings_section_daemons_subtitle.
@@ -3692,6 +3662,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pending data'**
   String get diagnostics_battery_value_pending;
+
+  /// No description provided for @diagnostics_battery_value_charge.
+  ///
+  /// In en, this message translates to:
+  /// **'{arg1}%'**
+  String diagnostics_battery_value_charge(Object arg1);
 
   /// No description provided for @dashboard_recordings_value_live.
   ///

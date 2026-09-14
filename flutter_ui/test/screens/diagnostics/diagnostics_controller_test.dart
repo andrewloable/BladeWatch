@@ -198,6 +198,55 @@ void main() {
     });
   });
 
+  // BladeWatch-1ovy: the tile used to say "Not available" unconditionally, a
+  // leftover from the SoH removal, while the Vehicle screen showed the charge
+  // percentage on the same device at the same moment.
+  group('refresh — battery charge', () {
+    DiagnosticsController withSoc(Future<int?> Function() source) => DiagnosticsController(
+          daemonChannel: DaemonChannel(platform),
+          storageService: StorageServiceClient(rpc),
+          systemService: SystemServiceClient(rpc),
+          networkChannel: NetworkChannel(platform),
+          surveillanceService: SurveillanceServiceClient(rpc),
+          adbConnectionFactory: () => adbConnection,
+          batterySocSource: source,
+        );
+
+    test('exposes the charge percentage the source reports', () async {
+      controller = withSoc(() async => 61);
+
+      await controller.refresh();
+
+      expect(controller.batterySoc, 61);
+    });
+
+    // Null, NOT 0. The tile renders null as "Not available"; rendering 0% would
+    // be indistinguishable from a genuinely flat pack.
+    test('is null when the source reports nothing', () async {
+      controller = withSoc(() async => null);
+
+      await controller.refresh();
+
+      expect(controller.batterySoc, isNull);
+    });
+
+    test('a throwing source leaves it null rather than propagating', () async {
+      controller = withSoc(() async => throw StateError('rpc down'));
+
+      await controller.refresh();
+
+      expect(controller.batterySoc, isNull);
+      // The other probes must still have completed.
+      expect(controller.loading, isFalse);
+    });
+
+    test('defaults to null when no source is injected', () async {
+      await controller.refresh();
+
+      expect(controller.batterySoc, isNull);
+    });
+  });
+
   group('refresh — camera tile', () {
     test('is offline when the camera daemon is not running, regardless of probe config', () async {
       stubDaemons(camera: false);

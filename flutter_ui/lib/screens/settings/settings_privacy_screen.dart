@@ -13,10 +13,16 @@ import 'settings_privacy_controller.dart';
 /// confirmation list.
 typedef _ResetCategory = (String id, String title, String desc, String label);
 
+/// BladeWatch-uuo6: there is deliberately NO `soh` category here. BladeWatch-p7vi
+/// removed state-of-health estimation from the daemon, so offering to "re-detect
+/// nominal capacity, re-seed estimate from BMS" promised a repair for a capability
+/// the product no longer has. Do not re-add it without reinstating SoH first.
+///
+/// `socHistory` below is a DIFFERENT thing — state of CHARGE, which is live and
+/// which BladeWatch-1ovy's battery tile reads.
 List<_ResetCategory> _resetCategories(AppLocalizations l10n) => [
       ('trips', l10n.reset_cat_trips, l10n.reset_cat_trips_desc, l10n.reset_label_trips),
       ('socHistory', l10n.reset_cat_soc_history, l10n.reset_cat_soc_history_desc, l10n.reset_label_soc_history),
-      ('soh', l10n.reset_cat_soh, l10n.reset_cat_soh_desc, l10n.reset_label_soh),
       ('mediaRecordings', l10n.reset_cat_recordings, l10n.reset_cat_recordings_desc, l10n.reset_label_recordings),
       ('mediaSurveillance', l10n.reset_cat_sentry_events, l10n.reset_cat_sentry_events_desc, l10n.reset_label_sentry_events),
       ('mediaProximity', l10n.reset_cat_proximity, l10n.reset_cat_proximity_desc, l10n.reset_label_proximity),

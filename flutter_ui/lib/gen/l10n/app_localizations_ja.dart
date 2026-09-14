@@ -445,12 +445,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get reset_cat_soc_history_desc => 'SoCサンプル,充電セッション,電圧ログ';
 
   @override
-  String get reset_cat_soh => 'SOH校正';
-
-  @override
-  String get reset_cat_soh_desc => 'BMSからの名容量,再種植の推定を再検出する';
-
-  @override
   String get reset_cat_recordings => '録画 (ビデオ)';
 
   @override
@@ -645,7 +639,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get battery_health_unavailable => '利用できません';
 
   @override
-  String get battery_health_unavailable_desc => 'この車両ではバッテリー劣化度の推定を利用できません。';
+  String get battery_health_unavailable_desc => 'バッテリー劣化度の推定を利用できません。';
 
   @override
   String get battery_health_reset => 'SOH推定をリセットする';
@@ -820,13 +814,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dialog_reset_selected => '選択項目をリセット';
 
   @override
-  String get dialog_reset_soh_title => 'SOH推定をリセットする?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'すべての SOH データを消去し、最初から再推定します。\n\n次の場合に使用します:\n• バッテリーを交換した\n• SOH の値が正しくないと思われる\n• 再校正したい\n\n次に利用できるデータソース (OEM、充電キャリブレーション、または瞬時値) から再取得します。';
-
-  @override
   String get dialog_reset_following_title => '次の設定をリセットしますか?';
 
   @override
@@ -878,9 +865,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'SoC + 12V 過去';
-
-  @override
-  String get reset_label_soh => 'SOH校正';
 
   @override
   String get reset_label_recordings => '録画';
@@ -1892,7 +1876,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_section_recording_subtitle => '預設/後設バッファ,コードック,保存制限';
 
   @override
-  String get settings_section_surveillance_subtitle => '検出ゾーン スケジュール 動き感';
+  String get settings_section_surveillance_subtitle => 'スケジュール、動体検知感度、物体検知。';
 
   @override
   String get settings_section_daemons_subtitle => 'Zrokトンネルとバックグラウンドサービス。';
@@ -2007,6 +1991,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => '待機データ';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

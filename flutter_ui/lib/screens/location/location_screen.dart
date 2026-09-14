@@ -134,7 +134,10 @@ class _LocationScreenState extends State<LocationScreen> {
               ),
             ),
           ]),
-        const SimpleAttributionWidget(source: Text('© OpenStreetMap contributors')),
+        // SimpleAttributionWidget prepends its own "©", so the source text must NOT
+        // repeat it — on device this rendered as "© © OpenStreetMap contributors"
+        // (BladeWatch-imh6.2).
+        const SimpleAttributionWidget(source: Text('OpenStreetMap contributors')),
       ],
     );
   }

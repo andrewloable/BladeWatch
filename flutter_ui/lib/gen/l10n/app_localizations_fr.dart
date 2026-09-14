@@ -461,13 +461,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'échantillons de SoC, sessions de charge, journaux de tension';
 
   @override
-  String get reset_cat_soh => 'Calibration de la SOH';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Rédétecte la capacité nominale, estimation des semences à partir du BMS';
-
-  @override
   String get reset_cat_recordings => 'Enregistrements (vidéos)';
 
   @override
@@ -667,7 +660,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'L\'estimation de l\'état de la batterie n\'est pas disponible sur ce véhicule.';
+      'L\'estimation de l\'état de la batterie n\'est pas disponible.';
 
   @override
   String get battery_health_reset => 'Réinitialiser l\'estimation SOH';
@@ -850,13 +843,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get dialog_reset_selected => 'Réinitialiser la sélection';
 
   @override
-  String get dialog_reset_soh_title => 'Réinitialiser l\'estimation SOH ?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Cela effacera toutes les données SOH et forcera la réévaluation à partir de zéro.\n\nUtilisez ceci si:\n• La batterie a été remplacée\n• La lecture SOH semble incorrecte\n• Vous souhaitez recalibrer\n\nLe système se reproduira à partir de la prochaine source de données disponible (OEM, calibration de charge ou lecture instantanée).';
-
-  @override
   String get dialog_reset_following_title => 'Réinitialiser ce qui suit ?';
 
   @override
@@ -913,9 +899,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'L\'historique de la SoC + 12V';
-
-  @override
-  String get reset_label_soh => 'Calibration de la SOH';
 
   @override
   String get reset_label_recordings => 'Enregistrements';
@@ -1976,7 +1959,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Zones de détection, horaire, sensibilité au mouvement.';
+      'Horaire, sensibilité au mouvement, détection d\'objets.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2100,6 +2083,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Données en attente';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

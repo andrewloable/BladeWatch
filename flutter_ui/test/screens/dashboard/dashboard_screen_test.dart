@@ -261,6 +261,30 @@ void main() {
     expect(find.text('Access code copied'), findsOneWidget);
   });
 
+  // BladeWatch-8sig: ordering, not decoration. Regenerate invalidates the current
+  // access code and every paired client; Set Password does not. The safer action
+  // leads so a mis-tap on a touchscreen in a car is the recoverable one — and it
+  // matches activity_main_new.xml, where btnSetPassword precedes
+  // btnRegenerateToken.
+  testWidgets('Set Password leads and Regenerate Token follows, never the reverse', (tester) async {
+    stubHappyPath();
+    final controller = buildController();
+    await pumpDashboard(tester, controller);
+    await tester.pumpAndSettle();
+
+    final setPassword = tester.getTopLeft(find.byKey(const ValueKey('accessCode.setPassword')));
+    final regenerate = tester.getTopLeft(find.byKey(const ValueKey('accessCode.regenerate')));
+
+    // Same row, so compare on x. If they ever wrap to separate lines, y decides.
+    if (setPassword.dy == regenerate.dy) {
+      expect(setPassword.dx, lessThan(regenerate.dx),
+          reason: 'the destructive action must not occupy the leading position');
+    } else {
+      expect(setPassword.dy, lessThan(regenerate.dy),
+          reason: 'the destructive action must not come first when wrapped');
+    }
+  });
+
   testWidgets('regenerating the access code asks for confirmation, then updates the secret', (tester) async {
     stubHappyPath();
     channel.stub('auth', 'regenerateAccessCode', 'new-fake-secret');

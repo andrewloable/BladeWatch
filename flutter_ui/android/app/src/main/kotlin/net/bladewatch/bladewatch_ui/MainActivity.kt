@@ -166,6 +166,17 @@ class MainActivity : FlutterActivity() {
                 // store by typo.
                 "publicConfig.getSection" ->
                     result.success(publicConfig.getSection(requireArgs(call).string("section")))
+                // BladeWatch-i2wv: typed read for the Diagnostics camera tile.
+                "publicConfig.getCameraProbe" -> {
+                    val probe = publicConfig.getCameraProbe()
+                    result.success(
+                        if (probe == null) null
+                        else mapOf(
+                            "probedCameraId" to probe.probedCameraId,
+                            "manualOverride" to probe.manualOverride,
+                        ),
+                    )
+                }
                 "publicConfig.putBoolean" -> {
                     val args = requireArgs(call)
                     result.success(

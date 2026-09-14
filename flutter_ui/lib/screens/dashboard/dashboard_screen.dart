@@ -616,18 +616,26 @@ class _AccessCodeRow extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
+        // BladeWatch-8sig: Set Password LEADS, Regenerate Token follows.
+        //
+        // Order matters here, it is not cosmetic. Regenerating invalidates the
+        // current access code and every paired client; Set Password does not.
+        // The safer action takes the leading position so a mis-tap on a
+        // touchscreen in a moving car is the recoverable one. This also matches
+        // `activity_main_new.xml`, where btnSetPassword precedes
+        // btnRegenerateToken in the layout.
         Wrap(
           spacing: 8,
           children: [
             OutlinedButton(
-              key: const ValueKey('accessCode.regenerate'),
-              onPressed: () => _confirmRegenerate(context),
-              child: Text(l10n.dashboard_regenerate_token),
-            ),
-            OutlinedButton(
               key: const ValueKey('accessCode.setPassword'),
               onPressed: () => _showSetPasswordDialog(context),
               child: Text(l10n.dashboard_set_password),
+            ),
+            OutlinedButton(
+              key: const ValueKey('accessCode.regenerate'),
+              onPressed: () => _confirmRegenerate(context),
+              child: Text(l10n.dashboard_regenerate_token),
             ),
           ],
         ),

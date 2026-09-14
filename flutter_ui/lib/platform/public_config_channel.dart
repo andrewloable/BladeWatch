@@ -25,6 +25,37 @@ class PublicConfigChannel {
     return result.map((key, value) => MapEntry(key as String, value as bool));
   }
 
+  /// The Diagnostics Camera tile's two fields, typed (BladeWatch-i2wv).
+  ///
+  /// [getSection] coerces every value to bool, and `probedCameraId` is an int, so
+  /// this is the typed method the class comment above asks for rather than a
+  /// dynamic-valued read.
+  ///
+  /// Null means the READ FAILED. That is not the same as a probedCameraId of -1,
+  /// which means "the daemon is up and has not probed a camera yet" — the tile
+  /// renders those two differently.
+  ///
+  /// Read only: `camera` is readable over IPC but deliberately NOT writable, so
+  /// there is no setter here by design.
+  Future<CameraProbeRead?> getCameraProbe() async {
+    final result = await _channel
+        .invoke<Map<Object?, Object?>?>('publicConfig', 'getCameraProbe', const {});
+    if (result == null) return null;
+    return CameraProbeRead(
+      probedCameraId: (result['probedCameraId'] as num?)?.toInt() ?? -1,
+      manualOverride: result['manualOverride'] as bool? ?? false,
+    );
+  }
+
   Future<bool> putBoolean(String section, String key, bool value) =>
       _channel.invoke<bool>('publicConfig', 'putBoolean', {'section': section, 'key': key, 'value': value});
+}
+
+/// One read of the daemon's `camera` config section — see
+/// [PublicConfigChannel.getCameraProbe].
+class CameraProbeRead {
+  final int probedCameraId;
+  final bool manualOverride;
+
+  const CameraProbeRead({required this.probedCameraId, required this.manualOverride});
 }

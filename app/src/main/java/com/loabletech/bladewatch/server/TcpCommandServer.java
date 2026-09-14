@@ -514,7 +514,7 @@ public class TcpCommandServer {
             // store is unreachable from here — that stays on the secret_* family.
             case "config_get_section": {
                 String section = cmd.optString("section", "");
-                if (!isPublicConfigSectionAllowed(section)) {
+                if (!isPublicConfigSectionReadable(section)) {
                     response.put("status", "error");
                     response.put("message", "Section not exposed over IPC: " + section);
                     break;
@@ -666,9 +666,44 @@ public class TcpCommandServer {
         PUBLIC_CONFIG_SECTIONS = Collections.unmodifiableSet(sections);
     }
 
-    /** Package-private so {@code PublicConfigCommandTest} can pin the allowlist. */
+    /**
+     * Sections readable over IPC but NOT writable — a strict superset of
+     * {@link #PUBLIC_CONFIG_SECTIONS}.
+     *
+     * <p>BladeWatch-i2wv: the Flutter Diagnostics screen's Camera health tile needs
+     * {@code camera.probedCameraId} / {@code camera.manualOverride}, which is exactly
+     * what native's {@code DiagnosticsFragment.updateCameraTile()} reads. It needs to
+     * READ it and nothing more.
+     *
+     * <p>The obvious move was to add {@code camera} to the set above, and that would
+     * have been wrong: that set gates {@code config_put} as well, so it would have
+     * handed every IPC caller unvalidated WRITE access to the camera configuration in
+     * order to satisfy a read-only tile. Splitting read from write grants the tile
+     * exactly the privilege it needs and no more.
+     *
+     * <p>Write access still goes through {@link #PUBLIC_CONFIG_SECTIONS} alone, so
+     * {@code camera} remains unwritable over IPC. Anything that genuinely needs to
+     * change camera config keeps using its purpose-built command, which validates.
+     */
+    private static final java.util.Set<String> PUBLIC_CONFIG_READABLE_SECTIONS;
+    static {
+        java.util.Set<String> sections = new java.util.LinkedHashSet<>(PUBLIC_CONFIG_SECTIONS);
+        sections.add("camera");
+        PUBLIC_CONFIG_READABLE_SECTIONS = Collections.unmodifiableSet(sections);
+    }
+
+    /**
+     * Package-private so {@code PublicConfigCommandTest} can pin the allowlist.
+     *
+     * <p>This is the WRITE gate. Reads use {@link #isPublicConfigSectionReadable}.
+     */
     static boolean isPublicConfigSectionAllowed(String section) {
         return PUBLIC_CONFIG_SECTIONS.contains(section);
+    }
+
+    /** The READ gate — see {@link #PUBLIC_CONFIG_READABLE_SECTIONS}. */
+    static boolean isPublicConfigSectionReadable(String section) {
+        return PUBLIC_CONFIG_READABLE_SECTIONS.contains(section);
     }
 
     /**
@@ -681,6 +716,13 @@ public class TcpCommandServer {
         toggleable.add("ZROK_TUNNEL");
         TOGGLEABLE_DAEMONS = Collections.unmodifiableSet(toggleable);
     }
+
+    /**
+     * ponytail: test seam — non-null stands in for the real `camera` config section.
+     * {@code UnifiedConfigManager.loadConfig()} calls {@code android.util.Log}, which
+     * is not mocked in a JVM unit test.
+     */
+    static JSONObject cameraConfigForTest = null;
 
     /**
      * ponytail: test seam — non-null records the intent instead of writing the real
@@ -820,8 +862,26 @@ public class TcpCommandServer {
                                 net.bladewatch.app.config.UnifiedConfigManager.isTimingLogsEnabled())
                         .put("debugLogsEnabled",
                                 net.bladewatch.app.config.UnifiedConfigManager.isDebugLogsEnabled());
+            case "camera": {
+                // BladeWatch-i2wv: read-only, and only the two fields the Diagnostics
+                // camera tile actually renders — the same pair native's
+                // DiagnosticsFragment.updateCameraTile() reads.
+                //
+                // Projected key by key rather than returned wholesale ON PURPOSE. The
+                // real `camera` section also carries firmwareFingerprint, buildDisplay,
+                // buildIncremental and productDevice — device-identifying strings that
+                // have no business crossing this boundary to satisfy a status tile.
+                JSONObject cfg = cameraConfigForTest != null
+                        ? cameraConfigForTest
+                        : net.bladewatch.app.config.UnifiedConfigManager.loadConfig()
+                                .optJSONObject("camera");
+                if (cfg == null) cfg = new JSONObject();
+                return new JSONObject()
+                        .put("probedCameraId", cfg.optInt("probedCameraId", -1))
+                        .put("manualOverride", cfg.optBoolean("manualOverride", false));
+            }
             default:
-                // Unreachable: every caller checks isPublicConfigSectionAllowed first.
+                // Unreachable: every caller checks the relevant gate first.
                 return new JSONObject();
         }
     }

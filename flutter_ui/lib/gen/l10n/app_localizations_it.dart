@@ -458,13 +458,6 @@ class AppLocalizationsIt extends AppLocalizations {
       'campioni SoC, sessioni di ricarica, registri di tensione';
 
   @override
-  String get reset_cat_soh => 'Calibrazione SOH';
-
-  @override
-  String get reset_cat_soh_desc =>
-      'Ri-detezione della capacità nominale, stima delle ri-sementi dal BMS';
-
-  @override
   String get reset_cat_recordings => 'Registrazioni (video)';
 
   @override
@@ -663,7 +656,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get battery_health_unavailable_desc =>
-      'La stima dello stato della batteria non è disponibile su questo veicolo.';
+      'La stima dello stato della batteria non è disponibile.';
 
   @override
   String get battery_health_reset => 'Reimposta la stima SOH';
@@ -846,13 +839,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get dialog_reset_selected => 'Reimposta selezionati';
 
   @override
-  String get dialog_reset_soh_title => 'Reimpostare la stima SOH?';
-
-  @override
-  String get dialog_reset_soh_message =>
-      'Questo cancella tutti i dati SOH e costringe la rivalutazione da zero.\n\nUtilizzare questo se:\n• Batteria è stata sostituita\n• La lettura SOH sembra sbagliata\n• Si desidera ricalibrare\n\nIl sistema si riproduce dalla prossima fonte di dati disponibile (OEM, calibrazione di carica o lettura istantanea).';
-
-  @override
   String get dialog_reset_following_title => 'Reimpostare quanto segue?';
 
   @override
@@ -908,9 +894,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get reset_label_soc_history => 'Storia SoC + 12V';
-
-  @override
-  String get reset_label_soh => 'Calibrazione SOH';
 
   @override
   String get reset_label_recordings => 'Registrazioni';
@@ -1965,7 +1948,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settings_section_surveillance_subtitle =>
-      'Zone di rilevamento, programma, sensibilità al movimento.';
+      'Programma, sensibilità al movimento, rilevamento oggetti.';
 
   @override
   String get settings_section_daemons_subtitle =>
@@ -2089,6 +2072,11 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get diagnostics_battery_value_pending => 'Dati in sospeso';
+
+  @override
+  String diagnostics_battery_value_charge(Object arg1) {
+    return '$arg1%';
+  }
 
   @override
   String dashboard_recordings_value_live(Object arg1) {

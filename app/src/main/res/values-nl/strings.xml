@@ -447,7 +447,7 @@
     <string name="settings_quick_theme_label">Thema</string>
     <string name="settings_quick_language_label">Taal</string>
     <string name="settings_section_recording_subtitle">Pre/post buffers, codec, opslaglimieten.</string>
-    <string name="settings_section_surveillance_subtitle">Detectiezonen, schema, bewegingsgevoeligheid.</string>
+    <string name="settings_section_surveillance_subtitle">Schema, bewegingsgevoeligheid, objectdetectie.</string>
     <string name="settings_section_daemons_subtitle">Zrok-tunnel en achtergrondservices.</string>
     <string name="settings_about_row_title">Over BladeWatch</string>
     <string name="settings_about_row_subtitle">Versie, licentie, ondersteuning ontwikkeling.</string>

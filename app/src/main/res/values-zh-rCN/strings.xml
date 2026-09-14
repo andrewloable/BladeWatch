@@ -447,7 +447,7 @@
     <string name="settings_quick_theme_label">主题</string>
     <string name="settings_quick_language_label">语言</string>
     <string name="settings_section_recording_subtitle">预/后缓冲器,代码,存储限制.</string>
-    <string name="settings_section_surveillance_subtitle">检测区域,时间表,运动敏感性.</string>
+    <string name="settings_section_surveillance_subtitle">时间表,移动检测灵敏度,目标检测.</string>
     <string name="settings_section_daemons_subtitle">Zrok 隧道与后台服务。</string>
     <string name="settings_about_row_title">关于BladeWatch</string>
     <string name="settings_about_row_subtitle">版本,许可证,支持开发.</string>

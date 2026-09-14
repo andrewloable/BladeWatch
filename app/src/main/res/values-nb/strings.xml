@@ -447,7 +447,7 @@
     <string name="settings_quick_theme_label">Tema</string>
     <string name="settings_quick_language_label">Språk</string>
     <string name="settings_section_recording_subtitle">Pre/post buffere, codec, lagringsgrenser.</string>
-    <string name="settings_section_surveillance_subtitle">Oppdagelseszoner, tidsplan, bevegelsesfølsomhet.</string>
+    <string name="settings_section_surveillance_subtitle">Tidsplan, bevegelsesfølsomhet, objektdeteksjon.</string>
     <string name="settings_section_daemons_subtitle">Zrok-tunnel og bakgrunnstjenester.</string>
     <string name="settings_about_row_title">Om BladeWatch</string>
     <string name="settings_about_row_subtitle">Versjon, lisens, støtteutvikling.</string>
