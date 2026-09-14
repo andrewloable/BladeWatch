@@ -47,9 +47,15 @@ jobs:
       # copy at app/src/main/assets/web/angular/ is committed (both gitignored).
       # Without Node the build fails loudly (verifyWebAssetsPresent) rather than
       # shipping an APK with no web UI at all.
+      # Node 24 (npm 11), matching the toolchain web/package-lock.json was generated
+      # with. Node 20 ships npm 10, which resolves a DIFFERENT dependency tree and
+      # makes `npm ci` fail with "Missing: chokidar@4.0.3, readdirp@4.1.2 from lock
+      # file" even though the lockfile is perfectly valid. web/ also pulls
+      # rollup-plugin-visualizer, which declares `node >= 22`, so 20 was wrong twice
+      # over. Keep this in step with the Node you develop on.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
@@ -141,7 +147,13 @@ jobs:
           path: dist/*.apk
           retention-days: 30
 
+      # Tags only. On a workflow_dispatch run the ref is a BRANCH, and
+      # action-gh-release requires a tag — without this guard a manual run would do
+      # the entire build and then fail on the very last step. Skipping it turns
+      # workflow_dispatch into a useful dry run: both APKs still get built, verified
+      # and uploaded as a workflow artifact, just not published as a release.
       - name: Attach both APKs to the release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.apk
