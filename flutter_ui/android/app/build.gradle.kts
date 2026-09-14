@@ -38,8 +38,19 @@ android {
         // app's legacy targetSdk=25 (untested territory for the embedding).
         minSdk = 29
         targetSdk = flutter.targetSdkVersion
+        // versionCode comes from pubspec.yaml's build number (the `+13000`), so
+        // there is one number to bump.
         versionCode = flutter.versionCode
-        versionName = flutter.versionName
+
+        // versionName is written out explicitly because BladeWatch versions have
+        // FOUR parts ("1.3.0.0", matching app/build.gradle.kts) and a pubspec
+        // version must be valid semver — `version: 1.3.0.0+13000` is rejected by
+        // pub outright, so `flutter.versionName` can only ever yield "1.3.0".
+        //
+        // The two APKs are installed as a pair and the About screen reads this
+        // value through package_info_plus, so they must report the same string.
+        // Keep this in step with app/build.gradle.kts's versionName.
+        versionName = "1.3.0.0"
 
         // BYD head unit is arm64-v8a only — same reasoning as the main app's
         // splits.abi block.
@@ -51,12 +62,24 @@ android {
     buildTypes {
         release {
             // Sign only when the shared keystore is actually available, mirroring
-            // the main app's behavior — otherwise build unsigned so a local build
-            // without secrets doesn't fail outright.
+            // the main app's behavior — otherwise build UNSIGNED, to be signed
+            // later with apksigner.
+            //
+            // This used to fall back to the DEBUG signing config while the comment
+            // said "unsigned". That mattered: the service host falls back to `null`
+            // (genuinely unsigned), so a keystore-less release build produced one
+            // unsigned APK and one debug-signed APK. `android:sharedUserId` only
+            // collapses the two packages into one UID when their certificates are
+            // identical, so that pair could never work together — and signing the
+            // service host afterwards with a real key would still not match the
+            // debug cert baked into this one.
+            //
+            // Installing a release build has always required a keystore; use
+            // `--debug` for the install-and-test path (see CLAUDE.md).
             signingConfig = if (file(System.getenv("KEYSTORE_FILE") ?: "../../../app/release.jks").exists())
                 signingConfigs.getByName("release")
             else
-                signingConfigs.getByName("debug")
+                null
         }
     }
 

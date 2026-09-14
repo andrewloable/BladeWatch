@@ -83,4 +83,46 @@ void main() {
           '(lib/shell/disposed_safe_notifier.dart) to each.',
     );
   });
+
+  /// The mixin only runs if each controller's own `dispose()` chains to `super`.
+  ///
+  /// `DisposedSafeNotifier.dispose()` sits between the controller and
+  /// `ChangeNotifier` in the mixin linearisation, so a controller that overrides
+  /// `dispose()` and forgets `super.dispose()` silently skips BOTH: `_disposed`
+  /// is never set (this guard becomes inert) and `ChangeNotifier.dispose()` never
+  /// runs (the listener list is never released). Neither failure is visible at
+  /// runtime -- the app keeps working and just leaks.
+  ///
+  /// Today only `adb_console_controller.dart` overrides `dispose()`, and it does
+  /// chain. This pins that any future override does too.
+  test('every controller that overrides dispose() calls super.dispose()', () {
+    var root = Directory('lib');
+    if (!root.existsSync()) root = Directory('flutter_ui/lib');
+    expect(root.existsSync(), isTrue, reason: 'could not locate lib/');
+
+    final offenders = <String>[];
+    for (final f in root.listSync(recursive: true).whereType<File>()) {
+      if (!f.path.endsWith('.dart')) continue;
+      final src = f.readAsStringSync();
+      if (!src.contains('extends ChangeNotifier')) continue;
+
+      // Take each `void dispose() {` body up to its closing brace at the same
+      // indent, and require a super.dispose() inside it.
+      for (final m in RegExp(r'\n(\s*)(?:@override\s*\n\s*)?void dispose\(\) \{(.*?)\n\1\}', dotAll: true)
+          .allMatches(src)) {
+        if (!m.group(2)!.contains('super.dispose()')) {
+          offenders.add(f.uri.pathSegments.last);
+        }
+      }
+    }
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'These controllers override dispose() without calling '
+          'super.dispose(). That skips DisposedSafeNotifier (so the '
+          'notify-after-dispose guard stops working) AND '
+          'ChangeNotifier.dispose() (so listeners are never released).',
+    );
+  });
 }

@@ -1,0 +1,176 @@
+# Build BOTH release APKs, unsigned, and attach them to the GitHub Release.
+#
+# BladeWatch ships as two APKs that share one UID:
+#   net.bladewatch.app     — service host: daemons, receivers, BYD integration, no UI
+#   net.bladewatch.flutter — the in-car UI the driver opens
+# Both are produced here. They are NOT interchangeable and both must be installed.
+#
+# Runs ONLY for a tag. Creating a release through the GitHub UI on a new tag also
+# creates that tag, which fires this same `push` event, so both routes are covered
+# by the one trigger. Ordinary pushes and pull requests build nothing.
+#
+# NO SECRETS REQUIRED: the keystore never touches GitHub. Both APKs come out
+# unsigned and CANNOT BE INSTALLED until you sign them — see the release notes this
+# workflow generates, and "Signing the CI APKs" in docs/build-and-operations.md.
+name: Release APKs (unsigned)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:        # manual re-run of a tag that already exists
+
+permissions:
+  contents: write           # create the release and upload the APKs to it
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false # never abort a half-finished release build
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # JDK 17: AGP for compileSdk 36 requires 17+. The modules themselves target
+      # Java 11 bytecode (sourceCompatibility in app/build.gradle.kts).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # REQUIRED, not optional. The Angular SPA in web/ is built by Gradle's
+      # buildAngularWebUI during preBuild, and neither web/dist nor the packaged
+      # copy at app/src/main/assets/web/angular/ is committed (both gitignored).
+      # Without Node the build fails loudly (verifyWebAssetsPresent) rather than
+      # shipping an APK with no web UI at all.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+
+      # Pinned to the version this project is developed against, so a Flutter
+      # release cannot silently change the shipped binary.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # app/build.gradle.kts pins ndkVersion = "26.1.10909125"; the native C++
+      # (OpenH264 / opencv-mobile / TFLite) will not configure without it.
+      # OpenH264 and opencv-mobile themselves are downloaded and checksum-verified
+      # by Gradle, so they need no step here.
+      - name: Install pinned NDK and CMake
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager --install "ndk;26.1.10909125" "cmake;3.22.1"
+
+      # A release built from unverified source is worse than a slow release.
+      # Delete this step if you want tag builds to be build-only.
+      - name: Quality gates
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon test koverVerify
+          cd flutter_ui && flutter analyze && flutter test
+
+      # No KEYSTORE_FILE in the environment, so both projects fall through to their
+      # unsigned release path: app/ sets signingConfig = null, and
+      # flutter_ui/android/app/ does the same.
+      - name: Build service host APK (net.bladewatch.app)
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Build in-car UI APK (net.bladewatch.flutter)
+        working-directory: flutter_ui
+        run: flutter build apk --release --target-platform android-arm64
+
+      # Collect BOTH APKs under tag-stamped, self-describing names.
+      #
+      # The service host APK is named bladewatch-<git branch>-arm64-v8a-release.apk
+      # by applicationVariants in app/build.gradle.kts. A tag build is a DETACHED
+      # HEAD, so `git rev-parse --abbrev-ref HEAD` returns the literal "HEAD" and the
+      # file lands as bladewatch-HEAD-...; glob for it rather than guessing, and
+      # stamp the tag on the uploaded name instead.
+      - name: Stage both APKs
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          mkdir -p dist
+          host=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          ui=flutter_ui/build/app/outputs/flutter-apk/app-release.apk
+          test -f "$host" || { echo "::error::service host APK not found"; exit 1; }
+          test -f "$ui"   || { echo "::error::in-car UI APK not found"; exit 1; }
+          cp -f "$host" "dist/bladewatch-service-host-${TAG}-arm64-v8a-unsigned.apk"
+          cp -f "$ui"   "dist/bladewatch-ui-${TAG}-arm64-v8a-unsigned.apk"
+          ls -la dist
+
+      # Both must be UNSIGNED and both must be present. A half-signed pair is the
+      # dangerous outcome: android:sharedUserId collapses the two packages into one
+      # UID only when their certificates are IDENTICAL, and the daemon's loopback
+      # IPC on 19876/19877 authorises by peer UID. If one APK arrived carrying a
+      # stray (e.g. debug) certificate, signing the other with your real key would
+      # produce a pair that installs but cannot talk to itself.
+      - name: Verify both APKs are present and unsigned
+        run: |
+          set -euo pipefail
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          count=$(ls dist/*.apk | wc -l)
+          if [ "$count" -ne 2 ]; then
+            echo "::error::expected 2 APKs (service host + in-car UI), found $count"
+            exit 1
+          fi
+          for apk in dist/*.apk; do
+            if "$APKSIGNER" verify "$apk" >/dev/null 2>&1; then
+              echo "::error::$apk is SIGNED but this workflow must emit unsigned APKs. Sign both with the SAME key after download, never one here and one later."
+              exit 1
+            fi
+            echo "unsigned OK: $(basename "$apk")"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apks-${{ github.ref_name }}
+          path: dist/*.apk
+          retention-days: 30
+
+      - name: Attach both APKs to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            ## Two APKs — install BOTH
+
+            | APK | Package | Role |
+            |---|---|---|
+            | `bladewatch-service-host-*` | `net.bladewatch.app` | Daemons, receivers, BYD integration. No launcher icon. |
+            | `bladewatch-ui-*` | `net.bladewatch.flutter` | The in-car UI. The only launcher icon. |
+
+            ### These are UNSIGNED and cannot be installed as-is
+
+            Sign **both with the same key** before installing. The two packages share
+            one UID via `android:sharedUserId`, which only resolves when their signing
+            certificates are identical — the daemon authorises its loopback IPC by peer
+            UID, so a mismatched pair installs and then fails to talk to itself.
+
+            ```sh
+            for f in bladewatch-*-unsigned.apk; do
+              apksigner sign --ks release.jks --ks-key-alias key0 \
+                --out "${f%-unsigned.apk}.apk" "$f"
+            done
+            # both digests must match:
+            apksigner verify --print-certs bladewatch-*-arm64-v8a.apk | grep 'SHA-256 digest'
+            ```
+
+            Adding `sharedUserId` changes the UID, so the first install after switching
+            keys needs an uninstall of both packages, not an upgrade. See CLAUDE.md for
+            the daemon-stop procedure and the ADB-key preservation recipe.

@@ -1,23 +1,46 @@
 <p align="center">
-  <img src="app/src/main/assets/web/shared/app-icon-ios.webp" width="120" alt="BladeWatch Logo">
+  <img src="flutter_ui/assets/brand/app_icon.png" width="120" alt="BladeWatch Logo">
 </p>
 
 <h1 align="center">BladeWatch</h1>
 
 Free, open-source dashcam and sentry mode app built specifically for BYD vehicles with DiLink v3. All recordings and data stay on your device — no cloud, no accounts, no subscriptions. Optional remote viewing is direct, peer-to-peer through your own tunnel.
 
-BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`) and installs onto the car's head unit over ADB.
+BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
+
+It ships as **two APKs that must both be installed**:
+
+| APK | Package | Role |
+|---|---|---|
+| In-car UI | `net.bladewatch.flutter` | Everything you see and tap. The only launcher icon. |
+| Service host | `net.bladewatch.app` | Daemons, recording, surveillance, BYD integration. No UI, no launcher icon. |
+
+They share one Android UID, which is what lets the UI talk to the daemons over loopback IPC. That only works when **both are signed with the same key**, so install them as a pair and never mix builds from different sources.
 
 ## Quick Start (Use Pre-built APK)
 
-Download the latest APK from [GitHub Releases] and install it directly on your BYD head unit.
+Download **both** APKs from [GitHub Releases](../../releases) and install them on your BYD head unit.
+
+Release builds are published **unsigned**, so the signing key never touches CI. Sign both with the same key before installing:
+
+```bash
+for f in bladewatch-*-unsigned.apk; do
+  apksigner sign --ks release.jks --ks-key-alias key0 \
+    --out "${f%-unsigned.apk}.apk" "$f"
+done
+# both digests must match, or the UI cannot reach the daemons:
+apksigner verify --print-certs bladewatch-*-arm64-v8a.apk | grep 'SHA-256 digest'
+
+adb install bladewatch-service-host-*-arm64-v8a.apk
+adb install bladewatch-ui-*-arm64-v8a.apk
+```
 
 ### 1. Prerequisites
 - Ensure **Wireless ADB** is enabled on your device before launching the app.
 
 ### 2. Initial Configuration
 1. **Authorize ADB:** On first launch, accept the ADB authentication prompt on your device screen.
-2. **Background Persistence:** In Settings, ensure the **"Disable Autostart"** toggle is **unchecked**. This is critical for reliable background operation.
+2. **Background Persistence:** In the head unit's autostart settings, make sure autostart is **enabled for both entries** — **"BladeWatch"** (the UI) and **"BladeWatch Service"** (the daemons). Two entries appear because BladeWatch is two APKs. This is critical: on this head unit BYD suppresses the usual boot broadcast, so autostart is what allows the app to run at boot at all. Enabling only the UI leaves the daemons dead.
 
 > ⚠️ **CRITICAL: Hard Reboot Required**
 > After the first installation and initial run, you must hard reboot the device:
@@ -69,31 +92,55 @@ If you want to use Zrok tunneling for remote access, you need your own Zrok invi
 
 ## Building from Source
 
-BladeWatch is a hybrid project: a native Android/Kotlin app plus an Angular web UI that the on-device daemon serves to remote browsers.
+BladeWatch is a hybrid project built from three codebases:
+
+- **`flutter_ui/`** — the in-car UI (Flutter/Dart), built as `net.bladewatch.flutter`.
+- **`app/`** — the service host (Android/Kotlin/Java + C++), built as `net.bladewatch.app`. Owns the daemons, the camera/GPU pipeline and the BYD integration.
+- **`web/`** — the Angular SPA the on-device daemon serves to remote browsers over your tunnel. Bundled into the service host APK.
+
+The in-car UI was native Android until it was rewritten in Flutter; the Angular app is not the in-car UI and is only used by remote clients.
 
 ### Requirements
-- Android SDK (`compileSdk 36`) and NDK
-- JDK 11
-- Node.js + npm (for the Angular web UI)
+- Android SDK (`compileSdk 36`) and NDK `26.1.10909125`
+- JDK 17 (the modules themselves target Java 11 bytecode)
+- [Flutter](https://docs.flutter.dev/get-started/install) 3.44+ — for the in-car UI APK
+- Node.js + npm — **required**, not optional. The Angular SPA is built during `preBuild` and
+  neither `web/dist` nor its packaged copy is committed, so without Node the build fails rather
+  than quietly producing an APK with no web UI.
 - [`buf`](https://buf.build) — optional, only needed to regenerate the protobuf / ConnectRPC stubs
 
 ### Build
 
-```bash
-# Debug build — also builds the Angular web UI and native libraries,
-# then bundles them into an arm64-v8a APK.
-./gradlew assembleDebug
+The two APKs build independently, from different toolchains:
 
-# Output:
-#   app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
+```bash
+# Service host (net.bladewatch.app) — also builds the Angular web UI and the
+# native libraries, then bundles them into an arm64-v8a APK.
+./gradlew assembleDebug
+# Output: app/build/outputs/apk/debug/bladewatch-<branch>-arm64-v8a-debug.apk
+#         (the git branch is embedded so builds stay distinguishable)
+
+# In-car UI (net.bladewatch.flutter)
+cd flutter_ui && flutter build apk --target-platform android-arm64 --debug
+# Output: flutter_ui/build/app/outputs/flutter-apk/app-debug.apk
 ```
+
+Both packages must report the **same UID** or the UI cannot reach the daemons:
+
+```bash
+adb shell 'dumpsys package net.bladewatch.app | grep userId'
+adb shell 'dumpsys package net.bladewatch.flutter | grep userId'
+```
+
+Release builds without a keystore come out **unsigned** by design (see Quick Start).
+Tagged releases are built by GitHub Actions — see `.github/workflows/release.yml`.
 
 The Gradle build orchestrates everything:
 - `buildAngularWebUI` builds the Angular app under `web/` and copies the output into the APK assets (hooked into `preBuild`; requires npm).
 - Native dependencies (OpenH264, opencv-mobile, TensorFlow Lite) are auto-downloaded and checksum-verified — no manual download step.
 - `generateConnectProtos` regenerates Java + TypeScript stubs from `proto/bladewatch/v1/*.proto` (only needed when the API schemas change).
 
-The app communicates with its embedded daemon over a REST API and a 1:1 ConnectRPC/gRPC layer on `127.0.0.1:8080`. For device install, daemon cleanup, and the full development workflow, see [`CLAUDE.md`](CLAUDE.md) and the [`docs/`](docs/) directory.
+The UI communicates with the daemon over a REST API and a 1:1 ConnectRPC layer on `127.0.0.1:8080`, with privileged operations going through loopback IPC on `127.0.0.1:19876`. For device install, daemon cleanup, and the full development workflow, see [`CLAUDE.md`](CLAUDE.md) and the [`docs/`](docs/) directory.
 
 ### Documentation
 In-depth documentation lives in [`docs/`](docs/) — architecture, daemons and processes, IPC/auth/secrets, networking and tunnels, the HTTP API reference, BYD integrations, the surveillance pipeline, and storage.

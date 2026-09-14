@@ -106,14 +106,18 @@ void main() {
     expect(kotlinRoot.existsSync() && daemonFile.existsSync(), isTrue,
         reason: 'could not locate the Kotlin root and TcpCommandServer.java');
 
-    final handled = RegExp(r'^\s*case\s+"([a-z_]+)"\s*:', multiLine: true)
+    // [A-Za-z_]+, not [a-z_]+: the daemon mixes snake_case ("secret_get") and
+    // camelCase ("daemonStatus", "tunnelStatus") command names. A lowercase-only
+    // pattern silently skipped 2 of the 15 commands on BOTH sides, so a rename of
+    // either would have been reported as "all clear" -- a guard that cannot fail.
+    final handled = RegExp(r'^\s*case\s+"([A-Za-z_]+)"\s*:', multiLine: true)
         .allMatches(daemonFile.readAsStringSync())
         .map((m) => m.group(1)!)
         .toSet();
     expect(handled, isNotEmpty, reason: 'no case labels found — has the dispatch changed shape?');
 
     final sent = <String, String>{};
-    final put = RegExp(r'"cmd"\s*,\s*"([a-z_]+)"');
+    final put = RegExp(r'"cmd"\s*,\s*"([A-Za-z_]+)"');
     for (final f in kotlinRoot.listSync(recursive: true).whereType<File>()) {
       if (!f.path.endsWith('.kt')) continue;
       for (final m in put.allMatches(f.readAsStringSync())) {
@@ -188,6 +192,45 @@ void main() {
       reason: '"$activity" is declared but NOT exported. A cross-package explicit '
           'start needs it exported, so waking the service host would fail with a '
           'SecurityException that wakeServiceHost only logs as a warning.',
+    );
+  });
+
+  /// The two APKs must report the same versionName.
+  ///
+  /// They are installed as a pair and the About screen reads this value through
+  /// package_info_plus, so a mismatch means the driver sees one version while the
+  /// daemon host is another — and a bug report would name the wrong build.
+  ///
+  /// It lives in two files unavoidably. BladeWatch versions have FOUR parts
+  /// ("1.3.0.0") and a pubspec version must be valid semver: `version: 1.3.0.0+13000`
+  /// is rejected by pub outright, so `flutter.versionName` can only ever yield
+  /// "1.3.0". flutter_ui/android/app/build.gradle.kts therefore writes versionName
+  /// out explicitly, which is a copy of the one in app/build.gradle.kts. This pins
+  /// the copy.
+  test('both APKs declare the same versionName', () {
+    var host = File('../app/build.gradle.kts');
+    var ui = File('android/app/build.gradle.kts');
+    if (!host.existsSync()) {
+      host = File('app/build.gradle.kts');
+      ui = File('flutter_ui/android/app/build.gradle.kts');
+    }
+    expect(host.existsSync() && ui.existsSync(), isTrue,
+        reason: 'could not locate both build.gradle.kts files');
+
+    String versionName(File f) {
+      final m = RegExp(r'versionName\s*=\s*"([^"]+)"').firstMatch(f.readAsStringSync());
+      expect(m, isNotNull, reason: '${f.path} declares no literal versionName');
+      return m!.group(1)!;
+    }
+
+    final a = versionName(host);
+    final b = versionName(ui);
+    expect(
+      b,
+      a,
+      reason: 'app/build.gradle.kts says "$a" but the Flutter APK says "$b". '
+          'Update both, and keep pubspec.yaml\'s build number in step with '
+          'app/build.gradle.kts\'s versionCode.',
     );
   });
 }

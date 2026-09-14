@@ -4,15 +4,37 @@ This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get sta
 
 > **Legacy reference**: This app was forked from "Overdrive" and rebranded to BladeWatch. The legacy BladeWatch app lives at `/Volumes/mandark-1Tb/projects/loabletech/BladeWatch-Legacy` for reference only — do not modify it.
 
-## Quick Reference
+## Writing Task Descriptions (CRITICAL)
 
-```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --claim  # Claim work atomically
-bd close <id>         # Complete work
-bd sync               # Sync with git
-```
+Write every `bd` `--description` for a **low-context implementing agent that has none
+of your context**. It cannot see your terminal, your reasoning, or this conversation —
+only what you wrote down.
+
+Required, in this order:
+
+1. **Problem / context** — what is wrong and how it manifests, not just the symptom.
+2. **Exact locations** — file paths, class and function names, line numbers.
+3. **Step-by-step instructions.**
+4. **Constraints** — what must NOT change, and why. Name the invariant, e.g. "do not
+   widen `PeerCredentials`", "do not touch `web/`".
+5. **Acceptance criteria** — a verifiable checklist, not prose.
+6. **Closing warning**, verbatim:
+
+   > Do not make mistakes. Read the referenced files fully before editing. Verify the
+   > build compiles and all acceptance criteria pass before closing. If anything is
+   > ambiguous, stop and ask rather than guessing.
+
+Two rules learned the hard way on this project:
+
+- **State the premise you acted on, and be willing to record that it was wrong.** A
+  task was once filed claiming some unreferenced l10n keys were "mostly unbuilt UI";
+  they had in fact been deliberately removed, and the code said so at the change site.
+  If you discover the premise was wrong, correct it in the close reason rather than
+  quietly closing.
+- **Close reasons are documentation.** Record what was verified and how, including the
+  mutation you used to prove a new guard can actually fail. "A test suite that pins a
+  bug is worse than no test, because it converts 'nobody checked' into 'somebody
+  decided.'"
 
 ## Non-Interactive Shell Commands
 
@@ -54,8 +76,13 @@ the exact stop-daemons → uninstall → install sequence. Key points:
 - Kill the `start_*.sh` watcher scripts FIRST, or they respawn the daemons.
 - Use the grep bracket trick (`start_[c]am_daemon`) so the kill command does not
   match and terminate its own adb shell.
-- `killall` is unreliable on this head unit (BYD toybox) — kill daemons by PID
-  (enumerate with `ps -A -o PID,NAME,ARGS` then `kill -9 <pid>`), not `killall`.
+- `killall` matches `comm`, and **the kernel caps `comm` at 15 characters**, so a
+  longer daemon name must be given truncated or the kill silently does nothing.
+  Verified on this head unit: `/proc/<pid>/comm` for the 17-char
+  `mm-qcamera-daemon` reads `mm-qcamera-daem`. `byd_cam_daemon` (14) and
+  `sentry_daemon` (13) are fine; **`acc_sentry_daemon` (17) must be spelled
+  `acc_sentry_daem`**. When in doubt use `pkill -9 -f`, which matches the full
+  cmdline, with the bracket trick so it cannot match its own shell.
 - Killing daemons can briefly drop the ADB-over-TCP link — reconnect with an
   `until [ "$(adb ... get-state)" = device ]` loop before continuing.
 
@@ -95,6 +122,15 @@ bd close <id>         # Complete work
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/SYNC_CONCEPTS.md for details and anti-patterns.
 
 ## Session Completion
+
+> **PROJECT OVERRIDE — read before the generic protocol below.** BladeWatch does
+> **not** use the mandatory-push step. Never run `git add`, `git commit` or
+> `git push`: the developer reviews and commits by hand (see **Git Workflow** in
+> [CLAUDE.md](CLAUDE.md)). Finish with the work tree clean-but-uncommitted and a
+> written hand-off. Every other step below — file issues, run quality gates, update
+> issue status, hand off context — does apply. If a regenerated beads block
+> reinstates "YOU must push", this override wins.
+
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 

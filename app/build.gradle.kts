@@ -281,8 +281,8 @@ android {
         applicationId = "net.bladewatch.app"
         minSdk = 25
         targetSdk = 25
-        versionCode = 10010
-        versionName = "1.0.1.0"
+        versionCode = 13000
+        versionName = "1.3.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -528,8 +528,14 @@ tasks.register<Exec>("generateConnectProtos") {
 }
 
 // Build the Angular web UI and copy the output into app assets.
-// The dist output is checked in at web/dist and is also generated here so
-// the APK always contains a fresh build when Node.js is available.
+//
+// NOTE: `web/dist` is NOT checked in — both it and the packaged copy at
+// app/src/main/assets/web/angular/ are gitignored (.gitignore:44,46). An earlier
+// comment here claimed the dist was committed and served as a fallback; it never
+// was. So on a fresh clone or a CI runner without Node this task is the ONLY
+// thing that produces the web assets, and skipping it silently shipped an APK
+// with no web UI at all while the build still reported success. The remote
+// browser/tunnel client simply would not be there.
 tasks.register<Exec>("buildAngularWebUI") {
     description = "Build the Angular web UI and copy dist to app/src/main/assets/web/angular/"
     group = "build"
@@ -544,19 +550,49 @@ tasks.register<Exec>("buildAngularWebUI") {
             into(file("src/main/assets/web/angular"))
         }
     }
-    // Skip if npm / Node is not on PATH — the committed dist is used instead.
     isIgnoreExitValue = false
-    onlyIf {
-        try {
-            ProcessBuilder("npm", "--version").start().waitFor() == 0
-        } catch (e: Exception) {
-            logger.warn("buildAngularWebUI: npm not found — skipping Angular build")
-            false
+    // Pure predicate, no side effects: Gradle SWALLOWS the message of an exception
+    // thrown from onlyIf, reporting only "Could not evaluate spec for 'Task
+    // satisfies onlyIf spec'". The real check lives in verifyWebAssetsPresent
+    // below, where a thrown message is actually shown to whoever ran the build.
+    onlyIf { npmIsAvailable() }
+}
+
+/** Whether `npm` can be executed — the Angular build's only external requirement. */
+fun npmIsAvailable(): Boolean = try {
+    ProcessBuilder("npm", "--version").start().waitFor() == 0
+} catch (e: Exception) {
+    false
+}
+
+// Fail the build when the web assets cannot be produced AND none are lying around
+// from an earlier run, rather than packaging an empty web/angular/ and reporting
+// success. This is the state a fresh clone or a CI runner without Node is in.
+tasks.register("verifyWebAssetsPresent") {
+    description = "Fail early if the Angular web assets can neither be built nor reused"
+    group = "verification"
+    val packaged = file("src/main/assets/web/angular")
+    doLast {
+        if (npmIsAvailable()) return@doLast
+        if (packaged.isDirectory && !packaged.list().isNullOrEmpty()) {
+            logger.warn(
+                "verifyWebAssetsPresent: npm/Node not on PATH — packaging the EXISTING " +
+                    "app/src/main/assets/web/angular/, which may be stale."
+            )
+            return@doLast
         }
+        throw GradleException(
+            "npm/Node is not on PATH and there are no previously-built assets at " +
+                "app/src/main/assets/web/angular/. Both that directory and web/dist are " +
+                "gitignored, so nothing can be packaged: the APK would ship with no web UI " +
+                "(the remote browser/tunnel client) while the build still reported success. " +
+                "Install Node — in GitHub Actions add actions/setup-node before ./gradlew — " +
+                "or run `npm run build` in web/ once on this machine."
+        )
     }
 }
 // Hook into preBuild so Angular is compiled before any variant's assets are packaged.
-tasks.named("preBuild") { dependsOn("buildAngularWebUI") }
+tasks.named("preBuild") { dependsOn("verifyWebAssetsPresent", "buildAngularWebUI") }
 
 // Fail the build if any web i18n catalog is invalid JSON or is missing keys that
 // en.json has. The catalog URLs are served unhashed and a corrupt/partial catalog

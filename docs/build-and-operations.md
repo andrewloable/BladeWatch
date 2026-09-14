@@ -539,6 +539,60 @@ Three independent, build-failing coverage gates — each may only ever be **rais
 
 All three are driven by the actual measured JVM/Dart suite at the time each gate was added — not chosen numbers — and are proved to actually fail (by temporarily raising the threshold, observing the failure, then restoring) rather than trusted blindly; see the git history / task notes on BladeWatch-ncbb.5 for that proof. Raise a threshold only after adding tests that justify it, in the same commit.
 
+### Release builds in CI (`.github/workflows/release.yml`)
+
+Tag builds only, and **no secrets**: the keystore never touches GitHub. Pushing a
+tag matching `v*` builds **both** APKs — `net.bladewatch.app` (service host) and
+`net.bladewatch.flutter` (in-car UI) — **unsigned**, and attaches both to the
+GitHub Release. Creating a release through the GitHub UI on a new tag creates that
+tag, which fires the same `push` event, so both routes are covered by one trigger.
+Ordinary pushes and pull requests build nothing. `workflow_dispatch` re-runs an
+existing tag.
+
+**Both APKs are required.** They are not variants of each other: the service host
+has no launcher icon and runs the daemons; the Flutter APK is the only thing the
+driver opens. Installing one without the other gives either a UI with no daemon or
+daemons with no UI.
+
+#### Signing the CI APKs
+
+Unsigned APKs cannot be installed. Sign **both with the same key**:
+
+```sh
+for f in bladewatch-*-unsigned.apk; do
+  apksigner sign --ks release.jks --ks-key-alias key0 \
+    --out "${f%-unsigned.apk}.apk" "$f"
+done
+apksigner verify --print-certs bladewatch-*-arm64-v8a.apk | grep 'SHA-256 digest'
+```
+
+Both digests must match. `android:sharedUserId` collapses the two packages into one
+UID *only* when their certificates are identical, and the daemon's loopback IPC on
+19876/19877 authorises by peer UID — a mismatched pair installs cleanly and then
+fails at runtime with the UI unable to reach the daemon.
+
+The workflow enforces that both APKs come out unsigned, and fails if either is
+signed or if fewer than two are produced. A half-signed pair is the dangerous
+outcome: signing the other half later with a real key can never match a debug
+certificate baked in during the build.
+
+**Both projects now fall back to genuinely unsigned** when no keystore is present
+(`signingConfig = null`). `flutter_ui/android/app/build.gradle.kts` previously fell
+back to the **debug** signing config while its comment said "unsigned", so a
+keystore-less release build produced one unsigned APK and one debug-signed APK —
+a pair that could never share a UID.
+
+**Node is required, not optional.** `buildAngularWebUI` runs during `preBuild`, and
+neither `web/dist` nor `app/src/main/assets/web/angular/` is committed (both
+gitignored). Before this was understood, a runner without Node skipped the Angular
+build with a warning and produced a *successful* APK containing no web UI at all.
+`verifyWebAssetsPresent` now fails the build in that state.
+
+Pinned toolchain: JDK 17 (AGP for `compileSdk 36`; the modules themselves target
+Java 11 bytecode), Node 20, Flutter 3.44.4, NDK `26.1.10909125` and CMake 3.22.1.
+OpenH264 and opencv-mobile need no CI step — Gradle downloads and checksum-verifies
+them.
+
 ### Recommended checks after code changes
 
 ```bash
