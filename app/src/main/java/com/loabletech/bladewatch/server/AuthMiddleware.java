@@ -286,7 +286,7 @@ public class AuthMiddleware {
         
         // API requests get 401 JSON
         if (path.startsWith("/api/") || path.startsWith("/ws") ||
-            path.startsWith("/snapshot/") || path.startsWith("/video/") ||
+            path.startsWith("/video/") ||
             path.startsWith("/thumb/") || path.startsWith("/h264/") ||
             path.equals("/status") || path.startsWith("/bladewatch.v1.")) {
             

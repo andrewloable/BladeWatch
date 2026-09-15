@@ -328,12 +328,15 @@ public class RecordingsApiHandler {
         }
         
         // Return 202 Accepted with retry hint - client should retry
+        byte[] body = "{\"status\":\"generating\"}"
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
         String headers = "HTTP/1.1 202 Accepted\r\n" +
                         "Content-Type: application/json\r\n" +
                         "Retry-After: 1\r\n" +
-                        "Connection: close\r\n\r\n";
-        out.write(headers.getBytes());
-        out.write("{\"status\":\"generating\"}".getBytes());
+                        "Content-Length: " + body.length + "\r\n" +
+                        HttpResponse.connectionHeader(out) + "\r\n";
+        out.write(headers.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        out.write(body);
         out.flush();
     }
     

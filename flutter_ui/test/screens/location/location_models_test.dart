@@ -216,14 +216,24 @@ void main() {
       expect(LocationMapReducer.markerRotation(0), 0);
     });
 
-    test('inverts a normal bearing (compass degrees -> screen rotation)', () {
-      expect(LocationMapReducer.markerRotation(90), 270);
-      expect(LocationMapReducer.markerRotation(270), 90);
+    // Was previously asserted as an INVERSION (90 -> 270), which is what made the
+    // marker point backwards on the car. Transform.rotate is clockwise-positive,
+    // exactly like a compass bearing, so the rotation IS the bearing. The web
+    // client's carIcon() has always applied it this way.
+    test('applies the bearing directly (compass degrees == screen rotation)', () {
+      expect(LocationMapReducer.markerRotation(90), 90);
+      expect(LocationMapReducer.markerRotation(270), 270);
+    });
+
+    test('matches the web client for the cardinal directions', () {
+      expect(LocationMapReducer.markerRotation(180), 180);
+      expect(LocationMapReducer.markerRotation(45), 45);
     });
 
     test('wraps values outside 0-360', () {
-      expect(LocationMapReducer.markerRotation(450), 270);
+      expect(LocationMapReducer.markerRotation(450), 90);
       expect(LocationMapReducer.markerRotation(360), 0);
+      expect(LocationMapReducer.markerRotation(-90), 270);
     });
   });
 

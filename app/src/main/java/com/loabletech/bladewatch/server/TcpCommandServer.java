@@ -217,27 +217,6 @@ public class TcpCommandServer {
                 response.put("message", "pong");
                 break;
 
-            case "getFrame":
-                int frameViewId = cmd.optInt("camera", 1);
-                // GPU pipeline: get frame from GPU camera extractor
-                net.bladewatch.app.surveillance.GpuSurveillancePipeline gpuPipeline = CameraDaemon.getGpuPipeline();
-                if (gpuPipeline != null && gpuPipeline.getCamera() != null) {
-                    byte[] jpegFrame = gpuPipeline.getCamera().getLatestJpegFrame(frameViewId);
-                    if (jpegFrame != null) {
-                        String base64Frame = android.util.Base64.encodeToString(jpegFrame, android.util.Base64.NO_WRAP);
-                        response.put("status", "ok");
-                        response.put("frame", base64Frame);
-                        response.put("timestamp", System.currentTimeMillis());
-                    } else {
-                        response.put("status", "error");
-                        response.put("message", "No frame available for view " + frameViewId);
-                    }
-                } else {
-                    response.put("status", "error");
-                    response.put("message", "GPU pipeline not available");
-                }
-                break;
-
             case "setOutput":
                 response.put("status", "ok");
                 response.put("outputDir", CameraDaemon.getOutputDir());

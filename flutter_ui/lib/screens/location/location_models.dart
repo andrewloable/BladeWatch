@@ -190,12 +190,33 @@ abstract final class LocationMapReducer {
       state.copyWith(followCar: true);
 
   /// Screen-space rotation for the car marker given a compass bearing
-  /// (0 = north, clockwise). Mirrors `LocationMapBearingMapper.markerRotation`.
+  /// (0 = north, clockwise).
+  ///
+  /// This is the bearing itself, NOT its inverse. It used to return
+  /// `360 - bearing`, which pointed the marker the wrong way round the compass —
+  /// a car heading east (90) drew as heading west. Reported from the car: "the
+  /// car indicator seems to point to the back of the car".
+  ///
+  /// The inversion would be right for a maths-convention rotation, where positive
+  /// angles go anticlockwise. Flutter's `Transform.rotate` is not that: it works in
+  /// screen coordinates, where positive is CLOCKWISE — the same direction a compass
+  /// bearing increases. So the marker art (`Icons.navigation`, which points up at
+  /// rest) needs the raw bearing and nothing else.
+  ///
+  /// The web client had it right all along and is the ground truth here:
+  /// `location.component.ts`'s `carIcon()` normalises the heading and applies it
+  /// directly as `transform: rotate(<heading>deg)`, with the comment "points up at
+  /// heading 0 and rotates clockwise with the GPS heading". CSS `rotate()` and
+  /// `Transform.rotate` share the same sign convention, so the two clients must use
+  /// the same value — and before this they did not.
+  ///
+  /// The old doc claimed to mirror a native `LocationMapBearingMapper.markerRotation`.
+  /// That class was deleted with the rest of the native UI in the Flutter refactor,
+  /// so nothing was checking the claim.
   static double markerRotation(double? bearingDegrees) {
     final bearing = bearingDegrees;
     if (bearing == null) return 0;
-    final normalized = ((bearing % 360) + 360) % 360;
-    return normalized == 0 ? 0 : 360 - normalized;
+    return ((bearing % 360) + 360) % 360;
   }
 }
 

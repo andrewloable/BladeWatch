@@ -139,7 +139,7 @@ public class ConnectDispatcher {
         sb.append("HTTP/1.1 200 OK\r\n")
           .append("Content-Type: ").append(contentType).append("\r\n")
           .append("Content-Length: ").append(body.length).append("\r\n")
-          .append("Connection: close\r\n");
+          .append(net.bladewatch.app.server.HttpResponse.connectionHeader(out));
         for (String h : extraHeaders) sb.append(h).append("\r\n");
         sb.append("\r\n");
         out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
@@ -157,7 +157,7 @@ public class ConnectDispatcher {
         String headers = "HTTP/1.1 " + httpStatus + " " + statusText + "\r\n"
                 + "Content-Type: " + contentType + "\r\n"
                 + "Content-Length: " + body.length + "\r\n"
-                + "Connection: close\r\n"
+                + net.bladewatch.app.server.HttpResponse.connectionHeader(out)
                 + "\r\n";
         out.write(headers.getBytes(StandardCharsets.UTF_8));
         out.write(body);

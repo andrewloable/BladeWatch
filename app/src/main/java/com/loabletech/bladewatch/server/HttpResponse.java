@@ -7,13 +7,31 @@ import java.io.OutputStream;
  * HTTP Response utilities - shared by all handlers.
  */
 public class HttpResponse {
+
+    /**
+     * The {@code Connection:} header line for this response, terminated with CRLF.
+     *
+     * <p>BladeWatch-67h8: returns {@code keep-alive} only when the server has wrapped the
+     * stream in a {@link KeepAliveStream} AND decided this response may be followed by
+     * another on the same socket. Any other stream — a test, a handler reached by a path
+     * that predates this, a future caller — gets {@code close}, which is what every
+     * response emitted before keep-alive existed and is never wrong.
+     */
+    public static String connectionHeader(OutputStream out) {
+        boolean keep = (out instanceof KeepAliveStream) && ((KeepAliveStream) out).isKeepAlive();
+        return keep ? "Connection: keep-alive\r\n" : "Connection: close\r\n";
+    }
     
     public static void sendError(OutputStream out, int code, String message) throws Exception {
+        // BladeWatch-67h8: the body was previously delimited only by the connection
+        // close. Keep-alive cannot frame that, so the length is explicit.
+        byte[] body = message.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         String response = "HTTP/1.1 " + code + " " + message + "\r\n" +
                          "Content-Type: text/plain\r\n" +
-                         "Connection: close\r\n\r\n" +
-                         message;
-        out.write(response.getBytes());
+                         "Content-Length: " + body.length + "\r\n" +
+                         connectionHeader(out) + "\r\n";
+        out.write(response.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        out.write(body);
         out.flush();
     }
 
@@ -22,7 +40,7 @@ public class HttpResponse {
         String headers = "HTTP/1.1 200 OK\r\n" +
                         "Content-Type: text/html; charset=utf-8\r\n" +
                         "Content-Length: " + body.length + "\r\n" +
-                        "Connection: close\r\n\r\n";
+                        connectionHeader(out) + "\r\n";
         out.write(headers.getBytes());
         out.write(body);
         out.flush();
@@ -34,7 +52,7 @@ public class HttpResponse {
                         "Content-Type: application/json\r\n" +
                         "Cache-Control: no-cache, no-store\r\n" +
                         "Content-Length: " + body.length + "\r\n" +
-                        "Connection: close\r\n\r\n";
+                        connectionHeader(out) + "\r\n";
         out.write(headers.getBytes());
         out.write(body);
         out.flush();
@@ -71,7 +89,7 @@ public class HttpResponse {
                 "Content-Type: application/json\r\n" +
                 "Cache-Control: no-cache, no-store\r\n" +
                 "Content-Length: " + body.length + "\r\n" +
-                "Connection: close\r\n\r\n";
+                connectionHeader(out) + "\r\n";
         out.write(headers.getBytes());
         out.write(body);
         out.flush();
@@ -87,7 +105,7 @@ public class HttpResponse {
                 "Content-Type: application/json\r\n" +
                 "Cache-Control: no-cache, no-store\r\n" +
                 "Content-Length: " + body.length + "\r\n" +
-                "Connection: close\r\n\r\n";
+                connectionHeader(out) + "\r\n";
         out.write(headers.getBytes());
         out.write(body);
         out.flush();
@@ -102,7 +120,7 @@ public class HttpResponse {
                         "Content-Type: application/json\r\n" +
                         "WWW-Authenticate: Bearer realm=\"BYD Champ\"\r\n" +
                         "Content-Length: " + body.length + "\r\n" +
-                        "Connection: close\r\n\r\n";
+                        connectionHeader(out) + "\r\n";
         out.write(headers.getBytes());
         out.write(body);
         out.flush();
@@ -114,7 +132,8 @@ public class HttpResponse {
     public static void sendRedirect(OutputStream out, String location) throws Exception {
         String response = "HTTP/1.1 302 Found\r\n" +
                          "Location: " + location + "\r\n" +
-                         "Connection: close\r\n\r\n";
+                         "Content-Length: 0\r\n" +
+                         connectionHeader(out) + "\r\n";
         out.write(response.getBytes());
         out.flush();
     }
@@ -138,7 +157,7 @@ public class HttpResponse {
                         "Content-Type: application/json\r\n" +
                         buildSetCookieHeaders(cookies) +
                         "Content-Length: " + body.length + "\r\n" +
-                        "Connection: close\r\n\r\n";
+                        connectionHeader(out) + "\r\n";
         out.write(headers.getBytes());
         out.write(body);
         out.flush();
@@ -209,7 +228,7 @@ public class HttpResponse {
         } else {
             headers.append("Cache-Control: no-cache\r\n");
         }
-        headers.append("Connection: close\r\n\r\n");
+        headers.append(connectionHeader(out) + "\r\n");
         out.write(headers.toString().getBytes());
 
         // Stream file in chunks
@@ -262,7 +281,7 @@ public class HttpResponse {
         } else {
             headers.append("Cache-Control: no-cache\r\n");
         }
-        headers.append("Connection: close\r\n\r\n");
+        headers.append(connectionHeader(out) + "\r\n");
         out.write(headers.toString().getBytes());
 
         try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "r")) {
@@ -284,13 +303,19 @@ public class HttpResponse {
      * 304 Not Modified — no body. Echoes the ETag so the client knows the
      * cached entry is still authoritative. Cache-Control reaffirms the
      * caching policy in case the client previously saw no-cache.
+     *
+     * <p>DELIBERATELY carries no {@code Content-Length}, and must not be given
+     * one "for consistency" when keep-alive lands (BladeWatch-67h8). A 304 never
+     * has a body, so there is nothing to frame; {@code Content-Length: 0} would
+     * be a lie about the resource's size rather than about this response, and
+     * RFC 7230 only permits a 304 to echo the length the 200 would have had.
      */
     public static void sendNotModified(OutputStream out, String etag) throws Exception {
         StringBuilder headers = new StringBuilder();
         headers.append("HTTP/1.1 304 Not Modified\r\n")
                .append("ETag: ").append(etag).append("\r\n")
                .append("Cache-Control: ").append(VIDEO_CACHE_CONTROL).append("\r\n")
-               .append("Connection: close\r\n\r\n");
+               .append(connectionHeader(out) + "\r\n");
         out.write(headers.toString().getBytes());
         out.flush();
     }
@@ -308,7 +333,7 @@ public class HttpResponse {
                         "Content-Type: " + contentType + "\r\n" +
                         "Content-Length: " + file.length() + "\r\n" +
                         "Cache-Control: public, max-age=86400\r\n" +
-                        "Connection: close\r\n\r\n";
+                        connectionHeader(out) + "\r\n";
         out.write(headers.getBytes());
         
         try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
@@ -329,7 +354,7 @@ public class HttpResponse {
                         "Content-Type: " + contentType + "\r\n" +
                         "Content-Length: " + data.length + "\r\n" +
                         "Cache-Control: public, max-age=86400\r\n" +
-                        "Connection: close\r\n\r\n";
+                        connectionHeader(out) + "\r\n";
         out.write(headers.getBytes());
         out.write(data);
         out.flush();

@@ -413,7 +413,6 @@ General status and control routes handled inline by `HttpServer`:
 
 - `GET /status` — aggregate device + vehicle + recording + GPS + network status
   (see field-parity note below). Requires auth.
-- `GET /snapshot/{viewId}` — latest JPEG frame for a camera view.
 - `POST /api/start/{id}` — start recording camera `{id}`.
 - `POST /api/view/{id}` — start view-only (no recording) for camera `{id}`.
 - `POST /api/stop/{id}` — stop camera `{id}`.

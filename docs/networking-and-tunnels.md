@@ -24,7 +24,7 @@ HTTP and WebSocket):
 - The Angular SPA build (`/`, `/assets/*`, `/vendor/*`).
 - Shared JavaScript, CSS, and i18n resources.
 - Auth endpoints (`/auth/*`).
-- The REST API (`/api/*`, `/status`, `/video/*`, `/thumb/*`, `/snapshot/*`).
+- The REST API (`/api/*`, `/status`, `/video/*`, `/thumb/*`).
 - The ConnectRPC / gRPC-style API under the `/bladewatch.v1.*` route prefix,
   consumed by the Angular SPA. Unary calls use `application/json`, streaming
   uses `application/connect+json`; both require `Connect-Protocol-Version: 1`.
