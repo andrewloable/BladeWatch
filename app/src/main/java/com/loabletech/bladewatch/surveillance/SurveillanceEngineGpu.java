@@ -1646,6 +1646,12 @@ public class SurveillanceEngineGpu {
         final int qW;
         final int qH;
         final byte[] cropData;
+        // BladeWatch-4pic: true only for a full mosaic TILE. Fisheye dewarp is tile-centred
+        // and a foveated crop is a re-centred sub-window whose centre is NOT the lens axis,
+        // so a radial model would move its boxes the wrong way. Set explicitly in all three
+        // branches rather than inferred from qW, so a future change to CROP_SIZE cannot
+        // silently re-enable dewarp on the foveated path.
+        final boolean fromMosaicTile;
         
         MotionPipelineV2.QuadrantResult motionResult = pipelineV2 != null ? pipelineV2.getResults()[quadrant] : null;
         
@@ -1679,6 +1685,7 @@ public class SurveillanceEngineGpu {
             if (foveatedRgb != null) {
                 qW = FoveatedCropper.CROP_SIZE;
                 qH = FoveatedCropper.CROP_SIZE;
+                fromMosaicTile = false;   // re-centred sub-window — never dewarped
                 // Must copy — foveatedCropper reuses its internal buffer
                 cropData = new byte[foveatedRgb.length];
                 System.arraycopy(foveatedRgb, 0, cropData, 0, foveatedRgb.length);
@@ -1693,6 +1700,7 @@ public class SurveillanceEngineGpu {
                 // landing on the wrong part of the thumbnail.
                 qW = THUMBNAIL_WIDTH / 2;
                 qH = THUMBNAIL_HEIGHT / 2;
+                fromMosaicTile = true;    // the fallback IS a tile, so it is dewarpable
                 byte[] mosaicShared = cropFromMosaic(mosaicRgb, quadrant, qW, qH);
                 cropData = new byte[mosaicShared.length];
                 System.arraycopy(mosaicShared, 0, cropData, 0, mosaicShared.length);
@@ -1701,6 +1709,7 @@ public class SurveillanceEngineGpu {
             // Legacy path: 320×240 from mosaic. See note above — must copy.
             qW = THUMBNAIL_WIDTH / 2;
             qH = THUMBNAIL_HEIGHT / 2;
+            fromMosaicTile = true;
             byte[] mosaicShared = cropFromMosaic(mosaicRgb, quadrant, qW, qH);
             cropData = new byte[mosaicShared.length];
             System.arraycopy(mosaicShared, 0, cropData, 0, mosaicShared.length);
@@ -1787,8 +1796,42 @@ public class SurveillanceEngineGpu {
                     }
                 }
                 
+                // BladeWatch-4pic: straighten the fisheye ONLY for the detector, and only
+                // for a full mosaic tile. cropData itself is left untouched — ThumbnailBuffer
+                // and the tracker must keep seeing the original warped pixels.
+                // A null return means "this quadrant is not dewarped", so the original is used.
+                //
+                // SCOPE: this is the LIVE detection path only. The DetectionBaseline seeding
+                // and refresh paths elsewhere in this class also run YOLO over full mosaic
+                // tiles and are deliberately NOT dewarped, matching Overdrive, which wires
+                // this in exactly one place too.
+                //
+                // That asymmetry is a known open question, recorded rather than assumed away:
+                // the baseline records what is normally present in a quadrant, and dewarped
+                // live detection finds MORE than undewarped baseline seeding does. An object
+                // the baseline never saw is not suppressed, so in principle this could ADD a
+                // false positive — which DETECTION-INVARIANTS treats as the one thing a
+                // change here must not do. Mitigating it: boxes reach the baseline mapped
+                // back into its own warped space, so they still MATCH; and a newly-found
+                // static object is also caught by ActorTracker's static/everMoved logic.
+                // This was to have been measured by BladeWatch-3dg8, which was closed with
+                // that measurement WAIVED — so the risk is UNQUANTIFIED, not cleared. If
+                // sentry starts firing on scenery or parked cars near the mirror cameras,
+                // dewarping the baseline seeding paths too is the first thing to try.
+                final byte[] dewarped = fromMosaicTile
+                        ? FisheyeDewarp.dewarpForDetector(cropData, qW, qH, qIdx)
+                        : null;
+                final byte[] detectorInput = dewarped != null ? dewarped : cropData;
+
                 java.util.List<net.bladewatch.app.ai.Detection> detections = detectorSnap.detect(
-                        cropData, qW, qH, aiConfidence, detectPerson, detectCar, false, detectBike, minObjectSize);
+                        detectorInput, qW, qH, aiConfidence, detectPerson, detectCar, false, detectBike, minObjectSize);
+
+                // Back to ORIGINAL crop space before anything downstream sees the list: the
+                // motion-overlap filter, DetectionBaseline, ActorTracker, CrossQuadrantTracker
+                // and ThumbnailBuffer all expect the warped coordinate space they always had.
+                if (dewarped != null) {
+                    detections = FisheyeDewarp.mapDetectionsToSource(detections, qW, qH, qIdx);
+                }
                 
                 // Track how many motion-filtered detections we found (accessible outside the block
                 // for the teardown gate that kills zombie tracks when YOLO returns empty)

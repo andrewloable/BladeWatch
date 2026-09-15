@@ -34,29 +34,30 @@ import java.nio.FloatBuffer;
  *   cam3(Right) = x: 2560..3840
  *   cam4(Front) = x: 3840..5120
  *
- * Quadrant-to-strip mapping:
- *   Q0 (front) → strip offset 0.75 (3840px)
- *   Q1 (right) → strip offset 0.50 (2560px)
- *   Q2 (left)  → strip offset 0.25 (1280px) [note: BL in mosaic = rear, BR = left]
- *   Q3 (rear)  → strip offset 0.00 (0px)
+ * Quadrant indexing — the single source of truth is
+ * {@link MotionPipelineV2#QUADRANT_NAMES}, which is {"front", "right", "rear", "left"}:
  *
- * Wait — the mosaic layout is: TL=Front, TR=Right, BL=Rear, BR=Left
- * But QUADRANT_NAMES = ["front", "right", "left", "rear"]
- * Quadrant indices: 0=TL(front), 1=TR(right), 2=BL(rear?), 3=BR(left?)
+ *   Q0 = front  → mosaic TL → strip offset 0.75 (3840px)
+ *   Q1 = right  → mosaic TR → strip offset 0.50 (2560px)
+ *   Q2 = rear   → mosaic BL → strip offset 0.00 (0px)
+ *   Q3 = left   → mosaic BR → strip offset 0.25 (1280px)
  *
- * Actually from the fragment shader:
- *   gridPos = step(0.5, vTexCoord)  → (0,0)=TL, (1,0)=TR, (0,1)=BL, (1,1)=BR
- *   TL=Front(0.75), TR=Right(0.50), BL=Rear(0.00), BR=Left(0.25)
+ * Two independent derivations agree with that table, which is why it is stated once here
+ * rather than re-derived at each use:
  *
- * And from SurveillanceEngineGpu.runAiOnQuadrant:
- *   startX = (quadrant % 2) * qW   → Q0: x=0, Q1: x=320, Q2: x=0, Q3: x=320
- *   startY = (quadrant / 2) * qH   → Q0: y=0, Q1: y=0,   Q2: y=240, Q3: y=240
+ *   Fragment shader:  gridPos = step(0.5, vTexCoord) → (0,0)=TL, (1,0)=TR, (0,1)=BL, (1,1)=BR
+ *   SurveillanceEngineGpu.runAiOnQuadrant:
+ *       startX = (quadrant % 2) * qW   → Q0,Q2: x=0    Q1,Q3: x=320
+ *       startY = (quadrant / 2) * qH   → Q0,Q1: y=0    Q2,Q3: y=240
+ *   giving Q0=TL, Q1=TR, Q2=BL, Q3=BR — which lines up with QUADRANT_NAMES above.
  *
- * So: Q0=TL=Front, Q1=TR=Right, Q2=BL=Rear, Q3=BR=Left
- * But QUADRANT_NAMES = ["front", "right", "left", "rear"]
- * This means Q2 maps to "left" in the name array but BL in the grid (which is Rear in the strip).
- *
- * Let's just use the same strip offset math as the fragment shader:
+ * NOTE FOR ANYONE INDEXING A PER-QUADRANT ARRAY (BladeWatch-7elj). An earlier version of
+ * this comment asserted the opposite order for Q2 and Q3 — that Q2 was the LEFT camera and
+ * Q3 the REAR. It was wrong, and the table above is correct (identically so in Overdrive),
+ * but the error is the expensive kind: a per-quadrant constant
+ * keyed off the wrong order applies to the wrong CAMERA, compiles cleanly, and shows up
+ * only as the feature quietly underperforming. Check MotionPipelineV2.QUADRANT_NAMES
+ * directly rather than trusting prose, including this prose.
  */
 public class FoveatedCropper {
     private static final DaemonLogger logger = DaemonLogger.getInstance("FoveatedCrop");

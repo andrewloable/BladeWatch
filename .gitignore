@@ -96,3 +96,7 @@ Temporary Items
 # Tunnel binary: downloaded and SHA-256-verified by the downloadTor Gradle task,
 # never committed (the 19.2 MB binary it replaces used to be).
 app/src/main/jniLibs/arm64-v8a/libtor.so
+
+# Local dewarp preview frames (BladeWatch-3dg8). Real camera frames of a real
+# place — PII, and invisible to grep. Never commit.
+/dewarp-samples/

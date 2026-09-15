@@ -227,6 +227,62 @@ class DaemonLauncher(
         )
     }
 
+    /**
+     * Shell lines that re-resolve the APK path and native-lib dir AT RUN TIME
+     * (BladeWatch-v9xw).
+     *
+     * The watchdog scripts used to bake `context.applicationInfo.sourceDir` in when the
+     * script was written. That path contains a per-install hash
+     * (`/data/app/net.bladewatch.app-<hash>/base.apk`), and `adb install -r` changes it —
+     * so after every reinstall the script pointed at an APK that no longer existed and
+     * app_process aborted on start-up:
+     *
+     *     name: main  >>> byd_cam_daemon <<<
+     *     Abort message: 'No pending exception expected:
+     *       java.lang.ClassNotFoundException: net.bladewatch.app.daemon.CameraDaemon'
+     *
+     * It self-healed on the next respawn, so the cost was one spurious native crash per
+     * install — noise that makes a REAL crash harder to see.
+     *
+     * Resolution order, and why:
+     *  1. `pm path` — authoritative, and correct immediately after a reinstall.
+     *  2. The baked path — used when `pm` is not answering yet. This matters on a COLD
+     *     BOOT, where the watchdog can start before package manager is ready; falling back
+     *     keeps boot behaviour exactly as it was.
+     *  3. A `/data/app` glob — last resort if both fail.
+     *
+     * Emitted INSIDE the respawn loop, so an install that happens while the watchdog is
+     * alive is picked up on the next restart rather than wedging it until reboot.
+     */
+    private fun apkResolutionLines(
+        bakedApkPath: String,
+        bakedNativeLibDir: String? = null
+    ): List<String> = buildList {
+        add("  # BladeWatch-v9xw: resolve the APK at run time — install -r changes the hash dir.")
+        add("  RESOLVED=\$(pm path ${context.packageName} 2>/dev/null | sed -n 's/^package://p' | head -n 1)")
+        add("  if [ -n \"\$RESOLVED\" ] && [ -f \"\$RESOLVED\" ]; then")
+        add("    APK_PATH=\"\$RESOLVED\"")
+        add("  elif [ -f \"$bakedApkPath\" ]; then")
+        add("    APK_PATH=\"$bakedApkPath\"")
+        add("  else")
+        add("    APK_PATH=\$(ls -d /data/app/*${context.packageName}*/base.apk 2>/dev/null | head -n 1)")
+        add("  fi")
+        // Only the camera daemon needs the native-lib dir. Emitting it for scripts that do
+        // not use it would leave a NATIVE_LIB_DIR lying around whose fallback is whatever
+        // the caller happened to pass — a trap for the next person who reaches for it.
+        if (bakedNativeLibDir != null) {
+            add("  # Native libs live beside the APK; keep the baked dir if the layout is unexpected.")
+            // Guard on a non-empty APK_PATH: `dirname ""` yields ".", which would then test
+            // ./lib/arm64 against whatever the script's working directory happens to be.
+            add("  if [ -n \"\$APK_PATH\" ] && [ -d \"\$(dirname \"\$APK_PATH\")/lib/arm64\" ]; then")
+            add("    NATIVE_LIB_DIR=\"\$(dirname \"\$APK_PATH\")/lib/arm64\"")
+            add("  else")
+            add("    NATIVE_LIB_DIR=\"$bakedNativeLibDir\"")
+            add("  fi")
+        }
+        add("")
+    }
+
     private fun writeCamDaemonScript(
         apkPath: String, proxyArgs: String, outputDir: String, nativeLibDir: String,
         scriptPath: String, callback: LaunchCallback
@@ -241,6 +297,7 @@ class DaemonLauncher(
             "RETRY_COUNT=0",
             "",
             "while true; do",
+            *apkResolutionLines(apkPath, nativeLibDir).toTypedArray(),
             "  # Check disable sentinel — if present, daemon was intentionally stopped",
             "  if [ -f \"\$SENTINEL\" ]; then",
             "    echo \"[\$(date)] Daemon disabled by user (sentinel file exists). Exiting watchdog.\" >> \"\$LOG_FILE\"",
@@ -260,12 +317,12 @@ class DaemonLauncher(
             "  fi",
             "  echo \"[\$(date)] Starting CameraDaemon...\" >> \"\$LOG_FILE\"",
             "",
-            "  CLASSPATH=/system/framework/bmmcamera.jar:$apkPath app_process " +
-                "-Djava.library.path=$nativeLibDir:/system/lib64:/vendor/lib64:/product/lib64:/odm/lib64 " +
+            "  CLASSPATH=/system/framework/bmmcamera.jar:\"\$APK_PATH\" app_process " +
+                "-Djava.library.path=\"\$NATIVE_LIB_DIR\":/system/lib64:/vendor/lib64:/product/lib64:/odm/lib64 " +
                 "${proxyArgs}/system/bin " +
                 "--nice-name=$CAMERA_DAEMON_PROCESS " +
                 "net.bladewatch.app.daemon.CameraDaemon " +
-                "$outputDir $nativeLibDir >> \"\$LOG_FILE\" 2>&1",
+                "$outputDir \"\$NATIVE_LIB_DIR\" >> \"\$LOG_FILE\" 2>&1",
             "",
             "  EXIT_CODE=\$?",
             "  # Check sentinel again — daemon may have written it during shutdown",
@@ -749,6 +806,8 @@ class DaemonLauncher(
         val scriptLines = listOf(
             "#!/system/bin/sh",
             "# AccSentryDaemon Watchdog Script",
+            // Seed only. Re-resolved inside the loop by apkResolutionLines (BladeWatch-v9xw),
+            // so an install -r between watchdog start and daemon respawn is picked up.
             "APK_PATH=\"$apkPath\"",
             "CLS=\"net.bladewatch.app.daemon.AccSentryDaemon\"",
             "PROCESS_NAME=\"$ACC_SENTRY_DAEMON_PROCESS\"",
@@ -776,6 +835,7 @@ class DaemonLauncher(
             "",
             "# Infinite respawn loop",
             "while true; do",
+            *apkResolutionLines(apkPath).toTypedArray(),
             "  # Log rotation: truncate if > 2MB",
             "  if [ -f \"\$LOG_FILE\" ]; then",
             "    SIZE=\$(stat -c%s \"\$LOG_FILE\" 2>/dev/null || echo 0)",
