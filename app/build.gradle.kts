@@ -126,6 +126,74 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("ExternalNative")
     dependsOn("downloadOpenH264", "downloadOpenCV")
 }
 
+// ---------------------------------------------------------------------------------------------
+// Tor onion service binary (BladeWatch-3lbz.1)
+//
+// Replaces the previous tunnel. Briar publishes the stock tor executable to Maven Central,
+// already built for
+// Android and already named lib*.so, which is exactly the shape Android will extract to
+// nativeLibraryDir with the execute bit set — the only way to ship a runnable binary to a
+// non-rooted head unit.
+//
+// Unlike the previous tunnel's 19.2 MB binary this is NOT committed: it is a build artifact, fetched and
+// SHA-256-verified here like OpenH264 and OpenCV. TorBinaryPackagingTest is the guard that keeps
+// a build from silently producing an APK with no tunnel in it.
+val torVersion = "0.4.8.14"
+val torJarSha256 = "fc7c4f5007a98132ba84534a873f101951d2d554d5da5f2031b85c277f8617a6"
+val torLibrarySha256 = "9aa3a500bc3edd495cd33c61fd65d536f49b92692e16f6e23e3ada44e76a94a9"
+
+tasks.register("downloadTor") {
+    val torSo = file("src/main/jniLibs/arm64-v8a/libtor.so")
+    val proj = project
+    // Without these the task is UP-TO-DATE whenever the output file merely exists, so
+    // bumping the version or the pin would leave the OLD binary in place — and
+    // `./gradlew downloadTor`, which TorBinaryPackagingTest's failure message tells you to
+    // run, would print UP-TO-DATE and do nothing.
+    inputs.property("torVersion", torVersion)
+    inputs.property("torLibrarySha256", torLibrarySha256)
+    outputs.file(torSo)
+    doLast {
+        if (torSo.exists() && hasExpectedSha256(torSo, torLibrarySha256)) {
+            println("\u2713 Tor ${torVersion} verified")
+            return@doLast
+        }
+        if (torSo.exists()) {
+            println("Tor exists but checksum changed; redownloading")
+            torSo.delete()
+        }
+        println("Downloading Tor ${torVersion}...")
+        // arm64-v8a only. The head unit is arm64; each extra ABI is another ~5 MB of APK.
+        val jar = file("${layout.buildDirectory.get().asFile}/tor/tor-android-${torVersion}.jar")
+        proj.ensureDownloadedVerified(
+            "https://repo1.maven.org/maven2/org/briarproject/tor-android/" +
+                "${torVersion}/tor-android-${torVersion}.jar",
+            jar,
+            torJarSha256,
+            "Tor ${torVersion} archive"
+        )
+        val staging = file("${layout.buildDirectory.get().asFile}/tor/extracted")
+        proj.delete(staging)
+        proj.copy {
+            from(proj.zipTree(jar)) { include("arm64-v8a/libtor.so") }
+            into(staging)
+        }
+        val extracted = file("${staging}/arm64-v8a/libtor.so")
+        if (!extracted.exists()) {
+            throw org.gradle.api.GradleException(
+                "Tor archive did not contain arm64-v8a/libtor.so"
+            )
+        }
+        torSo.parentFile.mkdirs()
+        extracted.copyTo(torSo, overwrite = true)
+        verifySha256(torSo, torLibrarySha256, "Tor ${torVersion} binary")
+        println("\u2713 Tor ${torVersion} downloaded and verified")
+    }
+}
+
+// preBuild, not the CMake hook: tor is not a native BUILD dependency, it just has to be on disk
+// before any variant packages jniLibs.
+tasks.named("preBuild") { dependsOn("downloadTor") }
+
 // OpenCV-mobile version for surveillance module (minimal build, ~3MB vs ~20MB)
 // https://github.com/nihui/opencv-mobile
 val opencvMobileTag = "v31"
@@ -308,6 +376,14 @@ android {
         }
     }
 
+    // BladeWatch-gn2y: ship the branch so every log can say which build wrote it.
+    // Gradle already computes gitBranch for the APK filename; this makes it readable at
+    // runtime by SessionBanner, which is what lets a reader tell a live fault from a fixed
+    // one that is still sitting in an unrotated log.
+    defaultConfig {
+        buildConfigField("String", "GIT_BRANCH", "\"$gitBranch\"")
+    }
+
     buildTypes {
         release {
             // Enable minification and shrinking for release builds
@@ -459,7 +535,7 @@ dependencies {
     implementation(libs.material)
     
     // Lifecycle & LiveData. Phase 4 deleted the native UI, but these are NOT
-    // UI-only: ZrokController and DaemonsViewModel publish daemon state as
+    // UI-only: TorController and DaemonsViewModel publish daemon state as
     // LiveData and both still run in this (UI-less) service host.
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
@@ -941,7 +1017,7 @@ tasks.register("validateArbCatalogs") {
             // Product and brand
             "app_name", "cd_brand_logo", "settings_hero_overline", "settings_footer_format",
             "status_overlay_notif_title", "settings_about_source_value",
-            "daemon_name_zrok", "tunnel_label_zrok",
+            "daemon_name_tor", "tunnel_label_tor",
             // Unit symbols and unit-only formats
             "vehicle_dialog_capacity_suffix", "trips_stat_kwh", "trips_stat_kwh_per_100km",
             "dashboard_insight_kwh_format", "dashboard_vehicle_summary",
@@ -1113,4 +1189,38 @@ tasks.withType<Test>().configureEach {
     inputs.dir("src/main/java")
         .withPropertyName("appSourcesForStaticChecks")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    // TorBinaryPackagingTest reads the shipped tunnel binary off disk, not off the classpath,
+    // so the same blindness applies: without this the guard stops running exactly when the
+    // binary changes.
+    inputs.dir("src/main/jniLibs")
+        .withPropertyName("shippedNativeBinaries")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    // NoRemovedTunnelReferencesTest scans the whole developer-edited tree as DATA —
+    // including directories OUTSIDE this module, which is why these are resolved from the
+    // root project rather than relatively. Without them the guard would go UP-TO-DATE the
+    // moment someone reintroduced the name in a doc, which is precisely the case it exists
+    // to catch.
+    // NoSelfMatchingProcessCommandsTest (BladeWatch-6jj1) scans the same trees as DATA, for
+    // the same reason: without these inputs it goes UP-TO-DATE precisely when someone
+    // reintroduces a self-matching pkill/pgrep.
+    listOf(
+        "app/src/main/assets", "app/src/main/res",
+        "flutter_ui/lib", "flutter_ui/test", "flutter_ui/android/app/src",
+        "web/src", "web/e2e", "docs",
+    ).forEach { rel ->
+        val dir = rootProject.file(rel)
+        if (dir.isDirectory) {
+            inputs.dir(dir)
+                .withPropertyName("scanned-" + rel.replace('/', '-'))
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+        }
+    }
+    listOf("CLAUDE.md", "Readme.md", "AGENTS.md", ".gitignore", "app/build.gradle.kts").forEach { rel ->
+        val f = rootProject.file(rel)
+        if (f.isFile) {
+            inputs.file(f)
+                .withPropertyName("scanned-" + rel.replace('/', '-').replace('.', '-'))
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+        }
+    }
 }

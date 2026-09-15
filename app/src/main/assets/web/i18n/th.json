@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "แจ้งเตือน",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "ระบบแจ้งเตือนยังไม่ได้เริ่มต้น กรุณาจอง Zrok URL ผ่านหน้าจอบริการและรีสตาร์ทบริการพื้นหลังเพื่อเปิดใช้งานการส่ง Push",
     "push_delivery": "การส่งแจ้งเตือน",
     "push_delivery_sub": "เปิดรับการแจ้งเตือนบนอุปกรณ์นี้ ต้องเปิดตั้งค่านี้บนมือถือแต่ละเครื่องที่ต้องการรับแจ้งเตือน",
     "enable_btn": "เปิดใช้งานบนเครื่องนี้",
@@ -171,7 +169,6 @@
     "registered_devices": "อุปกรณ์ที่ลงทะเบียนไว้",
     "devices_sub": "มือถือที่เปิดรับแจ้งเตือนจะแสดงอยู่ที่นี่ กด 'นำออก' เพื่อลบเครื่องนั้นทิ้ง",
     "no_devices": "ยังไม่มีอุปกรณ์",
-    "perm_zrok_required": "ต้องใช้ Zrok หรือ Reverse Proxy เพื่อส่งแจ้งเตือน (ดูแบนเนอร์ด้านบน)",
     "perm_unsupported": "เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน",
     "perm_unsupported_install": "เบราว์เซอร์ไม่รองรับ หากใช้ Safari ลองเพิ่มลงหน้าจอโฮมก่อน",
     "perm_granted": "เปิดแจ้งเตือนบนเครื่องนี้แล้ว",
@@ -1559,7 +1556,8 @@
     "retry": "ลองใหม่",
     "badgeLive": "● สด",
     "badgeConnecting": "○ กำลังเชื่อมต่อ…",
-    "notConnected": "ยังไม่ได้เชื่อมต่อภาพจากกล้อง"
+    "notConnected": "ยังไม่ได้เชื่อมต่อภาพจากกล้อง",
+    "decoderUnsupported": "เบราว์เซอร์นี้ไม่สามารถเล่นสตรีมสดได้ ต้องใช้เบราว์เซอร์ที่รองรับการถอดรหัสวิดีโอ เช่น Chrome หรือ Edge ส่วน Tor Browser และ Firefox ESR ยังไม่รองรับ"
   },
   "location": {
     "themeAuto": "อัตโนมัติ",

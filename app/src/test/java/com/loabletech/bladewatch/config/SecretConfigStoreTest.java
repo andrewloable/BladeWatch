@@ -46,8 +46,8 @@ public class SecretConfigStoreTest {
         SecretConfigStore store = new SecretConfigStore(storeFile);
 
         Assert.assertFalse(store.exists());
-        Assert.assertNull(store.getString("zrok", "token"));
-        Assert.assertNotNull(store.loadSection("zrok"));
+        Assert.assertNull(store.getString("tunnel", "token"));
+        Assert.assertNotNull(store.loadSection("tunnel"));
     }
 
     @Test
@@ -55,15 +55,15 @@ public class SecretConfigStoreTest {
         Files.write(storeFile.toPath(), "{not-json".getBytes(StandardCharsets.UTF_8));
 
         SecretConfigStore store = new SecretConfigStore(storeFile);
-        Assert.assertNull(store.getString("zrok", "token"));
-        Assert.assertTrue(store.putString("zrok", "token", "zrok-secret"));
-        Assert.assertEquals("zrok-secret", store.getString("zrok", "token"));
+        Assert.assertNull(store.getString("tunnel", "token"));
+        Assert.assertTrue(store.putString("tunnel", "token", "tunnel-secret"));
+        Assert.assertEquals("tunnel-secret", store.getString("tunnel", "token"));
     }
 
     @Test
     public void permissionsRemainOwnerOnly() throws Exception {
         SecretConfigStore store = new SecretConfigStore(storeFile);
-        Assert.assertTrue(store.putString("zrok", "enableToken", "enable-secret"));
+        Assert.assertTrue(store.putString("tunnel", "enableToken", "enable-secret"));
 
         if (!FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
             return;

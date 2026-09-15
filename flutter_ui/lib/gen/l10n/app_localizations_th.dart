@@ -398,20 +398,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get webview_loading => 'กำลังโหลด…';
 
   @override
-  String get zrok_enable_token_hint => 'เปิดใช้งาน Token';
-
-  @override
-  String get zrok_token_storage_note =>
-      'Token จะถูกเก็บอย่างปลอดภัยและใช้ร่วมกันระหว่างแอปและบริการเบื้องหลัง';
-
-  @override
-  String get zrok_reset_environment => 'รีเซ็ต Zrok Environment';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      'ลบ Environment และ Token ทิ้ง คุณจะต้องใช้ Token เพื่อเปิดใช้งานใหม่อีกครั้ง (ใช้โควตาอุปกรณ์ 1 สิทธิ์)';
-
-  @override
   String get reset_title => 'ล้างข้อมูล (Reset)';
 
   @override
@@ -589,7 +575,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get daemon_name_acc => 'การเฝ้าระวัง ACC';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'ระบบเบื้องหลัง';
@@ -841,7 +827,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get dashboard_no_tunnel => 'ยังไม่มี Tunnel ทำงานอยู่';
 
   @override
-  String get dashboard_starting_zrok => 'กำลังเริ่ม Zrok Tunnel…';
+  String get dashboard_starting_tor => 'กำลังเริ่มอุโมงค์ Tor…';
 
   @override
   String get dashboard_waiting_url => 'กำลังรอ Tunnel URL…';
@@ -852,7 +838,7 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'รหัสเข้าถึง';
@@ -866,52 +852,7 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'โทเค็นอุโมงค์ Zrok';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'ใส่ Token ใช้งาน Zrok ของคุณ\nเอามาได้จาก: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => 'Token ต้องไม่ว่าง';
-
-  @override
-  String get dialog_zrok_reset_title => 'รีเซ็ต Zrok Environment';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      'การทำแบบนี้จะ:\n• หยุดการทำงานของ Zrok Tunnel ถ้าเปิดอยู่\n• ลบ Zrok Environment ออกจากเครื่องนี้\n• ลบ Token ที่บันทึกไว้ทิ้ง\n\nคุณจะต้องใส่ Token เพื่อเปิดใช้อีกครั้ง (เสียโควตา 1 อุปกรณ์บน zrok.io นะ)\n\nแน่ใจใช่ไหม?';
-
-  @override
-  String get toast_resetting_zrok => 'กำลังรีเซ็ต Zrok Environment…';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'รีเซ็ต Zrok แล้ว ใส่ Token เพื่อตั้งค่าใหม่นะ';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      'รีเซ็ตสำเร็จบางส่วน (อาจจะต้องเข้าไปลบไฟล์ Token เองอีกที)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return 'รีเซ็ตสำเร็จนะแต่มีเตือน: $arg1';
-  }
-
-  @override
-  String get zrok_no_token_configured => 'ยังไม่ได้ใส่ Token กดเพื่อตั้งค่า';
-
-  @override
-  String get toast_zrok_token_saved => 'บันทึก Token แล้ว';
-
-  @override
-  String get toast_zrok_token_save_failed => 'บันทึก Token ไม่สำเร็จ';
-
-  @override
-  String get toast_zrok_token_deleted => 'ลบ Token ทิ้งแล้ว';
-
-  @override
-  String get toast_zrok_token_delete_failed => 'ลบ Token ไม่สำเร็จ';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1677,12 +1618,6 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'กำหนดค่า';
-
-  @override
-  String get settings_daemons_zrok_reset_button => 'รีเซ็ตสภาพแวดล้อม';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return 'ใช้ไป $arg1 · ว่าง $arg2';
   }
@@ -1796,7 +1731,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'อุโมงค์ Zrok และบริการเบื้องหลัง';
+      'อุโมงค์ Tor และบริการเบื้องหลัง';
 
   @override
   String get settings_about_row_title => 'เกี่ยวกับ BladeWatch';
@@ -2775,4 +2710,36 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'บันทึกไม่สำเร็จ';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'กำลังเชื่อมต่อกับ Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'วิธีเปิดที่อยู่นี้';
+
+  @override
+  String get dashboard_tor_help_title => 'การเปิดที่อยู่นี้';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: ติดตั้ง Tor Browser จาก Google Play หรือ F-Droid เปิดแล้ววางที่อยู่';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone และ iPad: ติดตั้ง Onion Browser จาก App Store เปิดแล้ววางที่อยู่ Tor Browser ไม่มีบน iOS';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS และ Linux: ดาวน์โหลด Tor Browser จาก torproject.org เปิดแล้ววางที่อยู่';
+
+  @override
+  String get dashboard_tor_help_password_note =>
+      'ยังต้องใช้รหัสผ่านหลังจากหน้าเว็บโหลดเสร็จ';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'สแกนเพื่อไปยังหน้าดาวน์โหลด Tor Browser';
+
+  @override
+  String get dashboard_tor_help_close => 'เข้าใจแล้ว';
 }

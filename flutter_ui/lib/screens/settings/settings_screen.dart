@@ -183,7 +183,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case _Section.daemons:
         final c = SettingsDaemonsController(
           daemonChannel: deps.daemonChannel,
-          configChannel: deps.configChannel,
           setDaemonEnabled: deps.setDaemonEnabled,
         );
         controller = c;

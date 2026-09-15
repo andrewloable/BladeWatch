@@ -23,36 +23,36 @@ class SecretConfigChannelTest {
     @Test
     fun `get sends secret_get with section and key, and returns the value`() {
         val ipc = FakeIpc { JSONObject().put("status", "ok").put("value", "ztok_abc123") }
-        val value = SecretConfigChannel(ipc).get("tunnels", "zrokToken")
+        val value = SecretConfigChannel(ipc).get("tunnels", "deviceToken")
 
         val sent = ipc.sentCommands.single()
         assertEquals("secret_get", sent.optString("cmd"))
         assertEquals("tunnels", sent.optString("section"))
-        assertEquals("zrokToken", sent.optString("key"))
+        assertEquals("deviceToken", sent.optString("key"))
         assertEquals("ztok_abc123", value)
     }
 
     @Test
     fun `get returns null when the value is empty (key not set) rather than throwing`() {
         val ipc = FakeIpc { JSONObject().put("status", "ok").put("value", "") }
-        assertNull(SecretConfigChannel(ipc).get("tunnels", "zrokToken"))
+        assertNull(SecretConfigChannel(ipc).get("tunnels", "deviceToken"))
     }
 
     @Test
     fun `get returns null when the value is absent entirely`() {
         val ipc = FakeIpc { JSONObject().put("status", "ok") }
-        assertNull(SecretConfigChannel(ipc).get("tunnels", "zrokToken"))
+        assertNull(SecretConfigChannel(ipc).get("tunnels", "deviceToken"))
     }
 
     @Test
     fun `put sends secret_put with section, key, and value, and returns true on ok`() {
         val ipc = FakeIpc { JSONObject().put("status", "ok") }
-        val result = SecretConfigChannel(ipc).put("tunnels", "zrokToken", "ztok_new")
+        val result = SecretConfigChannel(ipc).put("tunnels", "deviceToken", "ztok_new")
 
         val sent = ipc.sentCommands.single()
         assertEquals("secret_put", sent.optString("cmd"))
         assertEquals("tunnels", sent.optString("section"))
-        assertEquals("zrokToken", sent.optString("key"))
+        assertEquals("deviceToken", sent.optString("key"))
         assertEquals("ztok_new", sent.optString("value"))
         assertTrue(result)
     }
@@ -60,32 +60,32 @@ class SecretConfigChannelTest {
     @Test
     fun `put returns false when the daemon does not respond ok`() {
         val ipc = FakeIpc { JSONObject().put("status", "error").put("message", "disk full") }
-        assertFalse(SecretConfigChannel(ipc).put("tunnels", "zrokToken", "x"))
+        assertFalse(SecretConfigChannel(ipc).put("tunnels", "deviceToken", "x"))
     }
 
     @Test
     fun `delete sends secret_delete with section and key, and returns true on ok`() {
         val ipc = FakeIpc { JSONObject().put("status", "ok") }
-        val result = SecretConfigChannel(ipc).delete("tunnels", "zrokToken")
+        val result = SecretConfigChannel(ipc).delete("tunnels", "deviceToken")
 
         val sent = ipc.sentCommands.single()
         assertEquals("secret_delete", sent.optString("cmd"))
         assertEquals("tunnels", sent.optString("section"))
-        assertEquals("zrokToken", sent.optString("key"))
+        assertEquals("deviceToken", sent.optString("key"))
         assertTrue(result)
     }
 
     @Test
     fun `delete returns false when the daemon does not respond ok`() {
         val ipc = FakeIpc { JSONObject().put("status", "error") }
-        assertFalse(SecretConfigChannel(ipc).delete("tunnels", "zrokToken"))
+        assertFalse(SecretConfigChannel(ipc).delete("tunnels", "deviceToken"))
     }
 
     @Test
     fun `get propagates IPC failures rather than swallowing them`() {
         val ipc = FakeIpc { throw IpcException.DaemonNotListening("down") }
         assertThrows(IpcException.DaemonNotListening::class.java) {
-            SecretConfigChannel(ipc).get("tunnels", "zrokToken")
+            SecretConfigChannel(ipc).get("tunnels", "deviceToken")
         }
     }
 
@@ -93,7 +93,7 @@ class SecretConfigChannelTest {
     fun `put propagates IPC failures rather than swallowing them`() {
         val ipc = FakeIpc { throw IpcException.Timeout("slow") }
         assertThrows(IpcException.Timeout::class.java) {
-            SecretConfigChannel(ipc).put("tunnels", "zrokToken", "x")
+            SecretConfigChannel(ipc).put("tunnels", "deviceToken", "x")
         }
     }
 
@@ -101,7 +101,7 @@ class SecretConfigChannelTest {
     fun `delete propagates IPC failures rather than swallowing them`() {
         val ipc = FakeIpc { throw IpcException.CommandRejected("no") }
         assertThrows(IpcException.CommandRejected::class.java) {
-            SecretConfigChannel(ipc).delete("tunnels", "zrokToken")
+            SecretConfigChannel(ipc).delete("tunnels", "deviceToken")
         }
     }
 

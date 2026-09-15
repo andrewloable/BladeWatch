@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "Notificaciones",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "El backend de notificaciones no está inicializado. Reserve una URL de Zrok desde la pantalla de Servicios y reinicie el servicio en segundo plano para habilitar la entrega push.",
     "push_delivery": "Entrega de empuje",
     "push_delivery_sub": "Habilita las alertas en el dispositivo que está utilizando. Cada teléfono que instale el panel de instrumentos debe activarse aquí una vez.",
     "enable_btn": "Habilitar en este dispositivo",
@@ -171,7 +169,6 @@
     "registered_devices": "Dispositivos registrados",
     "devices_sub": "Todos los teléfonos que habilitaron las notificaciones push aparecen aquí. Utilice Remove para desinscribir un dispositivo. Desactivar en este dispositivo arriba también desinscribe el navegador actual localmente, mientras que Remove es solo del lado del servidor.",
     "no_devices": "No hay dispositivos registrados todavía.",
-    "perm_zrok_required": "La entrega de empuje requiere Zrok o un proxy inverso  ver banner arriba.",
     "perm_unsupported": "Notificaciones no compatibles en este navegador",
     "perm_unsupported_install": "No se admiten las notificaciones. Si está usando Safari, intente agregar a la pantalla de inicio para obtener las notificaciones",
     "perm_granted": "Las notificaciones están activadas en este dispositivo",
@@ -1559,7 +1556,8 @@
     "retry": "Reintentar",
     "badgeLive": "● EN VIVO",
     "badgeConnecting": "○ Conectando…",
-    "notConnected": "Transmisión de cámara no conectada"
+    "notConnected": "Transmisión de cámara no conectada",
+    "decoderUnsupported": "Este navegador no puede reproducir la transmisión en vivo. Necesita un navegador compatible con la decodificación de vídeo, como Chrome o Edge. Tor Browser y Firefox ESR aún no lo admiten."
   },
   "location": {
     "themeAuto": "Auto",

@@ -134,7 +134,7 @@ class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
     final tunnelUrl = await _safeTunnelUrl();
     if (tunnelUrl != null && tunnelUrl.isNotEmpty) {
       _tunnelState = TunnelState.online;
-    } else if (daemons['ZROK_TUNNEL'] == true) {
+    } else if (daemons['TOR_TUNNEL'] == true) {
       _tunnelState = TunnelState.connecting;
     } else {
       _tunnelState = TunnelState.offline;

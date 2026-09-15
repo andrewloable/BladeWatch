@@ -401,20 +401,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get webview_loading => 'Het laden...';
 
   @override
-  String get zrok_enable_token_hint => 'Token activeren';
-
-  @override
-  String get zrok_token_storage_note =>
-      'Token wordt veilig opgeslagen en gedeeld tussen de app en achtergrondservices.';
-
-  @override
-  String get zrok_reset_environment => 'Zrok-omgeving resetten';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      'Verwijdert omgeving en token. Je zult opnieuw moeten activeren met je token (gebruikt een apparaat slot).';
-
-  @override
   String get reset_title => 'Gegevens resetten';
 
   @override
@@ -591,7 +577,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get daemon_name_acc => 'ACC-bewaking';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Achtergronddiensten';
@@ -847,7 +833,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_no_tunnel => 'Geen tunnel loopt.';
 
   @override
-  String get dashboard_starting_zrok => 'Zrok tunnel starten...';
+  String get dashboard_starting_tor => 'Tor-tunnel starten…';
 
   @override
   String get dashboard_waiting_url => 'Wachtend op tunnel URL...';
@@ -858,7 +844,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Toegangscode';
@@ -872,54 +858,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok-tunneltoken';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'Voer je Zrok activeren token in.\nKrijg er een op: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => 'De token mag niet leeg zijn';
-
-  @override
-  String get dialog_zrok_reset_title => 'Zrok-omgeving resetten';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      'Dit zal:\n• de zrok-tunnel stoppen als het loopt\n• de zrok-omgeving van dit apparaat verwijderen\n• de opgeslagen token verwijderen\n\nJe zult je token opnieuw moeten invoeren en opnieuw moeten activeren. Dit maakt gebruik van een van je 5 apparaat slots op zrok.io.\n\nBen je zeker?';
-
-  @override
-  String get toast_resetting_zrok => 'Zrok-omgeving opnieuw instellen...';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'Zrok-omgeving opnieuw ingesteld. Voer een nieuw token in om opnieuw in te stellen.';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      'Omgeving opnieuw instellen (tokenbestand kan handmatig worden gereinigd)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return 'Omgevingsreset (met waarschuwingen: $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured =>
-      'Geen token geconfigureerd. Tik om in te stellen.';
-
-  @override
-  String get toast_zrok_token_saved => 'Gewaarborgd token';
-
-  @override
-  String get toast_zrok_token_save_failed => 'Niet gespaard token';
-
-  @override
-  String get toast_zrok_token_deleted => 'Verwijderde token';
-
-  @override
-  String get toast_zrok_token_delete_failed =>
-      'Het verwijderen van de token is niet gelukt';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1692,12 +1631,6 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configureren';
-
-  @override
-  String get settings_daemons_zrok_reset_button => 'Omgeving resetten';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '$arg1 gebruikt · $arg2 vrij';
   }
@@ -1811,7 +1744,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Zrok-tunnel en achtergrondservices.';
+      'Tor-tunnel en achtergrondservices.';
 
   @override
   String get settings_about_row_title => 'Over BladeWatch';
@@ -2798,4 +2731,36 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Opslaan mislukt';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'Verbinden met Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'Dit adres openen';
+
+  @override
+  String get dashboard_tor_help_title => 'Dit adres openen';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: installeer Tor Browser via Google Play of F-Droid, open het en plak het adres.';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone en iPad: installeer Onion Browser uit de App Store, open het en plak het adres. Tor Browser bestaat niet voor iOS.';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS en Linux: download Tor Browser via torproject.org, open het en plak het adres.';
+
+  @override
+  String get dashboard_tor_help_password_note =>
+      'Het wachtwoord blijft nodig zodra de pagina is geladen.';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'Scan voor de downloadpagina van Tor Browser';
+
+  @override
+  String get dashboard_tor_help_close => 'Duidelijk';
 }

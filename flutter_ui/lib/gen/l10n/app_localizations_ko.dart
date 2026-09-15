@@ -395,19 +395,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get webview_loading => '로딩...';
 
   @override
-  String get zrok_enable_token_hint => '토큰을 활성화';
-
-  @override
-  String get zrok_token_storage_note => '토큰은 안전하게 저장되어 앱과 백그라운드 서비스 사이에 공유됩니다.';
-
-  @override
-  String get zrok_reset_environment => 'Zrok 환경을 다시 설정';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      '환경과 토큰을 제거합니다. 토큰으로 다시 활성화해야 합니다 (기기 슬롯을 사용합니다).';
-
-  @override
   String get reset_title => '데이터 초기화';
 
   @override
@@ -581,7 +568,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get daemon_name_acc => 'ACC 감시';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '배경 서비스';
@@ -826,7 +813,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_no_tunnel => '터널이 통하지 않습니다.';
 
   @override
-  String get dashboard_starting_zrok => 'Zrok 터널 시작...';
+  String get dashboard_starting_tor => 'Tor 터널 시작 중…';
 
   @override
   String get dashboard_waiting_url => '터널 URL 대기 중…';
@@ -837,7 +824,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '액세스 코드';
@@ -851,50 +838,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok 터널 토큰';
-
-  @override
-  String get dialog_zrok_token_message => 'Zrok 활성화 토큰을 입력하세요.\n발급처: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => '지표는 빈이 될 수 없습니다';
-
-  @override
-  String get dialog_zrok_reset_title => 'Zrok 환경을 다시 설정';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      '이것은:\n• 실행되는 경우 zrok 터널을 중지합니다\n• 이 장치에서 zrok 환경을 제거합니다\n• 저장된 토큰을 삭제합니다\n\n당신은 다시 토큰을 입력하고 다시 활성화해야합니다. 이것은 zrok.io에서 5 개의 장치 슬롯 중 하나를 사용합니다.\n\n당신은 확실합니까?';
-
-  @override
-  String get toast_resetting_zrok => 'Zrok 환경을 재설정...';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'Zrok 환경 리셋. 다시 설정하기 위해 새로운 토큰을 입력하십시오.';
-
-  @override
-  String get toast_zrok_reset_partial => '환경 리셋 (토큰 파일은 수동으로 청소가 필요할 수 있습니다)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return '환경 리셋 (주의사항: $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured => '토큰이 설정되지 않았습니다. 설정하기 위해 탭하세요.';
-
-  @override
-  String get toast_zrok_token_saved => '저장된 토큰';
-
-  @override
-  String get toast_zrok_token_save_failed => '토큰 저장 실패';
-
-  @override
-  String get toast_zrok_token_deleted => '지표 삭제';
-
-  @override
-  String get toast_zrok_token_delete_failed => '토큰 삭제 실패';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1636,12 +1580,6 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => '구성';
-
-  @override
-  String get settings_daemons_zrok_reset_button => '환경 초기화';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '사용 된 $arg1 · $arg2 무료';
   }
@@ -1751,7 +1689,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_section_surveillance_subtitle => '일정, 동작 감도, 객체 감지.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Zrok 터널 및 백그라운드 서비스.';
+  String get settings_section_daemons_subtitle => 'Tor 터널 및 백그라운드 서비스.';
 
   @override
   String get settings_about_row_title => 'BladeWatch에 대해';
@@ -2716,4 +2654,35 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => '저장 실패';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'Tor에 연결 중…';
+
+  @override
+  String get dashboard_tor_help_tooltip => '이 주소를 여는 방법';
+
+  @override
+  String get dashboard_tor_help_title => '이 주소 열기';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: Google Play 또는 F-Droid에서 Tor Browser를 설치하고 실행한 뒤 주소를 붙여넣으세요.';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone 및 iPad: App Store에서 Onion Browser를 설치하고 실행한 뒤 주소를 붙여넣으세요. iOS용 Tor Browser는 없습니다.';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS, Linux: torproject.org에서 Tor Browser를 내려받아 실행한 뒤 주소를 붙여넣으세요.';
+
+  @override
+  String get dashboard_tor_help_password_note => '페이지가 열린 뒤에도 비밀번호가 필요합니다.';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      '스캔하여 Tor Browser 다운로드 페이지로 이동';
+
+  @override
+  String get dashboard_tor_help_close => '확인';
 }

@@ -691,6 +691,27 @@ object UnifiedConfigManager {
     }
 
     /**
+     * Drop a daemon entry entirely — for removing an entry that outlived the daemon it
+     * named (BladeWatch-fjb0). Returns true only if something was actually removed, so a
+     * caller can stay quiet on the overwhelmingly common no-op.
+     *
+     * Deliberately NOT expressible through [updateValues], which can only write values.
+     */
+    @JvmStatic
+    fun removeDaemonEntry(daemonType: String): Boolean {
+        synchronized(this) {
+            val config = loadConfig()
+            val daemons = config.optJSONObject("daemons") ?: return false
+            if (!daemons.has(daemonType)) return false
+            daemons.remove(daemonType)
+            config.put("daemons", daemons)
+            val success = saveConfig(config)
+            if (success) notifyListeners("daemons", daemons)
+            return success
+        }
+    }
+
+    /**
      * Get vehicle appearance config section (selected 3D model + body color).
      */
     @JvmStatic
@@ -721,8 +742,8 @@ object UnifiedConfigManager {
      *
      * `locale` is stored here (not in LocaleManager) so the web-side
      * language picker doesn't cross-pollinate the Android app's locale.
-     * Survives tunnel-URL changes (each new zrok session is a fresh
-     * origin, so localStorage alone is not enough). Default: "auto"
+     * Survives tunnel-URL changes (a tunnel origin can change, so localStorage
+     * alone is not enough). Default: "auto"
      * (the runtime falls back to navigator.language).
      */
     @JvmStatic
@@ -913,7 +934,9 @@ object UnifiedConfigManager {
     private fun sensitiveKeysFor(section: String): Set<String> {
         return when (section) {
             "auth" -> setOf("deviceSecret")
-            "zrok" -> setOf("enableToken", "reservedToken", "enable_token", "reserved_token")
+            // The tunnel has no secrets any more: a Tor onion service needs no account,
+            // no token and no registration. Its only secret is the hidden-service key,
+            // which lives in tor's own directory at mode 600 and never enters this store.
             else -> emptySet()
         }
     }

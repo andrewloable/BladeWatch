@@ -246,9 +246,9 @@ Remote access options include:
 
 - Local loopback web server.
 - Opt-in LAN HTTP.
-- Zrok public or reserved share.
+- Tor onion service (permanent address, no account or token).
 
-LAN HTTP is disabled by default. Zrok is designed to front the authenticated local web server directly with no intermediate proxy.
+LAN HTTP is disabled by default. The Tor onion service fronts the authenticated local web server directly with no intermediate proxy. The onion address is a capability URL, not authentication: the password/JWT layer stays mandatory.
 
 ## Updates
 
@@ -282,4 +282,4 @@ The daemon exposes a typed ConnectRPC API (also reachable over Connect/JSON HTTP
 - Location and GPS: [flutter_ui/lib/screens/location/](../flutter_ui/lib/screens/location/), [location.component.ts:1](../web/src/app/pages/location/location.component.ts#L1), [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51).
 - Trips, notifications, updates, and diagnostics: [TripAnalyticsManager.java:23](../app/src/main/java/com/loabletech/bladewatch/trips/TripAnalyticsManager.java#L23), [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [NotificationApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L30), [PerformanceApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/PerformanceApiHandler.java#L30), [adb_console_screen.dart](../flutter_ui/lib/screens/diagnostics/adb_console_screen.dart).
 - ConnectRPC API and web UI: [connect-clients.ts:19](../web/src/app/core/connect/connect-clients.ts#L19), [app.routes.ts:5](../web/src/app/app.routes.ts#L5).
-- Remote access: [ZrokLauncher.kt:27](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L27).
+- Remote access: [TorLauncher.kt:44](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L44).

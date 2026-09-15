@@ -102,6 +102,38 @@ void main() {
     await settle(tester);
   }
 
+
+  // BladeWatch-era8: the source segments and the date navigator share one row, so the
+  // recordings grid and the player below get that vertical space back.
+  //
+  // Structure is what a widget test can honestly pin. Whether it FITS is a device check:
+  // flutter test uses a fixed-width placeholder font, so any overflow assertion here would
+  // be meaningless (see CLAUDE.md's Testing section).
+  // BladeWatch-era8, second pass: the TYPE filters joined the same row, so the header is
+  // one line instead of three. Only the set matching the current source is present — the
+  // dashcam type chips and the surveillance filters are alternatives, never both.
+  testWidgets('the type filters share the row with the segments and date', (tester) async {
+    await pumpScreen(tester);
+
+    final segments = tester.getTopLeft(find.byKey(const ValueKey('recordings.segments')));
+    final normal = tester.getTopLeft(find.text('Normal'));
+
+    expect(normal.dy, closeTo(segments.dy, 24),
+        reason: 'the type chips should sit on the header row, not below it');
+  });
+
+  testWidgets('the source segments and the date navigator share one row', (tester) async {
+    await pumpScreen(tester);
+
+    final segments = tester.getTopLeft(find.byKey(const ValueKey('recordings.segments')));
+    final datePick = tester.getTopLeft(find.byKey(const ValueKey('recordings.datePick')));
+
+    expect(segments.dy, closeTo(datePick.dy, 24),
+        reason: 'they should sit on the same line, not stacked');
+    expect(segments.dx, lessThan(datePick.dx),
+        reason: 'the segments lead, the date navigator follows');
+  });
+
   testWidgets('shows an error state with a retry action', (tester) async {
     rpc.stubError('RecordingsService', 'ListRecordings', const ConnectError('unavailable', 'no daemon'));
     stubStats();

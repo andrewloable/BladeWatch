@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "通知",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "通知后端未初始化。请通过「服务」页面预留一个 Zrok URL，然后重启后台服务以启用推送通知。",
     "push_delivery": "推送",
     "push_delivery_sub": "在您目前使用的设备上启用警报.",
     "enable_btn": "在此设备上启用",
@@ -171,7 +169,6 @@
     "registered_devices": "已注册的设备",
     "devices_sub": "每个启用推送通知的手机都会在这里显示.使用删除来删除设备.在上面的设备上禁用也会在本地取消当前浏览器的订阅,而删除仅是服务器侧.",
     "no_devices": "目前还没有任何设备登记.",
-    "perm_zrok_required": "推送需要Zrok或反向代理查看上面的标志.",
     "perm_unsupported": "在本浏览器中未支持的通知",
     "perm_unsupported_install": "如果使用Safari,请尝试添加到主屏幕,以获取通知",
     "perm_granted": "在此设备上启用了通知",
@@ -1559,7 +1556,8 @@
     "retry": "重试",
     "badgeLive": "● 直播",
     "badgeConnecting": "○ 连接中…",
-    "notConnected": "摄像头流未连接"
+    "notConnected": "摄像头流未连接",
+    "decoderUnsupported": "此浏览器无法播放实时画面。需要支持视频解码的浏览器，例如 Chrome 或 Edge。Tor Browser 和 Firefox ESR 尚不支持。"
   },
   "location": {
     "themeAuto": "汽车",

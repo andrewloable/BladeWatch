@@ -392,18 +392,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webview_loading => '装载...';
 
   @override
-  String get zrok_enable_token_hint => '启用令牌';
-
-  @override
-  String get zrok_token_storage_note => '令牌已安全存储，并在应用与后台服务之间共享。';
-
-  @override
-  String get zrok_reset_environment => '重置Zrok环境';
-
-  @override
-  String get zrok_reset_environment_desc => '移除环境和令牌。您需要用令牌重新启用（会占用一个设备名额）。';
-
-  @override
   String get reset_title => '重置数据';
 
   @override
@@ -576,7 +564,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get daemon_name_acc => 'ACC 监控';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '背景服务';
@@ -816,7 +804,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_no_tunnel => '没有道运行';
 
   @override
-  String get dashboard_starting_zrok => '启动Zrok道...';
+  String get dashboard_starting_tor => '正在启动 Tor 隧道…';
 
   @override
   String get dashboard_waiting_url => '等待道URL...';
@@ -827,7 +815,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '访问代码';
@@ -841,49 +829,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok道标志';
-
-  @override
-  String get dialog_zrok_token_message => '请输入 Zrok 启用令牌。\n获取地址: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => '标签不能空';
-
-  @override
-  String get dialog_zrok_reset_title => '重置Zrok环境';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      '此操作将:\n• 停止正在运行的 zrok 隧道\n• 从本设备移除 zrok 环境\n• 删除已保存的令牌\n\n您需要重新输入令牌并重新启用。这会占用您在 zrok.io 上 5 个设备名额中的 1 个。\n\n确定吗？';
-
-  @override
-  String get toast_resetting_zrok => '重新设置zrok环境...';
-
-  @override
-  String get toast_zrok_reset_success => 'Zrok环境重置. 输入一个新的令牌,重新设置.';
-
-  @override
-  String get toast_zrok_reset_partial => '环境重置 (令牌文件可能需要手动清理)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return '环境重置 (附警告:$arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured => '未配置令牌。点按进行设置。';
-
-  @override
-  String get toast_zrok_token_saved => '存储的令牌';
-
-  @override
-  String get toast_zrok_token_save_failed => '未能保存令牌';
-
-  @override
-  String get toast_zrok_token_deleted => '删除的标志';
-
-  @override
-  String get toast_zrok_token_delete_failed => '未能删除令牌';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1617,12 +1563,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => '配置';
-
-  @override
-  String get settings_daemons_zrok_reset_button => '重置环境';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '使用的$arg1 ·免费的$arg2';
   }
@@ -1732,7 +1672,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_section_surveillance_subtitle => '时间表,移动检测灵敏度,目标检测.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Zrok 隧道与后台服务。';
+  String get settings_section_daemons_subtitle => 'Tor 隧道和后台服务。';
 
   @override
   String get settings_about_row_title => '关于BladeWatch';
@@ -2694,6 +2634,36 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => '保存失败';
+
+  @override
+  String get dashboard_tor_bootstrapping => '正在连接 Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => '如何打开此地址';
+
+  @override
+  String get dashboard_tor_help_title => '打开此地址';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android：从 Google Play 或 F-Droid 安装 Tor Browser，打开后粘贴地址。';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone 和 iPad：从 App Store 安装 Onion Browser，打开后粘贴地址。iOS 没有 Tor Browser。';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows、macOS 和 Linux：从 torproject.org 下载 Tor Browser，打开后粘贴地址。';
+
+  @override
+  String get dashboard_tor_help_password_note => '页面加载后仍需输入密码。';
+
+  @override
+  String get dashboard_tor_help_download_qr_label => '扫描前往 Tor Browser 下载页';
+
+  @override
+  String get dashboard_tor_help_close => '知道了';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -3084,18 +3054,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get webview_loading => '装载...';
 
   @override
-  String get zrok_enable_token_hint => '启用令牌';
-
-  @override
-  String get zrok_token_storage_note => '令牌已安全存储，并在应用与后台服务之间共享。';
-
-  @override
-  String get zrok_reset_environment => '重置Zrok环境';
-
-  @override
-  String get zrok_reset_environment_desc => '移除环境和令牌。您需要用令牌重新启用（会占用一个设备名额）。';
-
-  @override
   String get reset_title => '重置数据';
 
   @override
@@ -3268,7 +3226,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get daemon_name_acc => 'ACC 监控';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '背景服务';
@@ -3508,7 +3466,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dashboard_no_tunnel => '没有道运行';
 
   @override
-  String get dashboard_starting_zrok => '启动Zrok道...';
+  String get dashboard_starting_tor => '正在启动 Tor 隧道…';
 
   @override
   String get dashboard_waiting_url => '等待道URL...';
@@ -3519,7 +3477,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '访问代码';
@@ -3533,49 +3491,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok道标志';
-
-  @override
-  String get dialog_zrok_token_message => '请输入 Zrok 启用令牌。\n获取地址: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => '标签不能空';
-
-  @override
-  String get dialog_zrok_reset_title => '重置Zrok环境';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      '此操作将:\n• 停止正在运行的 zrok 隧道\n• 从本设备移除 zrok 环境\n• 删除已保存的令牌\n\n您需要重新输入令牌并重新启用。这会占用您在 zrok.io 上 5 个设备名额中的 1 个。\n\n确定吗？';
-
-  @override
-  String get toast_resetting_zrok => '重新设置zrok环境...';
-
-  @override
-  String get toast_zrok_reset_success => 'Zrok环境重置. 输入一个新的令牌,重新设置.';
-
-  @override
-  String get toast_zrok_reset_partial => '环境重置 (令牌文件可能需要手动清理)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return '环境重置 (附警告:$arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured => '未配置令牌。点按进行设置。';
-
-  @override
-  String get toast_zrok_token_saved => '存储的令牌';
-
-  @override
-  String get toast_zrok_token_save_failed => '未能保存令牌';
-
-  @override
-  String get toast_zrok_token_deleted => '删除的标志';
-
-  @override
-  String get toast_zrok_token_delete_failed => '未能删除令牌';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -4309,12 +4225,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String get settings_daemons_zrok_configure => '配置';
-
-  @override
-  String get settings_daemons_zrok_reset_button => '重置环境';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '使用的$arg1 ·免费的$arg2';
   }
@@ -4424,7 +4334,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_section_surveillance_subtitle => '时间表,移动检测灵敏度,目标检测.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Zrok 隧道与后台服务。';
+  String get settings_section_daemons_subtitle => 'Tor 隧道和后台服务。';
 
   @override
   String get settings_about_row_title => '关于BladeWatch';
@@ -5386,6 +5296,36 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get surveillance_apply_failed => '保存失败';
+
+  @override
+  String get dashboard_tor_bootstrapping => '正在连接 Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => '如何打开此地址';
+
+  @override
+  String get dashboard_tor_help_title => '打开此地址';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android：从 Google Play 或 F-Droid 安装 Tor Browser，打开后粘贴地址。';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone 和 iPad：从 App Store 安装 Onion Browser，打开后粘贴地址。iOS 没有 Tor Browser。';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows、macOS 和 Linux：从 torproject.org 下载 Tor Browser，打开后粘贴地址。';
+
+  @override
+  String get dashboard_tor_help_password_note => '页面加载后仍需输入密码。';
+
+  @override
+  String get dashboard_tor_help_download_qr_label => '扫描前往 Tor Browser 下载页';
+
+  @override
+  String get dashboard_tor_help_close => '知道了';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -5777,18 +5717,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get webview_loading => '接收了這些東西.';
 
   @override
-  String get zrok_enable_token_hint => '啟動權杖';
-
-  @override
-  String get zrok_token_storage_note => '權杖已安全儲存，並在應用程式與後台服務之間共用。';
-
-  @override
-  String get zrok_reset_environment => '重置Zrok環境';
-
-  @override
-  String get zrok_reset_environment_desc => '移除環境和權杖。您需要用權杖重新啟用（會佔用一個裝置名額）。';
-
-  @override
   String get reset_title => '重置資料';
 
   @override
@@ -5961,7 +5889,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get daemon_name_acc => 'ACC 監控';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '背景服務';
@@ -6202,7 +6130,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dashboard_no_tunnel => '沒有道運行';
 
   @override
-  String get dashboard_starting_zrok => '開始Zrok道...';
+  String get dashboard_starting_tor => '正在啟動 Tor 通道…';
 
   @override
   String get dashboard_waiting_url => '在等待道URL...';
@@ -6213,7 +6141,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '存取碼';
@@ -6227,49 +6155,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok道標記';
-
-  @override
-  String get dialog_zrok_token_message => '請輸入 Zrok 啟用權杖。\n取得位置: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => '符號不能空';
-
-  @override
-  String get dialog_zrok_reset_title => '重置Zrok環境';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      '此操作將:\n• 停止正在執行的 zrok 通道\n• 從本裝置移除 zrok 環境\n• 刪除已儲存的權杖\n\n您需要重新輸入權杖並重新啟用。這會佔用您在 zrok.io 上 5 個裝置名額中的 1 個。\n\n確定嗎？';
-
-  @override
-  String get toast_resetting_zrok => '還原zrok環境...';
-
-  @override
-  String get toast_zrok_reset_success => 'Zrok環境重置. 輸入新的權杖,重新設定.';
-
-  @override
-  String get toast_zrok_reset_partial => '環境重置 (權杖檔案可能需要手動清理)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return '環境重置 (附警告:$arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured => '尚未設定權杖。點按以進行設定。';
-
-  @override
-  String get toast_zrok_token_saved => '存儲的權杖';
-
-  @override
-  String get toast_zrok_token_save_failed => '沒有儲存權杖';
-
-  @override
-  String get toast_zrok_token_deleted => '已取消的標籤';
-
-  @override
-  String get toast_zrok_token_delete_failed => '無法刪除權杖';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -7002,12 +6888,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String get settings_daemons_zrok_configure => '設定';
-
-  @override
-  String get settings_daemons_zrok_reset_button => '重設環境';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '使用的$arg1 · 免費的$arg2';
   }
@@ -7117,7 +6997,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_section_surveillance_subtitle => '時間表,移動偵測靈敏度,物件偵測.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Zrok 隧道與後台服務。';
+  String get settings_section_daemons_subtitle => 'Tor 通道與背景服務。';
 
   @override
   String get settings_about_row_title => '關於BladeWatch';
@@ -8079,4 +7959,34 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get surveillance_apply_failed => '儲存失敗';
+
+  @override
+  String get dashboard_tor_bootstrapping => '正在連線至 Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => '如何開啟此位址';
+
+  @override
+  String get dashboard_tor_help_title => '開啟此位址';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android：從 Google Play 或 F-Droid 安裝 Tor Browser，開啟後貼上位址。';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone 和 iPad：從 App Store 安裝 Onion Browser，開啟後貼上位址。iOS 沒有 Tor Browser。';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows、macOS 和 Linux：從 torproject.org 下載 Tor Browser，開啟後貼上位址。';
+
+  @override
+  String get dashboard_tor_help_password_note => '頁面載入後仍需要密碼。';
+
+  @override
+  String get dashboard_tor_help_download_qr_label => '掃描前往 Tor Browser 下載頁';
+
+  @override
+  String get dashboard_tor_help_close => '知道了';
 }

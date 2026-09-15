@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "Notifiche",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "Backend delle notifiche non inizializzato. Prenota un URL Zrok tramite la schermata Servizi e riavvia il servizio in background per abilitare la consegna push.",
     "push_delivery": "Spinta di consegna",
     "push_delivery_sub": "Ogni telefono su cui installa la dashboard deve essere attivato una volta.",
     "enable_btn": "Abilitare su questo dispositivo",
@@ -171,7 +169,6 @@
     "registered_devices": "Dispositivi registrati",
     "devices_sub": "Tutti i telefoni che hanno abilitato le notifiche push vengono visualizzati qui. Utilizzare rimuovere per disregistrare un dispositivo. Disattivare su questo dispositivo sopra cancella anche l'iscrizione del browser corrente localmente, mentre rimuovere è solo server-side.",
     "no_devices": "Non ci sono dispositivi registrati.",
-    "perm_zrok_required": "La consegna push richiede Zrok o un proxy inverso  vedere banner sopra.",
     "perm_unsupported": "Notifiche non supportate in questo browser",
     "perm_unsupported_install": "Notifiche non supportate. Se si utilizza Safari, prova ad aggiungere alla schermata iniziale per ricevere notifiche",
     "perm_granted": "Le notifiche sono abilitate su questo dispositivo",
@@ -1559,7 +1556,8 @@
     "retry": "Riprova",
     "badgeLive": "● LIVE",
     "badgeConnecting": "○ Connessione…",
-    "notConnected": "Stream telecamera non connesso"
+    "notConnected": "Stream telecamera non connesso",
+    "decoderUnsupported": "Questo browser non può riprodurre lo streaming dal vivo. Serve un browser con supporto alla decodifica video, come Chrome o Edge. Tor Browser e Firefox ESR non lo supportano ancora."
   },
   "location": {
     "themeAuto": "Autovettura",

@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "通知",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "通知後台尚未初始化。請透過服務頁面預留 Zrok URL，然後重新啟動後台服務以啟用推播傳送。",
     "push_delivery": "推送方式",
     "push_delivery_sub": "在您目前使用的裝置上啟動警報.",
     "enable_btn": "在這個裝置上啟用",
@@ -171,7 +169,6 @@
     "registered_devices": "已註冊的裝置",
     "devices_sub": "請使用 Remove 取消註冊裝置. 在上面的裝置中禁用也會在本地取消當前的浏覽器,而 Remove 只有伺服器端.",
     "no_devices": "還沒有登記任何裝置.",
-    "perm_zrok_required": "推送需要Zrok或反向代理查看上面的標籤.",
     "perm_unsupported": "在這個覽器中沒有支持的通知",
     "perm_unsupported_install": "如果使用 Safari,請嘗試在主屏幕上添加通知",
     "perm_granted": "在此裝置上已啟用通知",
@@ -1559,7 +1556,8 @@
     "retry": "重試",
     "badgeLive": "● 直播",
     "badgeConnecting": "○ 連線中…",
-    "notConnected": "相機串流未連線"
+    "notConnected": "相機串流未連線",
+    "decoderUnsupported": "此瀏覽器無法播放即時畫面。需要支援視訊解碼的瀏覽器，例如 Chrome 或 Edge。Tor Browser 與 Firefox ESR 尚不支援。"
   },
   "location": {
     "themeAuto": "自動使用",

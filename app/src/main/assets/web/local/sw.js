@@ -49,7 +49,7 @@ const PRECACHE_URLS = [
 // Runtime-cache model GLBs selected in the Vehicle page. We intentionally do
 // not precache every GLB in the manifest, because that would spend data on
 // models the user never opens. The first load of each selected model still
-// downloads it once; later reloads, PWA launches, and zrok sessions hit Cache
+// downloads it once; later reloads, PWA launches, and tunnel sessions hit Cache
 // Storage instead of the tunnel.
 const MODEL_PATH_RE = /^\/shared\/models\/[^/?#]+\.glb$/;
 

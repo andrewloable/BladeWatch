@@ -22,9 +22,6 @@ object PreferencesManager {
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_SELECTED_CAMERAS = "selected_cameras"
     private const val KEY_LAST_TUNNEL_URL = "last_tunnel_url"
-    private const val KEY_LAST_ZROK_URL = "last_zrok_url"
-    private const val KEY_ZROK_UNIQUE_NAME = "zrok_unique_name"
-    private const val KEY_ZROK_ENABLE_TOKEN = "zrok_enable_token"
     private const val KEY_LOGS_EXPANDED = "logs_expanded"
     private const val KEY_AUTO_UPDATE_ENABLED = "auto_update_enabled"
     private const val KEY_DRIVE_SIDE = "drive_side"
@@ -169,25 +166,6 @@ object PreferencesManager {
     
     fun setLastTunnelUrl(url: String?) {
         requirePrefs().edit().putString(KEY_LAST_TUNNEL_URL, url).apply()
-    }
-    
-    // Zrok URL
-    fun getLastZrokUrl(): String? {
-        return requirePrefs().getString(KEY_LAST_ZROK_URL, null)
-    }
-    
-    fun setLastZrokUrl(url: String?) {
-        requirePrefs().edit().putString(KEY_LAST_ZROK_URL, url).apply()
-    }
-    
-    // Zrok Unique Name - CRITICAL for preventing "Not Found" errors
-    // The unique name MUST be persisted alongside the token to prevent split-brain
-    fun getZrokUniqueName(): String? {
-        return requirePrefs().getString(KEY_ZROK_UNIQUE_NAME, null)
-    }
-    
-    fun setZrokUniqueName(name: String) {
-        requirePrefs().edit().putString(KEY_ZROK_UNIQUE_NAME, name).commit()
     }
     
     // Logs Panel State

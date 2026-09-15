@@ -67,7 +67,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       theme: theme,
       onViewAllTrips: () => widget.onNavigate(BwRoutes.trips),
     );
-    final connect = _ConnectCard(controller: c, l10n: l10n, theme: theme);
+    // BladeWatch-y7x2: no card at all when the owner has switched the tunnel OFF.
+    //
+    // Only for the DISABLED phase, never for offline/connecting — an enabled tunnel is
+    // also not up for the first minute while tor bootstraps, and hiding the card then
+    // would make the Dashboard look broken exactly while the user waits for it.
+    //
+    // The access code goes with the card deliberately: it only ever authenticates the
+    // web app, and with no tunnel and LAN HTTP off by default the web app is not
+    // reachable at all, so there is nothing for the code to unlock.
+    final tunnelDisabled = c.tunnel.phase == TunnelPhase.disabled;
+    final connect = tunnelDisabled
+        ? null
+        : _ConnectCard(controller: c, l10n: l10n, theme: theme);
     final metrics = _MetricRow(
       controller: c,
       l10n: l10n,
@@ -94,7 +106,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // Native puts the hero and Scan-to-Connect side by side so the
                 // whole dashboard fits above the fold; stacking them pushed the
                 // access code two swipes down (BladeWatch-ya6f).
-                if (wide)
+                // With the tunnel switched off there is no connect card, so the hero
+                // takes the full width rather than leaving a gap where it used to be.
+                if (connect == null)
+                  hero
+                else if (wide)
                   // Deliberately NOT wrapped in IntrinsicHeight to equalise the
                   // two columns: the Connect card sizes its QR with a
                   // LayoutBuilder, and IntrinsicHeight cannot measure through
@@ -498,7 +514,7 @@ class _MetricTile extends StatelessWidget {
 /// Connect card: QR / placeholder, device id, and the access-code section —
 /// ground truth: `rebuildTunnelChips()`/`renderQr()`/`showPlaceholder()` +
 /// `loadAuthState()`/`toggleTokenVisibility()`/`copyTokenToClipboard()`/
-/// `showRegenerateConfirmation()`/`showSetPasswordDialog()`. Only Zrok has
+/// `showRegenerateConfirmation()`/`showSetPasswordDialog()`. Only one tunnel has
 /// ever populated native's tunnel-chip list (checked: `collectAvailableTunnels()`),
 /// so there is no tunnel-type selector here — just the one tunnel's state.
 class _ConnectCard extends StatefulWidget {
@@ -520,6 +536,10 @@ class _ConnectCardState extends State<_ConnectCard> {
     final c = widget.controller;
     final tunnel = c.tunnel;
     final online = tunnel.phase == TunnelPhase.online && tunnel.url != null && tunnel.url!.isNotEmpty;
+    // tor is up but not yet reachable — up to ~82 s on a cold start, ~6 s warm. Its own
+    // state, because both alternatives are wrong: "no tunnel" is a lie while one is
+    // starting, and a QR code here points at a service nothing can reach yet.
+    final connecting = !online && tunnel.phase == TunnelPhase.connecting;
 
     return Card(
       color: theme.colorScheme.surfaceContainer,
@@ -530,7 +550,30 @@ class _ConnectCardState extends State<_ConnectCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.dashboard_scan_to_connect, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.dashboard_scan_to_connect,
+                    style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface),
+                  ),
+                ),
+                // Always present, including with no tunnel: this is MORE useful before
+                // one is up, because that is when someone is still working out what to
+                // install. A .onion address does not open in Chrome or Safari — they
+                // fail with an unhelpful DNS error — so without this a user scans the
+                // QR, hits that error and concludes the app is broken.
+                IconButton(
+                  key: const ValueKey('connect.torHelp'),
+                  icon: const Icon(Icons.info_outline),
+                  tooltip: l10n.dashboard_tor_help_tooltip,
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => _TorHelpDialog(l10n: l10n, theme: theme),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             Center(
               child: online
@@ -542,14 +585,38 @@ class _ConnectCardState extends State<_ConnectCard> {
                           child: QrImageView(data: tunnel.url!, size: 160),
                         ),
                         const SizedBox(height: 8),
-                        Text(tunnel.url!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        // A v3 onion URL is 62 characters, half again as long as the
+                        // tunnel URL this replaced. Centre it and let it wrap rather
+                        // than overflowing the card on the head unit's panel.
+                        Text(
+                          tunnel.url!,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
                       ],
                     )
                   : Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text(
-                        l10n.dashboard_no_tunnel,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (connecting) ...[
+                            const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          Text(
+                            connecting ? l10n.dashboard_tor_bootstrapping : l10n.dashboard_no_tunnel,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                        ],
                       ),
                     ),
             ),
@@ -618,14 +685,15 @@ class _AccessCodeRow extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        // BladeWatch-8sig: Set Password LEADS, Regenerate Token follows.
+        // BladeWatch-y7x2: Regenerate Token was removed from this card at the owner's
+        // request. It rotated the access code, invalidating every paired client — a
+        // destructive action sitting one mis-tap away from Set Password on a touchscreen
+        // in a moving car. Set Password covers the ordinary case of changing the
+        // credential. The underlying regenerate capability is untouched in the daemon;
+        // only this entry point is gone.
         //
-        // Order matters here, it is not cosmetic. Regenerating invalidates the
-        // current access code and every paired client; Set Password does not.
-        // The safer action takes the leading position so a mis-tap on a
-        // touchscreen in a moving car is the recoverable one. This also matches
-        // `activity_main_new.xml`, where btnSetPassword precedes
-        // btnRegenerateToken in the layout.
+        // BladeWatch-8sig previously argued the ORDER of the two buttons on exactly that
+        // mis-tap risk; removing the destructive one settles it.
         Wrap(
           spacing: 8,
           children: [
@@ -634,36 +702,16 @@ class _AccessCodeRow extends StatelessWidget {
               onPressed: () => _showSetPasswordDialog(context),
               child: Text(l10n.dashboard_set_password),
             ),
-            OutlinedButton(
-              key: const ValueKey('accessCode.regenerate'),
-              onPressed: () => _confirmRegenerate(context),
-              child: Text(l10n.dashboard_regenerate_token),
-            ),
           ],
         ),
       ],
     );
   }
 
-  Future<void> _confirmRegenerate(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.dialog_regenerate_token_title),
-        content: Text(l10n.dialog_regenerate_token_message),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.action_cancel)),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.dialog_regenerate)),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    final ok = await controller.regenerateAccessCode();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(ok ? l10n.toast_token_regenerated : l10n.toast_token_regenerated_restart)),
-    );
-  }
+  // _confirmRegenerate() went with the Regenerate Token button (BladeWatch-y7x2). The
+  // capability itself is NOT gone — DashboardController.regenerateAccessCode() and the
+  // daemon behind it are untouched, and the l10n keys survive — so restoring the entry
+  // point is a small change if the owner wants it back somewhere less mis-tappable.
 
   Future<void> _showSetPasswordDialog(BuildContext context) async {
     final result = await showDialog<bool>(
@@ -843,4 +891,96 @@ class _VehicleCapacityDialogState extends State<_VehicleCapacityDialog> {
     );
   }
 
+}
+
+/// How to actually open the onion address, per platform.
+///
+/// The second QR is the reason this is a dialog rather than a line of text: it encodes
+/// an ordinary https URL, so it DOES open in any phone camera and stock browser, which
+/// gets the user from the car's screen to the Tor Browser download without typing.
+/// The connection QR on the card behind it cannot do that.
+class _TorHelpDialog extends StatelessWidget {
+  /// Only torproject.org, Google Play, F-Droid and the App Store are ever named here —
+  /// never a mirror or a third-party re-host.
+  static const String downloadUrl = 'https://www.torproject.org/download/';
+
+  final AppLocalizations l10n;
+  final ThemeData theme;
+
+  const _TorHelpDialog({required this.l10n, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      icon: const Icon(Icons.info_outline),
+      title: Text(l10n.dashboard_tor_help_title),
+      // The explicit width is load-bearing, not styling: QrImageView builds a
+      // LayoutBuilder, and AlertDialog sizes its content by asking for intrinsic
+      // width, which a LayoutBuilder cannot answer. Without a fixed width the dialog
+      // throws "LayoutBuilder does not support returning intrinsic dimensions".
+      //
+      // Scrollable because this is text-heavy and German, Russian and Vietnamese run
+      // long — on the head unit's panel the dismiss button must stay reachable.
+      content: SizedBox(
+        width: 320,
+        child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.dashboard_tor_help_android, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 12),
+            Text(l10n.dashboard_tor_help_ios, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 12),
+            Text(l10n.dashboard_tor_help_desktop, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 16),
+            // BladeWatch-4s7w: this sits ABOVE the QR deliberately.
+            //
+            // It used to be the last thing in the dialog, and on the head unit's 1080 px
+            // panel it fell entirely below the fold — in ENGLISH, the shortest locale,
+            // with the QR caption clipped mid-line just above it. Nothing indicated there
+            // was more to scroll to. It is the one line that stops a user assuming the
+            // onion address alone grants access, so it cannot be the line nobody sees.
+            Text(
+              l10n.dashboard_tor_help_password_note,
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    color: Colors.white,
+                    child: QrImageView(
+                      key: const ValueKey('connect.torHelp.downloadQr'),
+                      data: downloadUrl,
+                      // 96 rather than 120: the dialog is height-capped by the panel and
+                      // this is the cheapest 24 px to give back. A torproject.org URL is
+                      // short, so the QR stays low-density and scannable at this size.
+                      size: 96,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.dashboard_tor_help_download_qr_label,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          key: const ValueKey('connect.torHelp.close'),
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.dashboard_tor_help_close),
+        ),
+      ],
+    );
+  }
 }

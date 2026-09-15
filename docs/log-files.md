@@ -11,7 +11,7 @@ These are the primary logs. Each daemon's stdout/stderr is redirected to a fixed
 | `/data/local/tmp/cam_daemon.log` | `CameraDaemon` (`byd_cam_daemon`) | Busiest log — camera/GPU pipeline, H.264/H.265 recording, HTTP/TCP/IPC servers, BYD telemetry, `PerformanceMonitor`. Grows fastest (hundreds of KB). |
 | `/data/local/tmp/sentry_daemon.log` | `SentryDaemon` (`sentry_daemon`) | Surveillance orchestration, location monitor, control socket (port 19879). |
 | `/data/local/tmp/acc_sentry_daemon.log` | `AccSentryDaemon` (`acc_sentry_daemon`) | ACC power-state watcher, bodywork listener, 60s status checks. |
-| `/data/local/tmp/zrok.log` | Zrok tunnel (`ZrokLauncher`) | Tunnel connection output. |
+| `/data/local/tmp/tor.log` | Tor tunnel (`TorLauncher`) | tor's notice log. `tunnelStatus` reads it to decide when the onion address may be published — see `docs/networking-and-tunnels.md`. |
 | `/data/local/tmp/bladewatch_install.log` | Install/bootstrap scripts | Daemon install/startup bootstrap trace. |
 | `/data/local/tmp/sentry_network_diag.log` | Sentry network diagnostics | Network reachability diagnostics (when enabled). |
 
@@ -47,6 +47,40 @@ Note: when daemons are running detached and logging only to files, the logcat ta
 
 - **Daemon logs** (`DaemonLogger`, [DaemonLogger.java:46-47](app/src/main/java/com/loabletech/bladewatch/logging/DaemonLogger.java#L46-L47), rotation at [DaemonLogger.java:332-386](app/src/main/java/com/loabletech/bladewatch/logging/DaemonLogger.java#L332-L386)): rotate by size (`maxFileSizeMB` = 10 by default) to `<name>.log.1`, `.log.2`, `.log.3`; `rotationCount` = 3 by default. Oldest beyond the count is deleted.
 - **Debug app log** ([DebugAppLogger.kt:27-28](app/src/main/java/com/loabletech/bladewatch/logging/DebugAppLogger.kt#L27-L28), rotation at [DebugAppLogger.kt:110-132](app/src/main/java/com/loabletech/bladewatch/logging/DebugAppLogger.kt#L110-L132)): 5 MB/file (`MAX_SIZE_BYTES`), 3 rotations (`MAX_ROTATIONS`).
+### Session banners — find the current run
+
+Size-based rotation alone does not tell you **which build** wrote a line. A low-volume log
+takes weeks to reach its rotation threshold, so one file routinely spans several days and
+several builds. An audit on 2026-09-15 found two `[CRASH]` entries in `debug_app.log` for a
+bug that had already been fixed and regression-tested; they came from a build whose UI no
+longer existed, and nothing in the file said so.
+
+Every run therefore starts with a banner ([SessionBanner.kt](app/src/main/java/com/loabletech/bladewatch/logging/SessionBanner.kt)):
+
+```
+========================================================================
+BLADEWATCH-SESSION [2026-09-15 10:30:00.000] process=camera-daemon version=1.3.0.0 branch=feature-v1.3.1.0 build=debug
+========================================================================
+```
+
+- The service host writes it to `debug_app.log` as soon as debug logging is enabled.
+- `CameraDaemon` writes it to stdout, which the launcher script appends to `cam_daemon.log`.
+  Straight to stdout rather than through `DaemonLogger`, whose stdout path is deliberately
+  ERROR-only for that file — a run boundary is not an error.
+
+To read only the current run:
+
+```bash
+# where does the last run start?
+adb -s $CAR_IP:5555 shell 'grep -n BLADEWATCH-SESSION /data/local/tmp/cam_daemon.log | tail -1'
+# everything since then
+adb -s $CAR_IP:5555 shell 'sed -n "$(adb ... | cut -d: -f1),\$p" /data/local/tmp/cam_daemon.log'
+```
+
+`branch` comes from `BuildConfig.GIT_BRANCH`, which Gradle already computes for the APK
+filename. **Before treating any log entry as a live fault, check which banner it falls
+under.**
+
 - **LogCleaner** ([LogCleaner.kt](app/src/main/java/com/loabletech/bladewatch/logging/LogCleaner.kt)): periodic sweep that deletes old `*.log` and rotated `*.log.<n>` files by retention policy.
 - Verbosity is gated by [DaemonLogConfig.java](app/src/main/java/com/loabletech/bladewatch/logging/DaemonLogConfig.java); in release builds with all flags `false`, R8 strips log calls (see CLAUDE.md → Logging).
 

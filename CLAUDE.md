@@ -97,35 +97,60 @@ adb -s $CAR_IP:5555 shell '
   # very command line, which would kill the adb shell itself.
   for p in $(ps -A -o PID,ARGS 2>/dev/null | grep -E "start_[c]am_daemon|start_[a]cc_sentry|start_[s]entry|net.bladewatch.[a]pp.daemon" | awk "{print \$1}"); do kill -9 $p 2>/dev/null; done
   sleep 1
-  # Kill the renamed daemon processes by exact name. killall matches comm, so it
-  # will NOT match the adb shell -- but comm is CAPPED AT 15 CHARACTERS by the
-  # kernel, so a longer name must be given in its truncated form or the kill
-  # silently does nothing. Verified on this head unit: /proc/<pid>/comm for the
-  # 17-char mm-qcamera-daemon reads "mm-qcamera-daem".
-  #   byd_cam_daemon    (14) ok
-  #   sentry_daemon     (13) ok
-  #   acc_sentry_daemon (17) -> must be spelled acc_sentry_daem
-  killall -9 byd_cam_daemon sentry_daemon acc_sentry_daem 2>/dev/null
-  # Belt and braces: pkill matches the full cmdline, so it catches any daemon
-  # whose comm was truncated. The bracket trick keeps it from matching this very
-  # shell, which would kill the adb session mid-procedure.
-  pkill -9 -f "[a]cc_sentry_daemon" 2>/dev/null
-  # Kill the Zrok tunnel — the only remaining BladeWatch tunnel daemon.
-  # Match the BladeWatch-deployed binary path so this never touches an
-  # unrelated zrok process. (Cloudflared/Tailscale/sing-box/Telegram daemons
-  # were removed; do NOT add generic kills for them.)
-  pkill -9 -f /data/local/tmp/zrok 2>/dev/null
+  # Kill the daemon processes by name, SPELLED IN FULL. killall matches comm or
+  # basename(argv[0]) -- both "sh" for this adb shell -- so it cannot kill the
+  # session, and it needs no bracket trick.
+  #
+  # This block used to say acc_sentry_daemon had to be truncated to
+  # acc_sentry_daem because the kernel caps /proc/<pid>/comm at 15 characters.
+  # The cap is real; the conclusion was wrong, and the truncated spelling is the
+  # one that matches NOTHING. toybox falls back to basename(argv[0]), and these
+  # daemons are launched with --nice-name, so argv[0] IS the full name while comm
+  # is just "main". Measured on this head unit 2026-09-15:
+  #   pidof acc_sentry_daemon -> 4571
+  #   pidof acc_sentry_daem   -> (nothing)
+  #   pidof main              -> 2851 3102 4571   (comm for all three is "main")
+  killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon 2>/dev/null
+  # NO `pkill -9 -f` belt-and-braces line here. There used to be one, claiming the
+  # bracket trick kept it from matching this shell. It does not -- see the tor
+  # block below -- and it killed the adb session mid-procedure, so every step
+  # after it silently never ran.
+  # Kill the Tor tunnel — the only remaining BladeWatch tunnel daemon.
+  #
+  # killall, NOT pkill -f, and this is verified-on-device important: toybox pkill
+  # matches the pattern as a literal SUBSTRING of each /proc/<pid>/cmdline, and
+  # this adb shell's own cmdline is the whole script you are reading — including
+  # the pattern. So `pkill -9 -f /data/local/tmp/bladewatch_tor` kills the ADB
+  # shell mid-procedure (observed: exit 137, daemons never stopped). The usual
+  # bracket trick does NOT save you here either, because substring matching finds
+  # the literal "[b]ladewatch_tor" in the script text too.
+  #
+  # killall matches `comm` / basename(argv[0]), which is "sh" for this shell and
+  # "bladewatch_tor" for the tunnel, so it cannot match itself. The name is 14
+  # characters precisely so it survives the kernel's 15-char cap on comm — see
+  # TorLauncher.TOR_PROCESS.
+  killall -9 bladewatch_tor 2>/dev/null
   am force-stop net.bladewatch.app
   # Remove launcher scripts + stale locks/sentinels so nothing relaunches.
+  #
+  # !! NEVER widen any of these globs to cover /data/local/tmp/tor. That directory
+  # !! holds hs/hs_ed25519_secret_key, which IS the car's permanent onion address.
+  # !! Delete it and tor mints a brand-new address on the next start, silently
+  # !! breaking every QR code the owner has ever scanned, with no way back. The
+  # !! tunnel is stopped by killing the process, never by deleting its directory.
   rm -f /data/local/tmp/start_*.sh /data/local/tmp/camera_daemon.lock /data/local/tmp/*sentry*.lock /data/local/tmp/*sentry*.pid 2>/dev/null
   sleep 1
-  ps -A -o PID,ARGS 2>/dev/null | grep -E "byd_cam_daemon|sentry_daemon|acc_sentry|/data/local/tmp/zrok" | grep -v grep || echo "all daemons stopped"
+  ps -A -o PID,ARGS 2>/dev/null | grep -E "byd_cam_daemon|sentry_daemon|acc_sentry|bladewatch_to[r]" | grep -v grep || echo "all daemons stopped"
 '
 # NOTE: killing daemons can briefly drop the ADB-over-TCP connection; if so,
 # reconnect: until [ "$(adb -s $CAR_IP:5555 get-state)" = device ]; do adb connect $CAR_IP:5555; sleep 3; done
 adb -s $CAR_IP:5555 uninstall net.bladewatch.app
 # APK filename includes the branch name (e.g. flutter-refactor):
-adb -s $CAR_IP:5555 install "app/build/outputs/apk/debug/bladewatch-$(git rev-parse --abbrev-ref HEAD)-arm64-v8a-debug.apk"
+# NOTE the tr: a branch name containing a slash (feature/v1.3.1.0) would otherwise put a
+# DIRECTORY SEPARATOR in the path and adb fails with "failed to stat". Gradle sanitises the
+# slash to a dash when it names the APK, so the lookup has to sanitise it the same way.
+# Verified on 2026-09-15 -- the unsanitised form below failed on branch feature/v1.3.1.0.
+adb -s $CAR_IP:5555 install "app/build/outputs/apk/debug/bladewatch-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')-arm64-v8a-debug.apk"
 
 # !! UNINSTALLING WIPES THE APP'S ADB KEY PAIR from its filesDir (AdbShellExecutor
 # !! stores it at files/adbkey + files/adbkey.pub). The next launch generates a NEW,
@@ -203,7 +228,7 @@ BladeWatch is a hybrid Android + shell-daemon + embedded web app. The critical d
 **Shell-launched daemon processes** — launched via `app_process` ADB shell, run outside Activity lifecycle:
 - `CameraDaemon` — the central long-running process. Owns the camera/GPU pipeline, H.264/H.265 recording, WebSocket live streaming, HTTP API server (`127.0.0.1:8080`), TCP command server (`127.0.0.1:19876`), surveillance IPC server (`127.0.0.1:19877`), telemetry, trips.
 - `SentryDaemon` / `AccSentryDaemon` — surveillance orchestration.
-- Zrok tunnel daemon (native `.so` in `jniLibs/`) — **the only remaining tunnel/proxy daemon**. Cloudflared, Tailscale, sing-box and the Telegram daemon were all removed; the only sing-box mention left in the tree is a comment in `AdbDaemonLauncher.kt` recording the removal. Do not re-add generic kills for them.
+- Tor onion service (`TorLauncher`, binary shipped as `libtor.so` in `jniLibs/`) — **the only remaining tunnel/proxy daemon**. Runs as `bladewatch_tor`, exposes `127.0.0.1:8080` as a v3 onion service, and needs no account, token or registration. Unlike its predecessor the binary is NOT committed: `downloadTor` fetches and SHA-256-verifies it at build time. Cloudflared, Tailscale, sing-box and the Telegram daemon were all removed; do not re-add generic kills for them. **`/data/local/tmp/tor/hs` holds the permanent onion identity key — killing the tunnel is fine, deleting that directory is not.** See `docs/networking-and-tunnels.md`.
 
 **Embedded web UI** — the Angular 19 SPA under `web/`, built into `app/src/main/assets/web/angular/` and extracted to `/data/local/tmp/web` at runtime. Talks to CameraDaemon over ConnectRPC. It serves **remote browser / tunnel clients only** — the in-car UI is Flutter and does not embed it.
 

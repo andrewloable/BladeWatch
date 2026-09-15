@@ -1392,7 +1392,12 @@ class DaemonLauncher(
         callback: LaunchCallback
     ) {
         adbShellExecutor.execute(
-            command = "pgrep -f '$processName'",
+            // BladeWatch-6jj1: pidof, never `pgrep -f`. The latter matches this very ADB
+            // shell's cmdline — which contains $processName — so verification ALWAYS
+            // succeeded, including when the daemon had failed to start. Plain `pgrep` is
+            // no good either: it consults comm only, and app_process daemons launched
+            // with --nice-name have comm "main". pidof consults comm OR basename(argv[0]).
+            command = "pidof '$processName'",
             callback = object : AdbShellExecutor.ShellCallback {
                 override fun onSuccess(output: String) {
                     if (output.trim().isNotEmpty()) {

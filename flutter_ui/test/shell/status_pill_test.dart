@@ -44,15 +44,15 @@ void main() {
   });
 
   testWidgets('a live tunnel shows the real URL, not a placeholder', (tester) async {
-    await tester.pumpWidget(wrap(source: () async => 'https://abc123.share.zrok.io'));
+    await tester.pumpWidget(wrap(source: () async => 'https://abc123.share.tor.io'));
     await tester.pumpAndSettle();
 
-    expect(find.text('https://abc123.share.zrok.io'), findsOneWidget);
+    expect(find.text('https://abc123.share.tor.io'), findsOneWidget);
     expect(find.byKey(const ValueKey('shell.statusPill.dot')), findsOneWidget);
   });
 
   testWidgets('the copy button actually copies the URL', (tester) async {
-    const url = 'https://abc123.share.zrok.io';
+    const url = 'https://abc123.share.tor.io';
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
@@ -79,10 +79,10 @@ void main() {
   // A tunnel can drop while the app is open. The pill must go away again rather
   // than keep showing a dead address someone might try to hand out.
   testWidgets('the pill disappears when a tunnel drops', (tester) async {
-    String? current = 'https://abc123.share.zrok.io';
+    String? current = 'https://abc123.share.tor.io';
     await tester.pumpWidget(wrap(source: () async => current));
     await tester.pumpAndSettle();
-    expect(find.text('https://abc123.share.zrok.io'), findsOneWidget);
+    expect(find.text('https://abc123.share.tor.io'), findsOneWidget);
 
     current = null;
     // Past the poll interval.

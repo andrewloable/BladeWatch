@@ -18,14 +18,14 @@ void main() {
   late FakeAdbConnection adbConnection;
   late DiagnosticsController controller;
 
-  void stubDaemons({bool camera = true, bool zrok = false}) {
+  void stubDaemons({bool camera = true, bool tor = false}) {
     platform.stub('daemon', 'processStatus', {
       'status': 'ok',
       'daemons': {
         'CAMERA_DAEMON': camera,
         'SENTRY_DAEMON': false,
         'ACC_SENTRY_DAEMON': false,
-        'ZROK_TUNNEL': zrok,
+        'TOR_TUNNEL': tor,
       },
     });
   }
@@ -121,7 +121,7 @@ void main() {
         networkChannel: NetworkChannel(platform),
         surveillanceService: SurveillanceServiceClient(rpc),
         adbConnectionFactory: () => adbConnection,
-        tunnelUrlSource: () async => 'https://example.zrok.io',
+        tunnelUrlSource: () async => 'https://example.tor.io',
       );
 
       await controller.refresh();
@@ -133,7 +133,7 @@ void main() {
       // processStatus() only reports running/not-running, not STARTING — so
       // "connecting" here means the daemon is up (about to serve) but no URL
       // has been minted yet; still distinct from fully offline.
-      stubDaemons(zrok: true);
+      stubDaemons(tor: true);
 
       await controller.refresh();
 

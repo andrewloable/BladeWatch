@@ -34,7 +34,7 @@ Service host APK (net.bladewatch.app) -- no launcher entry
   -> foreground services and boot receivers
   -> DaemonStartupManager
   -> ADB shell / app_process launchers
-  -> CameraDaemon, SentryDaemon, AccSentryDaemon, Zrok tunnel daemon
+  -> CameraDaemon, SentryDaemon, AccSentryDaemon, Tor onion service
 
 CameraDaemon
   -> local TCP command server on 127.0.0.1:19876
@@ -80,7 +80,7 @@ WorkManager, Dadb, OkHttp, ConnectRPC-Kotlin, protobuf-java, TensorFlow Lite, H2
 WebSocket support, and native CMake builds. Navigation, osmdroid and ZXing were
 dropped with the native UI (`BladeWatch-81g9.3`). appcompat, Material and
 lifecycle stayed: `AppCompatDelegate` drives the night mode the status overlay
-reads, `SetupGuideDialog` builds a Material AlertDialog, and `ZrokController` /
+reads, `SetupGuideDialog` builds a Material AlertDialog, and `TorController` /
 `DaemonsViewModel` publish daemon state as `LiveData`.
 
 The embedded web UI is a separate Angular 19 project under `web/` (Vite +
@@ -131,7 +131,7 @@ Core daemon roles:
 - Camera daemon: camera, recording, streaming, HTTP API, WebSocket, telemetry, storage, Web Push notifications, trips.
 - Sentry daemon: surveillance mode orchestration.
 - ACC sentry daemon: ACC-aware sentry behavior.
-- Zrok tunnel daemon: optional remote access tunnel.
+- Tor onion service (`bladewatch_tor`): optional remote access tunnel.
 
 ### Native Libraries
 
@@ -143,7 +143,8 @@ Important native areas:
 - `app/src/main/cpp/surveillance/`.
 - `app/src/main/cpp/CMakeLists.txt`.
 - Downloaded OpenH264 and opencv-mobile artifacts handled by Gradle tasks.
-- `libzrok.so` packaged in `jniLibs/` for the Zrok tunnel.
+- `libtor.so` in `jniLibs/` for the Tor tunnel — downloaded and SHA-256-verified at build
+  time by `downloadTor`, not committed.
 
 ## Startup Lifecycle
 
@@ -155,8 +156,8 @@ Important native areas:
    sidecar, and the status overlay — then immediately backgrounds itself.
 4. `BootReceiver` handles boot, package replacement, screen, power, network, and BYD ACC events.
 5. `DaemonKeepaliveService` runs as a sticky foreground service, holds a partial wake lock, and schedules process revival.
-6. `DaemonStartupManager` delays launch to let the vehicle head unit settle, then starts core daemons and the optional Zrok tunnel.
-7. `AdbDaemonLauncher` and lower launchers execute shell commands that start Java daemons or the native Zrok binary.
+6. `DaemonStartupManager` delays launch to let the vehicle head unit settle, then starts core daemons and the optional Tor tunnel.
+7. `AdbDaemonLauncher` and lower launchers execute shell commands that start Java daemons or the native tor binary.
 
 Core daemon timing is intentionally staggered:
 
@@ -192,11 +193,11 @@ Owns the startup bootstrap. It draws nothing — the in-car UI is Flutter, see
 
 ### `DaemonStartupManager`
 
-Coordinates daemon launch, optional Zrok tunnel launch, health checks, and user-stopped daemon state. It treats camera, sentry, and ACC sentry as core daemons and treats Zrok as the optional tunnel daemon.
+Coordinates daemon launch, optional Tor tunnel launch, health checks, and user-stopped daemon state. It treats camera, sentry, and ACC sentry as core daemons and treats the Tor tunnel as the optional tunnel daemon.
 
 ### `AdbDaemonLauncher`
 
-Facade over daemon and tunnel launchers. It starts camera, sentry, ACC sentry, and Zrok through shell execution.
+Facade over daemon and tunnel launchers. It starts camera, sentry, ACC sentry, and the Tor tunnel through shell execution.
 
 ### `DaemonBootstrap`
 
@@ -233,7 +234,7 @@ The main local BYD telemetry collector. It discovers BYD framework devices throu
 - Daemons expose local TCP/HTTP IPC rather than relying on Activity-bound Android services.
 - The embedded web UI is an Angular 19 SPA that talks to the daemon over ConnectRPC; the in-car UI is Flutter, so the SPA serves remote browser / tunnel clients only.
 - Two UIs track the same 12 ConnectRPC services by convention: Flutter in the car, Angular in the browser. There is no shared UI code between them — only the protos.
-- Optional remote access is layered over the local web server through the Zrok tunnel instead of exposing internet-facing server code directly.
+- Optional remote access is layered over the local web server through the Tor onion service instead of exposing internet-facing server code directly. The onion address is a capability URL, not authentication: the password/JWT layer in front of the web server stays mandatory.
 - Surveillance and camera paths prioritize long-running stability over tight coupling with Android UI lifecycle.
 
 ## Major Risk Areas

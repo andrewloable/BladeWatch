@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "Notificações",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "Backend de notificações não inicializado. Reserve uma URL Zrok pela tela de Serviços e reinicie o serviço em segundo plano para habilitar a entrega push.",
     "push_delivery": "Entrega de empurrão",
     "push_delivery_sub": "Abilita alertas no dispositivo que você está usando atualmente. Cada telefone que você instalar o painel deve ser habilitado aqui uma vez.",
     "enable_btn": "Ativar neste dispositivo",
@@ -171,7 +169,6 @@
     "registered_devices": "Dispositivos registados",
     "devices_sub": "Todos os telefones que habilitaram notificações push aparecem aqui. Use Remove para desinscrever um dispositivo. Desativar neste dispositivo acima também cancela o navegador atual localmente, enquanto Remove é apenas do lado do servidor.",
     "no_devices": "Ainda não há aparelhos registados.",
-    "perm_zrok_required": "A entrega de push requer Zrok ou um proxy inverso  ver banner acima.",
     "perm_unsupported": "Notificações não suportadas neste navegador",
     "perm_unsupported_install": "Notificações não suportadas. Se estiver usando Safari, tente adicionar à tela inicial para obter notificações",
     "perm_granted": "Os equipamentos devem ser equipados com um sistema de controlo de dados.",
@@ -1559,7 +1556,8 @@
     "retry": "Tentar novamente",
     "badgeLive": "● AO VIVO",
     "badgeConnecting": "○ Conectando…",
-    "notConnected": "Transmissão da câmera não conectada"
+    "notConnected": "Transmissão da câmera não conectada",
+    "decoderUnsupported": "Este navegador não consegue reproduzir a transmissão ao vivo. É necessário um navegador com suporte a decodificação de vídeo, como Chrome ou Edge. O Tor Browser e o Firefox ESR ainda não têm esse suporte."
   },
   "location": {
     "themeAuto": "Automático",

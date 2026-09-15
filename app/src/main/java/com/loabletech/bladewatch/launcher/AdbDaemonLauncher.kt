@@ -16,7 +16,7 @@ import net.bladewatch.app.logging.LogManager
  * Note: Cloudflared/Tailscale tunnels, the sing-box proxy, the proxy daemon,
  * and the Telegram daemon have been removed. The corresponding methods are
  * retained as no-op stubs so existing callers keep compiling; the supported
- * tunnel (Zrok) is managed separately via ZrokLauncher/ZrokController.
+ * tunnel (Tor) is managed separately via TorLauncher/TorController.
  */
 class AdbDaemonLauncher(private val context: Context) {
 
@@ -150,8 +150,8 @@ class AdbDaemonLauncher(private val context: Context) {
     
     // ==================== SERVICE LAUNCHING ====================
     //
-    // The supported tunnel (Zrok) is managed separately via
-    // ZrokLauncher/ZrokController.
+    // The supported tunnel (Tor) is managed separately via
+    // TorLauncher/TorController.
     
     /**
      * Start daemons via ADB shell.

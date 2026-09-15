@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 
@@ -10,8 +11,9 @@ import 'settings_daemons_models.dart';
 /// Ground truth: `DaemonsFragment.kt` + `DaemonAdapter.kt`, reduced to what
 /// `daemon.processStatus` can report — see the controller's doc comment for
 /// why per-daemon start/stop and per-row uptime/subprocess detail aren't
-/// here. Zrok's configure action (token set/delete/reset) uses the
-/// already-capable `config.*` channel in full.
+/// here. There is no per-daemon configure action any more: the tunnel's token
+/// dialog went with the previous tunnel, and a Tor onion service has nothing to
+/// configure.
 class SettingsDaemonsScreen extends StatefulWidget {
   final SettingsDaemonsController controller;
 
@@ -27,11 +29,23 @@ class SettingsDaemonsScreen extends StatefulWidget {
 }
 
 class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
+  /// BladeWatch-dh1r: how often the rows re-read daemon state while this screen is up.
+  ///
+  /// The screen used to load once and never again, so a tunnel that started thirty
+  /// seconds after the user flipped the switch stayed "Waiting" until they navigated
+  /// away and back. The daemon's own health check runs on a 30 s cycle and tor then
+  /// needs up to a minute to bootstrap, so polling faster than the thing being observed
+  /// only costs IPC round trips; 5 s is quick enough to feel live.
+  static const Duration _refreshInterval = Duration(seconds: 5);
+
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
     widget.controller.load();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) => widget.controller.refresh());
   }
 
   void _onChanged() {
@@ -40,6 +54,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     widget.controller.removeListener(_onChanged);
     super.dispose();
   }
@@ -56,12 +71,12 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
   /// let the two UIs drift apart; that task added the matching
   /// `daemon_name_*` string resources to native as well, so the English wording
   /// stays byte-identical while the other 16 locales finally translate.
-  /// "Zrok Tunnel" is a product name and is deliberately untranslated.
+  /// "Tor Tunnel" is a product name and is deliberately untranslated.
   String _daemonLabel(AppLocalizations l10n, DaemonKind kind) => switch (kind) {
         DaemonKind.camera => l10n.daemon_name_camera,
         DaemonKind.sentry => l10n.daemon_name_surveillance,
         DaemonKind.accSentry => l10n.daemon_name_acc,
-        DaemonKind.zrokTunnel => l10n.daemon_name_zrok,
+        DaemonKind.torTunnel => l10n.daemon_name_tor,
       };
 
   /// Per-service icon, matching DaemonAdapter.getDaemonIcon.
@@ -69,7 +84,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         DaemonKind.camera => Icons.photo_camera_outlined,
         DaemonKind.sentry => Icons.shield_outlined,
         DaemonKind.accSentry => Icons.directions_car_outlined,
-        DaemonKind.zrokTunnel => Icons.link,
+        DaemonKind.torTunnel => Icons.link,
       };
 
   /// The log each service writes, from `DaemonAdapter.getLogFilePath`.
@@ -82,7 +97,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         DaemonKind.camera => '/data/local/tmp/cam_daemon.log',
         DaemonKind.sentry => '/data/local/tmp/sentry_daemon.log',
         DaemonKind.accSentry => '/data/local/tmp/acc_sentry_daemon.log',
-        DaemonKind.zrokTunnel => '/data/local/tmp/zrok.log',
+        DaemonKind.torTunnel => '/data/local/tmp/tor.log',
       };
 
   @override
@@ -104,23 +119,25 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         const SizedBox(height: 12),
         for (final row in c.rows)
           Builder(builder: (context) {
-            // Zrok with no token is the one actionable state here: native says
-            // WHY the tunnel is down and what to do, in the warning colour.
-            final needsZrokToken = row.kind == DaemonKind.zrokTunnel && !c.zrokHasToken;
-            final statusText = needsZrokToken
-                ? l10n.zrok_no_token_configured
-                : row.running
-                    ? l10n.surveillance_general_status_running
+            // The "no token configured" warning state is gone with the previous
+            // tunnel — Tor needs no account. What replaced it is the STARTING state:
+            // enabled but not up yet, which for tor lasts up to a minute (61 s cold
+            // bootstrap measured on the head unit). Showing that as a plain "Waiting"
+            // is what made the row look like the toggle had failed.
+            final statusText = row.running
+                ? l10n.surveillance_general_status_running
+                : row.pending
+                    ? l10n.dashboard_starting_tor
                     : l10n.startup_status_waiting;
-            final statusColor = needsZrokToken
-                ? _warningColor(theme)
-                : row.running
-                    ? _successColor(theme)
+            final statusColor = row.running
+                ? _successColor(theme)
+                : row.pending
+                    ? _warningColor(theme)
                     : theme.colorScheme.onSurfaceVariant;
-            final dotColor = needsZrokToken
-                ? _warningColor(theme)
-                : row.running
-                    ? _successColor(theme)
+            final dotColor = row.running
+                ? _successColor(theme)
+                : row.pending
+                    ? _warningColor(theme)
                     : theme.colorScheme.outlineVariant;
 
             return Card(
@@ -147,21 +164,17 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
                       tooltip: l10n.logs_panel_title,
                       onPressed: () => _showLog(context, l10n, row.kind),
                     ),
-                    if (row.kind == DaemonKind.zrokTunnel)
-                      IconButton(
-                        key: const ValueKey('daemon.zrok.configure'),
-                        icon: const Icon(Icons.settings),
-                        tooltip: l10n.settings_daemons_zrok_configure,
-                        onPressed: () => _showZrokDialog(context, l10n),
-                      ),
                     // Every row keeps a switch so its state stays visible and the
-                    // rows stay aligned. Only the Zrok tunnel can actually be
+                    // rows stay aligned. Only the Tor tunnel can actually be
                     // toggled (BladeWatch-abcx, see DaemonKind.canToggle); the rest
                     // answer immediately with the same message they always did,
                     // without a pointless IPC round trip.
                     Switch(
                       key: ValueKey('daemon.${row.kind.nativeKey}.toggle'),
-                      value: row.running,
+                      // Toggleable rows show the user's INTENT, not liveness — see
+                      // DaemonRowState.enabled. The rows that cannot be toggled have no
+                      // intent to show, so they keep reporting what is actually true.
+                      value: row.kind.canToggle ? row.enabled : row.running,
                       onChanged: (enabled) async {
                         final ok = await c.toggle(row.kind, enabled);
                         if (!ok && context.mounted) {
@@ -189,6 +202,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
   /// statusWarning for dark, verbatim. They are now a theme extension.
   Color _successColor(ThemeData theme) => theme.extension<BwStatusColors>()!.success;
 
+  /// Used for the "enabled but not up yet" row state — see the status block above.
   Color _warningColor(ThemeData theme) => theme.extension<BwStatusColors>()!.warning;
 
   /// Shows the tail of one service's log, matching native's per-service log
@@ -229,90 +243,4 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
     );
   }
 
-  Future<void> _showZrokDialog(BuildContext context, AppLocalizations l10n) async {
-    final controller = widget.controller;
-    final current = await controller.getZrokToken();
-    if (!context.mounted) return;
-    final textController = TextEditingController(text: current);
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.link),
-        title: Text(l10n.dialog_zrok_token_title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.dialog_zrok_token_message),
-            const SizedBox(height: 12),
-            TextField(key: const ValueKey('zrok.tokenField'), controller: textController),
-            const SizedBox(height: 8),
-            TextButton(
-              key: const ValueKey('zrok.resetEnvironment'),
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                await _confirmResetZrok(context, l10n);
-              },
-              child: Text(l10n.settings_daemons_zrok_reset_button),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(l10n.action_cancel)),
-          TextButton(
-            onPressed: () async {
-              final ok = await controller.deleteZrokToken();
-              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-              if (!context.mounted) return;
-              _notify(context, ok ? l10n.toast_zrok_token_deleted : l10n.toast_zrok_token_delete_failed);
-            },
-            child: Text(l10n.dialog_delete),
-          ),
-          TextButton(
-            key: const ValueKey('zrok.save'),
-            onPressed: () async {
-              final token = textController.text.trim();
-              if (token.isEmpty) {
-                _notify(context, l10n.toast_token_cannot_be_empty);
-                return;
-              }
-              final ok = await controller.saveZrokToken(token);
-              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-              if (!context.mounted) return;
-              _notify(context, ok ? l10n.toast_zrok_token_saved : l10n.toast_zrok_token_save_failed);
-            },
-            child: Text(l10n.dialog_save),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _confirmResetZrok(BuildContext context, AppLocalizations l10n) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.warning),
-        title: Text(l10n.dialog_zrok_reset_title),
-        content: Text(l10n.dialog_zrok_reset_message),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.action_cancel)),
-          TextButton(
-            key: const ValueKey('zrok.confirmReset'),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.dialog_reset),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    final ok = await widget.controller.resetZrokEnvironment();
-    if (!context.mounted) return;
-    _notify(context, ok ? l10n.toast_zrok_reset_success : l10n.toast_zrok_reset_partial);
-  }
-
-  void _notify(BuildContext context, String message) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
 }

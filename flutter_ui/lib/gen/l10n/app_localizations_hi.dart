@@ -400,20 +400,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get webview_loading => 'लोड...';
 
   @override
-  String get zrok_enable_token_hint => 'टोकन सक्षम करें';
-
-  @override
-  String get zrok_token_storage_note =>
-      'टोकन को सुरक्षित रूप से संग्रहीत किया जाता है और ऐप तथा पृष्ठभूमि सेवाओं के बीच साझा किया जाता है।';
-
-  @override
-  String get zrok_reset_environment => 'Zrok पर्यावरण को रीसेट करें';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      'पर्यावरण और टोकन को हटा देता है। आपको अपने टोकन के साथ फिर से सक्षम करना होगा (डिवाइस स्लॉट का उपयोग करता है) ।';
-
-  @override
   String get reset_title => 'डेटा रीसेट करें';
 
   @override
@@ -591,7 +577,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get daemon_name_acc => 'ACC निगरानी';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'पृष्ठभूमि सेवाएं';
@@ -847,7 +833,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dashboard_no_tunnel => 'कोई सुरंग नहीं चल रही है';
 
   @override
-  String get dashboard_starting_zrok => 'Zrok सुरंग शुरू...';
+  String get dashboard_starting_tor => 'Tor टनल शुरू हो रही है…';
 
   @override
   String get dashboard_waiting_url => 'सुरंग URL के लिए इंतजार...';
@@ -858,7 +844,7 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'एक्सेस कोड';
@@ -872,53 +858,7 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok सुरंग टोकन';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'अपना Zrok सक्षम टोकन दर्ज करें।\nइसे यहाँ से लें: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => 'टोकन खाली नहीं हो सकता';
-
-  @override
-  String get dialog_zrok_reset_title => 'Zrok पर्यावरण को रीसेट करें';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      'यह:\n• बंद कर देगा zrok सुरंग यदि चल रहा है\n• इस डिवाइस से zrok वातावरण निकालें\n• सहेजे गए टोकन को हटाएं\n\nआपको अपने टोकन को फिर से दर्ज करने और फिर से सक्षम करने की आवश्यकता होगी। यह zrok.io पर आपके 5 डिवाइस स्लॉट में से एक का उपयोग करता है।\n\nक्या आप सुनिश्चित हैं?';
-
-  @override
-  String get toast_resetting_zrok => 'Zrok वातावरण को रीसेट करना...';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'Zrok वातावरण रीसेट करें। फिर से सेट करने के लिए एक नया टोकन दर्ज करें।';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      'पर्यावरण रीसेट (टोकन फ़ाइल को मैनुअल सफाई की आवश्यकता हो सकती है)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return 'पर्यावरण रीसेट (चेतावनी के साथः $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured =>
-      'कोई टोकन कॉन्फ़िगर नहीं किया गया है. सेटअप करने के लिए टैप करें.';
-
-  @override
-  String get toast_zrok_token_saved => 'टोकन सहेजा गया';
-
-  @override
-  String get toast_zrok_token_save_failed => 'टोकन सहेजने में विफल';
-
-  @override
-  String get toast_zrok_token_deleted => 'टोकन हटाया गया';
-
-  @override
-  String get toast_zrok_token_delete_failed => 'टोकन हटाने में विफल';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1685,12 +1625,6 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'कॉन्फ़िगर करें';
-
-  @override
-  String get settings_daemons_zrok_reset_button => 'परिवेश रीसेट करें';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '$arg1 इस्तेमाल किया गया · $arg2 मुक्त';
   }
@@ -1804,7 +1738,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Zrok टनल और पृष्ठभूमि सेवाएं।';
+      'Tor टनल और बैकग्राउंड सेवाएँ.';
 
   @override
   String get settings_about_row_title => 'BladeWatch के बारे में';
@@ -2787,4 +2721,36 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'सहेजना विफल रहा';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'Tor से कनेक्ट हो रहा है…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'यह पता कैसे खोलें';
+
+  @override
+  String get dashboard_tor_help_title => 'यह पता खोलना';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: Google Play या F-Droid से Tor Browser इंस्टॉल करें, खोलें और पता पेस्ट करें।';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone और iPad: App Store से Onion Browser इंस्टॉल करें, खोलें और पता पेस्ट करें। iOS पर Tor Browser उपलब्ध नहीं है।';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS और Linux: torproject.org से Tor Browser डाउनलोड करें, खोलें और पता पेस्ट करें।';
+
+  @override
+  String get dashboard_tor_help_password_note =>
+      'पेज लोड होने के बाद भी पासवर्ड ज़रूरी होगा।';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'Tor Browser डाउनलोड पेज के लिए स्कैन करें';
+
+  @override
+  String get dashboard_tor_help_close => 'समझ गया';
 }

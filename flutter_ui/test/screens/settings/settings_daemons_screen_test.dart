@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/platform/config_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/screens/settings/settings_daemons_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_daemons_models.dart';
@@ -19,7 +18,7 @@ void main() {
   });
 
   SettingsDaemonsController buildController({Future<bool> Function(DaemonKind, bool)? setDaemonEnabled}) =>
-      SettingsDaemonsController(daemonChannel: DaemonChannel(channel), configChannel: ConfigChannel(channel), setDaemonEnabled: setDaemonEnabled);
+      SettingsDaemonsController(daemonChannel: DaemonChannel(channel), setDaemonEnabled: setDaemonEnabled);
 
   Future<void> pumpTall(
     WidgetTester tester,
@@ -44,7 +43,7 @@ void main() {
 
   testWidgets('renders all 4 daemon rows with their running state', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
     });
     await pumpTall(tester, buildController());
     await tester.pumpAndSettle();
@@ -52,7 +51,7 @@ void main() {
     expect(find.byKey(const ValueKey('daemon.camera')), findsOneWidget);
     expect(find.byKey(const ValueKey('daemon.sentry')), findsOneWidget);
     expect(find.byKey(const ValueKey('daemon.accSentry')), findsOneWidget);
-    expect(find.byKey(const ValueKey('daemon.zrokTunnel')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daemon.torTunnel')), findsOneWidget);
     expect(find.text('2 of 4 running'), findsOneWidget);
   });
 
@@ -64,9 +63,9 @@ void main() {
     expect(find.text('0 of 4 running'), findsOneWidget);
   });
 
-  testWidgets('toggling a non-Zrok daemon without a capability shows the unsupported message', (tester) async {
+  testWidgets('toggling a non-tunnel daemon without a capability shows the unsupported message', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
     });
     await pumpTall(tester, buildController());
     await tester.pumpAndSettle();
@@ -77,21 +76,90 @@ void main() {
     expect(find.textContaining('isn’t supported yet'), findsOneWidget);
   });
 
-  testWidgets('toggling the Zrok tunnel flips its switch', (tester) async {
+  // BladeWatch-dh1r. Observed on the head unit: the row read "Waiting" with the switch
+  // OFF while tor was running. Enabling only RECORDS INTENT — the daemon's health check
+  // launches on its next cycle and tor then needs up to a minute to bootstrap (61 s cold,
+  // measured) — so a switch bound to liveness springs straight back to off. The user's
+  // natural second tap then DISABLES the tunnel they just enabled, because the disable
+  // path also kills the process. That is why the switch follows `enabled`, not `running`.
+  testWidgets('the tunnel switch stays ON while tor is enabled but still starting', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+      'enabled': {'TOR_TUNNEL': true},
+    });
+    final controller = buildController(setDaemonEnabled: (kind, enabled) async => true);
+    await pumpTall(tester, controller);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Switch>(find.byKey(const ValueKey('daemon.TOR_TUNNEL.toggle'))).value,
+      isTrue,
+      reason: 'enabled but not yet running must read as ON, or the user turns it off again',
+    );
+  });
+
+  testWidgets('a tunnel the user disabled reads as OFF even mid-shutdown', (tester) async {
+    // The mirror case: the process is still alive for a moment after the kill, but the
+    // user has said off, and the switch must say off.
+    channel.stub('daemon', 'processStatus', {
+      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': true},
+      'enabled': {'TOR_TUNNEL': false},
+    });
+    final controller = buildController(setDaemonEnabled: (kind, enabled) async => true);
+    await pumpTall(tester, controller);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Switch>(find.byKey(const ValueKey('daemon.TOR_TUNNEL.toggle'))).value,
+      isFalse,
+    );
+  });
+
+  testWidgets('the row distinguishes starting from simply stopped', (tester) async {
+    channel.stub('daemon', 'processStatus', {
+      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+      'enabled': {'TOR_TUNNEL': true},
+    });
+    final controller = buildController();
+    await pumpTall(tester, controller);
+    await tester.pumpAndSettle();
+
+    // "Starting" rather than "Waiting": the row must not look like the toggle failed.
+    expect(find.text('Starting Tor tunnel…'), findsOneWidget);
+  });
+
+  // The daemons the user cannot toggle have no intent to show, so they keep reporting
+  // what is actually true — otherwise a running camera daemon would read as off.
+  testWidgets('non-toggleable rows still show liveness on their switch', (tester) async {
+    channel.stub('daemon', 'processStatus', {
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
+      'enabled': {'TOR_TUNNEL': false},
+    });
+    final controller = buildController();
+    await pumpTall(tester, controller);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Switch>(find.byKey(const ValueKey('daemon.CAMERA_DAEMON.toggle'))).value,
+      isTrue,
+    );
+  });
+
+  testWidgets('toggling the Tor tunnel flips its switch', (tester) async {
+    channel.stub('daemon', 'processStatus', {
+      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
     });
     final controller = buildController(setDaemonEnabled: (kind, enabled) async => true);
     await pumpTall(tester, controller);
     await tester.pumpAndSettle();
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': true},
+      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': true},
     });
 
-    await tester.tap(find.byKey(const ValueKey('daemon.ZROK_TUNNEL.toggle')));
+    await tester.tap(find.byKey(const ValueKey('daemon.TOR_TUNNEL.toggle')));
     await tester.pumpAndSettle();
 
-    expect(tester.widget<Switch>(find.byKey(const ValueKey('daemon.ZROK_TUNNEL.toggle'))).value, isTrue);
+    expect(tester.widget<Switch>(find.byKey(const ValueKey('daemon.TOR_TUNNEL.toggle'))).value, isTrue);
   });
 
   // BladeWatch-abcx: the other three keep a switch so their state stays visible, but
@@ -99,7 +167,7 @@ void main() {
   // structural (see DaemonKind.canToggle), not missing wiring.
   testWidgets('toggling a non-toggleable daemon explains itself and leaves it running', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
     });
     var capabilityCalls = 0;
     final controller = buildController(setDaemonEnabled: (kind, enabled) async {
@@ -118,102 +186,31 @@ void main() {
         reason: 'the daemon is still running, so the switch must stay on');
   });
 
-  testWidgets('the Zrok row has BOTH a configure button and a working switch', (tester) async {
-    // It used to have only the configure button, because nothing could start or stop
-    // it (BladeWatch-abcx). It is now the one daemon that can be toggled.
+  testWidgets('the Tor row has a working switch and only a log button', (tester) async {
+    // The configure button and its token dialog went with the previous tunnel: a Tor
+    // onion service has no account, no token and nothing to configure. Counting the
+    // buttons is the guard — a leftover settings button would show up here.
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
     });
     await pumpTall(tester, buildController());
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('daemon.zrok.configure')), findsOneWidget);
-    expect(find.byKey(const ValueKey('daemon.ZROK_TUNNEL.toggle')), findsOneWidget);
-  });
-
-  testWidgets('opening the Zrok dialog pre-fills the current token and saves a new one', (tester) async {
-    channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
-    });
-    channel.stub('config', 'get', 'old-token');
-    channel.stub('config', 'put', true);
-    await pumpTall(tester, buildController());
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('daemon.zrok.configure')));
-    await tester.pumpAndSettle();
-
-    expect(find.widgetWithText(TextField, 'old-token'), findsOneWidget);
-
-    await tester.enterText(find.byKey(const ValueKey('zrok.tokenField')), 'new-token');
-    await tester.tap(find.byKey(const ValueKey('zrok.save')));
-    await tester.pumpAndSettle();
-
-    final call = channel.calls.firstWhere((c) => c.method == 'put');
-    expect((call.args as Map)['value'], 'new-token');
-  });
-
-  testWidgets('tapping Delete in the Zrok dialog deletes the token', (tester) async {
-    channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
-    });
-    channel.stub('config', 'get', 'a-token');
-    channel.stub('config', 'delete', true);
-    await pumpTall(tester, buildController());
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('daemon.zrok.configure')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
-    await tester.pumpAndSettle();
-
-    expect(channel.calls.any((c) => c.method == 'delete'), isTrue);
-    expect(find.text('Token deleted'), findsOneWidget);
-  });
-
-  testWidgets('saving an empty Zrok token shows a validation message without calling the channel', (tester) async {
-    channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
-    });
-    channel.stub('config', 'get', null);
-    await pumpTall(tester, buildController());
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('daemon.zrok.configure')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('zrok.save')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Token cannot be empty'), findsOneWidget);
-    expect(channel.calls.where((c) => c.method == 'put'), isEmpty);
-  });
-
-  testWidgets('resetting the Zrok environment goes through a confirmation dialog', (tester) async {
-    channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': true},
-    });
-    channel.stub('config', 'get', 'a-token');
-    channel.stub('config', 'delete', true);
-    final controller = buildController(setDaemonEnabled: (kind, enabled) async => true);
-    await pumpTall(tester, controller);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('daemon.zrok.configure')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('zrok.resetEnvironment')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Reset Zrok Environment'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('zrok.confirmReset')));
-    await tester.pumpAndSettle();
-
-    expect(channel.calls.any((c) => c.method == 'delete'), isTrue);
-    expect(find.text('Zrok environment reset. Enter a new token to set up again.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daemon.TOR_TUNNEL.toggle')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('daemon.torTunnel')),
+        matching: find.byType(IconButton),
+      ),
+      findsOneWidget,
+      reason: 'only the log button — no configure button survives',
+    );
+    expect(find.byIcon(Icons.settings), findsNothing);
   });
 
   testWidgets('renders without error in dark theme', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': true},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': true},
     });
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -236,7 +233,7 @@ void main() {
 
   testWidgets('rows use native service names, not the startup screen labels', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
     });
     await pumpTall(tester, buildController());
     await tester.pumpAndSettle();
@@ -249,7 +246,7 @@ void main() {
     expect(find.text(l10n.daemon_name_camera), findsOneWidget);
     expect(find.text(l10n.daemon_name_surveillance), findsOneWidget);
     expect(find.text(l10n.daemon_name_acc), findsOneWidget);
-    expect(find.text(l10n.daemon_name_zrok), findsOneWidget);
+    expect(find.text(l10n.daemon_name_tor), findsOneWidget);
 
     // The startup screen's short labels are different words for the same
     // daemons and must not reappear here.
@@ -262,7 +259,7 @@ void main() {
     // in all 17 locales. Pumping a non-English locale is what proves the fix —
     // asserting the English strings alone would still pass with hardcoded text.
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
     });
     await pumpTall(tester, buildController(), locale: const Locale('de'));
     await tester.pumpAndSettle();
@@ -273,14 +270,14 @@ void main() {
     expect(find.text(de.daemon_name_surveillance), findsOneWidget);
     expect(find.text(de.daemon_name_acc), findsOneWidget);
 
-    // Zrok is a product name and stays verbatim in every locale.
-    expect(de.daemon_name_zrok, 'Zrok Tunnel');
-    expect(find.text('Zrok Tunnel'), findsOneWidget);
+    // Tor is a product name and stays verbatim in every locale.
+    expect(de.daemon_name_tor, 'Tor Tunnel');
+    expect(find.text('Tor Tunnel'), findsOneWidget);
   });
 
   testWidgets('a live service says Running, not Ready', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
     });
     await pumpTall(tester, buildController());
     await tester.pumpAndSettle();
@@ -293,39 +290,21 @@ void main() {
     expect(find.text('Ready'), findsNothing);
   });
 
-  testWidgets('Zrok with no token shows the actionable message, not "Waiting"', (tester) async {
-    channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': false},
-    });
-    // No token configured.
-    channel.stub('config', 'get', null);
-    await pumpTall(tester, buildController());
-    await tester.pumpAndSettle();
-
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('daemon.zrokTunnel')),
-        matching: find.text('No token configured. Tap to set up.'),
-      ),
-      findsOneWidget,
-    );
-  });
-
   testWidgets('every row has a per-service log button', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': true},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': true},
     });
     await pumpTall(tester, buildController());
     await tester.pumpAndSettle();
 
-    for (final kind in const ['camera', 'sentry', 'accSentry', 'zrokTunnel']) {
+    for (final kind in const ['camera', 'sentry', 'accSentry', 'torTunnel']) {
       expect(find.byKey(ValueKey('daemon.$kind.log')), findsOneWidget, reason: '$kind needs a log button');
     }
   });
 
   testWidgets('the log button shows that service\'s log', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': true},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': true},
     });
     final requested = <String>[];
     await pumpTall(
@@ -351,14 +330,14 @@ void main() {
     // name.
     await tester.tap(find.text('DONE'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('daemon.zrokTunnel.log')));
+    await tester.tap(find.byKey(const ValueKey('daemon.torTunnel.log')));
     await tester.pumpAndSettle();
-    expect(requested.last, '/data/local/tmp/zrok.log');
+    expect(requested.last, '/data/local/tmp/tor.log');
   });
 
   testWidgets('an unreadable log says so rather than claiming it is empty', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': true},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': true},
     });
     await pumpTall(
       tester,
@@ -375,7 +354,7 @@ void main() {
 
   testWidgets('an empty log says it is empty', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': true},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': true},
     });
     await pumpTall(tester, buildController(), logReader: (_) async => '   \n');
     await tester.pumpAndSettle();

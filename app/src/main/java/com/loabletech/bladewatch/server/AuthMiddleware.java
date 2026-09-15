@@ -149,10 +149,21 @@ public class AuthMiddleware {
         }
 
         // Tier 2 — loopback safety net. Trust 127.0.0.1 / ::1 ONLY when no
-        // tunnel-fingerprint headers are present. In release builds this
-        // bypass is disabled entirely because Android loopback is shared by
-        // every app on the device.
-        if (isLoopbackBypassAllowed() && !hasTunnelHeaders && clientAddress != null) {
+        // tunnel-fingerprint headers are present AND no tunnel is running. In
+        // release builds this bypass is disabled entirely because Android
+        // loopback is shared by every app on the device.
+        //
+        // BladeWatch-3lbz.2 — why the tunnel check was added. zrok relayed remote
+        // traffic with X-Forwarded-* headers, so hasTunnelHeaders alone was enough
+        // to switch this off for anyone coming in from outside. A Tor onion service
+        // injects NOTHING: tor opens a plain TCP connection to 127.0.0.1:8080, which
+        // at the socket level looks exactly like an app on the head unit. Without the
+        // extra condition, a debug build with the tunnel up would hand full API access
+        // to anyone who knew the onion address — and debug is the build that actually
+        // goes on the car, because preserving the ADB key across a reinstall needs
+        // run-as. Header sniffing cannot close this; the tunnel being up is the signal.
+        if (isLoopbackBypassAllowed() && !hasTunnelHeaders && !isTunnelActive()
+                && clientAddress != null) {
             String addrStr = clientAddress.toString();
             boolean isLoopback = addrStr.contains("127.0.0.1") || addrStr.contains("/0:0:0:0:0:0:0:1");
             if (isLoopback) {
@@ -171,6 +182,53 @@ public class AuthMiddleware {
     private static boolean isLoopbackBypassAllowed() {
         Boolean override = loopbackBypassOverride;
         return override != null ? override : BuildConfig.DEBUG;
+    }
+
+    /** Test seam; null = ask the real process table. */
+    private static volatile Boolean tunnelActiveOverride = null;
+
+    static void setTunnelActiveOverride(Boolean override) {
+        tunnelActiveOverride = override;
+        tunnelActiveCheckedAtMs = 0L;
+    }
+
+    private static volatile boolean tunnelActiveCached = false;
+    private static volatile long tunnelActiveCheckedAtMs = 0L;
+
+    /**
+     * Cache window for the tunnel check. Scanning /proc on every single request would be
+     * absurd for a server that also streams video; ten seconds bounds the exposure to one
+     * short window right after the tunnel starts, during which tor is still bootstrapping
+     * and the service is not reachable from outside anyway.
+     */
+    private static final long TUNNEL_CHECK_TTL_MS = 10_000L;
+
+    /**
+     * Whether the Tor tunnel process is up, i.e. whether this head unit is currently
+     * reachable from outside. See the Tier 2 comment for why this gates the bypass.
+     */
+    private static boolean isTunnelActive() {
+        Boolean override = tunnelActiveOverride;
+        if (override != null) return override;
+
+        long now = System.currentTimeMillis();
+        // Wall clock, so it can jump BACKWARDS — head units NTP-correct theirs shortly after
+        // boot, which is exactly when the tunnel is starting. A negative age would otherwise
+        // read as "fresh" and pin a stale `false` (bypass enabled) for the whole skew window.
+        long age = now - tunnelActiveCheckedAtMs;
+        if (age >= 0 && age < TUNNEL_CHECK_TTL_MS) return tunnelActiveCached;
+        boolean active;
+        try {
+            active = !TcpCommandServer.findPidsByProcessName(
+                    net.bladewatch.app.launcher.TorLauncher.TOR_PROCESS).isEmpty();
+        } catch (Throwable t) {
+            // Fail CLOSED: if we cannot tell whether the car is exposed, do not hand out
+            // local trust.
+            active = true;
+        }
+        tunnelActiveCached = active;
+        tunnelActiveCheckedAtMs = now;
+        return active;
     }
     
     /**

@@ -1,6 +1,6 @@
 # Data Flow and Storage
 
-BladeWatch coordinates data across the Android app process, shell-launched Java daemons, native camera code, web assets, the Zrok tunnel binary, and BYD local sources. Most cross-process state is intentionally stored in files under `/data/local/tmp`.
+BladeWatch coordinates data across the Android app process, shell-launched Java daemons, native camera code, web assets, the Tor tunnel binary, and BYD local sources. Most cross-process state is intentionally stored in files under `/data/local/tmp`.
 
 ## Primary Data Flows
 
@@ -245,14 +245,24 @@ GPU kernel cache:
 
 ## Tunnel Runtime Files
 
-Zrok:
+Tor onion service:
 
 ```text
-/data/local/tmp/zrok
-/data/local/tmp/zrok.log
-/data/local/tmp/.zrok/environment.json
-/data/local/tmp/.zrok/unique_name
+/data/local/tmp/bladewatch_tor    the binary, installed under its own process name
+/data/local/tmp/tor/torrc         generated config, rewritten on every launch
+/data/local/tmp/tor/data          consensus cache (safe to delete; costs a slow start)
+/data/local/tmp/tor/hs            hidden-service directory — see the warning below
+/data/local/tmp/tor/hs/hostname   the onion address, mode 600, shell-owned
+/data/local/tmp/tor.log           notice log
 ```
+
+**`hs/hs_ed25519_secret_key` is a SECRET and it is permanent.** It is the private key the
+car's onion address is derived from, so it belongs in the same category as the entries in
+`bladewatch_secrets.json`: never logged, never copied to shared storage, never returned
+over IPC, never committed. It differs from those in one important way — it cannot be
+rotated harmlessly. Deleting it mints a new address on the next start and silently breaks
+every QR code the owner has ever scanned, so the tunnel is stopped by killing the process,
+never by deleting its directory.
 
 ## Auth Data Flow
 
@@ -375,5 +385,5 @@ Notification APIs expose categories, push subscription management, preferences, 
 - Format storage API: [FormatStorageApiHandler.java:27](../app/src/main/java/com/loabletech/bladewatch/server/FormatStorageApiHandler.java#L27), [storage.proto:20](../proto/bladewatch/v1/storage.proto#L20).
 - Media catalog and sync: [MediaCatalogManager.java:26](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L26), [MediaCatalogManager.java:81](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L81), [MediaCatalogManager.java:130](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L130), [RecordingsApiHandler.java:185](../app/src/main/java/com/loabletech/bladewatch/server/RecordingsApiHandler.java#L185).
 - Trip database and sync: [TripDatabase.java:19](../app/src/main/java/com/loabletech/bladewatch/trips/TripDatabase.java#L19), [TripDatabase.java:30](../app/src/main/java/com/loabletech/bladewatch/trips/TripDatabase.java#L30).
-- Runtime assets and tunnel files: [build.gradle.kts:226](../app/build.gradle.kts#L226), [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [ZrokLauncher.kt:27](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L27).
+- Runtime assets and tunnel files: [build.gradle.kts:226](../app/build.gradle.kts#L226), [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [TorLauncher.kt:92](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L92).
 - Trips and notifications: [TripDetector.java:27](../app/src/main/java/com/loabletech/bladewatch/trips/TripDetector.java#L27), [TripAnalyticsManager.java:23](../app/src/main/java/com/loabletech/bladewatch/trips/TripAnalyticsManager.java#L23), [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [NotificationApiHandler.java:31](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L31).

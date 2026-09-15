@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * Listens on 127.0.0.1:8080 by default; LAN binding is an explicit unsafe mode.
  * 
  * Single-port WebSocket: /ws endpoint upgrades to WebSocket for H.264 streaming
- * (single port allows Zrok tunnel to expose both HTTP and WebSocket).
+ * (single port lets the tunnel expose both HTTP and WebSocket through one onion port).
  * 
  * API handlers are modularized into separate classes:
  * - RecordingsApiHandler: /api/recordings, /video/*
@@ -55,7 +55,37 @@ public class HttpServer {
     private volatile boolean running = true;
 
     // Thread Pool to prevent server clogging (max 32 concurrent connections)
+    /**
+     * Request-serving pool. Every worker here is bounded by the 15 s socket timeout set in
+     * {@code handleClient}, so no single request can hold one indefinitely.
+     */
     private final ExecutorService threadPool = Executors.newFixedThreadPool(32);
+
+    /**
+     * Long-lived H.264 WebSocket streams, deliberately SEPARATE from {@link #threadPool}
+     * (BladeWatch-sxzg).
+     *
+     * <p>The in-car Flutter UI speaks ConnectRPC to this very server on 127.0.0.1:8080, so
+     * it queues on the same pool as every remote client arriving through the onion service.
+     * {@code streamH264ToWebSocket} sets {@code setSoTimeout(0)} and then blocks for the
+     * whole viewing session — so on the request pool, each viewer permanently removed a
+     * worker that the driver's own screen needed. Ordinary requests are bounded by their
+     * timeout; a stream is bounded by nothing.
+     *
+     * <p>Measured on the head unit 2026-09-15, with the tunnel up and a remote viewer: the
+     * Flutter app rendered ZERO frames in ten seconds while 44% of frames were janky at a
+     * 600 ms 99th percentile, on a machine that was 497% of 800% idle. Not a render loop and
+     * not a CPU shortage — a UI thread waiting on RPCs stuck behind remote traffic.
+     *
+     * <p>Cached rather than fixed: viewers are few and sporadic, threads are reclaimed after
+     * 60 s idle, and a hard cap here would mean refusing a legitimate viewer rather than
+     * merely slowing one. The cap that matters is on the REQUEST pool, which this protects.
+     */
+    private final ExecutorService streamPool = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "http-stream");
+        t.setDaemon(true);
+        return t;
+    });
 
     private final ConnectDispatcher connectDispatcher = new ConnectDispatcher();
 
@@ -213,9 +243,14 @@ public class HttpServer {
             if (serverSocket != null) serverSocket.close();
         } catch (Exception e) { CameraDaemon.log("WARN: HTTP stop() serverSocket.close() failed: " + e.getMessage()); }
         threadPool.shutdownNow();
+        streamPool.shutdownNow();
     }
 
     private void handleClient(Socket client) {
+        // BladeWatch-sxzg: set when the socket's ownership passes to the streaming pool.
+        // The finally below MUST NOT close it then — the stream is still using it, and
+        // closing here would tear down every live view the moment it started.
+        boolean socketHandedOff = false;
         try {
             client.setSoTimeout(15000);
             BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
@@ -247,13 +282,17 @@ public class HttpServer {
             String vehicleActionTokenHeader = null;
             // Reverse-proxy fingerprints — used by AuthMiddleware to disable
             // the loopback safety net when a tunnel relayed the request.
-            // zrok injects X-Forwarded-*.
+            // A reverse proxy injects X-Forwarded-*. NOTE: the Tor onion service does
+            // NOT — it opens a plain TCP connection to 127.0.0.1:8080 — so these headers
+            // are no longer how remote traffic is recognised. AuthMiddleware also checks
+            // whether the tunnel process is up; see its Tier 2 comment.
             boolean hasTunnelHeaders = false;
             String forwardedFor = null;
             String hostHeader = null;
-            // Zrok's HTTP backend rewrites Host: to the backend URL (localhost:8080)
-            // before forwarding, and stashes the original public hostname in
-            // X-Forwarded-Host. Captured here so isPwaOrigin can match it.
+            // Kept for any reverse proxy that rewrites Host: to the backend URL
+            // (localhost:8080) and stashes the original public hostname in
+            // X-Forwarded-Host. Captured here so isPwaOrigin can match it. Tor sends
+            // neither header — an onion client's Host: is already the .onion address.
             String forwardedHostHeader = null;
 
             while ((line = reader.readLine()) != null && !line.isEmpty()) {
@@ -367,7 +406,7 @@ public class HttpServer {
                     client.close();
                     return;
                 }
-                handleWebSocketUpgrade(client, websocketKey);
+                socketHandedOff = handleWebSocketUpgrade(client, websocketKey);
                 return;
             }
 
@@ -580,7 +619,9 @@ public class HttpServer {
         } catch (Exception e) {
             CameraDaemon.log("HTTP error: " + e.getMessage());
         } finally {
-            try { client.close(); } catch (Exception e) { CameraDaemon.log("WARN: HTTP client.close() failed: " + e.getMessage()); }
+            if (!socketHandedOff) {
+                try { client.close(); } catch (Exception e) { CameraDaemon.log("WARN: HTTP client.close() failed: " + e.getMessage()); }
+            }
         }
     }
 
@@ -1074,7 +1115,14 @@ public class HttpServer {
     /**
      * Handles WebSocket upgrade on /ws path for single-port streaming.
      */
-    private void handleWebSocketUpgrade(Socket client, String websocketKey) {
+    /**
+     * Complete the WebSocket handshake and hand the socket to the streaming pool.
+     *
+     * @return true if ownership of {@code client} passed to {@link #streamPool}, meaning the
+     *         caller must NOT close it. False if the handshake failed and the socket is
+     *         still the caller's to close.
+     */
+    private boolean handleWebSocketUpgrade(Socket client, String websocketKey) {
         try {
             CameraDaemon.log("WebSocket upgrade requested");
             
@@ -1089,11 +1137,20 @@ public class HttpServer {
             out.flush();
             
             CameraDaemon.log("WebSocket handshake complete");
-            streamH264ToWebSocket(client);
+            // Hand off to the streaming pool and let this REQUEST thread go. The handshake
+            // is done, so nothing above needs the socket any more, and streaming it here
+            // would hold a request worker for the entire session (BladeWatch-sxzg).
+            //
+            // The socket is deliberately NOT closed on the way out: it now belongs to the
+            // stream, which closes it when the viewer goes away.
+            streamPool.execute(() -> streamH264ToWebSocket(client));
+            return true;
             
         } catch (Exception e) {
             CameraDaemon.log("WebSocket upgrade error: " + e.getMessage());
         }
+        // Handshake failed: the socket never reached the stream, so the caller still owns it.
+        return false;
     }
     
     private String computeWebSocketAccept(String key) throws Exception {

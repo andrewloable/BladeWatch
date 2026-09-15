@@ -5,7 +5,7 @@ import org.json.JSONObject
 
 /**
  * `secret_get`/`secret_put`/`secret_delete` over loopback IPC
- * (BladeWatch-ncbb.2) — for the Zrok token dialog and similar settings that
+ * (BladeWatch-ncbb.2) — for settings that
  * store a value in the daemon-owned secret store. Ports the relevant
  * commands from
  * `app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.java`

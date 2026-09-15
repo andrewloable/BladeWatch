@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "通知",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "通知バックエンドが初期化されていません。サービス画面でZrok URLを予約し、プッシュ配信を有効にするためにバックグラウンドサービスを再起動してください。",
     "push_delivery": "送料を押す",
     "push_delivery_sub": "現在使用しているデバイスのアラートを有効にします. デバイスにダッシュボードをインストールするすべての携帯電話は,一度に有効にする必要があります.",
     "enable_btn": "このデバイスで有効にする",
@@ -171,7 +169,6 @@
     "registered_devices": "登録された装置",
     "devices_sub": "プッシュ通知を有効にしたすべての電話がここに表示されます.デバイスを登録解除するために Remove を使用します.上記のデバイスを無効化すると,現在のブラウザを本地的にキャンセルします. Removeはサーバーサイドのみです.",
     "no_devices": "まだ登録されていない.",
-    "perm_zrok_required": "プッシュ配達にはZrokまたは逆代理が必要です 上のバナーを参照してください.",
     "perm_unsupported": "このブラウザでサポートされていない通知",
     "perm_unsupported_install": "通知がサポートされていません. Safari を使用している場合は,通知を取得するためにホーム画面に追加してみてください",
     "perm_granted": "このデバイスで通知が有効です",
@@ -1559,7 +1556,8 @@
     "retry": "再試行",
     "badgeLive": "● ライブ",
     "badgeConnecting": "○ 接続中…",
-    "notConnected": "カメラ映像が接続されていません"
+    "notConnected": "カメラ映像が接続されていません",
+    "decoderUnsupported": "このブラウザーではライブ映像を再生できません。Chrome や Edge など、動画デコードに対応したブラウザーが必要です。Tor Browser と Firefox ESR はまだ対応していません。"
   },
   "location": {
     "themeAuto": "自動運転",

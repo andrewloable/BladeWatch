@@ -51,7 +51,7 @@ void main() {
     channel.stub('publicConfig', 'getSection', <Object?, Object?>{});
     channel.stub('publicConfig', 'putBoolean', true);
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
     });
     rpc.stubJson('SystemService', 'GetStatus', {'recordingStatus': {}});
     rpc.stubJson('RecordingsService', 'GetStats', {'stats': {}});

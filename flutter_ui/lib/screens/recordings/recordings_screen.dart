@@ -200,11 +200,11 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
             key: const ValueKey('recordings.empty'),
             text: switch (c.filter.source) {
               RecordingSource.surveillance => l10n.recording_lib_no_recordings_sentry,
-              RecordingSource.dashcam when c.filter.dashcamTypes.contains('NORMAL') &&
-                  !c.filter.dashcamTypes.contains('PROXIMITY') =>
+              RecordingSource.dashcam
+                  when c.filter.dashcamTypes.contains('NORMAL') && !c.filter.dashcamTypes.contains('PROXIMITY') =>
                 l10n.recording_lib_no_recordings_normal,
-              RecordingSource.dashcam when c.filter.dashcamTypes.contains('PROXIMITY') &&
-                  !c.filter.dashcamTypes.contains('NORMAL') =>
+              RecordingSource.dashcam
+                  when c.filter.dashcamTypes.contains('PROXIMITY') && !c.filter.dashcamTypes.contains('NORMAL') =>
                 l10n.recording_lib_no_recordings_proximity,
               RecordingSource.dashcam => l10n.recording_lib_no_recordings,
             },
@@ -223,16 +223,18 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
   void _openPlayer(BuildContext context, RecordingItem item) {
     final visible = widget.controller.visible;
     final index = visible.indexWhere((r) => r.filename == item.filename);
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => RecordingsPlayerScreen(
-        controller: RecordingsPlayerController(
-          recordingsService: widget.recordingsService,
-          playlist: visible,
-          initialIndex: index < 0 ? 0 : index,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RecordingsPlayerScreen(
+          controller: RecordingsPlayerController(
+            recordingsService: widget.recordingsService,
+            playlist: visible,
+            initialIndex: index < 0 ? 0 : index,
+          ),
+          jwtSource: widget.jwtSource,
         ),
-        jwtSource: widget.jwtSource,
       ),
-    ));
+    );
   }
 }
 
@@ -309,33 +311,59 @@ class _Header extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          SegmentedButton<RecordingSource>(
-            showSelectedIcon: false,
-            key: const ValueKey('recordings.segments'),
-            segments: [
-              ButtonSegment(
-                value: RecordingSource.dashcam,
-                label: Text(loaded == null
-                    ? l10n.recordings_segment_dashcam
-                    : l10n.recordings_segment_dashcam_count(loaded.stats.dashcamCount)),
+          // BladeWatch-era8: the source segments and the date navigator share ONE row.
+          //
+          // They used to be stacked, which spent a whole row plus its 12 px gap on two
+          // controls that each need only part of the width — and every pixel here comes
+          // straight out of the recordings grid and the player below it.
+          //
+          // Wrap, not Row: the segment labels carry counts that grow, and several locales
+          // are much longer than English, so at some width the two controls stop fitting.
+          // Wrapping puts them back on separate lines exactly as before, which is the
+          // old layout — a graceful worst case rather than an overflow.
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              SegmentedButton<RecordingSource>(
+                showSelectedIcon: false,
+                key: const ValueKey('recordings.segments'),
+                segments: [
+                  ButtonSegment(
+                    value: RecordingSource.dashcam,
+                    label: Text(
+                      loaded == null
+                          ? l10n.recordings_segment_dashcam
+                          : l10n.recordings_segment_dashcam_count(loaded.stats.dashcamCount),
+                    ),
+                  ),
+                  ButtonSegment(
+                    value: RecordingSource.surveillance,
+                    label: Text(
+                      loaded == null
+                          ? l10n.recordings_segment_surveillance
+                          : l10n.recordings_segment_surveillance_count(loaded.stats.surveillanceCount),
+                    ),
+                  ),
+                ],
+                selected: {c.filter.source},
+                onSelectionChanged: (s) => c.setSource(s.first),
               ),
-              ButtonSegment(
-                value: RecordingSource.surveillance,
-                label: Text(loaded == null
-                    ? l10n.recordings_segment_surveillance
-                    : l10n.recordings_segment_surveillance_count(loaded.stats.surveillanceCount)),
-              ),
+              // The date row previously stretched edge to edge via an Expanded around its
+              // date button. Inside a Wrap there is no unbounded width to expand into, so
+              // it takes a bounded share instead — see _DateRow.maxWidth.
+              _DateRow(controller: c),
+              // The type/severity filters join the same Wrap rather than taking a third
+              // row of their own. Whichever set applies to the current source is shown —
+              // they are alternatives, so only one is ever in the Wrap at a time.
+              if (c.filter.source == RecordingSource.dashcam)
+                _TypeChipRow(controller: c)
+              else
+                _SurveillanceFilterRow(controller: c),
             ],
-            selected: {c.filter.source},
-            onSelectionChanged: (s) => c.setSource(s.first),
           ),
-          const SizedBox(height: 12),
-          _DateRow(controller: c),
           const SizedBox(height: 8),
-          if (c.filter.source == RecordingSource.dashcam)
-            _TypeChipRow(controller: c)
-          else
-            _SurveillanceFilterRow(controller: c),
         ],
       ),
     );
@@ -353,6 +381,9 @@ class _DateRow extends StatelessWidget {
   final RecordingsController controller;
   const _DateRow({required this.controller});
 
+  /// See the ConstrainedBox in [build].
+  static const double maxWidth = 460;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -362,48 +393,56 @@ class _DateRow extends StatelessWidget {
     final label = !c.filter.dateNarrowed
         ? l10n.recording_lib_date_all_days
         : c.filter.selectedDayMs == today
-            ? l10n.recording_lib_date_today
-            : c.filter.selectedDayMs == today - 86400000
-                ? l10n.recording_lib_date_yesterday
-                : _formatDate(c.filter.selectedDayMs);
+        ? l10n.recording_lib_date_today
+        : c.filter.selectedDayMs == today - 86400000
+        ? l10n.recording_lib_date_yesterday
+        : _formatDate(c.filter.selectedDayMs);
 
-    return Row(
-      children: [
-        // Native puts a calendar icon beside the date control so the row reads
-        // as a date picker rather than a generic pager.
-        const Padding(
-          padding: EdgeInsets.only(right: 4),
-          child: Icon(Icons.calendar_today, size: 18),
-        ),
-        if (c.filter.dateNarrowed)
-          IconButton(
-            key: const ValueKey('recordings.prevDay'),
-            tooltip: l10n.cd_previous_day,
-            icon: const Icon(Icons.chevron_left),
-            onPressed: () => c.shiftDay(-1),
+    return ConstrainedBox(
+      // BladeWatch-era8: bounded, because this now sits inside a Wrap where there is no
+      // infinite width to Expand into — an unbounded Expanded there throws. Wide enough
+      // that the date label and its pager controls stay comfortable, narrow enough to
+      // leave room for the segments beside it.
+      constraints: const BoxConstraints(maxWidth: _DateRow.maxWidth),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Native puts a calendar icon beside the date control so the row reads
+          // as a date picker rather than a generic pager.
+          const Padding(padding: EdgeInsets.only(right: 4), child: Icon(Icons.calendar_today, size: 18)),
+          if (c.filter.dateNarrowed)
+            IconButton(
+              key: const ValueKey('recordings.prevDay'),
+              tooltip: l10n.cd_previous_day,
+              icon: const Icon(Icons.chevron_left),
+              onPressed: () => c.shiftDay(-1),
+            ),
+          // Flexible, not Expanded: this Row is mainAxisSize.min inside a Wrap, so there is
+          // no leftover space to expand into. Loose fit lets the button size to its label
+          // and still shrink if the constraint above bites.
+          Flexible(
+            child: OutlinedButton(
+              key: const ValueKey('recordings.datePick'),
+              onPressed: () => _pickDate(context, c),
+              child: Text(label, overflow: TextOverflow.ellipsis),
+            ),
           ),
-        Expanded(
-          child: OutlinedButton(
-            key: const ValueKey('recordings.datePick'),
-            onPressed: () => _pickDate(context, c),
-            child: Text(label),
-          ),
-        ),
-        if (c.filter.dateNarrowed)
-          IconButton(
-            key: const ValueKey('recordings.nextDay'),
-            tooltip: l10n.cd_next_day,
-            icon: const Icon(Icons.chevron_right),
-            onPressed: c.filter.selectedDayMs < today ? () => c.shiftDay(1) : null,
-          ),
-        if (c.filter.dateNarrowed)
-          IconButton(
-            key: const ValueKey('recordings.clearDate'),
-            icon: const Icon(Icons.close),
-            tooltip: l10n.cd_clear_filter,
-            onPressed: () => c.setDateNarrowed(false),
-          ),
-      ],
+          if (c.filter.dateNarrowed)
+            IconButton(
+              key: const ValueKey('recordings.nextDay'),
+              tooltip: l10n.cd_next_day,
+              icon: const Icon(Icons.chevron_right),
+              onPressed: c.filter.selectedDayMs < today ? () => c.shiftDay(1) : null,
+            ),
+          if (c.filter.dateNarrowed)
+            IconButton(
+              key: const ValueKey('recordings.clearDate'),
+              icon: const Icon(Icons.close),
+              tooltip: l10n.cd_clear_filter,
+              onPressed: () => c.setDateNarrowed(false),
+            ),
+        ],
+      ),
     );
   }
 
@@ -500,9 +539,9 @@ class _SurveillanceFilterRow extends StatelessWidget {
         ActionChip(
           key: const ValueKey('recordings.openFilterSheet'),
           avatar: const Icon(Icons.tune, size: 18),
-          label: Text(active.isEmpty
-              ? l10n.recording_lib_filter_button
-              : l10n.recording_lib_filter_button_active(active.length)),
+          label: Text(
+            active.isEmpty ? l10n.recording_lib_filter_button : l10n.recording_lib_filter_button_active(active.length),
+          ),
           onPressed: () => _openFilterSheet(context, c),
         ),
         for (final (id, label, onRemove) in active)
@@ -578,39 +617,45 @@ class _FilterSheetState extends State<_FilterSheet> {
             const SizedBox(height: 16),
             Text(l10n.recording_lib_filter_section_what, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
-            Wrap(spacing: 8, children: [
-              FilterChip(
-                key: const ValueKey('recordings.sheet.actorAny'),
-                label: Text(l10n.recording_lib_chip_any),
-                selected: c.filter.actorClasses.isEmpty,
-                onSelected: (_) => c.resetActorClasses(),
-              ),
-              for (final name in const ['person', 'vehicle', 'bike', 'animal'])
+            Wrap(
+              spacing: 8,
+              children: [
                 FilterChip(
-                  key: ValueKey('recordings.sheet.actor.$name'),
-                  label: Text(_actorLabel(l10n, name)),
-                  selected: c.filter.actorClasses.contains(name),
-                  onSelected: (_) => c.toggleActorClass(name),
+                  key: const ValueKey('recordings.sheet.actorAny'),
+                  label: Text(l10n.recording_lib_chip_any),
+                  selected: c.filter.actorClasses.isEmpty,
+                  onSelected: (_) => c.resetActorClasses(),
                 ),
-            ]),
+                for (final name in const ['person', 'vehicle', 'bike', 'animal'])
+                  FilterChip(
+                    key: ValueKey('recordings.sheet.actor.$name'),
+                    label: Text(_actorLabel(l10n, name)),
+                    selected: c.filter.actorClasses.contains(name),
+                    onSelected: (_) => c.toggleActorClass(name),
+                  ),
+              ],
+            ),
             const SizedBox(height: 16),
             Text(l10n.recording_lib_filter_section_severity, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
-            Wrap(spacing: 8, children: [
-              FilterChip(
-                key: const ValueKey('recordings.sheet.sevAny'),
-                label: Text(l10n.recording_lib_chip_any),
-                selected: c.filter.severities.isEmpty,
-                onSelected: (_) => c.resetSeverities(),
-              ),
-              for (final name in const ['ALERT', 'CRITICAL'])
+            Wrap(
+              spacing: 8,
+              children: [
                 FilterChip(
-                  key: ValueKey('recordings.sheet.sev.$name'),
-                  label: Text(name == 'ALERT' ? l10n.recording_lib_chip_alert : l10n.recording_lib_chip_critical),
-                  selected: c.filter.severities.contains(name),
-                  onSelected: (_) => c.toggleSeverity(name),
+                  key: const ValueKey('recordings.sheet.sevAny'),
+                  label: Text(l10n.recording_lib_chip_any),
+                  selected: c.filter.severities.isEmpty,
+                  onSelected: (_) => c.resetSeverities(),
                 ),
-            ]),
+                for (final name in const ['ALERT', 'CRITICAL'])
+                  FilterChip(
+                    key: ValueKey('recordings.sheet.sev.$name'),
+                    label: Text(name == 'ALERT' ? l10n.recording_lib_chip_alert : l10n.recording_lib_chip_critical),
+                    selected: c.filter.severities.contains(name),
+                    onSelected: (_) => c.toggleSeverity(name),
+                  ),
+              ],
+            ),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -634,11 +679,11 @@ class _FilterSheetState extends State<_FilterSheet> {
   }
 
   String _actorLabel(AppLocalizations l10n, String name) => switch (name) {
-        'person' => l10n.recording_lib_chip_person,
-        'vehicle' => l10n.recording_lib_chip_vehicle,
-        'bike' => l10n.recording_lib_chip_bike,
-        _ => l10n.recording_lib_chip_animal,
-      };
+    'person' => l10n.recording_lib_chip_person,
+    'vehicle' => l10n.recording_lib_chip_vehicle,
+    'bike' => l10n.recording_lib_chip_bike,
+    _ => l10n.recording_lib_chip_animal,
+  };
 }
 
 class _SelectToolbar extends StatelessWidget {
@@ -743,20 +788,17 @@ class _RecordingsGrid extends StatelessWidget {
                 crossAxisSpacing: 8,
                 childAspectRatio: 1.4,
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = group.items[index];
-                  return _RecordingCard(
-                    key: ValueKey('recordings.card.${item.filename}'),
-                    controller: controller,
-                    item: item,
-                    jwt: jwt,
-                    isPlaying: selectedFilename == item.filename,
-                    onTap: () => onTapItem(item),
-                  );
-                },
-                childCount: group.items.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = group.items[index];
+                return _RecordingCard(
+                  key: ValueKey('recordings.card.${item.filename}'),
+                  controller: controller,
+                  item: item,
+                  jwt: jwt,
+                  isPlaying: selectedFilename == item.filename,
+                  onTap: () => onTapItem(item),
+                );
+              }, childCount: group.items.length),
             ),
           ),
         ],
@@ -765,18 +807,18 @@ class _RecordingsGrid extends StatelessWidget {
   }
 
   String _sectionLabel(AppLocalizations l10n, RecordingSection section) => switch (section) {
-        TimeOfDaySection(:final bucket) => switch (bucket) {
-            TimeOfDayBucket.morning => l10n.recording_lib_section_morning,
-            TimeOfDayBucket.afternoon => l10n.recording_lib_section_afternoon,
-            TimeOfDayBucket.evening => l10n.recording_lib_section_evening,
-            TimeOfDayBucket.night => l10n.recording_lib_section_night,
-          },
-        DateSection(:final relativeDay, :final dayStartMs) => switch (relativeDay) {
-            RelativeDay.today => l10n.recording_lib_date_today,
-            RelativeDay.yesterday => l10n.recording_lib_date_yesterday,
-            RelativeDay.other => _formatSectionDate(dayStartMs),
-          },
-      };
+    TimeOfDaySection(:final bucket) => switch (bucket) {
+      TimeOfDayBucket.morning => l10n.recording_lib_section_morning,
+      TimeOfDayBucket.afternoon => l10n.recording_lib_section_afternoon,
+      TimeOfDayBucket.evening => l10n.recording_lib_section_evening,
+      TimeOfDayBucket.night => l10n.recording_lib_section_night,
+    },
+    DateSection(:final relativeDay, :final dayStartMs) => switch (relativeDay) {
+      RelativeDay.today => l10n.recording_lib_date_today,
+      RelativeDay.yesterday => l10n.recording_lib_date_yesterday,
+      RelativeDay.other => _formatSectionDate(dayStartMs),
+    },
+  };
 
   String _formatSectionDate(int ms) {
     final d = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -806,10 +848,7 @@ class _SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Text(
         label.toUpperCase(),
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          letterSpacing: 0.5,
-        ),
+        style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, letterSpacing: 0.5),
       ),
     );
   }
@@ -899,31 +938,25 @@ class _RecordingCard extends StatelessWidget {
                             child: const Icon(Icons.play_arrow, color: Colors.white, size: 28),
                           ),
                         ),
-                      Positioned(
-                        top: 6,
-                        left: 6,
-                        child: _Badge(text: l10n.recording_lib_camera_badge(item.cameraId)),
-                      ),
+                      Positioned(top: 6, left: 6, child: _Badge(text: l10n.recording_lib_camera_badge(item.cameraId))),
                       if (item.severity != null)
                         Positioned(
                           top: 6,
                           right: 6,
                           child: _Badge(
                             text: item.severity == 'CRITICAL' ? l10n.rec_severity_critical : l10n.rec_severity_alert,
-                            color: (item.severity == 'CRITICAL'
-                                    ? theme.extension<BwStatusColors>()!.danger
-                                    : theme.extension<BwStatusColors>()!.warning)
-                                .withValues(alpha: 0.8),
+                            color:
+                                (item.severity == 'CRITICAL'
+                                        ? theme.extension<BwStatusColors>()!.danger
+                                        : theme.extension<BwStatusColors>()!.warning)
+                                    .withValues(alpha: 0.8),
                           ),
                         ),
                       if (c.selectMode)
                         Positioned(
                           top: 6,
                           right: 6,
-                          child: Checkbox(
-                            value: selected,
-                            onChanged: (_) => c.toggleSelected(item.filename),
-                          ),
+                          child: Checkbox(value: selected, onChanged: (_) => c.toggleSelected(item.filename)),
                         ),
                     ],
                   ),
@@ -934,11 +967,13 @@ class _RecordingCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(item.timeLabel, style: theme.textTheme.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
                       Text(
-                        '${item.formattedDuration} · ${item.formattedSize}',
-                        style: theme.textTheme.labelSmall,
+                        item.timeLabel,
+                        style: theme.textTheme.labelLarge,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      Text('${item.formattedDuration} · ${item.formattedSize}', style: theme.textTheme.labelSmall),
                       if (item.detectedClasses.isNotEmpty || item.proximityLabel != null)
                         Text(
                           [
@@ -973,11 +1008,11 @@ class _RecordingCard extends StatelessWidget {
   }
 
   String _proximityText(AppLocalizations l10n, ProximityLabel label) => switch (label) {
-        ProximityLabel.veryClose => l10n.recording_lib_proximity_very_close,
-        ProximityLabel.close => l10n.recording_lib_proximity_close,
-        ProximityLabel.mid => l10n.recording_lib_proximity_mid,
-        ProximityLabel.far => l10n.recording_lib_proximity_far,
-      };
+    ProximityLabel.veryClose => l10n.recording_lib_proximity_very_close,
+    ProximityLabel.close => l10n.recording_lib_proximity_close,
+    ProximityLabel.mid => l10n.recording_lib_proximity_mid,
+    ProximityLabel.far => l10n.recording_lib_proximity_far,
+  };
 
   Future<void> _confirmDelete(BuildContext context, RecordingsController c, RecordingItem item) async {
     final l10n = AppLocalizations.of(context)!;
@@ -999,9 +1034,9 @@ class _RecordingCard extends StatelessWidget {
     if (confirmed != true) return;
     final ok = await c.deleteRecording(item.filename);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(ok ? l10n.toast_recording_deleted : l10n.toast_recording_delete_failed),
-    ));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(ok ? l10n.toast_recording_deleted : l10n.toast_recording_delete_failed)));
   }
 }
 

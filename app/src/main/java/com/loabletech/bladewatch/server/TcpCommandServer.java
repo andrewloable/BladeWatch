@@ -53,7 +53,10 @@ public class TcpCommandServer {
         names.put("CAMERA_DAEMON", "byd_cam_daemon");
         names.put("SENTRY_DAEMON", "sentry_daemon");
         names.put("ACC_SENTRY_DAEMON", "acc_sentry_daemon");
-        names.put("ZROK_TUNNEL", "zrok");
+        // Renamed, not just re-pathed: argv[0] basename is the discriminator (see
+        // isProcessRunning), and a bare "tor" is generic enough to collide. 14 chars,
+        // under the kernel's 15-char cap on /proc/<pid>/comm so killall still matches.
+        names.put("TOR_TUNNEL", "bladewatch_tor");
         DAEMON_PROCESS_NAMES = Collections.unmodifiableMap(names);
     }
 
@@ -547,25 +550,37 @@ public class TcpCommandServer {
                 break;
             }
 
-            // BladeWatch-m1po: the current Zrok tunnel URL, for the Dashboard's
-            // remote-access tile / QR code in the Flutter APK, which has no path to
-            // ZrokController's in-memory LiveData or to the app-private
+            // BladeWatch-m1po / BladeWatch-3lbz.2: the current Tor onion URL, for the
+            // Dashboard's remote-access tile / QR code in the Flutter APK, which has no
+            // path to TorController's in-memory LiveData or to the app-private
             // SharedPreferences copy.
             //
-            // Gated on the process actually running, exactly as native is:
-            // ZrokLauncher.launchZrok only calls getTunnelUrl() inside an
-            // isTunnelRunning { if (isRunning) … } branch. Without that gate a URL
-            // left in the log by a previous session would make the UI report a live
-            // tunnel that nothing is listening on.
+            // TWO gates, and both are load-bearing:
+            //
+            // 1. The process must be running. tor's hs/hostname file is written once and
+            //    then persists forever, reboots included, so on its own it says nothing
+            //    about liveness.
+            // 2. tor must have BOOTSTRAPPED. The tunnel this replaces only
+            //    printed its URL once the tunnel was live. tor writes hs/hostname about a
+            //    second after first launch and then takes ~82 s (cold) or ~6 s (warm) to
+            //    reach the network — measured on the head unit 2026-09-14. Publishing the
+            //    address in that window puts an "online" QR code on screen for a service
+            //    nothing can reach yet.
             case "tunnelStatus": {
-                boolean tunnelRunning = isProcessRunning(DAEMON_PROCESS_NAMES.get("ZROK_TUNNEL"));
-                String tunnelUrl = tunnelRunning ? readZrokTunnelUrl() : null;
+                boolean tunnelRunning = isProcessRunning(DAEMON_PROCESS_NAMES.get("TOR_TUNNEL"));
+                String tunnelUrl =
+                        (tunnelRunning && isTorBootstrapped()) ? readTorOnionUrl() : null;
                 response.put("status", "ok");
                 response.put("running", tunnelRunning);
-                // running && url == null is a real, distinct state — the tunnel
-                // process is up but has not yet written its share banner. The client
-                // renders that as "connecting", not "offline".
+                // running && url == null is a real, distinct state — tor is up but not yet
+                // reachable. The client renders that as "connecting", not "offline".
                 response.put("url", tunnelUrl == null ? JSONObject.NULL : tunnelUrl);
+                // BladeWatch-y7x2: the owner's INTENT, so the Dashboard can hide its connect
+                // card entirely when the tunnel is switched off. Distinct from running: an
+                // enabled tunnel is also not running for the first minute while tor
+                // bootstraps, and hiding the card during THAT window would make the
+                // Dashboard look broken exactly while the user is waiting for it.
+                response.put("enabled", readDaemonEnabled("TOR_TUNNEL"));
                 break;
             }
 
@@ -574,7 +589,7 @@ public class TcpCommandServer {
             // `type` is checked against a fixed allow-list before anything happens, and
             // no part of it ever reaches a shell.
             //
-            // Scope is ZROK_TUNNEL only, on purpose (decided on this issue):
+            // Scope is TOR_TUNNEL only, on purpose (decided on this issue):
             //
             //  - CAMERA_DAEMON hosts THIS server. Stopping it kills the socket answering
             //    the request, and the Flutter APK has no ADB, so nothing could start it
@@ -586,9 +601,9 @@ public class TcpCommandServer {
             //    stoppable needs a cross-process decision about whether a stopped DASHCAM
             //    should stay stopped across a reboot — see this issue.
             //
-            // ZROK_TUNNEL has none of those problems: it is an OPTIONAL daemon whose
+            // TOR_TUNNEL has none of those problems: it is an OPTIONAL daemon whose
             // enabled state native ALREADY persists, and the health check both starts it
-            // (through the full ZrokLauncher flow, tokens and all) and leaves it alone
+            // (through TorLauncher) and leaves it alone
             // when disabled. So enabling is just recording the intent and letting the
             // existing launcher do the work; only disabling additionally has to kill the
             // running process, because the health check never kills, it only relaunches.
@@ -631,6 +646,24 @@ public class TcpCommandServer {
                 }
                 response.put("status", "ok");
                 response.put("daemons", daemons);
+
+                // BladeWatch-dh1r: the user's INTENT, reported separately from liveness.
+                //
+                // Liveness alone cannot drive a settings switch. Enabling a daemon only
+                // records the intent — the health check launches it on its next cycle and
+                // tor then needs up to a minute to bootstrap (61 s measured on the head
+                // unit). A switch bound to liveness springs straight back to off, and the
+                // user's natural second tap DISABLES the tunnel they just enabled, because
+                // the disable path also kills the process.
+                //
+                // Only toggleable daemons appear here. The other three are started by the
+                // service host and have no user-facing enabled state; inventing one would
+                // imply a switch that does nothing.
+                JSONObject enabled = new JSONObject();
+                for (String type : TOGGLEABLE_DAEMONS) {
+                    enabled.put(type, readDaemonEnabled(type));
+                }
+                response.put("enabled", enabled);
                 break;
             }
 
@@ -713,7 +746,7 @@ public class TcpCommandServer {
     private static final java.util.Set<String> TOGGLEABLE_DAEMONS;
     static {
         java.util.Set<String> toggleable = new java.util.LinkedHashSet<>();
-        toggleable.add("ZROK_TUNNEL");
+        toggleable.add("TOR_TUNNEL");
         TOGGLEABLE_DAEMONS = Collections.unmodifiableSet(toggleable);
     }
 
@@ -729,6 +762,32 @@ public class TcpCommandServer {
      * config, which needs {@code android.util.Log} and a file under /storage.
      */
     static java.util.Map<String, Boolean> daemonEnabledWritesForTest = null;
+
+    /** Test seam mirroring {@link #daemonEnabledWritesForTest}; null = read the real config. */
+    static java.util.Map<String, Boolean> daemonEnabledReadsForTest = null;
+
+    /**
+     * Whether the user has enabled an optional daemon. Absent means never enabled — a car
+     * whose owner has never touched the tunnel must not be reported as having asked for one.
+     */
+    private static boolean readDaemonEnabled(String daemonType) {
+        if (daemonEnabledReadsForTest != null) {
+            return Boolean.TRUE.equals(daemonEnabledReadsForTest.get(daemonType));
+        }
+        try {
+            Boolean recorded =
+                    net.bladewatch.app.config.UnifiedConfigManager.isDaemonEnabled(daemonType);
+            return Boolean.TRUE.equals(recorded);
+        } catch (Throwable t) {
+            // An unreadable config must not take down daemonStatus, which the Startup and
+            // Settings screens both poll. "Not enabled" is the safe answer: it understates
+            // rather than claiming the owner asked for a tunnel they never enabled. The
+            // liveness map above is unaffected and still reports the truth.
+            CameraDaemon.log("daemonStatus: could not read enabled state for "
+                    + daemonType + ": " + t.getMessage());
+            return false;
+        }
+    }
 
     private static boolean recordDaemonEnabled(String daemonType, boolean enabled) {
         if (daemonEnabledWritesForTest != null) {
@@ -776,67 +835,118 @@ public class TcpCommandServer {
     }
 
     /**
-     * Where {@code ZrokLauncher} points the tunnel's stdout — mirrors its private
-     * {@code ZROK_LOG} constant
-     * ({@code app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt}).
-     * Kept as a local copy rather than an import so this low-level server package
-     * takes no dependency on the launcher layer; update both if it ever moves.
+     * Where {@code TorLauncher} points tor's notice log — mirrors its {@code TOR_LOG}
+     * constant ({@code app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt}).
+     * Kept as a local copy rather than an import so this low-level server package takes no
+     * dependency on the launcher layer; update both if it ever moves.
      */
-    static String zrokLogPathForTest = null;
+    static String torLogPathForTest = null;
 
-    private static String zrokLogPath() {
-        return zrokLogPathForTest != null ? zrokLogPathForTest : "/data/local/tmp/zrok.log";
+    private static String torLogPath() {
+        return torLogPathForTest != null ? torLogPathForTest : "/data/local/tmp/tor.log";
     }
 
-    /** The share URL zrok prints when it brings a tunnel up. Same shape native greps for. */
-    private static final java.util.regex.Pattern ZROK_URL =
-            java.util.regex.Pattern.compile("https://[a-z0-9]+\\.share\\.zrok\\.io");
+    /**
+     * Where tor writes the onion address, inside the hidden-service directory.
+     *
+     * <p>Mode 600 and shell-owned, which is exactly why this command exists: the app UID
+     * cannot read it, but this process already runs as shell UID — the same UID tor is
+     * launched under — so it can, with no shell and no ADB.
+     *
+     * <p>The sibling {@code hs_ed25519_secret_key} in that directory is the car's permanent
+     * remote-access identity. Nothing may ever read, log or return it.
+     */
+    static String torHostnamePathForTest = null;
+
+    private static String torHostnamePath() {
+        return torHostnamePathForTest != null
+                ? torHostnamePathForTest
+                : "/data/local/tmp/tor/hs/hostname";
+    }
 
     /**
-     * Only ever read this much of the tail of a large log — see {@link #readZrokTunnelUrl}.
+     * A v3 onion address: 56 base32 characters (a-z and 2-7, so no 0/1/8/9) plus ".onion".
+     * Validated rather than trusted because the Dashboard turns whatever comes back into a
+     * QR code, and a half-written or truncated file would become a link that silently goes
+     * nowhere.
      */
-    private static final int ZROK_LOG_TAIL_BYTES = 256 * 1024;
+    private static final java.util.regex.Pattern ONION_V3 =
+            java.util.regex.Pattern.compile("^[a-z2-7]{56}\\.onion$");
 
     /**
-     * The tunnel URL from zrok's own log, or null if none is recorded.
-     *
-     * <p>Two deliberate differences from native's
-     * {@code grep -o … | head -1} ({@code ZrokLauncher.getTunnelUrl}):
-     *
-     * <p>1. It takes the <b>last</b> match, not the first. The log is appended to
-     * across launches, so the first match can be a URL from an earlier session that
-     * bound a different name — the exact "drift" native has to paper over afterwards
-     * with {@code reconcileTunnelUrl}. The most recent banner is the live one.
-     *
-     * <p>2. It never loads the whole file into memory. Native's own comment notes the
-     * 85 MB+ allocations that caused; this streams, and on a log larger than
-     * {@link #ZROK_LOG_TAIL_BYTES} it reads only the tail (skipping a partial first
-     * line, which cannot be a complete banner). A quiet tunnel writes its banner once
-     * at startup and little after, so the tail is where the live URL is.
-     *
-     * <p>Reading the file directly needs no shell and no ADB: this process already runs
-     * as shell UID, the same UID zrok was launched under, and the log lives in
-     * {@code /data/local/tmp}. Package-private for {@code TunnelStatusCommandTest}.
+     * Only ever read this much of the tail of a large log — see {@link #isTorBootstrapped}.
      */
-    static String readZrokTunnelUrl() {
-        java.io.File log = new java.io.File(zrokLogPath());
-        if (!log.isFile() || log.length() == 0) return null;
+    private static final int TOR_LOG_TAIL_BYTES = 256 * 1024;
+
+    /**
+     * The onion service URL, or null if tor has not written a usable address.
+     *
+     * <p>Plain {@code http://} on purpose. The onion protocol already encrypts end to end and
+     * authenticates the service by its key, so there is no TLS to add and no certificate to
+     * check — the address IS the public key. This is not a downgrade from an https tunnel URL.
+     *
+     * <p>Says nothing about reachability: the file persists across reboots, so callers must
+     * gate on {@link #isTorBootstrapped} as well. Package-private for
+     * {@code TunnelStatusCommandTest}.
+     */
+    static String readTorOnionUrl() {
+        java.io.File hostname = new java.io.File(torHostnamePath());
+        if (!hostname.isFile() || hostname.length() == 0) return null;
+        try {
+            // One short line; no streaming needed, unlike the log below.
+            byte[] raw = new byte[(int) Math.min(hostname.length(), 256)];
+            try (java.io.FileInputStream in = new java.io.FileInputStream(hostname)) {
+                int read = in.read(raw);
+                if (read <= 0) return null;
+                String addr = new String(raw, 0, read,
+                        java.nio.charset.StandardCharsets.UTF_8).trim();
+                if (!ONION_V3.matcher(addr).matches()) return null;
+                return "http://" + addr;
+            }
+        } catch (Exception e) {
+            CameraDaemon.log("tunnelStatus: could not read tor hostname: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Whether tor's CURRENT run has reached "Bootstrapped 100%".
+     *
+     * <p>tor appends to one log across launches, so a success line from an earlier run sits
+     * above the current run's "Bootstrapped 0% (starting)". Tracking the latest of the two
+     * rather than merely searching for 100% is what stops a restart republishing the address
+     * during the window when the service is not reachable — the exact class of cross-launch
+     * log drift the tunnel implementation this replaces had to handle too.
+     *
+     * <p>Never loads the whole log into memory: the previous implementation's comment records
+     * the 85 MB+ allocations that caused. On a log larger than {@link #TOR_LOG_TAIL_BYTES} it
+     * reads only the tail, skipping the partial line the seek lands inside. tor logs at notice
+     * level and is quiet once up, so the tail is where the current run is.
+     *
+     * <p>Package-private for {@code TunnelStatusCommandTest}.
+     */
+    static boolean isTorBootstrapped() {
+        java.io.File log = new java.io.File(torLogPath());
+        if (!log.isFile() || log.length() == 0) return false;
         try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(log, "r")) {
-            long start = Math.max(0, raf.length() - ZROK_LOG_TAIL_BYTES);
+            long start = Math.max(0, raf.length() - TOR_LOG_TAIL_BYTES);
             raf.seek(start);
             if (start > 0) raf.readLine(); // drop the partial line the seek landed inside
-            String found = null;
+            boolean bootstrapped = false;
             String line;
             while ((line = raf.readLine()) != null) {
-                java.util.regex.Matcher m = ZROK_URL.matcher(line);
-                while (m.find()) {
-                    found = m.group();
+                // Order matters: a run that restarts resets the verdict, and a run that
+                // completes sets it. The last one wins.
+                if (line.contains("Bootstrapped 0%")) {
+                    bootstrapped = false;
+                } else if (line.contains("Bootstrapped 100%")) {
+                    bootstrapped = true;
                 }
             }
-            return found;
+            return bootstrapped;
         } catch (Exception e) {
-            CameraDaemon.log("tunnelStatus: could not read zrok log: " + e.getMessage());
-            return null;
+            CameraDaemon.log("tunnelStatus: could not read tor log: " + e.getMessage());
+            return false;
         }
     }
 
@@ -895,8 +1005,8 @@ public class TcpCommandServer {
      * {@code -f} matches the FULL command line, so <i>any</i> process that merely
      * mentioned a daemon name reported that daemon as running. Observed on the head
      * unit: an {@code adb shell} one-liner that only wrote to
-     * {@code /data/local/tmp/zrok.log} made {@code tunnelStatus} answer
-     * {@code running=true} with no zrok anywhere — which defeats the whole point of
+     * the tunnel's log made {@code tunnelStatus} answer
+     * {@code running=true} with no tunnel anywhere — which defeats the whole point of
      * that command's liveness gate (it exists so a URL left in the log by a dead
      * session is never republished as a live tunnel).
      *
@@ -908,7 +1018,8 @@ public class TcpCommandServer {
      *       {@code "byd_cam_daemon"} (NUL/space padded) — while the {@code sh -c}
      *       that launched it keeps its own argv[0] of {@code "sh"}. Exactly the
      *       distinction the old pattern could not draw.</li>
-     *   <li>zrok is exec'd by path, so its argv[0] is {@code /data/local/tmp/zrok} —
+     *   <li>tor is exec'd by path, so its argv[0] is
+     *       {@code /data/local/tmp/bladewatch_tor} —
      *       hence the basename comparison rather than raw equality.</li>
      * </ul>
      *

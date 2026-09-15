@@ -1,4 +1,4 @@
-@import '../../shared/page-shared';
+@use '../../shared/page-shared';
 
 // Full-bleed live view: kill the page-shared padding so the camera fills.
 :host {
@@ -30,6 +30,22 @@
   width: 100%;
   height: 100%;
   display: block;
+  // Video letterboxes rather than stretches; harmless for the canvas, which is sized to
+  // the stream anyway.
+  object-fit: contain;
+  background: #000;
+
+  // [hidden] is only a UA-stylesheet rule ([hidden] { display: none }), and the author
+  // `display: block` above OUTRANKS it. Without this the attribute silently does nothing.
+  //
+  // That is not theoretical: it is why the MediaSource path showed a black screen with a
+  // "Live" badge on Android Tor Browser (BladeWatch-nobf). The canvas stayed displayed at
+  // full height, so the <video> below it in flow was pushed past .stream-wrap's
+  // overflow: hidden edge — the stream was playing, just off-screen, behind an empty
+  // canvas.
+  &[hidden] {
+    display: none;
+  }
 }
 
 .stream-badge {
@@ -56,8 +72,16 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 14px;
+  justify-content: center;
+  /* Wrap and stay inside the viewport. Without these the banner was an unbounded
+     absolutely-positioned flex row: on a phone the message alone made it wider than the
+     screen, so anything after it — including the capability line this exists to show —
+     was pushed off the edge and clipped. Reported from Android Tor Browser. */
+  flex-wrap: wrap;
+  max-width: min(92vw, 520px);
+  box-sizing: border-box;
+  gap: 8px 12px;
+  padding: 10px 14px;
   background: rgba(0, 0, 0, 0.72);
   border: 1px solid var(--border-default, rgba(255, 255, 255, 0.1));
   border-radius: 10px;
@@ -66,7 +90,22 @@
 
 .banner-text {
   font-size: 13px;
+  line-height: 1.4;
   color: var(--text-secondary, #a1a1aa);
+}
+
+/* Diagnostic capability line (BladeWatch-nobf). Its OWN line — flex-basis 100% forces a
+   wrap before it — so it cannot be pushed off the edge by a long message above it, which
+   is exactly what happened on a phone. Quieter than that message, because it is for
+   whoever is debugging rather than for the driver. */
+.banner-caps {
+  flex-basis: 100%;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  opacity: 0.85;
+  color: var(--text-secondary, #a1a1aa);
+  white-space: nowrap;
 }
 
 .banner-retry {

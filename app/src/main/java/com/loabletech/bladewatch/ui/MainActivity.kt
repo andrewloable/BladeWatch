@@ -66,6 +66,28 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         // Deliberately no setContentView: this activity has no UI.
 
+        // ...and because it has no UI, it must never take input either.
+        //
+        // BladeWatch-p9ag made this window translucent to kill the blank white flash. That
+        // exposed a second, older problem: moveTaskToBack(true) at the end of onCreate does
+        // NOT reliably background this task. Measured on the head unit 2026-09-15 —
+        //   Window #9  net.bladewatch.app/.ui.MainActivity     (invisible, on top)
+        //   Window #10 net.bladewatch.flutter/...MainActivity  (the real UI, beneath)
+        //   mResumedActivity: net.bladewatch.app/.ui.MainActivity
+        // While the window was opaque this showed up as a white screen, so it read as
+        // "something is broken". Once it went transparent the Flutter UI showed through it
+        // unchanged, but every TAP still landed on this invisible window — the in-car UI
+        // looked frozen, with nothing on screen to explain why. Reported exactly that way.
+        //
+        // These flags make the window incapable of holding focus or receiving touches, so
+        // input falls through to whatever is behind regardless of whether moveTaskToBack
+        // succeeds. That is belt and braces on purpose: the backgrounding call is kept
+        // below, but nothing user-visible now depends on it working.
+        window.addFlags(
+            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        )
+
         // Storage setup is posted off the onCreate critical path so a failure
         // (e.g. ROM lacking the All-Files-Access Settings activity on BYD SL7)
         // cannot abort activity launch. See setupStorageDirectories().
@@ -201,6 +223,16 @@ class MainActivity : Activity() {
         // JWTs ("Camera unavailable") until force-stopped; invalidating here lets
         // the next authenticated call pull the daemon's current secret over IPC.
         net.bladewatch.app.auth.AuthManager.refresh()
+        // BladeWatch-gn2y: re-sync the debug-log toggle, for the same reason the auth
+        // secret is refreshed above. Application.onCreate calls syncEnabled() once, and on
+        // that pass UnifiedConfigManager may not have loaded yet — and right after a
+        // reinstall the storage permission it needs is still pending behind a dialog. The
+        // logger then stayed OFF for the whole process lifetime even with
+        // developerOptions.debugLogsEnabled true in the config, which is exactly what was
+        // observed on the head unit: debug_app.log had nothing after a reinstall while the
+        // config said logging was on. Cheap, idempotent, and runs once the app is actually
+        // in the foreground with its permissions settled.
+        net.bladewatch.app.logging.DebugAppLogger.syncEnabled()
         try {
             val sm = net.bladewatch.app.storage.StorageManager.getInstance()
             if (!sm.isSdCardAvailable()) sm.refreshSdCard()

@@ -873,30 +873,6 @@ abstract class AppLocalizations {
   /// **'Loading…'**
   String get webview_loading;
 
-  /// No description provided for @zrok_enable_token_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable Token'**
-  String get zrok_enable_token_hint;
-
-  /// No description provided for @zrok_token_storage_note.
-  ///
-  /// In en, this message translates to:
-  /// **'Token is stored securely and shared between the app and background services.'**
-  String get zrok_token_storage_note;
-
-  /// No description provided for @zrok_reset_environment.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset Zrok Environment'**
-  String get zrok_reset_environment;
-
-  /// No description provided for @zrok_reset_environment_desc.
-  ///
-  /// In en, this message translates to:
-  /// **'Removes environment and token. You will need to re-enable with your token (uses a device slot).'**
-  String get zrok_reset_environment_desc;
-
   /// No description provided for @reset_title.
   ///
   /// In en, this message translates to:
@@ -1221,11 +1197,11 @@ abstract class AppLocalizations {
   /// **'ACC Surveillance'**
   String get daemon_name_acc;
 
-  /// No description provided for @daemon_name_zrok.
+  /// No description provided for @daemon_name_tor.
   ///
   /// In en, this message translates to:
-  /// **'Zrok Tunnel'**
-  String get daemon_name_zrok;
+  /// **'Tor Tunnel'**
+  String get daemon_name_tor;
 
   /// No description provided for @daemons_hero_title.
   ///
@@ -1608,8 +1584,8 @@ abstract class AppLocalizations {
   /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
-  /// **'Starting Zrok tunnel…'**
-  String get dashboard_starting_zrok;
+  /// **'Starting Tor tunnel…'**
+  String get dashboard_starting_tor;
 
   /// An action in progress. Impersonal, never 'I'.
   ///
@@ -1623,11 +1599,11 @@ abstract class AppLocalizations {
   /// **'{arg1}/{arg2} Running'**
   String dashboard_daemons_running(Object arg1, Object arg2);
 
-  /// No description provided for @tunnel_label_zrok.
+  /// No description provided for @tunnel_label_tor.
   ///
   /// In en, this message translates to:
-  /// **'Zrok'**
-  String get tunnel_label_zrok;
+  /// **'Tor'**
+  String get tunnel_label_tor;
 
   /// No description provided for @clip_label_access_code.
   ///
@@ -1647,89 +1623,11 @@ abstract class AppLocalizations {
   /// **'No configuration needed for {arg1}'**
   String toast_no_config_needed(Object arg1);
 
-  /// No description provided for @dialog_zrok_token_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Zrok Tunnel Token'**
-  String get dialog_zrok_token_title;
-
-  /// No description provided for @dialog_zrok_token_message.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter your Zrok enable token.\nGet one at: zrok.io'**
-  String get dialog_zrok_token_message;
-
   /// No description provided for @toast_token_cannot_be_empty.
   ///
   /// In en, this message translates to:
   /// **'Token cannot be empty'**
   String get toast_token_cannot_be_empty;
-
-  /// No description provided for @dialog_zrok_reset_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset Zrok Environment'**
-  String get dialog_zrok_reset_title;
-
-  /// No description provided for @dialog_zrok_reset_message.
-  ///
-  /// In en, this message translates to:
-  /// **'This will:\n• Stop the zrok tunnel if running\n• Remove the zrok environment from this device\n• Delete the saved token\n\nYou will need to re-enter your token and re-enable. This uses one of your 5 device slots on zrok.io.\n\nAre you sure?'**
-  String get dialog_zrok_reset_message;
-
-  /// No description provided for @toast_resetting_zrok.
-  ///
-  /// In en, this message translates to:
-  /// **'Resetting zrok environment…'**
-  String get toast_resetting_zrok;
-
-  /// No description provided for @toast_zrok_reset_success.
-  ///
-  /// In en, this message translates to:
-  /// **'Zrok environment reset. Enter a new token to set up again.'**
-  String get toast_zrok_reset_success;
-
-  /// No description provided for @toast_zrok_reset_partial.
-  ///
-  /// In en, this message translates to:
-  /// **'Environment reset (token file may need manual cleanup)'**
-  String get toast_zrok_reset_partial;
-
-  /// No description provided for @toast_zrok_reset_warnings.
-  ///
-  /// In en, this message translates to:
-  /// **'Environment reset (with warnings: {arg1})'**
-  String toast_zrok_reset_warnings(Object arg1);
-
-  /// No description provided for @zrok_no_token_configured.
-  ///
-  /// In en, this message translates to:
-  /// **'No token configured. Tap to set up.'**
-  String get zrok_no_token_configured;
-
-  /// No description provided for @toast_zrok_token_saved.
-  ///
-  /// In en, this message translates to:
-  /// **'Token saved'**
-  String get toast_zrok_token_saved;
-
-  /// 'save' means WRITE TO STORAGE, not rescue. Impersonal.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to save token'**
-  String get toast_zrok_token_save_failed;
-
-  /// No description provided for @toast_zrok_token_deleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Token deleted'**
-  String get toast_zrok_token_deleted;
-
-  /// No description provided for @toast_zrok_token_delete_failed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to delete token'**
-  String get toast_zrok_token_delete_failed;
 
   /// An action IN PROGRESS (retrieving a log file over IPC). Not an imperative, not first person, and 'fetch' means retrieve, not carry or bring.
   ///
@@ -3021,18 +2919,6 @@ abstract class AppLocalizations {
   /// **'Starting/stopping {arg1} isn’t supported yet'**
   String settings_daemons_toggle_unsupported(Object arg1);
 
-  /// No description provided for @settings_daemons_zrok_configure.
-  ///
-  /// In en, this message translates to:
-  /// **'Configure'**
-  String get settings_daemons_zrok_configure;
-
-  /// No description provided for @settings_daemons_zrok_reset_button.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset Environment'**
-  String get settings_daemons_zrok_reset_button;
-
   /// No description provided for @dashboard_metric_storage_chip.
   ///
   /// In en, this message translates to:
@@ -3222,7 +3108,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_section_daemons_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Zrok tunnel and background services.'**
+  /// **'Tor tunnel and background services.'**
   String get settings_section_daemons_subtitle;
 
   /// No description provided for @settings_about_row_title.
@@ -4963,6 +4849,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save failed'**
   String get surveillance_apply_failed;
+
+  /// Shown while tor is running but has not finished bootstrapping.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to Tor…'**
+  String get dashboard_tor_bootstrapping;
+
+  /// No description provided for @dashboard_tor_help_tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'How to open this address'**
+  String get dashboard_tor_help_tooltip;
+
+  /// No description provided for @dashboard_tor_help_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening this address'**
+  String get dashboard_tor_help_title;
+
+  /// No description provided for @dashboard_tor_help_android.
+  ///
+  /// In en, this message translates to:
+  /// **'Android: install Tor Browser from Google Play or F-Droid, open it and paste the address.'**
+  String get dashboard_tor_help_android;
+
+  /// No description provided for @dashboard_tor_help_ios.
+  ///
+  /// In en, this message translates to:
+  /// **'iPhone and iPad: install Onion Browser from the App Store, open it and paste the address. Tor Browser itself is not available on iOS.'**
+  String get dashboard_tor_help_ios;
+
+  /// No description provided for @dashboard_tor_help_desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Windows, macOS and Linux: download Tor Browser from torproject.org, open it and paste the address.'**
+  String get dashboard_tor_help_desktop;
+
+  /// No description provided for @dashboard_tor_help_password_note.
+  ///
+  /// In en, this message translates to:
+  /// **'You will still need the password after the page loads.'**
+  String get dashboard_tor_help_password_note;
+
+  /// No description provided for @dashboard_tor_help_download_qr_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan for the Tor Browser download page'**
+  String get dashboard_tor_help_download_qr_label;
+
+  /// No description provided for @dashboard_tor_help_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get dashboard_tor_help_close;
 }
 
 class _AppLocalizationsDelegate

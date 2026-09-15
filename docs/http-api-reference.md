@@ -445,7 +445,7 @@ stubs (`cd proto && buf generate`). Tracked by BladeWatch-852m.
 ## Client Guidance
 
 - Always authenticate before calling protected APIs.
-- Use the local base URL from the Android app or tunnel URL from the Zrok launcher.
+- Use the local base URL from the Android app, or the onion address the Tor tunnel publishes (`tunnelStatus` over IPC).
 - Avoid assuming response schemas from this list alone — read the handler class
   (REST) or `proto/bladewatch/v1/*.proto` (Connect) for the authoritative shape.
 - New clients — Dart or Angular — should use the Connect API (`/bladewatch.v1.*`,

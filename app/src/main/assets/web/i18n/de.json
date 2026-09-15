@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "Benachrichtigungen",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "Benachrichtigungs-Backend nicht initialisiert. Reservieren Sie eine Zrok-URL über den Dienste-Bildschirm und starten Sie den Hintergrunddienst neu, um die Push-Zustellung zu aktivieren.",
     "push_delivery": "Schublieferung",
     "push_delivery_sub": "Alle Geräte, auf die Sie das Dashboard installieren, müssen hier einmal aktiviert werden.",
     "enable_btn": "Auf diesem Gerät aktiviert",
@@ -171,7 +169,6 @@
     "registered_devices": "Registrierte Geräte",
     "devices_sub": "Jedes Telefon, das Push-Benachrichtigungen aktiviert hat, erscheint hier. Verwenden Sie Remove, um ein Gerät zu entregnen. Das Deaktivieren dieses Geräts löscht auch den aktuellen Browser lokal ab, während Remove nur auf der Serverseite ist.",
     "no_devices": "Noch keine Geräte registriert.",
-    "perm_zrok_required": "Die Push-Lieferung erfordert Zrok oder einen Reverse Proxy  siehe oben.",
     "perm_unsupported": "Benachrichtigungen, die in diesem Browser nicht unterstützt werden",
     "perm_unsupported_install": "Benachrichtigungen werden nicht unterstützt. Wenn Sie Safari verwenden, versuchen Sie, Benachrichtigungen auf den Startbildschirm hinzuzufügen, um Benachrichtigungen zu erhalten",
     "perm_granted": "An diesem Gerät sind Benachrichtigungen aktiviert",
@@ -1559,7 +1556,8 @@
     "retry": "Erneut versuchen",
     "badgeLive": "● LIVE",
     "badgeConnecting": "○ Verbinden…",
-    "notConnected": "Kamerastream nicht verbunden"
+    "notConnected": "Kamerastream nicht verbunden",
+    "decoderUnsupported": "Dieser Browser kann den Livestream nicht wiedergeben. Erforderlich ist ein Browser mit Videodekodierung, etwa Chrome oder Edge. Tor Browser und Firefox ESR unterstützen das noch nicht."
   },
   "location": {
     "themeAuto": "Automatisiert",

@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "Notifications",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "Le backend des notifications n'a pas été initialisé. Réservez une URL Zrok via l'écran Services et redémarrez le service d'arrière-plan pour activer la livraison push.",
     "push_delivery": "Pousser la livraison",
     "push_delivery_sub": "Vous devez activer le tableau de bord une fois sur chaque téléphone que vous installez.",
     "enable_btn": "Activer sur cet appareil",
@@ -171,7 +169,6 @@
     "registered_devices": "Dispositifs enregistrés",
     "devices_sub": "Tous les téléphones qui ont activé les notifications push apparaissent ici. Utilisez Retirer pour désinscrire un appareil. Désactiver sur cet appareil ci-dessus désactive également le navigateur actuel localement, tandis que Retirer est uniquement côté serveur.",
     "no_devices": "Aucun appareil n'a encore été enregistré.",
-    "perm_zrok_required": "La livraison en poussée nécessite Zrok ou un proxy inverse  voir bannière ci-dessus.",
     "perm_unsupported": "Notifications non prises en charge dans ce navigateur",
     "perm_unsupported_install": "Les notifications ne sont pas prises en charge. Si vous utilisez Safari, essayez d'ajouter à l'écran d'accueil pour obtenir les notifications",
     "perm_granted": "Les notifications sont activées sur cet appareil",
@@ -1559,7 +1556,8 @@
     "retry": "Réessayer",
     "badgeLive": "● EN DIRECT",
     "badgeConnecting": "○ Connexion…",
-    "notConnected": "Flux caméra non connecté"
+    "notConnected": "Flux caméra non connecté",
+    "decoderUnsupported": "Ce navigateur ne peut pas lire le flux en direct. Il faut un navigateur prenant en charge le décodage vidéo, comme Chrome ou Edge. Tor Browser et Firefox ESR ne le prennent pas encore en charge."
   },
   "location": {
     "themeAuto": "Auto",

@@ -21,7 +21,8 @@ import javax.crypto.spec.SecretKeySpec;
  * Authentication Manager for BYD Champ.
  *
  * Simple device token authentication - no external OAuth needed.
- * Works with any tunnel (Cloudflare, Zrok, etc.) since no origin validation required.
+ * Works with any tunnel (the Tor onion service, or a LAN address) since no origin
+ * validation is required.
  *
  * Auth Flow:
  * 1. User enters device token (displayed in app)

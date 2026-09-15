@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "Varsler",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "Varslingsbackend er ikke initialisert. Reserver en Zrok-URL via Tjenester-skjermen og start bakgrunnstjenesten på nytt for å aktivere push-levering.",
     "push_delivery": "Trykket levering",
     "push_delivery_sub": "Det aktiveres varsler på den enheten du bruker nå. Hver telefon du installerer instrumentpanelet på må være aktiveret her en gang.",
     "enable_btn": "Aktivere på denne enheten",
@@ -171,7 +169,6 @@
     "registered_devices": "Registrerte enheter",
     "devices_sub": "Alle telefoner som har aktivert push-meldinger vises her. Bruk Remove for å avregistrere en enhet. Å deaktivere på denne enheten ovenfor avmelder også den nåværende nettleseren lokalt, mens Remove er bare server-siden.",
     "no_devices": "Ingen enheter registrert ennå.",
-    "perm_zrok_required": "Push levering krever Zrok eller en omvendt proxy  se banner ovenfor.",
     "perm_unsupported": "Notifikasjoner som ikke støttes i denne nettleseren",
     "perm_unsupported_install": "Hvis du bruker Safari, prøv å legge til på startskjermen for å få meldinger",
     "perm_granted": "Notifikasjoner er aktivert på denne enheten",
@@ -1559,7 +1556,8 @@
     "retry": "Prøv igjen",
     "badgeLive": "● DIREKTE",
     "badgeConnecting": "○ Kobler til…",
-    "notConnected": "Kamerastrøm ikke tilkoblet"
+    "notConnected": "Kamerastrøm ikke tilkoblet",
+    "decoderUnsupported": "Denne nettleseren kan ikke spille av direktestrømmen. Den trenger en nettleser med videodekoding, for eksempel Chrome eller Edge. Tor Browser og Firefox ESR har det ikke ennå."
   },
   "location": {
     "themeAuto": "Auto",

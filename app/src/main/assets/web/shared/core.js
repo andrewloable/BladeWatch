@@ -278,7 +278,7 @@ BYD.i18n = (function () {
      *   External tunnel → POST /api/settings/appearance with {locale}
      *                     (writes a SEPARATE web-only locale into the
      *                     unified config). Survives tunnel-URL rotation:
-     *                     each new zrok session is a fresh origin so
+     *                     a tunnel origin can change, so
      *                     localStorage alone is not enough.
      * Either way, server writes are fire-and-forget; the catalog refetch
      * is the only thing the UI waits on.

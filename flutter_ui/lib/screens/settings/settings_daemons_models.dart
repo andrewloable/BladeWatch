@@ -4,14 +4,14 @@ enum DaemonKind {
   camera('CAMERA_DAEMON'),
   sentry('SENTRY_DAEMON'),
   accSentry('ACC_SENTRY_DAEMON'),
-  zrokTunnel('ZROK_TUNNEL');
+  torTunnel('TOR_TUNNEL');
 
   final String nativeKey;
   const DaemonKind(this.nativeKey);
 
   /// Whether this daemon can be started/stopped from this UI (BladeWatch-abcx).
   ///
-  /// Only the Zrok tunnel can, and the reasons are structural, not missing work:
+  /// Only the Tor tunnel can, and the reasons are structural, not missing work:
   ///
   /// - **Camera** hosts the loopback IPC server this app talks to. Stopping it kills
   ///   the only channel that could start it again — this APK has no ADB.
@@ -22,7 +22,7 @@ enum DaemonKind {
   ///
   /// The daemon enforces the same list; this is what lets the UI say so up front
   /// instead of letting the user discover it by toggling.
-  bool get canToggle => this == DaemonKind.zrokTunnel;
+  bool get canToggle => this == DaemonKind.torTunnel;
 }
 
 /// Ground truth: `DaemonAdapter.kt`'s per-row bind logic, reduced to what
@@ -34,5 +34,22 @@ class DaemonRowState {
   final DaemonKind kind;
   final bool running;
 
-  const DaemonRowState({required this.kind, required this.running});
+  /// BladeWatch-dh1r: what the USER asked for, which is not the same question as
+  /// [running] and must drive the switch. Enabling only records intent — the daemon's
+  /// health check launches on its next cycle and tor then needs up to a minute to
+  /// bootstrap, so a switch bound to [running] springs back to off and invites a second
+  /// tap that disables the tunnel again.
+  ///
+  /// Meaningful only where [DaemonKind.canToggle]; false elsewhere and unused there.
+  final bool enabled;
+
+  const DaemonRowState({
+    required this.kind,
+    required this.running,
+    this.enabled = false,
+  });
+
+  /// True while the user has asked for this daemon but it is not up yet — the window
+  /// the Settings row used to render as a plain "off".
+  bool get pending => enabled && !running;
 }

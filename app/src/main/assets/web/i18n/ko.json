@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "알림",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "알림 백엔드가 초기화되지 않았습니다. 서비스 화면에서 Zrok URL을 예약하고 백그라운드 서비스를 재시작하여 푸시 알림 전송을 활성화하세요.",
     "push_delivery": "푸시 배달",
     "push_delivery_sub": "현재 사용 중인 장치에 알림을 활성화합니다. 데시보드를 설치하는 모든 전화는 여기에 한번 활성화되어야 합니다.",
     "enable_btn": "이 장치에서 활성화",
@@ -171,7 +169,6 @@
     "registered_devices": "등록된 장치",
     "devices_sub": "푸시 알림을 활성화 한 모든 전화가 여기에 표시됩니다. 기기를 비등록하기 위해 제거를 사용하십시오. 위의 이 기기에서 비활성화하면 현 브라우저를 로컬에서 취소합니다. 제거는 서버 측면만입니다.",
     "no_devices": "아직 등록된 장치가 없습니다.",
-    "perm_zrok_required": "푸시 배달은 Zrok 또는 역 대리인이 필요합니다.",
     "perm_unsupported": "이 브라우저에서 지원되지 않는 알림",
     "perm_unsupported_install": "통지 지원되지 않습니다. 사파리를 사용하는 경우, 통지 수신을 위해 홈 화면에 추가하도록 시도하세요",
     "perm_granted": "이 장치에 알림이 활성화되어 있습니다.",
@@ -1559,7 +1556,8 @@
     "retry": "다시 시도",
     "badgeLive": "● 실시간",
     "badgeConnecting": "○ 연결 중…",
-    "notConnected": "카메라 스트림이 연결되지 않음"
+    "notConnected": "카메라 스트림이 연결되지 않음",
+    "decoderUnsupported": "이 브라우저에서는 실시간 영상을 재생할 수 없습니다. Chrome이나 Edge처럼 비디오 디코딩을 지원하는 브라우저가 필요합니다. Tor Browser와 Firefox ESR은 아직 지원하지 않습니다."
   },
   "location": {
     "themeAuto": "자동차",

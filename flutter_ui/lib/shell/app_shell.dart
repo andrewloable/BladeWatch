@@ -81,7 +81,7 @@ class AppShell extends StatelessWidget {
   /// [dashboardScreen] — see its doc comment for why.
   final Widget? liveViewScreen;
 
-  /// Live Zrok tunnel URL for the toolbar status pill (BladeWatch-0kru). Null
+  /// Live tunnel URL for the toolbar status pill (BladeWatch-0kru). Null
   /// source, or a source that answers null, means NO pill at all — native's
   /// `MainActivity.updateUrlDisplay()` sets `urlBar` to `View.GONE` when there is
   /// no tunnel, because the Dashboard connect card already says "No tunnel
@@ -249,7 +249,7 @@ class _Toolbar extends StatelessWidget implements PreferredSizeWidget {
 ///
 /// BladeWatch-0kru: this used to be a hardcoded placeholder that said
 /// "Connecting…" forever, with a grey dot and a dead copy button, on every
-/// screen. That was not merely unfinished, it was WRONG — with no zrok token
+/// screen. That was not merely unfinished, it was WRONG — with no tunnel
 /// configured nothing is connecting and nothing ever will, so it read as an app
 /// stuck mid-connect.
 ///

@@ -1,6 +1,7 @@
 package net.bladewatch.app.ui.daemon
 
 import net.bladewatch.app.launcher.AdbDaemonLauncher
+import net.bladewatch.app.launcher.DaemonKillCommands
 import net.bladewatch.app.ui.model.DaemonStatus
 import net.bladewatch.app.ui.model.DaemonType
 
@@ -36,11 +37,19 @@ class AccSentryDaemonController(
     override fun stop(callback: DaemonCallback) {
         callback.onStatusChanged(DaemonStatus.STOPPING, "Stopping...")
         
-        // Use pkill -9 -f 'acc_sentry' to kill BOTH daemon AND watchdog script
         adbLauncher.executeShellCommand(
-            "pkill -9 -f 'acc_sentry'; " +
+            // BladeWatch-6jj1: pkill -f 'acc_sentry' matched THIS shell's own cmdline
+            // and killed it, so nothing below it ran. The daemon goes by nice-name
+            // (killall matches comm/argv[0], both "sh" for us, so it cannot self-match);
+            // the watchdog SCRIPT runs as plain "sh" and needs a cmdline match, which is
+            // safe only because grep -E takes a regex and the pattern is bracketed.
+            //
+            // The rm globs start_acc_*.sh rather than naming the script — the plain
+            // literal would re-arm that regex against our own cmdline.
+            DaemonKillCommands.killByName("acc_sentry_daemon") + "; " +
+            DaemonKillCommands.killMatchingCmdline("start_acc_sentry") + "; " +
             "rm -f /data/local/tmp/acc_sentry_daemon.lock 2>/dev/null; " +
-            "rm -f /data/local/tmp/start_acc_sentry.sh 2>/dev/null; " +
+            "rm -f /data/local/tmp/start_acc_*.sh 2>/dev/null; " +
             "echo done",
             object : AdbDaemonLauncher.LaunchCallback {
                 override fun onLog(message: String) {}
@@ -48,7 +57,7 @@ class AccSentryDaemonController(
                     callback.onStatusChanged(DaemonStatus.STOPPED, "Stopped")
                 }
                 override fun onError(error: String) {
-                    // pkill returns error if no process - that's fine
+                    // killall returns an error when nothing matched - that's fine
                     callback.onStatusChanged(DaemonStatus.STOPPED, "Stopped")
                 }
             }
@@ -71,11 +80,19 @@ class AccSentryDaemonController(
     }
     
     override fun cleanup() {
-        // Use pkill -9 -f 'acc_sentry' to kill BOTH daemon AND watchdog script
         adbLauncher.executeShellCommand(
-            "pkill -9 -f 'acc_sentry'; " +
+            // BladeWatch-6jj1: pkill -f 'acc_sentry' matched THIS shell's own cmdline
+            // and killed it, so nothing below it ran. The daemon goes by nice-name
+            // (killall matches comm/argv[0], both "sh" for us, so it cannot self-match);
+            // the watchdog SCRIPT runs as plain "sh" and needs a cmdline match, which is
+            // safe only because grep -E takes a regex and the pattern is bracketed.
+            //
+            // The rm globs start_acc_*.sh rather than naming the script — the plain
+            // literal would re-arm that regex against our own cmdline.
+            DaemonKillCommands.killByName("acc_sentry_daemon") + "; " +
+            DaemonKillCommands.killMatchingCmdline("start_acc_sentry") + "; " +
             "rm -f /data/local/tmp/acc_sentry_daemon.lock 2>/dev/null; " +
-            "rm -f /data/local/tmp/start_acc_sentry.sh 2>/dev/null; " +
+            "rm -f /data/local/tmp/start_acc_*.sh 2>/dev/null; " +
             "echo done",
             object : AdbDaemonLauncher.LaunchCallback {
                 override fun onLog(message: String) {}

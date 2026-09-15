@@ -2,6 +2,7 @@ package net.bladewatch.app.ui.daemon
 
 import android.content.Context
 import net.bladewatch.app.launcher.AdbDaemonLauncher
+import net.bladewatch.app.launcher.DaemonKillCommands
 import net.bladewatch.app.ui.model.DaemonStatus
 import net.bladewatch.app.ui.model.DaemonType
 import org.json.JSONObject
@@ -72,14 +73,18 @@ class CameraDaemonController(
             // then kill the daemon and related processes. Without this, the
             // watchdog sees the daemon die and relaunches it immediately.
             val killCommands = buildString {
-                append("pkill -9 -f 'start_cam_daemon' 2>/dev/null; ")
-                append("rm -f /data/local/tmp/start_cam_daemon.sh 2>/dev/null; ")
+                // BladeWatch-6jj1: no pkill -f anywhere here. It matches the issuing ADB shell's
+                // own cmdline and kills it, so every clause below the first such one — including
+                // the "echo done" this callback waits for — was dead code on a real device.
+                //
+                // The rm globs start_cam_*.sh rather than naming the script: spelling the literal
+                // out would put it back in our own cmdline, where the bracketed regex above WOULD
+                // match it, and the loop would kill its own shell.
+                append(DaemonKillCommands.killMatchingCmdline("start_cam_daemon"))
+                append("; rm -f /data/local/tmp/start_cam_*.sh 2>/dev/null; ")
                 append("sleep 1; ")
-                RELATED_PROCESSES.forEach { proc ->
-                    append("pkill -9 -f '$proc' 2>/dev/null; ")
-                    append("killall -9 $proc 2>/dev/null; ")
-                }
-                append("rm -f /data/local/tmp/camera_daemon.lock 2>/dev/null; ")
+                append(DaemonKillCommands.killByName(*RELATED_PROCESSES.toTypedArray()))
+                append("; rm -f /data/local/tmp/camera_daemon.lock 2>/dev/null; ")
                 append("echo done")
             }
             adbLauncher.executeShellCommand(
@@ -126,14 +131,18 @@ class CameraDaemonController(
         sendShutdownCommand()
         // Kill the watchdog first so the daemon stays dead.
         val killCommands = buildString {
-            append("pkill -9 -f 'start_cam_daemon' 2>/dev/null; ")
-            append("rm -f /data/local/tmp/start_cam_daemon.sh 2>/dev/null; ")
+            // BladeWatch-6jj1: no pkill -f anywhere here. It matches the issuing ADB shell's
+            // own cmdline and kills it, so every clause below the first such one — including
+            // the "echo done" this callback waits for — was dead code on a real device.
+            //
+            // The rm globs start_cam_*.sh rather than naming the script: spelling the literal
+            // out would put it back in our own cmdline, where the bracketed regex above WOULD
+            // match it, and the loop would kill its own shell.
+            append(DaemonKillCommands.killMatchingCmdline("start_cam_daemon"))
+            append("; rm -f /data/local/tmp/start_cam_*.sh 2>/dev/null; ")
             append("sleep 1; ")
-            RELATED_PROCESSES.forEach { proc ->
-                append("pkill -9 -f '$proc' 2>/dev/null; ")
-                append("killall -9 $proc 2>/dev/null; ")
-            }
-            append("rm -f /data/local/tmp/camera_daemon.lock 2>/dev/null; ")
+            append(DaemonKillCommands.killByName(*RELATED_PROCESSES.toTypedArray()))
+            append("; rm -f /data/local/tmp/camera_daemon.lock 2>/dev/null; ")
             append("echo done")
         }
         adbLauncher.executeShellCommand(

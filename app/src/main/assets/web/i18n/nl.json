@@ -159,8 +159,6 @@
   },
   "notif": {
     "page_title": "Meldingen",
-    "origin_banner": "Push notifications require Zrok or a reverse proxy. Open the dashboard from your reserved Zrok or reverse proxy URL on your phone, Add to Home Screen, then return here to enable.",
-    "backend_banner": "Meldingen-backend niet geïnitialiseerd. Reserveer een Zrok URL via het scherm Services en herstart de achtergrondservice om pushabonnementen in te schakelen.",
     "push_delivery": "Push-levering",
     "push_delivery_sub": "Elke telefoon waarop je het dashboard installeert, moet hier één keer geactiveerd worden.",
     "enable_btn": "In staat stellen op dit apparaat",
@@ -171,7 +169,6 @@
     "registered_devices": "geregistreerde apparaten",
     "devices_sub": "Alle telefoons die push-meldingen hebben ingeschakeld, verschijnen hier. Gebruik verwijderen om een apparaat te verwijderen.",
     "no_devices": "Er zijn nog geen apparaten geregistreerd.",
-    "perm_zrok_required": "Push-levering vereist Zrok of een omgekeerde proxy  zie bovenstaande banner.",
     "perm_unsupported": "Kennisgevingen niet ondersteund in deze browser",
     "perm_unsupported_install": "Als je Safari gebruikt, probeer het toe te voegen aan het startscherm om meldingen te krijgen",
     "perm_granted": "Op dit apparaat zijn kennisgevingen ingeschakeld",
@@ -1559,7 +1556,8 @@
     "retry": "Opnieuw proberen",
     "badgeLive": "● LIVE",
     "badgeConnecting": "○ Verbinden…",
-    "notConnected": "Camerastream niet verbonden"
+    "notConnected": "Camerastream niet verbonden",
+    "decoderUnsupported": "Deze browser kan de livestream niet afspelen. Er is een browser met videodecodering nodig, zoals Chrome of Edge. Tor Browser en Firefox ESR ondersteunen dit nog niet."
   },
   "location": {
     "themeAuto": "Auto's",
