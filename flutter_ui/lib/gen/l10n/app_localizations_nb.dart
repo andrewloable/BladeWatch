@@ -1033,6 +1033,13 @@ class AppLocalizationsNb extends AppLocalizations {
   String get settings_section_privacy => 'Personvern og data';
 
   @override
+  String get settings_section_trips => 'Turer';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Kostnadssatser, avstandsenhet og hvor turer lagres';
+
+  @override
   String get settings_section_overlay => 'Status overlapning';
 
   @override
@@ -2108,6 +2115,16 @@ class AppLocalizationsNb extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Rekkevidde: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Drivstoff: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Drivstoffrekkevidde: $arg1 km';
   }
 
   @override

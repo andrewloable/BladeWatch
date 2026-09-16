@@ -1016,6 +1016,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_section_privacy => 'プライバシーとデータ';
 
   @override
+  String get settings_section_trips => 'トリップ';
+
+  @override
+  String get settings_section_trips_subtitle => '料金レート、距離単位、走行履歴の保存先';
+
+  @override
   String get settings_section_overlay => 'ステータスオーバーレイ';
 
   @override
@@ -2055,6 +2061,16 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return '航続: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return '燃料: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return '燃料航続: $arg1 km';
   }
 
   @override

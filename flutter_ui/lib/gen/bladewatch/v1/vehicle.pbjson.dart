@@ -155,13 +155,17 @@ const BatteryStatus$json = {
     {'1': 'soc', '3': 1, '4': 1, '5': 1, '10': 'soc'},
     {'1': 'range_km', '3': 2, '4': 1, '5': 5, '10': 'rangeKm'},
     {'1': 'bodywork_range_km', '3': 3, '4': 1, '5': 5, '10': 'bodyworkRangeKm'},
+    {'1': 'fuel_percent', '3': 4, '4': 1, '5': 1, '10': 'fuelPercent'},
+    {'1': 'fuel_range_km', '3': 5, '4': 1, '5': 5, '10': 'fuelRangeKm'},
   ],
 };
 
 /// Descriptor for `BatteryStatus`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List batteryStatusDescriptor = $convert.base64Decode(
     'Cg1CYXR0ZXJ5U3RhdHVzEhAKA3NvYxgBIAEoAVIDc29jEhkKCHJhbmdlX2ttGAIgASgFUgdyYW'
-    '5nZUttEioKEWJvZHl3b3JrX3JhbmdlX2ttGAMgASgFUg9ib2R5d29ya1JhbmdlS20=');
+    '5nZUttEioKEWJvZHl3b3JrX3JhbmdlX2ttGAMgASgFUg9ib2R5d29ya1JhbmdlS20SIQoMZnVl'
+    'bF9wZXJjZW50GAQgASgBUgtmdWVsUGVyY2VudBIiCg1mdWVsX3JhbmdlX2ttGAUgASgFUgtmdW'
+    'VsUmFuZ2VLbQ==');
 
 @$core.Deprecated('Use lightStatusDescriptor instead')
 const LightStatus$json = {

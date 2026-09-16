@@ -27,4 +27,25 @@ public interface BatteryStatusOrBuilder extends
    * @return The bodyworkRangeKm.
    */
   int getBodyworkRangeKm();
+
+  /**
+   * <pre>
+   * PHEV fuel leg. Both are OMITTED on a BEV rather than sent as 0: the
+   * collector leaves fuel_percent NaN and fuel_range_km UNAVAILABLE there, and
+   * a zero would render as a real "0%" / "0 km" readout on a car that has no
+   * tank. Clients therefore treat "absent" as "not a fuel vehicle", which is
+   * also how they decide whether to show the fuel readout at all -- there is no
+   * separate is_phev flag on this message.
+   * </pre>
+   *
+   * <code>double fuel_percent = 4 [json_name = "fuelPercent"];</code>
+   * @return The fuelPercent.
+   */
+  double getFuelPercent();
+
+  /**
+   * <code>int32 fuel_range_km = 5 [json_name = "fuelRangeKm"];</code>
+   * @return The fuelRangeKm.
+   */
+  int getFuelRangeKm();
 }

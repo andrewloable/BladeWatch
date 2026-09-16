@@ -13,7 +13,8 @@ import 'package:fixnum/fixnum.dart';
 import 'trips_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 
-/// Controller behind the Trips screen's 3 tabs (Trips/Stats/Storage) —
+/// Controller behind the Trips screen's 2 tabs (Trips/Stats) — the trip
+/// settings it also serves now live in the Settings hub's Trips pane.
 /// BladeWatch-yz1e.5. Ground truth: `TripsController.kt` (852 LOC). The trip
 /// detail overlay's own data/lifecycle is a separate controller
 /// ([TripDetailController], mirroring native's own separate

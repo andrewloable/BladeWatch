@@ -13,6 +13,7 @@ import '../../rpc/services/surveillance_service_client.dart';
 import '../../rpc/services/system_service_client.dart';
 import '../../shell/locale_controller.dart';
 import '../../shell/shell_controller.dart';
+import '../trips/trips_controller.dart';
 import '../surveillance/surveillance_controller.dart';
 import '../surveillance/surveillance_screen.dart';
 import 'settings_appearance_controller.dart';
@@ -26,6 +27,7 @@ import 'settings_privacy_controller.dart';
 import 'settings_privacy_screen.dart';
 import 'settings_recording_controller.dart';
 import 'settings_recording_screen.dart';
+import 'settings_trips_screen.dart';
 
 /// Everything [SettingsScreen]'s sub-rail sections need to build their own
 /// controllers. Bundled into one object purely to keep the screen's own
@@ -60,6 +62,12 @@ class SettingsHubDependencies {
   /// does, instead of a bare "Display language >".
   final LocaleController localeController;
 
+  /// The app root's own controller, NOT a per-pane instance: the Trips screen
+  /// holds the same object, so a rate saved in the Trips pane is reflected
+  /// there without a refetch. Never disposed by this hub — see
+  /// [appearanceController] for the same rule.
+  final TripsController tripsController;
+
   const SettingsHubDependencies({
     required this.prefs,
     required this.shellController,
@@ -77,6 +85,7 @@ class SettingsHubDependencies {
     this.setDaemonEnabled,
     required this.onOpenLanguagePicker,
     required this.localeController,
+    required this.tripsController,
   });
 }
 
@@ -86,7 +95,7 @@ class SettingsHubDependencies {
 const String _statusOverlaySection = 'statusOverlay';
 const String _developerOptionsSection = 'developerOptions';
 
-enum _Section { appearance, recording, surveillance, overlay, daemons, privacy }
+enum _Section { appearance, recording, surveillance, trips, overlay, daemons, privacy }
 
 /// Ground truth: `SettingsFragment.kt`'s landscape two-pane sub-rail — see
 /// the class doc for why this port doesn't also build the portrait
@@ -165,6 +174,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
         controller = c;
         content = SurveillanceSettingsScreen(controller: c);
+      case _Section.trips:
+        // Deliberately NOT assigned to `controller`: this instance belongs to
+        // the app root and is shared with the Trips screen, so the dispose
+        // below must not take it (same rule as appearance, BladeWatch-imh6.7).
+        content = SettingsTripsScreen(controller: deps.tripsController);
       case _Section.overlay:
         final c = SettingsOverlayController(
           loadSettings: () async {
@@ -216,6 +230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _Section.appearance => l10n.settings_section_appearance,
         _Section.recording => l10n.settings_section_recording,
         _Section.surveillance => l10n.settings_section_surveillance,
+        _Section.trips => l10n.settings_section_trips,
         _Section.overlay => l10n.settings_section_overlay,
         _Section.daemons => l10n.settings_section_daemons,
         _Section.privacy => l10n.settings_section_privacy,
@@ -234,6 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _Section.appearance => l10n.settings_appearance_subtitle,
         _Section.recording => l10n.settings_section_recording_subtitle,
         _Section.surveillance => l10n.settings_section_surveillance_subtitle,
+        _Section.trips => l10n.settings_section_trips_subtitle,
         _Section.overlay => l10n.settings_overlay_subtitle,
         _Section.daemons => l10n.settings_section_daemons_subtitle,
         _Section.privacy => null,
@@ -243,6 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _Section.appearance => Icons.dashboard,
         _Section.recording => Icons.videocam,
         _Section.surveillance => Icons.shield,
+        _Section.trips => Icons.route,
         _Section.overlay => Icons.layers,
         _Section.daemons => Icons.miscellaneous_services,
         _Section.privacy => Icons.privacy_tip,

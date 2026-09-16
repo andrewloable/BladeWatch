@@ -1053,6 +1053,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settings_section_privacy => 'Privacidad y datos';
 
   @override
+  String get settings_section_trips => 'Viajes';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Tarifas de coste, unidad de distancia y dónde se guardan los viajes';
+
+  @override
   String get settings_section_overlay => 'Superposición de estado';
 
   @override
@@ -2141,6 +2148,16 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Autonomía: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Combustible: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Autonomía de combustible: $arg1 km';
   }
 
   @override

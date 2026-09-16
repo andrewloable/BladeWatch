@@ -770,6 +770,14 @@
   "@settings_section_daemons": {},
   "settings_section_privacy": "Privacy & data",
   "@settings_section_privacy": {},
+  "settings_section_trips": "Trips",
+  "@settings_section_trips": {
+    "description": "Settings hub section holding the trip analytics pricing, distance unit and storage options."
+  },
+  "settings_section_trips_subtitle": "Cost rates, distance unit and where trips are stored",
+  "@settings_section_trips_subtitle": {
+    "description": "One-line description under the Trips settings pane title."
+  },
   "settings_section_overlay": "Status overlay",
   "@settings_section_overlay": {},
   "settings_overlay_subtitle": "Choose which segments of the floating status pill stay visible.",
@@ -1549,6 +1557,20 @@
   },
   "vehicle_status_range_fmt": "Range: {arg1} km",
   "@vehicle_status_range_fmt": {
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_status_fuel_fmt": "Fuel: {arg1}%",
+  "@vehicle_status_fuel_fmt": {
+    "description": "PHEV tank level on the vehicle status pill. Shown only on a car that has a fuel system.",
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_status_fuel_range_fmt": "Fuel range: {arg1} km",
+  "@vehicle_status_fuel_range_fmt": {
+    "description": "PHEV fuel range, shown beside the electric range.",
     "placeholders": {
       "arg1": {}
     }

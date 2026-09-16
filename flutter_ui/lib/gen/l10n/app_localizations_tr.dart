@@ -1039,6 +1039,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settings_section_privacy => 'Gizlilik & Veriler';
 
   @override
+  String get settings_section_trips => 'Yolculuklar';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Maliyet oranları, mesafe birimi ve yolculukların saklandığı yer';
+
+  @override
   String get settings_section_overlay => 'Durum göstergesi';
 
   @override
@@ -2120,6 +2127,16 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Menzil: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Yakıt: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Yakıt menzili: $arg1 km';
   }
 
   @override

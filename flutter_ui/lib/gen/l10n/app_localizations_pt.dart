@@ -1048,6 +1048,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settings_section_privacy => 'Privacidade e dados';
 
   @override
+  String get settings_section_trips => 'Viagens';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Tarifas de custo, unidade de distância e onde as viagens são guardadas';
+
+  @override
   String get settings_section_overlay => 'Superposição de status';
 
   @override
@@ -2133,6 +2140,16 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Autonomia: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Combustível: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Autonomia a combustível: $arg1 km';
   }
 
   @override
@@ -3841,6 +3858,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get settings_section_privacy => 'Privacidade e dados';
 
   @override
+  String get settings_section_trips => 'Viagens';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Tarifas de custo, unidade de distância e onde as viagens são salvas';
+
+  @override
   String get settings_section_overlay => 'Superposição de status';
 
   @override
@@ -4926,6 +4950,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Autonomia: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Combustível: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Autonomia a combustível: $arg1 km';
   }
 
   @override

@@ -1009,6 +1009,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_section_privacy => '隐私与数据';
 
   @override
+  String get settings_section_trips => '行程';
+
+  @override
+  String get settings_section_trips_subtitle => '费率、距离单位和行程存储位置';
+
+  @override
   String get settings_section_overlay => '状态覆盖';
 
   @override
@@ -2039,6 +2045,16 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return '续航：$arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return '燃油：$arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return '燃油续航：$arg1 km';
   }
 
   @override
@@ -3691,6 +3707,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_section_privacy => '隐私与数据';
 
   @override
+  String get settings_section_trips => '行程';
+
+  @override
+  String get settings_section_trips_subtitle => '费率、距离单位和行程存储位置';
+
+  @override
   String get settings_section_overlay => '状态覆盖';
 
   @override
@@ -4721,6 +4743,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return '续航：$arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return '燃油：$arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return '燃油续航：$arg1 km';
   }
 
   @override
@@ -6375,6 +6407,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_section_privacy => '隱私與資料';
 
   @override
+  String get settings_section_trips => '行程';
+
+  @override
+  String get settings_section_trips_subtitle => '費率、距離單位和行程儲存位置';
+
+  @override
   String get settings_section_overlay => '狀態覆蓋';
 
   @override
@@ -7404,6 +7442,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return '續航：$arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return '燃油：$arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return '燃油續航：$arg1 km';
   }
 
   @override

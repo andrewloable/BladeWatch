@@ -1041,6 +1041,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settings_section_privacy => 'गोपनीयता और डेटा';
 
   @override
+  String get settings_section_trips => 'यात्राएँ';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'लागत दरें, दूरी इकाई और यात्राएँ कहाँ संग्रहीत होती हैं';
+
+  @override
   String get settings_section_overlay => 'स्थिति ओवरले';
 
   @override
@@ -2114,6 +2121,16 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'रेंज: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'ईंधन: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'ईंधन रेंज: $arg1 km';
   }
 
   @override

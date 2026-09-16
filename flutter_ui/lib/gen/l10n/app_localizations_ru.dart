@@ -1048,6 +1048,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings_section_privacy => 'Конфиденциальность и данные';
 
   @override
+  String get settings_section_trips => 'Поездки';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Тарифы, единица расстояния и место хранения поездок';
+
+  @override
   String get settings_section_overlay => 'Наложение статуса';
 
   @override
@@ -2144,6 +2151,16 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Запас хода: $arg1 км';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Топливо: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Запас хода на топливе: $arg1 км';
   }
 
   @override

@@ -1050,6 +1050,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settings_section_privacy => 'Datenschutz und Daten';
 
   @override
+  String get settings_section_trips => 'Fahrten';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Kostensätze, Entfernungseinheit und Speicherort der Fahrten';
+
+  @override
   String get settings_section_overlay => 'Statusüberlagerung';
 
   @override
@@ -2137,6 +2144,16 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Reichweite: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Kraftstoff: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Kraftstoffreichweite: $arg1 km';
   }
 
   @override

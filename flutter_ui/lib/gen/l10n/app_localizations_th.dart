@@ -1033,6 +1033,13 @@ class AppLocalizationsTh extends AppLocalizations {
   String get settings_section_privacy => 'ความเป็นส่วนตัวและข้อมูล';
 
   @override
+  String get settings_section_trips => 'การเดินทาง';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'อัตราค่าใช้จ่าย หน่วยระยะทาง และที่จัดเก็บการเดินทาง';
+
+  @override
   String get settings_section_overlay => 'ข้อมูลสถานะบนภาพ';
 
   @override
@@ -2105,6 +2112,16 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'ระยะวิ่ง: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'น้ำมัน: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'ระยะวิ่งด้วยน้ำมัน: $arg1 km';
   }
 
   @override

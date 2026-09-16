@@ -364,6 +364,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                         publicConfigChannel: _publicConfigChannel,
                         setDaemonEnabled: SettingsDaemonsController.enabledSetterFor(_daemonChannel),
                         onOpenLanguagePicker: () => _showLanguagePicker(context),
+                        tripsController: _tripsController,
                       ),
                     ),
                     settingsAboutScreen: SettingsAboutScreen(

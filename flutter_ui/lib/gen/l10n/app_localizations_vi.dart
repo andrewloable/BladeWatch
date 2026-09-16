@@ -1037,6 +1037,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settings_section_privacy => 'Quyền riêng tư & dữ liệu';
 
   @override
+  String get settings_section_trips => 'Chuyến đi';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Đơn giá chi phí, đơn vị khoảng cách và nơi lưu chuyến đi';
+
+  @override
   String get settings_section_overlay => 'Lớp phủ trạng thái';
 
   @override
@@ -2116,6 +2123,16 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Quãng đường: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Nhiên liệu: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Quãng đường nhiên liệu: $arg1 km';
   }
 
   @override

@@ -645,11 +645,15 @@ class BatteryStatus extends $pb.GeneratedMessage {
     $core.double? soc,
     $core.int? rangeKm,
     $core.int? bodyworkRangeKm,
+    $core.double? fuelPercent,
+    $core.int? fuelRangeKm,
   }) {
     final result = BatteryStatus._();
     if (soc != null) result.soc = soc;
     if (rangeKm != null) result.rangeKm = rangeKm;
     if (bodyworkRangeKm != null) result.bodyworkRangeKm = bodyworkRangeKm;
+    if (fuelPercent != null) result.fuelPercent = fuelPercent;
+    if (fuelRangeKm != null) result.fuelRangeKm = fuelRangeKm;
     return result;
   }
 
@@ -669,6 +673,8 @@ class BatteryStatus extends $pb.GeneratedMessage {
     ..aD(1, _omitFieldNames ? '' : 'soc')
     ..aI(2, _omitFieldNames ? '' : 'rangeKm')
     ..aI(3, _omitFieldNames ? '' : 'bodyworkRangeKm')
+    ..aD(4, _omitFieldNames ? '' : 'fuelPercent')
+    ..aI(5, _omitFieldNames ? '' : 'fuelRangeKm')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -719,6 +725,30 @@ class BatteryStatus extends $pb.GeneratedMessage {
   $core.bool hasBodyworkRangeKm() => $_has(2);
   @$pb.TagNumber(3)
   void clearBodyworkRangeKm() => $_clearField(3);
+
+  /// PHEV fuel leg. Both are OMITTED on a BEV rather than sent as 0: the
+  /// collector leaves fuel_percent NaN and fuel_range_km UNAVAILABLE there, and
+  /// a zero would render as a real "0%" / "0 km" readout on a car that has no
+  /// tank. Clients therefore treat "absent" as "not a fuel vehicle", which is
+  /// also how they decide whether to show the fuel readout at all -- there is no
+  /// separate is_phev flag on this message.
+  @$pb.TagNumber(4)
+  $core.double get fuelPercent => $_getN(3);
+  @$pb.TagNumber(4)
+  set fuelPercent($core.double value) => $_setDouble(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasFuelPercent() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearFuelPercent() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.int get fuelRangeKm => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set fuelRangeKm($core.int value) => $_setSignedInt32(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasFuelRangeKm() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearFuelRangeKm() => $_clearField(5);
 }
 
 class LightStatus extends $pb.GeneratedMessage {

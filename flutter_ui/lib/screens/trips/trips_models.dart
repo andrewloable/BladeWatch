@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-enum TripsTab { trips, stats, storage }
+enum TripsTab { trips, stats }
 
 enum TripsDaysFilter {
   seven(7),

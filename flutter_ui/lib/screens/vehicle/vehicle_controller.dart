@@ -135,7 +135,12 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
             driverMemoryRecall: m.capabilities.seats.driverMemoryRecall,
           ),
         ),
-        battery: BatteryInfo(soc: m.battery.soc.toInt(), rangeKm: m.battery.rangeKm),
+        battery: BatteryInfo(
+          soc: m.battery.soc.toInt(),
+          rangeKm: m.battery.rangeKm,
+          fuelPercent: m.battery.fuelPercent.toInt(),
+          fuelRangeKm: m.battery.fuelRangeKm,
+        ),
         seats: SeatsInfo(heat: m.seats.heat.toList(), cool: m.seats.cool.toList()),
         climate: ClimateInfo(
           acOn: m.climate.acOn,

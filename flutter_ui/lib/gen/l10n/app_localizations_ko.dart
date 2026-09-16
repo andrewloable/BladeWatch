@@ -1018,6 +1018,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_section_privacy => '개인 정보 보호 & 데이터';
 
   @override
+  String get settings_section_trips => '주행';
+
+  @override
+  String get settings_section_trips_subtitle => '요금 단가, 거리 단위 및 주행 기록 저장 위치';
+
+  @override
   String get settings_section_overlay => '상태 덮개';
 
   @override
@@ -2057,6 +2063,16 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return '주행거리: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return '연료: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return '연료 주행거리: $arg1 km';
   }
 
   @override

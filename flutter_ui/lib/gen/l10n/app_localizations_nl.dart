@@ -1044,6 +1044,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settings_section_privacy => 'Privacy & gegevens';
 
   @override
+  String get settings_section_trips => 'Ritten';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Kostentarieven, afstandseenheid en waar ritten worden opgeslagen';
+
+  @override
   String get settings_section_overlay => 'Statusoverlay';
 
   @override
@@ -2123,6 +2130,16 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Bereik: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Brandstof: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Brandstofbereik: $arg1 km';
   }
 
   @override

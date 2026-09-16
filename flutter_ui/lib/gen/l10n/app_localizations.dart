@@ -1911,6 +1911,18 @@ abstract class AppLocalizations {
   /// **'Privacy & data'**
   String get settings_section_privacy;
 
+  /// Settings hub section holding the trip analytics pricing, distance unit and storage options.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips'**
+  String get settings_section_trips;
+
+  /// One-line description under the Trips settings pane title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost rates, distance unit and where trips are stored'**
+  String get settings_section_trips_subtitle;
+
   /// No description provided for @settings_section_overlay.
   ///
   /// In en, this message translates to:
@@ -3746,6 +3758,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Range: {arg1} km'**
   String vehicle_status_range_fmt(Object arg1);
+
+  /// PHEV tank level on the vehicle status pill. Shown only on a car that has a fuel system.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel: {arg1}%'**
+  String vehicle_status_fuel_fmt(Object arg1);
+
+  /// PHEV fuel range, shown beside the electric range.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel range: {arg1} km'**
+  String vehicle_status_fuel_range_fmt(Object arg1);
 
   /// No description provided for @vehicle_status_charge_unknown.
   ///

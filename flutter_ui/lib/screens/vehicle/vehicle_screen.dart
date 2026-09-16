@@ -167,6 +167,21 @@ class _StatusCard extends StatelessWidget {
                   key: const ValueKey('vehicle.status.range'),
                   style: theme.textTheme.bodySmall,
                 ),
+                // PHEV only. A BEV never reports these, so the two rows simply
+                // do not exist there rather than reading "Fuel: 0%" on a car
+                // with no tank.
+                if (battery.hasFuel) ...[
+                  Text(
+                    l10n.vehicle_status_fuel_fmt(battery.fuelPercent),
+                    key: const ValueKey('vehicle.status.fuel'),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  Text(
+                    l10n.vehicle_status_fuel_range_fmt(battery.fuelRangeKm),
+                    key: const ValueKey('vehicle.status.fuelRange'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
               ],
             ),
           ),

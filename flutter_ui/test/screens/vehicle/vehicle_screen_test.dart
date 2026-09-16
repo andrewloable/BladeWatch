@@ -31,6 +31,8 @@ void main() {
     bool capDriverMemory = false,
     int soc = 50,
     int rangeKm = 36,
+    double? fuelPercent,
+    int? fuelRangeKm,
     List<int> heat = const [0, 0],
     List<int> cool = const [0, 0],
     bool acOn = false,
@@ -54,7 +56,14 @@ void main() {
           'driverMemoryRecall': capDriverMemory,
         },
       },
-      'battery': {'soc': soc, 'rangeKm': rangeKm},
+      'battery': {
+        'soc': soc,
+        'rangeKm': rangeKm,
+        // Omitted, not zeroed, when null — that is exactly how the daemon
+        // reports a BEV, so the default stub IS the BEV case.
+        if (fuelPercent != null) 'fuelPercent': fuelPercent,
+        if (fuelRangeKm != null) 'fuelRangeKm': fuelRangeKm,
+      },
       'seats': {'heat': heat, 'cool': cool},
       'climate': {'acOn': acOn, 'setpointC': setpointC, 'insideTempC': insideTempC, 'fanLevel': fanLevel, 'maxCooling': maxCooling},
       'tyres': {
@@ -109,6 +118,30 @@ void main() {
       expect(find.text('Locked'), findsOneWidget);
       expect(find.text('Charge: 62%'), findsOneWidget);
       expect(find.text('Range: 210 km'), findsOneWidget);
+    });
+
+    testWidgets('shows the fuel level and fuel range on a PHEV', (tester) async {
+      stubState(doorsOverall: 1, soc: 62, rangeKm: 210, fuelPercent: 74, fuelRangeKm: 480);
+      stubAppearance();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Charge: 62%'), findsOneWidget);
+      expect(find.text('Range: 210 km'), findsOneWidget);
+      expect(find.text('Fuel: 74%'), findsOneWidget);
+      expect(find.text('Fuel range: 480 km'), findsOneWidget);
+    });
+
+    testWidgets('shows no fuel rows on a BEV, rather than a 0% tank', (tester) async {
+      // The daemon OMITS the fuel keys on a BEV; a "Fuel: 0%" here would be a
+      // readout for hardware the car does not have.
+      stubState(doorsOverall: 1, soc: 62, rangeKm: 210);
+      stubAppearance();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('vehicle.status.fuel')), findsNothing);
+      expect(find.byKey(const ValueKey('vehicle.status.fuelRange')), findsNothing);
     });
 
     testWidgets('shows Unlocked', (tester) async {

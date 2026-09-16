@@ -1033,6 +1033,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_section_privacy => 'Privacy & data';
 
   @override
+  String get settings_section_trips => 'Trips';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Cost rates, distance unit and where trips are stored';
+
+  @override
   String get settings_section_overlay => 'Status overlay';
 
   @override
@@ -2103,6 +2110,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String vehicle_status_range_fmt(Object arg1) {
     return 'Range: $arg1 km';
+  }
+
+  @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Fuel: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Fuel range: $arg1 km';
   }
 
   @override
