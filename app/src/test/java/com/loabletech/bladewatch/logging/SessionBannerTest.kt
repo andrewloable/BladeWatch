@@ -28,14 +28,14 @@ class SessionBannerTest {
     @Test
     fun `banner names the version, branch and build type`() {
         val banner = SessionBanner.format(
-            version = "1.3.0.0",
+            version = "1.3.1.0",
             branch = "feature/v1.3.1.0",
             buildType = "debug",
             timestamp = "2026-09-15 10:30:00.000",
             process = "service-host",
         )
 
-        assertTrue("must name the version: $banner", banner.contains("1.3.0.0"))
+        assertTrue("must name the version: $banner", banner.contains("1.3.1.0"))
         assertTrue("must name the branch: $banner", banner.contains("feature/v1.3.1.0"))
         assertTrue("must name the build type: $banner", banner.contains("debug"))
         assertTrue("must name the process: $banner", banner.contains("service-host"))
@@ -51,7 +51,7 @@ class SessionBannerTest {
     @Test
     fun `banner is visually and textually distinctive`() {
         val banner = SessionBanner.format(
-            version = "1.3.0.0", branch = "main", buildType = "release",
+            version = "1.3.1.0", branch = "main", buildType = "release",
             timestamp = "2026-09-15 10:30:00.000", process = "camera-daemon",
         )
 
@@ -80,7 +80,7 @@ class SessionBannerTest {
     @Test
     fun `marker appears exactly once`() {
         val banner = SessionBanner.format(
-            version = "1.3.0.0", branch = "main", buildType = "debug",
+            version = "1.3.1.0", branch = "main", buildType = "debug",
             timestamp = "2026-09-15 10:30:00.000", process = "service-host",
         )
 

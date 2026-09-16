@@ -61,8 +61,8 @@ void main() {
         'rangeKm': rangeKm,
         // Omitted, not zeroed, when null — that is exactly how the daemon
         // reports a BEV, so the default stub IS the BEV case.
-        if (fuelPercent != null) 'fuelPercent': fuelPercent,
-        if (fuelRangeKm != null) 'fuelRangeKm': fuelRangeKm,
+        'fuelPercent': ?fuelPercent,
+        'fuelRangeKm': ?fuelRangeKm,
       },
       'seats': {'heat': heat, 'cool': cool},
       'climate': {'acOn': acOn, 'setpointC': setpointC, 'insideTempC': insideTempC, 'fanLevel': fanLevel, 'maxCooling': maxCooling},
@@ -130,6 +130,24 @@ void main() {
       expect(find.text('Range: 210 km'), findsOneWidget);
       expect(find.text('Fuel: 74%'), findsOneWidget);
       expect(find.text('Fuel range: 480 km'), findsOneWidget);
+    });
+
+    testWidgets('the readout pill clears the tyre cards it used to overlap', (tester) async {
+      // It sat hard right, on top of the RL/FL cards (Positioned right: 14),
+      // and being translucent it let them show through. The PHEV fuel rows made
+      // it tall enough to reach them. Assert the real geometry, not the widget
+      // tree: a future layout change that re-introduces the collision has to
+      // fail here.
+      stubState(doorsOverall: 1, soc: 62, rangeKm: 210, fuelPercent: 74, fuelRangeKm: 480);
+      stubAppearance();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      final pill = tester.getRect(find.byKey(const ValueKey('vehicle.status.charge')));
+      for (final label in ['RR', 'FR', 'RL', 'FL']) {
+        final card = tester.getRect(find.text(label));
+        expect(pill.overlaps(card), isFalse, reason: 'readout pill overlaps the $label tyre card');
+      }
     });
 
     testWidgets('shows no fuel rows on a BEV, rather than a 0% tank', (tester) async {

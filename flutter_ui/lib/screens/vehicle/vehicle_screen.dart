@@ -140,10 +140,18 @@ class _StatusCard extends StatelessWidget {
     final battery = state.battery;
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      // Stack, not a spaceBetween Row: the readout pill used to sit hard right,
+      // where it ran into the RL/FL tyre cards (Positioned right: 14) — and
+      // because the pill is translucent the card behind it SHOWED THROUGH
+      // rather than being hidden. It grew tall enough to collide once the PHEV
+      // fuel rows were added. Centring it puts it in the gap between the two
+      // tyre columns, which is empty at every width the head unit runs.
+      child: Stack(
+        alignment: Alignment.topCenter,
         children: [
-          _GlassPill(
+          Align(
+            alignment: Alignment.topLeft,
+            child: _GlassPill(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -152,10 +160,13 @@ class _StatusCard extends StatelessWidget {
                 Text(lockLabel, key: const ValueKey('vehicle.status.lockText')),
               ],
             ),
+            ),
           ),
           _GlassPill(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              // Centred text, because the pill is no longer anchored to the
+              // right edge that end-alignment was reading against.
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   battery.soc > 0 ? l10n.vehicle_status_charge_fmt(battery.soc) : l10n.vehicle_status_charge_unknown,

@@ -38,19 +38,19 @@ android {
         // app's legacy targetSdk=25 (untested territory for the embedding).
         minSdk = 29
         targetSdk = flutter.targetSdkVersion
-        // versionCode comes from pubspec.yaml's build number (the `+13000`), so
+        // versionCode comes from pubspec.yaml's build number (the `+13100`), so
         // there is one number to bump.
         versionCode = flutter.versionCode
 
         // versionName is written out explicitly because BladeWatch versions have
-        // FOUR parts ("1.3.0.0", matching app/build.gradle.kts) and a pubspec
-        // version must be valid semver — `version: 1.3.0.0+13000` is rejected by
-        // pub outright, so `flutter.versionName` can only ever yield "1.3.0".
+        // FOUR parts ("1.3.1.0", matching app/build.gradle.kts) and a pubspec
+        // version must be valid semver — `version: 1.3.1.0+13100` is rejected by
+        // pub outright, so `flutter.versionName` can only ever yield "1.3.1".
         //
         // The two APKs are installed as a pair and the About screen reads this
         // value through package_info_plus, so they must report the same string.
         // Keep this in step with app/build.gradle.kts's versionName.
-        versionName = "1.3.0.0"
+        versionName = "1.3.1.0"
 
         // BYD head unit is arm64-v8a only — same reasoning as the main app's
         // splits.abi block.

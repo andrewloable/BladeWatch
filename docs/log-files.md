@@ -59,7 +59,7 @@ Every run therefore starts with a banner ([SessionBanner.kt](app/src/main/java/c
 
 ```
 ========================================================================
-BLADEWATCH-SESSION [2026-09-15 10:30:00.000] process=camera-daemon version=1.3.0.0 branch=feature-v1.3.1.0 build=debug
+BLADEWATCH-SESSION [2026-09-15 10:30:00.000] process=camera-daemon version=1.3.1.0 branch=feature-v1.3.1.0 build=debug
 ========================================================================
 ```
 

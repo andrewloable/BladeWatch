@@ -349,8 +349,8 @@ android {
         applicationId = "net.bladewatch.app"
         minSdk = 25
         targetSdk = 25
-        versionCode = 13000
-        versionName = "1.3.0.0"
+        versionCode = 13100
+        versionName = "1.3.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
