@@ -154,6 +154,64 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int FUEL_PRICE_PER_L_FIELD_NUMBER = 5;
+  private double fuelPricePerL_ = 0D;
+  /**
+   * <pre>
+   * Cost per litre for the PHEV fuel leg. 0 means not configured, so the leg is recorded
+   * but not costed. The currency above is shared with the electricity rate.
+   * </pre>
+   *
+   * <code>double fuel_price_per_l = 5 [json_name = "fuelPricePerL"];</code>
+   * @return The fuelPricePerL.
+   */
+  @java.lang.Override
+  public double getFuelPricePerL() {
+    return fuelPricePerL_;
+  }
+
+  public static final int FUEL_TANK_CAPACITY_L_FIELD_NUMBER = 6;
+  private double fuelTankCapacityL_ = 0D;
+  /**
+   * <pre>
+   * Fuel tank capacity in litres. 0 means not configured, and there is no default: BYD
+   * local data exposes no tank size, so without this the fuel RANGE simply cannot be
+   * computed. A guessed capacity would put a wrong range on the dashboard, which is worse
+   * than a blank one because the driver acts on it.
+   * </pre>
+   *
+   * <code>double fuel_tank_capacity_l = 6 [json_name = "fuelTankCapacityL"];</code>
+   * @return The fuelTankCapacityL.
+   */
+  @java.lang.Override
+  public double getFuelTankCapacityL() {
+    return fuelTankCapacityL_;
+  }
+
+  public static final int IS_PHEV_FIELD_NUMBER = 7;
+  private boolean isPhev_ = false;
+  /**
+   * <pre>
+   * Whether this vehicle has a fuel system at all.
+   *
+   * NOT a stored setting — a live read of the drivetrain, carried on the config message
+   * because the config screen is the one place that needs it. The two fuel settings above are
+   * meaningless on a BEV, and a UI that shows "Fuel Price (per litre)" to an owner whose car
+   * has no tank reads as a bug in the app.
+   *
+   * Clients must NOT treat false as "hide unconditionally": a value already configured has to
+   * stay visible so it can be cleared, and the drivetrain probe can read false while the HAL
+   * is warming up. See the gating rule in the web and Flutter trips settings.
+   * </pre>
+   *
+   * <code>bool is_phev = 7 [json_name = "isPhev"];</code>
+   * @return The isPhev.
+   */
+  @java.lang.Override
+  public boolean getIsPhev() {
+    return isPhev_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -180,6 +238,15 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(distanceUnit_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 4, distanceUnit_);
     }
+    if (java.lang.Double.doubleToRawLongBits(fuelPricePerL_) != 0) {
+      output.writeDouble(5, fuelPricePerL_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelTankCapacityL_) != 0) {
+      output.writeDouble(6, fuelTankCapacityL_);
+    }
+    if (isPhev_ != false) {
+      output.writeBool(7, isPhev_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -197,6 +264,18 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(distanceUnit_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(4, distanceUnit_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelPricePerL_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(5, fuelPricePerL_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelTankCapacityL_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(6, fuelTankCapacityL_);
+    }
+    if (isPhev_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(7, isPhev_);
     }
     return size;
   }
@@ -231,6 +310,14 @@ private static final long serialVersionUID = 0L;
         .equals(other.getCurrency())) return false;
     if (!getDistanceUnit()
         .equals(other.getDistanceUnit())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelPricePerL())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelPricePerL())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelTankCapacityL())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelTankCapacityL())) return false;
+    if (getIsPhev()
+        != other.getIsPhev()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -252,6 +339,15 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getCurrency().hashCode();
     hash = (37 * hash) + DISTANCE_UNIT_FIELD_NUMBER;
     hash = (53 * hash) + getDistanceUnit().hashCode();
+    hash = (37 * hash) + FUEL_PRICE_PER_L_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelPricePerL()));
+    hash = (37 * hash) + FUEL_TANK_CAPACITY_L_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelTankCapacityL()));
+    hash = (37 * hash) + IS_PHEV_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getIsPhev());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -391,6 +487,9 @@ private static final long serialVersionUID = 0L;
       electricityRate_ = 0D;
       currency_ = "";
       distanceUnit_ = "";
+      fuelPricePerL_ = 0D;
+      fuelTankCapacityL_ = 0D;
+      isPhev_ = false;
       return this;
     }
 
@@ -436,6 +535,15 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000008) != 0)) {
         result.distanceUnit_ = distanceUnit_;
       }
+      if (((from_bitField0_ & 0x00000010) != 0)) {
+        result.fuelPricePerL_ = fuelPricePerL_;
+      }
+      if (((from_bitField0_ & 0x00000020) != 0)) {
+        result.fuelTankCapacityL_ = fuelTankCapacityL_;
+      }
+      if (((from_bitField0_ & 0x00000040) != 0)) {
+        result.isPhev_ = isPhev_;
+      }
     }
 
     @java.lang.Override
@@ -465,6 +573,15 @@ private static final long serialVersionUID = 0L;
         distanceUnit_ = other.distanceUnit_;
         bitField0_ |= 0x00000008;
         onChanged();
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelPricePerL()) != 0) {
+        setFuelPricePerL(other.getFuelPricePerL());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelTankCapacityL()) != 0) {
+        setFuelTankCapacityL(other.getFuelTankCapacityL());
+      }
+      if (other.getIsPhev() != false) {
+        setIsPhev(other.getIsPhev());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -512,6 +629,21 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000008;
               break;
             } // case 34
+            case 41: {
+              fuelPricePerL_ = input.readDouble();
+              bitField0_ |= 0x00000010;
+              break;
+            } // case 41
+            case 49: {
+              fuelTankCapacityL_ = input.readDouble();
+              bitField0_ |= 0x00000020;
+              break;
+            } // case 49
+            case 56: {
+              isPhev_ = input.readBool();
+              bitField0_ |= 0x00000040;
+              break;
+            } // case 56
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -733,6 +865,177 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       distanceUnit_ = value;
       bitField0_ |= 0x00000008;
+      onChanged();
+      return this;
+    }
+
+    private double fuelPricePerL_ ;
+    /**
+     * <pre>
+     * Cost per litre for the PHEV fuel leg. 0 means not configured, so the leg is recorded
+     * but not costed. The currency above is shared with the electricity rate.
+     * </pre>
+     *
+     * <code>double fuel_price_per_l = 5 [json_name = "fuelPricePerL"];</code>
+     * @return The fuelPricePerL.
+     */
+    @java.lang.Override
+    public double getFuelPricePerL() {
+      return fuelPricePerL_;
+    }
+    /**
+     * <pre>
+     * Cost per litre for the PHEV fuel leg. 0 means not configured, so the leg is recorded
+     * but not costed. The currency above is shared with the electricity rate.
+     * </pre>
+     *
+     * <code>double fuel_price_per_l = 5 [json_name = "fuelPricePerL"];</code>
+     * @param value The fuelPricePerL to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelPricePerL(double value) {
+
+      fuelPricePerL_ = value;
+      bitField0_ |= 0x00000010;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Cost per litre for the PHEV fuel leg. 0 means not configured, so the leg is recorded
+     * but not costed. The currency above is shared with the electricity rate.
+     * </pre>
+     *
+     * <code>double fuel_price_per_l = 5 [json_name = "fuelPricePerL"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelPricePerL() {
+      bitField0_ = (bitField0_ & ~0x00000010);
+      fuelPricePerL_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double fuelTankCapacityL_ ;
+    /**
+     * <pre>
+     * Fuel tank capacity in litres. 0 means not configured, and there is no default: BYD
+     * local data exposes no tank size, so without this the fuel RANGE simply cannot be
+     * computed. A guessed capacity would put a wrong range on the dashboard, which is worse
+     * than a blank one because the driver acts on it.
+     * </pre>
+     *
+     * <code>double fuel_tank_capacity_l = 6 [json_name = "fuelTankCapacityL"];</code>
+     * @return The fuelTankCapacityL.
+     */
+    @java.lang.Override
+    public double getFuelTankCapacityL() {
+      return fuelTankCapacityL_;
+    }
+    /**
+     * <pre>
+     * Fuel tank capacity in litres. 0 means not configured, and there is no default: BYD
+     * local data exposes no tank size, so without this the fuel RANGE simply cannot be
+     * computed. A guessed capacity would put a wrong range on the dashboard, which is worse
+     * than a blank one because the driver acts on it.
+     * </pre>
+     *
+     * <code>double fuel_tank_capacity_l = 6 [json_name = "fuelTankCapacityL"];</code>
+     * @param value The fuelTankCapacityL to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelTankCapacityL(double value) {
+
+      fuelTankCapacityL_ = value;
+      bitField0_ |= 0x00000020;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Fuel tank capacity in litres. 0 means not configured, and there is no default: BYD
+     * local data exposes no tank size, so without this the fuel RANGE simply cannot be
+     * computed. A guessed capacity would put a wrong range on the dashboard, which is worse
+     * than a blank one because the driver acts on it.
+     * </pre>
+     *
+     * <code>double fuel_tank_capacity_l = 6 [json_name = "fuelTankCapacityL"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelTankCapacityL() {
+      bitField0_ = (bitField0_ & ~0x00000020);
+      fuelTankCapacityL_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private boolean isPhev_ ;
+    /**
+     * <pre>
+     * Whether this vehicle has a fuel system at all.
+     *
+     * NOT a stored setting — a live read of the drivetrain, carried on the config message
+     * because the config screen is the one place that needs it. The two fuel settings above are
+     * meaningless on a BEV, and a UI that shows "Fuel Price (per litre)" to an owner whose car
+     * has no tank reads as a bug in the app.
+     *
+     * Clients must NOT treat false as "hide unconditionally": a value already configured has to
+     * stay visible so it can be cleared, and the drivetrain probe can read false while the HAL
+     * is warming up. See the gating rule in the web and Flutter trips settings.
+     * </pre>
+     *
+     * <code>bool is_phev = 7 [json_name = "isPhev"];</code>
+     * @return The isPhev.
+     */
+    @java.lang.Override
+    public boolean getIsPhev() {
+      return isPhev_;
+    }
+    /**
+     * <pre>
+     * Whether this vehicle has a fuel system at all.
+     *
+     * NOT a stored setting — a live read of the drivetrain, carried on the config message
+     * because the config screen is the one place that needs it. The two fuel settings above are
+     * meaningless on a BEV, and a UI that shows "Fuel Price (per litre)" to an owner whose car
+     * has no tank reads as a bug in the app.
+     *
+     * Clients must NOT treat false as "hide unconditionally": a value already configured has to
+     * stay visible so it can be cleared, and the drivetrain probe can read false while the HAL
+     * is warming up. See the gating rule in the web and Flutter trips settings.
+     * </pre>
+     *
+     * <code>bool is_phev = 7 [json_name = "isPhev"];</code>
+     * @param value The isPhev to set.
+     * @return This builder for chaining.
+     */
+    public Builder setIsPhev(boolean value) {
+
+      isPhev_ = value;
+      bitField0_ |= 0x00000040;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Whether this vehicle has a fuel system at all.
+     *
+     * NOT a stored setting — a live read of the drivetrain, carried on the config message
+     * because the config screen is the one place that needs it. The two fuel settings above are
+     * meaningless on a BEV, and a UI that shows "Fuel Price (per litre)" to an owner whose car
+     * has no tank reads as a bug in the app.
+     *
+     * Clients must NOT treat false as "hide unconditionally": a value already configured has to
+     * stay visible so it can be cleared, and the drivetrain probe can read false while the HAL
+     * is warming up. See the gating rule in the web and Flutter trips settings.
+     * </pre>
+     *
+     * <code>bool is_phev = 7 [json_name = "isPhev"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearIsPhev() {
+      bitField0_ = (bitField0_ & ~0x00000040);
+      isPhev_ = false;
       onChanged();
       return this;
     }

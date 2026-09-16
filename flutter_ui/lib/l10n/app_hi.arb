@@ -712,6 +712,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "ईंधन रेंज: {km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "अभी पर्याप्त डेटा नहीं है",
   "@trips_range_no_data": {},
   "trips_dna_title": "ड्राइविंग DNA",
@@ -732,6 +738,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "बिजली दर",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "ईंधन मूल्य (प्रति लीटर)",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "ईंधन टैंक क्षमता (लीटर)",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "दूरी इकाई",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "संग्रहण स्थान",
@@ -789,6 +799,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "बाहरी तापमान",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "ईंधन",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "ईंधन लागत",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "बिजली लागत",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "ऊँचाई वृद्धि",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "ड्राइविंग स्कोर",

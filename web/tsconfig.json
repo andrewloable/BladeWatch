@@ -8,6 +8,15 @@
     "emitDecoratorMetadata": false,
     "useDefineForClassFields": false,
     "lib": ["ES2022", "dom"],
+    // BladeWatch-9uu6: lets src/app/util/currency.ts import the GENERATED ISO 4217
+    // catalogue (src/assets/iso4217.json) at build time. Importing beats fetching it at
+    // runtime: the list is static, and a failed fetch would leave the picker empty.
+    "resolveJsonModule": true,
+    // Do not typecheck node_modules .d.ts files. @bufbuild/protobuf and @connectrpc/connect
+    // ship declarations using the generic Uint8Array<ArrayBuffer> form introduced in TS 5.7;
+    // this project pins TS 5.6, where Uint8Array is not generic, so those files report 6
+    // errors that are not ours to fix and do not affect emitted code.
+    "skipLibCheck": true,
     "paths": {}
   },
   "include": ["src"],

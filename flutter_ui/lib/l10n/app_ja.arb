@@ -712,6 +712,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "燃料での航続距離：{km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "まだデータが十分ではありません",
   "@trips_range_no_data": {},
   "trips_dna_title": "運転DNA",
@@ -732,6 +738,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "電気料金",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "燃料価格（1リットルあたり）",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "燃料タンク容量（リットル）",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "距離の単位",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "保存先",
@@ -789,6 +799,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "外気温",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "燃料",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "燃料代",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "電気代",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "獲得標高",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "運転スコア",

@@ -78,6 +78,22 @@ class TripDetailData {
   final int overallScore;
   final String telemetryFilePath;
 
+  /// Whether this trip recorded BOTH ends of the fuel counter.
+  ///
+  /// Derived from the STORED trip by the daemon, not from a live drivetrain probe, so a
+  /// historical trip renders the same way on a car whose drivetrain reads differently today.
+  /// On a BEV this is false and the fuel rows are not shown at all.
+  final bool hasFuelData;
+
+  /// Litres of petrol burned on this trip. A real 0 on a PHEV leg driven entirely on battery.
+  final double litresUsed;
+
+  /// The two halves of [tripCost]. They sum to it, so showing them is a breakdown rather than
+  /// extra information — which is the point: the driver cannot otherwise tell which tank the
+  /// money went to.
+  final double fuelCost;
+  final double electricCost;
+
   const TripDetailData({
     required this.id,
     required this.startTime,
@@ -103,6 +119,10 @@ class TripDetailData {
     required this.consistencyScore,
     required this.overallScore,
     required this.telemetryFilePath,
+    this.hasFuelData = false,
+    this.litresUsed = 0,
+    this.fuelCost = 0,
+    this.electricCost = 0,
   });
 
   String get formattedDateTitle => DateFormat('EEEE, MMMM d').format(startTime);
@@ -182,18 +202,65 @@ class RangeEstimate {
   final double estimatedKm;
   final double builtInKm;
 
-  const RangeEstimate({required this.estimatedKm, required this.builtInKm});
+  /// Predicted PHEV fuel range, or <= 0 when it cannot be computed.
+  ///
+  /// The daemon returns -1 (`FuelConsumption.CANNOT_PREDICT`) when the owner has not
+  /// configured a tank capacity — BYD local data exposes no tank size, so without it the
+  /// range genuinely cannot be derived and nothing is guessed. Callers gate on `> 0`, which
+  /// covers both the sentinel and a plain absent field.
+  final double fuelRangeKm;
+
+  /// The car's own fuel-range readout, for comparison. The fuel twin of [builtInKm].
+  final double builtInFuelRangeKm;
+
+  const RangeEstimate({
+    required this.estimatedKm,
+    required this.builtInKm,
+    this.fuelRangeKm = 0,
+    this.builtInFuelRangeKm = 0,
+  });
 }
 
 class TripsConfig {
   final bool enabled;
   final double electricityRate;
+
+  /// Cost per litre for the PHEV fuel leg. 0 means NOT CONFIGURED — the litres burned are
+  /// still recorded, they just cannot be costed.
+  final double fuelPricePerL;
+
+  /// Fuel tank capacity in litres. 0 means NOT CONFIGURED, and there is no default: BYD
+  /// exposes no tank size, so without it the fuel range cannot be computed. A guessed
+  /// capacity would put a wrong range on the dashboard, which is worse than a blank one.
+  final double fuelTankCapacityL;
+
+  /// Normally an ISO 4217 code; may be a bare symbol on configs predating the picker.
   final String currency;
   final String distanceUnit;
+
+  /// Whether this vehicle has a fuel system at all.
+  ///
+  /// A live drivetrain read carried on the config, NOT a stored setting. See
+  /// [showFuelSettings] for why it is not used as a bare hide/show flag.
+  final bool isPhev;
+
+  /// Whether the fuel settings are meaningful for THIS car.
+  ///
+  /// A BEV has no tank, so a fuel price and a tank capacity are not merely unused there — they
+  /// read as a bug in the app.
+  ///
+  /// Deliberately not a bare [isPhev]. An already-configured value stays visible so it can be
+  /// cleared: the drivetrain probe returns false while the HAL is warming up, and a PHEV owner
+  /// who had set a fuel price must never find the field gone while the value is still being
+  /// applied. Same principle as keeping a legacy currency in the picker.
+  bool get showFuelSettings => isPhev || fuelPricePerL > 0 || fuelTankCapacityL > 0;
 
   const TripsConfig({
     required this.enabled,
     required this.electricityRate,
+    this.fuelPricePerL = 0,
+    this.fuelTankCapacityL = 0,
+    this.isPhev = false,
     required this.currency,
     required this.distanceUnit,
   });

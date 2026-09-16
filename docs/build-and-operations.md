@@ -425,7 +425,23 @@ The task's own 8-dialog list turned out to be 4 already built plus 4 genuinely n
 
 **Coverage**: Dart 99.97% (6547/6549 lines, 99.9695% unrounded) — up from 99.9679% at BladeWatch-yz1e.10 (6226/6228). Every new/changed file (`settings_privacy_screen.dart`, `diagnostics_controller.dart`, `diagnostics_screen.dart`, `locale_controller.dart`, `language_picker_sheet.dart`, `setup_channel.dart`, `setup_guide_controller.dart`, `setup_guide_dialog.dart`, `prefs_channel.dart`) reached 100%; the only 2 permanently-uncovered lines remain `main.dart`'s literal `void main()`. Kotlin (Flutter APK) stayed at 100% for testable code — `MainActivity.kt`'s 2 new intent-launching functions fall under its pre-existing wholesale exclusion, adding no new exclusion entries.
 
-## Build Commands
+## Build
+
+### Web app test suites
+
+The Angular app has three, with different requirements:
+
+| Command | Needs a car? | Covers |
+|---|---|---|
+| `npm run test:unit` | no | Framework-free logic (vitest) |
+| `npm run test:mobile` | no | Mobile layout on Pixel 7 + iPhone 13, against a locally served build |
+| `npm run test:e2e` | **yes** | Real flows against a live head unit; needs `e2e/.env` |
+
+`test:mobile` stubs the i18n catalogue, which is normally served by the DAEMON rather than the
+static bundle. Without that stub every label renders empty and controls collapse to their
+padding — measured: the login button reports 28px unlabelled against ~46px labelled, which
+looks exactly like a touch-target defect that does not exist.
+ Commands
 
 Common local commands:
 

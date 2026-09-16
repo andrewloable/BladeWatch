@@ -712,6 +712,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "Yakıt menzili: {km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "Henüz yeterli veri yok",
   "@trips_range_no_data": {},
   "trips_dna_title": "Sürüş DNA'sı",
@@ -732,6 +738,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "Elektrik tarifesi",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "Yakıt Fiyatı (litre başına)",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "Yakıt Deposu Kapasitesi (litre)",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "Mesafe birimi",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "Depolama konumu",
@@ -789,6 +799,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "Dış sıcaklık",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "Yakıt",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "Yakıt Maliyeti",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "Elektrik Maliyeti",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "Yükselti kazancı",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "Sürüş Puanları",

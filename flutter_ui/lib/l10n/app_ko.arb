@@ -712,6 +712,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "연료 주행가능 거리: {km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "아직 데이터가 충분하지 않습니다",
   "@trips_range_no_data": {},
   "trips_dna_title": "운전 DNA",
@@ -732,6 +738,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "전기 요금",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "연료 가격 (리터당)",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "연료 탱크 용량 (리터)",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "거리 단위",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "저장 위치",
@@ -789,6 +799,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "외기 온도",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "연료",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "연료비",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "전기요금",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "고도 상승",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "운전 점수",

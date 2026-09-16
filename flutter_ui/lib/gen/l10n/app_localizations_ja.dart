@@ -2214,6 +2214,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return '燃料での航続距離：$km';
+  }
+
+  @override
   String get trips_range_no_data => 'まだデータが十分ではありません';
 
   @override
@@ -2242,6 +2247,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => '電気料金';
+
+  @override
+  String get trips_storage_fuel_price_label => '燃料価格（1リットルあたり）';
+
+  @override
+  String get trips_storage_tank_capacity_label => '燃料タンク容量（リットル）';
 
   @override
   String get trips_storage_distance_unit_label => '距離の単位';
@@ -2317,6 +2328,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => '外気温';
+
+  @override
+  String get trips_detail_fuel_used => '燃料';
+
+  @override
+  String get trips_detail_fuel_cost => '燃料代';
+
+  @override
+  String get trips_detail_electric_cost => '電気代';
 
   @override
   String get trips_detail_elev_gain => '獲得標高';

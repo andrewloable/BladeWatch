@@ -39,6 +39,10 @@ const TripSummary$json = {
     {'1': 'end_lat', '3': 18, '4': 1, '5': 1, '10': 'endLat'},
     {'1': 'end_lon', '3': 19, '4': 1, '5': 1, '10': 'endLon'},
     {'1': 'ext_temp_c', '3': 20, '4': 1, '5': 5, '10': 'extTempC'},
+    {'1': 'litres_used', '3': 21, '4': 1, '5': 1, '10': 'litresUsed'},
+    {'1': 'fuel_cost', '3': 22, '4': 1, '5': 1, '10': 'fuelCost'},
+    {'1': 'electric_cost', '3': 23, '4': 1, '5': 1, '10': 'electricCost'},
+    {'1': 'has_fuel_data', '3': 24, '4': 1, '5': 8, '10': 'hasFuelData'},
   ],
 };
 
@@ -55,7 +59,9 @@ final $typed_data.Uint8List tripSummaryDescriptor = $convert.base64Decode(
     'Ug5raW5lbWF0aWNTdGF0ZRIpChBncmFkaWVudF9wcm9maWxlGA8gASgJUg9ncmFkaWVudFByb2'
     'ZpbGUSGwoJc3RhcnRfbGF0GBAgASgBUghzdGFydExhdBIbCglzdGFydF9sb24YESABKAFSCHN0'
     'YXJ0TG9uEhcKB2VuZF9sYXQYEiABKAFSBmVuZExhdBIXCgdlbmRfbG9uGBMgASgBUgZlbmRMb2'
-    '4SHAoKZXh0X3RlbXBfYxgUIAEoBVIIZXh0VGVtcEM=');
+    '4SHAoKZXh0X3RlbXBfYxgUIAEoBVIIZXh0VGVtcEMSHwoLbGl0cmVzX3VzZWQYFSABKAFSCmxp'
+    'dHJlc1VzZWQSGwoJZnVlbF9jb3N0GBYgASgBUghmdWVsQ29zdBIjCg1lbGVjdHJpY19jb3N0GB'
+    'cgASgBUgxlbGVjdHJpY0Nvc3QSIgoNaGFzX2Z1ZWxfZGF0YRgYIAEoCFILaGFzRnVlbERhdGE=');
 
 @$core.Deprecated('Use tripDetailDescriptor instead')
 const TripDetail$json = {
@@ -108,6 +114,13 @@ const TripDetail$json = {
       '5': 9,
       '10': 'microMomentsJson'
     },
+    {'1': 'fuel_pct_start', '3': 11, '4': 1, '5': 1, '10': 'fuelPctStart'},
+    {'1': 'fuel_pct_end', '3': 12, '4': 1, '5': 1, '10': 'fuelPctEnd'},
+    {'1': 'fuel_con_start', '3': 13, '4': 1, '5': 1, '10': 'fuelConStart'},
+    {'1': 'fuel_con_end', '3': 14, '4': 1, '5': 1, '10': 'fuelConEnd'},
+    {'1': 'fuel_price_per_l', '3': 15, '4': 1, '5': 1, '10': 'fuelPricePerL'},
+    {'1': 'elec_con_start', '3': 16, '4': 1, '5': 1, '10': 'elecConStart'},
+    {'1': 'elec_con_end', '3': 17, '4': 1, '5': 1, '10': 'elecConEnd'},
   ],
 };
 
@@ -121,7 +134,12 @@ final $typed_data.Uint8List tripDetailDescriptor = $convert.base64Decode(
     'EoBVIQY29uc2lzdGVuY3lTY29yZRIoChBlbGV2YXRpb25fZ2Fpbl9tGAcgASgBUg5lbGV2YXRp'
     'b25HYWluTRIoChBlbGV2YXRpb25fbG9zc19tGAggASgBUg5lbGV2YXRpb25Mb3NzTRIwChRhdm'
     'dfZ3JhZGllbnRfcGVyY2VudBgJIAEoAVISYXZnR3JhZGllbnRQZXJjZW50EiwKEm1pY3JvX21v'
-    'bWVudHNfanNvbhgKIAEoCVIQbWljcm9Nb21lbnRzSnNvbg==');
+    'bWVudHNfanNvbhgKIAEoCVIQbWljcm9Nb21lbnRzSnNvbhIkCg5mdWVsX3BjdF9zdGFydBgLIA'
+    'EoAVIMZnVlbFBjdFN0YXJ0EiAKDGZ1ZWxfcGN0X2VuZBgMIAEoAVIKZnVlbFBjdEVuZBIkCg5m'
+    'dWVsX2Nvbl9zdGFydBgNIAEoAVIMZnVlbENvblN0YXJ0EiAKDGZ1ZWxfY29uX2VuZBgOIAEoAV'
+    'IKZnVlbENvbkVuZBInChBmdWVsX3ByaWNlX3Blcl9sGA8gASgBUg1mdWVsUHJpY2VQZXJMEiQK'
+    'DmVsZWNfY29uX3N0YXJ0GBAgASgBUgxlbGVjQ29uU3RhcnQSIAoMZWxlY19jb25fZW5kGBEgAS'
+    'gBUgplbGVjQ29uRW5k');
 
 @$core.Deprecated('Use dnaScoresDescriptor instead')
 const DnaScores$json = {
@@ -175,6 +193,15 @@ const TripConfig$json = {
     {'1': 'electricity_rate', '3': 2, '4': 1, '5': 1, '10': 'electricityRate'},
     {'1': 'currency', '3': 3, '4': 1, '5': 9, '10': 'currency'},
     {'1': 'distance_unit', '3': 4, '4': 1, '5': 9, '10': 'distanceUnit'},
+    {'1': 'fuel_price_per_l', '3': 5, '4': 1, '5': 1, '10': 'fuelPricePerL'},
+    {
+      '1': 'fuel_tank_capacity_l',
+      '3': 6,
+      '4': 1,
+      '5': 1,
+      '10': 'fuelTankCapacityL'
+    },
+    {'1': 'is_phev', '3': 7, '4': 1, '5': 8, '10': 'isPhev'},
   ],
 };
 
@@ -182,7 +209,9 @@ const TripConfig$json = {
 final $typed_data.Uint8List tripConfigDescriptor = $convert.base64Decode(
     'CgpUcmlwQ29uZmlnEhgKB2VuYWJsZWQYASABKAhSB2VuYWJsZWQSKQoQZWxlY3RyaWNpdHlfcm'
     'F0ZRgCIAEoAVIPZWxlY3RyaWNpdHlSYXRlEhoKCGN1cnJlbmN5GAMgASgJUghjdXJyZW5jeRIj'
-    'Cg1kaXN0YW5jZV91bml0GAQgASgJUgxkaXN0YW5jZVVuaXQ=');
+    'Cg1kaXN0YW5jZV91bml0GAQgASgJUgxkaXN0YW5jZVVuaXQSJwoQZnVlbF9wcmljZV9wZXJfbB'
+    'gFIAEoAVINZnVlbFByaWNlUGVyTBIvChRmdWVsX3RhbmtfY2FwYWNpdHlfbBgGIAEoAVIRZnVl'
+    'bFRhbmtDYXBhY2l0eUwSFwoHaXNfcGhldhgHIAEoCFIGaXNQaGV2');
 
 @$core.Deprecated('Use tripStorageInfoDescriptor instead')
 const TripStorageInfo$json = {
@@ -484,6 +513,28 @@ const SetConfigRequest$json = {
     },
     {'1': 'currency', '3': 5, '4': 1, '5': 9, '10': 'currency'},
     {'1': 'distance_unit', '3': 6, '4': 1, '5': 9, '10': 'distanceUnit'},
+    {'1': 'fuel_price_per_l', '3': 7, '4': 1, '5': 1, '10': 'fuelPricePerL'},
+    {
+      '1': 'has_fuel_price_per_l',
+      '3': 8,
+      '4': 1,
+      '5': 8,
+      '10': 'hasFuelPricePerL'
+    },
+    {
+      '1': 'fuel_tank_capacity_l',
+      '3': 9,
+      '4': 1,
+      '5': 1,
+      '10': 'fuelTankCapacityL'
+    },
+    {
+      '1': 'has_fuel_tank_capacity_l',
+      '3': 10,
+      '4': 1,
+      '5': 8,
+      '10': 'hasFuelTankCapacityL'
+    },
   ],
 };
 
@@ -493,7 +544,10 @@ final $typed_data.Uint8List setConfigRequestDescriptor = $convert.base64Decode(
     'JsZWQYAiABKAhSCmhhc0VuYWJsZWQSKQoQZWxlY3RyaWNpdHlfcmF0ZRgDIAEoAVIPZWxlY3Ry'
     'aWNpdHlSYXRlEjAKFGhhc19lbGVjdHJpY2l0eV9yYXRlGAQgASgIUhJoYXNFbGVjdHJpY2l0eV'
     'JhdGUSGgoIY3VycmVuY3kYBSABKAlSCGN1cnJlbmN5EiMKDWRpc3RhbmNlX3VuaXQYBiABKAlS'
-    'DGRpc3RhbmNlVW5pdA==');
+    'DGRpc3RhbmNlVW5pdBInChBmdWVsX3ByaWNlX3Blcl9sGAcgASgBUg1mdWVsUHJpY2VQZXJMEi'
+    '4KFGhhc19mdWVsX3ByaWNlX3Blcl9sGAggASgIUhBoYXNGdWVsUHJpY2VQZXJMEi8KFGZ1ZWxf'
+    'dGFua19jYXBhY2l0eV9sGAkgASgBUhFmdWVsVGFua0NhcGFjaXR5TBI2ChhoYXNfZnVlbF90YW'
+    '5rX2NhcGFjaXR5X2wYCiABKAhSFGhhc0Z1ZWxUYW5rQ2FwYWNpdHlM');
 
 @$core.Deprecated('Use setConfigResponseDescriptor instead')
 const SetConfigResponse$json = {

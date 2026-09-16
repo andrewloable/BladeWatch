@@ -2267,6 +2267,11 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Drivstoffrekkevidde: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Ikke nok data ennå';
 
   @override
@@ -2295,6 +2300,12 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Strømpris';
+
+  @override
+  String get trips_storage_fuel_price_label => 'Drivstoffpris (per liter)';
+
+  @override
+  String get trips_storage_tank_capacity_label => 'Tankvolum (liter)';
 
   @override
   String get trips_storage_distance_unit_label => 'Distanseenhet';
@@ -2371,6 +2382,15 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Utetemp.';
+
+  @override
+  String get trips_detail_fuel_used => 'Drivstoff';
+
+  @override
+  String get trips_detail_fuel_cost => 'Drivstoffkostnad';
+
+  @override
+  String get trips_detail_electric_cost => 'Strømkostnad';
 
   @override
   String get trips_detail_elev_gain => 'Stigning';

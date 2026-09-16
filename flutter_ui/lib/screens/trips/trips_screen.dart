@@ -6,6 +6,7 @@ import 'trip_detail_screen.dart';
 import 'trips_controller.dart';
 import 'trips_models.dart';
 import '../../widgets/bw_choice_chip.dart';
+import 'package:bladewatch_ui/util/currency.dart';
 
 /// Ground truth: `TripsController.kt` (852 LOC) + `TripsFragment.kt`. Native
 /// puts its 3-tab bar at the *bottom* of the screen, content above it —
@@ -295,7 +296,7 @@ class _TripRow extends StatelessWidget {
               Row(children: [
                 Expanded(child: Text('$dist  ·  ${trip.formattedDuration}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
                 if (trip.tripCost > 0 && trip.currency.isNotEmpty)
-                  Text('${trip.currency} ${trip.tripCost.toStringAsFixed(2)}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(Currency.format(trip.tripCost, trip.currency), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ]),
             ],
           ),
@@ -360,6 +361,27 @@ class _StatsTab extends StatelessWidget {
                           style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
               ] else
                 Center(child: Text(l10n.trips_range_no_data, style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
+              // PHEV fuel range, reported SEPARATELY and never summed into the electric
+              // figure above: the two are drawn from different tanks with different
+              // confidence, and one number would hide which is about to run out.
+              //
+              // Hidden entirely unless it could be computed. The daemon returns -1 when no
+              // tank capacity is configured, because BYD exposes no tank size and a guessed
+              // range on a dashboard is worse than a blank one — the driver acts on it.
+              if (range != null && range.fuelRangeKm > 0) ...[
+                const SizedBox(height: 12),
+                Center(
+                    child: Text(
+                        l10n.trips_range_fuel(
+                            formatDistance(range.fuelRangeKm, distanceUnit, decimals: 0)),
+                        style: theme.textTheme.titleMedium)),
+                if (range.builtInFuelRangeKm > 0)
+                  Center(
+                      child: Text(
+                          l10n.trips_range_byd_estimate(
+                              formatDistance(range.builtInFuelRangeKm, distanceUnit, decimals: 0)),
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
+              ],
             ]),
           ),
         ),
@@ -427,10 +449,16 @@ class _StorageTab extends StatefulWidget {
 
 class _StorageTabState extends State<_StorageTab> {
   late bool _analyticsEnabled;
-  late final TextEditingController _currencyController;
   late final TextEditingController _rateController;
+  late final TextEditingController _fuelPriceController;
+  late final TextEditingController _tankCapacityController;
+  late String _currency;
   late String _distanceUnit;
   late String _storageType;
+
+  /// Loaded once from the generated asset. Null until it arrives; the picker is disabled
+  /// until then rather than showing an empty list.
+  List<String>? _currencyCodes;
 
   @override
   void initState() {
@@ -438,25 +466,56 @@ class _StorageTabState extends State<_StorageTab> {
     final cfg = widget.state.config;
     final storage = widget.state.storage;
     _analyticsEnabled = cfg?.enabled ?? false;
-    _currencyController = TextEditingController(text: cfg?.currency ?? 'USD');
+    _currency = (cfg?.currency.isNotEmpty ?? false) ? cfg!.currency : Currency.defaultCode;
     _rateController = TextEditingController(text: (cfg?.electricityRate ?? 0.0).toStringAsFixed(4));
+    // Both default to 0 meaning NOT CONFIGURED, matching the daemon and the web UI.
+    _fuelPriceController =
+        TextEditingController(text: (cfg?.fuelPricePerL ?? 0.0).toStringAsFixed(2));
+    _tankCapacityController =
+        TextEditingController(text: (cfg?.fuelTankCapacityL ?? 0.0).toStringAsFixed(1));
     _distanceUnit = cfg?.distanceUnit ?? 'km';
     _storageType = storage?.storageType ?? 'INTERNAL';
+    Currency.codes().then((codes) {
+      if (mounted) setState(() => _currencyCodes = codes);
+    });
   }
 
   @override
   void dispose() {
-    _currencyController.dispose();
     _rateController.dispose();
+    _fuelPriceController.dispose();
+    _tankCapacityController.dispose();
     super.dispose();
+  }
+
+  /// Whether the fuel settings belong on screen for this car.
+  ///
+  /// Reads the CONTROLLERS rather than the config so a value typed in this session keeps the
+  /// fields visible; otherwise clearing a fuel price to 0 on a car whose drivetrain probe is
+  /// cold would make the field vanish mid-edit.
+  bool get _showFuelSettings =>
+      (widget.state.config?.isPhev ?? false) ||
+      _nonNegative(_fuelPriceController.text) > 0 ||
+      _nonNegative(_tankCapacityController.text) > 0;
+
+  /// Parse a numeric settings field, treating anything unusable as 0 (not configured).
+  static double _nonNegative(String text) {
+    final v = double.tryParse(text.trim()) ?? 0.0;
+    return v > 0 ? v : 0.0;
   }
 
   Future<void> _apply() async {
     final rate = double.tryParse(_rateController.text) ?? 0.0;
+    // An unparseable or negative entry means "not configured" rather than a guess: a negative
+    // price would make the fuel leg subtract from the trip cost.
+    final fuelPrice = _nonNegative(_fuelPriceController.text);
+    final tankCapacity = _nonNegative(_tankCapacityController.text);
     final ok = await widget.controller.applyStorageChanges(
       enabled: _analyticsEnabled,
       rate: rate,
-      currency: _currencyController.text,
+      fuelPricePerL: fuelPrice,
+      fuelTankCapacityL: tankCapacity,
+      currency: _currency,
       distanceUnit: _distanceUnit,
       storageType: _storageType,
     );
@@ -498,8 +557,25 @@ class _StorageTabState extends State<_StorageTab> {
                 const SizedBox(height: 4),
                 Row(children: [
                   SizedBox(
-                    width: 80,
-                    child: TextField(key: const ValueKey('trips.storage.currency'), controller: _currencyController, decoration: const InputDecoration(isDense: true)),
+                    width: 104,
+                    child: DropdownButtonFormField<String>(
+                      key: const ValueKey('trips.storage.currency'),
+                      initialValue: _currency,
+                      isExpanded: true,
+                      decoration: const InputDecoration(isDense: true),
+                      // Disabled until the generated catalogue loads, rather than briefly
+                      // offering an empty menu.
+                      // optionsFor guarantees the stored value is present exactly once.
+                      // Without that, a legacy value like "$" is absent from the ISO
+                      // catalogue and DropdownButtonFormField asserts on the mismatch,
+                      // crashing the settings sheet for the owners most needing it.
+                      items: Currency.optionsFor(_currency, _currencyCodes)
+                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
+                      onChanged: _currencyCodes == null
+                          ? null
+                          : (v) => setState(() => _currency = v ?? _currency),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -512,6 +588,30 @@ class _StorageTabState extends State<_StorageTab> {
                   ),
                 ]),
                 const SizedBox(height: 12),
+                // PHEV only. A BEV has no tank, so these two are not merely unused there —
+                // they read as a bug in the app. `showFuelSettings` also stays true when a
+                // value is already configured, so a figure can always be cleared and a
+                // warming-up drivetrain probe cannot hide a setting still being applied.
+                if (_showFuelSettings) ...[
+                  Text(l10n.trips_storage_fuel_price_label, style: theme.textTheme.labelMedium),
+                  const SizedBox(height: 4),
+                  TextField(
+                    key: const ValueKey('trips.storage.fuelPrice'),
+                    controller: _fuelPriceController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(isDense: true),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(l10n.trips_storage_tank_capacity_label, style: theme.textTheme.labelMedium),
+                  const SizedBox(height: 4),
+                  TextField(
+                    key: const ValueKey('trips.storage.tankCapacity'),
+                    controller: _tankCapacityController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(isDense: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Text(l10n.trips_storage_distance_unit_label, style: theme.textTheme.labelMedium),
                 const SizedBox(height: 4),
                 Row(children: [

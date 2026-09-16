@@ -2303,6 +2303,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Запас хода на топливе: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Пока недостаточно данных';
 
   @override
@@ -2331,6 +2336,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Тариф на электроэнергию';
+
+  @override
+  String get trips_storage_fuel_price_label => 'Цена топлива (за литр)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Объём топливного бака (литры)';
 
   @override
   String get trips_storage_distance_unit_label => 'Единица расстояния';
@@ -2407,6 +2419,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Наружная темп.';
+
+  @override
+  String get trips_detail_fuel_used => 'Топливо';
+
+  @override
+  String get trips_detail_fuel_cost => 'Стоимость топлива';
+
+  @override
+  String get trips_detail_electric_cost => 'Стоимость электроэнергии';
 
   @override
   String get trips_detail_elev_gain => 'Набор высоты';

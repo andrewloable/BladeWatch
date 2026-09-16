@@ -221,7 +221,7 @@ public final class Trips extends com.google.protobuf.GeneratedFile {
   static {
     java.lang.String[] descriptorData = {
       "\n\031bladewatch/v1/trips.proto\022\rbladewatch." +
-      "v1\"\201\005\n\013TripSummary\022\016\n\002id\030\001 \001(\003R\002id\022\035\n\nst" +
+      "v1\"\210\006\n\013TripSummary\022\016\n\002id\030\001 \001(\003R\002id\022\035\n\nst" +
       "art_time\030\002 \001(\003R\tstartTime\022\031\n\010end_time\030\003 " +
       "\001(\003R\007endTime\022\037\n\013distance_km\030\004 \001(\001R\ndista" +
       "nceKm\022)\n\020duration_seconds\030\005 \001(\005R\017duratio" +
@@ -237,136 +237,154 @@ public final class Trips extends com.google.protobuf.GeneratedFile {
       "t\030\020 \001(\001R\010startLat\022\033\n\tstart_lon\030\021 \001(\001R\010st" +
       "artLon\022\027\n\007end_lat\030\022 \001(\001R\006endLat\022\027\n\007end_l" +
       "on\030\023 \001(\001R\006endLon\022\034\n\next_temp_c\030\024 \001(\005R\010ex" +
-      "tTempC\"\336\003\n\nTripDetail\0224\n\007summary\030\001 \001(\0132\032" +
-      ".bladewatch.v1.TripSummaryR\007summary\022-\n\022a" +
-      "nticipation_score\030\002 \001(\005R\021anticipationSco" +
-      "re\022)\n\020smoothness_score\030\003 \001(\005R\017smoothness" +
-      "Score\0224\n\026speed_discipline_score\030\004 \001(\005R\024s" +
-      "peedDisciplineScore\022)\n\020efficiency_score\030" +
-      "\005 \001(\005R\017efficiencyScore\022+\n\021consistency_sc" +
-      "ore\030\006 \001(\005R\020consistencyScore\022(\n\020elevation" +
-      "_gain_m\030\007 \001(\001R\016elevationGainM\022(\n\020elevati" +
-      "on_loss_m\030\010 \001(\001R\016elevationLossM\0220\n\024avg_g" +
-      "radient_percent\030\t \001(\001R\022avgGradientPercen" +
-      "t\022,\n\022micro_moments_json\030\n \001(\tR\020microMome" +
-      "ntsJson\"\326\001\n\tDnaScores\022\"\n\014anticipation\030\001 " +
-      "\001(\005R\014anticipation\022\036\n\nsmoothness\030\002 \001(\005R\ns" +
-      "moothness\022)\n\020speed_discipline\030\003 \001(\005R\017spe" +
-      "edDiscipline\022\036\n\nefficiency\030\004 \001(\005R\neffici" +
-      "ency\022 \n\013consistency\030\005 \001(\005R\013consistency\022\030" +
-      "\n\007overall\030\006 \001(\005R\007overall\"4\n\021WeeklyRollup" +
-      "Entry\022\037\n\013rollup_json\030\001 \001(\tR\nrollupJson\"2" +
-      "\n\017TelemetrySample\022\037\n\013sample_json\030\001 \001(\tR\n" +
-      "sampleJson\"\222\001\n\nTripConfig\022\030\n\007enabled\030\001 \001" +
-      "(\010R\007enabled\022)\n\020electricity_rate\030\002 \001(\001R\017e" +
-      "lectricityRate\022\032\n\010currency\030\003 \001(\tR\010curren" +
-      "cy\022#\n\rdistance_unit\030\004 \001(\tR\014distanceUnit\"" +
-      "\365\001\n\017TripStorageInfo\022!\n\014storage_type\030\001 \001(" +
-      "\tR\013storageType\022\031\n\010limit_mb\030\002 \001(\003R\007limitM" +
-      "b\022\027\n\007used_mb\030\003 \001(\001R\006usedMb\022\033\n\tused_unit\030" +
-      "\004 \001(\tR\010usedUnit\022*\n\021sd_card_available\030\005 \001" +
-      "(\010R\017sdCardAvailable\022\037\n\013trips_count\030\006 \001(\005" +
-      "R\ntripsCount\022!\n\014storage_path\030\007 \001(\tR\013stor" +
-      "agePath\"\342\002\n\021SimilarTripsStats\022%\n\016avg_eff" +
-      "iciency\030\001 \001(\001R\ravgEfficiency\022\033\n\tavg_scor" +
-      "e\030\002 \001(\001R\010avgScore\0220\n\024avg_duration_second" +
-      "s\030\003 \001(\001R\022avgDurationSeconds\022\"\n\ravg_speed" +
-      "_kmh\030\004 \001(\001R\013avgSpeedKmh\022\031\n\010avg_cost\030\005 \001(" +
-      "\001R\007avgCost\022 \n\014best_trip_id\030\006 \001(\003R\nbestTr" +
-      "ipId\022\'\n\017best_efficiency\030\007 \001(\001R\016bestEffic" +
-      "iency\022\"\n\rworst_trip_id\030\010 \001(\003R\013worstTripI" +
-      "d\022)\n\020worst_efficiency\030\t \001(\001R\017worstEffici" +
-      "ency\".\n\010GpsPoint\022\020\n\003lat\030\001 \001(\001R\003lat\022\020\n\003lo" +
-      "n\030\002 \001(\001R\003lon\"T\n\020ListTripsRequest\022\022\n\004days" +
-      "\030\001 \001(\005R\004days\022\024\n\005limit\030\002 \001(\005R\005limit\022\026\n\006of" +
-      "fset\030\003 \001(\005R\006offset\"_\n\021ListTripsResponse\022" +
-      "\030\n\007success\030\001 \001(\010R\007success\0220\n\005trips\030\002 \003(\013" +
-      "2\032.bladewatch.v1.TripSummaryR\005trips\" \n\016G" +
-      "etTripRequest\022\016\n\002id\030\001 \001(\003R\002id\"p\n\017GetTrip" +
-      "Response\022\030\n\007success\030\001 \001(\010R\007success\022-\n\004tr" +
-      "ip\030\002 \001(\0132\031.bladewatch.v1.TripDetailR\004tri" +
-      "p\022\024\n\005error\030\003 \001(\tR\005error\"#\n\021DeleteTripReq" +
-      "uest\022\016\n\002id\030\001 \001(\003R\002id\"D\n\022DeleteTripRespon" +
-      "se\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005error\030\002 " +
-      "\001(\tR\005error\"\'\n\021GetSummaryRequest\022\022\n\004days\030" +
-      "\001 \001(\005R\004days\"j\n\022GetSummaryResponse\022\030\n\007suc" +
-      "cess\030\001 \001(\010R\007success\022:\n\007summary\030\002 \003(\0132 .b" +
-      "ladewatch.v1.WeeklyRollupEntryR\007summary\"" +
-      "#\n\rGetDnaRequest\022\022\n\004days\030\001 \001(\005R\004days\"V\n\016" +
-      "GetDnaResponse\022\030\n\007success\030\001 \001(\010R\007success" +
-      "\022*\n\003dna\030\002 \001(\0132\030.bladewatch.v1.DnaScoresR" +
-      "\003dna\"\021\n\017GetRangeRequest\"e\n\020GetRangeRespo" +
-      "nse\022\030\n\007success\030\001 \001(\010R\007success\022\035\n\nrange_j" +
-      "son\030\002 \001(\tR\trangeJson\022\030\n\007message\030\003 \001(\tR\007m" +
-      "essage\"\022\n\020GetConfigRequest\"`\n\021GetConfigR" +
-      "esponse\022\030\n\007success\030\001 \001(\010R\007success\0221\n\006con" +
-      "fig\030\002 \001(\0132\031.bladewatch.v1.TripConfigR\006co" +
-      "nfig\"\353\001\n\020SetConfigRequest\022\030\n\007enabled\030\001 \001" +
-      "(\010R\007enabled\022\037\n\013has_enabled\030\002 \001(\010R\nhasEna" +
-      "bled\022)\n\020electricity_rate\030\003 \001(\001R\017electric" +
-      "ityRate\0220\n\024has_electricity_rate\030\004 \001(\010R\022h" +
-      "asElectricityRate\022\032\n\010currency\030\005 \001(\tR\010cur" +
-      "rency\022#\n\rdistance_unit\030\006 \001(\tR\014distanceUn" +
-      "it\"C\n\021SetConfigResponse\022\030\n\007success\030\001 \001(\010" +
-      "R\007success\022\024\n\005error\030\002 \001(\tR\005error\"\023\n\021GetSt" +
-      "orageRequest\"h\n\022GetStorageResponse\022\030\n\007su" +
-      "ccess\030\001 \001(\010R\007success\0228\n\007storage\030\002 \001(\0132\036." +
-      "bladewatch.v1.TripStorageInfoR\007storage\"\221" +
-      "\001\n\021SetStorageRequest\022!\n\014storage_type\030\001 \001" +
-      "(\tR\013storageType\022(\n\020storage_limit_mb\030\002 \001(" +
-      "\003R\016storageLimitMb\022/\n\024has_storage_limit_m" +
-      "b\030\003 \001(\010R\021hasStorageLimitMb\"D\n\022SetStorage" +
-      "Response\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005er" +
-      "ror\030\002 \001(\tR\005error\"\022\n\020SyncTripsRequest\"\211\001\n" +
-      "\021SyncTripsResponse\022\030\n\007success\030\001 \001(\010R\007suc" +
-      "cess\022\024\n\005error\030\002 \001(\tR\005error\022\024\n\005added\030\003 \001(" +
-      "\005R\005added\022\030\n\007removed\030\004 \001(\005R\007removed\022\024\n\005to" +
-      "tal\030\005 \001(\005R\005total\".\n\023GetTelemetryRequest\022" +
-      "\027\n\007trip_id\030\001 \001(\003R\006tripId\"\204\001\n\024GetTelemetr" +
-      "yResponse\022\030\n\007success\030\001 \001(\010R\007success\022<\n\tt" +
-      "elemetry\030\002 \003(\0132\036.bladewatch.v1.Telemetry" +
-      "SampleR\ttelemetry\022\024\n\005error\030\003 \001(\tR\005error\"" +
-      "1\n\026GetSimilarTripsRequest\022\027\n\007trip_id\030\001 \001" +
-      "(\003R\006tripId\"\315\001\n\027GetSimilarTripsResponse\022\030" +
-      "\n\007success\030\001 \001(\010R\007success\0224\n\007similar\030\002 \003(" +
-      "\0132\032.bladewatch.v1.TripSummaryR\007similar\022\024" +
-      "\n\005count\030\003 \001(\005R\005count\0226\n\005stats\030\004 \001(\0132 .bl" +
-      "adewatch.v1.SimilarTripsStatsR\005stats\022\024\n\005" +
-      "error\030\005 \001(\tR\005error\"-\n\022GetGpsTraceRequest" +
-      "\022\027\n\007trip_id\030\001 \001(\003R\006tripId\"p\n\023GetGpsTrace" +
-      "Response\022\030\n\007success\030\001 \001(\010R\007success\022)\n\003gp" +
-      "s\030\002 \003(\0132\027.bladewatch.v1.GpsPointR\003gps\022\024\n" +
-      "\005error\030\003 \001(\tR\005error2\211\t\n\014TripsService\022N\n\t" +
-      "ListTrips\022\037.bladewatch.v1.ListTripsReque" +
-      "st\032 .bladewatch.v1.ListTripsResponse\022H\n\007" +
-      "GetTrip\022\035.bladewatch.v1.GetTripRequest\032\036" +
-      ".bladewatch.v1.GetTripResponse\022Q\n\nDelete" +
-      "Trip\022 .bladewatch.v1.DeleteTripRequest\032!" +
-      ".bladewatch.v1.DeleteTripResponse\022Q\n\nGet" +
-      "Summary\022 .bladewatch.v1.GetSummaryReques" +
-      "t\032!.bladewatch.v1.GetSummaryResponse\022E\n\006" +
-      "GetDna\022\034.bladewatch.v1.GetDnaRequest\032\035.b" +
-      "ladewatch.v1.GetDnaResponse\022K\n\010GetRange\022" +
-      "\036.bladewatch.v1.GetRangeRequest\032\037.bladew" +
-      "atch.v1.GetRangeResponse\022N\n\tGetConfig\022\037." +
-      "bladewatch.v1.GetConfigRequest\032 .bladewa" +
-      "tch.v1.GetConfigResponse\022N\n\tSetConfig\022\037." +
-      "bladewatch.v1.SetConfigRequest\032 .bladewa" +
-      "tch.v1.SetConfigResponse\022Q\n\nGetStorage\022 " +
-      ".bladewatch.v1.GetStorageRequest\032!.blade" +
-      "watch.v1.GetStorageResponse\022Q\n\nSetStorag" +
-      "e\022 .bladewatch.v1.SetStorageRequest\032!.bl" +
-      "adewatch.v1.SetStorageResponse\022N\n\tSyncTr" +
-      "ips\022\037.bladewatch.v1.SyncTripsRequest\032 .b" +
-      "ladewatch.v1.SyncTripsResponse\022W\n\014GetTel" +
-      "emetry\022\".bladewatch.v1.GetTelemetryReque" +
-      "st\032#.bladewatch.v1.GetTelemetryResponse\022" +
-      "`\n\017GetSimilarTrips\022%.bladewatch.v1.GetSi" +
-      "milarTripsRequest\032&.bladewatch.v1.GetSim" +
-      "ilarTripsResponse\022T\n\013GetGpsTrace\022!.blade" +
-      "watch.v1.GetGpsTraceRequest\032\".bladewatch" +
-      ".v1.GetGpsTraceResponseB\036\n\032net.bladewatc" +
-      "h.app.grpc.v1P\001b\006proto3"
+      "tTempC\022\037\n\013litres_used\030\025 \001(\001R\nlitresUsed\022" +
+      "\033\n\tfuel_cost\030\026 \001(\001R\010fuelCost\022#\n\relectric" +
+      "_cost\030\027 \001(\001R\014electricCost\022\"\n\rhas_fuel_da" +
+      "ta\030\030 \001(\010R\013hasFuelData\"\337\005\n\nTripDetail\0224\n\007" +
+      "summary\030\001 \001(\0132\032.bladewatch.v1.TripSummar" +
+      "yR\007summary\022-\n\022anticipation_score\030\002 \001(\005R\021" +
+      "anticipationScore\022)\n\020smoothness_score\030\003 " +
+      "\001(\005R\017smoothnessScore\0224\n\026speed_discipline" +
+      "_score\030\004 \001(\005R\024speedDisciplineScore\022)\n\020ef" +
+      "ficiency_score\030\005 \001(\005R\017efficiencyScore\022+\n" +
+      "\021consistency_score\030\006 \001(\005R\020consistencySco" +
+      "re\022(\n\020elevation_gain_m\030\007 \001(\001R\016elevationG" +
+      "ainM\022(\n\020elevation_loss_m\030\010 \001(\001R\016elevatio" +
+      "nLossM\0220\n\024avg_gradient_percent\030\t \001(\001R\022av" +
+      "gGradientPercent\022,\n\022micro_moments_json\030\n" +
+      " \001(\tR\020microMomentsJson\022$\n\016fuel_pct_start" +
+      "\030\013 \001(\001R\014fuelPctStart\022 \n\014fuel_pct_end\030\014 \001" +
+      "(\001R\nfuelPctEnd\022$\n\016fuel_con_start\030\r \001(\001R\014" +
+      "fuelConStart\022 \n\014fuel_con_end\030\016 \001(\001R\nfuel" +
+      "ConEnd\022\'\n\020fuel_price_per_l\030\017 \001(\001R\rfuelPr" +
+      "icePerL\022$\n\016elec_con_start\030\020 \001(\001R\014elecCon" +
+      "Start\022 \n\014elec_con_end\030\021 \001(\001R\nelecConEnd\"" +
+      "\326\001\n\tDnaScores\022\"\n\014anticipation\030\001 \001(\005R\014ant" +
+      "icipation\022\036\n\nsmoothness\030\002 \001(\005R\nsmoothnes" +
+      "s\022)\n\020speed_discipline\030\003 \001(\005R\017speedDiscip" +
+      "line\022\036\n\nefficiency\030\004 \001(\005R\nefficiency\022 \n\013" +
+      "consistency\030\005 \001(\005R\013consistency\022\030\n\007overal" +
+      "l\030\006 \001(\005R\007overall\"4\n\021WeeklyRollupEntry\022\037\n" +
+      "\013rollup_json\030\001 \001(\tR\nrollupJson\"2\n\017Teleme" +
+      "trySample\022\037\n\013sample_json\030\001 \001(\tR\nsampleJs" +
+      "on\"\205\002\n\nTripConfig\022\030\n\007enabled\030\001 \001(\010R\007enab" +
+      "led\022)\n\020electricity_rate\030\002 \001(\001R\017electrici" +
+      "tyRate\022\032\n\010currency\030\003 \001(\tR\010currency\022#\n\rdi" +
+      "stance_unit\030\004 \001(\tR\014distanceUnit\022\'\n\020fuel_" +
+      "price_per_l\030\005 \001(\001R\rfuelPricePerL\022/\n\024fuel" +
+      "_tank_capacity_l\030\006 \001(\001R\021fuelTankCapacity" +
+      "L\022\027\n\007is_phev\030\007 \001(\010R\006isPhev\"\365\001\n\017TripStora" +
+      "geInfo\022!\n\014storage_type\030\001 \001(\tR\013storageTyp" +
+      "e\022\031\n\010limit_mb\030\002 \001(\003R\007limitMb\022\027\n\007used_mb\030" +
+      "\003 \001(\001R\006usedMb\022\033\n\tused_unit\030\004 \001(\tR\010usedUn" +
+      "it\022*\n\021sd_card_available\030\005 \001(\010R\017sdCardAva" +
+      "ilable\022\037\n\013trips_count\030\006 \001(\005R\ntripsCount\022" +
+      "!\n\014storage_path\030\007 \001(\tR\013storagePath\"\342\002\n\021S" +
+      "imilarTripsStats\022%\n\016avg_efficiency\030\001 \001(\001" +
+      "R\ravgEfficiency\022\033\n\tavg_score\030\002 \001(\001R\010avgS" +
+      "core\0220\n\024avg_duration_seconds\030\003 \001(\001R\022avgD" +
+      "urationSeconds\022\"\n\ravg_speed_kmh\030\004 \001(\001R\013a" +
+      "vgSpeedKmh\022\031\n\010avg_cost\030\005 \001(\001R\007avgCost\022 \n" +
+      "\014best_trip_id\030\006 \001(\003R\nbestTripId\022\'\n\017best_" +
+      "efficiency\030\007 \001(\001R\016bestEfficiency\022\"\n\rwors" +
+      "t_trip_id\030\010 \001(\003R\013worstTripId\022)\n\020worst_ef" +
+      "ficiency\030\t \001(\001R\017worstEfficiency\".\n\010GpsPo" +
+      "int\022\020\n\003lat\030\001 \001(\001R\003lat\022\020\n\003lon\030\002 \001(\001R\003lon\"" +
+      "T\n\020ListTripsRequest\022\022\n\004days\030\001 \001(\005R\004days\022" +
+      "\024\n\005limit\030\002 \001(\005R\005limit\022\026\n\006offset\030\003 \001(\005R\006o" +
+      "ffset\"_\n\021ListTripsResponse\022\030\n\007success\030\001 " +
+      "\001(\010R\007success\0220\n\005trips\030\002 \003(\0132\032.bladewatch" +
+      ".v1.TripSummaryR\005trips\" \n\016GetTripRequest" +
+      "\022\016\n\002id\030\001 \001(\003R\002id\"p\n\017GetTripResponse\022\030\n\007s" +
+      "uccess\030\001 \001(\010R\007success\022-\n\004trip\030\002 \001(\0132\031.bl" +
+      "adewatch.v1.TripDetailR\004trip\022\024\n\005error\030\003 " +
+      "\001(\tR\005error\"#\n\021DeleteTripRequest\022\016\n\002id\030\001 " +
+      "\001(\003R\002id\"D\n\022DeleteTripResponse\022\030\n\007success" +
+      "\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR\005error\"\'\n" +
+      "\021GetSummaryRequest\022\022\n\004days\030\001 \001(\005R\004days\"j" +
+      "\n\022GetSummaryResponse\022\030\n\007success\030\001 \001(\010R\007s" +
+      "uccess\022:\n\007summary\030\002 \003(\0132 .bladewatch.v1." +
+      "WeeklyRollupEntryR\007summary\"#\n\rGetDnaRequ" +
+      "est\022\022\n\004days\030\001 \001(\005R\004days\"V\n\016GetDnaRespons" +
+      "e\022\030\n\007success\030\001 \001(\010R\007success\022*\n\003dna\030\002 \001(\013" +
+      "2\030.bladewatch.v1.DnaScoresR\003dna\"\021\n\017GetRa" +
+      "ngeRequest\"e\n\020GetRangeResponse\022\030\n\007succes" +
+      "s\030\001 \001(\010R\007success\022\035\n\nrange_json\030\002 \001(\tR\tra" +
+      "ngeJson\022\030\n\007message\030\003 \001(\tR\007message\"\022\n\020Get" +
+      "ConfigRequest\"`\n\021GetConfigResponse\022\030\n\007su" +
+      "ccess\030\001 \001(\010R\007success\0221\n\006config\030\002 \001(\0132\031.b" +
+      "ladewatch.v1.TripConfigR\006config\"\255\003\n\020SetC" +
+      "onfigRequest\022\030\n\007enabled\030\001 \001(\010R\007enabled\022\037" +
+      "\n\013has_enabled\030\002 \001(\010R\nhasEnabled\022)\n\020elect" +
+      "ricity_rate\030\003 \001(\001R\017electricityRate\0220\n\024ha" +
+      "s_electricity_rate\030\004 \001(\010R\022hasElectricity" +
+      "Rate\022\032\n\010currency\030\005 \001(\tR\010currency\022#\n\rdist" +
+      "ance_unit\030\006 \001(\tR\014distanceUnit\022\'\n\020fuel_pr" +
+      "ice_per_l\030\007 \001(\001R\rfuelPricePerL\022.\n\024has_fu" +
+      "el_price_per_l\030\010 \001(\010R\020hasFuelPricePerL\022/" +
+      "\n\024fuel_tank_capacity_l\030\t \001(\001R\021fuelTankCa" +
+      "pacityL\0226\n\030has_fuel_tank_capacity_l\030\n \001(" +
+      "\010R\024hasFuelTankCapacityL\"C\n\021SetConfigResp" +
+      "onse\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005error\030" +
+      "\002 \001(\tR\005error\"\023\n\021GetStorageRequest\"h\n\022Get" +
+      "StorageResponse\022\030\n\007success\030\001 \001(\010R\007succes" +
+      "s\0228\n\007storage\030\002 \001(\0132\036.bladewatch.v1.TripS" +
+      "torageInfoR\007storage\"\221\001\n\021SetStorageReques" +
+      "t\022!\n\014storage_type\030\001 \001(\tR\013storageType\022(\n\020" +
+      "storage_limit_mb\030\002 \001(\003R\016storageLimitMb\022/" +
+      "\n\024has_storage_limit_mb\030\003 \001(\010R\021hasStorage" +
+      "LimitMb\"D\n\022SetStorageResponse\022\030\n\007success" +
+      "\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR\005error\"\022\n" +
+      "\020SyncTripsRequest\"\211\001\n\021SyncTripsResponse\022" +
+      "\030\n\007success\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\t" +
+      "R\005error\022\024\n\005added\030\003 \001(\005R\005added\022\030\n\007removed" +
+      "\030\004 \001(\005R\007removed\022\024\n\005total\030\005 \001(\005R\005total\".\n" +
+      "\023GetTelemetryRequest\022\027\n\007trip_id\030\001 \001(\003R\006t" +
+      "ripId\"\204\001\n\024GetTelemetryResponse\022\030\n\007succes" +
+      "s\030\001 \001(\010R\007success\022<\n\ttelemetry\030\002 \003(\0132\036.bl" +
+      "adewatch.v1.TelemetrySampleR\ttelemetry\022\024" +
+      "\n\005error\030\003 \001(\tR\005error\"1\n\026GetSimilarTripsR" +
+      "equest\022\027\n\007trip_id\030\001 \001(\003R\006tripId\"\315\001\n\027GetS" +
+      "imilarTripsResponse\022\030\n\007success\030\001 \001(\010R\007su" +
+      "ccess\0224\n\007similar\030\002 \003(\0132\032.bladewatch.v1.T" +
+      "ripSummaryR\007similar\022\024\n\005count\030\003 \001(\005R\005coun" +
+      "t\0226\n\005stats\030\004 \001(\0132 .bladewatch.v1.Similar" +
+      "TripsStatsR\005stats\022\024\n\005error\030\005 \001(\tR\005error\"" +
+      "-\n\022GetGpsTraceRequest\022\027\n\007trip_id\030\001 \001(\003R\006" +
+      "tripId\"p\n\023GetGpsTraceResponse\022\030\n\007success" +
+      "\030\001 \001(\010R\007success\022)\n\003gps\030\002 \003(\0132\027.bladewatc" +
+      "h.v1.GpsPointR\003gps\022\024\n\005error\030\003 \001(\tR\005error" +
+      "2\211\t\n\014TripsService\022N\n\tListTrips\022\037.bladewa" +
+      "tch.v1.ListTripsRequest\032 .bladewatch.v1." +
+      "ListTripsResponse\022H\n\007GetTrip\022\035.bladewatc" +
+      "h.v1.GetTripRequest\032\036.bladewatch.v1.GetT" +
+      "ripResponse\022Q\n\nDeleteTrip\022 .bladewatch.v" +
+      "1.DeleteTripRequest\032!.bladewatch.v1.Dele" +
+      "teTripResponse\022Q\n\nGetSummary\022 .bladewatc" +
+      "h.v1.GetSummaryRequest\032!.bladewatch.v1.G" +
+      "etSummaryResponse\022E\n\006GetDna\022\034.bladewatch" +
+      ".v1.GetDnaRequest\032\035.bladewatch.v1.GetDna" +
+      "Response\022K\n\010GetRange\022\036.bladewatch.v1.Get" +
+      "RangeRequest\032\037.bladewatch.v1.GetRangeRes" +
+      "ponse\022N\n\tGetConfig\022\037.bladewatch.v1.GetCo" +
+      "nfigRequest\032 .bladewatch.v1.GetConfigRes" +
+      "ponse\022N\n\tSetConfig\022\037.bladewatch.v1.SetCo" +
+      "nfigRequest\032 .bladewatch.v1.SetConfigRes" +
+      "ponse\022Q\n\nGetStorage\022 .bladewatch.v1.GetS" +
+      "torageRequest\032!.bladewatch.v1.GetStorage" +
+      "Response\022Q\n\nSetStorage\022 .bladewatch.v1.S" +
+      "etStorageRequest\032!.bladewatch.v1.SetStor" +
+      "ageResponse\022N\n\tSyncTrips\022\037.bladewatch.v1" +
+      ".SyncTripsRequest\032 .bladewatch.v1.SyncTr" +
+      "ipsResponse\022W\n\014GetTelemetry\022\".bladewatch" +
+      ".v1.GetTelemetryRequest\032#.bladewatch.v1." +
+      "GetTelemetryResponse\022`\n\017GetSimilarTrips\022" +
+      "%.bladewatch.v1.GetSimilarTripsRequest\032&" +
+      ".bladewatch.v1.GetSimilarTripsResponse\022T" +
+      "\n\013GetGpsTrace\022!.bladewatch.v1.GetGpsTrac" +
+      "eRequest\032\".bladewatch.v1.GetGpsTraceResp" +
+      "onseB\036\n\032net.bladewatch.app.grpc.v1P\001b\006pr" +
+      "oto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -377,13 +395,13 @@ public final class Trips extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_TripSummary_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_TripSummary_descriptor,
-        new java.lang.String[] { "Id", "StartTime", "EndTime", "DistanceKm", "DurationSeconds", "AvgSpeedKmh", "MaxSpeedKmh", "SocStart", "SocEnd", "EnergyPerKm", "TripCost", "Currency", "OverallScore", "KinematicState", "GradientProfile", "StartLat", "StartLon", "EndLat", "EndLon", "ExtTempC", });
+        new java.lang.String[] { "Id", "StartTime", "EndTime", "DistanceKm", "DurationSeconds", "AvgSpeedKmh", "MaxSpeedKmh", "SocStart", "SocEnd", "EnergyPerKm", "TripCost", "Currency", "OverallScore", "KinematicState", "GradientProfile", "StartLat", "StartLon", "EndLat", "EndLon", "ExtTempC", "LitresUsed", "FuelCost", "ElectricCost", "HasFuelData", });
     internal_static_bladewatch_v1_TripDetail_descriptor =
       getDescriptor().getMessageType(1);
     internal_static_bladewatch_v1_TripDetail_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_TripDetail_descriptor,
-        new java.lang.String[] { "Summary", "AnticipationScore", "SmoothnessScore", "SpeedDisciplineScore", "EfficiencyScore", "ConsistencyScore", "ElevationGainM", "ElevationLossM", "AvgGradientPercent", "MicroMomentsJson", });
+        new java.lang.String[] { "Summary", "AnticipationScore", "SmoothnessScore", "SpeedDisciplineScore", "EfficiencyScore", "ConsistencyScore", "ElevationGainM", "ElevationLossM", "AvgGradientPercent", "MicroMomentsJson", "FuelPctStart", "FuelPctEnd", "FuelConStart", "FuelConEnd", "FuelPricePerL", "ElecConStart", "ElecConEnd", });
     internal_static_bladewatch_v1_DnaScores_descriptor =
       getDescriptor().getMessageType(2);
     internal_static_bladewatch_v1_DnaScores_fieldAccessorTable = new
@@ -407,7 +425,7 @@ public final class Trips extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_TripConfig_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_TripConfig_descriptor,
-        new java.lang.String[] { "Enabled", "ElectricityRate", "Currency", "DistanceUnit", });
+        new java.lang.String[] { "Enabled", "ElectricityRate", "Currency", "DistanceUnit", "FuelPricePerL", "FuelTankCapacityL", "IsPhev", });
     internal_static_bladewatch_v1_TripStorageInfo_descriptor =
       getDescriptor().getMessageType(6);
     internal_static_bladewatch_v1_TripStorageInfo_fieldAccessorTable = new
@@ -515,7 +533,7 @@ public final class Trips extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_SetConfigRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetConfigRequest_descriptor,
-        new java.lang.String[] { "Enabled", "HasEnabled", "ElectricityRate", "HasElectricityRate", "Currency", "DistanceUnit", });
+        new java.lang.String[] { "Enabled", "HasEnabled", "ElectricityRate", "HasElectricityRate", "Currency", "DistanceUnit", "FuelPricePerL", "HasFuelPricePerL", "FuelTankCapacityL", "HasFuelTankCapacityL", });
     internal_static_bladewatch_v1_SetConfigResponse_descriptor =
       getDescriptor().getMessageType(24);
     internal_static_bladewatch_v1_SetConfigResponse_fieldAccessorTable = new

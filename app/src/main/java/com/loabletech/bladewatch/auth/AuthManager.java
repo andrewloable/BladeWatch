@@ -344,7 +344,36 @@ public class AuthManager {
         if (state == null) {
             return false;
         }
-        return token.equals(state.getDeviceToken());
+        // Guard the SECRET, not the composed token. getDeviceToken() is deviceId + "-" +
+        // deviceSecret, so a blank secret yields "byd-xxxx-" — non-empty, and guessable by
+        // anyone who has seen the device id, which the login page displays.
+        //
+        // getState() will not hand out a blank-secret state today (it re-initialises instead),
+        // so this is defence in depth rather than a live hole. It is worth stating here anyway
+        // because AuthState.fromJson deliberately sets deviceSecret = "" — the secret lives in
+        // the secret store, not the config — so blank-secret states are constructed by design
+        // and only one caller stands between them and this check.
+        String secret = state.getSecret();
+        if (secret == null || secret.isEmpty()) {
+            return false;
+        }
+        String expected = state.getDeviceToken();
+        if (expected == null || expected.isEmpty()) {
+            return false;
+        }
+        // Constant-time, like every other secret comparison in this class (see the JWT
+        // signature checks below) and in IpcTokenManager / VehicleActionToken. This one was
+        // the outlier, and it is the most exposed of the set: it backs POST /auth/token, the
+        // UNAUTHENTICATED login endpoint, so the compared value is supplied by whoever can
+        // reach the tunnel. String.equals returns at the first differing byte, which leaks how
+        // much of the secret a guess got right.
+        //
+        // The attempt limiter in AuthApiHandler already caps guesses, so this is defence in
+        // depth rather than a fix for a demonstrated break — but it costs one line and removes
+        // an inconsistency that reads like an oversight.
+        return MessageDigest.isEqual(
+                token.getBytes(StandardCharsets.UTF_8),
+                expected.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

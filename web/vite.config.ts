@@ -15,6 +15,31 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      /**
+       * Silence two unactionable third-party warnings, and NOTHING else.
+       *
+       * The prebuilt ESM in @connectrpc and @bufbuild is TypeScript-compiled down to helpers
+       * that reference `this` at module top level. Rollup correctly rewrites that to
+       * `undefined` for ESM and warns (THIS_IS_UNDEFINED), then tries to map the location back
+       * through a sourcemap those packages do not ship and warns again (SOURCEMAP_ERROR).
+       * Both are correct behaviour on our side and unfixable on theirs short of vendoring.
+       *
+       * It is 124 lines per build, and the SOURCEMAP_ERROR text literally reads "Error when
+       * using sourcemap for reporting an error" — so every green CI release log looked like it
+       * contained 62 errors. That is the real cost: noise that trains you to ignore the build
+       * output is worse than no output.
+       *
+       * Scoped to node_modules on purpose. The same two codes raised by OUR source are real
+       * bugs (a top-level `this` in an Angular file is almost always a mistake) and still warn.
+       */
+      onwarn(warning, defaultHandler) {
+        const noisy = warning.code === 'THIS_IS_UNDEFINED' || warning.code === 'SOURCEMAP_ERROR';
+        const thirdParty = (warning.id ?? warning.loc?.file ?? '').includes('node_modules');
+        if (noisy && thirdParty) return;
+        defaultHandler(warning);
+      },
+    },
   },
   server: {
     proxy: {

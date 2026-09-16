@@ -106,6 +106,10 @@ flutter:
   # resolve unmodified under webview_flutter's loadFlutterAsset().
   assets:
     - assets/LICENSE.txt
+    # BladeWatch-9uu6: the ISO 4217 currency codes offered by the trips settings
+    # picker. GENERATED from ICU by tools/gen-currencies.mjs — do not hand-edit;
+    # validateCurrencyCatalog fails the build if this drifts from the web copy.
+    - assets/iso4217.json
     # BladeWatch-ez0z: the app icon, for the in-app brand lockup shown while
     # the app starts. Android mipmaps are not reachable from Dart, so the
     # xxxhdpi foreground is shipped as a Flutter asset and scaled down.

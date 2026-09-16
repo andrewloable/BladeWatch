@@ -215,6 +215,88 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int FUEL_PCT_START_FIELD_NUMBER = 11;
+  private double fuelPctStart_ = 0D;
+  /**
+   * <pre>
+   * PHEV fuel leg detail (BladeWatch-fpdz). The raw lifetime counters live here, in the
+   * detail view only. -1 means the reading was never taken; 0 is a real measurement.
+   * </pre>
+   *
+   * <code>double fuel_pct_start = 11 [json_name = "fuelPctStart"];</code>
+   * @return The fuelPctStart.
+   */
+  @java.lang.Override
+  public double getFuelPctStart() {
+    return fuelPctStart_;
+  }
+
+  public static final int FUEL_PCT_END_FIELD_NUMBER = 12;
+  private double fuelPctEnd_ = 0D;
+  /**
+   * <code>double fuel_pct_end = 12 [json_name = "fuelPctEnd"];</code>
+   * @return The fuelPctEnd.
+   */
+  @java.lang.Override
+  public double getFuelPctEnd() {
+    return fuelPctEnd_;
+  }
+
+  public static final int FUEL_CON_START_FIELD_NUMBER = 13;
+  private double fuelConStart_ = 0D;
+  /**
+   * <code>double fuel_con_start = 13 [json_name = "fuelConStart"];</code>
+   * @return The fuelConStart.
+   */
+  @java.lang.Override
+  public double getFuelConStart() {
+    return fuelConStart_;
+  }
+
+  public static final int FUEL_CON_END_FIELD_NUMBER = 14;
+  private double fuelConEnd_ = 0D;
+  /**
+   * <code>double fuel_con_end = 14 [json_name = "fuelConEnd"];</code>
+   * @return The fuelConEnd.
+   */
+  @java.lang.Override
+  public double getFuelConEnd() {
+    return fuelConEnd_;
+  }
+
+  public static final int FUEL_PRICE_PER_L_FIELD_NUMBER = 15;
+  private double fuelPricePerL_ = 0D;
+  /**
+   * <code>double fuel_price_per_l = 15 [json_name = "fuelPricePerL"];</code>
+   * @return The fuelPricePerL.
+   */
+  @java.lang.Override
+  public double getFuelPricePerL() {
+    return fuelPricePerL_;
+  }
+
+  public static final int ELEC_CON_START_FIELD_NUMBER = 16;
+  private double elecConStart_ = 0D;
+  /**
+   * <code>double elec_con_start = 16 [json_name = "elecConStart"];</code>
+   * @return The elecConStart.
+   */
+  @java.lang.Override
+  public double getElecConStart() {
+    return elecConStart_;
+  }
+
+  public static final int ELEC_CON_END_FIELD_NUMBER = 17;
+  private double elecConEnd_ = 0D;
+  /**
+   * <code>double elec_con_end = 17 [json_name = "elecConEnd"];</code>
+   * @return The elecConEnd.
+   */
+  @java.lang.Override
+  public double getElecConEnd() {
+    return elecConEnd_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -259,6 +341,27 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(microMomentsJson_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 10, microMomentsJson_);
     }
+    if (java.lang.Double.doubleToRawLongBits(fuelPctStart_) != 0) {
+      output.writeDouble(11, fuelPctStart_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelPctEnd_) != 0) {
+      output.writeDouble(12, fuelPctEnd_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelConStart_) != 0) {
+      output.writeDouble(13, fuelConStart_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelConEnd_) != 0) {
+      output.writeDouble(14, fuelConEnd_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelPricePerL_) != 0) {
+      output.writeDouble(15, fuelPricePerL_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(elecConStart_) != 0) {
+      output.writeDouble(16, elecConStart_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(elecConEnd_) != 0) {
+      output.writeDouble(17, elecConEnd_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -301,6 +404,34 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(microMomentsJson_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(10, microMomentsJson_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelPctStart_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(11, fuelPctStart_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelPctEnd_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(12, fuelPctEnd_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelConStart_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(13, fuelConStart_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelConEnd_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(14, fuelConEnd_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelPricePerL_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(15, fuelPricePerL_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(elecConStart_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(16, elecConStart_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(elecConEnd_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(17, elecConEnd_);
     }
     return size;
   }
@@ -352,6 +483,27 @@ private static final long serialVersionUID = 0L;
             other.getAvgGradientPercent())) return false;
     if (!getMicroMomentsJson()
         .equals(other.getMicroMomentsJson())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelPctStart())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelPctStart())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelPctEnd())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelPctEnd())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelConStart())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelConStart())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelConEnd())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelConEnd())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelPricePerL())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelPricePerL())) return false;
+    if (java.lang.Double.doubleToLongBits(getElecConStart())
+        != java.lang.Double.doubleToLongBits(
+            other.getElecConStart())) return false;
+    if (java.lang.Double.doubleToLongBits(getElecConEnd())
+        != java.lang.Double.doubleToLongBits(
+            other.getElecConEnd())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -388,6 +540,27 @@ private static final long serialVersionUID = 0L;
         java.lang.Double.doubleToLongBits(getAvgGradientPercent()));
     hash = (37 * hash) + MICRO_MOMENTS_JSON_FIELD_NUMBER;
     hash = (53 * hash) + getMicroMomentsJson().hashCode();
+    hash = (37 * hash) + FUEL_PCT_START_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelPctStart()));
+    hash = (37 * hash) + FUEL_PCT_END_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelPctEnd()));
+    hash = (37 * hash) + FUEL_CON_START_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelConStart()));
+    hash = (37 * hash) + FUEL_CON_END_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelConEnd()));
+    hash = (37 * hash) + FUEL_PRICE_PER_L_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelPricePerL()));
+    hash = (37 * hash) + ELEC_CON_START_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getElecConStart()));
+    hash = (37 * hash) + ELEC_CON_END_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getElecConEnd()));
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -543,6 +716,13 @@ private static final long serialVersionUID = 0L;
       elevationLossM_ = 0D;
       avgGradientPercent_ = 0D;
       microMomentsJson_ = "";
+      fuelPctStart_ = 0D;
+      fuelPctEnd_ = 0D;
+      fuelConStart_ = 0D;
+      fuelConEnd_ = 0D;
+      fuelPricePerL_ = 0D;
+      elecConStart_ = 0D;
+      elecConEnd_ = 0D;
       return this;
     }
 
@@ -610,6 +790,27 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000200) != 0)) {
         result.microMomentsJson_ = microMomentsJson_;
       }
+      if (((from_bitField0_ & 0x00000400) != 0)) {
+        result.fuelPctStart_ = fuelPctStart_;
+      }
+      if (((from_bitField0_ & 0x00000800) != 0)) {
+        result.fuelPctEnd_ = fuelPctEnd_;
+      }
+      if (((from_bitField0_ & 0x00001000) != 0)) {
+        result.fuelConStart_ = fuelConStart_;
+      }
+      if (((from_bitField0_ & 0x00002000) != 0)) {
+        result.fuelConEnd_ = fuelConEnd_;
+      }
+      if (((from_bitField0_ & 0x00004000) != 0)) {
+        result.fuelPricePerL_ = fuelPricePerL_;
+      }
+      if (((from_bitField0_ & 0x00008000) != 0)) {
+        result.elecConStart_ = elecConStart_;
+      }
+      if (((from_bitField0_ & 0x00010000) != 0)) {
+        result.elecConEnd_ = elecConEnd_;
+      }
       result.bitField0_ |= to_bitField0_;
     }
 
@@ -656,6 +857,27 @@ private static final long serialVersionUID = 0L;
         microMomentsJson_ = other.microMomentsJson_;
         bitField0_ |= 0x00000200;
         onChanged();
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelPctStart()) != 0) {
+        setFuelPctStart(other.getFuelPctStart());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelPctEnd()) != 0) {
+        setFuelPctEnd(other.getFuelPctEnd());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelConStart()) != 0) {
+        setFuelConStart(other.getFuelConStart());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelConEnd()) != 0) {
+        setFuelConEnd(other.getFuelConEnd());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelPricePerL()) != 0) {
+        setFuelPricePerL(other.getFuelPricePerL());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getElecConStart()) != 0) {
+        setElecConStart(other.getElecConStart());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getElecConEnd()) != 0) {
+        setElecConEnd(other.getElecConEnd());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -735,6 +957,41 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000200;
               break;
             } // case 82
+            case 89: {
+              fuelPctStart_ = input.readDouble();
+              bitField0_ |= 0x00000400;
+              break;
+            } // case 89
+            case 97: {
+              fuelPctEnd_ = input.readDouble();
+              bitField0_ |= 0x00000800;
+              break;
+            } // case 97
+            case 105: {
+              fuelConStart_ = input.readDouble();
+              bitField0_ |= 0x00001000;
+              break;
+            } // case 105
+            case 113: {
+              fuelConEnd_ = input.readDouble();
+              bitField0_ |= 0x00002000;
+              break;
+            } // case 113
+            case 121: {
+              fuelPricePerL_ = input.readDouble();
+              bitField0_ |= 0x00004000;
+              break;
+            } // case 121
+            case 129: {
+              elecConStart_ = input.readDouble();
+              bitField0_ |= 0x00008000;
+              break;
+            } // case 129
+            case 137: {
+              elecConEnd_ = input.readDouble();
+              bitField0_ |= 0x00010000;
+              break;
+            } // case 137
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1217,6 +1474,245 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       microMomentsJson_ = value;
       bitField0_ |= 0x00000200;
+      onChanged();
+      return this;
+    }
+
+    private double fuelPctStart_ ;
+    /**
+     * <pre>
+     * PHEV fuel leg detail (BladeWatch-fpdz). The raw lifetime counters live here, in the
+     * detail view only. -1 means the reading was never taken; 0 is a real measurement.
+     * </pre>
+     *
+     * <code>double fuel_pct_start = 11 [json_name = "fuelPctStart"];</code>
+     * @return The fuelPctStart.
+     */
+    @java.lang.Override
+    public double getFuelPctStart() {
+      return fuelPctStart_;
+    }
+    /**
+     * <pre>
+     * PHEV fuel leg detail (BladeWatch-fpdz). The raw lifetime counters live here, in the
+     * detail view only. -1 means the reading was never taken; 0 is a real measurement.
+     * </pre>
+     *
+     * <code>double fuel_pct_start = 11 [json_name = "fuelPctStart"];</code>
+     * @param value The fuelPctStart to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelPctStart(double value) {
+
+      fuelPctStart_ = value;
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * PHEV fuel leg detail (BladeWatch-fpdz). The raw lifetime counters live here, in the
+     * detail view only. -1 means the reading was never taken; 0 is a real measurement.
+     * </pre>
+     *
+     * <code>double fuel_pct_start = 11 [json_name = "fuelPctStart"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelPctStart() {
+      bitField0_ = (bitField0_ & ~0x00000400);
+      fuelPctStart_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double fuelPctEnd_ ;
+    /**
+     * <code>double fuel_pct_end = 12 [json_name = "fuelPctEnd"];</code>
+     * @return The fuelPctEnd.
+     */
+    @java.lang.Override
+    public double getFuelPctEnd() {
+      return fuelPctEnd_;
+    }
+    /**
+     * <code>double fuel_pct_end = 12 [json_name = "fuelPctEnd"];</code>
+     * @param value The fuelPctEnd to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelPctEnd(double value) {
+
+      fuelPctEnd_ = value;
+      bitField0_ |= 0x00000800;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double fuel_pct_end = 12 [json_name = "fuelPctEnd"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelPctEnd() {
+      bitField0_ = (bitField0_ & ~0x00000800);
+      fuelPctEnd_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double fuelConStart_ ;
+    /**
+     * <code>double fuel_con_start = 13 [json_name = "fuelConStart"];</code>
+     * @return The fuelConStart.
+     */
+    @java.lang.Override
+    public double getFuelConStart() {
+      return fuelConStart_;
+    }
+    /**
+     * <code>double fuel_con_start = 13 [json_name = "fuelConStart"];</code>
+     * @param value The fuelConStart to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelConStart(double value) {
+
+      fuelConStart_ = value;
+      bitField0_ |= 0x00001000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double fuel_con_start = 13 [json_name = "fuelConStart"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelConStart() {
+      bitField0_ = (bitField0_ & ~0x00001000);
+      fuelConStart_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double fuelConEnd_ ;
+    /**
+     * <code>double fuel_con_end = 14 [json_name = "fuelConEnd"];</code>
+     * @return The fuelConEnd.
+     */
+    @java.lang.Override
+    public double getFuelConEnd() {
+      return fuelConEnd_;
+    }
+    /**
+     * <code>double fuel_con_end = 14 [json_name = "fuelConEnd"];</code>
+     * @param value The fuelConEnd to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelConEnd(double value) {
+
+      fuelConEnd_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double fuel_con_end = 14 [json_name = "fuelConEnd"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelConEnd() {
+      bitField0_ = (bitField0_ & ~0x00002000);
+      fuelConEnd_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double fuelPricePerL_ ;
+    /**
+     * <code>double fuel_price_per_l = 15 [json_name = "fuelPricePerL"];</code>
+     * @return The fuelPricePerL.
+     */
+    @java.lang.Override
+    public double getFuelPricePerL() {
+      return fuelPricePerL_;
+    }
+    /**
+     * <code>double fuel_price_per_l = 15 [json_name = "fuelPricePerL"];</code>
+     * @param value The fuelPricePerL to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelPricePerL(double value) {
+
+      fuelPricePerL_ = value;
+      bitField0_ |= 0x00004000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double fuel_price_per_l = 15 [json_name = "fuelPricePerL"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelPricePerL() {
+      bitField0_ = (bitField0_ & ~0x00004000);
+      fuelPricePerL_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double elecConStart_ ;
+    /**
+     * <code>double elec_con_start = 16 [json_name = "elecConStart"];</code>
+     * @return The elecConStart.
+     */
+    @java.lang.Override
+    public double getElecConStart() {
+      return elecConStart_;
+    }
+    /**
+     * <code>double elec_con_start = 16 [json_name = "elecConStart"];</code>
+     * @param value The elecConStart to set.
+     * @return This builder for chaining.
+     */
+    public Builder setElecConStart(double value) {
+
+      elecConStart_ = value;
+      bitField0_ |= 0x00008000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double elec_con_start = 16 [json_name = "elecConStart"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearElecConStart() {
+      bitField0_ = (bitField0_ & ~0x00008000);
+      elecConStart_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double elecConEnd_ ;
+    /**
+     * <code>double elec_con_end = 17 [json_name = "elecConEnd"];</code>
+     * @return The elecConEnd.
+     */
+    @java.lang.Override
+    public double getElecConEnd() {
+      return elecConEnd_;
+    }
+    /**
+     * <code>double elec_con_end = 17 [json_name = "elecConEnd"];</code>
+     * @param value The elecConEnd to set.
+     * @return This builder for chaining.
+     */
+    public Builder setElecConEnd(double value) {
+
+      elecConEnd_ = value;
+      bitField0_ |= 0x00010000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double elec_con_end = 17 [json_name = "elecConEnd"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearElecConEnd() {
+      bitField0_ = (bitField0_ & ~0x00010000);
+      elecConEnd_ = 0D;
       onChanged();
       return this;
     }

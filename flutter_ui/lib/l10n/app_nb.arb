@@ -712,6 +712,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "Drivstoffrekkevidde: {km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "Ikke nok data ennå",
   "@trips_range_no_data": {},
   "trips_dna_title": "Kjøre-DNA",
@@ -732,6 +738,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "Strømpris",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "Drivstoffpris (per liter)",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "Tankvolum (liter)",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "Distanseenhet",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "Lagringsplassering",
@@ -789,6 +799,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "Utetemp.",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "Drivstoff",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "Drivstoffkostnad",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "Strømkostnad",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "Stigning",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "Kjørepoeng",

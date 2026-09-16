@@ -195,6 +195,65 @@ public class AuthManagerTest {
         return s.substring(0, s.length() - 1) + flipped;
     }
 
+    // --- device token validation: the UNAUTHENTICATED POST /auth/token path ---
+
+    @Test
+    public void validateDeviceTokenAcceptsOnlyTheExactToken() {
+        AuthManager.setTestState(makeState("byd-test", "s3cret", 0));
+
+        Assert.assertTrue("the exact token must validate",
+                AuthManager.validateDeviceToken("byd-test-s3cret"));
+
+        // Every near-miss must fail. These are the shapes a timing oracle would walk through:
+        // a correct prefix of increasing length, and a correct length with one byte wrong.
+        Assert.assertFalse(AuthManager.validateDeviceToken("byd-test-s3cre"));
+        Assert.assertFalse(AuthManager.validateDeviceToken("byd-test-s3cretX"));
+        Assert.assertFalse(AuthManager.validateDeviceToken("byd-test-s3crex"));
+        Assert.assertFalse(AuthManager.validateDeviceToken("byd-test-"));
+        Assert.assertFalse(AuthManager.validateDeviceToken("b"));
+        Assert.assertFalse(AuthManager.validateDeviceToken("BYD-TEST-S3CRET"));
+    }
+
+    @Test
+    public void validateDeviceTokenRejectsEmptyAndNull() {
+        AuthManager.setTestState(makeState("byd-test", "s3cret", 0));
+
+        Assert.assertFalse(AuthManager.validateDeviceToken(null));
+        Assert.assertFalse(AuthManager.validateDeviceToken(""));
+    }
+
+    /**
+     * With no auth state there is nothing to compare against, so every token must be refused.
+     * Returning true here would turn an uninitialised device into an open one.
+     */
+    @Test
+    public void validateDeviceTokenRejectsEverythingWithoutState() {
+        AuthManager.clearTestState();
+
+        Assert.assertFalse(AuthManager.validateDeviceToken("anything"));
+    }
+
+    /**
+     * A blank stored secret must not make the token "byd-test-" valid.
+     *
+     * getDeviceToken() is deviceId + "-" + deviceSecret, so a blank secret produces a token
+     * that is non-empty yet guessable by anyone who has seen the device id — which the login
+     * page displays.
+     *
+     * getState() re-initialises rather than returning such a state, so this is defence in
+     * depth, not a demonstrated break. It is pinned because AuthState.fromJson sets
+     * deviceSecret = "" BY DESIGN (the secret lives in the secret store, not the config), so
+     * blank-secret states genuinely exist and only one caller separates them from this check.
+     */
+    @Test
+    public void validateDeviceTokenRejectsWhenTheStoredSecretIsBlank() {
+        AuthManager.AuthState blank = makeState("byd-test", "", 0);
+        AuthManager.setTestState(blank);
+
+        Assert.assertFalse(AuthManager.validateDeviceToken("byd-test-"));
+        Assert.assertFalse(AuthManager.validateDeviceToken(""));
+    }
+
     private AuthManager.AuthState makeState(String deviceId, String secret, long epoch) {
         AuthManager.AuthState state = new AuthManager.AuthState();
         state.deviceId = deviceId;

@@ -2299,6 +2299,11 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Autonomia a carburante: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Dati non ancora sufficienti';
 
   @override
@@ -2327,6 +2332,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Tariffa elettrica';
+
+  @override
+  String get trips_storage_fuel_price_label =>
+      'Prezzo del carburante (al litro)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Capacità del serbatoio (litri)';
 
   @override
   String get trips_storage_distance_unit_label => 'Unità di distanza';
@@ -2403,6 +2416,15 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Temp. esterna';
+
+  @override
+  String get trips_detail_fuel_used => 'Carburante';
+
+  @override
+  String get trips_detail_fuel_cost => 'Costo carburante';
+
+  @override
+  String get trips_detail_electric_cost => 'Costo elettrico';
 
   @override
   String get trips_detail_elev_gain => 'Dislivello +';

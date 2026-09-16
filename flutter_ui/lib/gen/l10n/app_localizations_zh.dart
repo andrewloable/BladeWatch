@@ -2198,6 +2198,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return '燃油续航：$km';
+  }
+
+  @override
   String get trips_range_no_data => '数据尚不足';
 
   @override
@@ -2226,6 +2231,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => '电价';
+
+  @override
+  String get trips_storage_fuel_price_label => '燃油价格（每升）';
+
+  @override
+  String get trips_storage_tank_capacity_label => '油箱容量（升）';
 
   @override
   String get trips_storage_distance_unit_label => '距离单位';
@@ -2301,6 +2312,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => '外部温度';
+
+  @override
+  String get trips_detail_fuel_used => '燃油';
+
+  @override
+  String get trips_detail_fuel_cost => '燃油费用';
+
+  @override
+  String get trips_detail_electric_cost => '电费';
 
   @override
   String get trips_detail_elev_gain => '爬升高度';
@@ -4860,6 +4880,11 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return '燃油续航：$km';
+  }
+
+  @override
   String get trips_range_no_data => '数据尚不足';
 
   @override
@@ -4888,6 +4913,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get trips_storage_rate_label => '电价';
+
+  @override
+  String get trips_storage_fuel_price_label => '燃油价格（每升）';
+
+  @override
+  String get trips_storage_tank_capacity_label => '油箱容量（升）';
 
   @override
   String get trips_storage_distance_unit_label => '距离单位';
@@ -4963,6 +4994,15 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get trips_detail_ext_temp => '外部温度';
+
+  @override
+  String get trips_detail_fuel_used => '燃油';
+
+  @override
+  String get trips_detail_fuel_cost => '燃油费用';
+
+  @override
+  String get trips_detail_electric_cost => '电费';
 
   @override
   String get trips_detail_elev_gain => '爬升高度';
@@ -7523,6 +7563,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return '燃油續航：$km';
+  }
+
+  @override
   String get trips_range_no_data => '資料尚不足';
 
   @override
@@ -7551,6 +7596,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get trips_storage_rate_label => '電價';
+
+  @override
+  String get trips_storage_fuel_price_label => '燃油價格（每公升）';
+
+  @override
+  String get trips_storage_tank_capacity_label => '油箱容量（公升）';
 
   @override
   String get trips_storage_distance_unit_label => '距離單位';
@@ -7626,6 +7677,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get trips_detail_ext_temp => '外部溫度';
+
+  @override
+  String get trips_detail_fuel_used => '燃油';
+
+  @override
+  String get trips_detail_fuel_cost => '燃油費用';
+
+  @override
+  String get trips_detail_electric_cost => '電費';
 
   @override
   String get trips_detail_elev_gain => '爬升高度';

@@ -2292,6 +2292,11 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Autonomia a combustível: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Ainda não há dados suficientes';
 
   @override
@@ -2320,6 +2325,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Tarifa de eletricidade';
+
+  @override
+  String get trips_storage_fuel_price_label =>
+      'Preço do combustível (por litro)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Capacidade do tanque (litros)';
 
   @override
   String get trips_storage_distance_unit_label => 'Unidade de distância';
@@ -2396,6 +2409,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Temp. exterior';
+
+  @override
+  String get trips_detail_fuel_used => 'Combustível';
+
+  @override
+  String get trips_detail_fuel_cost => 'Custo de combustível';
+
+  @override
+  String get trips_detail_electric_cost => 'Custo de eletricidade';
 
   @override
   String get trips_detail_elev_gain => 'Ganho de altitude';
@@ -5063,6 +5085,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Autonomia a combustível: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Ainda não há dados suficientes';
 
   @override
@@ -5091,6 +5118,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get trips_storage_rate_label => 'Tarifa de eletricidade';
+
+  @override
+  String get trips_storage_fuel_price_label =>
+      'Preço do combustível (por litro)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Capacidade do tanque (litros)';
 
   @override
   String get trips_storage_distance_unit_label => 'Unidade de distância';
@@ -5167,6 +5202,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get trips_detail_ext_temp => 'Temp. externa';
+
+  @override
+  String get trips_detail_fuel_used => 'Combustível';
+
+  @override
+  String get trips_detail_fuel_cost => 'Custo de combustível';
+
+  @override
+  String get trips_detail_electric_cost => 'Custo de eletricidade';
 
   @override
   String get trips_detail_elev_gain => 'Ganho de altitude';

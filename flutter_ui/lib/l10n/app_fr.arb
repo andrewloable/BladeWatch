@@ -712,6 +712,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "Autonomie carburant : {km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "Pas encore assez de données",
   "@trips_range_no_data": {},
   "trips_dna_title": "ADN de conduite",
@@ -732,6 +738,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "Tarif de l’électricité",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "Prix du carburant (par litre)",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "Capacité du réservoir (litres)",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "Unité de distance",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "Emplacement de stockage",
@@ -789,6 +799,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "Temp. ext.",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "Carburant",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "Coût carburant",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "Coût électrique",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "Dénivelé +",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "Scores de conduite",

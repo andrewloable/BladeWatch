@@ -4035,6 +4035,12 @@ abstract class AppLocalizations {
   /// **'BYD estimate: {km}'**
   String trips_range_byd_estimate(Object km);
 
+  /// No description provided for @trips_range_fuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel range: {km}'**
+  String trips_range_fuel(Object km);
+
   /// No description provided for @trips_range_no_data.
   ///
   /// In en, this message translates to:
@@ -4094,6 +4100,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Electricity Rate'**
   String get trips_storage_rate_label;
+
+  /// No description provided for @trips_storage_fuel_price_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel Price (per litre)'**
+  String get trips_storage_fuel_price_label;
+
+  /// No description provided for @trips_storage_tank_capacity_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel Tank Capacity (litres)'**
+  String get trips_storage_tank_capacity_label;
 
   /// No description provided for @trips_storage_distance_unit_label.
   ///
@@ -4231,6 +4249,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ext Temp'**
   String get trips_detail_ext_temp;
+
+  /// No description provided for @trips_detail_fuel_used.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel Used'**
+  String get trips_detail_fuel_used;
+
+  /// No description provided for @trips_detail_fuel_cost.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel Cost'**
+  String get trips_detail_fuel_cost;
+
+  /// No description provided for @trips_detail_electric_cost.
+  ///
+  /// In en, this message translates to:
+  /// **'Electric Cost'**
+  String get trips_detail_electric_cost;
 
   /// No description provided for @trips_detail_elev_gain.
   ///

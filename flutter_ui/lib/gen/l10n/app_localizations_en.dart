@@ -2262,6 +2262,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Fuel range: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Not enough data yet';
 
   @override
@@ -2290,6 +2295,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Electricity Rate';
+
+  @override
+  String get trips_storage_fuel_price_label => 'Fuel Price (per litre)';
+
+  @override
+  String get trips_storage_tank_capacity_label => 'Fuel Tank Capacity (litres)';
 
   @override
   String get trips_storage_distance_unit_label => 'Distance Unit';
@@ -2366,6 +2377,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Ext Temp';
+
+  @override
+  String get trips_detail_fuel_used => 'Fuel Used';
+
+  @override
+  String get trips_detail_fuel_cost => 'Fuel Cost';
+
+  @override
+  String get trips_detail_electric_cost => 'Electric Cost';
 
   @override
   String get trips_detail_elev_gain => 'Elev Gain';

@@ -27,6 +27,8 @@ import type {
   TripConfig,
   TripStorageInfo,
 } from '../../../gen/bladewatch/v1/trips_pb';
+import { CURRENCY_CODES, DEFAULT_CURRENCY, formatMoney, optionsFor } from '../../util/currency';
+import { showFuelSettings } from '../../util/drivetrain';
 
 /**
  * Trips — 1:1 parity with the native Trips screen
@@ -63,6 +65,14 @@ interface PeriodSummary {
 interface RangeEstimate {
   estimatedKm: number;
   builtInKm: number;
+  /**
+   * Predicted PHEV fuel range. 0 when there is nothing to show — the daemon returns -1
+   * when no tank capacity is configured (BYD exposes no tank size, and a guessed range on a
+   * dashboard is worse than a blank one), and the field is simply absent on a BEV.
+   */
+  fuelRangeKm: number;
+  /** The car's own fuel-range readout, for comparison. The fuel twin of `builtInKm`. */
+  builtInFuelRangeKm: number;
 }
 
 const KM_PER_MI = 0.621371;
@@ -106,8 +116,39 @@ export default class TripsComponent implements OnInit, OnDestroy {
 
   // ---- storage tab editable form ------------------------------------------
   readonly formEnabled = signal(false);
-  readonly formCurrency = signal('USD');
+  readonly formCurrency = signal(DEFAULT_CURRENCY);
+  /**
+   * The codes the picker offers. Computed rather than the raw catalogue so a legacy stored
+   * value (a bare symbol from a config predating the picker) is always among the options —
+   * otherwise the select renders with nothing selected and shows the owner a currency that
+   * is not what is stored.
+   */
+  readonly currencyCodes = computed(() => optionsFor(this.formCurrency(), CURRENCY_CODES));
+  /** Template helper — costs render through ICU, never by string concatenation. */
+  readonly money = formatMoney;
   readonly formRate = signal('0');
+  // PHEV pricing. Both default to '0' meaning NOT CONFIGURED, matching the daemon:
+  // a 0 fuel price still records the litres burned, it just cannot cost them, and a
+  // 0 tank capacity means no fuel range can be predicted (BYD exposes no tank size,
+  // so a guessed default would put a wrong range on the dashboard).
+  readonly formFuelPrice = signal('0');
+  readonly formTankCapacity = signal('0');
+  /** Live drivetrain from GetConfig — not a stored setting. See [showFuelSettings]. */
+  readonly isPhev = signal(false);
+  /**
+   * Whether the fuel settings are meaningful for THIS car.
+   *
+   * A BEV has no tank, so "Fuel Price (per litre)" and "Fuel Tank Capacity" are not merely
+   * unused there — they read as a bug in the app.
+   *
+   * Deliberately NOT a bare `isPhev()`. A value that is already configured stays visible so it
+   * can be cleared: the drivetrain probe returns false while the HAL is warming up, and a
+   * PHEV owner who had set a fuel price must never find the field gone with the value still
+   * quietly applied. Same principle as keeping a legacy currency in the picker.
+   */
+  readonly showFuelSettings = computed(() =>
+    showFuelSettings(this.isPhev(), this.formFuelPrice(), this.formTankCapacity()),
+  );
   readonly formDistanceUnit = signal<DistanceUnit>('km');
   readonly formStorageType = signal('INTERNAL');
   readonly saving = signal(false);
@@ -255,8 +296,11 @@ export default class TripsComponent implements OnInit, OnDestroy {
 
   private seedConfigForm(cfg: TripConfig): void {
     this.formEnabled.set(cfg.enabled);
-    this.formCurrency.set(cfg.currency || 'USD');
+    this.formCurrency.set(cfg.currency || DEFAULT_CURRENCY);
     this.formRate.set((cfg.electricityRate ?? 0).toFixed(4));
+    this.formFuelPrice.set((cfg.fuelPricePerL ?? 0).toFixed(2));
+    this.formTankCapacity.set((cfg.fuelTankCapacityL ?? 0).toFixed(1));
+    this.isPhev.set(cfg.isPhev ?? false);
     this.formDistanceUnit.set(cfg.distanceUnit === 'mi' ? 'mi' : 'km');
   }
 
@@ -314,12 +358,20 @@ export default class TripsComponent implements OnInit, OnDestroy {
       return null;
     }
     const r = (parsed['range'] as Record<string, any>) ?? parsed;
-    const estimatedKm = Number(r['predictedRangeKm'] ?? 0);
-    const builtInKm = Number(r['builtInRangeKm'] ?? 0);
-    if (!Number.isFinite(estimatedKm) || estimatedKm <= 0) {
-      return builtInKm > 0 ? { estimatedKm: 0, builtInKm } : null;
-    }
-    return { estimatedKm, builtInKm: Number.isFinite(builtInKm) ? builtInKm : 0 };
+    const num = (v: unknown): number => {
+      const n = Number(v ?? 0);
+      // Covers both the daemon's -1 "cannot predict" sentinel and a missing field.
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+    const estimatedKm = num(r['predictedRangeKm']);
+    const builtInKm = num(r['builtInRangeKm']);
+    const fuelRangeKm = num(r['fuelRangeKm']);
+    const builtInFuelRangeKm = num(r['builtInFuelRangeKm']);
+    // Null only when there is NOTHING to show. The fuel figures count: a PHEV can have a
+    // learned fuel range before it has enough electric samples, and returning null there
+    // would collapse the whole card to "not enough data" while a real number was available.
+    if (!estimatedKm && !builtInKm && !fuelRangeKm && !builtInFuelRangeKm) return null;
+    return { estimatedKm, builtInKm, fuelRangeKm, builtInFuelRangeKm };
   }
 
   // ---- trip detail --------------------------------------------------------
@@ -494,7 +546,9 @@ export default class TripsComponent implements OnInit, OnDestroy {
   async applyStorageSettings(): Promise<void> {
     this.saving.set(true);
     const rate = Number.parseFloat(this.formRate()) || 0;
-    const currency = this.formCurrency().trim() || 'USD';
+    const fuelPrice = Number.parseFloat(this.formFuelPrice()) || 0;
+    const tankCapacity = Number.parseFloat(this.formTankCapacity()) || 0;
+    const currency = this.formCurrency().trim() || DEFAULT_CURRENCY;
     const distanceUnit = this.formDistanceUnit();
     const enabled = this.formEnabled();
     const storageType = this.formStorageType();
@@ -505,6 +559,13 @@ export default class TripsComponent implements OnInit, OnDestroy {
         hasEnabled: true,
         electricityRate: rate,
         hasElectricityRate: true,
+        // Sent with presence companions for the same reason as the rate above:
+        // Connect omits default scalars, so a deliberate 0 ("not configured")
+        // would otherwise be indistinguishable from "field not sent".
+        fuelPricePerL: fuelPrice,
+        hasFuelPricePerL: true,
+        fuelTankCapacityL: tankCapacity,
+        hasFuelTankCapacityL: true,
         currency,
         distanceUnit,
       });

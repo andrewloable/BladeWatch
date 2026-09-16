@@ -211,6 +211,61 @@ Trip functionality includes:
 - Range analytics.
 - Trip config.
 - Trip storage management.
+- PHEV fuel leg: litres burned, fuel cost, and a dual-leg trip cost.
+
+### PHEV trips
+
+On a plug-in hybrid a trip records the petrol leg alongside the electric one, and
+`tripCost` becomes `electricCost + fuelCost`. On a BEV `fuelCost` is always 0, so
+`tripCost` is unchanged from the electric-only figure it has always been.
+
+Litres come from the delta between two readings of the car's LIFETIME fuel counter,
+never from tank percent — percent has no litre scale without a tank capacity, and BYD
+local data does not expose one.
+
+The trip detail view in **both** UIs shows the breakdown — litres burned, fuel cost and
+electric cost — alongside the combined `tripCost`. It appears only when the trip actually
+recorded the fuel counter at both ends (`hasFuelData`), so a BEV renders exactly as it
+always has rather than gaining three permanent zeroes. That flag is derived from the
+STORED trip, never from a live drivetrain probe, so a historical trip looks the same
+forever even on a car whose drivetrain reads differently today.
+
+A PHEV leg driven entirely on battery shows `0.0 L` rather than hiding the rows: the
+counter was read and its answer was zero, which is a measurement, and hiding it would
+make a real result indistinguishable from a BEV.
+
+These are settable in **both** UIs — the web settings and the in-car Trips screen — so a
+driver on the head unit can price a PHEV trip without reaching for a browser over the tunnel.
+The currency is chosen from the full ISO 4217 list in both.
+
+**On a BEV the fuel settings are not shown at all.** `TripConfig` carries an `is_phev` flag —
+a live drivetrain read, not a stored setting — and both UIs hide the fuel price and tank
+capacity when it is false. A car with no tank offering "Fuel Tank Capacity (litres)" reads as
+a bug in the app, not as an unused option.
+
+The gate is deliberately not a bare `is_phev`: a value that is ALREADY configured keeps the
+fields visible so it can be cleared. The drivetrain probe returns false while the HAL is warming
+up, and an owner must never be left with a fuel price that is still applied by a field that has
+disappeared.
+
+Two values are configurable and both default to 0 meaning "not configured":
+
+- `fuelPricePerL` — without it the litres are still recorded, just not costed.
+- `fuelTankCapacityL` — without it no fuel RANGE can be predicted. Nothing is guessed
+  here: a wrong range figure on a dashboard is worse than a blank one, because the
+  driver acts on it. The car's own `fuelRangeKm` is still reported for comparison.
+
+Fuel range is reported separately from electric range and never summed into it: the two
+are drawn from different tanks with different confidence, and a combined number would
+hide which one is about to run out.
+
+Both UIs render it on the range card, under the electric figure, and only when it could
+actually be computed: the daemon returns -1 when no tank capacity is configured, and that
+sentinel is hidden rather than shown as a range. The car's own `builtInFuelRangeKm` appears
+beside it for comparison, mirroring how the electric estimate shows BYD's own number.
+
+A PHEV can learn a fuel rate before it has enough electric samples, so the fuel figure
+renders even when the electric estimate is still empty.
 
 ## Performance and Telemetry
 

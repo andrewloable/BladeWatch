@@ -92,4 +92,51 @@ public interface TripDetailOrBuilder extends
    */
   com.google.protobuf.ByteString
       getMicroMomentsJsonBytes();
+
+  /**
+   * <pre>
+   * PHEV fuel leg detail (BladeWatch-fpdz). The raw lifetime counters live here, in the
+   * detail view only. -1 means the reading was never taken; 0 is a real measurement.
+   * </pre>
+   *
+   * <code>double fuel_pct_start = 11 [json_name = "fuelPctStart"];</code>
+   * @return The fuelPctStart.
+   */
+  double getFuelPctStart();
+
+  /**
+   * <code>double fuel_pct_end = 12 [json_name = "fuelPctEnd"];</code>
+   * @return The fuelPctEnd.
+   */
+  double getFuelPctEnd();
+
+  /**
+   * <code>double fuel_con_start = 13 [json_name = "fuelConStart"];</code>
+   * @return The fuelConStart.
+   */
+  double getFuelConStart();
+
+  /**
+   * <code>double fuel_con_end = 14 [json_name = "fuelConEnd"];</code>
+   * @return The fuelConEnd.
+   */
+  double getFuelConEnd();
+
+  /**
+   * <code>double fuel_price_per_l = 15 [json_name = "fuelPricePerL"];</code>
+   * @return The fuelPricePerL.
+   */
+  double getFuelPricePerL();
+
+  /**
+   * <code>double elec_con_start = 16 [json_name = "elecConStart"];</code>
+   * @return The elecConStart.
+   */
+  double getElecConStart();
+
+  /**
+   * <code>double elec_con_end = 17 [json_name = "elecConEnd"];</code>
+   * @return The elecConEnd.
+   */
+  double getElecConEnd();
 }

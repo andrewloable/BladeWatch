@@ -2216,6 +2216,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return '연료 주행가능 거리: $km';
+  }
+
+  @override
   String get trips_range_no_data => '아직 데이터가 충분하지 않습니다';
 
   @override
@@ -2244,6 +2249,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => '전기 요금';
+
+  @override
+  String get trips_storage_fuel_price_label => '연료 가격 (리터당)';
+
+  @override
+  String get trips_storage_tank_capacity_label => '연료 탱크 용량 (리터)';
 
   @override
   String get trips_storage_distance_unit_label => '거리 단위';
@@ -2319,6 +2330,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => '외기 온도';
+
+  @override
+  String get trips_detail_fuel_used => '연료';
+
+  @override
+  String get trips_detail_fuel_cost => '연료비';
+
+  @override
+  String get trips_detail_electric_cost => '전기요금';
 
   @override
   String get trips_detail_elev_gain => '고도 상승';

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, from, map, tap, type Observable } from 'rxjs';
 import { ConnectError, Code } from '@connectrpc/connect';
 import { ConnectClients } from '../connect/connect-clients';
-import type { GetAuthStatusResponse } from '../../../../gen/bladewatch/v1/auth_pb';
+import type { GetAuthStatusResponse } from '../../../gen/bladewatch/v1/auth_pb';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

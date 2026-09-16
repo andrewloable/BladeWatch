@@ -84,6 +84,36 @@ It initializes and reads from device areas including:
 
 The collector keeps a thread-safe `BydVehicleData` snapshot for other app systems.
 
+### Drivetrain detection (BEV vs PHEV)
+
+`BydDataCollector.computeIsPhev()`, exposed as `isPhevVehicle()`. `getEnergyType` is
+unreliable — observed returning 1 on both BEV and PHEV firmware — so it is not used as
+the discriminator. The verdict is cached with a 60s TTL and resolved in this order:
+
+1. **Pack capacity.** A known nominal pack strictly below `PHEV_MAX_NOMINAL_KWH`
+   (30 kWh) is a PHEV outright. The smallest BYD BEV is the Atto 3 at 49.9 kWh, so
+   sub-30 kWh uniquely names a PHEV across the catalogue.
+2. **Both fuel HAL signals real** (`getFuelPercentageValue` and
+   `getFuelDrivingRangeValue`) → PHEV.
+3. **Both at a BMS sentinel** (255/2046/etc) → BEV.
+4. **One real, one sentinel** → PHEV with an empty tank or zero range, cached on a
+   SHORT TTL so a transient HAL miss re-probes in seconds.
+
+**Capacity is consulted FIRST and that ordering is the whole point.** The fuel HAL
+returns BMS sentinels during firmware warm-up, so on a PHEV that has not finished
+booting both signals read as sentinel, rule 3 concludes BEV, and that verdict is cached
+for a full minute — during which fuel percent disappears and fuel-aware trip logic sees
+nothing. Overdrive shipped exactly that regression in v17 and fixed it by promoting the
+capacity gate. A known pack size is simply stronger evidence than a signal that is
+allowed to lie while it warms up.
+
+A fuel percent of `0` is deliberately NOT counted as a "real" reading: a BEV that
+returns 0 instead of a sentinel would otherwise classify as a PHEV.
+
+The 30 kWh threshold is **inherited from Overdrive and was not re-derived on this car**.
+The same rule also appears in `VehicleDataMonitor.isPhevVehicle` as a startup fallback
+for a different caller; if one moves, move both.
+
 ## Polling and Listeners
 
 The collector combines initial reads, polling, and listeners.

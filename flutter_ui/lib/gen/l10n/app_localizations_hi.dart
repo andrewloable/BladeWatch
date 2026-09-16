@@ -2273,6 +2273,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'ईंधन रेंज: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'अभी पर्याप्त डेटा नहीं है';
 
   @override
@@ -2301,6 +2306,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'बिजली दर';
+
+  @override
+  String get trips_storage_fuel_price_label => 'ईंधन मूल्य (प्रति लीटर)';
+
+  @override
+  String get trips_storage_tank_capacity_label => 'ईंधन टैंक क्षमता (लीटर)';
 
   @override
   String get trips_storage_distance_unit_label => 'दूरी इकाई';
@@ -2377,6 +2388,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'बाहरी तापमान';
+
+  @override
+  String get trips_detail_fuel_used => 'ईंधन';
+
+  @override
+  String get trips_detail_fuel_cost => 'ईंधन लागत';
+
+  @override
+  String get trips_detail_electric_cost => 'बिजली लागत';
 
   @override
   String get trips_detail_elev_gain => 'ऊँचाई वृद्धि';

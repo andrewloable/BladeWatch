@@ -2279,6 +2279,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Yakıt menzili: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Henüz yeterli veri yok';
 
   @override
@@ -2307,6 +2312,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Elektrik tarifesi';
+
+  @override
+  String get trips_storage_fuel_price_label => 'Yakıt Fiyatı (litre başına)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Yakıt Deposu Kapasitesi (litre)';
 
   @override
   String get trips_storage_distance_unit_label => 'Mesafe birimi';
@@ -2383,6 +2395,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Dış sıcaklık';
+
+  @override
+  String get trips_detail_fuel_used => 'Yakıt';
+
+  @override
+  String get trips_detail_fuel_cost => 'Yakıt Maliyeti';
+
+  @override
+  String get trips_detail_electric_cost => 'Elektrik Maliyeti';
 
   @override
   String get trips_detail_elev_gain => 'Yükselti kazancı';

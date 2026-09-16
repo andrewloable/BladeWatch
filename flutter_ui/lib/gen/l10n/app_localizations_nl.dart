@@ -2283,6 +2283,11 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Brandstofbereik: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Nog niet genoeg gegevens';
 
   @override
@@ -2311,6 +2316,12 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Elektriciteitstarief';
+
+  @override
+  String get trips_storage_fuel_price_label => 'Brandstofprijs (per liter)';
+
+  @override
+  String get trips_storage_tank_capacity_label => 'Tankinhoud (liter)';
 
   @override
   String get trips_storage_distance_unit_label => 'Afstandseenheid';
@@ -2387,6 +2398,15 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Buitentemp.';
+
+  @override
+  String get trips_detail_fuel_used => 'Brandstof';
+
+  @override
+  String get trips_detail_fuel_cost => 'Brandstofkosten';
+
+  @override
+  String get trips_detail_electric_cost => 'Stroomkosten';
 
   @override
   String get trips_detail_elev_gain => 'Hoogtewinst';

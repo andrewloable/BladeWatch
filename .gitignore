@@ -35,9 +35,21 @@ screenshots/
 
 # Beads / Dolt files (added by bd init)
 .beads-credential-key
-# Dolt backup chunks — binary, large, regenerable; must never be committed to source
-.beads/backup/*.darc
-.beads/backup/oldgen/
+# The ENTIRE Dolt backup directory — not just the chunks.
+#
+# This used to ignore only `.beads/backup/*.darc` and `oldgen/`, which left
+# `manifest`, `backup_state.json` and `LOCK` tracked. That combination cannot work:
+# `manifest` is Dolt's INDEX of which .darc chunks make up the backup, so git
+# distributed an index for data git was refusing to carry. Any checkout that
+# restored `manifest` pointed the backup at chunks that do not exist on this
+# machine, and every `bd` command then failed with
+#   auto-backup failed: ... error opening table file: table file not found
+# Observed 2026-09-14 through 2026-09-16: the tracked manifest named 256 chunks
+# while only 191 were present.
+#
+# A backup is a per-machine artifact and is regenerable with `bd backup sync`, so
+# none of it belongs in source. Ignore the whole directory.
+.beads/backup/
 
 # Angular / Vite web UI
 web/node_modules/

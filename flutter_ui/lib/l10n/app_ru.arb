@@ -712,6 +712,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "Запас хода на топливе: {km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "Пока недостаточно данных",
   "@trips_range_no_data": {},
   "trips_dna_title": "ДНК вождения",
@@ -732,6 +738,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "Тариф на электроэнергию",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "Цена топлива (за литр)",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "Объём топливного бака (литры)",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "Единица расстояния",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "Место хранения",
@@ -789,6 +799,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "Наружная темп.",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "Топливо",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "Стоимость топлива",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "Стоимость электроэнергии",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "Набор высоты",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "Оценки вождения",

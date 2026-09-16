@@ -712,6 +712,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "燃油續航：{km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "資料尚不足",
   "@trips_range_no_data": {},
   "trips_dna_title": "駕駛 DNA",
@@ -732,6 +738,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "電價",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "燃油價格（每公升）",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "油箱容量（公升）",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "距離單位",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "儲存位置",
@@ -789,6 +799,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "外部溫度",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "燃油",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "燃油費用",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "電費",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "爬升高度",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "駕駛評分",

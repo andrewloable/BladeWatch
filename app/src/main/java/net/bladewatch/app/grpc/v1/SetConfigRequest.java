@@ -172,6 +172,60 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int FUEL_PRICE_PER_L_FIELD_NUMBER = 7;
+  private double fuelPricePerL_ = 0D;
+  /**
+   * <pre>
+   * PHEV pricing (BladeWatch-9uu6). New field numbers only, so a client built against the
+   * old schema still parses this message.
+   *
+   * Each value carries an explicit has_* companion, matching the pattern above. proto3 omits
+   * default scalars on the wire, so without the companion a deliberate 0 — which means "not
+   * configured" for both of these — would be indistinguishable from "field not sent", and the
+   * daemon would keep the previous value instead of clearing it.
+   * </pre>
+   *
+   * <code>double fuel_price_per_l = 7 [json_name = "fuelPricePerL"];</code>
+   * @return The fuelPricePerL.
+   */
+  @java.lang.Override
+  public double getFuelPricePerL() {
+    return fuelPricePerL_;
+  }
+
+  public static final int HAS_FUEL_PRICE_PER_L_FIELD_NUMBER = 8;
+  private boolean hasFuelPricePerL_ = false;
+  /**
+   * <code>bool has_fuel_price_per_l = 8 [json_name = "hasFuelPricePerL"];</code>
+   * @return The hasFuelPricePerL.
+   */
+  @java.lang.Override
+  public boolean getHasFuelPricePerL() {
+    return hasFuelPricePerL_;
+  }
+
+  public static final int FUEL_TANK_CAPACITY_L_FIELD_NUMBER = 9;
+  private double fuelTankCapacityL_ = 0D;
+  /**
+   * <code>double fuel_tank_capacity_l = 9 [json_name = "fuelTankCapacityL"];</code>
+   * @return The fuelTankCapacityL.
+   */
+  @java.lang.Override
+  public double getFuelTankCapacityL() {
+    return fuelTankCapacityL_;
+  }
+
+  public static final int HAS_FUEL_TANK_CAPACITY_L_FIELD_NUMBER = 10;
+  private boolean hasFuelTankCapacityL_ = false;
+  /**
+   * <code>bool has_fuel_tank_capacity_l = 10 [json_name = "hasFuelTankCapacityL"];</code>
+   * @return The hasFuelTankCapacityL.
+   */
+  @java.lang.Override
+  public boolean getHasFuelTankCapacityL() {
+    return hasFuelTankCapacityL_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -204,6 +258,18 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(distanceUnit_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 6, distanceUnit_);
     }
+    if (java.lang.Double.doubleToRawLongBits(fuelPricePerL_) != 0) {
+      output.writeDouble(7, fuelPricePerL_);
+    }
+    if (hasFuelPricePerL_ != false) {
+      output.writeBool(8, hasFuelPricePerL_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelTankCapacityL_) != 0) {
+      output.writeDouble(9, fuelTankCapacityL_);
+    }
+    if (hasFuelTankCapacityL_ != false) {
+      output.writeBool(10, hasFuelTankCapacityL_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -229,6 +295,22 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(distanceUnit_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(6, distanceUnit_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelPricePerL_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(7, fuelPricePerL_);
+    }
+    if (hasFuelPricePerL_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(8, hasFuelPricePerL_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelTankCapacityL_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(9, fuelTankCapacityL_);
+    }
+    if (hasFuelTankCapacityL_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(10, hasFuelTankCapacityL_);
     }
     return size;
   }
@@ -267,6 +349,16 @@ private static final long serialVersionUID = 0L;
         .equals(other.getCurrency())) return false;
     if (!getDistanceUnit()
         .equals(other.getDistanceUnit())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelPricePerL())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelPricePerL())) return false;
+    if (getHasFuelPricePerL()
+        != other.getHasFuelPricePerL()) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelTankCapacityL())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelTankCapacityL())) return false;
+    if (getHasFuelTankCapacityL()
+        != other.getHasFuelTankCapacityL()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -294,6 +386,18 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getCurrency().hashCode();
     hash = (37 * hash) + DISTANCE_UNIT_FIELD_NUMBER;
     hash = (53 * hash) + getDistanceUnit().hashCode();
+    hash = (37 * hash) + FUEL_PRICE_PER_L_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelPricePerL()));
+    hash = (37 * hash) + HAS_FUEL_PRICE_PER_L_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getHasFuelPricePerL());
+    hash = (37 * hash) + FUEL_TANK_CAPACITY_L_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelTankCapacityL()));
+    hash = (37 * hash) + HAS_FUEL_TANK_CAPACITY_L_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getHasFuelTankCapacityL());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -431,6 +535,10 @@ private static final long serialVersionUID = 0L;
       hasElectricityRate_ = false;
       currency_ = "";
       distanceUnit_ = "";
+      fuelPricePerL_ = 0D;
+      hasFuelPricePerL_ = false;
+      fuelTankCapacityL_ = 0D;
+      hasFuelTankCapacityL_ = false;
       return this;
     }
 
@@ -482,6 +590,18 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000020) != 0)) {
         result.distanceUnit_ = distanceUnit_;
       }
+      if (((from_bitField0_ & 0x00000040) != 0)) {
+        result.fuelPricePerL_ = fuelPricePerL_;
+      }
+      if (((from_bitField0_ & 0x00000080) != 0)) {
+        result.hasFuelPricePerL_ = hasFuelPricePerL_;
+      }
+      if (((from_bitField0_ & 0x00000100) != 0)) {
+        result.fuelTankCapacityL_ = fuelTankCapacityL_;
+      }
+      if (((from_bitField0_ & 0x00000200) != 0)) {
+        result.hasFuelTankCapacityL_ = hasFuelTankCapacityL_;
+      }
     }
 
     @java.lang.Override
@@ -517,6 +637,18 @@ private static final long serialVersionUID = 0L;
         distanceUnit_ = other.distanceUnit_;
         bitField0_ |= 0x00000020;
         onChanged();
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelPricePerL()) != 0) {
+        setFuelPricePerL(other.getFuelPricePerL());
+      }
+      if (other.getHasFuelPricePerL() != false) {
+        setHasFuelPricePerL(other.getHasFuelPricePerL());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelTankCapacityL()) != 0) {
+        setFuelTankCapacityL(other.getFuelTankCapacityL());
+      }
+      if (other.getHasFuelTankCapacityL() != false) {
+        setHasFuelTankCapacityL(other.getHasFuelTankCapacityL());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -574,6 +706,26 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000020;
               break;
             } // case 50
+            case 57: {
+              fuelPricePerL_ = input.readDouble();
+              bitField0_ |= 0x00000040;
+              break;
+            } // case 57
+            case 64: {
+              hasFuelPricePerL_ = input.readBool();
+              bitField0_ |= 0x00000080;
+              break;
+            } // case 64
+            case 73: {
+              fuelTankCapacityL_ = input.readDouble();
+              bitField0_ |= 0x00000100;
+              break;
+            } // case 73
+            case 80: {
+              hasFuelTankCapacityL_ = input.readBool();
+              bitField0_ |= 0x00000200;
+              break;
+            } // case 80
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -859,6 +1011,164 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       distanceUnit_ = value;
       bitField0_ |= 0x00000020;
+      onChanged();
+      return this;
+    }
+
+    private double fuelPricePerL_ ;
+    /**
+     * <pre>
+     * PHEV pricing (BladeWatch-9uu6). New field numbers only, so a client built against the
+     * old schema still parses this message.
+     *
+     * Each value carries an explicit has_* companion, matching the pattern above. proto3 omits
+     * default scalars on the wire, so without the companion a deliberate 0 — which means "not
+     * configured" for both of these — would be indistinguishable from "field not sent", and the
+     * daemon would keep the previous value instead of clearing it.
+     * </pre>
+     *
+     * <code>double fuel_price_per_l = 7 [json_name = "fuelPricePerL"];</code>
+     * @return The fuelPricePerL.
+     */
+    @java.lang.Override
+    public double getFuelPricePerL() {
+      return fuelPricePerL_;
+    }
+    /**
+     * <pre>
+     * PHEV pricing (BladeWatch-9uu6). New field numbers only, so a client built against the
+     * old schema still parses this message.
+     *
+     * Each value carries an explicit has_* companion, matching the pattern above. proto3 omits
+     * default scalars on the wire, so without the companion a deliberate 0 — which means "not
+     * configured" for both of these — would be indistinguishable from "field not sent", and the
+     * daemon would keep the previous value instead of clearing it.
+     * </pre>
+     *
+     * <code>double fuel_price_per_l = 7 [json_name = "fuelPricePerL"];</code>
+     * @param value The fuelPricePerL to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelPricePerL(double value) {
+
+      fuelPricePerL_ = value;
+      bitField0_ |= 0x00000040;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * PHEV pricing (BladeWatch-9uu6). New field numbers only, so a client built against the
+     * old schema still parses this message.
+     *
+     * Each value carries an explicit has_* companion, matching the pattern above. proto3 omits
+     * default scalars on the wire, so without the companion a deliberate 0 — which means "not
+     * configured" for both of these — would be indistinguishable from "field not sent", and the
+     * daemon would keep the previous value instead of clearing it.
+     * </pre>
+     *
+     * <code>double fuel_price_per_l = 7 [json_name = "fuelPricePerL"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelPricePerL() {
+      bitField0_ = (bitField0_ & ~0x00000040);
+      fuelPricePerL_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private boolean hasFuelPricePerL_ ;
+    /**
+     * <code>bool has_fuel_price_per_l = 8 [json_name = "hasFuelPricePerL"];</code>
+     * @return The hasFuelPricePerL.
+     */
+    @java.lang.Override
+    public boolean getHasFuelPricePerL() {
+      return hasFuelPricePerL_;
+    }
+    /**
+     * <code>bool has_fuel_price_per_l = 8 [json_name = "hasFuelPricePerL"];</code>
+     * @param value The hasFuelPricePerL to set.
+     * @return This builder for chaining.
+     */
+    public Builder setHasFuelPricePerL(boolean value) {
+
+      hasFuelPricePerL_ = value;
+      bitField0_ |= 0x00000080;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool has_fuel_price_per_l = 8 [json_name = "hasFuelPricePerL"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearHasFuelPricePerL() {
+      bitField0_ = (bitField0_ & ~0x00000080);
+      hasFuelPricePerL_ = false;
+      onChanged();
+      return this;
+    }
+
+    private double fuelTankCapacityL_ ;
+    /**
+     * <code>double fuel_tank_capacity_l = 9 [json_name = "fuelTankCapacityL"];</code>
+     * @return The fuelTankCapacityL.
+     */
+    @java.lang.Override
+    public double getFuelTankCapacityL() {
+      return fuelTankCapacityL_;
+    }
+    /**
+     * <code>double fuel_tank_capacity_l = 9 [json_name = "fuelTankCapacityL"];</code>
+     * @param value The fuelTankCapacityL to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelTankCapacityL(double value) {
+
+      fuelTankCapacityL_ = value;
+      bitField0_ |= 0x00000100;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double fuel_tank_capacity_l = 9 [json_name = "fuelTankCapacityL"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelTankCapacityL() {
+      bitField0_ = (bitField0_ & ~0x00000100);
+      fuelTankCapacityL_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private boolean hasFuelTankCapacityL_ ;
+    /**
+     * <code>bool has_fuel_tank_capacity_l = 10 [json_name = "hasFuelTankCapacityL"];</code>
+     * @return The hasFuelTankCapacityL.
+     */
+    @java.lang.Override
+    public boolean getHasFuelTankCapacityL() {
+      return hasFuelTankCapacityL_;
+    }
+    /**
+     * <code>bool has_fuel_tank_capacity_l = 10 [json_name = "hasFuelTankCapacityL"];</code>
+     * @param value The hasFuelTankCapacityL to set.
+     * @return This builder for chaining.
+     */
+    public Builder setHasFuelTankCapacityL(boolean value) {
+
+      hasFuelTankCapacityL_ = value;
+      bitField0_ |= 0x00000200;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool has_fuel_tank_capacity_l = 10 [json_name = "hasFuelTankCapacityL"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearHasFuelTankCapacityL() {
+      bitField0_ = (bitField0_ & ~0x00000200);
+      hasFuelTankCapacityL_ = false;
       onChanged();
       return this;
     }

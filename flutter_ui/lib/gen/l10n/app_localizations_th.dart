@@ -2264,6 +2264,11 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'ระยะทางจากน้ำมัน: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'ข้อมูลยังไม่เพียงพอ';
 
   @override
@@ -2292,6 +2297,12 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'อัตราค่าไฟ';
+
+  @override
+  String get trips_storage_fuel_price_label => 'ราคาน้ำมัน (ต่อลิตร)';
+
+  @override
+  String get trips_storage_tank_capacity_label => 'ความจุถังน้ำมัน (ลิตร)';
 
   @override
   String get trips_storage_distance_unit_label => 'หน่วยระยะทาง';
@@ -2368,6 +2379,15 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'อุณหภูมิภายนอก';
+
+  @override
+  String get trips_detail_fuel_used => 'น้ำมัน';
+
+  @override
+  String get trips_detail_fuel_cost => 'ค่าน้ำมัน';
+
+  @override
+  String get trips_detail_electric_cost => 'ค่าไฟฟ้า';
 
   @override
   String get trips_detail_elev_gain => 'ความสูงที่ไต่';

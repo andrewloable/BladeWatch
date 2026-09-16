@@ -92,6 +92,10 @@ class TripDetailController extends ChangeNotifier with DisposedSafeNotifier {
       consistencyScore: t.consistencyScore,
       overallScore: s.overallScore,
       telemetryFilePath: '',
+      hasFuelData: s.hasFuelData,
+      litresUsed: s.litresUsed,
+      fuelCost: s.fuelCost,
+      electricCost: s.electricCost,
     );
   }
 

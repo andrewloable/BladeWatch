@@ -1,6 +1,13 @@
 import { type Interceptor } from '@connectrpc/connect';
 
-function getCookieValue(name: string): string | null {
+/**
+ * Read one cookie value by name, URL-decoded, or null when absent.
+ *
+ * Exported so it can be unit-tested. This sits on the auth path — every outgoing RPC depends
+ * on it finding the session cookie — and a regex that matched a cookie whose name merely ENDS
+ * with the one asked for would silently attach the wrong token.
+ */
+export function getCookieValue(name: string): string | null {
   const match = document.cookie.match(new RegExp('(?:^|;)\\s*' + name + '=([^;]*)'));
   return match ? decodeURIComponent(match[1]) : null;
 }

@@ -284,6 +284,62 @@ Classes in `android.hardware.*` and `android.os.*` are **compile-time stubs only
 
 `DaemonLogConfig.java` controls log verbosity. The release build Gradle script auto-detects if any logging flags are `true` — if so, `proguard-rules-strip-logs.pro` is excluded and log calls survive R8. In production (all flags false), R8 strips all log calls from bytecode. Do not enable logging flags in commits intended for release.
 
+## Platform Scope (read before writing or running any test)
+
+Two front-ends with **different** platform scopes. Confusing them wastes effort on targets that
+do not exist, or skips a target that does.
+
+**Native Flutter app (`flutter_ui/`) — BYD Android head unit ONLY.**
+One device: arm64, BYD DiLink v3, Android 10 / API 29. There is no BladeWatch on a phone, a
+tablet, a desktop or a browser.
+
+- **Do NOT test, build, or debug for iOS, macOS, Windows, Linux or Flutter web.** Not with
+  simulators, not with `flutter test -d chrome`, not "just to check".
+- **Do NOT add or restore those platform directories.** `flutter create .`, some `flutter pub
+  get` paths, and plugins that run platform scaffolding will silently recreate them; they are
+  removed on purpose and `app/build.gradle.kts` enforces their absence.
+- An iOS build failure is **not a bug to fix** — it is a target that should not exist. The same
+  goes for a plugin that "supports only desktop/web": it resolves fine on a dev machine and
+  fails at APK build time.
+- macOS hosts complicate this: a transitive dependency (`objective_c`, pulled in by
+  `video_player` / `webview_flutter`'s darwin implementations) runs a native-asset build hook
+  that calls `xcrun`, so an unaccepted Xcode licence blocks `flutter test` entirely. That is a
+  host-toolchain problem, not an iOS target — fix it with `sudo xcodebuild -license accept`,
+  never by adding iOS support.
+
+**Web app (`web/`) — browsers, including phones.**
+This one IS reached from a phone: it is what the owner opens when away from the car, over the
+tunnel. Mobile browsers — iOS Safari included — are in scope here, and that is not a
+contradiction of the rule above. A mobile *browser* is a supported client of the web app; a
+native *iOS build* of the Flutter app is not a thing that exists.
+
+```bash
+cd web && npm run typecheck           # tsc --noEmit — `vite build` does NOT typecheck
+cd web && npm run typecheck:templates # ngc --strictTemplates — nothing else checks templates
+cd web && npm run test:unit           # vitest — framework-free logic
+cd web && npm run test:mobile   # Playwright, Pixel 7 + iPhone 13, against a local build
+cd web && npm run test:e2e      # Playwright against a LIVE head unit (needs e2e/.env)
+```
+
+`test:mobile` serves the built app itself and needs no daemon, so mobile layout regressions are
+catchable without powering up a car. `test:e2e` does need a live device.
+
+**Component TEMPLATES are checked by neither of the above — run `npm run typecheck:templates`.**
+`tsc` only parses `.ts`, and `vite build` hands templates to esbuild without checking them.
+Measured 2026-09-16: a template calling a method that does not exist on its component compiled
+clean and exited 0 under BOTH. Nothing fails at runtime either — `@if (typoName())` is
+`undefined`, which is falsy, so the guarded block silently never renders and the page just looks
+empty. `./gradlew :app:webTemplateCheck` runs the same check.
+
+**`npm run build` does not typecheck — run `npm run typecheck` separately.** `vite build` bundles
+with esbuild, which strips types without checking them, so a type error produces a perfectly
+successful build. This is not theoretical: four files imported generated protobuf types through a
+path one level too deep, and because they were `import type` declarations esbuild erased them
+before ever resolving the path. The build stayed green for months while those pages had no
+compile-time protection at all. `./gradlew :app:webTypecheck` runs the same check; like
+`:app:webUnitTests` it is deliberately NOT wired into `preBuild`, because it needs `node_modules`
+and `buildAngularWebUI` already owns the "is the web toolchain present" question.
+
 ## Testing
 
 **Service host (Kotlin/Java)** — 24 JVM test files under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
@@ -294,7 +350,7 @@ Classes in `android.hardware.*` and `android.os.*` are **compile-time stubs only
 ./gradlew :app:testDebugUnitTest --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
 ```
 
-**In-car UI (Dart)** — 111 test files under `flutter_ui/test/`, ~1450 tests. There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
+**In-car UI (Dart)** — 111 test files under `flutter_ui/test/`, ~1450 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
 
 ```bash
 cd flutter_ui && flutter analyze && flutter test
