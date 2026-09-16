@@ -249,6 +249,20 @@ public class CameraDaemon {
         initFileLogging();
         logT("initFileLogging done");
 
+        // BladeWatch-gn2y: mark this run in cam_daemon.log, which the launcher script
+        // appends to across EVERY daemon restart and never rotates. Without a boundary,
+        // errors from a build that no longer exists sit alongside today's and read the
+        // same — an audit on the head unit found exactly that. Straight to stdout rather
+        // than through DaemonLogger, because that path is deliberately ERROR-only for this
+        // very file, and a run boundary is not an error.
+        System.out.println(net.bladewatch.app.logging.SessionBanner.format(
+                net.bladewatch.app.BuildConfig.VERSION_NAME,
+                net.bladewatch.app.BuildConfig.GIT_BRANCH,
+                net.bladewatch.app.BuildConfig.BUILD_TYPE,
+                new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", java.util.Locale.US)
+                        .format(new java.util.Date()),
+                "camera-daemon"));
+
         // Secondary singleton check: verify our server ports are free before
         // trusting the lock file. FileChannel.tryLock() on tmpfs can spuriously
         // succeed on some firmware, allowing a duplicate instance to start even

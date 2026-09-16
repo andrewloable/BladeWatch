@@ -46,6 +46,32 @@ object DebugAppLogger {
         }
     }
 
+    private var bannerWritten = false
+
+    /**
+     * The banner for this run. See [SessionBanner].
+     *
+     * Emitted lazily from [writeLine] rather than when logging is switched on, so it lands
+     * immediately before this run's FIRST line no matter which path enabled logging —
+     * config sync at startup, or the developer settings switch. Hooking it to the former
+     * alone missed the latter, and produced a run with no boundary at all.
+     */
+    private fun buildSessionBanner(): String {
+        return try {
+            SessionBanner.format(
+                version = net.bladewatch.app.BuildConfig.VERSION_NAME,
+                branch = net.bladewatch.app.BuildConfig.GIT_BRANCH,
+                buildType = net.bladewatch.app.BuildConfig.BUILD_TYPE,
+                timestamp = timestampFmt.format(java.util.Date()),
+                process = "service-host",
+            )
+        } catch (_: Throwable) {
+            // BuildConfig is generated; if anything about it is unavailable the banner is
+            // still worth writing, because the run boundary matters more than the metadata.
+            SessionBanner.format("", "", "", timestampFmt.format(java.util.Date()), "service-host")
+        }
+    }
+
     /** Update the in-memory flag (called from the settings switch). */
     fun setEnabled(value: Boolean) {
         enabled = value
@@ -104,6 +130,18 @@ object DebugAppLogger {
 
     private fun writeLine(line: String) {
         synchronized(writeLock) {
+            // Guarded by writeLock and flipped BEFORE the write, so the recursive-looking
+            // path cannot loop and two threads cannot both emit a banner.
+            if (!bannerWritten) {
+                bannerWritten = true
+                writeRaw(buildSessionBanner())
+            }
+            writeRaw(line)
+        }
+    }
+
+    /** Caller holds [writeLock]. */
+    private fun writeRaw(line: String) {
             try {
                 val file = File(LOG_FILE)
                 file.parentFile?.mkdirs()
@@ -121,7 +159,6 @@ object DebugAppLogger {
                 // Never throw from a logger — silent fallback to logcat only.
                 try { Log.w(TAG, "Failed to write debug log: $line") } catch (_: Throwable) {}
             }
-        }
     }
 
     private fun rotate(file: File) {

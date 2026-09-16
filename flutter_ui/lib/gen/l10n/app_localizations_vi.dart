@@ -399,20 +399,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get webview_loading => 'Lái...';
 
   @override
-  String get zrok_enable_token_hint => 'Bật token';
-
-  @override
-  String get zrok_token_storage_note =>
-      'Token được lưu trữ an toàn và chia sẻ giữa ứng dụng và các dịch vụ nền.';
-
-  @override
-  String get zrok_reset_environment => 'Đặt lại môi trường Zrok';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      'Xóa môi trường và token. Bạn sẽ cần phải bật lại với token của bạn (sử dụng một khe thiết bị).';
-
-  @override
   String get reset_title => 'Đặt lại dữ liệu';
 
   @override
@@ -589,7 +575,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get daemon_name_acc => 'Giám sát ACC';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Dịch vụ nền';
@@ -841,7 +827,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboard_no_tunnel => 'Không có đường hầm chạy';
 
   @override
-  String get dashboard_starting_zrok => 'Bắt đầu đường hầm Zrok...';
+  String get dashboard_starting_tor => 'Đang khởi động đường hầm Tor…';
 
   @override
   String get dashboard_waiting_url => 'Chờ đường hầm URL...';
@@ -852,7 +838,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Mã truy cập';
@@ -866,53 +852,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Mã thông báo đường hầm Zrok';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'Nhập token kích hoạt Zrok của bạn.\nLấy tại: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => 'Đơn hiệu không thể trống rỗng';
-
-  @override
-  String get dialog_zrok_reset_title => 'Đặt lại môi trường Zrok';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      'Điều này sẽ:\n• dừng đường hầm zrok nếu chạy\n• loại bỏ môi trường zrok từ thiết bị này\n• xóa token được lưu\n\n Bạn sẽ cần phải nhập lại token của bạn và bật lại. Điều này sử dụng một trong 5 khe thiết bị của bạn trên zrok.io.\n\n Bạn chắc chắn không?';
-
-  @override
-  String get toast_resetting_zrok => 'Tái thiết môi trường zrok...';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'Zrok thiết lập lại môi trường. Nhập một mã thông báo mới để thiết lập lại.';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      'Cài đặt lại môi trường (tệp mã thông báo có thể cần phải làm sạch thủ công)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return 'Tái thiết môi trường (với cảnh báo: $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured =>
-      'Chưa cấu hình token. Chạm để thiết lập.';
-
-  @override
-  String get toast_zrok_token_saved => 'Đồ tín hiệu được lưu';
-
-  @override
-  String get toast_zrok_token_save_failed => 'Không lưu token';
-
-  @override
-  String get toast_zrok_token_deleted => 'Địa chỉ bị xóa';
-
-  @override
-  String get toast_zrok_token_delete_failed => 'Không thể xóa token';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1095,6 +1035,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_section_privacy => 'Quyền riêng tư & dữ liệu';
+
+  @override
+  String get settings_section_trips => 'Chuyến đi';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Đơn giá chi phí, đơn vị khoảng cách và nơi lưu chuyến đi';
 
   @override
   String get settings_section_overlay => 'Lớp phủ trạng thái';
@@ -1685,12 +1632,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Cấu hình';
-
-  @override
-  String get settings_daemons_zrok_reset_button => 'Đặt lại môi trường';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '$arg1 được sử dụng · $arg2 miễn phí';
   }
@@ -1804,7 +1745,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Đường hầm Zrok và các dịch vụ nền.';
+      'Đường hầm Tor và dịch vụ nền.';
 
   @override
   String get settings_about_row_title => 'Về BladeWatch';
@@ -2185,6 +2126,16 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Nhiên liệu: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Quãng đường nhiên liệu: $arg1 km';
+  }
+
+  @override
   String get vehicle_status_charge_unknown => 'Sạc: —';
 
   @override
@@ -2342,6 +2293,11 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Quãng đường chạy bằng nhiên liệu: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Chưa đủ dữ liệu';
 
   @override
@@ -2370,6 +2326,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Giá điện';
+
+  @override
+  String get trips_storage_fuel_price_label => 'Giá nhiên liệu (mỗi lít)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Dung tích bình nhiên liệu (lít)';
 
   @override
   String get trips_storage_distance_unit_label => 'Đơn vị khoảng cách';
@@ -2446,6 +2409,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Nhiệt độ ngoài';
+
+  @override
+  String get trips_detail_fuel_used => 'Nhiên liệu';
+
+  @override
+  String get trips_detail_fuel_cost => 'Chi phí nhiên liệu';
+
+  @override
+  String get trips_detail_electric_cost => 'Chi phí điện';
 
   @override
   String get trips_detail_elev_gain => 'Độ cao tăng';
@@ -2787,4 +2759,36 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Lưu không thành công';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'Đang kết nối tới Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'Cách mở địa chỉ này';
+
+  @override
+  String get dashboard_tor_help_title => 'Mở địa chỉ này';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: cài Tor Browser từ Google Play hoặc F-Droid, mở ứng dụng và dán địa chỉ.';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone và iPad: cài Onion Browser từ App Store, mở ứng dụng và dán địa chỉ. Tor Browser không có trên iOS.';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS và Linux: tải Tor Browser tại torproject.org, mở lên và dán địa chỉ.';
+
+  @override
+  String get dashboard_tor_help_password_note =>
+      'Bạn vẫn cần mật khẩu sau khi trang tải xong.';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'Quét để mở trang tải Tor Browser';
+
+  @override
+  String get dashboard_tor_help_close => 'Đã hiểu';
 }

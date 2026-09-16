@@ -49,7 +49,7 @@
           <div class="stat-card">
             <div class="stat-label">{{ 'trips.cost' | translate }}</div>
             <div class="stat-value">
-              @if (s.tripCost > 0 && s.currency) { {{ s.currency }} {{ s.tripCost | number:'1.2-2' }} }
+              @if (s.tripCost > 0 && s.currency) { {{ money(s.tripCost, s.currency) }} }
               @else { — }
             </div>
           </div>
@@ -65,6 +65,29 @@
             <div class="stat-label">{{ 'trips.score' | translate }}</div>
             <div class="stat-value">@if (s.overallScore > 0) { {{ s.overallScore }} } @else { — }</div>
           </div>
+          <!--
+            PHEV fuel leg. Rendered only when the trip actually recorded the fuel counter, so a
+            BEV shows exactly the cards it always has rather than three permanent zeroes.
+            `hasFuelData` is derived from the STORED trip, so a historical trip renders the same
+            way regardless of what the drivetrain probe reports today.
+
+            The cost card above stays the TOTAL; these are its two halves and sum to it. Without
+            them the owner can see what a trip cost but not which tank the money came out of.
+          -->
+          @if (s.hasFuelData) {
+            <div class="stat-card">
+              <div class="stat-label">{{ 'trips.fuel_used' | translate }}</div>
+              <div class="stat-value">{{ s.litresUsed | number:'1.1-1' }} {{ 'trips.litres_short' | translate }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">{{ 'trips.fuel_cost' | translate }}</div>
+              <div class="stat-value">{{ money(s.fuelCost, s.currency) }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">{{ 'trips.electric_cost' | translate }}</div>
+              <div class="stat-value">{{ money(s.electricCost, s.currency) }}</div>
+            </div>
+          }
         </div>
       </div>
 
@@ -147,7 +170,7 @@
                 <div class="trip-date">{{ tripDate(trip.startTime) }}</div>
                 <div class="trip-meta">
                   {{ distanceLabel(trip.distanceKm) }} · {{ durationLabel(trip.durationSeconds) }}
-                  @if (trip.tripCost > 0 && trip.currency) { · {{ trip.currency }} {{ trip.tripCost | number:'1.2-2' }} }
+                  @if (trip.tripCost > 0 && trip.currency) { · {{ money(trip.tripCost, trip.currency) }} }
                 </div>
               </div>
               @if (trip.overallScore > 0) {
@@ -185,6 +208,17 @@
               <div class="big-sub">{{ 'trips.byd_estimate' | translate }}</div>
             } @else {
               <div class="big-sub">{{ 'trips.not_enough_data' | translate }}</div>
+            }
+            <!--
+              PHEV fuel range, reported SEPARATELY and never summed into the electric figure:
+              the two are drawn from different tanks with different confidence, and one number
+              would hide which is about to run out. Hidden unless it could be computed.
+            -->
+            @if (r.fuelRangeKm > 0) {
+              <div class="big-sub">{{ 'trips.fuel_range' | translate }} {{ r.fuelRangeKm | number:'1.0-0' }} km</div>
+              @if (r.builtInFuelRangeKm > 0) {
+                <div class="big-sub">{{ 'trips.byd_estimate_value' | translate }} {{ r.builtInFuelRangeKm | number:'1.0-0' }} km</div>
+              }
             }
           } @else {
             <div class="big-sub">{{ rangeMessage() || ('trips.not_enough_data' | translate) }}</div>
@@ -225,12 +259,15 @@
           <div class="form-group">
             <label class="form-label">{{ 'trips.electricity_rate' | translate }}</label>
             <div class="rate-row">
-              <input
+              <select
                 class="form-input currency-input"
-                type="text"
                 [value]="formCurrency()"
-                (input)="formCurrency.set($any($event.target).value)"
-                [attr.aria-label]="'trips.currency' | translate" />
+                (change)="formCurrency.set($any($event.target).value)"
+                [attr.aria-label]="'trips.currency' | translate">
+                @for (code of currencyCodes(); track code) {
+                  <option [value]="code" [selected]="code === formCurrency()">{{ code }}</option>
+                }
+              </select>
               <input
                 class="form-input"
                 type="number"
@@ -240,6 +277,50 @@
                 [attr.aria-label]="'trips.rate' | translate" />
             </div>
           </div>
+
+          <!--
+            PHEV only. A BEV has no tank, so these two are not merely unused there — they read
+            as a bug in the app. showFuelSettings also stays true when a value is already
+            configured, so a figure can always be cleared and a warming-up drivetrain probe
+            cannot hide a setting that is still being applied.
+          -->
+          @if (showFuelSettings()) {
+            <div class="form-group">
+              <label class="form-label">{{ 'trips.fuel_price' | translate }}</label>
+              <div class="rate-row">
+                <input
+                  class="form-input currency-input"
+                  type="text"
+                  [value]="formCurrency()"
+                  disabled
+                  [attr.aria-label]="'trips.currency' | translate" />
+                  <!-- Read-only on purpose: the fuel leg is priced in the SAME currency as the
+                       electric leg. One car, one wallet. -->
+                <input
+                  class="form-input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  [value]="formFuelPrice()"
+                  (input)="formFuelPrice.set($any($event.target).value)"
+                  [attr.aria-label]="'trips.fuel_price' | translate" />
+              </div>
+              <div class="toggle-sub">{{ 'trips.fuel_price_sub' | translate }}</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">{{ 'trips.tank_capacity' | translate }}</label>
+              <input
+                class="form-input"
+                type="number"
+                step="0.5"
+                min="0"
+                [value]="formTankCapacity()"
+                (input)="formTankCapacity.set($any($event.target).value)"
+                [attr.aria-label]="'trips.tank_capacity' | translate" />
+              <div class="toggle-sub">{{ 'trips.tank_capacity_sub' | translate }}</div>
+            </div>
+          }
 
           <div class="form-group">
             <label class="form-label">{{ 'trips.distance_unit' | translate }}</label>

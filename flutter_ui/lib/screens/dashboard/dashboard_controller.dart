@@ -33,12 +33,12 @@ import '../../shell/disposed_safe_notifier.dart';
 ///   call, and is the daemon's own canonical device id (the one
 ///   `AuthManager`'s JWT `sub` claim uses), not a UI-only label like
 ///   `DeviceIdGenerator`'s.
-/// - **The Zrok tunnel URL** reaches this controller through [tunnelUrlSource],
-///   wired in `main.dart` to `DaemonChannel.tunnelUrl` (the daemon's
+/// - **The Tor onion URL** reaches this controller through [tunnelStatusSource],
+///   wired in `main.dart` to `DaemonChannel.tunnelStatus` (the daemon's
 ///   `tunnelStatus` IPC command, BladeWatch-m1po). Native reads it from an
 ///   ADB-launched process's stdout and caches it in app-private
 ///   `SharedPreferences`, neither of which this APK can reach; the daemon reads
-///   zrok's own log instead, and only reports a URL while the tunnel process is
+///   tor's own files instead, and only reports a URL while the tunnel process is
 ///   actually alive. The injected default still reports "no tunnel", which keeps
 ///   every test free of a platform channel.
 class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
@@ -48,15 +48,15 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
     required SystemServiceClient systemService,
     required DaemonChannel daemonChannel,
     required AuthChannel authChannel,
-    Future<String?> Function() tunnelUrlSource = _noTunnel,
-  })  : _tunnelUrlSource = tunnelUrlSource, // ignore: prefer_initializing_formals
+    Future<TunnelStatus> Function() tunnelStatusSource = _noTunnel,
+  })  : _tunnelStatusSource = tunnelStatusSource, // ignore: prefer_initializing_formals
         _tripsService = tripsService, // ignore: prefer_initializing_formals
         _recordingsService = recordingsService, // ignore: prefer_initializing_formals
         _systemService = systemService, // ignore: prefer_initializing_formals
         _daemonChannel = daemonChannel, // ignore: prefer_initializing_formals
         _authChannel = authChannel; // ignore: prefer_initializing_formals
 
-  static Future<String?> _noTunnel() async => null;
+  static Future<TunnelStatus> _noTunnel() async => const TunnelStatus(running: false);
 
   static const int minAccessCodeLength = 12;
 
@@ -65,7 +65,7 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   final SystemServiceClient _systemService;
   final DaemonChannel _daemonChannel;
   final AuthChannel _authChannel;
-  final Future<String?> Function() _tunnelUrlSource;
+  final Future<TunnelStatus> Function() _tunnelStatusSource;
 
   TripStatsState _tripStats = const TripStatsState.loading();
   TripStatsState get tripStats => _tripStats;
@@ -183,10 +183,21 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
 
   Future<void> _refreshTunnel() async {
     try {
-      final url = await _tunnelUrlSource();
-      _tunnel = (url == null || url.isEmpty)
+      final status = await _tunnelStatusSource();
+      final url = status.url;
+      _tunnel = !status.enabled
+          // The owner switched it off. With no tunnel and LAN HTTP off by default the
+          // web app is unreachable, so the whole connect card — QR, address and access
+          // code alike — has nothing to connect to and is hidden.
+          ? const TunnelState(phase: TunnelPhase.disabled)
+          : !status.running
           ? const TunnelState(phase: TunnelPhase.offline)
-          : TunnelState(phase: TunnelPhase.online, url: url);
+          // Running with no address is tor still bootstrapping — up to ~82 s on a
+          // cold start. Distinct from offline, and distinct from online: there is
+          // nothing to show a QR code for yet.
+          : (url == null || url.isEmpty)
+              ? const TunnelState(phase: TunnelPhase.connecting)
+              : TunnelState(phase: TunnelPhase.online, url: url);
     } catch (_) {
       _tunnel = const TunnelState(phase: TunnelPhase.offline);
     }

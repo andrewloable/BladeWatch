@@ -398,20 +398,6 @@ class AppLocalizationsNb extends AppLocalizations {
   String get webview_loading => 'Ladding...';
 
   @override
-  String get zrok_enable_token_hint => 'Aktiver Token';
-
-  @override
-  String get zrok_token_storage_note =>
-      'Token lagres sikkert og deles mellom appen og bakgrunnstjenestene.';
-
-  @override
-  String get zrok_reset_environment => 'Tilbakestill Zrok-miljøet';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      'Fjerner miljø og token. Du må aktivere igjen med din token (bruker en enhetslot).';
-
-  @override
   String get reset_title => 'Tilbakestill data';
 
   @override
@@ -588,7 +574,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get daemon_name_acc => 'ACC-overvåking';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Bakgrunnstjenester';
@@ -838,7 +824,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dashboard_no_tunnel => 'Ingen tunnel løper';
 
   @override
-  String get dashboard_starting_zrok => 'Starting Zrok tunnel...';
+  String get dashboard_starting_tor => 'Starter Tor-tunnel…';
 
   @override
   String get dashboard_waiting_url => 'Ventet på tunnelen URL...';
@@ -849,7 +835,7 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Tilgangskode';
@@ -863,53 +849,7 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok-tunneltoken';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'Skriv inn Zrok-aktiverings tokenen din.\nKjøp en på: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => 'Token kan ikke være tomt';
-
-  @override
-  String get dialog_zrok_reset_title => 'Tilbakestill Zrok-miljøet';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      'Dette vil:\n• stoppe zrok-tunnelen hvis den kjører\n• fjerne zrok-miljøet fra denne enheten\n• slette den lagre tokenen\n\nDu må gjeninføre tokenen din og aktivere den igjen. Dette bruker en av de 5 enhetene dine slots på zrok.io.\n\nEr du sikker?';
-
-  @override
-  String get toast_resetting_zrok => 'Å gjeninnsette Zrok-miljøet...';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'Zrok miljø tilbakestilt. Skriv inn et nytt token for å sette opp igjen.';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      'Omgivning tilbakestilling (tokenfil kan trenge manuell rengjøring)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return 'Miljøinnstilling (med advarsler: $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured =>
-      'Ingen token konfigurert. Trykk for å sette opp.';
-
-  @override
-  String get toast_zrok_token_saved => 'Token lagret';
-
-  @override
-  String get toast_zrok_token_save_failed => 'Manglet på å lagre token';
-
-  @override
-  String get toast_zrok_token_deleted => 'Token slettet';
-
-  @override
-  String get toast_zrok_token_delete_failed => 'Mangler i å slette token';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1091,6 +1031,13 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get settings_section_privacy => 'Personvern og data';
+
+  @override
+  String get settings_section_trips => 'Turer';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Kostnadssatser, avstandsenhet og hvor turer lagres';
 
   @override
   String get settings_section_overlay => 'Status overlapning';
@@ -1677,12 +1624,6 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Konfigurer';
-
-  @override
-  String get settings_daemons_zrok_reset_button => 'Tilbakestill miljø';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '$arg1 brukt · $arg2 gratis';
   }
@@ -1797,7 +1738,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Zrok-tunnel og bakgrunnstjenester.';
+      'Tor-tunnel og bakgrunnstjenester.';
 
   @override
   String get settings_about_row_title => 'Om BladeWatch';
@@ -2177,6 +2118,16 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Drivstoff: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Drivstoffrekkevidde: $arg1 km';
+  }
+
+  @override
   String get vehicle_status_charge_unknown => 'Lading: —';
 
   @override
@@ -2333,6 +2284,11 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Drivstoffrekkevidde: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Ikke nok data ennå';
 
   @override
@@ -2361,6 +2317,12 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Strømpris';
+
+  @override
+  String get trips_storage_fuel_price_label => 'Drivstoffpris (per liter)';
+
+  @override
+  String get trips_storage_tank_capacity_label => 'Tankvolum (liter)';
 
   @override
   String get trips_storage_distance_unit_label => 'Distanseenhet';
@@ -2437,6 +2399,15 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Utetemp.';
+
+  @override
+  String get trips_detail_fuel_used => 'Drivstoff';
+
+  @override
+  String get trips_detail_fuel_cost => 'Drivstoffkostnad';
+
+  @override
+  String get trips_detail_electric_cost => 'Strømkostnad';
 
   @override
   String get trips_detail_elev_gain => 'Stigning';
@@ -2778,4 +2749,36 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Lagring mislyktes';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'Kobler til Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'Slik åpner du denne adressen';
+
+  @override
+  String get dashboard_tor_help_title => 'Åpne denne adressen';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: installer Tor Browser fra Google Play eller F-Droid, åpne den og lim inn adressen.';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone og iPad: installer Onion Browser fra App Store, åpne den og lim inn adressen. Tor Browser finnes ikke for iOS.';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS og Linux: last ned Tor Browser fra torproject.org, åpne den og lim inn adressen.';
+
+  @override
+  String get dashboard_tor_help_password_note =>
+      'Passordet trengs fortsatt når siden er lastet.';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'Skann for nedlastingssiden til Tor Browser';
+
+  @override
+  String get dashboard_tor_help_close => 'Greit';
 }

@@ -68,7 +68,7 @@ Dropped in Phase 4 (`BladeWatch-81g9.3`), with the native UI that needed them:
 (the map is `flutter_map`). appcompat, Material and lifecycle stayed and are not
 droppable: `AppCompatDelegate` drives the night mode `StatusOverlayService`
 reads, `SetupGuideDialog` builds a Material `AlertDialog` from
-`dialog_setup_guide.xml`, and `ZrokController` / `DaemonsViewModel` publish
+`dialog_setup_guide.xml`, and `TorController` / `DaemonsViewModel` publish
 daemon state as `LiveData`.
 
 The Vehicle hero renders via Three.js inside an embedded WebView (`app/src/main/assets/web/hero/hero.html`). A native Filament port was tried and removed — the BYD head unit's Adreno 610 GL driver crashes under continuous gltfio rendering, so Filament must not be reintroduced for the hero.
@@ -92,7 +92,9 @@ Native source areas:
 - `app/src/main/cpp/surveillance/`.
 - `app/src/main/cpp/CMakeLists.txt`.
 
-The Zrok tunnel binary is packaged as `libzrok.so` in `jniLibs/` and extracted at runtime.
+The Tor binary is packaged as `libtor.so` in `jniLibs/` and extracted at runtime. It is NOT
+committed: the `downloadTor` task fetches it from Maven Central and verifies its SHA-256 at
+build time, the same pattern OpenH264 and OpenCV use.
 
 ## Embedded Assets
 
@@ -105,7 +107,7 @@ Important asset groups:
   - `shared/`, `local/`, `web/` — the legacy hand-written web UI assets.
 - Server-side i18n under `app/src/main/assets/server-i18n/` (17 locales, used by the daemon for push/notification text).
 - AI models under `app/src/main/assets/models/` (e.g. `yolo11n.tflite`).
-- Zrok native binary packaged as a library in `jniLibs/`.
+- tor native binary packaged as a library in `jniLibs/` (downloaded and checksum-verified at build time, not committed).
 
 Runtime extraction paths:
 
@@ -133,7 +135,7 @@ After any full `buf generate`, always check `git status` on `web/src/gen` and `a
 
 `flutter_ui/lib/rpc/` is a small hand-written Connect protocol client mirroring `app/src/main/java/com/loabletech/bladewatch/client/ConnectClientProvider.kt`: POST to `http://127.0.0.1:8080/bladewatch.v1.<Service>/<Method>` with `Content-Type: application/json`, `Connect-Protocol-Version: 1`, and `Authorization: Bearer <jwt>` (4-minute cache keyed to a `JwtSource.stateVersion()`, mirroring `AuthManager.getStateVersion()`); body/response are protobuf-JSON via each generated message's `toProto3Json()`/`mergeFromProto3Json()`. `ConnectClient` never uses a system/VPN proxy for this loopback call (`findProxy` forced to `DIRECT` in `raw_http_sender.dart`), same reasoning as the Kotlin client's `Proxy.NO_PROXY`. `lib/rpc/services/` holds one thin wrapper class per service (`AuthServiceClient`, `SystemServiceClient`, …), one method per RPC — mechanically generated from the `.proto` `rpc` declarations, not hand-typed one at a time. `JwtSource` is an interface; the real implementation (`flutter_ui/lib/platform/auth_channel.dart`'s `AuthChannel`, backed by loopback IPC `secret_get` via the Flutter APK's own Kotlin `MethodChannel` layer — see `flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/auth/JwtMinter.kt` — never reading `bladewatch_secrets.json` directly) shipped in BladeWatch-ncbb.2.
 
-**`daemon.status` vs. `daemon.processStatus` — do not confuse these.** `TcpCommandServer.java`'s `start`/`stop`/`status` IPC commands (wrapped by `DaemonChannel.start()`/`.stop()`/`.status()`) control **camera recording** on an already-running CameraDaemon — which cameras are recording/viewing/active/available — not daemon process lifecycle. There is a separate `daemonStatus` IPC command (BladeWatch-1xt9, wrapped by `DaemonChannel.processStatus()`) that reports whether the CAMERA_DAEMON/SENTRY_DAEMON/ACC_SENTRY_DAEMON/ZROK_TUNNEL **processes** are actually running, computed locally via `pgrep -x <processName>` — no ADB needed, since the daemon already runs as shell UID, the same UID as the processes it's checking. This exists because the native `DaemonsViewModel`'s equivalent check (`AdbDaemonLauncher`) is 100% ADB-based and has no IPC equivalent otherwise, which the Flutter APK cannot use per Epic 1's IPC-only rule. A process check can only ever report `RUNNING`/`STOPPED`, never the transitional `DaemonStatus.STARTING`/`STOPPING`/`ERROR` states — those are tracked client-side during an in-flight start/stop call on the native side too.
+**`daemon.status` vs. `daemon.processStatus` — do not confuse these.** `TcpCommandServer.java`'s `start`/`stop`/`status` IPC commands (wrapped by `DaemonChannel.start()`/`.stop()`/`.status()`) control **camera recording** on an already-running CameraDaemon — which cameras are recording/viewing/active/available — not daemon process lifecycle. There is a separate `daemonStatus` IPC command (BladeWatch-1xt9, wrapped by `DaemonChannel.processStatus()`) that reports whether the CAMERA_DAEMON/SENTRY_DAEMON/ACC_SENTRY_DAEMON/TOR_TUNNEL **processes** are actually running, computed locally by reading `/proc/<pid>/cmdline` and comparing `basename(argv[0])` (`TcpCommandServer.findPidsByProcessName`), not by shelling out — no ADB needed, since the daemon already runs as shell UID, the same UID as the processes it's checking. This exists because the native `DaemonsViewModel`'s equivalent check (`AdbDaemonLauncher`) is 100% ADB-based and has no IPC equivalent otherwise, which the Flutter APK cannot use per Epic 1's IPC-only rule. A process check can only ever report `RUNNING`/`STOPPED`, never the transitional `DaemonStatus.STARTING`/`STOPPING`/`ERROR` states — those are tracked client-side during an in-flight start/stop call on the native side too.
 
 Local web development can run the Vite dev server (`cd web && npm run dev`), which proxies `/bladewatch.v1`, `/api`, `/status`, and `/auth` to the daemon at `http://127.0.0.1:8080`.
 
@@ -196,7 +198,7 @@ starting an Activity interrupts engine setup. The "Continue anyway" escape hatch
 
 `DashboardInsight.kt`, which this task's own description names as a logic source, is **dead code** — grepped the whole native source tree; it is referenced nowhere outside its own file. The live Dashboard (the "SOTA Dashboard" in `DashboardFragment`'s own header comment) has its own, different, inline logic, which is what this port actually follows.
 
-Two data sources this port deliberately does not match 1:1 with the native fragment, both because the native mechanism is ADB/local-storage-only and unreachable from the Flutter APK (Epic 1's IPC-only rule): today's recording count comes from `ListRecordings(date: today).total` over RPC rather than a local directory walk (`RecordingScanner`), and recording-in-progress / device id come from `SystemService.GetStatus()`'s `recording`/`deviceId` fields rather than `RecordingViewModel`/`DeviceIdGenerator`. The Zrok tunnel URL has **no IPC path at all** yet (checked: `ZrokController` only ever gets it from an ADB-launched process's stdout, cached in app-private `SharedPreferences`) — filed as BladeWatch-m1po; `DashboardController`'s `tunnelUrlSource` constructor parameter is injected specifically so that follow-up can wire in a real implementation later without touching this controller, and always reports "no tunnel" until then.
+Two data sources this port deliberately does not match 1:1 with the native fragment, both because the native mechanism is ADB/local-storage-only and unreachable from the Flutter APK (Epic 1's IPC-only rule): today's recording count comes from `ListRecordings(date: today).total` over RPC rather than a local directory walk (`RecordingScanner`), and recording-in-progress / device id come from `SystemService.GetStatus()`'s `recording`/`deviceId` fields rather than `RecordingViewModel`/`DeviceIdGenerator`. The tunnel URL had **no IPC path at all** at the time (checked: the tunnel controller only ever gets it from an ADB-launched process's stdout, cached in app-private `SharedPreferences`) — filed as BladeWatch-m1po; `DashboardController`'s `tunnelUrlSource` constructor parameter is injected specifically so that follow-up can wire in a real implementation later without touching this controller, and always reports "no tunnel" until then.
 
 Also discovered and filed while building this screen, neither blocking it: **BladeWatch-b195** (P0) — `JwtMinter.mintJwt()` can never succeed on a real device today, because `AuthManager.writeToConfig()` persists `deviceId`/`tokenEpoch` to `UnifiedConfigManager`, never to the `SecretConfigStore` section `secret_get_section("auth")` reads from, so every Flutter-side RPC call goes out with no `Authorization` header. This does not block the Dashboard's own access-code feature (which only needs `deviceSecret` alone, confirmed present), but it does mean the trip/recording/vehicle tiles will show their "unavailable" states on a real device until it's fixed.
 
@@ -204,7 +206,7 @@ Also discovered and filed while building this screen, neither blocking it: **Bla
 
 ### Flutter Settings hub and its 6 sections (BladeWatch-yz1e.3)
 
-`flutter_ui/lib/screens/settings/` — the Settings hub (`settings_screen.dart`, `SettingsScreen`) plus six section controller/screen pairs: Appearance (theme + drive side), Recording (the shared controller behind both of native's Recording-settings entry points), Overlay (status-pill toggles), Daemons (service list + Zrok token management), Privacy (storage summary + reset entry point + developer logging toggles), and About (its own top-level rail destination, `BwRoutes.settingsAbout`, separate from the sub-rail). Surveillance's full settings are BladeWatch-yz1e.8's own task — this hub only hosts its entry row.
+`flutter_ui/lib/screens/settings/` — the Settings hub (`settings_screen.dart`, `SettingsScreen`) plus six section controller/screen pairs: Appearance (theme + drive side), Recording (the shared controller behind both of native's Recording-settings entry points), Overlay (status-pill toggles), Daemons (service list + tunnel token management, since removed with the tunnel it belonged to), Privacy (storage summary + reset entry point + developer logging toggles), and About (its own top-level rail destination, `BwRoutes.settingsAbout`, separate from the sub-rail). Surveillance's full settings are BladeWatch-yz1e.8's own task — this hub only hosts its entry row.
 
 **Landscape sub-rail only.** `SettingsFragment.kt` has two layouts: a landscape two-pane sub-rail (persistent Appearance/Recording/Surveillance/Overlay/Daemons/Privacy panes) and a portrait "SOTA hub" (quick tiles + rows that navigate away). This port builds only the sub-rail — BladeWatch targets fixed-landscape BYD head units, so the portrait branch is unreachable on the actual target hardware. Each sub-rail row's controller is created fresh when selected and disposed when the user switches away, mirroring native's own `childFragmentManager.commit { replace(...) }` (which recreates each section's Fragment, and therefore its state, on every switch rather than caching it).
 
@@ -212,9 +214,9 @@ Also discovered and filed while building this screen, neither blocking it: **Bla
 
 **Two more architectural gaps discovered and filed while building this task, neither blocking it** (same injectable-seam pattern as `DashboardController.tunnelUrlSource`/BladeWatch-m1po):
 - **BladeWatch-hygs** (P2) — no IPC path reaches `UnifiedConfigManager`'s public (non-secret) config sections; only the daemon-owned *secret* store (`ConfigChannel`/`secret_*`) is reachable today. Blocks real persistence for Overlay's status-pill toggles and Privacy's two developer-logging toggles — both currently use an injected `loadSettings`/`persist` function pair that defaults to native's own fallback values and no-ops on write.
-- **BladeWatch-abcx** (P2) — no IPC path starts/stops an individual daemon *process* (only camera-recording on/off within the already-running camera daemon exists, via `daemon.start`/`daemon.stop`). Blocks the Daemons screen's per-service switches; `SettingsDaemonsController`'s injected `setDaemonEnabled` defaults to always reporting "not supported" (an honest, visible message, not a silent failure). Zrok's own configure/reset flow is unaffected — it already goes through the fully-capable `config.*` (secret-store) channel.
+- **BladeWatch-abcx** (P2) — no IPC path starts/stops an individual daemon *process* (only camera-recording on/off within the already-running camera daemon exists, via `daemon.start`/`daemon.stop`). Blocks the Daemons screen's per-service switches; `SettingsDaemonsController`'s injected `setDaemonEnabled` defaults to always reporting "not supported" (an honest, visible message, not a silent failure). The tunnel's own configure/reset flow was unaffected — it already went through the fully-capable `config.*` (secret-store) channel.
 
-`SettingsAboutFragment.kt` (native) does not have a "Check for Updates" feature, a source-code link, or support links — several `settings_about_*` ARB keys for these exist but are unused by any current native code or resource (grepped; a leftover from a richer About page that was never built). The Recording tab's "Format External Drive" and "Database Catalog" sync actions, and Daemons' Zrok token dialog, are fully implemented (no gap); Daemons' debug-only per-daemon log download (`DaemonsFragment.onDownloadLogClicked`, ADB `tail` + `FileProvider` share, gated to `BuildConfig.DEBUG`) is deliberately not ported — a developer convenience, not a release end-user feature.
+`SettingsAboutFragment.kt` (native) does not have a "Check for Updates" feature, a source-code link, or support links — several `settings_about_*` ARB keys for these exist but are unused by any current native code or resource (grepped; a leftover from a richer About page that was never built). The Recording tab's "Format External Drive" and "Database Catalog" sync actions, and Daemons' tunnel token dialog, are fully implemented (no gap); Daemons' debug-only per-daemon log download (`DaemonsFragment.onDownloadLogClicked`, ADB `tail` + `FileProvider` share, gated to `BuildConfig.DEBUG`) is deliberately not ported — a developer convenience, not a release end-user feature.
 
 ### Flutter Diagnostics hub, Performance dashboard, and ADB Console (BladeWatch-yz1e.4)
 
@@ -400,10 +402,10 @@ Separately, `docs/surveillance-implementation.md`'s own "ROI" section confirms t
 
 The task's own 8-dialog list turned out to be 4 already built plus 4 genuinely new — confirmed by reading each dialog's actual current Flutter state before assuming any of them needed writing, not by trusting the task list at face value:
 
-- **Battery Health, Camera Selection, Vehicle Capacity, Zrok Token were already implemented** (Diagnostics/Dashboard/Settings-Daemons — earlier yz1e.2/yz1e.4 work, each with a doc comment already pointing at this task by number). Camera Selection, Vehicle Capacity, and Zrok Token needed no changes. **Battery Health was enriched**: it showed only the SOH percent; native's dialog also has Source/Method/Capacity rows and a 4-way status line (`soh_estimation_active`/`_oem_readout`/`_nominal_baseline`/`_no_estimate_yet`), all backed by `GetSohStatus` fields (`nominalCapacityKwh`/`nominalSource`/`displaySource`) the controller was already fetching but not exposing. Native's own "estimation active" trigger is a `soh_percent > 0` read from `/data/local/tmp/abrp_soh_estimate.properties` — unavailable here for the same reason `DiagnosticsController.resetBattery()`'s doc comment already gives (no `/data/local/tmp` access from this port) — so `displaySource == 'live' || 'calibration'` is used as the closest RPC-only equivalent signal instead of guessing at file access. Model/pack-capacity/estimated-capacity/calibration-anchor remain out of scope for the identical reason.
+- **Battery Health, Camera Selection, Vehicle Capacity, tunnel token were already implemented** (Diagnostics/Dashboard/Settings-Daemons — earlier yz1e.2/yz1e.4 work, each with a doc comment already pointing at this task by number). Camera Selection, Vehicle Capacity, and the tunnel token needed no changes. **Battery Health was enriched**: it showed only the SOH percent; native's dialog also has Source/Method/Capacity rows and a 4-way status line (`soh_estimation_active`/`_oem_readout`/`_nominal_baseline`/`_no_estimate_yet`), all backed by `GetSohStatus` fields (`nominalCapacityKwh`/`nominalSource`/`displaySource`) the controller was already fetching but not exposing. Native's own "estimation active" trigger is a `soh_percent > 0` read from `/data/local/tmp/abrp_soh_estimate.properties` — unavailable here for the same reason `DiagnosticsController.resetBattery()`'s doc comment already gives (no `/data/local/tmp` access from this port) — so `displaySource == 'live' || 'calibration'` is used as the closest RPC-only equivalent signal instead of guessing at file access. Model/pack-capacity/estimated-capacity/calibration-anchor remain out of scope for the identical reason.
 - **Language Picker, Reset Data, Setup Guide were net new.**
 
-**Reset Data (`flutter_ui/lib/screens/settings/settings_privacy_screen.dart`) — ground truth `MainActivity.kt`'s `showResetDataDialog()`/`confirmAndPerformReset()`/`performReset()`.** A 3-dialog flow (category checklist → "reset the following?" confirmation naming the selected categories → result dialog parsing `SystemService.ResetPerformance`'s per-category `resultsJson`), using the exact same 7 API category strings as `resetCategoryMapping`. The screen's own `onResetData` callback (threaded from `main.dart` since BladeWatch-yz1e.3) was removed — showing a dialog needs a `BuildContext`, which a bare `VoidCallback` sourced from outside the widget tree can't usefully carry, so `SettingsPrivacyScreen` now takes a `SystemServiceClient` directly (already available at its one call site in `settings_screen.dart`) and shows the dialog itself, matching every other in-screen dialog this session (Camera Selection, Battery Health, Zrok Token).
+**Reset Data (`flutter_ui/lib/screens/settings/settings_privacy_screen.dart`) — ground truth `MainActivity.kt`'s `showResetDataDialog()`/`confirmAndPerformReset()`/`performReset()`.** A 3-dialog flow (category checklist → "reset the following?" confirmation naming the selected categories → result dialog parsing `SystemService.ResetPerformance`'s per-category `resultsJson`), using the exact same 7 API category strings as `resetCategoryMapping`. The screen's own `onResetData` callback (threaded from `main.dart` since BladeWatch-yz1e.3) was removed — showing a dialog needs a `BuildContext`, which a bare `VoidCallback` sourced from outside the widget tree can't usefully carry, so `SettingsPrivacyScreen` now takes a `SystemServiceClient` directly (already available at its one call site in `settings_screen.dart`) and shows the dialog itself, matching every other in-screen dialog this session (Camera Selection, Battery Health, tunnel token).
 
 **Language Picker (`flutter_ui/lib/shell/locale_controller.dart` + `flutter_ui/lib/screens/dialogs/language_picker_sheet.dart`) — ground truth `LanguagePickerDialog.kt` + `LocaleManager.java`.** Genuinely new app-wide infrastructure: nothing before this task let the Flutter shell's active locale differ from the system default at all (`MaterialApp` had no `locale:` parameter).
 
@@ -423,7 +425,23 @@ The task's own 8-dialog list turned out to be 4 already built plus 4 genuinely n
 
 **Coverage**: Dart 99.97% (6547/6549 lines, 99.9695% unrounded) — up from 99.9679% at BladeWatch-yz1e.10 (6226/6228). Every new/changed file (`settings_privacy_screen.dart`, `diagnostics_controller.dart`, `diagnostics_screen.dart`, `locale_controller.dart`, `language_picker_sheet.dart`, `setup_channel.dart`, `setup_guide_controller.dart`, `setup_guide_dialog.dart`, `prefs_channel.dart`) reached 100%; the only 2 permanently-uncovered lines remain `main.dart`'s literal `void main()`. Kotlin (Flutter APK) stayed at 100% for testable code — `MainActivity.kt`'s 2 new intent-launching functions fall under its pre-existing wholesale exclusion, adding no new exclusion entries.
 
-## Build Commands
+## Build
+
+### Web app test suites
+
+The Angular app has three, with different requirements:
+
+| Command | Needs a car? | Covers |
+|---|---|---|
+| `npm run test:unit` | no | Framework-free logic (vitest) |
+| `npm run test:mobile` | no | Mobile layout on Pixel 7 + iPhone 13, against a locally served build |
+| `npm run test:e2e` | **yes** | Real flows against a live head unit; needs `e2e/.env` |
+
+`test:mobile` stubs the i18n catalogue, which is normally served by the DAEMON rather than the
+static bundle. Without that stub every label renders empty and controls collapse to their
+padding — measured: the login button reports 28px unlabelled against ~46px labelled, which
+looks exactly like a touch-target defect that does not exist.
+ Commands
 
 Common local commands:
 
@@ -657,7 +675,7 @@ Important runtime files:
 - `/storage/emulated/0/BladeWatch/data/bladewatch_config.json` (persistent config; mirrored to `/data/local/tmp/bladewatch_config.json`).
 - `/storage/emulated/0/BladeWatch/data/bladewatch_trips_h2.mv.db` (persistent trip database).
 - `/data/local/tmp/bladewatch_secrets.json`.
-- `/data/local/tmp/zrok.log`.
+- `/data/local/tmp/tor.log`.
 - `/storage/emulated/0/BladeWatch`.
 
 Runtime files can contain secrets, tokens, tunnel URLs, or vehicle data. Treat pulled logs and configs as sensitive.

@@ -3,8 +3,7 @@ import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConnectClients } from '../../core/connect/connect-clients';
-import type { SurveillanceConfig } from '../../../../gen/bladewatch/v1/surveillance_pb';
-import type { SafeZone } from '../../../../gen/bladewatch/v1/safe_locations_pb';
+import type { SafeZone } from '../../../gen/bladewatch/v1/safe_locations_pb';
 
 @Component({
   selector: 'app-surveillance',
@@ -120,7 +119,7 @@ export default class SurveillanceComponent implements OnInit {
           detectCar: this.detectCar(),
           detectBike: this.detectBike(),
           nightMode: this.nightMode(),
-        } as Partial<SurveillanceConfig>,
+        },
       });
       this.statusMsg.set('Settings saved');
     } catch {

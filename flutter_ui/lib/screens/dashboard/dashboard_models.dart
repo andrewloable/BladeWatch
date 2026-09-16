@@ -70,7 +70,7 @@ class RecordingsMetricState {
 /// Daemon summary tile — ground truth: the `daemonsViewModel.daemonStates`
 /// observer's `running`/`total` count. Sourced from `daemon.processStatus`
 /// (BladeWatch-1xt9) rather than the native's ADB-based per-daemon
-/// `DaemonsViewModel`, which counts all 4 `DaemonType` values (incl. Zrok);
+/// `DaemonsViewModel`, which counts all 4 `DaemonType` values (incl. the tunnel);
 /// `daemon.processStatus` reports the same 4, so the count is directly
 /// comparable.
 class DaemonsSummaryState {
@@ -87,12 +87,16 @@ class DaemonsSummaryState {
 }
 
 /// Tunnel tile + hero chip + QR/placeholder state — ground truth:
-/// `updateTunnelTile()`/`rebuildTunnelChips()`/`showPlaceholder()`. Zrok is
+/// `updateTunnelTile()`/`rebuildTunnelChips()`/`showPlaceholder()`. The tunnel is
 /// the only tunnel type this app has ever shipped (`collectAvailableTunnels()`
-/// only ever adds `ZROK_TUNNEL`), so unlike the native code's
+/// only ever adds `TOR_TUNNEL`), so unlike the native code's
 /// generic-looking `List<Pair<DaemonType, String>>` machinery, this models
-/// Zrok directly rather than a list of one.
-enum TunnelPhase { offline, connecting, online }
+/// the tunnel directly rather than a list of one.
+/// BladeWatch-y7x2: [disabled] is the owner having switched the tunnel OFF, which is
+/// not the same as [offline] (enabled, but nothing running). The Dashboard hides its
+/// connect card entirely for [disabled] and shows "no tunnel" for [offline]; collapsing
+/// the two would hide the card during the minute an enabled tunnel takes to bootstrap.
+enum TunnelPhase { disabled, offline, connecting, online }
 
 class TunnelState {
   final TunnelPhase phase;

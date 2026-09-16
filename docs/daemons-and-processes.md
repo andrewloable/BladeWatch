@@ -74,7 +74,7 @@ Core daemons:
 
 Optional daemons:
 
-- `ZROK_TUNNEL`.
+- `TOR_TUNNEL`.
 
 Startup timing (measured from app launch / boot):
 
@@ -103,7 +103,7 @@ It can start:
 - Camera daemon.
 - Sentry daemon.
 - ACC sentry daemon.
-- Zrok tunnel.
+- Tor tunnel.
 - Android sidecar services.
 
 It also applies selected power, location, ACC whitelist, and Wi-Fi settings.
@@ -177,9 +177,9 @@ It accepts JSON commands for local control. Known command areas include:
 - Secret get, put, delete, and section operations.
 - Public (non-secret) config read/write, allow-listed to the `statusOverlay` and
   `developerOptions` sections (`config_get_section`, `config_put`).
-- Daemon process liveness (`daemonStatus`) and the Zrok tunnel URL (`tunnelStatus`).
+- Daemon process liveness (`daemonStatus`) and the Tor onion URL (`tunnelStatus`, gated on tor having bootstrapped).
 - Enable/disable an optional daemon (`daemon_set_enabled`), allow-listed to
-  `ZROK_TUNNEL`.
+  `TOR_TUNNEL`.
 
 The last four exist because the Flutter UI ships as a separate APK with no ADB; each is
 deliberately narrow rather than a general-purpose escape hatch. See
@@ -247,20 +247,43 @@ Responsibilities:
 - Uses the `UPDATE_GPS` surveillance IPC command.
 - Sends updates roughly every two seconds while active.
 
-## Zrok Tunnel Process
+## Tor Tunnel Process
 
-Zrok is the sole remote-access tunnel. It is extracted from the packaged `libzrok.so` native library and run as a subprocess.
+The Tor onion service is the sole remote-access tunnel. `TorLauncher` copies the binary out
+of the packaged `libtor.so` to `/data/local/tmp/bladewatch_tor` and runs it as a shell-UID
+subprocess, like every other daemon. The binary is downloaded and SHA-256-verified at build
+time by `downloadTor`, not committed.
 
 Runtime paths:
 
 ```text
-/data/local/tmp/zrok
-/data/local/tmp/zrok.log
-/data/local/tmp/.zrok/environment.json
-/data/local/tmp/.zrok/unique_name
+/data/local/tmp/bladewatch_tor    the binary, installed under its own process name
+/data/local/tmp/tor/torrc         generated config, rewritten on every launch
+/data/local/tmp/tor/data          consensus cache (safe to delete; costs a slow start)
+/data/local/tmp/tor/hs            hidden-service directory — NEVER delete, see below
+/data/local/tmp/tor.log           notice log; the tunnelStatus bootstrap gate reads this
 ```
 
-Zrok fronts the local HTTP server at `http://127.0.0.1:8080` and supports public ephemeral shares or reserved shares with a stable `https://<name>.share.zrok.io` URL. It runs directly with no intermediate proxy layer.
+It fronts the local HTTP server at `http://127.0.0.1:8080` as a v3 onion service on port 80,
+with no intermediate proxy layer. There is no account, token or registration, and the
+address is permanent because it is derived from a key in the hidden-service directory.
+
+The process is named `bladewatch_tor`, not `tor`: liveness is decided by
+`basename(argv[0])`, a bare `tor` could collide, and 14 characters stays inside the
+kernel's 15-character cap on `/proc/<pid>/comm` so `killall` matches it in full. That cap
+matters in practice — when stopping the tunnel by hand use `killall -9 bladewatch_tor`, not
+`pkill -9 -f`: toybox `pkill -f` matches the pattern as a literal substring of every
+process's cmdline, including the ADB shell running your own kill script, so it kills that
+shell mid-procedure.
+
+**`/data/local/tmp/tor/hs` holds `hs_ed25519_secret_key`, which IS the car's permanent
+onion address.** Killing the process is fine and reversible; deleting that directory is
+not — tor mints a new address on the next start and every QR code ever scanned stops
+working.
+
+Startup timing measured on the head unit: ~82 s from a cold start to `Bootstrapped 100%`,
+~6 s on a restart with a populated `DataDirectory`. `tunnelStatus` reports
+`running: true, url: null` throughout that window.
 
 ## Process Interaction Summary
 
@@ -269,7 +292,7 @@ BootReceiver / MainActivity (woken by the Flutter APK)
   -> DaemonKeepaliveService
   -> DaemonStartupManager
   -> AdbDaemonLauncher
-  -> app_process Java daemons and extracted Zrok native binary
+  -> app_process Java daemons and the extracted tor native binary
 
 Flutter in-car UI (net.bladewatch.flutter, same UID)
   -> TCP 19876 (privileged ops, via its own Kotlin MethodChannels)
@@ -294,4 +317,4 @@ Camera daemon
 - Daemon readiness sentinel and probe: [CameraDaemon.java:242](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L242), [CameraDaemon.java:633](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L633), [DaemonReadinessChecker.java:33](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.java#L33), [DaemonReadinessChecker.java:59](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.java#L59).
 - TCP and surveillance IPC commands: [CameraDaemonClient.java:61](../app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.java#L61), [TcpCommandServer.java:93](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L93), [TcpCommandServer.java:108](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L108), [SurveillanceIpcServer.java:75](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L75), [SurveillanceIpcServer.java:107](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L107).
 - Location sidecar IPC: [LocationSidecarService.java:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.java#L32), [AccSentryDaemon.java:2078](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.java#L2078).
-- Zrok tunnel process: [ZrokLauncher.kt:27](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L27), [ZrokLauncher.kt:1079](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L1079).
+- Tor tunnel process: [TorLauncher.kt:44](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L44), [TorLauncher.kt:92](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L92).

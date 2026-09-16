@@ -10,7 +10,7 @@ Design + spike for securing BladeWatch secrets at rest on the BYD DiLink v3 head
 
 ## Current State
 
-Secrets (device token, zrok enable token, BYD cloud creds) are stored as plaintext JSON at:
+Secrets (device token and similar) are stored as plaintext JSON at:
 ```
 /storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json
 ```

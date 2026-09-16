@@ -1,7 +1,7 @@
 import 'platform_channel.dart';
 
 /// Dart side of the `config.*` channel group (BladeWatch-ncbb.2) — for the
-/// Zrok token dialog and similar settings backed by the daemon-owned secret
+/// settings backed by the daemon-owned secret
 /// store. Thin-wraps the Kotlin `SecretConfigChannel` class
 /// (`secret_get`/`secret_put`/`secret_delete` over loopback IPC). Any
 /// [PlatformChannelError] / [ChannelTimeoutException] propagates unchanged.

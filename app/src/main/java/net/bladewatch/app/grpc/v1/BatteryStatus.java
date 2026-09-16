@@ -81,6 +81,37 @@ private static final long serialVersionUID = 0L;
     return bodyworkRangeKm_;
   }
 
+  public static final int FUEL_PERCENT_FIELD_NUMBER = 4;
+  private double fuelPercent_ = 0D;
+  /**
+   * <pre>
+   * PHEV fuel leg. Both are OMITTED on a BEV rather than sent as 0: the
+   * collector leaves fuel_percent NaN and fuel_range_km UNAVAILABLE there, and
+   * a zero would render as a real "0%" / "0 km" readout on a car that has no
+   * tank. Clients therefore treat "absent" as "not a fuel vehicle", which is
+   * also how they decide whether to show the fuel readout at all -- there is no
+   * separate is_phev flag on this message.
+   * </pre>
+   *
+   * <code>double fuel_percent = 4 [json_name = "fuelPercent"];</code>
+   * @return The fuelPercent.
+   */
+  @java.lang.Override
+  public double getFuelPercent() {
+    return fuelPercent_;
+  }
+
+  public static final int FUEL_RANGE_KM_FIELD_NUMBER = 5;
+  private int fuelRangeKm_ = 0;
+  /**
+   * <code>int32 fuel_range_km = 5 [json_name = "fuelRangeKm"];</code>
+   * @return The fuelRangeKm.
+   */
+  @java.lang.Override
+  public int getFuelRangeKm() {
+    return fuelRangeKm_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -104,6 +135,12 @@ private static final long serialVersionUID = 0L;
     if (bodyworkRangeKm_ != 0) {
       output.writeInt32(3, bodyworkRangeKm_);
     }
+    if (java.lang.Double.doubleToRawLongBits(fuelPercent_) != 0) {
+      output.writeDouble(4, fuelPercent_);
+    }
+    if (fuelRangeKm_ != 0) {
+      output.writeInt32(5, fuelRangeKm_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -119,6 +156,14 @@ private static final long serialVersionUID = 0L;
     if (bodyworkRangeKm_ != 0) {
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(3, bodyworkRangeKm_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelPercent_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(4, fuelPercent_);
+    }
+    if (fuelRangeKm_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeInt32Size(5, fuelRangeKm_);
     }
     return size;
   }
@@ -151,6 +196,11 @@ private static final long serialVersionUID = 0L;
         != other.getRangeKm()) return false;
     if (getBodyworkRangeKm()
         != other.getBodyworkRangeKm()) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelPercent())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelPercent())) return false;
+    if (getFuelRangeKm()
+        != other.getFuelRangeKm()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -169,6 +219,11 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getRangeKm();
     hash = (37 * hash) + BODYWORK_RANGE_KM_FIELD_NUMBER;
     hash = (53 * hash) + getBodyworkRangeKm();
+    hash = (37 * hash) + FUEL_PERCENT_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelPercent()));
+    hash = (37 * hash) + FUEL_RANGE_KM_FIELD_NUMBER;
+    hash = (53 * hash) + getFuelRangeKm();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -303,6 +358,8 @@ private static final long serialVersionUID = 0L;
       soc_ = 0D;
       rangeKm_ = 0;
       bodyworkRangeKm_ = 0;
+      fuelPercent_ = 0D;
+      fuelRangeKm_ = 0;
       return this;
     }
 
@@ -345,6 +402,12 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000004) != 0)) {
         result.bodyworkRangeKm_ = bodyworkRangeKm_;
       }
+      if (((from_bitField0_ & 0x00000008) != 0)) {
+        result.fuelPercent_ = fuelPercent_;
+      }
+      if (((from_bitField0_ & 0x00000010) != 0)) {
+        result.fuelRangeKm_ = fuelRangeKm_;
+      }
     }
 
     @java.lang.Override
@@ -367,6 +430,12 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getBodyworkRangeKm() != 0) {
         setBodyworkRangeKm(other.getBodyworkRangeKm());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelPercent()) != 0) {
+        setFuelPercent(other.getFuelPercent());
+      }
+      if (other.getFuelRangeKm() != 0) {
+        setFuelRangeKm(other.getFuelRangeKm());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -409,6 +478,16 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000004;
               break;
             } // case 24
+            case 33: {
+              fuelPercent_ = input.readDouble();
+              bitField0_ |= 0x00000008;
+              break;
+            } // case 33
+            case 40: {
+              fuelRangeKm_ = input.readInt32();
+              bitField0_ |= 0x00000010;
+              break;
+            } // case 40
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -518,6 +597,97 @@ private static final long serialVersionUID = 0L;
     public Builder clearBodyworkRangeKm() {
       bitField0_ = (bitField0_ & ~0x00000004);
       bodyworkRangeKm_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private double fuelPercent_ ;
+    /**
+     * <pre>
+     * PHEV fuel leg. Both are OMITTED on a BEV rather than sent as 0: the
+     * collector leaves fuel_percent NaN and fuel_range_km UNAVAILABLE there, and
+     * a zero would render as a real "0%" / "0 km" readout on a car that has no
+     * tank. Clients therefore treat "absent" as "not a fuel vehicle", which is
+     * also how they decide whether to show the fuel readout at all -- there is no
+     * separate is_phev flag on this message.
+     * </pre>
+     *
+     * <code>double fuel_percent = 4 [json_name = "fuelPercent"];</code>
+     * @return The fuelPercent.
+     */
+    @java.lang.Override
+    public double getFuelPercent() {
+      return fuelPercent_;
+    }
+    /**
+     * <pre>
+     * PHEV fuel leg. Both are OMITTED on a BEV rather than sent as 0: the
+     * collector leaves fuel_percent NaN and fuel_range_km UNAVAILABLE there, and
+     * a zero would render as a real "0%" / "0 km" readout on a car that has no
+     * tank. Clients therefore treat "absent" as "not a fuel vehicle", which is
+     * also how they decide whether to show the fuel readout at all -- there is no
+     * separate is_phev flag on this message.
+     * </pre>
+     *
+     * <code>double fuel_percent = 4 [json_name = "fuelPercent"];</code>
+     * @param value The fuelPercent to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelPercent(double value) {
+
+      fuelPercent_ = value;
+      bitField0_ |= 0x00000008;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * PHEV fuel leg. Both are OMITTED on a BEV rather than sent as 0: the
+     * collector leaves fuel_percent NaN and fuel_range_km UNAVAILABLE there, and
+     * a zero would render as a real "0%" / "0 km" readout on a car that has no
+     * tank. Clients therefore treat "absent" as "not a fuel vehicle", which is
+     * also how they decide whether to show the fuel readout at all -- there is no
+     * separate is_phev flag on this message.
+     * </pre>
+     *
+     * <code>double fuel_percent = 4 [json_name = "fuelPercent"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelPercent() {
+      bitField0_ = (bitField0_ & ~0x00000008);
+      fuelPercent_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private int fuelRangeKm_ ;
+    /**
+     * <code>int32 fuel_range_km = 5 [json_name = "fuelRangeKm"];</code>
+     * @return The fuelRangeKm.
+     */
+    @java.lang.Override
+    public int getFuelRangeKm() {
+      return fuelRangeKm_;
+    }
+    /**
+     * <code>int32 fuel_range_km = 5 [json_name = "fuelRangeKm"];</code>
+     * @param value The fuelRangeKm to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelRangeKm(int value) {
+
+      fuelRangeKm_ = value;
+      bitField0_ |= 0x00000010;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>int32 fuel_range_km = 5 [json_name = "fuelRangeKm"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelRangeKm() {
+      bitField0_ = (bitField0_ & ~0x00000010);
+      fuelRangeKm_ = 0;
       onChanged();
       return this;
     }

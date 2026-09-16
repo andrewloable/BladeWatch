@@ -57,4 +57,38 @@ public interface SetConfigRequestOrBuilder extends
    */
   com.google.protobuf.ByteString
       getDistanceUnitBytes();
+
+  /**
+   * <pre>
+   * PHEV pricing (BladeWatch-9uu6). New field numbers only, so a client built against the
+   * old schema still parses this message.
+   *
+   * Each value carries an explicit has_* companion, matching the pattern above. proto3 omits
+   * default scalars on the wire, so without the companion a deliberate 0 — which means "not
+   * configured" for both of these — would be indistinguishable from "field not sent", and the
+   * daemon would keep the previous value instead of clearing it.
+   * </pre>
+   *
+   * <code>double fuel_price_per_l = 7 [json_name = "fuelPricePerL"];</code>
+   * @return The fuelPricePerL.
+   */
+  double getFuelPricePerL();
+
+  /**
+   * <code>bool has_fuel_price_per_l = 8 [json_name = "hasFuelPricePerL"];</code>
+   * @return The hasFuelPricePerL.
+   */
+  boolean getHasFuelPricePerL();
+
+  /**
+   * <code>double fuel_tank_capacity_l = 9 [json_name = "fuelTankCapacityL"];</code>
+   * @return The fuelTankCapacityL.
+   */
+  double getFuelTankCapacityL();
+
+  /**
+   * <code>bool has_fuel_tank_capacity_l = 10 [json_name = "hasFuelTankCapacityL"];</code>
+   * @return The hasFuelTankCapacityL.
+   */
+  boolean getHasFuelTankCapacityL();
 }

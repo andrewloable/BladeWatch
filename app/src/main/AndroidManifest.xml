@@ -238,9 +238,19 @@
              Removing the intent-filter, not the activity: the bootstrap has no other
              home yet. See the close reason on BladeWatch-81g9.1 for why a Service was
              not chosen. -->
+        <!-- BladeWatch-p9ag: TRANSLUCENT, because this activity has no UI.
+             It never calls setContentView and calls moveTaskToBack(true) immediately, so
+             an opaque theme painted a blank WHITE WINDOW - reported from the head unit.
+             That window also flashed over the Flutter UI on every cold start, since
+             wakeServiceHost() starts this component from the Flutter app's first onResume.
+             What it was covering is the Flutter Startup screen, which already shows the
+             brand lockup and per-daemon progress; making this invisible is what lets it
+             through. NOT Theme.NoDisplay - that requires finishing before resume, and this
+             activity backgrounds itself instead. Pinned by ServiceHostManifestTest. -->
         <activity 
             android:name="net.bladewatch.app.ui.MainActivity"
             android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
             android:screenOrientation="unspecified"
             android:configChanges="orientation|screenSize|keyboardHidden"

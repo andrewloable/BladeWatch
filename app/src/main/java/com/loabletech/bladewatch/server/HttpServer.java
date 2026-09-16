@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * Listens on 127.0.0.1:8080 by default; LAN binding is an explicit unsafe mode.
  * 
  * Single-port WebSocket: /ws endpoint upgrades to WebSocket for H.264 streaming
- * (single port allows Zrok tunnel to expose both HTTP and WebSocket).
+ * (single port lets the tunnel expose both HTTP and WebSocket through one onion port).
  * 
  * API handlers are modularized into separate classes:
  * - RecordingsApiHandler: /api/recordings, /video/*
@@ -55,7 +55,37 @@ public class HttpServer {
     private volatile boolean running = true;
 
     // Thread Pool to prevent server clogging (max 32 concurrent connections)
+    /**
+     * Request-serving pool. Every worker here is bounded by the 15 s socket timeout set in
+     * {@code handleClient}, so no single request can hold one indefinitely.
+     */
     private final ExecutorService threadPool = Executors.newFixedThreadPool(32);
+
+    /**
+     * Long-lived H.264 WebSocket streams, deliberately SEPARATE from {@link #threadPool}
+     * (BladeWatch-sxzg).
+     *
+     * <p>The in-car Flutter UI speaks ConnectRPC to this very server on 127.0.0.1:8080, so
+     * it queues on the same pool as every remote client arriving through the onion service.
+     * {@code streamH264ToWebSocket} sets {@code setSoTimeout(0)} and then blocks for the
+     * whole viewing session — so on the request pool, each viewer permanently removed a
+     * worker that the driver's own screen needed. Ordinary requests are bounded by their
+     * timeout; a stream is bounded by nothing.
+     *
+     * <p>Measured on the head unit 2026-09-15, with the tunnel up and a remote viewer: the
+     * Flutter app rendered ZERO frames in ten seconds while 44% of frames were janky at a
+     * 600 ms 99th percentile, on a machine that was 497% of 800% idle. Not a render loop and
+     * not a CPU shortage — a UI thread waiting on RPCs stuck behind remote traffic.
+     *
+     * <p>Cached rather than fixed: viewers are few and sporadic, threads are reclaimed after
+     * 60 s idle, and a hard cap here would mean refusing a legitimate viewer rather than
+     * merely slowing one. The cap that matters is on the REQUEST pool, which this protects.
+     */
+    private final ExecutorService streamPool = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "http-stream");
+        t.setDaemon(true);
+        return t;
+    });
 
     private final ConnectDispatcher connectDispatcher = new ConnectDispatcher();
 
@@ -213,13 +243,72 @@ public class HttpServer {
             if (serverSocket != null) serverSocket.close();
         } catch (Exception e) { CameraDaemon.log("WARN: HTTP stop() serverSocket.close() failed: " + e.getMessage()); }
         threadPool.shutdownNow();
+        streamPool.shutdownNow();
+    }
+
+    /**
+     * Read timeout, applied to the first request and to the idle wait between keep-alive
+     * requests (BladeWatch-67h8). Long enough not to punish a slow Tor round trip, short
+     * enough that an abandoned socket is reclaimed rather than held by a daemon that runs
+     * for weeks.
+     */
+    private static final int SOCKET_TIMEOUT_MS = 15000;
+
+    /**
+     * Turn a Latin-1-read request body back into text (BladeWatch-ou7y).
+     *
+     * <p>The request reader decodes as ISO-8859-1 so that one char is exactly one byte and
+     * {@code Content-Length} — which counts bytes — can be satisfied exactly. That makes
+     * {@code chars} a byte buffer wearing a char[] costume: each element holds one byte in
+     * its low 8 bits. Narrowing them back to bytes and decoding as UTF-8 recovers the text
+     * the client actually sent.
+     *
+     * <p>Package-private so {@code RequestBodyDecodingTest} can exercise it directly; the
+     * surrounding socket plumbing is not unit-testable.
+     */
+    static String decodeRequestBody(char[] chars, int length) {
+        byte[] bytes = new byte[length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) chars[i];
+        }
+        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private void handleClient(Socket client) {
+        // BladeWatch-sxzg: set when the socket's ownership passes to the streaming pool.
+        // The finally below MUST NOT close it then — the stream is still using it, and
+        // closing here would tear down every live view the moment it started.
+        boolean socketHandedOff = false;
+        // True while waiting for a request line, false once one is being served. Lets the
+        // SocketTimeoutException handler tell a normal keep-alive idle expiry (the peer
+        // stopped asking) from a read that timed out MID-REQUEST, which is a real fault and
+        // must not be swallowed.
+        boolean betweenRequests = true;
         try {
-            client.setSoTimeout(15000);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            OutputStream out = new BufferedOutputStream(client.getOutputStream());
+            client.setSoTimeout(SOCKET_TIMEOUT_MS);
+            // BladeWatch-ou7y: ISO-8859-1, deliberately, NOT the platform default.
+            // Content-Length counts BYTES but reader.read(char[]) returns CHARACTERS, and
+            // under a UTF-8 decoder those differ for any non-ASCII body — the body loop
+            // then waits for characters that will never arrive and the request times out.
+            // Latin-1 maps bytes 0-255 bijectively onto chars 0-255, so one char IS one
+            // byte and the count is exact. decodeRequestBody() converts back to real text.
+            // Safe for the rest of the request: request lines and the header values parsed
+            // below are ASCII (a non-ASCII path arrives percent-encoded, which is ASCII).
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    client.getInputStream(), java.nio.charset.StandardCharsets.ISO_8859_1));
+            KeepAliveStream out = new KeepAliveStream(new BufferedOutputStream(client.getOutputStream()));
+
+            // BladeWatch-67h8: one socket may now carry several requests. Every existing
+            // "client.close(); return;" below still means "close and stop", which is
+            // still correct — they are the error paths. Only the SUCCESS path loops.
+            while (true) {
+
+            // Re-arm per iteration. A previous request on this connection may have raised
+            // the timeout (the vehicle-control path below sets 60s), and under keep-alive
+            // that would otherwise persist for every later request and hold an idle socket
+            // four times longer than intended.
+            client.setSoTimeout(SOCKET_TIMEOUT_MS);
+            betweenRequests = true;
 
             String requestLine = reader.readLine();
             if (requestLine == null) {
@@ -227,6 +316,7 @@ public class HttpServer {
                 return;
             }
             
+            betweenRequests = false;
             CameraDaemon.log("HTTP: " + requestLine);
             
             // Parse headers
@@ -247,17 +337,27 @@ public class HttpServer {
             String vehicleActionTokenHeader = null;
             // Reverse-proxy fingerprints — used by AuthMiddleware to disable
             // the loopback safety net when a tunnel relayed the request.
-            // zrok injects X-Forwarded-*.
+            // A reverse proxy injects X-Forwarded-*. NOTE: the Tor onion service does
+            // NOT — it opens a plain TCP connection to 127.0.0.1:8080 — so these headers
+            // are no longer how remote traffic is recognised. AuthMiddleware also checks
+            // whether the tunnel process is up; see its Tier 2 comment.
             boolean hasTunnelHeaders = false;
             String forwardedFor = null;
             String hostHeader = null;
-            // Zrok's HTTP backend rewrites Host: to the backend URL (localhost:8080)
-            // before forwarding, and stashes the original public hostname in
-            // X-Forwarded-Host. Captured here so isPwaOrigin can match it.
+            // Kept for any reverse proxy that rewrites Host: to the backend URL
+            // (localhost:8080) and stashes the original public hostname in
+            // X-Forwarded-Host. Captured here so isPwaOrigin can match it. Tor sends
+            // neither header — an onion client's Host: is already the .onion address.
             String forwardedHostHeader = null;
+
+            // BladeWatch-67h8: the client's own keep-alive intent.
+            String connectionRequestHeader = null;
 
             while ((line = reader.readLine()) != null && !line.isEmpty()) {
                 String lower = line.toLowerCase();
+                if (lower.startsWith("connection:")) {
+                    connectionRequestHeader = line.substring(11).trim().toLowerCase();
+                }
                 if (lower.startsWith("content-length:")) {
                     contentLength = Integer.parseInt(line.substring(15).trim());
                 } else if (lower.startsWith("sec-websocket-key:")) {
@@ -323,11 +423,15 @@ public class HttpServer {
                     if (read == -1) break;  // EOF
                     totalRead += read;
                 }
-                body = new String(bodyChars, 0, totalRead);
+                body = decodeRequestBody(bodyChars, totalRead);
             }
 
             String[] parts = requestLine.split(" ");
             if (parts.length < 2) {
+                // This runs BEFORE the keep-alive decision below, so on a REUSED connection
+                // `out` still carries the previous request's "keep-alive". We are about to
+                // close, so say so.
+                out.setKeepAlive(false);
                 HttpResponse.sendError(out, 400, "Bad Request");
                 client.close();
                 return;
@@ -335,6 +439,18 @@ public class HttpServer {
 
             String method = parts[0];
             String path = parts[1];
+
+            // BladeWatch-67h8: decide BEFORE dispatch, because the response writers read
+            // this back through HttpResponse.connectionHeader(out) as they emit headers.
+            // HTTP/1.1 defaults to persistent; HTTP/1.0 requires an explicit opt-in.
+            String httpVersion = parts.length > 2 ? parts[2].trim() : "HTTP/1.0";
+            boolean clientWantsClose = connectionRequestHeader != null
+                    && connectionRequestHeader.contains("close");
+            boolean clientWantsKeepAlive = connectionRequestHeader != null
+                    && connectionRequestHeader.contains("keep-alive");
+            boolean keepAlive = !clientWantsClose
+                    && ("HTTP/1.1".equalsIgnoreCase(httpVersion) || clientWantsKeepAlive);
+            out.setKeepAlive(keepAlive);
             
             // Extend timeout for slow vehicle control API calls.
             if (path.startsWith("/api/vehicle/lock") ||
@@ -362,12 +478,15 @@ public class HttpServer {
                         }
                     }
                 }
-                if (!AuthMiddleware.checkAuth(wsPathOnly, cookieHeader, wsAuthHeader, out,
-                        client.getRemoteSocketAddress(), hasTunnelHeaders)) {
+                out.setKeepAlive(false);   // see the auth gate below
+                boolean wsAuthorized = AuthMiddleware.checkAuth(wsPathOnly, cookieHeader,
+                        wsAuthHeader, out, client.getRemoteSocketAddress(), hasTunnelHeaders);
+                out.setKeepAlive(keepAlive);
+                if (!wsAuthorized) {
                     client.close();
                     return;
                 }
-                handleWebSocketUpgrade(client, websocketKey);
+                socketHandedOff = handleWebSocketUpgrade(client, websocketKey);
                 return;
             }
 
@@ -377,8 +496,9 @@ public class HttpServer {
             if (path.startsWith("/auth/")) {
                 String identity = String.valueOf(client.getRemoteSocketAddress());
                 AuthApiHandler.handle(method, path, body, out, identity, hasTunnelHeaders);
-                client.close();
-                return;
+                out.flush();
+                if (!keepAlive) break;
+                continue;
             }
             
             // Serve login page (public) - strip query string for matching
@@ -387,8 +507,9 @@ public class HttpServer {
                 if (!serveStaticFile(out, "local/login.html")) {
                     HttpResponse.sendError(out, 404, "login.html not found");
                 }
-                client.close();
-                return;
+                out.flush();
+                if (!keepAlive) break;
+                continue;
             }
             
             // Handle CORS preflight (OPTIONS) requests for cross-origin webapp access.
@@ -397,13 +518,20 @@ public class HttpServer {
             // Must be handled BEFORE auth check — preflight requests don't carry cookies/tokens.
             if (method.equals("OPTIONS")) {
                 HttpResponse.sendCorsPreflightResponse(out);
-                client.close();
-                return;
+                out.flush();
+                if (!keepAlive) break;
+                continue;
             }
             
-            // Check authentication for all other paths
-            if (!AuthMiddleware.checkAuth(path, cookieHeader, authHeader, out,
-                    client.getRemoteSocketAddress(), hasTunnelHeaders)) {
+            // Check authentication for all other paths.
+            // BladeWatch-67h8: checkAuth writes its own 401/redirect when it fails, and
+            // that response is followed by a close — so it must not claim keep-alive.
+            // Announce close first, restore the request's intent if auth passed.
+            out.setKeepAlive(false);
+            boolean authorized = AuthMiddleware.checkAuth(path, cookieHeader, authHeader, out,
+                    client.getRemoteSocketAddress(), hasTunnelHeaders);
+            out.setKeepAlive(keepAlive);
+            if (!authorized) {
                 client.close();
                 return;
             }
@@ -419,6 +547,7 @@ public class HttpServer {
                     && !client.getInetAddress().isLoopbackAddress()) {
                 net.bladewatch.app.auth.AuthManager.AuthState actionState = net.bladewatch.app.auth.AuthManager.getState();
                 if (actionState == null || !VehicleActionToken.validate(vehicleActionTokenHeader, actionState.deviceSecret)) {
+                    out.setKeepAlive(false);   // rejected and closing — do not advertise keep-alive
                     HttpResponse.sendJsonForbidden(out, "Vehicle action token required — use GET /api/vehicle/action-token first");
                     client.close();
                     return;
@@ -505,10 +634,7 @@ public class HttpServer {
                 }
             }
             // Core camera APIs (kept inline for simplicity)
-            else if (path.startsWith("/snapshot/")) {
-                int camId = Integer.parseInt(path.substring(10));
-                sendSnapshot(out, camId);
-            } else if (path.equals("/status")) {
+            else if (path.equals("/status")) {
                 sendStatus(out);
             } else if (path.startsWith("/api/start/")) {
                 int camId = Integer.parseInt(path.substring(11));
@@ -577,10 +703,32 @@ public class HttpServer {
                     HttpResponse.sendError(out, 404, "Not Found");
                 }
             }
+
+            // ---- BladeWatch-67h8: one request served; decide whether to read another ----
+            // The flush is load-bearing. Previously the close in `finally` flushed the
+            // BufferedOutputStream for any handler that forgot to; holding the socket open
+            // removes that safety net, and an unflushed response is a client that hangs.
+            out.flush();
+            if (!keepAlive) break;
+            }  // end of the per-request loop
+
+        } catch (java.net.SocketTimeoutException e) {
+            // Between requests this is ordinary keep-alive idle expiry — the peer simply
+            // stopped asking — and logging it would make every reused connection an error.
+            // MID-REQUEST it is a genuine fault (a truncated body, a client that stalled)
+            // and swallowing it would hide the one case worth seeing. Note that reading a
+            // body whose Content-Length counts BYTES with a char-oriented BufferedReader
+            // times out here on any non-ASCII body; that predates keep-alive, but this is
+            // where it now surfaces, so it must stay visible.
+            if (!betweenRequests) {
+                CameraDaemon.log("HTTP error: read timed out mid-request: " + e.getMessage());
+            }
         } catch (Exception e) {
             CameraDaemon.log("HTTP error: " + e.getMessage());
         } finally {
-            try { client.close(); } catch (Exception e) { CameraDaemon.log("WARN: HTTP client.close() failed: " + e.getMessage()); }
+            if (!socketHandedOff) {
+                try { client.close(); } catch (Exception e) { CameraDaemon.log("WARN: HTTP client.close() failed: " + e.getMessage()); }
+            }
         }
     }
 
@@ -689,36 +837,6 @@ public class HttpServer {
         return false;
     }
     
-    private void sendSnapshot(OutputStream out, int viewId) throws Exception {
-        net.bladewatch.app.surveillance.GpuSurveillancePipeline gpuPipeline = CameraDaemon.getGpuPipeline();
-        if (gpuPipeline == null || gpuPipeline.getCamera() == null) {
-            HttpResponse.sendError(out, 404, "GPU pipeline not available for view " + viewId);
-            return;
-        }
-
-        byte[] frame = gpuPipeline.getCamera().getLatestJpegFrame(viewId);
-        if (frame == null) {
-            HttpResponse.sendError(out, 404, "No frame available for view " + viewId);
-            return;
-        }
-
-        String headers = "HTTP/1.1 200 OK\r\n" +
-                        "Content-Type: image/jpeg\r\n" +
-                        "Content-Length: " + frame.length + "\r\n" +
-                        "Cache-Control: no-cache\r\n" +
-                        "Connection: close\r\n\r\n";
-        out.write(headers.getBytes());
-        out.flush();
-        
-        int offset = 0;
-        while (offset < frame.length) {
-            int count = Math.min(frame.length - offset, 1024);
-            out.write(frame, offset, count);
-            out.flush();
-            offset += count;
-        }
-    }
-
     /** Expose sendStatus for Connect service impls (ConnectHandlerUtil capture pattern). */
     public void serveStatus(OutputStream out) throws Exception {
         sendStatus(out);
@@ -1031,7 +1149,7 @@ public class HttpServer {
                 headers.append("Pragma: no-cache\r\n")
                        .append("Expires: 0\r\n");
             }
-            headers.append("Connection: close\r\n\r\n");
+            headers.append(HttpResponse.connectionHeader(out)).append("\r\n");
             out.write(headers.toString().getBytes());
             
             // Stream in 16KB chunks
@@ -1074,7 +1192,14 @@ public class HttpServer {
     /**
      * Handles WebSocket upgrade on /ws path for single-port streaming.
      */
-    private void handleWebSocketUpgrade(Socket client, String websocketKey) {
+    /**
+     * Complete the WebSocket handshake and hand the socket to the streaming pool.
+     *
+     * @return true if ownership of {@code client} passed to {@link #streamPool}, meaning the
+     *         caller must NOT close it. False if the handshake failed and the socket is
+     *         still the caller's to close.
+     */
+    private boolean handleWebSocketUpgrade(Socket client, String websocketKey) {
         try {
             CameraDaemon.log("WebSocket upgrade requested");
             
@@ -1089,11 +1214,20 @@ public class HttpServer {
             out.flush();
             
             CameraDaemon.log("WebSocket handshake complete");
-            streamH264ToWebSocket(client);
+            // Hand off to the streaming pool and let this REQUEST thread go. The handshake
+            // is done, so nothing above needs the socket any more, and streaming it here
+            // would hold a request worker for the entire session (BladeWatch-sxzg).
+            //
+            // The socket is deliberately NOT closed on the way out: it now belongs to the
+            // stream, which closes it when the viewer goes away.
+            streamPool.execute(() -> streamH264ToWebSocket(client));
+            return true;
             
         } catch (Exception e) {
             CameraDaemon.log("WebSocket upgrade error: " + e.getMessage());
         }
+        // Handshake failed: the socket never reached the stream, so the caller still owns it.
+        return false;
     }
     
     private String computeWebSocketAccept(String key) throws Exception {

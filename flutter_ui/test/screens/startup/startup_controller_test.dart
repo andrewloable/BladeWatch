@@ -25,7 +25,7 @@ void main() {
         'CAMERA_DAEMON': camera,
         'SENTRY_DAEMON': sentry,
         'ACC_SENTRY_DAEMON': accSentry,
-        'ZROK_TUNNEL': false,
+        'TOR_TUNNEL': false,
       },
     });
   }

@@ -96,6 +96,66 @@ void main() {
     expect(find.byKey(const ValueKey('tripDetail.scoresCard')), findsOneWidget);
   });
 
+  // ── BladeWatch-3zno: the PHEV fuel leg ────────────────────────────────────
+
+  /// A PHEV response: the same trip, plus the fuel leg the daemon records when the fuel
+  /// counter was read at both ends. 3.5 total = 2.0 electric + 1.5 fuel.
+  Map<String, dynamic> aPhevTripDetailResponse() {
+    final r = aTripDetailResponse();
+    final summary = r['trip']['summary'] as Map<String, dynamic>;
+    summary['hasFuelData'] = true;
+    summary['litresUsed'] = 1.25;
+    summary['fuelCost'] = 1.5;
+    summary['electricCost'] = 2.0;
+    return r;
+  }
+
+  testWidgets('shows litres and the cost split on a PHEV trip', (tester) async {
+    rpc.stubJson('TripsService', 'GetTrip', aPhevTripDetailResponse());
+    rpc.stubJson('TripsService', 'GetTelemetry', {'success': true, 'telemetry': []});
+    await pumpScreen(tester);
+
+    expect(find.text('Fuel Used'), findsOneWidget);
+    expect(find.text('1.3 L'), findsOneWidget);
+    expect(find.text('Fuel Cost'), findsOneWidget);
+    expect(find.text('Electric Cost'), findsOneWidget);
+
+    // Money goes through ICU, never string concatenation, so USD renders with its symbol.
+    expect(find.text(r'$1.50'), findsOneWidget);
+    expect(find.text(r'$2.00'), findsOneWidget);
+    // The existing total is untouched and still shown alongside the breakdown.
+    expect(find.text(r'$3.50'), findsOneWidget);
+  });
+
+  /// The half that matters more: a BEV must look exactly as it always did. A test that only
+  /// asserted the rows APPEAR would still pass if the gate were inverted or removed.
+  testWidgets('shows no fuel rows at all on a BEV trip', (tester) async {
+    rpc.stubJson('TripsService', 'GetTrip', aTripDetailResponse());
+    rpc.stubJson('TripsService', 'GetTelemetry', {'success': true, 'telemetry': []});
+    await pumpScreen(tester);
+
+    expect(find.byKey(const ValueKey('tripDetail.summaryCard')), findsOneWidget);
+    expect(find.text('Fuel Used'), findsNothing);
+    expect(find.text('Fuel Cost'), findsNothing);
+    expect(find.text('Electric Cost'), findsNothing);
+  });
+
+  /// A PHEV leg driven entirely on battery: the counter WAS read, and it correctly says zero
+  /// litres. That is a measurement, so the row is shown reading 0.0 L rather than hidden —
+  /// hiding it would make a real result indistinguishable from a BEV.
+  testWidgets('shows a zero-litre fuel leg rather than hiding it', (tester) async {
+    final r = aPhevTripDetailResponse();
+    final summary = r['trip']['summary'] as Map<String, dynamic>;
+    summary['litresUsed'] = 0.0;
+    summary['fuelCost'] = 0.0;
+    rpc.stubJson('TripsService', 'GetTrip', r);
+    rpc.stubJson('TripsService', 'GetTelemetry', {'success': true, 'telemetry': []});
+    await pumpScreen(tester);
+
+    expect(find.text('Fuel Used'), findsOneWidget);
+    expect(find.text('0.0 L'), findsOneWidget);
+  });
+
   // ── BladeWatch-fj8c: the route MAP, which native has always drawn ──────────
 
   testWidgets('draws the route on a map, with a polyline and start/end markers', (tester) async {

@@ -6,7 +6,7 @@ import android.os.Looper
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.launcher.AdbDaemonLauncher
 import net.bladewatch.app.launcher.AdbShellExecutor
-import net.bladewatch.app.launcher.ZrokLauncher
+import net.bladewatch.app.launcher.TorLauncher
 import net.bladewatch.app.logging.LogManager
 import net.bladewatch.app.ui.model.DaemonType
 import net.bladewatch.app.ui.util.PreferencesManager
@@ -39,7 +39,7 @@ class DaemonStartupManager(
         )
 
         val OPTIONAL_DAEMONS: List<DaemonType> = listOf(
-            DaemonType.ZROK_TUNNEL,
+            DaemonType.TOR_TUNNEL,
         )
 
         // Track intentional stops so health check doesn't fight the user
@@ -70,7 +70,36 @@ class DaemonStartupManager(
         }
     }
 
+    /**
+     * Schedule the staggered daemon startup.
+     *
+     * IDEMPOTENT, and that is load-bearing (BladeWatch-3lbz). This is called from
+     * `MainActivity.onCreate` AND again from its ADB-auth-granted callback — the second call
+     * is the recovery path for a reinstall, where the first attempt failed because the app's
+     * ADB key had been wiped and no daemon could start.
+     *
+     * It used to simply schedule a second full set of delayed work on top of the first, so
+     * everything fired TWICE, about a second apart. Measured on the head unit 2026-09-15 in
+     * tor's own log:
+     *
+     *     09:26:31 [notice] Tor 0.4.8.14
+     *     09:26:31 [notice] Tor 0.4.8.14          <- two starts, same second
+     *     09:26:31 [warn]  ...another Tor process is running with the same data directory...
+     *     09:26:36 [err]   No, it's still there. Exiting.
+     *
+     * Dropping the previously queued work first makes a second call REPLACE the first rather
+     * than duplicate it, which is what the recovery path actually wants. A plain one-shot
+     * guard would be wrong here: it would block the recovery call, which is the one that
+     * matters after a reinstall.
+     */
     fun initializeOnAppLaunch() {
+        // Cancel anything the previous call queued — the staggered starts at +45/+60/+90 s
+        // and any running health-check loop. healthCheckRunning has to be cleared too, or
+        // startDaemonHealthCheck() below would see "already running" and never reschedule
+        // the loop we just cancelled.
+        handler.removeCallbacksAndMessages(null)
+        healthCheckRunning = false
+
         initStartTime = System.currentTimeMillis()
         log.info(TAG, "=== Initializing daemon startup on app launch ===")
         log.info(TAG, "Waiting 45 seconds before starting daemons (system stabilization)...")
@@ -82,6 +111,11 @@ class DaemonStartupManager(
         // Enable AccessibilityService keep-alive immediately (doesn't need delay)
         enableAccessibilityKeepAlive()
         logT("enableAccessibilityKeepAlive done")
+
+        // BladeWatch-fjb0: clear the previous tunnel's account residue, which an uninstall
+        // never removed because it lives under the shell UID's /data/local/tmp. Idempotent
+        // and best-effort — a no-op on any device that never ran the old build.
+        net.bladewatch.app.launcher.LegacyTunnelCleanup.run(context)
 
         // Wait 45 seconds for system to fully stabilize before starting any daemons
         handler.postDelayed({
@@ -168,7 +202,7 @@ class DaemonStartupManager(
         daemonsViewModel?.let { vm ->
             DaemonType.values().forEach { type -> vm.refreshDaemonStatus(type, logResult = true) }
             // Camera daemon defaults to private stream mode. Public exposure is opt-in
-            // via the zrok tunnel in the Daemons settings, not a global mode.
+            // via the Tor tunnel in the Daemons settings, not a global mode.
             log.info(TAG, "Syncing camera daemon stream mode to: private")
             vm.cameraDaemonController.setStreamMode("private")
         }
@@ -271,15 +305,15 @@ class DaemonStartupManager(
     }
 
     private fun startTunnelFromPreferences(vm: DaemonsViewModel) {
-        val zrokEnabled = PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)
+        val tunnelEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TOR_TUNNEL)
 
-        if (zrokEnabled) {
-            vm.zrokController.isRunning { isRunning ->
+        if (tunnelEnabled) {
+            vm.torController.isRunning { isRunning ->
                 if (isRunning) {
-                    log.info(TAG, "Zrok already running, skipping start")
+                    log.info(TAG, "Tor already running, skipping start")
                 } else {
-                    log.info(TAG, "Starting Zrok (user enabled)...")
-                    handler.post { vm.startDaemon(DaemonType.ZROK_TUNNEL) }
+                    log.info(TAG, "Starting Tor (user enabled)...")
+                    handler.post { vm.startDaemon(DaemonType.TOR_TUNNEL) }
                 }
             }
         } else {
@@ -290,9 +324,9 @@ class DaemonStartupManager(
     private fun startOptionalDaemonsViaAdb() {
         log.info(TAG, "Starting optional daemons via ADB...")
         try {
-            if (PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)) {
-                log.info(TAG, "Boot: Starting Zrok...")
-                startZrokOnBoot()
+            if (PreferencesManager.isDaemonEnabled(DaemonType.TOR_TUNNEL)) {
+                log.info(TAG, "Boot: Starting Tor...")
+                startTorOnBoot()
             }
         } catch (e: Exception) {
             log.error(TAG, "Error starting optional daemons: ${e.message}")
@@ -300,23 +334,29 @@ class DaemonStartupManager(
     }
     
     /**
-     * Start Zrok tunnel on boot using ZrokLauncher directly.
+     * Start the Tor tunnel on boot using TorLauncher directly.
+     *
+     * A cold boot is the slow case: tor took ~82 s to bootstrap on the head unit with an
+     * empty DataDirectory, against ~6 s once the consensus cache is warm. TorLauncher waits
+     * it out; nothing here needs to.
      */
-    private fun startZrokOnBoot() {
+    private fun startTorOnBoot() {
         val adbShellExecutor = AdbShellExecutor(context)
-        val zrokLauncher = ZrokLauncher(context, adbShellExecutor, log)
-        
-        zrokLauncher.launchZrok(object : ZrokLauncher.ZrokCallback {
+        val torLauncher = TorLauncher(context, adbShellExecutor, log)
+
+        torLauncher.launchTor(object : TorLauncher.TorCallback {
             override fun onLog(message: String) {
-                log.debug(TAG, "[Zrok Boot] $message")
+                log.debug(TAG, "[Tor Boot] $message")
             }
-            
+
             override fun onTunnelUrl(url: String) {
-                log.info(TAG, "Boot: Zrok URL: $url")
+                // The address is a capability granting network access to this car, and
+                // daemon logs end up in bug reports. Record that it came up, not what it is.
+                log.info(TAG, "Boot: Tor onion service is live")
             }
-            
+
             override fun onError(error: String) {
-                log.error(TAG, "Boot: Zrok error: $error")
+                log.error(TAG, "Boot: Tor error: $error")
             }
         })
     }
@@ -326,24 +366,24 @@ class DaemonStartupManager(
      * so it can pick up new settings.
      */
     private fun restartTunnelIfEnabled(vm: DaemonsViewModel, forceRestart: Boolean = false) {
-        val zrokEnabled = PreferencesManager.isDaemonEnabled(DaemonType.ZROK_TUNNEL)
+        val tunnelEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TOR_TUNNEL)
 
-        if (zrokEnabled) {
-            vm.zrokController.isRunning { isRunning ->
+        if (tunnelEnabled) {
+            vm.torController.isRunning { isRunning ->
                 if (isRunning && forceRestart) {
-                    log.info(TAG, "Restarting Zrok to apply new settings...")
+                    log.info(TAG, "Restarting Tor to apply new settings...")
                     handler.post {
-                        vm.stopDaemon(DaemonType.ZROK_TUNNEL)
+                        vm.stopDaemon(DaemonType.TOR_TUNNEL)
                         handler.postDelayed({
-                            log.info(TAG, "Starting Zrok with new settings")
-                            vm.startDaemon(DaemonType.ZROK_TUNNEL)
+                            log.info(TAG, "Starting Tor with new settings")
+                            vm.startDaemon(DaemonType.TOR_TUNNEL)
                         }, 2000)
                     }
                 } else if (!isRunning) {
-                    log.info(TAG, "Starting Zrok (user enabled)")
-                    handler.post { vm.startDaemon(DaemonType.ZROK_TUNNEL) }
+                    log.info(TAG, "Starting Tor (user enabled)")
+                    handler.post { vm.startDaemon(DaemonType.TOR_TUNNEL) }
                 } else {
-                    log.info(TAG, "Zrok already running, no restart needed")
+                    log.info(TAG, "Tor already running, no restart needed")
                 }
             }
         }
@@ -508,8 +548,14 @@ class DaemonStartupManager(
                         onError = { e -> log.error(TAG, "HealthCheck: ACC Sentry restart failed: $e") }
                     )
                 }
-                else -> {
-                    log.warn(TAG, "Health check: no ADB fallback for ${type.displayName}")
+                DaemonType.TOR_TUNNEL -> {
+                    // BladeWatch-3lbz.8: without this branch the tunnel fell through to the
+                    // warning below and was never relaunched on the boot path, so remote
+                    // access did not come back after a reboot even with the tunnel enabled.
+                    // startTorOnBoot needs no ViewModel — it drives TorLauncher directly,
+                    // which is exactly what this fallback is for.
+                    log.info(TAG, "HealthCheck: relaunching Tor tunnel")
+                    startTorOnBoot()
                 }
             }
         }

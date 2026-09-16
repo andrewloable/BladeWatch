@@ -97,7 +97,21 @@ class BatteryInfo {
   final int soc;
   final int rangeKm;
 
-  const BatteryInfo({this.soc = 0, this.rangeKm = 0});
+  /// PHEV tank level, 0-100, and the fuel range beside it. Both are 0 on a BEV
+  /// because the daemon OMITS them there rather than sending a zero (see
+  /// BatteryStatus in vehicle.proto) — so 0 means "no fuel system", which is
+  /// exactly the condition for hiding the fuel readout.
+  final int fuelPercent;
+  final int fuelRangeKm;
+
+  /// Whether this car has a fuel system worth showing a readout for.
+  ///
+  /// Derived from the data rather than from a drivetrain flag: a PHEV whose HAL
+  /// has not answered yet looks like a BEV for a moment, which is the right
+  /// behaviour — better a missing row than a "0%" tank on a car that has one.
+  bool get hasFuel => fuelPercent > 0 || fuelRangeKm > 0;
+
+  const BatteryInfo({this.soc = 0, this.rangeKm = 0, this.fuelPercent = 0, this.fuelRangeKm = 0});
 }
 
 class SeatsInfo {

@@ -394,20 +394,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get webview_loading => '荷物...';
 
   @override
-  String get zrok_enable_token_hint => 'トークンを有効にする';
-
-  @override
-  String get zrok_token_storage_note =>
-      'トークンは安全に保存され、アプリとバックグラウンドサービス間で共有されます。';
-
-  @override
-  String get zrok_reset_environment => 'Zrok 環境をリセットする';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      '環境とトークンを削除します. トークンを再び有効にする必要があります (デバイススロットを使用します).';
-
-  @override
   String get reset_title => 'データをリセットする';
 
   @override
@@ -580,7 +566,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get daemon_name_acc => 'ACC監視';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '背景サービス';
@@ -825,7 +811,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboard_no_tunnel => 'トンネルが走らない';
 
   @override
-  String get dashboard_starting_zrok => 'Zrokトンネルを起動する';
+  String get dashboard_starting_tor => 'Tor トンネルを起動中…';
 
   @override
   String get dashboard_waiting_url => 'トンネルURLを待ってる';
@@ -836,7 +822,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'アクセスコード';
@@ -850,51 +836,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrokトンネルトークン';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'Zrok の有効化トークンを入力してください。\n取得先: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => '符号は空きすることはできません';
-
-  @override
-  String get dialog_zrok_reset_title => 'Zrok 環境をリセットする';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      '次の処理を行います:\n• 実行中であれば zrok トンネルを停止します\n• このデバイスから zrok 環境を削除します\n• 保存されたトークンを削除します\n\nトークンを再入力して有効化し直す必要があります。zrok.io の 5 つのデバイス枠のうち 1 つを使用します。\n\nよろしいですか？';
-
-  @override
-  String get toast_resetting_zrok => 'Zrok環境をリセットする...';
-
-  @override
-  String get toast_zrok_reset_success => 'Zrok 環境リセット. また設定するために新しいトークンを入力します.';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      '環境リセット (トークンファイルは手動の掃除が必要になる可能性があります)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return '環境リセット (警告: $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured => 'トークンが設定されていません。タップして設定してください。';
-
-  @override
-  String get toast_zrok_token_saved => '保存されたトークン';
-
-  @override
-  String get toast_zrok_token_save_failed => '記号保存に失敗';
-
-  @override
-  String get toast_zrok_token_deleted => 'トークン削除';
-
-  @override
-  String get toast_zrok_token_delete_failed => '記号を削除できませんでした';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1072,6 +1014,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settings_section_privacy => 'プライバシーとデータ';
+
+  @override
+  String get settings_section_trips => 'トリップ';
+
+  @override
+  String get settings_section_trips_subtitle => '料金レート、距離単位、走行履歴の保存先';
 
   @override
   String get settings_section_overlay => 'ステータスオーバーレイ';
@@ -1636,12 +1584,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => '設定';
-
-  @override
-  String get settings_daemons_zrok_reset_button => '環境をリセット';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '$arg1使用 · $arg2 無料';
   }
@@ -1751,7 +1693,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_section_surveillance_subtitle => 'スケジュール、動体検知感度、物体検知。';
 
   @override
-  String get settings_section_daemons_subtitle => 'Zrokトンネルとバックグラウンドサービス。';
+  String get settings_section_daemons_subtitle => 'Tor トンネルとバックグラウンド サービス。';
 
   @override
   String get settings_about_row_title => 'BladeWatchについて';
@@ -2122,6 +2064,16 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return '燃料: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return '燃料航続: $arg1 km';
+  }
+
+  @override
   String get vehicle_status_charge_unknown => '充電: —';
 
   @override
@@ -2278,6 +2230,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return '燃料での航続距離：$km';
+  }
+
+  @override
   String get trips_range_no_data => 'まだデータが十分ではありません';
 
   @override
@@ -2306,6 +2263,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => '電気料金';
+
+  @override
+  String get trips_storage_fuel_price_label => '燃料価格（1リットルあたり）';
+
+  @override
+  String get trips_storage_tank_capacity_label => '燃料タンク容量（リットル）';
 
   @override
   String get trips_storage_distance_unit_label => '距離の単位';
@@ -2381,6 +2344,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => '外気温';
+
+  @override
+  String get trips_detail_fuel_used => '燃料';
+
+  @override
+  String get trips_detail_fuel_cost => '燃料代';
+
+  @override
+  String get trips_detail_electric_cost => '電気代';
 
   @override
   String get trips_detail_elev_gain => '獲得標高';
@@ -2715,4 +2687,35 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => '保存に失敗しました';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'Tor に接続中…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'このアドレスの開き方';
+
+  @override
+  String get dashboard_tor_help_title => 'このアドレスを開く';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: Google Play または F-Droid から Tor Browser をインストールし、起動してアドレスを貼り付けます。';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone・iPad: App Store から Onion Browser をインストールし、起動してアドレスを貼り付けます。iOS 版の Tor Browser はありません。';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows・macOS・Linux: torproject.org から Tor Browser をダウンロードし、起動してアドレスを貼り付けます。';
+
+  @override
+  String get dashboard_tor_help_password_note => 'ページを開いた後もパスワードが必要です。';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'スキャンして Tor Browser のダウンロードページへ';
+
+  @override
+  String get dashboard_tor_help_close => '閉じる';
 }

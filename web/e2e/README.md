@@ -1,7 +1,7 @@
 # BladeWatch web — Playwright e2e
 
 End-to-end tests for the hosted Angular SPA, run against a **live** BladeWatch
-instance (zrok tunnel, device LAN IP, or `adb forward`). They exercise the real
+instance (Tor onion service, device LAN IP, or `adb forward`). They exercise the real
 login flow, every protected route, and regression cases for two P0 bugs.
 
 ## Setup
@@ -16,7 +16,7 @@ cp e2e/.env.example e2e/.env     # then edit e2e/.env (gitignored)
 `e2e/.env` (never committed):
 
 ```
-BLADEWATCH_E2E_URL=https://<your-tunnel>.share.zrok.io
+BLADEWATCH_E2E_URL=http://<your-onion-address>.onion
 BLADEWATCH_ACCESS_CODE=xxxxxxxx
 ```
 
@@ -32,7 +32,7 @@ npm run test:e2e:ui        # Playwright UI mode
 npm run test:e2e:report    # open the last HTML report
 ```
 
-The target must be reachable and the BladeWatch daemon running (for a zrok
+The target must be reachable and the BladeWatch daemon running (for a tunnel
 target, the device must be on and the tunnel up).
 
 ## What's covered

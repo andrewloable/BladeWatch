@@ -13,7 +13,8 @@ import 'package:fixnum/fixnum.dart';
 import 'trips_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 
-/// Controller behind the Trips screen's 3 tabs (Trips/Stats/Storage) —
+/// Controller behind the Trips screen's 2 tabs (Trips/Stats) — the trip
+/// settings it also serves now live in the Settings hub's Trips pane.
 /// BladeWatch-yz1e.5. Ground truth: `TripsController.kt` (852 LOC). The trip
 /// detail overlay's own data/lifecycle is a separate controller
 /// ([TripDetailController], mirroring native's own separate
@@ -105,6 +106,8 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
   Future<bool> applyStorageChanges({
     required bool enabled,
     required double rate,
+    required double fuelPricePerL,
+    required double fuelTankCapacityL,
     required String currency,
     required String distanceUnit,
     required String storageType,
@@ -119,6 +122,13 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
         hasEnabled_2: true,
         electricityRate: rate,
         hasElectricityRate_4: true,
+        // Presence companions for the same reason as the rate above: Connect omits
+        // default scalars, so a deliberate 0 ("not configured") would otherwise be
+        // indistinguishable from "field not sent" and the daemon would keep the old value.
+        fuelPricePerL: fuelPricePerL,
+        hasFuelPricePerL_8: true,
+        fuelTankCapacityL: fuelTankCapacityL,
+        hasFuelTankCapacityL_10: true,
         currency: currency,
         distanceUnit: distanceUnit,
       ));
@@ -238,12 +248,19 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
     return RangeEstimate(
       estimatedKm: (range['predictedRangeKm'] as num?)?.toDouble() ?? 0.0,
       builtInKm: (range['builtInRangeKm'] as num?)?.toDouble() ?? 0.0,
+      // Absent on a BEV, and -1 on a PHEV whose tank capacity is unconfigured. Both
+      // collapse to "nothing to show" at the `> 0` gate in the view.
+      fuelRangeKm: (range['fuelRangeKm'] as num?)?.toDouble() ?? 0.0,
+      builtInFuelRangeKm: (range['builtInFuelRangeKm'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
   static TripsConfig _toConfig(TripConfig cfg) => TripsConfig(
         enabled: cfg.enabled,
         electricityRate: cfg.electricityRate,
+        fuelPricePerL: cfg.fuelPricePerL,
+        fuelTankCapacityL: cfg.fuelTankCapacityL,
+        isPhev: cfg.isPhev,
         currency: cfg.currency,
         distanceUnit: cfg.distanceUnit,
       );

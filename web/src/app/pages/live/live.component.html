@@ -1,12 +1,40 @@
 <div class="live">
   <div class="stream-wrap">
-    <canvas #streamCanvas class="stream-canvas"></canvas>
+    <!-- Two render targets, exactly one live (BladeWatch-nobf). WebCodecs decodes into a
+         canvas; MediaSource drives a real <video>. The canvas stays in the DOM either way
+         because SotaPlayer takes it in its constructor. -->
+    <canvas #streamCanvas class="stream-canvas" [hidden]="usingMse()"></canvas>
+    @if (usingMse()) {
+      <!-- muted + playsinline so mobile browsers autoplay it; Android Tor Browser is the
+           case this path exists for. -->
+      <video
+        #streamVideo
+        class="stream-canvas"
+        autoplay
+        muted
+        playsinline
+      ></video>
+    }
 
-    <div class="stream-badge" [class.live]="streamConnected()">
-      {{ streamConnected() ? ('live.badgeLive' | translate) : ('live.badgeConnecting' | translate) }}
-    </div>
+    <!-- Hidden when the browser cannot decode at all: a "Connecting" badge over a stream
+         that will never connect is exactly the lie BladeWatch-nobf was about. The banner
+         below says what is really wrong, so no extra string is needed here. -->
+    @if (!decoderUnsupported()) {
+      <div class="stream-badge" [class.live]="streamConnected()">
+        {{ streamConnected() ? ('live.badgeLive' | translate) : ('live.badgeConnecting' | translate) }}
+      </div>
+    }
 
-    @if (!streamConnected()) {
+    @if (decoderUnsupported()) {
+      <!-- BladeWatch-nobf: no Retry here on purpose. Nothing is being retried and nothing
+           can succeed - this browser has no WebCodecs decoder. Tor Browser is the case
+           that matters, since the in-car help dialog tells users to install it. -->
+      <div class="stream-banner">
+        <span class="banner-text">{{ 'live.decoderUnsupported' | translate }}</span>
+        <!-- Symbols, not prose: diagnostic only, so it needs no locale entry. -->
+        <span class="banner-caps">{{ decoderCapabilities() }}</span>
+      </div>
+    } @else if (!streamConnected()) {
       <div class="stream-banner">
         <span class="banner-text">{{ 'live.notConnected' | translate }}</span>
         <button type="button" class="banner-retry" (click)="retryStream()">{{ 'live.retry' | translate }}</button>

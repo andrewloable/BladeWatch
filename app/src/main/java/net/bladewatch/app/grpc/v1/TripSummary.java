@@ -359,6 +359,68 @@ private static final long serialVersionUID = 0L;
     return extTempC_;
   }
 
+  public static final int LITRES_USED_FIELD_NUMBER = 21;
+  private double litresUsed_ = 0D;
+  /**
+   * <pre>
+   * PHEV fuel leg (BladeWatch-fpdz). New field numbers only -- 1-20 keep their meaning, so
+   * an older client parses this message unchanged.
+   *
+   * Derived values only: a list row shows what the fuel leg COST, never the lifetime
+   * counters it was derived from. Handing a client raw counters invites it to compute its
+   * own delta, which then disagrees with the daemon the moment a counter resets.
+   *
+   * On a BEV these are all 0, which is also proto3's default -- there is no "absent" here,
+   * and has_fuel_data below is what distinguishes a BEV from a PHEV that burned nothing.
+   * </pre>
+   *
+   * <code>double litres_used = 21 [json_name = "litresUsed"];</code>
+   * @return The litresUsed.
+   */
+  @java.lang.Override
+  public double getLitresUsed() {
+    return litresUsed_;
+  }
+
+  public static final int FUEL_COST_FIELD_NUMBER = 22;
+  private double fuelCost_ = 0D;
+  /**
+   * <code>double fuel_cost = 22 [json_name = "fuelCost"];</code>
+   * @return The fuelCost.
+   */
+  @java.lang.Override
+  public double getFuelCost() {
+    return fuelCost_;
+  }
+
+  public static final int ELECTRIC_COST_FIELD_NUMBER = 23;
+  private double electricCost_ = 0D;
+  /**
+   * <code>double electric_cost = 23 [json_name = "electricCost"];</code>
+   * @return The electricCost.
+   */
+  @java.lang.Override
+  public double getElectricCost() {
+    return electricCost_;
+  }
+
+  public static final int HAS_FUEL_DATA_FIELD_NUMBER = 24;
+  private boolean hasFuelData_ = false;
+  /**
+   * <pre>
+   * True when this trip recorded both ends of the fuel counter. Derived from the STORED
+   * trip, not a live drivetrain probe, so a historical trip renders the same way on a car
+   * whose drivetrain reads differently today.
+   * </pre>
+   *
+   * <code>bool has_fuel_data = 24 [json_name = "hasFuelData"];</code>
+   * @return The hasFuelData.
+   */
+  @java.lang.Override
+  public boolean getHasFuelData() {
+    return hasFuelData_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -432,6 +494,18 @@ private static final long serialVersionUID = 0L;
     }
     if (extTempC_ != 0) {
       output.writeInt32(20, extTempC_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(litresUsed_) != 0) {
+      output.writeDouble(21, litresUsed_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelCost_) != 0) {
+      output.writeDouble(22, fuelCost_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(electricCost_) != 0) {
+      output.writeDouble(23, electricCost_);
+    }
+    if (hasFuelData_ != false) {
+      output.writeBool(24, hasFuelData_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -514,6 +588,22 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(20, extTempC_);
     }
+    if (java.lang.Double.doubleToRawLongBits(litresUsed_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(21, litresUsed_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(fuelCost_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(22, fuelCost_);
+    }
+    if (java.lang.Double.doubleToRawLongBits(electricCost_) != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(23, electricCost_);
+    }
+    if (hasFuelData_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(24, hasFuelData_);
+    }
     return size;
   }
   @java.lang.Override
@@ -588,6 +678,17 @@ private static final long serialVersionUID = 0L;
             other.getEndLon())) return false;
     if (getExtTempC()
         != other.getExtTempC()) return false;
+    if (java.lang.Double.doubleToLongBits(getLitresUsed())
+        != java.lang.Double.doubleToLongBits(
+            other.getLitresUsed())) return false;
+    if (java.lang.Double.doubleToLongBits(getFuelCost())
+        != java.lang.Double.doubleToLongBits(
+            other.getFuelCost())) return false;
+    if (java.lang.Double.doubleToLongBits(getElectricCost())
+        != java.lang.Double.doubleToLongBits(
+            other.getElectricCost())) return false;
+    if (getHasFuelData()
+        != other.getHasFuelData()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -652,6 +753,18 @@ private static final long serialVersionUID = 0L;
         java.lang.Double.doubleToLongBits(getEndLon()));
     hash = (37 * hash) + EXT_TEMP_C_FIELD_NUMBER;
     hash = (53 * hash) + getExtTempC();
+    hash = (37 * hash) + LITRES_USED_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getLitresUsed()));
+    hash = (37 * hash) + FUEL_COST_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getFuelCost()));
+    hash = (37 * hash) + ELECTRIC_COST_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        java.lang.Double.doubleToLongBits(getElectricCost()));
+    hash = (37 * hash) + HAS_FUEL_DATA_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getHasFuelData());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -807,6 +920,10 @@ private static final long serialVersionUID = 0L;
       endLat_ = 0D;
       endLon_ = 0D;
       extTempC_ = 0;
+      litresUsed_ = 0D;
+      fuelCost_ = 0D;
+      electricCost_ = 0D;
+      hasFuelData_ = false;
       return this;
     }
 
@@ -900,6 +1017,18 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00080000) != 0)) {
         result.extTempC_ = extTempC_;
       }
+      if (((from_bitField0_ & 0x00100000) != 0)) {
+        result.litresUsed_ = litresUsed_;
+      }
+      if (((from_bitField0_ & 0x00200000) != 0)) {
+        result.fuelCost_ = fuelCost_;
+      }
+      if (((from_bitField0_ & 0x00400000) != 0)) {
+        result.electricCost_ = electricCost_;
+      }
+      if (((from_bitField0_ & 0x00800000) != 0)) {
+        result.hasFuelData_ = hasFuelData_;
+      }
     }
 
     @java.lang.Override
@@ -979,6 +1108,18 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getExtTempC() != 0) {
         setExtTempC(other.getExtTempC());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getLitresUsed()) != 0) {
+        setLitresUsed(other.getLitresUsed());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getFuelCost()) != 0) {
+        setFuelCost(other.getFuelCost());
+      }
+      if (java.lang.Double.doubleToRawLongBits(other.getElectricCost()) != 0) {
+        setElectricCost(other.getElectricCost());
+      }
+      if (other.getHasFuelData() != false) {
+        setHasFuelData(other.getHasFuelData());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1106,6 +1247,26 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00080000;
               break;
             } // case 160
+            case 169: {
+              litresUsed_ = input.readDouble();
+              bitField0_ |= 0x00100000;
+              break;
+            } // case 169
+            case 177: {
+              fuelCost_ = input.readDouble();
+              bitField0_ |= 0x00200000;
+              break;
+            } // case 177
+            case 185: {
+              electricCost_ = input.readDouble();
+              bitField0_ |= 0x00400000;
+              break;
+            } // case 185
+            case 192: {
+              hasFuelData_ = input.readBool();
+              bitField0_ |= 0x00800000;
+              break;
+            } // case 192
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1879,6 +2040,188 @@ private static final long serialVersionUID = 0L;
     public Builder clearExtTempC() {
       bitField0_ = (bitField0_ & ~0x00080000);
       extTempC_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private double litresUsed_ ;
+    /**
+     * <pre>
+     * PHEV fuel leg (BladeWatch-fpdz). New field numbers only -- 1-20 keep their meaning, so
+     * an older client parses this message unchanged.
+     *
+     * Derived values only: a list row shows what the fuel leg COST, never the lifetime
+     * counters it was derived from. Handing a client raw counters invites it to compute its
+     * own delta, which then disagrees with the daemon the moment a counter resets.
+     *
+     * On a BEV these are all 0, which is also proto3's default -- there is no "absent" here,
+     * and has_fuel_data below is what distinguishes a BEV from a PHEV that burned nothing.
+     * </pre>
+     *
+     * <code>double litres_used = 21 [json_name = "litresUsed"];</code>
+     * @return The litresUsed.
+     */
+    @java.lang.Override
+    public double getLitresUsed() {
+      return litresUsed_;
+    }
+    /**
+     * <pre>
+     * PHEV fuel leg (BladeWatch-fpdz). New field numbers only -- 1-20 keep their meaning, so
+     * an older client parses this message unchanged.
+     *
+     * Derived values only: a list row shows what the fuel leg COST, never the lifetime
+     * counters it was derived from. Handing a client raw counters invites it to compute its
+     * own delta, which then disagrees with the daemon the moment a counter resets.
+     *
+     * On a BEV these are all 0, which is also proto3's default -- there is no "absent" here,
+     * and has_fuel_data below is what distinguishes a BEV from a PHEV that burned nothing.
+     * </pre>
+     *
+     * <code>double litres_used = 21 [json_name = "litresUsed"];</code>
+     * @param value The litresUsed to set.
+     * @return This builder for chaining.
+     */
+    public Builder setLitresUsed(double value) {
+
+      litresUsed_ = value;
+      bitField0_ |= 0x00100000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * PHEV fuel leg (BladeWatch-fpdz). New field numbers only -- 1-20 keep their meaning, so
+     * an older client parses this message unchanged.
+     *
+     * Derived values only: a list row shows what the fuel leg COST, never the lifetime
+     * counters it was derived from. Handing a client raw counters invites it to compute its
+     * own delta, which then disagrees with the daemon the moment a counter resets.
+     *
+     * On a BEV these are all 0, which is also proto3's default -- there is no "absent" here,
+     * and has_fuel_data below is what distinguishes a BEV from a PHEV that burned nothing.
+     * </pre>
+     *
+     * <code>double litres_used = 21 [json_name = "litresUsed"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearLitresUsed() {
+      bitField0_ = (bitField0_ & ~0x00100000);
+      litresUsed_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double fuelCost_ ;
+    /**
+     * <code>double fuel_cost = 22 [json_name = "fuelCost"];</code>
+     * @return The fuelCost.
+     */
+    @java.lang.Override
+    public double getFuelCost() {
+      return fuelCost_;
+    }
+    /**
+     * <code>double fuel_cost = 22 [json_name = "fuelCost"];</code>
+     * @param value The fuelCost to set.
+     * @return This builder for chaining.
+     */
+    public Builder setFuelCost(double value) {
+
+      fuelCost_ = value;
+      bitField0_ |= 0x00200000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double fuel_cost = 22 [json_name = "fuelCost"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearFuelCost() {
+      bitField0_ = (bitField0_ & ~0x00200000);
+      fuelCost_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private double electricCost_ ;
+    /**
+     * <code>double electric_cost = 23 [json_name = "electricCost"];</code>
+     * @return The electricCost.
+     */
+    @java.lang.Override
+    public double getElectricCost() {
+      return electricCost_;
+    }
+    /**
+     * <code>double electric_cost = 23 [json_name = "electricCost"];</code>
+     * @param value The electricCost to set.
+     * @return This builder for chaining.
+     */
+    public Builder setElectricCost(double value) {
+
+      electricCost_ = value;
+      bitField0_ |= 0x00400000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>double electric_cost = 23 [json_name = "electricCost"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearElectricCost() {
+      bitField0_ = (bitField0_ & ~0x00400000);
+      electricCost_ = 0D;
+      onChanged();
+      return this;
+    }
+
+    private boolean hasFuelData_ ;
+    /**
+     * <pre>
+     * True when this trip recorded both ends of the fuel counter. Derived from the STORED
+     * trip, not a live drivetrain probe, so a historical trip renders the same way on a car
+     * whose drivetrain reads differently today.
+     * </pre>
+     *
+     * <code>bool has_fuel_data = 24 [json_name = "hasFuelData"];</code>
+     * @return The hasFuelData.
+     */
+    @java.lang.Override
+    public boolean getHasFuelData() {
+      return hasFuelData_;
+    }
+    /**
+     * <pre>
+     * True when this trip recorded both ends of the fuel counter. Derived from the STORED
+     * trip, not a live drivetrain probe, so a historical trip renders the same way on a car
+     * whose drivetrain reads differently today.
+     * </pre>
+     *
+     * <code>bool has_fuel_data = 24 [json_name = "hasFuelData"];</code>
+     * @param value The hasFuelData to set.
+     * @return This builder for chaining.
+     */
+    public Builder setHasFuelData(boolean value) {
+
+      hasFuelData_ = value;
+      bitField0_ |= 0x00800000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * True when this trip recorded both ends of the fuel counter. Derived from the STORED
+     * trip, not a live drivetrain probe, so a historical trip renders the same way on a car
+     * whose drivetrain reads differently today.
+     * </pre>
+     *
+     * <code>bool has_fuel_data = 24 [json_name = "hasFuelData"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearHasFuelData() {
+      bitField0_ = (bitField0_ & ~0x00800000);
+      hasFuelData_ = false;
       onChanged();
       return this;
     }

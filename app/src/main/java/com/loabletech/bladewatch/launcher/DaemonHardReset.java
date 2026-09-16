@@ -77,6 +77,75 @@ public final class DaemonHardReset {
     }
 
     /**
+     * The sweep, as one shell command — extracted so {@code DaemonHardResetCommandTest} can
+     * assert on it. Single invocation on purpose: atomic from the daemon-watchdog perspective,
+     * with no window for a half-killed watchdog to re-spawn between commands.
+     *
+     * <p>Process names are sourced from launcher constants:
+     * <ul>
+     *   <li>{@code byd_cam_daemon} (DaemonLauncher.CAMERA_DAEMON_PROCESS)</li>
+     *   <li>{@code sentry_daemon} (DaemonLauncher.SENTRY_DAEMON_PROCESS)</li>
+     *   <li>{@code acc_sentry_daemon} (DaemonLauncher.ACC_SENTRY_DAEMON_PROCESS)</li>
+     *   <li>{@code bladewatch_tor} (TorLauncher.TOR_PROCESS)</li>
+     * </ul>
+     *
+     * <p><b>NEVER add anything that deletes {@code /data/local/tmp/tor/hs}.</b> That directory
+     * holds {@code hs_ed25519_secret_key}, which IS the car's permanent onion address — lose it
+     * and tor mints a new one on the next start, silently breaking every QR code the owner ever
+     * scanned, with no way back. The {@code rm -f} clauses below are deliberately narrow for
+     * that reason; do not widen one into a glob over the tor directory. Wiping
+     * {@code /data/local/tmp/tor/data} would be harmless (it is only the consensus cache, worth
+     * one slow bootstrap), but it buys nothing here, so this does not touch the tor tree at all.
+     */
+    static String hardResetCommand() {
+        return
+                // Sentinel first so any racing watchdog sees "disabled" and bails out
+                "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; " +
+                // Watchdog shell scripts first, so nothing respawns behind the sweep.
+                //
+                // They run as `sh /data/local/tmp/start_cam_daemon.sh`, so argv[0] and comm
+                // are both "sh" — killall cannot single them out without killing every shell
+                // on the head unit, this one included. They need a cmdline match, and the
+                // bracket trick makes one safe: grep -E reads start_[c]am_daemon as a REGEX,
+                // which does NOT match the literal text "start_[c]am_daemon" sitting in this
+                // shell's own cmdline. That is exactly why the trick works for grep and fails
+                // for pkill -f, which takes no regex.
+                //
+                // For the same reason the rm below globs start_*.sh instead of naming the two
+                // scripts: spelling them out would put a literal "start_cam_daemon" back in
+                // this cmdline, which the regex above WOULD match — and the loop would kill
+                // its own shell.
+                "for p in $(ps -A -o PID,ARGS 2>/dev/null | " +
+                "grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print $1}'); " +
+                "do kill -9 $p 2>/dev/null; done; " +
+                // Then the daemons themselves, by name.
+                //
+                // NOT pkill -f, and this is verified-on-device important: toybox pkill -f
+                // matches the pattern as a literal SUBSTRING of every /proc/<pid>/cmdline, and
+                // this ADB shell's cmdline is the whole sweep — patterns included. The first
+                // such clause killed this shell (measured 2026-09-15 with a marker matching no
+                // process: exit 137, and nothing after it ran). Every kill, every rm and the
+                // "echo done" this method's callback waits for were dead code.
+                //
+                // Spelled in FULL. CLAUDE.md said to write acc_sentry_daem because the kernel
+                // caps /proc/<pid>/comm at 15 chars. The cap is real, the conclusion was not:
+                // toybox matches comm OR basename(argv[0]), and these daemons are launched
+                // with --nice-name, so argv[0] is the full name. Measured on the head unit:
+                //   pidof acc_sentry_daemon -> 4571
+                //   pidof acc_sentry_daem   -> (nothing)
+                //   pidof main              -> 2851 3102 4571  (comm for all three IS "main")
+                // The truncated spelling is the one that matches nothing.
+                "killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor " +
+                "2>/dev/null; " +
+                // Lock + watchdog state. Narrow globs — see the warning above.
+                "rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; " +
+                "rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; " +
+                "rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; " +
+                "rm -f /data/local/tmp/start_*.sh 2>/dev/null; " +
+                "echo done";
+    }
+
+    /**
      * Hard-kill every known daemon + watchdog, wipe lock/sentinel files, then
      * invoke onComplete on the same thread that the underlying launcher uses.
      * Safe to call when nothing is wrong — it is just a sweep.
@@ -86,33 +155,7 @@ public final class DaemonHardReset {
         long start = System.currentTimeMillis();
         AdbDaemonLauncher launcher = new AdbDaemonLauncher(ctx);
 
-        // Single shell invocation — atomic from the daemon-watchdog perspective
-        // (no chance for a half-killed watchdog to re-spawn between commands).
-        // Process names are sourced from launcher constants:
-        //   byd_cam_daemon       (DaemonLauncher.CAMERA_DAEMON_PROCESS)
-        //   sentry_daemon        (DaemonLauncher.SENTRY_DAEMON_PROCESS)
-        //   acc_sentry_daemon    (DaemonLauncher.ACC_SENTRY_DAEMON_PROCESS)
-        //   zrok                 (ZrokLauncher.ZROK_PROCESS)
-        String cmd =
-                // Sentinel first so any racing watchdog sees "disabled" and bails out
-                "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; " +
-                // Watchdog shell scripts (kill before binaries so they can't respawn)
-                "pkill -9 -f 'start_cam_daemon' 2>/dev/null; " +
-                "pkill -9 -f 'start_acc_sentry' 2>/dev/null; " +
-                // Native + app_process daemons (-f substring-matches the full command line)
-                "pkill -9 -f 'byd_cam_daemon' 2>/dev/null; " +
-                "pkill -9 -f 'cam_daemon' 2>/dev/null; " +           // defensive (catches any cam_daemon variant)
-                "pkill -9 -f 'sentry_daemon' 2>/dev/null; " +         // also catches acc_sentry_daemon
-                "pkill -9 -f 'acc_sentry_daemon' 2>/dev/null; " +
-                "pkill -9 -f 'zrok' 2>/dev/null; " +
-                // killall as a backup for binaries whose argv[0] differs from -f match
-                "killall -9 zrok 2>/dev/null; " +
-                // Lock + watchdog state
-                "rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; " +
-                "rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; " +
-                "rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; " +
-                "rm -f /data/local/tmp/start_cam_daemon.sh /data/local/tmp/start_acc_sentry.sh 2>/dev/null; " +
-                "echo done";
+        String cmd = hardResetCommand();
 
         launcher.executeShellCommand(cmd, new AdbDaemonLauncher.LaunchCallback() {
             @Override public void onLog(String m) {}

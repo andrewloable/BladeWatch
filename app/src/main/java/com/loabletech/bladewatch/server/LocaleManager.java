@@ -15,7 +15,7 @@ import java.util.Set;
  *
  * <p>The HTTP server runs as UID 2000 (shell), which cannot read app-private
  * SharedPreferences. We use the same cross-UID-readable file pattern as
- * {@code ZrokLauncher}: a plain text file under {@code /data/local/tmp/.bladewatch/}
+ * the daemon launchers: a plain text file under {@code /data/local/tmp/.bladewatch/}
  * that both the daemon and the Kotlin settings UI can read and write.
  *
  * <p>The locale chosen here drives:

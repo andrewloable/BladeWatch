@@ -268,14 +268,6 @@
   "@performance_refreshing_footer": {},
   "webview_loading": "Loading…",
   "@webview_loading": {},
-  "zrok_enable_token_hint": "Enable Token",
-  "@zrok_enable_token_hint": {},
-  "zrok_token_storage_note": "Token is stored securely and shared between the app and background services.",
-  "@zrok_token_storage_note": {},
-  "zrok_reset_environment": "Reset Zrok Environment",
-  "@zrok_reset_environment": {},
-  "zrok_reset_environment_desc": "Removes environment and token. You will need to re-enable with your token (uses a device slot).",
-  "@zrok_reset_environment_desc": {},
   "reset_title": "Reset Data",
   "@reset_title": {},
   "reset_subtitle": "Wipe accumulated data by category",
@@ -400,8 +392,8 @@
   "@daemon_name_surveillance": {},
   "daemon_name_acc": "ACC Surveillance",
   "@daemon_name_acc": {},
-  "daemon_name_zrok": "Zrok Tunnel",
-  "@daemon_name_zrok": {},
+  "daemon_name_tor": "Tor Tunnel",
+  "@daemon_name_tor": {},
   "daemons_hero_title": "Background services",
   "@daemons_hero_title": {},
   "daemons_count_pending": "Loading services…",
@@ -590,8 +582,8 @@
   "@toast_token_regenerated": {},
   "dashboard_no_tunnel": "No tunnel running",
   "@dashboard_no_tunnel": {},
-  "dashboard_starting_zrok": "Starting Zrok tunnel…",
-  "@dashboard_starting_zrok": {
+  "dashboard_starting_tor": "Starting Tor tunnel…",
+  "@dashboard_starting_tor": {
     "description": "An action in progress. Impersonal, never 'I'."
   },
   "dashboard_waiting_url": "Waiting for tunnel URL…",
@@ -605,8 +597,8 @@
       "arg2": {}
     }
   },
-  "tunnel_label_zrok": "Zrok",
-  "@tunnel_label_zrok": {},
+  "tunnel_label_tor": "Tor",
+  "@tunnel_label_tor": {},
   "clip_label_access_code": "Access Code",
   "@clip_label_access_code": {},
   "clip_label_url": "URL",
@@ -617,40 +609,8 @@
       "arg1": {}
     }
   },
-  "dialog_zrok_token_title": "Zrok Tunnel Token",
-  "@dialog_zrok_token_title": {},
-  "dialog_zrok_token_message": "Enter your Zrok enable token.\nGet one at: zrok.io",
-  "@dialog_zrok_token_message": {},
   "toast_token_cannot_be_empty": "Token cannot be empty",
   "@toast_token_cannot_be_empty": {},
-  "dialog_zrok_reset_title": "Reset Zrok Environment",
-  "@dialog_zrok_reset_title": {},
-  "dialog_zrok_reset_message": "This will:\n• Stop the zrok tunnel if running\n• Remove the zrok environment from this device\n• Delete the saved token\n\nYou will need to re-enter your token and re-enable. This uses one of your 5 device slots on zrok.io.\n\nAre you sure?",
-  "@dialog_zrok_reset_message": {},
-  "toast_resetting_zrok": "Resetting zrok environment…",
-  "@toast_resetting_zrok": {},
-  "toast_zrok_reset_success": "Zrok environment reset. Enter a new token to set up again.",
-  "@toast_zrok_reset_success": {},
-  "toast_zrok_reset_partial": "Environment reset (token file may need manual cleanup)",
-  "@toast_zrok_reset_partial": {},
-  "toast_zrok_reset_warnings": "Environment reset (with warnings: {arg1})",
-  "@toast_zrok_reset_warnings": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "zrok_no_token_configured": "No token configured. Tap to set up.",
-  "@zrok_no_token_configured": {},
-  "toast_zrok_token_saved": "Token saved",
-  "@toast_zrok_token_saved": {},
-  "toast_zrok_token_save_failed": "Failed to save token",
-  "@toast_zrok_token_save_failed": {
-    "description": "'save' means WRITE TO STORAGE, not rescue. Impersonal."
-  },
-  "toast_zrok_token_deleted": "Token deleted",
-  "@toast_zrok_token_deleted": {},
-  "toast_zrok_token_delete_failed": "Failed to delete token",
-  "@toast_zrok_token_delete_failed": {},
   "toast_fetching_log": "Fetching {arg1} log…",
   "@toast_fetching_log": {
     "placeholders": {
@@ -810,6 +770,14 @@
   "@settings_section_daemons": {},
   "settings_section_privacy": "Privacy & data",
   "@settings_section_privacy": {},
+  "settings_section_trips": "Trips",
+  "@settings_section_trips": {
+    "description": "Settings hub section holding the trip analytics pricing, distance unit and storage options."
+  },
+  "settings_section_trips_subtitle": "Cost rates, distance unit and where trips are stored",
+  "@settings_section_trips_subtitle": {
+    "description": "One-line description under the Trips settings pane title."
+  },
   "settings_section_overlay": "Status overlay",
   "@settings_section_overlay": {},
   "settings_overlay_subtitle": "Choose which segments of the floating status pill stay visible.",
@@ -1219,10 +1187,6 @@
       "arg1": {}
     }
   },
-  "settings_daemons_zrok_configure": "Configure",
-  "@settings_daemons_zrok_configure": {},
-  "settings_daemons_zrok_reset_button": "Reset Environment",
-  "@settings_daemons_zrok_reset_button": {},
   "dashboard_metric_storage_chip": "{arg1} used · {arg2} free",
   "@dashboard_metric_storage_chip": {
     "placeholders": {
@@ -1306,7 +1270,7 @@
   "@settings_section_recording_subtitle": {},
   "settings_section_surveillance_subtitle": "Schedule, motion sensitivity, object detection.",
   "@settings_section_surveillance_subtitle": {},
-  "settings_section_daemons_subtitle": "Zrok tunnel and background services.",
+  "settings_section_daemons_subtitle": "Tor tunnel and background services.",
   "@settings_section_daemons_subtitle": {},
   "settings_about_row_title": "About BladeWatch",
   "@settings_about_row_title": {},
@@ -1597,6 +1561,20 @@
       "arg1": {}
     }
   },
+  "vehicle_status_fuel_fmt": "Fuel: {arg1}%",
+  "@vehicle_status_fuel_fmt": {
+    "description": "PHEV tank level on the vehicle status pill. Shown only on a car that has a fuel system.",
+    "placeholders": {
+      "arg1": {}
+    }
+  },
+  "vehicle_status_fuel_range_fmt": "Fuel range: {arg1} km",
+  "@vehicle_status_fuel_range_fmt": {
+    "description": "PHEV fuel range, shown beside the electric range.",
+    "placeholders": {
+      "arg1": {}
+    }
+  },
   "vehicle_status_charge_unknown": "Charge: —",
   "@vehicle_status_charge_unknown": {},
   "vehicle_status_range_unknown": "Range: —",
@@ -1719,6 +1697,12 @@
       "km": {}
     }
   },
+  "trips_range_fuel": "Fuel range: {km}",
+  "@trips_range_fuel": {
+    "placeholders": {
+      "km": {}
+    }
+  },
   "trips_range_no_data": "Not enough data yet",
   "@trips_range_no_data": {},
   "trips_dna_title": "Driving DNA",
@@ -1739,6 +1723,10 @@
   "@trips_storage_analytics_label": {},
   "trips_storage_rate_label": "Electricity Rate",
   "@trips_storage_rate_label": {},
+  "trips_storage_fuel_price_label": "Fuel Price (per litre)",
+  "@trips_storage_fuel_price_label": {},
+  "trips_storage_tank_capacity_label": "Fuel Tank Capacity (litres)",
+  "@trips_storage_tank_capacity_label": {},
   "trips_storage_distance_unit_label": "Distance Unit",
   "@trips_storage_distance_unit_label": {},
   "trips_storage_location_label": "Storage Location",
@@ -1796,6 +1784,12 @@
   "@trips_detail_cost": {},
   "trips_detail_ext_temp": "Ext Temp",
   "@trips_detail_ext_temp": {},
+  "trips_detail_fuel_used": "Fuel Used",
+  "@trips_detail_fuel_used": {},
+  "trips_detail_fuel_cost": "Fuel Cost",
+  "@trips_detail_fuel_cost": {},
+  "trips_detail_electric_cost": "Electric Cost",
+  "@trips_detail_electric_cost": {},
   "trips_detail_elev_gain": "Elev Gain",
   "@trips_detail_elev_gain": {},
   "trips_detail_scores_title": "Driving Scores",
@@ -2039,5 +2033,25 @@
   "surveillance_apply_button": "Apply Changes",
   "@surveillance_apply_button": {},
   "surveillance_apply_failed": "Save failed",
-  "@surveillance_apply_failed": {}
+  "@surveillance_apply_failed": {},
+  "dashboard_tor_bootstrapping": "Connecting to Tor…",
+  "@dashboard_tor_bootstrapping": {
+    "description": "Shown while tor is running but has not finished bootstrapping."
+  },
+  "dashboard_tor_help_tooltip": "How to open this address",
+  "@dashboard_tor_help_tooltip": {},
+  "dashboard_tor_help_title": "Opening this address",
+  "@dashboard_tor_help_title": {},
+  "dashboard_tor_help_android": "Android: install Tor Browser from Google Play or F-Droid, open it and paste the address.",
+  "@dashboard_tor_help_android": {},
+  "dashboard_tor_help_ios": "iPhone and iPad: install Onion Browser from the App Store, open it and paste the address. Tor Browser itself is not available on iOS.",
+  "@dashboard_tor_help_ios": {},
+  "dashboard_tor_help_desktop": "Windows, macOS and Linux: download Tor Browser from torproject.org, open it and paste the address.",
+  "@dashboard_tor_help_desktop": {},
+  "dashboard_tor_help_password_note": "You will still need the password after the page loads.",
+  "@dashboard_tor_help_password_note": {},
+  "dashboard_tor_help_download_qr_label": "Scan for the Tor Browser download page",
+  "@dashboard_tor_help_download_qr_label": {},
+  "dashboard_tor_help_close": "Got it",
+  "@dashboard_tor_help_close": {}
 }

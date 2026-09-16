@@ -8,7 +8,7 @@ import { TranslateModule } from '@ngx-translate/core';
  * quick-access button. Shown on every page except /login (the shell hides it).
  *
  * The tunnel URL isn't exposed by any web RPC, so the pill reflects the actual
- * reachable origin the client is using (the zrok tunnel host or the LAN IP).
+ * reachable origin the client is using (the onion address or the LAN IP).
  */
 @Component({
   selector: 'app-header',

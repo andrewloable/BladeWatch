@@ -73,4 +73,83 @@ public class ServiceHostManifestTest {
                         + "launcher entry is gone",
                 m.substring(at, end).contains("android:exported=\"true\""));
     }
+
+    /**
+     * BladeWatch-p9ag: the bootstrap activity must declare a TRANSLUCENT theme.
+     *
+     * <p>Reported by the owner from the head unit: starting the service host showed a blank
+     * WHITE SCREEN. The activity deliberately never calls {@code setContentView} — it exists
+     * only to kick off daemon startup and calls {@code moveTaskToBack(true)} immediately — so
+     * with an ordinary opaque theme the window paints the bare theme background and nothing
+     * else.
+     *
+     * <p>It is not only visible when started by hand. The Flutter APK's
+     * {@code wakeServiceHost()} starts this component on its first {@code onResume}, so every
+     * cold start of the in-car UI flashes it.
+     *
+     * <p>A translucent window is the fix rather than giving this activity a progress UI,
+     * because the thing it would be covering IS the progress UI: the Flutter Startup screen
+     * already shows the brand lockup, "Getting your dashcam ready" and per-daemon progress.
+     * The white window was hiding it. Adding content here would also mean calling
+     * setContentView, which {@link #mainActivityIsNotAUiActivity()} and the class comment on
+     * MainActivity both forbid.
+     *
+     * <p>NOT {@code Theme.NoDisplay}: that requires the activity to finish before it resumes,
+     * and this one backgrounds itself instead of finishing, which crashes under NoDisplay on
+     * modern Android.
+     */
+    @Test
+    public void bootstrapActivityDeclaresATranslucentTheme() throws Exception {
+        String m = manifest();
+        int at = m.indexOf("net.bladewatch.app.ui.MainActivity");
+        Assert.assertTrue("MainActivity is missing from the manifest", at > 0);
+        int end = m.indexOf("/>", at);
+        String decl = m.substring(at, end);
+
+        Assert.assertTrue(
+                "MainActivity has no UI and must not paint one — an opaque theme shows a "
+                        + "blank white window over the Flutter startup screen. Declaration was: "
+                        + decl,
+                decl.contains("android:theme") && decl.contains("Translucent"));
+        Assert.assertFalse(
+                "Theme.NoDisplay crashes an activity that backgrounds itself instead of "
+                        + "finishing, which is what this one does: " + decl,
+                decl.contains("NoDisplay"));
+    }
+
+    /**
+     * BladeWatch-p9ag, second defect: the bootstrap window must not be able to take input.
+     *
+     * <p>Making it translucent removed the white flash but exposed an older bug —
+     * {@code moveTaskToBack(true)} does not reliably background this task. Measured on the
+     * head unit 2026-09-15, the invisible window sat directly on top of the Flutter UI and
+     * stayed the resumed activity:
+     *
+     * <pre>
+     *   Window #9  net.bladewatch.app/.ui.MainActivity     (invisible, on top)
+     *   Window #10 net.bladewatch.flutter/...MainActivity  (the real UI, beneath)
+     *   mResumedActivity: net.bladewatch.app/.ui.MainActivity
+     * </pre>
+     *
+     * <p>While opaque that read as a white screen — obviously broken. Transparent, the UI
+     * showed through perfectly and only TOUCH was swallowed, so the in-car app looked
+     * frozen with nothing on screen to explain it. That is a strictly worse failure, which
+     * is why the flags are pinned rather than left to the theme.
+     */
+    @Test
+    public void bootstrapActivityCannotTakeFocusOrTouch() throws Exception {
+        // Same CWD dance as manifest() above.
+        File f = new File("src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt");
+        if (!f.exists()) f = new File("app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt");
+        Assert.assertTrue("could not locate MainActivity.kt", f.exists());
+        String src = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+
+        Assert.assertTrue(
+                "The bootstrap window has no UI and must not be focusable — an invisible "
+                        + "window holding focus swallows every tap meant for the Flutter UI.",
+                src.contains("FLAG_NOT_FOCUSABLE"));
+        Assert.assertTrue(
+                "...nor touchable, for the same reason.",
+                src.contains("FLAG_NOT_TOUCHABLE"));
+    }
 }

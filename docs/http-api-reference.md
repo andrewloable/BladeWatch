@@ -250,8 +250,12 @@ Handled by `TripApiHandler`:
 - `GET /api/trips/summary`.
 - `GET /api/trips/dna`.
 - `GET /api/trips/range`.
-- `GET /api/trips/config`.
-- `POST /api/trips/config`.
+- `GET /api/trips/config` — also returns `isPhev`, a LIVE drivetrain read rather than a
+  stored setting. Both UIs hide the fuel price and tank capacity when it is false, so a BEV
+  is never offered settings for a tank it does not have. A probe failure yields `false`,
+  which clients treat as "hide unless a value is already configured" rather than as proof
+  the car is a BEV.
+- `POST /api/trips/config` — `isPhev` is ignored on write; it is not a setting.
 - `GET /api/trips/storage`.
 - `POST /api/trips/storage`.
 - `POST /api/trips/sync` — reconcile the trips DB against telemetry files on disk.
@@ -261,6 +265,41 @@ Handled by `TripApiHandler`:
 Connect mirror: `TripsService.{ListTrips,GetTrip,DeleteTrip,GetSummary,GetDna,
 GetRange,GetConfig,SetConfig,GetStorage,SetStorage,SyncTrips,GetTelemetry,
 GetSimilarTrips,GetGpsTrace}`.
+
+### PHEV fuel fields on a trip
+
+The trip LIST rows (`toSummaryJson`) carry derived values only:
+
+| Field | Meaning |
+|---|---|
+| `litresUsed` | Litres burned this trip, from the lifetime counter delta |
+| `fuelCost` | `litresUsed * fuelPricePerL` |
+| `electricCost` | Electric leg cost |
+| `hasFuelData` | Whether this trip recorded both ends of the fuel counter |
+
+The trip DETAIL response (`toJson`) adds the raw readings: `fuelPctStart`/`fuelPctEnd`,
+`fuelConStart`/`fuelConEnd`, `elecConStart`/`elecConEnd`, `fuelPricePerL`.
+
+Raw lifetime counters are deliberately kept OUT of list rows. Handing a client the
+counters invites it to compute its own delta, which then disagrees with the daemon's the
+moment a counter resets.
+
+**`hasFuelData` is derived from the stored trip, never from a live drivetrain probe.** A
+historical trip therefore renders identically forever, including on a car whose
+drivetrain reads differently today. It is also the only way to tell a BEV from a PHEV
+that burned nothing: both report `litresUsed: 0`, so a `litresUsed > 0` check cannot
+distinguish them.
+
+**BEV representation.** The fuel fields are emitted as `0`, never `null` and never
+omitted — one shape for every trip, so a client needs no special case.
+
+`GET /api/trips/range` additionally returns `fuelRangeKm`, `fuelLitresPerKm` and
+`builtInFuelRangeKm`. `fuelRangeKm` is `-1` when it cannot be predicted (no learned fuel
+samples, or no configured tank capacity).
+
+**Wire compatibility.** The proto fields were added at NEW numbers only — `TripSummary`
+21-24, `TripDetail` 11-17, `TripConfig` 5 — so a client built against the old schema
+parses these messages unchanged.
 
 ## Audio Test
 
@@ -413,7 +452,6 @@ General status and control routes handled inline by `HttpServer`:
 
 - `GET /status` — aggregate device + vehicle + recording + GPS + network status
   (see field-parity note below). Requires auth.
-- `GET /snapshot/{viewId}` — latest JPEG frame for a camera view.
 - `POST /api/start/{id}` — start recording camera `{id}`.
 - `POST /api/view/{id}` — start view-only (no recording) for camera `{id}`.
 - `POST /api/stop/{id}` — stop camera `{id}`.
@@ -445,7 +483,7 @@ stubs (`cd proto && buf generate`). Tracked by BladeWatch-852m.
 ## Client Guidance
 
 - Always authenticate before calling protected APIs.
-- Use the local base URL from the Android app or tunnel URL from the Zrok launcher.
+- Use the local base URL from the Android app, or the onion address the Tor tunnel publishes (`tunnelStatus` over IPC).
 - Avoid assuming response schemas from this list alone — read the handler class
   (REST) or `proto/bladewatch/v1/*.proto` (Connect) for the authoritative shape.
 - New clients — Dart or Angular — should use the Connect API (`/bladewatch.v1.*`,

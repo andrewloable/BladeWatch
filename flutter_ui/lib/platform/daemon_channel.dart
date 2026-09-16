@@ -18,32 +18,73 @@ class DaemonChannel {
   Future<Map<String, dynamic>> status() => _asStringMap(_channel.invoke('daemon', 'status'));
 
   /// BladeWatch-1xt9: real daemon-*process* liveness (CAMERA_DAEMON/SENTRY_DAEMON/
-  /// ACC_SENTRY_DAEMON/ZROK_TUNNEL) — not to be confused with [status] above, which
+  /// ACC_SENTRY_DAEMON/TOR_TUNNEL) — not to be confused with [status] above, which
   /// reports camera *recording* state. Unlike the other three methods, this one
   /// unwraps the response's nested `daemons` object into a flat, typed map, since
   /// every caller wants exactly that shape (see the Startup screen).
-  Future<Map<String, bool>> processStatus() async {
+  Future<Map<String, bool>> processStatus() async => (await daemonStatus()).running;
+
+  /// BladeWatch-dh1r: liveness AND the user's enabled intent, which are different
+  /// questions and were conflated until a bug on the head unit made that obvious.
+  ///
+  /// Enabling a daemon only RECORDS INTENT — the daemon's health check performs the
+  /// launch on its next cycle, and tor then needs up to a minute to bootstrap. A UI
+  /// bound to liveness therefore shows a switch springing back to off, and the user's
+  /// natural second tap disables the tunnel they just enabled, because the disable path
+  /// also kills the process.
+  ///
+  /// [DaemonStatus.enabled] carries entries only for daemons that can actually be
+  /// toggled; the rest are started by the service host and have no such state.
+  Future<DaemonStatus> daemonStatus() async {
     final response = await _asStringMap(_channel.invoke('daemon', 'processStatus'));
     final daemons = Map<String, dynamic>.from(response['daemons'] as Map);
-    return daemons.map((key, value) => MapEntry(key, value as bool));
+    final running = daemons.map((key, value) => MapEntry(key, value == true));
+    // Absent entirely on a daemon that predates this field. Both APKs share a UID and
+    // install together so that pair should not occur, but if it ever does, fall back to
+    // liveness: that is the OLD behaviour, which is merely imperfect. Defaulting to
+    // "nothing is enabled" would be actively worse — every switch would read off, and
+    // flipping one on would spring back exactly as in BladeWatch-dh1r.
+    final enabledRaw = response['enabled'];
+    final enabled = enabledRaw == null
+        ? running
+        : Map<String, dynamic>.from(enabledRaw as Map)
+            .map((key, value) => MapEntry(key, value == true));
+    return DaemonStatus(running: running, enabled: enabled);
   }
 
-  /// BladeWatch-m1po: the current Zrok tunnel URL, or null when no tunnel is
-  /// serving one. Backs the Dashboard's remote-access tile.
+  /// BladeWatch-m1po / BladeWatch-3lbz.3: the tunnel's liveness AND its address.
   ///
-  /// The daemon gates the URL on the tunnel PROCESS being alive, so a URL left
-  /// in zrok's log by a previous session never comes back as a live tunnel. It
-  /// also reports a `running` flag, distinguishing "up but has not published a
-  /// URL yet" from "offline" — not surfaced here, because the Dashboard renders
-  /// only online/offline. Widen the return type if a caller ever needs it.
-  Future<String?> tunnelUrl() async {
+  /// Both halves matter, which is why this returns a pair rather than a URL. The
+  /// daemon gates the address on tor having BOOTSTRAPPED, not merely on its hostname
+  /// file existing — that file is written about a second after tor's first launch and
+  /// then persists across reboots forever. A cold start takes ~82 s to reach the
+  /// network (~6 s warm), and throughout that window the honest answer is "running,
+  /// no address yet", which the Dashboard renders as connecting.
+  ///
+  /// This used to return just `String?` with a comment saying to widen it if a caller
+  /// ever needed the flag. With the previous tunnel the gap was a second or two; with
+  /// Tor it is long enough to matter, so the caller now needs it.
+  Future<TunnelStatus> tunnelStatus() async {
     final response = await _asStringMap(_channel.invoke('daemon', 'tunnelStatus'));
     final url = response['url'] as String?;
-    return (url == null || url.isEmpty) ? null : url;
+    return TunnelStatus(
+      running: response['running'] as bool? ?? false,
+      url: (url == null || url.isEmpty) ? null : url,
+      // Absent on a daemon predating BladeWatch-y7x2. Default TRUE, not false: a false
+      // default would hide the Dashboard's connect card on a car whose tunnel is fine,
+      // which is a far worse failure than showing a card that could have been hidden.
+      enabled: response['enabled'] as bool? ?? true,
+    );
   }
 
+  /// Just the address, for callers that only render a link — the Diagnostics network
+  /// card (which derives "connecting" from the daemon list it already has) and the
+  /// toolbar status pill. Null while tor is still bootstrapping, which is correct for
+  /// both: there is no address to show yet.
+  Future<String?> tunnelUrl() async => (await tunnelStatus()).url;
+
   /// BladeWatch-abcx: enable or disable an optional daemon, returning true only if
-  /// the daemon accepted it. Anything outside its allow-list (currently ZROK_TUNNEL
+  /// the daemon accepted it. Anything outside its allow-list (currently TOR_TUNNEL
   /// alone) comes back false rather than silently doing nothing — see
   /// [SettingsDaemonsController] for why the other three are not toggleable.
   Future<bool> setDaemonEnabled(String nativeKey, bool enabled) async {
@@ -60,4 +101,34 @@ class DaemonChannel {
   static Future<Map<String, dynamic>> _asStringMap(Future<dynamic> result) async {
     return Map<String, dynamic>.from(await result as Map);
   }
+}
+
+/// What the daemon reports about the Tor tunnel: whether the process is up, and the
+/// onion address once it is reachable.
+class TunnelStatus {
+  /// The tor process is alive. Says nothing about reachability on its own.
+  final bool running;
+
+  /// The onion address, present only once tor has bootstrapped.
+  final String? url;
+
+  /// Whether the owner has switched the tunnel ON. Deliberately separate from
+  /// [running]: an enabled tunnel is also not running for the first minute while tor
+  /// bootstraps, and the Dashboard must tell "switched off" apart from "starting".
+  final bool enabled;
+
+  const TunnelStatus({required this.running, this.url, this.enabled = true});
+}
+
+/// What the daemon reports about every background service: whether each process is
+/// alive, and — for the toggleable ones only — whether the user has asked for it.
+class DaemonStatus {
+  /// Process liveness, keyed by native daemon name. Every daemon appears.
+  final Map<String, bool> running;
+
+  /// The user's recorded intent, keyed the same way. Only toggleable daemons appear;
+  /// a missing key means "not toggleable", and a false value means "switched off".
+  final Map<String, bool> enabled;
+
+  const DaemonStatus({required this.running, required this.enabled});
 }

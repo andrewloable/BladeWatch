@@ -96,8 +96,8 @@ public class IpcRoundTripTest {
             JSONObject put = new JSONObject();
             put.put("cmd", "secret_put");
             put.put("section", "tunnel");
-            put.put("key", "zrokToken");
-            put.put("value", "zrok_test_value_abc123");
+            put.put("key", "deviceToken");
+            put.put("value", "test_value_abc123");
             JSONObject putResp = client.send(put);
             Assert.assertEquals("secret_put must return ok", "ok", putResp.getString("status"));
 
@@ -105,11 +105,11 @@ public class IpcRoundTripTest {
             JSONObject get = new JSONObject();
             get.put("cmd", "secret_get");
             get.put("section", "tunnel");
-            get.put("key", "zrokToken");
+            get.put("key", "deviceToken");
             JSONObject getResp = client.send(get);
             Assert.assertEquals("ok", getResp.getString("status"));
             Assert.assertEquals("Value must round-trip",
-                    "zrok_test_value_abc123", getResp.getString("value"));
+                    "test_value_abc123", getResp.getString("value"));
         }
     }
 

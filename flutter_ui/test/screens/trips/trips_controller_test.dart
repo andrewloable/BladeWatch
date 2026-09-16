@@ -191,6 +191,8 @@ void main() {
       final ok = await controller.applyStorageChanges(
         enabled: true,
         rate: 0.2,
+        fuelPricePerL: 1.8,
+        fuelTankCapacityL: 50.0,
         currency: 'EUR',
         distanceUnit: 'mi',
         storageType: 'SD_CARD',
@@ -199,6 +201,13 @@ void main() {
       expect(ok, isTrue);
       final setConfigCall = rpc.calls.firstWhere((c) => c.method == 'SetConfig');
       expect((setConfigCall.request as dynamic).currency, 'EUR');
+      // BladeWatch-9uu6: PHEV pricing must actually reach the daemon, with its presence
+      // companions — proto3 omits default scalars, so without them a deliberate 0 would be
+      // indistinguishable from "not sent" and the daemon would keep the old value.
+      expect((setConfigCall.request as dynamic).fuelPricePerL, 1.8);
+      expect((setConfigCall.request as dynamic).hasFuelPricePerL_8, isTrue);
+      expect((setConfigCall.request as dynamic).fuelTankCapacityL, 50.0);
+      expect((setConfigCall.request as dynamic).hasFuelTankCapacityL_10, isTrue);
       final setStorageCall = rpc.calls.firstWhere((c) => c.method == 'SetStorage');
       expect((setStorageCall.request as dynamic).storageType, 'SD_CARD');
       expect((setStorageCall.request as dynamic).storageLimitMb.toInt(), 500); // resends the loaded limit unchanged
@@ -210,7 +219,7 @@ void main() {
       rpc.stubJson('TripsService', 'SetConfig', {'success': false, 'error': 'nope'});
       rpc.stubJson('TripsService', 'SetStorage', {'success': true});
 
-      final ok = await controller.applyStorageChanges(enabled: true, rate: 0.2, currency: 'USD', distanceUnit: 'km', storageType: 'INTERNAL');
+      final ok = await controller.applyStorageChanges(enabled: true, rate: 0.2, fuelPricePerL: 0, fuelTankCapacityL: 0, currency: 'USD', distanceUnit: 'km', storageType: 'INTERNAL');
 
       expect(ok, isFalse);
     });
@@ -219,7 +228,7 @@ void main() {
       stubAllLoads(storage: null);
       await controller.load();
 
-      final ok = await controller.applyStorageChanges(enabled: true, rate: 0.2, currency: 'USD', distanceUnit: 'km', storageType: 'INTERNAL');
+      final ok = await controller.applyStorageChanges(enabled: true, rate: 0.2, fuelPricePerL: 0, fuelTankCapacityL: 0, currency: 'USD', distanceUnit: 'km', storageType: 'INTERNAL');
 
       expect(ok, isFalse);
     });

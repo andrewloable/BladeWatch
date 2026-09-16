@@ -2787,18 +2787,6 @@ public class PanoramicCameraGpu {
     }
     
     /**
-     * Gets the latest JPEG frame for a specific camera (for HTTP snapshot).
-     * 
-     * @param cameraId Camera ID (1-4)
-     * @return JPEG byte array, or null if not available
-     */
-    public byte[] getLatestJpegFrame(int cameraId) {
-        // This would need to be implemented by storing the latest extracted frame
-        // For now, return null (MJPEG streaming handles this via callback)
-        return null;
-    }
-    
-    /**
      * Checks CPU usage and logs warning if exceeds threshold.
      * 
      * Provides breakdown by component to identify bottlenecks.

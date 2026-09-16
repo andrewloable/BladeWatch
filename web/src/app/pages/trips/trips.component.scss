@@ -1,4 +1,4 @@
-@import '../../shared/page-shared';
+@use '../../shared/page-shared';
 // NOTE: leaflet.css is loaded via a TS side-effect import in trips.component.ts
 // (`import 'leaflet/dist/leaflet.css'`). Sass cannot resolve the node_modules
 // path here under this Vite + @analogjs build, so it must NOT be @imported in

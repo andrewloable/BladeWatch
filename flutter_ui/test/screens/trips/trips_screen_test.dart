@@ -1,7 +1,4 @@
-import 'dart:async';
-
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/rpc_transport.dart';
 import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/trips/trip_detail_controller.dart';
 import 'package:bladewatch_ui/screens/trips/trip_detail_screen.dart';
@@ -11,21 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
-import 'package:bladewatch_ui/widgets/bw_choice_chip.dart';
-
-/// A [RpcTransport] whose calls stay pending until [gate] is completed —
-/// FakeRpcClient resolves on the next microtask with no real delay, too
-/// narrow a window for a widget test to reliably observe a transient
-/// "in flight" state against.
-class _GatedRpcTransport implements RpcTransport {
-  final Completer<void> gate = Completer<void>();
-
-  @override
-  Future<T> call<T>(String service, String method, Object? request, T Function(Object? json) decode) async {
-    await gate.future;
-    return decode({'success': true, 'added': 1, 'removed': 0, 'total': 5});
-  }
-}
 
 void main() {
   late FakeRpcClient rpc;
@@ -165,136 +147,6 @@ void main() {
     expect(find.text('Not enough data yet'), findsOneWidget);
   });
 
-  group('Storage tab', () {
-    testWidgets('renders the loaded config/storage values', (tester) async {
-      stubAllLoads(
-        config: {'enabled': true, 'electricityRate': 0.15, 'currency': 'USD', 'distanceUnit': 'km'},
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 10.0, 'usedUnit': 'MB', 'sdCardAvailable': false, 'tripsCount': 2, 'storagePath': '/x'},
-      );
-      await pumpScreen(tester);
-
-      await tester.tap(find.byKey(const ValueKey('trips.tab.storage')));
-      await tester.pumpAndSettle();
-
-      final currencyField = tester.widget<TextField>(find.byKey(const ValueKey('trips.storage.currency')));
-      expect(currencyField.controller!.text, 'USD');
-      final sw = tester.widget<SwitchListTile>(find.byKey(const ValueKey('trips.storage.analytics')));
-      expect(sw.value, isTrue);
-    });
-
-    testWidgets('toggling the analytics switch and re-selecting Internal storage update local state', (tester) async {
-      stubAllLoads(
-        config: {'enabled': false, 'electricityRate': 0.1, 'currency': 'USD', 'distanceUnit': 'km'},
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''},
-      );
-      await pumpScreen(tester);
-      await tester.tap(find.byKey(const ValueKey('trips.tab.storage')));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const ValueKey('trips.storage.analytics')));
-      await tester.tap(find.byKey(const ValueKey('trips.storage.unit.mi')));
-      await tester.tap(find.byKey(const ValueKey('trips.storage.location.internal')));
-      await tester.pump();
-
-      final sw = tester.widget<SwitchListTile>(find.byKey(const ValueKey('trips.storage.analytics')));
-      expect(sw.value, isTrue);
-      final unitChip = tester.widget<BwChoiceChip>(find.byKey(const ValueKey('trips.storage.unit.mi')));
-      expect(unitChip.selected, isTrue);
-    });
-
-    testWidgets('the SD Card option is disabled and labeled N/A when unavailable', (tester) async {
-      stubAllLoads(storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': false, 'tripsCount': 0, 'storagePath': ''});
-      await pumpScreen(tester);
-      await tester.tap(find.byKey(const ValueKey('trips.tab.storage')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('SD Card (N/A)'), findsOneWidget);
-      final chip = tester.widget<BwChoiceChip>(find.byKey(const ValueKey('trips.storage.location.sdCard')));
-      expect(chip.onSelected, isNull);
-    });
-
-    testWidgets('applying changes saves and shows a failure snackbar when it fails', (tester) async {
-      stubAllLoads(storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''});
-      await pumpScreen(tester);
-      await tester.tap(find.byKey(const ValueKey('trips.tab.storage')));
-      await tester.pumpAndSettle();
-      rpc.stubError('TripsService', 'SetConfig', const ConnectError('unavailable', 'no daemon'));
-
-      await tester.tap(find.byKey(const ValueKey('trips.storage.apply')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Failed to save'), findsOneWidget);
-    });
-
-    testWidgets('applying changes succeeds and reloads', (tester) async {
-      stubAllLoads(storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''});
-      await pumpScreen(tester);
-      await tester.tap(find.byKey(const ValueKey('trips.tab.storage')));
-      await tester.pumpAndSettle();
-      rpc.stubJson('TripsService', 'SetConfig', {'success': true});
-      rpc.stubJson('TripsService', 'SetStorage', {'success': true});
-
-      await tester.tap(find.byKey(const ValueKey('trips.storage.location.sdCard')));
-      await tester.tap(find.byKey(const ValueKey('trips.storage.apply')));
-      await tester.pumpAndSettle();
-
-      final setStorageCall = rpc.calls.lastWhere((c) => c.method == 'SetStorage');
-      expect((setStorageCall.request as dynamic).storageType, 'SD_CARD');
-    });
-
-    testWidgets('shows the running state while the sync RPC is in flight', (tester) async {
-      stubAllLoads();
-      final gated = _GatedRpcTransport();
-      controller = TripsController(tripsService: TripsServiceClient(rpc), longTripsService: TripsServiceClient(gated));
-      await pumpScreen(tester);
-      await tester.tap(find.byKey(const ValueKey('trips.tab.storage')));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const ValueKey('trips.sync.button')));
-      await tester.pump();
-
-      expect(find.byKey(const ValueKey('trips.sync.running')), findsOneWidget);
-
-      gated.gate.complete();
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Synced successfully'), findsOneWidget);
-    });
-
-    testWidgets('syncing shows a success message', (tester) async {
-      // The transient "running" state (true while its own RPC await is in
-      // flight) is proven reliably at the controller level via a listener —
-      // FakeRpcClient resolves on the next microtask with no real delay, so
-      // it's too narrow a window for a widget test's pump() granularity to
-      // assert on without flaking.
-      stubAllLoads();
-      await pumpScreen(tester);
-      await tester.tap(find.byKey(const ValueKey('trips.tab.storage')));
-      await tester.pumpAndSettle();
-      longRpc.stubJson('TripsService', 'SyncTrips', {'success': true, 'added': 1, 'removed': 0, 'total': 5});
-
-      await tester.tap(find.byKey(const ValueKey('trips.sync.button')));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('Synced successfully'), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey('trips.sync.dismiss')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('trips.sync.button')), findsOneWidget);
-    });
-
-    testWidgets('a sync failure with no server message shows the generic fallback', (tester) async {
-      stubAllLoads();
-      await pumpScreen(tester);
-      await tester.tap(find.byKey(const ValueKey('trips.tab.storage')));
-      await tester.pumpAndSettle();
-      longRpc.stubJson('TripsService', 'SyncTrips', {'success': false, 'error': ''});
-
-      await tester.tap(find.byKey(const ValueKey('trips.sync.button')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Sync failed'), findsOneWidget);
-    });
-  });
 
   group('detail overlay', () {
     testWidgets('tapping a trip row opens the detail screen', (tester) async {

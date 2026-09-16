@@ -7,33 +7,33 @@ void main() {
   group('ConfigChannel', () {
     test('get sends section and key, and returns the value', () async {
       final fake = FakePlatformChannel()..stub('config', 'get', 'ztok_abc');
-      final result = await ConfigChannel(fake).get('tunnels', 'zrokToken');
+      final result = await ConfigChannel(fake).get('tunnels', 'torToken');
 
       expect(result, 'ztok_abc');
       expect(fake.calls.single.group, 'config');
       expect(fake.calls.single.method, 'get');
-      expect(fake.calls.single.args, {'section': 'tunnels', 'key': 'zrokToken'});
+      expect(fake.calls.single.args, {'section': 'tunnels', 'key': 'torToken'});
     });
 
     test('get returns null when the key is not set', () async {
       final fake = FakePlatformChannel()..stub('config', 'get', null);
-      expect(await ConfigChannel(fake).get('tunnels', 'zrokToken'), isNull);
+      expect(await ConfigChannel(fake).get('tunnels', 'torToken'), isNull);
     });
 
     test('put sends section, key, and value, and returns true', () async {
       final fake = FakePlatformChannel()..stub('config', 'put', true);
-      final result = await ConfigChannel(fake).put('tunnels', 'zrokToken', 'new-value');
+      final result = await ConfigChannel(fake).put('tunnels', 'torToken', 'new-value');
 
       expect(result, isTrue);
-      expect(fake.calls.single.args, {'section': 'tunnels', 'key': 'zrokToken', 'value': 'new-value'});
+      expect(fake.calls.single.args, {'section': 'tunnels', 'key': 'torToken', 'value': 'new-value'});
     });
 
     test('delete sends section and key, and returns true', () async {
       final fake = FakePlatformChannel()..stub('config', 'delete', true);
-      final result = await ConfigChannel(fake).delete('tunnels', 'zrokToken');
+      final result = await ConfigChannel(fake).delete('tunnels', 'torToken');
 
       expect(result, isTrue);
-      expect(fake.calls.single.args, {'section': 'tunnels', 'key': 'zrokToken'});
+      expect(fake.calls.single.args, {'section': 'tunnels', 'key': 'torToken'});
     });
 
     test('propagates a permissionDenied PlatformChannelError from put', () async {
@@ -45,7 +45,7 @@ void main() {
         );
 
       await expectLater(
-        () => ConfigChannel(fake).put('tunnels', 'zrokToken', 'x'),
+        () => ConfigChannel(fake).put('tunnels', 'torToken', 'x'),
         throwsA(isA<PlatformChannelError>()),
       );
     });
@@ -54,7 +54,7 @@ void main() {
       final fake = FakePlatformChannel()..stubTimeout('config', 'delete');
 
       await expectLater(
-        () => ConfigChannel(fake).delete('tunnels', 'zrokToken'),
+        () => ConfigChannel(fake).delete('tunnels', 'torToken'),
         throwsA(isA<ChannelTimeoutException>()),
       );
     });

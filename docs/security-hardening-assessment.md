@@ -63,7 +63,7 @@ not as primary security measures.
 |---|---|---|
 | Hardcoded secrets | ✅ None | Verified: no UUID credentials, no runtime tokens |
 | `Safe.s()` for VLESS credentials | ✅ Present | Bangcle-encrypted values in DEX |
-| Sensitive config keys as strings | ⚠️ Present | e.g., `"deviceSecret"`, `"zrokToken"` — field names, not values |
+| Sensitive config keys as strings | ⚠️ Present | e.g., `"deviceSecret"` — field names, not values |
 
 **Classification:** **Theater** for open-source. Field names in DEX are expected. No action needed.
 
@@ -74,7 +74,7 @@ not as primary security measures.
 | Item | Status | Notes |
 |---|---|---|
 | BYD cloud TLS pinning | ❌ Not implemented | BYD MQTT + HTTPS endpoints — currently no pinning |
-| Tunnel endpoints | ❌ Not pinned (by design) | Zrok/Cloudflare rotate certs; pinning would break reconnect |
+| Tunnel endpoints | ✅ N/A | There is no TLS endpoint to pin. A v3 onion address IS the service's public key, so tor authenticates the service cryptographically on every connection — stronger than pinning a rotating certificate, and nothing to configure |
 | Local HTTP (127.0.0.1:8080) | N/A | Loopback only, no TLS needed |
 
 **Classification:** BYD cloud pinning = **real** (prevents MITM on vehicle control commands). Track1 uy93.11.
@@ -148,7 +148,7 @@ not as primary security measures.
 |---|---|---|
 | BYD cloud HTTPS | ✅ TLS | Standard HTTPS |
 | BYD cloud MQTT | ✅ TLS | Port 8883 |
-| Zrok tunnel | ✅ TLS | Zrok provides end-to-end |
+| Tor onion service | ✅ End-to-end encrypted and service-authenticated | Not TLS, and no certificate is involved: the onion protocol encrypts end to end and authenticates the service by the key its address is derived from. Traffic inside the tunnel is plain HTTP to `127.0.0.1:8080` by design. **The address is a capability URL, not authentication — password/JWT auth stays mandatory** |
 | Local HTTP (127.0.0.1:8080) | ✅ Loopback-only | TLS unnecessary on loopback |
 | IPC (19876/19877) | ✅ Loopback-only | |
 

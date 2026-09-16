@@ -402,20 +402,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get webview_loading => 'Carregando...';
 
   @override
-  String get zrok_enable_token_hint => 'Ativar Token';
-
-  @override
-  String get zrok_token_storage_note =>
-      'O token é armazenado de forma segura e compartilhado entre o aplicativo e os serviços em segundo plano.';
-
-  @override
-  String get zrok_reset_environment => 'Repor o ambiente Zrok';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      'Remove ambiente e token. Você precisará reabilitar com o seu token (usa um slot de dispositivo).';
-
-  @override
   String get reset_title => 'Repor dados';
 
   @override
@@ -593,7 +579,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get daemon_name_acc => 'Vigilância ACC';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Serviços em segundo plano';
@@ -849,7 +835,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get dashboard_no_tunnel => 'Não há túnel a correr.';
 
   @override
-  String get dashboard_starting_zrok => 'Começando o túnel Zrok...';
+  String get dashboard_starting_tor => 'A iniciar o túnel Tor…';
 
   @override
   String get dashboard_waiting_url => 'À espera do túnel URL...';
@@ -860,7 +846,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Código de acesso';
@@ -874,53 +860,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Token do túnel Zrok';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'Introduza o seu token de habilitação Zrok.\nObter um em: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => 'O token não pode ser vazio';
-
-  @override
-  String get dialog_zrok_reset_title => 'Repor o ambiente Zrok';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      'Isto vai:\n• parar o túnel zrok se estiver em execução\n• remover o ambiente zrok deste dispositivo\n• remover o token guardado\n\nVocê precisará reinserir o seu token e ativar novamente. Isto usa um dos 5 slots do seu dispositivo em zrok.io.\n\nVocê tem certeza?';
-
-  @override
-  String get toast_resetting_zrok => 'Resetando o ambiente zrok...';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'Reset ambiente Zrok. Introduza um novo token para configurar novamente.';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      'Redefinição do ambiente (o arquivo de tokens pode precisar de limpeza manual)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return 'Reset do ambiente (com avisos: $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured =>
-      'Nenhum token configurado, toque para configurar.';
-
-  @override
-  String get toast_zrok_token_saved => 'Token guardado';
-
-  @override
-  String get toast_zrok_token_save_failed => 'Não conseguiu salvar token';
-
-  @override
-  String get toast_zrok_token_deleted => 'Token apagado';
-
-  @override
-  String get toast_zrok_token_delete_failed => 'Não conseguiu excluir o token';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1106,6 +1046,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settings_section_privacy => 'Privacidade e dados';
+
+  @override
+  String get settings_section_trips => 'Viagens';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Tarifas de custo, unidade de distância e onde as viagens são guardadas';
 
   @override
   String get settings_section_overlay => 'Superposição de status';
@@ -1698,12 +1645,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configurar';
-
-  @override
-  String get settings_daemons_zrok_reset_button => 'Repor ambiente';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '$arg1 utilizado · $arg2 livre';
   }
@@ -1818,7 +1759,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Túnel Zrok e serviços em segundo plano.';
+      'Túnel Tor e serviços em segundo plano.';
 
   @override
   String get settings_about_row_title => 'Sobre o BladeWatch';
@@ -2202,6 +2143,16 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Combustível: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Autonomia a combustível: $arg1 km';
+  }
+
+  @override
   String get vehicle_status_charge_unknown => 'Carga: —';
 
   @override
@@ -2358,6 +2309,11 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Autonomia a combustível: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Ainda não há dados suficientes';
 
   @override
@@ -2386,6 +2342,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Tarifa de eletricidade';
+
+  @override
+  String get trips_storage_fuel_price_label =>
+      'Preço do combustível (por litro)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Capacidade do tanque (litros)';
 
   @override
   String get trips_storage_distance_unit_label => 'Unidade de distância';
@@ -2462,6 +2426,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Temp. exterior';
+
+  @override
+  String get trips_detail_fuel_used => 'Combustível';
+
+  @override
+  String get trips_detail_fuel_cost => 'Custo de combustível';
+
+  @override
+  String get trips_detail_electric_cost => 'Custo de eletricidade';
 
   @override
   String get trips_detail_elev_gain => 'Ganho de altitude';
@@ -2807,6 +2780,38 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Falha ao guardar';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'A ligar ao Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'Como abrir este endereço';
+
+  @override
+  String get dashboard_tor_help_title => 'Abrir este endereço';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: instale o Tor Browser a partir do Google Play ou F-Droid, abra-o e cole o endereço.';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone e iPad: instale o Onion Browser na App Store, abra-o e cole o endereço. O Tor Browser não existe em iOS.';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS e Linux: transfira o Tor Browser em torproject.org, abra-o e cole o endereço.';
+
+  @override
+  String get dashboard_tor_help_password_note =>
+      'A palavra-passe continua a ser necessária depois de a página carregar.';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'Digitalize para a página de transferência do Tor Browser';
+
+  @override
+  String get dashboard_tor_help_close => 'Percebi';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -3207,20 +3212,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get webview_loading => 'Carregando...';
 
   @override
-  String get zrok_enable_token_hint => 'Ativar Token';
-
-  @override
-  String get zrok_token_storage_note =>
-      'O token é armazenado de forma segura e compartilhado entre o aplicativo e os serviços em segundo plano.';
-
-  @override
-  String get zrok_reset_environment => 'Redefinir o ambiente Zrok';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      'Remove ambiente e token. Você precisará reabilitar com o seu token (usa um slot de dispositivo).';
-
-  @override
   String get reset_title => 'Redefinir dados';
 
   @override
@@ -3398,7 +3389,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get daemon_name_acc => 'Vigilância ACC';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Serviços em segundo plano';
@@ -3654,7 +3645,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get dashboard_no_tunnel => 'Não há túnel a correr.';
 
   @override
-  String get dashboard_starting_zrok => 'Começando o túnel Zrok...';
+  String get dashboard_starting_tor => 'Iniciando o túnel Tor…';
 
   @override
   String get dashboard_waiting_url => 'À espera do túnel URL...';
@@ -3665,7 +3656,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Código de acesso';
@@ -3679,53 +3670,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Token do túnel Zrok';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'Introduza o seu token de habilitação Zrok.\nObter um em: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => 'O token não pode ser vazio';
-
-  @override
-  String get dialog_zrok_reset_title => 'Redefinir o ambiente Zrok';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      'Isto vai:\n• parar o túnel zrok se estiver em execução\n• remover o ambiente zrok deste dispositivo\n• remover o token guardado\n\nVocê precisará reinserir o seu token e ativar novamente. Isto usa um dos 5 slots do seu dispositivo em zrok.io.\n\nVocê tem certeza?';
-
-  @override
-  String get toast_resetting_zrok => 'Resetando o ambiente zrok...';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'Reset ambiente Zrok. Introduza um novo token para configurar novamente.';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      'Redefinição do ambiente (o arquivo de tokens pode precisar de limpeza manual)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return 'Reset do ambiente (com avisos: $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured =>
-      'Nenhum token configurado, toque para configurar.';
-
-  @override
-  String get toast_zrok_token_saved => 'Token guardado';
-
-  @override
-  String get toast_zrok_token_save_failed => 'Não conseguiu salvar token';
-
-  @override
-  String get toast_zrok_token_deleted => 'Token apagado';
-
-  @override
-  String get toast_zrok_token_delete_failed => 'Não conseguiu excluir o token';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -3911,6 +3856,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settings_section_privacy => 'Privacidade e dados';
+
+  @override
+  String get settings_section_trips => 'Viagens';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Tarifas de custo, unidade de distância e onde as viagens são salvas';
 
   @override
   String get settings_section_overlay => 'Superposição de status';
@@ -4503,12 +4455,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Configurar';
-
-  @override
-  String get settings_daemons_zrok_reset_button => 'Redefinir ambiente';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '$arg1 utilizado · $arg2 livre';
   }
@@ -4623,7 +4569,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Túnel Zrok e serviços em segundo plano.';
+      'Túnel Tor e serviços em segundo plano.';
 
   @override
   String get settings_about_row_title => 'Sobre o BladeWatch';
@@ -5007,6 +4953,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Combustível: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Autonomia a combustível: $arg1 km';
+  }
+
+  @override
   String get vehicle_status_charge_unknown => 'Carga: —';
 
   @override
@@ -5163,6 +5119,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Autonomia a combustível: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Ainda não há dados suficientes';
 
   @override
@@ -5191,6 +5152,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get trips_storage_rate_label => 'Tarifa de eletricidade';
+
+  @override
+  String get trips_storage_fuel_price_label =>
+      'Preço do combustível (por litro)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Capacidade do tanque (litros)';
 
   @override
   String get trips_storage_distance_unit_label => 'Unidade de distância';
@@ -5267,6 +5236,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get trips_detail_ext_temp => 'Temp. externa';
+
+  @override
+  String get trips_detail_fuel_used => 'Combustível';
+
+  @override
+  String get trips_detail_fuel_cost => 'Custo de combustível';
+
+  @override
+  String get trips_detail_electric_cost => 'Custo de eletricidade';
 
   @override
   String get trips_detail_elev_gain => 'Ganho de altitude';
@@ -5611,4 +5589,36 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get surveillance_apply_failed => 'Falha ao salvar';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'Conectando ao Tor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'Como abrir este endereço';
+
+  @override
+  String get dashboard_tor_help_title => 'Abrir este endereço';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: instale o Tor Browser pelo Google Play ou F-Droid, abra-o e cole o endereço.';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone e iPad: instale o Onion Browser na App Store, abra-o e cole o endereço. O Tor Browser não está disponível no iOS.';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS e Linux: baixe o Tor Browser em torproject.org, abra-o e cole o endereço.';
+
+  @override
+  String get dashboard_tor_help_password_note =>
+      'A senha continua sendo necessária depois que a página carregar.';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'Escaneie para a página de download do Tor Browser';
+
+  @override
+  String get dashboard_tor_help_close => 'Entendi';
 }

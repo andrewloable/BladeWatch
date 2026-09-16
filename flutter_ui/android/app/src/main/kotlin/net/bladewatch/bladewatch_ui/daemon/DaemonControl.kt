@@ -26,7 +26,7 @@ class DaemonControl(private val ipc: IpcCommandSender) {
 
     /**
      * BladeWatch-1xt9: real daemon-process liveness (CAMERA_DAEMON/SENTRY_DAEMON/
-     * ACC_SENTRY_DAEMON/ZROK_TUNNEL), computed locally by the daemon via `pgrep` — not
+     * ACC_SENTRY_DAEMON/TOR_TUNNEL), computed locally by the daemon via `pgrep` — not
      * to be confused with [status] above, which reports camera *recording* state, not
      * process lifecycle. Response shape: `{"status":"ok","daemons":{"<DaemonType name>":
      * <bool>, ...}}`.
@@ -34,7 +34,7 @@ class DaemonControl(private val ipc: IpcCommandSender) {
     fun processStatus(): JSONObject = ipc.sendCommand(JSONObject().put("cmd", "daemonStatus"))
 
     /**
-     * BladeWatch-m1po: the current Zrok tunnel URL, for the Dashboard's remote-access
+     * BladeWatch-m1po: the current Tor onion URL, for the Dashboard's remote-access
      * tile. Response shape: `{"status":"ok","running":<bool>,"url":<string|null>}`.
      *
      * The daemon gates the URL on the tunnel process actually running, so
@@ -46,11 +46,11 @@ class DaemonControl(private val ipc: IpcCommandSender) {
 
     /**
      * BladeWatch-abcx: enable or disable an OPTIONAL daemon. The daemon refuses any type
-     * outside its own allow-list — currently ZROK_TUNNEL alone — so passing anything else
+     * outside its own allow-list — currently TOR_TUNNEL alone — so passing anything else
      * comes back as an error rather than doing something partial.
      *
      * Enabling only RECORDS the intent: DaemonStartupManager's health check performs the
-     * actual launch through the full ZrokLauncher flow within ~30s. Disabling records the
+     * actual launch through TorLauncher within ~30s. Disabling records the
      * intent AND kills the running process, because that health check only ever relaunches.
      */
     fun setDaemonEnabled(type: String, enabled: Boolean): JSONObject = ipc.sendCommand(

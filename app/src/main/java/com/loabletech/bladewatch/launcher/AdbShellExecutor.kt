@@ -98,38 +98,20 @@ class AdbShellExecutor(private val context: Context) {
     }
 
     private fun redactCommand(command: String): String {
+        // The enable-token rule that used to live here went with the previous tunnel: a Tor
+        // onion service takes no token on its command line. Its only secret is the hidden-service
+        // key, which tor reads from disk itself and which never appears in a command.
         return command
-            .replace(Regex("""(?i)(\bzrok\s+enable\s+)(\S+)"""), "$1<redacted>")
             .replace(Regex("""(?i)("cmd"\s*:\s*"secret_put"[^}]*"value"\s*:\s*")[^"]*"""), "$1<redacted>")
     }
     
-    fun checkProcessRunning(processName: String): Int? {
-        return try {
-            val dadb = getOrCreateConnection()
-            val result = dadb.shell("pgrep -f '$processName'")
-            
-            if (result.exitCode == 0 && result.allOutput.trim().isNotEmpty()) {
-                result.allOutput.trim().lines().firstOrNull()?.toIntOrNull()
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            logger.error(TAG, "Failed to check process: $processName", e)
-            null
-        }
-    }
-    
-    fun killProcess(processName: String): Boolean {
-        return try {
-            val dadb = getOrCreateConnection()
-            val result = dadb.shell("pkill -9 -f '$processName'")
-            result.exitCode == 0
-        } catch (e: Exception) {
-            logger.error(TAG, "Failed to kill process: $processName", e)
-            false
-        }
-    }
-    
+    // checkProcessRunning()/killProcess() used to live here. Both were unreachable — no
+    // caller anywhere in the tree — and both used the `-f` forms that match the ADB shell's
+    // OWN cmdline: `pgrep -f NAME` answers with the probing shell's pid, and `pkill -9 -f
+    // NAME` kills that shell outright (verified on the head unit 2026-09-15; see
+    // TorLauncher.stopCommand). Removed rather than fixed, so nobody reaches for a
+    // convenient-looking helper that would silently do the wrong thing.
+
     fun getOrCreateConnection(): Dadb {
         synchronized(sharedDadbLock) {
             var dadb = sharedDadb

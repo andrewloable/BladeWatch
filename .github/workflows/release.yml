@@ -5,9 +5,13 @@
 #   net.bladewatch.flutter — the in-car UI the driver opens
 # Both are produced here. They are NOT interchangeable and both must be installed.
 #
-# Runs ONLY for a tag. Creating a release through the GitHub UI on a new tag also
-# creates that tag, which fires this same `push` event, so both routes are covered
-# by the one trigger. Ordinary pushes and pull requests build nothing.
+# Runs ONLY for a tag, and ONLY when that tag is on main. Creating a release through
+# the GitHub UI on a new tag also creates that tag, which fires this same `push` event,
+# so both routes are covered by the one trigger. Ordinary pushes and pull requests build
+# nothing.
+#
+# The trigger alone is not enough: `tags: v*` fires for a tag on ANY branch, so the first
+# job step verifies the tagged commit is an ancestor of main and fails the build if not.
 #
 # NO SECRETS REQUIRED: the keystore never touches GitHub. Both APKs come out
 # unsigned and CANNOT BE INSTALLED until you sign them — see the release notes this
@@ -34,6 +38,41 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Need main's history to verify the tag actually sits on it - a shallow
+          # clone has neither main nor the ancestry to check against.
+          fetch-depth: 0
+
+      # Release ONLY what is on main.
+      #
+      # The `tags: v*` trigger fires for a tag on ANY branch, so tagging a feature
+      # branch would publish a release built from unreviewed code under a version
+      # number that looks official. Nothing about the tag name says which branch it
+      # came from, and the resulting APKs are indistinguishable afterwards.
+      #
+      # A tag build is a DETACHED HEAD, so "am I on main" is meaningless - the real
+      # question is whether this commit is an ancestor of main, which is what
+      # merge-base --is-ancestor answers.
+      #
+      # workflow_dispatch is exempt: re-running an existing release is a deliberate
+      # act, and its ref is chosen by whoever clicks the button.
+      - name: Refuse to release a tag that is not on main
+        if: github.event_name == 'push'
+        run: |
+          # Explicit refspec, NOT `--depth=0` — git rejects that outright with
+          # "fatal: depth 0 is not a positive number", which would fail this step
+          # and every release with it. checkout's fetch-depth: 0 already pulls full
+          # history; this just guarantees the origin/main ref exists to compare to.
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if git merge-base --is-ancestor "${{ github.sha }}" origin/main; then
+            echo "OK: ${{ github.ref_name }} ($(git rev-parse --short "${{ github.sha }}")) is on main."
+          else
+            echo "::error::Tag ${{ github.ref_name }} is NOT on main."
+            echo "Its commit $(git rev-parse --short "${{ github.sha }}") is not an ancestor of origin/main,"
+            echo "so this would publish a release built from code that was never merged."
+            echo "Merge to main first, then move or re-create the tag there."
+            exit 1
+          fi
 
       # JDK 17: AGP for compileSdk 36 requires 17+. The modules themselves target
       # Java 11 bytecode (sourceCompatibility in app/build.gradle.kts).

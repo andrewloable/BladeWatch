@@ -355,17 +355,10 @@ public class BydDataCollector {
             Object unitVal = BydDeviceHelper.callGetter(instrumentDevice, "getMileageUnit");
             if (unitVal instanceof Number) {
                 int unit = ((Number) unitVal).intValue();
-                if (unit == 0) {
-                    // Miles mode
-                    distanceToKmFactor = MILES_TO_KM;
-                    unitDetected = true;
-                    logger.info("Mileage unit: MILES detected (factor=" + MILES_TO_KM + ")");
-                } else {
-                    // km mode (unit == 1 or any other value)
-                    distanceToKmFactor = 1.0;
-                    unitDetected = true;
-                    logger.info("Mileage unit: KM detected (factor=1.0)");
-                }
+                distanceToKmFactor = BydSignalRules.distanceFactorForMileageUnit(unit);
+                unitDetected = true;
+                logger.info("Mileage unit: " + (distanceToKmFactor > 1.0 ? "MILES" : "KM")
+                        + " detected (factor=" + distanceToKmFactor + ")");
             } else {
                 logger.info("Mileage unit: defaulting to km (getMileageUnit returned null)");
             }
@@ -733,12 +726,9 @@ public class BydDataCollector {
             collectEngine(b);       // enginePower, motorSpeed/torque
             collectGearbox(b);      // gearMode
         } else {
-            boolean possiblyCharging =
-                (!Double.isNaN(b.chargingPowerKw) && Math.abs(b.chargingPowerKw) > 0.1)
-                || (!Double.isNaN(b.externalChargingPowerKw) && b.externalChargingPowerKw > 0.1)
-                || b.chargingState == 1   // BMS explicitly says CHARGING
-                || b.chargingGunState == 2 || b.chargingGunState == 3
-                || b.chargingGunState == 4 || b.chargingGunState == 5;
+            boolean possiblyCharging = BydSignalRules.possiblyChargingWhileParked(
+                    b.chargingPowerKw, b.externalChargingPowerKw,
+                    b.chargingState, b.chargingGunState);
             if (possiblyCharging) {
                 collectEngine(b);   // adds enginePowerKw → confirms direction
             }
@@ -844,10 +834,9 @@ public class BydDataCollector {
             // SOC comes from StatisticDevice.getElecPercentageValue() — see collectStatistic().
             Object battPowerRaw = BydDeviceHelper.callGetter(bodyworkDevice, "getBatteryPowerValue");
             if (battPowerRaw instanceof Number) {
-                double rawVal = ((Number) battPowerRaw).doubleValue();
-                double voltage12v = rawVal > 100 ? rawVal / 10.0 : rawVal;
-                // Only treat as 12V voltage if it's in a plausible range (8-16V)
-                if (voltage12v >= 8.0 && voltage12v <= 16.0 && Double.isNaN(b.voltage12v)) {
+                Double voltage12v = BydSignalRules.scale12vVoltage(
+                        ((Number) battPowerRaw).doubleValue());
+                if (voltage12v != null && Double.isNaN(b.voltage12v)) {
                     b.voltage12v(voltage12v);
                 }
             }
@@ -878,7 +867,7 @@ public class BydDataCollector {
                             double soc = b.socPercent;
                             if (!Double.isNaN(soc) && soc > 5) {
                                 double impliedCap = evVal / (soc / 100.0);
-                                if (impliedCap >= 10 && impliedCap <= 130) {
+                                if (BydSignalRules.isRemainKwhConsistentWithSoc(evVal, soc)) {
                                     b.remainKwh(evVal);
                                     kwhWrittenThisCycle = true;
                                     logger.debug("remainKwh from getBatteryRemainPowerEV: " +
@@ -919,8 +908,7 @@ public class BydDataCollector {
                             // Validate against SOC
                             double soc = b.socPercent;
                             if (!Double.isNaN(soc) && soc > 5) {
-                                double impliedCap = kwh / (soc / 100.0);
-                                if (impliedCap >= 10 && impliedCap <= 130) {
+                                if (BydSignalRules.isRemainKwhConsistentWithSoc(kwh, soc)) {
                                     b.remainKwh(kwh);
                                     kwhWrittenThisCycle = true;
                                     logger.debug("remainKwh from getRemainingBatteryPower: " +
@@ -959,11 +947,10 @@ public class BydDataCollector {
                 // this fallback, this is the only signal, and gating on NaN would freeze
                 // it at the first poll's value (the bug this whole block was rewritten
                 // to fix). The 1-120 kWh sanity window protects against junk readings.
-                boolean looksLikeAhRating = (capVal >= 50 && capVal <= 350);
+                boolean looksLikeAhRating = BydSignalRules.looksLikeAhRating(capVal);
                 if (!kwhWrittenThisCycle && !looksLikeAhRating && capVal > 0) {
                     double kwhFromCap = capVal / 10.0;
-                    // Plausible remaining energy range for any BYD model: 1-120 kWh
-                    if (kwhFromCap > 1.0 && kwhFromCap < 120.0) {
+                    if (BydSignalRules.isPlausibleRemainKwh(kwhFromCap)) {
                         b.remainKwh(kwhFromCap);
                     }
                 }
@@ -1073,11 +1060,9 @@ public class BydDataCollector {
             try {
                 Object val = BydDeviceHelper.callGet(engineDevice, BydFeatureIds.ENGINE_POWER, Double.class);
                 if (val != null) {
-                    double raw = BydDeviceHelper.getDoubleValue(val);
-                    if (!Double.isNaN(raw) && raw >= -200.0 && raw <= 400.0) {
-                        double kw = (Math.abs(raw) > 100.0) ? raw * 0.1 : raw;
-                        b.enginePowerKw(kw);
-                    }
+                    Double kw = BydSignalRules.enginePowerKw(
+                            BydDeviceHelper.getDoubleValue(val));
+                    if (kw != null) b.enginePowerKw(kw);
                 }
             } catch (Exception e) {
                 logger.debug("collectEngine enginePower feature ID error: " + e.getMessage());
@@ -1306,11 +1291,9 @@ public class BydDataCollector {
         Object val = BydDeviceHelper.callGet(statisticDevice, featureId, Integer.TYPE);
         if (val == null) val = BydDeviceHelper.callGet(statisticDevice, featureId, Integer.class);
         if (val == null) return;
-        int raw = BydDeviceHelper.getIntValue(val);
-        if (raw == BydFeatureIds.BMS_UNAVAILABLE || raw == BydFeatureIds.INVALID_VALUE
-            || raw == BydFeatureIds.INVALID_VALUE_2 || raw == Integer.MIN_VALUE) return;
-        if (raw < 0 || raw > 120) return;
-        double tempC = raw - 40;
+        Double temp = BydSignalRules.cellTempC(BydDeviceHelper.getIntValue(val));
+        if (temp == null) return;
+        double tempC = temp;
         switch (which) {
             case "high": b.highCellTempC(tempC); break;
             case "low": b.lowCellTempC(tempC); break;
@@ -1322,11 +1305,9 @@ public class BydDataCollector {
         Object val = BydDeviceHelper.callGet(statisticDevice, featureId, Integer.TYPE);
         if (val == null) val = BydDeviceHelper.callGet(statisticDevice, featureId, Integer.class);
         if (val == null) return;
-        int raw = BydDeviceHelper.getIntValue(val);
-        if (raw == BydFeatureIds.BMS_UNAVAILABLE || raw == BydFeatureIds.INVALID_VALUE
-            || raw == BydFeatureIds.INVALID_VALUE_2 || raw == Integer.MIN_VALUE || raw <= 0) return;
-        double volts = raw / 1000.0;
-        if (volts < 1.0 || volts > 5.0) return;
+        Double v = BydSignalRules.cellVoltage(BydDeviceHelper.getIntValue(val));
+        if (v == null) return;
+        double volts = v;
         switch (which) {
             case "high": b.highCellVoltage(volts); break;
             case "low": b.lowCellVoltage(volts); break;
@@ -1403,8 +1384,7 @@ public class BydDataCollector {
             // actually charging — clearing there would break detection again.
             // We do NOT clear on disconnect-only signals (gunState==1) without a
             // BMS state agreeing, because PHEVs often leave gunState UNAVAILABLE.
-            if (b.chargingState == 0 || b.chargingState == 2
-                    || b.chargingState == 4 || b.chargingState == 12) {
+            if (BydSignalRules.isTerminalChargingState(b.chargingState)) {
                 b.chargingPowerKw(Double.NaN);
                 b.externalChargingPowerKw(Double.NaN);
             }
@@ -1445,10 +1425,7 @@ public class BydDataCollector {
             if (type instanceof Number) b.chargingType(((Number) type).intValue());
 
             // VTOL detection — gunState==5 OR chargingType==3
-            boolean isVtol = false;
-            if (b.chargingGunState == 5) isVtol = true;
-            if (b.chargingType == 3) isVtol = true;
-            b.vtolCharging(isVtol);
+            b.vtolCharging(BydSignalRules.isVtolCharging(b.chargingGunState, b.chargingType));
 
             // Charging capacity (kWh)
             Object cap = BydDeviceHelper.callGetter(chargingDevice, "getChargingCapacity");
@@ -1550,18 +1527,13 @@ public class BydDataCollector {
             Object extPower = BydDeviceHelper.callGetter(instrumentDevice, "getExternalChargingPower");
             if (extPower instanceof Number) {
                 double raw = ((Number) extPower).doubleValue();
-                double kw;
-                if (raw > 50.0 && raw < 50000.0) {
-                    kw = raw / 100.0; // hectowatts → kW
-                } else {
-                    kw = raw;         // already kW (BEV firmware default)
-                }
-                if (kw > 0.1 && kw <= 500) {
+                Double kw = BydSignalRules.externalChargingPowerKw(raw);
+                if (kw != null) {
                     b.externalChargingPowerKw(kw);
                     if (!loggedExtChargePowerScale) {
                         loggedExtChargePowerScale = true;
                         logger.info("getExternalChargingPower: raw=" + raw + " → " + kw
-                                + " kW (scale=" + (raw > 50.0 && raw < 50000.0 ? "hectowatts/100" : "kW")
+                                + " kW (scale=" + (BydSignalRules.isHectowattScale(raw) ? "hectowatts/100" : "kW")
                                 + "). Cross-check against the cluster's charging readout to confirm.");
                     }
                 }
@@ -1775,6 +1747,72 @@ public class BydDataCollector {
     private volatile long lastDrivetrainProbeMs = 0;
     private static final long DRIVETRAIN_REPROBE_MS = 60_000;
 
+    static final int DRIVETRAIN_UNKNOWN = 0;
+    static final int DRIVETRAIN_BEV = 1;
+    static final int DRIVETRAIN_PHEV = 2;
+    /** PHEV, but held on a short TTL so a transient HAL miss re-probes in seconds. */
+    static final int DRIVETRAIN_PHEV_PROVISIONAL = 3;
+
+    /**
+     * A known nominal pack strictly below this is a PHEV pack, full stop. The smallest BYD
+     * BEV is the Atto 3 at 49.9 kWh, so sub-30 kWh uniquely names a PHEV across the
+     * catalogue and the inverse risk is about zero.
+     *
+     * <p>Inherited from Overdrive and NOT re-derived on this car. The same rule also lives in
+     * {@code VehicleDataMonitor.isPhevVehicle}, where it serves a different caller as a
+     * startup fallback; if one moves, move both.
+     */
+    public static final double PHEV_MAX_NOMINAL_KWH = 30.0;
+
+    /**
+     * Pure drivetrain decision, split out from {@link #computeIsPhev()} so the ORDER of the
+     * rules can be tested without a HAL device (BladeWatch-fpdz.1).
+     *
+     * <p><b>Capacity is consulted FIRST and that is the whole point.</b> The fuel HAL returns
+     * BMS sentinels during firmware warm-up, so on a PHEV that has not finished booting both
+     * signals read as sentinel, the both-sentinel rule concludes BEV, and the caller caches
+     * that for a full minute. Overdrive shipped exactly that regression in v17 and fixed it
+     * by putting the capacity gate ahead of the probes. A known pack size is simply stronger
+     * evidence than a signal that is allowed to lie while it warms up.
+     *
+     * @param nominalKwh known nominal pack capacity, or 0/NaN when unknown
+     * @return one of the DRIVETRAIN_* constants
+     */
+    static int decideDrivetrain(double nominalKwh, boolean fuelPctReal, boolean fuelRangeReal,
+                                boolean fuelPctSentinel, boolean fuelRangeSentinel) {
+        // Tier 0 -- capacity. Strongest signal, and immune to the warm-up sentinel problem.
+        if (!Double.isNaN(nominalKwh) && nominalKwh > 0 && nominalKwh < PHEV_MAX_NOMINAL_KWH) {
+            return DRIVETRAIN_PHEV;
+        }
+        // Both fuel signals agree there is a fuel system.
+        if (fuelPctReal && fuelRangeReal) {
+            return DRIVETRAIN_PHEV;
+        }
+        // Both at sentinel: no fuel system.
+        if (fuelPctSentinel && fuelRangeSentinel) {
+            return DRIVETRAIN_BEV;
+        }
+        // One real + one sentinel: PHEV with an empty tank or zero range.
+        if ((fuelPctReal && fuelRangeSentinel) || (fuelRangeReal && fuelPctSentinel)) {
+            return DRIVETRAIN_PHEV_PROVISIONAL;
+        }
+        return DRIVETRAIN_UNKNOWN;
+    }
+
+    /**
+     * Known nominal pack capacity, or 0 when unavailable. Best-effort: this reaches another
+     * subsystem, and a drivetrain probe must never propagate its failure.
+     */
+    private double knownNominalKwh() {
+        try {
+            return net.bladewatch.app.monitor.VehicleDataMonitor.getInstance()
+                    .getNominalCapacityKwh();
+        } catch (Throwable t) {
+            logger.debug("computeIsPhev capacity probe unavailable: " + t.getMessage());
+            return 0;
+        }
+    }
+
     private boolean isPhev(BydVehicleData.Builder b) {
         return computeIsPhev();
     }
@@ -1819,41 +1857,38 @@ public class BydDataCollector {
                 logger.debug("computeIsPhev fuelRange probe error: " + e.getMessage());
             }
         }
-        // PHEV: at least one fuel signal returns a real, non-zero, non-sentinel
-        // value AND the other is either real or at a sentinel (i.e. NOT a real
-        // value claiming the opposite — that would indicate firmware lying).
-        // BEV: both signals at sentinel.
-        // Otherwise: defer to capacity heuristic, don't cache.
-        if (fuelPctReal && fuelRangeReal) {
-            cachedDrivetrain = 2;
-            lastDrivetrainProbeMs = now;
-            return true;
+        // The decision itself, including the capacity gate that runs ahead of the probes
+        // above. See decideDrivetrain for why the order matters.
+        int verdict = decideDrivetrain(knownNominalKwh(),
+                fuelPctReal, fuelRangeReal, fuelPctSentinel, fuelRangeSentinel);
+
+        switch (verdict) {
+            case DRIVETRAIN_PHEV:
+                cachedDrivetrain = 2;
+                lastDrivetrainProbeMs = now;
+                return true;
+            case DRIVETRAIN_BEV:
+                cachedDrivetrain = 1;
+                lastDrivetrainProbeMs = now;
+                return false;
+            case DRIVETRAIN_PHEV_PROVISIONAL:
+                // Cache as PHEV with a SHORTER TTL so a transient HAL miss self-heals
+                // quickly. Without any cache, every isPhev() call re-runs both reflection
+                // probes — onFuelPercentageChanged fires at HAL rate.
+                cachedDrivetrain = 2;
+                // 5s TTL via the lastDrivetrainProbeMs offset trick: pretend the probe
+                // happened (DRIVETRAIN_REPROBE_MS - 5000) ms ago, so the next call in >5s
+                // re-probes.
+                lastDrivetrainProbeMs = now - (DRIVETRAIN_REPROBE_MS - 5_000);
+                return true;
+            default:
+                // Unknown — do NOT cache. Default to non-BEV.
+                return false;
         }
-        if (fuelPctSentinel && fuelRangeSentinel) {
-            cachedDrivetrain = 1;
-            lastDrivetrainProbeMs = now;
-            return false;
-        }
-        // One real + one sentinel is the "PHEV with empty tank or 0 km" case.
-        // Cache as PHEV with a SHORTER TTL so a transient HAL miss self-heals
-        // quickly. Without the cache, every isPhev() call re-runs both
-        // reflection probes — onFuelPercentageChanged fires at HAL rate.
-        if ((fuelPctReal && fuelRangeSentinel) || (fuelRangeReal && fuelPctSentinel)) {
-            cachedDrivetrain = 2;
-            // 5s TTL via lastDrivetrainProbeMs offset trick: pretend the probe
-            // happened (DRIVETRAIN_REPROBE_MS - 5000) ms ago, so the next call
-            // in >5s will re-probe.
-            lastDrivetrainProbeMs = now - (DRIVETRAIN_REPROBE_MS - 5_000);
-            return true;
-        }
-        // Unknown — do NOT cache. Default to non-BEV.
-        return false;
     }
 
     private static boolean isBevFuelSentinel(int v) {
-        return v == 255 || v == 254 || v == 511 || v == 1023
-            || v == 2046 || v == 2047 || v == 4095
-            || v == 65534 || v == 65535;
+        return BydSignalRules.isBevFuelSentinel(v);
     }
 
     private void ensureDeviceContext(Object device) {
@@ -2482,20 +2517,11 @@ public class BydDataCollector {
     private int apiLockFromSdk(Object raw) {
         if (!(raw instanceof Number)) return LOCK_API_UNKNOWN;
         int sdkState = ((Number) raw).intValue();
-        if (sdkState == LOCK_SDK_LOCKED) return LOCK_API_LOCKED;
-        if (sdkState == LOCK_SDK_UNLOCKED) return LOCK_API_UNLOCKED;
-        if (sdkState == LOCK_SDK_INVALID) return LOCK_API_UNKNOWN;
-        return LOCK_API_UNKNOWN;
+        return BydSignalRules.lockSdkToApi(sdkState);
     }
 
     private int deriveOverallLock(int[] locks) {
-        boolean sawLockedDoor = false;
-        for (int i = 0; i < 4; i++) {
-            if (locks[i] == LOCK_API_UNLOCKED) return LOCK_API_UNLOCKED;
-            if (locks[i] != LOCK_API_LOCKED) return LOCK_API_UNKNOWN;
-            sawLockedDoor = true;
-        }
-        return sawLockedDoor ? LOCK_API_LOCKED : LOCK_API_UNKNOWN;
+        return BydSignalRules.deriveOverallLock(locks);
     }
 
     private void mergeCachedDoorLocks(int[] locks) {
@@ -5007,9 +5033,7 @@ public class BydDataCollector {
     }
 
     private static int normalizeSeatGetterLevel(int raw) {
-        if (raw == Integer.MIN_VALUE) return -1;
-        int normalized = raw - 1;
-        return (normalized >= 0 && normalized <= 2) ? normalized : -1;
+        return BydSignalRules.normalizeSeatGetterLevel(raw);
     }
 
     private static boolean hasPublicMethod(Object target, String methodName, Class<?>... parameterTypes) {

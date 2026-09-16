@@ -147,4 +147,46 @@ public interface TripSummaryOrBuilder extends
    * @return The extTempC.
    */
   int getExtTempC();
+
+  /**
+   * <pre>
+   * PHEV fuel leg (BladeWatch-fpdz). New field numbers only -- 1-20 keep their meaning, so
+   * an older client parses this message unchanged.
+   *
+   * Derived values only: a list row shows what the fuel leg COST, never the lifetime
+   * counters it was derived from. Handing a client raw counters invites it to compute its
+   * own delta, which then disagrees with the daemon the moment a counter resets.
+   *
+   * On a BEV these are all 0, which is also proto3's default -- there is no "absent" here,
+   * and has_fuel_data below is what distinguishes a BEV from a PHEV that burned nothing.
+   * </pre>
+   *
+   * <code>double litres_used = 21 [json_name = "litresUsed"];</code>
+   * @return The litresUsed.
+   */
+  double getLitresUsed();
+
+  /**
+   * <code>double fuel_cost = 22 [json_name = "fuelCost"];</code>
+   * @return The fuelCost.
+   */
+  double getFuelCost();
+
+  /**
+   * <code>double electric_cost = 23 [json_name = "electricCost"];</code>
+   * @return The electricCost.
+   */
+  double getElectricCost();
+
+  /**
+   * <pre>
+   * True when this trip recorded both ends of the fuel counter. Derived from the STORED
+   * trip, not a live drivetrain probe, so a historical trip renders the same way on a car
+   * whose drivetrain reads differently today.
+   * </pre>
+   *
+   * <code>bool has_fuel_data = 24 [json_name = "hasFuelData"];</code>
+   * @return The hasFuelData.
+   */
+  boolean getHasFuelData();
 }

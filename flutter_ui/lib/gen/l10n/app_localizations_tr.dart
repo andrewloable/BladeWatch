@@ -399,20 +399,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get webview_loading => 'Karga...';
 
   @override
-  String get zrok_enable_token_hint => 'Token’ı etkinleştir';
-
-  @override
-  String get zrok_token_storage_note =>
-      'Token güvenli bir şekilde saklanır ve uygulama ile arka plan servisleri arasında paylaşılır.';
-
-  @override
-  String get zrok_reset_environment => 'Zrok ortamını sıfırla';
-
-  @override
-  String get zrok_reset_environment_desc =>
-      'Çevre ve token çıkarır. token ile yeniden etkinleştirmeniz gerekir (bir cihaz yuvasını kullanır).';
-
-  @override
   String get reset_title => 'Verileri sıfırla';
 
   @override
@@ -591,7 +577,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get daemon_name_acc => 'ACC gözetim';
 
   @override
-  String get daemon_name_zrok => 'Zrok Tunnel';
+  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Arka plan hizmetleri';
@@ -844,7 +830,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dashboard_no_tunnel => 'Çalışan tünel yok';
 
   @override
-  String get dashboard_starting_zrok => 'Zrok tüneli başlatılıyor…';
+  String get dashboard_starting_tor => 'Tor tüneli başlatılıyor…';
 
   @override
   String get dashboard_waiting_url => 'URL tünelini bekliyoruz...';
@@ -855,7 +841,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get tunnel_label_zrok => 'Zrok';
+  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Erişim Kodu';
@@ -869,53 +855,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get dialog_zrok_token_title => 'Zrok tünel simgesi';
-
-  @override
-  String get dialog_zrok_token_message =>
-      'Zrok etkinleştirme token’ınızı girin.\nBuradan alın: zrok.io';
-
-  @override
   String get toast_token_cannot_be_empty => 'Token boş olamaz';
-
-  @override
-  String get dialog_zrok_reset_title => 'Zrok ortamını sıfırla';
-
-  @override
-  String get dialog_zrok_reset_message =>
-      'Bu:\n• Zrok tünelini durdurur eğer çalışır\n• Zrok ortamını bu cihazdan çıkarın\n• Kaydedilen token\'u silin\n\nToken\'inizi yeniden girmeniz ve yeniden etkinleştirmeniz gerekir. Bu zrok.io\'daki 5 cihaz yuvasından birini kullanır.\n\nEmin misiniz?';
-
-  @override
-  String get toast_resetting_zrok => 'Zrok ortamını yeniden ayarlayın...';
-
-  @override
-  String get toast_zrok_reset_success =>
-      'Zrok ortamı yeniden ayarlayın. Yeniden ayarlamak için yeni bir token girin.';
-
-  @override
-  String get toast_zrok_reset_partial =>
-      'Çevre sıfırlaması (token dosyası manuel temizlenmeye ihtiyaç duyabilir)';
-
-  @override
-  String toast_zrok_reset_warnings(Object arg1) {
-    return 'Çevre sıfırlaması (açıklamalarla: $arg1)';
-  }
-
-  @override
-  String get zrok_no_token_configured =>
-      'Token yapılandırılmamış. Ayarlamak için dokunun.';
-
-  @override
-  String get toast_zrok_token_saved => 'Kaydedilen token';
-
-  @override
-  String get toast_zrok_token_save_failed => 'Token kaydedilemedi';
-
-  @override
-  String get toast_zrok_token_deleted => 'İşaret silinmiş';
-
-  @override
-  String get toast_zrok_token_delete_failed => 'Token silmeyi başaramadı';
 
   @override
   String toast_fetching_log(Object arg1) {
@@ -1097,6 +1037,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_section_privacy => 'Gizlilik & Veriler';
+
+  @override
+  String get settings_section_trips => 'Yolculuklar';
+
+  @override
+  String get settings_section_trips_subtitle =>
+      'Maliyet oranları, mesafe birimi ve yolculukların saklandığı yer';
 
   @override
   String get settings_section_overlay => 'Durum göstergesi';
@@ -1687,12 +1634,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get settings_daemons_zrok_configure => 'Yapılandır';
-
-  @override
-  String get settings_daemons_zrok_reset_button => 'Ortamı sıfırla';
-
-  @override
   String dashboard_metric_storage_chip(Object arg1, Object arg2) {
     return '$arg1 kullanıldı · $arg2 ücretsiz';
   }
@@ -1807,7 +1748,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Zrok tüneli ve arka plan servisleri.';
+      'Tor tüneli ve arka plan hizmetleri.';
 
   @override
   String get settings_about_row_title => 'BladeWatch hakkında';
@@ -2189,6 +2130,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String vehicle_status_fuel_fmt(Object arg1) {
+    return 'Yakıt: $arg1%';
+  }
+
+  @override
+  String vehicle_status_fuel_range_fmt(Object arg1) {
+    return 'Yakıt menzili: $arg1 km';
+  }
+
+  @override
   String get vehicle_status_charge_unknown => 'Şarj: —';
 
   @override
@@ -2345,6 +2296,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String trips_range_fuel(Object km) {
+    return 'Yakıt menzili: $km';
+  }
+
+  @override
   String get trips_range_no_data => 'Henüz yeterli veri yok';
 
   @override
@@ -2373,6 +2329,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get trips_storage_rate_label => 'Elektrik tarifesi';
+
+  @override
+  String get trips_storage_fuel_price_label => 'Yakıt Fiyatı (litre başına)';
+
+  @override
+  String get trips_storage_tank_capacity_label =>
+      'Yakıt Deposu Kapasitesi (litre)';
 
   @override
   String get trips_storage_distance_unit_label => 'Mesafe birimi';
@@ -2449,6 +2412,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get trips_detail_ext_temp => 'Dış sıcaklık';
+
+  @override
+  String get trips_detail_fuel_used => 'Yakıt';
+
+  @override
+  String get trips_detail_fuel_cost => 'Yakıt Maliyeti';
+
+  @override
+  String get trips_detail_electric_cost => 'Elektrik Maliyeti';
 
   @override
   String get trips_detail_elev_gain => 'Yükselti kazancı';
@@ -2791,4 +2763,36 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Kaydetme başarısız';
+
+  @override
+  String get dashboard_tor_bootstrapping => 'Tor\'a bağlanılıyor…';
+
+  @override
+  String get dashboard_tor_help_tooltip => 'Bu adres nasıl açılır';
+
+  @override
+  String get dashboard_tor_help_title => 'Bu adresi açma';
+
+  @override
+  String get dashboard_tor_help_android =>
+      'Android: Tor Browser\'ı Google Play veya F-Droid\'den kurun, açın ve adresi yapıştırın.';
+
+  @override
+  String get dashboard_tor_help_ios =>
+      'iPhone ve iPad: Onion Browser\'ı App Store\'dan kurun, açın ve adresi yapıştırın. Tor Browser iOS\'ta yoktur.';
+
+  @override
+  String get dashboard_tor_help_desktop =>
+      'Windows, macOS ve Linux: Tor Browser\'ı torproject.org adresinden indirin, açın ve adresi yapıştırın.';
+
+  @override
+  String get dashboard_tor_help_password_note =>
+      'Sayfa yüklendikten sonra parola yine gerekir.';
+
+  @override
+  String get dashboard_tor_help_download_qr_label =>
+      'Tor Browser indirme sayfası için tarayın';
+
+  @override
+  String get dashboard_tor_help_close => 'Anladım';
 }

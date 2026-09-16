@@ -41,6 +41,10 @@ class TripSummary extends $pb.GeneratedMessage {
     $core.double? endLat,
     $core.double? endLon,
     $core.int? extTempC,
+    $core.double? litresUsed,
+    $core.double? fuelCost,
+    $core.double? electricCost,
+    $core.bool? hasFuelData,
   }) {
     final result = TripSummary._();
     if (id != null) result.id = id;
@@ -63,6 +67,10 @@ class TripSummary extends $pb.GeneratedMessage {
     if (endLat != null) result.endLat = endLat;
     if (endLon != null) result.endLon = endLon;
     if (extTempC != null) result.extTempC = extTempC;
+    if (litresUsed != null) result.litresUsed = litresUsed;
+    if (fuelCost != null) result.fuelCost = fuelCost;
+    if (electricCost != null) result.electricCost = electricCost;
+    if (hasFuelData != null) result.hasFuelData = hasFuelData;
     return result;
   }
 
@@ -99,6 +107,10 @@ class TripSummary extends $pb.GeneratedMessage {
     ..aD(18, _omitFieldNames ? '' : 'endLat')
     ..aD(19, _omitFieldNames ? '' : 'endLon')
     ..aI(20, _omitFieldNames ? '' : 'extTempC')
+    ..aD(21, _omitFieldNames ? '' : 'litresUsed')
+    ..aD(22, _omitFieldNames ? '' : 'fuelCost')
+    ..aD(23, _omitFieldNames ? '' : 'electricCost')
+    ..aOB(24, _omitFieldNames ? '' : 'hasFuelData')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -302,6 +314,54 @@ class TripSummary extends $pb.GeneratedMessage {
   $core.bool hasExtTempC() => $_has(19);
   @$pb.TagNumber(20)
   void clearExtTempC() => $_clearField(20);
+
+  /// PHEV fuel leg (BladeWatch-fpdz). New field numbers only -- 1-20 keep their meaning, so
+  /// an older client parses this message unchanged.
+  ///
+  /// Derived values only: a list row shows what the fuel leg COST, never the lifetime
+  /// counters it was derived from. Handing a client raw counters invites it to compute its
+  /// own delta, which then disagrees with the daemon the moment a counter resets.
+  ///
+  /// On a BEV these are all 0, which is also proto3's default -- there is no "absent" here,
+  /// and has_fuel_data below is what distinguishes a BEV from a PHEV that burned nothing.
+  @$pb.TagNumber(21)
+  $core.double get litresUsed => $_getN(20);
+  @$pb.TagNumber(21)
+  set litresUsed($core.double value) => $_setDouble(20, value);
+  @$pb.TagNumber(21)
+  $core.bool hasLitresUsed() => $_has(20);
+  @$pb.TagNumber(21)
+  void clearLitresUsed() => $_clearField(21);
+
+  @$pb.TagNumber(22)
+  $core.double get fuelCost => $_getN(21);
+  @$pb.TagNumber(22)
+  set fuelCost($core.double value) => $_setDouble(21, value);
+  @$pb.TagNumber(22)
+  $core.bool hasFuelCost() => $_has(21);
+  @$pb.TagNumber(22)
+  void clearFuelCost() => $_clearField(22);
+
+  @$pb.TagNumber(23)
+  $core.double get electricCost => $_getN(22);
+  @$pb.TagNumber(23)
+  set electricCost($core.double value) => $_setDouble(22, value);
+  @$pb.TagNumber(23)
+  $core.bool hasElectricCost() => $_has(22);
+  @$pb.TagNumber(23)
+  void clearElectricCost() => $_clearField(23);
+
+  /// True when this trip recorded both ends of the fuel counter. Derived from the STORED
+  /// trip, not a live drivetrain probe, so a historical trip renders the same way on a car
+  /// whose drivetrain reads differently today.
+  @$pb.TagNumber(24)
+  $core.bool get hasFuelData => $_getBF(23);
+  @$pb.TagNumber(24)
+  set hasFuelData($core.bool value) => $_setBool(23, value);
+  @$pb.TagNumber(24)
+  $core.bool hasHasFuelData() => $_has(23);
+  @$pb.TagNumber(24)
+  void clearHasFuelData() => $_clearField(24);
 }
 
 /// TripDetail extends TripSummary with Driving DNA scores and micro-moments.
@@ -317,6 +377,13 @@ class TripDetail extends $pb.GeneratedMessage {
     $core.double? elevationLossM,
     $core.double? avgGradientPercent,
     $core.String? microMomentsJson,
+    $core.double? fuelPctStart,
+    $core.double? fuelPctEnd,
+    $core.double? fuelConStart,
+    $core.double? fuelConEnd,
+    $core.double? fuelPricePerL,
+    $core.double? elecConStart,
+    $core.double? elecConEnd,
   }) {
     final result = TripDetail._();
     if (summary != null) result.summary = summary;
@@ -331,6 +398,13 @@ class TripDetail extends $pb.GeneratedMessage {
     if (avgGradientPercent != null)
       result.avgGradientPercent = avgGradientPercent;
     if (microMomentsJson != null) result.microMomentsJson = microMomentsJson;
+    if (fuelPctStart != null) result.fuelPctStart = fuelPctStart;
+    if (fuelPctEnd != null) result.fuelPctEnd = fuelPctEnd;
+    if (fuelConStart != null) result.fuelConStart = fuelConStart;
+    if (fuelConEnd != null) result.fuelConEnd = fuelConEnd;
+    if (fuelPricePerL != null) result.fuelPricePerL = fuelPricePerL;
+    if (elecConStart != null) result.elecConStart = elecConStart;
+    if (elecConEnd != null) result.elecConEnd = elecConEnd;
     return result;
   }
 
@@ -358,6 +432,13 @@ class TripDetail extends $pb.GeneratedMessage {
     ..aD(8, _omitFieldNames ? '' : 'elevationLossM')
     ..aD(9, _omitFieldNames ? '' : 'avgGradientPercent')
     ..aOS(10, _omitFieldNames ? '' : 'microMomentsJson')
+    ..aD(11, _omitFieldNames ? '' : 'fuelPctStart')
+    ..aD(12, _omitFieldNames ? '' : 'fuelPctEnd')
+    ..aD(13, _omitFieldNames ? '' : 'fuelConStart')
+    ..aD(14, _omitFieldNames ? '' : 'fuelConEnd')
+    ..aD(15, _omitFieldNames ? '' : 'fuelPricePerL')
+    ..aD(16, _omitFieldNames ? '' : 'elecConStart')
+    ..aD(17, _omitFieldNames ? '' : 'elecConEnd')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -472,6 +553,71 @@ class TripDetail extends $pb.GeneratedMessage {
   $core.bool hasMicroMomentsJson() => $_has(9);
   @$pb.TagNumber(10)
   void clearMicroMomentsJson() => $_clearField(10);
+
+  /// PHEV fuel leg detail (BladeWatch-fpdz). The raw lifetime counters live here, in the
+  /// detail view only. -1 means the reading was never taken; 0 is a real measurement.
+  @$pb.TagNumber(11)
+  $core.double get fuelPctStart => $_getN(10);
+  @$pb.TagNumber(11)
+  set fuelPctStart($core.double value) => $_setDouble(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasFuelPctStart() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearFuelPctStart() => $_clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.double get fuelPctEnd => $_getN(11);
+  @$pb.TagNumber(12)
+  set fuelPctEnd($core.double value) => $_setDouble(11, value);
+  @$pb.TagNumber(12)
+  $core.bool hasFuelPctEnd() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearFuelPctEnd() => $_clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.double get fuelConStart => $_getN(12);
+  @$pb.TagNumber(13)
+  set fuelConStart($core.double value) => $_setDouble(12, value);
+  @$pb.TagNumber(13)
+  $core.bool hasFuelConStart() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearFuelConStart() => $_clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.double get fuelConEnd => $_getN(13);
+  @$pb.TagNumber(14)
+  set fuelConEnd($core.double value) => $_setDouble(13, value);
+  @$pb.TagNumber(14)
+  $core.bool hasFuelConEnd() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearFuelConEnd() => $_clearField(14);
+
+  @$pb.TagNumber(15)
+  $core.double get fuelPricePerL => $_getN(14);
+  @$pb.TagNumber(15)
+  set fuelPricePerL($core.double value) => $_setDouble(14, value);
+  @$pb.TagNumber(15)
+  $core.bool hasFuelPricePerL() => $_has(14);
+  @$pb.TagNumber(15)
+  void clearFuelPricePerL() => $_clearField(15);
+
+  @$pb.TagNumber(16)
+  $core.double get elecConStart => $_getN(15);
+  @$pb.TagNumber(16)
+  set elecConStart($core.double value) => $_setDouble(15, value);
+  @$pb.TagNumber(16)
+  $core.bool hasElecConStart() => $_has(15);
+  @$pb.TagNumber(16)
+  void clearElecConStart() => $_clearField(16);
+
+  @$pb.TagNumber(17)
+  $core.double get elecConEnd => $_getN(16);
+  @$pb.TagNumber(17)
+  set elecConEnd($core.double value) => $_setDouble(16, value);
+  @$pb.TagNumber(17)
+  $core.bool hasElecConEnd() => $_has(16);
+  @$pb.TagNumber(17)
+  void clearElecConEnd() => $_clearField(17);
 }
 
 /// DnaScores holds the five Driving DNA axes.
@@ -715,12 +861,18 @@ class TripConfig extends $pb.GeneratedMessage {
     $core.double? electricityRate,
     $core.String? currency,
     $core.String? distanceUnit,
+    $core.double? fuelPricePerL,
+    $core.double? fuelTankCapacityL,
+    $core.bool? isPhev,
   }) {
     final result = TripConfig._();
     if (enabled != null) result.enabled = enabled;
     if (electricityRate != null) result.electricityRate = electricityRate;
     if (currency != null) result.currency = currency;
     if (distanceUnit != null) result.distanceUnit = distanceUnit;
+    if (fuelPricePerL != null) result.fuelPricePerL = fuelPricePerL;
+    if (fuelTankCapacityL != null) result.fuelTankCapacityL = fuelTankCapacityL;
+    if (isPhev != null) result.isPhev = isPhev;
     return result;
   }
 
@@ -741,6 +893,9 @@ class TripConfig extends $pb.GeneratedMessage {
     ..aD(2, _omitFieldNames ? '' : 'electricityRate')
     ..aOS(3, _omitFieldNames ? '' : 'currency')
     ..aOS(4, _omitFieldNames ? '' : 'distanceUnit')
+    ..aD(5, _omitFieldNames ? '' : 'fuelPricePerL')
+    ..aD(6, _omitFieldNames ? '' : 'fuelTankCapacityL')
+    ..aOB(7, _omitFieldNames ? '' : 'isPhev')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -798,6 +953,49 @@ class TripConfig extends $pb.GeneratedMessage {
   $core.bool hasDistanceUnit() => $_has(3);
   @$pb.TagNumber(4)
   void clearDistanceUnit() => $_clearField(4);
+
+  /// Cost per litre for the PHEV fuel leg. 0 means not configured, so the leg is recorded
+  /// but not costed. The currency above is shared with the electricity rate.
+  @$pb.TagNumber(5)
+  $core.double get fuelPricePerL => $_getN(4);
+  @$pb.TagNumber(5)
+  set fuelPricePerL($core.double value) => $_setDouble(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasFuelPricePerL() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearFuelPricePerL() => $_clearField(5);
+
+  /// Fuel tank capacity in litres. 0 means not configured, and there is no default: BYD
+  /// local data exposes no tank size, so without this the fuel RANGE simply cannot be
+  /// computed. A guessed capacity would put a wrong range on the dashboard, which is worse
+  /// than a blank one because the driver acts on it.
+  @$pb.TagNumber(6)
+  $core.double get fuelTankCapacityL => $_getN(5);
+  @$pb.TagNumber(6)
+  set fuelTankCapacityL($core.double value) => $_setDouble(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasFuelTankCapacityL() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearFuelTankCapacityL() => $_clearField(6);
+
+  /// Whether this vehicle has a fuel system at all.
+  ///
+  /// NOT a stored setting — a live read of the drivetrain, carried on the config message
+  /// because the config screen is the one place that needs it. The two fuel settings above are
+  /// meaningless on a BEV, and a UI that shows "Fuel Price (per litre)" to an owner whose car
+  /// has no tank reads as a bug in the app.
+  ///
+  /// Clients must NOT treat false as "hide unconditionally": a value already configured has to
+  /// stay visible so it can be cleared, and the drivetrain probe can read false while the HAL
+  /// is warming up. See the gating rule in the web and Flutter trips settings.
+  @$pb.TagNumber(7)
+  $core.bool get isPhev => $_getBF(6);
+  @$pb.TagNumber(7)
+  set isPhev($core.bool value) => $_setBool(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasIsPhev() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearIsPhev() => $_clearField(7);
 }
 
 /// TripStorageInfo reports trips storage usage and limits.
@@ -2059,6 +2257,10 @@ class SetConfigRequest extends $pb.GeneratedMessage {
     $core.bool? hasElectricityRate_4,
     $core.String? currency,
     $core.String? distanceUnit,
+    $core.double? fuelPricePerL,
+    $core.bool? hasFuelPricePerL_8,
+    $core.double? fuelTankCapacityL,
+    $core.bool? hasFuelTankCapacityL_10,
   }) {
     final result = SetConfigRequest._();
     if (enabled != null) result.enabled = enabled;
@@ -2068,6 +2270,12 @@ class SetConfigRequest extends $pb.GeneratedMessage {
       result.hasElectricityRate_4 = hasElectricityRate_4;
     if (currency != null) result.currency = currency;
     if (distanceUnit != null) result.distanceUnit = distanceUnit;
+    if (fuelPricePerL != null) result.fuelPricePerL = fuelPricePerL;
+    if (hasFuelPricePerL_8 != null)
+      result.hasFuelPricePerL_8 = hasFuelPricePerL_8;
+    if (fuelTankCapacityL != null) result.fuelTankCapacityL = fuelTankCapacityL;
+    if (hasFuelTankCapacityL_10 != null)
+      result.hasFuelTankCapacityL_10 = hasFuelTankCapacityL_10;
     return result;
   }
 
@@ -2090,6 +2298,10 @@ class SetConfigRequest extends $pb.GeneratedMessage {
     ..aOB(4, _omitFieldNames ? '' : 'hasElectricityRate')
     ..aOS(5, _omitFieldNames ? '' : 'currency')
     ..aOS(6, _omitFieldNames ? '' : 'distanceUnit')
+    ..aD(7, _omitFieldNames ? '' : 'fuelPricePerL')
+    ..aOB(8, _omitFieldNames ? '' : 'hasFuelPricePerL')
+    ..aD(9, _omitFieldNames ? '' : 'fuelTankCapacityL')
+    ..aOB(10, _omitFieldNames ? '' : 'hasFuelTankCapacityL')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -2167,6 +2379,49 @@ class SetConfigRequest extends $pb.GeneratedMessage {
   $core.bool hasDistanceUnit() => $_has(5);
   @$pb.TagNumber(6)
   void clearDistanceUnit() => $_clearField(6);
+
+  /// PHEV pricing (BladeWatch-9uu6). New field numbers only, so a client built against the
+  /// old schema still parses this message.
+  ///
+  /// Each value carries an explicit has_* companion, matching the pattern above. proto3 omits
+  /// default scalars on the wire, so without the companion a deliberate 0 — which means "not
+  /// configured" for both of these — would be indistinguishable from "field not sent", and the
+  /// daemon would keep the previous value instead of clearing it.
+  @$pb.TagNumber(7)
+  $core.double get fuelPricePerL => $_getN(6);
+  @$pb.TagNumber(7)
+  set fuelPricePerL($core.double value) => $_setDouble(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasFuelPricePerL() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearFuelPricePerL() => $_clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.bool get hasFuelPricePerL_8 => $_getBF(7);
+  @$pb.TagNumber(8)
+  set hasFuelPricePerL_8($core.bool value) => $_setBool(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasHasFuelPricePerL_8() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearHasFuelPricePerL_8() => $_clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.double get fuelTankCapacityL => $_getN(8);
+  @$pb.TagNumber(9)
+  set fuelTankCapacityL($core.double value) => $_setDouble(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasFuelTankCapacityL() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearFuelTankCapacityL() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.bool get hasFuelTankCapacityL_10 => $_getBF(9);
+  @$pb.TagNumber(10)
+  set hasFuelTankCapacityL_10($core.bool value) => $_setBool(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasHasFuelTankCapacityL_10() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearHasFuelTankCapacityL_10() => $_clearField(10);
 }
 
 class SetConfigResponse extends $pb.GeneratedMessage {

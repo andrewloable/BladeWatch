@@ -71,24 +71,29 @@ adb install bladewatch-ui-*-arm64-v8a.apk
 - **ADB Shell Runner** — Built-in terminal for running commands, checking processes, and viewing logs.
 - **17 Languages** — Fully localized UI.
 
-### Zrok Tunnel (Recommended)
-Free, open-source tunneling with no bandwidth limits at `https://<your-share>.share.zrok.io`. Best for video streaming. Do not share the invite token or public share link unless you intend to expose the car UI.
+### Tor Onion Service
+_(Versions before 1.3.1 used a different tunnel that required an account and an invite token. It has been removed; no migration is needed beyond enabling the Tor tunnel.)_
 
-**Quick Zrok setup:**
-1. Sign up at [zrok.io](https://zrok.io)
-2. Get your invite token from email
-3. Enter token in BladeWatch settings
-4. Done — tunnel URL is auto-generated
+Remote access runs over a Tor v3 onion service: no account, no token, no sign-up, and no
+device limit. The address is permanent — it survives restarts and reboots — so the QR code
+on the Dashboard keeps working once you have scanned it.
+
+**Setup:** enable the Tor tunnel under Daemons in the app. That is the whole setup. The
+first start takes about 80 seconds while tor connects to the network (a few seconds
+afterwards), and the Dashboard shows the QR code once it is actually reachable.
+
+**Opening the address:** a `.onion` address does not work in Chrome or Safari. Install
+[Tor Browser](https://www.torproject.org/download/) (Android, Windows, macOS, Linux) or
+Onion Browser on iPhone and iPad, then scan or paste the address. The Dashboard's info
+button shows the same instructions on the car's screen.
+
+**The address is not a password.** Anyone who has it can reach your car's login page, so
+the app's password still protects everything behind it — keep both to yourself.
+
+Expect roughly 60–75 KB/s and a couple of seconds of latency per request: slower than a
+direct connection, comfortably enough for the web UI and for live video.
 
 > Should work on all BYD vehicles with DiLink v3 and the panoramic camera system.
-
-## Zrok Token Setup (Optional)
-
-If you want to use Zrok tunneling for remote access, you need your own Zrok invite token:
-
-1. Sign up at [zrok.io](https://zrok.io) and get your invite token from email.
-2. Enter the token in the app: Daemons → Zrok settings.
-3. If you are building from source, prefer the on-device settings flow instead of hardcoding the token into source.
 
 ## Building from Source
 

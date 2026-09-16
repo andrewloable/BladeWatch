@@ -126,6 +126,74 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("ExternalNative")
     dependsOn("downloadOpenH264", "downloadOpenCV")
 }
 
+// ---------------------------------------------------------------------------------------------
+// Tor onion service binary (BladeWatch-3lbz.1)
+//
+// Replaces the previous tunnel. Briar publishes the stock tor executable to Maven Central,
+// already built for
+// Android and already named lib*.so, which is exactly the shape Android will extract to
+// nativeLibraryDir with the execute bit set — the only way to ship a runnable binary to a
+// non-rooted head unit.
+//
+// Unlike the previous tunnel's 19.2 MB binary this is NOT committed: it is a build artifact, fetched and
+// SHA-256-verified here like OpenH264 and OpenCV. TorBinaryPackagingTest is the guard that keeps
+// a build from silently producing an APK with no tunnel in it.
+val torVersion = "0.4.8.14"
+val torJarSha256 = "fc7c4f5007a98132ba84534a873f101951d2d554d5da5f2031b85c277f8617a6"
+val torLibrarySha256 = "9aa3a500bc3edd495cd33c61fd65d536f49b92692e16f6e23e3ada44e76a94a9"
+
+tasks.register("downloadTor") {
+    val torSo = file("src/main/jniLibs/arm64-v8a/libtor.so")
+    val proj = project
+    // Without these the task is UP-TO-DATE whenever the output file merely exists, so
+    // bumping the version or the pin would leave the OLD binary in place — and
+    // `./gradlew downloadTor`, which TorBinaryPackagingTest's failure message tells you to
+    // run, would print UP-TO-DATE and do nothing.
+    inputs.property("torVersion", torVersion)
+    inputs.property("torLibrarySha256", torLibrarySha256)
+    outputs.file(torSo)
+    doLast {
+        if (torSo.exists() && hasExpectedSha256(torSo, torLibrarySha256)) {
+            println("\u2713 Tor ${torVersion} verified")
+            return@doLast
+        }
+        if (torSo.exists()) {
+            println("Tor exists but checksum changed; redownloading")
+            torSo.delete()
+        }
+        println("Downloading Tor ${torVersion}...")
+        // arm64-v8a only. The head unit is arm64; each extra ABI is another ~5 MB of APK.
+        val jar = file("${layout.buildDirectory.get().asFile}/tor/tor-android-${torVersion}.jar")
+        proj.ensureDownloadedVerified(
+            "https://repo1.maven.org/maven2/org/briarproject/tor-android/" +
+                "${torVersion}/tor-android-${torVersion}.jar",
+            jar,
+            torJarSha256,
+            "Tor ${torVersion} archive"
+        )
+        val staging = file("${layout.buildDirectory.get().asFile}/tor/extracted")
+        proj.delete(staging)
+        proj.copy {
+            from(proj.zipTree(jar)) { include("arm64-v8a/libtor.so") }
+            into(staging)
+        }
+        val extracted = file("${staging}/arm64-v8a/libtor.so")
+        if (!extracted.exists()) {
+            throw org.gradle.api.GradleException(
+                "Tor archive did not contain arm64-v8a/libtor.so"
+            )
+        }
+        torSo.parentFile.mkdirs()
+        extracted.copyTo(torSo, overwrite = true)
+        verifySha256(torSo, torLibrarySha256, "Tor ${torVersion} binary")
+        println("\u2713 Tor ${torVersion} downloaded and verified")
+    }
+}
+
+// preBuild, not the CMake hook: tor is not a native BUILD dependency, it just has to be on disk
+// before any variant packages jniLibs.
+tasks.named("preBuild") { dependsOn("downloadTor") }
+
 // OpenCV-mobile version for surveillance module (minimal build, ~3MB vs ~20MB)
 // https://github.com/nihui/opencv-mobile
 val opencvMobileTag = "v31"
@@ -281,8 +349,8 @@ android {
         applicationId = "net.bladewatch.app"
         minSdk = 25
         targetSdk = 25
-        versionCode = 13000
-        versionName = "1.3.0.0"
+        versionCode = 13100
+        versionName = "1.3.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -306,6 +374,14 @@ android {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
         }
+    }
+
+    // BladeWatch-gn2y: ship the branch so every log can say which build wrote it.
+    // Gradle already computes gitBranch for the APK filename; this makes it readable at
+    // runtime by SessionBanner, which is what lets a reader tell a live fault from a fixed
+    // one that is still sitting in an unrotated log.
+    defaultConfig {
+        buildConfigField("String", "GIT_BRANCH", "\"$gitBranch\"")
     }
 
     buildTypes {
@@ -459,7 +535,7 @@ dependencies {
     implementation(libs.material)
     
     // Lifecycle & LiveData. Phase 4 deleted the native UI, but these are NOT
-    // UI-only: ZrokController and DaemonsViewModel publish daemon state as
+    // UI-only: TorController and DaemonsViewModel publish daemon state as
     // LiveData and both still run in this (UI-less) service host.
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
@@ -645,6 +721,124 @@ tasks.register("validateI18nCatalogs") {
 }
 // Validate before any variant's assets are packaged.
 tasks.named("preBuild") { dependsOn("validateI18nCatalogs") }
+
+// Fail the build if the two committed ISO 4217 currency catalogs drift apart.
+//
+// The list is GENERATED from ICU by tools/gen-currencies.mjs, which writes a
+// byte-identical copy for each front-end. Two copies exist only because the web
+// and Flutter builds are separate projects with separate asset pipelines — the
+// list itself has exactly one source. This check is what keeps the copies honest,
+// and follows the same precedent as validateI18nCatalogs above.
+//
+// It deliberately does NOT shell out to node: the check must work on a machine
+// with no node (and node's ICU could legitimately differ by version). It verifies
+// the copies agree with EACH OTHER and are structurally sane; regenerating is an
+// explicit author action.
+tasks.register("validateCurrencyCatalog") {
+    description = "Validate the ISO 4217 catalogs: identical copies, sorted, plausible"
+    group = "verification"
+    val webCatalog = rootProject.file("web/src/assets/iso4217.json")
+    val flutterCatalog = rootProject.file("flutter_ui/assets/iso4217.json")
+    inputs.files(webCatalog, flutterCatalog)
+    doLast {
+        val problems = mutableListOf<String>()
+        val slurper = groovy.json.JsonSlurper()
+
+        fun codesOf(f: java.io.File): List<String>? {
+            if (!f.isFile) { problems.add("${f.name}: missing at ${f.path}"); return null }
+            val parsed = try {
+                @Suppress("UNCHECKED_CAST")
+                slurper.parse(f) as Map<String, Any?>
+            } catch (e: Exception) {
+                problems.add("${f.name}: not valid JSON (${e.message})"); return null
+            }
+            @Suppress("UNCHECKED_CAST")
+            val codes = parsed["codes"] as? List<String>
+            if (codes == null) { problems.add("${f.name}: no 'codes' array"); return null }
+            return codes
+        }
+
+        val web = codesOf(webCatalog)
+        val flutter = codesOf(flutterCatalog)
+
+        if (web != null && flutter != null) {
+            if (web != flutter) {
+                val onlyWeb = web - flutter.toSet()
+                val onlyFlutter = flutter - web.toSet()
+                problems.add(
+                    "catalogs differ — regenerate with: node tools/gen-currencies.mjs" +
+                        (if (onlyWeb.isNotEmpty()) " (web-only: $onlyWeb)" else "") +
+                        (if (onlyFlutter.isNotEmpty()) " (flutter-only: $onlyFlutter)" else "")
+                )
+            }
+            // A truncated list means someone ran the generator on a small-ICU node.
+            if (web.size < 100) problems.add("only ${web.size} codes — looks truncated")
+            if (web != web.sorted()) problems.add("codes are not sorted")
+            for (required in listOf("USD", "EUR", "GBP", "JPY", "PHP")) {
+                if (required !in web) problems.add("missing common currency $required")
+            }
+        }
+
+        if (problems.isNotEmpty()) {
+            throw GradleException(
+                "ISO 4217 currency catalog validation FAILED:\n" +
+                    problems.joinToString("\n") { "    - $it" }
+            )
+        }
+    }
+}
+
+tasks.named("preBuild") { dependsOn("validateCurrencyCatalog") }
+
+// Web UI unit tests (BladeWatch-9uu6). The Angular app previously had NO unit tests at all —
+// only Playwright e2e under web/e2e — so framework-free logic such as currency formatting
+// shipped unexercised. vitest covers that gap; component and flow behaviour stays with
+// Playwright, which runs a real browser.
+//
+// NOT wired into preBuild: it needs node_modules, and buildAngularWebUI already owns the
+// "is the web toolchain present" question. Run it explicitly: ./gradlew :app:webUnitTests
+tasks.register<Exec>("webUnitTests") {
+    description = "Run the Angular app's vitest unit tests"
+    group = "verification"
+    workingDir = rootProject.file("web")
+    commandLine("npx", "vitest", "run", "--config", "vitest.config.ts")
+}
+
+// Typecheck the web UI (BladeWatch-gmmd). `vite build` bundles with esbuild, which STRIPS
+// types without checking them, so nothing verified web/ against tsc and type errors shipped
+// silently — a deliberately planted one compiled clean. That is not theoretical: four files
+// imported generated protobuf types through a path one level too deep (web/gen/ instead of
+// web/src/gen/). They are `import type`, so esbuild erased them before ever resolving the
+// path and the build stayed green while those pages lost all compile-time protection. Fixing
+// the paths then exposed a genuine type error that had been hidden behind them.
+//
+// NOT wired into preBuild, for the same reason as webUnitTests above: it needs node_modules,
+// and buildAngularWebUI already owns the "is the web toolchain present" question.
+// Run it explicitly: ./gradlew :app:webTypecheck
+tasks.register<Exec>("webTypecheck") {
+    description = "Typecheck the Angular web UI with tsc (vite build does not)"
+    group = "verification"
+    workingDir = rootProject.file("web")
+    commandLine("npx", "tsc", "--noEmit", "-p", "tsconfig.app.json")
+}
+
+// Angular TEMPLATE type-checking. Separate from webTypecheck because it is a different blind
+// spot with a different tool: `tsc` never opens a component template, and `vite build` bundles
+// templates through esbuild without checking them either.
+//
+// Measured 2026-09-16: a template calling a method that does not exist on its component
+// compiled clean and exited 0 under BOTH. Nothing then fails at runtime either — `@if
+// (typoName())` is undefined, which is falsy, so the guarded block silently never renders. On
+// this UI that means a settings section or a whole stats card quietly going missing.
+//
+// NOT wired into preBuild, for the same reason as the two tasks above: it needs node_modules.
+// Run it explicitly: ./gradlew :app:webTemplateCheck
+tasks.register<Exec>("webTemplateCheck") {
+    description = "Type-check Angular component TEMPLATES with ngc --strictTemplates"
+    group = "verification"
+    workingDir = rootProject.file("web")
+    commandLine("npx", "ngc", "-p", "tsconfig.templates.json")
+}
 
 // Fail the build if the Android string catalogs (res/values*/strings.xml, 624 keys
 // across 17 locales) are malformed, have an unescaped apostrophe (the Android-XML
@@ -941,7 +1135,7 @@ tasks.register("validateArbCatalogs") {
             // Product and brand
             "app_name", "cd_brand_logo", "settings_hero_overline", "settings_footer_format",
             "status_overlay_notif_title", "settings_about_source_value",
-            "daemon_name_zrok", "tunnel_label_zrok",
+            "daemon_name_tor", "tunnel_label_tor",
             // Unit symbols and unit-only formats
             "vehicle_dialog_capacity_suffix", "trips_stat_kwh", "trips_stat_kwh_per_100km",
             "dashboard_insight_kwh_format", "dashboard_vehicle_summary",
@@ -1039,17 +1233,30 @@ kover {
             }
             verify {
                 rule {
-                    // Ratcheted 2026-09-14: 1144/36930 lines (~3.10%) after excluding
+                    // Ratcheted 2026-09-16: 2007/36848 lines (~5.45%) after excluding
                     // generated protobuf and the BYD stubs above. Floor of that real
                     // figure — raise this as tests are added; never lower it.
                     //
-                    // Both halves of that ratio moved since the 2026-09-12 baseline of
+                    // Up from 1144/36930 (~3.10%) on 2026-09-14. This jump is the good
+                    // kind: +640 COVERED lines from the PHEV epic's trip-energy and
+                    // cost tests, plus BydSignalRules — the BYD HAL decision rules that
+                    // were previously inlined among reflection calls and could not be
+                    // tested at all. The denominator barely moved, so unlike the
+                    // 2026-09-14 jump this reflects tests added rather than untested
+                    // code deleted.
+                    //
+                    // Both halves of that ratio moved at the 2026-09-12 baseline of
                     // 1020/48610 (~2.10%): Phase 4 deleted the native in-car UI, which
-                    // removed ~11,700 lines that were almost entirely UNTESTED, and this
-                    // session's guards added covered ones. Deleting untested code raises
-                    // the percentage without improving anything, so treat a jump like
-                    // this as a new floor to hold, not as progress.
-                    minBound(3)
+                    // removed ~11,700 lines that were almost entirely UNTESTED. Deleting
+                    // untested code raises the percentage without improving anything, so
+                    // treat a jump like that as a new floor to hold, not as progress.
+                    // The bound is the FLOOR of the real figure, so headroom varies: at
+                    // 5.45% there are ~165 covered lines of margin, where the first cut of
+                    // this ratchet (5.07%) had only 25 and the 3.10% entry had 36. A thin
+                    // margin is not a defect — deleting a test class is meant to be noticed —
+                    // but do not read the current slack as permanent. If a legitimate
+                    // refactor drops below the bound, add tests; never lower it.
+                    minBound(5)
                 }
             }
         }
@@ -1113,4 +1320,38 @@ tasks.withType<Test>().configureEach {
     inputs.dir("src/main/java")
         .withPropertyName("appSourcesForStaticChecks")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    // TorBinaryPackagingTest reads the shipped tunnel binary off disk, not off the classpath,
+    // so the same blindness applies: without this the guard stops running exactly when the
+    // binary changes.
+    inputs.dir("src/main/jniLibs")
+        .withPropertyName("shippedNativeBinaries")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    // NoRemovedTunnelReferencesTest scans the whole developer-edited tree as DATA —
+    // including directories OUTSIDE this module, which is why these are resolved from the
+    // root project rather than relatively. Without them the guard would go UP-TO-DATE the
+    // moment someone reintroduced the name in a doc, which is precisely the case it exists
+    // to catch.
+    // NoSelfMatchingProcessCommandsTest (BladeWatch-6jj1) scans the same trees as DATA, for
+    // the same reason: without these inputs it goes UP-TO-DATE precisely when someone
+    // reintroduces a self-matching pkill/pgrep.
+    listOf(
+        "app/src/main/assets", "app/src/main/res",
+        "flutter_ui/lib", "flutter_ui/test", "flutter_ui/android/app/src",
+        "web/src", "web/e2e", "docs",
+    ).forEach { rel ->
+        val dir = rootProject.file(rel)
+        if (dir.isDirectory) {
+            inputs.dir(dir)
+                .withPropertyName("scanned-" + rel.replace('/', '-'))
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+        }
+    }
+    listOf("CLAUDE.md", "Readme.md", "AGENTS.md", ".gitignore", "app/build.gradle.kts").forEach { rel ->
+        val f = rootProject.file(rel)
+        if (f.isFile) {
+            inputs.file(f)
+                .withPropertyName("scanned-" + rel.replace('/', '-').replace('.', '-'))
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+        }
+    }
 }

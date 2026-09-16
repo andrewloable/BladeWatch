@@ -52,7 +52,7 @@ class DaemonControlTest {
                     .put("CAMERA_DAEMON", true)
                     .put("SENTRY_DAEMON", false)
                     .put("ACC_SENTRY_DAEMON", false)
-                    .put("ZROK_TUNNEL", false),
+                    .put("TOR_TUNNEL", false),
             )
         }
         val response = DaemonControl(ipc).processStatus()
@@ -66,13 +66,13 @@ class DaemonControlTest {
     fun `tunnelStatus sends the tunnelStatus command and returns the url`() {
         val ipc = FakeIpc {
             JSONObject().put("status", "ok").put("running", true)
-                .put("url", "https://bladewatch1a2b3c.share.zrok.io")
+                .put("url", "http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion")
         }
         val response = DaemonControl(ipc).tunnelStatus()
 
         assertEquals("tunnelStatus", ipc.sentCommands.single().optString("cmd"))
         assertEquals(true, response.getBoolean("running"))
-        assertEquals("https://bladewatch1a2b3c.share.zrok.io", response.getString("url"))
+        assertEquals("http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion", response.getString("url"))
     }
 
     @Test
@@ -92,11 +92,11 @@ class DaemonControlTest {
     fun `setDaemonEnabled sends the type and the flag`() {
         val ipc = FakeIpc { JSONObject().put("status", "ok").put("enabled", false).put("killed", 1) }
 
-        val response = DaemonControl(ipc).setDaemonEnabled("ZROK_TUNNEL", false)
+        val response = DaemonControl(ipc).setDaemonEnabled("TOR_TUNNEL", false)
 
         val sent = ipc.sentCommands.single()
         assertEquals("daemon_set_enabled", sent.optString("cmd"))
-        assertEquals("ZROK_TUNNEL", sent.optString("type"))
+        assertEquals("TOR_TUNNEL", sent.optString("type"))
         assertEquals(false, sent.getBoolean("enabled"))
         assertEquals("ok", response.optString("status"))
     }

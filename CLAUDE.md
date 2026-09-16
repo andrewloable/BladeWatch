@@ -97,35 +97,60 @@ adb -s $CAR_IP:5555 shell '
   # very command line, which would kill the adb shell itself.
   for p in $(ps -A -o PID,ARGS 2>/dev/null | grep -E "start_[c]am_daemon|start_[a]cc_sentry|start_[s]entry|net.bladewatch.[a]pp.daemon" | awk "{print \$1}"); do kill -9 $p 2>/dev/null; done
   sleep 1
-  # Kill the renamed daemon processes by exact name. killall matches comm, so it
-  # will NOT match the adb shell -- but comm is CAPPED AT 15 CHARACTERS by the
-  # kernel, so a longer name must be given in its truncated form or the kill
-  # silently does nothing. Verified on this head unit: /proc/<pid>/comm for the
-  # 17-char mm-qcamera-daemon reads "mm-qcamera-daem".
-  #   byd_cam_daemon    (14) ok
-  #   sentry_daemon     (13) ok
-  #   acc_sentry_daemon (17) -> must be spelled acc_sentry_daem
-  killall -9 byd_cam_daemon sentry_daemon acc_sentry_daem 2>/dev/null
-  # Belt and braces: pkill matches the full cmdline, so it catches any daemon
-  # whose comm was truncated. The bracket trick keeps it from matching this very
-  # shell, which would kill the adb session mid-procedure.
-  pkill -9 -f "[a]cc_sentry_daemon" 2>/dev/null
-  # Kill the Zrok tunnel — the only remaining BladeWatch tunnel daemon.
-  # Match the BladeWatch-deployed binary path so this never touches an
-  # unrelated zrok process. (Cloudflared/Tailscale/sing-box/Telegram daemons
-  # were removed; do NOT add generic kills for them.)
-  pkill -9 -f /data/local/tmp/zrok 2>/dev/null
+  # Kill the daemon processes by name, SPELLED IN FULL. killall matches comm or
+  # basename(argv[0]) -- both "sh" for this adb shell -- so it cannot kill the
+  # session, and it needs no bracket trick.
+  #
+  # This block used to say acc_sentry_daemon had to be truncated to
+  # acc_sentry_daem because the kernel caps /proc/<pid>/comm at 15 characters.
+  # The cap is real; the conclusion was wrong, and the truncated spelling is the
+  # one that matches NOTHING. toybox falls back to basename(argv[0]), and these
+  # daemons are launched with --nice-name, so argv[0] IS the full name while comm
+  # is just "main". Measured on this head unit 2026-09-15:
+  #   pidof acc_sentry_daemon -> 4571
+  #   pidof acc_sentry_daem   -> (nothing)
+  #   pidof main              -> 2851 3102 4571   (comm for all three is "main")
+  killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon 2>/dev/null
+  # NO `pkill -9 -f` belt-and-braces line here. There used to be one, claiming the
+  # bracket trick kept it from matching this shell. It does not -- see the tor
+  # block below -- and it killed the adb session mid-procedure, so every step
+  # after it silently never ran.
+  # Kill the Tor tunnel — the only remaining BladeWatch tunnel daemon.
+  #
+  # killall, NOT pkill -f, and this is verified-on-device important: toybox pkill
+  # matches the pattern as a literal SUBSTRING of each /proc/<pid>/cmdline, and
+  # this adb shell's own cmdline is the whole script you are reading — including
+  # the pattern. So `pkill -9 -f /data/local/tmp/bladewatch_tor` kills the ADB
+  # shell mid-procedure (observed: exit 137, daemons never stopped). The usual
+  # bracket trick does NOT save you here either, because substring matching finds
+  # the literal "[b]ladewatch_tor" in the script text too.
+  #
+  # killall matches `comm` / basename(argv[0]), which is "sh" for this shell and
+  # "bladewatch_tor" for the tunnel, so it cannot match itself. The name is 14
+  # characters precisely so it survives the kernel's 15-char cap on comm — see
+  # TorLauncher.TOR_PROCESS.
+  killall -9 bladewatch_tor 2>/dev/null
   am force-stop net.bladewatch.app
   # Remove launcher scripts + stale locks/sentinels so nothing relaunches.
+  #
+  # !! NEVER widen any of these globs to cover /data/local/tmp/tor. That directory
+  # !! holds hs/hs_ed25519_secret_key, which IS the car's permanent onion address.
+  # !! Delete it and tor mints a brand-new address on the next start, silently
+  # !! breaking every QR code the owner has ever scanned, with no way back. The
+  # !! tunnel is stopped by killing the process, never by deleting its directory.
   rm -f /data/local/tmp/start_*.sh /data/local/tmp/camera_daemon.lock /data/local/tmp/*sentry*.lock /data/local/tmp/*sentry*.pid 2>/dev/null
   sleep 1
-  ps -A -o PID,ARGS 2>/dev/null | grep -E "byd_cam_daemon|sentry_daemon|acc_sentry|/data/local/tmp/zrok" | grep -v grep || echo "all daemons stopped"
+  ps -A -o PID,ARGS 2>/dev/null | grep -E "byd_cam_daemon|sentry_daemon|acc_sentry|bladewatch_to[r]" | grep -v grep || echo "all daemons stopped"
 '
 # NOTE: killing daemons can briefly drop the ADB-over-TCP connection; if so,
 # reconnect: until [ "$(adb -s $CAR_IP:5555 get-state)" = device ]; do adb connect $CAR_IP:5555; sleep 3; done
 adb -s $CAR_IP:5555 uninstall net.bladewatch.app
 # APK filename includes the branch name (e.g. flutter-refactor):
-adb -s $CAR_IP:5555 install "app/build/outputs/apk/debug/bladewatch-$(git rev-parse --abbrev-ref HEAD)-arm64-v8a-debug.apk"
+# NOTE the tr: a branch name containing a slash (feature/v1.3.1.0) would otherwise put a
+# DIRECTORY SEPARATOR in the path and adb fails with "failed to stat". Gradle sanitises the
+# slash to a dash when it names the APK, so the lookup has to sanitise it the same way.
+# Verified on 2026-09-15 -- the unsanitised form below failed on branch feature/v1.3.1.0.
+adb -s $CAR_IP:5555 install "app/build/outputs/apk/debug/bladewatch-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')-arm64-v8a-debug.apk"
 
 # !! UNINSTALLING WIPES THE APP'S ADB KEY PAIR from its filesDir (AdbShellExecutor
 # !! stores it at files/adbkey + files/adbkey.pub). The next launch generates a NEW,
@@ -203,7 +228,7 @@ BladeWatch is a hybrid Android + shell-daemon + embedded web app. The critical d
 **Shell-launched daemon processes** — launched via `app_process` ADB shell, run outside Activity lifecycle:
 - `CameraDaemon` — the central long-running process. Owns the camera/GPU pipeline, H.264/H.265 recording, WebSocket live streaming, HTTP API server (`127.0.0.1:8080`), TCP command server (`127.0.0.1:19876`), surveillance IPC server (`127.0.0.1:19877`), telemetry, trips.
 - `SentryDaemon` / `AccSentryDaemon` — surveillance orchestration.
-- Zrok tunnel daemon (native `.so` in `jniLibs/`) — **the only remaining tunnel/proxy daemon**. Cloudflared, Tailscale, sing-box and the Telegram daemon were all removed; the only sing-box mention left in the tree is a comment in `AdbDaemonLauncher.kt` recording the removal. Do not re-add generic kills for them.
+- Tor onion service (`TorLauncher`, binary shipped as `libtor.so` in `jniLibs/`) — **the only remaining tunnel/proxy daemon**. Runs as `bladewatch_tor`, exposes `127.0.0.1:8080` as a v3 onion service, and needs no account, token or registration. Unlike its predecessor the binary is NOT committed: `downloadTor` fetches and SHA-256-verifies it at build time. Cloudflared, Tailscale, sing-box and the Telegram daemon were all removed; do not re-add generic kills for them. **`/data/local/tmp/tor/hs` holds the permanent onion identity key — killing the tunnel is fine, deleting that directory is not.** See `docs/networking-and-tunnels.md`.
 
 **Embedded web UI** — the Angular 19 SPA under `web/`, built into `app/src/main/assets/web/angular/` and extracted to `/data/local/tmp/web` at runtime. Talks to CameraDaemon over ConnectRPC. It serves **remote browser / tunnel clients only** — the in-car UI is Flutter and does not embed it.
 
@@ -259,6 +284,62 @@ Classes in `android.hardware.*` and `android.os.*` are **compile-time stubs only
 
 `DaemonLogConfig.java` controls log verbosity. The release build Gradle script auto-detects if any logging flags are `true` — if so, `proguard-rules-strip-logs.pro` is excluded and log calls survive R8. In production (all flags false), R8 strips all log calls from bytecode. Do not enable logging flags in commits intended for release.
 
+## Platform Scope (read before writing or running any test)
+
+Two front-ends with **different** platform scopes. Confusing them wastes effort on targets that
+do not exist, or skips a target that does.
+
+**Native Flutter app (`flutter_ui/`) — BYD Android head unit ONLY.**
+One device: arm64, BYD DiLink v3, Android 10 / API 29. There is no BladeWatch on a phone, a
+tablet, a desktop or a browser.
+
+- **Do NOT test, build, or debug for iOS, macOS, Windows, Linux or Flutter web.** Not with
+  simulators, not with `flutter test -d chrome`, not "just to check".
+- **Do NOT add or restore those platform directories.** `flutter create .`, some `flutter pub
+  get` paths, and plugins that run platform scaffolding will silently recreate them; they are
+  removed on purpose and `app/build.gradle.kts` enforces their absence.
+- An iOS build failure is **not a bug to fix** — it is a target that should not exist. The same
+  goes for a plugin that "supports only desktop/web": it resolves fine on a dev machine and
+  fails at APK build time.
+- macOS hosts complicate this: a transitive dependency (`objective_c`, pulled in by
+  `video_player` / `webview_flutter`'s darwin implementations) runs a native-asset build hook
+  that calls `xcrun`, so an unaccepted Xcode licence blocks `flutter test` entirely. That is a
+  host-toolchain problem, not an iOS target — fix it with `sudo xcodebuild -license accept`,
+  never by adding iOS support.
+
+**Web app (`web/`) — browsers, including phones.**
+This one IS reached from a phone: it is what the owner opens when away from the car, over the
+tunnel. Mobile browsers — iOS Safari included — are in scope here, and that is not a
+contradiction of the rule above. A mobile *browser* is a supported client of the web app; a
+native *iOS build* of the Flutter app is not a thing that exists.
+
+```bash
+cd web && npm run typecheck           # tsc --noEmit — `vite build` does NOT typecheck
+cd web && npm run typecheck:templates # ngc --strictTemplates — nothing else checks templates
+cd web && npm run test:unit           # vitest — framework-free logic
+cd web && npm run test:mobile   # Playwright, Pixel 7 + iPhone 13, against a local build
+cd web && npm run test:e2e      # Playwright against a LIVE head unit (needs e2e/.env)
+```
+
+`test:mobile` serves the built app itself and needs no daemon, so mobile layout regressions are
+catchable without powering up a car. `test:e2e` does need a live device.
+
+**Component TEMPLATES are checked by neither of the above — run `npm run typecheck:templates`.**
+`tsc` only parses `.ts`, and `vite build` hands templates to esbuild without checking them.
+Measured 2026-09-16: a template calling a method that does not exist on its component compiled
+clean and exited 0 under BOTH. Nothing fails at runtime either — `@if (typoName())` is
+`undefined`, which is falsy, so the guarded block silently never renders and the page just looks
+empty. `./gradlew :app:webTemplateCheck` runs the same check.
+
+**`npm run build` does not typecheck — run `npm run typecheck` separately.** `vite build` bundles
+with esbuild, which strips types without checking them, so a type error produces a perfectly
+successful build. This is not theoretical: four files imported generated protobuf types through a
+path one level too deep, and because they were `import type` declarations esbuild erased them
+before ever resolving the path. The build stayed green for months while those pages had no
+compile-time protection at all. `./gradlew :app:webTypecheck` runs the same check; like
+`:app:webUnitTests` it is deliberately NOT wired into `preBuild`, because it needs `node_modules`
+and `buildAngularWebUI` already owns the "is the web toolchain present" question.
+
 ## Testing
 
 **Service host (Kotlin/Java)** — 24 JVM test files under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
@@ -269,7 +350,7 @@ Classes in `android.hardware.*` and `android.os.*` are **compile-time stubs only
 ./gradlew :app:testDebugUnitTest --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
 ```
 
-**In-car UI (Dart)** — 111 test files under `flutter_ui/test/`, ~1450 tests. There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
+**In-car UI (Dart)** — 111 test files under `flutter_ui/test/`, ~1450 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
 
 ```bash
 cd flutter_ui && flutter analyze && flutter test

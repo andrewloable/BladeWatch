@@ -260,6 +260,14 @@ public class VehicleControlApiHandler {
         if (!Double.isNaN(data.socPercent)) battery.put("soc", data.socPercent);
         if (data.elecRangeKm != BydVehicleData.UNAVAILABLE) battery.put("rangeKm", data.elecRangeKm);
         if (data.bodyworkRangeKm != BydVehicleData.UNAVAILABLE) battery.put("bodyworkRangeKm", data.bodyworkRangeKm);
+        // PHEV fuel leg, omitted entirely on a BEV — see BatteryStatus in
+        // vehicle.proto. fuelPercent is NaN when the HAL has no tank reading, and
+        // a negative value is the collector's "unavailable", so both are excluded
+        // rather than sent as a 0 the UI would render as a real empty tank.
+        if (!Double.isNaN(data.fuelPercent) && data.fuelPercent >= 0) {
+            battery.put("fuelPercent", data.fuelPercent);
+        }
+        if (data.fuelRangeKm != BydVehicleData.UNAVAILABLE) battery.put("fuelRangeKm", data.fuelRangeKm);
         response.put("battery", battery);
 
         // Lights

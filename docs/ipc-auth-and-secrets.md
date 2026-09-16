@@ -163,30 +163,43 @@ daemon is visible to the app process (and vice versa) without a restart.
 `tunnelStatus` on 19876 (BladeWatch-m1po) answers
 `{"status":"ok","running":<bool>,"url":<string|null>}`.
 
-The Flutter APK cannot reach either place native keeps this value — `ZrokController`'s
-in-memory `LiveData`, or `PreferencesManager`'s app-private `SharedPreferences` — so
-the daemon reads zrok's own log (`/data/local/tmp/zrok.log`) instead. No shell and no
-ADB: the daemon already runs as shell UID, the same UID zrok was launched under.
+The Flutter APK cannot reach either place the service host keeps this value —
+`TorController`'s in-memory `LiveData`, or `PreferencesManager`'s app-private
+`SharedPreferences` — so the daemon reads tor's own files instead:
+`/data/local/tmp/tor/hs/hostname` for the address and `/data/local/tmp/tor.log` for the
+bootstrap state. No shell and no ADB: the daemon already runs as shell UID, the same UID
+tor was launched under, and the hostname file is mode 600 so the app UID could not read it
+anyway.
 
-**The URL is gated on the tunnel process being alive**, mirroring native, which only
-calls `ZrokLauncher.getTunnelUrl()` inside an `isTunnelRunning { if (isRunning) … }`
-branch. The log is appended to across launches, so without that gate a URL from a dead
-session would be republished as a live tunnel — including into the Dashboard's QR code.
-Liveness itself is an **argv[0]** match read from procfs, not a `pgrep -f` over whole
-command lines: `-f` matched any process that merely mentioned a daemon name, which
-defeated this gate (BladeWatch-xzhv — observed with a shell that only wrote to
-`zrok.log`). `app_process --nice-name=<n>` overwrites argv[0] with the nice-name, and
-zrok is exec'd by path, so the comparison is on the basename of argv[0], by exact
-equality — which also keeps `sentry_daemon` from matching `acc_sentry_daemon`.
+**The URL is gated on TWO things, and both are load-bearing.**
 
-Two deliberate differences from native's `grep -o … | head -1`: it takes the **last**
-match, because the first can be an older session's name (the drift native patches up
-afterwards with `reconcileTunnelUrl`), and it never loads the log into memory — it
-streams, reading only the tail of a large file.
+1. *The tunnel process is alive.* Liveness is an **argv[0]** match read from procfs, not a
+   `pgrep -f` over whole command lines: `-f` matched any process that merely mentioned a
+   daemon name, which defeated this gate (BladeWatch-xzhv — observed with a shell that
+   only wrote to the tunnel's log file). `app_process --nice-name=<n>` overwrites argv[0]
+   with the nice-name, and tor is exec'd by path, so the comparison is on the basename of
+   argv[0], by exact equality — which also keeps `sentry_daemon` from matching
+   `acc_sentry_daemon`. The binary is installed as `bladewatch_tor` so that basename is
+   both distinctive and inside the kernel's 15-character cap on `comm`.
 
-`running=true` with `url=null` is a real state (tunnel up, banner not yet written), not
-an error. `DaemonChannel.tunnelUrl()` collapses it to null because the Dashboard renders
-only online/offline.
+2. *tor has bootstrapped.* This gate is specific to Tor and did not exist for the previous
+   tunnel, which only printed its URL once it was already live. tor writes `hs/hostname`
+   about a second after its FIRST launch and then keeps it forever, reboots included, so
+   the file says nothing about reachability. A cold start takes ~82 s to reach
+   `Bootstrapped 100%` (~6 s warm), and publishing the address during that window would
+   put an "online" QR code on the Dashboard for a service nothing can reach.
+
+The bootstrap check reads the tail of `tor.log` — never the whole file, which cost 85 MB+
+allocations in the implementation this replaces — and tracks the **latest** of
+`Bootstrapped 0%` and `Bootstrapped 100%` rather than merely searching for 100%. tor
+appends to one log across launches, so after a restart the previous run's success line sits
+above the new run's start; taking the last one is what stops a restart republishing the
+address early.
+
+`running=true` with `url=null` is a real state (tor up, not yet reachable), not an error.
+`DaemonChannel.tunnelStatus()` surfaces both fields, and the Dashboard renders that state
+as "connecting" — with Tor it can last well over a minute, so collapsing it into "offline"
+would tell the user there is no tunnel while one is actively coming up.
 
 ## Daemon enable/disable over IPC
 
@@ -198,7 +211,7 @@ only online/offline.
 shell. The PIDs it signals come from this server's own procfs scan, keyed by a process
 name looked up from the enum — never from the wire.
 
-The allow-list currently holds **ZROK_TUNNEL alone** (BladeWatch-abcx), and the other
+The allow-list currently holds **TOR_TUNNEL alone** (BladeWatch-abcx), and the other
 three are excluded for structural reasons, not missing work:
 
 | Daemon | Why not |
@@ -207,13 +220,13 @@ three are excluded for structural reasons, not missing work:
 | `SENTRY_DAEMON`, `ACC_SENTRY_DAEMON` | Core daemons. `DaemonStartupManager`'s health check relaunches them within 30 s unless they are in `userStoppedDaemons` — an in-memory set in the *app* process that the daemon cannot reach — so a stop here would silently undo itself. |
 
 Enabling only **records the intent**: `DaemonStartupManager`'s health check performs the
-launch through the full `ZrokLauncher` flow (tokens, reserved mode) within ~30 s.
+launch through `TorLauncher` within ~30 s.
 Disabling records the intent **and kills the process**, because that health check only
 ever relaunches, never kills — without the kill the tunnel would keep serving until the
 next reboot while the switch read "off".
 
 The shared state is `UnifiedConfigManager`'s `daemons` section
-(`{"ZROK_TUNNEL": <bool>}`), which both APKs can reach. `DaemonStartupManager` prefers it
+(`{"TOR_TUNNEL": <bool>}`), which both APKs can reach. `DaemonStartupManager` prefers it
 and falls back to `PreferencesManager` (app-private SharedPreferences, invisible to the
 Flutter APK) when the key is unset, so an install predating the section keeps its
 existing setting.

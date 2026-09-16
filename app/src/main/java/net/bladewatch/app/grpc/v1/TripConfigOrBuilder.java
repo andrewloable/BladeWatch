@@ -45,4 +45,47 @@ public interface TripConfigOrBuilder extends
    */
   com.google.protobuf.ByteString
       getDistanceUnitBytes();
+
+  /**
+   * <pre>
+   * Cost per litre for the PHEV fuel leg. 0 means not configured, so the leg is recorded
+   * but not costed. The currency above is shared with the electricity rate.
+   * </pre>
+   *
+   * <code>double fuel_price_per_l = 5 [json_name = "fuelPricePerL"];</code>
+   * @return The fuelPricePerL.
+   */
+  double getFuelPricePerL();
+
+  /**
+   * <pre>
+   * Fuel tank capacity in litres. 0 means not configured, and there is no default: BYD
+   * local data exposes no tank size, so without this the fuel RANGE simply cannot be
+   * computed. A guessed capacity would put a wrong range on the dashboard, which is worse
+   * than a blank one because the driver acts on it.
+   * </pre>
+   *
+   * <code>double fuel_tank_capacity_l = 6 [json_name = "fuelTankCapacityL"];</code>
+   * @return The fuelTankCapacityL.
+   */
+  double getFuelTankCapacityL();
+
+  /**
+   * <pre>
+   * Whether this vehicle has a fuel system at all.
+   *
+   * NOT a stored setting — a live read of the drivetrain, carried on the config message
+   * because the config screen is the one place that needs it. The two fuel settings above are
+   * meaningless on a BEV, and a UI that shows "Fuel Price (per litre)" to an owner whose car
+   * has no tank reads as a bug in the app.
+   *
+   * Clients must NOT treat false as "hide unconditionally": a value already configured has to
+   * stay visible so it can be cleared, and the drivetrain probe can read false while the HAL
+   * is warming up. See the gating rule in the web and Flutter trips settings.
+   * </pre>
+   *
+   * <code>bool is_phev = 7 [json_name = "isPhev"];</code>
+   * @return The isPhev.
+   */
+  boolean getIsPhev();
 }

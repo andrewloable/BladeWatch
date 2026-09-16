@@ -202,7 +202,7 @@ void main() {
   /// daemon host is another — and a bug report would name the wrong build.
   ///
   /// It lives in two files unavoidably. BladeWatch versions have FOUR parts
-  /// ("1.3.0.0") and a pubspec version must be valid semver: `version: 1.3.0.0+13000`
+  /// ("1.3.1.0") and a pubspec version must be valid semver: `version: 1.3.1.0+13100`
   /// is rejected by pub outright, so `flutter.versionName` can only ever yield
   /// "1.3.0". flutter_ui/android/app/build.gradle.kts therefore writes versionName
   /// out explicitly, which is a copy of the one in app/build.gradle.kts. This pins

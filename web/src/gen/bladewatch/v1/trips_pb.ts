@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bladewatch/v1/trips.proto.
  */
 export const file_bladewatch_v1_trips: GenFile = /*@__PURE__*/
-  fileDesc("ChlibGFkZXdhdGNoL3YxL3RyaXBzLnByb3RvEg1ibGFkZXdhdGNoLnYxIqIDCgtUcmlwU3VtbWFyeRIKCgJpZBgBIAEoAxISCgpzdGFydF90aW1lGAIgASgDEhAKCGVuZF90aW1lGAMgASgDEhMKC2Rpc3RhbmNlX2ttGAQgASgBEhgKEGR1cmF0aW9uX3NlY29uZHMYBSABKAUSFQoNYXZnX3NwZWVkX2ttaBgGIAEoARIVCg1tYXhfc3BlZWRfa21oGAcgASgFEhEKCXNvY19zdGFydBgIIAEoARIPCgdzb2NfZW5kGAkgASgBEhUKDWVuZXJneV9wZXJfa20YCiABKAESEQoJdHJpcF9jb3N0GAsgASgBEhAKCGN1cnJlbmN5GAwgASgJEhUKDW92ZXJhbGxfc2NvcmUYDSABKAUSFwoPa2luZW1hdGljX3N0YXRlGA4gASgJEhgKEGdyYWRpZW50X3Byb2ZpbGUYDyABKAkSEQoJc3RhcnRfbGF0GBAgASgBEhEKCXN0YXJ0X2xvbhgRIAEoARIPCgdlbmRfbGF0GBIgASgBEg8KB2VuZF9sb24YEyABKAESEgoKZXh0X3RlbXBfYxgUIAEoBSKyAgoKVHJpcERldGFpbBIrCgdzdW1tYXJ5GAEgASgLMhouYmxhZGV3YXRjaC52MS5UcmlwU3VtbWFyeRIaChJhbnRpY2lwYXRpb25fc2NvcmUYAiABKAUSGAoQc21vb3RobmVzc19zY29yZRgDIAEoBRIeChZzcGVlZF9kaXNjaXBsaW5lX3Njb3JlGAQgASgFEhgKEGVmZmljaWVuY3lfc2NvcmUYBSABKAUSGQoRY29uc2lzdGVuY3lfc2NvcmUYBiABKAUSGAoQZWxldmF0aW9uX2dhaW5fbRgHIAEoARIYChBlbGV2YXRpb25fbG9zc19tGAggASgBEhwKFGF2Z19ncmFkaWVudF9wZXJjZW50GAkgASgBEhoKEm1pY3JvX21vbWVudHNfanNvbhgKIAEoCSKJAQoJRG5hU2NvcmVzEhQKDGFudGljaXBhdGlvbhgBIAEoBRISCgpzbW9vdGhuZXNzGAIgASgFEhgKEHNwZWVkX2Rpc2NpcGxpbmUYAyABKAUSEgoKZWZmaWNpZW5jeRgEIAEoBRITCgtjb25zaXN0ZW5jeRgFIAEoBRIPCgdvdmVyYWxsGAYgASgFIigKEVdlZWtseVJvbGx1cEVudHJ5EhMKC3JvbGx1cF9qc29uGAEgASgJIiYKD1RlbGVtZXRyeVNhbXBsZRITCgtzYW1wbGVfanNvbhgBIAEoCSJgCgpUcmlwQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSGAoQZWxlY3RyaWNpdHlfcmF0ZRgCIAEoARIQCghjdXJyZW5jeRgDIAEoCRIVCg1kaXN0YW5jZV91bml0GAQgASgJIqMBCg9UcmlwU3RvcmFnZUluZm8SFAoMc3RvcmFnZV90eXBlGAEgASgJEhAKCGxpbWl0X21iGAIgASgDEg8KB3VzZWRfbWIYAyABKAESEQoJdXNlZF91bml0GAQgASgJEhkKEXNkX2NhcmRfYXZhaWxhYmxlGAUgASgIEhMKC3RyaXBzX2NvdW50GAYgASgFEhQKDHN0b3JhZ2VfcGF0aBgHIAEoCSLlAQoRU2ltaWxhclRyaXBzU3RhdHMSFgoOYXZnX2VmZmljaWVuY3kYASABKAESEQoJYXZnX3Njb3JlGAIgASgBEhwKFGF2Z19kdXJhdGlvbl9zZWNvbmRzGAMgASgBEhUKDWF2Z19zcGVlZF9rbWgYBCABKAESEAoIYXZnX2Nvc3QYBSABKAESFAoMYmVzdF90cmlwX2lkGAYgASgDEhcKD2Jlc3RfZWZmaWNpZW5jeRgHIAEoARIVCg13b3JzdF90cmlwX2lkGAggASgDEhgKEHdvcnN0X2VmZmljaWVuY3kYCSABKAEiJAoIR3BzUG9pbnQSCwoDbGF0GAEgASgBEgsKA2xvbhgCIAEoASI/ChBMaXN0VHJpcHNSZXF1ZXN0EgwKBGRheXMYASABKAUSDQoFbGltaXQYAiABKAUSDgoGb2Zmc2V0GAMgASgFIk8KEUxpc3RUcmlwc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSKQoFdHJpcHMYAiADKAsyGi5ibGFkZXdhdGNoLnYxLlRyaXBTdW1tYXJ5IhwKDkdldFRyaXBSZXF1ZXN0EgoKAmlkGAEgASgDIloKD0dldFRyaXBSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEicKBHRyaXAYAiABKAsyGS5ibGFkZXdhdGNoLnYxLlRyaXBEZXRhaWwSDQoFZXJyb3IYAyABKAkiHwoRRGVsZXRlVHJpcFJlcXVlc3QSCgoCaWQYASABKAMiNAoSRGVsZXRlVHJpcFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiIQoRR2V0U3VtbWFyeVJlcXVlc3QSDAoEZGF5cxgBIAEoBSJYChJHZXRTdW1tYXJ5UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIxCgdzdW1tYXJ5GAIgAygLMiAuYmxhZGV3YXRjaC52MS5XZWVrbHlSb2xsdXBFbnRyeSIdCg1HZXREbmFSZXF1ZXN0EgwKBGRheXMYASABKAUiSAoOR2V0RG5hUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIlCgNkbmEYAiABKAsyGC5ibGFkZXdhdGNoLnYxLkRuYVNjb3JlcyIRCg9HZXRSYW5nZVJlcXVlc3QiSAoQR2V0UmFuZ2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhIKCnJhbmdlX2pzb24YAiABKAkSDwoHbWVzc2FnZRgDIAEoCSISChBHZXRDb25maWdSZXF1ZXN0Ik8KEUdldENvbmZpZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSKQoGY29uZmlnGAIgASgLMhkuYmxhZGV3YXRjaC52MS5UcmlwQ29uZmlnIpkBChBTZXRDb25maWdSZXF1ZXN0Eg8KB2VuYWJsZWQYASABKAgSEwoLaGFzX2VuYWJsZWQYAiABKAgSGAoQZWxlY3RyaWNpdHlfcmF0ZRgDIAEoARIcChRoYXNfZWxlY3RyaWNpdHlfcmF0ZRgEIAEoCBIQCghjdXJyZW5jeRgFIAEoCRIVCg1kaXN0YW5jZV91bml0GAYgASgJIjMKEVNldENvbmZpZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiEwoRR2V0U3RvcmFnZVJlcXVlc3QiVgoSR2V0U3RvcmFnZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLwoHc3RvcmFnZRgCIAEoCzIeLmJsYWRld2F0Y2gudjEuVHJpcFN0b3JhZ2VJbmZvImEKEVNldFN0b3JhZ2VSZXF1ZXN0EhQKDHN0b3JhZ2VfdHlwZRgBIAEoCRIYChBzdG9yYWdlX2xpbWl0X21iGAIgASgDEhwKFGhhc19zdG9yYWdlX2xpbWl0X21iGAMgASgIIjQKElNldFN0b3JhZ2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJIhIKEFN5bmNUcmlwc1JlcXVlc3QiYgoRU3luY1RyaXBzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCRINCgVhZGRlZBgDIAEoBRIPCgdyZW1vdmVkGAQgASgFEg0KBXRvdGFsGAUgASgFIiYKE0dldFRlbGVtZXRyeVJlcXVlc3QSDwoHdHJpcF9pZBgBIAEoAyJpChRHZXRUZWxlbWV0cnlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEjEKCXRlbGVtZXRyeRgCIAMoCzIeLmJsYWRld2F0Y2gudjEuVGVsZW1ldHJ5U2FtcGxlEg0KBWVycm9yGAMgASgJIikKFkdldFNpbWlsYXJUcmlwc1JlcXVlc3QSDwoHdHJpcF9pZBgBIAEoAyKmAQoXR2V0U2ltaWxhclRyaXBzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIrCgdzaW1pbGFyGAIgAygLMhouYmxhZGV3YXRjaC52MS5UcmlwU3VtbWFyeRINCgVjb3VudBgDIAEoBRIvCgVzdGF0cxgEIAEoCzIgLmJsYWRld2F0Y2gudjEuU2ltaWxhclRyaXBzU3RhdHMSDQoFZXJyb3IYBSABKAkiJQoSR2V0R3BzVHJhY2VSZXF1ZXN0Eg8KB3RyaXBfaWQYASABKAMiWwoTR2V0R3BzVHJhY2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEiQKA2dwcxgCIAMoCzIXLmJsYWRld2F0Y2gudjEuR3BzUG9pbnQSDQoFZXJyb3IYAyABKAkyiQkKDFRyaXBzU2VydmljZRJOCglMaXN0VHJpcHMSHy5ibGFkZXdhdGNoLnYxLkxpc3RUcmlwc1JlcXVlc3QaIC5ibGFkZXdhdGNoLnYxLkxpc3RUcmlwc1Jlc3BvbnNlEkgKB0dldFRyaXASHS5ibGFkZXdhdGNoLnYxLkdldFRyaXBSZXF1ZXN0Gh4uYmxhZGV3YXRjaC52MS5HZXRUcmlwUmVzcG9uc2USUQoKRGVsZXRlVHJpcBIgLmJsYWRld2F0Y2gudjEuRGVsZXRlVHJpcFJlcXVlc3QaIS5ibGFkZXdhdGNoLnYxLkRlbGV0ZVRyaXBSZXNwb25zZRJRCgpHZXRTdW1tYXJ5EiAuYmxhZGV3YXRjaC52MS5HZXRTdW1tYXJ5UmVxdWVzdBohLmJsYWRld2F0Y2gudjEuR2V0U3VtbWFyeVJlc3BvbnNlEkUKBkdldERuYRIcLmJsYWRld2F0Y2gudjEuR2V0RG5hUmVxdWVzdBodLmJsYWRld2F0Y2gudjEuR2V0RG5hUmVzcG9uc2USSwoIR2V0UmFuZ2USHi5ibGFkZXdhdGNoLnYxLkdldFJhbmdlUmVxdWVzdBofLmJsYWRld2F0Y2gudjEuR2V0UmFuZ2VSZXNwb25zZRJOCglHZXRDb25maWcSHy5ibGFkZXdhdGNoLnYxLkdldENvbmZpZ1JlcXVlc3QaIC5ibGFkZXdhdGNoLnYxLkdldENvbmZpZ1Jlc3BvbnNlEk4KCVNldENvbmZpZxIfLmJsYWRld2F0Y2gudjEuU2V0Q29uZmlnUmVxdWVzdBogLmJsYWRld2F0Y2gudjEuU2V0Q29uZmlnUmVzcG9uc2USUQoKR2V0U3RvcmFnZRIgLmJsYWRld2F0Y2gudjEuR2V0U3RvcmFnZVJlcXVlc3QaIS5ibGFkZXdhdGNoLnYxLkdldFN0b3JhZ2VSZXNwb25zZRJRCgpTZXRTdG9yYWdlEiAuYmxhZGV3YXRjaC52MS5TZXRTdG9yYWdlUmVxdWVzdBohLmJsYWRld2F0Y2gudjEuU2V0U3RvcmFnZVJlc3BvbnNlEk4KCVN5bmNUcmlwcxIfLmJsYWRld2F0Y2gudjEuU3luY1RyaXBzUmVxdWVzdBogLmJsYWRld2F0Y2gudjEuU3luY1RyaXBzUmVzcG9uc2USVwoMR2V0VGVsZW1ldHJ5EiIuYmxhZGV3YXRjaC52MS5HZXRUZWxlbWV0cnlSZXF1ZXN0GiMuYmxhZGV3YXRjaC52MS5HZXRUZWxlbWV0cnlSZXNwb25zZRJgCg9HZXRTaW1pbGFyVHJpcHMSJS5ibGFkZXdhdGNoLnYxLkdldFNpbWlsYXJUcmlwc1JlcXVlc3QaJi5ibGFkZXdhdGNoLnYxLkdldFNpbWlsYXJUcmlwc1Jlc3BvbnNlElQKC0dldEdwc1RyYWNlEiEuYmxhZGV3YXRjaC52MS5HZXRHcHNUcmFjZVJlcXVlc3QaIi5ibGFkZXdhdGNoLnYxLkdldEdwc1RyYWNlUmVzcG9uc2VCHgoabmV0LmJsYWRld2F0Y2guYXBwLmdycGMudjFQAWIGcHJvdG8z");
+  fileDesc("ChlibGFkZXdhdGNoL3YxL3RyaXBzLnByb3RvEg1ibGFkZXdhdGNoLnYxIvgDCgtUcmlwU3VtbWFyeRIKCgJpZBgBIAEoAxISCgpzdGFydF90aW1lGAIgASgDEhAKCGVuZF90aW1lGAMgASgDEhMKC2Rpc3RhbmNlX2ttGAQgASgBEhgKEGR1cmF0aW9uX3NlY29uZHMYBSABKAUSFQoNYXZnX3NwZWVkX2ttaBgGIAEoARIVCg1tYXhfc3BlZWRfa21oGAcgASgFEhEKCXNvY19zdGFydBgIIAEoARIPCgdzb2NfZW5kGAkgASgBEhUKDWVuZXJneV9wZXJfa20YCiABKAESEQoJdHJpcF9jb3N0GAsgASgBEhAKCGN1cnJlbmN5GAwgASgJEhUKDW92ZXJhbGxfc2NvcmUYDSABKAUSFwoPa2luZW1hdGljX3N0YXRlGA4gASgJEhgKEGdyYWRpZW50X3Byb2ZpbGUYDyABKAkSEQoJc3RhcnRfbGF0GBAgASgBEhEKCXN0YXJ0X2xvbhgRIAEoARIPCgdlbmRfbGF0GBIgASgBEg8KB2VuZF9sb24YEyABKAESEgoKZXh0X3RlbXBfYxgUIAEoBRITCgtsaXRyZXNfdXNlZBgVIAEoARIRCglmdWVsX2Nvc3QYFiABKAESFQoNZWxlY3RyaWNfY29zdBgXIAEoARIVCg1oYXNfZnVlbF9kYXRhGBggASgIItYDCgpUcmlwRGV0YWlsEisKB3N1bW1hcnkYASABKAsyGi5ibGFkZXdhdGNoLnYxLlRyaXBTdW1tYXJ5EhoKEmFudGljaXBhdGlvbl9zY29yZRgCIAEoBRIYChBzbW9vdGhuZXNzX3Njb3JlGAMgASgFEh4KFnNwZWVkX2Rpc2NpcGxpbmVfc2NvcmUYBCABKAUSGAoQZWZmaWNpZW5jeV9zY29yZRgFIAEoBRIZChFjb25zaXN0ZW5jeV9zY29yZRgGIAEoBRIYChBlbGV2YXRpb25fZ2Fpbl9tGAcgASgBEhgKEGVsZXZhdGlvbl9sb3NzX20YCCABKAESHAoUYXZnX2dyYWRpZW50X3BlcmNlbnQYCSABKAESGgoSbWljcm9fbW9tZW50c19qc29uGAogASgJEhYKDmZ1ZWxfcGN0X3N0YXJ0GAsgASgBEhQKDGZ1ZWxfcGN0X2VuZBgMIAEoARIWCg5mdWVsX2Nvbl9zdGFydBgNIAEoARIUCgxmdWVsX2Nvbl9lbmQYDiABKAESGAoQZnVlbF9wcmljZV9wZXJfbBgPIAEoARIWCg5lbGVjX2Nvbl9zdGFydBgQIAEoARIUCgxlbGVjX2Nvbl9lbmQYESABKAEiiQEKCURuYVNjb3JlcxIUCgxhbnRpY2lwYXRpb24YASABKAUSEgoKc21vb3RobmVzcxgCIAEoBRIYChBzcGVlZF9kaXNjaXBsaW5lGAMgASgFEhIKCmVmZmljaWVuY3kYBCABKAUSEwoLY29uc2lzdGVuY3kYBSABKAUSDwoHb3ZlcmFsbBgGIAEoBSIoChFXZWVrbHlSb2xsdXBFbnRyeRITCgtyb2xsdXBfanNvbhgBIAEoCSImCg9UZWxlbWV0cnlTYW1wbGUSEwoLc2FtcGxlX2pzb24YASABKAkiqQEKClRyaXBDb25maWcSDwoHZW5hYmxlZBgBIAEoCBIYChBlbGVjdHJpY2l0eV9yYXRlGAIgASgBEhAKCGN1cnJlbmN5GAMgASgJEhUKDWRpc3RhbmNlX3VuaXQYBCABKAkSGAoQZnVlbF9wcmljZV9wZXJfbBgFIAEoARIcChRmdWVsX3RhbmtfY2FwYWNpdHlfbBgGIAEoARIPCgdpc19waGV2GAcgASgIIqMBCg9UcmlwU3RvcmFnZUluZm8SFAoMc3RvcmFnZV90eXBlGAEgASgJEhAKCGxpbWl0X21iGAIgASgDEg8KB3VzZWRfbWIYAyABKAESEQoJdXNlZF91bml0GAQgASgJEhkKEXNkX2NhcmRfYXZhaWxhYmxlGAUgASgIEhMKC3RyaXBzX2NvdW50GAYgASgFEhQKDHN0b3JhZ2VfcGF0aBgHIAEoCSLlAQoRU2ltaWxhclRyaXBzU3RhdHMSFgoOYXZnX2VmZmljaWVuY3kYASABKAESEQoJYXZnX3Njb3JlGAIgASgBEhwKFGF2Z19kdXJhdGlvbl9zZWNvbmRzGAMgASgBEhUKDWF2Z19zcGVlZF9rbWgYBCABKAESEAoIYXZnX2Nvc3QYBSABKAESFAoMYmVzdF90cmlwX2lkGAYgASgDEhcKD2Jlc3RfZWZmaWNpZW5jeRgHIAEoARIVCg13b3JzdF90cmlwX2lkGAggASgDEhgKEHdvcnN0X2VmZmljaWVuY3kYCSABKAEiJAoIR3BzUG9pbnQSCwoDbGF0GAEgASgBEgsKA2xvbhgCIAEoASI/ChBMaXN0VHJpcHNSZXF1ZXN0EgwKBGRheXMYASABKAUSDQoFbGltaXQYAiABKAUSDgoGb2Zmc2V0GAMgASgFIk8KEUxpc3RUcmlwc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSKQoFdHJpcHMYAiADKAsyGi5ibGFkZXdhdGNoLnYxLlRyaXBTdW1tYXJ5IhwKDkdldFRyaXBSZXF1ZXN0EgoKAmlkGAEgASgDIloKD0dldFRyaXBSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEicKBHRyaXAYAiABKAsyGS5ibGFkZXdhdGNoLnYxLlRyaXBEZXRhaWwSDQoFZXJyb3IYAyABKAkiHwoRRGVsZXRlVHJpcFJlcXVlc3QSCgoCaWQYASABKAMiNAoSRGVsZXRlVHJpcFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiIQoRR2V0U3VtbWFyeVJlcXVlc3QSDAoEZGF5cxgBIAEoBSJYChJHZXRTdW1tYXJ5UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIxCgdzdW1tYXJ5GAIgAygLMiAuYmxhZGV3YXRjaC52MS5XZWVrbHlSb2xsdXBFbnRyeSIdCg1HZXREbmFSZXF1ZXN0EgwKBGRheXMYASABKAUiSAoOR2V0RG5hUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIlCgNkbmEYAiABKAsyGC5ibGFkZXdhdGNoLnYxLkRuYVNjb3JlcyIRCg9HZXRSYW5nZVJlcXVlc3QiSAoQR2V0UmFuZ2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhIKCnJhbmdlX2pzb24YAiABKAkSDwoHbWVzc2FnZRgDIAEoCSISChBHZXRDb25maWdSZXF1ZXN0Ik8KEUdldENvbmZpZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSKQoGY29uZmlnGAIgASgLMhkuYmxhZGV3YXRjaC52MS5UcmlwQ29uZmlnIpECChBTZXRDb25maWdSZXF1ZXN0Eg8KB2VuYWJsZWQYASABKAgSEwoLaGFzX2VuYWJsZWQYAiABKAgSGAoQZWxlY3RyaWNpdHlfcmF0ZRgDIAEoARIcChRoYXNfZWxlY3RyaWNpdHlfcmF0ZRgEIAEoCBIQCghjdXJyZW5jeRgFIAEoCRIVCg1kaXN0YW5jZV91bml0GAYgASgJEhgKEGZ1ZWxfcHJpY2VfcGVyX2wYByABKAESHAoUaGFzX2Z1ZWxfcHJpY2VfcGVyX2wYCCABKAgSHAoUZnVlbF90YW5rX2NhcGFjaXR5X2wYCSABKAESIAoYaGFzX2Z1ZWxfdGFua19jYXBhY2l0eV9sGAogASgIIjMKEVNldENvbmZpZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiEwoRR2V0U3RvcmFnZVJlcXVlc3QiVgoSR2V0U3RvcmFnZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLwoHc3RvcmFnZRgCIAEoCzIeLmJsYWRld2F0Y2gudjEuVHJpcFN0b3JhZ2VJbmZvImEKEVNldFN0b3JhZ2VSZXF1ZXN0EhQKDHN0b3JhZ2VfdHlwZRgBIAEoCRIYChBzdG9yYWdlX2xpbWl0X21iGAIgASgDEhwKFGhhc19zdG9yYWdlX2xpbWl0X21iGAMgASgIIjQKElNldFN0b3JhZ2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJIhIKEFN5bmNUcmlwc1JlcXVlc3QiYgoRU3luY1RyaXBzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCRINCgVhZGRlZBgDIAEoBRIPCgdyZW1vdmVkGAQgASgFEg0KBXRvdGFsGAUgASgFIiYKE0dldFRlbGVtZXRyeVJlcXVlc3QSDwoHdHJpcF9pZBgBIAEoAyJpChRHZXRUZWxlbWV0cnlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEjEKCXRlbGVtZXRyeRgCIAMoCzIeLmJsYWRld2F0Y2gudjEuVGVsZW1ldHJ5U2FtcGxlEg0KBWVycm9yGAMgASgJIikKFkdldFNpbWlsYXJUcmlwc1JlcXVlc3QSDwoHdHJpcF9pZBgBIAEoAyKmAQoXR2V0U2ltaWxhclRyaXBzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIrCgdzaW1pbGFyGAIgAygLMhouYmxhZGV3YXRjaC52MS5UcmlwU3VtbWFyeRINCgVjb3VudBgDIAEoBRIvCgVzdGF0cxgEIAEoCzIgLmJsYWRld2F0Y2gudjEuU2ltaWxhclRyaXBzU3RhdHMSDQoFZXJyb3IYBSABKAkiJQoSR2V0R3BzVHJhY2VSZXF1ZXN0Eg8KB3RyaXBfaWQYASABKAMiWwoTR2V0R3BzVHJhY2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEiQKA2dwcxgCIAMoCzIXLmJsYWRld2F0Y2gudjEuR3BzUG9pbnQSDQoFZXJyb3IYAyABKAkyiQkKDFRyaXBzU2VydmljZRJOCglMaXN0VHJpcHMSHy5ibGFkZXdhdGNoLnYxLkxpc3RUcmlwc1JlcXVlc3QaIC5ibGFkZXdhdGNoLnYxLkxpc3RUcmlwc1Jlc3BvbnNlEkgKB0dldFRyaXASHS5ibGFkZXdhdGNoLnYxLkdldFRyaXBSZXF1ZXN0Gh4uYmxhZGV3YXRjaC52MS5HZXRUcmlwUmVzcG9uc2USUQoKRGVsZXRlVHJpcBIgLmJsYWRld2F0Y2gudjEuRGVsZXRlVHJpcFJlcXVlc3QaIS5ibGFkZXdhdGNoLnYxLkRlbGV0ZVRyaXBSZXNwb25zZRJRCgpHZXRTdW1tYXJ5EiAuYmxhZGV3YXRjaC52MS5HZXRTdW1tYXJ5UmVxdWVzdBohLmJsYWRld2F0Y2gudjEuR2V0U3VtbWFyeVJlc3BvbnNlEkUKBkdldERuYRIcLmJsYWRld2F0Y2gudjEuR2V0RG5hUmVxdWVzdBodLmJsYWRld2F0Y2gudjEuR2V0RG5hUmVzcG9uc2USSwoIR2V0UmFuZ2USHi5ibGFkZXdhdGNoLnYxLkdldFJhbmdlUmVxdWVzdBofLmJsYWRld2F0Y2gudjEuR2V0UmFuZ2VSZXNwb25zZRJOCglHZXRDb25maWcSHy5ibGFkZXdhdGNoLnYxLkdldENvbmZpZ1JlcXVlc3QaIC5ibGFkZXdhdGNoLnYxLkdldENvbmZpZ1Jlc3BvbnNlEk4KCVNldENvbmZpZxIfLmJsYWRld2F0Y2gudjEuU2V0Q29uZmlnUmVxdWVzdBogLmJsYWRld2F0Y2gudjEuU2V0Q29uZmlnUmVzcG9uc2USUQoKR2V0U3RvcmFnZRIgLmJsYWRld2F0Y2gudjEuR2V0U3RvcmFnZVJlcXVlc3QaIS5ibGFkZXdhdGNoLnYxLkdldFN0b3JhZ2VSZXNwb25zZRJRCgpTZXRTdG9yYWdlEiAuYmxhZGV3YXRjaC52MS5TZXRTdG9yYWdlUmVxdWVzdBohLmJsYWRld2F0Y2gudjEuU2V0U3RvcmFnZVJlc3BvbnNlEk4KCVN5bmNUcmlwcxIfLmJsYWRld2F0Y2gudjEuU3luY1RyaXBzUmVxdWVzdBogLmJsYWRld2F0Y2gudjEuU3luY1RyaXBzUmVzcG9uc2USVwoMR2V0VGVsZW1ldHJ5EiIuYmxhZGV3YXRjaC52MS5HZXRUZWxlbWV0cnlSZXF1ZXN0GiMuYmxhZGV3YXRjaC52MS5HZXRUZWxlbWV0cnlSZXNwb25zZRJgCg9HZXRTaW1pbGFyVHJpcHMSJS5ibGFkZXdhdGNoLnYxLkdldFNpbWlsYXJUcmlwc1JlcXVlc3QaJi5ibGFkZXdhdGNoLnYxLkdldFNpbWlsYXJUcmlwc1Jlc3BvbnNlElQKC0dldEdwc1RyYWNlEiEuYmxhZGV3YXRjaC52MS5HZXRHcHNUcmFjZVJlcXVlc3QaIi5ibGFkZXdhdGNoLnYxLkdldEdwc1RyYWNlUmVzcG9uc2VCHgoabmV0LmJsYWRld2F0Y2guYXBwLmdycGMudjFQAWIGcHJvdG8z");
 
 /**
  * TripSummary is a compact trip row for list views.
@@ -117,6 +117,40 @@ export type TripSummary = Message<"bladewatch.v1.TripSummary"> & {
    * @generated from field: int32 ext_temp_c = 20;
    */
   extTempC: number;
+
+  /**
+   * PHEV fuel leg (BladeWatch-fpdz). New field numbers only -- 1-20 keep their meaning, so
+   * an older client parses this message unchanged.
+   *
+   * Derived values only: a list row shows what the fuel leg COST, never the lifetime
+   * counters it was derived from. Handing a client raw counters invites it to compute its
+   * own delta, which then disagrees with the daemon the moment a counter resets.
+   *
+   * On a BEV these are all 0, which is also proto3's default -- there is no "absent" here,
+   * and has_fuel_data below is what distinguishes a BEV from a PHEV that burned nothing.
+   *
+   * @generated from field: double litres_used = 21;
+   */
+  litresUsed: number;
+
+  /**
+   * @generated from field: double fuel_cost = 22;
+   */
+  fuelCost: number;
+
+  /**
+   * @generated from field: double electric_cost = 23;
+   */
+  electricCost: number;
+
+  /**
+   * True when this trip recorded both ends of the fuel counter. Derived from the STORED
+   * trip, not a live drivetrain probe, so a historical trip renders the same way on a car
+   * whose drivetrain reads differently today.
+   *
+   * @generated from field: bool has_fuel_data = 24;
+   */
+  hasFuelData: boolean;
 };
 
 /**
@@ -183,6 +217,44 @@ export type TripDetail = Message<"bladewatch.v1.TripDetail"> & {
    * @generated from field: string micro_moments_json = 10;
    */
   microMomentsJson: string;
+
+  /**
+   * PHEV fuel leg detail (BladeWatch-fpdz). The raw lifetime counters live here, in the
+   * detail view only. -1 means the reading was never taken; 0 is a real measurement.
+   *
+   * @generated from field: double fuel_pct_start = 11;
+   */
+  fuelPctStart: number;
+
+  /**
+   * @generated from field: double fuel_pct_end = 12;
+   */
+  fuelPctEnd: number;
+
+  /**
+   * @generated from field: double fuel_con_start = 13;
+   */
+  fuelConStart: number;
+
+  /**
+   * @generated from field: double fuel_con_end = 14;
+   */
+  fuelConEnd: number;
+
+  /**
+   * @generated from field: double fuel_price_per_l = 15;
+   */
+  fuelPricePerL: number;
+
+  /**
+   * @generated from field: double elec_con_start = 16;
+   */
+  elecConStart: number;
+
+  /**
+   * @generated from field: double elec_con_end = 17;
+   */
+  elecConEnd: number;
 };
 
 /**
@@ -303,6 +375,40 @@ export type TripConfig = Message<"bladewatch.v1.TripConfig"> & {
    * @generated from field: string distance_unit = 4;
    */
   distanceUnit: string;
+
+  /**
+   * Cost per litre for the PHEV fuel leg. 0 means not configured, so the leg is recorded
+   * but not costed. The currency above is shared with the electricity rate.
+   *
+   * @generated from field: double fuel_price_per_l = 5;
+   */
+  fuelPricePerL: number;
+
+  /**
+   * Fuel tank capacity in litres. 0 means not configured, and there is no default: BYD
+   * local data exposes no tank size, so without this the fuel RANGE simply cannot be
+   * computed. A guessed capacity would put a wrong range on the dashboard, which is worse
+   * than a blank one because the driver acts on it.
+   *
+   * @generated from field: double fuel_tank_capacity_l = 6;
+   */
+  fuelTankCapacityL: number;
+
+  /**
+   * Whether this vehicle has a fuel system at all.
+   *
+   * NOT a stored setting — a live read of the drivetrain, carried on the config message
+   * because the config screen is the one place that needs it. The two fuel settings above are
+   * meaningless on a BEV, and a UI that shows "Fuel Price (per litre)" to an owner whose car
+   * has no tank reads as a bug in the app.
+   *
+   * Clients must NOT treat false as "hide unconditionally": a value already configured has to
+   * stay visible so it can be cleared, and the drivetrain probe can read false while the HAL
+   * is warming up. See the gating rule in the web and Flutter trips settings.
+   *
+   * @generated from field: bool is_phev = 7;
+   */
+  isPhev: boolean;
 };
 
 /**
@@ -764,6 +870,34 @@ export type SetConfigRequest = Message<"bladewatch.v1.SetConfigRequest"> & {
    * @generated from field: string distance_unit = 6;
    */
   distanceUnit: string;
+
+  /**
+   * PHEV pricing (BladeWatch-9uu6). New field numbers only, so a client built against the
+   * old schema still parses this message.
+   *
+   * Each value carries an explicit has_* companion, matching the pattern above. proto3 omits
+   * default scalars on the wire, so without the companion a deliberate 0 — which means "not
+   * configured" for both of these — would be indistinguishable from "field not sent", and the
+   * daemon would keep the previous value instead of clearing it.
+   *
+   * @generated from field: double fuel_price_per_l = 7;
+   */
+  fuelPricePerL: number;
+
+  /**
+   * @generated from field: bool has_fuel_price_per_l = 8;
+   */
+  hasFuelPricePerL: boolean;
+
+  /**
+   * @generated from field: double fuel_tank_capacity_l = 9;
+   */
+  fuelTankCapacityL: number;
+
+  /**
+   * @generated from field: bool has_fuel_tank_capacity_l = 10;
+   */
+  hasFuelTankCapacityL: boolean;
 };
 
 /**

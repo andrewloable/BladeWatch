@@ -75,43 +75,12 @@
     <span class="metric-sub">{{ 'dashboard.open_vehicle_page' | translate }}</span>
   </a>
 
-  <!-- ===================== Connect card ===================== -->
-  <section class="card connect-card">
-    <div class="section-title">{{ 'dashboard.connect' | translate }}</div>
-
-    <div class="connect-body">
-      <div class="qr-box">
-        @if (qrDataUrl()) {
-          <img class="qr-img" [src]="qrDataUrl()" [alt]="'dashboard.qr_alt' | translate" />
-        } @else {
-          <div class="qr-placeholder">{{ 'dashboard.no_url' | translate }}</div>
-        }
-      </div>
-
-      <div class="connect-info">
-        <div class="info-row">
-          <span class="info-label">{{ 'dashboard.share_link' | translate }}</span>
-          <button type="button" class="info-value link" (click)="copyUrl()" [title]="tunnelUrl()">
-            {{ tunnelUrl() || '—' }}
-          </button>
-        </div>
-        <div class="info-row">
-          <span class="info-label">{{ 'dashboard.device_id' | translate }}</span>
-          <button type="button" class="info-value mono" (click)="copyDeviceId()" [title]="deviceId()">
-            {{ deviceId() || '—' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    @if (statusMsg()) {
-      <div class="connect-toast">{{ statusMsg() }}</div>
-    }
-
-    <p class="connect-note">
-      {{ 'dashboard.connect_note' | translate }}
-    </p>
-  </section>
+  <!-- The Connect card lives ONLY in the in-car Flutter dashboard now.
+       It showed the tunnel URL, its QR code and the device id — which is exactly the
+       information you already have if you are reading this page, because you reached it
+       THROUGH that tunnel. Worse, it put the car's onion address on a page served over
+       that same address, so anyone shoulder-surfing a remote session could copy a
+       capability URL that never expires. Pairing is an at-the-car action; keep it there. -->
 </div>
 
 <!-- ===================== Battery-capacity dialog ===================== -->

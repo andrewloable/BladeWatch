@@ -6,9 +6,10 @@ import 'trip_detail_screen.dart';
 import 'trips_controller.dart';
 import 'trips_models.dart';
 import '../../widgets/bw_choice_chip.dart';
+import 'package:bladewatch_ui/util/currency.dart';
 
 /// Ground truth: `TripsController.kt` (852 LOC) + `TripsFragment.kt`. Native
-/// puts its 3-tab bar at the *bottom* of the screen, content above it —
+/// puts its tab bar at the *bottom* of the screen, content above it —
 /// preserved as-is, not "fixed" to a top tab bar.
 class TripsScreen extends StatefulWidget {
   final TripsController controller;
@@ -88,11 +89,6 @@ class _TripsScreenState extends State<TripsScreen> {
         return switch (c.activeTab) {
           TripsTab.trips => _TripsTab(state: c.state as TripsLoaded, onSelectTrip: c.openDetail, onSelectFilter: c.selectFilter, activeFilter: c.activeFilter),
           TripsTab.stats => _StatsTab(state: c.state as TripsLoaded),
-          TripsTab.storage => _StorageTab(
-              key: ValueKey('trips.storage.${(c.state as TripsLoaded).config?.distanceUnit}.${(c.state as TripsLoaded).storage?.storageType}'),
-              state: c.state as TripsLoaded,
-              controller: c,
-            ),
         };
     }
   }
@@ -111,7 +107,6 @@ class _TabBar extends StatelessWidget {
     final tabs = [
       (TripsTab.trips, l10n.trips_tab_trips, 'trips.tab.trips'),
       (TripsTab.stats, l10n.trips_tab_stats, 'trips.tab.stats'),
-      (TripsTab.storage, l10n.trips_tab_storage, 'trips.tab.storage'),
     ];
     return ColoredBox(
       color: theme.colorScheme.surfaceContainer,
@@ -295,7 +290,7 @@ class _TripRow extends StatelessWidget {
               Row(children: [
                 Expanded(child: Text('$dist  ·  ${trip.formattedDuration}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
                 if (trip.tripCost > 0 && trip.currency.isNotEmpty)
-                  Text('${trip.currency} ${trip.tripCost.toStringAsFixed(2)}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(Currency.format(trip.tripCost, trip.currency), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ]),
             ],
           ),
@@ -360,6 +355,27 @@ class _StatsTab extends StatelessWidget {
                           style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
               ] else
                 Center(child: Text(l10n.trips_range_no_data, style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
+              // PHEV fuel range, reported SEPARATELY and never summed into the electric
+              // figure above: the two are drawn from different tanks with different
+              // confidence, and one number would hide which is about to run out.
+              //
+              // Hidden entirely unless it could be computed. The daemon returns -1 when no
+              // tank capacity is configured, because BYD exposes no tank size and a guessed
+              // range on a dashboard is worse than a blank one — the driver acts on it.
+              if (range != null && range.fuelRangeKm > 0) ...[
+                const SizedBox(height: 12),
+                Center(
+                    child: Text(
+                        l10n.trips_range_fuel(
+                            formatDistance(range.fuelRangeKm, distanceUnit, decimals: 0)),
+                        style: theme.textTheme.titleMedium)),
+                if (range.builtInFuelRangeKm > 0)
+                  Center(
+                      child: Text(
+                          l10n.trips_range_byd_estimate(
+                              formatDistance(range.builtInFuelRangeKm, distanceUnit, decimals: 0)),
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
+              ],
             ]),
           ),
         ),
@@ -415,196 +431,3 @@ class _ScoreBar extends StatelessWidget {
   }
 }
 
-class _StorageTab extends StatefulWidget {
-  final TripsLoaded state;
-  final TripsController controller;
-
-  const _StorageTab({super.key, required this.state, required this.controller});
-
-  @override
-  State<_StorageTab> createState() => _StorageTabState();
-}
-
-class _StorageTabState extends State<_StorageTab> {
-  late bool _analyticsEnabled;
-  late final TextEditingController _currencyController;
-  late final TextEditingController _rateController;
-  late String _distanceUnit;
-  late String _storageType;
-
-  @override
-  void initState() {
-    super.initState();
-    final cfg = widget.state.config;
-    final storage = widget.state.storage;
-    _analyticsEnabled = cfg?.enabled ?? false;
-    _currencyController = TextEditingController(text: cfg?.currency ?? 'USD');
-    _rateController = TextEditingController(text: (cfg?.electricityRate ?? 0.0).toStringAsFixed(4));
-    _distanceUnit = cfg?.distanceUnit ?? 'km';
-    _storageType = storage?.storageType ?? 'INTERNAL';
-  }
-
-  @override
-  void dispose() {
-    _currencyController.dispose();
-    _rateController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _apply() async {
-    final rate = double.tryParse(_rateController.text) ?? 0.0;
-    final ok = await widget.controller.applyStorageChanges(
-      enabled: _analyticsEnabled,
-      rate: rate,
-      currency: _currencyController.text,
-      distanceUnit: _distanceUnit,
-      storageType: _storageType,
-    );
-    if (!mounted) return;
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.toast_failed_to_save_short)));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final storage = widget.state.storage;
-    final sdAvailable = storage?.sdCardAvailable ?? false;
-
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        Card(
-          color: theme.colorScheme.surfaceContainer,
-          elevation: 0,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.trips_storage_title, style: theme.textTheme.labelLarge),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  key: const ValueKey('trips.storage.analytics'),
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.trips_storage_analytics_label),
-                  value: _analyticsEnabled,
-                  onChanged: (v) => setState(() => _analyticsEnabled = v),
-                ),
-                const SizedBox(height: 8),
-                Text(l10n.trips_storage_rate_label, style: theme.textTheme.labelMedium),
-                const SizedBox(height: 4),
-                Row(children: [
-                  SizedBox(
-                    width: 80,
-                    child: TextField(key: const ValueKey('trips.storage.currency'), controller: _currencyController, decoration: const InputDecoration(isDense: true)),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      key: const ValueKey('trips.storage.rate'),
-                      controller: _rateController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(isDense: true),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 12),
-                Text(l10n.trips_storage_distance_unit_label, style: theme.textTheme.labelMedium),
-                const SizedBox(height: 4),
-                Row(children: [
-                  BwChoiceChip(key: const ValueKey('trips.storage.unit.km'), label: const Text('km'), selected: _distanceUnit == 'km', onSelected: (_) => setState(() => _distanceUnit = 'km')),
-                  const SizedBox(width: 8),
-                  BwChoiceChip(key: const ValueKey('trips.storage.unit.mi'), label: const Text('mi'), selected: _distanceUnit == 'mi', onSelected: (_) => setState(() => _distanceUnit = 'mi')),
-                ]),
-                const SizedBox(height: 12),
-                Text(l10n.trips_storage_location_label, style: theme.textTheme.labelMedium),
-                const SizedBox(height: 4),
-                Row(children: [
-                  BwChoiceChip(
-                    key: const ValueKey('trips.storage.location.internal'),
-                    label: Text(l10n.trips_storage_internal),
-                    selected: _storageType == 'INTERNAL',
-                    onSelected: (_) => setState(() => _storageType = 'INTERNAL'),
-                  ),
-                  const SizedBox(width: 8),
-                  BwChoiceChip(
-                    key: const ValueKey('trips.storage.location.sdCard'),
-                    label: Text(sdAvailable ? l10n.trips_storage_sd_card : l10n.trips_storage_sd_card_unavailable),
-                    selected: _storageType == 'SD_CARD',
-                    onSelected: sdAvailable ? (_) => setState(() => _storageType = 'SD_CARD') : null,
-                  ),
-                ]),
-                if (storage != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.trips_storage_usage_line(storage.usedMb.toString(), storage.usedUnit, storage.limitMb.toString(), storage.tripsCount),
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
-                  ),
-                  if (storage.storagePath.isNotEmpty) Text(storage.storagePath, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
-                ],
-                const SizedBox(height: 12),
-                FilledButton(key: const ValueKey('trips.storage.apply'), onPressed: _apply, child: Text(l10n.trips_storage_apply)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _SyncCard(controller: widget.controller),
-      ],
-    );
-  }
-}
-
-class _SyncCard extends StatelessWidget {
-  final TripsController controller;
-  const _SyncCard({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
-    return Card(
-      key: const ValueKey('trips.syncCard'),
-      color: theme.colorScheme.surfaceContainer,
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.trips_sync_title, style: theme.textTheme.labelLarge),
-            const SizedBox(height: 6),
-            Text(l10n.trips_sync_description, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-            const SizedBox(height: 12),
-            if (controller.syncResult != null) ...[
-              Text(
-                controller.syncResult!.success
-                    ? l10n.trips_sync_success(controller.syncResult!.added, controller.syncResult!.removed, controller.syncResult!.total)
-                    : controller.syncResult!.error ?? l10n.trips_sync_failed_generic,
-                style: TextStyle(color: controller.syncResult!.success ? theme.colorScheme.primary : theme.colorScheme.error),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: TextButton(
-                  key: const ValueKey('trips.sync.dismiss'),
-                  onPressed: controller.dismissSyncResult,
-                  child: Text(l10n.settings_recording_dismiss),
-                ),
-              ),
-            ] else if (controller.syncRunning)
-              Center(key: const ValueKey('trips.sync.running'), child: Text(l10n.trips_sync_running))
-            else
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(key: const ValueKey('trips.sync.button'), onPressed: controller.syncDatabase, child: Text(l10n.trips_sync_button)),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}

@@ -1,6 +1,6 @@
 # Data Flow and Storage
 
-BladeWatch coordinates data across the Android app process, shell-launched Java daemons, native camera code, web assets, the Zrok tunnel binary, and BYD local sources. Most cross-process state is intentionally stored in files under `/data/local/tmp`.
+BladeWatch coordinates data across the Android app process, shell-launched Java daemons, native camera code, web assets, the Tor tunnel binary, and BYD local sources. Most cross-process state is intentionally stored in files under `/data/local/tmp`.
 
 ## Primary Data Flows
 
@@ -129,6 +129,111 @@ Legacy configs may be migrated from:
 - `/data/local/tmp/camera_settings.json`.
 - `/data/data/com.android.providers.settings/sentry_config.json`.
 
+#### `tripAnalytics` keys
+
+| Key | Default | Meaning |
+|---|---|---|
+| `enabled` | `true` | Always forced true; there is no user-facing off switch |
+| `electricityRate` | `0` | Cost per kWh; 0 means not configured |
+| `fuelPricePerL` | `0` | Cost per litre; 0 means not configured |
+| `fuelTankCapacityL` | `0` | Tank size in litres; 0 means no fuel range can be predicted |
+| `currency` | `""` | ISO 4217 code, shared by both rates — one car, one wallet |
+| `distanceUnit` | `"km"` | `"km"` or `"mi"` |
+
+A `0` in either price means "not configured", not "free": the leg is still recorded, it
+is simply not costed. `fuelTankCapacityL` has no default value because BYD local data
+does not expose a tank size and one must not be guessed.
+
+#### Currency
+
+`currency` stores an **ISO 4217 code** ("USD", "PHP"). Both settings UIs pick it from a
+generated catalogue rather than accepting free text.
+
+**No symbol table is shipped.** Symbols, their placement, the spacing around them and the
+number of decimal digits vary by currency *and* by locale — JPY has no minor unit, many
+European locales put the symbol after the amount. Each platform formats from its own ICU
+data instead: `Intl.NumberFormat` on the web, `NumberFormat.simpleCurrency` (via `intl`) in
+the Flutter UI.
+
+**Legacy free text still works.** Configs predating the picker hold a bare symbol such as
+`$`, and trips already priced in one must not change appearance. Both renderers apply the
+same rule: a value shaped like an ISO code (exactly three letters) is formatted through ICU;
+anything else falls back to the original rendering — the stored string, a space, then the
+amount to two decimals. `TripConfig.setCurrency` mirrors that shape test, upper-casing
+code-shaped input so "php" and "PHP" cannot become two stored values, and storing anything
+else unchanged.
+
+The daemon deliberately does **not** carry the 162-code list. Its job is to reject garbage,
+not to be the ISO authority: the picker constrains the choice, and "exactly three letters"
+is a complete structural rule with no table to keep in sync.
+
+**There is no currency conversion, by design.** A trip is costed in the currency it was paid
+in, and `TripRecord.currency` is snapshotted at cost time so history stays truthful. There is
+no exchange-rate source and none is wanted — converting historical costs at today's rate
+would misreport what the owner actually spent.
+
+**The code list is generated, not hand-maintained.** `tools/gen-currencies.mjs` derives it
+from ICU via `Intl.supportedValuesOf('currency')` and writes a byte-identical copy to
+`web/src/assets/iso4217.json` and `flutter_ui/assets/iso4217.json`. Regenerate with:
+
+```bash
+node tools/gen-currencies.mjs
+```
+
+`validateCurrencyCatalog` (wired into `preBuild`, like `validateI18nCatalogs`) fails the
+build if the two copies drift, if the list is truncated, if it is unsorted, or if a common
+currency is missing. Shipped code never calls `Intl.supportedValuesOf` — it is ES2022 and
+the head unit's Android 10 WebView cannot be relied on to have it.
+
+### Trip database columns
+
+The trips table gained ten columns for the PHEV fuel leg and metered energy:
+
+| Column | Default | Meaning |
+|---|---|---|
+| `fuel_pct_start` / `fuel_pct_end` | `-1` | Tank level %, 0-100 |
+| `fuel_con_start` / `fuel_con_end` | `-1` | Lifetime fuel counter, litres |
+| `elec_con_start` / `elec_con_end` | `-1` | Lifetime electricity counter, kWh |
+| `litres_used` | `0` | Litres burned this trip (counter delta) |
+| `fuel_price_per_l` | `0` | Price snapshot at trip end |
+| `fuel_cost` | `0` | `litres_used * fuel_price_per_l` |
+| `electric_cost` | `0` | Electric leg cost |
+
+**The defaults are deliberately not uniform.** The six OBSERVED counters default to
+`-1`, meaning "never read". `0` is a legitimate measurement — an empty tank, a PHEV leg
+driven entirely on electricity, a fresh lifetime counter — and the two must never be
+collapsed. Defaulting the counters to `0` would make every historical BEV trip claim a
+full set of real fuel readings that all happen to be zero. The four COMPUTED columns do
+default to `0`, because they are sums: nothing measured is nothing spent.
+
+These ten are `DOUBLE PRECISION` while their older neighbours are `REAL`. That is not an
+inconsistency for its own sake: H2's `REAL` is 32-bit, and these are lifetime counters
+whose value is only ever used as a small difference of two large numbers. At a
+100,000 kWh counter, float32 resolution is about 0.008 kWh, which would quantise a
+0.4 kWh short trip by roughly 2% — and the short trip is precisely what the metered
+energy tier exists to measure.
+
+Migration is additive (`ADD COLUMN IF NOT EXISTS`) and the columns are appended after
+`route_id`, so no pre-existing prepared-statement parameter position shifts. A database
+written before these columns existed opens unchanged, with the counters reading `-1`.
+
+### Energy accounting
+
+`TripRecord.getEnergyUsedKwh()` resolves in two tiers, in this order:
+
+1. **Net remaining-energy delta** (`kwhStart - kwhEnd`). Wins whenever it can answer,
+   because it is net of regeneration — the quantity a cost must be based on, since you
+   only buy back the energy the pack actually ended up short. A pack that ended fuller
+   than it started returns `0`, never a negative.
+2. **Gross lifetime counter** (`elecConEnd - elecConStart`). Used only when tier 1 cannot
+   answer — notably when the two readings are EQUAL. Remaining energy is derived from a
+   1%-resolution SoC (~0.6 kWh, several km of driving), so on a short trip it reports a
+   flat 0 while the accumulator has still advanced. Equal is "below this channel's
+   resolution", not "consumed nothing".
+
+`energyPerKm` stays electric-only kWh/km. Litres are never folded into it, or every
+stored efficiency figure would change meaning and historical comparison would break.
+
 ### Secret Store
 
 Main secret path:
@@ -245,14 +350,24 @@ GPU kernel cache:
 
 ## Tunnel Runtime Files
 
-Zrok:
+Tor onion service:
 
 ```text
-/data/local/tmp/zrok
-/data/local/tmp/zrok.log
-/data/local/tmp/.zrok/environment.json
-/data/local/tmp/.zrok/unique_name
+/data/local/tmp/bladewatch_tor    the binary, installed under its own process name
+/data/local/tmp/tor/torrc         generated config, rewritten on every launch
+/data/local/tmp/tor/data          consensus cache (safe to delete; costs a slow start)
+/data/local/tmp/tor/hs            hidden-service directory — see the warning below
+/data/local/tmp/tor/hs/hostname   the onion address, mode 600, shell-owned
+/data/local/tmp/tor.log           notice log
 ```
+
+**`hs/hs_ed25519_secret_key` is a SECRET and it is permanent.** It is the private key the
+car's onion address is derived from, so it belongs in the same category as the entries in
+`bladewatch_secrets.json`: never logged, never copied to shared storage, never returned
+over IPC, never committed. It differs from those in one important way — it cannot be
+rotated harmlessly. Deleting it mints a new address on the next start and silently breaks
+every QR code the owner has ever scanned, so the tunnel is stopped by killing the process,
+never by deleting its directory.
 
 ## Auth Data Flow
 
@@ -375,5 +490,5 @@ Notification APIs expose categories, push subscription management, preferences, 
 - Format storage API: [FormatStorageApiHandler.java:27](../app/src/main/java/com/loabletech/bladewatch/server/FormatStorageApiHandler.java#L27), [storage.proto:20](../proto/bladewatch/v1/storage.proto#L20).
 - Media catalog and sync: [MediaCatalogManager.java:26](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L26), [MediaCatalogManager.java:81](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L81), [MediaCatalogManager.java:130](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L130), [RecordingsApiHandler.java:185](../app/src/main/java/com/loabletech/bladewatch/server/RecordingsApiHandler.java#L185).
 - Trip database and sync: [TripDatabase.java:19](../app/src/main/java/com/loabletech/bladewatch/trips/TripDatabase.java#L19), [TripDatabase.java:30](../app/src/main/java/com/loabletech/bladewatch/trips/TripDatabase.java#L30).
-- Runtime assets and tunnel files: [build.gradle.kts:226](../app/build.gradle.kts#L226), [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [ZrokLauncher.kt:27](../app/src/main/java/com/loabletech/bladewatch/launcher/ZrokLauncher.kt#L27).
+- Runtime assets and tunnel files: [build.gradle.kts:226](../app/build.gradle.kts#L226), [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [TorLauncher.kt:92](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L92).
 - Trips and notifications: [TripDetector.java:27](../app/src/main/java/com/loabletech/bladewatch/trips/TripDetector.java#L27), [TripAnalyticsManager.java:23](../app/src/main/java/com/loabletech/bladewatch/trips/TripAnalyticsManager.java#L23), [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [NotificationApiHandler.java:31](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L31).

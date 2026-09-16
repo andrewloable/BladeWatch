@@ -9,6 +9,7 @@ import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/settings/settings_appearance_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_daemons_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_overlay_screen.dart';
@@ -16,6 +17,7 @@ import 'package:bladewatch_ui/screens/settings/settings_privacy_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_appearance_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_screen.dart';
+import 'package:bladewatch_ui/screens/trips/trips_controller.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_screen.dart';
 import 'package:bladewatch_ui/shell/shell_controller.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
@@ -51,7 +53,7 @@ void main() {
     channel.stub('publicConfig', 'getSection', <Object?, Object?>{});
     channel.stub('publicConfig', 'putBoolean', true);
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
     });
     rpc.stubJson('SystemService', 'GetStatus', {'recordingStatus': {}});
     rpc.stubJson('RecordingsService', 'GetStats', {'stats': {}});
@@ -77,6 +79,8 @@ void main() {
         surveillanceService: SurveillanceServiceClient(rpc),
         longSurveillanceService: SurveillanceServiceClient(rpc),
         safeLocationsService: SafeLocationsServiceClient(rpc),
+        tripsController: TripsController(
+            tripsService: TripsServiceClient(rpc), longTripsService: TripsServiceClient(rpc)),
         daemonChannel: DaemonChannel(channel),
         configChannel: ConfigChannel(channel),
         publicConfigChannel: PublicConfigChannel(channel),

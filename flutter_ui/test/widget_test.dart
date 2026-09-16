@@ -65,7 +65,7 @@ void main() {
           'CAMERA_DAEMON': true,
           'SENTRY_DAEMON': true,
           'ACC_SENTRY_DAEMON': true,
-          'ZROK_TUNNEL': true,
+          'TOR_TUNNEL': true,
         },
       });
     final startupController = StartupController(

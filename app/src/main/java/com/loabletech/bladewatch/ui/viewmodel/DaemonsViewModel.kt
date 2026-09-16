@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import net.bladewatch.app.launcher.AdbDaemonLauncher
+import net.bladewatch.app.launcher.TorLauncher
 import net.bladewatch.app.logging.LogManager
 import net.bladewatch.app.ui.daemon.*
 import net.bladewatch.app.ui.model.DaemonState
@@ -27,8 +28,8 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
     private val daemonStatesLock = Any()
     private var daemonStatesSnapshot: Map<DaemonType, DaemonState> = emptyMap()
     
-    // Expose zrok controller for tunnel URL access
-    val zrokController: ZrokController
+    // Expose the tunnel controller for tunnel URL access
+    val torController: TorController
 
     // Expose camera daemon controller for startup manager
     val cameraDaemonController: CameraDaemonController
@@ -45,14 +46,14 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
     }
     
     init {
-        zrokController = ZrokController(app, adbLauncher)
+        torController = TorController(app, adbLauncher)
         cameraDaemonController = CameraDaemonController(app, adbLauncher)
 
         controllers = mapOf(
             DaemonType.CAMERA_DAEMON to cameraDaemonController,
             DaemonType.SENTRY_DAEMON to SentryDaemonController(adbLauncher),
             DaemonType.ACC_SENTRY_DAEMON to AccSentryDaemonController(adbLauncher),
-            DaemonType.ZROK_TUNNEL to zrokController
+            DaemonType.TOR_TUNNEL to torController
         )
         
         // Initialize all states as stopped
@@ -70,7 +71,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(object : Runnable {
             override fun run() {
                 // Only refresh tunnel statuses periodically
-                refreshDaemonStatus(DaemonType.ZROK_TUNNEL)
+                refreshDaemonStatus(DaemonType.TOR_TUNNEL)
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 30000)
             }
         }, 30000)
@@ -131,24 +132,8 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
     fun refreshDaemonStatus(type: DaemonType, logResult: Boolean = false) {
         val controller = controllers[type] ?: return
         
-        // Special handling for Zrok - check token first
-        if (type == DaemonType.ZROK_TUNNEL) {
-            zrokController.hasEnableToken { hasToken ->
-                if (!hasToken) {
-                    // No token configured - show needs config state
-                    updateZrokNeedsConfig("No token configured. Tap to set up.")
-                    if (logResult) {
-                        LogManager.getInstance().debug("Daemons", "${type.name}: No token configured")
-                    }
-                    return@hasEnableToken
-                }
-                
-                // Token exists, proceed with normal status check
-                doRefreshDaemonStatus(type, controller, logResult)
-            }
-            return
-        }
-
+        // No special case for the tunnel any more: the previous one needed an enable
+        // token checked before every status read, Tor needs no account at all.
         doRefreshDaemonStatus(type, controller, logResult)
     }
     
@@ -171,9 +156,9 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
                             SubprocessInfo(p.name, p.pid, p.uptime)
                         }
                         
-                        // For zrok, also fetch the tunnel URL
-                        if (type == DaemonType.ZROK_TUNNEL) {
-                            zrokController.refreshTunnelUrl { url ->
+                        // For the tunnel, also fetch its URL
+                        if (type == DaemonType.TOR_TUNNEL) {
+                            torController.refreshTunnelUrl { url ->
                                 val statusText = url ?: "Running"
                                 updateStateWithSubprocesses(type, DaemonStatus.RUNNING, statusText, uptime, subprocesses)
                                 if (logResult) {
@@ -210,7 +195,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
             DaemonType.CAMERA_DAEMON -> "byd_cam_daemon"
             DaemonType.SENTRY_DAEMON -> "sentry_daemon"
             DaemonType.ACC_SENTRY_DAEMON -> "acc_sentry_daemon"
-            DaemonType.ZROK_TUNNEL -> "zrok share"
+            DaemonType.TOR_TUNNEL -> TorLauncher.TOR_PROCESS
         }
     }
     
@@ -219,7 +204,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
             DaemonType.CAMERA_DAEMON -> listOf("byd_cam_daemon", "ffmpeg", "mediamtx")
             DaemonType.SENTRY_DAEMON -> listOf("sentry_daemon")
             DaemonType.ACC_SENTRY_DAEMON -> listOf("acc_sentry_daemon")
-            DaemonType.ZROK_TUNNEL -> listOf("zrok")
+            DaemonType.TOR_TUNNEL -> listOf(TorLauncher.TOR_PROCESS)
         }
     }
     
@@ -262,13 +247,6 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
         daemonStatesSnapshot[type]
     }
     
-    /**
-     * Update Zrok state to indicate configuration is needed.
-     */
-    fun updateZrokNeedsConfig(message: String) {
-        updateDaemonState(DaemonType.ZROK_TUNNEL, DaemonState.needsConfig(DaemonType.ZROK_TUNNEL, message))
-    }
-
     private fun updateDaemonState(type: DaemonType, state: DaemonState) {
         val updatedStates = synchronized(daemonStatesLock) {
             val currentStates = daemonStatesSnapshot.toMutableMap()

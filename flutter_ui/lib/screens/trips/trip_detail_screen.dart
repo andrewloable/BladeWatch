@@ -8,6 +8,7 @@ import '../../gen/l10n/app_localizations.dart';
 import 'trip_detail_controller.dart';
 import 'trip_route.dart';
 import 'trips_models.dart';
+import 'package:bladewatch_ui/util/currency.dart';
 
 /// Ground truth: `TripDetailController.kt` (457 LOC), including its route map
 /// — see [_RouteCard]. The map was deferred when this screen was first ported
@@ -224,7 +225,7 @@ class _SummaryCard extends StatelessWidget {
     final avgSpd = formatSpeed(trip.avgSpeedKmh, distanceUnit);
     final maxSpd = formatSpeed(trip.maxSpeedKmh, distanceUnit);
     final energyStr = trip.energyUsedKwh > 0 ? '${trip.energyUsedKwh.toStringAsFixed(1)} kWh' : '--';
-    final costStr = trip.tripCost > 0 && trip.currency.isNotEmpty ? '${trip.currency} ${trip.tripCost.toStringAsFixed(2)}' : '--';
+    final costStr = trip.tripCost > 0 && trip.currency.isNotEmpty ? Currency.format(trip.tripCost, trip.currency) : '--';
     final socStr = '${trip.socStart.toStringAsFixed(0)} → ${trip.socEnd.toStringAsFixed(0)}%';
     final tempStr = trip.extTempC != 0.0 ? '${trip.extTempC.toStringAsFixed(0)}°C' : '--';
     final elevStr = trip.elevationGainM > 0 ? '+${trip.elevationGainM.toStringAsFixed(0)}m' : '--';
@@ -239,6 +240,17 @@ class _SummaryCard extends StatelessWidget {
       (l10n.trips_detail_cost, costStr),
       (l10n.trips_detail_ext_temp, tempStr),
       (l10n.trips_detail_elev_gain, elevStr),
+      // PHEV fuel leg. Appended only when the trip actually recorded the fuel counter, so a
+      // BEV shows exactly the nine cells it always has rather than three permanent zeroes.
+      //
+      // The cost cell above stays the TOTAL. These two are its halves and sum to it; without
+      // them the driver can see what a trip cost but not which tank the money came out of,
+      // which on a car that runs both is the whole question.
+      if (trip.hasFuelData) ...[
+        (l10n.trips_detail_fuel_used, '${trip.litresUsed.toStringAsFixed(1)} L'),
+        (l10n.trips_detail_fuel_cost, Currency.format(trip.fuelCost, trip.currency)),
+        (l10n.trips_detail_electric_cost, Currency.format(trip.electricCost, trip.currency)),
+      ],
     ];
 
     return Card(

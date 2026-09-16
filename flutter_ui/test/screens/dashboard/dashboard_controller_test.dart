@@ -11,17 +11,21 @@ import '../../fakes/fake_platform_channel.dart';
 import '../../fakes/fake_rpc_client.dart';
 
 void main() {
+  // Obviously fake. Never put a real onion address in a fixture: it is a capability
+  // granting network access to a real car.
+  const onion = 'http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion';
+
   late FakeRpcClient rpc;
   late FakePlatformChannel channel;
 
-  DashboardController buildController({Future<String?> Function()? tunnelUrlSource}) {
+  DashboardController buildController({Future<TunnelStatus> Function()? tunnelStatusSource}) {
     return DashboardController(
       tripsService: TripsServiceClient(rpc),
       recordingsService: RecordingsServiceClient(rpc),
       systemService: SystemServiceClient(rpc),
       daemonChannel: DaemonChannel(channel),
       authChannel: AuthChannel(channel),
-      tunnelUrlSource: tunnelUrlSource ?? () async => null,
+      tunnelStatusSource: tunnelStatusSource ?? () async => const TunnelStatus(running: false),
     );
   }
 
@@ -39,7 +43,7 @@ void main() {
     rpc.stubJson('SystemService', 'GetSelectedModel', {'modelId': 'seal'});
     channel.stub('daemon', 'processStatus', {
       'status': 'ok',
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
     });
     channel.stub('auth', 'getAccessCode', 'shh-fake-secret');
   }
@@ -94,7 +98,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
       });
       channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
@@ -113,7 +117,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
       });
       channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
@@ -125,7 +129,7 @@ void main() {
     });
   });
 
-  test('the true default tunnelUrlSource (no constructor argument) reports no tunnel', () async {
+  test('the true default tunnel source (no constructor argument) reports no tunnel', () async {
     stubHappyPath();
     final c = DashboardController(
       tripsService: TripsServiceClient(rpc),
@@ -176,7 +180,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
       });
       channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
@@ -196,7 +200,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
       });
       channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
@@ -223,7 +227,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
       });
       channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
@@ -241,7 +245,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
       });
       channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
@@ -306,7 +310,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
       });
       channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
@@ -335,17 +339,30 @@ void main() {
       expect(c.tunnel.url, isNull);
     });
 
-    test('reports online when the injected tunnelUrlSource returns a URL', () async {
+    test('reports online when the tunnel is running and has published an address', () async {
       stubHappyPath();
-      final c = buildController(tunnelUrlSource: () async => 'https://example.zrok.io');
+      final c = buildController(
+          tunnelStatusSource: () async => const TunnelStatus(running: true, url: onion));
       await c.refresh();
       expect(c.tunnel.phase, TunnelPhase.online);
-      expect(c.tunnel.url, 'https://example.zrok.io');
+      expect(c.tunnel.url, onion);
     });
 
-    test('a tunnelUrlSource that throws resolves to offline rather than crashing refresh()', () async {
+    test('reports CONNECTING while tor is up but has not bootstrapped', () async {
+      // The ~82 s cold-start window. Rendering this as "offline" would tell the user
+      // there is no tunnel while one is actively coming up; rendering it as "online"
+      // would show a QR code for a service nothing can reach yet.
       stubHappyPath();
-      final c = buildController(tunnelUrlSource: () async => throw Exception('boom'));
+      final c = buildController(
+          tunnelStatusSource: () async => const TunnelStatus(running: true));
+      await c.refresh();
+      expect(c.tunnel.phase, TunnelPhase.connecting);
+      expect(c.tunnel.url, isNull);
+    });
+
+    test('a tunnel source that throws resolves to offline rather than crashing refresh()', () async {
+      stubHappyPath();
+      final c = buildController(tunnelStatusSource: () async => throw Exception('boom'));
       await c.refresh();
       expect(c.tunnel.phase, TunnelPhase.offline);
       expect(c.tunnel.url, isNull);
@@ -456,7 +473,7 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'ZROK_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
       });
       channel.stubError(
         'auth',

@@ -6,6 +6,7 @@ import { ConnectClients } from '../../core/connect/connect-clients';
 import type { GetStorageSettingsResponse } from '../../../gen/bladewatch/v1/storage_pb';
 import type { SafeZone } from '../../../gen/bladewatch/v1/safe_locations_pb';
 import type { PreviewCleanupResponse } from '../../../gen/bladewatch/v1/storage_pb';
+import { formatBytes, formatMb } from '../../util/format';
 
 type SectionId = 'appearance' | 'recording' | 'surveillance' | 'overlay' | 'privacy';
 type ThemeMode = 'auto' | 'light' | 'dark';
@@ -264,9 +265,8 @@ export default class SettingsComponent implements OnInit {
     return Math.max(totalMb > 0 ? totalMb : daemonMax, this.recLimitMin() + 100);
   };
 
-  formatMb(mb: number): string {
-    return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb} MB`;
-  }
+  /** Delegates to the tested util; kept as a method so templates can call it. */
+  formatMb = formatMb;
 
   async saveStorage(): Promise<void> {
     this.saving.set(true);
@@ -514,14 +514,6 @@ export default class SettingsComponent implements OnInit {
     }
   }
 
-  formatBytes(value: number | bigint): string {
-    const bytes = Number(value);
-    if (!bytes || bytes < 0) return '0 B';
-    if (bytes < 1024) return `${bytes} B`;
-    const kb = bytes / 1024;
-    if (kb < 1024) return `${kb.toFixed(1)} KB`;
-    const mb = kb / 1024;
-    if (mb < 1024) return `${mb.toFixed(1)} MB`;
-    return `${(mb / 1024).toFixed(2)} GB`;
-  }
+  /** Delegates to the tested util; kept as a method so templates can call it. */
+  formatBytes = formatBytes;
 }

@@ -1,4 +1,4 @@
-@import '../../shared/page-shared';
+@use '../../shared/page-shared';
 // NOTE: leaflet/dist/leaflet.css is imported as a side-effect in
 // location.component.ts (Vite resolves it). Sass cannot resolve that bare
 // node_modules path here, so it must NOT be @imported in this file.

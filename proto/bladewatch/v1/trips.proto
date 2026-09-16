@@ -62,6 +62,23 @@ message TripSummary {
   double end_lat = 18;
   double end_lon = 19;
   int32 ext_temp_c = 20;
+
+  // PHEV fuel leg (BladeWatch-fpdz). New field numbers only -- 1-20 keep their meaning, so
+  // an older client parses this message unchanged.
+  //
+  // Derived values only: a list row shows what the fuel leg COST, never the lifetime
+  // counters it was derived from. Handing a client raw counters invites it to compute its
+  // own delta, which then disagrees with the daemon the moment a counter resets.
+  //
+  // On a BEV these are all 0, which is also proto3's default -- there is no "absent" here,
+  // and has_fuel_data below is what distinguishes a BEV from a PHEV that burned nothing.
+  double litres_used = 21;
+  double fuel_cost = 22;
+  double electric_cost = 23;
+  // True when this trip recorded both ends of the fuel counter. Derived from the STORED
+  // trip, not a live drivetrain probe, so a historical trip renders the same way on a car
+  // whose drivetrain reads differently today.
+  bool has_fuel_data = 24;
 }
 
 // TripDetail extends TripSummary with Driving DNA scores and micro-moments.
@@ -77,6 +94,16 @@ message TripDetail {
   double avg_gradient_percent = 9;
   // Raw micro-moments JSON blob.
   string micro_moments_json = 10;
+
+  // PHEV fuel leg detail (BladeWatch-fpdz). The raw lifetime counters live here, in the
+  // detail view only. -1 means the reading was never taken; 0 is a real measurement.
+  double fuel_pct_start = 11;
+  double fuel_pct_end = 12;
+  double fuel_con_start = 13;
+  double fuel_con_end = 14;
+  double fuel_price_per_l = 15;
+  double elec_con_start = 16;
+  double elec_con_end = 17;
 }
 
 // DnaScores holds the five Driving DNA axes.
@@ -107,6 +134,26 @@ message TripConfig {
   double electricity_rate = 2;
   string currency = 3;
   string distance_unit = 4;
+  // Cost per litre for the PHEV fuel leg. 0 means not configured, so the leg is recorded
+  // but not costed. The currency above is shared with the electricity rate.
+  double fuel_price_per_l = 5;
+  // Fuel tank capacity in litres. 0 means not configured, and there is no default: BYD
+  // local data exposes no tank size, so without this the fuel RANGE simply cannot be
+  // computed. A guessed capacity would put a wrong range on the dashboard, which is worse
+  // than a blank one because the driver acts on it.
+  double fuel_tank_capacity_l = 6;
+
+  // Whether this vehicle has a fuel system at all.
+  //
+  // NOT a stored setting — a live read of the drivetrain, carried on the config message
+  // because the config screen is the one place that needs it. The two fuel settings above are
+  // meaningless on a BEV, and a UI that shows "Fuel Price (per litre)" to an owner whose car
+  // has no tank reads as a bug in the app.
+  //
+  // Clients must NOT treat false as "hide unconditionally": a value already configured has to
+  // stay visible so it can be cleared, and the drivetrain probe can read false while the HAL
+  // is warming up. See the gating rule in the web and Flutter trips settings.
+  bool is_phev = 7;
 }
 
 // TripStorageInfo reports trips storage usage and limits.
@@ -210,6 +257,18 @@ message SetConfigRequest {
   bool has_electricity_rate = 4;
   string currency = 5;
   string distance_unit = 6;
+
+  // PHEV pricing (BladeWatch-9uu6). New field numbers only, so a client built against the
+  // old schema still parses this message.
+  //
+  // Each value carries an explicit has_* companion, matching the pattern above. proto3 omits
+  // default scalars on the wire, so without the companion a deliberate 0 — which means "not
+  // configured" for both of these — would be indistinguishable from "field not sent", and the
+  // daemon would keep the previous value instead of clearing it.
+  double fuel_price_per_l = 7;
+  bool has_fuel_price_per_l = 8;
+  double fuel_tank_capacity_l = 9;
+  bool has_fuel_tank_capacity_l = 10;
 }
 
 message SetConfigResponse {

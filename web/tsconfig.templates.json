@@ -1,0 +1,24 @@
+{
+  // Angular TEMPLATE type-checking, which nothing else in this project does.
+  //
+  // `vite build` bundles with esbuild and `tsc` only parses .ts — neither looks inside a
+  // component template. Verified 2026-09-16: a template calling a method that does not exist
+  // on its component compiled clean and exited 0 under BOTH. The failure is silent rather than
+  // loud: `@if (typoName())` evaluates to undefined, which is falsy, so the guarded section
+  // simply never renders and the page looks merely empty.
+  //
+  // `ngc` with strictTemplates catches exactly that, and reports it with a "did you mean".
+  // It is a superset of the plain tsc check — same program, plus templates.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": []
+  },
+  "angularCompilerOptions": {
+    "strictTemplates": true
+  },
+  // Reachable from the entry point, plus the ambient declarations (src/types/jmuxer.d.ts)
+  // that the program needs to resolve untyped packages.
+  "files": ["src/main.ts"],
+  "include": ["src/**/*.d.ts"]
+}

@@ -89,7 +89,7 @@ public class DaemonSetEnabledCommandTest {
 
     @Test
     public void refusesAnUnknownOrEmptyType() throws Exception {
-        for (String type : new String[] {"", "NOT_A_DAEMON", "zrok", "zrok_tunnel"}) {
+        for (String type : new String[] {"", "NOT_A_DAEMON", "tor", "tor_tunnel"}) {
             Assert.assertEquals("type must match the enum exactly: " + type,
                     "error", setEnabled(type, false).getString("status"));
         }
@@ -99,7 +99,7 @@ public class DaemonSetEnabledCommandTest {
     @Test
     public void refusesATypeWithShellMetacharacters() throws Exception {
         // Nothing from the wire reaches a shell, and the allow-list is why.
-        JSONObject resp = setEnabled("ZROK_TUNNEL; rm -rf /data", false);
+        JSONObject resp = setEnabled("TOR_TUNNEL; rm -rf /data", false);
 
         Assert.assertEquals("error", resp.getString("status"));
         Assert.assertTrue(TcpCommandServer.killedPidsForTest.isEmpty());
@@ -111,44 +111,44 @@ public class DaemonSetEnabledCommandTest {
     public void disablingTheTunnelKillsTheRunningProcess() throws Exception {
         // The health check only ever RELAUNCHES, never kills, so without this the tunnel
         // keeps serving until the next reboot while the switch reads "off".
-        fakeProcess(202, "/data/local/tmp/zrok", "share", "reserved", "tok");
+        fakeProcess(202, "/data/local/tmp/bladewatch_tor", "-f", "/data/local/tmp/tor/torrc");
 
-        JSONObject resp = setEnabled("ZROK_TUNNEL", false);
+        JSONObject resp = setEnabled("TOR_TUNNEL", false);
 
         Assert.assertEquals("ok", resp.getString("status"));
         Assert.assertEquals(java.util.Collections.singletonList(202), TcpCommandServer.killedPidsForTest);
-        Assert.assertEquals(Boolean.FALSE, TcpCommandServer.daemonEnabledWritesForTest.get("ZROK_TUNNEL"));
+        Assert.assertEquals(Boolean.FALSE, TcpCommandServer.daemonEnabledWritesForTest.get("TOR_TUNNEL"));
     }
 
     @Test
     public void enablingTheTunnelKillsNothing() throws Exception {
         // Enabling is "record the intent"; DaemonStartupManager's health check does the
-        // actual launch through the full ZrokLauncher flow.
-        fakeProcess(203, "/data/local/tmp/zrok", "share");
+        // actual launch through TorLauncher.
+        fakeProcess(203, "/data/local/tmp/bladewatch_tor", "-f", "/data/local/tmp/tor/torrc");
 
-        JSONObject resp = setEnabled("ZROK_TUNNEL", true);
+        JSONObject resp = setEnabled("TOR_TUNNEL", true);
 
         Assert.assertEquals("ok", resp.getString("status"));
         Assert.assertTrue(TcpCommandServer.killedPidsForTest.isEmpty());
         // Recording the intent IS the whole of "start": the health check does the launch.
-        Assert.assertEquals(Boolean.TRUE, TcpCommandServer.daemonEnabledWritesForTest.get("ZROK_TUNNEL"));
+        Assert.assertEquals(Boolean.TRUE, TcpCommandServer.daemonEnabledWritesForTest.get("TOR_TUNNEL"));
     }
 
     @Test
     public void disablingKillsOnlyTheTunnelAndNotOtherDaemons() throws Exception {
-        fakeProcess(301, "/data/local/tmp/zrok", "share");
+        fakeProcess(301, "/data/local/tmp/bladewatch_tor", "-f", "/data/local/tmp/tor/torrc");
         fakeProcess(302, "byd_cam_daemon");
         fakeProcess(303, "sentry_daemon");
-        fakeProcess(304, "sh", "-c", "echo /data/local/tmp/zrok.log");
+        fakeProcess(304, "sh", "-c", "echo /data/local/tmp/tor.log");
 
-        setEnabled("ZROK_TUNNEL", false);
+        setEnabled("TOR_TUNNEL", false);
 
         Assert.assertEquals(java.util.Collections.singletonList(301), TcpCommandServer.killedPidsForTest);
     }
 
     @Test
     public void disablingWhenNothingIsRunningKillsNothingAndDoesNotFail() throws Exception {
-        JSONObject resp = setEnabled("ZROK_TUNNEL", false);
+        JSONObject resp = setEnabled("TOR_TUNNEL", false);
 
         Assert.assertTrue(TcpCommandServer.killedPidsForTest.isEmpty());
         Assert.assertEquals(0, resp.getInt("killed"));

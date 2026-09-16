@@ -194,7 +194,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
         systemService: _systemService,
         daemonChannel: _daemonChannel,
         authChannel: _authChannel,
-        tunnelUrlSource: _daemonChannel.tunnelUrl,
+        tunnelStatusSource: _daemonChannel.tunnelStatus,
       );
 
   late final SettingsAboutController _settingsAboutController =
@@ -364,6 +364,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                         publicConfigChannel: _publicConfigChannel,
                         setDaemonEnabled: SettingsDaemonsController.enabledSetterFor(_daemonChannel),
                         onOpenLanguagePicker: () => _showLanguagePicker(context),
+                        tripsController: _tripsController,
                       ),
                     ),
                     settingsAboutScreen: SettingsAboutScreen(

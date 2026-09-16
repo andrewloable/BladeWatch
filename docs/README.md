@@ -8,7 +8,7 @@ only launcher icon) and `net.bladewatch.app` (the UI-less service host that runs
 the foreground services, receivers and privileged shell-launched daemons). It
 coordinates the in-car UI, camera and surveillance pipelines, local and remote
 web access, BYD vehicle telemetry, trip analytics, Web Push notifications, and
-the Zrok tunnel process.
+the Tor tunnel process.
 
 ## Document Map
 
@@ -18,7 +18,7 @@ the Zrok tunnel process.
 - [Data Flow and Storage](data-flow-and-storage.md) explains where data comes from, how it moves between components, and where it is persisted.
 - [Daemons and Processes](daemons-and-processes.md) documents Android components, app-process daemons, watchdogs, foreground services, and local IPC ports.
 - [IPC, Authentication & Secrets](ipc-auth-and-secrets.md) explains the app/daemon UID split, the IPC token bootstrap, the secret-fetch and JWT flows, the **required `/data/local/tmp` file permissions**, and the failure modes that surface as "Camera unavailable".
-- [Networking and Tunnels](networking-and-tunnels.md) covers HTTP, WebSocket streaming, auth, LAN mode, Zrok, and remote access behavior.
+- [Networking and Tunnels](networking-and-tunnels.md) covers HTTP, WebSocket streaming, auth, LAN mode, the Tor onion service, and remote access behavior.
 - [HTTP API Reference](http-api-reference.md) lists the embedded web API route families and known endpoints.
 - [BYD Integrations](byd-integrations.md) explains local BYD hardware APIs, compile-time stubs, telemetry collection, and local vehicle controls.
 - [Surveillance Implementation](surveillance-implementation.md) documents sentry-mode activation, the GPU/native motion pipeline, AI confirmation, recording lifecycle, safe locations, schedules, APIs, and guardrails.
