@@ -1557,7 +1557,8 @@
     "badgeLive": "● LIVE",
     "badgeConnecting": "○ Verbinden…",
     "notConnected": "Kamerastream nicht verbunden",
-    "decoderUnsupported": "Dieser Browser kann den Livestream nicht wiedergeben. Erforderlich ist ein Browser mit Videodekodierung, etwa Chrome oder Edge. Tor Browser und Firefox ESR unterstützen das noch nicht."
+    "decoderUnsupported": "Dieser Browser kann den Livestream nicht wiedergeben. Erforderlich ist ein Browser mit Videodekodierung, etwa Chrome oder Edge. Tor Browser und Firefox ESR unterstützen das noch nicht.",
+    "stillFrameLabel": "Standbild — kein Live-Video"
   },
   "location": {
     "themeAuto": "Automatisiert",

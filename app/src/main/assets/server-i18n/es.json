@@ -75,6 +75,8 @@
     "surveillance_invalid_quadrant_with_id": "Cuadrante inválido: {0}",
     "surveillance_event_frame_failed_with_detail": "Fallo en procesar el marco del evento: {0}",
     "surveillance_no_frame_available": "No hay marco disponible  iniciar la vigilancia o grabar un evento primero",
+    "telemetry_overlay_unknown_type_with_id": "Tipo de grabación desconocido: {0}",
+    "telemetry_overlay_fields_missing": "Falta \"fields\"",
     "update_app_context_not_ready": "Contexto de la aplicación no está listo",
     "update_check_timed_out": "Verificación de actualización en el momento",
     "update_disabled_in_public_mode": "Las actualizaciones están desactivadas en el modo de compartir público.",
@@ -118,7 +120,11 @@
     "area_hood": "El capullo",
     "area_trunk": "El maletero",
     "area_fuel_cap": "Capa de combustible",
-    "area_door_n": "Puerta {0}"
+    "area_door_n": "Puerta {0}",
+    "trip_started": "Viaje iniciado",
+    "trip_ended": "Viaje finalizado",
+    "trip_summary_km": "{0} km · {1} min",
+    "trip_summary_mi": "{0} mi · {1} min"
   },
   "vehicle_control": {
     "cloud_required": "Conectar una cuenta BYD en Configuración para usar este control",
@@ -130,6 +136,7 @@
     "cloud_failed": "No pude llegar al coche  Intentar de nuevo cuando el vehículo esté despierto",
     "rate_limited": "Un comando todavía está en proceso  esperar unos segundos",
     "not_supported": "Este control no está disponible en este momento",
+    "blocked_moving": "No disponible mientras el vehículo está en movimiento.",
     "find_car_label": "Encuentra un coche",
     "battery_heat_label": "El calor de la batería",
     "close_all_windows_label": "todas las ventanas cerradas"

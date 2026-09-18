@@ -1287,6 +1287,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '今月 $arg1';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'オンライン';
 
   @override
@@ -1470,10 +1475,85 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => '録画の優先度';
+
+  @override
+  String get settings_recording_priority_description => '突然の電源断に録画がどう対応するか。';
+
+  @override
+  String get settings_recording_priority_performance_label => 'パフォーマンス';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'CPU使用率を抑えます。突然電源が切れた場合、現在の録画セグメント(録画時間制限まで)が失われる可能性があります。';
+
+  @override
+  String get settings_recording_priority_reliability_label => '信頼性';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'より頻繁に保存するためCPUを少し多く使用します。突然電源が切れた場合、失われるのは最大でも約1分間です。';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'オーバーレイ項目';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      '連続録画の焼き付けオーバーレイに表示する項目を選びます。';
+
+  @override
+  String get settings_recording_overlay_field_speed => '速度';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'ギア';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left => '左ウインカー';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right => '右ウインカー';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'ブレーキペダル';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => 'アクセルペダル';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver => '運転席シートベルト';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger => '助手席シートベルト';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => '日付と時刻';
+
+  @override
   String get settings_recording_quality_title => '録画品質';
 
   @override
   String get settings_recording_storage_title => '録画の保存先';
+
+  @override
+  String get settings_recording_storage_confirm_title => '録画を削除しますか?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'この変更により$arg1件の録画が削除されます($arg2)。',
+      one: 'この変更により$arg1件の録画が削除されます($arg2)。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title => '影響不明';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'この変更で何が削除されるか判断できませんでした。上限を下げると既存の録画が削除される場合があります。';
 
   @override
   String get settings_recording_storage_location_label => '保存先';
@@ -1486,6 +1566,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SDカード（なし）';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'SDカードがマウントされませんでした';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1884,6 +1968,27 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => '最大冷房: オフ';
+
+  @override
+  String get vehicle_screen_on => '画面：オン';
+
+  @override
+  String get vehicle_screen_off => '画面：オフ';
+
+  @override
+  String get vehicle_media_volume_label => 'メディア音量';
+
+  @override
+  String get vehicle_media_mute => 'ミュート';
+
+  @override
+  String get vehicle_media_muted => 'ミュート中';
+
+  @override
+  String get vehicle_front_defrost => 'フロントデフロスター';
+
+  @override
+  String get vehicle_rear_defrost => 'リアデフロスター';
 
   @override
   String get vehicle_temp_label => '温度';
@@ -2718,4 +2823,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => '閉じる';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'センサーモードが作動している間、12Vバッテリーの電力を追加で消費します。';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      '現在、別のアプリがカメラを使用しています。';
 }

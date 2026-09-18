@@ -413,6 +413,14 @@ const GetVehicleStateResponse$json = {
       '10': 'tyres'
     },
     {'1': 'error', '3': 13, '4': 1, '5': 9, '10': 'error'},
+    {
+      '1': 'media_volume_percent',
+      '3': 14,
+      '4': 1,
+      '5': 5,
+      '10': 'mediaVolumePercent'
+    },
+    {'1': 'media_muted', '3': 15, '4': 1, '5': 8, '10': 'mediaMuted'},
   ],
 };
 
@@ -429,7 +437,9 @@ final $typed_data.Uint8List getVehicleStateResponseDescriptor = $convert.base64D
     'BGFkYXMYCSABKAsyGS5ibGFkZXdhdGNoLnYxLkFkYXNTdGF0dXNSBGFkYXMSLwoFc2VhdHMYCi'
     'ABKAsyGS5ibGFkZXdhdGNoLnYxLlNlYXRTdGF0dXNSBXNlYXRzEjYKB2NsaW1hdGUYCyABKAsy'
     'HC5ibGFkZXdhdGNoLnYxLkNsaW1hdGVTdGF0dXNSB2NsaW1hdGUSLwoFdHlyZXMYDCABKAsyGS'
-    '5ibGFkZXdhdGNoLnYxLlR5cmVTdGF0dXNSBXR5cmVzEhQKBWVycm9yGA0gASgJUgVlcnJvcg==');
+    '5ibGFkZXdhdGNoLnYxLlR5cmVTdGF0dXNSBXR5cmVzEhQKBWVycm9yGA0gASgJUgVlcnJvchIw'
+    'ChRtZWRpYV92b2x1bWVfcGVyY2VudBgOIAEoBVISbWVkaWFWb2x1bWVQZXJjZW50Eh8KC21lZG'
+    'lhX211dGVkGA8gASgIUgptZWRpYU11dGVk');
 
 @$core.Deprecated('Use getAcDiagnosticsRequestDescriptor instead')
 const GetAcDiagnosticsRequest$json = {
@@ -585,6 +595,7 @@ const SetClimateRequest$json = {
     {'1': 'restore_ac_on', '3': 7, '4': 1, '5': 8, '10': 'restoreAcOn'},
     {'1': 'restore_temp_c', '3': 8, '4': 1, '5': 1, '10': 'restoreTempC'},
     {'1': 'restore_fan_level', '3': 9, '4': 1, '5': 5, '10': 'restoreFanLevel'},
+    {'1': 'cycle_mode', '3': 10, '4': 1, '5': 5, '10': 'cycleMode'},
   ],
 };
 
@@ -595,7 +606,7 @@ final $typed_data.Uint8List setClimateRequestDescriptor = $convert.base64Decode(
     'ZmFuTGV2ZWwSGwoJd2luZF9tb2RlGAUgASgFUgh3aW5kTW9kZRIfCgttYXhfY29vbGluZxgGIA'
     'EoCFIKbWF4Q29vbGluZxIiCg1yZXN0b3JlX2FjX29uGAcgASgIUgtyZXN0b3JlQWNPbhIkCg5y'
     'ZXN0b3JlX3RlbXBfYxgIIAEoAVIMcmVzdG9yZVRlbXBDEioKEXJlc3RvcmVfZmFuX2xldmVsGA'
-    'kgASgFUg9yZXN0b3JlRmFuTGV2ZWw=');
+    'kgASgFUg9yZXN0b3JlRmFuTGV2ZWwSHQoKY3ljbGVfbW9kZRgKIAEoBVIJY3ljbGVNb2Rl');
 
 @$core.Deprecated('Use setSeatRequestDescriptor instead')
 const SetSeatRequest$json = {
@@ -635,6 +646,46 @@ const SetLightsRequest$json = {
 final $typed_data.Uint8List setLightsRequestDescriptor = $convert.base64Decode(
     'ChBTZXRMaWdodHNSZXF1ZXN0EhYKBmFjdGlvbhgBIAEoCVIGYWN0aW9uEhMKAm9uGAIgASgISA'
     'BSAm9uiAEBQgUKA19vbg==');
+
+@$core.Deprecated('Use setScreenRequestDescriptor instead')
+const SetScreenRequest$json = {
+  '1': 'SetScreenRequest',
+  '2': [
+    {'1': 'on', '3': 1, '4': 1, '5': 8, '9': 0, '10': 'on', '17': true},
+  ],
+  '8': [
+    {'1': '_on'},
+  ],
+};
+
+/// Descriptor for `SetScreenRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setScreenRequestDescriptor = $convert.base64Decode(
+    'ChBTZXRTY3JlZW5SZXF1ZXN0EhMKAm9uGAEgASgISABSAm9uiAEBQgUKA19vbg==');
+
+@$core.Deprecated('Use setMediaVolumeRequestDescriptor instead')
+const SetMediaVolumeRequest$json = {
+  '1': 'SetMediaVolumeRequest',
+  '2': [
+    {'1': 'action', '3': 1, '4': 1, '5': 9, '10': 'action'},
+    {
+      '1': 'percent',
+      '3': 2,
+      '4': 1,
+      '5': 5,
+      '9': 0,
+      '10': 'percent',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_percent'},
+  ],
+};
+
+/// Descriptor for `SetMediaVolumeRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setMediaVolumeRequestDescriptor = $convert.base64Decode(
+    'ChVTZXRNZWRpYVZvbHVtZVJlcXVlc3QSFgoGYWN0aW9uGAEgASgJUgZhY3Rpb24SHQoHcGVyY2'
+    'VudBgCIAEoBUgAUgdwZXJjZW50iAEBQgoKCF9wZXJjZW50');
 
 @$core.Deprecated('Use setAdasRequestDescriptor instead')
 const SetAdasRequest$json = {
@@ -948,6 +999,16 @@ const $core.Map<$core.String, $core.dynamic> VehicleServiceBase$json = {
       '3': '.bladewatch.v1.VehicleCommandResponse'
     },
     {
+      '1': 'SetScreen',
+      '2': '.bladewatch.v1.SetScreenRequest',
+      '3': '.bladewatch.v1.VehicleCommandResponse'
+    },
+    {
+      '1': 'SetMediaVolume',
+      '2': '.bladewatch.v1.SetMediaVolumeRequest',
+      '3': '.bladewatch.v1.VehicleCommandResponse'
+    },
+    {
       '1': 'SetAdas',
       '2': '.bladewatch.v1.SetAdasRequest',
       '3': '.bladewatch.v1.VehicleCommandResponse'
@@ -1028,6 +1089,8 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.SetClimateRequest': SetClimateRequest$json,
   '.bladewatch.v1.SetSeatRequest': SetSeatRequest$json,
   '.bladewatch.v1.SetLightsRequest': SetLightsRequest$json,
+  '.bladewatch.v1.SetScreenRequest': SetScreenRequest$json,
+  '.bladewatch.v1.SetMediaVolumeRequest': SetMediaVolumeRequest$json,
   '.bladewatch.v1.SetAdasRequest': SetAdasRequest$json,
   '.bladewatch.v1.SetBatteryHeatRequest': SetBatteryHeatRequest$json,
   '.bladewatch.v1.GetChargingScheduleRequest': GetChargingScheduleRequest$json,
@@ -1065,19 +1128,22 @@ final $typed_data.Uint8List vehicleServiceDescriptor = $convert.base64Decode(
     'JlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USTwoHU2V0U2Vh'
     'dBIdLmJsYWRld2F0Y2gudjEuU2V0U2VhdFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbG'
     'VDb21tYW5kUmVzcG9uc2USUwoJU2V0TGlnaHRzEh8uYmxhZGV3YXRjaC52MS5TZXRMaWdodHNS'
-    'ZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEk8KB1NldEFkYX'
-    'MSHS5ibGFkZXdhdGNoLnYxLlNldEFkYXNSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xl'
-    'Q29tbWFuZFJlc3BvbnNlEl0KDlNldEJhdHRlcnlIZWF0EiQuYmxhZGV3YXRjaC52MS5TZXRCYX'
-    'R0ZXJ5SGVhdFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2US'
-    'bAoTR2V0Q2hhcmdpbmdTY2hlZHVsZRIpLmJsYWRld2F0Y2gudjEuR2V0Q2hhcmdpbmdTY2hlZH'
-    'VsZVJlcXVlc3QaKi5ibGFkZXdhdGNoLnYxLkdldENoYXJnaW5nU2NoZWR1bGVSZXNwb25zZRJn'
-    'ChNTZXRDaGFyZ2luZ1NjaGVkdWxlEikuYmxhZGV3YXRjaC52MS5TZXRDaGFyZ2luZ1NjaGVkdW'
-    'xlUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJXCgxHZXRD'
-    'aGFyZ2VDYXASIi5ibGFkZXdhdGNoLnYxLkdldENoYXJnZUNhcFJlcXVlc3QaIy5ibGFkZXdhdG'
-    'NoLnYxLkdldENoYXJnZUNhcFJlc3BvbnNlElkKDFNldENoYXJnZUNhcBIiLmJsYWRld2F0Y2gu'
-    'djEuU2V0Q2hhcmdlQ2FwUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZX'
-    'Nwb25zZRJdCg5HZXRHcHNMb2NhdGlvbhIkLmJsYWRld2F0Y2gudjEuR2V0R3BzTG9jYXRpb25S'
-    'ZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5HZXRHcHNMb2NhdGlvblJlc3BvbnNlEksKCFN0YXJ0R3'
-    'BzEh4uYmxhZGV3YXRjaC52MS5TdGFydEdwc1JlcXVlc3QaHy5ibGFkZXdhdGNoLnYxLlN0YXJ0'
-    'R3BzUmVzcG9uc2USSAoHU3RvcEdwcxIdLmJsYWRld2F0Y2gudjEuU3RvcEdwc1JlcXVlc3QaHi'
-    '5ibGFkZXdhdGNoLnYxLlN0b3BHcHNSZXNwb25zZQ==');
+    'ZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlElMKCVNldFNjcm'
+    'VlbhIfLmJsYWRld2F0Y2gudjEuU2V0U2NyZWVuUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVo'
+    'aWNsZUNvbW1hbmRSZXNwb25zZRJdCg5TZXRNZWRpYVZvbHVtZRIkLmJsYWRld2F0Y2gudjEuU2'
+    'V0TWVkaWFWb2x1bWVSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3Bv'
+    'bnNlEk8KB1NldEFkYXMSHS5ibGFkZXdhdGNoLnYxLlNldEFkYXNSZXF1ZXN0GiUuYmxhZGV3YX'
+    'RjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEl0KDlNldEJhdHRlcnlIZWF0EiQuYmxhZGV3'
+    'YXRjaC52MS5TZXRCYXR0ZXJ5SGVhdFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb2'
+    '1tYW5kUmVzcG9uc2USbAoTR2V0Q2hhcmdpbmdTY2hlZHVsZRIpLmJsYWRld2F0Y2gudjEuR2V0'
+    'Q2hhcmdpbmdTY2hlZHVsZVJlcXVlc3QaKi5ibGFkZXdhdGNoLnYxLkdldENoYXJnaW5nU2NoZW'
+    'R1bGVSZXNwb25zZRJnChNTZXRDaGFyZ2luZ1NjaGVkdWxlEikuYmxhZGV3YXRjaC52MS5TZXRD'
+    'aGFyZ2luZ1NjaGVkdWxlUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZX'
+    'Nwb25zZRJXCgxHZXRDaGFyZ2VDYXASIi5ibGFkZXdhdGNoLnYxLkdldENoYXJnZUNhcFJlcXVl'
+    'c3QaIy5ibGFkZXdhdGNoLnYxLkdldENoYXJnZUNhcFJlc3BvbnNlElkKDFNldENoYXJnZUNhcB'
+    'IiLmJsYWRld2F0Y2gudjEuU2V0Q2hhcmdlQ2FwUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVo'
+    'aWNsZUNvbW1hbmRSZXNwb25zZRJdCg5HZXRHcHNMb2NhdGlvbhIkLmJsYWRld2F0Y2gudjEuR2'
+    'V0R3BzTG9jYXRpb25SZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5HZXRHcHNMb2NhdGlvblJlc3Bv'
+    'bnNlEksKCFN0YXJ0R3BzEh4uYmxhZGV3YXRjaC52MS5TdGFydEdwc1JlcXVlc3QaHy5ibGFkZX'
+    'dhdGNoLnYxLlN0YXJ0R3BzUmVzcG9uc2USSAoHU3RvcEdwcxIdLmJsYWRld2F0Y2gudjEuU3Rv'
+    'cEdwc1JlcXVlc3QaHi5ibGFkZXdhdGNoLnYxLlN0b3BHcHNSZXNwb25zZQ==');

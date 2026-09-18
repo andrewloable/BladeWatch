@@ -38,7 +38,7 @@ public class PerformanceApiHandler {
      * @return true if request was handled
      */
     public static boolean handle(String method, String path, String body, OutputStream out) throws Exception {
-        
+
         // GET /api/performance - Current snapshot
         if (path.equals("/api/performance") && method.equals("GET")) {
             return handleGetCurrent(out);
@@ -138,7 +138,7 @@ public class PerformanceApiHandler {
 
         return false;
     }
-    
+
     private static boolean handleGetCurrent(OutputStream out) throws Exception {
         try {
             PerformanceMonitor monitor = PerformanceMonitor.getInstance();

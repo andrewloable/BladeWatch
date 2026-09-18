@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:bladewatch_ui/rpc/jwt_source.dart';
+import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
 import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
@@ -8,14 +12,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
 
+class _FakeJwtSource implements JwtSource {
+  @override
+  Future<String?> mintJwt() async => 'fake.jwt.token';
+
+  @override
+  Future<int> stateVersion() async => 0;
+}
+
 void main() {
   late FakeRpcClient rpc;
 
-  RecordingSettingsController build() => RecordingSettingsController(
+  RecordingSettingsController build({RawGetSender? getSender, RawHttpSender? postSender}) => RecordingSettingsController(
         systemService: SystemServiceClient(rpc),
         recordingsService: RecordingsServiceClient(rpc),
         settingsService: SettingsServiceClient(rpc),
         storageService: StorageServiceClient(rpc),
+        jwtSource: _FakeJwtSource(),
+        getSender: getSender,
+        postSender: postSender,
       );
 
   void stubHappyPath() {
@@ -25,7 +40,8 @@ void main() {
     rpc.stubJson('RecordingsService', 'GetStats', {
       'stats': {'recordingsCount': 3, 'proximityCount': 2},
     });
-    rpc.stubJson('SettingsService', 'GetQuality', {'recordingQuality': 'HIGH', 'recordingCodec': 'H264', 'recordingSegmentMinutes': 10});
+    rpc.stubJson('SettingsService', 'GetQuality',
+        {'recordingQuality': 'HIGH', 'recordingCodec': 'H264', 'recordingSegmentMinutes': 10, 'recordingPriority': 'PERFORMANCE'});
     rpc.stubJson('StorageService', 'GetStorageSettings', {
       'recordingsStorageType': 'INTERNAL',
       'recordingsLimitMb': 800,
@@ -63,6 +79,7 @@ void main() {
       expect(c.selectedMode, RecordingMode.driveMode);
       expect(c.selectedQuality, RecordingQuality.high);
       expect(c.selectedLimit, RecordingLimit.ten);
+      expect(c.selectedPriority, RecordingPriority.performance);
       expect(c.selectedStorageType, 'INTERNAL');
       expect(c.selectedLimitMb, 800);
       expect(c.dirty, isFalse);
@@ -83,6 +100,7 @@ void main() {
       expect(c.status, isNull);
       expect(c.selectedMode, RecordingMode.none);
       expect(c.selectedQuality, RecordingQuality.standard);
+      expect(c.selectedPriority, RecordingPriority.reliability);
     });
   });
 
@@ -109,6 +127,17 @@ void main() {
       c.selectLimit(RecordingLimit.one);
 
       expect(c.selectedLimit, RecordingLimit.one);
+      expect(c.dirty, isTrue);
+    });
+
+    test('selectPriority marks dirty', () async {
+      stubHappyPath();
+      final c = build();
+      await c.load();
+
+      c.selectPriority(RecordingPriority.reliability);
+
+      expect(c.selectedPriority, RecordingPriority.reliability);
       expect(c.dirty, isTrue);
     });
 
@@ -158,6 +187,7 @@ void main() {
       await c.load();
       c.selectMode(RecordingMode.continuous);
       c.selectLimit(RecordingLimit.one);
+      c.selectPriority(RecordingPriority.reliability);
 
       final result = await c.applyChanges(RecordingSettingsTab.capture);
 
@@ -167,6 +197,7 @@ void main() {
       expect((modeCall.request as dynamic).mode, 'CONTINUOUS');
       final limitCall = rpc.calls.firstWhere((c) => c.method == 'SetQuality');
       expect((limitCall.request as dynamic).recordingSegmentMinutes, 1);
+      expect((limitCall.request as dynamic).recordingPriority, 'RELIABILITY');
     });
 
     test('CAPTURE tab surfaces a mode-save failure without attempting the limit save result', () async {
@@ -264,6 +295,66 @@ void main() {
       final result = await c.applyChanges(RecordingSettingsTab.storage);
 
       expect(result.ok, isFalse);
+    });
+  });
+
+  group('previewStorageLimitImpact()', () {
+    test('raising the limit returns null without calling the preview RPC', () async {
+      stubHappyPath(); // loaded limitMb is 800
+      final c = build();
+      await c.load();
+      c.setStorageLimitMb(900);
+
+      final impact = await c.previewStorageLimitImpact();
+
+      expect(impact, isNull);
+      expect(rpc.calls.where((call) => call.method == 'PreviewStorageLimitChange'), isEmpty);
+    });
+
+    test('lowering to a value the preview says deletes files returns the real count and size', () async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'recordingsImpact': {'fileCount': 48, 'totalBytes': 12300000000},
+      });
+      final c = build();
+      await c.load();
+      c.setStorageLimitMb(100);
+
+      final impact = await c.previewStorageLimitImpact();
+
+      expect(impact, isNotNull);
+      expect(impact!.status, StorageLimitImpactStatus.known);
+      expect(impact.fileCount, 48);
+      expect(impact.totalBytes, 12300000000);
+      final call = rpc.calls.firstWhere((c) => c.method == 'PreviewStorageLimitChange');
+      expect((call.request as dynamic).recordingsLimitMb.toInt(), 100);
+    });
+
+    test('lowering to a value that deletes nothing returns null', () async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'recordingsImpact': {'fileCount': 0, 'totalBytes': 0},
+      });
+      final c = build();
+      await c.load();
+      c.setStorageLimitMb(100);
+
+      final impact = await c.previewStorageLimitImpact();
+
+      expect(impact, isNull);
+    });
+
+    test('the preview RPC failing returns an unknown-impact result', () async {
+      stubHappyPath();
+      rpc.stubError('StorageService', 'PreviewStorageLimitChange', const ConnectError('unavailable', 'down'));
+      final c = build();
+      await c.load();
+      c.setStorageLimitMb(100);
+
+      final impact = await c.previewStorageLimitImpact();
+
+      expect(impact, isNotNull);
+      expect(impact!.status, StorageLimitImpactStatus.unknown);
     });
   });
 
@@ -444,6 +535,76 @@ void main() {
       await c.load();
 
       expect(c.storageLimitMaxMb, 5000);
+    });
+  });
+
+  // BladeWatch-y78o.5: the telemetry overlay field checklist. A plain REST endpoint (see
+  // QualitySettingsApiHandler.java), not a Connect RPC — these use the injected raw GET/POST
+  // senders directly rather than FakeRpcClient.
+  group('overlay fields', () {
+    test('loadOverlayFields() populates the selection from the daemon response', () async {
+      final c = build(
+        getSender: (uri, headers) async => RawHttpResponse(
+          200,
+          jsonEncode({
+            'success': true,
+            'availableFields': ['SPEED', 'GEAR'],
+            'selections': {
+              'continuous': ['SPEED'],
+              'surveillance': [],
+              'proximity': [],
+            },
+          }),
+        ),
+      );
+
+      await c.loadOverlayFields();
+
+      expect(c.overlayFields, {OverlayField.speed});
+    });
+
+    test('loadOverlayFields() leaves the default (all fields) selection on a failure', () async {
+      final c = build(getSender: (uri, headers) async => throw Exception('connection refused'));
+
+      await c.loadOverlayFields();
+
+      expect(c.overlayFields, OverlayField.values.toSet());
+    });
+
+    test('setOverlayFieldEnabled() removes a field optimistically and keeps it removed on success', () async {
+      String? sentBody;
+      final c = build(
+        postSender: (uri, headers, body) async {
+          sentBody = body;
+          return const RawHttpResponse(200, '{"success":true}');
+        },
+      );
+
+      await c.setOverlayFieldEnabled(OverlayField.brakePedal, false);
+
+      expect(c.overlayFields.contains(OverlayField.brakePedal), isFalse);
+      final sent = jsonDecode(sentBody!) as Map<String, dynamic>;
+      expect(sent['type'], 'continuous');
+      expect((sent['fields'] as List).contains('BRAKE_PEDAL'), isFalse);
+    });
+
+    test('setOverlayFieldEnabled() reverts the optimistic change when the daemon write fails', () async {
+      final c = build(postSender: (uri, headers, body) async => const RawHttpResponse(500, '{"success":false}'));
+      final before = c.overlayFields;
+
+      await c.setOverlayFieldEnabled(OverlayField.timestamp, false);
+
+      expect(c.overlayFields, before);
+      expect(c.overlayFields.contains(OverlayField.timestamp), isTrue);
+    });
+
+    test('setOverlayFieldEnabled() reverts on a thrown exception, not just a bad status', () async {
+      final c = build(postSender: (uri, headers, body) async => throw Exception('connection refused'));
+      final before = c.overlayFields;
+
+      await c.setOverlayFieldEnabled(OverlayField.gear, false);
+
+      expect(c.overlayFields, before);
     });
   });
 }

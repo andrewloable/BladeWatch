@@ -75,6 +75,8 @@
     "surveillance_invalid_quadrant_with_id": "无效四分之一:{0}",
     "surveillance_event_frame_failed_with_detail": "没有处理事件框架:{0}",
     "surveillance_no_frame_available": "没有框架 首先开始监控或记录事件",
+    "telemetry_overlay_unknown_type_with_id": "未知的录制类型：{0}",
+    "telemetry_overlay_fields_missing": "缺少 \"fields\"",
     "update_app_context_not_ready": "应用程序背景未准备",
     "update_check_timed_out": "更新检查时间",
     "update_disabled_in_public_mode": "在公共共享模式中,更新是禁用的. 在车内应用程序中首先切换到私人模式.",
@@ -118,7 +120,11 @@
     "area_hood": "子",
     "area_trunk": "箱子",
     "area_fuel_cap": "燃料盖",
-    "area_door_n": "门{0}"
+    "area_door_n": "门{0}",
+    "trip_started": "行程已开始",
+    "trip_ended": "行程已结束",
+    "trip_summary_km": "{0} km · {1} 分钟",
+    "trip_summary_mi": "{0} 英里 · {1} 分钟"
   },
   "vehicle_control": {
     "cloud_required": "在设置中连接BYD帐户以使用此控制",
@@ -130,6 +136,7 @@
     "cloud_failed": "不能到达车,当车醒的时候再试一次.",
     "rate_limited": "一个命令仍在进行 等几秒钟",
     "not_supported": "这个控制器目前不用.",
+    "blocked_moving": "车辆行驶时不可用。",
     "find_car_label": "找个车",
     "battery_heat_label": "热量电池",
     "close_all_windows_label": "所有的窗户关闭"

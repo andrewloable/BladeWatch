@@ -769,12 +769,16 @@ class GetSurveillanceStatusResponse extends $pb.GeneratedMessage {
     $core.bool? pipelineRunning,
     $core.bool? surveillanceActive,
     $core.String? error,
+    $core.bool? cameraYielded,
+    $core.bool? nativeAppActive,
   }) {
     final result = GetSurveillanceStatusResponse._();
     if (pipelineRunning != null) result.pipelineRunning = pipelineRunning;
     if (surveillanceActive != null)
       result.surveillanceActive = surveillanceActive;
     if (error != null) result.error = error;
+    if (cameraYielded != null) result.cameraYielded = cameraYielded;
+    if (nativeAppActive != null) result.nativeAppActive = nativeAppActive;
     return result;
   }
 
@@ -794,6 +798,8 @@ class GetSurveillanceStatusResponse extends $pb.GeneratedMessage {
     ..aOB(1, _omitFieldNames ? '' : 'pipelineRunning')
     ..aOB(2, _omitFieldNames ? '' : 'surveillanceActive')
     ..aOS(4, _omitFieldNames ? '' : 'error')
+    ..aOB(5, _omitFieldNames ? '' : 'cameraYielded')
+    ..aOB(6, _omitFieldNames ? '' : 'nativeAppActive')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -850,6 +856,27 @@ class GetSurveillanceStatusResponse extends $pb.GeneratedMessage {
   $core.bool hasError() => $_has(2);
   @$pb.TagNumber(4)
   void clearError() => $_clearField(4);
+
+  /// True while another app (typically the car's own DVR) holds the camera and
+  /// BydCameraCoordinator has yielded to it (BladeWatch-gyg1.2). Surface this only while
+  /// true -- a permanent "another app might be using the camera" caption is noise.
+  @$pb.TagNumber(5)
+  $core.bool get cameraYielded => $_getBF(3);
+  @$pb.TagNumber(5)
+  set cameraYielded($core.bool value) => $_setBool(3, value);
+  @$pb.TagNumber(5)
+  $core.bool hasCameraYielded() => $_has(3);
+  @$pb.TagNumber(5)
+  void clearCameraYielded() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.bool get nativeAppActive => $_getBF(4);
+  @$pb.TagNumber(6)
+  set nativeAppActive($core.bool value) => $_setBool(4, value);
+  @$pb.TagNumber(6)
+  $core.bool hasNativeAppActive() => $_has(4);
+  @$pb.TagNumber(6)
+  void clearNativeAppActive() => $_clearField(6);
 }
 
 class EnableSurveillanceRequest extends $pb.GeneratedMessage {

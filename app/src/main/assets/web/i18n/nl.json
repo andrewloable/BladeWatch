@@ -1557,7 +1557,8 @@
     "badgeLive": "● LIVE",
     "badgeConnecting": "○ Verbinden…",
     "notConnected": "Camerastream niet verbonden",
-    "decoderUnsupported": "Deze browser kan de livestream niet afspelen. Er is een browser met videodecodering nodig, zoals Chrome of Edge. Tor Browser en Firefox ESR ondersteunen dit nog niet."
+    "decoderUnsupported": "Deze browser kan de livestream niet afspelen. Er is een browser met videodecodering nodig, zoals Chrome of Edge. Tor Browser en Firefox ESR ondersteunen dit nog niet.",
+    "stillFrameLabel": "Stilstaand beeld — geen live video"
   },
   "location": {
     "themeAuto": "Auto's",

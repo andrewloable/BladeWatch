@@ -26,6 +26,8 @@ import com.connectrpc.StreamType
  *    SetClimate           POST /api/vehicle/climate
  *    SetSeat              POST /api/vehicle/seat
  *    SetLights            POST /api/vehicle/lights
+ *    SetScreen            POST /api/vehicle/screen
+ *    SetMediaVolume       POST /api/vehicle/media-volume
  *    SetAdas              POST /api/vehicle/adas
  *    SetBatteryHeat       POST /api/vehicle/battery-heat
  *    GetChargingSchedule  GET  /api/vehicle/charging-schedule
@@ -177,6 +179,30 @@ public class VehicleServiceClient(
     MethodSpec(
     "bladewatch.v1.VehicleService/SetLights",
       net.bladewatch.app.grpc.v1.SetLightsRequest::class,
+      net.bladewatch.app.grpc.v1.VehicleCommandResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun setScreen(request: SetScreenRequest, headers: Headers): ResponseMessage<VehicleCommandResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.VehicleService/SetScreen",
+      net.bladewatch.app.grpc.v1.SetScreenRequest::class,
+      net.bladewatch.app.grpc.v1.VehicleCommandResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun setMediaVolume(request: SetMediaVolumeRequest, headers: Headers): ResponseMessage<VehicleCommandResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.VehicleService/SetMediaVolume",
+      net.bladewatch.app.grpc.v1.SetMediaVolumeRequest::class,
       net.bladewatch.app.grpc.v1.VehicleCommandResponse::class,
       StreamType.UNARY,
     ),

@@ -75,6 +75,8 @@
     "surveillance_invalid_quadrant_with_id": "有効でない四角形: {0}",
     "surveillance_event_frame_failed_with_detail": "イベントフレーム処理失敗: {0}",
     "surveillance_no_frame_available": "フレームはありません 監視を開始するか,イベントを最初に記録する",
+    "telemetry_overlay_unknown_type_with_id": "不明な録画タイプです: {0}",
+    "telemetry_overlay_fields_missing": "\"fields\" がありません",
     "update_app_context_not_ready": "アプリのコンテキストは準備ができていない",
     "update_check_timed_out": "アップデートチェック終了時間",
     "update_disabled_in_public_mode": "更新は PUBLIC 共有モードで無効です. 車内アプリで最初に PRIVATE モードに切り替えます.",
@@ -118,7 +120,11 @@
     "area_hood": "ハード",
     "area_trunk": "トランク",
     "area_fuel_cap": "燃料キャップ",
-    "area_door_n": "ドア{0}"
+    "area_door_n": "ドア{0}",
+    "trip_started": "走行を開始しました",
+    "trip_ended": "走行が終了しました",
+    "trip_summary_km": "{0} km · {1} 分",
+    "trip_summary_mi": "{0} mi · {1} 分"
   },
   "vehicle_control": {
     "cloud_required": "BYD アカウントを設定で接続する",
@@ -130,6 +136,7 @@
     "cloud_failed": "車にたどり着けませんでした 車両が起きるときにもう一度試してみてください",
     "rate_limited": "命令はまだ進行中です 待って数秒",
     "not_supported": "この制御は現在利用できません",
+    "blocked_moving": "車両が走行中は利用できません。",
     "find_car_label": "車を探す",
     "battery_heat_label": "熱気球",
     "close_all_windows_label": "すべての窓を閉じる"

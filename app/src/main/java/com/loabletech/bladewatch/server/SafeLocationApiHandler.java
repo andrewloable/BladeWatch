@@ -1,14 +1,11 @@
 package net.bladewatch.app.server;
 
-import net.bladewatch.app.daemon.CameraDaemon;
 import net.bladewatch.app.surveillance.SafeLocation;
 import net.bladewatch.app.surveillance.SafeLocationManager;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.OutputStream;
-import java.util.List;
 
 /**
  * Safe Location API Handler — REST endpoints for geofence zone management.

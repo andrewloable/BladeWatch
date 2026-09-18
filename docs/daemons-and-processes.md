@@ -155,6 +155,12 @@ The TCP connect is the authoritative liveness signal — it is UID-independent a
 
 `waitUntilReady(timeoutMs)` polls every 500 ms and logs progress every 5 s. It is used by `CameraDaemonClient.connect()` (60 s for cold-boot callers, 2 s for mid-session reconnects) and by `SecretConfigBridge` (30 s) before any IPC read/write.
 
+### Recording mode manager
+
+`RecordingModeManager` ([RecordingModeManager.java](../app/src/main/java/com/loabletech/bladewatch/recording/RecordingModeManager.java)) coordinates four mutually-exclusive modes (`NONE`, `CONTINUOUS`, `DRIVE_MODE`, `PROXIMITY_GUARD`) driven by ACC state and gear.
+
+`ChargingDetector`'s fused charging state (`BladeWatch-nmao.1`) is an additional input: `CONTINUOUS` and `DRIVE_MODE` are suppressed while the fused detector reports charging, so a spurious non-P gear read at a wallbox cannot start a drive recording. `PROXIMITY_GUARD` is deliberately excluded — a car at a public charger is exactly when radar triggers matter most. The decision is a pure static, `RecordingModeManager.isSuppressedByCharging(Mode, boolean)`, consulted once at the top of `activateMode` so every activation path (constructor auto-activate, `setMode`, ACC-on, gear-change, and hardware resync) is gated the same way without duplicating the check. `RecordingModeManager` seeds the flag from `ChargingDetector.getInstance().isCharging()` at construction (a daemon that boots already plugged in starts suppressed) and subscribes/unsubscribes a `FusedStateListener` in its constructor/`shutdown()`; on the charging-started edge it deactivates the running mode immediately, and on charging-ended it retries activation through the same warmup path the constructor and resync use, so a still-open pipeline resumes recording with no teardown.
+
 ## TCP Command Server
 
 `TcpCommandServer` listens on:
@@ -284,6 +290,79 @@ working.
 Startup timing measured on the head unit: ~82 s from a cold start to `Bootstrapped 100%`,
 ~6 s on a restart with a populated `DataDirectory`. `tunnelStatus` reports
 `running: true, url: null` throughout that window.
+
+## Conditional Polling
+
+`ConditionalPoller<T>` (BladeWatch-t1lg.2) polls a value only while at least one subscriber
+wants it: zero subscribers means no scheduled task exists at all (not a task that returns
+early — a no-op task still wakes the CPU). The first `subscribe()` starts the schedule and
+samples immediately so the first subscriber does not wait a full interval; the last `close()`
+cancels it. Modelled on Overdrive's `ConditionalPoller` (`docs/evaluations/overdrive-automations.md`)
+— the one piece of that project's automation subsystem that pays for itself with none of the
+rest, which is why it is here and no automation engine is.
+
+First (and, deliberately, only — a sweep of every fixed-rate poller in the daemon is a
+separate issue once this has run on a car for a while) converted caller:
+`ChargingEventNotifier`'s SOC-during-charging poll (10s interval — the shortest-interval
+fixed-rate/fixed-delay task in the daemon whose consumer is clearly identifiable and outside
+the camera/recording/vehicle-telemetry hot path; `PerformanceMonitor`, `BydDataCollector`,
+`TelemetryDataCollector`, `SocHistoryDatabase`, and the `StorageManager`/`ExternalStorageCleaner`
+watchdogs were all considered and rejected — see BladeWatch-t1lg.2's close reason for why each
+one). `startSocPoller()`/`stopSocPoller()` now subscribe/close a `ConditionalPoller<BydVehicleData>`
+instead of hand-rolling a `ScheduledFuture`, still driven by the same charging-session lifecycle
+(`onFusedEdge`) as before.
+
+## Detection Rate Scaling
+
+`PipelineRateController` (BladeWatch-t1lg.3) is the transition owner that changes how hard the
+detection pipeline works, mid-session, without dropping the encoder or tearing down the EGL
+context. `RecordingModeManager` already decides *whether* to record based on ACC/gear; this
+decides how much *surveillance/detection* work happens once something is running — recording
+quality itself (resolution, codec, bitrate, the encoder) is never touched.
+
+**Policy** (`targetFps`, a pure function — no camera, no EGL, no Android):
+
+1. A live viewer attached, or motion in the last 5 minutes → full configured rate, always. A
+   viewer or recent motion overrides everything else.
+2. ACC on (driving) → the driving rate (default 5 fps).
+3. ACC off, parked, quiet → the idle rate (default 2 fps).
+4. The result never exceeds the user's configured recording fps — a "power saving" mode that
+   raises the frame rate would be absurd.
+
+Both rates are configurable via `UnifiedConfigManager`'s `camera` section
+(`detectionDrivingFps`, `detectionIdleFps`), read the same way
+`GpuSurveillancePipeline.loadTargetFps()` reads `camera.targetFps`.
+
+**Wiring** — three inputs, no new listeners:
+
+- **ACC**: `RecordingModeManager.onAccStateChanged()` forwards the edge to
+  `PipelineRateController.getInstance().setAccOn(...)` — the same ACC source
+  `RecordingModeManager` already listens to, not a second listener.
+- **Motion**: `SurveillanceEngineGpu.processFrameV2()`'s `anyMotion` block calls
+  `onMotionDetected()`, which applies the full rate synchronously (not on the next scheduled
+  tick) and (re)starts a 5-minute one-shot timer that calls `clearRecentMotion()` if nothing
+  further happens.
+- **Live viewer**: `PipelineRateController` itself polls
+  `GpuSurveillancePipeline.getWebSocketServer().hasActiveClients()` every 15s on its own
+  injected scheduler (no standalone `WebSocketStreamServer` singleton exists to push from).
+
+**The actuator, and why it can't touch the encoder**: `PipelineRateController` never reaches
+the camera HAL or the encoder. It calls `PanoramicCameraGpu.setDetectionRate(fps)`, which
+delegates to `AiLaneWorker.setDetectionRate(fps)` — a wall-clock throttle (`fps <= 0` disables
+it) applied in `AiLaneWorker.submitFrame()`, *before* a frame is even accepted for
+`SurveillanceEngineGpu.processFrame()`. This is deliberately not the same path as
+`PanoramicCameraGpu.setTargetFps()`, which reaches `AvmCameraHelper.setCameraFps()` on the live
+camera HAL and the encoder's `KEY_FRAME_RATE` — reusing it for automatic, frequent ACC-driven
+scaling would mean an encoder reinit on every drive-to-park transition, which is exactly the
+disruption this feature exists to avoid. Because throttling happens purely by dropping some
+frames before they reach the motion pipeline (the same recycle-on-drop path `AiLaneWorker`
+already uses when busy), the native pipeline's own state — confidence history, quadrant state,
+tracker continuity — is never reset by a rate change.
+
+**Not yet verified on a device**: the unit tests prove the decision logic and that the
+transition owner calls only the rate setter, never a teardown/re-init/release method on its
+target. They cannot prove the EGL/encoder survive a real ACC on→off transition on the actual
+hardware — that requires a car. See BladeWatch-t1lg.3's status.
 
 ## Process Interaction Summary
 

@@ -53,6 +53,19 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
   // successful poll — matches native's identical `applyStateToViews()` sync.
   bool _acOn = false;
   bool get acOn => _acOn;
+
+  // BladeWatch-2000.3: no status field reports this -- SetScreen is fire-and-forget, so this
+  // tracks only what the owner last asked for in this session, not the actual panel state.
+  bool _screenOn = true;
+  bool get screenOn => _screenOn;
+
+  // BladeWatch-2000.2: unlike screenOn above, GetVehicleState DOES report this (the real
+  // AudioManager stream state), so _fetchState below overwrites these with server truth on
+  // every poll -- these are not a local-only guess.
+  int _mediaVolumePercent = 0;
+  int get mediaVolumePercent => _mediaVolumePercent;
+  bool _mediaMuted = false;
+  bool get mediaMuted => _mediaMuted;
   int _setpointC = 22;
   int get setpointC => _setpointC;
   int _fanLevel = 3;
@@ -164,6 +177,8 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
       _setpointC = newState.climate.setpointC;
       _fanLevel = newState.climate.fanLevel;
       _maxCooling = newState.climate.maxCooling;
+      _mediaVolumePercent = m.mediaVolumePercent.clamp(0, 100);
+      _mediaMuted = m.mediaMuted;
     } catch (_) {
       _registerFailure();
     }
@@ -290,6 +305,143 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
       }
     } catch (e) {
       _acOn = !nowOn;
+      notifyListeners();
+      return '$e';
+    }
+    return null;
+  }
+
+  /// BladeWatch-2000.3: turning the screen off while moving is refused server-side
+  /// (VehicleCommandRouter's motion interlock); turning it back on always succeeds. Reverts
+  /// the optimistic update on any failure, same shape as [toggleAc].
+  Future<String?> toggleScreen() async {
+    if (!_debounce('screen_toggle')) return null;
+    final nowOn = !_screenOn;
+    _screenOn = nowOn;
+    notifyListeners();
+    try {
+      final resp = await _vehicleService.setScreen(pb.SetScreenRequest(on: nowOn));
+      final result = _mapCommand(resp);
+      if (!result.ok) {
+        _screenOn = !nowOn;
+        notifyListeners();
+        return result.failure;
+      }
+    } catch (e) {
+      _screenOn = !nowOn;
+      notifyListeners();
+      return '$e';
+    }
+    return null;
+  }
+
+  // ─────────────────────────── Media volume (BladeWatch-2000.2) ────────────────────────
+
+  /// [beforePercent]/[beforeMuted] must be captured by the caller BEFORE its own optimistic
+  /// update -- capturing them in here would capture the value the caller already changed it
+  /// to, making the revert-on-failure below a no-op (caught by this issue's own tests).
+  Future<String?> _sendVolumeAction(String action, int beforePercent, bool beforeMuted, {int? percent}) async {
+    try {
+      final resp = await _vehicleService
+          .setMediaVolume(pb.SetMediaVolumeRequest(action: action, percent: percent));
+      final result = _mapCommand(resp);
+      if (!result.ok) {
+        _mediaVolumePercent = beforePercent;
+        _mediaMuted = beforeMuted;
+        notifyListeners();
+        return result.failure;
+      }
+    } catch (e) {
+      _mediaVolumePercent = beforePercent;
+      _mediaMuted = beforeMuted;
+      notifyListeners();
+      return '$e';
+    }
+    return null;
+  }
+
+  /// Optimistic step matching the daemon's own MediaVolumeController.STEP_PERCENT; the next
+  /// poll corrects this to the real server value via _fetchState, same as the climate
+  /// temp/fan steppers.
+  static const int _volumeStepPercent = 5;
+
+  // No setMediaVolumePercent here: this screen offers a stepper, not a slider, so nothing
+  // calls it. The daemon's POST /api/vehicle/media-volume still accepts {"action": "set",
+  // "percent": n} for the web UI — add the wrapper back when a slider needs it.
+
+  Future<String?> stepVolumeUp() async {
+    if (!_debounce('volume_step')) return null;
+    final beforePercent = _mediaVolumePercent;
+    final beforeMuted = _mediaMuted;
+    _mediaVolumePercent = (_mediaVolumePercent + _volumeStepPercent).clamp(0, 100);
+    notifyListeners();
+    return _sendVolumeAction('step_up', beforePercent, beforeMuted);
+  }
+
+  Future<String?> stepVolumeDown() async {
+    if (!_debounce('volume_step')) return null;
+    final beforePercent = _mediaVolumePercent;
+    final beforeMuted = _mediaMuted;
+    _mediaVolumePercent = (_mediaVolumePercent - _volumeStepPercent).clamp(0, 100);
+    notifyListeners();
+    return _sendVolumeAction('step_down', beforePercent, beforeMuted);
+  }
+
+  Future<String?> toggleMute() async {
+    if (!_debounce('volume_mute')) return null;
+    final beforePercent = _mediaVolumePercent;
+    final wasMuted = _mediaMuted;
+    _mediaMuted = !wasMuted;
+    notifyListeners();
+    return _sendVolumeAction(wasMuted ? 'unmute' : 'mute', beforePercent, wasMuted);
+  }
+
+  // ─────────────────────────── Defrosters (BladeWatch-2000.1) ──────────────────────────
+  // No status field reports these (see BladeWatch-2000.1's own close reason for why wind
+  // mode/cycle mode have no UI at all) -- fire-and-forget, same as screenOn in
+  // BladeWatch-2000.3.
+
+  bool _frontDefrostOn = false;
+  bool get frontDefrostOn => _frontDefrostOn;
+  bool _rearDefrostOn = false;
+  bool get rearDefrostOn => _rearDefrostOn;
+
+  Future<String?> toggleFrontDefrost() async {
+    if (!_debounce('front_defrost')) return null;
+    final nowOn = !_frontDefrostOn;
+    _frontDefrostOn = nowOn;
+    notifyListeners();
+    try {
+      final resp = await _vehicleService.setClimate(pb.SetClimateRequest(action: 'front_defrost', on: nowOn));
+      final result = _mapCommand(resp);
+      if (!result.ok) {
+        _frontDefrostOn = !nowOn;
+        notifyListeners();
+        return result.failure;
+      }
+    } catch (e) {
+      _frontDefrostOn = !nowOn;
+      notifyListeners();
+      return '$e';
+    }
+    return null;
+  }
+
+  Future<String?> toggleRearDefrost() async {
+    if (!_debounce('rear_defrost')) return null;
+    final nowOn = !_rearDefrostOn;
+    _rearDefrostOn = nowOn;
+    notifyListeners();
+    try {
+      final resp = await _vehicleService.setClimate(pb.SetClimateRequest(action: 'rear_defrost', on: nowOn));
+      final result = _mapCommand(resp);
+      if (!result.ok) {
+        _rearDefrostOn = !nowOn;
+        notifyListeners();
+        return result.failure;
+      }
+    } catch (e) {
+      _rearDefrostOn = !nowOn;
       notifyListeners();
       return '$e';
     }

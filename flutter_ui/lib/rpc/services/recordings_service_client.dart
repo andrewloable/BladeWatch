@@ -66,4 +66,11 @@ class RecordingsServiceClient {
         (json) => GetEventTimelineResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
+  Future<MarkRecordingResponse> markRecording(MarkRecordingRequest request) => _transport.call(
+        'RecordingsService',
+        'MarkRecording',
+        request,
+        (json) => MarkRecordingResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
 }

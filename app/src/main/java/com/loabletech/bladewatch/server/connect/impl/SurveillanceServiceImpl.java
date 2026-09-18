@@ -116,6 +116,10 @@ public class SurveillanceServiceImpl {
             if (status != null) {
                 flat.put("pipelineRunning", status.optBoolean("active", false));
                 flat.put("surveillanceActive", status.optBoolean("enabled", false));
+                // BladeWatch-gyg1.2: already computed by BydCameraCoordinator and already in
+                // the REST status object -- these two field names match exactly, no reshaping.
+                flat.put("cameraYielded", status.optBoolean("cameraYielded", false));
+                flat.put("nativeAppActive", status.optBoolean("nativeAppActive", false));
             }
             return ConnectResponse.of(flat.toString());
         } catch (org.json.JSONException e) {

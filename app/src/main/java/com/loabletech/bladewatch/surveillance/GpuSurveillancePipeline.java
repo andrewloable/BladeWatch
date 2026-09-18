@@ -38,6 +38,13 @@ public class GpuSurveillancePipeline {
     private HardwareEventRecorderGpu streamEncoder;
     private net.bladewatch.app.streaming.WebSocketStreamServer wsStreamServer;
     private boolean streamingEnabled = false;
+
+    // BladeWatch-y78o.1: still-frame fallback for browsers with no video decoder. Reads the
+    // same mosaic RGB buffer `sentry` already produces every frame; only the periodic JPEG
+    // encode (see StillFrameRefresher's own doc comment) is new work, and it is on its own
+    // timer, not the camera's.
+    private static final long STILL_FRAME_REFRESH_INTERVAL_MS = 5000L;
+    private net.bladewatch.app.streaming.StillFrameRefresher stillFrameRefresher;
     
     // Telemetry overlay
     private TelemetryDataCollector telemetryCollector;
@@ -849,6 +856,21 @@ public class GpuSurveillancePipeline {
         sentry.init(eventOutputDir, downscaler, assetManager, context);  // Pass Context for Java TFLite
         sentry.setRecorder(recorder);  // Share recorder with normal recording
 
+        // BladeWatch-t1lg.3: scale detection work by ACC/parked/motion/viewer state. A
+        // process-wide singleton -- init() here is a no-op on a later stop/start reinit cycle
+        // (PipelineRateController.init already returns the existing instance), and the
+        // RateTarget lambda reads the `camera` field fresh on every call, so it keeps working
+        // across a camera re-open without re-registering anything.
+        net.bladewatch.app.surveillance.PipelineRateController.init(
+                detectionFps -> {
+                    if (camera != null) camera.setDetectionRate(detectionFps);
+                },
+                loadTargetFps(),
+                () -> {
+                    net.bladewatch.app.streaming.WebSocketStreamServer ws = getWebSocketServer();
+                    return ws != null && ws.hasActiveClients();
+                });
+
         // 4b. Apply saved config (use the pre-loaded one if available so we don't
         // hit disk twice).
         try {
@@ -1552,9 +1574,52 @@ public class GpuSurveillancePipeline {
         wsStreamServer.start();
         logger.info("WebSocket server started, setting stream callback...");
         streamEncoder.setStreamCallback(wsStreamServer);
-        
+
         streamingEnabled = true;
         logger.info("H.264 streaming enabled (WebSocket port 8887)");
+
+        // BladeWatch-y78o.1: start the still-frame refresher alongside the real stream so a
+        // browser with no decoder has something to fall back to for as long as live view is
+        // open. Bitmap.compress needs android.graphics, so the encoder is a plain lambda here
+        // (Kotlin fun interfaces are callable as Java SAM lambdas) rather than living in the
+        // Kotlin file itself, which stays free of android.* imports.
+        stillFrameRefresher = new net.bladewatch.app.streaming.StillFrameRefresher(
+                () -> sentry != null ? sentry.getLatestMosaicFrame() : null,
+                // Fixed 640x480 — NOT streamScaler's configurable width/height. This is
+                // SurveillanceEngineGpu.getLatestMosaicFrame()'s own dimension, unrelated to the
+                // live H.264 stream's resolution (see that method's doc comment). Same literal
+                // SurveillanceApiHandler#sendQuadrantSnapshot already hardcodes for the same
+                // buffer.
+                640, 480,
+                GpuSurveillancePipeline::encodeMosaicJpeg,
+                STILL_FRAME_REFRESH_INTERVAL_MS,
+                java.util.concurrent.Executors.newSingleThreadScheduledExecutor());
+        stillFrameRefresher.start();
+    }
+
+    /**
+     * Encodes a 3-byte-per-pixel RGB buffer as a JPEG. The {@link net.bladewatch.app.streaming.JpegEncoder}
+     * implementation used by {@link #stillFrameRefresher} — kept as a plain static method (not a
+     * lambda capturing pipeline state) so it has no dependency on pipeline internals, matching
+     * SurveillanceApiHandler#sendQuadrantFromMosaic's existing RGB→ARGB→JPEG conversion.
+     */
+    private static byte[] encodeMosaicJpeg(byte[] rgb, int width, int height) {
+        int[] pixels = new int[width * height];
+        for (int i = 0, p = 0; p < pixels.length && i + 2 < rgb.length; i += 3, p++) {
+            int r = rgb[i] & 0xFF;
+            int g = rgb[i + 1] & 0xFF;
+            int b = rgb[i + 2] & 0xFF;
+            pixels[p] = 0xFF000000 | (r << 16) | (g << 8) | b;
+        }
+        android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(
+                pixels, width, height, android.graphics.Bitmap.Config.ARGB_8888);
+        try {
+            java.io.ByteArrayOutputStream jpegOut = new java.io.ByteArrayOutputStream();
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, jpegOut);
+            return jpegOut.toByteArray();
+        } finally {
+            bitmap.recycle();
+        }
     }
     
     /**
@@ -1567,7 +1632,15 @@ public class GpuSurveillancePipeline {
         
         logger.info("Disabling H.264 streaming...");
         streamingEnabled = false;
-        
+
+        // BladeWatch-y78o.1: stop the still-frame refresher's timer and drop the retained
+        // frame -- serving a frame from a stopped session would be honestly stale, not just
+        // a few seconds old.
+        if (stillFrameRefresher != null) {
+            stillFrameRefresher.stop();
+            stillFrameRefresher = null;
+        }
+
         // CRITICAL: Clear streaming components from camera FIRST
         // This prevents render loop from using released surfaces
         if (camera != null) {
@@ -1627,7 +1700,15 @@ public class GpuSurveillancePipeline {
     public net.bladewatch.app.streaming.WebSocketStreamServer getWebSocketServer() {
         return wsStreamServer;
     }
-    
+
+    /**
+     * BladeWatch-y78o.1: the most recently retained still-frame JPEG, or null if streaming
+     * isn't enabled or no frame has been produced yet.
+     */
+    public byte[] getLatestStillFrame() {
+        return stillFrameRefresher != null ? stillFrameRefresher.current() : null;
+    }
+
     /**
      * Sets the stream view mode (which camera to show).
      * 

@@ -75,6 +75,8 @@
     "surveillance_invalid_quadrant_with_id": "Invalide kvadrant: {0}",
     "surveillance_event_frame_failed_with_detail": "Felet til å behandle hendelsesramme: {0}",
     "surveillance_no_frame_available": "Ingen ramme tilgjengelig  starte overvåking eller registrere en hendelse først",
+    "telemetry_overlay_unknown_type_with_id": "Ukjent opptakstype: {0}",
+    "telemetry_overlay_fields_missing": "Mangler \"fields\"",
     "update_app_context_not_ready": "App- kontekst ikke klar",
     "update_check_timed_out": "Oppdatering sjekk ut",
     "update_disabled_in_public_mode": "Oppdateringer er deaktivert i PUBLIC Sharing-modus. Skifte til PRIVATE-modus i bilen app først.",
@@ -118,7 +120,11 @@
     "area_hood": "Hode",
     "area_trunk": "Trunk",
     "area_fuel_cap": "Brenselkap",
-    "area_door_n": "Dør {0}"
+    "area_door_n": "Dør {0}",
+    "trip_started": "Tur startet",
+    "trip_ended": "Tur avsluttet",
+    "trip_summary_km": "{0} km · {1} min",
+    "trip_summary_mi": "{0} mi · {1} min"
   },
   "vehicle_control": {
     "cloud_required": "Koble en BYD konto i innstillinger for å bruke denne kontrollen",
@@ -130,6 +136,7 @@
     "cloud_failed": "Ikke kunne nå bilen  prøv igjen når bilen er våken",
     "rate_limited": "Et kommando er fortsatt i gang  vent et par sekunder",
     "not_supported": "Denne kontrollen er ikke tilgjengelig akkurat nå",
+    "blocked_moving": "Utilgjengelig mens kjøretøyet er i bevegelse.",
     "find_car_label": "Finn en bil",
     "battery_heat_label": "Hottery Bat",
     "close_all_windows_label": "alle vinduer lukket"

@@ -73,4 +73,16 @@ public interface SetClimateRequestOrBuilder extends
    * @return The restoreFanLevel.
    */
   int getRestoreFanLevel();
+
+  /**
+   * <pre>
+   * BladeWatch-2000.1. Value meaning is not established in source (see
+   * docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+   * already is; the UI does not offer a labelled picker for either.
+   * </pre>
+   *
+   * <code>int32 cycle_mode = 10 [json_name = "cycleMode"];</code>
+   * @return The cycleMode.
+   */
+  int getCycleMode();
 }

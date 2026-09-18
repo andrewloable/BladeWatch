@@ -312,6 +312,7 @@ class GetQualityResponse extends $pb.GeneratedMessage {
     $core.Iterable<$core.MapEntry<$core.String, $core.String>>? fpsOptions,
     $core.String? nativeResolution,
     $core.int? recordingSegmentMinutes,
+    $core.String? recordingPriority,
   }) {
     final result = GetQualityResponse._();
     if (success != null) result.success = success;
@@ -327,6 +328,7 @@ class GetQualityResponse extends $pb.GeneratedMessage {
     if (nativeResolution != null) result.nativeResolution = nativeResolution;
     if (recordingSegmentMinutes != null)
       result.recordingSegmentMinutes = recordingSegmentMinutes;
+    if (recordingPriority != null) result.recordingPriority = recordingPriority;
     return result;
   }
 
@@ -370,6 +372,7 @@ class GetQualityResponse extends $pb.GeneratedMessage {
         packageName: const $pb.PackageName('bladewatch.v1'))
     ..aOS(9, _omitFieldNames ? '' : 'nativeResolution')
     ..aI(10, _omitFieldNames ? '' : 'recordingSegmentMinutes')
+    ..aOS(11, _omitFieldNames ? '' : 'recordingPriority')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -476,6 +479,16 @@ class GetQualityResponse extends $pb.GeneratedMessage {
   $core.bool hasRecordingSegmentMinutes() => $_has(9);
   @$pb.TagNumber(10)
   void clearRecordingSegmentMinutes() => $_clearField(10);
+
+  /// One of: PERFORMANCE, RELIABILITY. See RecordingPriority.
+  @$pb.TagNumber(11)
+  $core.String get recordingPriority => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set recordingPriority($core.String value) => $_setString(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasRecordingPriority() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearRecordingPriority() => $_clearField(11);
 }
 
 class SetQualityRequest extends $pb.GeneratedMessage {
@@ -485,6 +498,7 @@ class SetQualityRequest extends $pb.GeneratedMessage {
     $core.String? streamingQuality,
     $core.int? fps,
     $core.int? recordingSegmentMinutes,
+    $core.String? recordingPriority,
   }) {
     final result = SetQualityRequest._();
     if (recordingQuality != null) result.recordingQuality = recordingQuality;
@@ -493,6 +507,7 @@ class SetQualityRequest extends $pb.GeneratedMessage {
     if (fps != null) result.fps = fps;
     if (recordingSegmentMinutes != null)
       result.recordingSegmentMinutes = recordingSegmentMinutes;
+    if (recordingPriority != null) result.recordingPriority = recordingPriority;
     return result;
   }
 
@@ -514,6 +529,7 @@ class SetQualityRequest extends $pb.GeneratedMessage {
     ..aOS(3, _omitFieldNames ? '' : 'streamingQuality')
     ..aI(4, _omitFieldNames ? '' : 'fps')
     ..aI(5, _omitFieldNames ? '' : 'recordingSegmentMinutes')
+    ..aOS(6, _omitFieldNames ? '' : 'recordingPriority')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -587,6 +603,16 @@ class SetQualityRequest extends $pb.GeneratedMessage {
   $core.bool hasRecordingSegmentMinutes() => $_has(4);
   @$pb.TagNumber(5)
   void clearRecordingSegmentMinutes() => $_clearField(5);
+
+  /// One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+  @$pb.TagNumber(6)
+  $core.String get recordingPriority => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set recordingPriority($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasRecordingPriority() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearRecordingPriority() => $_clearField(6);
 }
 
 class SetQualityResponse extends $pb.GeneratedMessage {

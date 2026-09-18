@@ -45,6 +45,10 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.SetSeatRequest request);
   $async.Future<$0.VehicleCommandResponse> setLights(
       $pb.ServerContext ctx, $0.SetLightsRequest request);
+  $async.Future<$0.VehicleCommandResponse> setScreen(
+      $pb.ServerContext ctx, $0.SetScreenRequest request);
+  $async.Future<$0.VehicleCommandResponse> setMediaVolume(
+      $pb.ServerContext ctx, $0.SetMediaVolumeRequest request);
   $async.Future<$0.VehicleCommandResponse> setAdas(
       $pb.ServerContext ctx, $0.SetAdasRequest request);
   $async.Future<$0.VehicleCommandResponse> setBatteryHeat(
@@ -90,6 +94,10 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
         return $0.SetSeatRequest();
       case 'SetLights':
         return $0.SetLightsRequest();
+      case 'SetScreen':
+        return $0.SetScreenRequest();
+      case 'SetMediaVolume':
+        return $0.SetMediaVolumeRequest();
       case 'SetAdas':
         return $0.SetAdasRequest();
       case 'SetBatteryHeat':
@@ -140,6 +148,10 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
         return setSeat(ctx, request as $0.SetSeatRequest);
       case 'SetLights':
         return setLights(ctx, request as $0.SetLightsRequest);
+      case 'SetScreen':
+        return setScreen(ctx, request as $0.SetScreenRequest);
+      case 'SetMediaVolume':
+        return setMediaVolume(ctx, request as $0.SetMediaVolumeRequest);
       case 'SetAdas':
         return setAdas(ctx, request as $0.SetAdasRequest);
       case 'SetBatteryHeat':

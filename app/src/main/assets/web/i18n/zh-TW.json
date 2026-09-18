@@ -1557,7 +1557,8 @@
     "badgeLive": "● 直播",
     "badgeConnecting": "○ 連線中…",
     "notConnected": "相機串流未連線",
-    "decoderUnsupported": "此瀏覽器無法播放即時畫面。需要支援視訊解碼的瀏覽器，例如 Chrome 或 Edge。Tor Browser 與 Firefox ESR 尚不支援。"
+    "decoderUnsupported": "此瀏覽器無法播放即時畫面。需要支援視訊解碼的瀏覽器，例如 Chrome 或 Edge。Tor Browser 與 Firefox ESR 尚不支援。",
+    "stillFrameLabel": "靜態影像 — 非即時視訊"
   },
   "location": {
     "themeAuto": "自動使用",

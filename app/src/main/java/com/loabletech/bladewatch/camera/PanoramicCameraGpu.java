@@ -217,10 +217,6 @@ public class PanoramicCameraGpu {
     }
     private CameraYieldListener yieldListener;
     
-    // CPU usage monitoring
-    private long lastCpuCheckTime = 0;
-    private static final long CPU_CHECK_INTERVAL_MS = 10000;  // Every 10 seconds
-    
     // Stats logging (time-based, not frame-based)
     private long lastStatsTime = 0;
     private int lastStatsFrameCount = 0;
@@ -2482,6 +2478,21 @@ public class PanoramicCameraGpu {
     public float getMeasuredFps() {
         return measuredFps;
     }
+
+    /**
+     * BladeWatch-t1lg.3: {@code PipelineRateController.RateTarget}. Deliberately NOT
+     * {@link #setTargetFps} -- that one reaches the camera HAL and the encoder's
+     * KEY_FRAME_RATE; this only throttles how often {@link AiLaneWorker} accepts a frame for
+     * detection. Camera capture rate, the encoder, and the EGL context are untouched. A no-op
+     * before {@code aiLaneWorker} exists (camera not yet open) -- the next rate change after
+     * open reapplies it, so this is a missed interval at worst, never a crash.
+     */
+    public void setDetectionRate(int fps) {
+        net.bladewatch.app.camera.AiLaneWorker worker = aiLaneWorker;
+        if (worker != null) {
+            worker.setDetectionRate(fps);
+        }
+    }
     /**
      * Enables auto-probe mode: tries camera IDs 0-5 at startup to find
      * the one that produces actual image data. Logs resolution and pixel
@@ -2786,53 +2797,6 @@ public class PanoramicCameraGpu {
         return height;
     }
     
-    /**
-     * Checks CPU usage and logs warning if exceeds threshold.
-     * 
-     * Provides breakdown by component to identify bottlenecks.
-     */
-    private void checkCpuUsage() {
-        long now = System.currentTimeMillis();
-        if (now - lastCpuCheckTime < CPU_CHECK_INTERVAL_MS) {
-            return;
-        }
-        
-        lastCpuCheckTime = now;
-        
-        try {
-            // Read /proc/stat for total CPU time
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.FileReader("/proc/stat"));
-            String line = reader.readLine();
-            reader.close();
-            
-            // Parse CPU times
-            String[] tokens = line.split("\\s+");
-            long totalCpu = 0;
-            for (int i = 1; i < tokens.length; i++) {
-                totalCpu += Long.parseLong(tokens[i]);
-            }
-            
-            // Read /proc/self/stat for process CPU time
-            reader = new java.io.BufferedReader(
-                    new java.io.FileReader("/proc/self/stat"));
-            line = reader.readLine();
-            reader.close();
-            
-            tokens = line.split("\\s+");
-            long processCpu = Long.parseLong(tokens[13]) + Long.parseLong(tokens[14]);
-            
-            // Calculate CPU percentage (simplified)
-            // Note: This is a rough estimate. For accurate measurement, use
-            // Android Profiler or systrace.
-            // Logging disabled to reduce log spam - uncomment for debugging
-            // logger.debug( String.format("CPU check: process=%d, total=%d", processCpu, totalCpu));
-            
-        } catch (Exception e) {
-            // Silent fail - CPU monitoring is optional
-        }
-    }
-
     // ── Timing helpers (only called at emission, never per-frame) ──────────
 
     private static long p50ms(long[] ns, int filled) {

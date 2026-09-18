@@ -98,8 +98,6 @@ public class AccSentryDaemon {
     private static PowerManager.WakeLock wakeLock;
 
     // Original screen timeout (saved before sentry mode)
-    private static String originalScreenTimeout = "60000";
-    
     // Daemon start time for uptime tracking
     private static long startTime = 0;
 
@@ -1475,44 +1473,12 @@ public class AccSentryDaemon {
     private static void setBacklightState(boolean on) {
         log("Setting backlight: " + (on ? "ON" : "OFF"));
 
-        // Try PowerManager reflection
-        if (appContext != null) {
-            try {
-                PowerManager pm = (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
-                String methodName = on ? "turnBacklightOn" : "turnBacklightOff";
-                try {
-                    Method m = pm.getClass().getMethod(methodName, long.class);
-                    m.invoke(pm, android.os.SystemClock.uptimeMillis());
-                    log("Backlight: PowerManager." + methodName + " SUCCESS");
-                    return;
-                } catch (NoSuchMethodException e) {
-                    // Try PascalCase variant
-                    methodName = on ? "TurnBacklightOn" : "TurnBacklightOff";
-                    try {
-                        Method m = pm.getClass().getMethod(methodName, long.class);
-                        m.invoke(pm, android.os.SystemClock.uptimeMillis());
-                        log("Backlight: PowerManager." + methodName + " SUCCESS");
-                        return;
-                    } catch (Exception e2) {
-                        // Fall through
-                    }
-                }
-            } catch (Exception e) {
-                // Fall through
-            }
-
-            // Try BYD Hardware Service
-            try {
-                Class<?> clazz = Class.forName("android.hardware.bydauto.setting.BYDAutoSettingDevice");
-                Method getInstance = clazz.getMethod("getInstance", Context.class);
-                Object device = getInstance.invoke(null, appContext);
-                String methodName = on ? "turnBacklightOn" : "turnBacklightOff";
-                clazz.getMethod(methodName).invoke(device);
-                log("Backlight: BYDAutoSettingDevice." + methodName + " SUCCESS");
-                return;
-            } catch (Exception e) {
-                // Fall through
-            }
+        // BladeWatch-2000.3: the PowerManager/BYD-hardware-service reflection cascade now
+        // lives in BacklightController, shared with the explicit screen on/off vehicle
+        // command. Behaviour is identical to the pre-extraction inline version -- pinned by
+        // AccSentryDaemonBacklightDelegationTest.
+        if (appContext != null && net.bladewatch.app.byd.BacklightController.setBacklight(appContext, on)) {
+            return;
         }
 
         // Fallback: Settings brightness
@@ -1522,37 +1488,6 @@ public class AccSentryDaemon {
             execShell("input keyevent 224");  // KEYCODE_WAKEUP
         } else {
             execShell("input keyevent 223");  // KEYCODE_SLEEP
-        }
-    }
-
-    /**
-     * Enforces strict power management state.
-     * Transitions the display to the OFF state while strictly prohibiting
-     * the operating system from entering deep sleep (Doze) modes.
-     * This maintains network and CPU availability while minimizing power draw.
-     */
-    private static void enforceSmartSleep() {
-        if (appContext == null) return;
-        
-        try {
-            Context permissiveContext = new PermissionBypassContext(appContext);
-            PowerManager pm = (PowerManager) permissiveContext.getSystemService(Context.POWER_SERVICE);
-            
-            // Method signature: goToSleep(long time, int reason, int flags)
-            Method method = PowerManager.class.getMethod("goToSleep", Long.TYPE, Integer.TYPE, Integer.TYPE);
-            
-            // Dynamically retrieve the system-specific reason code (Compatibility Mode)
-            // This ensures the command is accepted by the Body Control Module
-            int reasonID = getSystemSleepReasonCode();
-            
-            // Execute with Flag 1 (GO_TO_SLEEP_FLAG_NO_DOZE)
-            // Flag 1 is the critical component: Screen OFF, but CPU/Radio remain ACTIVE.
-            method.invoke(pm, android.os.SystemClock.uptimeMillis(), reasonID, 1);
-            
-        } catch (Exception e) {
-            log("Smart sleep state enforcement failed: " + e.getMessage());
-            // Graceful fallback to basic backlight control if reflection fails
-            setBacklightState(false);
         }
     }
 

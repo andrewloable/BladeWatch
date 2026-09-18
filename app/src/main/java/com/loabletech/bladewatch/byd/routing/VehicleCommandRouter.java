@@ -34,7 +34,7 @@ public final class VehicleCommandRouter {
 
     // ── Public types ────────────────────────────────────────────────────
 
-    public enum Outcome { SUCCESS, FAILED, NOT_SUPPORTED, RATE_LIMITED, AUTH_REQUIRED }
+    public enum Outcome { SUCCESS, FAILED, NOT_SUPPORTED, RATE_LIMITED, AUTH_REQUIRED, BLOCKED_UNSAFE }
 
     /** Path actually executed. */
     public enum Path { SDK, NONE }
@@ -64,6 +64,9 @@ public final class VehicleCommandRouter {
         public static CommandResult notSupported(String msg) {
             return new CommandResult(Outcome.NOT_SUPPORTED, Path.NONE, msg, 0, null);
         }
+        public static CommandResult blockedUnsafe(String msg) {
+            return new CommandResult(Outcome.BLOCKED_UNSAFE, Path.NONE, msg, 0, null);
+        }
 
         public String pathString() {
             switch (path) {
@@ -89,6 +92,17 @@ public final class VehicleCommandRouter {
 
         /** Run via SDK. Returns true on success, false on failure. */
         public boolean executeViaSdk(BydDataCollector collector) { return false; }
+
+        /**
+         * True only for a command where giving control back to the driver is never the
+         * unsafe direction, so a BLOCK_MOVING/BLOCK_UNKNOWN motion decision must not prevent
+         * it from running (BladeWatch-2000.3 — screen ON specifically: "screen off" stays
+         * gated normally). Default false. This does not skip the motion interlock
+         * evaluation itself (see {@link #execute}) — every command's decision is still
+         * computed and logged, only the BLOCKING policy is directional for the one command
+         * that opts in.
+         */
+        public boolean allowedWhileUnsafe() { return false; }
     }
 
     // ── Concrete commands ───────────────────────────────────────────────
@@ -172,6 +186,44 @@ public final class VehicleCommandRouter {
         public String name() { return "climate-fan"; }
         public boolean hasSdkPath() { return true; }
         public boolean executeViaSdk(BydDataCollector c) { return c.setAcFanLevel(level); }
+    }
+
+    /** BladeWatch-2000.1. */
+    public static final class FrontDefrostCommand extends VehicleCommand {
+        public final boolean on;
+        public FrontDefrostCommand(boolean on) { this.on = on; }
+        public String name() { return "climate-front-defrost"; }
+        public boolean hasSdkPath() { return true; }
+        public boolean executeViaSdk(BydDataCollector c) { return c.setFrontDefrost(on); }
+    }
+
+    /** BladeWatch-2000.1. */
+    public static final class RearDefrostCommand extends VehicleCommand {
+        public final boolean on;
+        public RearDefrostCommand(boolean on) { this.on = on; }
+        public String name() { return "climate-rear-defrost"; }
+        public boolean hasSdkPath() { return true; }
+        public boolean executeViaSdk(BydDataCollector c) { return c.setRearDefrost(on); }
+    }
+
+    /** BladeWatch-2000.1. Raw SDK value, carried through unlabeled -- its meaning is not
+     * established in source (see docs/byd-integrations.md); no UI offers a labelled picker. */
+    public static final class ClimateSetWindModeCommand extends VehicleCommand {
+        public final int mode;
+        public ClimateSetWindModeCommand(int mode) { this.mode = mode; }
+        public String name() { return "climate-wind-mode"; }
+        public boolean hasSdkPath() { return true; }
+        public boolean executeViaSdk(BydDataCollector c) { return c.setAcWindMode(mode); }
+    }
+
+    /** BladeWatch-2000.1. Raw SDK value -- same "unlabeled" reasoning as
+     * {@link ClimateSetWindModeCommand}. */
+    public static final class ClimateSetCycleModeCommand extends VehicleCommand {
+        public final int mode;
+        public ClimateSetCycleModeCommand(int mode) { this.mode = mode; }
+        public String name() { return "climate-cycle-mode"; }
+        public boolean hasSdkPath() { return true; }
+        public boolean executeViaSdk(BydDataCollector c) { return c.setAcCycleMode(mode); }
     }
 
     public static final class ClimateMaxCoolingCommand extends VehicleCommand {
@@ -275,16 +327,87 @@ public final class VehicleCommandRouter {
         public String name() { return "smart-charging-toggle"; }
     }
 
+    // ── Screen backlight (BladeWatch-2000.3) ───────────────────────────────
+    // BYD vendor PowerManager.TurnBacklightOn/Off reflection, shared with the stealth-panel
+    // path in AccSentryDaemon via BacklightController — see BydDataCollector.setScreenBacklight.
+
+    /** Giving the driver their screen back is never the unsafe direction. */
+    public static final class ScreenOnCommand extends VehicleCommand {
+        public String name() { return "screen-on"; }
+        public boolean hasSdkPath() { return true; }
+        public boolean allowedWhileUnsafe() { return true; }
+        public boolean executeViaSdk(BydDataCollector c) { return c.setScreenBacklight(true); }
+    }
+
+    /** Turning the panel off is only permitted while parked — normal (non-directional)
+     * interlock gating applies, same as every other command. */
+    public static final class ScreenOffCommand extends VehicleCommand {
+        public String name() { return "screen-off"; }
+        public boolean hasSdkPath() { return true; }
+        public boolean executeViaSdk(BydDataCollector c) { return c.setScreenBacklight(false); }
+    }
+
+    // ── Motion interlock (BladeWatch-2pnn.2) ───────────────────────────────
+
+    /** Gear + speed as read at dispatch time. Package-private seam for tests. */
+    interface MotionState {
+        int gear();
+        double speedKmh();
+        /** A daemon that has never received a gear sample must not refuse every command
+         * forever; one that HAS seen telemetry and then lost it must refuse. Live callers
+         * derive this from whether GearMonitor has ever received a sample; test doubles set
+         * it directly (BladeWatch-2000.3 — needed to exercise BLOCK_UNKNOWN deterministically,
+         * which this router could not do before: it always read the live GearMonitor for this
+         * flag, even when gear()/speedKmh() were injected for a test). */
+        boolean requireKnownState();
+    }
+
+    /** Non-null only in tests; production reads the live singletons via {@link #liveMotionState()}. */
+    private volatile MotionState motionState = null;
+
+    void setMotionStateForTest(MotionState state) {
+        this.motionState = state;
+    }
+
+    private static MotionState liveMotionState() {
+        int gear = net.bladewatch.app.monitor.GearMonitor.getInstance().getCurrentGear();
+        net.bladewatch.app.byd.BydVehicleData data = BydDataCollector.getInstance().getData();
+        double speedKmh = (data != null) ? data.speedKmh : Double.NaN;
+        boolean requireKnownState = net.bladewatch.app.monitor.GearMonitor.getInstance().getLastUpdateTime() != 0;
+        return new MotionState() {
+            public int gear() { return gear; }
+            public double speedKmh() { return speedKmh; }
+            public boolean requireKnownState() { return requireKnownState; }
+        };
+    }
+
     // ── Routing ─────────────────────────────────────────────────────────
 
     public CommandResult execute(VehicleCommand cmd) {
+        MotionState state = (motionState != null) ? motionState : liveMotionState();
+        DrivingSafetyGuard.Decision decision =
+                DrivingSafetyGuard.evaluate(state.gear(), state.speedKmh(), state.requireKnownState());
+        if (decision != DrivingSafetyGuard.Decision.ALLOW && !cmd.allowedWhileUnsafe()) {
+            logger.info("Blocked " + cmd.name() + " by motion interlock: " + decision);
+            return CommandResult.blockedUnsafe(msg("blocked_moving"));
+        }
         if (!cmd.hasSdkPath()) {
             return CommandResult.notSupported(msg("not_supported"));
         }
         long start = System.currentTimeMillis();
         SdkLeg leg = invokeSdk(cmd);
         long elapsed = System.currentTimeMillis() - start;
-        if (leg.success) return CommandResult.success(Path.SDK, msg("local_sent"), elapsed);
+        if (leg.success) {
+            // BladeWatch-2000.3: arm/disarm the auto-recovery watch here, at the single
+            // chokepoint every screen command passes through, rather than in the REST/Connect
+            // handler layer -- keeps handlers dumb JSON<->CommandResult translators.
+            if (cmd instanceof ScreenOffCommand) {
+                ScreenAutoRecovery.getInstance().armed();
+            } else if (cmd instanceof ScreenOnCommand) {
+                ScreenAutoRecovery.getInstance().disarm();
+            }
+            return CommandResult.success(Path.SDK, msg("local_sent"), elapsed);
+        }
         return CommandResult.failed(Path.SDK, msg("not_supported"), elapsed, leg.error);
     }
 

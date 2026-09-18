@@ -1291,6 +1291,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '이번 달 $arg1';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => '온라인';
 
   @override
@@ -1473,10 +1478,86 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => '녹화 우선순위';
+
+  @override
+  String get settings_recording_priority_description =>
+      '갑작스러운 정전 시 녹화가 처리되는 방식입니다.';
+
+  @override
+  String get settings_recording_priority_performance_label => '성능';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'CPU 사용량이 적습니다. 전원이 갑자기 끊기면 현재 녹화 세그먼트(녹화 제한 시간까지)가 손실될 수 있습니다.';
+
+  @override
+  String get settings_recording_priority_reliability_label => '안정성';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      '더 자주 저장하기 위해 CPU를 조금 더 사용합니다. 전원이 갑자기 끊기면 최대 약 1분이 손실될 수 있습니다.';
+
+  @override
+  String get settings_recording_overlay_fields_title => '오버레이 항목';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      '연속 녹화에 각인되는 오버레이에 표시될 항목을 선택하세요.';
+
+  @override
+  String get settings_recording_overlay_field_speed => '속도';
+
+  @override
+  String get settings_recording_overlay_field_gear => '기어';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left => '좌측 방향지시등';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right => '우측 방향지시등';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => '브레이크 페달';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => '가속페달';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver => '운전자 안전벨트';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger => '동승자 안전벨트';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => '날짜와 시간';
+
+  @override
   String get settings_recording_quality_title => '녹화 품질';
 
   @override
   String get settings_recording_storage_title => '녹화 저장소';
+
+  @override
+  String get settings_recording_storage_confirm_title => '녹화를 삭제하시겠습니까?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '이 변경으로 녹화 $arg1개가 삭제됩니다($arg2).',
+      one: '이 변경으로 녹화 $arg1개가 삭제됩니다($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title => '영향 알 수 없음';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      '이 변경으로 무엇이 삭제될지 확인할 수 없습니다. 한도를 낮추면 기존 녹화가 삭제될 수 있습니다.';
 
   @override
   String get settings_recording_storage_location_label => '저장 위치';
@@ -1489,6 +1570,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD 카드 (없음)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'SD 카드가 마운트되지 않았습니다';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1886,6 +1971,27 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => '최대 냉방: 꺼짐';
+
+  @override
+  String get vehicle_screen_on => '화면: 켜짐';
+
+  @override
+  String get vehicle_screen_off => '화면: 꺼짐';
+
+  @override
+  String get vehicle_media_volume_label => '미디어 볼륨';
+
+  @override
+  String get vehicle_media_mute => '음소거';
+
+  @override
+  String get vehicle_media_muted => '음소거됨';
+
+  @override
+  String get vehicle_front_defrost => '앞유리 성에 제거';
+
+  @override
+  String get vehicle_rear_defrost => '뒷유리 성에 제거';
 
   @override
   String get vehicle_temp_label => '온도';
@@ -2721,4 +2827,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => '확인';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      '센트리 모드가 작동 중일 때는 12V 배터리 전력을 추가로 사용합니다.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      '지금 다른 앱이 카메라를 사용하고 있습니다.';
 }

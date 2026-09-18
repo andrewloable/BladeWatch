@@ -4,6 +4,7 @@ import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/safe_locations_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_ui/screens/settings/settings_recording_models.dart' show StorageLimitImpactStatus;
 import 'package:bladewatch_ui/screens/surveillance/surveillance_controller.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -557,6 +558,66 @@ void main() {
       c.setStorageLimitMb(1000);
 
       expect(c.editStorageLimitMb, 1000);
+    });
+  });
+
+  group('previewStorageLimitImpact() (BladeWatch-gyg1.6)', () {
+    test('raising the limit returns null without calling the preview RPC', () async {
+      stubHappyPath(); // loaded limitMb is 800
+      final c = build();
+      await c.load();
+      c.setStorageLimitMb(900);
+
+      final impact = await c.previewStorageLimitImpact();
+
+      expect(impact, isNull);
+      expect(rpc.calls.where((call) => call.method == 'PreviewStorageLimitChange'), isEmpty);
+    });
+
+    test('lowering to a value the preview says deletes files returns the real count and size', () async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'surveillanceImpact': {'fileCount': 12, 'totalBytes': 12884901888},
+      });
+      final c = build();
+      await c.load();
+      c.setStorageLimitMb(100);
+
+      final impact = await c.previewStorageLimitImpact();
+
+      expect(impact, isNotNull);
+      expect(impact!.status, StorageLimitImpactStatus.known);
+      expect(impact.fileCount, 12);
+      expect(impact.totalBytes, 12884901888);
+      final call = rpc.calls.firstWhere((c) => c.method == 'PreviewStorageLimitChange');
+      expect((call.request as dynamic).surveillanceLimitMb.toInt(), 100);
+    });
+
+    test('lowering to a value that deletes nothing returns null', () async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'surveillanceImpact': {'fileCount': 0, 'totalBytes': 0},
+      });
+      final c = build();
+      await c.load();
+      c.setStorageLimitMb(100);
+
+      final impact = await c.previewStorageLimitImpact();
+
+      expect(impact, isNull);
+    });
+
+    test('the preview RPC failing returns an unknown-impact result', () async {
+      stubHappyPath();
+      rpc.stubError('StorageService', 'PreviewStorageLimitChange', const ConnectError('unavailable', 'down'));
+      final c = build();
+      await c.load();
+      c.setStorageLimitMb(100);
+
+      final impact = await c.previewStorageLimitImpact();
+
+      expect(impact, isNotNull);
+      expect(impact!.status, StorageLimitImpactStatus.unknown);
     });
   });
 

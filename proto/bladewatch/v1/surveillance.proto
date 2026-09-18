@@ -118,6 +118,11 @@ message GetSurveillanceStatusResponse {
   reserved 3;
   reserved "active_cameras";
   string error = 4;
+  // True while another app (typically the car's own DVR) holds the camera and
+  // BydCameraCoordinator has yielded to it (BladeWatch-gyg1.2). Surface this only while
+  // true -- a permanent "another app might be using the camera" caption is noise.
+  bool camera_yielded = 5;
+  bool native_app_active = 6;
 }
 
 message EnableSurveillanceRequest {}

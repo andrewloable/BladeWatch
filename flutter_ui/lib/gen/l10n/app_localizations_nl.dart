@@ -1330,6 +1330,11 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 deze maand';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'Online';
 
   @override
@@ -1520,10 +1525,91 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'Opnameprioriteit';
+
+  @override
+  String get settings_recording_priority_description =>
+      'Hoe opname omgaat met een plotseling stroomverlies.';
+
+  @override
+  String get settings_recording_priority_performance_label => 'Prestaties';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Gebruikt minder CPU. Als de stroom abrupt wordt onderbroken, kan het huidige opnamesegment (tot uw opnamelimiet) verloren gaan.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Betrouwbaarheid';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Gebruikt iets meer CPU om vaker op te slaan. Als de stroom abrupt wordt onderbroken, gaat er maximaal ongeveer een minuut verloren.';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'Overlayvelden';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Kies wat wordt weergegeven in de ingebrande overlay bij doorlopende opnamen.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Snelheid';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Versnelling';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'Linker richtingaanwijzer';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'Rechter richtingaanwijzer';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Rempedaal';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => 'Gaspedaal';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Veiligheidsgordel bestuurder';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Veiligheidsgordel passagier';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'Datum en tijd';
+
+  @override
   String get settings_recording_quality_title => 'Opnamekwaliteit';
 
   @override
   String get settings_recording_storage_title => 'Opnameopslag';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'Opnames verwijderen?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Dit verwijdert $arg1 opnames ($arg2).',
+      one: 'Dit verwijdert $arg1 opname ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Gevolg onbekend';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Kon niet bepalen wat deze wijziging zou verwijderen. Het verlagen van de limiet kan bestaande opnames verwijderen.';
 
   @override
   String get settings_recording_storage_location_label => 'Opslaglocatie';
@@ -1536,6 +1622,10 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD-kaart (n.v.t.)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'SD-kaart is niet aangekoppeld';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1950,6 +2040,27 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'Max. koeling: UIT';
+
+  @override
+  String get vehicle_screen_on => 'Scherm: AAN';
+
+  @override
+  String get vehicle_screen_off => 'Scherm: UIT';
+
+  @override
+  String get vehicle_media_volume_label => 'Mediavolume';
+
+  @override
+  String get vehicle_media_mute => 'Dempen';
+
+  @override
+  String get vehicle_media_muted => 'Gedempt';
+
+  @override
+  String get vehicle_front_defrost => 'Voorruitverwarming';
+
+  @override
+  String get vehicle_rear_defrost => 'Achterruitverwarming';
 
   @override
   String get vehicle_temp_label => 'Temperatuur';
@@ -2800,4 +2911,12 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'Duidelijk';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'Bewakingsmodus gebruikt extra stroom uit de 12V-accu zolang deze actief is.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'Een andere app gebruikt op dit moment de camera.';
 }

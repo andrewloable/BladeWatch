@@ -7,6 +7,7 @@ import '../../widgets/storage_limit.dart';
 import 'surveillance_controller.dart';
 import 'surveillance_models.dart';
 import '../../widgets/bw_choice_chip.dart';
+import '../settings/settings_recording_models.dart' show StorageLimitImpact, StorageLimitImpactStatus;
 
 /// Ground truth: `SurveillanceSettingsController.kt` — General/Detection/
 /// Recording/Storage/Advanced tabs. Tab selection is pure UI state (kept in
@@ -115,6 +116,19 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
         value: c.editEnabled,
         onChanged: (v) => c.toggleSurveillance(v),
       ),
+      // BladeWatch-gyg1.2: a persistent, non-blocking note -- not a dialog to dismiss --
+      // shown whenever sentry is armed. The contention note is the opposite: it must
+      // stay ABSENT except while genuinely true, or it becomes ignorable noise.
+      if (c.editEnabled)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Text(l10n.surveillance_general_battery_warning, style: theme.textTheme.bodySmall),
+        ),
+      if (status?.cameraYielded == true)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Text(l10n.surveillance_general_camera_contention_warning, style: theme.textTheme.bodySmall),
+        ),
       ListTile(
         title: Text(l10n.surveillance_general_status),
         trailing: Text(status?.isRunning == true ? l10n.surveillance_general_status_running : l10n.surveillance_general_status_idle),
@@ -427,6 +441,10 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
   Widget _applyButton(AppLocalizations l10n, SurveillanceSettingsController c, SurveillanceSettingsTab tab) => FilledButton(
         key: ValueKey('surveillance.apply.${tab.name}'),
         onPressed: () async {
+          if (tab == SurveillanceSettingsTab.storage) {
+            await _applyStorage(l10n, c);
+            return;
+          }
           final result = await c.applyChanges(tab);
           if (!mounted) return;
           if (!result.ok) {
@@ -435,6 +453,52 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
         },
         child: Text(l10n.surveillance_apply_button),
       );
+
+  /// BladeWatch-gyg1.6: the Surveillance Storage tab's own version of
+  /// SettingsRecordingScreen._applyStorage/_confirmStorageLimitChange (BladeWatch-gyg1.4).
+  /// Preview the real impact first; only apply once the owner has seen and confirmed it (or
+  /// there is nothing to confirm). Cancelling must leave SetStorageSettings uncalled.
+  Future<void> _applyStorage(AppLocalizations l10n, SurveillanceSettingsController c) async {
+    final impact = await c.previewStorageLimitImpact();
+    // See SettingsRecordingScreen._applyStorage: leaving the screen while the preview RPC is
+    // in flight would otherwise reach showDialog with a defunct State.context.
+    if (!mounted) return;
+    if (impact != null) {
+      final confirmed = await _confirmStorageLimitChange(l10n, impact);
+      if (confirmed != true) return;
+      if (!mounted) return;
+    }
+    final result = await c.applyChanges(SurveillanceSettingsTab.storage);
+    if (!mounted) return;
+    if (!result.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.error ?? l10n.surveillance_apply_failed)));
+    }
+  }
+
+  Future<bool?> _confirmStorageLimitChange(AppLocalizations l10n, StorageLimitImpact impact) {
+    final known = impact.status == StorageLimitImpactStatus.known;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const ValueKey('surveillance.storageConfirm.dialog'),
+        title: Text(known ? l10n.settings_recording_storage_confirm_title : l10n.settings_recording_storage_confirm_unknown_title),
+        content: Text(known
+            ? l10n.settings_recording_storage_confirm_message(
+                impact.fileCount, formatStorageMb((impact.totalBytes / (1024 * 1024)).round()))
+            : l10n.settings_recording_storage_confirm_unknown_message),
+        actions: [
+          TextButton(
+              key: const ValueKey('surveillance.storageConfirm.cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.action_cancel)),
+          FilledButton(
+              key: const ValueKey('surveillance.storageConfirm.confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.dialog_delete)),
+        ],
+      ),
+    );
+  }
 }
 
 class _FormatDriveCard extends StatelessWidget {

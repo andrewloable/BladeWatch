@@ -25,6 +25,7 @@ import java.util.Locale;
  *   SyncCatalog      → POST   /api/recordings/sync
  *   GetInflightStatus → GET   /api/recordings/inflight/{filename}
  *   GetEventTimeline → GET    /api/events/{filename}
+ *   MarkRecording    → POST   /api/recordings/mark
  */
 public class RecordingsServiceImpl {
 
@@ -45,6 +46,8 @@ public class RecordingsServiceImpl {
                 this::handleGetInflightStatus);
         dispatcher.register("bladewatch.v1.RecordingsService", "GetEventTimeline",
                 this::handleGetEventTimeline);
+        dispatcher.register("bladewatch.v1.RecordingsService", "MarkRecording",
+                this::handleMarkRecording);
     }
 
     /**
@@ -216,6 +219,14 @@ public class RecordingsServiceImpl {
         } catch (JSONException e) {
             throw new ConnectException("internal", "An internal error occurred");
         }
+    }
+
+    private ConnectResponse handleMarkRecording(String req, String clientIdentity) throws ConnectException {
+        // REST and proto field names already match 1:1 (success, reason, filename,
+        // markTimestampMs <-> mark_timestamp_ms's default JSON name) -- no reshaping needed,
+        // unlike GetDates/GetInflightStatus above.
+        return ConnectHandlerUtil.captureString(out ->
+                RecordingsApiHandler.handle("POST", "/api/recordings/mark", req, out));
     }
 
     private ConnectResponse handleGetEventTimeline(String req, String clientIdentity) throws ConnectException {

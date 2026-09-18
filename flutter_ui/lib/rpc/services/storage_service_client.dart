@@ -24,6 +24,14 @@ class StorageServiceClient {
         (json) => SetStorageSettingsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
+  Future<PreviewStorageLimitChangeResponse> previewStorageLimitChange(PreviewStorageLimitChangeRequest request) =>
+      _transport.call(
+        'StorageService',
+        'PreviewStorageLimitChange',
+        request,
+        (json) => PreviewStorageLimitChangeResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
   Future<GetExternalStorageResponse> getExternalStorage(GetExternalStorageRequest request) => _transport.call(
         'StorageService',
         'GetExternalStorage',

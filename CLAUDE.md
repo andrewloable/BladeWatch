@@ -406,6 +406,7 @@ When changing route handlers, daemon ports, config paths, startup timing, tunnel
 - Auth / IPC token / secret store / cross-process file permission changes → `ipc-auth-and-secrets.md`
 - User-facing changes → `features.md`
 - UI/UX, design-language, theme, or color/typography/shape/motion token changes → `ui-ux-design-language.md`
+- Surveillance/sentry detection pipeline changes (motion pipeline thresholds, shadow/oscillation filtering, YOLO gating, texture tracker, deterrent suppression) → `detection-invariants.md` — read it *before* changing a threshold, not just after
 
 `docs/webview-migration.md` is **retired** — it describes a superseded
 architecture (WebView → native fragments, both since replaced by Flutter). Do not

@@ -75,6 +75,8 @@
     "surveillance_invalid_quadrant_with_id": "Invalid quadrant: {0}",
     "surveillance_event_frame_failed_with_detail": "Failed to process event frame: {0}",
     "surveillance_no_frame_available": "No frame available — start surveillance or record an event first",
+    "telemetry_overlay_unknown_type_with_id": "Unknown recording type: {0}",
+    "telemetry_overlay_fields_missing": "Missing \"fields\"",
     "update_app_context_not_ready": "App context not ready",
     "update_check_timed_out": "Update check timed out",
     "update_disabled_in_public_mode": "Updates are disabled in PUBLIC sharing mode. Switch to PRIVATE mode in the in-car app first.",
@@ -118,7 +120,11 @@
     "area_hood": "Hood",
     "area_trunk": "Trunk",
     "area_fuel_cap": "Fuel cap",
-    "area_door_n": "Door {0}"
+    "area_door_n": "Door {0}",
+    "trip_started": "Trip started",
+    "trip_ended": "Trip ended",
+    "trip_summary_km": "{0} km · {1} min",
+    "trip_summary_mi": "{0} mi · {1} min"
   },
   "vehicle_control": {
     "cloud_required": "Connect a BYD account in Settings to use this control",
@@ -130,6 +136,7 @@
     "cloud_failed": "Couldn't reach the car — try again when the vehicle is awake",
     "rate_limited": "A command is still in progress — wait a few seconds",
     "not_supported": "This control isn't available right now",
+    "blocked_moving": "Unavailable while the vehicle is moving.",
     "find_car_label": "Find car",
     "battery_heat_label": "Battery heat",
     "close_all_windows_label": "Close all windows"

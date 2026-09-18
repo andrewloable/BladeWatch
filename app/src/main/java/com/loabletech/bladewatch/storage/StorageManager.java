@@ -6,7 +6,6 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -19,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 /**
  * StorageManager - SOTA Storage Management for BladeWatch
@@ -116,8 +116,6 @@ public class StorageManager {
     public static final String TRIPS_SUBDIR = "trips";
     
     // Config file location
-    private static final String CONFIG_FILE = "/data/local/tmp/bladewatch_config.json";
-
     // SD card path cache — persists across restarts to avoid running sm list-volumes on every boot
     private static final String SD_CARD_CACHE_PATH = "/data/local/tmp/bladewatch_sdcard_path";
     
@@ -604,30 +602,6 @@ public class StorageManager {
     }
 
     /**
-     * Get Android system property via reflection or shell.
-     */
-    private String getSystemProperty(String key) {
-        try {
-            // Try reflection first
-            Class<?> systemProperties = Class.forName("android.os.SystemProperties");
-            java.lang.reflect.Method get = systemProperties.getMethod("get", String.class, String.class);
-            return (String) get.invoke(null, key, "");
-        } catch (Exception e) {
-            // Fall back to shell
-            try {
-                Process p = Runtime.getRuntime().exec(new String[]{"getprop", key});
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line = reader.readLine();
-                reader.close();
-                p.waitFor();
-                return line != null ? line.trim() : "";
-            } catch (Exception e2) {
-                return "";
-            }
-        }
-    }
-    
-    /**
      * Initialize storage directories.
      * IMPORTANT: Sets world-readable permissions so the UI app can access recordings.
      */
@@ -915,16 +889,113 @@ public class StorageManager {
      * Safe to call after getInstance() completes: updateActiveDirectories() guards
      * against switching while recording/surveillance is active.
      */
+    /** Mount attempts at boot before {@link #applyAutoStoragePriority()} gives up on a
+     * previously-configured SD card. Spaced {@link #SD_CARD_BOOT_MOUNT_RETRY_MS} apart;
+     * each {@link #ensureSdCardMounted} call has its own internal up-to-3s wait for the
+     * sdcardfs layer, so worst case this budgets roughly
+     * (attempts-1)*retryMs + attempts*3s before giving up on a truly absent card. */
+    private static final int SD_CARD_BOOT_MOUNT_ATTEMPTS = 5;
+    private static final long SD_CARD_BOOT_MOUNT_RETRY_MS = 2000;
+
+    private volatile boolean sdCardMountFailedAtBoot = false;
+    private volatile String sdCardMountErrorMessage = null;
+
+    /** Outcome of {@link #resolveSdCardAutoPriority}. */
+    enum AutoPriorityResult { MOUNTED, KEEP_SD_CARD_AND_FLAG_ERROR, FALL_BACK_TO_INTERNAL }
+
+    /** Sleep abstraction so {@link #resolveSdCardAutoPriority} is unit-testable without a
+     * real {@code Thread.sleep} in the test process. */
+    interface Sleeper { void sleep(long ms); }
+
+    private static final Sleeper REAL_SLEEPER = ms -> {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    };
+
+    /**
+     * Pure retry-then-decide logic for SD card auto-priority at boot, extracted static +
+     * dependency-injected so it is unit-testable without a live Android environment — the
+     * same constraint that motivated extracting {@link #selectFilesToDelete} (see
+     * {@code StorageManagerCleanupSelectionTest}'s doc comment).
+     *
+     * <p>Calls {@code mountAttempt} up to {@code maxAttempts} times, sleeping {@code sleepMs}
+     * between attempts (never after the last one), stopping as soon as one attempt reports
+     * mounted.
+     *
+     * <p>The decision on exhaustion is the actual fix for a real incident: a boot-time race
+     * where the SD card isn't mounted yet by the time this runs used to silently downgrade an
+     * already-configured SD_CARD preference to INTERNAL and persist that change — recovering
+     * required a full device restart, sometimes more than one, to win the race. Retrying first,
+     * and refusing to downgrade an existing SD_CARD preference even once retries are exhausted,
+     * fixes that: {@link #applyAutoStoragePriority()} flags the failure instead (surfaced to the
+     * UI so the user knows to restart) and leaves the preference alone so the SD watchdog keeps
+     * retrying in the background and can still self-heal without a restart.
+     *
+     * @param previouslyOnSdCard whether the persisted config already had at least one category
+     *        on SD_CARD before this pass began
+     */
+    static AutoPriorityResult resolveSdCardAutoPriority(
+            int maxAttempts,
+            long sleepMs,
+            boolean previouslyOnSdCard,
+            java.util.function.BooleanSupplier mountAttempt,
+            Sleeper sleeper) {
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            if (mountAttempt.getAsBoolean()) {
+                return AutoPriorityResult.MOUNTED;
+            }
+            if (attempt < maxAttempts) {
+                sleeper.sleep(sleepMs);
+            }
+        }
+        return previouslyOnSdCard
+                ? AutoPriorityResult.KEEP_SD_CARD_AND_FLAG_ERROR
+                : AutoPriorityResult.FALL_BACK_TO_INTERNAL;
+    }
+
     public void applyAutoStoragePriority() {
         // 1. SD card (discovered in constructor via tryLoadSdCardFromCache / discoverSdCard).
         // Those two only ever detect a volume already in "mounted" state — neither
         // calls `sm mount`. A card that's physically present but sitting unmounted
         // at this point in boot (e.g. vold didn't auto-mount it) would otherwise be
         // invisible here forever. ensureSdCardMounted() is the method that actually
-        // issues `sm mount`; call it now so presence, not prior mount state, decides.
+        // issues `sm mount`; call it repeatedly (with waits) so presence, not prior mount
+        // state OR a single unlucky boot-timing race, decides.
         if (!sdCardAvailable) {
-            ensureSdCardMounted(true);
+            boolean previouslyOnSdCard = recordingsStorageType == StorageType.SD_CARD
+                    || surveillanceStorageType == StorageType.SD_CARD
+                    || tripsStorageType == StorageType.SD_CARD;
+            AutoPriorityResult result = resolveSdCardAutoPriority(
+                    SD_CARD_BOOT_MOUNT_ATTEMPTS, SD_CARD_BOOT_MOUNT_RETRY_MS, previouslyOnSdCard,
+                    () -> ensureSdCardMounted(true), REAL_SLEEPER);
+            if (result == AutoPriorityResult.KEEP_SD_CARD_AND_FLAG_ERROR) {
+                sdCardMountFailedAtBoot = true;
+                sdCardMountErrorMessage = "SD card is configured for storage but did not mount "
+                        + "after " + SD_CARD_BOOT_MOUNT_ATTEMPTS + " attempts at startup. "
+                        + "Restart the device with the SD card seated to restore SD card storage.";
+                logError(sdCardMountErrorMessage
+                        + " Keeping the existing SD_CARD preference rather than silently"
+                        + " switching to internal storage.");
+                // Active directories temporarily point at internal (existing
+                // ensureStorageReady fallback) until the card mounts; the persisted
+                // preference is untouched so the watchdog can restore it with no config
+                // rewrite, and no files silently start accumulating under a preference
+                // switch nobody asked for.
+                updateActiveDirectories();
+                return;
+            }
+            // FALL_BACK_TO_INTERNAL falls through to step 3 below (no prior SD_CARD
+            // preference to protect — this is the normal "no SD card ever configured"
+            // auto-detect outcome). MOUNTED means ensureSdCardMounted() already set
+            // sdCardAvailable/sdCardPath as a side effect.
         }
+
+        sdCardMountFailedAtBoot = false;
+        sdCardMountErrorMessage = null;
+
         if (sdCardAvailable && sdCardPath != null) {
             File bladeWatchDir = new File(sdCardPath, "BladeWatch");
             if (bladeWatchDir.exists()) {
@@ -1179,15 +1250,28 @@ public class StorageManager {
         return tripsLimitMb;
     }
     
+    /**
+     * The limit that would actually be persisted for {@code limitMb}: clamped to
+     * {@code [MIN_LIMIT_MB, maxLimitMb]}.
+     *
+     * <p>Static with the maximum injected so it is testable without a live
+     * {@code StorageManager} — the same constraint that shaped {@link #selectFilesToDelete}.
+     * Every path that reasons about a proposed limit must go through this (BladeWatch-xa3s):
+     * a preview computed from the raw request describes a limit that can never be applied, and
+     * for a negative or overflowing value it describes deleting everything, because a negative
+     * byte target makes {@link #selectFilesToDelete}'s stop condition unreachable.
+     */
+    static long clampLimitMb(long limitMb, long maxLimitMb) {
+        return Math.max(MIN_LIMIT_MB, Math.min(maxLimitMb, limitMb));
+    }
+
     public void setRecordingsLimitMb(long limitMb) {
-        long maxLimit = physicalDiskMaxMb(recordingsStorageType);
-        recordingsLimitMb = Math.max(MIN_LIMIT_MB, Math.min(maxLimit, limitMb));
+        recordingsLimitMb = clampLimitMb(limitMb, physicalDiskMaxMb(recordingsStorageType));
         saveConfig();
     }
 
     public void setSurveillanceLimitMb(long limitMb) {
-        long maxLimit = physicalDiskMaxMb(surveillanceStorageType);
-        surveillanceLimitMb = Math.max(MIN_LIMIT_MB, Math.min(maxLimit, limitMb));
+        surveillanceLimitMb = clampLimitMb(limitMb, physicalDiskMaxMb(surveillanceStorageType));
         saveConfig();
     }
 
@@ -1342,11 +1426,35 @@ public class StorageManager {
     public boolean isSdCardAvailable() {
         return sdCardAvailable;
     }
-    
+
     public String getSdCardPath() {
         return sdCardPath;
     }
-    
+
+    /** True when {@link #applyAutoStoragePriority()} could not mount an already-configured
+     * SD card after {@link #SD_CARD_BOOT_MOUNT_ATTEMPTS} tries at boot. Cleared once the SD
+     * watchdog remounts the card, or on the next successful boot-time mount. */
+    public boolean isSdCardMountFailedAtBoot() {
+        return sdCardMountFailedAtBoot;
+    }
+
+    /** User-facing explanation for {@link #isSdCardMountFailedAtBoot()}, or null if there is
+     * no active failure. */
+    public String getSdCardMountErrorMessage() {
+        return sdCardMountErrorMessage;
+    }
+
+    // ==================== Internal / SD Card dir pairs (for internal->SD migration) ====================
+
+    public File getInternalRecordingsDir() { return internalRecordingsDir; }
+    public File getSdCardRecordingsDir() { return sdCardRecordingsDir; }
+    public File getInternalSurveillanceDir() { return internalSurveillanceDir; }
+    public File getSdCardSurveillanceDir() { return sdCardSurveillanceDir; }
+    public File getInternalProximityDir() { return internalProximityDir; }
+    public File getSdCardProximityDir() { return sdCardProximityDir; }
+    public File getInternalTripsDir() { return internalTripsDir; }
+    public File getSdCardTripsDir() { return sdCardTripsDir; }
+
     // ==================== All Storage Locations (for scanning) ====================
     
     /**
@@ -1831,49 +1939,23 @@ public class StorageManager {
         long targetSize = limitBytes - reserveBytes;
         if (targetSize < 0) targetSize = 0;
 
-        // Collect every reapable file, deduplicated by filename so a clip
-        // that exists on both internal and SD card isn't accounted twice.
-        // When namePrefix is non-null, restrict to files matching the
-        // category (some dirs in the list are shared with other categories
-        // — typically the flat legacy base).
-        List<File> allFiles = new ArrayList<>();
-        Set<String> seenNames = new HashSet<>();
-        long currentSize = 0;
-        for (File dir : dirs) {
-            if (dir == null || !dir.exists() || !dir.isDirectory()) continue;
-            File[] files = dir.listFiles((d, name) -> name.endsWith(".mp4"));
-            if (files == null) {
-                files = listFilesViaShell(dir);
-            }
-            if (files == null) continue;
-            for (File f : files) {
-                if (!f.isFile()) continue;
-                String name = f.getName();
-                if (namePrefix != null && !name.startsWith(namePrefix)) continue;
-                if (!seenNames.add(name)) continue;
-                allFiles.add(f);
-                currentSize += f.length();
-            }
-        }
+        CleanupSelection selection = selectFilesToDelete(dirs, namePrefix, targetSize,
+            MarkedRecordingsStore.getInstance(), this::listMp4FilesWithShellFallback);
 
-        if (currentSize <= targetSize) {
+        // Key this on the POOL size, not on the selection being empty: selectFilesToDelete
+        // also returns an empty selection when the pool is over target but every candidate
+        // was skipped for being marked. Returning true there would claim space is available
+        // while still over the limit, and would skip the CDR fallback below.
+        if (selection.poolSizeAtStart <= targetSize) {
             return true;  // Already within limit
         }
 
-        if (allFiles.isEmpty()) {
-            return true;
-        }
-
-        // Oldest first (global ordering across all dirs).
-        Collections.sort(allFiles, Comparator.comparingLong(File::lastModified));
-
+        long currentSize = selection.poolSizeAtStart;
         int deletedCount = 0;
         long deletedSize = 0;
         boolean reapedFromInactive = false;
 
-        for (File file : allFiles) {
-            if (currentSize <= targetSize) break;
-
+        for (File file : selection.files) {
             long fileSize = file.length();
             boolean deleted = file.delete();
             if (!deleted) {
@@ -1938,7 +2020,132 @@ public class StorageManager {
 
         return currentSize <= targetSize;
     }
-    
+
+    /** One directory's .mp4 listing, falling back to a shell `ls` when the directory is
+     * owned by a different UID and {@link File#listFiles} returns null. Extracted from
+     * ensureSpace's own pre-existing inline logic so {@link #selectFilesToDelete} can share
+     * it via a lambda while staying a static, independently testable method. */
+    private File[] listMp4FilesWithShellFallback(File dir) {
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".mp4"));
+        return files != null ? files : listFilesViaShell(dir);
+    }
+
+    /** Result of {@link #selectFilesToDelete}: the files it selected (oldest first, already
+     * excluding marked recordings) and the pooled size of every reapable file before any
+     * selection, for the caller to track as deletions proceed. */
+    static final class CleanupSelection {
+        final List<File> files;
+        final long poolSizeAtStart;
+
+        CleanupSelection(List<File> files, long poolSizeAtStart) {
+            this.files = files;
+            this.poolSizeAtStart = poolSizeAtStart;
+        }
+    }
+
+    /**
+     * Selects, oldest-first, exactly the files {@link #ensureSpace} would delete to bring
+     * {@code dirs}' pooled total at or under {@code targetSizeBytes} -- skipping files
+     * {@code markedStore} reports as marked (BladeWatch-nmao.4) -- but performs no deletion.
+     * Returns an empty selection when the pool is already within the target or has nothing
+     * reapable. BladeWatch-gyg1.4: shared, unmodified, by both the real cleanup in
+     * {@link #ensureSpace} (which deletes the returned files) and
+     * {@link #previewRecordingsLimitChange}/{@link #previewSurveillanceLimitChange} (which
+     * only sum them) -- the two paths can never disagree about which files a given limit
+     * would remove, because they run the identical selection code.
+     *
+     * <p>Static and dependency-injected ({@code markedStore}, {@code lister}) specifically so
+     * it is testable without constructing a {@code StorageManager}, which needs a live
+     * Android environment (see {@code MarkedRecordingsExcludedFromCleanupTest}'s doc comment).
+     */
+    static CleanupSelection selectFilesToDelete(List<File> dirs, String namePrefix, long targetSizeBytes,
+                                                 MarkedRecordingsStore markedStore,
+                                                 Function<File, File[]> lister) {
+        // Collect every reapable file, deduplicated by filename so a clip
+        // that exists on both internal and SD card isn't accounted twice.
+        // When namePrefix is non-null, restrict to files matching the
+        // category (some dirs in the list are shared with other categories
+        // — typically the flat legacy base).
+        List<File> allFiles = new ArrayList<>();
+        Set<String> seenNames = new HashSet<>();
+        long currentSize = 0;
+        for (File dir : dirs) {
+            if (dir == null || !dir.exists() || !dir.isDirectory()) continue;
+            File[] files = lister.apply(dir);
+            if (files == null) continue;
+            for (File f : files) {
+                if (!f.isFile()) continue;
+                String name = f.getName();
+                if (namePrefix != null && !name.startsWith(namePrefix)) continue;
+                if (!seenNames.add(name)) continue;
+                allFiles.add(f);
+                currentSize += f.length();
+            }
+        }
+
+        if (currentSize <= targetSizeBytes || allFiles.isEmpty()) {
+            return new CleanupSelection(Collections.emptyList(), currentSize);
+        }
+
+        // Oldest first (global ordering across all dirs).
+        Collections.sort(allFiles, Comparator.comparingLong(File::lastModified));
+
+        List<File> toDelete = new ArrayList<>();
+        long remaining = currentSize;
+        for (File file : allFiles) {
+            if (remaining <= targetSizeBytes) break;
+
+            // BladeWatch-nmao.4: a bookmarked clip must never be swept -- having it
+            // deleted out from under a mark is worse than having no bookmark at all.
+            if (markedStore.isMarked(file.getName())) {
+                continue;
+            }
+
+            toDelete.add(file);
+            remaining -= file.length();
+        }
+
+        return new CleanupSelection(toDelete, currentSize);
+    }
+
+    /** The exact impact (BladeWatch-gyg1.4) of changing a limit: how many files and how many
+     * bytes the identical algorithm {@link #ensureSpace} uses would remove. Never an
+     * estimate -- computed from real per-file sizes via {@link #selectFilesToDelete}. */
+    public static final class CleanupImpact {
+        public final int fileCount;
+        public final long totalBytes;
+
+        CleanupImpact(int fileCount, long totalBytes) {
+            this.fileCount = fileCount;
+            this.totalBytes = totalBytes;
+        }
+    }
+
+    private CleanupImpact previewLimitChange(List<File> dirs, String namePrefix, long hypotheticalLimitMb) {
+        CleanupSelection selection = selectFilesToDelete(dirs, namePrefix, hypotheticalLimitMb * 1024 * 1024,
+            MarkedRecordingsStore.getInstance(), this::listMp4FilesWithShellFallback);
+        long totalBytes = 0;
+        for (File f : selection.files) totalBytes += f.length();
+        return new CleanupImpact(selection.files.size(), totalBytes);
+    }
+
+    /** What would be deleted if the recordings limit were changed to {@code hypotheticalLimitMb},
+     * given today's files -- performs no deletion. BladeWatch-gyg1.4. Clamped through
+     * {@link #clampLimitMb} exactly as {@link #setRecordingsLimitMb} would, so the preview
+     * describes the limit that would actually be applied (BladeWatch-xa3s). */
+    public CleanupImpact previewRecordingsLimitChange(long hypotheticalLimitMb) {
+        return previewLimitChange(getReapableDirs("recordings"), namePrefixForCategory("recordings"),
+            clampLimitMb(hypotheticalLimitMb, physicalDiskMaxMb(recordingsStorageType)));
+    }
+
+    /** What would be deleted if the surveillance limit were changed to {@code hypotheticalLimitMb},
+     * given today's files -- performs no deletion. BladeWatch-gyg1.4. Clamped as
+     * {@link #setSurveillanceLimitMb} would; see {@link #previewRecordingsLimitChange}. */
+    public CleanupImpact previewSurveillanceLimitChange(long hypotheticalLimitMb) {
+        return previewLimitChange(getReapableDirs("surveillance"), namePrefixForCategory("surveillance"),
+            clampLimitMb(hypotheticalLimitMb, physicalDiskMaxMb(surveillanceStorageType)));
+    }
+
     /**
      * SOTA: Delete file via shell command when Java delete fails.
      */
@@ -2420,9 +2627,12 @@ public class StorageManager {
                     }
                     
                     if (ensureSdCardMounted(true)) {
-                        logInfo("SD card watchdog: remounted successfully after " + 
+                        logInfo("SD card watchdog: remounted successfully after " +
                             sdWatchdogConsecutiveFailures + " attempts");
                         sdWatchdogConsecutiveFailures = 0;
+                        boolean clearingBootFailure = sdCardMountFailedAtBoot;
+                        sdCardMountFailedAtBoot = false;
+                        sdCardMountErrorMessage = null;
 
                         // Restore SD card directories now that card is back
                         initSdCardDirectories();
@@ -2434,11 +2644,39 @@ public class StorageManager {
                                 net.bladewatch.app.daemon.CameraDaemon.getGpuPipeline();
                             if (pipeline != null && pipeline.getSentry() != null) {
                                 pipeline.getSentry().setEventOutputDir(getSurveillanceDir());
-                                logInfo("SD card watchdog: updated sentry output dir to " + 
+                                logInfo("SD card watchdog: updated sentry output dir to " +
                                     getSurveillanceDir().getAbsolutePath());
                             }
                         } catch (Exception e) {
                             logWarn("SD card watchdog: could not update sentry dir: " + e.getMessage());
+                        }
+
+                        // The card just came back after being unavailable (at boot or mid-
+                        // session) — sweep anything that was written to internal storage in
+                        // the meantime over to it. Background thread so a directory scan
+                        // never delays the watchdog's own 15s cadence.
+                        Thread migrateThread = new Thread(() -> {
+                            try {
+                                net.bladewatch.app.trips.TripAnalyticsManager tam =
+                                    net.bladewatch.app.daemon.CameraDaemon.getTripAnalyticsManager();
+                                net.bladewatch.app.media.MediaCatalogManager mcm =
+                                    net.bladewatch.app.daemon.CameraDaemon.getMediaCatalogManager();
+                                net.bladewatch.app.storage.InternalToSdMigrator.migrate(
+                                    this,
+                                    tam != null ? tam.getDatabase() : null,
+                                    (mcm != null && mcm.isAvailable()) ? mcm::reconcile : null);
+                            } catch (Exception e) {
+                                logWarn("Internal-to-SD migration after watchdog remount failed: " + e.getMessage());
+                            }
+                        }, "internal-to-sd-migration-watchdog");
+                        migrateThread.setDaemon(true);
+                        // See CameraDaemon's boot-time migration trigger for why this must be
+                        // low priority: internal->SD moves cross filesystems, so every file falls
+                        // back to slow copy-then-delete.
+                        migrateThread.setPriority(Thread.MIN_PRIORITY);
+                        migrateThread.start();
+                        if (clearingBootFailure) {
+                            logInfo("SD card watchdog: cleared boot-time mount failure flag");
                         }
                     } else if (shouldLog) {
                         logError("SD card watchdog: remount FAILED - surveillance may use internal fallback");
@@ -2449,6 +2687,8 @@ public class StorageManager {
                         logInfo("SD card watchdog: card is mounted again");
                         sdWatchdogConsecutiveFailures = 0;
                     }
+                    sdCardMountFailedAtBoot = false;
+                    sdCardMountErrorMessage = null;
                 }
             } catch (Exception e) {
                 logWarn("SD card watchdog error: " + e.getMessage());

@@ -69,7 +69,15 @@ public class RecordingModeManager {
     // Without this, a duplicate-event guard keyed only on accIsOn locks us out
     // of retrying activation on the next ACC ON IPC.
     private volatile boolean modeActive = false;
-    
+
+    // True while ChargingDetector's fused state says the vehicle is charging. Gates
+    // activation of CONTINUOUS and DRIVE_MODE only -- PROXIMITY_GUARD must keep working
+    // at a public charger, which is exactly when radar triggers matter most.
+    private volatile boolean chargingSuppressed = false;
+
+    private final net.bladewatch.app.monitor.ChargingDetector.FusedStateListener chargingListener =
+        (isCharging, source) -> onChargingStateChanged(isCharging, source);
+
     public RecordingModeManager(Context context, GpuSurveillancePipeline pipeline) {
         this.context = context;
         this.pipeline = pipeline;
@@ -98,7 +106,10 @@ public class RecordingModeManager {
             net.bladewatch.app.monitor.GearMonitor gm =
                 net.bladewatch.app.monitor.GearMonitor.getInstance();
             if (gm.isRunning()) {
-                int gearNow = gm.getCurrentGear();
+                // getEffectiveGear(), not getCurrentGear(): this drives a MODE decision
+                // (whether to auto-activate on boot), so a spurious non-P read while
+                // charging must not be treated as a driving gear (BladeWatch-nmao.2).
+                int gearNow = gm.getEffectiveGear();
                 if (gearNow != currentGear) {
                     logger.info("Constructor gear sync from GearMonitor: "
                         + gearToString(currentGear) + " -> " + gearToString(gearNow));
@@ -108,6 +119,12 @@ public class RecordingModeManager {
         } catch (Exception e) {
             logger.debug("Constructor GearMonitor sync skipped: " + e.getMessage());
         }
+
+        // Seed from the current fused charging state BEFORE the auto-activate block
+        // below, or a daemon that starts while already plugged in would record until
+        // the session ends instead of starting suppressed.
+        chargingSuppressed = net.bladewatch.app.monitor.ChargingDetector.getInstance().isCharging();
+        net.bladewatch.app.monitor.ChargingDetector.getInstance().addFusedStateListener(chargingListener);
 
         // Activate the loaded mode if conditions are met.
         // CONTINUOUS: activate immediately (accIsOn defaults to true)
@@ -169,7 +186,9 @@ public class RecordingModeManager {
             net.bladewatch.app.monitor.GearMonitor gm =
                 net.bladewatch.app.monitor.GearMonitor.getInstance();
             if (gm.isRunning()) {
-                hwGear = gm.getCurrentGear();
+                // getEffectiveGear(): re-sync also drives mode-activation retries, so the
+                // same charging noise filter applies (BladeWatch-nmao.2).
+                hwGear = gm.getEffectiveGear();
             }
         } catch (Exception ignored) {
                 logger.warn("GearMonitor unavailable during resync: " + ignored.getMessage());
@@ -287,7 +306,10 @@ public class RecordingModeManager {
         try {
             net.bladewatch.app.monitor.GearMonitor gearMonitor = net.bladewatch.app.monitor.GearMonitor.getInstance();
             if (gearMonitor.isRunning()) {
-                int actualGear = gearMonitor.getCurrentGear();
+                // getEffectiveGear(): setMode() uses this to decide whether to immediately
+                // activate DRIVE_MODE/PROXIMITY_GUARD, so the same charging noise filter
+                // applies (BladeWatch-nmao.2).
+                int actualGear = gearMonitor.getEffectiveGear();
                 if (actualGear != currentGear) {
                     logger.info("Syncing gear from GearMonitor: " + gearToString(currentGear) + " -> " + gearToString(actualGear));
                     currentGear = actualGear;
@@ -358,6 +380,15 @@ public class RecordingModeManager {
             + ", modeActive=" + modeActive + ")");
 
         accIsOn = isOn;
+
+        // BladeWatch-t1lg.3: same ACC source, no second listener -- forward the edge to the
+        // detection-rate controller if it has been constructed yet (it lives on the camera
+        // pipeline, which may not exist this early in daemon startup).
+        net.bladewatch.app.surveillance.PipelineRateController rateController =
+                net.bladewatch.app.surveillance.PipelineRateController.getInstance();
+        if (rateController != null) {
+            rateController.setAccOn(isOn);
+        }
 
         if (isOn) {
             // Suppress only if the mode is genuinely already running. Keying
@@ -559,7 +590,51 @@ public class RecordingModeManager {
     
     // ==================== MODE ACTIVATION ====================
     
+    /**
+     * Fired on genuine charging-state transitions only (see FusedStateListener contract).
+     * Deactivates the running mode the instant charging starts; on the reverse edge, retries
+     * activation through the same warmup path the constructor and resync use, so a still-open
+     * pipeline resumes recording with no teardown/restart.
+     */
+    private synchronized void onChargingStateChanged(boolean isCharging, String source) {
+        if (chargingSuppressed == isCharging) {
+            return;
+        }
+        chargingSuppressed = isCharging;
+        logger.info("Charging state changed (" + source + "): chargingSuppressed=" + chargingSuppressed
+            + " (mode=" + currentMode + ")");
+
+        if (currentMode != Mode.CONTINUOUS && currentMode != Mode.DRIVE_MODE) {
+            return; // PROXIMITY_GUARD (and NONE) are never touched by charging state
+        }
+        if (chargingSuppressed) {
+            deactivateMode(currentMode);
+        } else if (accIsOn) {
+            if (currentMode == Mode.CONTINUOUS) {
+                activateModeWithWarmup(currentMode, "charging-ended");
+            } else if (currentMode == Mode.DRIVE_MODE && isDrivingGear(currentGear)) {
+                activateModeWithWarmup(currentMode, "charging-ended");
+            }
+        }
+    }
+
+    /**
+     * Pure policy: does charging suppress this mode? CONTINUOUS and DRIVE_MODE only --
+     * PROXIMITY_GUARD is deliberately excluded (see {@link #chargingSuppressed}). Extracted
+     * as a pure static so it is unit-testable without Context/GpuSurveillancePipeline/a real
+     * ChargingDetector, and so {@link #activateMode} has exactly one gate to consult instead
+     * of duplicating this decision at every call site that can trigger activation.
+     */
+    public static boolean isSuppressedByCharging(Mode mode, boolean charging) {
+        return charging && (mode == Mode.CONTINUOUS || mode == Mode.DRIVE_MODE);
+    }
+
     private void activateMode(Mode mode) {
+        if (isSuppressedByCharging(mode, chargingSuppressed)) {
+            logger.info("Skipping activation of " + mode + " — vehicle is charging");
+            modeActive = false;
+            return;
+        }
         logger.info("Activating mode: " + mode);
 
         // SOTA: Stop any manual recording before activating a mode
@@ -775,6 +850,7 @@ public class RecordingModeManager {
      */
     public void shutdown() {
         logger.info("Shutting down RecordingModeManager...");
+        net.bladewatch.app.monitor.ChargingDetector.getInstance().removeFusedStateListener(chargingListener);
         CameraDaemon.stopAvcKeepAlive();
         deactivateMode(currentMode);
         if (proximityController != null) {

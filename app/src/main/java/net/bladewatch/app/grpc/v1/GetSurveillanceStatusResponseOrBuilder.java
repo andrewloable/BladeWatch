@@ -33,4 +33,22 @@ public interface GetSurveillanceStatusResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getErrorBytes();
+
+  /**
+   * <pre>
+   * True while another app (typically the car's own DVR) holds the camera and
+   * BydCameraCoordinator has yielded to it (BladeWatch-gyg1.2). Surface this only while
+   * true -- a permanent "another app might be using the camera" caption is noise.
+   * </pre>
+   *
+   * <code>bool camera_yielded = 5 [json_name = "cameraYielded"];</code>
+   * @return The cameraYielded.
+   */
+  boolean getCameraYielded();
+
+  /**
+   * <code>bool native_app_active = 6 [json_name = "nativeAppActive"];</code>
+   * @return The nativeAppActive.
+   */
+  boolean getNativeAppActive();
 }

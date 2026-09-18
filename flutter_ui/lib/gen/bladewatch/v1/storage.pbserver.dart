@@ -25,6 +25,8 @@ abstract class StorageServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.GetStorageSettingsRequest request);
   $async.Future<$0.SetStorageSettingsResponse> setStorageSettings(
       $pb.ServerContext ctx, $0.SetStorageSettingsRequest request);
+  $async.Future<$0.PreviewStorageLimitChangeResponse> previewStorageLimitChange(
+      $pb.ServerContext ctx, $0.PreviewStorageLimitChangeRequest request);
   $async.Future<$0.GetExternalStorageResponse> getExternalStorage(
       $pb.ServerContext ctx, $0.GetExternalStorageRequest request);
   $async.Future<$0.SetExternalConfigResponse> setExternalConfig(
@@ -46,6 +48,8 @@ abstract class StorageServiceBase extends $pb.GeneratedService {
         return $0.GetStorageSettingsRequest();
       case 'SetStorageSettings':
         return $0.SetStorageSettingsRequest();
+      case 'PreviewStorageLimitChange':
+        return $0.PreviewStorageLimitChangeRequest();
       case 'GetExternalStorage':
         return $0.GetExternalStorageRequest();
       case 'SetExternalConfig':
@@ -72,6 +76,9 @@ abstract class StorageServiceBase extends $pb.GeneratedService {
         return getStorageSettings(ctx, request as $0.GetStorageSettingsRequest);
       case 'SetStorageSettings':
         return setStorageSettings(ctx, request as $0.SetStorageSettingsRequest);
+      case 'PreviewStorageLimitChange':
+        return previewStorageLimitChange(
+            ctx, request as $0.PreviewStorageLimitChangeRequest);
       case 'GetExternalStorage':
         return getExternalStorage(ctx, request as $0.GetExternalStorageRequest);
       case 'SetExternalConfig':

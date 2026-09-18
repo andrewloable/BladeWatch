@@ -9,9 +9,15 @@ import android.view.Surface;
 
 import net.bladewatch.app.camera.EGLCore;
 import net.bladewatch.app.camera.GlUtil;
+import net.bladewatch.app.config.UnifiedConfigManager;
 import net.bladewatch.app.telemetry.OverlayBitmapRenderer;
+import net.bladewatch.app.telemetry.OverlayField;
+import net.bladewatch.app.telemetry.OverlayFieldSelectionResolver;
+import net.bladewatch.app.telemetry.RecordingOverlayType;
 import net.bladewatch.app.telemetry.TelemetryDataCollector;
 import net.bladewatch.app.telemetry.TelemetrySnapshot;
+
+import java.util.Set;
 
 import java.nio.FloatBuffer;
 
@@ -417,7 +423,15 @@ public class GpuMosaicRecorder {
                 // Update bitmap every 3rd frame (~5 FPS at 15 FPS recording)
                 if ((overlayFrameCounter == 1 || overlayFrameCounter % 3 == 0) && telemetryCollector != null) {
                     TelemetrySnapshot snapshot = telemetryCollector.getLatestSnapshot();
-                    overlayRenderer.renderFrame(snapshot, overlayFrameCounter / 3);
+                    // BladeWatch-y78o.5: every overlay-enabled recording that reaches this call
+                    // site today (continuous/drive-mode dashcam AND proximity-triggered clips --
+                    // both route through GpuSurveillancePipeline's same Mode.NORMAL_RECORDING
+                    // path; surveillance/sentry recording calls setOverlayRecordingModeAllowed
+                    // (false) and never reaches here at all) uses the CONTINUOUS type's field
+                    // selection. Re-reading config here (not cached) is cheap at ~5 fps.
+                    Set<OverlayField> enabledFields = OverlayFieldSelectionResolver.resolve(
+                            UnifiedConfigManager.getTelemetryOverlay(), RecordingOverlayType.CONTINUOUS);
+                    overlayRenderer.renderFrame(snapshot, overlayFrameCounter / 3, enabledFields);
                 }
                 
                 // Upload new bitmap to texture ONLY when the double buffer actually swapped.

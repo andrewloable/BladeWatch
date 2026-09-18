@@ -196,6 +196,14 @@ public class RecordingsApiHandler {
             return true;
         }
 
+        // Bookmark the recording currently being written (BladeWatch-nmao.4). Metadata
+        // only -- no new file, no split. No filename in the request: the caller (a Live
+        // View button) has none to give, so the server resolves "current" itself.
+        if (path.equals("/api/recordings/mark") && method.equals("POST")) {
+            handleMarkRecording(out);
+            return true;
+        }
+
         // Delete recording
         if (path.startsWith("/api/recordings/") && method.equals("DELETE")) {
             String filename = path.substring(16);
@@ -448,6 +456,61 @@ public class RecordingsApiHandler {
             if (f.exists() && f.canRead() && f.length() > 0) return f;
         }
         return null;
+    }
+
+    /**
+     * Bookmarks the recording currently being written. Read-only w.r.t. the recording
+     * pipeline itself -- this only resolves which file is live and hands it to
+     * {@link MarkedRecordingsStore} (BladeWatch-nmao.4).
+     */
+    private static void handleMarkRecording(OutputStream out) throws Exception {
+        JSONObject response = buildMarkResponse(
+                currentRecordingFilename(), net.bladewatch.app.storage.MarkedRecordingsStore.getInstance());
+        HttpResponse.sendJson(out, response.toString());
+    }
+
+    /** The base filename currently being written by the shared encoder, or null if none. */
+    private static String currentRecordingFilename() {
+        try {
+            net.bladewatch.app.surveillance.GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
+            if (pipeline == null) return null;
+            net.bladewatch.app.surveillance.HardwareEventRecorderGpu encoder = pipeline.getEncoder();
+            return encoder != null ? encoder.getCurrentRecordingFilename() : null;
+        } catch (Exception e) {
+            CameraDaemon.log("currentRecordingFilename failed: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Pure decision: given the currently-recording filename (or null if nothing is
+     * recording), mark it and build the response JSON. Extracted from
+     * {@link #handleMarkRecording} so the in-flight/not-recording branches and the
+     * mark-persists behaviour are testable without a real {@code CameraDaemon}.
+     */
+    static JSONObject buildMarkResponse(String currentFilename,
+                                         net.bladewatch.app.storage.MarkedRecordingsStore store) throws Exception {
+        JSONObject json = new JSONObject();
+        if (currentFilename == null) {
+            json.put("success", false);
+            json.put("reason", "not_recording");
+            return json;
+        }
+        long markTimestampMs = store.mark(currentFilename);
+        json.put("success", true);
+        json.put("filename", currentFilename);
+        json.put("markTimestampMs", markTimestampMs);
+        return json;
+    }
+
+    /** Adds `marked`/`markedAtMs` to a recording's JSON from the marked-recordings store. */
+    static void applyMarkedStatus(JSONObject recording, String filename,
+                                   net.bladewatch.app.storage.MarkedRecordingsStore store) throws Exception {
+        boolean marked = store.isMarked(filename);
+        recording.put("marked", marked);
+        if (marked) {
+            recording.put("markedAtMs", store.getMarkTimestamp(filename));
+        }
     }
 
     /**
@@ -953,6 +1016,8 @@ public class RecordingsApiHandler {
             
             // Thumbnail URL - server generates thumbnail from video
             rec.put("thumbnailUrl", "/thumb/" + name);
+
+            applyMarkedStatus(rec, name, net.bladewatch.app.storage.MarkedRecordingsStore.getInstance());
 
             // ---- v3 sidecar enrichment (item 6) ----
             // If a JSON sidecar accompanies this MP4, attach the high-level stats so

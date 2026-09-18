@@ -558,6 +558,31 @@ public class CameraDaemon {
                 log("Media catalog init failed: " + e.getMessage());
             }
 
+            // If the SD card mounted successfully for this boot (applyAutoStoragePriority()
+            // ran earlier in main(), before either manager above existed), sweep any files
+            // stranded on internal storage from a prior boot's mount failure over to it now.
+            // Runs in the background — a directory scan + a handful of file moves must not
+            // delay daemon startup, and both managers this depends on are ready by this point.
+            if (storageManager.isSdCardAvailable()) {
+                Thread migrateThread = new Thread(() -> {
+                    try {
+                        net.bladewatch.app.storage.InternalToSdMigrator.migrate(
+                                storageManager,
+                                tripAnalyticsManager.getDatabase(),
+                                mediaCatalogManager.isAvailable() ? mediaCatalogManager::reconcile : null);
+                    } catch (Exception e) {
+                        log("Internal-to-SD migration failed: " + e.getMessage());
+                    }
+                }, "internal-to-sd-migration");
+                migrateThread.setDaemon(true);
+                // Internal->SD moves cross filesystems, so every file falls back to slow
+                // copy-then-delete (a real device backlog of ~900 files took well over an hour).
+                // Low priority so this never contends with the active recording/camera pipeline
+                // for I/O or CPU.
+                migrateThread.setPriority(Thread.MIN_PRIORITY);
+                migrateThread.start();
+            }
+
             // ONE-TIME migration: Clear poisoned consumption buckets if this is a PHEV
             // and the migration hasn't been done yet. Old trips may have been recorded
             // with wrong nominal capacity (e.g., 60 kWh BEV default instead of 18.3 kWh PHEV).
@@ -1290,18 +1315,6 @@ public class CameraDaemon {
             }
         }
         return false;
-    }
-    
-    /**
-     * Check if a port is already in use (fallback check).
-     */
-    private static boolean isPortInUse(int port) {
-        try (java.net.ServerSocket socket = new java.net.ServerSocket(port)) {
-            socket.setReuseAddress(true);
-            return false;
-        } catch (java.io.IOException e) {
-            return true;
-        }
     }
     
     public static Handler getMainHandler() {
@@ -2650,14 +2663,6 @@ public class CameraDaemon {
     }
     
     /**
-     * Count event recordings from today.
-     * Looks for files matching pattern: event_YYYYMMDD_*.mp4 in sentry_events directory
-     */
-    private static int countTodaysEvents() {
-        return getTodaysEvents().size();
-    }
-    
-    /**
      * Get list of today's events with timestamps.
      * Returns list of event info maps with filename, time, and size.
      */
@@ -2798,21 +2803,6 @@ public class CameraDaemon {
         return STREAM_MODE_PUBLIC.equals(streamMode);
     }
     
-    /**
-     * Get list of recording cameras (helper for status).
-     */
-    private static java.util.List<Integer> getRecordingCameras() {
-        java.util.List<Integer> recording = new java.util.ArrayList<>();
-        // GPU pipeline records all 4 cameras in mosaic
-        if (gpuPipeline != null && gpuPipeline.isRunning()) {
-            recording.add(1);
-            recording.add(2);
-            recording.add(3);
-            recording.add(4);
-        }
-        return recording;
-    }
-
     // ==================== INITIALIZATION ====================
     
     private static void generateDeviceId() {
@@ -3189,35 +3179,6 @@ public class CameraDaemon {
             log("Failed to initialize GPS Monitor with context: " + e.getMessage());
             log("Falling back to daemon mode (shell commands)");
             net.bladewatch.app.monitor.GpsMonitor.getInstance().init(null);
-        }
-    }
-    
-    /**
-     * Grant location permissions to the app via shell commands.
-     * The daemon runs with elevated privileges so it can grant permissions.
-     */
-    private static void grantLocationPermissions() {
-        String[] permissions = {
-            "android.permission.ACCESS_FINE_LOCATION",
-            "android.permission.ACCESS_COARSE_LOCATION",
-            "android.permission.ACCESS_BACKGROUND_LOCATION"
-        };
-        
-        log("Granting location permissions...");
-        
-        for (String perm : permissions) {
-            try {
-                Process process = Runtime.getRuntime().exec(
-                    "pm grant net.bladewatch.app " + perm);
-                int exitCode = process.waitFor();
-                if (exitCode == 0) {
-                    log("Granted: " + perm);
-                } else {
-                    log("Failed to grant: " + perm + " (exit=" + exitCode + ")");
-                }
-            } catch (Exception e) {
-                log("Error granting " + perm + ": " + e.getMessage());
-            }
         }
     }
     

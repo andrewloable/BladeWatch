@@ -90,6 +90,8 @@ message GetQualityResponse {
   string native_resolution = 9;
   // Recording segment length in minutes (e.g. 5, 10, 15).
   int32 recording_segment_minutes = 10;
+  // One of: PERFORMANCE, RELIABILITY. See RecordingPriority.
+  string recording_priority = 11;
 }
 
 message SetQualityRequest {
@@ -103,6 +105,8 @@ message SetQualityRequest {
   int32 fps = 4;
   // Recording segment length in minutes. 0 = keep current.
   int32 recording_segment_minutes = 5;
+  // One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+  string recording_priority = 6;
 }
 
 message SetQualityResponse {

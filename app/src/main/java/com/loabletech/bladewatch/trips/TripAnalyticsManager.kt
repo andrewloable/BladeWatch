@@ -350,15 +350,17 @@ class TripAnalyticsManager {
 
         // Detector
         val d = TripDetector()
-        d.setListener(object : TripDetector.TripListener {
+        d.addListener(object : TripDetector.TripListener {
             override fun onTripStarted(trip: TripRecord) = handleTripStarted(trip)
             override fun onTripEnded(trip: TripRecord) = handleTripEnded(trip)
             override fun onTripDiscarded(trip: TripRecord, reason: String) =
                 handleTripDiscarded(trip, reason)
-
-            override fun getRecordedDistanceKm(): Double =
-                recorder?.getTotalDistanceKm() ?: 0.0
         })
+        d.setDistanceProvider { recorder?.getTotalDistanceKm() ?: 0.0 }
+        // BladeWatch-nmao.3: trip lifecycle push notifications. TripDetector has no static
+        // singleton for a notifier to reach into (unlike ChargingDetector), so it is
+        // registered here, at the one place the detector instance is actually created.
+        d.addListener(net.bladewatch.app.notifications.TripEventNotifier.getInstance())
         detector = d
 
         recorder = TripTelemetryRecorder(telemetryDataCollector)

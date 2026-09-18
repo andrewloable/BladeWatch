@@ -20,6 +20,8 @@ option java_multiple_files = true;
 //   SetClimate           POST /api/vehicle/climate
 //   SetSeat              POST /api/vehicle/seat
 //   SetLights            POST /api/vehicle/lights
+//   SetScreen            POST /api/vehicle/screen
+//   SetMediaVolume       POST /api/vehicle/media-volume
 //   SetAdas              POST /api/vehicle/adas
 //   SetBatteryHeat       POST /api/vehicle/battery-heat
 //   GetChargingSchedule  GET  /api/vehicle/charging-schedule
@@ -42,6 +44,8 @@ service VehicleService {
   rpc SetClimate(SetClimateRequest) returns (VehicleCommandResponse);
   rpc SetSeat(SetSeatRequest) returns (VehicleCommandResponse);
   rpc SetLights(SetLightsRequest) returns (VehicleCommandResponse);
+  rpc SetScreen(SetScreenRequest) returns (VehicleCommandResponse);
+  rpc SetMediaVolume(SetMediaVolumeRequest) returns (VehicleCommandResponse);
   rpc SetAdas(SetAdasRequest) returns (VehicleCommandResponse);
   rpc SetBatteryHeat(SetBatteryHeatRequest) returns (VehicleCommandResponse);
   rpc GetChargingSchedule(GetChargingScheduleRequest) returns (GetChargingScheduleResponse);
@@ -176,6 +180,10 @@ message GetVehicleStateResponse {
   ClimateStatus climate = 11;
   TyreStatus tyres = 12;
   string error = 13;
+  // BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+  // shows the real value rather than a local guess.
+  int32 media_volume_percent = 14;
+  bool media_muted = 15;
 }
 
 message GetAcDiagnosticsRequest {}
@@ -234,6 +242,10 @@ message SetClimateRequest {
   bool restore_ac_on = 7;
   double restore_temp_c = 8;
   int32 restore_fan_level = 9;
+  // BladeWatch-2000.1. Value meaning is not established in source (see
+  // docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+  // already is; the UI does not offer a labelled picker for either.
+  int32 cycle_mode = 10;
 }
 
 message SetSeatRequest {
@@ -254,6 +266,21 @@ message SetLightsRequest {
   // proto3 bool would omit from the JSON wire (default-scalar omission), so
   // the handler would never see the boolean. optional forces it onto the wire.
   optional bool on = 2;
+}
+
+// BladeWatch-2000.3. Same explicit-presence reasoning as SetLightsRequest.on above: a
+// screen-off request sets on=false, which a plain proto3 bool would omit from the wire.
+message SetScreenRequest {
+  optional bool on = 1;
+}
+
+// BladeWatch-2000.2: media volume and mute. Not routed through VehicleCommandRouter -- see
+// docs/byd-integrations.md's "Media volume and mute" section for why.
+message SetMediaVolumeRequest {
+  // One of: "set", "step_up", "step_down", "mute", "unmute".
+  string action = 1;
+  // Required (0-100) when action == "set"; ignored for every other action.
+  optional int32 percent = 2;
 }
 
 message SetAdasRequest {

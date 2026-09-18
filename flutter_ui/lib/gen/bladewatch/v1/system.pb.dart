@@ -686,6 +686,8 @@ class NetworkInfo extends $pb.GeneratedMessage {
     $core.bool? lanHttpEnabled,
     $core.String? httpBind,
     $core.String? httpModeWarning,
+    $fixnum.Int64? thisMonthBytes,
+    $fixnum.Int64? lastMonthBytes,
   }) {
     final result = NetworkInfo._();
     if (type != null) result.type = type;
@@ -694,6 +696,8 @@ class NetworkInfo extends $pb.GeneratedMessage {
     if (lanHttpEnabled != null) result.lanHttpEnabled = lanHttpEnabled;
     if (httpBind != null) result.httpBind = httpBind;
     if (httpModeWarning != null) result.httpModeWarning = httpModeWarning;
+    if (thisMonthBytes != null) result.thisMonthBytes = thisMonthBytes;
+    if (lastMonthBytes != null) result.lastMonthBytes = lastMonthBytes;
     return result;
   }
 
@@ -716,6 +720,8 @@ class NetworkInfo extends $pb.GeneratedMessage {
     ..aOB(4, _omitFieldNames ? '' : 'lanHttpEnabled')
     ..aOS(5, _omitFieldNames ? '' : 'httpBind')
     ..aOS(6, _omitFieldNames ? '' : 'httpModeWarning')
+    ..aInt64(7, _omitFieldNames ? '' : 'thisMonthBytes')
+    ..aInt64(8, _omitFieldNames ? '' : 'lastMonthBytes')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -793,6 +799,26 @@ class NetworkInfo extends $pb.GeneratedMessage {
   $core.bool hasHttpModeWarning() => $_has(5);
   @$pb.TagNumber(6)
   void clearHttpModeWarning() => $_clearField(6);
+
+  /// BladeWatch's own network usage (BladeWatch-t1lg.1), NOT total device data use -- own-UID
+  /// TrafficStats totals only. 0 until the first background sample completes.
+  @$pb.TagNumber(7)
+  $fixnum.Int64 get thisMonthBytes => $_getI64(6);
+  @$pb.TagNumber(7)
+  set thisMonthBytes($fixnum.Int64 value) => $_setInt64(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasThisMonthBytes() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearThisMonthBytes() => $_clearField(7);
+
+  @$pb.TagNumber(8)
+  $fixnum.Int64 get lastMonthBytes => $_getI64(7);
+  @$pb.TagNumber(8)
+  set lastMonthBytes($fixnum.Int64 value) => $_setInt64(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasLastMonthBytes() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearLastMonthBytes() => $_clearField(8);
 }
 
 /// GpsStatusInfo is a lightweight location snapshot embedded in SystemStatus.

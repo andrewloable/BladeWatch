@@ -266,6 +266,128 @@ void main() {
       expect(find.text('AC busy'), findsOneWidget);
     });
 
+    testWidgets('toggling the screen calls SetScreen and flips the button label (BladeWatch-2000.3)',
+        (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetScreen', {'success': true});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Screen: ON'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.screen.toggle')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Screen: OFF'), findsOneWidget);
+      expect((rpc.calls.last.request as dynamic).on, isFalse);
+    });
+
+    testWidgets('a screen toggle blocked by the motion interlock shows a snackbar with the server message',
+        (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetScreen', {'success': false, 'message': 'Blocked while moving'});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.screen.toggle')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Blocked while moving'), findsOneWidget);
+      expect(find.text('Screen: ON'), findsOneWidget);
+    });
+
+    testWidgets('stepping media volume up calls SetMediaVolume and shows the new percent (BladeWatch-2000.2)',
+        (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetMediaVolume', {'success': true});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      expect(find.text('0%'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.media.volume.plus')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('5%'), findsOneWidget);
+      expect((rpc.calls.last.request as dynamic).action, 'step_up');
+    });
+
+    testWidgets('tapping mute calls SetMediaVolume with action=mute and flips the button label',
+        (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetMediaVolume', {'success': true});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mute'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.media.mute')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Muted'), findsOneWidget);
+      expect((rpc.calls.last.request as dynamic).action, 'mute');
+    });
+
+    testWidgets('a failed media volume command shows a snackbar with the server message', (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetMediaVolume', {'success': false, 'message': 'audio busy'});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.media.mute')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('audio busy'), findsOneWidget);
+      expect(find.text('Mute'), findsOneWidget);
+    });
+
+    testWidgets('tapping front defrost calls SetClimate with action=front_defrost (BladeWatch-2000.1)',
+        (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': true});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.climate.frontDefrost')));
+      await tester.pumpAndSettle();
+
+      expect((rpc.calls.last.request as dynamic).action, 'front_defrost');
+      expect((rpc.calls.last.request as dynamic).on, isTrue);
+    });
+
+    testWidgets('tapping rear defrost calls SetClimate with action=rear_defrost', (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': true});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.climate.rearDefrost')));
+      await tester.pumpAndSettle();
+
+      expect((rpc.calls.last.request as dynamic).action, 'rear_defrost');
+      expect((rpc.calls.last.request as dynamic).on, isTrue);
+    });
+
+    testWidgets('a failed defrost command shows a snackbar with the server message', (tester) async {
+      stubState();
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': false, 'message': 'Blocked while moving'});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('vehicle.climate.frontDefrost')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Blocked while moving'), findsOneWidget);
+    });
+
     testWidgets('toggling max cooling flips the button label', (tester) async {
       stubState(maxCooling: false);
       stubAppearance();

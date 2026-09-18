@@ -276,6 +276,8 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
 
   late final LiveViewController _liveViewController = LiveViewController(
     streamService: _streamService,
+    systemService: _systemService,
+    recordingsService: _recordingsService,
     jwtSource: _authChannel,
     textureChannel: _liveViewTextureChannel,
   );
@@ -365,6 +367,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                         setDaemonEnabled: SettingsDaemonsController.enabledSetterFor(_daemonChannel),
                         onOpenLanguagePicker: () => _showLanguagePicker(context),
                         tripsController: _tripsController,
+                        jwtSource: _authChannel,
                       ),
                     ),
                     settingsAboutScreen: SettingsAboutScreen(
@@ -395,7 +398,11 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                     ),
                     surveillanceScreen: SurveillanceSettingsScreen(controller: _surveillanceController),
                     vehicleScreen: VehicleScreen(controller: _vehicleController),
-                    liveViewScreen: LiveViewScreen(controller: _liveViewController),
+                    liveViewScreen: LiveViewScreen(
+                      controller: _liveViewController,
+                      locationController: _locationController,
+                      onOpenLocation: () => _shellController.selectRoute(BwRoutes.location),
+                    ),
                   )
                 : StartupScreen(
                     controller: _startupController,

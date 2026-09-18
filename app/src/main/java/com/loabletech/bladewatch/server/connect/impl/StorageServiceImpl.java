@@ -13,8 +13,9 @@ import net.bladewatch.app.server.connect.ConnectResponse;
  * Connect protocol handler for bladewatch.v1.StorageService.
  *
  * Routes:
- *   GetStorageSettings     → GET  /api/settings/storage    (QualitySettingsApiHandler)
- *   SetStorageSettings     → POST /api/settings/storage    (QualitySettingsApiHandler)
+ *   GetStorageSettings        → GET  /api/settings/storage         (QualitySettingsApiHandler)
+ *   SetStorageSettings        → POST /api/settings/storage         (QualitySettingsApiHandler)
+ *   PreviewStorageLimitChange → POST /api/settings/storage/preview (QualitySettingsApiHandler)
  *   GetExternalStorage     → GET  /api/storage/external    (ExternalStorageApiHandler)
  *   SetExternalConfig      → POST /api/storage/external/config   (ExternalStorageApiHandler)
  *   TriggerCleanup         → POST /api/storage/external/cleanup  (ExternalStorageApiHandler)
@@ -36,6 +37,8 @@ public class StorageServiceImpl {
                 this::handleGetStorageSettings);
         dispatcher.register("bladewatch.v1.StorageService", "SetStorageSettings",
                 this::handleSetStorageSettings);
+        dispatcher.register("bladewatch.v1.StorageService", "PreviewStorageLimitChange",
+                this::handlePreviewStorageLimitChange);
         dispatcher.register("bladewatch.v1.StorageService", "GetExternalStorage",
                 this::handleGetExternalStorage);
         dispatcher.register("bladewatch.v1.StorageService", "SetExternalConfig",
@@ -60,6 +63,11 @@ public class StorageServiceImpl {
     private ConnectResponse handleSetStorageSettings(String req, String clientIdentity) throws ConnectException {
         return ConnectHandlerUtil.captureString(out ->
                 QualitySettingsApiHandler.handle("POST", "/api/settings/storage", req, out));
+    }
+
+    private ConnectResponse handlePreviewStorageLimitChange(String req, String clientIdentity) throws ConnectException {
+        return ConnectHandlerUtil.captureString(out ->
+                QualitySettingsApiHandler.handle("POST", "/api/settings/storage/preview", req, out));
     }
 
     private ConnectResponse handleGetExternalStorage(String req, String clientIdentity) throws ConnectException {

@@ -23,6 +23,8 @@ import com.connectrpc.ResponseMessage
  *    SetClimate           POST /api/vehicle/climate
  *    SetSeat              POST /api/vehicle/seat
  *    SetLights            POST /api/vehicle/lights
+ *    SetScreen            POST /api/vehicle/screen
+ *    SetMediaVolume       POST /api/vehicle/media-volume
  *    SetAdas              POST /api/vehicle/adas
  *    SetBatteryHeat       POST /api/vehicle/battery-heat
  *    GetChargingSchedule  GET  /api/vehicle/charging-schedule
@@ -57,6 +59,10 @@ public interface VehicleServiceClientInterface {
   public suspend fun setSeat(request: SetSeatRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
 
   public suspend fun setLights(request: SetLightsRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
+
+  public suspend fun setScreen(request: SetScreenRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
+
+  public suspend fun setMediaVolume(request: SetMediaVolumeRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
 
   public suspend fun setAdas(request: SetAdasRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
 

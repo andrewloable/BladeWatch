@@ -124,6 +124,73 @@ void main() {
 
       expect(rpc.calls.any((c) => c.service == 'SurveillanceService' && c.method == 'Disable'), isTrue);
     });
+
+    // BladeWatch-gyg1.2: honest-warning tests. stubHappyPath()'s GetConfig has
+    // enabled: true, so armed is the default fixture; the disarmed test overrides it.
+    testWidgets('battery cost note is shown next to the arming control when armed', (tester) async {
+      stubHappyPath();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+      // Asserts on the resolved l10n VALUE, not an English literal written in this
+      // test -- if the widget hardcoded different text, or the key were renamed,
+      // this and the widget's own lookup would diverge and the test would fail.
+      expect(find.text(l10n.surveillance_general_battery_warning), findsOneWidget);
+    });
+
+    testWidgets('battery cost note is absent when disarmed', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SurveillanceService', 'GetConfig', {
+        'success': true,
+        'config': {
+          'enabled': false,
+          'distancePreset': 'OUTDOOR',
+          'sensitivity': 3,
+          'detectPerson': true,
+          'detectCar': true,
+          'detectBike': false,
+          'preRecordSeconds': 5,
+          'postRecordSeconds': 10,
+          'nightMode': false,
+          'aiEnabled': true,
+          'aiConfidence': 0.4,
+          'cameraFront': true,
+          'cameraRight': true,
+          'cameraRear': true,
+          'cameraLeft': true,
+          'deterrentAction': 'silent',
+          'deterrentCooldownSeconds': 60,
+        },
+      });
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+      expect(find.text(l10n.surveillance_general_battery_warning), findsNothing);
+    });
+
+    testWidgets('camera contention note is shown only while another app holds the camera', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SurveillanceService', 'GetStatus',
+          {'pipelineRunning': true, 'surveillanceActive': false, 'cameraYielded': true, 'nativeAppActive': true});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+      expect(find.text(l10n.surveillance_general_camera_contention_warning), findsOneWidget);
+    });
+
+    testWidgets('camera contention note is absent when nothing is contending', (tester) async {
+      stubHappyPath(); // GetStatus defaults cameraYielded to false (unset in the fixture)
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+      // This is the assertion that matters most: a permanent caption here is exactly
+      // the failure mode step 2 of the issue exists to prevent.
+      expect(find.text(l10n.surveillance_general_camera_contention_warning), findsNothing);
+    });
   });
 
   group('Detection tab', () {
@@ -433,6 +500,117 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('surveillance.sync.dismiss')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('surveillance.sync.start')), findsOneWidget);
+    });
+  });
+
+  group('storage limit confirmation (BladeWatch-gyg1.6)', () {
+    Future<SurveillanceSettingsController> openStorageTabAt(WidgetTester tester, int limitMb) async {
+      final controller = buildController();
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('surveillance.tab.storage')));
+      await tester.pumpAndSettle();
+      controller.setStorageLimitMb(limitMb);
+      await tester.pumpAndSettle();
+      return controller;
+    }
+
+    testWidgets('lowering to a value the preview says deletes files shows a confirmation with the count and size',
+        (tester) async {
+      stubHappyPath(); // loaded limitMb is 800
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'surveillanceImpact': {'fileCount': 6, 'totalBytes': 12884901888},
+      });
+      await openStorageTabAt(tester, 100);
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.apply.storage')));
+      await tester.pumpAndSettle();
+
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.byKey(const ValueKey('surveillance.storageConfirm.dialog')), findsOneWidget);
+      expect(find.text(l10n.settings_recording_storage_confirm_message(6, '12.0 GB')), findsOneWidget);
+    });
+
+    testWidgets('cancelling leaves SetStorageSettings uncalled', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'surveillanceImpact': {'fileCount': 6, 'totalBytes': 12884901888},
+      });
+      await openStorageTabAt(tester, 100);
+      await tester.tap(find.byKey(const ValueKey('surveillance.apply.storage')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.storageConfirm.cancel')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('surveillance.storageConfirm.dialog')), findsNothing);
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), isEmpty);
+    });
+
+    testWidgets('confirming calls SetStorageSettings exactly once with the new value', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'surveillanceImpact': {'fileCount': 6, 'totalBytes': 12884901888},
+      });
+      rpc.stubJson('StorageService', 'SetStorageSettings', {'success': true});
+      await openStorageTabAt(tester, 100);
+      await tester.tap(find.byKey(const ValueKey('surveillance.apply.storage')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.storageConfirm.confirm')));
+      await tester.pumpAndSettle();
+
+      final calls = rpc.calls.where((c) => c.method == 'SetStorageSettings').toList();
+      expect(calls, hasLength(1));
+      expect((calls.single.request as dynamic).surveillanceLimitMb.toInt(), 100);
+    });
+
+    testWidgets('raising the limit applies directly with no dialog and no preview call', (tester) async {
+      stubHappyPath(); // loaded limitMb is 800
+      rpc.stubJson('StorageService', 'SetStorageSettings', {'success': true});
+      await openStorageTabAt(tester, 900);
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.apply.storage')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('surveillance.storageConfirm.dialog')), findsNothing);
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), hasLength(1));
+      expect(rpc.calls.where((c) => c.method == 'PreviewStorageLimitChange'), isEmpty);
+    });
+
+    testWidgets('lowering to a value that deletes nothing applies directly with no dialog', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'surveillanceImpact': {'fileCount': 0, 'totalBytes': 0},
+      });
+      rpc.stubJson('StorageService', 'SetStorageSettings', {'success': true});
+      await openStorageTabAt(tester, 100);
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.apply.storage')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('surveillance.storageConfirm.dialog')), findsNothing);
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), hasLength(1));
+    });
+
+    testWidgets('the preview RPC failing shows a distinct impact-unknown confirmation, and cancelling it '
+        'also leaves SetStorageSettings uncalled', (tester) async {
+      stubHappyPath();
+      rpc.stubError('StorageService', 'PreviewStorageLimitChange', const ConnectError('unavailable', 'down'));
+      await openStorageTabAt(tester, 100);
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.apply.storage')));
+      await tester.pumpAndSettle();
+
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.byKey(const ValueKey('surveillance.storageConfirm.dialog')), findsOneWidget);
+      expect(find.text(l10n.settings_recording_storage_confirm_unknown_title), findsOneWidget);
+      expect(find.text(l10n.settings_recording_storage_confirm_unknown_message), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('surveillance.storageConfirm.cancel')));
+      await tester.pumpAndSettle();
+
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), isEmpty);
     });
   });
 

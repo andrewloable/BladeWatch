@@ -46,6 +46,8 @@ public class VehicleServiceImpl {
         dispatcher.register("bladewatch.v1.VehicleService", "SetLights",
                 this::handleSetLights);
         dispatcher.register("bladewatch.v1.VehicleService", "SetAdas", this::handleSetAdas);
+        dispatcher.register("bladewatch.v1.VehicleService", "SetScreen", this::handleSetScreen);
+        dispatcher.register("bladewatch.v1.VehicleService", "SetMediaVolume", this::handleSetMediaVolume);
         dispatcher.register("bladewatch.v1.VehicleService", "GetChargeCap",
                 this::handleGetChargeCap);
         dispatcher.register("bladewatch.v1.VehicleService", "SetChargeCap",
@@ -107,6 +109,16 @@ public class VehicleServiceImpl {
     private ConnectResponse handleSetAdas(String req, String clientIdentity) throws ConnectException {
         return ConnectHandlerUtil.captureString(out ->
                 VehicleControlApiHandler.handle("POST", "/api/vehicle/adas", req, out));
+    }
+
+    private ConnectResponse handleSetScreen(String req, String clientIdentity) throws ConnectException {
+        return ConnectHandlerUtil.captureString(out ->
+                VehicleControlApiHandler.handle("POST", "/api/vehicle/screen", req, out));
+    }
+
+    private ConnectResponse handleSetMediaVolume(String req, String clientIdentity) throws ConnectException {
+        return ConnectHandlerUtil.captureString(out ->
+                VehicleControlApiHandler.handle("POST", "/api/vehicle/media-volume", req, out));
     }
 
     private ConnectResponse handleGetChargeCap(String req, String clientIdentity) throws ConnectException {

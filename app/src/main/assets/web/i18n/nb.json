@@ -1557,7 +1557,8 @@
     "badgeLive": "● DIREKTE",
     "badgeConnecting": "○ Kobler til…",
     "notConnected": "Kamerastrøm ikke tilkoblet",
-    "decoderUnsupported": "Denne nettleseren kan ikke spille av direktestrømmen. Den trenger en nettleser med videodekoding, for eksempel Chrome eller Edge. Tor Browser og Firefox ESR har det ikke ennå."
+    "decoderUnsupported": "Denne nettleseren kan ikke spille av direktestrømmen. Den trenger en nettleser med videodekoding, for eksempel Chrome eller Edge. Tor Browser og Firefox ESR har det ikke ennå.",
+    "stillFrameLabel": "Stillbilde — ikke direktevideo"
   },
   "location": {
     "themeAuto": "Auto",

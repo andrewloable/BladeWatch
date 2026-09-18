@@ -70,8 +70,6 @@ public class FoveatedCropper {
     private static final int STRIP_HEIGHT = 960;
 
     // Each camera occupies 1/4 of the strip = 1280×960
-    private static final int CAM_WIDTH = 1280;
-
     // GL resources
     private int fbo = -1;
     private int fboTexture = -1;

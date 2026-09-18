@@ -1557,7 +1557,8 @@
     "badgeLive": "● สด",
     "badgeConnecting": "○ กำลังเชื่อมต่อ…",
     "notConnected": "ยังไม่ได้เชื่อมต่อภาพจากกล้อง",
-    "decoderUnsupported": "เบราว์เซอร์นี้ไม่สามารถเล่นสตรีมสดได้ ต้องใช้เบราว์เซอร์ที่รองรับการถอดรหัสวิดีโอ เช่น Chrome หรือ Edge ส่วน Tor Browser และ Firefox ESR ยังไม่รองรับ"
+    "decoderUnsupported": "เบราว์เซอร์นี้ไม่สามารถเล่นสตรีมสดได้ ต้องใช้เบราว์เซอร์ที่รองรับการถอดรหัสวิดีโอ เช่น Chrome หรือ Edge ส่วน Tor Browser และ Firefox ESR ยังไม่รองรับ",
+    "stillFrameLabel": "ภาพนิ่ง — ไม่ใช่วิดีโอสด"
   },
   "location": {
     "themeAuto": "อัตโนมัติ",

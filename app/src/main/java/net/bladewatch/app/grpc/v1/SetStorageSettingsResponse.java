@@ -49,6 +49,7 @@ private static final long serialVersionUID = 0L;
             net.bladewatch.app.grpc.v1.SetStorageSettingsResponse.class, net.bladewatch.app.grpc.v1.SetStorageSettingsResponse.Builder.class);
   }
 
+  private int bitField0_;
   public static final int SUCCESS_FIELD_NUMBER = 1;
   private boolean success_ = false;
   /**
@@ -99,6 +100,76 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int RECORDINGS_IMPACT_FIELD_NUMBER = 3;
+  private net.bladewatch.app.grpc.v1.CleanupImpact recordingsImpact_;
+  /**
+   * <pre>
+   * Present only when applying this request actually deleted at least one existing file for
+   * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+   * finds this out BEFORE applying.
+   * </pre>
+   *
+   * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+   * @return Whether the recordingsImpact field is set.
+   */
+  @java.lang.Override
+  public boolean hasRecordingsImpact() {
+    return ((bitField0_ & 0x00000001) != 0);
+  }
+  /**
+   * <pre>
+   * Present only when applying this request actually deleted at least one existing file for
+   * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+   * finds this out BEFORE applying.
+   * </pre>
+   *
+   * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+   * @return The recordingsImpact.
+   */
+  @java.lang.Override
+  public net.bladewatch.app.grpc.v1.CleanupImpact getRecordingsImpact() {
+    return recordingsImpact_ == null ? net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance() : recordingsImpact_;
+  }
+  /**
+   * <pre>
+   * Present only when applying this request actually deleted at least one existing file for
+   * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+   * finds this out BEFORE applying.
+   * </pre>
+   *
+   * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+   */
+  @java.lang.Override
+  public net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder getRecordingsImpactOrBuilder() {
+    return recordingsImpact_ == null ? net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance() : recordingsImpact_;
+  }
+
+  public static final int SURVEILLANCE_IMPACT_FIELD_NUMBER = 4;
+  private net.bladewatch.app.grpc.v1.CleanupImpact surveillanceImpact_;
+  /**
+   * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+   * @return Whether the surveillanceImpact field is set.
+   */
+  @java.lang.Override
+  public boolean hasSurveillanceImpact() {
+    return ((bitField0_ & 0x00000002) != 0);
+  }
+  /**
+   * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+   * @return The surveillanceImpact.
+   */
+  @java.lang.Override
+  public net.bladewatch.app.grpc.v1.CleanupImpact getSurveillanceImpact() {
+    return surveillanceImpact_ == null ? net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance() : surveillanceImpact_;
+  }
+  /**
+   * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+   */
+  @java.lang.Override
+  public net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder getSurveillanceImpactOrBuilder() {
+    return surveillanceImpact_ == null ? net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance() : surveillanceImpact_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -119,6 +190,12 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(error_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 2, error_);
     }
+    if (((bitField0_ & 0x00000001) != 0)) {
+      output.writeMessage(3, getRecordingsImpact());
+    }
+    if (((bitField0_ & 0x00000002) != 0)) {
+      output.writeMessage(4, getSurveillanceImpact());
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -129,6 +206,14 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(error_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(2, error_);
+    }
+    if (((bitField0_ & 0x00000001) != 0)) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeMessageSize(3, getRecordingsImpact());
+    }
+    if (((bitField0_ & 0x00000002) != 0)) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeMessageSize(4, getSurveillanceImpact());
     }
     return size;
   }
@@ -158,6 +243,16 @@ private static final long serialVersionUID = 0L;
         != other.getSuccess()) return false;
     if (!getError()
         .equals(other.getError())) return false;
+    if (hasRecordingsImpact() != other.hasRecordingsImpact()) return false;
+    if (hasRecordingsImpact()) {
+      if (!getRecordingsImpact()
+          .equals(other.getRecordingsImpact())) return false;
+    }
+    if (hasSurveillanceImpact() != other.hasSurveillanceImpact()) return false;
+    if (hasSurveillanceImpact()) {
+      if (!getSurveillanceImpact()
+          .equals(other.getSurveillanceImpact())) return false;
+    }
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -174,6 +269,14 @@ private static final long serialVersionUID = 0L;
         getSuccess());
     hash = (37 * hash) + ERROR_FIELD_NUMBER;
     hash = (53 * hash) + getError().hashCode();
+    if (hasRecordingsImpact()) {
+      hash = (37 * hash) + RECORDINGS_IMPACT_FIELD_NUMBER;
+      hash = (53 * hash) + getRecordingsImpact().hashCode();
+    }
+    if (hasSurveillanceImpact()) {
+      hash = (37 * hash) + SURVEILLANCE_IMPACT_FIELD_NUMBER;
+      hash = (53 * hash) + getSurveillanceImpact().hashCode();
+    }
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -293,13 +396,20 @@ private static final long serialVersionUID = 0L;
 
     // Construct using net.bladewatch.app.grpc.v1.SetStorageSettingsResponse.newBuilder()
     private Builder() {
-
+      maybeForceBuilderInitialization();
     }
 
     private Builder(
         com.google.protobuf.GeneratedMessage.BuilderParent parent) {
       super(parent);
-
+      maybeForceBuilderInitialization();
+    }
+    private void maybeForceBuilderInitialization() {
+      if (com.google.protobuf.GeneratedMessage
+              .alwaysUseFieldBuilders) {
+        internalGetRecordingsImpactFieldBuilder();
+        internalGetSurveillanceImpactFieldBuilder();
+      }
     }
     @java.lang.Override
     public Builder clear() {
@@ -307,6 +417,16 @@ private static final long serialVersionUID = 0L;
       bitField0_ = 0;
       success_ = false;
       error_ = "";
+      recordingsImpact_ = null;
+      if (recordingsImpactBuilder_ != null) {
+        recordingsImpactBuilder_.dispose();
+        recordingsImpactBuilder_ = null;
+      }
+      surveillanceImpact_ = null;
+      if (surveillanceImpactBuilder_ != null) {
+        surveillanceImpactBuilder_.dispose();
+        surveillanceImpactBuilder_ = null;
+      }
       return this;
     }
 
@@ -346,6 +466,20 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000002) != 0)) {
         result.error_ = error_;
       }
+      int to_bitField0_ = 0;
+      if (((from_bitField0_ & 0x00000004) != 0)) {
+        result.recordingsImpact_ = recordingsImpactBuilder_ == null
+            ? recordingsImpact_
+            : recordingsImpactBuilder_.build();
+        to_bitField0_ |= 0x00000001;
+      }
+      if (((from_bitField0_ & 0x00000008) != 0)) {
+        result.surveillanceImpact_ = surveillanceImpactBuilder_ == null
+            ? surveillanceImpact_
+            : surveillanceImpactBuilder_.build();
+        to_bitField0_ |= 0x00000002;
+      }
+      result.bitField0_ |= to_bitField0_;
     }
 
     @java.lang.Override
@@ -367,6 +501,12 @@ private static final long serialVersionUID = 0L;
         error_ = other.error_;
         bitField0_ |= 0x00000002;
         onChanged();
+      }
+      if (other.hasRecordingsImpact()) {
+        mergeRecordingsImpact(other.getRecordingsImpact());
+      }
+      if (other.hasSurveillanceImpact()) {
+        mergeSurveillanceImpact(other.getSurveillanceImpact());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -404,6 +544,20 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000002;
               break;
             } // case 18
+            case 26: {
+              input.readMessage(
+                  internalGetRecordingsImpactFieldBuilder().getBuilder(),
+                  extensionRegistry);
+              bitField0_ |= 0x00000004;
+              break;
+            } // case 26
+            case 34: {
+              input.readMessage(
+                  internalGetSurveillanceImpactFieldBuilder().getBuilder(),
+                  extensionRegistry);
+              bitField0_ |= 0x00000008;
+              break;
+            } // case 34
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -523,6 +677,302 @@ private static final long serialVersionUID = 0L;
       bitField0_ |= 0x00000002;
       onChanged();
       return this;
+    }
+
+    private net.bladewatch.app.grpc.v1.CleanupImpact recordingsImpact_;
+    private com.google.protobuf.SingleFieldBuilder<
+        net.bladewatch.app.grpc.v1.CleanupImpact, net.bladewatch.app.grpc.v1.CleanupImpact.Builder, net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder> recordingsImpactBuilder_;
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     * @return Whether the recordingsImpact field is set.
+     */
+    public boolean hasRecordingsImpact() {
+      return ((bitField0_ & 0x00000004) != 0);
+    }
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     * @return The recordingsImpact.
+     */
+    public net.bladewatch.app.grpc.v1.CleanupImpact getRecordingsImpact() {
+      if (recordingsImpactBuilder_ == null) {
+        return recordingsImpact_ == null ? net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance() : recordingsImpact_;
+      } else {
+        return recordingsImpactBuilder_.getMessage();
+      }
+    }
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     */
+    public Builder setRecordingsImpact(net.bladewatch.app.grpc.v1.CleanupImpact value) {
+      if (recordingsImpactBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        recordingsImpact_ = value;
+      } else {
+        recordingsImpactBuilder_.setMessage(value);
+      }
+      bitField0_ |= 0x00000004;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     */
+    public Builder setRecordingsImpact(
+        net.bladewatch.app.grpc.v1.CleanupImpact.Builder builderForValue) {
+      if (recordingsImpactBuilder_ == null) {
+        recordingsImpact_ = builderForValue.build();
+      } else {
+        recordingsImpactBuilder_.setMessage(builderForValue.build());
+      }
+      bitField0_ |= 0x00000004;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     */
+    public Builder mergeRecordingsImpact(net.bladewatch.app.grpc.v1.CleanupImpact value) {
+      if (recordingsImpactBuilder_ == null) {
+        if (((bitField0_ & 0x00000004) != 0) &&
+          recordingsImpact_ != null &&
+          recordingsImpact_ != net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance()) {
+          getRecordingsImpactBuilder().mergeFrom(value);
+        } else {
+          recordingsImpact_ = value;
+        }
+      } else {
+        recordingsImpactBuilder_.mergeFrom(value);
+      }
+      if (recordingsImpact_ != null) {
+        bitField0_ |= 0x00000004;
+        onChanged();
+      }
+      return this;
+    }
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     */
+    public Builder clearRecordingsImpact() {
+      bitField0_ = (bitField0_ & ~0x00000004);
+      recordingsImpact_ = null;
+      if (recordingsImpactBuilder_ != null) {
+        recordingsImpactBuilder_.dispose();
+        recordingsImpactBuilder_ = null;
+      }
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     */
+    public net.bladewatch.app.grpc.v1.CleanupImpact.Builder getRecordingsImpactBuilder() {
+      bitField0_ |= 0x00000004;
+      onChanged();
+      return internalGetRecordingsImpactFieldBuilder().getBuilder();
+    }
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     */
+    public net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder getRecordingsImpactOrBuilder() {
+      if (recordingsImpactBuilder_ != null) {
+        return recordingsImpactBuilder_.getMessageOrBuilder();
+      } else {
+        return recordingsImpact_ == null ?
+            net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance() : recordingsImpact_;
+      }
+    }
+    /**
+     * <pre>
+     * Present only when applying this request actually deleted at least one existing file for
+     * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+     * finds this out BEFORE applying.
+     * </pre>
+     *
+     * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+     */
+    private com.google.protobuf.SingleFieldBuilder<
+        net.bladewatch.app.grpc.v1.CleanupImpact, net.bladewatch.app.grpc.v1.CleanupImpact.Builder, net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder> 
+        internalGetRecordingsImpactFieldBuilder() {
+      if (recordingsImpactBuilder_ == null) {
+        recordingsImpactBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+            net.bladewatch.app.grpc.v1.CleanupImpact, net.bladewatch.app.grpc.v1.CleanupImpact.Builder, net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder>(
+                getRecordingsImpact(),
+                getParentForChildren(),
+                isClean());
+        recordingsImpact_ = null;
+      }
+      return recordingsImpactBuilder_;
+    }
+
+    private net.bladewatch.app.grpc.v1.CleanupImpact surveillanceImpact_;
+    private com.google.protobuf.SingleFieldBuilder<
+        net.bladewatch.app.grpc.v1.CleanupImpact, net.bladewatch.app.grpc.v1.CleanupImpact.Builder, net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder> surveillanceImpactBuilder_;
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     * @return Whether the surveillanceImpact field is set.
+     */
+    public boolean hasSurveillanceImpact() {
+      return ((bitField0_ & 0x00000008) != 0);
+    }
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     * @return The surveillanceImpact.
+     */
+    public net.bladewatch.app.grpc.v1.CleanupImpact getSurveillanceImpact() {
+      if (surveillanceImpactBuilder_ == null) {
+        return surveillanceImpact_ == null ? net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance() : surveillanceImpact_;
+      } else {
+        return surveillanceImpactBuilder_.getMessage();
+      }
+    }
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     */
+    public Builder setSurveillanceImpact(net.bladewatch.app.grpc.v1.CleanupImpact value) {
+      if (surveillanceImpactBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        surveillanceImpact_ = value;
+      } else {
+        surveillanceImpactBuilder_.setMessage(value);
+      }
+      bitField0_ |= 0x00000008;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     */
+    public Builder setSurveillanceImpact(
+        net.bladewatch.app.grpc.v1.CleanupImpact.Builder builderForValue) {
+      if (surveillanceImpactBuilder_ == null) {
+        surveillanceImpact_ = builderForValue.build();
+      } else {
+        surveillanceImpactBuilder_.setMessage(builderForValue.build());
+      }
+      bitField0_ |= 0x00000008;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     */
+    public Builder mergeSurveillanceImpact(net.bladewatch.app.grpc.v1.CleanupImpact value) {
+      if (surveillanceImpactBuilder_ == null) {
+        if (((bitField0_ & 0x00000008) != 0) &&
+          surveillanceImpact_ != null &&
+          surveillanceImpact_ != net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance()) {
+          getSurveillanceImpactBuilder().mergeFrom(value);
+        } else {
+          surveillanceImpact_ = value;
+        }
+      } else {
+        surveillanceImpactBuilder_.mergeFrom(value);
+      }
+      if (surveillanceImpact_ != null) {
+        bitField0_ |= 0x00000008;
+        onChanged();
+      }
+      return this;
+    }
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     */
+    public Builder clearSurveillanceImpact() {
+      bitField0_ = (bitField0_ & ~0x00000008);
+      surveillanceImpact_ = null;
+      if (surveillanceImpactBuilder_ != null) {
+        surveillanceImpactBuilder_.dispose();
+        surveillanceImpactBuilder_ = null;
+      }
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     */
+    public net.bladewatch.app.grpc.v1.CleanupImpact.Builder getSurveillanceImpactBuilder() {
+      bitField0_ |= 0x00000008;
+      onChanged();
+      return internalGetSurveillanceImpactFieldBuilder().getBuilder();
+    }
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     */
+    public net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder getSurveillanceImpactOrBuilder() {
+      if (surveillanceImpactBuilder_ != null) {
+        return surveillanceImpactBuilder_.getMessageOrBuilder();
+      } else {
+        return surveillanceImpact_ == null ?
+            net.bladewatch.app.grpc.v1.CleanupImpact.getDefaultInstance() : surveillanceImpact_;
+      }
+    }
+    /**
+     * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+     */
+    private com.google.protobuf.SingleFieldBuilder<
+        net.bladewatch.app.grpc.v1.CleanupImpact, net.bladewatch.app.grpc.v1.CleanupImpact.Builder, net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder> 
+        internalGetSurveillanceImpactFieldBuilder() {
+      if (surveillanceImpactBuilder_ == null) {
+        surveillanceImpactBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+            net.bladewatch.app.grpc.v1.CleanupImpact, net.bladewatch.app.grpc.v1.CleanupImpact.Builder, net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder>(
+                getSurveillanceImpact(),
+                getParentForChildren(),
+                isClean());
+        surveillanceImpact_ = null;
+      }
+      return surveillanceImpactBuilder_;
     }
 
     // @@protoc_insertion_point(builder_scope:bladewatch.v1.SetStorageSettingsResponse)

@@ -1316,6 +1316,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 this month';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'Online';
 
   @override
@@ -1506,10 +1511,92 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'Recording Priority';
+
+  @override
+  String get settings_recording_priority_description =>
+      'How recording handles a sudden loss of power.';
+
+  @override
+  String get settings_recording_priority_performance_label => 'Performance';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Uses less CPU. If power is cut abruptly, the current recording segment (up to your Recording Limit) may be lost.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Reliability';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Uses a bit more CPU to save more often. If power is cut abruptly, at most about a minute may be lost.';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'Overlay Fields';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Choose what appears in the burned-in overlay on continuous recordings.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Speed';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Gear';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'Left turn signal';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'Right turn signal';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Brake pedal';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal =>
+      'Accelerator pedal';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Driver seatbelt';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Passenger seatbelt';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'Date and time';
+
+  @override
   String get settings_recording_quality_title => 'Recording Quality';
 
   @override
   String get settings_recording_storage_title => 'Recording Storage';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'Delete recordings?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'This will delete $arg1 recordings ($arg2).',
+      one: 'This will delete $arg1 recording ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Impact unknown';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Could not determine what this change would delete. Lowering the limit may remove existing recordings.';
 
   @override
   String get settings_recording_storage_location_label => 'Storage Location';
@@ -1522,6 +1609,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD Card (N/A)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'SD card did not mount';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1931,6 +2022,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'Max Cooling: OFF';
+
+  @override
+  String get vehicle_screen_on => 'Screen: ON';
+
+  @override
+  String get vehicle_screen_off => 'Screen: OFF';
+
+  @override
+  String get vehicle_media_volume_label => 'Media Volume';
+
+  @override
+  String get vehicle_media_mute => 'Mute';
+
+  @override
+  String get vehicle_media_muted => 'Muted';
+
+  @override
+  String get vehicle_front_defrost => 'Front Defrost';
+
+  @override
+  String get vehicle_rear_defrost => 'Rear Defrost';
 
   @override
   String get vehicle_temp_label => 'Temperature';
@@ -2775,4 +2887,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'Got it';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'Sentry mode uses extra 12V battery power while armed.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'Another app is using the camera right now.';
 }

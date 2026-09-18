@@ -4,6 +4,7 @@ import net.bladewatch.app.daemon.CameraDaemon;
 import net.bladewatch.app.logging.DaemonLogger;
 import net.bladewatch.app.storage.StorageManager;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -22,6 +23,7 @@ import java.io.OutputStream;
  * - POST /api/settings/quality - Update quality settings
  * - GET /api/settings/storage - Get storage limit settings
  * - POST /api/settings/storage - Update storage limit settings
+ * - POST /api/settings/storage/preview - Preview a limit change's real impact without applying it
  */
 public class QualitySettingsApiHandler {
 
@@ -63,6 +65,10 @@ public class QualitySettingsApiHandler {
             handleStorageSettingsPost(out, body);
             return true;
         }
+        if (path.equals("/api/settings/storage/preview") && method.equals("POST")) {
+            handlePreviewStorageLimitChange(out, body);
+            return true;
+        }
         // SOTA: Unified config endpoint for cross-UID sync (proximityGuard, recording, streaming)
         if (path.equals("/api/settings/unified") && method.equals("GET")) {
             sendUnifiedConfig(out);
@@ -79,6 +85,15 @@ public class QualitySettingsApiHandler {
         }
         if (path.equals("/api/settings/telemetry-overlay") && method.equals("POST")) {
             handleTelemetryOverlayPost(out, body);
+            return true;
+        }
+        // Per-recording-type overlay field checklist (BladeWatch-y78o.5).
+        if (path.equals("/api/settings/telemetry-overlay/fields") && method.equals("GET")) {
+            sendTelemetryOverlayFields(out);
+            return true;
+        }
+        if (path.equals("/api/settings/telemetry-overlay/fields") && method.equals("POST")) {
+            handleTelemetryOverlayFieldsPost(out, body);
             return true;
         }
         // Status overlay (floating pill) indicator visibility — camera/recording + trip.
@@ -215,6 +230,10 @@ public class QualitySettingsApiHandler {
         response.put("internalTotalSpace", storage.getInternalTotalSpace());
         response.put("internalFreeFormatted", StorageManager.formatSize(storage.getInternalFreeSpace()));
         response.put("internalTotalFormatted", StorageManager.formatSize(storage.getInternalTotalSpace()));
+
+        // Boot-time SD card mount failure (see StorageManager.resolveSdCardAutoPriority)
+        response.put("sdCardMountFailed", storage.isSdCardMountFailedAtBoot());
+        response.put("sdCardMountError", storage.getSdCardMountErrorMessage());
         
         HttpResponse.sendJson(out, response.toString());
     }
@@ -226,7 +245,7 @@ public class QualitySettingsApiHandler {
         try {
             JSONObject settings = new JSONObject(body);
             StorageManager storage = StorageManager.getInstance();
-            
+
             // Handle storage type changes first (before limit changes)
             boolean storageTypeChanged = false;
             
@@ -269,42 +288,25 @@ public class QualitySettingsApiHandler {
                 }
             }
             
-            // Calculate how much will be deleted before applying changes
-            long recordingsToDelete = 0;
-            long surveillanceToDelete = 0;
-            int recordingsFilesToDelete = 0;
-            int surveillanceFilesToDelete = 0;
-            
+            // Calculate exactly what will be deleted before applying changes (BladeWatch-gyg1.4:
+            // the real selection algorithm via StorageManager.previewXLimitChange, not an
+            // average-file-size estimate -- computed against today's files, before the limit
+            // write below, matching this method's pre-existing "impact, then apply" order).
+            StorageManager.CleanupImpact recordingsImpact = null;
+            StorageManager.CleanupImpact surveillanceImpact = null;
+
             if (settings.has("recordingsLimitMb")) {
                 long newLimit = settings.getLong("recordingsLimitMb");
-                long currentSize = storage.getRecordingsSize();
-                long newLimitBytes = newLimit * 1024 * 1024;
-                if (currentSize > newLimitBytes) {
-                    recordingsToDelete = currentSize - newLimitBytes;
-                    // Estimate files to delete (rough estimate based on average file size)
-                    int count = storage.getRecordingsCount();
-                    if (count > 0) {
-                        long avgSize = currentSize / count;
-                        recordingsFilesToDelete = (int) Math.ceil((double) recordingsToDelete / avgSize);
-                    }
-                }
+                StorageManager.CleanupImpact impact = storage.previewRecordingsLimitChange(newLimit);
+                if (impact.fileCount > 0) recordingsImpact = impact;
                 storage.setRecordingsLimitMb(newLimit);
                 CameraDaemon.log("Recordings limit set to: " + newLimit + " MB");
             }
-            
+
             if (settings.has("surveillanceLimitMb")) {
                 long newLimit = settings.getLong("surveillanceLimitMb");
-                long currentSize = storage.getSurveillanceSize();
-                long newLimitBytes = newLimit * 1024 * 1024;
-                if (currentSize > newLimitBytes) {
-                    surveillanceToDelete = currentSize - newLimitBytes;
-                    // Estimate files to delete
-                    int count = storage.getSurveillanceCount();
-                    if (count > 0) {
-                        long avgSize = currentSize / count;
-                        surveillanceFilesToDelete = (int) Math.ceil((double) surveillanceToDelete / avgSize);
-                    }
-                }
+                StorageManager.CleanupImpact impact = storage.previewSurveillanceLimitChange(newLimit);
+                if (impact.fileCount > 0) surveillanceImpact = impact;
                 storage.setSurveillanceLimitMb(newLimit);
                 CameraDaemon.log("Surveillance limit set to: " + newLimit + " MB");
             }
@@ -324,18 +326,10 @@ public class QualitySettingsApiHandler {
             response.put("recordingsPath", storage.getRecordingsPath());
             response.put("surveillancePath", storage.getSurveillancePath());
             
-            // Include cleanup info in response
-            if (recordingsToDelete > 0 || surveillanceToDelete > 0) {
-                JSONObject cleanup = new JSONObject();
-                if (recordingsToDelete > 0) {
-                    cleanup.put("recordingsToDelete", StorageManager.formatSize(recordingsToDelete));
-                    cleanup.put("recordingsFilesEstimate", recordingsFilesToDelete);
-                }
-                if (surveillanceToDelete > 0) {
-                    cleanup.put("surveillanceToDelete", StorageManager.formatSize(surveillanceToDelete));
-                    cleanup.put("surveillanceFilesEstimate", surveillanceFilesToDelete);
-                }
-                response.put("cleanup", cleanup);
+            // Include the real (not estimated) impact in the response -- BladeWatch-gyg1.4.
+            if (recordingsImpact != null) response.put("recordingsImpact", impactJson(recordingsImpact));
+            if (surveillanceImpact != null) response.put("surveillanceImpact", impactJson(surveillanceImpact));
+            if (recordingsImpact != null || surveillanceImpact != null) {
                 response.put("message", Messages.get("messages.quality_storage_settings_updated_cleanup"));
             } else if (storageTypeChanged) {
                 response.put("message", Messages.get("messages.quality_storage_location_changed"));
@@ -350,7 +344,47 @@ public class QualitySettingsApiHandler {
             HttpResponse.sendJsonError(out, e.getMessage());
         }
     }
-    
+
+    /**
+     * BladeWatch-gyg1.4: computes and returns exactly what a proposed recordings/surveillance
+     * limit would delete, using {@link StorageManager}'s real selection algorithm against
+     * today's files. A separate, read-only endpoint from {@link #handleStorageSettingsPost} --
+     * deliberately not a flag on it -- so a caller previewing a change can be certain nothing
+     * was written and no cleanup ran, without having to trust a flag was honoured.
+     */
+    private static void handlePreviewStorageLimitChange(OutputStream out, String body) throws Exception {
+        try {
+            JSONObject settings = new JSONObject(body);
+            StorageManager storage = StorageManager.getInstance();
+
+            JSONObject response = new JSONObject();
+            response.put("success", true);
+
+            if (settings.has("recordingsLimitMb")) {
+                StorageManager.CleanupImpact impact =
+                    storage.previewRecordingsLimitChange(settings.getLong("recordingsLimitMb"));
+                response.put("recordingsImpact", impactJson(impact));
+            }
+            if (settings.has("surveillanceLimitMb")) {
+                StorageManager.CleanupImpact impact =
+                    storage.previewSurveillanceLimitChange(settings.getLong("surveillanceLimitMb"));
+                response.put("surveillanceImpact", impactJson(impact));
+            }
+
+            HttpResponse.sendJson(out, response.toString());
+        } catch (Exception e) {
+            CameraDaemon.log("Error previewing storage limit change: " + e.getMessage());
+            HttpResponse.sendJsonError(out, e.getMessage());
+        }
+    }
+
+    private static JSONObject impactJson(StorageManager.CleanupImpact impact) throws Exception {
+        JSONObject json = new JSONObject();
+        json.put("fileCount", impact.fileCount);
+        json.put("totalBytes", impact.totalBytes);
+        return json;
+    }
+
     /**
      * Send full unified config for cross-UID sync.
      * Returns the entire config including proximityGuard, recording, streaming sections.
@@ -602,6 +636,19 @@ public class QualitySettingsApiHandler {
         } catch (Exception e) { logger.warn("Failed to read recordingSegmentMinutes: " + e.getMessage()); }
         response.put("recordingSegmentMinutes", segMinutes);
 
+        // PERFORMANCE/RELIABILITY (BladeWatch-gyg1.3) — caps the segment length above when
+        // RELIABILITY, so an abrupt power loss loses at most one minute instead of up to
+        // recordingSegmentMinutes. See RecordingPriority.
+        String recPriority = net.bladewatch.app.recording.RecordingPriority.RELIABILITY.name();
+        try {
+            // Same read as HardwareEventRecorderGpu.loadSegmentDurationMs, so the reported
+            // value and the enforced one cannot disagree.
+            recPriority = net.bladewatch.app.recording.RecordingPriority
+                .fromConfigValue(net.bladewatch.app.config.UnifiedConfigManager.getRecording().optString("priority", null))
+                .name();
+        } catch (Exception e) { logger.warn("Failed to read recordingPriority: " + e.getMessage()); }
+        response.put("recordingPriority", recPriority);
+
         // Surface measured FPS so the UI can show actualFps when HAL clamps
         // below requested (e.g., user picks 30, HAL emits ~26 panoramic on
         // this device). 0 means "not measured yet" — the renderLoop only
@@ -750,6 +797,27 @@ public class QualitySettingsApiHandler {
                 }
             }
             
+            if (settings.has("recordingPriority")) {
+                String rawPriority = settings.getString("recordingPriority");
+                if (!rawPriority.isEmpty()) {
+                    try {
+                        // fromConfigValue never throws -- an unrecognised name still saves a
+                        // valid enum name (RELIABILITY) rather than rejecting the request.
+                        String normalized = net.bladewatch.app.recording.RecordingPriority
+                            .fromConfigValue(rawPriority).name();
+                        org.json.JSONObject rec = net.bladewatch.app.config.UnifiedConfigManager
+                            .loadConfig().optJSONObject("recording");
+                        if (rec == null) rec = new org.json.JSONObject();
+                        rec.put("priority", normalized);
+                        net.bladewatch.app.config.UnifiedConfigManager.updateSection("recording", rec);
+                        CameraDaemon.log("Recording priority set to: " + normalized
+                            + " (applies to the next segment rotation)");
+                    } catch (Exception e) {
+                        CameraDaemon.log("Failed to save recordingPriority: " + e.getMessage());
+                    }
+                }
+            }
+
             if (settings.has("recordingSegmentMinutes")) {
                 int mins = settings.getInt("recordingSegmentMinutes");
                 if (mins == 1 || mins == 5 || mins == 10) {
@@ -1127,7 +1195,11 @@ public class QualitySettingsApiHandler {
             JSONObject settings = new JSONObject(body);
             boolean enabled = settings.optBoolean("enabled", false);
 
-            JSONObject overlayConfig = new JSONObject();
+            // BladeWatch-y78o.5: merge into the EXISTING config rather than constructing a
+            // fresh object. This used to overwrite the whole "telemetryOverlay" section with
+            // only {"enabled": ...}, which would have silently wiped a user's per-recording-type
+            // field selection ("fields") every time they toggled the overlay on/off.
+            JSONObject overlayConfig = net.bladewatch.app.config.UnifiedConfigManager.getTelemetryOverlay();
             overlayConfig.put("enabled", enabled);
             net.bladewatch.app.config.UnifiedConfigManager.setTelemetryOverlay(overlayConfig);
 
@@ -1143,6 +1215,91 @@ public class QualitySettingsApiHandler {
             HttpResponse.sendJson(out, response.toString());
         } catch (Exception e) {
             CameraDaemon.log("Error setting telemetry overlay: " + e.getMessage());
+            HttpResponse.sendJsonError(out, e.getMessage());
+        }
+    }
+
+    /**
+     * BladeWatch-y78o.5: the per-recording-type overlay field checklist. Returns every
+     * available field (so the client never hardcodes the list) plus each recording type's
+     * current selection.
+     */
+    private static void sendTelemetryOverlayFields(OutputStream out) throws Exception {
+        JSONObject overlayConfig = net.bladewatch.app.config.UnifiedConfigManager.getTelemetryOverlay();
+
+        JSONArray availableFields = new JSONArray();
+        for (net.bladewatch.app.telemetry.OverlayField field : net.bladewatch.app.telemetry.OverlayField.values()) {
+            availableFields.put(field.name());
+        }
+
+        JSONObject selections = new JSONObject();
+        for (net.bladewatch.app.telemetry.RecordingOverlayType type : net.bladewatch.app.telemetry.RecordingOverlayType.values()) {
+            java.util.Set<net.bladewatch.app.telemetry.OverlayField> selection =
+                    net.bladewatch.app.telemetry.OverlayFieldSelectionResolver.resolve(overlayConfig, type);
+            JSONArray arr = new JSONArray();
+            for (net.bladewatch.app.telemetry.OverlayField field : selection) {
+                arr.put(field.name());
+            }
+            selections.put(type.getConfigKey(), arr);
+        }
+
+        JSONObject response = new JSONObject();
+        response.put("success", true);
+        response.put("availableFields", availableFields);
+        response.put("selections", selections);
+        HttpResponse.sendJson(out, response.toString());
+    }
+
+    /**
+     * Body: {"type": "continuous"|"surveillance"|"proximity", "fields": ["SPEED", ...]}.
+     * An unknown type is a bad request (there is a small, fixed set of recording types); an
+     * unknown field NAME inside "fields" is silently dropped by
+     * {@link net.bladewatch.app.telemetry.OverlayFieldSelectionResolver#resolve}, not here —
+     * mirroring how a persisted config file is already treated by the reader.
+     */
+    private static void handleTelemetryOverlayFieldsPost(OutputStream out, String body) throws Exception {
+        try {
+            JSONObject req = new JSONObject(body);
+            String typeKey = req.optString("type", "");
+            net.bladewatch.app.telemetry.RecordingOverlayType type = null;
+            for (net.bladewatch.app.telemetry.RecordingOverlayType candidate :
+                    net.bladewatch.app.telemetry.RecordingOverlayType.values()) {
+                if (candidate.getConfigKey().equals(typeKey)) {
+                    type = candidate;
+                    break;
+                }
+            }
+            if (type == null) {
+                HttpResponse.sendJsonBadRequest(out, Messages.get("errors.telemetry_overlay_unknown_type_with_id", typeKey));
+                return;
+            }
+
+            JSONArray fieldsArray = req.optJSONArray("fields");
+            if (fieldsArray == null) {
+                HttpResponse.sendJsonBadRequest(out, Messages.get("errors.telemetry_overlay_fields_missing"));
+                return;
+            }
+            // Reuse OverlayFieldSelectionResolver's own case-insensitive, unknown-name-dropping
+            // match (the same logic a persisted config file is read with) instead of
+            // re-implementing it here: wrap the incoming array in the same {"fields": {type:
+            // [...]}} shape resolve() already parses, and read it straight back out.
+            JSONObject incomingShape = new JSONObject()
+                    .put("fields", new JSONObject().put(type.getConfigKey(), fieldsArray));
+            java.util.Set<net.bladewatch.app.telemetry.OverlayField> selection =
+                    net.bladewatch.app.telemetry.OverlayFieldSelectionResolver.resolve(incomingShape, type);
+
+            JSONObject overlayConfig = net.bladewatch.app.config.UnifiedConfigManager.getTelemetryOverlay();
+            overlayConfig = net.bladewatch.app.telemetry.OverlayFieldSelectionResolver.withSelection(overlayConfig, type, selection);
+            net.bladewatch.app.config.UnifiedConfigManager.setTelemetryOverlay(overlayConfig);
+
+            JSONObject response = new JSONObject();
+            response.put("success", true);
+            JSONArray savedArray = new JSONArray();
+            for (net.bladewatch.app.telemetry.OverlayField field : selection) savedArray.put(field.name());
+            response.put("fields", savedArray);
+            HttpResponse.sendJson(out, response.toString());
+        } catch (Exception e) {
+            CameraDaemon.log("Error setting telemetry overlay fields: " + e.getMessage());
             HttpResponse.sendJsonError(out, e.getMessage());
         }
     }

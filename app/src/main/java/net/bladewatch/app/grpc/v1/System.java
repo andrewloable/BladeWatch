@@ -262,127 +262,129 @@ public final class System extends com.google.protobuf.GeneratedFile {
       "\007enabled\022\037\n\013trip_active\030\002 \001(\010R\ntripActiv" +
       "e\022&\n\017trip_start_time\030\003 \001(\003R\rtripStartTim" +
       "e\022*\n\021trip_duration_sec\030\004 \001(\003R\017tripDurati" +
-      "onSec\"\270\001\n\013NetworkInfo\022\022\n\004type\030\001 \001(\tR\004typ" +
+      "onSec\"\214\002\n\013NetworkInfo\022\022\n\004type\030\001 \001(\tR\004typ" +
       "e\022\022\n\004ssid\030\002 \001(\tR\004ssid\022\016\n\002ip\030\003 \001(\tR\002ip\022(\n" +
       "\020lan_http_enabled\030\004 \001(\010R\016lanHttpEnabled\022" +
       "\033\n\thttp_bind\030\005 \001(\tR\010httpBind\022*\n\021http_mod" +
-      "e_warning\030\006 \001(\tR\017httpModeWarning\"s\n\rGpsS" +
-      "tatusInfo\022\020\n\003lat\030\001 \001(\001R\003lat\022\020\n\003lng\030\002 \001(\001" +
-      "R\003lng\022\033\n\tspeed_kmh\030\003 \001(\001R\010speedKmh\022!\n\014ha" +
-      "s_location\030\004 \001(\010R\013hasLocation\"\022\n\020GetStat" +
-      "usRequest\"\317\007\n\021GetStatusResponse\022\033\n\tdevic" +
-      "e_id\030\001 \001(\tR\010deviceId\022,\n\022vehicle_data_rea" +
-      "dy\030\002 \001(\010R\020vehicleDataReady\022\037\n\013app_versio" +
-      "n\030\003 \001(\tR\nappVersion\022\034\n\trecording\030\004 \003(\005R\t" +
-      "recording\022\030\n\007viewing\030\005 \003(\005R\007viewing\022\026\n\006a" +
-      "ctive\030\006 \003(\005R\006active\022\034\n\tavailable\030\007 \003(\005R\t" +
-      "available\0224\n\007battery\030\010 \001(\0132\032.bladewatch." +
-      "v1.BatteryInfoR\007battery\022\020\n\003acc\030\t \001(\010R\003ac" +
-      "c\0227\n\010charging\030\n \001(\0132\033.bladewatch.v1.Char" +
-      "gingInfoR\010charging\022(\n\003soc\030\013 \001(\0132\026.bladew" +
-      "atch.v1.SocInfoR\003soc\022.\n\005range\030\014 \001(\0132\030.bl" +
-      "adewatch.v1.RangeInfoR\005range\022(\n\003soh\030\r \001(" +
-      "\0132\026.bladewatch.v1.SohInfoR\003soh\022#\n\rdistan" +
-      "ce_unit\030\016 \001(\tR\014distanceUnit\022\026\n\006locale\030\017 " +
-      "\001(\tR\006locale\0220\n\024safe_zone_suppressed\030\020 \001(" +
-      "\010R\022safeZoneSuppressed\022 \n\014in_safe_zone\030\021 " +
-      "\001(\010R\ninSafeZone\022$\n\016safe_zone_name\030\022 \001(\tR" +
-      "\014safeZoneName\022)\n\020gpu_surveillance\030\023 \001(\010R" +
-      "\017gpuSurveillance\022I\n\020recording_status\030\024 \001" +
-      "(\0132\036.bladewatch.v1.RecordingStatusR\017reco" +
-      "rdingStatus\022:\n\013trip_status\030\025 \001(\0132\031.blade" +
-      "watch.v1.TripStatusR\ntripStatus\0224\n\007netwo" +
-      "rk\030\027 \001(\0132\032.bladewatch.v1.NetworkInfoR\007ne" +
-      "twork\022,\n\022vehicle_data_error\030\030 \001(\tR\020vehic" +
-      "leDataErrorJ\004\010\026\020\027R\010gps_json\"\027\n\025GetPerfor" +
-      "manceRequest\"]\n\026GetPerformanceResponse\022\030" +
-      "\n\007success\030\001 \001(\010R\007success\022)\n\020performance_" +
-      "json\030\002 \001(\tR\017performanceJson\"7\n\024PlayAudio" +
-      "TestRequest\022\037\n\013duration_ms\030\001 \001(\005R\ndurati" +
-      "onMs\"a\n\025PlayAudioTestResponse\022\030\n\007success" +
-      "\030\001 \001(\010R\007success\022\030\n\007message\030\002 \001(\tR\007messag" +
-      "e\022\024\n\005error\030\003 \001(\tR\005error\"i\n\tModelInfo\022\022\n\004" +
-      "name\030\001 \001(\tR\004name\022\036\n\ndownloaded\030\003 \001(\010R\ndo" +
-      "wnloaded\022\035\n\nsize_bytes\030\004 \001(\003R\tsizeBytesJ" +
-      "\004\010\002\020\003R\003url\"\023\n\021ListModelsRequest\"U\n\022ListM" +
-      "odelsResponse\0220\n\006models\030\002 \003(\0132\030.bladewat" +
-      "ch.v1.ModelInfoR\006modelsJ\004\010\001\020\002R\007success\"<" +
-      "\n\024DownloadModelRequest\022\020\n\003url\030\001 \001(\tR\003url" +
-      "\022\022\n\004name\030\002 \001(\tR\004name\"a\n\025DownloadModelRes" +
-      "ponse\022\030\n\007success\030\001 \001(\010R\007success\022\030\n\007messa" +
-      "ge\030\002 \001(\tR\007message\022\024\n\005error\030\003 \001(\tR\005error\"" +
-      "\026\n\024GetSohNominalRequest\"t\n\025GetSohNominal" +
-      "Response\022$\n\013nominal_kwh\030\001 \001(\001H\000R\nnominal" +
-      "Kwh\210\001\001\022%\n\016nominal_source\030\002 \001(\tR\rnominalS" +
-      "ourceB\016\n\014_nominal_kwh\"L\n\024SetSohNominalRe" +
-      "quest\022$\n\013nominal_kwh\030\001 \001(\001H\000R\nnominalKwh" +
-      "\210\001\001B\016\n\014_nominal_kwh\"G\n\025SetSohNominalResp" +
-      "onse\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005error\030" +
-      "\002 \001(\tR\005error\"\025\n\023GetSohStatusRequest\"\347\001\n\024" +
-      "GetSohStatusResponse\022\030\n\007success\030\001 \001(\010R\007s" +
-      "uccess\0220\n\024nominal_capacity_kwh\030\002 \001(\001R\022no" +
-      "minalCapacityKwh\022%\n\016nominal_source\030\003 \001(\t" +
-      "R\rnominalSource\022\037\n\013display_soh\030\004 \001(\001R\ndi" +
-      "splaySoh\022%\n\016display_source\030\005 \001(\tR\rdispla" +
-      "ySource\022\024\n\005error\030\006 \001(\tR\005error\"\021\n\017ResetSo" +
-      "hRequest\"B\n\020ResetSohResponse\022\030\n\007success\030" +
-      "\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR\005error\"9\n\027" +
-      "ResetPerformanceRequest\022\036\n\ncategories\030\001 " +
-      "\003(\tR\ncategories\"m\n\030ResetPerformanceRespo" +
-      "nse\022\030\n\007success\030\001 \001(\010R\007success\022!\n\014results" +
-      "_json\030\002 \001(\tR\013resultsJson\022\024\n\005error\030\003 \001(\tR" +
-      "\005error\"<\n\026GetParkingDeltaRequest\022\"\n\rmax_" +
-      "age_hours\030\001 \001(\005R\013maxAgeHours\"R\n\027GetParki" +
-      "ngDeltaResponse\022\034\n\tavailable\030\001 \001(\010R\tavai" +
-      "lable\022\031\n\010raw_json\030\002 \001(\tR\007rawJson\"5\n\024GetL" +
-      "astChargeRequest\022\035\n\nhours_back\030\001 \001(\005R\tho" +
-      "ursBack\"P\n\025GetLastChargeResponse\022\034\n\tavai" +
-      "lable\030\001 \001(\010R\tavailable\022\031\n\010raw_json\030\002 \001(\t" +
-      "R\007rawJson\"\031\n\027GetSelectedModelRequest\"K\n\030" +
-      "GetSelectedModelResponse\022\031\n\010model_id\030\001 \001" +
-      "(\tR\007modelId\022\024\n\005color\030\002 \001(\tR\005color\"J\n\027Set" +
-      "SelectedModelRequest\022\031\n\010model_id\030\001 \001(\tR\007" +
-      "modelId\022\024\n\005color\030\002 \001(\tR\005color\"@\n\030SetSele" +
-      "ctedModelResponse\022\016\n\002ok\030\001 \001(\010R\002ok\022\024\n\005err" +
-      "or\030\002 \001(\tR\005error\"\032\n\030GetModelsManifestRequ" +
-      "est\"@\n\031GetModelsManifestResponse\022#\n\rmani" +
-      "fest_json\030\001 \001(\tR\014manifestJson2\374\n\n\rSystem" +
-      "Service\022N\n\tGetStatus\022\037.bladewatch.v1.Get" +
-      "StatusRequest\032 .bladewatch.v1.GetStatusR" +
-      "esponse\022]\n\016GetPerformance\022$.bladewatch.v" +
-      "1.GetPerformanceRequest\032%.bladewatch.v1." +
-      "GetPerformanceResponse\022Z\n\rPlayAudioTest\022" +
-      "#.bladewatch.v1.PlayAudioTestRequest\032$.b" +
-      "ladewatch.v1.PlayAudioTestResponse\022Q\n\nLi" +
-      "stModels\022 .bladewatch.v1.ListModelsReque" +
-      "st\032!.bladewatch.v1.ListModelsResponse\022Z\n" +
-      "\rDownloadModel\022#.bladewatch.v1.DownloadM" +
-      "odelRequest\032$.bladewatch.v1.DownloadMode" +
-      "lResponse\022Z\n\rGetSohNominal\022#.bladewatch." +
-      "v1.GetSohNominalRequest\032$.bladewatch.v1." +
-      "GetSohNominalResponse\022Z\n\rSetSohNominal\022#" +
-      ".bladewatch.v1.SetSohNominalRequest\032$.bl" +
-      "adewatch.v1.SetSohNominalResponse\022W\n\014Get" +
-      "SohStatus\022\".bladewatch.v1.GetSohStatusRe" +
-      "quest\032#.bladewatch.v1.GetSohStatusRespon" +
-      "se\022K\n\010ResetSoh\022\036.bladewatch.v1.ResetSohR" +
-      "equest\032\037.bladewatch.v1.ResetSohResponse\022" +
-      "c\n\020ResetPerformance\022&.bladewatch.v1.Rese" +
-      "tPerformanceRequest\032\'.bladewatch.v1.Rese" +
-      "tPerformanceResponse\022`\n\017GetParkingDelta\022" +
-      "%.bladewatch.v1.GetParkingDeltaRequest\032&" +
-      ".bladewatch.v1.GetParkingDeltaResponse\022Z" +
-      "\n\rGetLastCharge\022#.bladewatch.v1.GetLastC" +
-      "hargeRequest\032$.bladewatch.v1.GetLastChar" +
-      "geResponse\022c\n\020GetSelectedModel\022&.bladewa" +
-      "tch.v1.GetSelectedModelRequest\032\'.bladewa" +
-      "tch.v1.GetSelectedModelResponse\022c\n\020SetSe" +
-      "lectedModel\022&.bladewatch.v1.SetSelectedM" +
-      "odelRequest\032\'.bladewatch.v1.SetSelectedM" +
-      "odelResponse\022f\n\021GetModelsManifest\022\'.blad" +
-      "ewatch.v1.GetModelsManifestRequest\032(.bla" +
-      "dewatch.v1.GetModelsManifestResponseB\036\n\032" +
-      "net.bladewatch.app.grpc.v1P\001b\006proto3"
+      "e_warning\030\006 \001(\tR\017httpModeWarning\022(\n\020this" +
+      "_month_bytes\030\007 \001(\003R\016thisMonthBytes\022(\n\020la" +
+      "st_month_bytes\030\010 \001(\003R\016lastMonthBytes\"s\n\r" +
+      "GpsStatusInfo\022\020\n\003lat\030\001 \001(\001R\003lat\022\020\n\003lng\030\002" +
+      " \001(\001R\003lng\022\033\n\tspeed_kmh\030\003 \001(\001R\010speedKmh\022!" +
+      "\n\014has_location\030\004 \001(\010R\013hasLocation\"\022\n\020Get" +
+      "StatusRequest\"\317\007\n\021GetStatusResponse\022\033\n\td" +
+      "evice_id\030\001 \001(\tR\010deviceId\022,\n\022vehicle_data" +
+      "_ready\030\002 \001(\010R\020vehicleDataReady\022\037\n\013app_ve" +
+      "rsion\030\003 \001(\tR\nappVersion\022\034\n\trecording\030\004 \003" +
+      "(\005R\trecording\022\030\n\007viewing\030\005 \003(\005R\007viewing\022" +
+      "\026\n\006active\030\006 \003(\005R\006active\022\034\n\tavailable\030\007 \003" +
+      "(\005R\tavailable\0224\n\007battery\030\010 \001(\0132\032.bladewa" +
+      "tch.v1.BatteryInfoR\007battery\022\020\n\003acc\030\t \001(\010" +
+      "R\003acc\0227\n\010charging\030\n \001(\0132\033.bladewatch.v1." +
+      "ChargingInfoR\010charging\022(\n\003soc\030\013 \001(\0132\026.bl" +
+      "adewatch.v1.SocInfoR\003soc\022.\n\005range\030\014 \001(\0132" +
+      "\030.bladewatch.v1.RangeInfoR\005range\022(\n\003soh\030" +
+      "\r \001(\0132\026.bladewatch.v1.SohInfoR\003soh\022#\n\rdi" +
+      "stance_unit\030\016 \001(\tR\014distanceUnit\022\026\n\006local" +
+      "e\030\017 \001(\tR\006locale\0220\n\024safe_zone_suppressed\030" +
+      "\020 \001(\010R\022safeZoneSuppressed\022 \n\014in_safe_zon" +
+      "e\030\021 \001(\010R\ninSafeZone\022$\n\016safe_zone_name\030\022 " +
+      "\001(\tR\014safeZoneName\022)\n\020gpu_surveillance\030\023 " +
+      "\001(\010R\017gpuSurveillance\022I\n\020recording_status" +
+      "\030\024 \001(\0132\036.bladewatch.v1.RecordingStatusR\017" +
+      "recordingStatus\022:\n\013trip_status\030\025 \001(\0132\031.b" +
+      "ladewatch.v1.TripStatusR\ntripStatus\0224\n\007n" +
+      "etwork\030\027 \001(\0132\032.bladewatch.v1.NetworkInfo" +
+      "R\007network\022,\n\022vehicle_data_error\030\030 \001(\tR\020v" +
+      "ehicleDataErrorJ\004\010\026\020\027R\010gps_json\"\027\n\025GetPe" +
+      "rformanceRequest\"]\n\026GetPerformanceRespon" +
+      "se\022\030\n\007success\030\001 \001(\010R\007success\022)\n\020performa" +
+      "nce_json\030\002 \001(\tR\017performanceJson\"7\n\024PlayA" +
+      "udioTestRequest\022\037\n\013duration_ms\030\001 \001(\005R\ndu" +
+      "rationMs\"a\n\025PlayAudioTestResponse\022\030\n\007suc" +
+      "cess\030\001 \001(\010R\007success\022\030\n\007message\030\002 \001(\tR\007me" +
+      "ssage\022\024\n\005error\030\003 \001(\tR\005error\"i\n\tModelInfo" +
+      "\022\022\n\004name\030\001 \001(\tR\004name\022\036\n\ndownloaded\030\003 \001(\010" +
+      "R\ndownloaded\022\035\n\nsize_bytes\030\004 \001(\003R\tsizeBy" +
+      "tesJ\004\010\002\020\003R\003url\"\023\n\021ListModelsRequest\"U\n\022L" +
+      "istModelsResponse\0220\n\006models\030\002 \003(\0132\030.blad" +
+      "ewatch.v1.ModelInfoR\006modelsJ\004\010\001\020\002R\007succe" +
+      "ss\"<\n\024DownloadModelRequest\022\020\n\003url\030\001 \001(\tR" +
+      "\003url\022\022\n\004name\030\002 \001(\tR\004name\"a\n\025DownloadMode" +
+      "lResponse\022\030\n\007success\030\001 \001(\010R\007success\022\030\n\007m" +
+      "essage\030\002 \001(\tR\007message\022\024\n\005error\030\003 \001(\tR\005er" +
+      "ror\"\026\n\024GetSohNominalRequest\"t\n\025GetSohNom" +
+      "inalResponse\022$\n\013nominal_kwh\030\001 \001(\001H\000R\nnom" +
+      "inalKwh\210\001\001\022%\n\016nominal_source\030\002 \001(\tR\rnomi" +
+      "nalSourceB\016\n\014_nominal_kwh\"L\n\024SetSohNomin" +
+      "alRequest\022$\n\013nominal_kwh\030\001 \001(\001H\000R\nnomina" +
+      "lKwh\210\001\001B\016\n\014_nominal_kwh\"G\n\025SetSohNominal" +
+      "Response\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005er" +
+      "ror\030\002 \001(\tR\005error\"\025\n\023GetSohStatusRequest\"" +
+      "\347\001\n\024GetSohStatusResponse\022\030\n\007success\030\001 \001(" +
+      "\010R\007success\0220\n\024nominal_capacity_kwh\030\002 \001(\001" +
+      "R\022nominalCapacityKwh\022%\n\016nominal_source\030\003" +
+      " \001(\tR\rnominalSource\022\037\n\013display_soh\030\004 \001(\001" +
+      "R\ndisplaySoh\022%\n\016display_source\030\005 \001(\tR\rdi" +
+      "splaySource\022\024\n\005error\030\006 \001(\tR\005error\"\021\n\017Res" +
+      "etSohRequest\"B\n\020ResetSohResponse\022\030\n\007succ" +
+      "ess\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR\005error" +
+      "\"9\n\027ResetPerformanceRequest\022\036\n\ncategorie" +
+      "s\030\001 \003(\tR\ncategories\"m\n\030ResetPerformanceR" +
+      "esponse\022\030\n\007success\030\001 \001(\010R\007success\022!\n\014res" +
+      "ults_json\030\002 \001(\tR\013resultsJson\022\024\n\005error\030\003 " +
+      "\001(\tR\005error\"<\n\026GetParkingDeltaRequest\022\"\n\r" +
+      "max_age_hours\030\001 \001(\005R\013maxAgeHours\"R\n\027GetP" +
+      "arkingDeltaResponse\022\034\n\tavailable\030\001 \001(\010R\t" +
+      "available\022\031\n\010raw_json\030\002 \001(\tR\007rawJson\"5\n\024" +
+      "GetLastChargeRequest\022\035\n\nhours_back\030\001 \001(\005" +
+      "R\thoursBack\"P\n\025GetLastChargeResponse\022\034\n\t" +
+      "available\030\001 \001(\010R\tavailable\022\031\n\010raw_json\030\002" +
+      " \001(\tR\007rawJson\"\031\n\027GetSelectedModelRequest" +
+      "\"K\n\030GetSelectedModelResponse\022\031\n\010model_id" +
+      "\030\001 \001(\tR\007modelId\022\024\n\005color\030\002 \001(\tR\005color\"J\n" +
+      "\027SetSelectedModelRequest\022\031\n\010model_id\030\001 \001" +
+      "(\tR\007modelId\022\024\n\005color\030\002 \001(\tR\005color\"@\n\030Set" +
+      "SelectedModelResponse\022\016\n\002ok\030\001 \001(\010R\002ok\022\024\n" +
+      "\005error\030\002 \001(\tR\005error\"\032\n\030GetModelsManifest" +
+      "Request\"@\n\031GetModelsManifestResponse\022#\n\r" +
+      "manifest_json\030\001 \001(\tR\014manifestJson2\374\n\n\rSy" +
+      "stemService\022N\n\tGetStatus\022\037.bladewatch.v1" +
+      ".GetStatusRequest\032 .bladewatch.v1.GetSta" +
+      "tusResponse\022]\n\016GetPerformance\022$.bladewat" +
+      "ch.v1.GetPerformanceRequest\032%.bladewatch" +
+      ".v1.GetPerformanceResponse\022Z\n\rPlayAudioT" +
+      "est\022#.bladewatch.v1.PlayAudioTestRequest" +
+      "\032$.bladewatch.v1.PlayAudioTestResponse\022Q" +
+      "\n\nListModels\022 .bladewatch.v1.ListModelsR" +
+      "equest\032!.bladewatch.v1.ListModelsRespons" +
+      "e\022Z\n\rDownloadModel\022#.bladewatch.v1.Downl" +
+      "oadModelRequest\032$.bladewatch.v1.Download" +
+      "ModelResponse\022Z\n\rGetSohNominal\022#.bladewa" +
+      "tch.v1.GetSohNominalRequest\032$.bladewatch" +
+      ".v1.GetSohNominalResponse\022Z\n\rSetSohNomin" +
+      "al\022#.bladewatch.v1.SetSohNominalRequest\032" +
+      "$.bladewatch.v1.SetSohNominalResponse\022W\n" +
+      "\014GetSohStatus\022\".bladewatch.v1.GetSohStat" +
+      "usRequest\032#.bladewatch.v1.GetSohStatusRe" +
+      "sponse\022K\n\010ResetSoh\022\036.bladewatch.v1.Reset" +
+      "SohRequest\032\037.bladewatch.v1.ResetSohRespo" +
+      "nse\022c\n\020ResetPerformance\022&.bladewatch.v1." +
+      "ResetPerformanceRequest\032\'.bladewatch.v1." +
+      "ResetPerformanceResponse\022`\n\017GetParkingDe" +
+      "lta\022%.bladewatch.v1.GetParkingDeltaReque" +
+      "st\032&.bladewatch.v1.GetParkingDeltaRespon" +
+      "se\022Z\n\rGetLastCharge\022#.bladewatch.v1.GetL" +
+      "astChargeRequest\032$.bladewatch.v1.GetLast" +
+      "ChargeResponse\022c\n\020GetSelectedModel\022&.bla" +
+      "dewatch.v1.GetSelectedModelRequest\032\'.bla" +
+      "dewatch.v1.GetSelectedModelResponse\022c\n\020S" +
+      "etSelectedModel\022&.bladewatch.v1.SetSelec" +
+      "tedModelRequest\032\'.bladewatch.v1.SetSelec" +
+      "tedModelResponse\022f\n\021GetModelsManifest\022\'." +
+      "bladewatch.v1.GetModelsManifestRequest\032(" +
+      ".bladewatch.v1.GetModelsManifestResponse" +
+      "B\036\n\032net.bladewatch.app.grpc.v1P\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -435,7 +437,7 @@ public final class System extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_NetworkInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_NetworkInfo_descriptor,
-        new java.lang.String[] { "Type", "Ssid", "Ip", "LanHttpEnabled", "HttpBind", "HttpModeWarning", });
+        new java.lang.String[] { "Type", "Ssid", "Ip", "LanHttpEnabled", "HttpBind", "HttpModeWarning", "ThisMonthBytes", "LastMonthBytes", });
     internal_static_bladewatch_v1_GpsStatusInfo_descriptor =
       getDescriptor().getMessageType(8);
     internal_static_bladewatch_v1_GpsStatusInfo_fieldAccessorTable = new

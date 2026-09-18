@@ -157,6 +157,8 @@ const NetworkInfo$json = {
     {'1': 'lan_http_enabled', '3': 4, '4': 1, '5': 8, '10': 'lanHttpEnabled'},
     {'1': 'http_bind', '3': 5, '4': 1, '5': 9, '10': 'httpBind'},
     {'1': 'http_mode_warning', '3': 6, '4': 1, '5': 9, '10': 'httpModeWarning'},
+    {'1': 'this_month_bytes', '3': 7, '4': 1, '5': 3, '10': 'thisMonthBytes'},
+    {'1': 'last_month_bytes', '3': 8, '4': 1, '5': 3, '10': 'lastMonthBytes'},
   ],
 };
 
@@ -165,7 +167,8 @@ final $typed_data.Uint8List networkInfoDescriptor = $convert.base64Decode(
     'CgtOZXR3b3JrSW5mbxISCgR0eXBlGAEgASgJUgR0eXBlEhIKBHNzaWQYAiABKAlSBHNzaWQSDg'
     'oCaXAYAyABKAlSAmlwEigKEGxhbl9odHRwX2VuYWJsZWQYBCABKAhSDmxhbkh0dHBFbmFibGVk'
     'EhsKCWh0dHBfYmluZBgFIAEoCVIIaHR0cEJpbmQSKgoRaHR0cF9tb2RlX3dhcm5pbmcYBiABKA'
-    'lSD2h0dHBNb2RlV2FybmluZw==');
+    'lSD2h0dHBNb2RlV2FybmluZxIoChB0aGlzX21vbnRoX2J5dGVzGAcgASgDUg50aGlzTW9udGhC'
+    'eXRlcxIoChBsYXN0X21vbnRoX2J5dGVzGAggASgDUg5sYXN0TW9udGhCeXRlcw==');
 
 @$core.Deprecated('Use gpsStatusInfoDescriptor instead')
 const GpsStatusInfo$json = {

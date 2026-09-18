@@ -120,6 +120,10 @@ message NetworkInfo {
   bool lan_http_enabled = 4;
   string http_bind = 5;
   string http_mode_warning = 6;
+  // BladeWatch's own network usage (BladeWatch-t1lg.1), NOT total device data use -- own-UID
+  // TrafficStats totals only. 0 until the first background sample completes.
+  int64 this_month_bytes = 7;
+  int64 last_month_bytes = 8;
 }
 
 // GpsStatusInfo is a lightweight location snapshot embedded in SystemStatus.

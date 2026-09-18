@@ -46,6 +46,15 @@ public final class AiLaneWorker {
     private volatile long droppedFrames = 0;
     private volatile long processedFrames = 0;
 
+    // BladeWatch-t1lg.3: PipelineRateController's actuator. Wall-clock throttle, not a
+    // frame-count ratio -- this worker never learns the camera's actual capture fps, and a
+    // time-based gate needs no such knowledge. 0 (the default) means "no throttle beyond the
+    // existing busy-drop policy", i.e. today's behavior, unchanged until something calls
+    // setDetectionRate. This never touches the encoder, EGL, or sentry's internal state --
+    // it only decides, before any of that, whether THIS frame is accepted at all.
+    private volatile long minIntervalMs = 0;
+    private volatile long lastAcceptedAtMs = 0;
+
     public AiLaneWorker(FrameRecycler recycler) {
         this.recycler = recycler;
         this.executor = Executors.newSingleThreadExecutor(r -> {
@@ -76,6 +85,17 @@ public final class AiLaneWorker {
         if (s == null || !s.isActive()) {
             recycler.recycle(rgbFrame);
             return false;
+        }
+        long minInterval = minIntervalMs;
+        if (minInterval > 0) {
+            long now = System.currentTimeMillis();
+            if (now - lastAcceptedAtMs < minInterval) {
+                // Throttled by PipelineRateController's current rate, not busy -- same
+                // recycle-on-drop policy either way.
+                recycler.recycle(rgbFrame);
+                return false;
+            }
+            lastAcceptedAtMs = now;
         }
         if (!busy.compareAndSet(false, true)) {
             // Worker still processing previous frame; drop this one and let
@@ -125,6 +145,16 @@ public final class AiLaneWorker {
             recycler.recycle(rgbFrame);
             return false;
         }
+    }
+
+    /**
+     * Sets the detection processing rate. {@code fps <= 0} disables the throttle entirely
+     * (every submitted frame is a candidate again, subject only to the existing busy-drop
+     * policy). Implements {@code PipelineRateController.RateTarget}; never touches the
+     * encoder, EGL, or sentry.
+     */
+    public void setDetectionRate(int fps) {
+        minIntervalMs = fps > 0 ? 1000L / fps : 0;
     }
 
     /** Diagnostic counters for the periodic Stats log. */

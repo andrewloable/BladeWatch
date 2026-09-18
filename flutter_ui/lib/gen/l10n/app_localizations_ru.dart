@@ -1335,6 +1335,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 в этом месяце';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'Онлайн';
 
   @override
@@ -1530,10 +1535,92 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'Приоритет записи';
+
+  @override
+  String get settings_recording_priority_description =>
+      'Как запись обрабатывает внезапное отключение питания.';
+
+  @override
+  String get settings_recording_priority_performance_label =>
+      'Производительность';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Использует меньше ресурсов ЦП. При резком отключении питания текущий сегмент записи (до значения лимита записи) может быть потерян.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Надёжность';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Использует немного больше ресурсов ЦП, чтобы сохранять чаще. При резком отключении питания теряется не более примерно одной минуты.';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'Поля наложения';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Выберите, что отображается в въеденном поверх на непрерывных записях.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Скорость';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Передача';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'Левый поворотник';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'Правый поворотник';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Педаль тормоза';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => 'Педаль газа';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Ремень водителя';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Ремень пассажира';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'Дата и время';
+
+  @override
   String get settings_recording_quality_title => 'Качество записи';
 
   @override
   String get settings_recording_storage_title => 'Хранилище записей';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'Удалить записи?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Это приведёт к удалению $arg1 записей ($arg2).',
+      one: 'Это приведёт к удалению $arg1 записи ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Влияние неизвестно';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Не удалось определить, что будет удалено в результате этого изменения. Уменьшение лимита может привести к удалению существующих записей.';
 
   @override
   String get settings_recording_storage_location_label => 'Место хранения';
@@ -1546,6 +1633,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD-карта (нет)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'SD-карта не была подключена';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1970,6 +2061,27 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'Макс. охлаждение: ВЫКЛ';
+
+  @override
+  String get vehicle_screen_on => 'Экран: ВКЛ';
+
+  @override
+  String get vehicle_screen_off => 'Экран: ВЫКЛ';
+
+  @override
+  String get vehicle_media_volume_label => 'Громкость медиа';
+
+  @override
+  String get vehicle_media_mute => 'Без звука';
+
+  @override
+  String get vehicle_media_muted => 'Звук выключен';
+
+  @override
+  String get vehicle_front_defrost => 'Обогрев переднего стекла';
+
+  @override
+  String get vehicle_rear_defrost => 'Обогрев заднего стекла';
 
   @override
   String get vehicle_temp_label => 'Температура';
@@ -2822,4 +2934,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'Понятно';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'Режим охраны расходует дополнительную энергию 12-вольтовой батареи, пока он активен.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'Камеру сейчас использует другое приложение.';
 }

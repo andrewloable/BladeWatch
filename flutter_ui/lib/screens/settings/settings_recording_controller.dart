@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
 
@@ -7,6 +9,8 @@ import '../../gen/bladewatch/v1/recordings.pb.dart';
 import '../../gen/bladewatch/v1/settings.pb.dart';
 import '../../gen/bladewatch/v1/storage.pb.dart';
 import '../../gen/bladewatch/v1/system.pb.dart' hide RecordingStatus;
+import '../../rpc/jwt_source.dart';
+import '../../rpc/raw_http_sender.dart';
 import '../../rpc/services/recordings_service_client.dart';
 import '../../rpc/services/settings_service_client.dart';
 import '../../rpc/services/storage_service_client.dart';
@@ -34,15 +38,27 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
     required RecordingsServiceClient recordingsService,
     required SettingsServiceClient settingsService,
     required StorageServiceClient storageService,
+    required JwtSource jwtSource,
+    Uri? baseUrl,
+    RawGetSender? getSender,
+    RawHttpSender? postSender,
   })  : _systemService = systemService, // ignore: prefer_initializing_formals
         _recordingsService = recordingsService, // ignore: prefer_initializing_formals
         _settingsService = settingsService, // ignore: prefer_initializing_formals
-        _storageService = storageService; // ignore: prefer_initializing_formals
+        _storageService = storageService, // ignore: prefer_initializing_formals
+        _jwtSource = jwtSource, // ignore: prefer_initializing_formals
+        _baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'), // ignore: prefer_initializing_formals
+        _getSender = getSender ?? createIoGetSender(), // ignore: prefer_initializing_formals
+        _postSender = postSender ?? createIoHttpSender(); // ignore: prefer_initializing_formals
 
   final SystemServiceClient _systemService;
   final RecordingsServiceClient _recordingsService;
   final SettingsServiceClient _settingsService;
   final StorageServiceClient _storageService;
+  final JwtSource _jwtSource;
+  final Uri _baseUrl;
+  final RawGetSender _getSender;
+  final RawHttpSender _postSender;
 
   bool _loading = true;
   bool get loading => _loading;
@@ -63,6 +79,17 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
 
   RecordingLimit _selectedLimit = RecordingLimit.five;
   RecordingLimit get selectedLimit => _selectedLimit;
+
+  RecordingPriority _selectedPriority = RecordingPriority.reliability;
+  RecordingPriority get selectedPriority => _selectedPriority;
+
+  /// BladeWatch-y78o.5: the burned-in telemetry overlay's field checklist for continuous
+  /// (drive-mode/proximity) dashcam recording — the only recording type with any observable
+  /// overlay today; see this issue's close reason for why surveillance/proximity are not
+  /// separately exposed here. Defaults to every field, matching today's behaviour until the
+  /// daemon is actually reached.
+  Set<OverlayField> _overlayFields = OverlayField.values.toSet();
+  Set<OverlayField> get overlayFields => _overlayFields;
 
   String _selectedStorageType = 'INTERNAL';
   String get selectedStorageType => _selectedStorageType;
@@ -122,6 +149,7 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
       _selectedQuality = RecordingQuality.fromValue(resp.recordingQuality.isNotEmpty ? resp.recordingQuality : 'STANDARD');
       _selectedCodec = resp.codec.isNotEmpty ? resp.codec : 'H264';
       _selectedLimit = RecordingLimit.fromMinutes(resp.recordingSegmentMinutes > 0 ? resp.recordingSegmentMinutes : 5);
+      _selectedPriority = RecordingPriority.fromValue(resp.recordingPriority.isNotEmpty ? resp.recordingPriority : 'RELIABILITY');
     } catch (_) {}
 
     try {
@@ -140,6 +168,8 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
         maxLimitMbSdCard: resp.maxLimitMbSdCard.toInt() > 0 ? resp.maxLimitMbSdCard.toInt() : 100000,
         internalTotalMb: resp.internalTotalBytes.toInt() ~/ (1024 * 1024),
         sdCardTotalMb: resp.sdCardTotalBytes.toInt() ~/ (1024 * 1024),
+        sdCardMountFailed: resp.sdCardMountFailed,
+        sdCardMountError: resp.sdCardMountError.isNotEmpty ? resp.sdCardMountError : null,
       );
       _selectedStorageType = _storageSettings!.storageType;
       _selectedLimitMb = _storageSettings!.limitMb.clamp(storageLimitMinMb, storageLimitMaxMb);
@@ -158,6 +188,12 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
 
   void selectLimit(RecordingLimit limit) {
     _selectedLimit = limit;
+    _dirty = true;
+    notifyListeners();
+  }
+
+  void selectPriority(RecordingPriority priority) {
+    _selectedPriority = priority;
     _dirty = true;
     notifyListeners();
   }
@@ -213,7 +249,10 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
 
   Future<ApplyResult> _saveLimit() async {
     try {
-      final resp = await _settingsService.setQuality(SetQualityRequest(recordingSegmentMinutes: _selectedLimit.minutes));
+      final resp = await _settingsService.setQuality(SetQualityRequest(
+        recordingSegmentMinutes: _selectedLimit.minutes,
+        recordingPriority: _selectedPriority.value,
+      ));
       return ApplyResult(ok: resp.success, error: resp.error.isNotEmpty ? resp.error : null);
     } catch (e) {
       return ApplyResult(ok: false, error: e.toString());
@@ -237,6 +276,95 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
       return ApplyResult(ok: resp.success, error: resp.error.isNotEmpty ? resp.error : null);
     } catch (e) {
       return ApplyResult(ok: false, error: e.toString());
+    }
+  }
+
+  /// BladeWatch-gyg1.4: whether applying the current Storage-tab selections would delete
+  /// existing recordings, and if so, how many and how large -- real numbers from the daemon's
+  /// own selection algorithm, not an estimate. Returns null when nothing needs confirming:
+  /// the limit is unchanged or raised (raising can never delete anything, so no preview call
+  /// is even made), or the preview itself says nothing would be deleted. Calls the read-only
+  /// PreviewStorageLimitChange RPC -- SetStorageSettings is never called by this method, only
+  /// by [applyChanges], and only once the owner has confirmed.
+  Future<StorageLimitImpact?> previewStorageLimitImpact() async {
+    final current = _storageSettings?.limitMb;
+    if (current == null || _selectedLimitMb >= current) return null;
+    try {
+      final resp = await _storageService
+          .previewStorageLimitChange(PreviewStorageLimitChangeRequest(recordingsLimitMb: Int64(_selectedLimitMb)));
+      if (!resp.hasRecordingsImpact()) return null;
+      final impact = resp.recordingsImpact;
+      if (impact.fileCount == 0) return null;
+      return StorageLimitImpact.known(fileCount: impact.fileCount, totalBytes: impact.totalBytes.toInt());
+    } catch (_) {
+      return const StorageLimitImpact.unknown();
+    }
+  }
+
+  /// Loads the continuous-recording overlay field selection from the daemon. Leaves
+  /// [overlayFields] at its current value (defaulting to every field) on any failure —
+  /// same defensive posture as [_refreshRecordingStatus]-style loads elsewhere in this app:
+  /// a daemon hiccup should not make a settings screen appear to have silently changed the
+  /// user's saved choice.
+  Future<void> loadOverlayFields() async {
+    try {
+      final jwt = await _jwtSource.mintJwt();
+      final uri = _baseUrl.replace(path: '/api/settings/telemetry-overlay/fields');
+      final headers = <String, String>{
+        if (jwt != null) 'Authorization': 'Bearer $jwt',
+      };
+      final resp = await _getSender(uri, headers);
+      if (resp.statusCode != 200) return;
+      final json = jsonDecode(resp.body) as Map<String, dynamic>;
+      final selections = json['selections'] as Map<String, dynamic>?;
+      final continuous = selections?['continuous'] as List<dynamic>?;
+      if (continuous == null) return;
+      final fields = <OverlayField>{};
+      for (final name in continuous) {
+        final field = OverlayField.fromValue(name as String);
+        if (field != null) fields.add(field);
+      }
+      _overlayFields = fields;
+      notifyListeners();
+    } catch (_) {
+      // Keep the current (default-all) selection — see doc comment above.
+    }
+  }
+
+  /// Toggles one field in the continuous-recording overlay checklist. Optimistic (the
+  /// checkbox moves immediately) but reverts if the daemon write fails — the `before` set is
+  /// captured BEFORE the optimistic update, not after, so revert-on-failure actually restores
+  /// the prior state rather than being a no-op.
+  Future<void> setOverlayFieldEnabled(OverlayField field, bool enabled) async {
+    final before = _overlayFields;
+    final next = Set<OverlayField>.from(before);
+    if (enabled) {
+      next.add(field);
+    } else {
+      next.remove(field);
+    }
+    _overlayFields = next;
+    notifyListeners();
+
+    try {
+      final jwt = await _jwtSource.mintJwt();
+      final uri = _baseUrl.replace(path: '/api/settings/telemetry-overlay/fields');
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        if (jwt != null) 'Authorization': 'Bearer $jwt',
+      };
+      final body = jsonEncode({
+        'type': 'continuous',
+        'fields': [for (final f in next) f.value],
+      });
+      final resp = await _postSender(uri, headers, body);
+      if (resp.statusCode != 200) {
+        _overlayFields = before;
+        notifyListeners();
+      }
+    } catch (_) {
+      _overlayFields = before;
+      notifyListeners();
     }
   }
 

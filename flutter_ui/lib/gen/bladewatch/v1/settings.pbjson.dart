@@ -190,6 +190,13 @@ const GetQualityResponse$json = {
       '5': 5,
       '10': 'recordingSegmentMinutes'
     },
+    {
+      '1': 'recording_priority',
+      '3': 11,
+      '4': 1,
+      '5': 9,
+      '10': 'recordingPriority'
+    },
   ],
   '3': [
     GetQualityResponse_RecordingQualityOptionsEntry$json,
@@ -248,11 +255,12 @@ final $typed_data.Uint8List getQualityResponseDescriptor = $convert.base64Decode
     'cnlSDGNvZGVjT3B0aW9ucxJSCgtmcHNfb3B0aW9ucxgIIAMoCzIxLmJsYWRld2F0Y2gudjEuR2'
     'V0UXVhbGl0eVJlc3BvbnNlLkZwc09wdGlvbnNFbnRyeVIKZnBzT3B0aW9ucxIrChFuYXRpdmVf'
     'cmVzb2x1dGlvbhgJIAEoCVIQbmF0aXZlUmVzb2x1dGlvbhI6ChlyZWNvcmRpbmdfc2VnbWVudF'
-    '9taW51dGVzGAogASgFUhdyZWNvcmRpbmdTZWdtZW50TWludXRlcxpqChxSZWNvcmRpbmdRdWFs'
-    'aXR5T3B0aW9uc0VudHJ5EhAKA2tleRgBIAEoCVIDa2V5EjQKBXZhbHVlGAIgASgLMh4uYmxhZG'
-    'V3YXRjaC52MS5RdWFsaXR5VGllckluZm9SBXZhbHVlOgI4ARo/ChFDb2RlY09wdGlvbnNFbnRy'
-    'eRIQCgNrZXkYASABKAlSA2tleRIUCgV2YWx1ZRgCIAEoCVIFdmFsdWU6AjgBGj0KD0Zwc09wdG'
-    'lvbnNFbnRyeRIQCgNrZXkYASABKAlSA2tleRIUCgV2YWx1ZRgCIAEoCVIFdmFsdWU6AjgB');
+    '9taW51dGVzGAogASgFUhdyZWNvcmRpbmdTZWdtZW50TWludXRlcxItChJyZWNvcmRpbmdfcHJp'
+    'b3JpdHkYCyABKAlSEXJlY29yZGluZ1ByaW9yaXR5GmoKHFJlY29yZGluZ1F1YWxpdHlPcHRpb2'
+    '5zRW50cnkSEAoDa2V5GAEgASgJUgNrZXkSNAoFdmFsdWUYAiABKAsyHi5ibGFkZXdhdGNoLnYx'
+    'LlF1YWxpdHlUaWVySW5mb1IFdmFsdWU6AjgBGj8KEUNvZGVjT3B0aW9uc0VudHJ5EhAKA2tleR'
+    'gBIAEoCVIDa2V5EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAEaPQoPRnBzT3B0aW9uc0VudHJ5'
+    'EhAKA2tleRgBIAEoCVIDa2V5EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAE=');
 
 @$core.Deprecated('Use setQualityRequestDescriptor instead')
 const SetQualityRequest$json = {
@@ -281,6 +289,13 @@ const SetQualityRequest$json = {
       '5': 5,
       '10': 'recordingSegmentMinutes'
     },
+    {
+      '1': 'recording_priority',
+      '3': 6,
+      '4': 1,
+      '5': 9,
+      '10': 'recordingPriority'
+    },
   ],
 };
 
@@ -289,7 +304,8 @@ final $typed_data.Uint8List setQualityRequestDescriptor = $convert.base64Decode(
     'ChFTZXRRdWFsaXR5UmVxdWVzdBIrChFyZWNvcmRpbmdfcXVhbGl0eRgBIAEoCVIQcmVjb3JkaW'
     '5nUXVhbGl0eRIUCgVjb2RlYxgCIAEoCVIFY29kZWMSKwoRc3RyZWFtaW5nX3F1YWxpdHkYAyAB'
     'KAlSEHN0cmVhbWluZ1F1YWxpdHkSEAoDZnBzGAQgASgFUgNmcHMSOgoZcmVjb3JkaW5nX3NlZ2'
-    '1lbnRfbWludXRlcxgFIAEoBVIXcmVjb3JkaW5nU2VnbWVudE1pbnV0ZXM=');
+    '1lbnRfbWludXRlcxgFIAEoBVIXcmVjb3JkaW5nU2VnbWVudE1pbnV0ZXMSLQoScmVjb3JkaW5n'
+    'X3ByaW9yaXR5GAYgASgJUhFyZWNvcmRpbmdQcmlvcml0eQ==');
 
 @$core.Deprecated('Use setQualityResponseDescriptor instead')
 const SetQualityResponse$json = {

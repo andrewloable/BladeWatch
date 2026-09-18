@@ -106,6 +106,8 @@ const RecordingEntry$json = {
     {'1': 'detected_classes', '3': 10, '4': 3, '5': 9, '10': 'detectedClasses'},
     {'1': 'severity', '3': 11, '4': 1, '5': 9, '10': 'peakSeverity'},
     {'1': 'proximity', '3': 12, '4': 1, '5': 9, '10': 'peakProximity'},
+    {'1': 'marked', '3': 13, '4': 1, '5': 8, '10': 'marked'},
+    {'1': 'marked_at_ms', '3': 14, '4': 1, '5': 3, '10': 'markedAtMs'},
   ],
 };
 
@@ -118,7 +120,8 @@ final $typed_data.Uint8List recordingEntryDescriptor = $convert.base64Decode(
     'dGVfbGFiZWwYByABKAlSDWRhdGVGb3JtYXR0ZWQSIQoKdGltZV9sYWJlbBgIIAEoCVINdGltZU'
     'Zvcm1hdHRlZBIdCgpoYXNfZXZlbnRzGAkgASgIUgloYXNFdmVudHMSKQoQZGV0ZWN0ZWRfY2xh'
     'c3NlcxgKIAMoCVIPZGV0ZWN0ZWRDbGFzc2VzEh4KCHNldmVyaXR5GAsgASgJUgxwZWFrU2V2ZX'
-    'JpdHkSIAoJcHJveGltaXR5GAwgASgJUg1wZWFrUHJveGltaXR5');
+    'JpdHkSIAoJcHJveGltaXR5GAwgASgJUg1wZWFrUHJveGltaXR5EhYKBm1hcmtlZBgNIAEoCFIG'
+    'bWFya2VkEiAKDG1hcmtlZF9hdF9tcxgOIAEoA1IKbWFya2VkQXRNcw==');
 
 @$core.Deprecated('Use listRecordingsRequestDescriptor instead')
 const ListRecordingsRequest$json = {
@@ -388,6 +391,32 @@ final $typed_data.Uint8List getEventTimelineRequestDescriptor =
     $convert.base64Decode(
         'ChdHZXRFdmVudFRpbWVsaW5lUmVxdWVzdBIaCghmaWxlbmFtZRgBIAEoCVIIZmlsZW5hbWU=');
 
+@$core.Deprecated('Use markRecordingRequestDescriptor instead')
+const MarkRecordingRequest$json = {
+  '1': 'MarkRecordingRequest',
+};
+
+/// Descriptor for `MarkRecordingRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List markRecordingRequestDescriptor =
+    $convert.base64Decode('ChRNYXJrUmVjb3JkaW5nUmVxdWVzdA==');
+
+@$core.Deprecated('Use markRecordingResponseDescriptor instead')
+const MarkRecordingResponse$json = {
+  '1': 'MarkRecordingResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'reason', '3': 2, '4': 1, '5': 9, '10': 'reason'},
+    {'1': 'filename', '3': 3, '4': 1, '5': 9, '10': 'filename'},
+    {'1': 'mark_timestamp_ms', '3': 4, '4': 1, '5': 3, '10': 'markTimestampMs'},
+  ],
+};
+
+/// Descriptor for `MarkRecordingResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List markRecordingResponseDescriptor = $convert.base64Decode(
+    'ChVNYXJrUmVjb3JkaW5nUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIWCgZyZW'
+    'Fzb24YAiABKAlSBnJlYXNvbhIaCghmaWxlbmFtZRgDIAEoCVIIZmlsZW5hbWUSKgoRbWFya190'
+    'aW1lc3RhbXBfbXMYBCABKANSD21hcmtUaW1lc3RhbXBNcw==');
+
 @$core.Deprecated('Use getEventTimelineResponseDescriptor instead')
 const GetEventTimelineResponse$json = {
   '1': 'GetEventTimelineResponse',
@@ -448,6 +477,11 @@ const $core.Map<$core.String, $core.dynamic> RecordingsServiceBase$json = {
       '2': '.bladewatch.v1.GetEventTimelineRequest',
       '3': '.bladewatch.v1.GetEventTimelineResponse'
     },
+    {
+      '1': 'MarkRecording',
+      '2': '.bladewatch.v1.MarkRecordingRequest',
+      '3': '.bladewatch.v1.MarkRecordingResponse'
+    },
   ],
 };
 
@@ -472,6 +506,8 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.GetInflightStatusResponse': GetInflightStatusResponse$json,
   '.bladewatch.v1.GetEventTimelineRequest': GetEventTimelineRequest$json,
   '.bladewatch.v1.GetEventTimelineResponse': GetEventTimelineResponse$json,
+  '.bladewatch.v1.MarkRecordingRequest': MarkRecordingRequest$json,
+  '.bladewatch.v1.MarkRecordingResponse': MarkRecordingResponse$json,
 };
 
 /// Descriptor for `RecordingsService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -489,4 +525,6 @@ final $typed_data.Uint8List recordingsServiceDescriptor = $convert.base64Decode(
     'YXR1cxInLmJsYWRld2F0Y2gudjEuR2V0SW5mbGlnaHRTdGF0dXNSZXF1ZXN0GiguYmxhZGV3YX'
     'RjaC52MS5HZXRJbmZsaWdodFN0YXR1c1Jlc3BvbnNlEmMKEEdldEV2ZW50VGltZWxpbmUSJi5i'
     'bGFkZXdhdGNoLnYxLkdldEV2ZW50VGltZWxpbmVSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5HZX'
-    'RFdmVudFRpbWVsaW5lUmVzcG9uc2U=');
+    'RFdmVudFRpbWVsaW5lUmVzcG9uc2USWgoNTWFya1JlY29yZGluZxIjLmJsYWRld2F0Y2gudjEu'
+    'TWFya1JlY29yZGluZ1JlcXVlc3QaJC5ibGFkZXdhdGNoLnYxLk1hcmtSZWNvcmRpbmdSZXNwb2'
+    '5zZQ==');

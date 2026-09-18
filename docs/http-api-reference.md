@@ -76,14 +76,16 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 | --- | --- | --- |
 | `AuthService` | `Login`, `Logout`, `GetAuthStatus`, `InvalidateAuthCache` | `/auth/token`, `/auth/logout`, `/auth/status` |
 | `SystemService` | `GetStatus`, `GetPerformance`, `PlayAudioTest`, `ListModels`, `DownloadModel`, `GetSelectedModel`, `SetSelectedModel`, `GetModelsManifest`, `GetSohNominal`/`SetSohNominal`, `GetSohStatus`, `ResetSoh`, `ResetPerformance`, `GetParkingDelta`, `GetLastCharge` | `/status`, `/api/performance*`, `/api/audio/test-avas`, `/api/models/*` |
-| `RecordingsService` | `ListRecordings`, `GetDates`, `GetStats`, `DeleteRecording`, `BatchDelete`, `SyncCatalog`, `GetInflightStatus`, `GetEventTimeline` | `/api/recordings*`, `/api/events/*` |
+| `RecordingsService` | `ListRecordings`, `GetDates`, `GetStats`, `DeleteRecording`, `BatchDelete`, `SyncCatalog`, `GetInflightStatus`, `GetEventTimeline`, `MarkRecording` | `/api/recordings*`, `/api/events/*` |
 | `TripsService` | `ListTrips`, `GetTrip`, `DeleteTrip`, `GetSummary`, `GetDna`, `GetRange`, `GetConfig`/`SetConfig`, `GetStorage`/`SetStorage`, `SyncTrips`, `GetTelemetry`, `GetSimilarTrips`, `GetGpsTrace` | `/api/trips*` |
 | `SurveillanceService` | `GetConfig`/`SetConfig`, `GetStatus`, `Enable`, `Disable`, `GetHeatmap`, `GetSnapshot`, `GetFilterLog`, `SyncCatalog` | `/api/surveillance/*` |
 | `SafeLocationsService` | `ListZones`, `AddZone`, `UpdateZone`, `DeleteZone`, `Toggle` | `/api/surveillance/safe-locations*` |
 | `StreamService` | `Enable`, `Disable`, `GetStatus`, `GetQuality`/`SetQuality`, `GetViewMode`/`SetViewMode` | `/api/stream/*` |
+| — | `GET /api/stream/still` (REST-only, no Connect RPC): the still-frame fallback JPEG for browsers with no usable H.264 decoder (BladeWatch-y78o.1) | `/api/stream/still` |
 | `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` |
-| `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
-| `VehicleService` | `GetState`, `GetAcDiagnostics`, `GetSeatDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`, `SetAdas`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported) | `/api/vehicle/*`, `/api/gps/*` |
+| `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `PreviewStorageLimitChange`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
+| `VehicleService` | `GetState`, `GetAcDiagnostics`, `GetSeatDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported) | `/api/vehicle/*`, `/api/gps/*` |
+| — | `GET /api/vehicle/adas-inventory` (REST-only, no Connect RPC): read-only probe of which declared `ADAS_*` ids actually resolve from the SDK on this car (BladeWatch-2pnn.3) | `/api/vehicle/adas-inventory` |
 | `NotificationsService` | `GetCategories`, `Subscribe`, `Unsubscribe`, `ListSubscriptions`, `UpdatePreferences`, `SendTest` | `/api/notifications/*`, `/api/push/*` |
 
 The full request/response message shapes are in `proto/bladewatch/v1/*.proto`
@@ -134,9 +136,21 @@ Handled by `RecordingsApiHandler`:
   returns `{status:"ok", mode}`. Connect: `SettingsService.SetRecordingMode`
   (`{mode}` → `{success, mode}`), which calls `CameraDaemon.setRecordingMode`
   directly rather than shelling this inline route.
+- `POST /api/recordings/mark` — bookmarks the recording currently being written
+  (BladeWatch-nmao.4). Metadata only: no new file, no split, no copy. Empty body —
+  the server resolves "current" from the shared encoder's live output file, since
+  the caller (a Live View button) has no filename to give it. Returns
+  `{success:true, filename, markTimestampMs}`, or `{success:false,
+  reason:"not_recording"}` when nothing is recording (not an error — no exception,
+  no non-2xx status). Marking the same clip twice is idempotent: the second call
+  returns the original `markTimestampMs` unchanged, not a new one. A marked file is
+  excluded from `StorageManager`'s automatic cleanup sweep (see
+  [data-flow-and-storage.md](data-flow-and-storage.md)) and gains `marked`/
+  `markedAtMs` fields on its `ListRecordings`/`RecordingEntry` entry.
 
 Connect mirrors: `RecordingsService.{ListRecordings,GetDates,GetStats,
-DeleteRecording,BatchDelete,SyncCatalog,GetInflightStatus,GetEventTimeline}`.
+DeleteRecording,BatchDelete,SyncCatalog,GetInflightStatus,GetEventTimeline,
+MarkRecording}`.
 
 ## Surveillance
 
@@ -201,6 +215,13 @@ Handled by `QualitySettingsApiHandler`:
 - `POST /api/settings/quality`.
 - `GET /api/settings/storage`.
 - `POST /api/settings/storage`.
+- `POST /api/settings/storage/preview` — `PreviewStorageLimitChange` (BladeWatch-gyg1.4).
+  Body: `{ recordingsLimitMb?, surveillanceLimitMb? }`, either or both. Returns the real
+  (not estimated) `{ recordingsImpact?/surveillanceImpact?: { fileCount, totalBytes } }` that
+  applying those limits would delete, using the identical selection algorithm
+  `StorageManager.ensureSpace` uses — but writes nothing and deletes nothing. A limit key
+  omitted from the request is omitted from the response. See
+  [data-flow-and-storage.md](data-flow-and-storage.md#previewing-a-storage-limit-change-bladewatch-gyg14).
 - `GET /api/settings/unified`.
 - `POST /api/settings/unified`.
 - `GET /api/settings/telemetry-overlay`.
@@ -213,7 +234,7 @@ the storage settings are also surfaced via `StorageService` on Connect.
 
 Connect mirrors: `SettingsService.{GetQuality,SetQuality,GetAppearance,
 SetAppearance,GetLocale,SetLocale,SetRecordingMode}` and
-`StorageService.{GetStorageSettings,SetStorageSettings}`.
+`StorageService.{GetStorageSettings,SetStorageSettings,PreviewStorageLimitChange}`.
 
 ## External Storage
 
@@ -322,6 +343,7 @@ return the not-supported responses described under
 - `GET /api/vehicle/state` — returns current door/window/trunk/lock/battery/climate/tyre/seats/lights/ADAS state.
 - `GET /api/vehicle/ac-diagnostics` — read-only AC SDK method probe.
 - `GET /api/vehicle/seat-diagnostics` — read-only seat hardware capability probe.
+- `GET /api/vehicle/adas-inventory` — read-only ADAS field inventory (BladeWatch-2pnn.3). REST-only for now — no ConnectRPC/proto mapping exists yet, unlike the other diagnostics endpoints above; add one in a follow-up if a client needs it. Returns `{ success, adas: { sdkClassPresent, declared: [...], sdkOnly: [...] } }` — see [byd-integrations.md](byd-integrations.md#adas-field-inventory-bladewatch-2pnn3) for the shape and the (important) caveat that `sdkClassPresent` alone does not mean "this car has ADAS".
 - `POST /api/vehicle/trunk` — body `{ "action": "open" | "close" | "stop" }`.
 - `POST /api/vehicle/window` — see window variants below.
 - `POST /api/vehicle/climate` — body `{ "action": "power_on"|"power_off"|"set_temp"|"set_fan"|"max_cooling", ... }`.

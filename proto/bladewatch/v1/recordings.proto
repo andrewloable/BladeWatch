@@ -16,6 +16,7 @@ option java_multiple_files = true;
 //   SyncCatalog         POST   /api/recordings/sync
 //   GetInflightStatus   GET    /api/recordings/inflight/{filename}
 //   GetEventTimeline    GET    /api/events/{filename}
+//   MarkRecording       POST   /api/recordings/mark
 service RecordingsService {
   rpc ListRecordings(ListRecordingsRequest) returns (ListRecordingsResponse);
   rpc GetDates(GetDatesRequest) returns (GetDatesResponse);
@@ -25,6 +26,10 @@ service RecordingsService {
   rpc SyncCatalog(SyncCatalogRequest) returns (SyncCatalogResponse);
   rpc GetInflightStatus(GetInflightStatusRequest) returns (GetInflightStatusResponse);
   rpc GetEventTimeline(GetEventTimelineRequest) returns (GetEventTimelineResponse);
+  // Bookmarks the recording currently being written (metadata only -- no new
+  // file, no split). No request fields: the server resolves "current" itself,
+  // since the caller (a Live View button) has no filename to give it.
+  rpc MarkRecording(MarkRecordingRequest) returns (MarkRecordingResponse);
 }
 
 // RecordingType filters which recording category to list.
@@ -78,6 +83,10 @@ message RecordingEntry {
   repeated string detected_classes = 10;
   string severity = 11 [json_name = "peakSeverity"];
   string proximity = 12 [json_name = "peakProximity"];
+  // Set by MarkRecording while this clip was being written. Excluded from
+  // automatic storage cleanup -- see StorageManager.ensureSpace.
+  bool marked = 13;
+  int64 marked_at_ms = 14 [json_name = "markedAtMs"];
 }
 
 message ListRecordingsRequest {
@@ -166,6 +175,16 @@ message GetInflightStatusResponse {
 
 message GetEventTimelineRequest {
   string filename = 1;
+}
+
+message MarkRecordingRequest {}
+
+message MarkRecordingResponse {
+  bool success = 1;
+  // Populated only when success is false, e.g. "not_recording".
+  string reason = 2;
+  string filename = 3;
+  int64 mark_timestamp_ms = 4;
 }
 
 // GetEventTimelineResponse carries the event-timeline sidecar verbatim as a JSON string blob.

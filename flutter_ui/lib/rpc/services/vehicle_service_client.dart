@@ -70,6 +70,20 @@ class VehicleServiceClient {
         (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
+  Future<VehicleCommandResponse> setScreen(SetScreenRequest request) => _transport.call(
+        'VehicleService',
+        'SetScreen',
+        request,
+        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<VehicleCommandResponse> setMediaVolume(SetMediaVolumeRequest request) => _transport.call(
+        'VehicleService',
+        'SetMediaVolume',
+        request,
+        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
   Future<VehicleCommandResponse> setAdas(SetAdasRequest request) => _transport.call(
         'VehicleService',
         'SetAdas',

@@ -11,20 +11,29 @@ import com.connectrpc.ResponseMessage
  *  StorageService manages recording storage limits and external drive cleanup.
  *
  *  HTTP mapping (QualitySettingsApiHandler + ExternalStorageApiHandler + FormatStorageApiHandler):
- *    GetStorageSettings      GET  /api/settings/storage
- *    SetStorageSettings      POST /api/settings/storage
- *    GetExternalStorage      GET  /api/storage/external
- *    SetExternalConfig       POST /api/storage/external/config
- *    TriggerCleanup          POST /api/storage/external/cleanup
- *    PreviewCleanup          GET  /api/storage/external/preview
- *    RefreshExternalStorage  POST /api/storage/external/refresh
- *    ListFormatVolumes       GET  /api/storage/format
- *    FormatVolume            POST /api/storage/format
+ *    GetStorageSettings         GET  /api/settings/storage
+ *    SetStorageSettings         POST /api/settings/storage
+ *    PreviewStorageLimitChange  POST /api/settings/storage/preview
+ *    GetExternalStorage         GET  /api/storage/external
+ *    SetExternalConfig          POST /api/storage/external/config
+ *    TriggerCleanup             POST /api/storage/external/cleanup
+ *    PreviewCleanup             GET  /api/storage/external/preview
+ *    RefreshExternalStorage     POST /api/storage/external/refresh
+ *    ListFormatVolumes          GET  /api/storage/format
+ *    FormatVolume               POST /api/storage/format
  */
 public interface StorageServiceClientInterface {
   public suspend fun getStorageSettings(request: GetStorageSettingsRequest, headers: Headers = emptyMap()): ResponseMessage<GetStorageSettingsResponse>
 
   public suspend fun setStorageSettings(request: SetStorageSettingsRequest, headers: Headers = emptyMap()): ResponseMessage<SetStorageSettingsResponse>
+
+  /**
+   *  BladeWatch-gyg1.4: a separate, read-only RPC -- deliberately not a "dry run" flag on
+   *  SetStorageSettings -- so a client can preview a lowered limit's real impact with a
+   *  guarantee that SetStorageSettings itself was never called, and therefore nothing was
+   *  written and no cleanup ran.
+   */
+  public suspend fun previewStorageLimitChange(request: PreviewStorageLimitChangeRequest, headers: Headers = emptyMap()): ResponseMessage<PreviewStorageLimitChangeResponse>
 
   public suspend fun getExternalStorage(request: GetExternalStorageRequest, headers: Headers = emptyMap()): ResponseMessage<GetExternalStorageResponse>
 

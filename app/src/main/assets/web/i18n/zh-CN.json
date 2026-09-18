@@ -1557,7 +1557,8 @@
     "badgeLive": "● 直播",
     "badgeConnecting": "○ 连接中…",
     "notConnected": "摄像头流未连接",
-    "decoderUnsupported": "此浏览器无法播放实时画面。需要支持视频解码的浏览器，例如 Chrome 或 Edge。Tor Browser 和 Firefox ESR 尚不支持。"
+    "decoderUnsupported": "此浏览器无法播放实时画面。需要支持视频解码的浏览器，例如 Chrome 或 Edge。Tor Browser 和 Firefox ESR 尚不支持。",
+    "stillFrameLabel": "静态图像 — 非实时视频"
   },
   "location": {
     "themeAuto": "汽车",

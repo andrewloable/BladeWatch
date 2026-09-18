@@ -1557,7 +1557,8 @@
     "badgeLive": "● 실시간",
     "badgeConnecting": "○ 연결 중…",
     "notConnected": "카메라 스트림이 연결되지 않음",
-    "decoderUnsupported": "이 브라우저에서는 실시간 영상을 재생할 수 없습니다. Chrome이나 Edge처럼 비디오 디코딩을 지원하는 브라우저가 필요합니다. Tor Browser와 Firefox ESR은 아직 지원하지 않습니다."
+    "decoderUnsupported": "이 브라우저에서는 실시간 영상을 재생할 수 없습니다. Chrome이나 Edge처럼 비디오 디코딩을 지원하는 브라우저가 필요합니다. Tor Browser와 Firefox ESR은 아직 지원하지 않습니다.",
+    "stillFrameLabel": "정지 이미지 — 실시간 영상 아님"
   },
   "location": {
     "themeAuto": "자동차",

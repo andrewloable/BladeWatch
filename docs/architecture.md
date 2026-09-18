@@ -221,7 +221,11 @@ confirmed stable — the SPA is now the only web UI the daemon serves.
 
 ### `GpuSurveillancePipeline`
 
-Coordinates panoramic camera input, GPU scaling, recording, AI lane processing, surveillance state, adaptive bitrate, telemetry overlay, and streaming.
+Coordinates panoramic camera input, GPU scaling, recording, AI lane processing, surveillance state, adaptive bitrate, telemetry overlay, and streaming. Its detection stack (native motion pipeline, YOLO gate, texture tracker) has a dedicated invariants document — read [detection-invariants.md](detection-invariants.md) before changing any threshold, filter, or evidence source in `SurveillanceEngineGpu` or the native `motion_pipeline_v2`/`texture_tracker` code.
+
+`PipelineRateController` (BladeWatch-t1lg.3) scales *detection* processing rate by driving state — ACC on trims to a driving rate, parked-and-quiet ramps to an idle rate, and a live viewer or recent motion always forces the full configured rate. It owns frame rate the way `AdaptiveBitrateController` owns bitrate — never both from one place. It does not touch recording resolution, codec, bitrate, the encoder, or the EGL context: the actuator is `AiLaneWorker`'s frame-accept throttle (a wall-clock gate before a frame is even submitted for detection), reached via `PanoramicCameraGpu.setDetectionRate`, never the camera-HAL-touching `setTargetFps`. See [daemons-and-processes.md](daemons-and-processes.md#detection-rate-scaling) for the full policy and wiring.
+
+Camera selection is **not** profile-driven: `configureDefaultCamera()` hardcodes `cameraId=1, surfaceMode=0` (Seal's known-good tuple) for every car, and `PanoCameraDiscovery`'s runtime probe is what actually validates or corrects it — if the HAL opens that tuple but produces no ImageReader callbacks, auto-probe advances to the next camera/surface pair rather than streaming a blank view. A `CameraProfileResolver`/`CameraProfileCatalog` pair was written for BladeWatch-y78o.3 to make that first guess model-aware, but it was never wired into the pipeline and was removed as dead code; making a fresh install stop assuming a Seal needs a camera-profile setting distinct from `vehicle.modelId`, which is the 3D-appearance picker and defaults to `seal` for everyone.
 
 ### `BydDataCollector`
 
@@ -236,6 +240,7 @@ The main local BYD telemetry collector. It discovers BYD framework devices throu
 - Two UIs track the same 12 ConnectRPC services by convention: Flutter in the car, Angular in the browser. There is no shared UI code between them — only the protos.
 - Optional remote access is layered over the local web server through the Tor onion service instead of exposing internet-facing server code directly. The onion address is a capability URL, not authentication: the password/JWT layer in front of the web server stays mandatory.
 - Surveillance and camera paths prioritize long-running stability over tight coupling with Android UI lifecycle.
+- **BladeWatch is server-free by design, permanently** (decided BladeWatch-tren.3). The project operates no backend of its own; nothing leaves the car unless the owner points it somewhere (e.g. the Tor onion service, which needs no account, token, or registration). This is a permanent product decision, not a temporary resource constraint, and the following stay permanently out of scope as a result: push notifications while the car is offline, multi-user access to one car, an account/pairing flow, community-authored automations, hazard-sharing between cars, diagnostic log upload with a short code, and car APK distribution from a server.
 
 ## Major Risk Areas
 

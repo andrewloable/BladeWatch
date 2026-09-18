@@ -27,7 +27,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class BydEventDaemon {
     
-    private static final String TAG = "BydEventDaemon";
     private static final DaemonLogger logger = DaemonLogger.getInstance("BydEventDaemon");
     private static final int TCP_PORT = 19878;
     

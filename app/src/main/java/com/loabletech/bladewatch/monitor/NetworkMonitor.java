@@ -40,11 +40,108 @@ public class NetworkMonitor {
     private static volatile Context appContext;
     private static volatile boolean shellFallbackLogged = false;
 
+    // ==================== DATA USAGE (BladeWatch-t1lg.1) ====================
+
+    private static final DataUsageAccumulator rxAccumulator = new DataUsageAccumulator();
+    private static final DataUsageAccumulator txAccumulator = new DataUsageAccumulator();
+    private static final long DATA_USAGE_SAMPLE_INTERVAL_SECONDS = 60;
+    private static java.util.concurrent.ScheduledExecutorService dataUsageScheduler;
+
     public static void init(Context context) {
         appContext = context;
         CameraDaemon.log("NetworkMonitor: init with context=" +
                 (context != null ? context.getClass().getSimpleName() : "null"));
         refresh();
+
+        loadDataUsageState();
+        sampleDataUsage(); // one immediate sample so /status isn't empty until the first tick
+        startDataUsageSampling();
+    }
+
+    /**
+     * Own-UID (own network) totals only, not whole-device usage — see
+     * {@link DataUsageAccumulator}'s own doc comment for why a naive counter is wrong across a
+     * reboot. Starts a low-priority periodic sampler; idempotent, safe to call more than once.
+     */
+    private static void startDataUsageSampling() {
+        if (dataUsageScheduler != null) return;
+        dataUsageScheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "DataUsageSampler");
+            t.setDaemon(true);
+            t.setPriority(Thread.MIN_PRIORITY);
+            return t;
+        });
+        dataUsageScheduler.scheduleAtFixedRate(NetworkMonitor::sampleDataUsage,
+                DATA_USAGE_SAMPLE_INTERVAL_SECONDS, DATA_USAGE_SAMPLE_INTERVAL_SECONDS,
+                java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    private static void sampleDataUsage() {
+        try {
+            int uid = android.os.Process.myUid();
+            long rx = android.net.TrafficStats.getUidRxBytes(uid);
+            long tx = android.net.TrafficStats.getUidTxBytes(uid);
+            long now = System.currentTimeMillis();
+            rxAccumulator.sample(rx, now);
+            txAccumulator.sample(tx, now);
+            saveDataUsageState();
+        } catch (Exception e) {
+            CameraDaemon.log("NetworkMonitor: data usage sampling failed: " + e.getMessage());
+        }
+    }
+
+    private static void loadDataUsageState() {
+        try {
+            JSONObject section = net.bladewatch.app.config.UnifiedConfigManager.loadConfig().optJSONObject("dataUsage");
+            if (section == null) return;
+            rxAccumulator.restore(
+                    section.optLong("rxLastReading", -1L),
+                    section.optLong("rxAccumulatedThisMonth", 0L),
+                    section.optInt("rxCurrentMonthKey", -1),
+                    section.optLong("rxLastMonthTotal", 0L),
+                    section.optInt("rxLastMonthKey", -1));
+            txAccumulator.restore(
+                    section.optLong("txLastReading", -1L),
+                    section.optLong("txAccumulatedThisMonth", 0L),
+                    section.optInt("txCurrentMonthKey", -1),
+                    section.optLong("txLastMonthTotal", 0L),
+                    section.optInt("txLastMonthKey", -1));
+        } catch (Exception e) {
+            CameraDaemon.log("NetworkMonitor: failed to load data usage state: " + e.getMessage());
+        }
+    }
+
+    private static void saveDataUsageState() {
+        try {
+            JSONObject section = new JSONObject();
+            section.put("rxLastReading", rxAccumulator.getLastReading());
+            section.put("rxAccumulatedThisMonth", rxAccumulator.getAccumulatedThisMonth());
+            section.put("rxCurrentMonthKey", rxAccumulator.currentMonthKeyForPersistence());
+            section.put("rxLastMonthTotal", rxAccumulator.getLastMonthTotal());
+            section.put("rxLastMonthKey", rxAccumulator.lastMonthKeyForPersistence());
+            section.put("txLastReading", txAccumulator.getLastReading());
+            section.put("txAccumulatedThisMonth", txAccumulator.getAccumulatedThisMonth());
+            section.put("txCurrentMonthKey", txAccumulator.currentMonthKeyForPersistence());
+            section.put("txLastMonthTotal", txAccumulator.getLastMonthTotal());
+            section.put("txLastMonthKey", txAccumulator.lastMonthKeyForPersistence());
+            net.bladewatch.app.config.UnifiedConfigManager.updateSection("dataUsage", section);
+        } catch (Exception e) {
+            CameraDaemon.log("NetworkMonitor: failed to save data usage state: " + e.getMessage());
+        }
+    }
+
+    /** This-month / last-month totals (rx+tx combined), for the /status network block. */
+    public static JSONObject getDataUsageInfo() {
+        JSONObject usage = new JSONObject();
+        try {
+            usage.put("thisMonthBytes",
+                    rxAccumulator.getAccumulatedThisMonth() + txAccumulator.getAccumulatedThisMonth());
+            usage.put("lastMonthBytes",
+                    rxAccumulator.getLastMonthTotal() + txAccumulator.getLastMonthTotal());
+        } catch (Exception e) {
+            CameraDaemon.log("DEBUG: getDataUsageInfo JSON build failed: " + e.getMessage());
+        }
+        return usage;
     }
 
     /**

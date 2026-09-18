@@ -75,6 +75,8 @@
     "surveillance_invalid_quadrant_with_id": "Niet geldig quadrant: {0}",
     "surveillance_event_frame_failed_with_detail": "Het proces van het evenement is niet voltooid: {0}",
     "surveillance_no_frame_available": "Geen kader beschikbaar  eerst begint het toezicht of wordt een gebeurtenis opgenomen",
+    "telemetry_overlay_unknown_type_with_id": "Onbekend opnametype: {0}",
+    "telemetry_overlay_fields_missing": "\"fields\" ontbreekt",
     "update_app_context_not_ready": "App-context niet klaar",
     "update_check_timed_out": "Update check uitgemaakt",
     "update_disabled_in_public_mode": "Updates zijn uitgeschakeld in de PUBLIC Sharing-modus.",
@@ -118,7 +120,11 @@
     "area_hood": "Hoed",
     "area_trunk": "Kofferbak",
     "area_fuel_cap": "Brandstofkap",
-    "area_door_n": "Door {0}"
+    "area_door_n": "Door {0}",
+    "trip_started": "Rit gestart",
+    "trip_ended": "Rit beëindigd",
+    "trip_summary_km": "{0} km · {1} min",
+    "trip_summary_mi": "{0} mi · {1} min"
   },
   "vehicle_control": {
     "cloud_required": "Verbind een BYD-account in Instellingen om deze bediening te gebruiken",
@@ -130,6 +136,7 @@
     "cloud_failed": "Ik kon de auto niet bereiken. Probeer opnieuw als de auto wakker is.",
     "rate_limited": "Een opdracht is nog in progress  wacht een paar seconden",
     "not_supported": "Deze controle is niet beschikbaar op dit moment.",
+    "blocked_moving": "Niet beschikbaar terwijl het voertuig rijdt.",
     "find_car_label": "Zoek een auto .",
     "battery_heat_label": "Heat Battery",
     "close_all_windows_label": "alle ramen dicht"

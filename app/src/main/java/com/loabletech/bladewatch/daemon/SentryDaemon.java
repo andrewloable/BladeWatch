@@ -2,8 +2,6 @@ package net.bladewatch.app.daemon;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.IAccModeManager;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 

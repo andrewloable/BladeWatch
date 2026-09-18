@@ -36,12 +36,40 @@ class LiveStreamStatus {
   const LiveStreamStatus.unavailable(String reason) : this._(LiveStreamPhase.unavailable, reason);
 }
 
+/// BladeWatch-nmao.4: no native ground truth for this one -- the one-tap bookmark
+/// is a new feature, not a port.
+enum MarkStatus { idle, marking }
+
 class LiveViewState {
   final LiveViewDirection direction;
   final LiveStreamStatus status;
+  final bool isRecording;
+  final MarkStatus markStatus;
+  // Transient feedback from the last mark attempt (success or failure); null when
+  // there is nothing to show. The screen is expected to clear it after display.
+  final String? markMessage;
 
-  const LiveViewState({this.direction = LiveViewDirection.front, this.status = const LiveStreamStatus.idle()});
+  const LiveViewState({
+    this.direction = LiveViewDirection.front,
+    this.status = const LiveStreamStatus.idle(),
+    this.isRecording = false,
+    this.markStatus = MarkStatus.idle,
+    this.markMessage,
+  });
 
-  LiveViewState copyWith({LiveViewDirection? direction, LiveStreamStatus? status}) =>
-      LiveViewState(direction: direction ?? this.direction, status: status ?? this.status);
+  LiveViewState copyWith({
+    LiveViewDirection? direction,
+    LiveStreamStatus? status,
+    bool? isRecording,
+    MarkStatus? markStatus,
+    String? markMessage,
+    bool clearMarkMessage = false,
+  }) =>
+      LiveViewState(
+        direction: direction ?? this.direction,
+        status: status ?? this.status,
+        isRecording: isRecording ?? this.isRecording,
+        markStatus: markStatus ?? this.markStatus,
+        markMessage: clearMarkMessage ? null : (markMessage ?? this.markMessage),
+      );
 }

@@ -1,6 +1,5 @@
 package net.bladewatch.app.surveillance;
 
-import net.bladewatch.app.logging.DaemonLogger;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -21,8 +20,6 @@ import java.util.List;
  * (e.g., 22:00-06:00 means 10PM to 6AM next day).
  */
 public class SurveillanceSchedule {
-    private static final DaemonLogger logger = DaemonLogger.getInstance("SurvSchedule");
-
     private boolean enabled = false;
     private final List<Rule> rules = new ArrayList<>();
 

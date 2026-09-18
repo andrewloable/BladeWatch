@@ -1,7 +1,6 @@
 package net.bladewatch.app.surveillance;
 
 import net.bladewatch.app.ai.Detection;
-import net.bladewatch.app.logging.DaemonLogger;
 import net.bladewatch.app.surveillance.Actor.ClassGroup;
 import net.bladewatch.app.surveillance.Actor.Proximity;
 import net.bladewatch.app.surveillance.Actor.Severity;
@@ -31,8 +30,6 @@ import java.util.List;
  *    1597–1598). The caller is responsible for any coordinate normalisation.
  */
 public final class ActorTracker {
-
-    private static final DaemonLogger logger = DaemonLogger.getInstance("ActorTracker");
 
     /** Active tracks live this long without an update before being pruned. */
     private static final long TRACK_TTL_MS = 5000;

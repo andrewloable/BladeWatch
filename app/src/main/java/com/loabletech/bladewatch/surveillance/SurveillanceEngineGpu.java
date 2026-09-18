@@ -969,7 +969,16 @@ public class SurveillanceEngineGpu {
         
         if (anyMotion) {
             lastMotionTime = now;
-            
+
+            // BladeWatch-t1lg.3: return to full detection rate on this exact call, not the
+            // next scheduled tick -- see PipelineRateController's class doc for why that
+            // matters (a blind window at the moment something moved is the one failure mode
+            // this whole feature must not introduce).
+            PipelineRateController rateController = PipelineRateController.getInstance();
+            if (rateController != null) {
+                rateController.onMotionDetected();
+            }
+
             // Track peak threat across the entire motion sequence
             if (maxThreat > peakThreatDuringSequence) {
                 peakThreatDuringSequence = maxThreat;
@@ -2482,20 +2491,6 @@ public class SurveillanceEngineGpu {
             return new int[] { lastMotionMinY, lastMotionMaxY };
         }
         return null;
-    }
-    
-    /**
-     * Gets class name from COCO class ID.
-     */
-    private String getClassName(int classId) {
-        switch (classId) {
-            case 0: return "person";
-            case 2: return "car";
-            case 3: return "motorcycle";
-            case 5: return "bus";
-            case 7: return "truck";
-            default: return "object_" + classId;
-        }
     }
     
     /**

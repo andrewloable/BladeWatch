@@ -75,6 +75,8 @@
     "surveillance_invalid_quadrant_with_id": "Tỷ lệ không hợp lệ: {0}",
     "surveillance_event_frame_failed_with_detail": "Không xử lý khung sự kiện: {0}",
     "surveillance_no_frame_available": "Không có khung sẵn  bắt đầu giám sát hoặc ghi lại một sự kiện trước",
+    "telemetry_overlay_unknown_type_with_id": "Loại ghi không xác định: {0}",
+    "telemetry_overlay_fields_missing": "Thiếu \"fields\"",
     "update_app_context_not_ready": "Khối cảnh ứng dụng không sẵn sàng",
     "update_check_timed_out": "Kiểm tra cập nhật thời gian",
     "update_disabled_in_public_mode": "Các bản cập nhật bị vô hiệu hóa trong chế độ chia sẻ PUBLIC. chuyển sang chế độ PRIVATE trong ứng dụng trong xe trước.",
@@ -118,7 +120,11 @@
     "area_hood": "Hood",
     "area_trunk": "Thùng bể",
     "area_fuel_cap": "Tấm nhiên liệu",
-    "area_door_n": "Cửa {0}"
+    "area_door_n": "Cửa {0}",
+    "trip_started": "Chuyến đi bắt đầu",
+    "trip_ended": "Chuyến đi kết thúc",
+    "trip_summary_km": "{0} km · {1} phút",
+    "trip_summary_mi": "{0} mi · {1} phút"
   },
   "vehicle_control": {
     "cloud_required": "Kết nối tài khoản BYD trong Cài đặt để sử dụng điều khiển này",
@@ -130,6 +136,7 @@
     "cloud_failed": "Không thể tiếp cận xe  thử lại khi xe tỉnh táo",
     "rate_limited": "Một lệnh vẫn đang tiến hành  chờ vài giây",
     "not_supported": "Máy điều khiển này không có sẵn ngay bây giờ.",
+    "blocked_moving": "Không khả dụng khi xe đang di chuyển.",
     "find_car_label": "Tìm xe",
     "battery_heat_label": "Thức nóng",
     "close_all_windows_label": "tất cả các cửa sổ đóng cửa"

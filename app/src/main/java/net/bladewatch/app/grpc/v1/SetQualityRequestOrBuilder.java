@@ -89,4 +89,24 @@ public interface SetQualityRequestOrBuilder extends
    * @return The recordingSegmentMinutes.
    */
   int getRecordingSegmentMinutes();
+
+  /**
+   * <pre>
+   * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+   * </pre>
+   *
+   * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+   * @return The recordingPriority.
+   */
+  java.lang.String getRecordingPriority();
+  /**
+   * <pre>
+   * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+   * </pre>
+   *
+   * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+   * @return The bytes for recordingPriority.
+   */
+  com.google.protobuf.ByteString
+      getRecordingPriorityBytes();
 }

@@ -19,6 +19,7 @@ import com.connectrpc.ResponseMessage
  *    SyncCatalog         POST   /api/recordings/sync
  *    GetInflightStatus   GET    /api/recordings/inflight/{filename}
  *    GetEventTimeline    GET    /api/events/{filename}
+ *    MarkRecording       POST   /api/recordings/mark
  */
 public interface RecordingsServiceClientInterface {
   public suspend fun listRecordings(request: ListRecordingsRequest, headers: Headers = emptyMap()): ResponseMessage<ListRecordingsResponse>
@@ -36,4 +37,11 @@ public interface RecordingsServiceClientInterface {
   public suspend fun getInflightStatus(request: GetInflightStatusRequest, headers: Headers = emptyMap()): ResponseMessage<GetInflightStatusResponse>
 
   public suspend fun getEventTimeline(request: GetEventTimelineRequest, headers: Headers = emptyMap()): ResponseMessage<GetEventTimelineResponse>
+
+  /**
+   *  Bookmarks the recording currently being written (metadata only -- no new
+   *  file, no split). No request fields: the server resolves "current" itself,
+   *  since the caller (a Live View button) has no filename to give it.
+   */
+  public suspend fun markRecording(request: MarkRecordingRequest, headers: Headers = emptyMap()): ResponseMessage<MarkRecordingResponse>
 }

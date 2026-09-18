@@ -554,6 +554,33 @@ class TripDatabase {
         return false
     }
 
+    /**
+     * Rewrites `telemetry_file_path` for every trip row pointing at [oldPath] to [newPath].
+     * Used by [net.bladewatch.app.storage.InternalToSdMigrator] after physically moving a
+     * trip's telemetry file from internal storage to the SD card, so the trip detail screen
+     * keeps finding it. A no-op with no matching row (e.g. a stray file with no DB row) is not
+     * an error — the file still moved, the caller just has nothing to update.
+     *
+     * @return true if at least one row was updated
+     */
+    fun updateTelemetryFilePath(oldPath: String, newPath: String): Boolean {
+        if (!ensureConnection()) return false
+
+        return try {
+            conn().prepareStatement(
+                "UPDATE trips SET telemetry_file_path=? WHERE telemetry_file_path=?"
+            ).use { pstmt ->
+                pstmt.setString(1, newPath)
+                pstmt.setString(2, oldPath)
+                pstmt.executeUpdate() > 0
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to update telemetry_file_path from $oldPath to $newPath", e)
+            reconnect()
+            false
+        }
+    }
+
     /** Total number of trips in the database. */
     fun getTripCount(): Int {
         if (!ensureConnection()) return 0

@@ -1557,7 +1557,8 @@
     "badgeLive": "● TRỰC TIẾP",
     "badgeConnecting": "○ Đang kết nối…",
     "notConnected": "Luồng camera chưa kết nối",
-    "decoderUnsupported": "Trình duyệt này không phát được luồng trực tiếp. Cần trình duyệt hỗ trợ giải mã video, chẳng hạn Chrome hoặc Edge. Tor Browser và Firefox ESR chưa hỗ trợ."
+    "decoderUnsupported": "Trình duyệt này không phát được luồng trực tiếp. Cần trình duyệt hỗ trợ giải mã video, chẳng hạn Chrome hoặc Edge. Tor Browser và Firefox ESR chưa hỗ trợ.",
+    "stillFrameLabel": "Ảnh tĩnh — không phải video trực tiếp"
   },
   "location": {
     "themeAuto": "Tự động",

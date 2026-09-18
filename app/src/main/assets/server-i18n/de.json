@@ -75,6 +75,8 @@
     "surveillance_invalid_quadrant_with_id": "Unzulässiges Quadrant: {0}",
     "surveillance_event_frame_failed_with_detail": "Nicht verarbeiteten Ereignisrahmen: {0}",
     "surveillance_no_frame_available": "Es gibt keinen Rahmen  Beginnen Sie mit der Überwachung oder registrieren Sie zuerst ein Ereignis",
+    "telemetry_overlay_unknown_type_with_id": "Unbekannter Aufnahmetyp: {0}",
+    "telemetry_overlay_fields_missing": "\"fields\" fehlt",
     "update_app_context_not_ready": "App-Kontext nicht bereit",
     "update_check_timed_out": "Aktualisierungsüberprüfungszeit",
     "update_disabled_in_public_mode": "Aktualisierungen sind im PUBLIC-Sharing-Modus deaktiviert.",
@@ -118,7 +120,11 @@
     "area_hood": "Hut",
     "area_trunk": "Trunk",
     "area_fuel_cap": "Kraftstoffkappe",
-    "area_door_n": "Tür {0}"
+    "area_door_n": "Tür {0}",
+    "trip_started": "Fahrt gestartet",
+    "trip_ended": "Fahrt beendet",
+    "trip_summary_km": "{0} km · {1} Min.",
+    "trip_summary_mi": "{0} mi · {1} Min."
   },
   "vehicle_control": {
     "cloud_required": "Verbinden Sie ein BYD-Konto in Einstellungen, um diese Steuerung zu verwenden",
@@ -130,6 +136,7 @@
     "cloud_failed": "Ich konnte das Auto nicht erreichen  Versuchen Sie noch einmal, wenn das Fahrzeug wach ist",
     "rate_limited": "Ein Befehl ist noch im Gange  Warten Sie ein paar Sekunden",
     "not_supported": "Die Steuerung ist nicht verfügbar.",
+    "blocked_moving": "Nicht verfügbar, während sich das Fahrzeug bewegt.",
     "find_car_label": "Finden Sie ein Auto .",
     "battery_heat_label": "Heizung Battery",
     "close_all_windows_label": "Alle Fenster schließen"

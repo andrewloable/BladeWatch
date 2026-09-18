@@ -10,8 +10,6 @@ import org.json.JSONObject;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Publishes vehicle.charging.* notifications:
@@ -87,8 +85,16 @@ public final class ChargingEventNotifier {
                 return t;
             });
 
+    // BladeWatch-t1lg.2: polls only while a charging session is open. Subscribing/closing is
+    // driven by onFusedEdge below, which already tracks that lifecycle -- this replaces a
+    // hand-rolled ScheduledFuture start/stop with the shared ConditionalPoller primitive.
+    private final net.bladewatch.app.monitor.ConditionalPoller<BydVehicleData> socPoller =
+            new net.bladewatch.app.monitor.ConditionalPoller<>(
+                    "charging-soc", SOC_POLL_INTERVAL_MS,
+                    () -> BydDataCollector.getInstance().getData(), scheduler);
+
     private volatile boolean sessionActive = false;
-    private volatile ScheduledFuture<?> socPoller;
+    private volatile net.bladewatch.app.monitor.ConditionalPoller.Subscription socPollSubscription;
     private volatile boolean fullFiredThisSession = false;
     private volatile double sessionStartSoc = Double.NaN;
     private volatile double sessionMaxSoc = Double.NaN;
@@ -146,22 +152,19 @@ public final class ChargingEventNotifier {
 
     private void startSocPoller() {
         stopSocPoller();
-        socPoller = scheduler.scheduleWithFixedDelay(
-                this::checkSocFull,
-                0L, SOC_POLL_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        socPollSubscription = socPoller.subscribe(this::checkSocFull);
     }
 
     private void stopSocPoller() {
-        ScheduledFuture<?> f = socPoller;
-        if (f != null) {
-            f.cancel(false);
-            socPoller = null;
+        net.bladewatch.app.monitor.ConditionalPoller.Subscription s = socPollSubscription;
+        if (s != null) {
+            s.close();
+            socPollSubscription = null;
         }
     }
 
-    private void checkSocFull() {
+    private void checkSocFull(BydVehicleData snap) {
         if (!sessionActive || fullFiredThisSession) return;
-        BydVehicleData snap = BydDataCollector.getInstance().getData();
         if (snap == null) return;
         double soc = snap.socPercent;
         if (!isFinite(soc)) return;

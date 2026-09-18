@@ -287,6 +287,27 @@ the same component vocabulary in its own SCSS
   gradient). The Flutter shell builds it in
   [app_shell.dart](../flutter_ui/lib/shell/app_shell.dart); the old
   `app-shell.css` was retired with the legacy static pages in `c970b59`.
+- **Inline caption / honesty text** — a short `bodySmall` line placed directly
+  under the control it explains (no icon, no tinted container), used for
+  plain-language cost or side-effect disclosures such as the Sentry mode
+  battery-drain note and the camera-contention note in
+  [surveillance_screen.dart](../flutter_ui/lib/screens/surveillance/surveillance_screen.dart),
+  and the drive-format warning in the same file. Conditional captions (shown
+  only while the condition they describe is actually true, e.g. camera
+  contention) must not be replaced with a permanently visible caption — see
+  `surveillance_screen_test.dart`'s `'General tab'` group.
+- **Utility rail** (BladeWatch-y78o.2) — a narrow, fixed-width (`168dp`)
+  `colorSurface`-dark (`0xFF101010`, the same fixed tone the Live screen's
+  direction bar/mark button already used before this) column alongside a
+  full-stage primary view, carrying a screen's secondary controls and a
+  compact preview of another destination. First used in
+  [live_view_screen.dart](../flutter_ui/lib/screens/live_view/live_view_screen.dart):
+  the camera keeps the whole video area, and the rail carries the 5-way
+  direction selector, the recording bookmark button, and a location preview.
+  A preview in this rail is a **summary**, never a second live instance of
+  the destination it previews (no embedded map here — a short status line
+  reusing the destination's own strings) — tapping it navigates to the real
+  destination, which stays in the primary nav rail.
 
 ## Icons
 

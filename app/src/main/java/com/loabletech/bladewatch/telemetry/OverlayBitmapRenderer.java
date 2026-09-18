@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Telemetry overlay renderer with solid PNG icons tinted via alpha extraction.
@@ -136,7 +137,17 @@ public class OverlayBitmapRenderer {
         return null;
     }
 
-    public boolean renderFrame(TelemetrySnapshot snap, int fc) {
+    /**
+     * BladeWatch-y78o.5: {@code enabledFields} gates the main bar's content, field by field.
+     * Each field still occupies its ORIGINAL fixed layout slot whether drawn or not — {@code x}
+     * advances by the same amount either way — so deselecting one field leaves every other
+     * field's position exactly where it already was (required by this issue's own "leaves the
+     * others unchanged" test), rather than reflowing the remaining fields to fill the gap.
+     * {@code enabledFields.isEmpty()} skips the main bar (background included) entirely: no
+     * empty box. GPS lat/lon below is drawn through its own separate, unconditional path,
+     * untouched by {@code enabledFields} — see {@link OverlayField}'s doc comment for why.
+     */
+    public boolean renderFrame(TelemetrySnapshot snap, int fc, Set<OverlayField> enabledFields) {
         try {
             Bitmap bmp = doubleBuffer.getBackForWriting();
             Canvas c = new Canvas(bmp);
@@ -144,101 +155,125 @@ public class OverlayBitmapRenderer {
 
             boolean blink = (fc / 3) % 2 == 0;
             float barL = 200, barR = 1080;
-            bgRect.set(barL, 2, barR, 78);
-            c.drawRoundRect(bgRect, 14, 14, bgPaint);
-
             int iy = (HEIGHT - ICON_SIZE) / 2;
 
-            // LEFT TURN — fixed at left edge of bar
-            drawIcon(c, alphaLeft, barL + 10, iy, snap.leftTurnSignal && blink ? 0xFFFF8800 : 0xFF555555);
+            if (!enabledFields.isEmpty()) {
+                bgRect.set(barL, 2, barR, 78);
+                c.drawRoundRect(bgRect, 14, 14, bgPaint);
 
-            // RIGHT TURN — fixed at right edge of bar
-            drawIcon(c, alphaRight, barR - ICON_SIZE - 10, iy, snap.rightTurnSignal && blink ? 0xFFFF8800 : 0xFF555555);
+                // LEFT TURN — fixed at left edge of bar
+                if (enabledFields.contains(OverlayField.TURN_SIGNAL_LEFT)) {
+                    drawIcon(c, alphaLeft, barL + 10, iy, snap.leftTurnSignal && blink ? 0xFFFF8800 : 0xFF555555);
+                }
 
-            // Calculate content width for centering (between the two arrows).
-            // Display speed in the user's selected unit. snap.speedKmh is the
-            // canonical km/h value; convert to mph if the user / vehicle is in
-            // miles mode (BydDataCollector.isMilesMode reflects this).
-            boolean milesMode = false;
-            try {
-                net.bladewatch.app.byd.BydDataCollector collector =
-                        net.bladewatch.app.byd.BydDataCollector.getInstance();
-                milesMode = collector != null && collector.isMilesMode();
-            } catch (Throwable ignored) {
-                logger.debug("BydDataCollector.isMilesMode unavailable, using km/h");
+                // RIGHT TURN — fixed at right edge of bar
+                if (enabledFields.contains(OverlayField.TURN_SIGNAL_RIGHT)) {
+                    drawIcon(c, alphaRight, barR - ICON_SIZE - 10, iy, snap.rightTurnSignal && blink ? 0xFFFF8800 : 0xFF555555);
+                }
+
+                // Calculate content width for centering (between the two arrows).
+                // Display speed in the user's selected unit. snap.speedKmh is the
+                // canonical km/h value; convert to mph if the user / vehicle is in
+                // miles mode (BydDataCollector.isMilesMode reflects this).
+                boolean milesMode = false;
+                try {
+                    net.bladewatch.app.byd.BydDataCollector collector =
+                            net.bladewatch.app.byd.BydDataCollector.getInstance();
+                    milesMode = collector != null && collector.isMilesMode();
+                } catch (Throwable ignored) {
+                    logger.debug("BydDataCollector.isMilesMode unavailable, using km/h");
+                }
+                String spd = milesMode
+                    ? String.valueOf((int) Math.round(snap.speedKmh * KM_TO_MI))
+                    : String.valueOf(snap.speedKmh);
+                String spdUnit = milesMode ? "mph" : "km/h";
+                float spdW = speedPaint.measureText(spd) + 4 + unitPaint.measureText(spdUnit);
+                float gearW = 44;
+                float brakeW = ICON_SIZE + 8;
+                float accelW = ICON_SIZE + 10;
+                float belt1W = ICON_SIZE + 4;
+                float belt2W = ICON_SIZE + 10;
+                float timeW = 100;
+                float totalW = spdW + 8 + gearW + 8 + brakeW + accelW + belt1W + belt2W + timeW;
+
+                // Center content between arrows. The layout formula (and hence every field's
+                // fixed position) is unconditional — it does not depend on which fields are
+                // actually enabled, exactly like the un-selectable arrows/background above.
+                float innerL = barL + ICON_SIZE + 24;
+                float innerR = barR - ICON_SIZE - 24;
+                float innerW = innerR - innerL;
+                float x = innerL + (innerW - totalW) / 2;
+
+                // SPEED
+                if (enabledFields.contains(OverlayField.SPEED)) {
+                    c.drawText(spd, x, 54, speedPaint);
+                    c.drawText(spdUnit, x + speedPaint.measureText(spd) + 4, 54, unitPaint);
+                }
+                x += spdW + 8;
+
+                // GEAR
+                if (enabledFields.contains(OverlayField.GEAR)) {
+                    gearPaint.setColor(getGearColorForDarkBg(snap.gearMode));
+                    c.drawText(String.valueOf(snap.getGearChar()), x, 54, gearPaint);
+                }
+                x += gearW + 8;
+
+                // BRAKE PEDAL
+                if (enabledFields.contains(OverlayField.BRAKE_PEDAL)) {
+                    int brakeCol = snap.brakePedalPercent > 5 ? 0xFFFF2222 : 0xFF888888;
+                    drawIcon(c, alphaPedal, x, iy, brakeCol);
+                    labelPaint.setColor(brakeCol);
+                    String brkTxt = snap.brakePedalPercent > 5 ? "B " + snap.brakePedalPercent + "%" : "B";
+                    c.drawText(brkTxt, x, iy + ICON_SIZE + 14, labelPaint);
+                }
+                x += brakeW;
+
+                // ACCEL PEDAL
+                if (enabledFields.contains(OverlayField.ACCEL_PEDAL)) {
+                    int accelCol = snap.accelPedalPercent > 5 ? 0xFF22DD22 : 0xFF888888;
+                    drawIcon(c, alphaPedal, x, iy, accelCol);
+                    labelPaint.setColor(accelCol);
+                    String accTxt = snap.accelPedalPercent > 5 ? "A " + snap.accelPedalPercent + "%" : "A";
+                    c.drawText(accTxt, x, iy + ICON_SIZE + 14, labelPaint);
+                }
+                x += accelW;
+
+                // DRIVER SEATBELT
+                if (enabledFields.contains(OverlayField.SEATBELT_DRIVER)) {
+                    boolean dB = snap.seatbeltBuckled.length > 0 && snap.seatbeltBuckled[0];
+                    int dCol = dB ? 0xFF22DD22 : (blink ? 0xFFFF2222 : 0xFF552222);
+                    drawIcon(c, alphaBelt, x, iy, dCol);
+                    labelPaint.setColor(dB ? 0xFF22DD22 : 0xFFFF2222);
+                    c.drawText("D", x + ICON_SIZE / 2 - 4, iy + ICON_SIZE + 14, labelPaint);
+                }
+                x += belt1W;
+
+                // PASSENGER SEATBELT
+                if (enabledFields.contains(OverlayField.SEATBELT_PASSENGER)) {
+                    boolean pB = snap.seatbeltBuckled.length > 1 && snap.seatbeltBuckled[1];
+                    int pCol = pB ? 0xFF22DD22 : (blink ? 0xFFFF2222 : 0xFF552222);
+                    drawIcon(c, alphaBelt, x, iy, pCol);
+                    labelPaint.setColor(pB ? 0xFF22DD22 : 0xFFFF2222);
+                    c.drawText("P", x + ICON_SIZE / 2 - 3, iy + ICON_SIZE + 14, labelPaint);
+                }
+                x += belt2W;
+
+                // TIMESTAMP
+                if (enabledFields.contains(OverlayField.TIMESTAMP)) {
+                    reusableDate.setTime(snap.timestampMs);
+                    timePaint.setTextSize(16);
+                    c.drawText(dateFmt.format(reusableDate), x, 34, timePaint);
+                    timePaint.setTextSize(20);
+                    c.drawText(timeFmt.format(reusableDate), x, 60, timePaint);
+                }
             }
-            String spd = milesMode
-                ? String.valueOf((int) Math.round(snap.speedKmh * KM_TO_MI))
-                : String.valueOf(snap.speedKmh);
-            String spdUnit = milesMode ? "mph" : "km/h";
-            float spdW = speedPaint.measureText(spd) + 4 + unitPaint.measureText(spdUnit);
-            float gearW = 44;
-            float brakeW = ICON_SIZE + 8;
-            float accelW = ICON_SIZE + 10;
-            float belt1W = ICON_SIZE + 4;
-            float belt2W = ICON_SIZE + 10;
-            float timeW = 100;
-            float totalW = spdW + 8 + gearW + 8 + brakeW + accelW + belt1W + belt2W + timeW;
-
-            // Center content between arrows
-            float innerL = barL + ICON_SIZE + 24;
-            float innerR = barR - ICON_SIZE - 24;
-            float innerW = innerR - innerL;
-            float x = innerL + (innerW - totalW) / 2;
-
-            // SPEED
-            c.drawText(spd, x, 54, speedPaint);
-            x += speedPaint.measureText(spd) + 4;
-            c.drawText(spdUnit, x, 54, unitPaint);
-            x += unitPaint.measureText(spdUnit) + 8;
-
-            // GEAR
-            gearPaint.setColor(getGearColorForDarkBg(snap.gearMode));
-            c.drawText(String.valueOf(snap.getGearChar()), x, 54, gearPaint);
-            x += gearW + 8;
-
-            // BRAKE PEDAL
-            int brakeCol = snap.brakePedalPercent > 5 ? 0xFFFF2222 : 0xFF888888;
-            drawIcon(c, alphaPedal, x, iy, brakeCol);
-            labelPaint.setColor(brakeCol);
-            String brkTxt = snap.brakePedalPercent > 5 ? "B " + snap.brakePedalPercent + "%" : "B";
-            c.drawText(brkTxt, x, iy + ICON_SIZE + 14, labelPaint);
-            x += brakeW;
-
-            // ACCEL PEDAL
-            int accelCol = snap.accelPedalPercent > 5 ? 0xFF22DD22 : 0xFF888888;
-            drawIcon(c, alphaPedal, x, iy, accelCol);
-            labelPaint.setColor(accelCol);
-            String accTxt = snap.accelPedalPercent > 5 ? "A " + snap.accelPedalPercent + "%" : "A";
-            c.drawText(accTxt, x, iy + ICON_SIZE + 14, labelPaint);
-            x += accelW;
-
-            // DRIVER SEATBELT
-            boolean dB = snap.seatbeltBuckled.length > 0 && snap.seatbeltBuckled[0];
-            int dCol = dB ? 0xFF22DD22 : (blink ? 0xFFFF2222 : 0xFF552222);
-            drawIcon(c, alphaBelt, x, iy, dCol);
-            labelPaint.setColor(dB ? 0xFF22DD22 : 0xFFFF2222);
-            c.drawText("D", x + ICON_SIZE / 2 - 4, iy + ICON_SIZE + 14, labelPaint);
-            x += belt1W;
-
-            // PASSENGER SEATBELT
-            boolean pB = snap.seatbeltBuckled.length > 1 && snap.seatbeltBuckled[1];
-            int pCol = pB ? 0xFF22DD22 : (blink ? 0xFFFF2222 : 0xFF552222);
-            drawIcon(c, alphaBelt, x, iy, pCol);
-            labelPaint.setColor(pB ? 0xFF22DD22 : 0xFFFF2222);
-            c.drawText("P", x + ICON_SIZE / 2 - 3, iy + ICON_SIZE + 14, labelPaint);
-            x += belt2W;
-
-            // TIMESTAMP
-            reusableDate.setTime(snap.timestampMs);
-            timePaint.setTextSize(16);
-            c.drawText(dateFmt.format(reusableDate), x, 34, timePaint);
-            timePaint.setTextSize(20);
-            c.drawText(timeFmt.format(reusableDate), x, 60, timePaint);
 
             // GPS COORDINATES — burned into the dashcam footage in the empty
             // region to the right of the main bar (x 1080–1280). Omitted when
             // there is no fix yet so we never show a misleading 0,0.
+            //
+            // BladeWatch-y78o.5: deliberately NOT gated by enabledFields — see
+            // OverlayField's doc comment. Unconditional exactly as before this issue.
             if (snap.hasGps) {
                 float gx = barR + 8;
                 bgRect.set(gx - 6, 2, WIDTH - 2, 78);

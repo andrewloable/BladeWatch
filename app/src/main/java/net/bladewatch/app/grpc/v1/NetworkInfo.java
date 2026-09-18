@@ -263,6 +263,33 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int THIS_MONTH_BYTES_FIELD_NUMBER = 7;
+  private long thisMonthBytes_ = 0L;
+  /**
+   * <pre>
+   * BladeWatch's own network usage (BladeWatch-t1lg.1), NOT total device data use -- own-UID
+   * TrafficStats totals only. 0 until the first background sample completes.
+   * </pre>
+   *
+   * <code>int64 this_month_bytes = 7 [json_name = "thisMonthBytes"];</code>
+   * @return The thisMonthBytes.
+   */
+  @java.lang.Override
+  public long getThisMonthBytes() {
+    return thisMonthBytes_;
+  }
+
+  public static final int LAST_MONTH_BYTES_FIELD_NUMBER = 8;
+  private long lastMonthBytes_ = 0L;
+  /**
+   * <code>int64 last_month_bytes = 8 [json_name = "lastMonthBytes"];</code>
+   * @return The lastMonthBytes.
+   */
+  @java.lang.Override
+  public long getLastMonthBytes() {
+    return lastMonthBytes_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -295,6 +322,12 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(httpModeWarning_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 6, httpModeWarning_);
     }
+    if (thisMonthBytes_ != 0L) {
+      output.writeInt64(7, thisMonthBytes_);
+    }
+    if (lastMonthBytes_ != 0L) {
+      output.writeInt64(8, lastMonthBytes_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -317,6 +350,14 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(httpModeWarning_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(6, httpModeWarning_);
+    }
+    if (thisMonthBytes_ != 0L) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeInt64Size(7, thisMonthBytes_);
+    }
+    if (lastMonthBytes_ != 0L) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeInt64Size(8, lastMonthBytes_);
     }
     return size;
   }
@@ -354,6 +395,10 @@ private static final long serialVersionUID = 0L;
         .equals(other.getHttpBind())) return false;
     if (!getHttpModeWarning()
         .equals(other.getHttpModeWarning())) return false;
+    if (getThisMonthBytes()
+        != other.getThisMonthBytes()) return false;
+    if (getLastMonthBytes()
+        != other.getLastMonthBytes()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -378,6 +423,12 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getHttpBind().hashCode();
     hash = (37 * hash) + HTTP_MODE_WARNING_FIELD_NUMBER;
     hash = (53 * hash) + getHttpModeWarning().hashCode();
+    hash = (37 * hash) + THIS_MONTH_BYTES_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        getThisMonthBytes());
+    hash = (37 * hash) + LAST_MONTH_BYTES_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        getLastMonthBytes());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -519,6 +570,8 @@ private static final long serialVersionUID = 0L;
       lanHttpEnabled_ = false;
       httpBind_ = "";
       httpModeWarning_ = "";
+      thisMonthBytes_ = 0L;
+      lastMonthBytes_ = 0L;
       return this;
     }
 
@@ -570,6 +623,12 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000020) != 0)) {
         result.httpModeWarning_ = httpModeWarning_;
       }
+      if (((from_bitField0_ & 0x00000040) != 0)) {
+        result.thisMonthBytes_ = thisMonthBytes_;
+      }
+      if (((from_bitField0_ & 0x00000080) != 0)) {
+        result.lastMonthBytes_ = lastMonthBytes_;
+      }
     }
 
     @java.lang.Override
@@ -611,6 +670,12 @@ private static final long serialVersionUID = 0L;
         httpModeWarning_ = other.httpModeWarning_;
         bitField0_ |= 0x00000020;
         onChanged();
+      }
+      if (other.getThisMonthBytes() != 0L) {
+        setThisMonthBytes(other.getThisMonthBytes());
+      }
+      if (other.getLastMonthBytes() != 0L) {
+        setLastMonthBytes(other.getLastMonthBytes());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -668,6 +733,16 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000020;
               break;
             } // case 50
+            case 56: {
+              thisMonthBytes_ = input.readInt64();
+              bitField0_ |= 0x00000040;
+              break;
+            } // case 56
+            case 64: {
+              lastMonthBytes_ = input.readInt64();
+              bitField0_ |= 0x00000080;
+              break;
+            } // case 64
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1073,6 +1148,85 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       httpModeWarning_ = value;
       bitField0_ |= 0x00000020;
+      onChanged();
+      return this;
+    }
+
+    private long thisMonthBytes_ ;
+    /**
+     * <pre>
+     * BladeWatch's own network usage (BladeWatch-t1lg.1), NOT total device data use -- own-UID
+     * TrafficStats totals only. 0 until the first background sample completes.
+     * </pre>
+     *
+     * <code>int64 this_month_bytes = 7 [json_name = "thisMonthBytes"];</code>
+     * @return The thisMonthBytes.
+     */
+    @java.lang.Override
+    public long getThisMonthBytes() {
+      return thisMonthBytes_;
+    }
+    /**
+     * <pre>
+     * BladeWatch's own network usage (BladeWatch-t1lg.1), NOT total device data use -- own-UID
+     * TrafficStats totals only. 0 until the first background sample completes.
+     * </pre>
+     *
+     * <code>int64 this_month_bytes = 7 [json_name = "thisMonthBytes"];</code>
+     * @param value The thisMonthBytes to set.
+     * @return This builder for chaining.
+     */
+    public Builder setThisMonthBytes(long value) {
+
+      thisMonthBytes_ = value;
+      bitField0_ |= 0x00000040;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * BladeWatch's own network usage (BladeWatch-t1lg.1), NOT total device data use -- own-UID
+     * TrafficStats totals only. 0 until the first background sample completes.
+     * </pre>
+     *
+     * <code>int64 this_month_bytes = 7 [json_name = "thisMonthBytes"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearThisMonthBytes() {
+      bitField0_ = (bitField0_ & ~0x00000040);
+      thisMonthBytes_ = 0L;
+      onChanged();
+      return this;
+    }
+
+    private long lastMonthBytes_ ;
+    /**
+     * <code>int64 last_month_bytes = 8 [json_name = "lastMonthBytes"];</code>
+     * @return The lastMonthBytes.
+     */
+    @java.lang.Override
+    public long getLastMonthBytes() {
+      return lastMonthBytes_;
+    }
+    /**
+     * <code>int64 last_month_bytes = 8 [json_name = "lastMonthBytes"];</code>
+     * @param value The lastMonthBytes to set.
+     * @return This builder for chaining.
+     */
+    public Builder setLastMonthBytes(long value) {
+
+      lastMonthBytes_ = value;
+      bitField0_ |= 0x00000080;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>int64 last_month_bytes = 8 [json_name = "lastMonthBytes"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearLastMonthBytes() {
+      bitField0_ = (bitField0_ & ~0x00000080);
+      lastMonthBytes_ = 0L;
       onChanged();
       return this;
     }

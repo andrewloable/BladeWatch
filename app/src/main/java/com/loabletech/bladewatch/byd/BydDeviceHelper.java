@@ -765,6 +765,67 @@ public final class BydDeviceHelper {
         return -1;
     }
 
+    /** Outcome of {@link #callGetSingleWithStatus}, distinguishing why a read produced no value. */
+    public enum ReadStatus { OK, PERMISSION_DENIED, FAILED, NO_DEVICE }
+
+    /** Read result carrying both the value and {@link ReadStatus} — see {@link #callGetSingleWithStatus}. */
+    public static final class GetResult {
+        public final int value;
+        public final ReadStatus status;
+        public GetResult(int value, ReadStatus status) {
+            this.value = value;
+            this.status = status;
+        }
+    }
+
+    /**
+     * Pure mapping from a {@code get()} failure to a caller-facing status. Extracted so
+     * PERMISSION_DENIED vs FAILED is unit-testable without a real device to throw a genuine
+     * {@link SecurityException} through reflection (BladeWatch-2pnn.3).
+     *
+     * <p>Unwraps first (BladeWatch-t87k): the only caller classifies what
+     * {@link Method#invoke} threw, and reflection wraps anything the target method raised in an
+     * {@link java.lang.reflect.InvocationTargetException}. Testing the bare
+     * {@code SecurityException} shape alone passed while production, which only ever sees the
+     * wrapped one, reported every permission refusal as a generic FAILED — the one distinction
+     * this status exists to draw.
+     */
+    static ReadStatus statusForFailure(Exception e) {
+        Throwable t = e;
+        while (t instanceof java.lang.reflect.InvocationTargetException && t.getCause() != null) {
+            t = t.getCause();
+        }
+        return (t instanceof SecurityException) ? ReadStatus.PERMISSION_DENIED : ReadStatus.FAILED;
+    }
+
+    /**
+     * Same primitive as {@link #callGetSingle}, but reports WHY a read failed instead of
+     * collapsing every non-success case to {@code -1}. Added for BladeWatch-2pnn.3's ADAS
+     * field inventory, which needs to tell "the SDK refused" apart from "the call broke" apart
+     * from "there is no device at all" — {@link #callGetSingle}'s signature is unchanged and
+     * every existing caller is unaffected.
+     */
+    public static GetResult callGetSingleWithStatus(Object device, int featureId) {
+        if (device == null) return new GetResult(-1, ReadStatus.NO_DEVICE);
+        try {
+            int deviceType = resolveDeviceType(device);
+            if (deviceType == Integer.MIN_VALUE) return new GetResult(-1, ReadStatus.FAILED);
+            Method m = findMethodCached(device, "get", getSingleMethodCache,
+                    int.class, int.class);
+            if (m != null) {
+                Object result = m.invoke(device, deviceType, featureId);
+                if (result instanceof Number) {
+                    return new GetResult(((Number) result).intValue(), ReadStatus.OK);
+                }
+            }
+            return new GetResult(-1, ReadStatus.FAILED);
+        } catch (Exception e) {
+            ReadStatus status = statusForFailure(e);
+            logger.debug("callGetSingleWithStatus " + status + " for id=" + featureId + " — " + e.getMessage());
+            return new GetResult(-1, status);
+        }
+    }
+
     /**
      * Call getDouble(int deviceType, int featureId) on a BYD device.
      * Returns Double.NaN on any failure.

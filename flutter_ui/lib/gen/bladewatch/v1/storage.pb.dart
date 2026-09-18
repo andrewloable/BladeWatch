@@ -183,6 +183,8 @@ class GetStorageSettingsResponse extends $pb.GeneratedMessage {
     $fixnum.Int64? internalTotalBytes,
     $core.String? internalFreeFormatted,
     $core.String? internalTotalFormatted,
+    $core.bool? sdCardMountFailed,
+    $core.String? sdCardMountError,
   }) {
     final result = GetStorageSettingsResponse._();
     if (success != null) result.success = success;
@@ -219,6 +221,8 @@ class GetStorageSettingsResponse extends $pb.GeneratedMessage {
       result.internalFreeFormatted = internalFreeFormatted;
     if (internalTotalFormatted != null)
       result.internalTotalFormatted = internalTotalFormatted;
+    if (sdCardMountFailed != null) result.sdCardMountFailed = sdCardMountFailed;
+    if (sdCardMountError != null) result.sdCardMountError = sdCardMountError;
     return result;
   }
 
@@ -265,6 +269,8 @@ class GetStorageSettingsResponse extends $pb.GeneratedMessage {
         protoName: 'internal_total_bytes')
     ..aOS(23, _omitFieldNames ? '' : 'internalFreeFormatted')
     ..aOS(24, _omitFieldNames ? '' : 'internalTotalFormatted')
+    ..aOB(25, _omitFieldNames ? '' : 'sdCardMountFailed')
+    ..aOS(26, _omitFieldNames ? '' : 'sdCardMountError')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -509,6 +515,27 @@ class GetStorageSettingsResponse extends $pb.GeneratedMessage {
   $core.bool hasInternalTotalFormatted() => $_has(23);
   @$pb.TagNumber(24)
   void clearInternalTotalFormatted() => $_clearField(24);
+
+  /// True when an SD card configured for storage failed to mount after repeated attempts at
+  /// daemon startup and the daemon kept the SD_CARD preference (not silently downgraded to
+  /// internal). See sd_card_mount_error for a user-facing message.
+  @$pb.TagNumber(25)
+  $core.bool get sdCardMountFailed => $_getBF(24);
+  @$pb.TagNumber(25)
+  set sdCardMountFailed($core.bool value) => $_setBool(24, value);
+  @$pb.TagNumber(25)
+  $core.bool hasSdCardMountFailed() => $_has(24);
+  @$pb.TagNumber(25)
+  void clearSdCardMountFailed() => $_clearField(25);
+
+  @$pb.TagNumber(26)
+  $core.String get sdCardMountError => $_getSZ(25);
+  @$pb.TagNumber(26)
+  set sdCardMountError($core.String value) => $_setString(25, value);
+  @$pb.TagNumber(26)
+  $core.bool hasSdCardMountError() => $_has(25);
+  @$pb.TagNumber(26)
+  void clearSdCardMountError() => $_clearField(26);
 }
 
 class SetStorageSettingsRequest extends $pb.GeneratedMessage {
@@ -611,14 +638,90 @@ class SetStorageSettingsRequest extends $pb.GeneratedMessage {
   void clearSurveillanceStorageType() => $_clearField(4);
 }
 
+/// CleanupImpact reports the real (not estimated) effect of a limit on existing files, from
+/// the identical selection algorithm StorageManager.ensureSpace uses.
+class CleanupImpact extends $pb.GeneratedMessage {
+  factory CleanupImpact({
+    $core.int? fileCount,
+    $fixnum.Int64? totalBytes,
+  }) {
+    final result = CleanupImpact._();
+    if (fileCount != null) result.fileCount = fileCount;
+    if (totalBytes != null) result.totalBytes = totalBytes;
+    return result;
+  }
+
+  CleanupImpact._();
+
+  factory CleanupImpact.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      CleanupImpact()..mergeFromBuffer(data, registry);
+  factory CleanupImpact.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      CleanupImpact()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'CleanupImpact',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: CleanupImpact.$_createMessage)
+    ..aI(1, _omitFieldNames ? '' : 'fileCount')
+    ..aInt64(2, _omitFieldNames ? '' : 'totalBytes')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CleanupImpact clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CleanupImpact copyWith(void Function(CleanupImpact) updates) =>
+      super.copyWith((message) => updates(message as CleanupImpact))
+          as CleanupImpact;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated('Use CleanupImpact() / CleanupImpact.new instead')
+  static CleanupImpact create() => CleanupImpact._();
+  static $pb.GeneratedMessage $_createMessage() => CleanupImpact._();
+  @$core.override
+  CleanupImpact createEmptyInstance() => CleanupImpact._();
+  @$core.pragma('dart2js:noInline')
+  static CleanupImpact getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CleanupImpact>(
+          CleanupImpact.$_createMessage);
+  static CleanupImpact? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get fileCount => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set fileCount($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasFileCount() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearFileCount() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get totalBytes => $_getI64(1);
+  @$pb.TagNumber(2)
+  set totalBytes($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasTotalBytes() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearTotalBytes() => $_clearField(2);
+}
+
 class SetStorageSettingsResponse extends $pb.GeneratedMessage {
   factory SetStorageSettingsResponse({
     $core.bool? success,
     $core.String? error,
+    CleanupImpact? recordingsImpact,
+    CleanupImpact? surveillanceImpact,
   }) {
     final result = SetStorageSettingsResponse._();
     if (success != null) result.success = success;
     if (error != null) result.error = error;
+    if (recordingsImpact != null) result.recordingsImpact = recordingsImpact;
+    if (surveillanceImpact != null)
+      result.surveillanceImpact = surveillanceImpact;
     return result;
   }
 
@@ -637,6 +740,10 @@ class SetStorageSettingsResponse extends $pb.GeneratedMessage {
       createEmptyInstance: SetStorageSettingsResponse.$_createMessage)
     ..aOB(1, _omitFieldNames ? '' : 'success')
     ..aOS(2, _omitFieldNames ? '' : 'error')
+    ..aOM<CleanupImpact>(3, _omitFieldNames ? '' : 'recordingsImpact',
+        subBuilder: CleanupImpact.$_createMessage)
+    ..aOM<CleanupImpact>(4, _omitFieldNames ? '' : 'surveillanceImpact',
+        subBuilder: CleanupImpact.$_createMessage)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -683,6 +790,219 @@ class SetStorageSettingsResponse extends $pb.GeneratedMessage {
   $core.bool hasError() => $_has(1);
   @$pb.TagNumber(2)
   void clearError() => $_clearField(2);
+
+  /// Present only when applying this request actually deleted at least one existing file for
+  /// the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+  /// finds this out BEFORE applying.
+  @$pb.TagNumber(3)
+  CleanupImpact get recordingsImpact => $_getN(2);
+  @$pb.TagNumber(3)
+  set recordingsImpact(CleanupImpact value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasRecordingsImpact() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearRecordingsImpact() => $_clearField(3);
+  @$pb.TagNumber(3)
+  CleanupImpact ensureRecordingsImpact() => $_ensure(2);
+
+  @$pb.TagNumber(4)
+  CleanupImpact get surveillanceImpact => $_getN(3);
+  @$pb.TagNumber(4)
+  set surveillanceImpact(CleanupImpact value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasSurveillanceImpact() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearSurveillanceImpact() => $_clearField(4);
+  @$pb.TagNumber(4)
+  CleanupImpact ensureSurveillanceImpact() => $_ensure(3);
+}
+
+class PreviewStorageLimitChangeRequest extends $pb.GeneratedMessage {
+  factory PreviewStorageLimitChangeRequest({
+    $fixnum.Int64? recordingsLimitMb,
+    $fixnum.Int64? surveillanceLimitMb,
+  }) {
+    final result = PreviewStorageLimitChangeRequest._();
+    if (recordingsLimitMb != null) result.recordingsLimitMb = recordingsLimitMb;
+    if (surveillanceLimitMb != null)
+      result.surveillanceLimitMb = surveillanceLimitMb;
+    return result;
+  }
+
+  PreviewStorageLimitChangeRequest._();
+
+  factory PreviewStorageLimitChangeRequest.fromBuffer(
+          $core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PreviewStorageLimitChangeRequest()..mergeFromBuffer(data, registry);
+  factory PreviewStorageLimitChangeRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PreviewStorageLimitChangeRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PreviewStorageLimitChangeRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: PreviewStorageLimitChangeRequest.$_createMessage)
+    ..aInt64(1, _omitFieldNames ? '' : 'recordingsLimitMb')
+    ..aInt64(2, _omitFieldNames ? '' : 'surveillanceLimitMb')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PreviewStorageLimitChangeRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PreviewStorageLimitChangeRequest copyWith(
+          void Function(PreviewStorageLimitChangeRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as PreviewStorageLimitChangeRequest))
+          as PreviewStorageLimitChangeRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use PreviewStorageLimitChangeRequest() / PreviewStorageLimitChangeRequest.new instead')
+  static PreviewStorageLimitChangeRequest create() =>
+      PreviewStorageLimitChangeRequest._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      PreviewStorageLimitChangeRequest._();
+  @$core.override
+  PreviewStorageLimitChangeRequest createEmptyInstance() =>
+      PreviewStorageLimitChangeRequest._();
+  @$core.pragma('dart2js:noInline')
+  static PreviewStorageLimitChangeRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PreviewStorageLimitChangeRequest>(
+          PreviewStorageLimitChangeRequest.$_createMessage);
+  static PreviewStorageLimitChangeRequest? _defaultInstance;
+
+  /// 0 = do not preview recordings.
+  @$pb.TagNumber(1)
+  $fixnum.Int64 get recordingsLimitMb => $_getI64(0);
+  @$pb.TagNumber(1)
+  set recordingsLimitMb($fixnum.Int64 value) => $_setInt64(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRecordingsLimitMb() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRecordingsLimitMb() => $_clearField(1);
+
+  /// 0 = do not preview surveillance.
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get surveillanceLimitMb => $_getI64(1);
+  @$pb.TagNumber(2)
+  set surveillanceLimitMb($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasSurveillanceLimitMb() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSurveillanceLimitMb() => $_clearField(2);
+}
+
+class PreviewStorageLimitChangeResponse extends $pb.GeneratedMessage {
+  factory PreviewStorageLimitChangeResponse({
+    $core.bool? success,
+    $core.String? error,
+    CleanupImpact? recordingsImpact,
+    CleanupImpact? surveillanceImpact,
+  }) {
+    final result = PreviewStorageLimitChangeResponse._();
+    if (success != null) result.success = success;
+    if (error != null) result.error = error;
+    if (recordingsImpact != null) result.recordingsImpact = recordingsImpact;
+    if (surveillanceImpact != null)
+      result.surveillanceImpact = surveillanceImpact;
+    return result;
+  }
+
+  PreviewStorageLimitChangeResponse._();
+
+  factory PreviewStorageLimitChangeResponse.fromBuffer(
+          $core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PreviewStorageLimitChangeResponse()..mergeFromBuffer(data, registry);
+  factory PreviewStorageLimitChangeResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PreviewStorageLimitChangeResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PreviewStorageLimitChangeResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: PreviewStorageLimitChangeResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'error')
+    ..aOM<CleanupImpact>(3, _omitFieldNames ? '' : 'recordingsImpact',
+        subBuilder: CleanupImpact.$_createMessage)
+    ..aOM<CleanupImpact>(4, _omitFieldNames ? '' : 'surveillanceImpact',
+        subBuilder: CleanupImpact.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PreviewStorageLimitChangeResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PreviewStorageLimitChangeResponse copyWith(
+          void Function(PreviewStorageLimitChangeResponse) updates) =>
+      super.copyWith((message) =>
+              updates(message as PreviewStorageLimitChangeResponse))
+          as PreviewStorageLimitChangeResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use PreviewStorageLimitChangeResponse() / PreviewStorageLimitChangeResponse.new instead')
+  static PreviewStorageLimitChangeResponse create() =>
+      PreviewStorageLimitChangeResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      PreviewStorageLimitChangeResponse._();
+  @$core.override
+  PreviewStorageLimitChangeResponse createEmptyInstance() =>
+      PreviewStorageLimitChangeResponse._();
+  @$core.pragma('dart2js:noInline')
+  static PreviewStorageLimitChangeResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PreviewStorageLimitChangeResponse>(
+          PreviewStorageLimitChangeResponse.$_createMessage);
+  static PreviewStorageLimitChangeResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get error => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set error($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasError() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearError() => $_clearField(2);
+
+  /// Present iff recordings_limit_mb was set in the request.
+  @$pb.TagNumber(3)
+  CleanupImpact get recordingsImpact => $_getN(2);
+  @$pb.TagNumber(3)
+  set recordingsImpact(CleanupImpact value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasRecordingsImpact() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearRecordingsImpact() => $_clearField(3);
+  @$pb.TagNumber(3)
+  CleanupImpact ensureRecordingsImpact() => $_ensure(2);
+
+  /// Present iff surveillance_limit_mb was set in the request.
+  @$pb.TagNumber(4)
+  CleanupImpact get surveillanceImpact => $_getN(3);
+  @$pb.TagNumber(4)
+  set surveillanceImpact(CleanupImpact value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasSurveillanceImpact() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearSurveillanceImpact() => $_clearField(4);
+  @$pb.TagNumber(4)
+  CleanupImpact ensureSurveillanceImpact() => $_ensure(3);
 }
 
 class GetExternalStorageRequest extends $pb.GeneratedMessage {
@@ -2101,15 +2421,16 @@ class FormatVolumeResponse extends $pb.GeneratedMessage {
 /// StorageService manages recording storage limits and external drive cleanup.
 ///
 /// HTTP mapping (QualitySettingsApiHandler + ExternalStorageApiHandler + FormatStorageApiHandler):
-///   GetStorageSettings      GET  /api/settings/storage
-///   SetStorageSettings      POST /api/settings/storage
-///   GetExternalStorage      GET  /api/storage/external
-///   SetExternalConfig       POST /api/storage/external/config
-///   TriggerCleanup          POST /api/storage/external/cleanup
-///   PreviewCleanup          GET  /api/storage/external/preview
-///   RefreshExternalStorage  POST /api/storage/external/refresh
-///   ListFormatVolumes       GET  /api/storage/format
-///   FormatVolume            POST /api/storage/format
+///   GetStorageSettings         GET  /api/settings/storage
+///   SetStorageSettings         POST /api/settings/storage
+///   PreviewStorageLimitChange  POST /api/settings/storage/preview
+///   GetExternalStorage         GET  /api/storage/external
+///   SetExternalConfig          POST /api/storage/external/config
+///   TriggerCleanup             POST /api/storage/external/cleanup
+///   PreviewCleanup             GET  /api/storage/external/preview
+///   RefreshExternalStorage     POST /api/storage/external/refresh
+///   ListFormatVolumes          GET  /api/storage/format
+///   FormatVolume               POST /api/storage/format
 class StorageServiceApi {
   final $pb.RpcClient _client;
 
@@ -2123,6 +2444,19 @@ class StorageServiceApi {
           $pb.ClientContext? ctx, SetStorageSettingsRequest request) =>
       _client.invoke<SetStorageSettingsResponse>(ctx, 'StorageService',
           'SetStorageSettings', request, SetStorageSettingsResponse());
+
+  /// BladeWatch-gyg1.4: a separate, read-only RPC -- deliberately not a "dry run" flag on
+  /// SetStorageSettings -- so a client can preview a lowered limit's real impact with a
+  /// guarantee that SetStorageSettings itself was never called, and therefore nothing was
+  /// written and no cleanup ran.
+  $async.Future<PreviewStorageLimitChangeResponse> previewStorageLimitChange(
+          $pb.ClientContext? ctx, PreviewStorageLimitChangeRequest request) =>
+      _client.invoke<PreviewStorageLimitChangeResponse>(
+          ctx,
+          'StorageService',
+          'PreviewStorageLimitChange',
+          request,
+          PreviewStorageLimitChangeResponse());
   $async.Future<GetExternalStorageResponse> getExternalStorage(
           $pb.ClientContext? ctx, GetExternalStorageRequest request) =>
       _client.invoke<GetExternalStorageResponse>(ctx, 'StorageService',

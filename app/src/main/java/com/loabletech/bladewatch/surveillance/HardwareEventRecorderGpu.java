@@ -1179,6 +1179,19 @@ public class HardwareEventRecorderGpu {
     public boolean isRecording() {
         return recording;
     }
+
+    /**
+     * The base filename (no directory, no {@code .tmp} suffix) currently being written, or
+     * {@code null} if nothing is recording. Used by {@code MarkRecording} (BladeWatch-nmao.4)
+     * to resolve "the current clip" without the caller (a Live View button) ever knowing a
+     * filename itself.
+     */
+    public String getCurrentRecordingFilename() {
+        File tmp = tempFile;
+        if (tmp == null || !tmp.exists()) return null;
+        String name = tmp.getName();
+        return name.endsWith(".tmp") ? name.substring(0, name.length() - 4) : name;
+    }
     
     /**
      * Checks if currently writing to file.
@@ -1634,16 +1647,26 @@ public class HardwareEventRecorderGpu {
     
     /**
      * Reads the user-configured per-file recording limit (minutes) from the
-     * unified config (recording.segmentMinutes; options 1/5/10) and converts it
-     * to milliseconds. Falls back to the default (5 min) on any error or an
-     * unexpected value, so a bad config can never disable rotation entirely.
+     * unified config (recording.segmentMinutes; options 1/5/10), applies the
+     * recording.priority cap (BladeWatch-gyg1.3 -- RELIABILITY shortens this to 1
+     * minute regardless of segmentMinutes, so an abrupt power loss loses at most
+     * one unfinalised segment instead of up to segmentMinutes), and converts the
+     * result to milliseconds. Falls back to the default (5 min) on any error or
+     * an unexpected value, so a bad config can never disable rotation entirely.
      */
     private long loadSegmentDurationMs() {
         try {
-            int mins = net.bladewatch.app.config.UnifiedConfigManager
-                .getRecording().optInt("segmentMinutes", 5);
+            org.json.JSONObject rec = net.bladewatch.app.config.UnifiedConfigManager.getRecording();
+            int mins = rec.optInt("segmentMinutes", 5);
             if (mins == 1 || mins == 5 || mins == 10) {
-                return mins * 60_000L;
+                // The key is always present by the time this reads: UnifiedConfigManager's
+                // applyDefaults sets it for new configs and migrateConfig back-fills
+                // PERFORMANCE for any config predating it, both persisted. A missing value
+                // here therefore means a hand-edited config, where RELIABILITY (the cap) is
+                // the right thing to fall back to.
+                net.bladewatch.app.recording.RecordingPriority priority =
+                    net.bladewatch.app.recording.RecordingPriority.fromConfigValue(rec.optString("priority", null));
+                return priority.effectiveSegmentMinutes(mins) * 60_000L;
             }
         } catch (Exception e) {
             logger.warn("Could not read recording.segmentMinutes, using default: " + e.getMessage());
@@ -1894,8 +1917,6 @@ public class HardwareEventRecorderGpu {
     }
     
     // Track the current output file path for cleanup protection
-    private static volatile String currentlyWritingPath = null;
-    
     /**
      * Gets the path of the file currently being written to.
      * Used by cleanup to avoid deleting active files.

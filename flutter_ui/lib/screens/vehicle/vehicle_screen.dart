@@ -556,6 +556,67 @@ class _ClimateTab extends StatelessWidget {
             Expanded(child: _stepper(context, l10n.vehicle_fan_speed_label, l10n.vehicle_fan_level(c.fanLevel), 'vehicle.climate.fan', c.decFan, c.incFan)),
           ],
         ),
+        const SizedBox(height: 8),
+        FilledButton(
+          key: const ValueKey('vehicle.screen.toggle'),
+          style: FilledButton.styleFrom(backgroundColor: c.screenOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+          onPressed: () async {
+            final error = await c.toggleScreen();
+            if (context.mounted && error != null) showVehicleCommandError(context, error);
+          },
+          child: Text(c.screenOn ? l10n.vehicle_screen_on : l10n.vehicle_screen_off),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+                child: _stepper(context, l10n.vehicle_media_volume_label, '${c.mediaVolumePercent}%',
+                    'vehicle.media.volume', c.stepVolumeDown, c.stepVolumeUp)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: FilledButton(
+                key: const ValueKey('vehicle.media.mute'),
+                style: FilledButton.styleFrom(
+                    backgroundColor: c.mediaMuted ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
+                onPressed: () async {
+                  final error = await c.toggleMute();
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
+                },
+                child: Text(c.mediaMuted ? l10n.vehicle_media_muted : l10n.vehicle_media_mute),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton(
+                key: const ValueKey('vehicle.climate.frontDefrost'),
+                style: FilledButton.styleFrom(
+                    backgroundColor: c.frontDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+                onPressed: () async {
+                  final error = await c.toggleFrontDefrost();
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
+                },
+                child: Text(l10n.vehicle_front_defrost),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: FilledButton(
+                key: const ValueKey('vehicle.climate.rearDefrost'),
+                style: FilledButton.styleFrom(
+                    backgroundColor: c.rearDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+                onPressed: () async {
+                  final error = await c.toggleRearDefrost();
+                  if (context.mounted && error != null) showVehicleCommandError(context, error);
+                },
+                child: Text(l10n.vehicle_rear_defrost),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

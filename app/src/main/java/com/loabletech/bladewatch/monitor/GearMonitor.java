@@ -173,12 +173,41 @@ public class GearMonitor {
     }
     
     /**
-     * Get current gear.
+     * Get current gear as read off the BYD SDK, unfiltered.
+     *
+     * <p>This is the RAW sensor value. Safety-critical callers (the motion interlock —
+     * {@code DrivingSafetyGuard} / {@code VehicleCommandRouter}) MUST use this, not
+     * {@link #getEffectiveGear()} — see that method's javadoc for why.
      */
     public int getCurrentGear() {
         return currentGear;
     }
-    
+
+    /**
+     * Get gear for MODE-DECISION purposes: reports {@code GEAR_P} while
+     * {@code ChargingDetector} says the vehicle is charging, regardless of the raw sensor
+     * value. While plugged in and charging, the car is by definition stationary, and a
+     * non-P gear read off the SDK in that state is noise (BladeWatch-nmao.2) — this exists
+     * so that noise cannot start a drive recording.
+     *
+     * <p><b>Do not use this for anything safety-critical.</b> A car that is genuinely in a
+     * driving gear at a charger (should never happen, but "should never happen" is not a
+     * safety argument) must never be reported as parked to the motion interlock. Use
+     * {@link #getCurrentGear()} there.
+     */
+    public int getEffectiveGear() {
+        if (net.bladewatch.app.monitor.ChargingDetector.getInstance().isCharging()) {
+            return GEAR_P;
+        }
+        return currentGear;
+    }
+
+    /** Test seam — production code never calls this. */
+    void setCurrentGearForTest(int gear) {
+        this.currentGear = gear;
+    }
+
+
     /**
      * Get last update time.
      */

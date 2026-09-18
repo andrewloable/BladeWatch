@@ -181,4 +181,21 @@ public interface RecordingEntryOrBuilder extends
    */
   com.google.protobuf.ByteString
       getProximityBytes();
+
+  /**
+   * <pre>
+   * Set by MarkRecording while this clip was being written. Excluded from
+   * automatic storage cleanup -- see StorageManager.ensureSpace.
+   * </pre>
+   *
+   * <code>bool marked = 13 [json_name = "marked"];</code>
+   * @return The marked.
+   */
+  boolean getMarked();
+
+  /**
+   * <code>int64 marked_at_ms = 14 [json_name = "markedAtMs"];</code>
+   * @return The markedAtMs.
+   */
+  long getMarkedAtMs();
 }

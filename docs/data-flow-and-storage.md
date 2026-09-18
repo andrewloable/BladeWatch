@@ -18,6 +18,54 @@ BYD camera HAL / Android camera feed
 
 The camera pipeline uses GPU paths and native helpers to avoid expensive CPU copies where possible.
 
+**Recording Priority (BladeWatch-gyg1.3).** A recording segment's MP4 moov atom is written
+only when `HardwareEventRecorderGpu` finalizes the file at segment rotation
+(`recording.segmentMinutes` — 1/5/10 minutes, default 5) or on a clean stop. An abrupt
+daemon kill (power loss) leaves the in-progress segment as an unplayable `.tmp` file,
+later garbage-collected by `cleanupOrphanedTmpFiles` — not a shortened-but-valid clip.
+`recording.priority` (`RecordingPriority`, values `PERFORMANCE`/`RELIABILITY`) is a cap
+layered on top of `segmentMinutes`, not a replacement for it: Performance — "uses less
+CPU. If power is cut abruptly, the current recording segment (up to your Recording
+Limit) may be lost." Reliability — "uses a bit more CPU to save more often. If power is
+cut abruptly, at most about a minute may be lost" (segment length capped to 1 minute
+regardless of `segmentMinutes`). New installs default to Reliability; an existing config
+migrates once to Performance, preserving its pre-existing (uncapped) behaviour.
+
+**Telemetry overlay field selection (BladeWatch-y78o.5).** `OverlayBitmapRenderer` draws a
+burned-in bar (speed, gear, left/right turn signal, brake/accelerator pedal,
+driver/passenger seatbelt, timestamp) into continuous/drive-mode/proximity-triggered
+recordings — `GpuMosaicRecorder`'s one call site reads the CONTINUOUS type's selection from
+`telemetryOverlay.fields.continuous` (`UnifiedConfigManager`, `OverlayFieldSelectionResolver`)
+on every overlay refresh (~5 fps). A field absent from that array, or the whole `fields`
+section, or the whole config, is drawn — the default is every field, so an existing install
+with no `fields` key sees no change. Deselecting a field leaves a gap at its fixed position
+rather than reflowing the remaining fields (their layout is otherwise unconditional).
+Selecting no fields at all skips the bar entirely, no empty box drawn.
+
+**GPS latitude/longitude is a permanently separate case, not a selectable field.** It is
+drawn through its own unconditional path in the same method, gated only on
+`TelemetrySnapshot.hasGps` — burned into every recording with a GPS fix regardless of the
+field checklist, exactly as it already was before y78o.5. That issue's own scope explicitly
+excluded VIN and location from the new selection mechanism (burning either into a video
+frame defeats text search on the resulting file, which is the whole reason to be careful
+with them); y78o.5 did not add, remove, or gate the existing GPS behaviour, and
+`OverlayField`'s enumeration cannot contain `vin`/`location`/`latitude`/`longitude`/`gps`/
+`address`/`coordinates` in any case — a reflection-based test
+(`OverlayFieldSelectionTest.kt`) fails the build if it ever does.
+
+Surveillance (sentry) recording shows no overlay at all today, independent of this field
+selection — `GpuSurveillancePipeline` calls
+`recorder.setOverlayRecordingModeAllowed(false)` when surveillance mode is enabled, a
+pre-existing, unrelated gate this issue did not change. Proximity-triggered recording is
+different: `ProximityRecordingHandler` calls the SAME `startRecording(dir, "proximity")`
+continuous-recording path (`Mode.NORMAL_RECORDING`, overlay enabled) as drive-mode
+recording, so it already shows an overlay today — using the CONTINUOUS type's field
+selection, since the daemon has no separate call site to read a `proximity`-specific one
+from. The Settings UI (Recording -> Capture tab -> Overlay Fields) therefore only exposes
+the CONTINUOUS checklist; `telemetryOverlay.fields.surveillance` / `.proximity` exist in the
+config format and resolve correctly if read, for a future issue to wire a genuinely separate
+per-type call site (or, for surveillance, to enable an overlay there at all).
+
 ### Camera to Live Stream
 
 ```text
@@ -299,7 +347,43 @@ On daemon startup, `StorageManager.applyAutoStoragePriority()` resolves which ph
 
 The resolved storage type is persisted to the unified config (`recordingsStorageType`, `surveillanceStorageType`, `tripsStorageType`). The scan runs unconditionally on every boot so inserting or removing a drive between reboots is always reflected. All three storage types (recordings, surveillance, trips) are set to the same device.
 
-The SD-card watchdog (`startSdCardWatchdog`) starts after the priority scan and keeps the selected drive mounted during sentry mode.
+**SD card mount retry, not a silent downgrade to internal.** Step 1's `sm mount` can lose a
+boot-timing race — the card is physically present but `vold` hasn't finished mounting it yet by
+the time `applyAutoStoragePriority()` runs. `StorageManager.resolveSdCardAutoPriority` (extracted
+static + dependency-injected, same reasoning as `selectFilesToDelete` below) retries the mount up
+to 5 times, 2 seconds apart, before giving up. If retries are exhausted **and** the persisted
+config already had at least one category set to `SD_CARD`, the daemon does **not** downgrade that
+preference to `INTERNAL` and save it — a config rewrite here used to mean the SD card preference
+was silently lost until someone happened to reboot at a moment the race went the other way,
+sometimes needing more than one restart. Instead `isSdCardMountFailedAtBoot()` /
+`getSdCardMountErrorMessage()` are set, surfaced to the Flutter Recording Storage screen via
+`GetStorageSettings`'s `sd_card_mount_failed` / `sd_card_mount_error` proto fields as a banner
+telling the owner to restart the device with the card seated. Active directories still fall back
+to internal storage in the meantime (the existing `ensureStorageReady` behavior) so recording
+never stalls. Only a genuinely first-time auto-detect (no prior `SD_CARD` preference at all) falls
+through to step 3 as before.
+
+The SD-card watchdog (`startSdCardWatchdog`) starts after the priority scan and keeps the
+selected drive mounted continuously (not just during sentry mode — BYD/Android can unmount the SD
+card at any time). Whenever it (or the boot-time retry above) brings the card back — after being
+absent at boot or unmounted mid-session — `InternalToSdMigrator.migrate()` runs on a background,
+`Thread.MIN_PRIORITY` thread and sweeps any recordings/surveillance/proximity/trip files that were
+written to internal storage in the meantime over to the SD card. Files younger than 60 seconds are
+left alone (still possibly open for writing); a destination file that already exists is left
+untouched on both sides rather than overwritten.
+
+Internal storage and the SD card are different physical volumes, so every move falls back to a
+copy-then-delete (a same-filesystem `rename` always fails with `EXDEV` across them) — confirmed on
+a real device where a ~900-file backlog, accumulated during the exact mount-race incident this
+migrator fixes, took over an hour to fully clear. `moveCategory`/`migrateTrips` log progress every
+25 files for exactly this reason: with nothing logged until a whole category finishes, a large
+backlog looks indistinguishable from a hung thread. Low thread priority keeps a large sweep from
+contending with the active recording/camera pipeline for I/O or CPU while it runs.
+
+Recordings/surveillance/proximity need no database rewrite — `MediaCatalogManager.reconcile()`
+runs afterward and picks up the new paths by re-scanning the filesystem — but trip telemetry's
+`telemetry_file_path` column is rewritten explicitly per moved file
+(`TripDatabase.updateTelemetryFilePath`), since that path isn't discoverable any other way.
 
 Storage cleanup behavior includes:
 
@@ -308,6 +392,48 @@ Storage cleanup behavior includes:
 - Maximum limit is dynamic: the effective ceiling is the selected drive's physical free space when known. The static fallback ceiling is `2 TB` (`MAX_LIMIT_MB_INTERNAL` / `MAX_LIMIT_MB_SD_CARD`, both `2_000_000` MB). The proto exposes a separate `max_limit_mb_sd_card` field so the UI can clamp SD-card limits independently from internal.
 - Periodic cleanup checks every `30 seconds`.
 - Avoiding storage-directory switches while recording or surveillance is active.
+- **Marked recordings are never deleted by cleanup** (`MarkedRecordingsStore`,
+  BladeWatch-nmao.4). `ensureSpace`'s oldest-first deletion loop skips any file whose
+  name is in the marked-recordings store before deleting it — a bookmark set via
+  `POST /api/recordings/mark` on a clip protects it from the retention sweep
+  indefinitely, with no separate "keep forever" flag or expiry. Marks persist to
+  `/data/local/tmp/marked_recordings.json`, independent of the storage type the
+  clip itself lives on.
+
+### Previewing a storage limit change (BladeWatch-gyg1.4)
+
+Lowering the recordings/surveillance limit can delete existing clips the moment
+`SetStorageSettings` is applied — `handleStorageSettingsPost` writes the new limit and kicks
+off an async cleanup thread immediately, with no confirmation step of its own. To let the
+Settings UI warn honestly before that happens, `StorageManager.selectFilesToDelete` — the
+oldest-first, marked-recording-excluding selection algorithm `ensureSpace` itself deletes with
+— was extracted into a static, dependency-injected method shared, unmodified, by both:
+
+- `ensureSpace` (the real cleanup — deletes the files the selection returns), and
+- `previewRecordingsLimitChange(hypotheticalLimitMb)` /
+  `previewSurveillanceLimitChange(hypotheticalLimitMb)` (new — sums the selection into a
+  `CleanupImpact { fileCount, totalBytes }` and deletes nothing).
+
+Because both paths run the identical selection code, a preview and the cleanup it previews can
+never disagree about which files a given limit would remove.
+
+The preview is exposed as its own RPC, `PreviewStorageLimitChange` (`POST
+/api/settings/storage/preview`) — deliberately not a flag on `SetStorageSettings` — so a
+caller previewing a lowered limit has a structural guarantee that `SetStorageSettings` itself
+was never called: nothing was written, no cleanup ran, regardless of what the owner does next.
+Both the Flutter Recording Storage screen (`SettingsRecordingScreen`, BladeWatch-gyg1.4) and
+the Surveillance Storage tab (`SurveillanceSettingsScreen`, BladeWatch-gyg1.6) call it the
+same way — only when the proposed limit is lower than the current one (raising a limit can
+never delete anything); if the preview reports at least one file, the owner sees a
+confirmation naming the real count and size before Apply proceeds, and cancelling leaves the
+RPC path to `SetStorageSettings` completely untaken. A preview call that itself fails shows a
+distinct "impact unknown" confirmation rather than silently proceeding as if nothing would be
+deleted. The two screens' confirmation dialog code (`_applyStorage`/
+`_confirmStorageLimitChange`) is duplicated per screen rather than shared, matching this
+codebase's existing convention of one small controller/screen pair per settings surface (see
+e.g. `settings_recording_models.dart`'s own note on why `FormatDriveResult` is copied rather
+than imported) — only the `StorageLimitImpact` model and the four `settings_recording_storage_confirm_*`
+l10n strings are actually shared between them.
 
 ### Format Storage API
 

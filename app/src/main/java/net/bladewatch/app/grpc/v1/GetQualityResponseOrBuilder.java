@@ -264,4 +264,24 @@ java.lang.String defaultValue);
    * @return The recordingSegmentMinutes.
    */
   int getRecordingSegmentMinutes();
+
+  /**
+   * <pre>
+   * One of: PERFORMANCE, RELIABILITY. See RecordingPriority.
+   * </pre>
+   *
+   * <code>string recording_priority = 11 [json_name = "recordingPriority"];</code>
+   * @return The recordingPriority.
+   */
+  java.lang.String getRecordingPriority();
+  /**
+   * <pre>
+   * One of: PERFORMANCE, RELIABILITY. See RecordingPriority.
+   * </pre>
+   *
+   * <code>string recording_priority = 11 [json_name = "recordingPriority"];</code>
+   * @return The bytes for recordingPriority.
+   */
+  com.google.protobuf.ByteString
+      getRecordingPriorityBytes();
 }

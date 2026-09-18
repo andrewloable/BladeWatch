@@ -1,6 +1,7 @@
 package net.bladewatch.app.trips
 
 import android.content.Context
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -37,7 +38,8 @@ class TripDetector {
     @Volatile
     private var activeTrip: TripRecord? = null
 
-    private var listener: TripListener? = null
+    private val listeners = CopyOnWriteArrayList<TripListener>()
+    private var distanceProvider: DistanceProvider? = null
 
     /** Odometer reading at trip start (km), -1 if unavailable. */
     private var startOdometerKm = -1.0
@@ -59,19 +61,46 @@ class TripDetector {
 
     // ==================== LISTENER ====================
 
-    /** Listener interface for trip lifecycle events. */
+    /** Listener interface for trip lifecycle events. Multiple listeners may be registered. */
     interface TripListener {
         fun onTripStarted(trip: TripRecord)
         fun onTripEnded(trip: TripRecord)
         fun onTripDiscarded(trip: TripRecord, reason: String)
-
-        /** Called before finalization to get the GPS distance from the recorder. */
-        fun getRecordedDistanceKm(): Double = 0.0
     }
 
-    /** Set the callback listener for trip events. */
-    fun setListener(listener: TripListener?) {
-        this.listener = listener
+    /**
+     * Supplies the GPS-tracked distance for the just-finished trip. A query, not an event —
+     * with multiple [TripListener]s there is no sensible "which one answers", so this is a
+     * single designated slot, separate from the listener list (BladeWatch-nmao.3).
+     */
+    fun interface DistanceProvider {
+        fun getRecordedDistanceKm(): Double
+    }
+
+    /** Add a listener for trip lifecycle events. A no-op if already registered. */
+    fun addListener(listener: TripListener) {
+        listeners.addIfAbsent(listener)
+    }
+
+    /** Remove a previously-added listener. */
+    fun removeListener(listener: TripListener) {
+        listeners.remove(listener)
+    }
+
+    /** Set the single distance provider consulted when resolving a trip's distance. */
+    fun setDistanceProvider(provider: DistanceProvider?) {
+        distanceProvider = provider
+    }
+
+    /** Notify every registered listener; one throwing must not stop the others. */
+    private inline fun notifyListeners(what: String, action: (TripListener) -> Unit) {
+        for (l in listeners) {
+            try {
+                action(l)
+            } catch (e: Exception) {
+                logger.error("Listener.$what failed: " + e.message)
+            }
+        }
     }
 
     // ==================== GEAR MONITOR REGISTRATION ====================
@@ -207,13 +236,7 @@ class TripDetector {
                 "GPS=${trip.startLat},${trip.startLon})"
         )
 
-        listener?.let {
-            try {
-                it.onTripStarted(trip)
-            } catch (e: Exception) {
-                logger.error("Listener.onTripStarted failed: " + e.message)
-            }
-        }
+        notifyListeners("onTripStarted") { it.onTripStarted(trip) }
     }
 
     /**
@@ -326,13 +349,7 @@ class TripDetector {
         parkStartTime = 0
         state = State.IDLE
 
-        listener?.let {
-            try {
-                it.onTripEnded(trip)
-            } catch (e: Exception) {
-                logger.error("Listener.onTripEnded failed: " + e.message)
-            }
-        }
+        notifyListeners("onTripEnded") { it.onTripEnded(trip) }
     }
 
     /**
@@ -353,10 +370,10 @@ class TripDetector {
         }
 
         // Fallback: GPS haversine distance from the recorder.
-        val distListener = listener
-        if (trip.distanceKm <= 0 && distListener != null) {
+        val provider = distanceProvider
+        if (trip.distanceKm <= 0 && provider != null) {
             try {
-                val recordedDist = distListener.getRecordedDistanceKm()
+                val recordedDist = provider.getRecordedDistanceKm()
                 if (recordedDist > 0) {
                     trip.distanceKm = recordedDist
                     logger.info("Distance from GPS (fallback): ${"%.2f".format(recordedDist)} km")
@@ -431,13 +448,8 @@ class TripDetector {
         parkStartTime = 0
         state = State.IDLE
 
-        val l = listener
-        if (l != null && discardedTrip != null) {
-            try {
-                l.onTripDiscarded(discardedTrip, reason)
-            } catch (e: Exception) {
-                logger.error("Listener.onTripDiscarded failed: " + e.message)
-            }
+        if (discardedTrip != null) {
+            notifyListeners("onTripDiscarded") { it.onTripDiscarded(discardedTrip, reason) }
         }
     }
 

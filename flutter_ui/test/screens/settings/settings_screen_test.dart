@@ -3,6 +3,8 @@ import 'package:bladewatch_ui/platform/config_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/platform/prefs_channel.dart';
 import 'package:bladewatch_ui/platform/public_config_channel.dart';
+import 'package:bladewatch_ui/rpc/jwt_source.dart';
+import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
 import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/safe_locations_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
@@ -37,6 +39,14 @@ class _MemLocaleStore implements LocaleStore {
     _tag = tag;
     return true;
   }
+}
+
+class _FakeJwtSource implements JwtSource {
+  @override
+  Future<String?> mintJwt() async => 'fake.jwt.token';
+
+  @override
+  Future<int> stateVersion() async => 0;
 }
 
 void main() {
@@ -85,6 +95,13 @@ void main() {
         configChannel: ConfigChannel(channel),
         publicConfigChannel: PublicConfigChannel(channel),
         onOpenLanguagePicker: () => languageOpened = true,
+        jwtSource: _FakeJwtSource(),
+        // The Recording pane loads its overlay-field checklist on init (BladeWatch-y78o.5);
+        // these fakes keep that off the real network in every test here, none of which cares
+        // about the checklist's content specifically.
+        overlayFieldsGetSender: (uri, headers) async =>
+            const RawHttpResponse(200, '{"success":true,"availableFields":[],"selections":{}}'),
+        overlayFieldsPostSender: (uri, headers, body) async => const RawHttpResponse(200, '{"success":true}'),
       );
   }
 

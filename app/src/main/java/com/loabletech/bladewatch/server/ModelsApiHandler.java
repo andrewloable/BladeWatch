@@ -260,22 +260,4 @@ public class ModelsApiHandler {
         return null;
     }
 
-    private static String queryParam(String path, String key) {
-        int q = path.indexOf('?');
-        if (q < 0) return null;
-        String query = path.substring(q + 1);
-        for (String pair : query.split("&")) {
-            int eq = pair.indexOf('=');
-            if (eq < 0) continue;
-            if (key.equals(pair.substring(0, eq))) {
-                try {
-                    return java.net.URLDecoder.decode(pair.substring(eq + 1), "UTF-8");
-                } catch (Exception e) {
-                    logger.warn("Failed to URL-decode query parameter: " + e.getMessage());
-                    return null;
-                }
-            }
-        }
-        return null;
-    }
 }

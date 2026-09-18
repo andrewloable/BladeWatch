@@ -1035,6 +1035,9 @@ public class HttpServer {
         
         // Network info (WiFi SSID + IP or Mobile Data)
         JSONObject network = net.bladewatch.app.monitor.NetworkMonitor.getNetworkInfo();
+        JSONObject dataUsage = net.bladewatch.app.monitor.NetworkMonitor.getDataUsageInfo();
+        network.put("thisMonthBytes", dataUsage.optLong("thisMonthBytes", 0L));
+        network.put("lastMonthBytes", dataUsage.optLong("lastMonthBytes", 0L));
         if (UnifiedConfigManager.isLanHttpEnabled()) {
             network.put("lanHttpEnabled", true);
             network.put("httpBind", "0.0.0.0");

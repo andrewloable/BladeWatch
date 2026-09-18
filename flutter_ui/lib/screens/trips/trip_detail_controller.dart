@@ -77,7 +77,12 @@ class TripDetailController extends ChangeNotifier with DisposedSafeNotifier {
       maxSpeedKmh: s.maxSpeedKmh.toDouble(),
       socStart: s.socStart,
       socEnd: s.socEnd,
-      energyUsedKwh: 0.0, // see trips_models.dart's TripDetailData doc comment
+      // TripSummary has no direct kWh-consumed field, only energyPerKm — but energyPerKm *
+      // distanceKm IS that value, exactly (the daemon derives energyPerKm from the same
+      // energyUsedKwh internally; see TripScoreEngine's own kWh-preferred efficiency
+      // computation). Native hardcoded this to 0.0 reasoning the field "doesn't exist" and
+      // the Flutter port faithfully reproduced that — this is the fix, not a port gap.
+      energyUsedKwh: s.energyPerKm * s.distanceKm,
       efficiencySocPerKm: 0.0,
       currency: s.currency,
       tripCost: s.tripCost,

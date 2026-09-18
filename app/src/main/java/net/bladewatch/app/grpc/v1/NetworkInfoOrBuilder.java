@@ -75,4 +75,21 @@ public interface NetworkInfoOrBuilder extends
    */
   com.google.protobuf.ByteString
       getHttpModeWarningBytes();
+
+  /**
+   * <pre>
+   * BladeWatch's own network usage (BladeWatch-t1lg.1), NOT total device data use -- own-UID
+   * TrafficStats totals only. 0 until the first background sample completes.
+   * </pre>
+   *
+   * <code>int64 this_month_bytes = 7 [json_name = "thisMonthBytes"];</code>
+   * @return The thisMonthBytes.
+   */
+  long getThisMonthBytes();
+
+  /**
+   * <code>int64 last_month_bytes = 8 [json_name = "lastMonthBytes"];</code>
+   * @return The lastMonthBytes.
+   */
+  long getLastMonthBytes();
 }

@@ -20,6 +20,7 @@ import java.io.OutputStream;
  * - POST /api/stream/quality/{preset} - Set streaming quality
  * - POST /api/stream/view/{mode} - Set view mode (0=Mosaic, 1-4=Single camera)
  * - GET /api/stream/view - Get current view mode
+ * - GET /api/stream/still - Get the retained still-frame JPEG (BladeWatch-y78o.1)
  */
 public class StreamingApiHandler {
     
@@ -60,7 +61,43 @@ public class StreamingApiHandler {
             sendStreamViewMode(out);
             return true;
         }
+        if (path.equals("/api/stream/still") && method.equals("GET")) {
+            handleStillFrame(out);
+            return true;
+        }
         return false;
+    }
+
+    /**
+     * BladeWatch-y78o.1: serves the still-frame fallback JPEG. Thin — all it does is fetch the
+     * retained bytes and hand them to {@link #sendStillFrame}, which is the actually-tested
+     * part (this method itself needs a running pipeline, like every other handler in this
+     * class, so it is exercised on-device rather than in a JVM unit test).
+     */
+    private static void handleStillFrame(OutputStream out) throws Exception {
+        GpuSurveillancePipeline pipeline = CameraDaemon.getGpuPipeline();
+        byte[] jpeg = (pipeline != null) ? pipeline.getLatestStillFrame() : null;
+        sendStillFrame(out, jpeg);
+    }
+
+    /**
+     * Writes the still-frame HTTP response. A present, non-empty frame is 200 image/jpeg; an
+     * absent or empty one is an explicit 503 — never a 200 with a zero-length body, which would
+     * read to a client as a valid-but-corrupt image rather than "not ready yet".
+     */
+    static void sendStillFrame(OutputStream out, byte[] jpeg) throws Exception {
+        if (jpeg == null || jpeg.length == 0) {
+            HttpResponse.sendError(out, 503, "No still frame available yet");
+            return;
+        }
+        String header = "HTTP/1.1 200 OK\r\n" +
+                "Content-Type: image/jpeg\r\n" +
+                "Content-Length: " + jpeg.length + "\r\n" +
+                "Cache-Control: no-cache\r\n" +
+                "\r\n";
+        out.write(header.getBytes());
+        out.write(jpeg);
+        out.flush();
     }
     
     private static void handleEnableStreaming(OutputStream out) throws Exception {

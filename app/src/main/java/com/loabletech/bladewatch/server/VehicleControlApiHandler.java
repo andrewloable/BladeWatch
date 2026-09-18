@@ -21,6 +21,7 @@ import java.io.OutputStream;
  *   GET  /api/vehicle/state         — current door/window/trunk/lock state
  *   GET  /api/vehicle/ac-diagnostics — read-only AC SDK method/getter probe
  *   GET  /api/vehicle/seat-diagnostics — read-only seat hardware/capability probe
+ *   GET  /api/vehicle/adas-inventory — read-only: which declared ADAS_* ids actually resolve from the SDK (BladeWatch-2pnn.3)
  *   POST /api/vehicle/lock          — lock
  *   POST /api/vehicle/unlock        — unlock
  *   POST /api/vehicle/trunk         — open/close/stop
@@ -30,6 +31,13 @@ import java.io.OutputStream;
  *   POST /api/vehicle/climate       — climate control
  *   POST /api/vehicle/seat          — SDK_ONLY
  *   POST /api/vehicle/lights        — SDK_ONLY
+ *   POST /api/vehicle/screen        — { on: true|false } SDK_ONLY. ON bypasses the motion
+ *                                      interlock (BladeWatch-2000.3); OFF is gated normally.
+ *   POST /api/vehicle/media-volume  — { action: "set"|"step_up"|"step_down"|"mute"|"unmute",
+ *                                      percent? } (BladeWatch-2000.2). Android AudioManager
+ *                                      only -- no BYD SDK, not routed through
+ *                                      VehicleCommandRouter, no motion interlock (adjusting
+ *                                      volume is safe while driving).
  *   POST /api/vehicle/adas          — SDK_ONLY
  *   POST /api/vehicle/battery-heat  — battery preconditioning
  *   GET  /api/vehicle/charging-schedule  — { enabled, startChargeTime, endChargeTime, chargeWay }
@@ -69,6 +77,12 @@ public class VehicleControlApiHandler {
             return true;
         }
 
+        // GET /api/vehicle/adas-inventory — read-only, on demand only (BladeWatch-2pnn.3)
+        if (cleanPath.equals("/api/vehicle/adas-inventory") && method.equals("GET")) {
+            handleAdasInventory(out);
+            return true;
+        }
+
         // REMOVED in BladeWatch-c2h1 with the rest of the cloud-only surface:
         //   /api/vehicle/{lock,unlock,flash,find-car,battery-heat,charging-schedule}
         // None had a local SDK primitive, so after 61b4d7f deleted the BYD cloud they
@@ -101,6 +115,18 @@ public class VehicleControlApiHandler {
         // POST /api/vehicle/lights
         if (cleanPath.equals("/api/vehicle/lights") && method.equals("POST")) {
             handleLights(out, body);
+            return true;
+        }
+
+        // POST /api/vehicle/screen (BladeWatch-2000.3)
+        if (cleanPath.equals("/api/vehicle/screen") && method.equals("POST")) {
+            handleScreen(out, body);
+            return true;
+        }
+
+        // POST /api/vehicle/media-volume (BladeWatch-2000.2)
+        if (cleanPath.equals("/api/vehicle/media-volume") && method.equals("POST")) {
+            handleMediaVolume(out, body);
             return true;
         }
 
@@ -376,6 +402,17 @@ public class VehicleControlApiHandler {
         }
         response.put("tyres", tyres);
 
+        // BladeWatch-2000.2: real current value, not a local guess -- read straight from
+        // MediaVolumeController rather than tracked separately here.
+        try {
+            net.bladewatch.app.audio.MediaVolumeController volume =
+                net.bladewatch.app.audio.MediaVolumeController.getInstance();
+            response.put("mediaVolumePercent", volume.getVolumePercent());
+            response.put("mediaMuted", volume.isMuted());
+        } catch (Exception e) {
+            logger.warn("Failed to read media volume state: " + e.getMessage());
+        }
+
         // Engine telemetry block was removed: the BYD Auto SDK's
         // engineCoolantLevel / oilLevel / waterTempC / gearMode feeds
         // were producing unreliable values on the test PHEV
@@ -399,6 +436,21 @@ public class VehicleControlApiHandler {
         JSONObject response = new JSONObject();
         response.put("success", true);
         response.put("ac", BydDataCollector.getInstance().diagnoseAc());
+        HttpResponse.sendJson(out, response.toString());
+    }
+
+    /**
+     * Read-only: which of BladeWatch's declared ADAS_* feature ids actually resolve from the
+     * real BYD SDK on this car, versus silently falling back to a hardcoded literal
+     * (BladeWatch-2pnn.3). Never writes to the vehicle. Gated by the same JWT auth as every
+     * other /api/vehicle/* route (AuthMiddleware.checkAuth, checked centrally in HttpServer
+     * before any handler runs).
+     */
+    private static void handleAdasInventory(OutputStream out) throws Exception {
+        JSONObject response = new JSONObject();
+        response.put("success", true);
+        response.put("adas", net.bladewatch.app.byd.AdasFieldInventory.probe(
+                BydDataCollector.getInstance().getAdasDevice()));
         HttpResponse.sendJson(out, response.toString());
     }
 
@@ -533,58 +585,13 @@ public class VehicleControlApiHandler {
         try {
             JSONObject req = new JSONObject(body);
             String action = req.optString("action", "");
-            VehicleCommand cmd;
-            switch (action) {
-                // Connect/proto clients send camelCase json-names (setpointC,
-                // fanLevel, maxCooling, restoreAcOn, restoreTempC,
-                // restoreFanLevel) and OMIT default scalars (false/0). The
-                // legacy web UI sends temp/fan/enabled/restorePowerOn/
-                // restoreTemp/restoreFan. Read the proto key when present, else
-                // fall back to the legacy key. Boolean fallbacks default to
-                // false so a proto disable (omitted maxCooling=false) is honored
-                // — the legacy UI always sends the boolean explicitly, so its
-                // path never relies on the default.
-                case "power_on": {
-                    double t = req.has("setpointC") ? req.optDouble("setpointC", 22) : req.optDouble("temp", 22);
-                    cmd = new VehicleCommandRouter.ClimateOnCommand(t);
-                    break;
-                }
-                case "power_off":
-                    cmd = new VehicleCommandRouter.ClimateOffCommand();
-                    break;
-                case "set_temp": {
-                    int zone = req.optInt("zone", 1);
-                    double t = req.has("setpointC") ? req.optDouble("setpointC", 22) : req.optDouble("temp", 22);
-                    cmd = new VehicleCommandRouter.ClimateSetTempCommand(zone, t);
-                    break;
-                }
-                case "set_fan": {
-                    int fan = req.has("fanLevel") ? req.optInt("fanLevel", 3) : req.optInt("fan", 3);
-                    cmd = new VehicleCommandRouter.ClimateSetFanCommand(fan);
-                    break;
-                }
-                case "max_cooling": {
-                    boolean enabled = req.has("maxCooling")
-                            ? req.optBoolean("maxCooling", false)
-                            : req.optBoolean("enabled", false);
-                    boolean hasRestore = req.optBoolean("hasRestore", true);
-                    double restoreTemp = req.has("restoreTempC")
-                            ? req.optDouble("restoreTempC", 22) : req.optDouble("restoreTemp", 22);
-                    int restoreFan = req.has("restoreFanLevel")
-                            ? req.optInt("restoreFanLevel", 3) : req.optInt("restoreFan", 3);
-                    boolean restorePowerOn = req.has("restoreAcOn")
-                            ? req.optBoolean("restoreAcOn", false)
-                            : req.optBoolean("restorePowerOn", false);
-                    cmd = new VehicleCommandRouter.ClimateMaxCoolingCommand(
-                            enabled, hasRestore, restoreTemp, restoreFan, restorePowerOn);
-                    break;
-                }
-                default:
-                    logger.warn("Climate: unknown action '" + action + "'");
-                    response.put("success", false);
-                    response.put("error", Messages.get("errors.vehicle_unknown_action_with_action", action));
-                    HttpResponse.sendJson(out, response.toString());
-                    return;
+            VehicleCommand cmd = buildClimateCommand(action, req);
+            if (cmd == null) {
+                logger.warn("Climate: unknown action '" + action + "'");
+                response.put("success", false);
+                response.put("error", Messages.get("errors.vehicle_unknown_action_with_action", action));
+                HttpResponse.sendJson(out, response.toString());
+                return;
             }
             CommandResult r = VehicleCommandRouter.getInstance().execute(cmd);
             logger.info("Climate: action=" + action + " " + r.outcome + " path=" + r.path);
@@ -595,6 +602,67 @@ public class VehicleControlApiHandler {
             response.put("success", false);
             response.put("error", e.getMessage());
             HttpResponse.sendJson(out, response.toString());
+        }
+    }
+
+    /**
+     * Pure parser: maps a climate {@code action} + its JSON body to the {@link VehicleCommand}
+     * it should dispatch, or {@code null} for an unrecognised action (never throws on that --
+     * {@link #handleClimate} turns a null into the existing "unknown action" error response).
+     * Extracted so BladeWatch-2000.1's four new actions (and the five pre-existing ones) are
+     * testable without an HTTP round trip -- mirrors {@link #parseLightsRequest}'s shape.
+     *
+     * <p>Connect/proto clients send camelCase json-names and OMIT default scalars (false/0);
+     * the legacy web UI sends its own names and always sends booleans explicitly. Read the
+     * proto key when present, else fall back to the legacy key -- see the pre-existing cases
+     * below for the established convention this follows.
+     */
+    static VehicleCommand buildClimateCommand(String action, JSONObject req) {
+        switch (action) {
+            case "power_on": {
+                double t = req.has("setpointC") ? req.optDouble("setpointC", 22) : req.optDouble("temp", 22);
+                return new VehicleCommandRouter.ClimateOnCommand(t);
+            }
+            case "power_off":
+                return new VehicleCommandRouter.ClimateOffCommand();
+            case "set_temp": {
+                int zone = req.optInt("zone", 1);
+                double t = req.has("setpointC") ? req.optDouble("setpointC", 22) : req.optDouble("temp", 22);
+                return new VehicleCommandRouter.ClimateSetTempCommand(zone, t);
+            }
+            case "set_fan": {
+                int fan = req.has("fanLevel") ? req.optInt("fanLevel", 3) : req.optInt("fan", 3);
+                return new VehicleCommandRouter.ClimateSetFanCommand(fan);
+            }
+            case "max_cooling": {
+                boolean enabled = req.has("maxCooling")
+                        ? req.optBoolean("maxCooling", false)
+                        : req.optBoolean("enabled", false);
+                boolean hasRestore = req.optBoolean("hasRestore", true);
+                double restoreTemp = req.has("restoreTempC")
+                        ? req.optDouble("restoreTempC", 22) : req.optDouble("restoreTemp", 22);
+                int restoreFan = req.has("restoreFanLevel")
+                        ? req.optInt("restoreFanLevel", 3) : req.optInt("restoreFan", 3);
+                boolean restorePowerOn = req.has("restoreAcOn")
+                        ? req.optBoolean("restoreAcOn", false)
+                        : req.optBoolean("restorePowerOn", false);
+                return new VehicleCommandRouter.ClimateMaxCoolingCommand(
+                        enabled, hasRestore, restoreTemp, restoreFan, restorePowerOn);
+            }
+            // BladeWatch-2000.1 below. "on" is already a plain (non-optional) proto bool on
+            // SetClimateRequest, so a false request value arrives on the wire as an absent
+            // key -- optBoolean's false default already matches that, same as every other
+            // plain-bool field on this same message.
+            case "front_defrost":
+                return new VehicleCommandRouter.FrontDefrostCommand(req.optBoolean("on", false));
+            case "rear_defrost":
+                return new VehicleCommandRouter.RearDefrostCommand(req.optBoolean("on", false));
+            case "set_wind_mode":
+                return new VehicleCommandRouter.ClimateSetWindModeCommand(req.optInt("windMode", req.optInt("wind_mode", 0)));
+            case "set_cycle_mode":
+                return new VehicleCommandRouter.ClimateSetCycleModeCommand(req.optInt("cycleMode", req.optInt("cycle_mode", 0)));
+            default:
+                return null;
         }
     }
 
@@ -732,6 +800,98 @@ public class VehicleControlApiHandler {
             HttpResponse.sendJson(out, resp.toString());
         } catch (Exception e) {
             logger.warn("Light command failed: " + e.getMessage());
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            HttpResponse.sendJson(out, response.toString());
+        }
+    }
+
+    /**
+     * Screen on/off — SDK_ONLY routed (BladeWatch-2000.3).
+     * Body: { "on": true|false }. Missing 'on' is a parse error, same as lights/ADAS.
+     * OFF is gated by the normal motion interlock; ON is not (VehicleCommandRouter.
+     * ScreenOnCommand#allowedWhileUnsafe) -- giving the driver their screen back is never the
+     * unsafe direction.
+     */
+    private static void handleScreen(OutputStream out, String body) throws Exception {
+        JSONObject response = new JSONObject();
+        try {
+            JSONObject req = new JSONObject(body);
+            if (!req.has("on")) {
+                response.put("success", false);
+                response.put("error", "screen requires 'on'");
+                HttpResponse.sendJson(out, response.toString());
+                return;
+            }
+            boolean on = req.optBoolean("on", false);
+            VehicleCommandRouter.VehicleCommand cmd = on
+                    ? new VehicleCommandRouter.ScreenOnCommand()
+                    : new VehicleCommandRouter.ScreenOffCommand();
+            CommandResult r = VehicleCommandRouter.getInstance().execute(cmd);
+            logger.info("Screen: on=" + on + " " + r.outcome);
+            JSONObject resp = routedResponse(r, "screen");
+            resp.put("on", on);
+            HttpResponse.sendJson(out, resp.toString());
+        } catch (Exception e) {
+            logger.warn("Screen command failed: " + e.getMessage());
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            HttpResponse.sendJson(out, response.toString());
+        }
+    }
+
+    /**
+     * Media volume/mute (BladeWatch-2000.2). Android AudioManager only -- no BYD SDK,
+     * deliberately not routed through VehicleCommandRouter (see this issue's close reason:
+     * adjusting volume is ordinary, safe-while-driving behaviour, unlike the actuations that
+     * class gates).
+     * Body: { "action": "set"|"step_up"|"step_down"|"mute"|"unmute", "percent"?: 0-100 }.
+     */
+    private static void handleMediaVolume(OutputStream out, String body) throws Exception {
+        JSONObject response = new JSONObject();
+        try {
+            JSONObject req = new JSONObject(body);
+            String action = req.optString("action", "");
+            net.bladewatch.app.audio.MediaVolumeController volume =
+                net.bladewatch.app.audio.MediaVolumeController.getInstance();
+            switch (action) {
+                case "set":
+                    if (!req.has("percent")) {
+                        response.put("success", false);
+                        response.put("error", "media-volume 'set' requires 'percent'");
+                        HttpResponse.sendJson(out, response.toString());
+                        return;
+                    }
+                    volume.setVolumePercent(req.getInt("percent"));
+                    break;
+                case "step_up":
+                    volume.stepUp();
+                    break;
+                case "step_down":
+                    volume.stepDown();
+                    break;
+                case "mute":
+                    volume.mute();
+                    break;
+                case "unmute":
+                    volume.unmute();
+                    break;
+                default:
+                    response.put("success", false);
+                    response.put("error", "media-volume requires 'action' to be one of: "
+                        + "set, step_up, step_down, mute, unmute");
+                    HttpResponse.sendJson(out, response.toString());
+                    return;
+            }
+            logger.info("MediaVolume: action=" + action + " -> " + volume.getVolumePercent()
+                + "% muted=" + volume.isMuted());
+            response.put("success", true);
+            response.put("outcome", "success");
+            response.put("mediaVolumePercent", volume.getVolumePercent());
+            response.put("mediaMuted", volume.isMuted());
+            HttpResponse.sendJson(out, response.toString());
+        } catch (Exception e) {
+            logger.warn("Media volume command failed: " + e.getMessage());
             response.put("success", false);
             response.put("error", e.getMessage());
             HttpResponse.sendJson(out, response.toString());

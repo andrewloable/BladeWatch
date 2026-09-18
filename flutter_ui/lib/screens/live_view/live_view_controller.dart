@@ -3,10 +3,14 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../../gen/bladewatch/v1/recordings.pb.dart';
 import '../../gen/bladewatch/v1/stream.pb.dart';
+import '../../gen/bladewatch/v1/system.pb.dart';
 import '../../platform/live_view_texture_channel.dart';
 import '../../rpc/jwt_source.dart';
+import '../../rpc/services/recordings_service_client.dart';
 import '../../rpc/services/stream_service_client.dart';
+import '../../rpc/services/system_service_client.dart';
 import 'live_view_models.dart';
 
 /// Narrow abstraction over `dart:io`'s `WebSocket` — the plugin's only test
@@ -72,12 +76,16 @@ Future<LiveSocket> connectIoLiveSocket(String url) async => IoLiveSocket(await W
 class LiveViewController extends ChangeNotifier {
   LiveViewController({
     required StreamServiceClient streamService,
+    required SystemServiceClient systemService,
+    required RecordingsServiceClient recordingsService,
     required JwtSource jwtSource,
     required LiveViewTextureChannel textureChannel,
     LiveSocketConnector connect = connectIoLiveSocket,
     Duration retryDelay = const Duration(seconds: 2),
     int maxConnectAttempts = 20,
   })  : _streamService = streamService, // ignore: prefer_initializing_formals
+        _systemService = systemService, // ignore: prefer_initializing_formals
+        _recordingsService = recordingsService, // ignore: prefer_initializing_formals
         _jwtSource = jwtSource, // ignore: prefer_initializing_formals
         _textureChannel = textureChannel, // ignore: prefer_initializing_formals
         _connect = connect, // ignore: prefer_initializing_formals
@@ -85,6 +93,8 @@ class LiveViewController extends ChangeNotifier {
         _maxConnectAttempts = maxConnectAttempts; // ignore: prefer_initializing_formals
 
   final StreamServiceClient _streamService;
+  final SystemServiceClient _systemService;
+  final RecordingsServiceClient _recordingsService;
   final JwtSource _jwtSource;
   final LiveViewTextureChannel _textureChannel;
   final LiveSocketConnector _connect;
@@ -135,7 +145,45 @@ class LiveViewController extends ChangeNotifier {
         return;
       }
     }
+    unawaited(_refreshRecordingStatus());
     await _connectAndStream(myGen);
+  }
+
+  /// One-shot check, mirroring `DashboardController`'s own `GetStatus`-derived
+  /// `isRecording` (`status.recording.isNotEmpty`) -- this screen does not poll, so a
+  /// recording that starts/stops while the screen is already open is picked up the
+  /// next time it is opened, not live. Left at the default (not recording) on
+  /// failure: the safe failure mode is a hidden/disabled mark button, not one that
+  /// claims to work and then fails.
+  Future<void> _refreshRecordingStatus() async {
+    try {
+      final status = await _systemService.getStatus(GetStatusRequest());
+      if (_disposed) return;
+      _state = _state.copyWith(isRecording: status.recording.isNotEmpty);
+      notifyListeners();
+    } catch (_) {
+      // Leave isRecording at its default.
+    }
+  }
+
+  /// Bookmarks the recording currently being written. The in-flight guard below is
+  /// what actually makes a double-tap send exactly one RPC -- the screen additionally
+  /// hides the button while [MarkStatus.marking], but the controller does not rely on
+  /// that for correctness.
+  Future<void> markRecording() async {
+    if (!_state.isRecording || _state.markStatus == MarkStatus.marking) return;
+    _state = _state.copyWith(markStatus: MarkStatus.marking, clearMarkMessage: true);
+    notifyListeners();
+    String message;
+    try {
+      final resp = await _recordingsService.markRecording(MarkRecordingRequest());
+      message = resp.success ? 'Bookmarked' : (resp.reason.isNotEmpty ? resp.reason : 'Could not bookmark');
+    } catch (_) {
+      message = 'Could not bookmark';
+    }
+    if (_disposed) return;
+    _state = _state.copyWith(markStatus: MarkStatus.idle, markMessage: message);
+    notifyListeners();
   }
 
   Future<void> _connectAndStream(int myGen) async {

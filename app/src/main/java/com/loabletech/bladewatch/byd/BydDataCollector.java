@@ -26,12 +26,6 @@ public class BydDataCollector {
     // BYD SDK reports 1=unlock and 2=lock; the web API historically exposes
     // 1=locked and 2=unlocked, so collection converts at the boundary.
     private static final int LOCK_API_UNKNOWN = -1;
-    private static final int LOCK_API_LOCKED = 1;
-    private static final int LOCK_API_UNLOCKED = 2;
-    private static final int LOCK_SDK_INVALID = 0;
-    private static final int LOCK_SDK_UNLOCKED = 1;
-    private static final int LOCK_SDK_LOCKED = 2;
-
     private static BydDataCollector instance;
     private static final Object lock = new Object();
 
@@ -3908,6 +3902,20 @@ public class BydDataCollector {
         }
     }
 
+    // --- Screen backlight (BladeWatch-2000.3) ---
+
+    /**
+     * Wakes or dims the head unit panel via {@link BacklightController} — the same
+     * PowerManager/BYD-hardware-service reflection {@code AccSentryDaemon}'s stealth panel
+     * uses, shared rather than duplicated. Not vehicle telemetry, but routed through
+     * {@code VehicleCommandRouter} like every other actuation so it gets the motion interlock
+     * for free (screen OFF is gated normally; screen ON opts out via
+     * {@code VehicleCommand#allowedWhileUnsafe}).
+     */
+    public boolean setScreenBacklight(boolean on) {
+        return BacklightController.setBacklight(context, on);
+    }
+
     public boolean setAcTemperature(int zone, double tempCelsius) {
         try {
             // Temperature is sent as int (degrees × 1 for most BYD models)
@@ -4545,6 +4553,11 @@ public class BydDataCollector {
     /** Get the multimedia device (for direct access by audio test handler). */
     public Object getMultimediaDevice() {
         return multimediaDevice;
+    }
+
+    /** Get the ADAS device (for direct access by {@code AdasFieldInventory}, read-only). */
+    public Object getAdasDevice() {
+        return adasDevice;
     }
 
     /** Get exterior speaker state: 1=enabled, 0=disabled, null=unavailable or unsupported. */

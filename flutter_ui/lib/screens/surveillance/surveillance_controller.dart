@@ -14,6 +14,7 @@ import '../../rpc/services/storage_service_client.dart';
 import '../../rpc/services/surveillance_service_client.dart';
 import 'surveillance_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
+import '../settings/settings_recording_models.dart' show StorageLimitImpact;
 
 /// Ground truth: `SurveillanceSettingsController.kt`, the shared controller
 /// behind BOTH the standalone `surveillanceSettingsWebFragment` destination
@@ -201,16 +202,18 @@ class SurveillanceSettingsController extends ChangeNotifier with DisposedSafeNot
     // constructs a value) — isRunning/eventsToday default independently so
     // one endpoint failing doesn't blank out the other.
     var isRunning = false;
+    var cameraYielded = false;
     try {
       final resp = await _surveillanceService.getStatus(pb.GetSurveillanceStatusRequest());
       isRunning = resp.pipelineRunning || resp.surveillanceActive;
+      cameraYielded = resp.cameraYielded;
     } catch (_) {}
     var eventsToday = 0;
     try {
       final resp = await _recordingsService.getStats(GetStatsRequest());
       eventsToday = resp.stats.surveillanceCount;
     } catch (_) {}
-    _status = SurveillanceStatus(isRunning: isRunning, eventsToday: eventsToday);
+    _status = SurveillanceStatus(isRunning: isRunning, eventsToday: eventsToday, cameraYielded: cameraYielded);
 
     try {
       final resp = await _storageService.getStorageSettings(storage_pb.GetStorageSettingsRequest());
@@ -500,6 +503,28 @@ class SurveillanceSettingsController extends ChangeNotifier with DisposedSafeNot
       return ApplyResult(ok: resp.success, error: resp.error.isNotEmpty ? resp.error : null);
     } catch (e) {
       return ApplyResult(ok: false, error: '$e');
+    }
+  }
+
+  /// BladeWatch-gyg1.6: the Surveillance Storage tab's own version of
+  /// RecordingSettingsController.previewStorageLimitImpact (BladeWatch-gyg1.4) -- same
+  /// reasoning, same model, ported field-for-field to surveillanceLimitMb/surveillanceImpact.
+  /// Returns null when nothing needs confirming: the limit is unchanged or raised, or the
+  /// preview itself says nothing would be deleted. Performs no write -- applyChanges(storage)
+  /// is still the only path that actually changes the limit.
+  Future<StorageLimitImpact?> previewStorageLimitImpact() async {
+    final current = _storageSettings?.limitMb;
+    if (current == null || _editStorageLimitMb >= current) return null;
+    try {
+      final resp = await _storageService.previewStorageLimitChange(
+        storage_pb.PreviewStorageLimitChangeRequest(surveillanceLimitMb: Int64(_editStorageLimitMb)),
+      );
+      if (!resp.hasSurveillanceImpact()) return null;
+      final impact = resp.surveillanceImpact;
+      if (impact.fileCount == 0) return null;
+      return StorageLimitImpact.known(fileCount: impact.fileCount, totalBytes: impact.totalBytes.toInt());
+    } catch (_) {
+      return const StorageLimitImpact.unknown();
     }
   }
 }

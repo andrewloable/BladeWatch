@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bladewatch/v1/vehicle.proto.
  */
 export const file_bladewatch_v1_vehicle: GenFile = /*@__PURE__*/
-  fileDesc("ChtibGFkZXdhdGNoL3YxL3ZlaGljbGUucHJvdG8SDWJsYWRld2F0Y2gudjEiagoKRG9vclN0YXR1cxIKCgJsZhgBIAEoBRIKCgJyZhgCIAEoBRIKCgJschgDIAEoBRIKCgJychgEIAEoBRINCgV0cnVuaxgFIAEoBRIMCgRob29kGAYgASgFEg8KB292ZXJhbGwYByABKAUiYQoMV2luZG93U3RhdHVzEgoKAmxmGAEgASgFEgoKAnJmGAIgASgFEgoKAmxyGAMgASgFEgoKAnJyGAQgASgFEg8KB3N1bnJvb2YYBSABKAUSEAoIc3Vuc2hhZGUYBiABKAUiNwoSV2luZG93Q2FwYWJpbGl0aWVzEg8KB3N1bnJvb2YYASABKAgSEAoIc3Vuc2hhZGUYAiABKAgiigEKEFNlYXRDYXBhYmlsaXRpZXMSEwoLZHJpdmVyX2hlYXQYASABKAgSFgoOcGFzc2VuZ2VyX2hlYXQYAiABKAgSEwoLZHJpdmVyX2Nvb2wYAyABKAgSFgoOcGFzc2VuZ2VyX2Nvb2wYBCABKAgSHAoUZHJpdmVyX21lbW9yeV9yZWNhbGwYBSABKAgieQoTVmVoaWNsZUNhcGFiaWxpdGllcxIyCgd3aW5kb3dzGAEgASgLMiEuYmxhZGV3YXRjaC52MS5XaW5kb3dDYXBhYmlsaXRpZXMSLgoFc2VhdHMYAiABKAsyHy5ibGFkZXdhdGNoLnYxLlNlYXRDYXBhYmlsaXRpZXMiIgoLVHJ1bmtTdGF0dXMSEwoLbG9ja19zdGF0dXMYASABKAUiMAoNU3Vucm9vZlN0YXR1cxINCgVzdGF0ZRgBIAEoBRIQCghwb3NpdGlvbhgCIAEoBSJ2Cg1CYXR0ZXJ5U3RhdHVzEgsKA3NvYxgBIAEoARIQCghyYW5nZV9rbRgCIAEoBRIZChFib2R5d29ya19yYW5nZV9rbRgDIAEoBRIUCgxmdWVsX3BlcmNlbnQYBCABKAESFQoNZnVlbF9yYW5nZV9rbRgFIAEoBSJaCgtMaWdodFN0YXR1cxIQCghsb3dfYmVhbRgBIAEoCBIRCgloaWdoX2JlYW0YAiABKAgSDgoGaGF6YXJkGAMgASgIEhYKDmRheV90aW1lX2xpZ2h0GAQgASgIIikKCkFkYXNTdGF0dXMSGwoTc3BlZWRfbGltaXRfd2FybmluZxgBIAEoCCJGCgpTZWF0U3RhdHVzEgwKBGhlYXQYASADKAUSDAoEY29vbBgCIAMoBRIcChR2ZW50aWxhdGVkX3N1cHBvcnRlZBgDIAEoCCKEAQoNQ2xpbWF0ZVN0YXR1cxINCgVhY19vbhgBIAEoCBISCgpzZXRwb2ludF9jGAIgASgBEhUKDWluc2lkZV90ZW1wX2MYAyABKAESEQoJd2luZF9tb2RlGAQgASgFEhEKCWZhbl9sZXZlbBgFIAEoBRITCgttYXhfY29vbGluZxgGIAEoCCKXAQoMVHlyZVByZXNzdXJlEgwKBGtfcGEYASABKAUSCwoDcHNpGAIgASgBEhwKBnRlbXBfYxgDIAEoBVIMdGVtcGVyYXR1cmVDEhYKDnByZXNzdXJlX3N0YXRlGAQgASgFEiAKCmxlYWtfc3RhdGUYBSABKAVSDGFpckxlYWtTdGF0ZRIUCgxzaWduYWxfc3RhdGUYBiABKAUisAEKClR5cmVTdGF0dXMSJwoCZmwYASABKAsyGy5ibGFkZXdhdGNoLnYxLlR5cmVQcmVzc3VyZRInCgJmchgCIAEoCzIbLmJsYWRld2F0Y2gudjEuVHlyZVByZXNzdXJlEicKAnJsGAMgASgLMhsuYmxhZGV3YXRjaC52MS5UeXJlUHJlc3N1cmUSJwoCcnIYBCABKAsyGy5ibGFkZXdhdGNoLnYxLlR5cmVQcmVzc3VyZSIYChZHZXRWZWhpY2xlU3RhdGVSZXF1ZXN0IqwEChdHZXRWZWhpY2xlU3RhdGVSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEigKBWRvb3JzGAIgASgLMhkuYmxhZGV3YXRjaC52MS5Eb29yU3RhdHVzEiwKB3dpbmRvd3MYAyABKAsyGy5ibGFkZXdhdGNoLnYxLldpbmRvd1N0YXR1cxI4CgxjYXBhYmlsaXRpZXMYBCABKAsyIi5ibGFkZXdhdGNoLnYxLlZlaGljbGVDYXBhYmlsaXRpZXMSKQoFdHJ1bmsYBSABKAsyGi5ibGFkZXdhdGNoLnYxLlRydW5rU3RhdHVzEi0KB3N1bnJvb2YYBiABKAsyHC5ibGFkZXdhdGNoLnYxLlN1bnJvb2ZTdGF0dXMSLQoHYmF0dGVyeRgHIAEoCzIcLmJsYWRld2F0Y2gudjEuQmF0dGVyeVN0YXR1cxIqCgZsaWdodHMYCCABKAsyGi5ibGFkZXdhdGNoLnYxLkxpZ2h0U3RhdHVzEicKBGFkYXMYCSABKAsyGS5ibGFkZXdhdGNoLnYxLkFkYXNTdGF0dXMSKAoFc2VhdHMYCiABKAsyGS5ibGFkZXdhdGNoLnYxLlNlYXRTdGF0dXMSLQoHY2xpbWF0ZRgLIAEoCzIcLmJsYWRld2F0Y2gudjEuQ2xpbWF0ZVN0YXR1cxIoCgV0eXJlcxgMIAEoCzIZLmJsYWRld2F0Y2gudjEuVHlyZVN0YXR1cxINCgVlcnJvchgNIAEoCSIZChdHZXRBY0RpYWdub3N0aWNzUmVxdWVzdCI9ChhHZXRBY0RpYWdub3N0aWNzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIQCghyYXdfanNvbhgCIAEoCSIbChlHZXRTZWF0RGlhZ25vc3RpY3NSZXF1ZXN0Ij8KGkdldFNlYXREaWFnbm9zdGljc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSEAoIcmF3X2pzb24YAiABKAkiaAoWVmVoaWNsZUNvbW1hbmRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSDQoFZXJyb3IYAyABKAkSDwoHb3V0Y29tZRgEIAEoCRIMCgRwYXRoGAUgASgJIg0KC0xvY2tSZXF1ZXN0Ig8KDVVubG9ja1JlcXVlc3QiDgoMRmxhc2hSZXF1ZXN0IhAKDkZpbmRDYXJSZXF1ZXN0Ih4KDFRydW5rUmVxdWVzdBIOCgZhY3Rpb24YASABKAkibAoRTW92ZVdpbmRvd1JlcXVlc3QSFAoMd2luZG93X2luZGV4GAEgASgFEhEKCWRpcmVjdGlvbhgCIAEoCRIbCg50YXJnZXRfcGVyY2VudBgDIAEoBUgAiAEBQhEKD190YXJnZXRfcGVyY2VudCLIAQoRU2V0Q2xpbWF0ZVJlcXVlc3QSDgoGYWN0aW9uGAEgASgJEgoKAm9uGAIgASgIEhIKCnNldHBvaW50X2MYAyABKAESEQoJZmFuX2xldmVsGAQgASgFEhEKCXdpbmRfbW9kZRgFIAEoBRITCgttYXhfY29vbGluZxgGIAEoCBIVCg1yZXN0b3JlX2FjX29uGAcgASgIEhYKDnJlc3RvcmVfdGVtcF9jGAggASgBEhkKEXJlc3RvcmVfZmFuX2xldmVsGAkgASgFIp0BCg5TZXRTZWF0UmVxdWVzdBISCgpzZWF0X2luZGV4GAEgASgFEg4KBmFjdGlvbhgCIAEoCRINCgVsZXZlbBgDIAEoBRITCgtkcml2ZXJfaGVhdBgEIAEoBRITCgtkcml2ZXJfdmVudBgFIAEoBRIWCg5wYXNzZW5nZXJfaGVhdBgGIAEoBRIWCg5wYXNzZW5nZXJfdmVudBgHIAEoBSI6ChBTZXRMaWdodHNSZXF1ZXN0Eg4KBmFjdGlvbhgBIAEoCRIPCgJvbhgCIAEoCEgAiAEBQgUKA19vbiI4Cg5TZXRBZGFzUmVxdWVzdBIOCgZhY3Rpb24YASABKAkSDwoCb24YAiABKAhIAIgBAUIFCgNfb24iLwoVU2V0QmF0dGVyeUhlYXRSZXF1ZXN0Eg8KAm9uGAEgASgISACIAQFCBQoDX29uIhwKGkdldENoYXJnaW5nU2NoZWR1bGVSZXF1ZXN0IrkBChtHZXRDaGFyZ2luZ1NjaGVkdWxlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdlbmFibGVkGAIgASgIEhkKEXN0YXJ0X2NoYXJnZV90aW1lGAMgASgJEhcKD2VuZF9jaGFyZ2VfdGltZRgEIAEoCRISCgpjaGFyZ2Vfd2F5GAUgASgFEg0KBWVycm9yGAYgASgJEhEKCXN1cHBvcnRlZBgHIAEoCBIOCgZyZWFzb24YCCABKAkihgEKGlNldENoYXJnaW5nU2NoZWR1bGVSZXF1ZXN0EhkKEXN0YXJ0X2NoYXJnZV90aW1lGAEgASgJEhcKD2VuZF9jaGFyZ2VfdGltZRgCIAEoCRISCgpjaGFyZ2Vfd2F5GAMgASgFEhQKB2VuYWJsZWQYBCABKAhIAIgBAUIKCghfZW5hYmxlZCIVChNHZXRDaGFyZ2VDYXBSZXF1ZXN0IqABChRHZXRDaGFyZ2VDYXBSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhQKB3BlcmNlbnQYAiABKAVIAIgBARIUCgdlbmFibGVkGAMgASgISAGIAQESFgoJc3VwcG9ydGVkGAQgASgISAKIAQESDQoFZXJyb3IYBSABKAlCCgoIX3BlcmNlbnRCCgoIX2VuYWJsZWRCDAoKX3N1cHBvcnRlZCJIChNTZXRDaGFyZ2VDYXBSZXF1ZXN0Eg8KB3BlcmNlbnQYASABKAUSFAoHZW5hYmxlZBgCIAEoCEgAiAEBQgoKCF9lbmFibGVkIhcKFUdldEdwc0xvY2F0aW9uUmVxdWVzdCJZChZHZXRHcHNMb2NhdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSFQoNbG9jYXRpb25fanNvbhgCIAEoCRIXCg9nb29nbGVfbWFwc191cmwYAyABKAkiEQoPU3RhcnRHcHNSZXF1ZXN0IksKEFN0YXJ0R3BzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJEhUKDWxvY2F0aW9uX2pzb24YAyABKAkiEAoOU3RvcEdwc1JlcXVlc3QiMwoPU3RvcEdwc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCTLFDgoOVmVoaWNsZVNlcnZpY2USWQoIR2V0U3RhdGUSJS5ibGFkZXdhdGNoLnYxLkdldFZlaGljbGVTdGF0ZVJlcXVlc3QaJi5ibGFkZXdhdGNoLnYxLkdldFZlaGljbGVTdGF0ZVJlc3BvbnNlEmMKEEdldEFjRGlhZ25vc3RpY3MSJi5ibGFkZXdhdGNoLnYxLkdldEFjRGlhZ25vc3RpY3NSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5HZXRBY0RpYWdub3N0aWNzUmVzcG9uc2USaQoSR2V0U2VhdERpYWdub3N0aWNzEiguYmxhZGV3YXRjaC52MS5HZXRTZWF0RGlhZ25vc3RpY3NSZXF1ZXN0GikuYmxhZGV3YXRjaC52MS5HZXRTZWF0RGlhZ25vc3RpY3NSZXNwb25zZRJJCgRMb2NrEhouYmxhZGV3YXRjaC52MS5Mb2NrUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJNCgZVbmxvY2sSHC5ibGFkZXdhdGNoLnYxLlVubG9ja1JlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USSwoFVHJ1bmsSGy5ibGFkZXdhdGNoLnYxLlRydW5rUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJVCgpNb3ZlV2luZG93EiAuYmxhZGV3YXRjaC52MS5Nb3ZlV2luZG93UmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJLCgVGbGFzaBIbLmJsYWRld2F0Y2gudjEuRmxhc2hSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEk8KB0ZpbmRDYXISHS5ibGFkZXdhdGNoLnYxLkZpbmRDYXJSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlElUKClNldENsaW1hdGUSIC5ibGFkZXdhdGNoLnYxLlNldENsaW1hdGVSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEk8KB1NldFNlYXQSHS5ibGFkZXdhdGNoLnYxLlNldFNlYXRSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlElMKCVNldExpZ2h0cxIfLmJsYWRld2F0Y2gudjEuU2V0TGlnaHRzUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJPCgdTZXRBZGFzEh0uYmxhZGV3YXRjaC52MS5TZXRBZGFzUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJdCg5TZXRCYXR0ZXJ5SGVhdBIkLmJsYWRld2F0Y2gudjEuU2V0QmF0dGVyeUhlYXRSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEmwKE0dldENoYXJnaW5nU2NoZWR1bGUSKS5ibGFkZXdhdGNoLnYxLkdldENoYXJnaW5nU2NoZWR1bGVSZXF1ZXN0GiouYmxhZGV3YXRjaC52MS5HZXRDaGFyZ2luZ1NjaGVkdWxlUmVzcG9uc2USZwoTU2V0Q2hhcmdpbmdTY2hlZHVsZRIpLmJsYWRld2F0Y2gudjEuU2V0Q2hhcmdpbmdTY2hlZHVsZVJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USVwoMR2V0Q2hhcmdlQ2FwEiIuYmxhZGV3YXRjaC52MS5HZXRDaGFyZ2VDYXBSZXF1ZXN0GiMuYmxhZGV3YXRjaC52MS5HZXRDaGFyZ2VDYXBSZXNwb25zZRJZCgxTZXRDaGFyZ2VDYXASIi5ibGFkZXdhdGNoLnYxLlNldENoYXJnZUNhcFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USXQoOR2V0R3BzTG9jYXRpb24SJC5ibGFkZXdhdGNoLnYxLkdldEdwc0xvY2F0aW9uUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuR2V0R3BzTG9jYXRpb25SZXNwb25zZRJLCghTdGFydEdwcxIeLmJsYWRld2F0Y2gudjEuU3RhcnRHcHNSZXF1ZXN0Gh8uYmxhZGV3YXRjaC52MS5TdGFydEdwc1Jlc3BvbnNlEkgKB1N0b3BHcHMSHS5ibGFkZXdhdGNoLnYxLlN0b3BHcHNSZXF1ZXN0Gh4uYmxhZGV3YXRjaC52MS5TdG9wR3BzUmVzcG9uc2VCHgoabmV0LmJsYWRld2F0Y2guYXBwLmdycGMudjFQAWIGcHJvdG8z");
+  fileDesc("ChtibGFkZXdhdGNoL3YxL3ZlaGljbGUucHJvdG8SDWJsYWRld2F0Y2gudjEiagoKRG9vclN0YXR1cxIKCgJsZhgBIAEoBRIKCgJyZhgCIAEoBRIKCgJschgDIAEoBRIKCgJychgEIAEoBRINCgV0cnVuaxgFIAEoBRIMCgRob29kGAYgASgFEg8KB292ZXJhbGwYByABKAUiYQoMV2luZG93U3RhdHVzEgoKAmxmGAEgASgFEgoKAnJmGAIgASgFEgoKAmxyGAMgASgFEgoKAnJyGAQgASgFEg8KB3N1bnJvb2YYBSABKAUSEAoIc3Vuc2hhZGUYBiABKAUiNwoSV2luZG93Q2FwYWJpbGl0aWVzEg8KB3N1bnJvb2YYASABKAgSEAoIc3Vuc2hhZGUYAiABKAgiigEKEFNlYXRDYXBhYmlsaXRpZXMSEwoLZHJpdmVyX2hlYXQYASABKAgSFgoOcGFzc2VuZ2VyX2hlYXQYAiABKAgSEwoLZHJpdmVyX2Nvb2wYAyABKAgSFgoOcGFzc2VuZ2VyX2Nvb2wYBCABKAgSHAoUZHJpdmVyX21lbW9yeV9yZWNhbGwYBSABKAgieQoTVmVoaWNsZUNhcGFiaWxpdGllcxIyCgd3aW5kb3dzGAEgASgLMiEuYmxhZGV3YXRjaC52MS5XaW5kb3dDYXBhYmlsaXRpZXMSLgoFc2VhdHMYAiABKAsyHy5ibGFkZXdhdGNoLnYxLlNlYXRDYXBhYmlsaXRpZXMiIgoLVHJ1bmtTdGF0dXMSEwoLbG9ja19zdGF0dXMYASABKAUiMAoNU3Vucm9vZlN0YXR1cxINCgVzdGF0ZRgBIAEoBRIQCghwb3NpdGlvbhgCIAEoBSJ2Cg1CYXR0ZXJ5U3RhdHVzEgsKA3NvYxgBIAEoARIQCghyYW5nZV9rbRgCIAEoBRIZChFib2R5d29ya19yYW5nZV9rbRgDIAEoBRIUCgxmdWVsX3BlcmNlbnQYBCABKAESFQoNZnVlbF9yYW5nZV9rbRgFIAEoBSJaCgtMaWdodFN0YXR1cxIQCghsb3dfYmVhbRgBIAEoCBIRCgloaWdoX2JlYW0YAiABKAgSDgoGaGF6YXJkGAMgASgIEhYKDmRheV90aW1lX2xpZ2h0GAQgASgIIikKCkFkYXNTdGF0dXMSGwoTc3BlZWRfbGltaXRfd2FybmluZxgBIAEoCCJGCgpTZWF0U3RhdHVzEgwKBGhlYXQYASADKAUSDAoEY29vbBgCIAMoBRIcChR2ZW50aWxhdGVkX3N1cHBvcnRlZBgDIAEoCCKEAQoNQ2xpbWF0ZVN0YXR1cxINCgVhY19vbhgBIAEoCBISCgpzZXRwb2ludF9jGAIgASgBEhUKDWluc2lkZV90ZW1wX2MYAyABKAESEQoJd2luZF9tb2RlGAQgASgFEhEKCWZhbl9sZXZlbBgFIAEoBRITCgttYXhfY29vbGluZxgGIAEoCCKXAQoMVHlyZVByZXNzdXJlEgwKBGtfcGEYASABKAUSCwoDcHNpGAIgASgBEhwKBnRlbXBfYxgDIAEoBVIMdGVtcGVyYXR1cmVDEhYKDnByZXNzdXJlX3N0YXRlGAQgASgFEiAKCmxlYWtfc3RhdGUYBSABKAVSDGFpckxlYWtTdGF0ZRIUCgxzaWduYWxfc3RhdGUYBiABKAUisAEKClR5cmVTdGF0dXMSJwoCZmwYASABKAsyGy5ibGFkZXdhdGNoLnYxLlR5cmVQcmVzc3VyZRInCgJmchgCIAEoCzIbLmJsYWRld2F0Y2gudjEuVHlyZVByZXNzdXJlEicKAnJsGAMgASgLMhsuYmxhZGV3YXRjaC52MS5UeXJlUHJlc3N1cmUSJwoCcnIYBCABKAsyGy5ibGFkZXdhdGNoLnYxLlR5cmVQcmVzc3VyZSIYChZHZXRWZWhpY2xlU3RhdGVSZXF1ZXN0It8EChdHZXRWZWhpY2xlU3RhdGVSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEigKBWRvb3JzGAIgASgLMhkuYmxhZGV3YXRjaC52MS5Eb29yU3RhdHVzEiwKB3dpbmRvd3MYAyABKAsyGy5ibGFkZXdhdGNoLnYxLldpbmRvd1N0YXR1cxI4CgxjYXBhYmlsaXRpZXMYBCABKAsyIi5ibGFkZXdhdGNoLnYxLlZlaGljbGVDYXBhYmlsaXRpZXMSKQoFdHJ1bmsYBSABKAsyGi5ibGFkZXdhdGNoLnYxLlRydW5rU3RhdHVzEi0KB3N1bnJvb2YYBiABKAsyHC5ibGFkZXdhdGNoLnYxLlN1bnJvb2ZTdGF0dXMSLQoHYmF0dGVyeRgHIAEoCzIcLmJsYWRld2F0Y2gudjEuQmF0dGVyeVN0YXR1cxIqCgZsaWdodHMYCCABKAsyGi5ibGFkZXdhdGNoLnYxLkxpZ2h0U3RhdHVzEicKBGFkYXMYCSABKAsyGS5ibGFkZXdhdGNoLnYxLkFkYXNTdGF0dXMSKAoFc2VhdHMYCiABKAsyGS5ibGFkZXdhdGNoLnYxLlNlYXRTdGF0dXMSLQoHY2xpbWF0ZRgLIAEoCzIcLmJsYWRld2F0Y2gudjEuQ2xpbWF0ZVN0YXR1cxIoCgV0eXJlcxgMIAEoCzIZLmJsYWRld2F0Y2gudjEuVHlyZVN0YXR1cxINCgVlcnJvchgNIAEoCRIcChRtZWRpYV92b2x1bWVfcGVyY2VudBgOIAEoBRITCgttZWRpYV9tdXRlZBgPIAEoCCIZChdHZXRBY0RpYWdub3N0aWNzUmVxdWVzdCI9ChhHZXRBY0RpYWdub3N0aWNzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIQCghyYXdfanNvbhgCIAEoCSIbChlHZXRTZWF0RGlhZ25vc3RpY3NSZXF1ZXN0Ij8KGkdldFNlYXREaWFnbm9zdGljc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSEAoIcmF3X2pzb24YAiABKAkiaAoWVmVoaWNsZUNvbW1hbmRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSDQoFZXJyb3IYAyABKAkSDwoHb3V0Y29tZRgEIAEoCRIMCgRwYXRoGAUgASgJIg0KC0xvY2tSZXF1ZXN0Ig8KDVVubG9ja1JlcXVlc3QiDgoMRmxhc2hSZXF1ZXN0IhAKDkZpbmRDYXJSZXF1ZXN0Ih4KDFRydW5rUmVxdWVzdBIOCgZhY3Rpb24YASABKAkibAoRTW92ZVdpbmRvd1JlcXVlc3QSFAoMd2luZG93X2luZGV4GAEgASgFEhEKCWRpcmVjdGlvbhgCIAEoCRIbCg50YXJnZXRfcGVyY2VudBgDIAEoBUgAiAEBQhEKD190YXJnZXRfcGVyY2VudCLcAQoRU2V0Q2xpbWF0ZVJlcXVlc3QSDgoGYWN0aW9uGAEgASgJEgoKAm9uGAIgASgIEhIKCnNldHBvaW50X2MYAyABKAESEQoJZmFuX2xldmVsGAQgASgFEhEKCXdpbmRfbW9kZRgFIAEoBRITCgttYXhfY29vbGluZxgGIAEoCBIVCg1yZXN0b3JlX2FjX29uGAcgASgIEhYKDnJlc3RvcmVfdGVtcF9jGAggASgBEhkKEXJlc3RvcmVfZmFuX2xldmVsGAkgASgFEhIKCmN5Y2xlX21vZGUYCiABKAUinQEKDlNldFNlYXRSZXF1ZXN0EhIKCnNlYXRfaW5kZXgYASABKAUSDgoGYWN0aW9uGAIgASgJEg0KBWxldmVsGAMgASgFEhMKC2RyaXZlcl9oZWF0GAQgASgFEhMKC2RyaXZlcl92ZW50GAUgASgFEhYKDnBhc3Nlbmdlcl9oZWF0GAYgASgFEhYKDnBhc3Nlbmdlcl92ZW50GAcgASgFIjoKEFNldExpZ2h0c1JlcXVlc3QSDgoGYWN0aW9uGAEgASgJEg8KAm9uGAIgASgISACIAQFCBQoDX29uIioKEFNldFNjcmVlblJlcXVlc3QSDwoCb24YASABKAhIAIgBAUIFCgNfb24iSQoVU2V0TWVkaWFWb2x1bWVSZXF1ZXN0Eg4KBmFjdGlvbhgBIAEoCRIUCgdwZXJjZW50GAIgASgFSACIAQFCCgoIX3BlcmNlbnQiOAoOU2V0QWRhc1JlcXVlc3QSDgoGYWN0aW9uGAEgASgJEg8KAm9uGAIgASgISACIAQFCBQoDX29uIi8KFVNldEJhdHRlcnlIZWF0UmVxdWVzdBIPCgJvbhgBIAEoCEgAiAEBQgUKA19vbiIcChpHZXRDaGFyZ2luZ1NjaGVkdWxlUmVxdWVzdCK5AQobR2V0Q2hhcmdpbmdTY2hlZHVsZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHZW5hYmxlZBgCIAEoCBIZChFzdGFydF9jaGFyZ2VfdGltZRgDIAEoCRIXCg9lbmRfY2hhcmdlX3RpbWUYBCABKAkSEgoKY2hhcmdlX3dheRgFIAEoBRINCgVlcnJvchgGIAEoCRIRCglzdXBwb3J0ZWQYByABKAgSDgoGcmVhc29uGAggASgJIoYBChpTZXRDaGFyZ2luZ1NjaGVkdWxlUmVxdWVzdBIZChFzdGFydF9jaGFyZ2VfdGltZRgBIAEoCRIXCg9lbmRfY2hhcmdlX3RpbWUYAiABKAkSEgoKY2hhcmdlX3dheRgDIAEoBRIUCgdlbmFibGVkGAQgASgISACIAQFCCgoIX2VuYWJsZWQiFQoTR2V0Q2hhcmdlQ2FwUmVxdWVzdCKgAQoUR2V0Q2hhcmdlQ2FwUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIUCgdwZXJjZW50GAIgASgFSACIAQESFAoHZW5hYmxlZBgDIAEoCEgBiAEBEhYKCXN1cHBvcnRlZBgEIAEoCEgCiAEBEg0KBWVycm9yGAUgASgJQgoKCF9wZXJjZW50QgoKCF9lbmFibGVkQgwKCl9zdXBwb3J0ZWQiSAoTU2V0Q2hhcmdlQ2FwUmVxdWVzdBIPCgdwZXJjZW50GAEgASgFEhQKB2VuYWJsZWQYAiABKAhIAIgBAUIKCghfZW5hYmxlZCIXChVHZXRHcHNMb2NhdGlvblJlcXVlc3QiWQoWR2V0R3BzTG9jYXRpb25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWxvY2F0aW9uX2pzb24YAiABKAkSFwoPZ29vZ2xlX21hcHNfdXJsGAMgASgJIhEKD1N0YXJ0R3BzUmVxdWVzdCJLChBTdGFydEdwc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCRIVCg1sb2NhdGlvbl9qc29uGAMgASgJIhAKDlN0b3BHcHNSZXF1ZXN0IjMKD1N0b3BHcHNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAky+Q8KDlZlaGljbGVTZXJ2aWNlElkKCEdldFN0YXRlEiUuYmxhZGV3YXRjaC52MS5HZXRWZWhpY2xlU3RhdGVSZXF1ZXN0GiYuYmxhZGV3YXRjaC52MS5HZXRWZWhpY2xlU3RhdGVSZXNwb25zZRJjChBHZXRBY0RpYWdub3N0aWNzEiYuYmxhZGV3YXRjaC52MS5HZXRBY0RpYWdub3N0aWNzUmVxdWVzdBonLmJsYWRld2F0Y2gudjEuR2V0QWNEaWFnbm9zdGljc1Jlc3BvbnNlEmkKEkdldFNlYXREaWFnbm9zdGljcxIoLmJsYWRld2F0Y2gudjEuR2V0U2VhdERpYWdub3N0aWNzUmVxdWVzdBopLmJsYWRld2F0Y2gudjEuR2V0U2VhdERpYWdub3N0aWNzUmVzcG9uc2USSQoETG9jaxIaLmJsYWRld2F0Y2gudjEuTG9ja1JlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USTQoGVW5sb2NrEhwuYmxhZGV3YXRjaC52MS5VbmxvY2tSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEksKBVRydW5rEhsuYmxhZGV3YXRjaC52MS5UcnVua1JlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USVQoKTW92ZVdpbmRvdxIgLmJsYWRld2F0Y2gudjEuTW92ZVdpbmRvd1JlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USSwoFRmxhc2gSGy5ibGFkZXdhdGNoLnYxLkZsYXNoUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJPCgdGaW5kQ2FyEh0uYmxhZGV3YXRjaC52MS5GaW5kQ2FyUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJVCgpTZXRDbGltYXRlEiAuYmxhZGV3YXRjaC52MS5TZXRDbGltYXRlUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJPCgdTZXRTZWF0Eh0uYmxhZGV3YXRjaC52MS5TZXRTZWF0UmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJTCglTZXRMaWdodHMSHy5ibGFkZXdhdGNoLnYxLlNldExpZ2h0c1JlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USUwoJU2V0U2NyZWVuEh8uYmxhZGV3YXRjaC52MS5TZXRTY3JlZW5SZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEl0KDlNldE1lZGlhVm9sdW1lEiQuYmxhZGV3YXRjaC52MS5TZXRNZWRpYVZvbHVtZVJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USTwoHU2V0QWRhcxIdLmJsYWRld2F0Y2gudjEuU2V0QWRhc1JlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USXQoOU2V0QmF0dGVyeUhlYXQSJC5ibGFkZXdhdGNoLnYxLlNldEJhdHRlcnlIZWF0UmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJsChNHZXRDaGFyZ2luZ1NjaGVkdWxlEikuYmxhZGV3YXRjaC52MS5HZXRDaGFyZ2luZ1NjaGVkdWxlUmVxdWVzdBoqLmJsYWRld2F0Y2gudjEuR2V0Q2hhcmdpbmdTY2hlZHVsZVJlc3BvbnNlEmcKE1NldENoYXJnaW5nU2NoZWR1bGUSKS5ibGFkZXdhdGNoLnYxLlNldENoYXJnaW5nU2NoZWR1bGVSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlElcKDEdldENoYXJnZUNhcBIiLmJsYWRld2F0Y2gudjEuR2V0Q2hhcmdlQ2FwUmVxdWVzdBojLmJsYWRld2F0Y2gudjEuR2V0Q2hhcmdlQ2FwUmVzcG9uc2USWQoMU2V0Q2hhcmdlQ2FwEiIuYmxhZGV3YXRjaC52MS5TZXRDaGFyZ2VDYXBSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEl0KDkdldEdwc0xvY2F0aW9uEiQuYmxhZGV3YXRjaC52MS5HZXRHcHNMb2NhdGlvblJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLkdldEdwc0xvY2F0aW9uUmVzcG9uc2USSwoIU3RhcnRHcHMSHi5ibGFkZXdhdGNoLnYxLlN0YXJ0R3BzUmVxdWVzdBofLmJsYWRld2F0Y2gudjEuU3RhcnRHcHNSZXNwb25zZRJICgdTdG9wR3BzEh0uYmxhZGV3YXRjaC52MS5TdG9wR3BzUmVxdWVzdBoeLmJsYWRld2F0Y2gudjEuU3RvcEdwc1Jlc3BvbnNlQh4KGm5ldC5ibGFkZXdhdGNoLmFwcC5ncnBjLnYxUAFiBnByb3RvMw");
 
 /**
  * DoorStatus holds per-door lock state: 1=locked, 2=unlocked, -1=unknown.
@@ -546,6 +546,19 @@ export type GetVehicleStateResponse = Message<"bladewatch.v1.GetVehicleStateResp
    * @generated from field: string error = 13;
    */
   error: string;
+
+  /**
+   * BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+   * shows the real value rather than a local guess.
+   *
+   * @generated from field: int32 media_volume_percent = 14;
+   */
+  mediaVolumePercent: number;
+
+  /**
+   * @generated from field: bool media_muted = 15;
+   */
+  mediaMuted: boolean;
 };
 
 /**
@@ -825,6 +838,15 @@ export type SetClimateRequest = Message<"bladewatch.v1.SetClimateRequest"> & {
    * @generated from field: int32 restore_fan_level = 9;
    */
   restoreFanLevel: number;
+
+  /**
+   * BladeWatch-2000.1. Value meaning is not established in source (see
+   * docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+   * already is; the UI does not offer a labelled picker for either.
+   *
+   * @generated from field: int32 cycle_mode = 10;
+   */
+  cycleMode: number;
 };
 
 /**
@@ -912,6 +934,55 @@ export const SetLightsRequestSchema: GenMessage<SetLightsRequest> = /*@__PURE__*
   messageDesc(file_bladewatch_v1_vehicle, 29);
 
 /**
+ * BladeWatch-2000.3. Same explicit-presence reasoning as SetLightsRequest.on above: a
+ * screen-off request sets on=false, which a plain proto3 bool would omit from the wire.
+ *
+ * @generated from message bladewatch.v1.SetScreenRequest
+ */
+export type SetScreenRequest = Message<"bladewatch.v1.SetScreenRequest"> & {
+  /**
+   * @generated from field: optional bool on = 1;
+   */
+  on?: boolean | undefined;
+};
+
+/**
+ * Describes the message bladewatch.v1.SetScreenRequest.
+ * Use `create(SetScreenRequestSchema)` to create a new message.
+ */
+export const SetScreenRequestSchema: GenMessage<SetScreenRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_vehicle, 30);
+
+/**
+ * BladeWatch-2000.2: media volume and mute. Not routed through VehicleCommandRouter -- see
+ * docs/byd-integrations.md's "Media volume and mute" section for why.
+ *
+ * @generated from message bladewatch.v1.SetMediaVolumeRequest
+ */
+export type SetMediaVolumeRequest = Message<"bladewatch.v1.SetMediaVolumeRequest"> & {
+  /**
+   * One of: "set", "step_up", "step_down", "mute", "unmute".
+   *
+   * @generated from field: string action = 1;
+   */
+  action: string;
+
+  /**
+   * Required (0-100) when action == "set"; ignored for every other action.
+   *
+   * @generated from field: optional int32 percent = 2;
+   */
+  percent?: number | undefined;
+};
+
+/**
+ * Describes the message bladewatch.v1.SetMediaVolumeRequest.
+ * Use `create(SetMediaVolumeRequestSchema)` to create a new message.
+ */
+export const SetMediaVolumeRequestSchema: GenMessage<SetMediaVolumeRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_vehicle, 31);
+
+/**
  * @generated from message bladewatch.v1.SetAdasRequest
  */
 export type SetAdasRequest = Message<"bladewatch.v1.SetAdasRequest"> & {
@@ -935,7 +1006,7 @@ export type SetAdasRequest = Message<"bladewatch.v1.SetAdasRequest"> & {
  * Use `create(SetAdasRequestSchema)` to create a new message.
  */
 export const SetAdasRequestSchema: GenMessage<SetAdasRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 30);
+  messageDesc(file_bladewatch_v1_vehicle, 32);
 
 /**
  * @generated from message bladewatch.v1.SetBatteryHeatRequest
@@ -956,7 +1027,7 @@ export type SetBatteryHeatRequest = Message<"bladewatch.v1.SetBatteryHeatRequest
  * Use `create(SetBatteryHeatRequestSchema)` to create a new message.
  */
 export const SetBatteryHeatRequestSchema: GenMessage<SetBatteryHeatRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 31);
+  messageDesc(file_bladewatch_v1_vehicle, 33);
 
 /**
  * @generated from message bladewatch.v1.GetChargingScheduleRequest
@@ -969,7 +1040,7 @@ export type GetChargingScheduleRequest = Message<"bladewatch.v1.GetChargingSched
  * Use `create(GetChargingScheduleRequestSchema)` to create a new message.
  */
 export const GetChargingScheduleRequestSchema: GenMessage<GetChargingScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 32);
+  messageDesc(file_bladewatch_v1_vehicle, 34);
 
 /**
  * @generated from message bladewatch.v1.GetChargingScheduleResponse
@@ -1025,7 +1096,7 @@ export type GetChargingScheduleResponse = Message<"bladewatch.v1.GetChargingSche
  * Use `create(GetChargingScheduleResponseSchema)` to create a new message.
  */
 export const GetChargingScheduleResponseSchema: GenMessage<GetChargingScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 33);
+  messageDesc(file_bladewatch_v1_vehicle, 35);
 
 /**
  * @generated from message bladewatch.v1.SetChargingScheduleRequest
@@ -1062,7 +1133,7 @@ export type SetChargingScheduleRequest = Message<"bladewatch.v1.SetChargingSched
  * Use `create(SetChargingScheduleRequestSchema)` to create a new message.
  */
 export const SetChargingScheduleRequestSchema: GenMessage<SetChargingScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 34);
+  messageDesc(file_bladewatch_v1_vehicle, 36);
 
 /**
  * @generated from message bladewatch.v1.GetChargeCapRequest
@@ -1075,7 +1146,7 @@ export type GetChargeCapRequest = Message<"bladewatch.v1.GetChargeCapRequest"> &
  * Use `create(GetChargeCapRequestSchema)` to create a new message.
  */
 export const GetChargeCapRequestSchema: GenMessage<GetChargeCapRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 35);
+  messageDesc(file_bladewatch_v1_vehicle, 37);
 
 /**
  * @generated from message bladewatch.v1.GetChargeCapResponse
@@ -1116,7 +1187,7 @@ export type GetChargeCapResponse = Message<"bladewatch.v1.GetChargeCapResponse">
  * Use `create(GetChargeCapResponseSchema)` to create a new message.
  */
 export const GetChargeCapResponseSchema: GenMessage<GetChargeCapResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 36);
+  messageDesc(file_bladewatch_v1_vehicle, 38);
 
 /**
  * @generated from message bladewatch.v1.SetChargeCapRequest
@@ -1142,7 +1213,7 @@ export type SetChargeCapRequest = Message<"bladewatch.v1.SetChargeCapRequest"> &
  * Use `create(SetChargeCapRequestSchema)` to create a new message.
  */
 export const SetChargeCapRequestSchema: GenMessage<SetChargeCapRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 37);
+  messageDesc(file_bladewatch_v1_vehicle, 39);
 
 /**
  * @generated from message bladewatch.v1.GetGpsLocationRequest
@@ -1155,7 +1226,7 @@ export type GetGpsLocationRequest = Message<"bladewatch.v1.GetGpsLocationRequest
  * Use `create(GetGpsLocationRequestSchema)` to create a new message.
  */
 export const GetGpsLocationRequestSchema: GenMessage<GetGpsLocationRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 38);
+  messageDesc(file_bladewatch_v1_vehicle, 40);
 
 /**
  * @generated from message bladewatch.v1.GetGpsLocationResponse
@@ -1184,7 +1255,7 @@ export type GetGpsLocationResponse = Message<"bladewatch.v1.GetGpsLocationRespon
  * Use `create(GetGpsLocationResponseSchema)` to create a new message.
  */
 export const GetGpsLocationResponseSchema: GenMessage<GetGpsLocationResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 39);
+  messageDesc(file_bladewatch_v1_vehicle, 41);
 
 /**
  * @generated from message bladewatch.v1.StartGpsRequest
@@ -1197,7 +1268,7 @@ export type StartGpsRequest = Message<"bladewatch.v1.StartGpsRequest"> & {
  * Use `create(StartGpsRequestSchema)` to create a new message.
  */
 export const StartGpsRequestSchema: GenMessage<StartGpsRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 40);
+  messageDesc(file_bladewatch_v1_vehicle, 42);
 
 /**
  * @generated from message bladewatch.v1.StartGpsResponse
@@ -1224,7 +1295,7 @@ export type StartGpsResponse = Message<"bladewatch.v1.StartGpsResponse"> & {
  * Use `create(StartGpsResponseSchema)` to create a new message.
  */
 export const StartGpsResponseSchema: GenMessage<StartGpsResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 41);
+  messageDesc(file_bladewatch_v1_vehicle, 43);
 
 /**
  * @generated from message bladewatch.v1.StopGpsRequest
@@ -1237,7 +1308,7 @@ export type StopGpsRequest = Message<"bladewatch.v1.StopGpsRequest"> & {
  * Use `create(StopGpsRequestSchema)` to create a new message.
  */
 export const StopGpsRequestSchema: GenMessage<StopGpsRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 42);
+  messageDesc(file_bladewatch_v1_vehicle, 44);
 
 /**
  * @generated from message bladewatch.v1.StopGpsResponse
@@ -1259,7 +1330,7 @@ export type StopGpsResponse = Message<"bladewatch.v1.StopGpsResponse"> & {
  * Use `create(StopGpsResponseSchema)` to create a new message.
  */
 export const StopGpsResponseSchema: GenMessage<StopGpsResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 43);
+  messageDesc(file_bladewatch_v1_vehicle, 45);
 
 /**
  * VehicleService exposes BYD vehicle state reads and control commands.
@@ -1277,6 +1348,8 @@ export const StopGpsResponseSchema: GenMessage<StopGpsResponse> = /*@__PURE__*/
  *   SetClimate           POST /api/vehicle/climate
  *   SetSeat              POST /api/vehicle/seat
  *   SetLights            POST /api/vehicle/lights
+ *   SetScreen            POST /api/vehicle/screen
+ *   SetMediaVolume       POST /api/vehicle/media-volume
  *   SetAdas              POST /api/vehicle/adas
  *   SetBatteryHeat       POST /api/vehicle/battery-heat
  *   GetChargingSchedule  GET  /api/vehicle/charging-schedule
@@ -1384,6 +1457,22 @@ export const VehicleService: GenService<{
   setLights: {
     methodKind: "unary";
     input: typeof SetLightsRequestSchema;
+    output: typeof VehicleCommandResponseSchema;
+  },
+  /**
+   * @generated from rpc bladewatch.v1.VehicleService.SetScreen
+   */
+  setScreen: {
+    methodKind: "unary";
+    input: typeof SetScreenRequestSchema;
+    output: typeof VehicleCommandResponseSchema;
+  },
+  /**
+   * @generated from rpc bladewatch.v1.VehicleService.SetMediaVolume
+   */
+  setMediaVolume: {
+    methodKind: "unary";
+    input: typeof SetMediaVolumeRequestSchema;
     output: typeof VehicleCommandResponseSchema;
   },
   /**

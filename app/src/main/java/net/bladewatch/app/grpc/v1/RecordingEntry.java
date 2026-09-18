@@ -434,6 +434,33 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int MARKED_FIELD_NUMBER = 13;
+  private boolean marked_ = false;
+  /**
+   * <pre>
+   * Set by MarkRecording while this clip was being written. Excluded from
+   * automatic storage cleanup -- see StorageManager.ensureSpace.
+   * </pre>
+   *
+   * <code>bool marked = 13 [json_name = "marked"];</code>
+   * @return The marked.
+   */
+  @java.lang.Override
+  public boolean getMarked() {
+    return marked_;
+  }
+
+  public static final int MARKED_AT_MS_FIELD_NUMBER = 14;
+  private long markedAtMs_ = 0L;
+  /**
+   * <code>int64 marked_at_ms = 14 [json_name = "markedAtMs"];</code>
+   * @return The markedAtMs.
+   */
+  @java.lang.Override
+  public long getMarkedAtMs() {
+    return markedAtMs_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -483,6 +510,12 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(proximity_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 12, proximity_);
+    }
+    if (marked_ != false) {
+      output.writeBool(13, marked_);
+    }
+    if (markedAtMs_ != 0L) {
+      output.writeInt64(14, markedAtMs_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -534,6 +567,14 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(proximity_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(12, proximity_);
     }
+    if (marked_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(13, marked_);
+    }
+    if (markedAtMs_ != 0L) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeInt64Size(14, markedAtMs_);
+    }
     return size;
   }
   @java.lang.Override
@@ -581,6 +622,10 @@ private static final long serialVersionUID = 0L;
         .equals(other.getSeverity())) return false;
     if (!getProximity()
         .equals(other.getProximity())) return false;
+    if (getMarked()
+        != other.getMarked()) return false;
+    if (getMarkedAtMs()
+        != other.getMarkedAtMs()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -622,6 +667,12 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getSeverity().hashCode();
     hash = (37 * hash) + PROXIMITY_FIELD_NUMBER;
     hash = (53 * hash) + getProximity().hashCode();
+    hash = (37 * hash) + MARKED_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getMarked());
+    hash = (37 * hash) + MARKED_AT_MS_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        getMarkedAtMs());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -770,6 +821,8 @@ private static final long serialVersionUID = 0L;
           com.google.protobuf.LazyStringArrayList.emptyList();
       severity_ = "";
       proximity_ = "";
+      marked_ = false;
+      markedAtMs_ = 0L;
       return this;
     }
 
@@ -840,6 +893,12 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000800) != 0)) {
         result.proximity_ = proximity_;
       }
+      if (((from_bitField0_ & 0x00001000) != 0)) {
+        result.marked_ = marked_;
+      }
+      if (((from_bitField0_ & 0x00002000) != 0)) {
+        result.markedAtMs_ = markedAtMs_;
+      }
     }
 
     @java.lang.Override
@@ -908,6 +967,12 @@ private static final long serialVersionUID = 0L;
         proximity_ = other.proximity_;
         bitField0_ |= 0x00000800;
         onChanged();
+      }
+      if (other.getMarked() != false) {
+        setMarked(other.getMarked());
+      }
+      if (other.getMarkedAtMs() != 0L) {
+        setMarkedAtMs(other.getMarkedAtMs());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -995,6 +1060,16 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000800;
               break;
             } // case 98
+            case 104: {
+              marked_ = input.readBool();
+              bitField0_ |= 0x00001000;
+              break;
+            } // case 104
+            case 112: {
+              markedAtMs_ = input.readInt64();
+              bitField0_ |= 0x00002000;
+              break;
+            } // case 112
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1831,6 +1906,85 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       proximity_ = value;
       bitField0_ |= 0x00000800;
+      onChanged();
+      return this;
+    }
+
+    private boolean marked_ ;
+    /**
+     * <pre>
+     * Set by MarkRecording while this clip was being written. Excluded from
+     * automatic storage cleanup -- see StorageManager.ensureSpace.
+     * </pre>
+     *
+     * <code>bool marked = 13 [json_name = "marked"];</code>
+     * @return The marked.
+     */
+    @java.lang.Override
+    public boolean getMarked() {
+      return marked_;
+    }
+    /**
+     * <pre>
+     * Set by MarkRecording while this clip was being written. Excluded from
+     * automatic storage cleanup -- see StorageManager.ensureSpace.
+     * </pre>
+     *
+     * <code>bool marked = 13 [json_name = "marked"];</code>
+     * @param value The marked to set.
+     * @return This builder for chaining.
+     */
+    public Builder setMarked(boolean value) {
+
+      marked_ = value;
+      bitField0_ |= 0x00001000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Set by MarkRecording while this clip was being written. Excluded from
+     * automatic storage cleanup -- see StorageManager.ensureSpace.
+     * </pre>
+     *
+     * <code>bool marked = 13 [json_name = "marked"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearMarked() {
+      bitField0_ = (bitField0_ & ~0x00001000);
+      marked_ = false;
+      onChanged();
+      return this;
+    }
+
+    private long markedAtMs_ ;
+    /**
+     * <code>int64 marked_at_ms = 14 [json_name = "markedAtMs"];</code>
+     * @return The markedAtMs.
+     */
+    @java.lang.Override
+    public long getMarkedAtMs() {
+      return markedAtMs_;
+    }
+    /**
+     * <code>int64 marked_at_ms = 14 [json_name = "markedAtMs"];</code>
+     * @param value The markedAtMs to set.
+     * @return This builder for chaining.
+     */
+    public Builder setMarkedAtMs(long value) {
+
+      markedAtMs_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>int64 marked_at_ms = 14 [json_name = "markedAtMs"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearMarkedAtMs() {
+      bitField0_ = (bitField0_ & ~0x00002000);
+      markedAtMs_ = 0L;
       onChanged();
       return this;
     }

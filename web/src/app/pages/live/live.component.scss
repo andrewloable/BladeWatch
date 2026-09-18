@@ -48,6 +48,22 @@
   }
 }
 
+// BladeWatch-y78o.1: same box/fit as .stream-canvas (defined above) but img-specific rules
+// don't apply to a canvas or video element, so this stays a separate class.
+.still-frame-img {
+  object-fit: contain;
+}
+
+// A steady amber tint, not the neutral grey/red the connection banners use — this is not a
+// connection problem being reported, it is a standing reminder of what mode the view is in.
+.still-frame-banner {
+  border-color: rgba(245, 158, 11, 0.4);
+
+  .banner-text {
+    color: #f59e0b;
+  }
+}
+
 .stream-badge {
   position: absolute;
   top: 10px;

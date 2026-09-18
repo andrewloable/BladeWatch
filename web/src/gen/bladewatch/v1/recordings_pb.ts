@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bladewatch/v1/recordings.proto.
  */
 export const file_bladewatch_v1_recordings: GenFile = /*@__PURE__*/
-  fileDesc("Ch5ibGFkZXdhdGNoL3YxL3JlY29yZGluZ3MucHJvdG8SDWJsYWRld2F0Y2gudjEi5wIKDlJlY29yZGluZ0VudHJ5EhAKCGZpbGVuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSKgoEdHlwZRgDIAEoDjIcLmJsYWRld2F0Y2gudjEuUmVjb3JkaW5nVHlwZRIfCgx0aW1lc3RhbXBfbXMYBCABKANSCXRpbWVzdGFtcBIYCgpzaXplX2J5dGVzGAUgASgDUgRzaXplEhgKEGR1cmF0aW9uX3NlY29uZHMYBiABKAMSIQoKZGF0ZV9sYWJlbBgHIAEoCVINZGF0ZUZvcm1hdHRlZBIhCgp0aW1lX2xhYmVsGAggASgJUg10aW1lRm9ybWF0dGVkEhIKCmhhc19ldmVudHMYCSABKAgSGAoQZGV0ZWN0ZWRfY2xhc3NlcxgKIAMoCRIeCghzZXZlcml0eRgLIAEoCVIMcGVha1NldmVyaXR5EiAKCXByb3hpbWl0eRgMIAEoCVINcGVha1Byb3hpbWl0eSKdAQoVTGlzdFJlY29yZGluZ3NSZXF1ZXN0EgwKBHR5cGUYASABKAkSDAoEZGF0ZRgCIAEoCRIMCgRwYWdlGAMgASgFEhEKCXBhZ2Vfc2l6ZRgEIAEoBRIUCgxjbGFzc19maWx0ZXIYBSABKAkSFwoPc2V2ZXJpdHlfZmlsdGVyGAYgASgJEhgKEHByb3hpbWl0eV9maWx0ZXIYByABKAkiewoWTGlzdFJlY29yZGluZ3NSZXNwb25zZRIxCgpyZWNvcmRpbmdzGAEgAygLMh0uYmxhZGV3YXRjaC52MS5SZWNvcmRpbmdFbnRyeRINCgV0b3RhbBgCIAEoBRIMCgRwYWdlGAMgASgFEhEKCXBhZ2Vfc2l6ZRgEIAEoBSIRCg9HZXREYXRlc1JlcXVlc3QiIQoQR2V0RGF0ZXNSZXNwb25zZRINCgVkYXRlcxgBIAMoCSLsAQoOUmVjb3JkaW5nU3RhdHMSHQoVcmVjb3JkaW5nc19zaXplX2J5dGVzGAEgASgDEh8KF3N1cnZlaWxsYW5jZV9zaXplX2J5dGVzGAIgASgDEhwKFHByb3hpbWl0eV9zaXplX2J5dGVzGAMgASgDEhgKEHJlY29yZGluZ3NfY291bnQYBCABKAUSGgoSc3VydmVpbGxhbmNlX2NvdW50GAUgASgFEhcKD3Byb3hpbWl0eV9jb3VudBgGIAEoBRIYChB0b3RhbF9zaXplX2J5dGVzGAcgASgDEhMKC3RvdGFsX2NvdW50GAggASgFIhEKD0dldFN0YXRzUmVxdWVzdCJAChBHZXRTdGF0c1Jlc3BvbnNlEiwKBXN0YXRzGAEgASgLMh0uYmxhZGV3YXRjaC52MS5SZWNvcmRpbmdTdGF0cyIqChZEZWxldGVSZWNvcmRpbmdSZXF1ZXN0EhAKCGZpbGVuYW1lGAEgASgJIjkKF0RlbGV0ZVJlY29yZGluZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiJwoSQmF0Y2hEZWxldGVSZXF1ZXN0EhEKCWZpbGVuYW1lcxgBIAMoCSJXChNCYXRjaERlbGV0ZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHZGVsZXRlZBgCIAEoBRIOCgZmYWlsZWQYAyABKAUSDgoGZXJyb3JzGAQgAygJIhQKElN5bmNDYXRhbG9nUmVxdWVzdCJVChNTeW5jQ2F0YWxvZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFYWRkZWQYAiABKAUSDwoHcmVtb3ZlZBgDIAEoBRINCgVlcnJvchgEIAEoCSIsChhHZXRJbmZsaWdodFN0YXR1c1JlcXVlc3QSEAoIZmlsZW5hbWUYASABKAkiKwoZR2V0SW5mbGlnaHRTdGF0dXNSZXNwb25zZRIOCgZzdGF0dXMYASABKAkiKwoXR2V0RXZlbnRUaW1lbGluZVJlcXVlc3QSEAoIZmlsZW5hbWUYASABKAkiNwoYR2V0RXZlbnRUaW1lbGluZVJlc3BvbnNlEhUKDXRpbWVsaW5lX2pzb24YAiABKAlKBAgBEAIqgwEKDVJlY29yZGluZ1R5cGUSHgoaUkVDT1JESU5HX1RZUEVfVU5TUEVDSUZJRUQQABIZChVSRUNPUkRJTkdfVFlQRV9OT1JNQUwQARIZChVSRUNPUkRJTkdfVFlQRV9TRU5UUlkQAhIcChhSRUNPUkRJTkdfVFlQRV9QUk9YSU1JVFkQAyp1CgtDbGFzc0ZpbHRlchIcChhDTEFTU19GSUxURVJfVU5TUEVDSUZJRUQQABIXChNDTEFTU19GSUxURVJfUEVSU09OEAESGAoUQ0xBU1NfRklMVEVSX1ZFSElDTEUQAhIVChFDTEFTU19GSUxURVJfQklLRRADKoQBCg5TZXZlcml0eUZpbHRlchIfChtTRVZFUklUWV9GSUxURVJfVU5TUEVDSUZJRUQQABIYChRTRVZFUklUWV9GSUxURVJfSU5GTxABEhkKFVNFVkVSSVRZX0ZJTFRFUl9BTEVSVBACEhwKGFNFVkVSSVRZX0ZJTFRFUl9DUklUSUNBTBADKo0BCg9Qcm94aW1pdHlGaWx0ZXISIAocUFJPWElNSVRZX0ZJTFRFUl9VTlNQRUNJRklFRBAAEh8KG1BST1hJTUlUWV9GSUxURVJfVkVSWV9DTE9TRRABEhoKFlBST1hJTUlUWV9GSUxURVJfQ0xPU0UQAhIbChdQUk9YSU1JVFlfRklMVEVSX01FRElVTRADMucFChFSZWNvcmRpbmdzU2VydmljZRJdCg5MaXN0UmVjb3JkaW5ncxIkLmJsYWRld2F0Y2gudjEuTGlzdFJlY29yZGluZ3NSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5MaXN0UmVjb3JkaW5nc1Jlc3BvbnNlEksKCEdldERhdGVzEh4uYmxhZGV3YXRjaC52MS5HZXREYXRlc1JlcXVlc3QaHy5ibGFkZXdhdGNoLnYxLkdldERhdGVzUmVzcG9uc2USSwoIR2V0U3RhdHMSHi5ibGFkZXdhdGNoLnYxLkdldFN0YXRzUmVxdWVzdBofLmJsYWRld2F0Y2gudjEuR2V0U3RhdHNSZXNwb25zZRJgCg9EZWxldGVSZWNvcmRpbmcSJS5ibGFkZXdhdGNoLnYxLkRlbGV0ZVJlY29yZGluZ1JlcXVlc3QaJi5ibGFkZXdhdGNoLnYxLkRlbGV0ZVJlY29yZGluZ1Jlc3BvbnNlElQKC0JhdGNoRGVsZXRlEiEuYmxhZGV3YXRjaC52MS5CYXRjaERlbGV0ZVJlcXVlc3QaIi5ibGFkZXdhdGNoLnYxLkJhdGNoRGVsZXRlUmVzcG9uc2USVAoLU3luY0NhdGFsb2cSIS5ibGFkZXdhdGNoLnYxLlN5bmNDYXRhbG9nUmVxdWVzdBoiLmJsYWRld2F0Y2gudjEuU3luY0NhdGFsb2dSZXNwb25zZRJmChFHZXRJbmZsaWdodFN0YXR1cxInLmJsYWRld2F0Y2gudjEuR2V0SW5mbGlnaHRTdGF0dXNSZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5HZXRJbmZsaWdodFN0YXR1c1Jlc3BvbnNlEmMKEEdldEV2ZW50VGltZWxpbmUSJi5ibGFkZXdhdGNoLnYxLkdldEV2ZW50VGltZWxpbmVSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5HZXRFdmVudFRpbWVsaW5lUmVzcG9uc2VCHgoabmV0LmJsYWRld2F0Y2guYXBwLmdycGMudjFQAWIGcHJvdG8z");
+  fileDesc("Ch5ibGFkZXdhdGNoL3YxL3JlY29yZGluZ3MucHJvdG8SDWJsYWRld2F0Y2gudjEijQMKDlJlY29yZGluZ0VudHJ5EhAKCGZpbGVuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSKgoEdHlwZRgDIAEoDjIcLmJsYWRld2F0Y2gudjEuUmVjb3JkaW5nVHlwZRIfCgx0aW1lc3RhbXBfbXMYBCABKANSCXRpbWVzdGFtcBIYCgpzaXplX2J5dGVzGAUgASgDUgRzaXplEhgKEGR1cmF0aW9uX3NlY29uZHMYBiABKAMSIQoKZGF0ZV9sYWJlbBgHIAEoCVINZGF0ZUZvcm1hdHRlZBIhCgp0aW1lX2xhYmVsGAggASgJUg10aW1lRm9ybWF0dGVkEhIKCmhhc19ldmVudHMYCSABKAgSGAoQZGV0ZWN0ZWRfY2xhc3NlcxgKIAMoCRIeCghzZXZlcml0eRgLIAEoCVIMcGVha1NldmVyaXR5EiAKCXByb3hpbWl0eRgMIAEoCVINcGVha1Byb3hpbWl0eRIOCgZtYXJrZWQYDSABKAgSFAoMbWFya2VkX2F0X21zGA4gASgDIp0BChVMaXN0UmVjb3JkaW5nc1JlcXVlc3QSDAoEdHlwZRgBIAEoCRIMCgRkYXRlGAIgASgJEgwKBHBhZ2UYAyABKAUSEQoJcGFnZV9zaXplGAQgASgFEhQKDGNsYXNzX2ZpbHRlchgFIAEoCRIXCg9zZXZlcml0eV9maWx0ZXIYBiABKAkSGAoQcHJveGltaXR5X2ZpbHRlchgHIAEoCSJ7ChZMaXN0UmVjb3JkaW5nc1Jlc3BvbnNlEjEKCnJlY29yZGluZ3MYASADKAsyHS5ibGFkZXdhdGNoLnYxLlJlY29yZGluZ0VudHJ5Eg0KBXRvdGFsGAIgASgFEgwKBHBhZ2UYAyABKAUSEQoJcGFnZV9zaXplGAQgASgFIhEKD0dldERhdGVzUmVxdWVzdCIhChBHZXREYXRlc1Jlc3BvbnNlEg0KBWRhdGVzGAEgAygJIuwBCg5SZWNvcmRpbmdTdGF0cxIdChVyZWNvcmRpbmdzX3NpemVfYnl0ZXMYASABKAMSHwoXc3VydmVpbGxhbmNlX3NpemVfYnl0ZXMYAiABKAMSHAoUcHJveGltaXR5X3NpemVfYnl0ZXMYAyABKAMSGAoQcmVjb3JkaW5nc19jb3VudBgEIAEoBRIaChJzdXJ2ZWlsbGFuY2VfY291bnQYBSABKAUSFwoPcHJveGltaXR5X2NvdW50GAYgASgFEhgKEHRvdGFsX3NpemVfYnl0ZXMYByABKAMSEwoLdG90YWxfY291bnQYCCABKAUiEQoPR2V0U3RhdHNSZXF1ZXN0IkAKEEdldFN0YXRzUmVzcG9uc2USLAoFc3RhdHMYASABKAsyHS5ibGFkZXdhdGNoLnYxLlJlY29yZGluZ1N0YXRzIioKFkRlbGV0ZVJlY29yZGluZ1JlcXVlc3QSEAoIZmlsZW5hbWUYASABKAkiOQoXRGVsZXRlUmVjb3JkaW5nUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSInChJCYXRjaERlbGV0ZVJlcXVlc3QSEQoJZmlsZW5hbWVzGAEgAygJIlcKE0JhdGNoRGVsZXRlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdkZWxldGVkGAIgASgFEg4KBmZhaWxlZBgDIAEoBRIOCgZlcnJvcnMYBCADKAkiFAoSU3luY0NhdGFsb2dSZXF1ZXN0IlUKE1N5bmNDYXRhbG9nUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVhZGRlZBgCIAEoBRIPCgdyZW1vdmVkGAMgASgFEg0KBWVycm9yGAQgASgJIiwKGEdldEluZmxpZ2h0U3RhdHVzUmVxdWVzdBIQCghmaWxlbmFtZRgBIAEoCSIrChlHZXRJbmZsaWdodFN0YXR1c1Jlc3BvbnNlEg4KBnN0YXR1cxgBIAEoCSIrChdHZXRFdmVudFRpbWVsaW5lUmVxdWVzdBIQCghmaWxlbmFtZRgBIAEoCSIWChRNYXJrUmVjb3JkaW5nUmVxdWVzdCJlChVNYXJrUmVjb3JkaW5nUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIOCgZyZWFzb24YAiABKAkSEAoIZmlsZW5hbWUYAyABKAkSGQoRbWFya190aW1lc3RhbXBfbXMYBCABKAMiNwoYR2V0RXZlbnRUaW1lbGluZVJlc3BvbnNlEhUKDXRpbWVsaW5lX2pzb24YAiABKAlKBAgBEAIqgwEKDVJlY29yZGluZ1R5cGUSHgoaUkVDT1JESU5HX1RZUEVfVU5TUEVDSUZJRUQQABIZChVSRUNPUkRJTkdfVFlQRV9OT1JNQUwQARIZChVSRUNPUkRJTkdfVFlQRV9TRU5UUlkQAhIcChhSRUNPUkRJTkdfVFlQRV9QUk9YSU1JVFkQAyp1CgtDbGFzc0ZpbHRlchIcChhDTEFTU19GSUxURVJfVU5TUEVDSUZJRUQQABIXChNDTEFTU19GSUxURVJfUEVSU09OEAESGAoUQ0xBU1NfRklMVEVSX1ZFSElDTEUQAhIVChFDTEFTU19GSUxURVJfQklLRRADKoQBCg5TZXZlcml0eUZpbHRlchIfChtTRVZFUklUWV9GSUxURVJfVU5TUEVDSUZJRUQQABIYChRTRVZFUklUWV9GSUxURVJfSU5GTxABEhkKFVNFVkVSSVRZX0ZJTFRFUl9BTEVSVBACEhwKGFNFVkVSSVRZX0ZJTFRFUl9DUklUSUNBTBADKo0BCg9Qcm94aW1pdHlGaWx0ZXISIAocUFJPWElNSVRZX0ZJTFRFUl9VTlNQRUNJRklFRBAAEh8KG1BST1hJTUlUWV9GSUxURVJfVkVSWV9DTE9TRRABEhoKFlBST1hJTUlUWV9GSUxURVJfQ0xPU0UQAhIbChdQUk9YSU1JVFlfRklMVEVSX01FRElVTRADMsMGChFSZWNvcmRpbmdzU2VydmljZRJdCg5MaXN0UmVjb3JkaW5ncxIkLmJsYWRld2F0Y2gudjEuTGlzdFJlY29yZGluZ3NSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5MaXN0UmVjb3JkaW5nc1Jlc3BvbnNlEksKCEdldERhdGVzEh4uYmxhZGV3YXRjaC52MS5HZXREYXRlc1JlcXVlc3QaHy5ibGFkZXdhdGNoLnYxLkdldERhdGVzUmVzcG9uc2USSwoIR2V0U3RhdHMSHi5ibGFkZXdhdGNoLnYxLkdldFN0YXRzUmVxdWVzdBofLmJsYWRld2F0Y2gudjEuR2V0U3RhdHNSZXNwb25zZRJgCg9EZWxldGVSZWNvcmRpbmcSJS5ibGFkZXdhdGNoLnYxLkRlbGV0ZVJlY29yZGluZ1JlcXVlc3QaJi5ibGFkZXdhdGNoLnYxLkRlbGV0ZVJlY29yZGluZ1Jlc3BvbnNlElQKC0JhdGNoRGVsZXRlEiEuYmxhZGV3YXRjaC52MS5CYXRjaERlbGV0ZVJlcXVlc3QaIi5ibGFkZXdhdGNoLnYxLkJhdGNoRGVsZXRlUmVzcG9uc2USVAoLU3luY0NhdGFsb2cSIS5ibGFkZXdhdGNoLnYxLlN5bmNDYXRhbG9nUmVxdWVzdBoiLmJsYWRld2F0Y2gudjEuU3luY0NhdGFsb2dSZXNwb25zZRJmChFHZXRJbmZsaWdodFN0YXR1cxInLmJsYWRld2F0Y2gudjEuR2V0SW5mbGlnaHRTdGF0dXNSZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5HZXRJbmZsaWdodFN0YXR1c1Jlc3BvbnNlEmMKEEdldEV2ZW50VGltZWxpbmUSJi5ibGFkZXdhdGNoLnYxLkdldEV2ZW50VGltZWxpbmVSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5HZXRFdmVudFRpbWVsaW5lUmVzcG9uc2USWgoNTWFya1JlY29yZGluZxIjLmJsYWRld2F0Y2gudjEuTWFya1JlY29yZGluZ1JlcXVlc3QaJC5ibGFkZXdhdGNoLnYxLk1hcmtSZWNvcmRpbmdSZXNwb25zZUIeChpuZXQuYmxhZGV3YXRjaC5hcHAuZ3JwYy52MVABYgZwcm90bzM");
 
 /**
  * RecordingEntry represents one video clip in the catalog.
@@ -87,6 +87,19 @@ export type RecordingEntry = Message<"bladewatch.v1.RecordingEntry"> & {
    * @generated from field: string proximity = 12 [json_name = "peakProximity"];
    */
   proximity: string;
+
+  /**
+   * Set by MarkRecording while this clip was being written. Excluded from
+   * automatic storage cleanup -- see StorageManager.ensureSpace.
+   *
+   * @generated from field: bool marked = 13;
+   */
+  marked: boolean;
+
+  /**
+   * @generated from field: int64 marked_at_ms = 14;
+   */
+  markedAtMs: bigint;
 };
 
 /**
@@ -486,6 +499,53 @@ export const GetEventTimelineRequestSchema: GenMessage<GetEventTimelineRequest> 
   messageDesc(file_bladewatch_v1_recordings, 16);
 
 /**
+ * @generated from message bladewatch.v1.MarkRecordingRequest
+ */
+export type MarkRecordingRequest = Message<"bladewatch.v1.MarkRecordingRequest"> & {
+};
+
+/**
+ * Describes the message bladewatch.v1.MarkRecordingRequest.
+ * Use `create(MarkRecordingRequestSchema)` to create a new message.
+ */
+export const MarkRecordingRequestSchema: GenMessage<MarkRecordingRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_recordings, 17);
+
+/**
+ * @generated from message bladewatch.v1.MarkRecordingResponse
+ */
+export type MarkRecordingResponse = Message<"bladewatch.v1.MarkRecordingResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * Populated only when success is false, e.g. "not_recording".
+   *
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+
+  /**
+   * @generated from field: string filename = 3;
+   */
+  filename: string;
+
+  /**
+   * @generated from field: int64 mark_timestamp_ms = 4;
+   */
+  markTimestampMs: bigint;
+};
+
+/**
+ * Describes the message bladewatch.v1.MarkRecordingResponse.
+ * Use `create(MarkRecordingResponseSchema)` to create a new message.
+ */
+export const MarkRecordingResponseSchema: GenMessage<MarkRecordingResponse> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_recordings, 18);
+
+/**
  * GetEventTimelineResponse carries the event-timeline sidecar verbatim as a JSON string blob.
  * The sidecar (EventTimelineCollector v3) is a rich object {version,durationMs,events[],actors[],
  * stats{},heroThumbnail} that does not map to flat fields; clients parse timeline_json themselves.
@@ -505,7 +565,7 @@ export type GetEventTimelineResponse = Message<"bladewatch.v1.GetEventTimelineRe
  * Use `create(GetEventTimelineResponseSchema)` to create a new message.
  */
 export const GetEventTimelineResponseSchema: GenMessage<GetEventTimelineResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_recordings, 17);
+  messageDesc(file_bladewatch_v1_recordings, 19);
 
 /**
  * RecordingType filters which recording category to list.
@@ -651,6 +711,7 @@ export const ProximityFilterSchema: GenEnum<ProximityFilter> = /*@__PURE__*/
  *   SyncCatalog         POST   /api/recordings/sync
  *   GetInflightStatus   GET    /api/recordings/inflight/{filename}
  *   GetEventTimeline    GET    /api/events/{filename}
+ *   MarkRecording       POST   /api/recordings/mark
  *
  * @generated from service bladewatch.v1.RecordingsService
  */
@@ -718,6 +779,18 @@ export const RecordingsService: GenService<{
     methodKind: "unary";
     input: typeof GetEventTimelineRequestSchema;
     output: typeof GetEventTimelineResponseSchema;
+  },
+  /**
+   * Bookmarks the recording currently being written (metadata only -- no new
+   * file, no split). No request fields: the server resolves "current" itself,
+   * since the caller (a Live View button) has no filename to give it.
+   *
+   * @generated from rpc bladewatch.v1.RecordingsService.MarkRecording
+   */
+  markRecording: {
+    methodKind: "unary";
+    input: typeof MarkRecordingRequestSchema;
+    output: typeof MarkRecordingResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_bladewatch_v1_recordings, 0);

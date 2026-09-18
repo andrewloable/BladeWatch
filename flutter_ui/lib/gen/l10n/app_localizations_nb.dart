@@ -1316,6 +1316,11 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 denne måneden';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'Tilkoblet';
 
   @override
@@ -1507,10 +1512,92 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'Opptaksprioritet';
+
+  @override
+  String get settings_recording_priority_description =>
+      'Hvordan opptak håndterer et plutselig strømbrudd.';
+
+  @override
+  String get settings_recording_priority_performance_label => 'Ytelse';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Bruker mindre CPU. Hvis strømmen brytes brått, kan det gjeldende opptakssegmentet (opptil opptaksgrensen) gå tapt.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Pålitelighet';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Bruker litt mer CPU for å lagre oftere. Hvis strømmen brytes brått, går maks omtrent ett minutt tapt.';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'Overleggsfelt';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Velg hva som vises i det innbrente overlegget på kontinuerlige opptak.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Hastighet';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Gir';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'Venstre blinklys';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'Høyre blinklys';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Brempedal';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => 'Gasspedal';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Førerens sikkerhetsbelte';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Passasjerens sikkerhetsbelte';
+
+  @override
+  String get settings_recording_overlay_field_timestamp =>
+      'Dato og klokkeslett';
+
+  @override
   String get settings_recording_quality_title => 'Opptakskvalitet';
 
   @override
   String get settings_recording_storage_title => 'Opptakslagring';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'Slette opptak?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Dette vil slette $arg1 opptak ($arg2).',
+      one: 'Dette vil slette $arg1 opptak ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Ukjent konsekvens';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Kunne ikke fastslå hva denne endringen ville slette. Å senke grensen kan fjerne eksisterende opptak.';
 
   @override
   String get settings_recording_storage_location_label => 'Lagringsplassering';
@@ -1523,6 +1610,10 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD-kort (utilgj.)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'SD-kortet ble ikke montert';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1935,6 +2026,27 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'Maks kjøling: AV';
+
+  @override
+  String get vehicle_screen_on => 'Skjerm: PÅ';
+
+  @override
+  String get vehicle_screen_off => 'Skjerm: AV';
+
+  @override
+  String get vehicle_media_volume_label => 'Medievolum';
+
+  @override
+  String get vehicle_media_mute => 'Demp';
+
+  @override
+  String get vehicle_media_muted => 'Dempet';
+
+  @override
+  String get vehicle_front_defrost => 'Frontrute-defrost';
+
+  @override
+  String get vehicle_rear_defrost => 'Bakrute-defrost';
 
   @override
   String get vehicle_temp_label => 'Temperatur';
@@ -2781,4 +2893,12 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'Greit';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'Vaktmodus bruker ekstra strøm fra 12V-batteriet mens den er aktivert.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'En annen app bruker kameraet akkurat nå.';
 }

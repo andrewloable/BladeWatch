@@ -14,15 +14,16 @@ import com.connectrpc.StreamType
  *  StorageService manages recording storage limits and external drive cleanup.
  *
  *  HTTP mapping (QualitySettingsApiHandler + ExternalStorageApiHandler + FormatStorageApiHandler):
- *    GetStorageSettings      GET  /api/settings/storage
- *    SetStorageSettings      POST /api/settings/storage
- *    GetExternalStorage      GET  /api/storage/external
- *    SetExternalConfig       POST /api/storage/external/config
- *    TriggerCleanup          POST /api/storage/external/cleanup
- *    PreviewCleanup          GET  /api/storage/external/preview
- *    RefreshExternalStorage  POST /api/storage/external/refresh
- *    ListFormatVolumes       GET  /api/storage/format
- *    FormatVolume            POST /api/storage/format
+ *    GetStorageSettings         GET  /api/settings/storage
+ *    SetStorageSettings         POST /api/settings/storage
+ *    PreviewStorageLimitChange  POST /api/settings/storage/preview
+ *    GetExternalStorage         GET  /api/storage/external
+ *    SetExternalConfig          POST /api/storage/external/config
+ *    TriggerCleanup             POST /api/storage/external/cleanup
+ *    PreviewCleanup             GET  /api/storage/external/preview
+ *    RefreshExternalStorage     POST /api/storage/external/refresh
+ *    ListFormatVolumes          GET  /api/storage/format
+ *    FormatVolume               POST /api/storage/format
  */
 public class StorageServiceClient(
   private val client: ProtocolClientInterface,
@@ -46,6 +47,24 @@ public class StorageServiceClient(
     "bladewatch.v1.StorageService/SetStorageSettings",
       net.bladewatch.app.grpc.v1.SetStorageSettingsRequest::class,
       net.bladewatch.app.grpc.v1.SetStorageSettingsResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  /**
+   *  BladeWatch-gyg1.4: a separate, read-only RPC -- deliberately not a "dry run" flag on
+   *  SetStorageSettings -- so a client can preview a lowered limit's real impact with a
+   *  guarantee that SetStorageSettings itself was never called, and therefore nothing was
+   *  written and no cleanup ran.
+   */
+  override suspend fun previewStorageLimitChange(request: PreviewStorageLimitChangeRequest, headers: Headers): ResponseMessage<PreviewStorageLimitChangeResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.StorageService/PreviewStorageLimitChange",
+      net.bladewatch.app.grpc.v1.PreviewStorageLimitChangeRequest::class,
+      net.bladewatch.app.grpc.v1.PreviewStorageLimitChangeResponse::class,
       StreamType.UNARY,
     ),
   )

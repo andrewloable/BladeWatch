@@ -193,6 +193,15 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             const SizedBox(width: 6),
             Flexible(child: Text(l10n.diagnostics_network_tunnel_label(tunnelLabel), style: theme.textTheme.labelSmall, overflow: TextOverflow.ellipsis)),
           ]),
+          if (c.thisMonthDataUsageFormatted.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              l10n.diagnostics_network_data_usage_line(c.thisMonthDataUsageFormatted),
+              style: theme.textTheme.labelSmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );

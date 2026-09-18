@@ -1557,7 +1557,8 @@
     "badgeLive": "● EN VIVO",
     "badgeConnecting": "○ Conectando…",
     "notConnected": "Transmisión de cámara no conectada",
-    "decoderUnsupported": "Este navegador no puede reproducir la transmisión en vivo. Necesita un navegador compatible con la decodificación de vídeo, como Chrome o Edge. Tor Browser y Firefox ESR aún no lo admiten."
+    "decoderUnsupported": "Este navegador no puede reproducir la transmisión en vivo. Necesita un navegador compatible con la decodificación de vídeo, como Chrome o Edge. Tor Browser y Firefox ESR aún no lo admiten.",
+    "stillFrameLabel": "Imagen fija — no es video en vivo"
   },
   "location": {
     "themeAuto": "Auto",
