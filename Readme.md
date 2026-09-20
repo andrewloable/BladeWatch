@@ -47,6 +47,95 @@ adb install bladewatch-ui-*-arm64-v8a.apk
 > Press and hold the **Volume Down** button for 5 seconds. Wait for the system to fully restart.
 > This step is necessary to finalize the installation.
 
+## Install with an AI Agent
+
+Rather do none of the above by hand? Paste the block below into an agentic coding assistant
+(Claude Code, Codex, Gemini CLI, Cursor, …) running on a computer that is on the same Wi-Fi
+network as the car. It fetches and signs both APKs, installs them over ADB, and if the car is
+not reachable it tells you how to switch ADB on in the head unit.
+
+```text
+Install BladeWatch (https://github.com/andrewloable/BladeWatch) on my BYD DiLink v3 head unit
+over ADB. Run the commands yourself, one step at a time, and stop to ask me only where a step
+says so.
+
+Facts:
+- BladeWatch is TWO APKs and both must be installed: the service host (package
+  net.bladewatch.app, file bladewatch-service-host-*.apk) and the in-car UI (package
+  net.bladewatch.flutter, file bladewatch-ui-*.apk). They share one Android UID, so both MUST
+  be signed with the same key.
+- The head unit is reached with ADB over Wi-Fi: adb connect <car-ip>:5555. It is arm64-v8a,
+  Android 10 (API 29), reports manufacturer "BYD AUTO", and is not rooted (it does not need
+  to be). Always pass -s <car-ip>:5555 to every adb command.
+
+1. Tools. Make sure adb (Android platform-tools), apksigner (Android build-tools) and keytool
+   (a JDK) are on PATH; install whatever is missing with this OS's package manager (macOS:
+   brew install --cask android-platform-tools android-commandlinetools, then sdkmanager
+   "build-tools;35.0.0"; Debian/Ubuntu: apt install adb apksigner default-jdk-headless).
+
+2. APKs. If two already-signed BladeWatch APKs are in the current directory, use them.
+   Otherwise download the two *-unsigned.apk assets of the latest release from
+   https://github.com/andrewloable/BladeWatch/releases/latest (gh release download
+   --repo andrewloable/BladeWatch --pattern '*.apk', or the GitHub releases API), then sign
+   BOTH with the same key:
+   - Ask me whether I have a keystore. If yes, ask for its path, alias and password. If not,
+     create one: keytool -genkeypair -keystore bladewatch.jks -alias bladewatch -keyalg RSA
+     -keysize 2048 -validity 10000 -dname "CN=BladeWatch" -storepass <password you choose>,
+     then tell me to back that file up: every future update must be signed with this same
+     key, or both packages have to be uninstalled first.
+   - For each file: apksigner sign --ks <keystore> --ks-key-alias <alias>
+     --ks-pass pass:<password> --out <name>.apk <name>-unsigned.apk
+   - Then apksigner verify --print-certs on both signed APKs and confirm the SHA-256
+     certificate digests are identical. Stop if they differ.
+
+3. Connect. Run adb devices. If the car is already listed, use it. Otherwise ask me for the
+   car's IP address and run adb connect <car-ip>:5555. If that fails (including "no route to
+   host"), run adb kill-server && adb start-server and try once more: the local adb server
+   gets stuck like this while the car is up. If it still fails, show me these instructions
+   and wait for me:
+
+   How to switch ADB on in the car:
+   a) Put the car and this computer on the same Wi-Fi network, e.g. connect both to a phone
+      hotspot.
+   b) On the head unit open Settings, find Developer options (usually by tapping the version
+      number under About several times) and switch on USB debugging.
+   c) That alone is NOT enough on BYD: also switch on the head unit's own Wireless ADB /
+      network debugging setting. A BYD system update can silently turn it back off.
+   d) Read the car's IP address in the head unit's Wi-Fi settings and tell me.
+   e) When the computer connects, the car's screen asks "Allow USB debugging?": tick
+      "Always allow" and tap OK.
+
+   Once connected, confirm it really is the car before installing anything:
+   getprop ro.product.manufacturer must contain BYD, getprop ro.product.cpu.abi must be
+   arm64-v8a and getprop ro.build.version.sdk must be 29 or higher. If not, stop and ask me.
+
+4. Install. adb install -r the service host APK first, then the UI APK. If an install is
+   rejected with INSTALL_FAILED_UPDATE_INCOMPATIBLE, INSTALL_FAILED_SHARED_USER_INCOMPATIBLE
+   or INSTALL_FAILED_UID_CHANGED, an older BladeWatch signed with a different key is on the
+   car: tell me, and only with my OK run adb uninstall net.bladewatch.flutter and
+   adb uninstall net.bladewatch.app, ask me to hard-reboot the head unit (hold Volume Down
+   for 5 seconds) so its old background daemons die, reconnect, and install again. Never
+   uninstall anything without asking, and never touch /data/local/tmp/tor (it holds the
+   car's permanent Tor address).
+
+5. Verify. adb shell 'dumpsys package net.bladewatch.app | grep userId' and the same for
+   net.bladewatch.flutter must print the same userId; if they differ the APKs were signed with
+   different keys, go back to step 2. Then launch the UI:
+   adb shell am start -n net.bladewatch.flutter/net.bladewatch.bladewatch_ui.MainActivity
+
+6. Tell me what to do on the car's screen, in this order:
+   - Accept the "Allow USB debugging?" prompt that appears on first launch. The app uses its
+     own ADB key to start its background daemons; nothing works until this is accepted.
+   - In the head unit's BYD Auto-Start settings, allow BOTH "BladeWatch" and
+     "BladeWatch Service" to start automatically, otherwise nothing runs when the car is
+     switched on. BYD resets this on every install, so it must be redone after each update.
+   - Hard-reboot the head unit: hold Volume Down for 5 seconds and wait for it to restart.
+
+Report each step's result as you go. Do not make mistakes: read every command's output before
+moving on, never guess an IP address or a package name, and if anything is ambiguous, stop
+and ask me instead of guessing.
+```
+
 ---
 
 ## Features
