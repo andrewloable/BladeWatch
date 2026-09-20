@@ -115,7 +115,13 @@ void main() {
     await tester.pumpWidget(Container());
   });
 
-  testWidgets('channel error: shows the error message instead of crashing', (tester) async {
+  /// BladeWatch-t7js: this used to assert the raw exception text was rendered. It was —
+  /// on the head unit the header read "PlatformChannelError(daemonNotUp): connect to
+  /// 127.0.0.1:19876 failed ... ECONNREFUSED" in red, directly under "Getting your dashcam
+  /// ready". daemonNotUp is the expected answer to every poll until CameraDaemon binds
+  /// 19876, roughly the first 45s after boot, so the screen was calling its own normal
+  /// startup an error. It must now show ordinary progress.
+  testWidgets('channel error: shows normal progress, never raw exception text', (tester) async {
     fakeChannel.stubError(
       'daemon',
       'processStatus',
@@ -126,7 +132,10 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
-    expect(find.textContaining('daemon not up'), findsOneWidget);
+    expect(find.text('Getting things ready…'), findsOneWidget);
+    for (final leak in ['daemon not up', 'PlatformChannelError', 'ECONNREFUSED', '19876']) {
+      expect(find.textContaining(leak), findsNothing, reason: 'leaked "$leak" to the driver');
+    }
 
     await tester.pumpWidget(Container());
   });

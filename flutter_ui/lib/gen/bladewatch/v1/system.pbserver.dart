@@ -51,6 +51,12 @@ abstract class SystemServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.SetSelectedModelRequest request);
   $async.Future<$0.GetModelsManifestResponse> getModelsManifest(
       $pb.ServerContext ctx, $0.GetModelsManifestRequest request);
+  $async.Future<$0.PerformanceConnectResponse> performanceConnect(
+      $pb.ServerContext ctx, $0.PerformanceConnectRequest request);
+  $async.Future<$0.PerformanceHeartbeatResponse> performanceHeartbeat(
+      $pb.ServerContext ctx, $0.PerformanceHeartbeatRequest request);
+  $async.Future<$0.PerformanceDisconnectResponse> performanceDisconnect(
+      $pb.ServerContext ctx, $0.PerformanceDisconnectRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
@@ -84,6 +90,12 @@ abstract class SystemServiceBase extends $pb.GeneratedService {
         return $0.SetSelectedModelRequest();
       case 'GetModelsManifest':
         return $0.GetModelsManifestRequest();
+      case 'PerformanceConnect':
+        return $0.PerformanceConnectRequest();
+      case 'PerformanceHeartbeat':
+        return $0.PerformanceHeartbeatRequest();
+      case 'PerformanceDisconnect':
+        return $0.PerformanceDisconnectRequest();
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -122,6 +134,14 @@ abstract class SystemServiceBase extends $pb.GeneratedService {
         return setSelectedModel(ctx, request as $0.SetSelectedModelRequest);
       case 'GetModelsManifest':
         return getModelsManifest(ctx, request as $0.GetModelsManifestRequest);
+      case 'PerformanceConnect':
+        return performanceConnect(ctx, request as $0.PerformanceConnectRequest);
+      case 'PerformanceHeartbeat':
+        return performanceHeartbeat(
+            ctx, request as $0.PerformanceHeartbeatRequest);
+      case 'PerformanceDisconnect':
+        return performanceDisconnect(
+            ctx, request as $0.PerformanceDisconnectRequest);
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }

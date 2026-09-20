@@ -60,7 +60,7 @@ class TripAnalyticsManager {
         config = cfg
 
         // 4. Ensure the trips directory exists
-        val tripsDir = StorageManager.getInstance().getTripsDir()
+        val tripsDir = StorageManager.getInstance().tripsDir
         if (tripsDir != null && !tripsDir.exists()) {
             val created = tripsDir.mkdirs()
             logger.info(
@@ -124,7 +124,7 @@ class TripAnalyticsManager {
         logger.info("ACC ON — trip detection ready (waiting for gear D/R)")
 
         try {
-            val currentGear = GearMonitor.getInstance().getCurrentGear()
+            val currentGear = GearMonitor.getInstance().currentGear
             val d = detector
             if (currentGear != GearMonitor.GEAR_P && d != null && !d.isTripActive()) {
                 logger.info(
@@ -165,7 +165,7 @@ class TripAnalyticsManager {
         if (!enabled) initComponents()
 
         // If gear is not P, trigger trip detection.
-        val currentGear = GearMonitor.getInstance().getCurrentGear()
+        val currentGear = GearMonitor.getInstance().currentGear
         val d = detector
         if (currentGear != GearMonitor.GEAR_P && d != null) {
             logger.info(
@@ -200,7 +200,7 @@ class TripAnalyticsManager {
      */
     fun setTelemetryDataCollector(collector: TelemetryDataCollector?) {
         telemetryDataCollector = collector
-        recorder?.setTelemetryDataCollector(collector)
+        recorder?.telemetryDataCollector = collector
     }
 
     // ==================== SYNC / RECONCILE ====================
@@ -233,7 +233,7 @@ class TripAnalyticsManager {
 
             val known = HashSet(db.getAllTelemetryPaths())
             var added = 0
-            for (dir in StorageManager.getInstance().getAllTripsDirs()) {
+            for (dir in StorageManager.getInstance().allTripsDirs) {
                 if (dir == null || !dir.exists() || !dir.canRead()) continue
                 val files = dir.listFiles { _, name -> name.endsWith(".jsonl.gz") } ?: continue
                 for (f in files) {
@@ -350,15 +350,17 @@ class TripAnalyticsManager {
 
         // Detector
         val d = TripDetector()
-        d.setListener(object : TripDetector.TripListener {
+        d.addListener(object : TripDetector.TripListener {
             override fun onTripStarted(trip: TripRecord) = handleTripStarted(trip)
             override fun onTripEnded(trip: TripRecord) = handleTripEnded(trip)
             override fun onTripDiscarded(trip: TripRecord, reason: String) =
                 handleTripDiscarded(trip, reason)
-
-            override fun getRecordedDistanceKm(): Double =
-                recorder?.getTotalDistanceKm() ?: 0.0
         })
+        d.setDistanceProvider { recorder?.totalDistanceKm ?: 0.0 }
+        // BladeWatch-nmao.3: trip lifecycle push notifications. TripDetector has no static
+        // singleton for a notifier to reach into (unlike ChargingDetector), so it is
+        // registered here, at the one place the detector instance is actually created.
+        d.addListener(net.bladewatch.app.notifications.TripEventNotifier.getInstance())
         detector = d
 
         recorder = TripTelemetryRecorder(telemetryDataCollector)
@@ -407,7 +409,7 @@ class TripAnalyticsManager {
         // 1. Stop the recorder and collect samples
         val samples = recorder?.let { rec ->
             telemetryPath = rec.stopRecording()
-            rec.getSamplesForScoring()
+            rec.samplesForScoring
         }
 
         // 2. Resolve trip energy (kWh) BEFORE scoring, and assign energyPerKm from it.
@@ -453,8 +455,8 @@ class TripAnalyticsManager {
 
         // 4. Recorder stats (the recorder is authoritative for avg/max speed).
         recorder?.let { rec ->
-            trip.maxSpeedKmh = rec.getMaxSpeedKmh()
-            trip.avgSpeedKmh = rec.getAvgSpeedKmh()
+            trip.maxSpeedKmh = rec.maxSpeedKmh
+            trip.avgSpeedKmh = rec.avgSpeedKmh
         }
 
         // 5. Snapshot the rates and cost both legs, using the SAME resolved energy figure so

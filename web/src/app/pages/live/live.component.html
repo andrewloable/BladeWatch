@@ -16,10 +16,16 @@
       ></video>
     }
 
-    <!-- Hidden when the browser cannot decode at all: a "Connecting" badge over a stream
-         that will never connect is exactly the lie BladeWatch-nobf was about. The banner
-         below says what is really wrong, so no extra string is needed here. -->
-    @if (!decoderUnsupported()) {
+    @if (usingStillFrame()) {
+      <!-- BladeWatch-y78o.1: a periodically refreshed JPEG for browsers with no usable H.264
+           decoder at all (neither WebCodecs nor MediaSource). alt text carries the same
+           honesty requirement as the visible banner below, for anyone using a screen reader. -->
+      <img #stillFrameImg class="stream-canvas still-frame-img" [alt]="'live.stillFrameLabel' | translate" />
+    }
+
+    <!-- Hidden when the browser cannot decode at all, and hidden for the still-frame fallback:
+         a "Connecting" badge implies video, which is exactly the lie this exists to avoid. -->
+    @if (!decoderUnsupported() && !usingStillFrame()) {
       <div class="stream-badge" [class.live]="streamConnected()">
         {{ streamConnected() ? ('live.badgeLive' | translate) : ('live.badgeConnecting' | translate) }}
       </div>
@@ -33,6 +39,13 @@
         <span class="banner-text">{{ 'live.decoderUnsupported' | translate }}</span>
         <!-- Symbols, not prose: diagnostic only, so it needs no locale entry. -->
         <span class="banner-caps">{{ decoderCapabilities() }}</span>
+      </div>
+    } @else if (usingStillFrame()) {
+      <!-- BladeWatch-y78o.1: persistent, not just on error — the point is telling the owner
+           what they are looking at for as long as they are looking at it, not reporting a
+           connection problem. No Retry button: the periodic refresh already is the retry. -->
+      <div class="stream-banner still-frame-banner">
+        <span class="banner-text">{{ 'live.stillFrameLabel' | translate }}</span>
       </div>
     } @else if (!streamConnected()) {
       <div class="stream-banner">

@@ -19,6 +19,8 @@
 /// callback, exactly like the real `ConnectClient` would.
 library;
 
+import 'dart:async';
+
 import 'package:bladewatch_ui/rpc/rpc_transport.dart';
 
 class RpcCall {
@@ -68,6 +70,7 @@ class FakeRpcClient implements RpcTransport {
   final Map<String, _JsonStub> _jsonResponses = {};
   final Map<String, ConnectError> _errors = {};
   final Set<String> _timeouts = {};
+  final Map<String, Completer<Object?>> _pending = {};
 
   static String _key(String service, String method) => '$service/$method';
 
@@ -104,6 +107,25 @@ class FakeRpcClient implements RpcTransport {
     _timeouts.remove(key);
   }
 
+  /// Registers [service]/[method] to hang until the returned completer is
+  /// completed with the raw JSON to decode.
+  ///
+  /// The other stubs all resolve on the next microtask, which is too fast to
+  /// reproduce "the screen was disposed while this call was still in flight" —
+  /// the case where a widget awaits an RPC and then touches `State.context`.
+  /// Holding the future open explicitly is the only deterministic way to land a
+  /// test in that window.
+  Completer<Object?> stubPending(String service, String method) {
+    final key = _key(service, method);
+    final completer = Completer<Object?>();
+    _pending[key] = completer;
+    _responses.remove(key);
+    _jsonResponses.remove(key);
+    _errors.remove(key);
+    _timeouts.remove(key);
+    return completer;
+  }
+
   /// Registers [service]/[method] to simulate a timeout.
   void stubTimeout(String service, String method) {
     final key = _key(service, method);
@@ -127,6 +149,16 @@ class FakeRpcClient implements RpcTransport {
     final key = _key(service, method);
     calls.add(RpcCall(service, method, request));
 
+    final pending = _pending[key];
+    if (pending != null) {
+      final raw = await pending.future;
+      if (decode == null) {
+        throw StateError(
+          'FakeRpcClient: stubPending($key) was used but call() got no decode function to run it through',
+        );
+      }
+      return decode(raw);
+    }
     if (_timeouts.contains(key)) {
       throw RpcTimeoutException(service, method);
     }

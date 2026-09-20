@@ -1557,7 +1557,8 @@
     "badgeLive": "● लाइव",
     "badgeConnecting": "○ कनेक्ट हो रहा है…",
     "notConnected": "कैमरा स्ट्रीम कनेक्ट नहीं है",
-    "decoderUnsupported": "यह ब्राउज़र लाइव स्ट्रीम नहीं चला सकता। इसके लिए वीडियो डिकोडिंग सपोर्ट वाला ब्राउज़र चाहिए, जैसे Chrome या Edge। Tor Browser और Firefox ESR में यह अभी नहीं है।"
+    "decoderUnsupported": "यह ब्राउज़र लाइव स्ट्रीम नहीं चला सकता। इसके लिए वीडियो डिकोडिंग सपोर्ट वाला ब्राउज़र चाहिए, जैसे Chrome या Edge। Tor Browser और Firefox ESR में यह अभी नहीं है।",
+    "stillFrameLabel": "स्थिर छवि — लाइव वीडियो नहीं"
   },
   "location": {
     "themeAuto": "ऑटो",

@@ -28,6 +28,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
     super.initState();
     widget.controller.addListener(_onChanged);
     widget.controller.load();
+    widget.controller.loadOverlayFields();
   }
 
   void _onChanged() {
@@ -158,8 +159,78 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
           ],
         ),
         const SizedBox(height: 16),
+        Text(l10n.settings_recording_priority_title, style: theme.textTheme.titleMedium),
+        Text(l10n.settings_recording_priority_description, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 12),
+        RadioGroup<RecordingPriority>(
+          groupValue: c.selectedPriority,
+          onChanged: (p) => c.selectPriority(p!),
+          child: Column(
+            children: [
+              for (final priority in RecordingPriority.values)
+                RadioListTile<RecordingPriority>(
+                  key: ValueKey('recording.priority.${priority.name}'),
+                  value: priority,
+                  title: Text(_priorityLabel(l10n, priority)),
+                  subtitle: Text(_priorityDesc(l10n, priority)),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _overlayFieldsSection(l10n, theme, c),
+        const SizedBox(height: 16),
         _applyButton(l10n, c, RecordingSettingsTab.capture),
       ];
+
+  /// BladeWatch-y78o.5: the burned-in telemetry overlay's field checklist for continuous
+  /// (drive-mode/proximity) dashcam recording. Deliberately no VIN/location entry — see
+  /// OverlayField's own doc comment. Saves each toggle immediately (not part of this tab's
+  /// batch Apply flow), matching how the toggle reverts itself on a failed save rather than
+  /// leaving a dirty, unsaved checkbox behind.
+  Widget _overlayFieldsSection(AppLocalizations l10n, ThemeData theme, RecordingSettingsController c) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.settings_recording_overlay_fields_title, style: theme.textTheme.titleMedium),
+        Text(
+          l10n.settings_recording_overlay_fields_description,
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        for (final field in OverlayField.values)
+          CheckboxListTile(
+            key: ValueKey('recording.overlayField.${field.name}'),
+            value: c.overlayFields.contains(field),
+            title: Text(_overlayFieldLabel(l10n, field)),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            onChanged: (enabled) => c.setOverlayFieldEnabled(field, enabled ?? false),
+          ),
+      ],
+    );
+  }
+
+  String _overlayFieldLabel(AppLocalizations l10n, OverlayField field) => switch (field) {
+        OverlayField.speed => l10n.settings_recording_overlay_field_speed,
+        OverlayField.gear => l10n.settings_recording_overlay_field_gear,
+        OverlayField.turnSignalLeft => l10n.settings_recording_overlay_field_turn_signal_left,
+        OverlayField.turnSignalRight => l10n.settings_recording_overlay_field_turn_signal_right,
+        OverlayField.brakePedal => l10n.settings_recording_overlay_field_brake_pedal,
+        OverlayField.accelPedal => l10n.settings_recording_overlay_field_accel_pedal,
+        OverlayField.seatbeltDriver => l10n.settings_recording_overlay_field_seatbelt_driver,
+        OverlayField.seatbeltPassenger => l10n.settings_recording_overlay_field_seatbelt_passenger,
+        OverlayField.timestamp => l10n.settings_recording_overlay_field_timestamp,
+      };
+
+  String _priorityLabel(AppLocalizations l10n, RecordingPriority priority) => switch (priority) {
+        RecordingPriority.performance => l10n.settings_recording_priority_performance_label,
+        RecordingPriority.reliability => l10n.settings_recording_priority_reliability_label,
+      };
+
+  String _priorityDesc(AppLocalizations l10n, RecordingPriority priority) => switch (priority) {
+        RecordingPriority.performance => l10n.settings_recording_priority_performance_desc,
+        RecordingPriority.reliability => l10n.settings_recording_priority_reliability_desc,
+      };
 
   List<Widget> _qualityTab(AppLocalizations l10n, ThemeData theme, RecordingSettingsController c) => [
         Text(l10n.settings_recording_quality_title, style: theme.textTheme.titleMedium),
@@ -205,6 +276,29 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
           ),
         ],
       ),
+      if (storage?.sdCardMountFailed ?? false) ...[
+        const SizedBox(height: 8),
+        Card(
+          key: const ValueKey('recording.storage.sdMountFailedBanner'),
+          color: theme.colorScheme.errorContainer,
+          elevation: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.settings_recording_storage_sd_mount_failed_title,
+                    style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onErrorContainer)),
+                if ((storage?.sdCardMountError ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(storage!.sdCardMountError!,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer)),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
       const SizedBox(height: 16),
       Text(l10n.settings_recording_storage_limit_label, style: theme.textTheme.labelMedium),
       // formatStorageMb, not a raw megabyte count: native shows "16.0 GB"
@@ -260,6 +354,10 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
         key: ValueKey('recording.apply.${tab.name}'),
         onPressed: c.dirty
             ? () async {
+                if (tab == RecordingSettingsTab.storage) {
+                  await _applyStorage(l10n, c);
+                  return;
+                }
                 final result = await c.applyChanges(tab);
                 if (!mounted) return;
                 if (!result.ok) {
@@ -269,6 +367,54 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
             : null,
         child: Text(l10n.settings_recording_apply_button),
       );
+
+  /// BladeWatch-gyg1.4: lowering the recordings limit can silently delete existing clips.
+  /// Preview the real impact first; only apply once the owner has seen and confirmed it (or
+  /// there is nothing to confirm). Cancelling must leave SetStorageSettings uncalled -- this
+  /// is why the preview and the apply are two separate controller calls, not one.
+  Future<void> _applyStorage(AppLocalizations l10n, RecordingSettingsController c) async {
+    final impact = await c.previewStorageLimitImpact();
+    // The owner can leave this screen while the preview RPC is in flight, and
+    // _confirmStorageLimitChange reads State.context, which throws once unmounted.
+    // use_build_context_synchronously does not flag it: the await is here and the context
+    // read is in that method, and the lint does not follow across the call.
+    if (!mounted) return;
+    if (impact != null) {
+      final confirmed = await _confirmStorageLimitChange(l10n, impact);
+      if (confirmed != true) return;
+      if (!mounted) return;
+    }
+    final result = await c.applyChanges(RecordingSettingsTab.storage);
+    if (!mounted) return;
+    if (!result.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.error ?? l10n.toast_failed_to_save_short)));
+    }
+  }
+
+  Future<bool?> _confirmStorageLimitChange(AppLocalizations l10n, StorageLimitImpact impact) {
+    final known = impact.status == StorageLimitImpactStatus.known;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const ValueKey('recording.storageConfirm.dialog'),
+        title: Text(known ? l10n.settings_recording_storage_confirm_title : l10n.settings_recording_storage_confirm_unknown_title),
+        content: Text(known
+            ? l10n.settings_recording_storage_confirm_message(
+                impact.fileCount, formatStorageMb((impact.totalBytes / (1024 * 1024)).round()))
+            : l10n.settings_recording_storage_confirm_unknown_message),
+        actions: [
+          TextButton(
+              key: const ValueKey('recording.storageConfirm.cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.action_cancel)),
+          FilledButton(
+              key: const ValueKey('recording.storageConfirm.confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.dialog_delete)),
+        ],
+      ),
+    );
+  }
 }
 
 class _FormatDriveCard extends StatelessWidget {

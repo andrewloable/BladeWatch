@@ -85,9 +85,9 @@ class _StartupScreenState extends State<StartupScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    c.channelErrorMessage ?? _headerText(l10n, c.phase),
+                                    _headerText(l10n, c.phase),
                                     style: theme.textTheme.labelLarge?.copyWith(
-                                      color: c.channelErrorMessage != null ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant,
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ),

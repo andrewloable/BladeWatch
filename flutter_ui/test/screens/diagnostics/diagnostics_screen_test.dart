@@ -12,21 +12,12 @@ import 'package:bladewatch_ui/screens/diagnostics/diagnostics_models.dart';
 import 'package:bladewatch_ui/screens/diagnostics/diagnostics_screen.dart';
 import 'package:bladewatch_ui/screens/diagnostics/performance_controller.dart';
 import 'package:bladewatch_ui/screens/diagnostics/performance_screen.dart';
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_adb_connection.dart';
 import '../../fakes/fake_platform_channel.dart';
 import '../../fakes/fake_rpc_client.dart';
-
-class _FakeJwtSource implements JwtSource {
-  @override
-  Future<String?> mintJwt() async => null;
-  @override
-  Future<int> stateVersion() async => 0;
-}
 
 void main() {
   late FakeRpcClient rpc;
@@ -88,8 +79,6 @@ void main() {
           adbConsoleControllerFactory: () => AdbConsoleController(connection: FakeAdbConnection()),
           performanceControllerFactory: () => PerformanceController(
             systemService: SystemServiceClient(FakeRpcClient()),
-            jwtSource: _FakeJwtSource(),
-            send: (uri, headers, body) async => const RawHttpResponse(200, '{}'),
           ),
           onOpenSettings: () => settingsOpened = true,
         ),

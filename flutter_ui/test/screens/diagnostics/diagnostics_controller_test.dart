@@ -65,6 +65,14 @@ void main() {
     });
   }
 
+  /// `lastMonthBytes` is stubbed but never asserted on: the daemon really does send it, so the
+  /// response shape stays honest, but no screen renders it and the controller does not read it.
+  void stubDataUsage({int thisMonthBytes = 0}) {
+    rpc.stubJson('SystemService', 'GetStatus', {
+      'network': {'thisMonthBytes': '$thisMonthBytes', 'lastMonthBytes': '0'},
+    });
+  }
+
   setUp(() {
     rpc = FakeRpcClient();
     platform = FakePlatformChannel();
@@ -72,6 +80,7 @@ void main() {
     stubDaemons();
     stubStorage();
     stubBattery();
+    stubDataUsage();
     adbConnection = FakeAdbConnection();
     controller = DiagnosticsController(
       daemonChannel: DaemonChannel(platform),
@@ -144,6 +153,23 @@ void main() {
       await controller.refresh();
 
       expect(controller.tunnelState, TunnelState.offline);
+    });
+
+    test('BladeWatch-t1lg.1: formats this-month data usage from GetStatus', () async {
+      stubDataUsage(thisMonthBytes: 1024 * 1024);
+
+      await controller.refresh();
+
+      expect(controller.thisMonthDataUsageFormatted, '1.0 MB');
+    });
+
+    test('BladeWatch-t1lg.1: leaves data usage blank rather than propagating when GetStatus fails', () async {
+      rpc.stubError('SystemService', 'GetStatus', const ConnectError('unavailable', 'no daemon'));
+
+      await controller.refresh();
+
+      expect(controller.thisMonthDataUsageFormatted, isEmpty);
+      expect(controller.loading, isFalse); // one probe failing doesn't block the others
     });
   });
 

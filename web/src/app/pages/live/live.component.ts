@@ -11,6 +11,8 @@ import {
 import { TranslateModule } from '@ngx-translate/core';
 import { ConnectClients } from '../../core/connect/connect-clients';
 import { MsePlayer } from './mse-player';
+import { StillFramePlayer } from './still-frame-player';
+import { selectStreamTier } from './stream-tier';
 
 // SotaPlayer is a global loaded from public/vendor/SotaPlayer.js (no module).
 declare var SotaPlayer: any;
@@ -38,6 +40,7 @@ export default class LiveComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('streamCanvas') streamCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('streamVideo') streamVideoRef!: ElementRef<HTMLVideoElement>;
+  @ViewChild('stillFrameImg') stillFrameImgRef!: ElementRef<HTMLImageElement>;
 
   readonly streamConnected = signal(false);
   readonly selectedCam = signal(0);
@@ -82,6 +85,13 @@ export default class LiveComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   readonly usingMse = signal(false);
 
+  /**
+   * BladeWatch-y78o.1: the still-frame fallback is active — neither WebCodecs nor MSE H.264
+   * decoded, so the view shows a periodically refreshed JPEG instead of the dead-end
+   * [decoderUnsupported] banner. Drives which element is on screen, same shape as [usingMse].
+   */
+  readonly usingStillFrame = signal(false);
+
   private player: any = null;
   /** Set once the player object exists so the banner can show a retry hint. */
   private playerStarted = false;
@@ -115,20 +125,22 @@ export default class LiveComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Ask BEFORE constructing a player. SotaPlayer.start() would otherwise swallow this
     // into a console.error and leave the UI claiming it is merely "not connected".
-    if (typeof SotaPlayer.isSupported === 'function' && !SotaPlayer.isSupported()) {
-      // No WebCodecs. Before giving up, try MediaSource — which is how this plays at all
-      // in Tor Browser, the browser our own help dialog tells people to install.
-      if (MsePlayer.isSupported()) {
-        this.startMseStream();
-        return;
-      }
-      this.decoderUnsupported.set(true);
-      this.decoderCapabilities.set(this.probeDecoders());
-      this.streamConnected.set(false);
+    const webCodecsSupported =
+      typeof SotaPlayer.isSupported !== 'function' || SotaPlayer.isSupported();
+    const tier = selectStreamTier(webCodecsSupported, MsePlayer.isSupported());
+
+    if (tier === 'mse') {
+      this.startMseStream();
       return;
     }
+    if (tier === 'stillframe') {
+      this.startStillFrameStream();
+      return;
+    }
+
     this.decoderUnsupported.set(false);
     this.usingMse.set(false);
+    this.usingStillFrame.set(false);
 
     this.player = new SotaPlayer(canvas, this.wsUrl());
     this.player.onConnected = () => this.streamConnected.set(true);
@@ -167,11 +179,45 @@ export default class LiveComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * BladeWatch-y78o.1: bring up the still-frame fallback — neither WebCodecs nor MSE H.264
+   * decoded (the case Tor Browser on Linux reaches; see still-frame-player.ts). Same
+   * set-the-signal-first-then-queueMicrotask shape as [startMseStream], for the same reason:
+   * the `<img>` must exist in the DOM before the player reaches for it.
+   */
+  private startStillFrameStream(): void {
+    this.decoderUnsupported.set(false);
+    this.usingMse.set(false);
+    this.usingStillFrame.set(true);
+    queueMicrotask(() => {
+      const img = this.stillFrameImgRef?.nativeElement;
+      if (!img) {
+        // Should not happen, but see startMseStream's identical guard: claiming "connecting"
+        // forever is worse than the honest unsupported message.
+        this.usingStillFrame.set(false);
+        this.decoderUnsupported.set(true);
+        this.decoderCapabilities.set(this.probeDecoders());
+        return;
+      }
+      const player = new StillFramePlayer(img, this.stillFrameUrl());
+      player.onConnected = () => this.streamConnected.set(true);
+      player.onDisconnected = () => this.streamConnected.set(false);
+      this.player = player;
+      this.playerStarted = true;
+      player.start();
+    });
+  }
+
   /** What this browser can and cannot decode. See [decoderCapabilities]. */
   /** Same origin as the page, so an onion address just works. */
   private wsUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${window.location.host}/ws`;
+  }
+
+  /** Relative — same-origin, so the session cookie authenticates it like any other request. */
+  private stillFrameUrl(): string {
+    return '/api/stream/still';
   }
 
   private probeDecoders(): string {

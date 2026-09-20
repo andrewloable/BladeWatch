@@ -5,6 +5,8 @@ import '../../platform/config_channel.dart';
 import '../../platform/daemon_channel.dart';
 import '../../platform/prefs_channel.dart';
 import '../../platform/public_config_channel.dart';
+import '../../rpc/jwt_source.dart';
+import '../../rpc/raw_http_sender.dart';
 import '../../rpc/services/recordings_service_client.dart';
 import '../../rpc/services/safe_locations_service_client.dart';
 import '../../rpc/services/settings_service_client.dart';
@@ -68,6 +70,15 @@ class SettingsHubDependencies {
   /// [appearanceController] for the same rule.
   final TripsController tripsController;
 
+  /// BladeWatch-y78o.5: mints the JWT for the Recording pane's overlay-field-checklist REST
+  /// calls (a plain HTTP endpoint, not a Connect RPC — see settings_recording_controller.dart).
+  final JwtSource jwtSource;
+
+  /// Test-only override for the overlay-field-checklist REST calls — null in production,
+  /// which makes [RecordingSettingsController] use its own real `dart:io` senders.
+  final RawGetSender? overlayFieldsGetSender;
+  final RawHttpSender? overlayFieldsPostSender;
+
   const SettingsHubDependencies({
     required this.prefs,
     required this.shellController,
@@ -86,6 +97,9 @@ class SettingsHubDependencies {
     required this.onOpenLanguagePicker,
     required this.localeController,
     required this.tripsController,
+    required this.jwtSource,
+    this.overlayFieldsGetSender,
+    this.overlayFieldsPostSender,
   });
 }
 

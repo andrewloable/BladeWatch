@@ -46,3 +46,27 @@ RawHttpSender createIoHttpSender({
     return RawHttpResponse(response.statusCode, responseBody);
   };
 }
+
+/// A GET counterpart to [RawHttpSender], for the handful of plain REST reads (no Connect
+/// envelope, no request body) that do not go through [ConnectClient] — e.g. the telemetry
+/// overlay field checklist (BladeWatch-y78o.5). Injectable for the same reason: tests never
+/// open a socket.
+typedef RawGetSender = Future<RawHttpResponse> Function(Uri uri, Map<String, String> headers);
+
+/// The real GET sender, sharing [createIoHttpSender]'s timeout/proxy discipline.
+RawGetSender createIoGetSender({
+  Duration connectTimeout = const Duration(seconds: 5),
+  Duration readTimeout = const Duration(seconds: 10),
+}) {
+  final httpClient = HttpClient()
+    ..connectionTimeout = connectTimeout
+    ..findProxy = (_) => 'DIRECT';
+
+  return (Uri uri, Map<String, String> headers) async {
+    final request = await httpClient.getUrl(uri).timeout(connectTimeout);
+    headers.forEach(request.headers.set);
+    final response = await request.close().timeout(readTimeout);
+    final responseBody = await response.transform(utf8.decoder).join().timeout(readTimeout);
+    return RawHttpResponse(response.statusCode, responseBody);
+  };
+}

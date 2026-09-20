@@ -1364,6 +1364,8 @@ class GetVehicleStateResponse extends $pb.GeneratedMessage {
     ClimateStatus? climate,
     TyreStatus? tyres,
     $core.String? error,
+    $core.int? mediaVolumePercent,
+    $core.bool? mediaMuted,
   }) {
     final result = GetVehicleStateResponse._();
     if (success != null) result.success = success;
@@ -1379,6 +1381,9 @@ class GetVehicleStateResponse extends $pb.GeneratedMessage {
     if (climate != null) result.climate = climate;
     if (tyres != null) result.tyres = tyres;
     if (error != null) result.error = error;
+    if (mediaVolumePercent != null)
+      result.mediaVolumePercent = mediaVolumePercent;
+    if (mediaMuted != null) result.mediaMuted = mediaMuted;
     return result;
   }
 
@@ -1419,6 +1424,8 @@ class GetVehicleStateResponse extends $pb.GeneratedMessage {
     ..aOM<TyreStatus>(12, _omitFieldNames ? '' : 'tyres',
         subBuilder: TyreStatus.$_createMessage)
     ..aOS(13, _omitFieldNames ? '' : 'error')
+    ..aI(14, _omitFieldNames ? '' : 'mediaVolumePercent')
+    ..aOB(15, _omitFieldNames ? '' : 'mediaMuted')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1583,6 +1590,26 @@ class GetVehicleStateResponse extends $pb.GeneratedMessage {
   $core.bool hasError() => $_has(12);
   @$pb.TagNumber(13)
   void clearError() => $_clearField(13);
+
+  /// BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+  /// shows the real value rather than a local guess.
+  @$pb.TagNumber(14)
+  $core.int get mediaVolumePercent => $_getIZ(13);
+  @$pb.TagNumber(14)
+  set mediaVolumePercent($core.int value) => $_setSignedInt32(13, value);
+  @$pb.TagNumber(14)
+  $core.bool hasMediaVolumePercent() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearMediaVolumePercent() => $_clearField(14);
+
+  @$pb.TagNumber(15)
+  $core.bool get mediaMuted => $_getBF(14);
+  @$pb.TagNumber(15)
+  set mediaMuted($core.bool value) => $_setBool(14, value);
+  @$pb.TagNumber(15)
+  $core.bool hasMediaMuted() => $_has(14);
+  @$pb.TagNumber(15)
+  void clearMediaMuted() => $_clearField(15);
 }
 
 class GetAcDiagnosticsRequest extends $pb.GeneratedMessage {
@@ -2249,6 +2276,7 @@ class SetClimateRequest extends $pb.GeneratedMessage {
     $core.bool? restoreAcOn,
     $core.double? restoreTempC,
     $core.int? restoreFanLevel,
+    $core.int? cycleMode,
   }) {
     final result = SetClimateRequest._();
     if (action != null) result.action = action;
@@ -2260,6 +2288,7 @@ class SetClimateRequest extends $pb.GeneratedMessage {
     if (restoreAcOn != null) result.restoreAcOn = restoreAcOn;
     if (restoreTempC != null) result.restoreTempC = restoreTempC;
     if (restoreFanLevel != null) result.restoreFanLevel = restoreFanLevel;
+    if (cycleMode != null) result.cycleMode = cycleMode;
     return result;
   }
 
@@ -2285,6 +2314,7 @@ class SetClimateRequest extends $pb.GeneratedMessage {
     ..aOB(7, _omitFieldNames ? '' : 'restoreAcOn')
     ..aD(8, _omitFieldNames ? '' : 'restoreTempC')
     ..aI(9, _omitFieldNames ? '' : 'restoreFanLevel')
+    ..aI(10, _omitFieldNames ? '' : 'cycleMode')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -2390,6 +2420,18 @@ class SetClimateRequest extends $pb.GeneratedMessage {
   $core.bool hasRestoreFanLevel() => $_has(8);
   @$pb.TagNumber(9)
   void clearRestoreFanLevel() => $_clearField(9);
+
+  /// BladeWatch-2000.1. Value meaning is not established in source (see
+  /// docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+  /// already is; the UI does not offer a labelled picker for either.
+  @$pb.TagNumber(10)
+  $core.int get cycleMode => $_getIZ(9);
+  @$pb.TagNumber(10)
+  set cycleMode($core.int value) => $_setSignedInt32(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasCycleMode() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearCycleMode() => $_clearField(10);
 }
 
 class SetSeatRequest extends $pb.GeneratedMessage {
@@ -2593,6 +2635,140 @@ class SetLightsRequest extends $pb.GeneratedMessage {
   $core.bool hasOn() => $_has(1);
   @$pb.TagNumber(2)
   void clearOn() => $_clearField(2);
+}
+
+/// BladeWatch-2000.3. Same explicit-presence reasoning as SetLightsRequest.on above: a
+/// screen-off request sets on=false, which a plain proto3 bool would omit from the wire.
+class SetScreenRequest extends $pb.GeneratedMessage {
+  factory SetScreenRequest({
+    $core.bool? on,
+  }) {
+    final result = SetScreenRequest._();
+    if (on != null) result.on = on;
+    return result;
+  }
+
+  SetScreenRequest._();
+
+  factory SetScreenRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetScreenRequest()..mergeFromBuffer(data, registry);
+  factory SetScreenRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetScreenRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SetScreenRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: SetScreenRequest.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'on')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetScreenRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetScreenRequest copyWith(void Function(SetScreenRequest) updates) =>
+      super.copyWith((message) => updates(message as SetScreenRequest))
+          as SetScreenRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated('Use SetScreenRequest() / SetScreenRequest.new instead')
+  static SetScreenRequest create() => SetScreenRequest._();
+  static $pb.GeneratedMessage $_createMessage() => SetScreenRequest._();
+  @$core.override
+  SetScreenRequest createEmptyInstance() => SetScreenRequest._();
+  @$core.pragma('dart2js:noInline')
+  static SetScreenRequest getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SetScreenRequest>(
+          SetScreenRequest.$_createMessage);
+  static SetScreenRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get on => $_getBF(0);
+  @$pb.TagNumber(1)
+  set on($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasOn() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOn() => $_clearField(1);
+}
+
+/// BladeWatch-2000.2: media volume and mute. Not routed through VehicleCommandRouter -- see
+/// docs/byd-integrations.md's "Media volume and mute" section for why.
+class SetMediaVolumeRequest extends $pb.GeneratedMessage {
+  factory SetMediaVolumeRequest({
+    $core.String? action,
+    $core.int? percent,
+  }) {
+    final result = SetMediaVolumeRequest._();
+    if (action != null) result.action = action;
+    if (percent != null) result.percent = percent;
+    return result;
+  }
+
+  SetMediaVolumeRequest._();
+
+  factory SetMediaVolumeRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetMediaVolumeRequest()..mergeFromBuffer(data, registry);
+  factory SetMediaVolumeRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetMediaVolumeRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SetMediaVolumeRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: SetMediaVolumeRequest.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'action')
+    ..aI(2, _omitFieldNames ? '' : 'percent')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetMediaVolumeRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetMediaVolumeRequest copyWith(
+          void Function(SetMediaVolumeRequest) updates) =>
+      super.copyWith((message) => updates(message as SetMediaVolumeRequest))
+          as SetMediaVolumeRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use SetMediaVolumeRequest() / SetMediaVolumeRequest.new instead')
+  static SetMediaVolumeRequest create() => SetMediaVolumeRequest._();
+  static $pb.GeneratedMessage $_createMessage() => SetMediaVolumeRequest._();
+  @$core.override
+  SetMediaVolumeRequest createEmptyInstance() => SetMediaVolumeRequest._();
+  @$core.pragma('dart2js:noInline')
+  static SetMediaVolumeRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetMediaVolumeRequest>(
+          SetMediaVolumeRequest.$_createMessage);
+  static SetMediaVolumeRequest? _defaultInstance;
+
+  /// One of: "set", "step_up", "step_down", "mute", "unmute".
+  @$pb.TagNumber(1)
+  $core.String get action => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set action($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasAction() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearAction() => $_clearField(1);
+
+  /// Required (0-100) when action == "set"; ignored for every other action.
+  @$pb.TagNumber(2)
+  $core.int get percent => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set percent($core.int value) => $_setSignedInt32(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasPercent() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearPercent() => $_clearField(2);
 }
 
 class SetAdasRequest extends $pb.GeneratedMessage {
@@ -3610,6 +3786,263 @@ class StopGpsResponse extends $pb.GeneratedMessage {
   void clearMessage() => $_clearField(2);
 }
 
+class IssueActionTokenRequest extends $pb.GeneratedMessage {
+  factory IssueActionTokenRequest() => IssueActionTokenRequest._();
+
+  IssueActionTokenRequest._();
+
+  factory IssueActionTokenRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      IssueActionTokenRequest()..mergeFromBuffer(data, registry);
+  factory IssueActionTokenRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      IssueActionTokenRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'IssueActionTokenRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: IssueActionTokenRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  IssueActionTokenRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  IssueActionTokenRequest copyWith(
+          void Function(IssueActionTokenRequest) updates) =>
+      super.copyWith((message) => updates(message as IssueActionTokenRequest))
+          as IssueActionTokenRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use IssueActionTokenRequest() / IssueActionTokenRequest.new instead')
+  static IssueActionTokenRequest create() => IssueActionTokenRequest._();
+  static $pb.GeneratedMessage $_createMessage() => IssueActionTokenRequest._();
+  @$core.override
+  IssueActionTokenRequest createEmptyInstance() => IssueActionTokenRequest._();
+  @$core.pragma('dart2js:noInline')
+  static IssueActionTokenRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<IssueActionTokenRequest>(
+          IssueActionTokenRequest.$_createMessage);
+  static IssueActionTokenRequest? _defaultInstance;
+}
+
+class IssueActionTokenResponse extends $pb.GeneratedMessage {
+  factory IssueActionTokenResponse({
+    $core.bool? success,
+    $core.String? token,
+    $core.int? expiresInSeconds,
+    $core.String? error,
+  }) {
+    final result = IssueActionTokenResponse._();
+    if (success != null) result.success = success;
+    if (token != null) result.token = token;
+    if (expiresInSeconds != null) result.expiresInSeconds = expiresInSeconds;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  IssueActionTokenResponse._();
+
+  factory IssueActionTokenResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      IssueActionTokenResponse()..mergeFromBuffer(data, registry);
+  factory IssueActionTokenResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      IssueActionTokenResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'IssueActionTokenResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: IssueActionTokenResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'token')
+    ..aI(3, _omitFieldNames ? '' : 'expiresInSeconds')
+    ..aOS(4, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  IssueActionTokenResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  IssueActionTokenResponse copyWith(
+          void Function(IssueActionTokenResponse) updates) =>
+      super.copyWith((message) => updates(message as IssueActionTokenResponse))
+          as IssueActionTokenResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use IssueActionTokenResponse() / IssueActionTokenResponse.new instead')
+  static IssueActionTokenResponse create() => IssueActionTokenResponse._();
+  static $pb.GeneratedMessage $_createMessage() => IssueActionTokenResponse._();
+  @$core.override
+  IssueActionTokenResponse createEmptyInstance() =>
+      IssueActionTokenResponse._();
+  @$core.pragma('dart2js:noInline')
+  static IssueActionTokenResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<IssueActionTokenResponse>(
+          IssueActionTokenResponse.$_createMessage);
+  static IssueActionTokenResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  /// Present the token as the X-Vehicle-Action-Token header on actuating VehicleService calls.
+  @$pb.TagNumber(2)
+  $core.String get token => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set token($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasToken() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearToken() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.int get expiresInSeconds => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set expiresInSeconds($core.int value) => $_setSignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasExpiresInSeconds() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearExpiresInSeconds() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get error => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set error($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasError() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearError() => $_clearField(4);
+}
+
+class GetAdasInventoryRequest extends $pb.GeneratedMessage {
+  factory GetAdasInventoryRequest() => GetAdasInventoryRequest._();
+
+  GetAdasInventoryRequest._();
+
+  factory GetAdasInventoryRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetAdasInventoryRequest()..mergeFromBuffer(data, registry);
+  factory GetAdasInventoryRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetAdasInventoryRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetAdasInventoryRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetAdasInventoryRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetAdasInventoryRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetAdasInventoryRequest copyWith(
+          void Function(GetAdasInventoryRequest) updates) =>
+      super.copyWith((message) => updates(message as GetAdasInventoryRequest))
+          as GetAdasInventoryRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetAdasInventoryRequest() / GetAdasInventoryRequest.new instead')
+  static GetAdasInventoryRequest create() => GetAdasInventoryRequest._();
+  static $pb.GeneratedMessage $_createMessage() => GetAdasInventoryRequest._();
+  @$core.override
+  GetAdasInventoryRequest createEmptyInstance() => GetAdasInventoryRequest._();
+  @$core.pragma('dart2js:noInline')
+  static GetAdasInventoryRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetAdasInventoryRequest>(
+          GetAdasInventoryRequest.$_createMessage);
+  static GetAdasInventoryRequest? _defaultInstance;
+}
+
+class GetAdasInventoryResponse extends $pb.GeneratedMessage {
+  factory GetAdasInventoryResponse({
+    $core.bool? success,
+    $core.String? adasJson,
+  }) {
+    final result = GetAdasInventoryResponse._();
+    if (success != null) result.success = success;
+    if (adasJson != null) result.adasJson = adasJson;
+    return result;
+  }
+
+  GetAdasInventoryResponse._();
+
+  factory GetAdasInventoryResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetAdasInventoryResponse()..mergeFromBuffer(data, registry);
+  factory GetAdasInventoryResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetAdasInventoryResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetAdasInventoryResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetAdasInventoryResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'adasJson')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetAdasInventoryResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetAdasInventoryResponse copyWith(
+          void Function(GetAdasInventoryResponse) updates) =>
+      super.copyWith((message) => updates(message as GetAdasInventoryResponse))
+          as GetAdasInventoryResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetAdasInventoryResponse() / GetAdasInventoryResponse.new instead')
+  static GetAdasInventoryResponse create() => GetAdasInventoryResponse._();
+  static $pb.GeneratedMessage $_createMessage() => GetAdasInventoryResponse._();
+  @$core.override
+  GetAdasInventoryResponse createEmptyInstance() =>
+      GetAdasInventoryResponse._();
+  @$core.pragma('dart2js:noInline')
+  static GetAdasInventoryResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetAdasInventoryResponse>(
+          GetAdasInventoryResponse.$_createMessage);
+  static GetAdasInventoryResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  /// The `adas` object as JSON: {sdkClassPresent, declared:[...], sdkOnly:[...]}.
+  /// NOTE: sdkClassPresent alone does NOT mean this car has ADAS — see byd-integrations.md.
+  @$pb.TagNumber(2)
+  $core.String get adasJson => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set adasJson($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasAdasJson() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearAdasJson() => $_clearField(2);
+}
+
 /// VehicleService exposes BYD vehicle state reads and control commands.
 ///
 /// HTTP mapping:
@@ -3625,6 +4058,8 @@ class StopGpsResponse extends $pb.GeneratedMessage {
 ///   SetClimate           POST /api/vehicle/climate
 ///   SetSeat              POST /api/vehicle/seat
 ///   SetLights            POST /api/vehicle/lights
+///   SetScreen            POST /api/vehicle/screen
+///   SetMediaVolume       POST /api/vehicle/media-volume
 ///   SetAdas              POST /api/vehicle/adas
 ///   SetBatteryHeat       POST /api/vehicle/battery-heat
 ///   GetChargingSchedule  GET  /api/vehicle/charging-schedule
@@ -3687,6 +4122,14 @@ class VehicleServiceApi {
           $pb.ClientContext? ctx, SetLightsRequest request) =>
       _client.invoke<VehicleCommandResponse>(ctx, 'VehicleService', 'SetLights',
           request, VehicleCommandResponse());
+  $async.Future<VehicleCommandResponse> setScreen(
+          $pb.ClientContext? ctx, SetScreenRequest request) =>
+      _client.invoke<VehicleCommandResponse>(ctx, 'VehicleService', 'SetScreen',
+          request, VehicleCommandResponse());
+  $async.Future<VehicleCommandResponse> setMediaVolume(
+          $pb.ClientContext? ctx, SetMediaVolumeRequest request) =>
+      _client.invoke<VehicleCommandResponse>(ctx, 'VehicleService',
+          'SetMediaVolume', request, VehicleCommandResponse());
   $async.Future<VehicleCommandResponse> setAdas(
           $pb.ClientContext? ctx, SetAdasRequest request) =>
       _client.invoke<VehicleCommandResponse>(
@@ -3723,6 +4166,22 @@ class VehicleServiceApi {
           $pb.ClientContext? ctx, StopGpsRequest request) =>
       _client.invoke<StopGpsResponse>(
           ctx, 'VehicleService', 'StopGps', request, StopGpsResponse());
+
+  /// BladeWatch-jwko: issues the short-lived second factor that actuating commands require from
+  /// a non-loopback caller. Never itself gated — you cannot need a token to get a token.
+  $async.Future<IssueActionTokenResponse> issueActionToken(
+          $pb.ClientContext? ctx, IssueActionTokenRequest request) =>
+      _client.invoke<IssueActionTokenResponse>(ctx, 'VehicleService',
+          'IssueActionToken', request, IssueActionTokenResponse());
+
+  /// BladeWatch-6mnq: read-only probe of which declared ADAS_* ids actually resolve from the SDK
+  /// on this car (BladeWatch-2pnn.3). It was REST-only, and the reference said to add an RPC
+  /// "if a client needs it" — removing the REST surface is exactly that moment, and without this
+  /// the diagnostic would simply have vanished.
+  $async.Future<GetAdasInventoryResponse> getAdasInventory(
+          $pb.ClientContext? ctx, GetAdasInventoryRequest request) =>
+      _client.invoke<GetAdasInventoryResponse>(ctx, 'VehicleService',
+          'GetAdasInventory', request, GetAdasInventoryResponse());
 }
 
 const $core.bool _omitFieldNames =

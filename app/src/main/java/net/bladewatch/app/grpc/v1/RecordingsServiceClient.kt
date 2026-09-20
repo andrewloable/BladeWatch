@@ -22,6 +22,7 @@ import com.connectrpc.StreamType
  *    SyncCatalog         POST   /api/recordings/sync
  *    GetInflightStatus   GET    /api/recordings/inflight/{filename}
  *    GetEventTimeline    GET    /api/events/{filename}
+ *    MarkRecording       POST   /api/recordings/mark
  */
 public class RecordingsServiceClient(
   private val client: ProtocolClientInterface,
@@ -117,6 +118,23 @@ public class RecordingsServiceClient(
     "bladewatch.v1.RecordingsService/GetEventTimeline",
       net.bladewatch.app.grpc.v1.GetEventTimelineRequest::class,
       net.bladewatch.app.grpc.v1.GetEventTimelineResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  /**
+   *  Bookmarks the recording currently being written (metadata only -- no new
+   *  file, no split). No request fields: the server resolves "current" itself,
+   *  since the caller (a Live View button) has no filename to give it.
+   */
+  override suspend fun markRecording(request: MarkRecordingRequest, headers: Headers): ResponseMessage<MarkRecordingResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.RecordingsService/MarkRecording",
+      net.bladewatch.app.grpc.v1.MarkRecordingRequest::class,
+      net.bladewatch.app.grpc.v1.MarkRecordingResponse::class,
       StreamType.UNARY,
     ),
   )

@@ -349,8 +349,8 @@ android {
         applicationId = "net.bladewatch.app"
         minSdk = 25
         targetSdk = 25
-        versionCode = 13100
-        versionName = "1.3.1.0"
+        versionCode = 13200
+        versionName = "1.3.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -395,13 +395,24 @@ android {
             //   → R8 strips all log calls from bytecode
             // When ANY flag is true (debug build): exclude proguard-rules-strip-logs.pro
             //   → log calls stay in bytecode, DaemonLogConfig controls which tags write to disk
-            val logConfigFile = file("src/main/java/com/loabletech/bladewatch/logging/DaemonLogConfig.java") // path unchanged — dir rename not required
-            val loggingEnabled = if (logConfigFile.exists()) {
-                val content = logConfigFile.readText()
-                val enableAllMatch = Regex("""public static final boolean ENABLE_ALL\s*=\s*true""").containsMatchIn(content)
-                val anyFlagTrue = Regex("""public static final boolean (?!ANY_LOGGING_ENABLED)\w+\s*=\s*true""").containsMatchIn(content)
-                enableAllMatch || anyFlagTrue
-            } else false
+            // DaemonLogConfig is KOTLIN since BladeWatch-dmrg, so the flags are
+            // `const val NAME = true`, not `public static final boolean NAME = true`.
+            //
+            // This detection is fail-DANGEROUS, which is why the file is required rather than
+            // tolerated: if the path is wrong, `exists()` is false, loggingEnabled comes out
+            // false, and strip-logs is applied unconditionally — so a developer who turned a
+            // flag on to debug a device would get a release APK with every log call removed and
+            // no indication why. Failing the build is the only honest behaviour.
+            val logConfigFile = file("src/main/java/com/loabletech/bladewatch/logging/DaemonLogConfig.kt")
+            require(logConfigFile.exists()) {
+                "DaemonLogConfig not found at ${logConfigFile.path}. The release build reads it " +
+                    "to decide whether to strip log calls; without it, logging would be stripped " +
+                    "silently even when a flag is enabled."
+            }
+            val logConfigContent = logConfigFile.readText()
+            val enableAllMatch = Regex("""const val ENABLE_ALL\s*=\s*true""").containsMatchIn(logConfigContent)
+            val anyFlagTrue = Regex("""const val (?!ANY_LOGGING_ENABLED)\w+\s*=\s*true""").containsMatchIn(logConfigContent)
+            val loggingEnabled = enableAllMatch || anyFlagTrue
             
             val proguardFilesList = mutableListOf(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

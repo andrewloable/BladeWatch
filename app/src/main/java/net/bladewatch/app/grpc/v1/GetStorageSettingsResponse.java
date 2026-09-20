@@ -37,6 +37,7 @@ private static final long serialVersionUID = 0L;
     sdCardTotalFormatted_ = "";
     internalFreeFormatted_ = "";
     internalTotalFormatted_ = "";
+    sdCardMountError_ = "";
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -573,6 +574,62 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int SD_CARD_MOUNT_FAILED_FIELD_NUMBER = 25;
+  private boolean sdCardMountFailed_ = false;
+  /**
+   * <pre>
+   * True when an SD card configured for storage failed to mount after repeated attempts at
+   * daemon startup and the daemon kept the SD_CARD preference (not silently downgraded to
+   * internal). See sd_card_mount_error for a user-facing message.
+   * </pre>
+   *
+   * <code>bool sd_card_mount_failed = 25 [json_name = "sdCardMountFailed"];</code>
+   * @return The sdCardMountFailed.
+   */
+  @java.lang.Override
+  public boolean getSdCardMountFailed() {
+    return sdCardMountFailed_;
+  }
+
+  public static final int SD_CARD_MOUNT_ERROR_FIELD_NUMBER = 26;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object sdCardMountError_ = "";
+  /**
+   * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+   * @return The sdCardMountError.
+   */
+  @java.lang.Override
+  public java.lang.String getSdCardMountError() {
+    java.lang.Object ref = sdCardMountError_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      sdCardMountError_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+   * @return The bytes for sdCardMountError.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getSdCardMountErrorBytes() {
+    java.lang.Object ref = sdCardMountError_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      sdCardMountError_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -658,6 +715,12 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(internalTotalFormatted_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 24, internalTotalFormatted_);
+    }
+    if (sdCardMountFailed_ != false) {
+      output.writeBool(25, sdCardMountFailed_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(sdCardMountError_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 26, sdCardMountError_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -750,6 +813,13 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(internalTotalFormatted_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(24, internalTotalFormatted_);
     }
+    if (sdCardMountFailed_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(25, sdCardMountFailed_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(sdCardMountError_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(26, sdCardMountError_);
+    }
     return size;
   }
   @java.lang.Override
@@ -822,6 +892,10 @@ private static final long serialVersionUID = 0L;
         .equals(other.getInternalFreeFormatted())) return false;
     if (!getInternalTotalFormatted()
         .equals(other.getInternalTotalFormatted())) return false;
+    if (getSdCardMountFailed()
+        != other.getSdCardMountFailed()) return false;
+    if (!getSdCardMountError()
+        .equals(other.getSdCardMountError())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -894,6 +968,11 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getInternalFreeFormatted().hashCode();
     hash = (37 * hash) + INTERNAL_TOTAL_FORMATTED_FIELD_NUMBER;
     hash = (53 * hash) + getInternalTotalFormatted().hashCode();
+    hash = (37 * hash) + SD_CARD_MOUNT_FAILED_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getSdCardMountFailed());
+    hash = (37 * hash) + SD_CARD_MOUNT_ERROR_FIELD_NUMBER;
+    hash = (53 * hash) + getSdCardMountError().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -1049,6 +1128,8 @@ private static final long serialVersionUID = 0L;
       internalTotalBytes_ = 0L;
       internalFreeFormatted_ = "";
       internalTotalFormatted_ = "";
+      sdCardMountFailed_ = false;
+      sdCardMountError_ = "";
       return this;
     }
 
@@ -1154,6 +1235,12 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00800000) != 0)) {
         result.internalTotalFormatted_ = internalTotalFormatted_;
       }
+      if (((from_bitField0_ & 0x01000000) != 0)) {
+        result.sdCardMountFailed_ = sdCardMountFailed_;
+      }
+      if (((from_bitField0_ & 0x02000000) != 0)) {
+        result.sdCardMountError_ = sdCardMountError_;
+      }
     }
 
     @java.lang.Override
@@ -1256,6 +1343,14 @@ private static final long serialVersionUID = 0L;
       if (!other.getInternalTotalFormatted().isEmpty()) {
         internalTotalFormatted_ = other.internalTotalFormatted_;
         bitField0_ |= 0x00800000;
+        onChanged();
+      }
+      if (other.getSdCardMountFailed() != false) {
+        setSdCardMountFailed(other.getSdCardMountFailed());
+      }
+      if (!other.getSdCardMountError().isEmpty()) {
+        sdCardMountError_ = other.sdCardMountError_;
+        bitField0_ |= 0x02000000;
         onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
@@ -1404,6 +1499,16 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00800000;
               break;
             } // case 194
+            case 200: {
+              sdCardMountFailed_ = input.readBool();
+              bitField0_ |= 0x01000000;
+              break;
+            } // case 200
+            case 210: {
+              sdCardMountError_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x02000000;
+              break;
+            } // case 210
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -2545,6 +2650,128 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       internalTotalFormatted_ = value;
       bitField0_ |= 0x00800000;
+      onChanged();
+      return this;
+    }
+
+    private boolean sdCardMountFailed_ ;
+    /**
+     * <pre>
+     * True when an SD card configured for storage failed to mount after repeated attempts at
+     * daemon startup and the daemon kept the SD_CARD preference (not silently downgraded to
+     * internal). See sd_card_mount_error for a user-facing message.
+     * </pre>
+     *
+     * <code>bool sd_card_mount_failed = 25 [json_name = "sdCardMountFailed"];</code>
+     * @return The sdCardMountFailed.
+     */
+    @java.lang.Override
+    public boolean getSdCardMountFailed() {
+      return sdCardMountFailed_;
+    }
+    /**
+     * <pre>
+     * True when an SD card configured for storage failed to mount after repeated attempts at
+     * daemon startup and the daemon kept the SD_CARD preference (not silently downgraded to
+     * internal). See sd_card_mount_error for a user-facing message.
+     * </pre>
+     *
+     * <code>bool sd_card_mount_failed = 25 [json_name = "sdCardMountFailed"];</code>
+     * @param value The sdCardMountFailed to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSdCardMountFailed(boolean value) {
+
+      sdCardMountFailed_ = value;
+      bitField0_ |= 0x01000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * True when an SD card configured for storage failed to mount after repeated attempts at
+     * daemon startup and the daemon kept the SD_CARD preference (not silently downgraded to
+     * internal). See sd_card_mount_error for a user-facing message.
+     * </pre>
+     *
+     * <code>bool sd_card_mount_failed = 25 [json_name = "sdCardMountFailed"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearSdCardMountFailed() {
+      bitField0_ = (bitField0_ & ~0x01000000);
+      sdCardMountFailed_ = false;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object sdCardMountError_ = "";
+    /**
+     * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+     * @return The sdCardMountError.
+     */
+    public java.lang.String getSdCardMountError() {
+      java.lang.Object ref = sdCardMountError_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        sdCardMountError_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+     * @return The bytes for sdCardMountError.
+     */
+    public com.google.protobuf.ByteString
+        getSdCardMountErrorBytes() {
+      java.lang.Object ref = sdCardMountError_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        sdCardMountError_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+     * @param value The sdCardMountError to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSdCardMountError(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      sdCardMountError_ = value;
+      bitField0_ |= 0x02000000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearSdCardMountError() {
+      sdCardMountError_ = getDefaultInstance().getSdCardMountError();
+      bitField0_ = (bitField0_ & ~0x02000000);
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+     * @param value The bytes for sdCardMountError to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSdCardMountErrorBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      sdCardMountError_ = value;
+      bitField0_ |= 0x02000000;
       onChanged();
       return this;
     }

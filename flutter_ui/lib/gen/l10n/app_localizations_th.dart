@@ -1319,6 +1319,11 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 เดือนนี้';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'ออนไลน์';
 
   @override
@@ -1509,10 +1514,91 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'ลำดับความสำคัญการบันทึก';
+
+  @override
+  String get settings_recording_priority_description =>
+      'การบันทึกจัดการกับไฟดับกะทันหันอย่างไร';
+
+  @override
+  String get settings_recording_priority_performance_label => 'ประสิทธิภาพ';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'ใช้ CPU น้อยลง หากไฟดับกะทันหัน ส่วนการบันทึกปัจจุบัน (สูงสุดตามขีดจำกัดการบันทึกของคุณ) อาจสูญหาย';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'ความน่าเชื่อถือ';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'ใช้ CPU มากขึ้นเล็กน้อยเพื่อบันทึกบ่อยขึ้น หากไฟดับกะทันหัน จะสูญเสียไม่เกินประมาณหนึ่งนาที';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'ฟิลด์ซ้อนทับ';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'เลือกสิ่งที่จะแสดงในฟิลด์ซ้อนทับที่ฝังอยู่บนวิดีโอต่อเนื่อง';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'ความเร็ว';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'เกียร์';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'ไฟเลี้ยวซ้าย';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'ไฟเลี้ยวขวา';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'แป้นเบรก';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => 'คันเร่ง';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'เข็มขัดนิรภัยคนขับ';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'เข็มขัดนิรภัยผู้โดยสาร';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'วันที่และเวลา';
+
+  @override
   String get settings_recording_quality_title => 'คุณภาพการบันทึก';
 
   @override
   String get settings_recording_storage_title => 'ที่จัดเก็บการบันทึก';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'ลบการบันทึกหรือไม่?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'การดำเนินการนี้จะลบการบันทึก $arg1 รายการ ($arg2)',
+      one: 'การดำเนินการนี้จะลบการบันทึก $arg1 รายการ ($arg2)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'ไม่ทราบผลกระทบ';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'ไม่สามารถระบุได้ว่าการเปลี่ยนแปลงนี้จะลบอะไรบ้าง การลดขีดจำกัดอาจลบการบันทึกที่มีอยู่';
 
   @override
   String get settings_recording_storage_location_label => 'ตำแหน่งจัดเก็บ';
@@ -1525,6 +1611,10 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'การ์ด SD (ไม่มี)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'การ์ด SD ไม่ได้ต่อเชื่อม';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1934,6 +2024,27 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'ทำความเย็นสูงสุด: ปิด';
+
+  @override
+  String get vehicle_screen_on => 'หน้าจอ: เปิด';
+
+  @override
+  String get vehicle_screen_off => 'หน้าจอ: ปิด';
+
+  @override
+  String get vehicle_media_volume_label => 'ระดับเสียงสื่อ';
+
+  @override
+  String get vehicle_media_mute => 'ปิดเสียง';
+
+  @override
+  String get vehicle_media_muted => 'ปิดเสียงแล้ว';
+
+  @override
+  String get vehicle_front_defrost => 'ละลายน้ำแข็งกระจกหน้า';
+
+  @override
+  String get vehicle_rear_defrost => 'ละลายน้ำแข็งกระจกหลัง';
 
   @override
   String get vehicle_temp_label => 'อุณหภูมิ';
@@ -2779,4 +2890,12 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'เข้าใจแล้ว';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'โหมดเซนทรีใช้พลังงานแบตเตอรี่ 12V เพิ่มเติมขณะทำงาน';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'แอปอื่นกำลังใช้กล้องอยู่ในขณะนี้';
 }

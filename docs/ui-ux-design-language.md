@@ -47,8 +47,49 @@ until the overlay follows; the Angular SPA has no automated gate and must be
 updated by hand.
 
 **Target device.** BYD Seal 15.6″ rotatable infotainment — landscape
-`1920×1080` (`960×540dp`), portrait `1080×1920` (`540×960dp`). The design
-language is tuned for this large, bright, glanceable surface, not a phone.
+`1920×1080`, portrait `1080×1920`. The design language is tuned for this large,
+bright, glanceable surface, not a phone.
+
+**In dp, measured on the head unit 2026-09-20.** `wm density` reports **240**, so the
+device pixel ratio is `240/160 = 1.5`. Three different numbers matter and conflating
+them is how layouts get mis-sized:
+
+| Landscape | px | dp | What it is |
+|---|---|---|---|
+| Display | `1920×1080` | `1280×720` | The panel. Not a layout budget. |
+| Usable window | `1920×906` | `1280×604` | After the system status and bottom bars — `dumpsys window` reports `mStable=[0,84][1920,990]`. |
+| Screen body | `1920×830` | `1280×553` | After the app's own toolbar. **This is what a screen actually lays out in.** |
+
+This line previously claimed `960×540dp` / `540×960dp`, which assumes density 320. The
+width was genuinely wrong — `960` against a real `1280`. The height was wrong about the
+display but landed near the real *body* height by coincidence, which is why layout
+arithmetic done against `540dp` looked plausible. Measure with
+`adb shell wm size; wm density` for the display and `adb shell dumpsys window | grep mStable`
+for the usable window; do not trust any of these numbers from memory.
+
+**Both orientations must lay out.** The unit rotates, and a screen built for only one of
+them does not merely look cramped in the other — it clips. The Vehicle screen shipped a
+single `Stack` whose hero, tyre cards and control panel shared no constraint, which was
+fine in portrait and covered the car entirely in landscape (BladeWatch-vuul).
+
+### Responsive breakpoints
+
+The spacing table below is the token set for *rhythm*; it has no entry for a breakpoint,
+so these are recorded here instead of being reinvented per screen. Each is measured, not
+picked:
+
+| Constant | Value | Why that number |
+|---|---|---|
+| wide-layout minimum width | `700dp` | Between the device's two orientations (`1280dp` landscape, `720dp` portrait), so in practice it is an orientation switch, expressed as a width so it degrades sensibly elsewhere. |
+| two-up control minimum width | `500dp` | A stepper's −/value/+ cluster is rigid: two `48dp` icon buttons plus the value, so only its label can absorb a squeeze. Two steppers in a `432dp` column overflowed by 16px. |
+| portrait controls maximum height | `0.55` of the screen | A **cap**, not a target — the panel shrink-wraps its content and scrolls past it. The car takes whatever is left. |
+
+**Do not express the portrait split as `Expanded` + `Flexible`.** Both are flex children
+with flex `1`, so `RenderFlex` splits the height 50/50 no matter what the content wants:
+the hero is capped at half the screen and the slack becomes dead space at the bottom.
+Measured at `720×1280`: hero `640`, controls `200`, `440px` of nothing underneath. Make
+the controls a **non-flex** child with a bounded height — non-flex children are measured
+first, so the single remaining flex child takes everything left.
 
 ## UI Refactor Ground Rules
 
@@ -287,6 +328,27 @@ the same component vocabulary in its own SCSS
   gradient). The Flutter shell builds it in
   [app_shell.dart](../flutter_ui/lib/shell/app_shell.dart); the old
   `app-shell.css` was retired with the legacy static pages in `c970b59`.
+- **Inline caption / honesty text** — a short `bodySmall` line placed directly
+  under the control it explains (no icon, no tinted container), used for
+  plain-language cost or side-effect disclosures such as the Sentry mode
+  battery-drain note and the camera-contention note in
+  [surveillance_screen.dart](../flutter_ui/lib/screens/surveillance/surveillance_screen.dart),
+  and the drive-format warning in the same file. Conditional captions (shown
+  only while the condition they describe is actually true, e.g. camera
+  contention) must not be replaced with a permanently visible caption — see
+  `surveillance_screen_test.dart`'s `'General tab'` group.
+- **Utility rail** (BladeWatch-y78o.2) — a narrow, fixed-width (`168dp`)
+  `colorSurface`-dark (`0xFF101010`, the same fixed tone the Live screen's
+  direction bar/mark button already used before this) column alongside a
+  full-stage primary view, carrying a screen's secondary controls and a
+  compact preview of another destination. First used in
+  [live_view_screen.dart](../flutter_ui/lib/screens/live_view/live_view_screen.dart):
+  the camera keeps the whole video area, and the rail carries the 5-way
+  direction selector, the recording bookmark button, and a location preview.
+  A preview in this rail is a **summary**, never a second live instance of
+  the destination it previews (no embedded map here — a short status line
+  reusing the destination's own strings) — tapping it navigates to the real
+  destination, which stays in the primary nav rail.
 
 ## Icons
 

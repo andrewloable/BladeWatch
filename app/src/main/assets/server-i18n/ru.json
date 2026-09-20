@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Недействительный орган обращения: {0}",
     "performance_no_data": "Мониторинг производительности не начался или пока не собираются данные",
     "soh_not_initialized": "SohEstimator не инициирован",
+    "soh_nominal_range": "Номинальная ёмкость должна быть от 8 до 120 кВт·ч",
     "reset_no_categories": "Категории не указаны",
     "reset_unknown_category": "Неизвестная категория",
     "reset_trip_in_progress": "Путешествие в процессе  сначала выключите ACC",
@@ -75,6 +76,8 @@
     "surveillance_invalid_quadrant_with_id": "Недействительный квадрант: {0}",
     "surveillance_event_frame_failed_with_detail": "Не удалось обработать рамку событий: {0}",
     "surveillance_no_frame_available": "Никаких кадров нет  начать наблюдение или записывать событие сначала",
+    "telemetry_overlay_unknown_type_with_id": "Неизвестный тип записи: {0}",
+    "telemetry_overlay_fields_missing": "Отсутствует \"fields\"",
     "update_app_context_not_ready": "Контекст приложения не готов",
     "update_check_timed_out": "Время проверки обновления",
     "update_disabled_in_public_mode": "Обновления отключены в режиме общественного обмена. Первое, что нужно сделать, это перейти на режим ПРИВАТУ в приложении в автомобиле.",
@@ -118,7 +121,11 @@
     "area_hood": "Капуста",
     "area_trunk": "Трубопровод",
     "area_fuel_cap": "Топливная крышка",
-    "area_door_n": "Дверь {0}"
+    "area_door_n": "Дверь {0}",
+    "trip_started": "Поездка началась",
+    "trip_ended": "Поездка завершена",
+    "trip_summary_km": "{0} km · {1} мин",
+    "trip_summary_mi": "{0} миль · {1} мин"
   },
   "vehicle_control": {
     "cloud_required": "Подключить учетную запись BYD в Настройках для использования этого управления",
@@ -130,6 +137,7 @@
     "cloud_failed": "Не удалось добраться до машины  попробуйте снова, когда машина проснется",
     "rate_limited": "Командование все еще в процессе  подождите несколько секунд",
     "not_supported": "Это управление не доступно в данный момент.",
+    "blocked_moving": "Недоступно, пока автомобиль движется.",
     "find_car_label": "Найди машину .",
     "battery_heat_label": "Теплая батарея",
     "close_all_windows_label": "Все окна закрываются"

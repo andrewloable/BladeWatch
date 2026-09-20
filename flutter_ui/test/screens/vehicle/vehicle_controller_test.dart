@@ -1,5 +1,6 @@
 import 'package:bladewatch_ui/gen/bladewatch/v1/system.pb.dart' show SetSelectedModelRequest;
-import 'package:bladewatch_ui/gen/bladewatch/v1/vehicle.pb.dart' show MoveWindowRequest, SetClimateRequest, SetSeatRequest;
+import 'package:bladewatch_ui/gen/bladewatch/v1/vehicle.pb.dart'
+    show MoveWindowRequest, SetClimateRequest, SetMediaVolumeRequest, SetScreenRequest, SetSeatRequest;
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/vehicle_service_client.dart';
 import 'package:bladewatch_ui/screens/vehicle/vehicle_controller.dart';
@@ -42,6 +43,8 @@ void main() {
     double insideTempC = 0.0,
     int fanLevel = 3,
     bool maxCooling = false,
+    int mediaVolumePercent = 40,
+    bool mediaMuted = false,
     Map<String, Object?> flTyre = const {},
   }) {
     rpc.stubJson('VehicleService', 'GetState', {
@@ -61,6 +64,8 @@ void main() {
       'battery': {'soc': soc, 'rangeKm': rangeKm},
       'seats': {'heat': heat, 'cool': cool},
       'climate': {'acOn': acOn, 'setpointC': setpointC, 'insideTempC': insideTempC, 'fanLevel': fanLevel, 'maxCooling': maxCooling},
+      'mediaVolumePercent': mediaVolumePercent,
+      'mediaMuted': mediaMuted,
       'tyres': {
         'fl': flTyre,
         'fr': <String, Object?>{},
@@ -429,6 +434,220 @@ void main() {
       await c.toggleAc();
 
       expect(rpc.calls.length, callsAfterFirst);
+    });
+  });
+
+  group('screen toggle (BladeWatch-2000.3)', () {
+    test('defaults to on, and turning off sends on=false', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetScreen', {'success': true});
+      final c = build();
+      await c.load();
+      expect(c.screenOn, isTrue);
+
+      final error = await c.toggleScreen();
+
+      expect(error, isNull);
+      expect(c.screenOn, isFalse);
+      final req = rpc.calls.last.request as SetScreenRequest;
+      expect(req.on, isFalse);
+    });
+
+    test('a failure (e.g. blocked by the motion interlock) reverts the optimistic state', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetScreen', {'success': false, 'message': 'Blocked while moving'});
+      final c = build();
+      await c.load();
+
+      final error = await c.toggleScreen();
+
+      expect(error, 'Blocked while moving');
+      expect(c.screenOn, isTrue);
+    });
+
+    test('throwing reverts the optimistic state and returns the exception text', () async {
+      stubState();
+      rpc.stubError('VehicleService', 'SetScreen', const ConnectError('unavailable', 'down'));
+      final c = build();
+      await c.load();
+
+      final error = await c.toggleScreen();
+
+      expect(error, isNotNull);
+      expect(c.screenOn, isTrue);
+    });
+
+    test('is debounced within 600ms', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetScreen', {'success': true});
+      final c = build();
+      await c.load();
+
+      await c.toggleScreen();
+      final callsAfterFirst = rpc.calls.length;
+      await c.toggleScreen();
+
+      expect(rpc.calls.length, callsAfterFirst);
+    });
+  });
+
+  group('media volume (BladeWatch-2000.2)', () {
+    test('load reads the real server value, not a local guess', () async {
+      stubState(mediaVolumePercent: 73, mediaMuted: true);
+      final c = build();
+
+      await c.load();
+
+      expect(c.mediaVolumePercent, 73);
+      expect(c.mediaMuted, isTrue);
+    });
+
+    test('stepVolumeUp sends step_up and optimistically increases by 5', () async {
+      stubState(mediaVolumePercent: 40);
+      rpc.stubJson('VehicleService', 'SetMediaVolume', {'success': true});
+      final c = build();
+      await c.load();
+
+      final error = await c.stepVolumeUp();
+
+      expect(error, isNull);
+      expect(c.mediaVolumePercent, 45);
+      final req = rpc.calls.last.request as SetMediaVolumeRequest;
+      expect(req.action, 'step_up');
+    });
+
+    test('stepVolumeDown sends step_down and optimistically decreases by 5', () async {
+      stubState(mediaVolumePercent: 40);
+      rpc.stubJson('VehicleService', 'SetMediaVolume', {'success': true});
+      final c = build();
+      await c.load();
+
+      final error = await c.stepVolumeDown();
+
+      expect(error, isNull);
+      expect(c.mediaVolumePercent, 35);
+      final req = rpc.calls.last.request as SetMediaVolumeRequest;
+      expect(req.action, 'step_down');
+    });
+
+    test('toggleMute sends mute then unmute in turn', () async {
+      stubState(mediaVolumePercent: 40, mediaMuted: false);
+      rpc.stubJson('VehicleService', 'SetMediaVolume', {'success': true});
+      final c = build();
+      await c.load();
+
+      await c.toggleMute();
+      expect(c.mediaMuted, isTrue);
+      expect((rpc.calls.last.request as SetMediaVolumeRequest).action, 'mute');
+    });
+
+    test('a failure reverts the optimistic percent and mute state', () async {
+      stubState(mediaVolumePercent: 40, mediaMuted: false);
+      rpc.stubJson('VehicleService', 'SetMediaVolume', {'success': false, 'message': 'busy'});
+      final c = build();
+      await c.load();
+
+      final error = await c.toggleMute();
+
+      expect(error, 'busy');
+      expect(c.mediaMuted, isFalse);
+    });
+
+    test('throwing reverts the optimistic state and returns the exception text', () async {
+      stubState(mediaVolumePercent: 40);
+      rpc.stubError('VehicleService', 'SetMediaVolume', const ConnectError('unavailable', 'down'));
+      final c = build();
+      await c.load();
+
+      final error = await c.stepVolumeUp();
+
+      expect(error, isNotNull);
+      expect(c.mediaVolumePercent, 40);
+    });
+
+    test('stepVolumeUp is debounced within 600ms', () async {
+      stubState(mediaVolumePercent: 40);
+      rpc.stubJson('VehicleService', 'SetMediaVolume', {'success': true});
+      final c = build();
+      await c.load();
+
+      await c.stepVolumeUp();
+      final callsAfterFirst = rpc.calls.length;
+      await c.stepVolumeUp();
+
+      expect(rpc.calls.length, callsAfterFirst);
+    });
+  });
+
+  group('defrosters (BladeWatch-2000.1)', () {
+    test('toggleFrontDefrost sends action=front_defrost on=true', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': true});
+      final c = build();
+      await c.load();
+      expect(c.frontDefrostOn, isFalse);
+
+      final error = await c.toggleFrontDefrost();
+
+      expect(error, isNull);
+      expect(c.frontDefrostOn, isTrue);
+      final req = rpc.calls.last.request as SetClimateRequest;
+      expect(req.action, 'front_defrost');
+      expect(req.on, isTrue);
+    });
+
+    test('toggleRearDefrost sends action=rear_defrost on=true, independent of front', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': true});
+      final c = build();
+      await c.load();
+
+      final error = await c.toggleRearDefrost();
+
+      expect(error, isNull);
+      expect(c.rearDefrostOn, isTrue);
+      expect(c.frontDefrostOn, isFalse);
+      final req = rpc.calls.last.request as SetClimateRequest;
+      expect(req.action, 'rear_defrost');
+      expect(req.on, isTrue);
+    });
+
+    test('a failure (e.g. blocked by the motion interlock) reverts front defrost', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': false, 'message': 'Blocked while moving'});
+      final c = build();
+      await c.load();
+
+      final error = await c.toggleFrontDefrost();
+
+      expect(error, 'Blocked while moving');
+      expect(c.frontDefrostOn, isFalse);
+    });
+
+    test('throwing reverts rear defrost and returns the exception text', () async {
+      stubState();
+      rpc.stubError('VehicleService', 'SetClimate', const ConnectError('unavailable', 'down'));
+      final c = build();
+      await c.load();
+
+      final error = await c.toggleRearDefrost();
+
+      expect(error, isNotNull);
+      expect(c.rearDefrostOn, isFalse);
+    });
+
+    test('front and rear defrost debounce independently', () async {
+      stubState();
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': true});
+      final c = build();
+      await c.load();
+
+      await c.toggleFrontDefrost();
+      final callsAfterFront = rpc.calls.length;
+      final error = await c.toggleRearDefrost();
+
+      expect(error, isNull);
+      expect(rpc.calls.length, callsAfterFront + 1, reason: 'rear must not be blocked by front\'s debounce key');
     });
   });
 

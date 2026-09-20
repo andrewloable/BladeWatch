@@ -1557,7 +1557,8 @@
     "badgeLive": "● LIVE",
     "badgeConnecting": "○ Connessione…",
     "notConnected": "Stream telecamera non connesso",
-    "decoderUnsupported": "Questo browser non può riprodurre lo streaming dal vivo. Serve un browser con supporto alla decodifica video, come Chrome o Edge. Tor Browser e Firefox ESR non lo supportano ancora."
+    "decoderUnsupported": "Questo browser non può riprodurre lo streaming dal vivo. Serve un browser con supporto alla decodifica video, come Chrome o Edge. Tor Browser e Firefox ESR non lo supportano ancora.",
+    "stillFrameLabel": "Immagine fissa — non è video in diretta"
   },
   "location": {
     "themeAuto": "Autovettura",

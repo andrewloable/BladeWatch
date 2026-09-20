@@ -2,7 +2,7 @@
 """
 Encrypt strings for use with Safe.s() in BladeWatch.
 
-Uses the same AES-256-CBC key and IV as Safe.java to produce
+Uses the same AES-256-CBC key and IV as Safe.kt to produce
 Base64-encoded ciphertext that Safe.s() can decrypt at runtime.
 
 IMPORTANT: Safe.s() is for NON-SECRET obfuscation only (internal paths,
@@ -26,7 +26,7 @@ import base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
-# Key parts from Safe.java (same byte arrays)
+# Key parts from Safe.kt (same byte arrays)
 K1 = bytes([0x38, 0x39, 0x33, 0x38, 0x34, 0x37, 0x32, 0x38])
 K2 = bytes([0x33, 0x37, 0x34, 0x38, 0x32, 0x39, 0x33, 0x30])
 K3 = bytes([0x31, 0x38, 0x32, 0x37, 0x33, 0x38, 0x34, 0x39])

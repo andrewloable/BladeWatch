@@ -27,4 +27,52 @@ public interface SetStorageSettingsResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getErrorBytes();
+
+  /**
+   * <pre>
+   * Present only when applying this request actually deleted at least one existing file for
+   * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+   * finds this out BEFORE applying.
+   * </pre>
+   *
+   * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+   * @return Whether the recordingsImpact field is set.
+   */
+  boolean hasRecordingsImpact();
+  /**
+   * <pre>
+   * Present only when applying this request actually deleted at least one existing file for
+   * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+   * finds this out BEFORE applying.
+   * </pre>
+   *
+   * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+   * @return The recordingsImpact.
+   */
+  net.bladewatch.app.grpc.v1.CleanupImpact getRecordingsImpact();
+  /**
+   * <pre>
+   * Present only when applying this request actually deleted at least one existing file for
+   * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+   * finds this out BEFORE applying.
+   * </pre>
+   *
+   * <code>.bladewatch.v1.CleanupImpact recordings_impact = 3 [json_name = "recordingsImpact"];</code>
+   */
+  net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder getRecordingsImpactOrBuilder();
+
+  /**
+   * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+   * @return Whether the surveillanceImpact field is set.
+   */
+  boolean hasSurveillanceImpact();
+  /**
+   * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+   * @return The surveillanceImpact.
+   */
+  net.bladewatch.app.grpc.v1.CleanupImpact getSurveillanceImpact();
+  /**
+   * <code>.bladewatch.v1.CleanupImpact surveillance_impact = 4 [json_name = "surveillanceImpact"];</code>
+   */
+  net.bladewatch.app.grpc.v1.CleanupImpactOrBuilder getSurveillanceImpactOrBuilder();
 }

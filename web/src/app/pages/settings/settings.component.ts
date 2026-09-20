@@ -405,21 +405,15 @@ export default class SettingsComponent implements OnInit {
     }
   }
 
-  // ---- Overlay (synced to device via /api/settings/status-overlay) ----
+  // ---- Overlay (synced to the device over SettingsService, BladeWatch-qwqq) ----
   /** Hydrate the toggles from the device's canonical config (source of truth). */
   private async loadOverlay(): Promise<void> {
     try {
-      const resp = await fetch('/api/settings/status-overlay', { credentials: 'same-origin' });
-      if (!resp.ok) return;
-      const data = await resp.json();
-      if (typeof data.cameraVisible === 'boolean') {
-        this.overlayCamera.set(data.cameraVisible);
-        localStorage.setItem('bw_overlay_camera', String(data.cameraVisible));
-      }
-      if (typeof data.tripVisible === 'boolean') {
-        this.overlayTrip.set(data.tripVisible);
-        localStorage.setItem('bw_overlay_trip', String(data.tripVisible));
-      }
+      const data = await this.clients.settings.getStatusOverlay({});
+      this.overlayCamera.set(data.cameraVisible);
+      localStorage.setItem('bw_overlay_camera', String(data.cameraVisible));
+      this.overlayTrip.set(data.tripVisible);
+      localStorage.setItem('bw_overlay_trip', String(data.tripVisible));
     } catch {
       /* offline — keep the localStorage fast-paint values */
     }
@@ -446,14 +440,15 @@ export default class SettingsComponent implements OnInit {
     localStorage.setItem(key, String(on));
     void (async () => {
       try {
-        const resp = await fetch('/api/settings/status-overlay', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ [field]: on }),
-        });
-        const data = resp.ok ? await resp.json() : null;
-        if (!data?.success) throw new Error(data?.error || 'save failed');
+        // Only the toggle being changed is sent. proto3 has no field presence for a bare
+        // bool, so each carries an explicit set* companion — without it the untouched
+        // toggle would arrive as false and be switched off behind the user's back.
+        const data = await this.clients.settings.setStatusOverlay(
+          field === 'cameraVisible'
+            ? { cameraVisible: on, setCameraVisible: true }
+            : { tripVisible: on, setTripVisible: true },
+        );
+        if (!data.success) throw new Error(data.error || 'save failed');
       } catch {
         sig.set(prev);
         localStorage.setItem(key, String(prev));

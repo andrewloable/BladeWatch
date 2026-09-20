@@ -1,6 +1,7 @@
 package net.bladewatch.app.launcher
 
 import android.content.Context
+import net.bladewatch.app.daemon.ShellResultClassifier
 import net.bladewatch.app.logging.LogManager
 
 /**
@@ -265,7 +266,12 @@ class ServiceLauncher(
                     logManager.info(TAG, "LocationSidecarService start result: ${output.trim()}")
                     callback.onLog("Service start result: ${output.trim()}")
                     
-                    if (output.contains("Error") || output.contains("Exception")) {
+                    // One definition of "did this fail", shared with
+                    // SentryDaemon.restartLocationService, which runs the same am command
+                    // (BladeWatch-boat/ieva). The hand-rolled test that used to live here was
+                    // case-sensitive, knew nothing of "Permission Denial", and mapped EMPTY
+                    // output to a successful launch.
+                    if (ShellResultClassifier.isFailure(output)) {
                         callback.onError("Service start failed: ${output.trim()}")
                     } else {
                         callback.onLaunched()

@@ -48,10 +48,15 @@ class TripItem {
   String get formattedDuration => formatTripDuration(durationSeconds);
 }
 
-/// Mirrors `TripsClient.fetchTripDetail`'s hardcoded 0.0 defaults for
-/// [energyUsedKwh]/[efficiencySocPerKm] and empty [telemetryFilePath] — the
-/// RPC response genuinely has no field for these (TripDetail/TripSummary
-/// proto messages checked directly), not a port gap.
+/// [energyUsedKwh] is derived client-side as `energyPerKm * distanceKm` — TripSummary has no
+/// direct kWh-consumed field, but that product IS the value (see TripDetailController's own
+/// comment). Native's `TripsClient.fetchTripDetail` hardcodes this to 0.0 instead, reasoning
+/// the field "doesn't exist"; that produced a permanently blank Energy tile on the trip detail
+/// screen even when SoC and electric cost both showed real usage. Not reproduced here.
+///
+/// [efficiencySocPerKm] and [telemetryFilePath] stay hardcoded to 0.0 / empty, matching native —
+/// the RPC response genuinely has no field for these (TripDetail/TripSummary proto messages
+/// checked directly), and neither is currently rendered by this screen.
 class TripDetailData {
   final int id;
   final DateTime startTime;

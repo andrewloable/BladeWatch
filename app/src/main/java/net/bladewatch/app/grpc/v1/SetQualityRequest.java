@@ -31,6 +31,7 @@ private static final long serialVersionUID = 0L;
     recordingQuality_ = "";
     codec_ = "";
     streamingQuality_ = "";
+    recordingPriority_ = "";
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor
@@ -222,6 +223,53 @@ private static final long serialVersionUID = 0L;
     return recordingSegmentMinutes_;
   }
 
+  public static final int RECORDING_PRIORITY_FIELD_NUMBER = 6;
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object recordingPriority_ = "";
+  /**
+   * <pre>
+   * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+   * </pre>
+   *
+   * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+   * @return The recordingPriority.
+   */
+  @java.lang.Override
+  public java.lang.String getRecordingPriority() {
+    java.lang.Object ref = recordingPriority_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      recordingPriority_ = s;
+      return s;
+    }
+  }
+  /**
+   * <pre>
+   * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+   * </pre>
+   *
+   * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+   * @return The bytes for recordingPriority.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getRecordingPriorityBytes() {
+    java.lang.Object ref = recordingPriority_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      recordingPriority_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -251,6 +299,9 @@ private static final long serialVersionUID = 0L;
     if (recordingSegmentMinutes_ != 0) {
       output.writeInt32(5, recordingSegmentMinutes_);
     }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(recordingPriority_)) {
+      com.google.protobuf.GeneratedMessage.writeString(output, 6, recordingPriority_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -271,6 +322,9 @@ private static final long serialVersionUID = 0L;
     if (recordingSegmentMinutes_ != 0) {
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(5, recordingSegmentMinutes_);
+    }
+    if (!com.google.protobuf.GeneratedMessage.isStringEmpty(recordingPriority_)) {
+      size += com.google.protobuf.GeneratedMessage.computeStringSize(6, recordingPriority_);
     }
     return size;
   }
@@ -306,6 +360,8 @@ private static final long serialVersionUID = 0L;
         != other.getFps()) return false;
     if (getRecordingSegmentMinutes()
         != other.getRecordingSegmentMinutes()) return false;
+    if (!getRecordingPriority()
+        .equals(other.getRecordingPriority())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -327,6 +383,8 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getFps();
     hash = (37 * hash) + RECORDING_SEGMENT_MINUTES_FIELD_NUMBER;
     hash = (53 * hash) + getRecordingSegmentMinutes();
+    hash = (37 * hash) + RECORDING_PRIORITY_FIELD_NUMBER;
+    hash = (53 * hash) + getRecordingPriority().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -463,6 +521,7 @@ private static final long serialVersionUID = 0L;
       streamingQuality_ = "";
       fps_ = 0;
       recordingSegmentMinutes_ = 0;
+      recordingPriority_ = "";
       return this;
     }
 
@@ -511,6 +570,9 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000010) != 0)) {
         result.recordingSegmentMinutes_ = recordingSegmentMinutes_;
       }
+      if (((from_bitField0_ & 0x00000020) != 0)) {
+        result.recordingPriority_ = recordingPriority_;
+      }
     }
 
     @java.lang.Override
@@ -545,6 +607,11 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getRecordingSegmentMinutes() != 0) {
         setRecordingSegmentMinutes(other.getRecordingSegmentMinutes());
+      }
+      if (!other.getRecordingPriority().isEmpty()) {
+        recordingPriority_ = other.recordingPriority_;
+        bitField0_ |= 0x00000020;
+        onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -597,6 +664,11 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000010;
               break;
             } // case 40
+            case 50: {
+              recordingPriority_ = input.readStringRequireUtf8();
+              bitField0_ |= 0x00000020;
+              break;
+            } // case 50
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -974,6 +1046,98 @@ private static final long serialVersionUID = 0L;
     public Builder clearRecordingSegmentMinutes() {
       bitField0_ = (bitField0_ & ~0x00000010);
       recordingSegmentMinutes_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object recordingPriority_ = "";
+    /**
+     * <pre>
+     * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+     * </pre>
+     *
+     * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+     * @return The recordingPriority.
+     */
+    public java.lang.String getRecordingPriority() {
+      java.lang.Object ref = recordingPriority_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        recordingPriority_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <pre>
+     * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+     * </pre>
+     *
+     * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+     * @return The bytes for recordingPriority.
+     */
+    public com.google.protobuf.ByteString
+        getRecordingPriorityBytes() {
+      java.lang.Object ref = recordingPriority_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        recordingPriority_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <pre>
+     * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+     * </pre>
+     *
+     * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+     * @param value The recordingPriority to set.
+     * @return This builder for chaining.
+     */
+    public Builder setRecordingPriority(
+        java.lang.String value) {
+      if (value == null) { throw new NullPointerException(); }
+      recordingPriority_ = value;
+      bitField0_ |= 0x00000020;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+     * </pre>
+     *
+     * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearRecordingPriority() {
+      recordingPriority_ = getDefaultInstance().getRecordingPriority();
+      bitField0_ = (bitField0_ & ~0x00000020);
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+     * </pre>
+     *
+     * <code>string recording_priority = 6 [json_name = "recordingPriority"];</code>
+     * @param value The bytes for recordingPriority to set.
+     * @return This builder for chaining.
+     */
+    public Builder setRecordingPriorityBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) { throw new NullPointerException(); }
+      checkByteStringIsUtf8(value);
+      recordingPriority_ = value;
+      bitField0_ |= 0x00000020;
       onChanged();
       return this;
     }

@@ -23,6 +23,14 @@ service SettingsService {
   rpc GetLocale(GetLocaleRequest) returns (GetLocaleResponse);
   rpc SetLocale(SetLocaleRequest) returns (SetLocaleResponse);
   rpc SetRecordingMode(SetRecordingModeRequest) returns (SetRecordingModeResponse);
+
+  // BladeWatch-qwqq: these four replace the last /api/settings/* JSON calls any first-party
+  // client still made over REST — the web SPA's status-overlay toggles and the Flutter
+  // recording screen's telemetry-field picker.
+  rpc GetStatusOverlay(GetStatusOverlayRequest) returns (GetStatusOverlayResponse);
+  rpc SetStatusOverlay(SetStatusOverlayRequest) returns (SetStatusOverlayResponse);
+  rpc GetTelemetryOverlayFields(GetTelemetryOverlayFieldsRequest) returns (GetTelemetryOverlayFieldsResponse);
+  rpc SetTelemetryOverlayFields(SetTelemetryOverlayFieldsRequest) returns (SetTelemetryOverlayFieldsResponse);
 }
 
 // RecordingQualityTier identifies a named recording quality preset.
@@ -90,6 +98,8 @@ message GetQualityResponse {
   string native_resolution = 9;
   // Recording segment length in minutes (e.g. 5, 10, 15).
   int32 recording_segment_minutes = 10;
+  // One of: PERFORMANCE, RELIABILITY. See RecordingPriority.
+  string recording_priority = 11;
 }
 
 message SetQualityRequest {
@@ -103,6 +113,8 @@ message SetQualityRequest {
   int32 fps = 4;
   // Recording segment length in minutes. 0 = keep current.
   int32 recording_segment_minutes = 5;
+  // One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+  string recording_priority = 6;
 }
 
 message SetQualityResponse {
@@ -164,4 +176,61 @@ message SetRecordingModeResponse {
   // The mode that was applied.
   string mode = 2;
   string error = 3;
+}
+
+
+// ---- status overlay (the floating camera/trip pills) ----
+
+message GetStatusOverlayRequest {}
+
+message GetStatusOverlayResponse {
+  bool success = 1;
+  bool camera_visible = 2;
+  bool trip_visible = 3;
+}
+
+// Both fields are optional in the REST body this replaces: omitting one leaves it unchanged.
+// Proto3 has no field presence for bare bools, so each carries an explicit "set" companion
+// rather than being silently interpreted as false.
+message SetStatusOverlayRequest {
+  bool camera_visible = 1;
+  bool set_camera_visible = 2;
+  bool trip_visible = 3;
+  bool set_trip_visible = 4;
+}
+
+message SetStatusOverlayResponse {
+  bool success = 1;
+  bool camera_visible = 2;
+  bool trip_visible = 3;
+  string error = 4;
+}
+
+// ---- telemetry overlay field picker ----
+
+message GetTelemetryOverlayFieldsRequest {}
+
+message GetTelemetryOverlayFieldsResponse {
+  bool success = 1;
+  // Every OverlayField enum name the daemon knows about.
+  repeated string available_fields = 2;
+  // Per recording type ("continuous"/"surveillance"/"proximity") -> selected field names.
+  map<string, FieldList> selections = 3;
+}
+
+message FieldList {
+  repeated string fields = 1;
+}
+
+message SetTelemetryOverlayFieldsRequest {
+  // One of "continuous", "surveillance", "proximity". An unknown type is a bad request.
+  string type = 1;
+  // OverlayField enum names. An unknown name is dropped by the resolver, not rejected here,
+  // mirroring how a persisted config file is already treated by the reader.
+  repeated string fields = 2;
+}
+
+message SetTelemetryOverlayFieldsResponse {
+  bool success = 1;
+  string error = 2;
 }

@@ -41,6 +41,15 @@ export CAR_IP=<your head unit's LAN IP>
 # Connect to device
 adb connect $CAR_IP:5555
 
+# "No route to host" here does NOT mean the head unit is down. The LOCAL adb
+# server gets into this state routinely while the car is up and answering — seen
+# repeatedly on this project, including a deploy on 2026-09-19 where the very next
+# command after this restart connected first try. Restart the local server and
+# retry BEFORE doing any network diagnosis (ping sweeps, ARP scans, checking the
+# car's Wi-Fi): those cost minutes and usually find nothing wrong.
+adb kill-server && adb start-server
+adb connect $CAR_IP:5555
+
 # Verify connection
 adb -s $CAR_IP:5555 devices
 
@@ -151,6 +160,20 @@ adb -s $CAR_IP:5555 uninstall net.bladewatch.app
 # slash to a dash when it names the APK, so the lookup has to sanitise it the same way.
 # Verified on 2026-09-15 -- the unsanitised form below failed on branch feature/v1.3.1.0.
 adb -s $CAR_IP:5555 install "app/build/outputs/apk/debug/bladewatch-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')-arm64-v8a-debug.apk"
+
+# LAUNCHING AFTER THE REINSTALL NEEDS --activity-clear-task. MainActivity calls
+# moveTaskToBack(true) immediately, so its task record survives force-stop and the
+# uninstall/reinstall. A plain `am start` then reports "Activity not started, its
+# current task has been brought to the front" (or "intent has been delivered to
+# currently running top-most instance") and NO PROCESS IS CREATED -- `pidof
+# net.bladewatch.app` stays empty, nothing is logged, and it looks like the app is
+# crashing on startup when in fact it never ran. `am start -S` does NOT fix it.
+# Measured on this head unit 2026-09-20: three failed launches, then this worked
+# first try:
+adb -s $CAR_IP:5555 shell 'am force-stop net.bladewatch.app; sleep 1; am start -n net.bladewatch.app/net.bladewatch.app.ui.MainActivity --activity-clear-task --activity-clear-top'
+# Note the component is net.bladewatch.app.ui.MainActivity -- the Gradle package
+# rename maps com/loabletech/bladewatch/** to net.bladewatch.app.**, so the source
+# path and the runtime class name deliberately disagree.
 
 # !! UNINSTALLING WIPES THE APP'S ADB KEY PAIR from its filesDir (AdbShellExecutor
 # !! stores it at files/adbkey + files/adbkey.pub). The next launch generates a NEW,
@@ -267,12 +290,12 @@ Camera frame → GPU downscale → native motion pipeline → per-quadrant state
 - In-car UI (Flutter): [flutter_ui/lib/main.dart](flutter_ui/lib/main.dart), [flutter_ui/lib/shell/](flutter_ui/lib/shell/), [flutter_ui/lib/screens/](flutter_ui/lib/screens/), [flutter_ui/lib/theme/](flutter_ui/lib/theme/), [flutter_ui/lib/rpc/](flutter_ui/lib/rpc/), [flutter_ui/lib/l10n/](flutter_ui/lib/l10n/)
 - Flutter-side Kotlin (MethodChannels + Live View texture plugin): [flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt](flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt)
 - Service host entry: [BladeWatchApplication.kt](app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt), [MainActivity.kt](app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt) (bootstrap only)
-- Daemon launch: [DaemonStartupManager.kt](app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt), [AdbDaemonLauncher.kt](app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt), [DaemonBootstrap.java](app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.java)
-- Central daemon: [CameraDaemon.java](app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java)
-- HTTP server: [HttpServer.java](app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java)
-- Auth: [AuthManager.java](app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java), [AuthMiddleware.java](app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java)
-- GPU pipeline: [GpuSurveillancePipeline.java](app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.java), [PanoramicCameraGpu.java](app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.java)
-- BYD local: [BydDataCollector.java](app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java)
+- Daemon launch: [DaemonStartupManager.kt](app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt), [AdbDaemonLauncher.kt](app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt), [DaemonBootstrap.kt](app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.kt)
+- Central daemon: [CameraDaemon.kt](app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt)
+- HTTP server: [HttpServer.kt](app/src/main/java/com/loabletech/bladewatch/server/HttpServer.kt)
+- Auth: [AuthManager.kt](app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.kt), [AuthMiddleware.kt](app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.kt)
+- GPU pipeline: [GpuSurveillancePipeline.kt](app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.kt), [PanoramicCameraGpu.kt](app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.kt)
+- BYD local: [BydDataCollector.kt](app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt)
 - Config: [UnifiedConfigManager.kt](app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt), [SecretConfigStore.kt](app/src/main/java/com/loabletech/bladewatch/config/SecretConfigStore.kt)
 - Web UI (remote clients): [web/](web/), built into [app/src/main/assets/web/](app/src/main/assets/web/)
 
@@ -406,6 +429,7 @@ When changing route handlers, daemon ports, config paths, startup timing, tunnel
 - Auth / IPC token / secret store / cross-process file permission changes → `ipc-auth-and-secrets.md`
 - User-facing changes → `features.md`
 - UI/UX, design-language, theme, or color/typography/shape/motion token changes → `ui-ux-design-language.md`
+- Surveillance/sentry detection pipeline changes (motion pipeline thresholds, shadow/oscillation filtering, YOLO gating, texture tracker, deterrent suppression) → `detection-invariants.md` — read it *before* changing a threshold, not just after
 
 `docs/webview-migration.md` is **retired** — it describes a superseded
 architecture (WebView → native fragments, both since replaced by Flutter). Do not

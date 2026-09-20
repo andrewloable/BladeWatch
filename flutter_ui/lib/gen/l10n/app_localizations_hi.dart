@@ -1325,6 +1325,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return 'इस महीने $arg1';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'ऑनलाइन';
 
   @override
@@ -1515,10 +1520,91 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'रिकॉर्डिंग प्राथमिकता';
+
+  @override
+  String get settings_recording_priority_description =>
+      'अचानक बिजली जाने पर रिकॉर्डिंग कैसे व्यवहार करती है।';
+
+  @override
+  String get settings_recording_priority_performance_label => 'प्रदर्शन';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'कम CPU का उपयोग करता है। यदि बिजली अचानक कट जाती है, तो मौजूदा रिकॉर्डिंग सेगमेंट (आपकी रिकॉर्डिंग सीमा तक) खो सकता है।';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'विश्वसनीयता';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'अधिक बार सहेजने के लिए थोड़ा अधिक CPU उपयोग करता है। यदि बिजली अचानक कट जाती है, तो अधिकतम लगभग एक मिनट खो सकता है।';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'ओवरले फील्ड';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'चुनें कि निरंतर रिकॉर्डिंग पर जलाई गई ओवरले में क्या दिखे।';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'गति';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'गिअर';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'बाईं टर्न सिग्नल';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'दाईं टर्न सिग्नल';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'ब्रेक पैडल';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => 'एक्सीलरेटर पैडल';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'चालक सीटबेल्ट';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'यात्री सीटबेल्ट';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'दिनांक और समय';
+
+  @override
   String get settings_recording_quality_title => 'रिकॉर्डिंग गुणवत्ता';
 
   @override
   String get settings_recording_storage_title => 'रिकॉर्डिंग संग्रहण';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'रिकॉर्डिंग हटाएं?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'इससे $arg1 रिकॉर्डिंग हट जाएंगी ($arg2)।',
+      one: 'इससे $arg1 रिकॉर्डिंग हट जाएगी ($arg2)।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'प्रभाव अज्ञात';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'यह निर्धारित नहीं किया जा सका कि यह बदलाव क्या हटाएगा। सीमा घटाने से मौजूदा रिकॉर्डिंग हट सकती हैं।';
 
   @override
   String get settings_recording_storage_location_label => 'संग्रहण स्थान';
@@ -1531,6 +1617,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD कार्ड (उपलब्ध नहीं)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'एसडी कार्ड माउंट नहीं हुआ';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1941,6 +2031,27 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'अधिकतम कूलिंग: बंद';
+
+  @override
+  String get vehicle_screen_on => 'स्क्रीन: चालू';
+
+  @override
+  String get vehicle_screen_off => 'स्क्रीन: बंद';
+
+  @override
+  String get vehicle_media_volume_label => 'मीडिया वॉल्यूम';
+
+  @override
+  String get vehicle_media_mute => 'म्यूट करें';
+
+  @override
+  String get vehicle_media_muted => 'म्यूट';
+
+  @override
+  String get vehicle_front_defrost => 'फ्रंट डीफ्रॉस्ट';
+
+  @override
+  String get vehicle_rear_defrost => 'रियर डीफ्रॉस्ट';
 
   @override
   String get vehicle_temp_label => 'तापमान';
@@ -2790,4 +2901,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'समझ गया';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'सेंट्री मोड सक्रिय रहने पर 12V बैटरी की अतिरिक्त बिजली उपयोग करता है।';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'कोई अन्य ऐप अभी कैमरा उपयोग कर रहा है।';
 }

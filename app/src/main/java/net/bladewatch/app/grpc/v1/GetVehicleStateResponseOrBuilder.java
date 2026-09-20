@@ -192,4 +192,21 @@ public interface GetVehicleStateResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getErrorBytes();
+
+  /**
+   * <pre>
+   * BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+   * shows the real value rather than a local guess.
+   * </pre>
+   *
+   * <code>int32 media_volume_percent = 14 [json_name = "mediaVolumePercent"];</code>
+   * @return The mediaVolumePercent.
+   */
+  int getMediaVolumePercent();
+
+  /**
+   * <code>bool media_muted = 15 [json_name = "mediaMuted"];</code>
+   * @return The mediaMuted.
+   */
+  boolean getMediaMuted();
 }

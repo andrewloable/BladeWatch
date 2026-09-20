@@ -126,6 +126,56 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_bladewatch_v1_SetRecordingModeResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetStatusOverlayRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetStatusOverlayRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetStatusOverlayResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetStatusOverlayResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_SetStatusOverlayRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_SetStatusOverlayRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_SetStatusOverlayResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_SetStatusOverlayResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetTelemetryOverlayFieldsRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_SelectionsEntry_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_SelectionsEntry_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_FieldList_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_FieldList_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_SetTelemetryOverlayFieldsRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_SetTelemetryOverlayFieldsRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_SetTelemetryOverlayFieldsResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_SetTelemetryOverlayFieldsResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -148,7 +198,7 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
       " \001(\001R\tmbPer2Min\022\036\n\013gb_per_hour\030\004 \001(\001R\tgb" +
       "PerHour\022$\n\016minutes_per_gb\030\005 \001(\005R\014minutes" +
       "PerGb\022-\n\022quality_equivalent\030\006 \001(\tR\021quali" +
-      "tyEquivalent\"\023\n\021GetQualityRequest\"\365\006\n\022Ge" +
+      "tyEquivalent\"\023\n\021GetQualityRequest\"\244\007\n\022Ge" +
       "tQualityResponse\022\030\n\007success\030\001 \001(\010R\007succe" +
       "ss\022+\n\021recording_quality\030\002 \001(\tR\020recording" +
       "Quality\022\035\n\005codec\030\003 \001(\tR\016recordingCodec\022\026" +
@@ -165,68 +215,107 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
       "onsEntryR\nfpsOptions\022+\n\021native_resolutio" +
       "n\030\t \001(\tR\020nativeResolution\022:\n\031recording_s" +
       "egment_minutes\030\n \001(\005R\027recordingSegmentMi" +
-      "nutes\032j\n\034RecordingQualityOptionsEntry\022\020\n" +
-      "\003key\030\001 \001(\tR\003key\0224\n\005value\030\002 \001(\0132\036.bladewa" +
-      "tch.v1.QualityTierInfoR\005value:\0028\001\032?\n\021Cod" +
-      "ecOptionsEntry\022\020\n\003key\030\001 \001(\tR\003key\022\024\n\005valu" +
-      "e\030\002 \001(\tR\005value:\0028\001\032=\n\017FpsOptionsEntry\022\020\n" +
-      "\003key\030\001 \001(\tR\003key\022\024\n\005value\030\002 \001(\tR\005value:\0028" +
-      "\001\"\321\001\n\021SetQualityRequest\022+\n\021recording_qua" +
-      "lity\030\001 \001(\tR\020recordingQuality\022\024\n\005codec\030\002 " +
-      "\001(\tR\005codec\022+\n\021streaming_quality\030\003 \001(\tR\020s" +
-      "treamingQuality\022\020\n\003fps\030\004 \001(\005R\003fps\022:\n\031rec" +
-      "ording_segment_minutes\030\005 \001(\005R\027recordingS" +
-      "egmentMinutes\"\252\001\n\022SetQualityResponse\022\030\n\007" +
-      "success\030\001 \001(\010R\007success\022+\n\021recording_qual" +
-      "ity\030\002 \001(\tR\020recordingQuality\022\035\n\005codec\030\003 \001" +
-      "(\tR\016recordingCodec\022\030\n\007message\030\004 \001(\tR\007mes" +
-      "sage\022\024\n\005error\030\005 \001(\tR\005error\"\026\n\024GetAppeara" +
-      "nceRequest\"_\n\025GetAppearanceResponse\022\030\n\007s" +
-      "uccess\030\001 \001(\010R\007success\022\024\n\005theme\030\002 \001(\tR\005th" +
-      "eme\022\026\n\006locale\030\003 \001(\tR\006locale\"D\n\024SetAppear" +
-      "anceRequest\022\024\n\005theme\030\001 \001(\tR\005theme\022\026\n\006loc" +
-      "ale\030\002 \001(\tR\006locale\"u\n\025SetAppearanceRespon" +
-      "se\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005theme\030\002 " +
-      "\001(\tR\005theme\022\026\n\006locale\030\003 \001(\tR\006locale\022\024\n\005er" +
-      "ror\030\004 \001(\tR\005error\"\022\n\020GetLocaleRequest\"\264\001\n" +
-      "\021GetLocaleResponse\022\022\n\004lang\030\001 \001(\tR\004lang\022M" +
-      "\n\tsupported\030\002 \003(\0132/.bladewatch.v1.GetLoc" +
-      "aleResponse.SupportedEntryR\tsupported\032<\n" +
-      "\016SupportedEntry\022\020\n\003key\030\001 \001(\tR\003key\022\024\n\005val" +
-      "ue\030\002 \001(\010R\005value:\0028\001\"&\n\020SetLocaleRequest\022" +
-      "\022\n\004lang\030\001 \001(\tR\004lang\"\'\n\021SetLocaleResponse" +
-      "\022\022\n\004lang\030\001 \001(\tR\004lang\"-\n\027SetRecordingMode" +
-      "Request\022\022\n\004mode\030\001 \001(\tR\004mode\"^\n\030SetRecord" +
-      "ingModeResponse\022\030\n\007success\030\001 \001(\010R\007succes" +
-      "s\022\022\n\004mode\030\002 \001(\tR\004mode\022\024\n\005error\030\003 \001(\tR\005er" +
-      "ror*\354\001\n\024RecordingQualityTier\022&\n\"RECORDIN" +
-      "G_QUALITY_TIER_UNSPECIFIED\020\000\022\"\n\036RECORDIN" +
-      "G_QUALITY_TIER_ECONOMY\020\001\022#\n\037RECORDING_QU" +
-      "ALITY_TIER_STANDARD\020\002\022\037\n\033RECORDING_QUALI" +
-      "TY_TIER_HIGH\020\003\022\"\n\036RECORDING_QUALITY_TIER" +
-      "_PREMIUM\020\004\022\036\n\032RECORDING_QUALITY_TIER_MAX" +
-      "\020\005*U\n\nVideoCodec\022\033\n\027VIDEO_CODEC_UNSPECIF" +
-      "IED\020\000\022\024\n\020VIDEO_CODEC_H264\020\001\022\024\n\020VIDEO_COD" +
-      "EC_H265\020\002*b\n\010AppTheme\022\031\n\025APP_THEME_UNSPE" +
-      "CIFIED\020\000\022\022\n\016APP_THEME_DARK\020\001\022\023\n\017APP_THEM" +
-      "E_LIGHT\020\002\022\022\n\016APP_THEME_AUTO\020\0032\364\004\n\017Settin" +
-      "gsService\022Q\n\nGetQuality\022 .bladewatch.v1." +
-      "GetQualityRequest\032!.bladewatch.v1.GetQua" +
-      "lityResponse\022Q\n\nSetQuality\022 .bladewatch." +
-      "v1.SetQualityRequest\032!.bladewatch.v1.Set" +
-      "QualityResponse\022Z\n\rGetAppearance\022#.blade" +
-      "watch.v1.GetAppearanceRequest\032$.bladewat" +
-      "ch.v1.GetAppearanceResponse\022Z\n\rSetAppear" +
-      "ance\022#.bladewatch.v1.SetAppearanceReques" +
-      "t\032$.bladewatch.v1.SetAppearanceResponse\022" +
-      "N\n\tGetLocale\022\037.bladewatch.v1.GetLocaleRe" +
-      "quest\032 .bladewatch.v1.GetLocaleResponse\022" +
-      "N\n\tSetLocale\022\037.bladewatch.v1.SetLocaleRe" +
-      "quest\032 .bladewatch.v1.SetLocaleResponse\022" +
-      "c\n\020SetRecordingMode\022&.bladewatch.v1.SetR" +
-      "ecordingModeRequest\032\'.bladewatch.v1.SetR" +
-      "ecordingModeResponseB\036\n\032net.bladewatch.a" +
-      "pp.grpc.v1P\001b\006proto3"
+      "nutes\022-\n\022recording_priority\030\013 \001(\tR\021recor" +
+      "dingPriority\032j\n\034RecordingQualityOptionsE" +
+      "ntry\022\020\n\003key\030\001 \001(\tR\003key\0224\n\005value\030\002 \001(\0132\036." +
+      "bladewatch.v1.QualityTierInfoR\005value:\0028\001" +
+      "\032?\n\021CodecOptionsEntry\022\020\n\003key\030\001 \001(\tR\003key\022" +
+      "\024\n\005value\030\002 \001(\tR\005value:\0028\001\032=\n\017FpsOptionsE" +
+      "ntry\022\020\n\003key\030\001 \001(\tR\003key\022\024\n\005value\030\002 \001(\tR\005v" +
+      "alue:\0028\001\"\200\002\n\021SetQualityRequest\022+\n\021record" +
+      "ing_quality\030\001 \001(\tR\020recordingQuality\022\024\n\005c" +
+      "odec\030\002 \001(\tR\005codec\022+\n\021streaming_quality\030\003" +
+      " \001(\tR\020streamingQuality\022\020\n\003fps\030\004 \001(\005R\003fps" +
+      "\022:\n\031recording_segment_minutes\030\005 \001(\005R\027rec" +
+      "ordingSegmentMinutes\022-\n\022recording_priori" +
+      "ty\030\006 \001(\tR\021recordingPriority\"\252\001\n\022SetQuali" +
+      "tyResponse\022\030\n\007success\030\001 \001(\010R\007success\022+\n\021" +
+      "recording_quality\030\002 \001(\tR\020recordingQualit" +
+      "y\022\035\n\005codec\030\003 \001(\tR\016recordingCodec\022\030\n\007mess" +
+      "age\030\004 \001(\tR\007message\022\024\n\005error\030\005 \001(\tR\005error" +
+      "\"\026\n\024GetAppearanceRequest\"_\n\025GetAppearanc" +
+      "eResponse\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005t" +
+      "heme\030\002 \001(\tR\005theme\022\026\n\006locale\030\003 \001(\tR\006local" +
+      "e\"D\n\024SetAppearanceRequest\022\024\n\005theme\030\001 \001(\t" +
+      "R\005theme\022\026\n\006locale\030\002 \001(\tR\006locale\"u\n\025SetAp" +
+      "pearanceResponse\022\030\n\007success\030\001 \001(\010R\007succe" +
+      "ss\022\024\n\005theme\030\002 \001(\tR\005theme\022\026\n\006locale\030\003 \001(\t" +
+      "R\006locale\022\024\n\005error\030\004 \001(\tR\005error\"\022\n\020GetLoc" +
+      "aleRequest\"\264\001\n\021GetLocaleResponse\022\022\n\004lang" +
+      "\030\001 \001(\tR\004lang\022M\n\tsupported\030\002 \003(\0132/.bladew" +
+      "atch.v1.GetLocaleResponse.SupportedEntry" +
+      "R\tsupported\032<\n\016SupportedEntry\022\020\n\003key\030\001 \001" +
+      "(\tR\003key\022\024\n\005value\030\002 \001(\010R\005value:\0028\001\"&\n\020Set" +
+      "LocaleRequest\022\022\n\004lang\030\001 \001(\tR\004lang\"\'\n\021Set" +
+      "LocaleResponse\022\022\n\004lang\030\001 \001(\tR\004lang\"-\n\027Se" +
+      "tRecordingModeRequest\022\022\n\004mode\030\001 \001(\tR\004mod" +
+      "e\"^\n\030SetRecordingModeResponse\022\030\n\007success" +
+      "\030\001 \001(\010R\007success\022\022\n\004mode\030\002 \001(\tR\004mode\022\024\n\005e" +
+      "rror\030\003 \001(\tR\005error\"\031\n\027GetStatusOverlayReq" +
+      "uest\"~\n\030GetStatusOverlayResponse\022\030\n\007succ" +
+      "ess\030\001 \001(\010R\007success\022%\n\016camera_visible\030\002 \001" +
+      "(\010R\rcameraVisible\022!\n\014trip_visible\030\003 \001(\010R" +
+      "\013tripVisible\"\273\001\n\027SetStatusOverlayRequest" +
+      "\022%\n\016camera_visible\030\001 \001(\010R\rcameraVisible\022" +
+      ",\n\022set_camera_visible\030\002 \001(\010R\020setCameraVi" +
+      "sible\022!\n\014trip_visible\030\003 \001(\010R\013tripVisible" +
+      "\022(\n\020set_trip_visible\030\004 \001(\010R\016setTripVisib" +
+      "le\"\224\001\n\030SetStatusOverlayResponse\022\030\n\007succe" +
+      "ss\030\001 \001(\010R\007success\022%\n\016camera_visible\030\002 \001(" +
+      "\010R\rcameraVisible\022!\n\014trip_visible\030\003 \001(\010R\013" +
+      "tripVisible\022\024\n\005error\030\004 \001(\tR\005error\"\"\n Get" +
+      "TelemetryOverlayFieldsRequest\"\243\002\n!GetTel" +
+      "emetryOverlayFieldsResponse\022\030\n\007success\030\001" +
+      " \001(\010R\007success\022)\n\020available_fields\030\002 \003(\tR" +
+      "\017availableFields\022`\n\nselections\030\003 \003(\0132@.b" +
+      "ladewatch.v1.GetTelemetryOverlayFieldsRe" +
+      "sponse.SelectionsEntryR\nselections\032W\n\017Se" +
+      "lectionsEntry\022\020\n\003key\030\001 \001(\tR\003key\022.\n\005value" +
+      "\030\002 \001(\0132\030.bladewatch.v1.FieldListR\005value:" +
+      "\0028\001\"#\n\tFieldList\022\026\n\006fields\030\001 \003(\tR\006fields" +
+      "\"N\n SetTelemetryOverlayFieldsRequest\022\022\n\004" +
+      "type\030\001 \001(\tR\004type\022\026\n\006fields\030\002 \003(\tR\006fields" +
+      "\"S\n!SetTelemetryOverlayFieldsResponse\022\030\n" +
+      "\007success\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR\005" +
+      "error*\354\001\n\024RecordingQualityTier\022&\n\"RECORD" +
+      "ING_QUALITY_TIER_UNSPECIFIED\020\000\022\"\n\036RECORD" +
+      "ING_QUALITY_TIER_ECONOMY\020\001\022#\n\037RECORDING_" +
+      "QUALITY_TIER_STANDARD\020\002\022\037\n\033RECORDING_QUA" +
+      "LITY_TIER_HIGH\020\003\022\"\n\036RECORDING_QUALITY_TI" +
+      "ER_PREMIUM\020\004\022\036\n\032RECORDING_QUALITY_TIER_M" +
+      "AX\020\005*U\n\nVideoCodec\022\033\n\027VIDEO_CODEC_UNSPEC" +
+      "IFIED\020\000\022\024\n\020VIDEO_CODEC_H264\020\001\022\024\n\020VIDEO_C" +
+      "ODEC_H265\020\002*b\n\010AppTheme\022\031\n\025APP_THEME_UNS" +
+      "PECIFIED\020\000\022\022\n\016APP_THEME_DARK\020\001\022\023\n\017APP_TH" +
+      "EME_LIGHT\020\002\022\022\n\016APP_THEME_AUTO\020\0032\276\010\n\017Sett" +
+      "ingsService\022Q\n\nGetQuality\022 .bladewatch.v" +
+      "1.GetQualityRequest\032!.bladewatch.v1.GetQ" +
+      "ualityResponse\022Q\n\nSetQuality\022 .bladewatc" +
+      "h.v1.SetQualityRequest\032!.bladewatch.v1.S" +
+      "etQualityResponse\022Z\n\rGetAppearance\022#.bla" +
+      "dewatch.v1.GetAppearanceRequest\032$.bladew" +
+      "atch.v1.GetAppearanceResponse\022Z\n\rSetAppe" +
+      "arance\022#.bladewatch.v1.SetAppearanceRequ" +
+      "est\032$.bladewatch.v1.SetAppearanceRespons" +
+      "e\022N\n\tGetLocale\022\037.bladewatch.v1.GetLocale" +
+      "Request\032 .bladewatch.v1.GetLocaleRespons" +
+      "e\022N\n\tSetLocale\022\037.bladewatch.v1.SetLocale" +
+      "Request\032 .bladewatch.v1.SetLocaleRespons" +
+      "e\022c\n\020SetRecordingMode\022&.bladewatch.v1.Se" +
+      "tRecordingModeRequest\032\'.bladewatch.v1.Se" +
+      "tRecordingModeResponse\022c\n\020GetStatusOverl" +
+      "ay\022&.bladewatch.v1.GetStatusOverlayReque" +
+      "st\032\'.bladewatch.v1.GetStatusOverlayRespo" +
+      "nse\022c\n\020SetStatusOverlay\022&.bladewatch.v1." +
+      "SetStatusOverlayRequest\032\'.bladewatch.v1." +
+      "SetStatusOverlayResponse\022~\n\031GetTelemetry" +
+      "OverlayFields\022/.bladewatch.v1.GetTelemet" +
+      "ryOverlayFieldsRequest\0320.bladewatch.v1.G" +
+      "etTelemetryOverlayFieldsResponse\022~\n\031SetT" +
+      "elemetryOverlayFields\022/.bladewatch.v1.Se" +
+      "tTelemetryOverlayFieldsRequest\0320.bladewa" +
+      "tch.v1.SetTelemetryOverlayFieldsResponse" +
+      "B\036\n\032net.bladewatch.app.grpc.v1P\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -255,7 +344,7 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_GetQualityResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetQualityResponse_descriptor,
-        new java.lang.String[] { "Success", "RecordingQuality", "Codec", "Fps", "RecordingQualityOptions", "ActiveRecordingEstimate", "CodecOptions", "FpsOptions", "NativeResolution", "RecordingSegmentMinutes", });
+        new java.lang.String[] { "Success", "RecordingQuality", "Codec", "Fps", "RecordingQualityOptions", "ActiveRecordingEstimate", "CodecOptions", "FpsOptions", "NativeResolution", "RecordingSegmentMinutes", "RecordingPriority", });
     internal_static_bladewatch_v1_GetQualityResponse_RecordingQualityOptionsEntry_descriptor =
       internal_static_bladewatch_v1_GetQualityResponse_descriptor.getNestedType(0);
     internal_static_bladewatch_v1_GetQualityResponse_RecordingQualityOptionsEntry_fieldAccessorTable = new
@@ -279,7 +368,7 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_SetQualityRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetQualityRequest_descriptor,
-        new java.lang.String[] { "RecordingQuality", "Codec", "StreamingQuality", "Fps", "RecordingSegmentMinutes", });
+        new java.lang.String[] { "RecordingQuality", "Codec", "StreamingQuality", "Fps", "RecordingSegmentMinutes", "RecordingPriority", });
     internal_static_bladewatch_v1_SetQualityResponse_descriptor =
       getDescriptor().getMessageType(5);
     internal_static_bladewatch_v1_SetQualityResponse_fieldAccessorTable = new
@@ -352,6 +441,66 @@ public final class Settings extends com.google.protobuf.GeneratedFile {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetRecordingModeResponse_descriptor,
         new java.lang.String[] { "Success", "Mode", "Error", });
+    internal_static_bladewatch_v1_GetStatusOverlayRequest_descriptor =
+      getDescriptor().getMessageType(16);
+    internal_static_bladewatch_v1_GetStatusOverlayRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetStatusOverlayRequest_descriptor,
+        new java.lang.String[] { });
+    internal_static_bladewatch_v1_GetStatusOverlayResponse_descriptor =
+      getDescriptor().getMessageType(17);
+    internal_static_bladewatch_v1_GetStatusOverlayResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetStatusOverlayResponse_descriptor,
+        new java.lang.String[] { "Success", "CameraVisible", "TripVisible", });
+    internal_static_bladewatch_v1_SetStatusOverlayRequest_descriptor =
+      getDescriptor().getMessageType(18);
+    internal_static_bladewatch_v1_SetStatusOverlayRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_SetStatusOverlayRequest_descriptor,
+        new java.lang.String[] { "CameraVisible", "SetCameraVisible", "TripVisible", "SetTripVisible", });
+    internal_static_bladewatch_v1_SetStatusOverlayResponse_descriptor =
+      getDescriptor().getMessageType(19);
+    internal_static_bladewatch_v1_SetStatusOverlayResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_SetStatusOverlayResponse_descriptor,
+        new java.lang.String[] { "Success", "CameraVisible", "TripVisible", "Error", });
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsRequest_descriptor =
+      getDescriptor().getMessageType(20);
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetTelemetryOverlayFieldsRequest_descriptor,
+        new java.lang.String[] { });
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_descriptor =
+      getDescriptor().getMessageType(21);
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_descriptor,
+        new java.lang.String[] { "Success", "AvailableFields", "Selections", });
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_SelectionsEntry_descriptor =
+      internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_descriptor.getNestedType(0);
+    internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_SelectionsEntry_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetTelemetryOverlayFieldsResponse_SelectionsEntry_descriptor,
+        new java.lang.String[] { "Key", "Value", });
+    internal_static_bladewatch_v1_FieldList_descriptor =
+      getDescriptor().getMessageType(22);
+    internal_static_bladewatch_v1_FieldList_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_FieldList_descriptor,
+        new java.lang.String[] { "Fields", });
+    internal_static_bladewatch_v1_SetTelemetryOverlayFieldsRequest_descriptor =
+      getDescriptor().getMessageType(23);
+    internal_static_bladewatch_v1_SetTelemetryOverlayFieldsRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_SetTelemetryOverlayFieldsRequest_descriptor,
+        new java.lang.String[] { "Type", "Fields", });
+    internal_static_bladewatch_v1_SetTelemetryOverlayFieldsResponse_descriptor =
+      getDescriptor().getMessageType(24);
+    internal_static_bladewatch_v1_SetTelemetryOverlayFieldsResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_SetTelemetryOverlayFieldsResponse_descriptor,
+        new java.lang.String[] { "Success", "Error", });
     descriptor.resolveAllFeaturesImmutable();
   }
 

@@ -1,8 +1,6 @@
 import 'dart:convert';
 
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/diagnostics/performance_controller.dart';
 import 'package:bladewatch_ui/screens/diagnostics/performance_screen.dart';
@@ -11,24 +9,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
 
-class _FakeJwtSource implements JwtSource {
-  @override
-  Future<String?> mintJwt() async => 'jwt-1';
-  @override
-  Future<int> stateVersion() async => 0;
-}
-
 void main() {
   late FakeRpcClient rpc;
   late PerformanceController controller;
 
   setUp(() {
     rpc = FakeRpcClient();
-    controller = PerformanceController(
-      systemService: SystemServiceClient(rpc),
-      jwtSource: _FakeJwtSource(),
-      send: (uri, headers, body) async => const RawHttpResponse(200, '{"status":"ok","clientId":"c1"}'),
-    );
+    controller = PerformanceController(systemService: SystemServiceClient(rpc));
   });
 
   Future<void> pumpScreen(WidgetTester tester) async {
@@ -113,15 +100,10 @@ void main() {
   });
 
   testWidgets('disposing the screen disconnects the client', (tester) async {
-    var disconnectSent = false;
-    controller = PerformanceController(
-      systemService: SystemServiceClient(rpc),
-      jwtSource: _FakeJwtSource(),
-      send: (uri, headers, body) async {
-        if (uri.path == '/api/performance/disconnect') disconnectSent = true;
-        return const RawHttpResponse(200, '{"status":"ok","clientId":"c1"}');
-      },
-    );
+    controller = PerformanceController(systemService: SystemServiceClient(rpc));
+    rpc.stubJson('SystemService', 'PerformanceConnect', {'success': true, 'clientId': 'c1'});
+    rpc.stubJson('SystemService', 'PerformanceHeartbeat', {'success': true});
+    rpc.stubJson('SystemService', 'PerformanceDisconnect', {'success': true});
     rpc.stubJson('SystemService', 'GetPerformance', {'success': true, 'performanceJson': '{}'});
     // PerformanceScreen owns a permanent 3-second periodic poll timer once
     // mounted, so pumpAndSettle() (which waits for zero pending timers)
@@ -133,7 +115,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pump();
 
-    expect(disconnectSent, isTrue);
+    // Monitoring is on-demand: without this the daemon keeps sampling for a panel that is
+    // gone, until the session times out (BladeWatch-qwqq moved it off REST).
+    expect(rpc.calls.where((c) => c.method == 'PerformanceDisconnect'), hasLength(1));
   });
 
   testWidgets('renders correctly in dark theme', (tester) async {

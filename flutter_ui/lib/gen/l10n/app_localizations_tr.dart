@@ -1325,6 +1325,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return 'Bu ay $arg1';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'Çevrimiçi';
 
   @override
@@ -1516,10 +1521,90 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'Kayıt Önceliği';
+
+  @override
+  String get settings_recording_priority_description =>
+      'Kaydın ani bir elektrik kesintisini nasıl ele aldığı.';
+
+  @override
+  String get settings_recording_priority_performance_label => 'Performans';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Daha az CPU kullanır. Güç aniden kesilirse, mevcut kayıt bölümü (Kayıt Sınırınıza kadar) kaybolabilir.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Güvenilirlik';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Daha sık kaydetmek için biraz daha fazla CPU kullanır. Güç aniden kesilirse, en fazla yaklaşık bir dakika kaybolabilir.';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'Bindirme Alanları';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Sürekli kayıtlardaki bindirmede nelerin görüneceğini seçin.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Hız';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Vites';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left => 'Sol sinyal';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right => 'Sağ sinyal';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Fren pedalı';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => 'Gaz pedalı';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Sürücü emniyet kemeri';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Yolcu emniyet kemeri';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'Tarih ve saat';
+
+  @override
   String get settings_recording_quality_title => 'Kayıt kalitesi';
 
   @override
   String get settings_recording_storage_title => 'Kayıt depolama';
+
+  @override
+  String get settings_recording_storage_confirm_title =>
+      'Kayıtlar silinsin mi?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Bu işlem $arg1 kaydı silecek ($arg2).',
+      one: 'Bu işlem $arg1 kaydı silecek ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Etki bilinmiyor';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Bu değişikliğin neyi sileceği belirlenemedi. Sınırı düşürmek mevcut kayıtları kaldırabilir.';
 
   @override
   String get settings_recording_storage_location_label => 'Depolama konumu';
@@ -1532,6 +1617,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD kart (yok)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'SD kart bağlanamadı';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1948,6 +2037,27 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'Maks Soğutma: KAPALI';
+
+  @override
+  String get vehicle_screen_on => 'Ekran: AÇIK';
+
+  @override
+  String get vehicle_screen_off => 'Ekran: KAPALI';
+
+  @override
+  String get vehicle_media_volume_label => 'Medya Sesi';
+
+  @override
+  String get vehicle_media_mute => 'Sessiz';
+
+  @override
+  String get vehicle_media_muted => 'Sessize Alındı';
+
+  @override
+  String get vehicle_front_defrost => 'Ön Buz Çözücü';
+
+  @override
+  String get vehicle_rear_defrost => 'Arka Buz Çözücü';
 
   @override
   String get vehicle_temp_label => 'Sıcaklık';
@@ -2795,4 +2905,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'Anladım';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'Nöbetçi modu etkinken 12V akünün fazladan gücünü kullanır.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'Şu anda kamerayı başka bir uygulama kullanıyor.';
 }

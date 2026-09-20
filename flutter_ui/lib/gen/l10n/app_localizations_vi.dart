@@ -1323,6 +1323,11 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 tháng này';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'Trực tuyến';
 
   @override
@@ -1514,10 +1519,91 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'Mức ưu tiên ghi hình';
+
+  @override
+  String get settings_recording_priority_description =>
+      'Cách ghi hình xử lý khi mất điện đột ngột.';
+
+  @override
+  String get settings_recording_priority_performance_label => 'Hiệu năng';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Sử dụng ít CPU hơn. Nếu nguồn điện bị ngắt đột ngột, đoạn ghi hình hiện tại (tối đa theo Giới hạn ghi hình của bạn) có thể bị mất.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Độ tin cậy';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Sử dụng nhiều CPU hơn một chút để lưu thường xuyên hơn. Nếu nguồn điện bị ngắt đột ngột, tối đa khoảng một phút có thể bị mất.';
+
+  @override
+  String get settings_recording_overlay_fields_title => 'Trường lớp phủ';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Chọn những gì xuất hiện trong lớp phủ in sẵn trên bản ghi liên tục.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Tốc độ';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Số (hộp số)';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'Đèn báo rẽ trái';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'Đèn báo rẽ phải';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Bàn đạp phanh';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => 'Bàn đạp ga';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Dây an toàn tài xế';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Dây an toàn hành khách';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'Ngày và giờ';
+
+  @override
   String get settings_recording_quality_title => 'Chất lượng ghi';
 
   @override
   String get settings_recording_storage_title => 'Lưu trữ bản ghi';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'Xóa bản ghi?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Thao tác này sẽ xóa $arg1 bản ghi ($arg2).',
+      one: 'Thao tác này sẽ xóa $arg1 bản ghi ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Không rõ tác động';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Không thể xác định thay đổi này sẽ xóa những gì. Việc giảm giới hạn có thể xóa các bản ghi hiện có.';
 
   @override
   String get settings_recording_storage_location_label => 'Vị trí lưu trữ';
@@ -1530,6 +1616,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'Thẻ SD (không có)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'Thẻ SD chưa được gắn kết';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1944,6 +2034,27 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'Làm mát tối đa: TẮT';
+
+  @override
+  String get vehicle_screen_on => 'Màn hình: BẬT';
+
+  @override
+  String get vehicle_screen_off => 'Màn hình: TẮT';
+
+  @override
+  String get vehicle_media_volume_label => 'Âm lượng phương tiện';
+
+  @override
+  String get vehicle_media_mute => 'Tắt tiếng';
+
+  @override
+  String get vehicle_media_muted => 'Đã tắt tiếng';
+
+  @override
+  String get vehicle_front_defrost => 'Sấy kính trước';
+
+  @override
+  String get vehicle_rear_defrost => 'Sấy kính sau';
 
   @override
   String get vehicle_temp_label => 'Nhiệt độ';
@@ -2791,4 +2902,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'Đã hiểu';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'Chế độ canh gác sử dụng thêm điện năng từ ắc quy 12V khi đang bật.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'Một ứng dụng khác đang sử dụng camera ngay bây giờ.';
 }

@@ -1557,7 +1557,8 @@
     "badgeLive": "● EN DIRECT",
     "badgeConnecting": "○ Connexion…",
     "notConnected": "Flux caméra non connecté",
-    "decoderUnsupported": "Ce navigateur ne peut pas lire le flux en direct. Il faut un navigateur prenant en charge le décodage vidéo, comme Chrome ou Edge. Tor Browser et Firefox ESR ne le prennent pas encore en charge."
+    "decoderUnsupported": "Ce navigateur ne peut pas lire le flux en direct. Il faut un navigateur prenant en charge le décodage vidéo, comme Chrome ou Edge. Tor Browser et Firefox ESR ne le prennent pas encore en charge.",
+    "stillFrameLabel": "Image fixe — pas de vidéo en direct"
   },
   "location": {
     "themeAuto": "Auto",

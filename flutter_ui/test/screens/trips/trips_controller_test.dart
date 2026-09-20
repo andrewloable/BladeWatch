@@ -54,7 +54,7 @@ void main() {
       stubAllLoads(
         trips: [aTrip()],
         rollups: [
-          {'rollupJson': '{"tripCount":3,"totalDistanceKm":30.0,"totalDurationSeconds":1800,"totalEnergyKwh":10.0,"avgEfficiency":85.0,"avgEnergyPerKm":0.2}'}
+          {'rollupJson': '{"tripCount":3,"totalDistanceKm":30.0,"totalDurationSeconds":1800,"totalEnergyKwh":10.0,"avgEfficiencyScore":85,"avgEnergyPerKm":0.2}'}
         ],
         dna: {'anticipation': 80, 'smoothness': 70, 'speedDiscipline': 60, 'efficiency': 90, 'consistency': 75, 'overall': 77},
         rangeJson: '{"range":{"predictedRangeKm":320.5,"builtInRangeKm":300.0}}',
@@ -94,8 +94,8 @@ void main() {
 
     test('averages summary rollups across entries and sums counts/totals', () async {
       stubAllLoads(rollups: [
-        {'rollupJson': '{"tripCount":2,"totalDistanceKm":10.0,"totalDurationSeconds":600,"totalEnergyKwh":4.0,"avgEfficiency":80.0,"avgEnergyPerKm":0.1}'},
-        {'rollupJson': '{"tripCount":3,"totalDistanceKm":20.0,"totalDurationSeconds":900,"totalEnergyKwh":6.0,"avgEfficiency":90.0,"avgEnergyPerKm":0.3}'},
+        {'rollupJson': '{"tripCount":2,"totalDistanceKm":10.0,"totalDurationSeconds":600,"totalEnergyKwh":4.0,"avgEfficiencyScore":80,"avgEnergyPerKm":0.1}'},
+        {'rollupJson': '{"tripCount":3,"totalDistanceKm":20.0,"totalDurationSeconds":900,"totalEnergyKwh":6.0,"avgEfficiencyScore":90,"avgEnergyPerKm":0.3}'},
       ]);
 
       await controller.load();
@@ -112,13 +112,28 @@ void main() {
     test('skips an unparseable rollup entry rather than crashing', () async {
       stubAllLoads(rollups: [
         {'rollupJson': 'not json'},
-        {'rollupJson': '{"tripCount":1,"totalDistanceKm":5.0,"totalDurationSeconds":300,"totalEnergyKwh":1.0,"avgEfficiency":50.0,"avgEnergyPerKm":0.1}'},
+        {'rollupJson': '{"tripCount":1,"totalDistanceKm":5.0,"totalDurationSeconds":300,"totalEnergyKwh":1.0,"avgEfficiencyScore":50,"avgEnergyPerKm":0.1}'},
       ]);
 
       await controller.load();
 
       final summary = (controller.state as TripsLoaded).summary!;
       expect(summary.tripCount, 1);
+    });
+
+    test('reads avgEfficiencyScore, not the legacy SoC-delta avgEfficiency field', () async {
+      // A short trip: coarse integer SoC% never ticked down (avgEfficiency, the legacy
+      // metric, stays 0) even though the daemon's properly kWh-preferred 0-100 score
+      // (avgEfficiencyScore) correctly reflects real energy use. This is the bug from
+      // BladeWatch's "trips today show 0 efficiency" report.
+      stubAllLoads(rollups: [
+        {'rollupJson': '{"tripCount":1,"totalDistanceKm":1.2,"totalDurationSeconds":300,"totalEnergyKwh":0.2,"avgEfficiency":0.0,"avgEfficiencyScore":72,"avgEnergyPerKm":0.17}'},
+      ]);
+
+      await controller.load();
+
+      final summary = (controller.state as TripsLoaded).summary!;
+      expect(summary.avgEfficiency, 72.0);
     });
 
     test('reads range from the nested "range" object when present', () async {

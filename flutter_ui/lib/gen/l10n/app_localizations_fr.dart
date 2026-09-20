@@ -1343,6 +1343,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 ce mois-ci';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'En ligne';
 
   @override
@@ -1537,10 +1542,94 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'Priorité d\'enregistrement';
+
+  @override
+  String get settings_recording_priority_description =>
+      'Comment l\'enregistrement gère une coupure de courant soudaine.';
+
+  @override
+  String get settings_recording_priority_performance_label => 'Performance';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Utilise moins de CPU. En cas de coupure de courant soudaine, le segment d\'enregistrement en cours (jusqu\'à votre limite d\'enregistrement) peut être perdu.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Fiabilité';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Utilise un peu plus de CPU pour enregistrer plus souvent. En cas de coupure de courant soudaine, au plus environ une minute peut être perdue.';
+
+  @override
+  String get settings_recording_overlay_fields_title =>
+      'Champs de superposition';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Choisissez ce qui apparaît dans la superposition incrustée sur les enregistrements continus.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Vitesse';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Vitesse engagée';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'Clignotant gauche';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'Clignotant droit';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Pédale de frein';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal =>
+      'Pédale d\'accélérateur';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Ceinture conducteur';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Ceinture passager';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'Date et heure';
+
+  @override
   String get settings_recording_quality_title => 'Qualité d\'enregistrement';
 
   @override
   String get settings_recording_storage_title => 'Stockage des enregistrements';
+
+  @override
+  String get settings_recording_storage_confirm_title =>
+      'Supprimer les enregistrements ?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Cela supprimera $arg1 enregistrements ($arg2).',
+      one: 'Cela supprimera $arg1 enregistrement ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Impact inconnu';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Impossible de déterminer ce que cette modification supprimerait. Réduire la limite peut supprimer des enregistrements existants.';
 
   @override
   String get settings_recording_storage_location_label =>
@@ -1554,6 +1643,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'Carte SD (N/D)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'La carte SD ne s\'est pas montée';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1975,6 +2068,27 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'Refroidissement max : DÉSACTIVÉ';
+
+  @override
+  String get vehicle_screen_on => 'Écran : ACTIVÉ';
+
+  @override
+  String get vehicle_screen_off => 'Écran : DÉSACTIVÉ';
+
+  @override
+  String get vehicle_media_volume_label => 'Volume média';
+
+  @override
+  String get vehicle_media_mute => 'Muet';
+
+  @override
+  String get vehicle_media_muted => 'En sourdine';
+
+  @override
+  String get vehicle_front_defrost => 'Dégivrage avant';
+
+  @override
+  String get vehicle_rear_defrost => 'Dégivrage arrière';
 
   @override
   String get vehicle_temp_label => 'Température';
@@ -2829,4 +2943,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'Compris';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'Le mode sentinelle consomme de l\'énergie supplémentaire de la batterie 12V tant qu\'il est actif.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'Une autre application utilise actuellement la caméra.';
 }

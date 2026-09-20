@@ -207,4 +207,28 @@ public interface GetStorageSettingsResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getInternalTotalFormattedBytes();
+
+  /**
+   * <pre>
+   * True when an SD card configured for storage failed to mount after repeated attempts at
+   * daemon startup and the daemon kept the SD_CARD preference (not silently downgraded to
+   * internal). See sd_card_mount_error for a user-facing message.
+   * </pre>
+   *
+   * <code>bool sd_card_mount_failed = 25 [json_name = "sdCardMountFailed"];</code>
+   * @return The sdCardMountFailed.
+   */
+  boolean getSdCardMountFailed();
+
+  /**
+   * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+   * @return The sdCardMountError.
+   */
+  java.lang.String getSdCardMountError();
+  /**
+   * <code>string sd_card_mount_error = 26 [json_name = "sdCardMountError"];</code>
+   * @return The bytes for sdCardMountError.
+   */
+  com.google.protobuf.ByteString
+      getSdCardMountErrorBytes();
 }

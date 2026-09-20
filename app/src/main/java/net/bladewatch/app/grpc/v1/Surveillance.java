@@ -178,69 +178,71 @@ public final class Surveillance extends com.google.protobuf.GeneratedFile {
       "CameraIdB\023\n\021_manual_camera_id\"O\n\035SetSurv" +
       "eillanceConfigResponse\022\030\n\007success\030\001 \001(\010R" +
       "\007success\022\024\n\005error\030\002 \001(\tR\005error\"\036\n\034GetSur" +
-      "veillanceStatusRequest\"\247\001\n\035GetSurveillan" +
+      "veillanceStatusRequest\"\372\001\n\035GetSurveillan" +
       "ceStatusResponse\022)\n\020pipeline_running\030\001 \001" +
       "(\010R\017pipelineRunning\022/\n\023surveillance_acti" +
       "ve\030\002 \001(\010R\022surveillanceActive\022\024\n\005error\030\004 " +
-      "\001(\tR\005errorJ\004\010\003\020\004R\016active_cameras\"\033\n\031Enab" +
-      "leSurveillanceRequest\"f\n\032EnableSurveilla" +
-      "nceResponse\022\030\n\007success\030\001 \001(\010R\007success\022\030\n" +
-      "\007message\030\002 \001(\tR\007message\022\024\n\005error\030\003 \001(\tR\005" +
-      "error\"\034\n\032DisableSurveillanceRequest\"Q\n\033D" +
-      "isableSurveillanceResponse\022\030\n\007success\030\001 " +
-      "\001(\010R\007success\022\030\n\007message\030\002 \001(\tR\007message\"\023" +
-      "\n\021GetHeatmapRequest\"\306\002\n\017HeatmapQuadrant\022" +
-      "\016\n\002id\030\001 \001(\005R\002id\022\022\n\004name\030\002 \001(\tR\004name\022\030\n\007e" +
-      "nabled\030\003 \001(\010R\007enabled\022\036\n\nsuppressed\030\004 \001(" +
-      "\010R\nsuppressed\022\033\n\tmean_luma\030\005 \001(\001R\010meanLu" +
-      "ma\022#\n\ractive_blocks\030\006 \001(\005R\014activeBlocks\022" +
-      ")\n\020confirmed_blocks\030\007 \001(\005R\017confirmedBloc" +
-      "ks\022!\n\014threat_level\030\010 \001(\005R\013threatLevel\022%\n" +
-      "\016component_size\030\t \001(\005R\rcomponentSize\022\036\n\n" +
-      "confidence\030\n \003(\001R\nconfidence\"\273\001\n\022GetHeat" +
-      "mapResponse\022\033\n\tgrid_cols\030\002 \001(\005R\010gridCols" +
-      "\022\033\n\tgrid_rows\030\003 \001(\005R\010gridRows\022\033\n\tview_mo" +
-      "de\030\004 \001(\005R\010viewMode\022<\n\tquadrants\030\005 \003(\0132\036." +
-      "bladewatch.v1.HeatmapQuadrantR\tquadrants" +
-      "J\004\010\001\020\002R\nimage_jpeg\"0\n\022GetSnapshotRequest" +
-      "\022\032\n\010quadrant\030\001 \001(\005R\010quadrant\"J\n\023GetSnaps" +
-      "hotResponse\022\035\n\nimage_jpeg\030\001 \001(\014R\timageJp" +
-      "eg\022\024\n\005error\030\002 \001(\tR\005error\"\025\n\023GetFilterLog" +
-      "Request\"L\n\024GetFilterLogResponse\022\030\n\007entri" +
-      "es\030\002 \003(\tR\007entries\022\024\n\005count\030\003 \001(\005R\005countJ" +
-      "\004\010\001\020\002\" \n\036SyncSurveillanceCatalogRequest\"" +
-      "\201\001\n\037SyncSurveillanceCatalogResponse\022\030\n\007s" +
-      "uccess\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR\005er" +
-      "ror\022\024\n\005added\030\003 \001(\005R\005added\022\030\n\007removed\030\004 \001" +
-      "(\005R\007removed*\265\001\n\016DistancePreset\022\037\n\033DISTAN" +
-      "CE_PRESET_UNSPECIFIED\020\000\022\030\n\024DISTANCE_PRES" +
-      "ET_NEAR\020\001\022\031\n\025DISTANCE_PRESET_SHORT\020\002\022\032\n\026" +
-      "DISTANCE_PRESET_MEDIUM\020\003\022\030\n\024DISTANCE_PRE" +
-      "SET_LONG\020\004\022\027\n\023DISTANCE_PRESET_FAR\020\0052\376\006\n\023" +
-      "SurveillanceService\022f\n\tGetConfig\022+.blade" +
-      "watch.v1.GetSurveillanceConfigRequest\032,." +
-      "bladewatch.v1.GetSurveillanceConfigRespo" +
-      "nse\022f\n\tSetConfig\022+.bladewatch.v1.SetSurv" +
-      "eillanceConfigRequest\032,.bladewatch.v1.Se" +
-      "tSurveillanceConfigResponse\022f\n\tGetStatus" +
-      "\022+.bladewatch.v1.GetSurveillanceStatusRe" +
-      "quest\032,.bladewatch.v1.GetSurveillanceSta" +
-      "tusResponse\022]\n\006Enable\022(.bladewatch.v1.En" +
-      "ableSurveillanceRequest\032).bladewatch.v1." +
-      "EnableSurveillanceResponse\022`\n\007Disable\022)." +
-      "bladewatch.v1.DisableSurveillanceRequest" +
-      "\032*.bladewatch.v1.DisableSurveillanceResp" +
-      "onse\022Q\n\nGetHeatmap\022 .bladewatch.v1.GetHe" +
-      "atmapRequest\032!.bladewatch.v1.GetHeatmapR" +
-      "esponse\022T\n\013GetSnapshot\022!.bladewatch.v1.G" +
-      "etSnapshotRequest\032\".bladewatch.v1.GetSna" +
-      "pshotResponse\022W\n\014GetFilterLog\022\".bladewat" +
-      "ch.v1.GetFilterLogRequest\032#.bladewatch.v" +
-      "1.GetFilterLogResponse\022l\n\013SyncCatalog\022-." +
-      "bladewatch.v1.SyncSurveillanceCatalogReq" +
-      "uest\032..bladewatch.v1.SyncSurveillanceCat" +
-      "alogResponseB\036\n\032net.bladewatch.app.grpc." +
-      "v1P\001b\006proto3"
+      "\001(\tR\005error\022%\n\016camera_yielded\030\005 \001(\010R\rcame" +
+      "raYielded\022*\n\021native_app_active\030\006 \001(\010R\017na" +
+      "tiveAppActiveJ\004\010\003\020\004R\016active_cameras\"\033\n\031E" +
+      "nableSurveillanceRequest\"f\n\032EnableSurvei" +
+      "llanceResponse\022\030\n\007success\030\001 \001(\010R\007success" +
+      "\022\030\n\007message\030\002 \001(\tR\007message\022\024\n\005error\030\003 \001(" +
+      "\tR\005error\"\034\n\032DisableSurveillanceRequest\"Q" +
+      "\n\033DisableSurveillanceResponse\022\030\n\007success" +
+      "\030\001 \001(\010R\007success\022\030\n\007message\030\002 \001(\tR\007messag" +
+      "e\"\023\n\021GetHeatmapRequest\"\306\002\n\017HeatmapQuadra" +
+      "nt\022\016\n\002id\030\001 \001(\005R\002id\022\022\n\004name\030\002 \001(\tR\004name\022\030" +
+      "\n\007enabled\030\003 \001(\010R\007enabled\022\036\n\nsuppressed\030\004" +
+      " \001(\010R\nsuppressed\022\033\n\tmean_luma\030\005 \001(\001R\010mea" +
+      "nLuma\022#\n\ractive_blocks\030\006 \001(\005R\014activeBloc" +
+      "ks\022)\n\020confirmed_blocks\030\007 \001(\005R\017confirmedB" +
+      "locks\022!\n\014threat_level\030\010 \001(\005R\013threatLevel" +
+      "\022%\n\016component_size\030\t \001(\005R\rcomponentSize\022" +
+      "\036\n\nconfidence\030\n \003(\001R\nconfidence\"\273\001\n\022GetH" +
+      "eatmapResponse\022\033\n\tgrid_cols\030\002 \001(\005R\010gridC" +
+      "ols\022\033\n\tgrid_rows\030\003 \001(\005R\010gridRows\022\033\n\tview" +
+      "_mode\030\004 \001(\005R\010viewMode\022<\n\tquadrants\030\005 \003(\013" +
+      "2\036.bladewatch.v1.HeatmapQuadrantR\tquadra" +
+      "ntsJ\004\010\001\020\002R\nimage_jpeg\"0\n\022GetSnapshotRequ" +
+      "est\022\032\n\010quadrant\030\001 \001(\005R\010quadrant\"J\n\023GetSn" +
+      "apshotResponse\022\035\n\nimage_jpeg\030\001 \001(\014R\timag" +
+      "eJpeg\022\024\n\005error\030\002 \001(\tR\005error\"\025\n\023GetFilter" +
+      "LogRequest\"L\n\024GetFilterLogResponse\022\030\n\007en" +
+      "tries\030\002 \003(\tR\007entries\022\024\n\005count\030\003 \001(\005R\005cou" +
+      "ntJ\004\010\001\020\002\" \n\036SyncSurveillanceCatalogReque" +
+      "st\"\201\001\n\037SyncSurveillanceCatalogResponse\022\030" +
+      "\n\007success\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR" +
+      "\005error\022\024\n\005added\030\003 \001(\005R\005added\022\030\n\007removed\030" +
+      "\004 \001(\005R\007removed*\265\001\n\016DistancePreset\022\037\n\033DIS" +
+      "TANCE_PRESET_UNSPECIFIED\020\000\022\030\n\024DISTANCE_P" +
+      "RESET_NEAR\020\001\022\031\n\025DISTANCE_PRESET_SHORT\020\002\022" +
+      "\032\n\026DISTANCE_PRESET_MEDIUM\020\003\022\030\n\024DISTANCE_" +
+      "PRESET_LONG\020\004\022\027\n\023DISTANCE_PRESET_FAR\020\0052\376" +
+      "\006\n\023SurveillanceService\022f\n\tGetConfig\022+.bl" +
+      "adewatch.v1.GetSurveillanceConfigRequest" +
+      "\032,.bladewatch.v1.GetSurveillanceConfigRe" +
+      "sponse\022f\n\tSetConfig\022+.bladewatch.v1.SetS" +
+      "urveillanceConfigRequest\032,.bladewatch.v1" +
+      ".SetSurveillanceConfigResponse\022f\n\tGetSta" +
+      "tus\022+.bladewatch.v1.GetSurveillanceStatu" +
+      "sRequest\032,.bladewatch.v1.GetSurveillance" +
+      "StatusResponse\022]\n\006Enable\022(.bladewatch.v1" +
+      ".EnableSurveillanceRequest\032).bladewatch." +
+      "v1.EnableSurveillanceResponse\022`\n\007Disable" +
+      "\022).bladewatch.v1.DisableSurveillanceRequ" +
+      "est\032*.bladewatch.v1.DisableSurveillanceR" +
+      "esponse\022Q\n\nGetHeatmap\022 .bladewatch.v1.Ge" +
+      "tHeatmapRequest\032!.bladewatch.v1.GetHeatm" +
+      "apResponse\022T\n\013GetSnapshot\022!.bladewatch.v" +
+      "1.GetSnapshotRequest\032\".bladewatch.v1.Get" +
+      "SnapshotResponse\022W\n\014GetFilterLog\022\".blade" +
+      "watch.v1.GetFilterLogRequest\032#.bladewatc" +
+      "h.v1.GetFilterLogResponse\022l\n\013SyncCatalog" +
+      "\022-.bladewatch.v1.SyncSurveillanceCatalog" +
+      "Request\032..bladewatch.v1.SyncSurveillance" +
+      "CatalogResponseB\036\n\032net.bladewatch.app.gr" +
+      "pc.v1P\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -287,7 +289,7 @@ public final class Surveillance extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_GetSurveillanceStatusResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetSurveillanceStatusResponse_descriptor,
-        new java.lang.String[] { "PipelineRunning", "SurveillanceActive", "Error", });
+        new java.lang.String[] { "PipelineRunning", "SurveillanceActive", "Error", "CameraYielded", "NativeAppActive", });
     internal_static_bladewatch_v1_EnableSurveillanceRequest_descriptor =
       getDescriptor().getMessageType(7);
     internal_static_bladewatch_v1_EnableSurveillanceRequest_fieldAccessorTable = new

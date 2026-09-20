@@ -86,6 +86,13 @@ class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
   TunnelState _tunnelState = TunnelState.offline;
   TunnelState get tunnelState => _tunnelState;
 
+  /// BladeWatch-t1lg.1: BladeWatch's own network usage (own-UID TrafficStats totals), not
+  /// whole-device usage. Empty until the first successful GetStatus call.
+  /// Only this month is surfaced; the daemon also reports `network.lastMonthBytes`, which no
+  /// screen renders — read it here when something actually shows it.
+  String _thisMonthDataUsageFormatted = '';
+  String get thisMonthDataUsageFormatted => _thisMonthDataUsageFormatted;
+
   int _storageClipCount = 0;
   int get storageClipCount => _storageClipCount;
   String _storageUsedFormatted = '';
@@ -138,6 +145,13 @@ class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
       _tunnelState = TunnelState.connecting;
     } else {
       _tunnelState = TunnelState.offline;
+    }
+
+    try {
+      final resp = await _systemService.getStatus(GetStatusRequest());
+      _thisMonthDataUsageFormatted = _formatBytes(resp.network.thisMonthBytes.toInt());
+    } catch (_) {
+      _thisMonthDataUsageFormatted = '';
     }
   }
 

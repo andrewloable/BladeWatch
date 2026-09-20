@@ -16,6 +16,17 @@ This file catalogs the main capabilities implemented in the repository.
 - Thumbnail and video serving through the embedded HTTP server.
 - Storage selection and cleanup.
 - External storage detection and configuration.
+- One-tap bookmark on the recording currently being written (`MarkRecording`,
+  BladeWatch-nmao.4) — a Live View button that flags "something happened here"
+  without starting a new file, split, or copy. Marked clips are excluded from
+  automatic storage cleanup (see [data-flow-and-storage.md](data-flow-and-storage.md))
+  and show a marked indicator in the recordings list.
+- Recording Priority — Performance vs. Reliability (BladeWatch-gyg1.3). Settings screen
+  copy: "Performance — uses less CPU. If power is cut abruptly, the current recording
+  segment (up to your Recording Limit) may be lost." / "Reliability — uses a bit more
+  CPU to save more often. If power is cut abruptly, at most about a minute may be lost."
+  Reliability is the default for new installs; existing installs keep today's behaviour
+  (Performance) until changed. See [data-flow-and-storage.md](data-flow-and-storage.md).
 
 Default camera-related values found in code:
 
@@ -23,7 +34,9 @@ Default camera-related values found in code:
 - View resolution: `1280x960`.
 - Default frame rate: `25 fps`.
 - Default recording bitrate: `4 Mbps`.
-- Segment length: `2 minutes`.
+- Segment length: user-configurable "Recording Limit" — `1`, `5` (default), or `10 minutes`
+  per file; the Reliability recording priority above caps this to `1 minute` regardless of
+  the Recording Limit choice.
 
 ## Surveillance and Sentry Mode
 
@@ -40,6 +53,9 @@ Default camera-related values found in code:
 - Surveillance heatmap and snapshots.
 - Safe locations.
 - Filter logging.
+- Honest in-app warnings: a persistent note that arming Sentry mode draws extra
+  12V battery power while armed, and a conditional note (shown only while another
+  app actually holds the camera) that camera access has been yielded to it.
 
 Default surveillance config includes:
 
@@ -81,6 +97,9 @@ A dedicated Location experience exists in both the in-car UI and the web app:
 - Fragmentation support for large frames.
 - Separate streaming encoder path from recording.
 - Streaming quality configuration.
+- Still-frame fallback for browsers with no usable H.264 decoder (WebCodecs or MSE) — a
+  periodically refreshed JPEG, clearly labelled "still image, not live video", so the remote
+  web view degrades instead of failing outright. See `docs/networking-and-tunnels.md`.
 
 ## Embedded Web UI and PWA
 
@@ -128,7 +147,11 @@ the daemon host. It provides (Material 3 — see
 - Dashboard.
 - Live camera view (the one platform-channel exception: a Kotlin texture plugin
   decodes the H.264 WebSocket stream through `MediaCodec` and hands Flutter a
-  `TextureRegistry` id; everything else is Dart).
+  `TextureRegistry` id; everything else is Dart). The camera takes the full
+  stage, with a narrow utility rail alongside it carrying the direction
+  selector, the recording bookmark button, and a location preview — tapping
+  the preview opens the full Location destination, which stays in the nav
+  rail (BladeWatch-y78o.2).
 - Recordings library and video playback.
 - Surveillance settings.
 - Trips list, stats and storage.
@@ -179,7 +202,7 @@ The collector isolates failures by device type so one unavailable BYD API does n
 
 The in-car app includes a Vehicle screen under `flutter_ui/lib/screens/vehicle/`. Its tab bar exposes three control tabs:
 
-- **Climate** — AC on/off, max cooling toggle, temperature and fan speed.
+- **Climate** — AC on/off, max cooling toggle, temperature and fan speed, and an explicit screen on/off control (BladeWatch-2000.3 — see below).
 - **Seats** — heat and ventilation level for driver and passenger (Off / Low / High). The tab is hidden when no seat controls are available.
 - **Windows** — per-window open/close/vent controls (LF, RF, LR, RR) plus an all-windows close/vent/open.
 
@@ -189,9 +212,17 @@ The hero region above the tabs shows a Three.js-rendered car with a tyre-pressur
 
 The vehicle UI supports 17 languages (Flutter ARB catalogs under `flutter_ui/lib/l10n/`, and the web app via `@ngx-translate`).
 
-All write actions route through `VehicleCommandRouter`. Lock/Unlock/Flash were removed from both the in-car view and the web page by design — there is no local SDK path and these were never wired to cloud control here. The proto `VehicleService` still declares cloud-style RPCs (Lock, Unlock, Trunk, Flash, FindCar, SetLights, SetAdas, SetBatteryHeat, SetChargingSchedule, SetChargeCap), but the active local controls surfaced to users are:
+Nearly every write action routes through `VehicleCommandRouter`, which gates BYD SDK
+actuations behind the motion interlock; media volume (below) is the one deliberate exception.
+Lock/Unlock/Flash were removed from both the in-car view and the web page by design — there is no local SDK path and these were never wired to cloud control here. The proto `VehicleService` still declares cloud-style RPCs (Lock, Unlock, Trunk, Flash, FindCar, SetLights, SetAdas, SetBatteryHeat, SetChargingSchedule, SetChargeCap), but the active local controls surfaced to users are:
 
-- Climate (power, max cooling, temperature, fan).
+- Climate (power, max cooling, temperature, fan, front/rear defrost — BladeWatch-2000.1). Wind mode and air-cycle mode are also routed and gated identically, but carry a raw, unlabelled SDK integer with no UI picker: their value meanings are not established anywhere in source, and shipping a labelled control ("Face", "Recirculate", ...) would be a guess actuating the physical car. See `docs/byd-integrations.md`'s "Wind mode and cycle mode" section; establishing the real mapping needs a device and is filed as `BladeWatch-2000.4`.
+- Screen on/off (BladeWatch-2000.3) — explicit user action, wired through `VehicleCommandRouter.ScreenOnCommand`/`ScreenOffCommand` to the BYD vendor `PowerManager` backlight primitive (`BacklightController`, shared with the sentry stealth-panel path). Safety requirements, non-negotiable:
+  - Screen **off** is permitted only while parked (`DrivingSafetyGuard.evaluate(...)` returns `ALLOW`) — refused otherwise, including when the motion state is unknown.
+  - Screen **on** is permitted in every state, including while moving — giving the driver their screen back is never the unsafe direction.
+  - If the screen was switched off by this control and the vehicle then leaves the parked state, it is turned back on automatically (`ScreenAutoRecovery`) with no user action required.
+  - No screen-off timer, schedule, or automation hook exists or is permitted — off is explicit-only.
+- Media volume and mute (BladeWatch-2000.2) — set to an absolute 0-100%, step up/down, mute/unmute (restores the exact pre-mute level, not a default). Android's own `AudioManager` (`STREAM_MUSIC`) only, no BYD SDK. Deliberately **not** routed through `VehicleCommandRouter` — adjusting volume is ordinary, safe-while-driving behaviour (a physical volume knob is never gated on being parked), unlike the actuations that router gates. Touches only the volume level — no audio route, focus request, output device change, or sound playback of any kind.
 - Seats (heat / ventilation).
 - Windows (per-window and all-windows position).
 - Read-only lock state, charge/range, and TPMS.
@@ -212,6 +243,26 @@ Trip functionality includes:
 - Trip config.
 - Trip storage management.
 - PHEV fuel leg: litres burned, fuel cost, and a dual-leg trip cost.
+
+### Fixed: blank Energy tile and 0% "Today" efficiency (Flutter)
+
+Two related client-side display bugs, both in `flutter_ui/lib/screens/trips/`:
+
+- **Trip detail's Energy tile always showed "--"**, even on trips with a clear SoC drop and a
+  nonzero electric cost. `trip_detail_controller.dart` hardcoded `energyUsedKwh` to `0.0`,
+  reasoning (matching a comment in the native Android reference client) that `TripSummary`'s
+  proto has no direct kWh-consumed field. It has `energy_per_km` instead, and
+  `energy_per_km * distance_km` **is** that value — the daemon derives one from the other
+  internally. Fixed by deriving it client-side rather than reproducing the native gap.
+- **The Trips screen's "Today" stat showed 0% efficiency** on days with only short trips.
+  `trips_controller.dart` summed `avgEfficiency` from each weekly rollup — the daemon's legacy
+  SoC-delta-per-km metric, which is exactly `0.0` whenever a trip's *coarse, integer* SoC%
+  reading didn't visibly drop (routine on a short trip) even though real energy was used. Fixed
+  by reading `avgEfficiencyScore` instead — the same 0-100, kWh-preferred score
+  `TripScoreEngine` already computes correctly and stores in a separate rollup column that the
+  client just wasn't reading.
+
+Neither fix touched the daemon; both values were already being computed and sent correctly.
 
 ### PHEV trips
 
@@ -277,7 +328,14 @@ Performance features include:
 - Battery and SOC data.
 - Parking delta.
 - Charge session and last-charge tracking.
-- Telemetry overlay config.
+- Telemetry overlay config, including a per-recording-type field checklist
+  (speed, gear, turn signals, brake/accelerator pedals, driver/passenger
+  seatbelt, timestamp — BladeWatch-y78o.5). **VIN and GPS coordinates are
+  deliberately not selectable fields.** GPS latitude/longitude is still burned
+  in unconditionally whenever a fix is available — an existing, pre-y78o.5
+  behaviour this issue's own scope explicitly left unchanged — through a
+  separate code path the field checklist does not touch, gate, or expose as a
+  toggle. See [data-flow-and-storage.md](data-flow-and-storage.md) for why.
 
 Battery state-of-health estimation is not available. The nominal battery capacity value from BYD local telemetry is accessible through the SOC nominal endpoint, but no SoH estimator runs.
 
@@ -293,7 +351,9 @@ Notification features include:
 
 Surveillance and proximity events deliver notifications through Web Push. There is no Telegram notification path.
 
-Tapping a push opens the Angular SPA at the route for that category — `/events?filter=sentry` or `/events?filter=proximity` for surveillance and proximity clips, `/vehicle` for TPMS, door, and charging alerts. Event pushes also carry the clip name as `file=`, which opens that recording directly, and a pre-signed snapshot URL as `hero=`, which the events page renders as an inline banner. The banner exists because iOS Safari ignores `options.image` on Web Push, so the snapshot never reaches the OS notification banner; only a same-origin `/thumb/` path is accepted for `hero=`. Category click targets live in [notifications-categories.json](../app/src/main/assets/notifications-categories.json) as `defaultClickUrl`, used when an event carries no URL of its own.
+Tapping a push opens the Angular SPA at the route for that category — `/events?filter=sentry` or `/events?filter=proximity` for surveillance and proximity clips, `/vehicle` for TPMS, door, and charging alerts, `/trips` for trip lifecycle alerts. Event pushes also carry the clip name as `file=`, which opens that recording directly, and a pre-signed snapshot URL as `hero=`, which the events page renders as an inline banner. The banner exists because iOS Safari ignores `options.image` on Web Push, so the snapshot never reaches the OS notification banner; only a same-origin `/thumb/` path is accepted for `hero=`. Category click targets live in [notifications-categories.json](../app/src/main/assets/notifications-categories.json) as `defaultClickUrl`, used when an event carries no URL of its own.
+
+`trips.started` and `trips.ended` (`TripEventNotifier`, BladeWatch-nmao.3) notify on trip boundaries detected by the gear-based `TripDetector` state machine. Both are **off by default** — a trip ends every time the owner parks, and a notification on every park is how people turn all notifications off. `trips.ended`'s payload carries the trip's distance and duration; discarded trips (below the minimum duration/distance thresholds) never publish anything.
 
 ## Remote Access
 
@@ -320,6 +380,13 @@ The app includes update APIs for:
 Diagnostics exist across the in-car UI, daemon state, ConnectRPC/HTTP APIs, and log files. The app includes daemon health checks, process revival, overlay status, and logging utilities.
 
 The Diagnostics screen surfaces Network, Storage, Camera, and Battery tiles, a Camera Probe dialog (Auto or pin camera 0-5), and a Battery Health dialog with an SOH reset. The Battery tile shows the current state-of-charge percentage. An ADB console / shell runner (`flutter_ui/lib/screens/diagnostics/adb_console_screen.dart`) provides preset and ad-hoc shell commands; it is intentionally not exposed in the web build.
+
+The Network tile also shows BladeWatch's own monthly network usage (BladeWatch-t1lg.1) — own-UID
+`TrafficStats` totals, not whole-device usage, since a metered head-unit SIM makes "what does
+BladeWatch itself cost me" a real question. It survives daemon restarts and device reboots (a
+reboot resets the underlying counter; that reset is detected and credited forward rather than
+subtracted, so the running month total never goes backward or silently loses data) — see
+[networking-and-tunnels.md](networking-and-tunnels.md) for the accounting details.
 
 ## ConnectRPC API
 

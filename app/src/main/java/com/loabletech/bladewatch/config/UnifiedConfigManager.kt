@@ -1,6 +1,7 @@
 package net.bladewatch.app.config
 
 import android.util.Log
+import net.bladewatch.app.recording.RecordingPriority
 import org.json.JSONObject
 import java.io.File
 import java.io.FileWriter
@@ -234,6 +235,12 @@ object UnifiedConfigManager {
         if (!recording.has("codec")) recording.put("codec", "H264")
         // Per-file recording limit in minutes (segment rotation). Options 1/5/10.
         if (!recording.has("segmentMinutes")) recording.put("segmentMinutes", 5)
+        // Recording priority (PERFORMANCE/RELIABILITY): new installs get the safer default.
+        // The priorityMigrated marker is set here too (mirroring telemetryOverlay above) so
+        // migrateConfig()'s one-time PERFORMANCE migration below never re-touches a config
+        // that was already created under this default. See BladeWatch-gyg1.3.
+        if (!recording.has("priority")) recording.put("priority", RecordingPriority.RELIABILITY.name)
+        if (!recording.has("priorityMigrated")) recording.put("priorityMigrated", true)
 
         // Streaming defaults
         if (!streaming.has("quality")) streaming.put("quality", "MEDIUM")
@@ -299,25 +306,12 @@ object UnifiedConfigManager {
      * migration must therefore be guarded by its own marker so it fires once
      * and never overrides a deliberate later user choice.
      */
-    private fun migrateConfig(config: JSONObject): Boolean {
-        var changed = false
-
-        // Telemetry overlay default flipped false -> true (2026-06). Configs
-        // created under the old false-default are enabled exactly once; the
-        // defaultOnMigrated marker prevents re-enabling after the user turns
-        // the overlay off in Settings.
-        val telemetryOverlay = config.optJSONObject("telemetryOverlay") ?: JSONObject().also {
-            config.put("telemetryOverlay", it)
-            changed = true
-        }
-        if (!telemetryOverlay.optBoolean("defaultOnMigrated", false)) {
-            telemetryOverlay.put("enabled", true)
-            telemetryOverlay.put("defaultOnMigrated", true)
-            changed = true
-        }
-
-        return changed
-    }
+    /**
+     * Applies the one-time, marker-gated migrations. The bodies live in [ConfigMigrations], a
+     * pure object with no `android.*` dependency, so they are unit-testable without a live
+     * Android environment -- this class is not (BladeWatch-l5w4).
+     */
+    private fun migrateConfig(config: JSONObject): Boolean = ConfigMigrations.apply(config)
 
     /**
      * Load config from file (with caching).
@@ -709,6 +703,26 @@ object UnifiedConfigManager {
             if (success) notifyListeners("daemons", daemons)
             return success
         }
+    }
+
+    /**
+     * The owner's explicit nominal pack capacity in kWh, or 0 when unset (BladeWatch-b9vl).
+     *
+     * Stored in the `vehicle` section next to `modelId`, because it describes the same thing:
+     * which car this is. `NominalCapacityResolver` validates the range — this only reads it.
+     */
+    @JvmStatic
+    fun getNominalCapacityOverrideKwh(): Double = getVehicle().optDouble("nominalKwhOverride", 0.0)
+
+    /**
+     * Set or clear the owner's nominal pack capacity. Pass 0 to clear it and fall back to
+     * auto-detection.
+     */
+    @JvmStatic
+    fun setNominalCapacityOverrideKwh(kwh: Double): Boolean {
+        val patch = JSONObject()
+        patch.put("nominalKwhOverride", if (kwh.isNaN() || kwh <= 0) 0.0 else kwh)
+        return updateSection("vehicle", patch)
     }
 
     /**

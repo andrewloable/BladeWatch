@@ -72,6 +72,7 @@ class TripDatabase {
 
                 createTables()
                 isInitialized = true
+                repairMirroredTripEnergy()
                 logger.info("Trip Database initialized via H2 (Pure Java): $DB_PATH")
                 return
             } catch (e: Exception) {
@@ -552,6 +553,33 @@ class TripDatabase {
             reconnect()
         }
         return false
+    }
+
+    /**
+     * Rewrites `telemetry_file_path` for every trip row pointing at [oldPath] to [newPath].
+     * Used by [net.bladewatch.app.storage.InternalToSdMigrator] after physically moving a
+     * trip's telemetry file from internal storage to the SD card, so the trip detail screen
+     * keeps finding it. A no-op with no matching row (e.g. a stray file with no DB row) is not
+     * an error — the file still moved, the caller just has nothing to update.
+     *
+     * @return true if at least one row was updated
+     */
+    fun updateTelemetryFilePath(oldPath: String, newPath: String): Boolean {
+        if (!ensureConnection()) return false
+
+        return try {
+            conn().prepareStatement(
+                "UPDATE trips SET telemetry_file_path=? WHERE telemetry_file_path=?"
+            ).use { pstmt ->
+                pstmt.setString(1, newPath)
+                pstmt.setString(2, oldPath)
+                pstmt.executeUpdate() > 0
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to update telemetry_file_path from $oldPath to $newPath", e)
+            reconnect()
+            false
+        }
     }
 
     /** Total number of trips in the database. */
@@ -1409,6 +1437,92 @@ class TripDatabase {
             logger.info("Trips sync: pruned $removed trip(s) with missing telemetry")
         }
         return removed
+    }
+
+    /**
+     * One-time repair of trips stored while nominal pack capacity resolved to ~100 kWh
+     * (BladeWatch-aa3i). See [TripEnergyMigration] for the arithmetic and the evidence.
+     *
+     * Gated on the DATA, not on a marker file: a row is repaired only while its stored energy
+     * still mirrors SoC, which it stops doing the moment it is repaired. That makes this safe
+     * to run on every init, safe on a partly-repaired database, and — unlike a marker beside
+     * the database — it survives a restore of the database alone.
+     *
+     * Best-effort. A failure here must never stop the daemon coming up, so everything is
+     * caught and the history is simply left as it was.
+     */
+    private fun repairMirroredTripEnergy() {
+        val conn = connection ?: return
+        try {
+            val nominalKwh = try {
+                net.bladewatch.app.monitor.VehicleDataMonitor.getInstance().getNominalCapacityKwh()
+            } catch (e: Throwable) {
+                0.0
+            }
+            // Without a trustworthy capacity there is nothing to recompute WITH. Rewriting rows
+            // against a guessed number is how the damage happened in the first place.
+            if (nominalKwh <= 0) {
+                logger.debug("Trip energy repair skipped: nominal capacity unknown")
+                return
+            }
+
+            val ids = ArrayList<Long>()
+            val fixes = ArrayList<TripEnergyMigration.Corrected>()
+            conn.prepareStatement(
+                "SELECT ID, SOC_START, SOC_END, KWH_START, KWH_END, DISTANCE_KM, " +
+                    "ELECTRICITY_RATE, FUEL_COST, ELEC_CON_START, ELEC_CON_END FROM TRIPS"
+            ).use { ps ->
+                ps.executeQuery().use { rs ->
+                    while (rs.next()) {
+                        val socStart = rs.getDouble(2)
+                        val socEnd = rs.getDouble(3)
+                        if (!TripEnergyMigration.needsCorrection(
+                                socStart, socEnd, rs.getDouble(4), rs.getDouble(5)
+                            )
+                        ) continue
+                        val ec0 = rs.getDouble(9)
+                        val ec1 = rs.getDouble(10)
+                        ids.add(rs.getLong(1))
+                        fixes.add(
+                            TripEnergyMigration.correct(
+                                socStart = socStart,
+                                socEnd = socEnd,
+                                distanceKm = rs.getDouble(6),
+                                electricityRate = rs.getDouble(7),
+                                fuelCost = rs.getDouble(8),
+                                meteredEnergyKwh = if (ec0 >= 0 && ec1 >= ec0) ec1 - ec0 else 0.0,
+                                nominalKwh = nominalKwh,
+                            )
+                        )
+                    }
+                }
+            }
+            if (ids.isEmpty()) return
+
+            conn.prepareStatement(
+                "UPDATE TRIPS SET KWH_START = ?, KWH_END = ?, ENERGY_PER_KM = ?, " +
+                    "ELECTRIC_COST = ?, TRIP_COST = ? WHERE ID = ?"
+            ).use { ps ->
+                for (i in ids.indices) {
+                    val fixed = fixes[i]
+                    ps.setDouble(1, fixed.kwhStart)
+                    ps.setDouble(2, fixed.kwhEnd)
+                    ps.setDouble(3, fixed.energyPerKm)
+                    ps.setDouble(4, fixed.electricCost)
+                    ps.setDouble(5, fixed.tripCost)
+                    ps.setLong(6, ids[i])
+                    ps.addBatch()
+                }
+                ps.executeBatch()
+            }
+            logger.info(
+                "Trip energy repair: corrected ${ids.size} trip(s) against a " +
+                    "${"%.1f".format(nominalKwh)} kWh pack (BladeWatch-aa3i). Efficiency SCORES " +
+                    "are NOT recomputed and remain as scored at the time."
+            )
+        } catch (e: Exception) {
+            logger.warn("Trip energy repair failed, leaving history untouched: " + e.message)
+        }
     }
 
     private companion object {

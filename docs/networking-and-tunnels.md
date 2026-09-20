@@ -216,6 +216,33 @@ Two caveats worth knowing before diagnosing a "bug":
   with an unhelpful DNS error, which is why the Dashboard ships a help dialog explaining
   the per-platform install.
 
+### Still-frame fallback for decoder-less browsers (BladeWatch-y78o.1)
+
+`GET /api/stream/still` serves a periodically refreshed JPEG of the full 4-camera mosaic
+(640×480, quality 80) for browsers that can decode neither WebCodecs nor MSE H.264 — Tor
+Browser on Linux is the documented case (see `docs/evaluations/overdrive-remote-communication.md`
+and friends for why: Firefox borrows the platform's H.264 decoder and Linux has none by
+default). The web client (`web/src/app/pages/live/still-frame-player.ts`) selects this tier
+automatically — see `stream-tier.ts` — and shows a persistent "still image, not live video"
+banner so the owner never mistakes a stale frame for a live one.
+
+**No JPEG encode on the hot camera path.** The source is
+`SurveillanceEngineGpu.getLatestMosaicFrame()`, the same continuously-updated RGB buffer
+`SurveillanceApiHandler`'s quadrant-snapshot route already reads — it updates every camera
+frame regardless of whether this fallback exists. The only new work is the JPEG encode
+itself, and it runs on its own 5-second timer (`StillFrameRefresher`), fully decoupled from
+camera FPS. Two consecutive HTTP requests between refreshes are served the same retained
+bytes with zero additional encoding.
+
+**Step Zero viability (BladeWatch-y78o.1, no physical head unit available this session — see
+the issue's own close reason for the full methodology and caveats):** a synthetic
+detail-heavy 640×480 JPEG at quality 80 measured 122 KB, chosen as a conservative
+(worst-case-compression) proxy for a real camera frame in the absence of device access. At
+the documented **101 KB/s** sustained onion throughput
+(`docs/evaluations/overdrive-remote-communication.md`), a 5-second refresh costs ~24 KB/s —
+about a quarter of the budget, leaving headroom for the rest of the page. A 2-second refresh
+would use ~60%, too tight; 5 seconds was chosen as the default for that reason.
+
 ### Reading the current tunnel URL
 
 The Flutter UI is a different APK and cannot read the service host's in-memory state or
@@ -235,6 +262,29 @@ Because tor appends to one log across launches, the gate tracks the *latest* of
 `Bootstrapped 0%` and `Bootstrapped 100%` rather than merely searching for 100% — an old
 success line sits above the new run's start. See
 [ipc-auth-and-secrets.md](ipc-auth-and-secrets.md) for the response shape.
+
+## BladeWatch's Own Network Usage (BladeWatch-t1lg.1)
+
+On a metered head-unit SIM, streaming a live view or serving the web UI over the onion service
+costs real money, and nothing previously told the owner what it costs. `NetworkMonitor` now
+tracks BladeWatch's own (own-UID) `TrafficStats.getUidRxBytes`/`getUidTxBytes` totals — **not**
+whole-device usage, and not per-app attribution (`NetworkStatsManager`/`PACKAGE_USAGE_STATS` are
+deliberately not used; own-UID totals need no permission).
+
+A background sampler (`DataUsageSampler`, `Thread.MIN_PRIORITY`, every 60s) reads both counters
+and feeds them to `DataUsageAccumulator` — a pure, `android.*`-free class specifically so its
+hardest case (a device reboot resets the cumulative-since-boot counter to near zero) is
+unit-testable without a device. The rule: if the new reading is `>=` the last one, add the delta;
+if it went backward, a reboot happened and the whole new reading is credited as new traffic,
+never subtracted. The running total also rolls over to a new bucket on the local-time month
+boundary, keeping the just-finished month's total for "last month."
+
+State (`rxLastReading`, `rxAccumulatedThisMonth`, `rxCurrentMonthKey`, `rxLastMonthTotal`,
+`rxLastMonthKey`, and the `tx` equivalents) persists to `UnifiedConfigManager`'s `dataUsage`
+section after every sample, so a daemon restart resumes from where it left off instead of
+re-crediting a large reading as if it were a reboot. Surfaced as `thisMonthBytes`/`lastMonthBytes`
+(rx+tx combined) on `NetworkInfo` in `GetStatus`, and shown on the Flutter Diagnostics screen's
+network tile as "X this month."
 
 ## Remote Access Security Model
 

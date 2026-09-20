@@ -70,8 +70,11 @@ class SurveillanceConfig {
 class SurveillanceStatus {
   final bool isRunning;
   final int eventsToday;
+  // BladeWatch-gyg1.2: true only while another app actually holds the camera --
+  // surfaced honestly, not as a permanent caption. See BydCameraCoordinator.isYielded().
+  final bool cameraYielded;
 
-  const SurveillanceStatus({required this.isRunning, required this.eventsToday});
+  const SurveillanceStatus({required this.isRunning, required this.eventsToday, this.cameraYielded = false});
 }
 
 class SurveillanceStorageSettings {

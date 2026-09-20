@@ -37,6 +37,8 @@ class RecordingEntry extends $pb.GeneratedMessage {
     $core.Iterable<$core.String>? detectedClasses,
     $core.String? severity,
     $core.String? proximity,
+    $core.bool? marked,
+    $fixnum.Int64? markedAtMs,
   }) {
     final result = RecordingEntry._();
     if (filename != null) result.filename = filename;
@@ -51,6 +53,8 @@ class RecordingEntry extends $pb.GeneratedMessage {
     if (detectedClasses != null) result.detectedClasses.addAll(detectedClasses);
     if (severity != null) result.severity = severity;
     if (proximity != null) result.proximity = proximity;
+    if (marked != null) result.marked = marked;
+    if (markedAtMs != null) result.markedAtMs = markedAtMs;
     return result;
   }
 
@@ -80,6 +84,8 @@ class RecordingEntry extends $pb.GeneratedMessage {
     ..pPS(10, _omitFieldNames ? '' : 'detectedClasses')
     ..aOS(11, _omitFieldNames ? '' : 'peakSeverity', protoName: 'severity')
     ..aOS(12, _omitFieldNames ? '' : 'peakProximity', protoName: 'proximity')
+    ..aOB(13, _omitFieldNames ? '' : 'marked')
+    ..aInt64(14, _omitFieldNames ? '' : 'markedAtMs')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -210,6 +216,26 @@ class RecordingEntry extends $pb.GeneratedMessage {
   $core.bool hasProximity() => $_has(11);
   @$pb.TagNumber(12)
   void clearProximity() => $_clearField(12);
+
+  /// Set by MarkRecording while this clip was being written. Excluded from
+  /// automatic storage cleanup -- see StorageManager.ensureSpace.
+  @$pb.TagNumber(13)
+  $core.bool get marked => $_getBF(12);
+  @$pb.TagNumber(13)
+  set marked($core.bool value) => $_setBool(12, value);
+  @$pb.TagNumber(13)
+  $core.bool hasMarked() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearMarked() => $_clearField(13);
+
+  @$pb.TagNumber(14)
+  $fixnum.Int64 get markedAtMs => $_getI64(13);
+  @$pb.TagNumber(14)
+  set markedAtMs($fixnum.Int64 value) => $_setInt64(13, value);
+  @$pb.TagNumber(14)
+  $core.bool hasMarkedAtMs() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearMarkedAtMs() => $_clearField(14);
 }
 
 class ListRecordingsRequest extends $pb.GeneratedMessage {
@@ -1361,6 +1387,144 @@ class GetEventTimelineRequest extends $pb.GeneratedMessage {
   void clearFilename() => $_clearField(1);
 }
 
+class MarkRecordingRequest extends $pb.GeneratedMessage {
+  factory MarkRecordingRequest() => MarkRecordingRequest._();
+
+  MarkRecordingRequest._();
+
+  factory MarkRecordingRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      MarkRecordingRequest()..mergeFromBuffer(data, registry);
+  factory MarkRecordingRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      MarkRecordingRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'MarkRecordingRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: MarkRecordingRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  MarkRecordingRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  MarkRecordingRequest copyWith(void Function(MarkRecordingRequest) updates) =>
+      super.copyWith((message) => updates(message as MarkRecordingRequest))
+          as MarkRecordingRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use MarkRecordingRequest() / MarkRecordingRequest.new instead')
+  static MarkRecordingRequest create() => MarkRecordingRequest._();
+  static $pb.GeneratedMessage $_createMessage() => MarkRecordingRequest._();
+  @$core.override
+  MarkRecordingRequest createEmptyInstance() => MarkRecordingRequest._();
+  @$core.pragma('dart2js:noInline')
+  static MarkRecordingRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<MarkRecordingRequest>(
+          MarkRecordingRequest.$_createMessage);
+  static MarkRecordingRequest? _defaultInstance;
+}
+
+class MarkRecordingResponse extends $pb.GeneratedMessage {
+  factory MarkRecordingResponse({
+    $core.bool? success,
+    $core.String? reason,
+    $core.String? filename,
+    $fixnum.Int64? markTimestampMs,
+  }) {
+    final result = MarkRecordingResponse._();
+    if (success != null) result.success = success;
+    if (reason != null) result.reason = reason;
+    if (filename != null) result.filename = filename;
+    if (markTimestampMs != null) result.markTimestampMs = markTimestampMs;
+    return result;
+  }
+
+  MarkRecordingResponse._();
+
+  factory MarkRecordingResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      MarkRecordingResponse()..mergeFromBuffer(data, registry);
+  factory MarkRecordingResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      MarkRecordingResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'MarkRecordingResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: MarkRecordingResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'reason')
+    ..aOS(3, _omitFieldNames ? '' : 'filename')
+    ..aInt64(4, _omitFieldNames ? '' : 'markTimestampMs')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  MarkRecordingResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  MarkRecordingResponse copyWith(
+          void Function(MarkRecordingResponse) updates) =>
+      super.copyWith((message) => updates(message as MarkRecordingResponse))
+          as MarkRecordingResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use MarkRecordingResponse() / MarkRecordingResponse.new instead')
+  static MarkRecordingResponse create() => MarkRecordingResponse._();
+  static $pb.GeneratedMessage $_createMessage() => MarkRecordingResponse._();
+  @$core.override
+  MarkRecordingResponse createEmptyInstance() => MarkRecordingResponse._();
+  @$core.pragma('dart2js:noInline')
+  static MarkRecordingResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<MarkRecordingResponse>(
+          MarkRecordingResponse.$_createMessage);
+  static MarkRecordingResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  /// Populated only when success is false, e.g. "not_recording".
+  @$pb.TagNumber(2)
+  $core.String get reason => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set reason($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasReason() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearReason() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get filename => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set filename($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasFilename() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearFilename() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $fixnum.Int64 get markTimestampMs => $_getI64(3);
+  @$pb.TagNumber(4)
+  set markTimestampMs($fixnum.Int64 value) => $_setInt64(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasMarkTimestampMs() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearMarkTimestampMs() => $_clearField(4);
+}
+
 /// GetEventTimelineResponse carries the event-timeline sidecar verbatim as a JSON string blob.
 /// The sidecar (EventTimelineCollector v3) is a rich object {version,durationMs,events[],actors[],
 /// stats{},heroThumbnail} that does not map to flat fields; clients parse timeline_json themselves.
@@ -1436,6 +1600,7 @@ class GetEventTimelineResponse extends $pb.GeneratedMessage {
 ///   SyncCatalog         POST   /api/recordings/sync
 ///   GetInflightStatus   GET    /api/recordings/inflight/{filename}
 ///   GetEventTimeline    GET    /api/events/{filename}
+///   MarkRecording       POST   /api/recordings/mark
 class RecordingsServiceApi {
   final $pb.RpcClient _client;
 
@@ -1473,6 +1638,14 @@ class RecordingsServiceApi {
           $pb.ClientContext? ctx, GetEventTimelineRequest request) =>
       _client.invoke<GetEventTimelineResponse>(ctx, 'RecordingsService',
           'GetEventTimeline', request, GetEventTimelineResponse());
+
+  /// Bookmarks the recording currently being written (metadata only -- no new
+  /// file, no split). No request fields: the server resolves "current" itself,
+  /// since the caller (a Live View button) has no filename to give it.
+  $async.Future<MarkRecordingResponse> markRecording(
+          $pb.ClientContext? ctx, MarkRecordingRequest request) =>
+      _client.invoke<MarkRecordingResponse>(ctx, 'RecordingsService',
+          'MarkRecording', request, MarkRecordingResponse());
 }
 
 const $core.bool _omitFieldNames =

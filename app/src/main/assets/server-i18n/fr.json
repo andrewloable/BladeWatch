@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Contenu de requête invalide: {0}",
     "performance_no_data": "La surveillance des performances n'a pas été lancée ou aucune donnée n'a encore été recueillie",
     "soh_not_initialized": "L'estimateur de Soh n'est pas initialisé",
+    "soh_nominal_range": "La capacité nominale doit être comprise entre 8 et 120 kWh",
     "reset_no_categories": "Aucune catégorie spécifiée",
     "reset_unknown_category": "Catégorie inconnue",
     "reset_trip_in_progress": "Trajet en cours - éteindre l'ACC d'abord",
@@ -75,6 +76,8 @@
     "surveillance_invalid_quadrant_with_id": "Quadrant invalide: {0}",
     "surveillance_event_frame_failed_with_detail": "Échec de traitement de l'événement de cadre: {0}",
     "surveillance_no_frame_available": "Aucun cadre disponible - commencez la surveillance ou enregistrez un événement d'abord",
+    "telemetry_overlay_unknown_type_with_id": "Type d'enregistrement inconnu : {0}",
+    "telemetry_overlay_fields_missing": "\"fields\" manquant",
     "update_app_context_not_ready": "Le contexte de l'application n'est pas prêt",
     "update_check_timed_out": "Délai de vérification des mises à jour dépassé",
     "update_disabled_in_public_mode": "Les mises à jour sont désactivées en mode public. Basculez d'abord vers le mode privé dans l'app de la voiture.",
@@ -118,7 +121,11 @@
     "area_hood": "Capot",
     "area_trunk": "Coffre",
     "area_fuel_cap": "Trappe à carburant",
-    "area_door_n": "Porte {0}"
+    "area_door_n": "Porte {0}",
+    "trip_started": "Trajet commencé",
+    "trip_ended": "Trajet terminé",
+    "trip_summary_km": "{0} km · {1} min",
+    "trip_summary_mi": "{0} mi · {1} min"
   },
   "vehicle_control": {
     "cloud_required": "Connectez un compte BYD dans les paramètres pour utiliser ce contrôle",
@@ -130,6 +137,7 @@
     "cloud_failed": "Je n'ai pas pu atteindre la voiture. Essayez à nouveau quand le véhicule est éveillé.",
     "rate_limited": "Une commande est toujours en cours  Attendez quelques secondes",
     "not_supported": "Ce contrôle n'est pas disponible en ce moment.",
+    "blocked_moving": "Indisponible pendant que le véhicule est en mouvement.",
     "find_car_label": "Trouvez une voiture.",
     "battery_heat_label": "La chaleur de la batterie",
     "close_all_windows_label": "Toutes les fenêtres fermées"

@@ -108,7 +108,7 @@ class VehicleDataMonitor private constructor() {
 
     fun getVd(): BydVehicleData? = try {
         val c = BydDataCollector.getInstance()
-        if (c.isInitialized()) c.getData() else null
+        if (c.isInitialized) c.data else null
     } catch (e: Exception) {
         null
     }
@@ -273,34 +273,67 @@ class VehicleDataMonitor private constructor() {
             return computedKwh
         }
 
-        // No nominal capacity: use the raw BMS value if available.
-        if (rawKwh > 0) return rawKwh
-
-        return 0.0
+        // No nominal capacity: use the raw BMS value, but only if it is really energy.
+        // nominal == 0.0 is the honest "unknown" NominalCapacityResolver now returns, and
+        // handing the raw value back here would convert that straight into the mirrored
+        // number the fix exists to eliminate (BladeWatch-ofe9).
+        return NominalCapacityResolver.trustworthyRemainKwh(rawKwh, soc)
     }
 
     /**
-     * Derive nominal pack capacity (kWh) from BYD local vehicle data only.
+     * Derive nominal pack capacity (kWh). See [NominalCapacityResolver] for the priority order
+     * and, importantly, for why the `remainKwh / (soc/100)` derivation is no longer trusted
+     * unconditionally (BladeWatch-x4lf: on this car that channel mirrors SoC percent, which
+     * made every pack look like ~100 kWh).
      *
-     * Source priority:
-     *  1. chargingDevice-reported pack capacity (`BydVehicleData.chargingCapacityKwh`)
-     *  2. implied capacity = remainKwh / (soc/100) when both are present and SOC is high
-     *     enough to be trustworthy
-     *
-     * Returns 0 when neither source is available. There is no SOH/degradation source in BYD
-     * local data — callers treat the pack as 100% healthy.
+     * Returns 0 when capacity genuinely cannot be determined. There is no SOH/degradation
+     * source in BYD local data — callers treat the pack as 100% healthy.
      */
+    /**
+     * Which source [getNominalCapacityKwh] answered from — "user", "sdk", "catalogue",
+     * "derived" or "unset" (BladeWatch-b9vl).
+     *
+     * Computed from the same inputs, in the same order, by the same object that picks the
+     * value. `GetSohNominal` used to return a hardcoded "unset" while a capacity was
+     * demonstrably known; a source derived anywhere else drifts from the value again.
+     */
+    fun getNominalCapacitySource(): String {
+        val vd = getVd() ?: return "unset"
+        return NominalCapacityResolver.sourceOf(
+            overrideKwh = nominalOverrideKwh(),
+            chargingCapacityKwh = vd.chargingCapacityKwh,
+            catalogueKwh = catalogueNominalKwh(),
+            remainKwh = vd.remainKwh,
+            socPercent = vd.socPercent,
+        )
+    }
+
+    /** The per-trim `nominalKwh` from models/manifest.json, or 0 when it cannot answer. */
+    private fun catalogueNominalKwh(): Double = try {
+        net.bladewatch.app.server.ModelsApiHandler.nominalKwhForSelectedModel()
+    } catch (e: Throwable) {
+        0.0
+    }
+
+    /** The owner's explicit capacity, or 0 when unset. Best-effort: config is off-process. */
+    private fun nominalOverrideKwh(): Double = try {
+        net.bladewatch.app.config.UnifiedConfigManager.getNominalCapacityOverrideKwh()
+    } catch (e: Throwable) {
+        0.0
+    }
+
     fun getNominalCapacityKwh(): Double {
         val vd = getVd() ?: return 0.0
-        if (!vd.chargingCapacityKwh.isNaN() && vd.chargingCapacityKwh > 0) {
-            return vd.chargingCapacityKwh
-        }
-        val soc = if (vd.socPercent.isNaN()) 0.0 else vd.socPercent
-        val rawKwh = if (vd.remainKwh.isNaN()) 0.0 else vd.remainKwh
-        if (rawKwh > 0 && soc > 5) {
-            return rawKwh / (soc / 100.0)
-        }
-        return 0.0
+        // The per-trim `nominalKwh` in models/manifest.json. The lookup already existed and
+        // had no callers at all, so the catalogue value was never consulted.
+        val catalogueKwh = catalogueNominalKwh()
+        return NominalCapacityResolver.resolve(
+            overrideKwh = nominalOverrideKwh(),
+            chargingCapacityKwh = vd.chargingCapacityKwh,
+            catalogueKwh = catalogueKwh,
+            remainKwh = vd.remainKwh,
+            socPercent = vd.socPercent,
+        )
     }
 
     /**
@@ -328,7 +361,7 @@ class VehicleDataMonitor private constructor() {
     private fun isPhevVehicle(nominalCapacityKwh: Double): Boolean {
         try {
             val collector = BydDataCollector.getInstance()
-            if (collector.isInitialized()) {
+            if (collector.isInitialized) {
                 return collector.isPhevVehicle()
             }
         } catch (t: Throwable) {
@@ -431,7 +464,7 @@ class VehicleDataMonitor private constructor() {
 
     fun getAvailability(): Map<String, Boolean> {
         val c = BydDataCollector.getInstance()
-        val ready = c.isInitialized()
+        val ready = c.isInitialized
         return hashMapOf(
             "batteryVoltage" to ready,
             "batteryPower" to (ready || batteryPowerMonitor.isAvailable()),

@@ -162,13 +162,6 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
     send: createIoHttpSender(readTimeout: const Duration(seconds: 120)),
   );
   late final TripsServiceClient _longTripsService = TripsServiceClient(_longRpcTransport);
-  // PerformanceController talks to 3 /api/performance/* endpoints over raw HTTP
-  // rather than RPC, so it needs a RawHttpSender of its own kind. It is rebuilt
-  // on every visit to the Performance screen, and createIoHttpSender() allocates
-  // an HttpClient that nothing ever closes — so letting the controller default
-  // leaks one connection pool per visit on a head unit that stays up for days.
-  // Hand it this app-lifetime sender instead; HttpClient is designed to be shared.
-  late final RawHttpSender _rawHttpSender = createIoHttpSender();
   // BladeWatch-yz1e.8: SyncCatalog (surveillance) shares the same long-read
   // transport, mirroring ConnectClientProvider.longSurveillanceService().
   late final SurveillanceServiceClient _longSurveillanceService = SurveillanceServiceClient(_longRpcTransport);
@@ -276,6 +269,8 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
 
   late final LiveViewController _liveViewController = LiveViewController(
     streamService: _streamService,
+    systemService: _systemService,
+    recordingsService: _recordingsService,
     jwtSource: _authChannel,
     textureChannel: _liveViewTextureChannel,
   );
@@ -365,6 +360,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                         setDaemonEnabled: SettingsDaemonsController.enabledSetterFor(_daemonChannel),
                         onOpenLanguagePicker: () => _showLanguagePicker(context),
                         tripsController: _tripsController,
+                        jwtSource: _authChannel,
                       ),
                     ),
                     settingsAboutScreen: SettingsAboutScreen(
@@ -375,11 +371,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                       controller: _diagnosticsController,
                       adbConsoleControllerFactory: () =>
                           AdbConsoleController(connection: AdbClient(keys: _adbKeyChannel)),
-                      performanceControllerFactory: () => PerformanceController(
-                        systemService: _systemService,
-                        jwtSource: _authChannel,
-                        send: _rawHttpSender,
-                      ),
+                      performanceControllerFactory: () => PerformanceController(systemService: _systemService),
                       onOpenSettings: () => _shellController.selectRoute(BwRoutes.settings),
                     ),
                     tripsScreen: TripsScreen(
@@ -395,7 +387,11 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                     ),
                     surveillanceScreen: SurveillanceSettingsScreen(controller: _surveillanceController),
                     vehicleScreen: VehicleScreen(controller: _vehicleController),
-                    liveViewScreen: LiveViewScreen(controller: _liveViewController),
+                    liveViewScreen: LiveViewScreen(
+                      controller: _liveViewController,
+                      locationController: _locationController,
+                      onOpenLocation: () => _shellController.selectRoute(BwRoutes.location),
+                    ),
                   )
                 : StartupScreen(
                     controller: _startupController,

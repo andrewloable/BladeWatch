@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Bundle
 import android.os.Looper
 import androidx.core.content.ContextCompat
 
@@ -31,6 +32,28 @@ class LocationServiceChannel(private val context: Context) {
         override fun onLocationChanged(location: Location) {
             lastSample = location
         }
+
+        // The three below are EMPTY ON PURPOSE AND MUST NOT BE DELETED. They look like dead
+        // code and are exactly what a later cleanup removes.
+        //
+        // `LocationListener` declares four methods. These three only gained default
+        // implementations in API 30; on API 29 they are ABSTRACT. This head unit is Android
+        // 10 / API 29 and this APK sets minSdk 29, but compileSdk is modern, so Kotlin
+        // compiles fine against the API 30+ shape where they are optional. The omission
+        // cannot fail the build — it surfaces at run time, on the main looper, the instant
+        // the framework reports a provider toggle, and it kills the whole UI process:
+        //
+        //   FATAL EXCEPTION: main
+        //   java.lang.AbstractMethodError: abstract method
+        //     "void android.location.LocationListener.onProviderDisabled(java.lang.String)"
+        //
+        // Observed on the car 2026-09-20 (BladeWatch-pg6r). Signatures match
+        // `LocationSidecarService`, which has implemented all four all along.
+        override fun onProviderEnabled(provider: String) = Unit
+
+        override fun onProviderDisabled(provider: String) = Unit
+
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
     }
 
     fun hasPermission(): Boolean =

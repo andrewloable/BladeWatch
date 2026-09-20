@@ -210,7 +210,11 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
       totalDist += (r['totalDistanceKm'] as num?)?.toDouble() ?? 0.0;
       totalDur += (r['totalDurationSeconds'] as num?)?.toInt() ?? 0;
       totalEnergy += (r['totalEnergyKwh'] as num?)?.toDouble() ?? 0.0;
-      totalEfficiency += (r['avgEfficiency'] as num?)?.toDouble() ?? 0.0;
+      // avgEfficiencyScore (0-100), NOT avgEfficiency: the latter is the daemon's legacy
+      // SoC-delta-per-km metric, which reads 0 whenever a trip's coarse integer SoC% didn't
+      // visibly drop (common on short trips) even though real energy was used. The score
+      // field is TripScoreEngine's properly kWh-preferred, baseline-adjusted 0-100 value.
+      totalEfficiency += (r['avgEfficiencyScore'] as num?)?.toDouble() ?? 0.0;
       energyPerKmSum += (r['avgEnergyPerKm'] as num?)?.toDouble() ?? 0.0;
     }
     // The divisor is the ORIGINAL entry count (including unparseable ones,

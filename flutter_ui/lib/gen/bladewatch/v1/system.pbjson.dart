@@ -157,6 +157,8 @@ const NetworkInfo$json = {
     {'1': 'lan_http_enabled', '3': 4, '4': 1, '5': 8, '10': 'lanHttpEnabled'},
     {'1': 'http_bind', '3': 5, '4': 1, '5': 9, '10': 'httpBind'},
     {'1': 'http_mode_warning', '3': 6, '4': 1, '5': 9, '10': 'httpModeWarning'},
+    {'1': 'this_month_bytes', '3': 7, '4': 1, '5': 3, '10': 'thisMonthBytes'},
+    {'1': 'last_month_bytes', '3': 8, '4': 1, '5': 3, '10': 'lastMonthBytes'},
   ],
 };
 
@@ -165,7 +167,8 @@ final $typed_data.Uint8List networkInfoDescriptor = $convert.base64Decode(
     'CgtOZXR3b3JrSW5mbxISCgR0eXBlGAEgASgJUgR0eXBlEhIKBHNzaWQYAiABKAlSBHNzaWQSDg'
     'oCaXAYAyABKAlSAmlwEigKEGxhbl9odHRwX2VuYWJsZWQYBCABKAhSDmxhbkh0dHBFbmFibGVk'
     'EhsKCWh0dHBfYmluZBgFIAEoCVIIaHR0cEJpbmQSKgoRaHR0cF9tb2RlX3dhcm5pbmcYBiABKA'
-    'lSD2h0dHBNb2RlV2FybmluZw==');
+    'lSD2h0dHBNb2RlV2FybmluZxIoChB0aGlzX21vbnRoX2J5dGVzGAcgASgDUg50aGlzTW9udGhC'
+    'eXRlcxIoChBsYXN0X21vbnRoX2J5dGVzGAggASgDUg5sYXN0TW9udGhCeXRlcw==');
 
 @$core.Deprecated('Use gpsStatusInfoDescriptor instead')
 const GpsStatusInfo$json = {
@@ -748,6 +751,94 @@ final $typed_data.Uint8List getModelsManifestResponseDescriptor =
         'ChlHZXRNb2RlbHNNYW5pZmVzdFJlc3BvbnNlEiMKDW1hbmlmZXN0X2pzb24YASABKAlSDG1hbm'
         'lmZXN0SnNvbg==');
 
+@$core.Deprecated('Use performanceConnectRequestDescriptor instead')
+const PerformanceConnectRequest$json = {
+  '1': 'PerformanceConnectRequest',
+  '2': [
+    {'1': 'client_id', '3': 1, '4': 1, '5': 9, '10': 'clientId'},
+  ],
+};
+
+/// Descriptor for `PerformanceConnectRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List performanceConnectRequestDescriptor =
+    $convert.base64Decode(
+        'ChlQZXJmb3JtYW5jZUNvbm5lY3RSZXF1ZXN0EhsKCWNsaWVudF9pZBgBIAEoCVIIY2xpZW50SW'
+        'Q=');
+
+@$core.Deprecated('Use performanceConnectResponseDescriptor instead')
+const PerformanceConnectResponse$json = {
+  '1': 'PerformanceConnectResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'client_id', '3': 2, '4': 1, '5': 9, '10': 'clientId'},
+    {'1': 'error', '3': 3, '4': 1, '5': 9, '10': 'error'},
+  ],
+};
+
+/// Descriptor for `PerformanceConnectResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List performanceConnectResponseDescriptor =
+    $convert.base64Decode(
+        'ChpQZXJmb3JtYW5jZUNvbm5lY3RSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEh'
+        'sKCWNsaWVudF9pZBgCIAEoCVIIY2xpZW50SWQSFAoFZXJyb3IYAyABKAlSBWVycm9y');
+
+@$core.Deprecated('Use performanceHeartbeatRequestDescriptor instead')
+const PerformanceHeartbeatRequest$json = {
+  '1': 'PerformanceHeartbeatRequest',
+  '2': [
+    {'1': 'client_id', '3': 1, '4': 1, '5': 9, '10': 'clientId'},
+  ],
+};
+
+/// Descriptor for `PerformanceHeartbeatRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List performanceHeartbeatRequestDescriptor =
+    $convert.base64Decode(
+        'ChtQZXJmb3JtYW5jZUhlYXJ0YmVhdFJlcXVlc3QSGwoJY2xpZW50X2lkGAEgASgJUghjbGllbn'
+        'RJZA==');
+
+@$core.Deprecated('Use performanceHeartbeatResponseDescriptor instead')
+const PerformanceHeartbeatResponse$json = {
+  '1': 'PerformanceHeartbeatResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'error', '3': 2, '4': 1, '5': 9, '10': 'error'},
+  ],
+};
+
+/// Descriptor for `PerformanceHeartbeatResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List performanceHeartbeatResponseDescriptor =
+    $convert.base64Decode(
+        'ChxQZXJmb3JtYW5jZUhlYXJ0YmVhdFJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3'
+        'MSFAoFZXJyb3IYAiABKAlSBWVycm9y');
+
+@$core.Deprecated('Use performanceDisconnectRequestDescriptor instead')
+const PerformanceDisconnectRequest$json = {
+  '1': 'PerformanceDisconnectRequest',
+  '2': [
+    {'1': 'client_id', '3': 1, '4': 1, '5': 9, '10': 'clientId'},
+  ],
+};
+
+/// Descriptor for `PerformanceDisconnectRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List performanceDisconnectRequestDescriptor =
+    $convert.base64Decode(
+        'ChxQZXJmb3JtYW5jZURpc2Nvbm5lY3RSZXF1ZXN0EhsKCWNsaWVudF9pZBgBIAEoCVIIY2xpZW'
+        '50SWQ=');
+
+@$core.Deprecated('Use performanceDisconnectResponseDescriptor instead')
+const PerformanceDisconnectResponse$json = {
+  '1': 'PerformanceDisconnectResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'error', '3': 2, '4': 1, '5': 9, '10': 'error'},
+  ],
+};
+
+/// Descriptor for `PerformanceDisconnectResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List performanceDisconnectResponseDescriptor =
+    $convert.base64Decode(
+        'Ch1QZXJmb3JtYW5jZURpc2Nvbm5lY3RSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZX'
+        'NzEhQKBWVycm9yGAIgASgJUgVlcnJvcg==');
+
 const $core.Map<$core.String, $core.dynamic> SystemServiceBase$json = {
   '1': 'SystemService',
   '2': [
@@ -826,6 +917,21 @@ const $core.Map<$core.String, $core.dynamic> SystemServiceBase$json = {
       '2': '.bladewatch.v1.GetModelsManifestRequest',
       '3': '.bladewatch.v1.GetModelsManifestResponse'
     },
+    {
+      '1': 'PerformanceConnect',
+      '2': '.bladewatch.v1.PerformanceConnectRequest',
+      '3': '.bladewatch.v1.PerformanceConnectResponse'
+    },
+    {
+      '1': 'PerformanceHeartbeat',
+      '2': '.bladewatch.v1.PerformanceHeartbeatRequest',
+      '3': '.bladewatch.v1.PerformanceHeartbeatResponse'
+    },
+    {
+      '1': 'PerformanceDisconnect',
+      '2': '.bladewatch.v1.PerformanceDisconnectRequest',
+      '3': '.bladewatch.v1.PerformanceDisconnectResponse'
+    },
   ],
 };
 
@@ -871,6 +977,16 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.SetSelectedModelResponse': SetSelectedModelResponse$json,
   '.bladewatch.v1.GetModelsManifestRequest': GetModelsManifestRequest$json,
   '.bladewatch.v1.GetModelsManifestResponse': GetModelsManifestResponse$json,
+  '.bladewatch.v1.PerformanceConnectRequest': PerformanceConnectRequest$json,
+  '.bladewatch.v1.PerformanceConnectResponse': PerformanceConnectResponse$json,
+  '.bladewatch.v1.PerformanceHeartbeatRequest':
+      PerformanceHeartbeatRequest$json,
+  '.bladewatch.v1.PerformanceHeartbeatResponse':
+      PerformanceHeartbeatResponse$json,
+  '.bladewatch.v1.PerformanceDisconnectRequest':
+      PerformanceDisconnectRequest$json,
+  '.bladewatch.v1.PerformanceDisconnectResponse':
+      PerformanceDisconnectResponse$json,
 };
 
 /// Descriptor for `SystemService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -900,4 +1016,10 @@ final $typed_data.Uint8List systemServiceDescriptor = $convert.base64Decode(
     'LmJsYWRld2F0Y2gudjEuU2V0U2VsZWN0ZWRNb2RlbFJlcXVlc3QaJy5ibGFkZXdhdGNoLnYxLl'
     'NldFNlbGVjdGVkTW9kZWxSZXNwb25zZRJmChFHZXRNb2RlbHNNYW5pZmVzdBInLmJsYWRld2F0'
     'Y2gudjEuR2V0TW9kZWxzTWFuaWZlc3RSZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5HZXRNb2RlbH'
-    'NNYW5pZmVzdFJlc3BvbnNl');
+    'NNYW5pZmVzdFJlc3BvbnNlEmkKElBlcmZvcm1hbmNlQ29ubmVjdBIoLmJsYWRld2F0Y2gudjEu'
+    'UGVyZm9ybWFuY2VDb25uZWN0UmVxdWVzdBopLmJsYWRld2F0Y2gudjEuUGVyZm9ybWFuY2VDb2'
+    '5uZWN0UmVzcG9uc2USbwoUUGVyZm9ybWFuY2VIZWFydGJlYXQSKi5ibGFkZXdhdGNoLnYxLlBl'
+    'cmZvcm1hbmNlSGVhcnRiZWF0UmVxdWVzdBorLmJsYWRld2F0Y2gudjEuUGVyZm9ybWFuY2VIZW'
+    'FydGJlYXRSZXNwb25zZRJyChVQZXJmb3JtYW5jZURpc2Nvbm5lY3QSKy5ibGFkZXdhdGNoLnYx'
+    'LlBlcmZvcm1hbmNlRGlzY29ubmVjdFJlcXVlc3QaLC5ibGFkZXdhdGNoLnYxLlBlcmZvcm1hbm'
+    'NlRGlzY29ubmVjdFJlc3BvbnNl');

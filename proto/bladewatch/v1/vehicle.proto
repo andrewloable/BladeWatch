@@ -20,6 +20,8 @@ option java_multiple_files = true;
 //   SetClimate           POST /api/vehicle/climate
 //   SetSeat              POST /api/vehicle/seat
 //   SetLights            POST /api/vehicle/lights
+//   SetScreen            POST /api/vehicle/screen
+//   SetMediaVolume       POST /api/vehicle/media-volume
 //   SetAdas              POST /api/vehicle/adas
 //   SetBatteryHeat       POST /api/vehicle/battery-heat
 //   GetChargingSchedule  GET  /api/vehicle/charging-schedule
@@ -42,6 +44,8 @@ service VehicleService {
   rpc SetClimate(SetClimateRequest) returns (VehicleCommandResponse);
   rpc SetSeat(SetSeatRequest) returns (VehicleCommandResponse);
   rpc SetLights(SetLightsRequest) returns (VehicleCommandResponse);
+  rpc SetScreen(SetScreenRequest) returns (VehicleCommandResponse);
+  rpc SetMediaVolume(SetMediaVolumeRequest) returns (VehicleCommandResponse);
   rpc SetAdas(SetAdasRequest) returns (VehicleCommandResponse);
   rpc SetBatteryHeat(SetBatteryHeatRequest) returns (VehicleCommandResponse);
   rpc GetChargingSchedule(GetChargingScheduleRequest) returns (GetChargingScheduleResponse);
@@ -51,6 +55,16 @@ service VehicleService {
   rpc GetGpsLocation(GetGpsLocationRequest) returns (GetGpsLocationResponse);
   rpc StartGps(StartGpsRequest) returns (StartGpsResponse);
   rpc StopGps(StopGpsRequest) returns (StopGpsResponse);
+
+  // BladeWatch-jwko: issues the short-lived second factor that actuating commands require from
+  // a non-loopback caller. Never itself gated — you cannot need a token to get a token.
+  rpc IssueActionToken(IssueActionTokenRequest) returns (IssueActionTokenResponse);
+
+  // BladeWatch-6mnq: read-only probe of which declared ADAS_* ids actually resolve from the SDK
+  // on this car (BladeWatch-2pnn.3). It was REST-only, and the reference said to add an RPC
+  // "if a client needs it" — removing the REST surface is exactly that moment, and without this
+  // the diagnostic would simply have vanished.
+  rpc GetAdasInventory(GetAdasInventoryRequest) returns (GetAdasInventoryResponse);
 }
 
 // DoorStatus holds per-door lock state: 1=locked, 2=unlocked, -1=unknown.
@@ -176,6 +190,10 @@ message GetVehicleStateResponse {
   ClimateStatus climate = 11;
   TyreStatus tyres = 12;
   string error = 13;
+  // BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+  // shows the real value rather than a local guess.
+  int32 media_volume_percent = 14;
+  bool media_muted = 15;
 }
 
 message GetAcDiagnosticsRequest {}
@@ -234,6 +252,10 @@ message SetClimateRequest {
   bool restore_ac_on = 7;
   double restore_temp_c = 8;
   int32 restore_fan_level = 9;
+  // BladeWatch-2000.1. Value meaning is not established in source (see
+  // docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+  // already is; the UI does not offer a labelled picker for either.
+  int32 cycle_mode = 10;
 }
 
 message SetSeatRequest {
@@ -254,6 +276,21 @@ message SetLightsRequest {
   // proto3 bool would omit from the JSON wire (default-scalar omission), so
   // the handler would never see the boolean. optional forces it onto the wire.
   optional bool on = 2;
+}
+
+// BladeWatch-2000.3. Same explicit-presence reasoning as SetLightsRequest.on above: a
+// screen-off request sets on=false, which a plain proto3 bool would omit from the wire.
+message SetScreenRequest {
+  optional bool on = 1;
+}
+
+// BladeWatch-2000.2: media volume and mute. Not routed through VehicleCommandRouter -- see
+// docs/byd-integrations.md's "Media volume and mute" section for why.
+message SetMediaVolumeRequest {
+  // One of: "set", "step_up", "step_down", "mute", "unmute".
+  string action = 1;
+  // Required (0-100) when action == "set"; ignored for every other action.
+  optional int32 percent = 2;
 }
 
 message SetAdasRequest {
@@ -341,4 +378,29 @@ message StopGpsRequest {}
 message StopGpsResponse {
   bool success = 1;
   string message = 2;
+}
+
+
+// ---- vehicle action token (uy93.5, restored on Connect by BladeWatch-jwko) ----
+
+message IssueActionTokenRequest {}
+
+message IssueActionTokenResponse {
+  bool success = 1;
+  // Present the token as the X-Vehicle-Action-Token header on actuating VehicleService calls.
+  string token = 2;
+  int32 expires_in_seconds = 3;
+  string error = 4;
+}
+
+
+// ---- ADAS field inventory ----
+
+message GetAdasInventoryRequest {}
+
+message GetAdasInventoryResponse {
+  bool success = 1;
+  // The `adas` object as JSON: {sdkClassPresent, declared:[...], sdkOnly:[...]}.
+  // NOTE: sdkClassPresent alone does NOT mean this car has ADAS — see byd-integrations.md.
+  string adas_json = 2;
 }

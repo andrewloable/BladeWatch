@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bladewatch/v1/settings.proto.
  */
 export const file_bladewatch_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChxibGFkZXdhdGNoL3YxL3NldHRpbmdzLnByb3RvEg1ibGFkZXdhdGNoLnYxIpoBCg9RdWFsaXR5VGllckluZm8SFAoMZGlzcGxheV9uYW1lGAEgASgJEhMKC2JpdHJhdGVfYnBzGAIgASgDEhQKDGJpdHJhdGVfbWJwcxgDIAEoARIVCg1tYl9wZXJfbWludXRlGAQgASgBEhMKC2diX3Blcl9ob3VyGAUgASgBEhoKEnF1YWxpdHlfZXF1aXZhbGVudBgGIAEoCSKlAQoXQWN0aXZlUmVjb3JkaW5nRXN0aW1hdGUSFAoMYml0cmF0ZV9tYnBzGAEgASgBEhUKDW1iX3Blcl9taW51dGUYAiABKAESFAoMbWJfcGVyXzJfbWluGAMgASgBEhMKC2diX3Blcl9ob3VyGAQgASgBEhYKDm1pbnV0ZXNfcGVyX2diGAUgASgFEhoKEnF1YWxpdHlfZXF1aXZhbGVudBgGIAEoCSITChFHZXRRdWFsaXR5UmVxdWVzdCK/BQoSR2V0UXVhbGl0eVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSGQoRcmVjb3JkaW5nX3F1YWxpdHkYAiABKAkSHQoFY29kZWMYAyABKAlSDnJlY29yZGluZ0NvZGVjEhYKA2ZwcxgEIAEoBVIJY2FtZXJhRnBzEmEKGXJlY29yZGluZ19xdWFsaXR5X29wdGlvbnMYBSADKAsyPi5ibGFkZXdhdGNoLnYxLkdldFF1YWxpdHlSZXNwb25zZS5SZWNvcmRpbmdRdWFsaXR5T3B0aW9uc0VudHJ5EkkKGWFjdGl2ZV9yZWNvcmRpbmdfZXN0aW1hdGUYBiABKAsyJi5ibGFkZXdhdGNoLnYxLkFjdGl2ZVJlY29yZGluZ0VzdGltYXRlEkoKDWNvZGVjX29wdGlvbnMYByADKAsyMy5ibGFkZXdhdGNoLnYxLkdldFF1YWxpdHlSZXNwb25zZS5Db2RlY09wdGlvbnNFbnRyeRJGCgtmcHNfb3B0aW9ucxgIIAMoCzIxLmJsYWRld2F0Y2gudjEuR2V0UXVhbGl0eVJlc3BvbnNlLkZwc09wdGlvbnNFbnRyeRIZChFuYXRpdmVfcmVzb2x1dGlvbhgJIAEoCRIhChlyZWNvcmRpbmdfc2VnbWVudF9taW51dGVzGAogASgFGl4KHFJlY29yZGluZ1F1YWxpdHlPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEi0KBXZhbHVlGAIgASgLMh4uYmxhZGV3YXRjaC52MS5RdWFsaXR5VGllckluZm86AjgBGjMKEUNvZGVjT3B0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEaMQoPRnBzT3B0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiiAEKEVNldFF1YWxpdHlSZXF1ZXN0EhkKEXJlY29yZGluZ19xdWFsaXR5GAEgASgJEg0KBWNvZGVjGAIgASgJEhkKEXN0cmVhbWluZ19xdWFsaXR5GAMgASgJEgsKA2ZwcxgEIAEoBRIhChlyZWNvcmRpbmdfc2VnbWVudF9taW51dGVzGAUgASgFIn8KElNldFF1YWxpdHlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhkKEXJlY29yZGluZ19xdWFsaXR5GAIgASgJEh0KBWNvZGVjGAMgASgJUg5yZWNvcmRpbmdDb2RlYxIPCgdtZXNzYWdlGAQgASgJEg0KBWVycm9yGAUgASgJIhYKFEdldEFwcGVhcmFuY2VSZXF1ZXN0IkcKFUdldEFwcGVhcmFuY2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBXRoZW1lGAIgASgJEg4KBmxvY2FsZRgDIAEoCSI1ChRTZXRBcHBlYXJhbmNlUmVxdWVzdBINCgV0aGVtZRgBIAEoCRIOCgZsb2NhbGUYAiABKAkiVgoVU2V0QXBwZWFyYW5jZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFdGhlbWUYAiABKAkSDgoGbG9jYWxlGAMgASgJEg0KBWVycm9yGAQgASgJIhIKEEdldExvY2FsZVJlcXVlc3QilwEKEUdldExvY2FsZVJlc3BvbnNlEgwKBGxhbmcYASABKAkSQgoJc3VwcG9ydGVkGAIgAygLMi8uYmxhZGV3YXRjaC52MS5HZXRMb2NhbGVSZXNwb25zZS5TdXBwb3J0ZWRFbnRyeRowCg5TdXBwb3J0ZWRFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAg6AjgBIiAKEFNldExvY2FsZVJlcXVlc3QSDAoEbGFuZxgBIAEoCSIhChFTZXRMb2NhbGVSZXNwb25zZRIMCgRsYW5nGAEgASgJIicKF1NldFJlY29yZGluZ01vZGVSZXF1ZXN0EgwKBG1vZGUYASABKAkiSAoYU2V0UmVjb3JkaW5nTW9kZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDAoEbW9kZRgCIAEoCRINCgVlcnJvchgDIAEoCSrsAQoUUmVjb3JkaW5nUXVhbGl0eVRpZXISJgoiUkVDT1JESU5HX1FVQUxJVFlfVElFUl9VTlNQRUNJRklFRBAAEiIKHlJFQ09SRElOR19RVUFMSVRZX1RJRVJfRUNPTk9NWRABEiMKH1JFQ09SRElOR19RVUFMSVRZX1RJRVJfU1RBTkRBUkQQAhIfChtSRUNPUkRJTkdfUVVBTElUWV9USUVSX0hJR0gQAxIiCh5SRUNPUkRJTkdfUVVBTElUWV9USUVSX1BSRU1JVU0QBBIeChpSRUNPUkRJTkdfUVVBTElUWV9USUVSX01BWBAFKlUKClZpZGVvQ29kZWMSGwoXVklERU9fQ09ERUNfVU5TUEVDSUZJRUQQABIUChBWSURFT19DT0RFQ19IMjY0EAESFAoQVklERU9fQ09ERUNfSDI2NRACKmIKCEFwcFRoZW1lEhkKFUFQUF9USEVNRV9VTlNQRUNJRklFRBAAEhIKDkFQUF9USEVNRV9EQVJLEAESEwoPQVBQX1RIRU1FX0xJR0hUEAISEgoOQVBQX1RIRU1FX0FVVE8QAzL0BAoPU2V0dGluZ3NTZXJ2aWNlElEKCkdldFF1YWxpdHkSIC5ibGFkZXdhdGNoLnYxLkdldFF1YWxpdHlSZXF1ZXN0GiEuYmxhZGV3YXRjaC52MS5HZXRRdWFsaXR5UmVzcG9uc2USUQoKU2V0UXVhbGl0eRIgLmJsYWRld2F0Y2gudjEuU2V0UXVhbGl0eVJlcXVlc3QaIS5ibGFkZXdhdGNoLnYxLlNldFF1YWxpdHlSZXNwb25zZRJaCg1HZXRBcHBlYXJhbmNlEiMuYmxhZGV3YXRjaC52MS5HZXRBcHBlYXJhbmNlUmVxdWVzdBokLmJsYWRld2F0Y2gudjEuR2V0QXBwZWFyYW5jZVJlc3BvbnNlEloKDVNldEFwcGVhcmFuY2USIy5ibGFkZXdhdGNoLnYxLlNldEFwcGVhcmFuY2VSZXF1ZXN0GiQuYmxhZGV3YXRjaC52MS5TZXRBcHBlYXJhbmNlUmVzcG9uc2USTgoJR2V0TG9jYWxlEh8uYmxhZGV3YXRjaC52MS5HZXRMb2NhbGVSZXF1ZXN0GiAuYmxhZGV3YXRjaC52MS5HZXRMb2NhbGVSZXNwb25zZRJOCglTZXRMb2NhbGUSHy5ibGFkZXdhdGNoLnYxLlNldExvY2FsZVJlcXVlc3QaIC5ibGFkZXdhdGNoLnYxLlNldExvY2FsZVJlc3BvbnNlEmMKEFNldFJlY29yZGluZ01vZGUSJi5ibGFkZXdhdGNoLnYxLlNldFJlY29yZGluZ01vZGVSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5TZXRSZWNvcmRpbmdNb2RlUmVzcG9uc2VCHgoabmV0LmJsYWRld2F0Y2guYXBwLmdycGMudjFQAWIGcHJvdG8z");
+  fileDesc("ChxibGFkZXdhdGNoL3YxL3NldHRpbmdzLnByb3RvEg1ibGFkZXdhdGNoLnYxIpoBCg9RdWFsaXR5VGllckluZm8SFAoMZGlzcGxheV9uYW1lGAEgASgJEhMKC2JpdHJhdGVfYnBzGAIgASgDEhQKDGJpdHJhdGVfbWJwcxgDIAEoARIVCg1tYl9wZXJfbWludXRlGAQgASgBEhMKC2diX3Blcl9ob3VyGAUgASgBEhoKEnF1YWxpdHlfZXF1aXZhbGVudBgGIAEoCSKlAQoXQWN0aXZlUmVjb3JkaW5nRXN0aW1hdGUSFAoMYml0cmF0ZV9tYnBzGAEgASgBEhUKDW1iX3Blcl9taW51dGUYAiABKAESFAoMbWJfcGVyXzJfbWluGAMgASgBEhMKC2diX3Blcl9ob3VyGAQgASgBEhYKDm1pbnV0ZXNfcGVyX2diGAUgASgFEhoKEnF1YWxpdHlfZXF1aXZhbGVudBgGIAEoCSITChFHZXRRdWFsaXR5UmVxdWVzdCLbBQoSR2V0UXVhbGl0eVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSGQoRcmVjb3JkaW5nX3F1YWxpdHkYAiABKAkSHQoFY29kZWMYAyABKAlSDnJlY29yZGluZ0NvZGVjEhYKA2ZwcxgEIAEoBVIJY2FtZXJhRnBzEmEKGXJlY29yZGluZ19xdWFsaXR5X29wdGlvbnMYBSADKAsyPi5ibGFkZXdhdGNoLnYxLkdldFF1YWxpdHlSZXNwb25zZS5SZWNvcmRpbmdRdWFsaXR5T3B0aW9uc0VudHJ5EkkKGWFjdGl2ZV9yZWNvcmRpbmdfZXN0aW1hdGUYBiABKAsyJi5ibGFkZXdhdGNoLnYxLkFjdGl2ZVJlY29yZGluZ0VzdGltYXRlEkoKDWNvZGVjX29wdGlvbnMYByADKAsyMy5ibGFkZXdhdGNoLnYxLkdldFF1YWxpdHlSZXNwb25zZS5Db2RlY09wdGlvbnNFbnRyeRJGCgtmcHNfb3B0aW9ucxgIIAMoCzIxLmJsYWRld2F0Y2gudjEuR2V0UXVhbGl0eVJlc3BvbnNlLkZwc09wdGlvbnNFbnRyeRIZChFuYXRpdmVfcmVzb2x1dGlvbhgJIAEoCRIhChlyZWNvcmRpbmdfc2VnbWVudF9taW51dGVzGAogASgFEhoKEnJlY29yZGluZ19wcmlvcml0eRgLIAEoCRpeChxSZWNvcmRpbmdRdWFsaXR5T3B0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRItCgV2YWx1ZRgCIAEoCzIeLmJsYWRld2F0Y2gudjEuUXVhbGl0eVRpZXJJbmZvOgI4ARozChFDb2RlY09wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBGjEKD0Zwc09wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIqQBChFTZXRRdWFsaXR5UmVxdWVzdBIZChFyZWNvcmRpbmdfcXVhbGl0eRgBIAEoCRINCgVjb2RlYxgCIAEoCRIZChFzdHJlYW1pbmdfcXVhbGl0eRgDIAEoCRILCgNmcHMYBCABKAUSIQoZcmVjb3JkaW5nX3NlZ21lbnRfbWludXRlcxgFIAEoBRIaChJyZWNvcmRpbmdfcHJpb3JpdHkYBiABKAkifwoSU2V0UXVhbGl0eVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSGQoRcmVjb3JkaW5nX3F1YWxpdHkYAiABKAkSHQoFY29kZWMYAyABKAlSDnJlY29yZGluZ0NvZGVjEg8KB21lc3NhZ2UYBCABKAkSDQoFZXJyb3IYBSABKAkiFgoUR2V0QXBwZWFyYW5jZVJlcXVlc3QiRwoVR2V0QXBwZWFyYW5jZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFdGhlbWUYAiABKAkSDgoGbG9jYWxlGAMgASgJIjUKFFNldEFwcGVhcmFuY2VSZXF1ZXN0Eg0KBXRoZW1lGAEgASgJEg4KBmxvY2FsZRgCIAEoCSJWChVTZXRBcHBlYXJhbmNlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgV0aGVtZRgCIAEoCRIOCgZsb2NhbGUYAyABKAkSDQoFZXJyb3IYBCABKAkiEgoQR2V0TG9jYWxlUmVxdWVzdCKXAQoRR2V0TG9jYWxlUmVzcG9uc2USDAoEbGFuZxgBIAEoCRJCCglzdXBwb3J0ZWQYAiADKAsyLy5ibGFkZXdhdGNoLnYxLkdldExvY2FsZVJlc3BvbnNlLlN1cHBvcnRlZEVudHJ5GjAKDlN1cHBvcnRlZEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCDoCOAEiIAoQU2V0TG9jYWxlUmVxdWVzdBIMCgRsYW5nGAEgASgJIiEKEVNldExvY2FsZVJlc3BvbnNlEgwKBGxhbmcYASABKAkiJwoXU2V0UmVjb3JkaW5nTW9kZVJlcXVlc3QSDAoEbW9kZRgBIAEoCSJIChhTZXRSZWNvcmRpbmdNb2RlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIMCgRtb2RlGAIgASgJEg0KBWVycm9yGAMgASgJIhkKF0dldFN0YXR1c092ZXJsYXlSZXF1ZXN0IlkKGEdldFN0YXR1c092ZXJsYXlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhYKDmNhbWVyYV92aXNpYmxlGAIgASgIEhQKDHRyaXBfdmlzaWJsZRgDIAEoCCJ9ChdTZXRTdGF0dXNPdmVybGF5UmVxdWVzdBIWCg5jYW1lcmFfdmlzaWJsZRgBIAEoCBIaChJzZXRfY2FtZXJhX3Zpc2libGUYAiABKAgSFAoMdHJpcF92aXNpYmxlGAMgASgIEhgKEHNldF90cmlwX3Zpc2libGUYBCABKAgiaAoYU2V0U3RhdHVzT3ZlcmxheVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSFgoOY2FtZXJhX3Zpc2libGUYAiABKAgSFAoMdHJpcF92aXNpYmxlGAMgASgIEg0KBWVycm9yGAQgASgJIiIKIEdldFRlbGVtZXRyeU92ZXJsYXlGaWVsZHNSZXF1ZXN0IvEBCiFHZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIYChBhdmFpbGFibGVfZmllbGRzGAIgAygJElQKCnNlbGVjdGlvbnMYAyADKAsyQC5ibGFkZXdhdGNoLnYxLkdldFRlbGVtZXRyeU92ZXJsYXlGaWVsZHNSZXNwb25zZS5TZWxlY3Rpb25zRW50cnkaSwoPU2VsZWN0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRInCgV2YWx1ZRgCIAEoCzIYLmJsYWRld2F0Y2gudjEuRmllbGRMaXN0OgI4ASIbCglGaWVsZExpc3QSDgoGZmllbGRzGAEgAygJIkAKIFNldFRlbGVtZXRyeU92ZXJsYXlGaWVsZHNSZXF1ZXN0EgwKBHR5cGUYASABKAkSDgoGZmllbGRzGAIgAygJIkMKIVNldFRlbGVtZXRyeU92ZXJsYXlGaWVsZHNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJKuwBChRSZWNvcmRpbmdRdWFsaXR5VGllchImCiJSRUNPUkRJTkdfUVVBTElUWV9USUVSX1VOU1BFQ0lGSUVEEAASIgoeUkVDT1JESU5HX1FVQUxJVFlfVElFUl9FQ09OT01ZEAESIwofUkVDT1JESU5HX1FVQUxJVFlfVElFUl9TVEFOREFSRBACEh8KG1JFQ09SRElOR19RVUFMSVRZX1RJRVJfSElHSBADEiIKHlJFQ09SRElOR19RVUFMSVRZX1RJRVJfUFJFTUlVTRAEEh4KGlJFQ09SRElOR19RVUFMSVRZX1RJRVJfTUFYEAUqVQoKVmlkZW9Db2RlYxIbChdWSURFT19DT0RFQ19VTlNQRUNJRklFRBAAEhQKEFZJREVPX0NPREVDX0gyNjQQARIUChBWSURFT19DT0RFQ19IMjY1EAIqYgoIQXBwVGhlbWUSGQoVQVBQX1RIRU1FX1VOU1BFQ0lGSUVEEAASEgoOQVBQX1RIRU1FX0RBUksQARITCg9BUFBfVEhFTUVfTElHSFQQAhISCg5BUFBfVEhFTUVfQVVUTxADMr4ICg9TZXR0aW5nc1NlcnZpY2USUQoKR2V0UXVhbGl0eRIgLmJsYWRld2F0Y2gudjEuR2V0UXVhbGl0eVJlcXVlc3QaIS5ibGFkZXdhdGNoLnYxLkdldFF1YWxpdHlSZXNwb25zZRJRCgpTZXRRdWFsaXR5EiAuYmxhZGV3YXRjaC52MS5TZXRRdWFsaXR5UmVxdWVzdBohLmJsYWRld2F0Y2gudjEuU2V0UXVhbGl0eVJlc3BvbnNlEloKDUdldEFwcGVhcmFuY2USIy5ibGFkZXdhdGNoLnYxLkdldEFwcGVhcmFuY2VSZXF1ZXN0GiQuYmxhZGV3YXRjaC52MS5HZXRBcHBlYXJhbmNlUmVzcG9uc2USWgoNU2V0QXBwZWFyYW5jZRIjLmJsYWRld2F0Y2gudjEuU2V0QXBwZWFyYW5jZVJlcXVlc3QaJC5ibGFkZXdhdGNoLnYxLlNldEFwcGVhcmFuY2VSZXNwb25zZRJOCglHZXRMb2NhbGUSHy5ibGFkZXdhdGNoLnYxLkdldExvY2FsZVJlcXVlc3QaIC5ibGFkZXdhdGNoLnYxLkdldExvY2FsZVJlc3BvbnNlEk4KCVNldExvY2FsZRIfLmJsYWRld2F0Y2gudjEuU2V0TG9jYWxlUmVxdWVzdBogLmJsYWRld2F0Y2gudjEuU2V0TG9jYWxlUmVzcG9uc2USYwoQU2V0UmVjb3JkaW5nTW9kZRImLmJsYWRld2F0Y2gudjEuU2V0UmVjb3JkaW5nTW9kZVJlcXVlc3QaJy5ibGFkZXdhdGNoLnYxLlNldFJlY29yZGluZ01vZGVSZXNwb25zZRJjChBHZXRTdGF0dXNPdmVybGF5EiYuYmxhZGV3YXRjaC52MS5HZXRTdGF0dXNPdmVybGF5UmVxdWVzdBonLmJsYWRld2F0Y2gudjEuR2V0U3RhdHVzT3ZlcmxheVJlc3BvbnNlEmMKEFNldFN0YXR1c092ZXJsYXkSJi5ibGFkZXdhdGNoLnYxLlNldFN0YXR1c092ZXJsYXlSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5TZXRTdGF0dXNPdmVybGF5UmVzcG9uc2USfgoZR2V0VGVsZW1ldHJ5T3ZlcmxheUZpZWxkcxIvLmJsYWRld2F0Y2gudjEuR2V0VGVsZW1ldHJ5T3ZlcmxheUZpZWxkc1JlcXVlc3QaMC5ibGFkZXdhdGNoLnYxLkdldFRlbGVtZXRyeU92ZXJsYXlGaWVsZHNSZXNwb25zZRJ+ChlTZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzEi8uYmxhZGV3YXRjaC52MS5TZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVxdWVzdBowLmJsYWRld2F0Y2gudjEuU2V0VGVsZW1ldHJ5T3ZlcmxheUZpZWxkc1Jlc3BvbnNlQh4KGm5ldC5ibGFkZXdhdGNoLmFwcC5ncnBjLnYxUAFiBnByb3RvMw");
 
 /**
  * QualityTierInfo describes one recording quality tier.
@@ -180,6 +180,13 @@ export type GetQualityResponse = Message<"bladewatch.v1.GetQualityResponse"> & {
    * @generated from field: int32 recording_segment_minutes = 10;
    */
   recordingSegmentMinutes: number;
+
+  /**
+   * One of: PERFORMANCE, RELIABILITY. See RecordingPriority.
+   *
+   * @generated from field: string recording_priority = 11;
+   */
+  recordingPriority: string;
 };
 
 /**
@@ -227,6 +234,13 @@ export type SetQualityRequest = Message<"bladewatch.v1.SetQualityRequest"> & {
    * @generated from field: int32 recording_segment_minutes = 5;
    */
   recordingSegmentMinutes: number;
+
+  /**
+   * One of: PERFORMANCE, RELIABILITY. Leave empty to keep current.
+   *
+   * @generated from field: string recording_priority = 6;
+   */
+  recordingPriority: string;
 };
 
 /**
@@ -497,6 +511,224 @@ export const SetRecordingModeResponseSchema: GenMessage<SetRecordingModeResponse
   messageDesc(file_bladewatch_v1_settings, 15);
 
 /**
+ * @generated from message bladewatch.v1.GetStatusOverlayRequest
+ */
+export type GetStatusOverlayRequest = Message<"bladewatch.v1.GetStatusOverlayRequest"> & {
+};
+
+/**
+ * Describes the message bladewatch.v1.GetStatusOverlayRequest.
+ * Use `create(GetStatusOverlayRequestSchema)` to create a new message.
+ */
+export const GetStatusOverlayRequestSchema: GenMessage<GetStatusOverlayRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 16);
+
+/**
+ * @generated from message bladewatch.v1.GetStatusOverlayResponse
+ */
+export type GetStatusOverlayResponse = Message<"bladewatch.v1.GetStatusOverlayResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: bool camera_visible = 2;
+   */
+  cameraVisible: boolean;
+
+  /**
+   * @generated from field: bool trip_visible = 3;
+   */
+  tripVisible: boolean;
+};
+
+/**
+ * Describes the message bladewatch.v1.GetStatusOverlayResponse.
+ * Use `create(GetStatusOverlayResponseSchema)` to create a new message.
+ */
+export const GetStatusOverlayResponseSchema: GenMessage<GetStatusOverlayResponse> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 17);
+
+/**
+ * Both fields are optional in the REST body this replaces: omitting one leaves it unchanged.
+ * Proto3 has no field presence for bare bools, so each carries an explicit "set" companion
+ * rather than being silently interpreted as false.
+ *
+ * @generated from message bladewatch.v1.SetStatusOverlayRequest
+ */
+export type SetStatusOverlayRequest = Message<"bladewatch.v1.SetStatusOverlayRequest"> & {
+  /**
+   * @generated from field: bool camera_visible = 1;
+   */
+  cameraVisible: boolean;
+
+  /**
+   * @generated from field: bool set_camera_visible = 2;
+   */
+  setCameraVisible: boolean;
+
+  /**
+   * @generated from field: bool trip_visible = 3;
+   */
+  tripVisible: boolean;
+
+  /**
+   * @generated from field: bool set_trip_visible = 4;
+   */
+  setTripVisible: boolean;
+};
+
+/**
+ * Describes the message bladewatch.v1.SetStatusOverlayRequest.
+ * Use `create(SetStatusOverlayRequestSchema)` to create a new message.
+ */
+export const SetStatusOverlayRequestSchema: GenMessage<SetStatusOverlayRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 18);
+
+/**
+ * @generated from message bladewatch.v1.SetStatusOverlayResponse
+ */
+export type SetStatusOverlayResponse = Message<"bladewatch.v1.SetStatusOverlayResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: bool camera_visible = 2;
+   */
+  cameraVisible: boolean;
+
+  /**
+   * @generated from field: bool trip_visible = 3;
+   */
+  tripVisible: boolean;
+
+  /**
+   * @generated from field: string error = 4;
+   */
+  error: string;
+};
+
+/**
+ * Describes the message bladewatch.v1.SetStatusOverlayResponse.
+ * Use `create(SetStatusOverlayResponseSchema)` to create a new message.
+ */
+export const SetStatusOverlayResponseSchema: GenMessage<SetStatusOverlayResponse> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 19);
+
+/**
+ * @generated from message bladewatch.v1.GetTelemetryOverlayFieldsRequest
+ */
+export type GetTelemetryOverlayFieldsRequest = Message<"bladewatch.v1.GetTelemetryOverlayFieldsRequest"> & {
+};
+
+/**
+ * Describes the message bladewatch.v1.GetTelemetryOverlayFieldsRequest.
+ * Use `create(GetTelemetryOverlayFieldsRequestSchema)` to create a new message.
+ */
+export const GetTelemetryOverlayFieldsRequestSchema: GenMessage<GetTelemetryOverlayFieldsRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 20);
+
+/**
+ * @generated from message bladewatch.v1.GetTelemetryOverlayFieldsResponse
+ */
+export type GetTelemetryOverlayFieldsResponse = Message<"bladewatch.v1.GetTelemetryOverlayFieldsResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * Every OverlayField enum name the daemon knows about.
+   *
+   * @generated from field: repeated string available_fields = 2;
+   */
+  availableFields: string[];
+
+  /**
+   * Per recording type ("continuous"/"surveillance"/"proximity") -> selected field names.
+   *
+   * @generated from field: map<string, bladewatch.v1.FieldList> selections = 3;
+   */
+  selections: { [key: string]: FieldList };
+};
+
+/**
+ * Describes the message bladewatch.v1.GetTelemetryOverlayFieldsResponse.
+ * Use `create(GetTelemetryOverlayFieldsResponseSchema)` to create a new message.
+ */
+export const GetTelemetryOverlayFieldsResponseSchema: GenMessage<GetTelemetryOverlayFieldsResponse> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 21);
+
+/**
+ * @generated from message bladewatch.v1.FieldList
+ */
+export type FieldList = Message<"bladewatch.v1.FieldList"> & {
+  /**
+   * @generated from field: repeated string fields = 1;
+   */
+  fields: string[];
+};
+
+/**
+ * Describes the message bladewatch.v1.FieldList.
+ * Use `create(FieldListSchema)` to create a new message.
+ */
+export const FieldListSchema: GenMessage<FieldList> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 22);
+
+/**
+ * @generated from message bladewatch.v1.SetTelemetryOverlayFieldsRequest
+ */
+export type SetTelemetryOverlayFieldsRequest = Message<"bladewatch.v1.SetTelemetryOverlayFieldsRequest"> & {
+  /**
+   * One of "continuous", "surveillance", "proximity". An unknown type is a bad request.
+   *
+   * @generated from field: string type = 1;
+   */
+  type: string;
+
+  /**
+   * OverlayField enum names. An unknown name is dropped by the resolver, not rejected here,
+   * mirroring how a persisted config file is already treated by the reader.
+   *
+   * @generated from field: repeated string fields = 2;
+   */
+  fields: string[];
+};
+
+/**
+ * Describes the message bladewatch.v1.SetTelemetryOverlayFieldsRequest.
+ * Use `create(SetTelemetryOverlayFieldsRequestSchema)` to create a new message.
+ */
+export const SetTelemetryOverlayFieldsRequestSchema: GenMessage<SetTelemetryOverlayFieldsRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 23);
+
+/**
+ * @generated from message bladewatch.v1.SetTelemetryOverlayFieldsResponse
+ */
+export type SetTelemetryOverlayFieldsResponse = Message<"bladewatch.v1.SetTelemetryOverlayFieldsResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string error = 2;
+   */
+  error: string;
+};
+
+/**
+ * Describes the message bladewatch.v1.SetTelemetryOverlayFieldsResponse.
+ * Use `create(SetTelemetryOverlayFieldsResponseSchema)` to create a new message.
+ */
+export const SetTelemetryOverlayFieldsResponseSchema: GenMessage<SetTelemetryOverlayFieldsResponse> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_settings, 24);
+
+/**
  * RecordingQualityTier identifies a named recording quality preset.
  *
  * @generated from enum bladewatch.v1.RecordingQualityTier
@@ -670,6 +902,42 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof SetRecordingModeRequestSchema;
     output: typeof SetRecordingModeResponseSchema;
+  },
+  /**
+   * BladeWatch-qwqq: these four replace the last /api/settings/* JSON calls any first-party
+   * client still made over REST — the web SPA's status-overlay toggles and the Flutter
+   * recording screen's telemetry-field picker.
+   *
+   * @generated from rpc bladewatch.v1.SettingsService.GetStatusOverlay
+   */
+  getStatusOverlay: {
+    methodKind: "unary";
+    input: typeof GetStatusOverlayRequestSchema;
+    output: typeof GetStatusOverlayResponseSchema;
+  },
+  /**
+   * @generated from rpc bladewatch.v1.SettingsService.SetStatusOverlay
+   */
+  setStatusOverlay: {
+    methodKind: "unary";
+    input: typeof SetStatusOverlayRequestSchema;
+    output: typeof SetStatusOverlayResponseSchema;
+  },
+  /**
+   * @generated from rpc bladewatch.v1.SettingsService.GetTelemetryOverlayFields
+   */
+  getTelemetryOverlayFields: {
+    methodKind: "unary";
+    input: typeof GetTelemetryOverlayFieldsRequestSchema;
+    output: typeof GetTelemetryOverlayFieldsResponseSchema;
+  },
+  /**
+   * @generated from rpc bladewatch.v1.SettingsService.SetTelemetryOverlayFields
+   */
+  setTelemetryOverlayFields: {
+    methodKind: "unary";
+    input: typeof SetTelemetryOverlayFieldsRequestSchema;
+    output: typeof SetTelemetryOverlayFieldsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_bladewatch_v1_settings, 0);

@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// The two sides are separate projects that agree only by convention: the Dart
 /// clients under `lib/rpc/services/` pass a service and method name as plain
 /// STRINGS to `RpcTransport.call`, and the daemon registers handlers by string
-/// in `server/connect/impl/*.java`. Nothing in either build checks that they
+/// in `server/connect/impl/`. Nothing in either build checks that they
 /// match, so a mismatch is a runtime 404 that surfaces only when a driver opens
 /// the screen that needs it.
 ///
@@ -45,7 +45,9 @@ void main() {
 
     final served = <String>{};
     for (final f in javaRoot.listSync(recursive: true).whereType<File>()) {
-      if (!f.path.endsWith('.java')) continue;
+      // Both extensions: the Connect impls are migrating to Kotlin (BladeWatch-9rut),
+      // and a .java-only filter would quietly scan nothing and pass vacuously.
+      if (!f.path.endsWith('.java') && !f.path.endsWith('.kt')) continue;
       for (final m in RegExp(r'register\(\s*"bladewatch\.v1\.(\w+)"\s*,\s*"(\w+)"')
           .allMatches(f.readAsStringSync())) {
         served.add('${m.group(1)}/${m.group(2)}');

@@ -26,9 +26,16 @@ import org.junit.Test
 class FisheyeDewarpWiringTest {
 
     private fun engineSource(): String {
+        // Both extensions: the surveillance package is migrating to Kotlin (BladeWatch-h74p), and
+        // a guard that keeps asking for a ".java" that no longer exists stops guarding without
+        // ever failing.
         var f = File("src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java")
         if (!f.isFile) {
             f = File("app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java")
+        if (!f.isFile)
+            f = File("src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.kt")
+        if (!f.isFile)
+            f = File("app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.kt")
         }
         assertTrue("could not locate SurveillanceEngineGpu.java from ${File(".").absolutePath}",
             f.isFile)
@@ -47,7 +54,7 @@ class FisheyeDewarpWiringTest {
             "SurveillanceEngineGpu must declare a boolean marking a full mosaic tile. " +
                 "Do not infer it from qW or CROP_SIZE — that is exactly the inference this " +
                 "guard exists to prevent.",
-            src.contains("boolean fromMosaicTile"))
+            src.contains("boolean fromMosaicTile") || src.contains("val fromMosaicTile: Boolean"))
     }
 
     /** All three crop branches must set it: foveated, the foveated fallback, and legacy. */
@@ -70,11 +77,14 @@ class FisheyeDewarpWiringTest {
     /** Dewarp must be gated on that flag, so a foveated crop is never dewarped. */
     @Test
     fun `dewarp is applied only to mosaic tiles`() {
-        val src = engineSource()
+        val src = engineSource().replace("\r\n", "\n")
+        // Java spells the guard as a ternary; Kotlin as an if-expression. Either is fine —
+        // what matters is that the dewarp call is conditioned on fromMosaicTile.
+        val javaTernary = Regex("fromMosaicTile\\s*\\n?\\s*\\?\\s*FisheyeDewarp\\.dewarpForDetector")
+        val kotlinIf = Regex("if\\s*\\(fromMosaicTile\\)\\s*FisheyeDewarp\\.dewarpForDetector")
         assertTrue(
             "the dewarp call must be guarded by fromMosaicTile",
-            Regex("fromMosaicTile\\s*\\n?\\s*\\?\\s*FisheyeDewarp\\.dewarpForDetector")
-                .containsMatchIn(src.replace("\r\n", "\n")))
+            javaTernary.containsMatchIn(src) || kotlinIf.containsMatchIn(src))
     }
 
     /**
@@ -89,8 +99,11 @@ class FisheyeDewarpWiringTest {
             "the detector must be fed a separate buffer, not a reassigned cropData",
             src.contains("detectorInput"))
         assertTrue(
-            "cropData is declared final so it cannot be reassigned — keep it that way",
-            src.contains("final byte[] cropData"))
+            "cropData must be immutable (Java: declared final; Kotlin: a val or an immutable " +
+                "function parameter) so it cannot be reassigned — keep it that way",
+            src.contains("final byte[] cropData") ||
+                src.contains("val cropData: ByteArray") ||
+                Regex("cropData:\\s*ByteArray[?]?[,)]").containsMatchIn(src))
     }
 
     /**

@@ -100,6 +100,21 @@ jobs:
       - run: npm ci
         working-directory: web
 
+      # `vite build` does NOT typecheck — esbuild strips types without checking them, so a
+      # type error produces a perfectly successful build. Neither does anything check Angular
+      # TEMPLATES. Both are documented traps in CLAUDE.md, and the second one shipped: four
+      # files imported generated protobuf types through a path one level too deep and the
+      # build stayed green for months because `import type` declarations are erased before
+      # the path is ever resolved. Gradle's buildAngularWebUI runs `vite build` and would
+      # have caught neither.
+      - name: Web gates
+        working-directory: web
+        run: |
+          set -euo pipefail
+          npm run typecheck
+          npm run typecheck:templates
+          npm run test:unit
+
       # Pinned to the version this project is developed against, so a Flutter
       # release cannot silently change the shipped binary.
       - uses: subosito/flutter-action@v2
@@ -149,6 +164,28 @@ jobs:
       - name: Build in-car UI APK (net.bladewatch.flutter)
         working-directory: flutter_ui
         run: flutter build apk --release --target-platform android-arm64
+
+      # The Flutter APK's privileged Kotlin layer — IPC client, JWT minting, daemon control,
+      # secret/public config, the Live View texture plugin, the LocationListener — is a
+      # SEPARATE Gradle build with its own Kover gate at a 100% bound. The repo-root
+      # `koverVerify` above covers the SERVICE HOST ONLY and passes happily while this one is
+      # failing (CLAUDE.md says so explicitly), so without this step a regression in that
+      # layer ships. It is where BladeWatch-pg6r's guard lives — the crash that killed the
+      # whole UI process on API 29.
+      #
+      # AFTER the UI build, not with the other gates: flutter_ui/android/.gitignore ignores
+      # `/gradlew`, so the wrapper does not exist in a fresh checkout. Flutter injects it
+      # during `flutter build`, which is the step above.
+      - name: Quality gate — in-car UI Kotlin layer
+        working-directory: flutter_ui/android
+        run: |
+          set -euo pipefail
+          if [ ! -x ./gradlew ]; then
+            echo "::error::flutter_ui/android/gradlew missing. It is gitignored and injected by"
+            echo "the preceding 'flutter build apk' step — that step must run before this one."
+            exit 1
+          fi
+          ./gradlew --no-daemon koverVerify
 
       # Collect BOTH APKs under tag-stamped, self-describing names.
       #

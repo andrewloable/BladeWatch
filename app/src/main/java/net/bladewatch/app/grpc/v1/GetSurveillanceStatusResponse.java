@@ -110,6 +110,34 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int CAMERA_YIELDED_FIELD_NUMBER = 5;
+  private boolean cameraYielded_ = false;
+  /**
+   * <pre>
+   * True while another app (typically the car's own DVR) holds the camera and
+   * BydCameraCoordinator has yielded to it (BladeWatch-gyg1.2). Surface this only while
+   * true -- a permanent "another app might be using the camera" caption is noise.
+   * </pre>
+   *
+   * <code>bool camera_yielded = 5 [json_name = "cameraYielded"];</code>
+   * @return The cameraYielded.
+   */
+  @java.lang.Override
+  public boolean getCameraYielded() {
+    return cameraYielded_;
+  }
+
+  public static final int NATIVE_APP_ACTIVE_FIELD_NUMBER = 6;
+  private boolean nativeAppActive_ = false;
+  /**
+   * <code>bool native_app_active = 6 [json_name = "nativeAppActive"];</code>
+   * @return The nativeAppActive.
+   */
+  @java.lang.Override
+  public boolean getNativeAppActive() {
+    return nativeAppActive_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -133,6 +161,12 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(error_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 4, error_);
     }
+    if (cameraYielded_ != false) {
+      output.writeBool(5, cameraYielded_);
+    }
+    if (nativeAppActive_ != false) {
+      output.writeBool(6, nativeAppActive_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -147,6 +181,14 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(error_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(4, error_);
+    }
+    if (cameraYielded_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(5, cameraYielded_);
+    }
+    if (nativeAppActive_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(6, nativeAppActive_);
     }
     return size;
   }
@@ -178,6 +220,10 @@ private static final long serialVersionUID = 0L;
         != other.getSurveillanceActive()) return false;
     if (!getError()
         .equals(other.getError())) return false;
+    if (getCameraYielded()
+        != other.getCameraYielded()) return false;
+    if (getNativeAppActive()
+        != other.getNativeAppActive()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -197,6 +243,12 @@ private static final long serialVersionUID = 0L;
         getSurveillanceActive());
     hash = (37 * hash) + ERROR_FIELD_NUMBER;
     hash = (53 * hash) + getError().hashCode();
+    hash = (37 * hash) + CAMERA_YIELDED_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getCameraYielded());
+    hash = (37 * hash) + NATIVE_APP_ACTIVE_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getNativeAppActive());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -331,6 +383,8 @@ private static final long serialVersionUID = 0L;
       pipelineRunning_ = false;
       surveillanceActive_ = false;
       error_ = "";
+      cameraYielded_ = false;
+      nativeAppActive_ = false;
       return this;
     }
 
@@ -373,6 +427,12 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000004) != 0)) {
         result.error_ = error_;
       }
+      if (((from_bitField0_ & 0x00000008) != 0)) {
+        result.cameraYielded_ = cameraYielded_;
+      }
+      if (((from_bitField0_ & 0x00000010) != 0)) {
+        result.nativeAppActive_ = nativeAppActive_;
+      }
     }
 
     @java.lang.Override
@@ -397,6 +457,12 @@ private static final long serialVersionUID = 0L;
         error_ = other.error_;
         bitField0_ |= 0x00000004;
         onChanged();
+      }
+      if (other.getCameraYielded() != false) {
+        setCameraYielded(other.getCameraYielded());
+      }
+      if (other.getNativeAppActive() != false) {
+        setNativeAppActive(other.getNativeAppActive());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -439,6 +505,16 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000004;
               break;
             } // case 34
+            case 40: {
+              cameraYielded_ = input.readBool();
+              bitField0_ |= 0x00000008;
+              break;
+            } // case 40
+            case 48: {
+              nativeAppActive_ = input.readBool();
+              bitField0_ |= 0x00000010;
+              break;
+            } // case 48
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -588,6 +664,88 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       error_ = value;
       bitField0_ |= 0x00000004;
+      onChanged();
+      return this;
+    }
+
+    private boolean cameraYielded_ ;
+    /**
+     * <pre>
+     * True while another app (typically the car's own DVR) holds the camera and
+     * BydCameraCoordinator has yielded to it (BladeWatch-gyg1.2). Surface this only while
+     * true -- a permanent "another app might be using the camera" caption is noise.
+     * </pre>
+     *
+     * <code>bool camera_yielded = 5 [json_name = "cameraYielded"];</code>
+     * @return The cameraYielded.
+     */
+    @java.lang.Override
+    public boolean getCameraYielded() {
+      return cameraYielded_;
+    }
+    /**
+     * <pre>
+     * True while another app (typically the car's own DVR) holds the camera and
+     * BydCameraCoordinator has yielded to it (BladeWatch-gyg1.2). Surface this only while
+     * true -- a permanent "another app might be using the camera" caption is noise.
+     * </pre>
+     *
+     * <code>bool camera_yielded = 5 [json_name = "cameraYielded"];</code>
+     * @param value The cameraYielded to set.
+     * @return This builder for chaining.
+     */
+    public Builder setCameraYielded(boolean value) {
+
+      cameraYielded_ = value;
+      bitField0_ |= 0x00000008;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * True while another app (typically the car's own DVR) holds the camera and
+     * BydCameraCoordinator has yielded to it (BladeWatch-gyg1.2). Surface this only while
+     * true -- a permanent "another app might be using the camera" caption is noise.
+     * </pre>
+     *
+     * <code>bool camera_yielded = 5 [json_name = "cameraYielded"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearCameraYielded() {
+      bitField0_ = (bitField0_ & ~0x00000008);
+      cameraYielded_ = false;
+      onChanged();
+      return this;
+    }
+
+    private boolean nativeAppActive_ ;
+    /**
+     * <code>bool native_app_active = 6 [json_name = "nativeAppActive"];</code>
+     * @return The nativeAppActive.
+     */
+    @java.lang.Override
+    public boolean getNativeAppActive() {
+      return nativeAppActive_;
+    }
+    /**
+     * <code>bool native_app_active = 6 [json_name = "nativeAppActive"];</code>
+     * @param value The nativeAppActive to set.
+     * @return This builder for chaining.
+     */
+    public Builder setNativeAppActive(boolean value) {
+
+      nativeAppActive_ = value;
+      bitField0_ |= 0x00000010;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool native_app_active = 6 [json_name = "nativeAppActive"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearNativeAppActive() {
+      bitField0_ = (bitField0_ & ~0x00000010);
+      nativeAppActive_ = false;
       onChanged();
       return this;
     }

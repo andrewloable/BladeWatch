@@ -177,6 +177,16 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_bladewatch_v1_SetLightsRequest_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_SetScreenRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_SetScreenRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_SetMediaVolumeRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_SetMediaVolumeRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
     internal_static_bladewatch_v1_SetAdasRequest_descriptor;
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -246,6 +256,26 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_bladewatch_v1_StopGpsResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_IssueActionTokenRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_IssueActionTokenRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_IssueActionTokenResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_IssueActionTokenResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetAdasInventoryRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetAdasInventoryRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetAdasInventoryResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetAdasInventoryResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -304,7 +334,7 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
       "eR\002fr\022+\n\002rl\030\003 \001(\0132\033.bladewatch.v1.TyrePr" +
       "essureR\002rl\022+\n\002rr\030\004 \001(\0132\033.bladewatch.v1.T" +
       "yrePressureR\002rr\"\030\n\026GetVehicleStateReques" +
-      "t\"\230\005\n\027GetVehicleStateResponse\022\030\n\007success" +
+      "t\"\353\005\n\027GetVehicleStateResponse\022\030\n\007success" +
       "\030\001 \001(\010R\007success\022/\n\005doors\030\002 \001(\0132\031.bladewa" +
       "tch.v1.DoorStatusR\005doors\0225\n\007windows\030\003 \001(" +
       "\0132\033.bladewatch.v1.WindowStatusR\007windows\022" +
@@ -320,118 +350,141 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
       ".v1.SeatStatusR\005seats\0226\n\007climate\030\013 \001(\0132\034" +
       ".bladewatch.v1.ClimateStatusR\007climate\022/\n" +
       "\005tyres\030\014 \001(\0132\031.bladewatch.v1.TyreStatusR" +
-      "\005tyres\022\024\n\005error\030\r \001(\tR\005error\"\031\n\027GetAcDia" +
-      "gnosticsRequest\"O\n\030GetAcDiagnosticsRespo" +
-      "nse\022\030\n\007success\030\001 \001(\010R\007success\022\031\n\010raw_jso" +
-      "n\030\002 \001(\tR\007rawJson\"\033\n\031GetSeatDiagnosticsRe" +
-      "quest\"Q\n\032GetSeatDiagnosticsResponse\022\030\n\007s" +
-      "uccess\030\001 \001(\010R\007success\022\031\n\010raw_json\030\002 \001(\tR" +
-      "\007rawJson\"\220\001\n\026VehicleCommandResponse\022\030\n\007s" +
-      "uccess\030\001 \001(\010R\007success\022\030\n\007message\030\002 \001(\tR\007" +
-      "message\022\024\n\005error\030\003 \001(\tR\005error\022\030\n\007outcome" +
-      "\030\004 \001(\tR\007outcome\022\022\n\004path\030\005 \001(\tR\004path\"\r\n\013L" +
-      "ockRequest\"\017\n\rUnlockRequest\"\016\n\014FlashRequ" +
-      "est\"\020\n\016FindCarRequest\"&\n\014TrunkRequest\022\026\n" +
-      "\006action\030\001 \001(\tR\006action\"\223\001\n\021MoveWindowRequ" +
-      "est\022!\n\014window_index\030\001 \001(\005R\013windowIndex\022\034" +
-      "\n\tdirection\030\002 \001(\tR\tdirection\022*\n\016target_p" +
-      "ercent\030\003 \001(\005H\000R\rtargetPercent\210\001\001B\021\n\017_tar" +
-      "get_percent\"\253\002\n\021SetClimateRequest\022\026\n\006act" +
-      "ion\030\001 \001(\tR\006action\022\016\n\002on\030\002 \001(\010R\002on\022\035\n\nset" +
-      "point_c\030\003 \001(\001R\tsetpointC\022\033\n\tfan_level\030\004 " +
-      "\001(\005R\010fanLevel\022\033\n\twind_mode\030\005 \001(\005R\010windMo" +
-      "de\022\037\n\013max_cooling\030\006 \001(\010R\nmaxCooling\022\"\n\rr" +
-      "estore_ac_on\030\007 \001(\010R\013restoreAcOn\022$\n\016resto" +
-      "re_temp_c\030\010 \001(\001R\014restoreTempC\022*\n\021restore" +
-      "_fan_level\030\t \001(\005R\017restoreFanLevel\"\355\001\n\016Se" +
-      "tSeatRequest\022\035\n\nseat_index\030\001 \001(\005R\tseatIn" +
-      "dex\022\026\n\006action\030\002 \001(\tR\006action\022\024\n\005level\030\003 \001" +
-      "(\005R\005level\022\037\n\013driver_heat\030\004 \001(\005R\ndriverHe" +
-      "at\022\037\n\013driver_vent\030\005 \001(\005R\ndriverVent\022%\n\016p" +
-      "assenger_heat\030\006 \001(\005R\rpassengerHeat\022%\n\016pa" +
-      "ssenger_vent\030\007 \001(\005R\rpassengerVent\"F\n\020Set" +
-      "LightsRequest\022\026\n\006action\030\001 \001(\tR\006action\022\023\n" +
-      "\002on\030\002 \001(\010H\000R\002on\210\001\001B\005\n\003_on\"D\n\016SetAdasRequ" +
-      "est\022\026\n\006action\030\001 \001(\tR\006action\022\023\n\002on\030\002 \001(\010H" +
-      "\000R\002on\210\001\001B\005\n\003_on\"3\n\025SetBatteryHeatRequest" +
-      "\022\023\n\002on\030\001 \001(\010H\000R\002on\210\001\001B\005\n\003_on\"\034\n\032GetCharg" +
-      "ingScheduleRequest\"\220\002\n\033GetChargingSchedu" +
-      "leResponse\022\030\n\007success\030\001 \001(\010R\007success\022\030\n\007" +
-      "enabled\030\002 \001(\010R\007enabled\022*\n\021start_charge_t" +
-      "ime\030\003 \001(\tR\017startChargeTime\022&\n\017end_charge" +
-      "_time\030\004 \001(\tR\rendChargeTime\022\035\n\ncharge_way" +
-      "\030\005 \001(\005R\tchargeWay\022\024\n\005error\030\006 \001(\tR\005error\022" +
-      "\034\n\tsupported\030\007 \001(\010R\tsupported\022\026\n\006reason\030" +
-      "\010 \001(\tR\006reason\"\272\001\n\032SetChargingScheduleReq" +
-      "uest\022*\n\021start_charge_time\030\001 \001(\tR\017startCh" +
-      "argeTime\022&\n\017end_charge_time\030\002 \001(\tR\rendCh" +
-      "argeTime\022\035\n\ncharge_way\030\003 \001(\005R\tchargeWay\022" +
-      "\035\n\007enabled\030\004 \001(\010H\000R\007enabled\210\001\001B\n\n\010_enabl" +
-      "ed\"\025\n\023GetChargeCapRequest\"\315\001\n\024GetChargeC" +
-      "apResponse\022\030\n\007success\030\001 \001(\010R\007success\022\035\n\007" +
-      "percent\030\002 \001(\005H\000R\007percent\210\001\001\022\035\n\007enabled\030\003" +
-      " \001(\010H\001R\007enabled\210\001\001\022!\n\tsupported\030\004 \001(\010H\002R" +
-      "\tsupported\210\001\001\022\024\n\005error\030\005 \001(\tR\005errorB\n\n\010_" +
-      "percentB\n\n\010_enabledB\014\n\n_supported\"Z\n\023Set" +
-      "ChargeCapRequest\022\030\n\007percent\030\001 \001(\005R\007perce" +
-      "nt\022\035\n\007enabled\030\002 \001(\010H\000R\007enabled\210\001\001B\n\n\010_en" +
-      "abled\"\027\n\025GetGpsLocationRequest\"\177\n\026GetGps" +
-      "LocationResponse\022\030\n\007success\030\001 \001(\010R\007succe" +
-      "ss\022#\n\rlocation_json\030\002 \001(\tR\014locationJson\022" +
-      "&\n\017google_maps_url\030\003 \001(\tR\rgoogleMapsUrl\"" +
-      "\021\n\017StartGpsRequest\"k\n\020StartGpsResponse\022\030" +
+      "\005tyres\022\024\n\005error\030\r \001(\tR\005error\0220\n\024media_vo" +
+      "lume_percent\030\016 \001(\005R\022mediaVolumePercent\022\037" +
+      "\n\013media_muted\030\017 \001(\010R\nmediaMuted\"\031\n\027GetAc" +
+      "DiagnosticsRequest\"O\n\030GetAcDiagnosticsRe" +
+      "sponse\022\030\n\007success\030\001 \001(\010R\007success\022\031\n\010raw_" +
+      "json\030\002 \001(\tR\007rawJson\"\033\n\031GetSeatDiagnostic" +
+      "sRequest\"Q\n\032GetSeatDiagnosticsResponse\022\030" +
+      "\n\007success\030\001 \001(\010R\007success\022\031\n\010raw_json\030\002 \001" +
+      "(\tR\007rawJson\"\220\001\n\026VehicleCommandResponse\022\030" +
       "\n\007success\030\001 \001(\010R\007success\022\030\n\007message\030\002 \001(" +
-      "\tR\007message\022#\n\rlocation_json\030\003 \001(\tR\014locat" +
-      "ionJson\"\020\n\016StopGpsRequest\"E\n\017StopGpsResp" +
-      "onse\022\030\n\007success\030\001 \001(\010R\007success\022\030\n\007messag" +
-      "e\030\002 \001(\tR\007message2\305\016\n\016VehicleService\022Y\n\010G" +
-      "etState\022%.bladewatch.v1.GetVehicleStateR" +
-      "equest\032&.bladewatch.v1.GetVehicleStateRe" +
-      "sponse\022c\n\020GetAcDiagnostics\022&.bladewatch." +
-      "v1.GetAcDiagnosticsRequest\032\'.bladewatch." +
-      "v1.GetAcDiagnosticsResponse\022i\n\022GetSeatDi" +
-      "agnostics\022(.bladewatch.v1.GetSeatDiagnos" +
-      "ticsRequest\032).bladewatch.v1.GetSeatDiagn" +
-      "osticsResponse\022I\n\004Lock\022\032.bladewatch.v1.L" +
-      "ockRequest\032%.bladewatch.v1.VehicleComman" +
-      "dResponse\022M\n\006Unlock\022\034.bladewatch.v1.Unlo" +
-      "ckRequest\032%.bladewatch.v1.VehicleCommand" +
-      "Response\022K\n\005Trunk\022\033.bladewatch.v1.TrunkR" +
-      "equest\032%.bladewatch.v1.VehicleCommandRes" +
-      "ponse\022U\n\nMoveWindow\022 .bladewatch.v1.Move" +
-      "WindowRequest\032%.bladewatch.v1.VehicleCom" +
-      "mandResponse\022K\n\005Flash\022\033.bladewatch.v1.Fl" +
-      "ashRequest\032%.bladewatch.v1.VehicleComman" +
-      "dResponse\022O\n\007FindCar\022\035.bladewatch.v1.Fin" +
-      "dCarRequest\032%.bladewatch.v1.VehicleComma" +
-      "ndResponse\022U\n\nSetClimate\022 .bladewatch.v1" +
-      ".SetClimateRequest\032%.bladewatch.v1.Vehic" +
-      "leCommandResponse\022O\n\007SetSeat\022\035.bladewatc" +
-      "h.v1.SetSeatRequest\032%.bladewatch.v1.Vehi" +
-      "cleCommandResponse\022S\n\tSetLights\022\037.bladew" +
-      "atch.v1.SetLightsRequest\032%.bladewatch.v1" +
-      ".VehicleCommandResponse\022O\n\007SetAdas\022\035.bla" +
-      "dewatch.v1.SetAdasRequest\032%.bladewatch.v" +
-      "1.VehicleCommandResponse\022]\n\016SetBatteryHe" +
-      "at\022$.bladewatch.v1.SetBatteryHeatRequest" +
+      "\tR\007message\022\024\n\005error\030\003 \001(\tR\005error\022\030\n\007outc" +
+      "ome\030\004 \001(\tR\007outcome\022\022\n\004path\030\005 \001(\tR\004path\"\r" +
+      "\n\013LockRequest\"\017\n\rUnlockRequest\"\016\n\014FlashR" +
+      "equest\"\020\n\016FindCarRequest\"&\n\014TrunkRequest" +
+      "\022\026\n\006action\030\001 \001(\tR\006action\"\223\001\n\021MoveWindowR" +
+      "equest\022!\n\014window_index\030\001 \001(\005R\013windowInde" +
+      "x\022\034\n\tdirection\030\002 \001(\tR\tdirection\022*\n\016targe" +
+      "t_percent\030\003 \001(\005H\000R\rtargetPercent\210\001\001B\021\n\017_" +
+      "target_percent\"\312\002\n\021SetClimateRequest\022\026\n\006" +
+      "action\030\001 \001(\tR\006action\022\016\n\002on\030\002 \001(\010R\002on\022\035\n\n" +
+      "setpoint_c\030\003 \001(\001R\tsetpointC\022\033\n\tfan_level" +
+      "\030\004 \001(\005R\010fanLevel\022\033\n\twind_mode\030\005 \001(\005R\010win" +
+      "dMode\022\037\n\013max_cooling\030\006 \001(\010R\nmaxCooling\022\"" +
+      "\n\rrestore_ac_on\030\007 \001(\010R\013restoreAcOn\022$\n\016re" +
+      "store_temp_c\030\010 \001(\001R\014restoreTempC\022*\n\021rest" +
+      "ore_fan_level\030\t \001(\005R\017restoreFanLevel\022\035\n\n" +
+      "cycle_mode\030\n \001(\005R\tcycleMode\"\355\001\n\016SetSeatR" +
+      "equest\022\035\n\nseat_index\030\001 \001(\005R\tseatIndex\022\026\n" +
+      "\006action\030\002 \001(\tR\006action\022\024\n\005level\030\003 \001(\005R\005le" +
+      "vel\022\037\n\013driver_heat\030\004 \001(\005R\ndriverHeat\022\037\n\013" +
+      "driver_vent\030\005 \001(\005R\ndriverVent\022%\n\016passeng" +
+      "er_heat\030\006 \001(\005R\rpassengerHeat\022%\n\016passenge" +
+      "r_vent\030\007 \001(\005R\rpassengerVent\"F\n\020SetLights" +
+      "Request\022\026\n\006action\030\001 \001(\tR\006action\022\023\n\002on\030\002 " +
+      "\001(\010H\000R\002on\210\001\001B\005\n\003_on\".\n\020SetScreenRequest\022" +
+      "\023\n\002on\030\001 \001(\010H\000R\002on\210\001\001B\005\n\003_on\"Z\n\025SetMediaV" +
+      "olumeRequest\022\026\n\006action\030\001 \001(\tR\006action\022\035\n\007" +
+      "percent\030\002 \001(\005H\000R\007percent\210\001\001B\n\n\010_percent\"" +
+      "D\n\016SetAdasRequest\022\026\n\006action\030\001 \001(\tR\006actio" +
+      "n\022\023\n\002on\030\002 \001(\010H\000R\002on\210\001\001B\005\n\003_on\"3\n\025SetBatt" +
+      "eryHeatRequest\022\023\n\002on\030\001 \001(\010H\000R\002on\210\001\001B\005\n\003_" +
+      "on\"\034\n\032GetChargingScheduleRequest\"\220\002\n\033Get" +
+      "ChargingScheduleResponse\022\030\n\007success\030\001 \001(" +
+      "\010R\007success\022\030\n\007enabled\030\002 \001(\010R\007enabled\022*\n\021" +
+      "start_charge_time\030\003 \001(\tR\017startChargeTime" +
+      "\022&\n\017end_charge_time\030\004 \001(\tR\rendChargeTime" +
+      "\022\035\n\ncharge_way\030\005 \001(\005R\tchargeWay\022\024\n\005error" +
+      "\030\006 \001(\tR\005error\022\034\n\tsupported\030\007 \001(\010R\tsuppor" +
+      "ted\022\026\n\006reason\030\010 \001(\tR\006reason\"\272\001\n\032SetCharg" +
+      "ingScheduleRequest\022*\n\021start_charge_time\030" +
+      "\001 \001(\tR\017startChargeTime\022&\n\017end_charge_tim" +
+      "e\030\002 \001(\tR\rendChargeTime\022\035\n\ncharge_way\030\003 \001" +
+      "(\005R\tchargeWay\022\035\n\007enabled\030\004 \001(\010H\000R\007enable" +
+      "d\210\001\001B\n\n\010_enabled\"\025\n\023GetChargeCapRequest\"" +
+      "\315\001\n\024GetChargeCapResponse\022\030\n\007success\030\001 \001(" +
+      "\010R\007success\022\035\n\007percent\030\002 \001(\005H\000R\007percent\210\001" +
+      "\001\022\035\n\007enabled\030\003 \001(\010H\001R\007enabled\210\001\001\022!\n\tsupp" +
+      "orted\030\004 \001(\010H\002R\tsupported\210\001\001\022\024\n\005error\030\005 \001" +
+      "(\tR\005errorB\n\n\010_percentB\n\n\010_enabledB\014\n\n_su" +
+      "pported\"Z\n\023SetChargeCapRequest\022\030\n\007percen" +
+      "t\030\001 \001(\005R\007percent\022\035\n\007enabled\030\002 \001(\010H\000R\007ena" +
+      "bled\210\001\001B\n\n\010_enabled\"\027\n\025GetGpsLocationReq" +
+      "uest\"\177\n\026GetGpsLocationResponse\022\030\n\007succes" +
+      "s\030\001 \001(\010R\007success\022#\n\rlocation_json\030\002 \001(\tR" +
+      "\014locationJson\022&\n\017google_maps_url\030\003 \001(\tR\r" +
+      "googleMapsUrl\"\021\n\017StartGpsRequest\"k\n\020Star" +
+      "tGpsResponse\022\030\n\007success\030\001 \001(\010R\007success\022\030" +
+      "\n\007message\030\002 \001(\tR\007message\022#\n\rlocation_jso" +
+      "n\030\003 \001(\tR\014locationJson\"\020\n\016StopGpsRequest\"" +
+      "E\n\017StopGpsResponse\022\030\n\007success\030\001 \001(\010R\007suc" +
+      "cess\022\030\n\007message\030\002 \001(\tR\007message\"\031\n\027IssueA" +
+      "ctionTokenRequest\"\216\001\n\030IssueActionTokenRe" +
+      "sponse\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005toke" +
+      "n\030\002 \001(\tR\005token\022,\n\022expires_in_seconds\030\003 \001" +
+      "(\005R\020expiresInSeconds\022\024\n\005error\030\004 \001(\tR\005err" +
+      "or\"\031\n\027GetAdasInventoryRequest\"Q\n\030GetAdas" +
+      "InventoryResponse\022\030\n\007success\030\001 \001(\010R\007succ" +
+      "ess\022\033\n\tadas_json\030\002 \001(\tR\010adasJson2\303\021\n\016Veh" +
+      "icleService\022Y\n\010GetState\022%.bladewatch.v1." +
+      "GetVehicleStateRequest\032&.bladewatch.v1.G" +
+      "etVehicleStateResponse\022c\n\020GetAcDiagnosti" +
+      "cs\022&.bladewatch.v1.GetAcDiagnosticsReque" +
+      "st\032\'.bladewatch.v1.GetAcDiagnosticsRespo" +
+      "nse\022i\n\022GetSeatDiagnostics\022(.bladewatch.v" +
+      "1.GetSeatDiagnosticsRequest\032).bladewatch" +
+      ".v1.GetSeatDiagnosticsResponse\022I\n\004Lock\022\032" +
+      ".bladewatch.v1.LockRequest\032%.bladewatch." +
+      "v1.VehicleCommandResponse\022M\n\006Unlock\022\034.bl" +
+      "adewatch.v1.UnlockRequest\032%.bladewatch.v" +
+      "1.VehicleCommandResponse\022K\n\005Trunk\022\033.blad" +
+      "ewatch.v1.TrunkRequest\032%.bladewatch.v1.V" +
+      "ehicleCommandResponse\022U\n\nMoveWindow\022 .bl" +
+      "adewatch.v1.MoveWindowRequest\032%.bladewat" +
+      "ch.v1.VehicleCommandResponse\022K\n\005Flash\022\033." +
+      "bladewatch.v1.FlashRequest\032%.bladewatch." +
+      "v1.VehicleCommandResponse\022O\n\007FindCar\022\035.b" +
+      "ladewatch.v1.FindCarRequest\032%.bladewatch" +
+      ".v1.VehicleCommandResponse\022U\n\nSetClimate" +
+      "\022 .bladewatch.v1.SetClimateRequest\032%.bla" +
+      "dewatch.v1.VehicleCommandResponse\022O\n\007Set" +
+      "Seat\022\035.bladewatch.v1.SetSeatRequest\032%.bl" +
+      "adewatch.v1.VehicleCommandResponse\022S\n\tSe" +
+      "tLights\022\037.bladewatch.v1.SetLightsRequest" +
       "\032%.bladewatch.v1.VehicleCommandResponse\022" +
-      "l\n\023GetChargingSchedule\022).bladewatch.v1.G" +
-      "etChargingScheduleRequest\032*.bladewatch.v" +
-      "1.GetChargingScheduleResponse\022g\n\023SetChar" +
-      "gingSchedule\022).bladewatch.v1.SetCharging" +
-      "ScheduleRequest\032%.bladewatch.v1.VehicleC" +
-      "ommandResponse\022W\n\014GetChargeCap\022\".bladewa" +
-      "tch.v1.GetChargeCapRequest\032#.bladewatch." +
-      "v1.GetChargeCapResponse\022Y\n\014SetChargeCap\022" +
-      "\".bladewatch.v1.SetChargeCapRequest\032%.bl" +
-      "adewatch.v1.VehicleCommandResponse\022]\n\016Ge" +
-      "tGpsLocation\022$.bladewatch.v1.GetGpsLocat" +
-      "ionRequest\032%.bladewatch.v1.GetGpsLocatio" +
-      "nResponse\022K\n\010StartGps\022\036.bladewatch.v1.St" +
-      "artGpsRequest\032\037.bladewatch.v1.StartGpsRe" +
-      "sponse\022H\n\007StopGps\022\035.bladewatch.v1.StopGp" +
-      "sRequest\032\036.bladewatch.v1.StopGpsResponse" +
-      "B\036\n\032net.bladewatch.app.grpc.v1P\001b\006proto3"
+      "S\n\tSetScreen\022\037.bladewatch.v1.SetScreenRe" +
+      "quest\032%.bladewatch.v1.VehicleCommandResp" +
+      "onse\022]\n\016SetMediaVolume\022$.bladewatch.v1.S" +
+      "etMediaVolumeRequest\032%.bladewatch.v1.Veh" +
+      "icleCommandResponse\022O\n\007SetAdas\022\035.bladewa" +
+      "tch.v1.SetAdasRequest\032%.bladewatch.v1.Ve" +
+      "hicleCommandResponse\022]\n\016SetBatteryHeat\022$" +
+      ".bladewatch.v1.SetBatteryHeatRequest\032%.b" +
+      "ladewatch.v1.VehicleCommandResponse\022l\n\023G" +
+      "etChargingSchedule\022).bladewatch.v1.GetCh" +
+      "argingScheduleRequest\032*.bladewatch.v1.Ge" +
+      "tChargingScheduleResponse\022g\n\023SetCharging" +
+      "Schedule\022).bladewatch.v1.SetChargingSche" +
+      "duleRequest\032%.bladewatch.v1.VehicleComma" +
+      "ndResponse\022W\n\014GetChargeCap\022\".bladewatch." +
+      "v1.GetChargeCapRequest\032#.bladewatch.v1.G" +
+      "etChargeCapResponse\022Y\n\014SetChargeCap\022\".bl" +
+      "adewatch.v1.SetChargeCapRequest\032%.bladew" +
+      "atch.v1.VehicleCommandResponse\022]\n\016GetGps" +
+      "Location\022$.bladewatch.v1.GetGpsLocationR" +
+      "equest\032%.bladewatch.v1.GetGpsLocationRes" +
+      "ponse\022K\n\010StartGps\022\036.bladewatch.v1.StartG" +
+      "psRequest\032\037.bladewatch.v1.StartGpsRespon" +
+      "se\022H\n\007StopGps\022\035.bladewatch.v1.StopGpsReq" +
+      "uest\032\036.bladewatch.v1.StopGpsResponse\022c\n\020" +
+      "IssueActionToken\022&.bladewatch.v1.IssueAc" +
+      "tionTokenRequest\032\'.bladewatch.v1.IssueAc" +
+      "tionTokenResponse\022c\n\020GetAdasInventory\022&." +
+      "bladewatch.v1.GetAdasInventoryRequest\032\'." +
+      "bladewatch.v1.GetAdasInventoryResponseB\036" +
+      "\n\032net.bladewatch.app.grpc.v1P\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -532,7 +585,7 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_GetVehicleStateResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetVehicleStateResponse_descriptor,
-        new java.lang.String[] { "Success", "Doors", "Windows", "Capabilities", "Trunk", "Sunroof", "Battery", "Lights", "Adas", "Seats", "Climate", "Tyres", "Error", });
+        new java.lang.String[] { "Success", "Doors", "Windows", "Capabilities", "Trunk", "Sunroof", "Battery", "Lights", "Adas", "Seats", "Climate", "Tyres", "Error", "MediaVolumePercent", "MediaMuted", });
     internal_static_bladewatch_v1_GetAcDiagnosticsRequest_descriptor =
       getDescriptor().getMessageType(16);
     internal_static_bladewatch_v1_GetAcDiagnosticsRequest_fieldAccessorTable = new
@@ -604,7 +657,7 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
     internal_static_bladewatch_v1_SetClimateRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetClimateRequest_descriptor,
-        new java.lang.String[] { "Action", "On", "SetpointC", "FanLevel", "WindMode", "MaxCooling", "RestoreAcOn", "RestoreTempC", "RestoreFanLevel", });
+        new java.lang.String[] { "Action", "On", "SetpointC", "FanLevel", "WindMode", "MaxCooling", "RestoreAcOn", "RestoreTempC", "RestoreFanLevel", "CycleMode", });
     internal_static_bladewatch_v1_SetSeatRequest_descriptor =
       getDescriptor().getMessageType(28);
     internal_static_bladewatch_v1_SetSeatRequest_fieldAccessorTable = new
@@ -617,90 +670,126 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetLightsRequest_descriptor,
         new java.lang.String[] { "Action", "On", });
-    internal_static_bladewatch_v1_SetAdasRequest_descriptor =
+    internal_static_bladewatch_v1_SetScreenRequest_descriptor =
       getDescriptor().getMessageType(30);
+    internal_static_bladewatch_v1_SetScreenRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_SetScreenRequest_descriptor,
+        new java.lang.String[] { "On", });
+    internal_static_bladewatch_v1_SetMediaVolumeRequest_descriptor =
+      getDescriptor().getMessageType(31);
+    internal_static_bladewatch_v1_SetMediaVolumeRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_SetMediaVolumeRequest_descriptor,
+        new java.lang.String[] { "Action", "Percent", });
+    internal_static_bladewatch_v1_SetAdasRequest_descriptor =
+      getDescriptor().getMessageType(32);
     internal_static_bladewatch_v1_SetAdasRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetAdasRequest_descriptor,
         new java.lang.String[] { "Action", "On", });
     internal_static_bladewatch_v1_SetBatteryHeatRequest_descriptor =
-      getDescriptor().getMessageType(31);
+      getDescriptor().getMessageType(33);
     internal_static_bladewatch_v1_SetBatteryHeatRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetBatteryHeatRequest_descriptor,
         new java.lang.String[] { "On", });
     internal_static_bladewatch_v1_GetChargingScheduleRequest_descriptor =
-      getDescriptor().getMessageType(32);
+      getDescriptor().getMessageType(34);
     internal_static_bladewatch_v1_GetChargingScheduleRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetChargingScheduleRequest_descriptor,
         new java.lang.String[] { });
     internal_static_bladewatch_v1_GetChargingScheduleResponse_descriptor =
-      getDescriptor().getMessageType(33);
+      getDescriptor().getMessageType(35);
     internal_static_bladewatch_v1_GetChargingScheduleResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetChargingScheduleResponse_descriptor,
         new java.lang.String[] { "Success", "Enabled", "StartChargeTime", "EndChargeTime", "ChargeWay", "Error", "Supported", "Reason", });
     internal_static_bladewatch_v1_SetChargingScheduleRequest_descriptor =
-      getDescriptor().getMessageType(34);
+      getDescriptor().getMessageType(36);
     internal_static_bladewatch_v1_SetChargingScheduleRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetChargingScheduleRequest_descriptor,
         new java.lang.String[] { "StartChargeTime", "EndChargeTime", "ChargeWay", "Enabled", });
     internal_static_bladewatch_v1_GetChargeCapRequest_descriptor =
-      getDescriptor().getMessageType(35);
+      getDescriptor().getMessageType(37);
     internal_static_bladewatch_v1_GetChargeCapRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetChargeCapRequest_descriptor,
         new java.lang.String[] { });
     internal_static_bladewatch_v1_GetChargeCapResponse_descriptor =
-      getDescriptor().getMessageType(36);
+      getDescriptor().getMessageType(38);
     internal_static_bladewatch_v1_GetChargeCapResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetChargeCapResponse_descriptor,
         new java.lang.String[] { "Success", "Percent", "Enabled", "Supported", "Error", });
     internal_static_bladewatch_v1_SetChargeCapRequest_descriptor =
-      getDescriptor().getMessageType(37);
+      getDescriptor().getMessageType(39);
     internal_static_bladewatch_v1_SetChargeCapRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SetChargeCapRequest_descriptor,
         new java.lang.String[] { "Percent", "Enabled", });
     internal_static_bladewatch_v1_GetGpsLocationRequest_descriptor =
-      getDescriptor().getMessageType(38);
+      getDescriptor().getMessageType(40);
     internal_static_bladewatch_v1_GetGpsLocationRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetGpsLocationRequest_descriptor,
         new java.lang.String[] { });
     internal_static_bladewatch_v1_GetGpsLocationResponse_descriptor =
-      getDescriptor().getMessageType(39);
+      getDescriptor().getMessageType(41);
     internal_static_bladewatch_v1_GetGpsLocationResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetGpsLocationResponse_descriptor,
         new java.lang.String[] { "Success", "LocationJson", "GoogleMapsUrl", });
     internal_static_bladewatch_v1_StartGpsRequest_descriptor =
-      getDescriptor().getMessageType(40);
+      getDescriptor().getMessageType(42);
     internal_static_bladewatch_v1_StartGpsRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_StartGpsRequest_descriptor,
         new java.lang.String[] { });
     internal_static_bladewatch_v1_StartGpsResponse_descriptor =
-      getDescriptor().getMessageType(41);
+      getDescriptor().getMessageType(43);
     internal_static_bladewatch_v1_StartGpsResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_StartGpsResponse_descriptor,
         new java.lang.String[] { "Success", "Message", "LocationJson", });
     internal_static_bladewatch_v1_StopGpsRequest_descriptor =
-      getDescriptor().getMessageType(42);
+      getDescriptor().getMessageType(44);
     internal_static_bladewatch_v1_StopGpsRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_StopGpsRequest_descriptor,
         new java.lang.String[] { });
     internal_static_bladewatch_v1_StopGpsResponse_descriptor =
-      getDescriptor().getMessageType(43);
+      getDescriptor().getMessageType(45);
     internal_static_bladewatch_v1_StopGpsResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_StopGpsResponse_descriptor,
         new java.lang.String[] { "Success", "Message", });
+    internal_static_bladewatch_v1_IssueActionTokenRequest_descriptor =
+      getDescriptor().getMessageType(46);
+    internal_static_bladewatch_v1_IssueActionTokenRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_IssueActionTokenRequest_descriptor,
+        new java.lang.String[] { });
+    internal_static_bladewatch_v1_IssueActionTokenResponse_descriptor =
+      getDescriptor().getMessageType(47);
+    internal_static_bladewatch_v1_IssueActionTokenResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_IssueActionTokenResponse_descriptor,
+        new java.lang.String[] { "Success", "Token", "ExpiresInSeconds", "Error", });
+    internal_static_bladewatch_v1_GetAdasInventoryRequest_descriptor =
+      getDescriptor().getMessageType(48);
+    internal_static_bladewatch_v1_GetAdasInventoryRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetAdasInventoryRequest_descriptor,
+        new java.lang.String[] { });
+    internal_static_bladewatch_v1_GetAdasInventoryResponse_descriptor =
+      getDescriptor().getMessageType(49);
+    internal_static_bladewatch_v1_GetAdasInventoryResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetAdasInventoryResponse_descriptor,
+        new java.lang.String[] { "Success", "AdasJson", });
     descriptor.resolveAllFeaturesImmutable();
   }
 

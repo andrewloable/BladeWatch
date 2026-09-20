@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Organismo di richiesta invalido: {0}",
     "performance_no_data": "Non è stato avviato il monitoraggio delle prestazioni o non sono stati ancora raccolti dati",
     "soh_not_initialized": "SohEstimator non avviato",
+    "soh_nominal_range": "La capacità nominale deve essere compresa tra 8 e 120 kWh",
     "reset_no_categories": "Nessuna categoria specificata",
     "reset_unknown_category": "Categoria sconosciuta",
     "reset_trip_in_progress": "Viaggio in corso  spegnere ACC prima",
@@ -75,6 +76,8 @@
     "surveillance_invalid_quadrant_with_id": "Quadrante invalido: {0}",
     "surveillance_event_frame_failed_with_detail": "Non è riuscito a elaborare il quadro dell'evento: {0}",
     "surveillance_no_frame_available": "Nessun quadro disponibile  iniziare la sorveglianza o registrare un evento prima",
+    "telemetry_overlay_unknown_type_with_id": "Tipo di registrazione sconosciuto: {0}",
+    "telemetry_overlay_fields_missing": "\"fields\" mancante",
     "update_app_context_not_ready": "Il contesto dell'app non è pronto",
     "update_check_timed_out": "Controllo di aggiornamento",
     "update_disabled_in_public_mode": "Gli aggiornamenti sono disabilitati in modalità condivisione PUBLICA.",
@@ -118,7 +121,11 @@
     "area_hood": "Cappuccio",
     "area_trunk": "Treno",
     "area_fuel_cap": "Cappello del carburante",
-    "area_door_n": "Porta {0}"
+    "area_door_n": "Porta {0}",
+    "trip_started": "Viaggio iniziato",
+    "trip_ended": "Viaggio terminato",
+    "trip_summary_km": "{0} km · {1} min",
+    "trip_summary_mi": "{0} mi · {1} min"
   },
   "vehicle_control": {
     "cloud_required": "Connettere un account BYD nelle impostazioni per utilizzare questo controllo",
@@ -130,6 +137,7 @@
     "cloud_failed": "Non riuscivo a raggiungere l'auto  riprova quando il veicolo è sveglio",
     "rate_limited": "Un comando è ancora in corso.",
     "not_supported": "Questo controllo non è disponibile al momento.",
+    "blocked_moving": "Non disponibile mentre il veicolo è in movimento.",
     "find_car_label": "Trova la macchina",
     "battery_heat_label": "Calore di batteria",
     "close_all_windows_label": "Tutti i finestrini chiusi"

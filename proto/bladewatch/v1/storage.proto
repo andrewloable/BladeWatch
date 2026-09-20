@@ -8,18 +8,24 @@ option java_multiple_files = true;
 // StorageService manages recording storage limits and external drive cleanup.
 //
 // HTTP mapping (QualitySettingsApiHandler + ExternalStorageApiHandler + FormatStorageApiHandler):
-//   GetStorageSettings      GET  /api/settings/storage
-//   SetStorageSettings      POST /api/settings/storage
-//   GetExternalStorage      GET  /api/storage/external
-//   SetExternalConfig       POST /api/storage/external/config
-//   TriggerCleanup          POST /api/storage/external/cleanup
-//   PreviewCleanup          GET  /api/storage/external/preview
-//   RefreshExternalStorage  POST /api/storage/external/refresh
-//   ListFormatVolumes       GET  /api/storage/format
-//   FormatVolume            POST /api/storage/format
+//   GetStorageSettings         GET  /api/settings/storage
+//   SetStorageSettings         POST /api/settings/storage
+//   PreviewStorageLimitChange  POST /api/settings/storage/preview
+//   GetExternalStorage         GET  /api/storage/external
+//   SetExternalConfig          POST /api/storage/external/config
+//   TriggerCleanup             POST /api/storage/external/cleanup
+//   PreviewCleanup             GET  /api/storage/external/preview
+//   RefreshExternalStorage     POST /api/storage/external/refresh
+//   ListFormatVolumes          GET  /api/storage/format
+//   FormatVolume               POST /api/storage/format
 service StorageService {
   rpc GetStorageSettings(GetStorageSettingsRequest) returns (GetStorageSettingsResponse);
   rpc SetStorageSettings(SetStorageSettingsRequest) returns (SetStorageSettingsResponse);
+  // BladeWatch-gyg1.4: a separate, read-only RPC -- deliberately not a "dry run" flag on
+  // SetStorageSettings -- so a client can preview a lowered limit's real impact with a
+  // guarantee that SetStorageSettings itself was never called, and therefore nothing was
+  // written and no cleanup ran.
+  rpc PreviewStorageLimitChange(PreviewStorageLimitChangeRequest) returns (PreviewStorageLimitChangeResponse);
   rpc GetExternalStorage(GetExternalStorageRequest) returns (GetExternalStorageResponse);
   rpc SetExternalConfig(SetExternalConfigRequest) returns (SetExternalConfigResponse);
   rpc TriggerCleanup(TriggerCleanupRequest) returns (TriggerCleanupResponse);
@@ -71,6 +77,11 @@ message GetStorageSettingsResponse {
   int64 internal_total_bytes = 22 [json_name = "internalTotalSpace"];
   string internal_free_formatted = 23;
   string internal_total_formatted = 24;
+  // True when an SD card configured for storage failed to mount after repeated attempts at
+  // daemon startup and the daemon kept the SD_CARD preference (not silently downgraded to
+  // internal). See sd_card_mount_error for a user-facing message.
+  bool sd_card_mount_failed = 25;
+  string sd_card_mount_error = 26;
 }
 
 message SetStorageSettingsRequest {
@@ -80,9 +91,37 @@ message SetStorageSettingsRequest {
   string surveillance_storage_type = 4;
 }
 
+// CleanupImpact reports the real (not estimated) effect of a limit on existing files, from
+// the identical selection algorithm StorageManager.ensureSpace uses.
+message CleanupImpact {
+  int32 file_count = 1;
+  int64 total_bytes = 2;
+}
+
 message SetStorageSettingsResponse {
   bool success = 1;
   string error = 2;
+  // Present only when applying this request actually deleted at least one existing file for
+  // the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+  // finds this out BEFORE applying.
+  CleanupImpact recordings_impact = 3;
+  CleanupImpact surveillance_impact = 4;
+}
+
+message PreviewStorageLimitChangeRequest {
+  // 0 = do not preview recordings.
+  int64 recordings_limit_mb = 1;
+  // 0 = do not preview surveillance.
+  int64 surveillance_limit_mb = 2;
+}
+
+message PreviewStorageLimitChangeResponse {
+  bool success = 1;
+  string error = 2;
+  // Present iff recordings_limit_mb was set in the request.
+  CleanupImpact recordings_impact = 3;
+  // Present iff surveillance_limit_mb was set in the request.
+  CleanupImpact surveillance_impact = 4;
 }
 
 message GetExternalStorageRequest {}

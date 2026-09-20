@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Órgão de pedido inválido: {0}",
     "performance_no_data": "Monitoramento do desempenho não iniciado ou ainda não recolhidos dados",
     "soh_not_initialized": "SohEstimator não iniciado",
+    "soh_nominal_range": "A capacidade nominal deve estar entre 8 e 120 kWh",
     "reset_no_categories": "Nenhuma categoria especificada",
     "reset_unknown_category": "Categoria desconhecida",
     "reset_trip_in_progress": "Viagem em andamento  desligue ACC primeiro",
@@ -75,6 +76,8 @@
     "surveillance_invalid_quadrant_with_id": "Quadrante inválido: {0}",
     "surveillance_event_frame_failed_with_detail": "Falhou em processar o quadro do evento: {0}",
     "surveillance_no_frame_available": "Nenhum quadro disponível  iniciar a vigilância ou gravar um evento primeiro",
+    "telemetry_overlay_unknown_type_with_id": "Tipo de gravação desconhecido: {0}",
+    "telemetry_overlay_fields_missing": "\"fields\" ausente",
     "update_app_context_not_ready": "Contexto do aplicativo não pronto",
     "update_check_timed_out": "Verificação de atualização",
     "update_disabled_in_public_mode": "As atualizações são desativadas no modo de compartilhamento PÚBLICO.",
@@ -118,7 +121,11 @@
     "area_hood": "Capuz",
     "area_trunk": "Tropeço",
     "area_fuel_cap": "Capa de combustível",
-    "area_door_n": "Porta {0}"
+    "area_door_n": "Porta {0}",
+    "trip_started": "Viagem iniciada",
+    "trip_ended": "Viagem encerrada",
+    "trip_summary_km": "{0} km · {1} min",
+    "trip_summary_mi": "{0} mi · {1} min"
   },
   "vehicle_control": {
     "cloud_required": "Conectar uma conta BYD em Configurações para usar este controle",
@@ -130,6 +137,7 @@
     "cloud_failed": "Não conseguiu chegar ao carro  tente novamente quando o veículo estiver acordado",
     "rate_limited": "Um comando ainda está em andamento.",
     "not_supported": "Este controlo não está disponível neste momento.",
+    "blocked_moving": "Indisponível enquanto o veículo está em movimento.",
     "find_car_label": "Encontre um carro .",
     "battery_heat_label": "Bateria de calor",
     "close_all_windows_label": "Todas as janelas fechadas"

@@ -63,9 +63,6 @@ class StartupController extends ChangeNotifier with DisposedSafeNotifier {
   bool _navigateToDashboard = false;
   bool get navigateToDashboard => _navigateToDashboard;
 
-  String? _channelErrorMessage;
-  String? get channelErrorMessage => _channelErrorMessage;
-
   DateTime? _readyAt;
 
   /// Advances the screen by one poll. The widget layer drives this on a
@@ -82,7 +79,6 @@ class StartupController extends ChangeNotifier with DisposedSafeNotifier {
 
     try {
       final statuses = await _daemonChannel.processStatus();
-      _channelErrorMessage = null;
       for (final d in CoreDaemon.values) {
         final running = statuses[d.processStatusKey] ?? false;
         final current = _rows[d]!;
@@ -94,8 +90,22 @@ class StartupController extends ChangeNotifier with DisposedSafeNotifier {
         // running && already ready: elapsed stays frozen at its recorded value.
       }
       await _recomputePhase();
-    } catch (e) {
-      _channelErrorMessage = e.toString();
+    } catch (_) {
+      // Swallowed on purpose, and nothing is surfaced to the screen.
+      //
+      // The overwhelmingly common case here is PlatformChannelErrorReason.daemonNotUp,
+      // which on this screen is not an error at all — it is the normal state. Nothing
+      // listens on 19876 until CameraDaemon is up, so ECONNREFUSED is the expected answer
+      // to every poll for the first ~45s after boot, and this tick runs roughly once a
+      // second throughout. The screen used to print the raw exception across its header in
+      // red, which is how a socket errno and two loopback port numbers ended up as the
+      // headline on a screen titled "Getting your dashcam ready".
+      //
+      // The rows already say what is true — each stays [DaemonRowStatus.waiting] while the
+      // channel is down — and the "Continue anyway" button appears regardless after
+      // [_continueAnywayDelay], so a permanently broken channel still degrades honestly.
+      // Catching is still required: tick() is driven by a Timer.periodic in the widget and
+      // an escaping exception would kill the poll loop.
     }
 
     notifyListeners();

@@ -1557,7 +1557,8 @@
     "badgeLive": "● CANLI",
     "badgeConnecting": "○ Bağlanıyor…",
     "notConnected": "Kamera yayını bağlı değil",
-    "decoderUnsupported": "Bu tarayıcı canlı yayını oynatamıyor. Chrome veya Edge gibi video kod çözmeyi destekleyen bir tarayıcı gerekir. Tor Browser ve Firefox ESR bunu henüz desteklemiyor."
+    "decoderUnsupported": "Bu tarayıcı canlı yayını oynatamıyor. Chrome veya Edge gibi video kod çözmeyi destekleyen bir tarayıcı gerekir. Tor Browser ve Firefox ESR bunu henüz desteklemiyor.",
+    "stillFrameLabel": "Sabit görüntü — canlı video değil"
   },
   "location": {
     "themeAuto": "Otomatik",

@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Geçersiz talep organı: {0}",
     "performance_no_data": "Performans izleme başlatılmamış veya henüz bir veri toplanmamış",
     "soh_not_initialized": "SohEstimator başlatılmamış",
+    "soh_nominal_range": "Nominal kapasite 8 ile 120 kWh arasında olmalıdır",
     "reset_no_categories": "Belgilendirilmemiş kategoriler",
     "reset_unknown_category": "Bilinmeyen kategori",
     "reset_trip_in_progress": "Yolculuk devam ediyor  ACC'i önce kapat",
@@ -75,6 +76,8 @@
     "surveillance_invalid_quadrant_with_id": "Geçersiz dörtlük: {0}",
     "surveillance_event_frame_failed_with_detail": "Olay çerçevesini işlemeyi başaramadım: {0}",
     "surveillance_no_frame_available": "Hiçbir çerçeve mevcut değil  önce izlemeyi başlatın veya bir olayı kaydetin",
+    "telemetry_overlay_unknown_type_with_id": "Bilinmeyen kayıt türü: {0}",
+    "telemetry_overlay_fields_missing": "\"fields\" eksik",
     "update_app_context_not_ready": "Uygulama bağlamı hazır değil",
     "update_check_timed_out": "Güncelleme kontrolü zamanı",
     "update_disabled_in_public_mode": "PUBLIC paylaşım modunda güncellemeler devre dışı bırakılır.",
@@ -118,7 +121,11 @@
     "area_hood": "Kapuk",
     "area_trunk": "Çanta",
     "area_fuel_cap": "Yakıt kapağı",
-    "area_door_n": "Kapı {0}"
+    "area_door_n": "Kapı {0}",
+    "trip_started": "Yolculuk başladı",
+    "trip_ended": "Yolculuk sona erdi",
+    "trip_summary_km": "{0} km · {1} dk",
+    "trip_summary_mi": "{0} mi · {1} dk"
   },
   "vehicle_control": {
     "cloud_required": "Bu kontrolü kullanmak için Ayarlarda BYD hesabını bağlayın",
@@ -130,6 +137,7 @@
     "cloud_failed": "Araca ulaşamadım. Araç uyanıkken tekrar dene.",
     "rate_limited": "Bir komut hala devam ediyor  birkaç saniye bekleyin",
     "not_supported": "Bu kontrol şu anda kullanılamıyor.",
+    "blocked_moving": "Araç hareket halindeyken kullanılamaz.",
     "find_car_label": "Arabayı bul .",
     "battery_heat_label": "Sıcaklık Battery",
     "close_all_windows_label": "Tüm pencereler kapatıldı"

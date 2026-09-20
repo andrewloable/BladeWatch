@@ -37,6 +37,8 @@ abstract class RecordingsServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.GetInflightStatusRequest request);
   $async.Future<$0.GetEventTimelineResponse> getEventTimeline(
       $pb.ServerContext ctx, $0.GetEventTimelineRequest request);
+  $async.Future<$0.MarkRecordingResponse> markRecording(
+      $pb.ServerContext ctx, $0.MarkRecordingRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
@@ -56,6 +58,8 @@ abstract class RecordingsServiceBase extends $pb.GeneratedService {
         return $0.GetInflightStatusRequest();
       case 'GetEventTimeline':
         return $0.GetEventTimelineRequest();
+      case 'MarkRecording':
+        return $0.MarkRecordingRequest();
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -80,6 +84,8 @@ abstract class RecordingsServiceBase extends $pb.GeneratedService {
         return getInflightStatus(ctx, request as $0.GetInflightStatusRequest);
       case 'GetEventTimeline':
         return getEventTimeline(ctx, request as $0.GetEventTimelineRequest);
+      case 'MarkRecording':
+        return markRecording(ctx, request as $0.MarkRecordingRequest);
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }

@@ -5,7 +5,9 @@ import 'dart:typed_data';
 import 'package:bladewatch_ui/gen/bladewatch/v1/stream.pb.dart';
 import 'package:bladewatch_ui/platform/live_view_texture_channel.dart';
 import 'package:bladewatch_ui/rpc/jwt_source.dart';
+import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/stream_service_client.dart';
+import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/live_view/live_view_controller.dart';
 import 'package:bladewatch_ui/screens/live_view/live_view_models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -72,6 +74,8 @@ void main() {
     var index = 0;
     return LiveViewController(
       streamService: StreamServiceClient(rpc),
+      systemService: SystemServiceClient(rpc),
+      recordingsService: RecordingsServiceClient(rpc),
       jwtSource: jwt,
       textureChannel: LiveViewTextureChannel(channel),
       retryDelay: Duration.zero,
@@ -211,6 +215,8 @@ void main() {
       var attempts = 0;
       final c = LiveViewController(
         streamService: StreamServiceClient(rpc),
+        systemService: SystemServiceClient(rpc),
+        recordingsService: RecordingsServiceClient(rpc),
         jwtSource: jwt,
         textureChannel: LiveViewTextureChannel(channel),
         retryDelay: Duration.zero,
@@ -243,6 +249,8 @@ void main() {
       jwt.next = secret;
       final c = LiveViewController(
         streamService: StreamServiceClient(rpc),
+        systemService: SystemServiceClient(rpc),
+        recordingsService: RecordingsServiceClient(rpc),
         jwtSource: jwt,
         textureChannel: LiveViewTextureChannel(channel),
         retryDelay: Duration.zero,
@@ -264,6 +272,8 @@ void main() {
       final socket = FakeLiveSocket();
       final c = LiveViewController(
         streamService: StreamServiceClient(rpc),
+        systemService: SystemServiceClient(rpc),
+        recordingsService: RecordingsServiceClient(rpc),
         jwtSource: jwt,
         textureChannel: LiveViewTextureChannel(channel),
         retryDelay: Duration.zero,
@@ -416,6 +426,8 @@ void main() {
       // Re-stub createTexture to return increasing ids across calls.
       final c = LiveViewController(
         streamService: StreamServiceClient(rpc),
+        systemService: SystemServiceClient(rpc),
+        recordingsService: RecordingsServiceClient(rpc),
         jwtSource: jwt,
         textureChannel: LiveViewTextureChannel(originalStub),
         retryDelay: Duration.zero,
@@ -429,6 +441,113 @@ void main() {
       expect(c.textureId, firstId); // fake channel always returns the same stubbed id
       expect(socketA.closed, isTrue);
       expect(channel.calls.where((call) => call.method == 'createTexture').length, 2);
+    });
+  });
+
+  group('recording status', () {
+    test('start() refreshes isRecording from GetStatus', () async {
+      stubHappyRpcPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'recording': [0]});
+      final c = build(sockets: () => [FakeLiveSocket()]);
+
+      await c.start();
+      await flush();
+
+      expect(c.state.isRecording, isTrue);
+    });
+
+    test('GetStatus reporting nothing recording leaves isRecording false', () async {
+      stubHappyRpcPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'recording': []});
+      final c = build(sockets: () => [FakeLiveSocket()]);
+
+      await c.start();
+      await flush();
+
+      expect(c.state.isRecording, isFalse);
+    });
+
+    test('GetStatus throwing leaves isRecording false rather than propagating', () async {
+      stubHappyRpcPath();
+      rpc.stubError('SystemService', 'GetStatus', const ConnectError('unavailable', 'down'));
+      final c = build(sockets: () => [FakeLiveSocket()]);
+
+      await c.start();
+      await flush();
+
+      expect(c.state.isRecording, isFalse);
+    });
+  });
+
+  group('markRecording', () {
+    Future<LiveViewController> buildRecording() async {
+      stubHappyRpcPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'recording': [0]});
+      final c = build(sockets: () => [FakeLiveSocket()]);
+      await c.start();
+      await flush();
+      return c;
+    }
+
+    test('not recording: markRecording is a no-op and sends no RPC', () async {
+      stubHappyRpcPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'recording': []});
+      final c = build(sockets: () => [FakeLiveSocket()]);
+      await c.start();
+      await flush();
+
+      await c.markRecording();
+
+      expect(rpc.calls.where((call) => call.method == 'MarkRecording'), isEmpty);
+    });
+
+    test('recording: markRecording sends MarkRecording and reports success', () async {
+      final c = await buildRecording();
+      rpc.stubJson('RecordingsService', 'MarkRecording', {
+        'success': true,
+        'filename': 'clip1.mp4',
+        'markTimestampMs': '1000',
+      });
+
+      await c.markRecording();
+
+      expect(rpc.calls.where((call) => call.method == 'MarkRecording').length, 1);
+      expect(c.state.markStatus, MarkStatus.idle);
+      expect(c.state.markMessage, isNotNull);
+    });
+
+    test('a double tap inside one in-flight call sends exactly one RPC', () async {
+      final c = await buildRecording();
+      rpc.stubJson('RecordingsService', 'MarkRecording', {'success': true, 'filename': 'clip1.mp4', 'markTimestampMs': '1000'});
+      // Fire both taps before either has a chance to complete -- the guard under
+      // test is markStatus == marking, not a timer, so no delay is needed here.
+      final first = c.markRecording();
+      final second = c.markRecording();
+
+      await first;
+      await second;
+
+      expect(rpc.calls.where((call) => call.method == 'MarkRecording').length, 1);
+    });
+
+    test('a failed RPC surfaces a message and returns markStatus to idle (no permanent spinner)', () async {
+      final c = await buildRecording();
+      rpc.stubError('RecordingsService', 'MarkRecording', const ConnectError('unavailable', 'daemon down'));
+
+      await c.markRecording();
+
+      expect(c.state.markStatus, MarkStatus.idle);
+      expect(c.state.markMessage, isNotNull);
+    });
+
+    test('server-reported failure (nothing recording server-side) surfaces the reason', () async {
+      final c = await buildRecording();
+      rpc.stubJson('RecordingsService', 'MarkRecording', {'success': false, 'reason': 'not_recording'});
+
+      await c.markRecording();
+
+      expect(c.state.markStatus, MarkStatus.idle);
+      expect(c.state.markMessage, 'not_recording');
     });
   });
 }

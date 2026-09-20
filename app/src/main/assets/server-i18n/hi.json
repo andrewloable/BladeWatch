@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "अमान्य अनुरोध निकायः {0}",
     "performance_no_data": "प्रदर्शन निगरानी शुरू नहीं हुई या अभी तक कोई डेटा एकत्र नहीं किया गया है",
     "soh_not_initialized": "SohEstimator प्रारंभ नहीं किया गया",
+    "soh_nominal_range": "नाममात्र क्षमता 8 और 120 kWh के बीच होनी चाहिए",
     "reset_no_categories": "कोई श्रेणी निर्दिष्ट नहीं",
     "reset_unknown_category": "अज्ञात श्रेणी",
     "reset_trip_in_progress": "यात्रा चल रही है  पहले ACC बंद करें",
@@ -75,6 +76,8 @@
     "surveillance_invalid_quadrant_with_id": "अमान्य चतुर्भुजः {0}",
     "surveillance_event_frame_failed_with_detail": "घटना फ्रेम को संसाधित करने में विफलः {0}",
     "surveillance_no_frame_available": "कोई फ्रेम उपलब्ध नहीं है  निगरानी शुरू करें या पहले किसी घटना को रिकॉर्ड करें",
+    "telemetry_overlay_unknown_type_with_id": "अज्ञात रिकॉर्डिंग प्रकार: {0}",
+    "telemetry_overlay_fields_missing": "\"fields\" गायब है",
     "update_app_context_not_ready": "एप्लिकेशन संदर्भ तैयार नहीं",
     "update_check_timed_out": "अद्यतन जाँच समय समाप्त",
     "update_disabled_in_public_mode": "पब्लिक शेयरिंग मोड में अपडेट अक्षम हैं। पहले कार में ऐप में प्राइवेट मोड पर स्विच करें।",
@@ -118,7 +121,11 @@
     "area_hood": "हुड",
     "area_trunk": "ट्रंक",
     "area_fuel_cap": "ईंधन कैप",
-    "area_door_n": "दरवाजा {0}"
+    "area_door_n": "दरवाजा {0}",
+    "trip_started": "यात्रा शुरू हुई",
+    "trip_ended": "यात्रा समाप्त हुई",
+    "trip_summary_km": "{0} km · {1} मिनट",
+    "trip_summary_mi": "{0} मील · {1} मिनट"
   },
   "vehicle_control": {
     "cloud_required": "इस नियंत्रण का उपयोग करने के लिए सेटिंग्स में एक BYD खाता कनेक्ट करें",
@@ -130,6 +137,7 @@
     "cloud_failed": "कार तक नहीं पहुंच सका  वाहन जागने पर फिर से प्रयास करें",
     "rate_limited": "एक कमांड अभी भी चल रहा है  कुछ सेकंड प्रतीक्षा करें",
     "not_supported": "यह नियंत्रण अभी उपलब्ध नहीं है",
+    "blocked_moving": "वाहन के चलते समय उपलब्ध नहीं है।",
     "find_car_label": "कार खोजें",
     "battery_heat_label": "गर्मी की बल्लेबाजी",
     "close_all_windows_label": "सभी खिड़कियां बंद करें"

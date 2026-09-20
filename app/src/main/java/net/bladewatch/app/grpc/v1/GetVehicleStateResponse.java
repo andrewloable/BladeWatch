@@ -386,6 +386,33 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int MEDIA_VOLUME_PERCENT_FIELD_NUMBER = 14;
+  private int mediaVolumePercent_ = 0;
+  /**
+   * <pre>
+   * BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+   * shows the real value rather than a local guess.
+   * </pre>
+   *
+   * <code>int32 media_volume_percent = 14 [json_name = "mediaVolumePercent"];</code>
+   * @return The mediaVolumePercent.
+   */
+  @java.lang.Override
+  public int getMediaVolumePercent() {
+    return mediaVolumePercent_;
+  }
+
+  public static final int MEDIA_MUTED_FIELD_NUMBER = 15;
+  private boolean mediaMuted_ = false;
+  /**
+   * <code>bool media_muted = 15 [json_name = "mediaMuted"];</code>
+   * @return The mediaMuted.
+   */
+  @java.lang.Override
+  public boolean getMediaMuted() {
+    return mediaMuted_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -438,6 +465,12 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(error_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 13, error_);
+    }
+    if (mediaVolumePercent_ != 0) {
+      output.writeInt32(14, mediaVolumePercent_);
+    }
+    if (mediaMuted_ != false) {
+      output.writeBool(15, mediaMuted_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -493,6 +526,14 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(error_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(13, error_);
+    }
+    if (mediaVolumePercent_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeInt32Size(14, mediaVolumePercent_);
+    }
+    if (mediaMuted_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(15, mediaMuted_);
     }
     return size;
   }
@@ -577,6 +618,10 @@ private static final long serialVersionUID = 0L;
     }
     if (!getError()
         .equals(other.getError())) return false;
+    if (getMediaVolumePercent()
+        != other.getMediaVolumePercent()) return false;
+    if (getMediaMuted()
+        != other.getMediaMuted()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -637,6 +682,11 @@ private static final long serialVersionUID = 0L;
     }
     hash = (37 * hash) + ERROR_FIELD_NUMBER;
     hash = (53 * hash) + getError().hashCode();
+    hash = (37 * hash) + MEDIA_VOLUME_PERCENT_FIELD_NUMBER;
+    hash = (53 * hash) + getMediaVolumePercent();
+    hash = (37 * hash) + MEDIA_MUTED_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getMediaMuted());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -841,6 +891,8 @@ private static final long serialVersionUID = 0L;
         tyresBuilder_ = null;
       }
       error_ = "";
+      mediaVolumePercent_ = 0;
+      mediaMuted_ = false;
       return this;
     }
 
@@ -947,6 +999,12 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00001000) != 0)) {
         result.error_ = error_;
       }
+      if (((from_bitField0_ & 0x00002000) != 0)) {
+        result.mediaVolumePercent_ = mediaVolumePercent_;
+      }
+      if (((from_bitField0_ & 0x00004000) != 0)) {
+        result.mediaMuted_ = mediaMuted_;
+      }
       result.bitField0_ |= to_bitField0_;
     }
 
@@ -1002,6 +1060,12 @@ private static final long serialVersionUID = 0L;
         error_ = other.error_;
         bitField0_ |= 0x00001000;
         onChanged();
+      }
+      if (other.getMediaVolumePercent() != 0) {
+        setMediaVolumePercent(other.getMediaVolumePercent());
+      }
+      if (other.getMediaMuted() != false) {
+        setMediaMuted(other.getMediaMuted());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1116,6 +1180,16 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00001000;
               break;
             } // case 106
+            case 112: {
+              mediaVolumePercent_ = input.readInt32();
+              bitField0_ |= 0x00002000;
+              break;
+            } // case 112
+            case 120: {
+              mediaMuted_ = input.readBool();
+              bitField0_ |= 0x00004000;
+              break;
+            } // case 120
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -2564,6 +2638,85 @@ private static final long serialVersionUID = 0L;
       checkByteStringIsUtf8(value);
       error_ = value;
       bitField0_ |= 0x00001000;
+      onChanged();
+      return this;
+    }
+
+    private int mediaVolumePercent_ ;
+    /**
+     * <pre>
+     * BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+     * shows the real value rather than a local guess.
+     * </pre>
+     *
+     * <code>int32 media_volume_percent = 14 [json_name = "mediaVolumePercent"];</code>
+     * @return The mediaVolumePercent.
+     */
+    @java.lang.Override
+    public int getMediaVolumePercent() {
+      return mediaVolumePercent_;
+    }
+    /**
+     * <pre>
+     * BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+     * shows the real value rather than a local guess.
+     * </pre>
+     *
+     * <code>int32 media_volume_percent = 14 [json_name = "mediaVolumePercent"];</code>
+     * @param value The mediaVolumePercent to set.
+     * @return This builder for chaining.
+     */
+    public Builder setMediaVolumePercent(int value) {
+
+      mediaVolumePercent_ = value;
+      bitField0_ |= 0x00002000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
+     * shows the real value rather than a local guess.
+     * </pre>
+     *
+     * <code>int32 media_volume_percent = 14 [json_name = "mediaVolumePercent"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearMediaVolumePercent() {
+      bitField0_ = (bitField0_ & ~0x00002000);
+      mediaVolumePercent_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private boolean mediaMuted_ ;
+    /**
+     * <code>bool media_muted = 15 [json_name = "mediaMuted"];</code>
+     * @return The mediaMuted.
+     */
+    @java.lang.Override
+    public boolean getMediaMuted() {
+      return mediaMuted_;
+    }
+    /**
+     * <code>bool media_muted = 15 [json_name = "mediaMuted"];</code>
+     * @param value The mediaMuted to set.
+     * @return This builder for chaining.
+     */
+    public Builder setMediaMuted(boolean value) {
+
+      mediaMuted_ = value;
+      bitField0_ |= 0x00004000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool media_muted = 15 [json_name = "mediaMuted"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearMediaMuted() {
+      bitField0_ = (bitField0_ & ~0x00004000);
+      mediaMuted_ = false;
       onChanged();
       return this;
     }

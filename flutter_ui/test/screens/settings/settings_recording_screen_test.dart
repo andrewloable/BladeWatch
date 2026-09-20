@@ -4,9 +4,11 @@ import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_controller.dart';
+import 'package:bladewatch_ui/screens/settings/settings_recording_models.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:bladewatch_ui/gen/bladewatch/v1/settings.pb.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
@@ -19,11 +21,16 @@ void main() {
     rpc = FakeRpcClient();
   });
 
-  RecordingSettingsController buildController() => RecordingSettingsController(
+  RecordingSettingsController buildController() =>
+      RecordingSettingsController(
         systemService: SystemServiceClient(rpc),
         recordingsService: RecordingsServiceClient(rpc),
         settingsService: SettingsServiceClient(rpc),
         storageService: StorageServiceClient(rpc),
+        // initState() always calls loadOverlayFields(), even on tests that never open the
+        // Capture tab. It catches its own errors, and FakeRpcClient throws for any RPC a test
+        // has not stubbed, so "no real socket, ever" still holds without the raw senders that
+        // used to be injected here (BladeWatch-qwqq).
       );
 
   void stubHappyPath({bool sdCardAvailable = true}) {
@@ -92,6 +99,8 @@ void main() {
 
     expect(find.byKey(const ValueKey('recording.mode.driveMode')), findsOneWidget);
     expect(find.byKey(const ValueKey('recording.limit.10')), findsOneWidget);
+    expect(find.byKey(const ValueKey('recording.priority.performance')), findsOneWidget);
+    expect(find.byKey(const ValueKey('recording.priority.reliability')), findsOneWidget);
   });
 
   testWidgets('selecting a different mode enables Apply, and applying calls SetRecordingMode', (tester) async {
@@ -150,6 +159,31 @@ void main() {
     expect(chip.selected, isTrue);
   });
 
+  testWidgets('selecting a recording-priority option enables Apply, and applying sends it', (tester) async {
+    stubHappyPath();
+    rpc.stubJson('SettingsService', 'SetRecordingMode', {'success': true});
+    rpc.stubJson('SettingsService', 'SetQuality', {'success': true});
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.capture')));
+    await tester.pumpAndSettle();
+
+    final applyBefore = tester.widget<FilledButton>(find.byKey(const ValueKey('recording.apply.capture')));
+    expect(applyBefore.onPressed, isNull);
+
+    await tester.tap(find.byKey(const ValueKey('recording.priority.performance')));
+    await tester.pumpAndSettle();
+
+    final applyAfter = tester.widget<FilledButton>(find.byKey(const ValueKey('recording.apply.capture')));
+    expect(applyAfter.onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const ValueKey('recording.apply.capture')));
+    await tester.pumpAndSettle();
+
+    final call = rpc.calls.firstWhere((c) => c.method == 'SetQuality');
+    expect((call.request as dynamic).recordingPriority, 'PERFORMANCE');
+  });
+
   testWidgets('Quality tab lets the user pick a tier', (tester) async {
     stubHappyPath();
     rpc.stubJson('SettingsService', 'SetQuality', {'success': true});
@@ -205,6 +239,51 @@ void main() {
     final sdChip = tester.widget<BwChoiceChip>(find.byKey(const ValueKey('recording.storage.sdCard')));
     expect(sdChip.onSelected, isNull);
     expect(find.byKey(const ValueKey('recording.format.start')), findsNothing);
+  });
+
+  testWidgets('Storage tab shows a restart-device banner when the SD card failed to mount at boot', (tester) async {
+    rpc.stubJson('SystemService', 'GetStatus', {
+      'recordingStatus': {'configuredMode': 'DRIVE_MODE', 'isRecording': true},
+    });
+    rpc.stubJson('RecordingsService', 'GetStats', {
+      'stats': {'recordingsCount': 3, 'proximityCount': 2},
+    });
+    rpc.stubJson('SettingsService', 'GetQuality', {'recordingQuality': 'HIGH', 'recordingCodec': 'H264', 'recordingSegmentMinutes': 10});
+    rpc.stubJson('StorageService', 'GetStorageSettings', {
+      'recordingsStorageType': 'SD_CARD',
+      'recordingsLimitMb': 800,
+      'recordingsSize': 500 * 1024 * 1024,
+      'recordingsCount': 12,
+      'sdCardAvailable': false,
+      'sdCardFreeFormatted': '',
+      'internalFreeFormatted': '5.4 GB',
+      'recordingsPath': '/storage/emulated/0/BladeWatch/recordings',
+      'minLimitMb': 100,
+      'maxLimitMb': 100000,
+      'maxLimitMbSdCard': 100000,
+      'internalTotalSpace': 20000 * 1024 * 1024,
+      'sdCardTotalSpace': 0,
+      'sdCardMountFailed': true,
+      'sdCardMountError': 'SD card is configured for storage but did not mount after 5 attempts at startup. '
+          'Restart the device with the SD card seated to restore SD card storage.',
+    });
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('recording.storage.sdMountFailedBanner')), findsOneWidget);
+    expect(find.textContaining('Restart the device'), findsOneWidget);
+  });
+
+  testWidgets('Storage tab shows no restart banner on the ordinary happy path', (tester) async {
+    stubHappyPath();
+    await pump(tester, buildController());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('recording.storage.sdMountFailedBanner')), findsNothing);
   });
 
   testWidgets('moving the storage limit slider marks the tab dirty', (tester) async {
@@ -420,4 +499,214 @@ void main() {
     expect(tabBarY, greaterThan(contentY));
   });
 
+  group('storage limit confirmation (BladeWatch-gyg1.4)', () {
+    Future<RecordingSettingsController> openStorageTabAt(WidgetTester tester, int limitMb) async {
+      final controller = buildController();
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('recording.tab.storage')));
+      await tester.pumpAndSettle();
+      controller.setStorageLimitMb(limitMb);
+      await tester.pumpAndSettle();
+      return controller;
+    }
+
+    testWidgets('lowering to a value the preview says deletes files shows a confirmation with the count and size',
+        (tester) async {
+      stubHappyPath(); // loaded limitMb is 800
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        // 12 GiB exactly, so formatStorageMb's binary MB->GB conversion is exact ("12.0 GB")
+        // with no rounding ambiguity to reproduce in the assertion below.
+        'recordingsImpact': {'fileCount': 48, 'totalBytes': 12884901888},
+      });
+      await openStorageTabAt(tester, 100);
+
+      await tester.tap(find.byKey(const ValueKey('recording.apply.storage')));
+      await tester.pumpAndSettle();
+
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.byKey(const ValueKey('recording.storageConfirm.dialog')), findsOneWidget);
+      expect(find.text(l10n.settings_recording_storage_confirm_message(48, '12.0 GB')), findsOneWidget);
+    });
+
+    testWidgets('cancelling leaves SetStorageSettings uncalled', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'recordingsImpact': {'fileCount': 48, 'totalBytes': 12300000000},
+      });
+      await openStorageTabAt(tester, 100);
+      await tester.tap(find.byKey(const ValueKey('recording.apply.storage')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('recording.storageConfirm.cancel')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('recording.storageConfirm.dialog')), findsNothing);
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), isEmpty);
+    });
+
+    testWidgets('confirming calls SetStorageSettings exactly once with the new value', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'recordingsImpact': {'fileCount': 48, 'totalBytes': 12300000000},
+      });
+      rpc.stubJson('StorageService', 'SetStorageSettings', {'success': true});
+      await openStorageTabAt(tester, 100);
+      await tester.tap(find.byKey(const ValueKey('recording.apply.storage')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('recording.storageConfirm.confirm')));
+      await tester.pumpAndSettle();
+
+      final calls = rpc.calls.where((c) => c.method == 'SetStorageSettings').toList();
+      expect(calls, hasLength(1));
+      expect((calls.single.request as dynamic).recordingsLimitMb.toInt(), 100);
+    });
+
+    testWidgets('leaving the screen while the preview is still in flight does not throw', (tester) async {
+      // BladeWatch-61ed: _applyStorage awaits previewStorageLimitImpact and then calls
+      // showDialog(context: State.context). Reading that context after the widget is
+      // unmounted throws "the State no longer has a context (and should be considered
+      // defunct)". use_build_context_synchronously does not catch it because the await and
+      // the context read are in different methods and the lint is intra-procedural.
+      //
+      // previewStorageLimitImpact turns an RPC failure into a NON-null unknown() impact, so
+      // the dialog is attempted even on the slow/failing-daemon path that widens this window.
+      stubHappyPath();
+      final pending = rpc.stubPending('StorageService', 'PreviewStorageLimitChange');
+      rpc.stubJson('StorageService', 'SetStorageSettings', {'success': true});
+      await openStorageTabAt(tester, 100);
+
+      await tester.tap(find.byKey(const ValueKey('recording.apply.storage')));
+      await tester.pump(); // the preview is now awaiting and cannot complete yet
+
+      // The owner navigates away before the daemon answers.
+      await tester.pumpWidget(const SizedBox.shrink());
+      pending.complete({
+        'recordingsImpact': {'fileCount': 48, 'totalBytes': 12300000000},
+      });
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const ValueKey('recording.storageConfirm.dialog')), findsNothing);
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), isEmpty,
+          reason: 'a screen the owner has left must not go on to write settings');
+    });
+
+    testWidgets('raising the limit applies directly with no dialog and no preview call', (tester) async {
+      stubHappyPath(); // loaded limitMb is 800
+      rpc.stubJson('StorageService', 'SetStorageSettings', {'success': true});
+      await openStorageTabAt(tester, 900);
+
+      await tester.tap(find.byKey(const ValueKey('recording.apply.storage')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('recording.storageConfirm.dialog')), findsNothing);
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), hasLength(1));
+      expect(rpc.calls.where((c) => c.method == 'PreviewStorageLimitChange'), isEmpty);
+    });
+
+    testWidgets('lowering to a value that deletes nothing applies directly with no dialog', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('StorageService', 'PreviewStorageLimitChange', {
+        'recordingsImpact': {'fileCount': 0, 'totalBytes': 0},
+      });
+      rpc.stubJson('StorageService', 'SetStorageSettings', {'success': true});
+      await openStorageTabAt(tester, 100);
+
+      await tester.tap(find.byKey(const ValueKey('recording.apply.storage')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('recording.storageConfirm.dialog')), findsNothing);
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), hasLength(1));
+    });
+
+    testWidgets('the preview RPC failing shows a distinct impact-unknown confirmation, and cancelling it '
+        'also leaves SetStorageSettings uncalled', (tester) async {
+      stubHappyPath();
+      rpc.stubError('StorageService', 'PreviewStorageLimitChange', const ConnectError('unavailable', 'down'));
+      await openStorageTabAt(tester, 100);
+
+      await tester.tap(find.byKey(const ValueKey('recording.apply.storage')));
+      await tester.pumpAndSettle();
+
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.byKey(const ValueKey('recording.storageConfirm.dialog')), findsOneWidget);
+      expect(find.text(l10n.settings_recording_storage_confirm_unknown_title), findsOneWidget);
+      expect(find.text(l10n.settings_recording_storage_confirm_unknown_message), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('recording.storageConfirm.cancel')));
+      await tester.pumpAndSettle();
+
+      expect(rpc.calls.where((c) => c.method == 'SetStorageSettings'), isEmpty);
+    });
+  });
+
+  // BladeWatch-y78o.5: the burned-in telemetry overlay's field checklist, in the Capture tab.
+  group('overlay field checklist', () {
+    testWidgets('shows a checkbox per field, checked according to the loaded selection', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SettingsService', 'GetTelemetryOverlayFields', {
+        'success': true,
+        'availableFields': ['SPEED', 'GEAR'],
+        'selections': {
+          'continuous': {'fields': ['SPEED']},
+          'surveillance': {'fields': <String>[]},
+          'proximity': {'fields': <String>[]},
+        },
+      });
+      final controller = buildController();
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('recording.tab.capture')));
+      await tester.pumpAndSettle();
+
+      final speedTile =
+          tester.widget<CheckboxListTile>(find.byKey(const ValueKey('recording.overlayField.speed')));
+      final gearTile = tester.widget<CheckboxListTile>(find.byKey(const ValueKey('recording.overlayField.gear')));
+      expect(speedTile.value, isTrue);
+      expect(gearTile.value, isFalse);
+    });
+
+    testWidgets('every field has its own checkbox, none of them named for VIN or location', (tester) async {
+      stubHappyPath();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('recording.tab.capture')));
+      await tester.pumpAndSettle();
+
+      for (final field in OverlayField.values) {
+        expect(find.byKey(ValueKey('recording.overlayField.${field.name}')), findsOneWidget);
+      }
+      // The forbidden-name guard itself lives in the daemon-side test (CameraProfileResolverTest
+      // pattern equivalent: OverlayFieldSelectionTest.kt) which reflects over the actual
+      // enumeration; this just confirms the widget tree has exactly the OverlayField.values
+      // set and nothing extra.
+      expect(find.byType(CheckboxListTile), findsNWidgets(OverlayField.values.length));
+    });
+
+    testWidgets('tapping a checkbox toggles it and sends the new selection to the daemon', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SettingsService', 'SetTelemetryOverlayFields', {'success': true});
+      final controller = buildController();
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('recording.tab.capture')));
+      await tester.pumpAndSettle();
+
+      final before =
+          tester.widget<CheckboxListTile>(find.byKey(const ValueKey('recording.overlayField.gear')));
+      expect(before.value, isTrue); // default-all: the load RPC is unstubbed here
+
+      await tester.tap(find.byKey(const ValueKey('recording.overlayField.gear')));
+      await tester.pumpAndSettle();
+
+      final after = tester.widget<CheckboxListTile>(find.byKey(const ValueKey('recording.overlayField.gear')));
+      expect(after.value, isFalse);
+      final sent = rpc.calls
+          .firstWhere((call) => call.method == 'SetTelemetryOverlayFields')
+          .request as SetTelemetryOverlayFieldsRequest;
+      expect(sent.fields.contains('GEAR'), isFalse);
+    });
+  });
 }

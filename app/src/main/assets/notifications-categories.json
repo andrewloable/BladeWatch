@@ -118,6 +118,24 @@
       "severity": "critical",
       "defaultClickUrl": "/vehicle",
       "note": "AC, DC charger, charging gun, or C10 breakdown reported by BMS"
+    },
+    {
+      "id": "trips.started",
+      "label": "Trip started",
+      "group": "Trips",
+      "defaultEnabled": false,
+      "severity": "info",
+      "defaultClickUrl": "/trips",
+      "note": "Fires when the gear-based trip detector starts tracking a new trip. Off by default -- turn on if you want a record of every drive starting."
+    },
+    {
+      "id": "trips.ended",
+      "label": "Trip ended",
+      "group": "Trips",
+      "defaultEnabled": false,
+      "severity": "info",
+      "defaultClickUrl": "/trips",
+      "note": "Fires once a trip is finalized (distance/duration above the minimum thresholds). Off by default -- a trip ends every time you park, and a notification on every park is how people turn all notifications off."
     }
   ]
 }

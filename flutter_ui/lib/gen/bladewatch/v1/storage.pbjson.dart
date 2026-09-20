@@ -192,6 +192,20 @@ const GetStorageSettingsResponse$json = {
       '5': 9,
       '10': 'internalTotalFormatted'
     },
+    {
+      '1': 'sd_card_mount_failed',
+      '3': 25,
+      '4': 1,
+      '5': 8,
+      '10': 'sdCardMountFailed'
+    },
+    {
+      '1': 'sd_card_mount_error',
+      '3': 26,
+      '4': 1,
+      '5': 9,
+      '10': 'sdCardMountError'
+    },
   ],
 };
 
@@ -217,7 +231,9 @@ final $typed_data.Uint8List getStorageSettingsResponseDescriptor = $convert.base
     '50ZXJuYWxfZnJlZV9ieXRlcxgVIAEoA1IRaW50ZXJuYWxGcmVlU3BhY2USMAoUaW50ZXJuYWxf'
     'dG90YWxfYnl0ZXMYFiABKANSEmludGVybmFsVG90YWxTcGFjZRI2ChdpbnRlcm5hbF9mcmVlX2'
     'Zvcm1hdHRlZBgXIAEoCVIVaW50ZXJuYWxGcmVlRm9ybWF0dGVkEjgKGGludGVybmFsX3RvdGFs'
-    'X2Zvcm1hdHRlZBgYIAEoCVIWaW50ZXJuYWxUb3RhbEZvcm1hdHRlZA==');
+    'X2Zvcm1hdHRlZBgYIAEoCVIWaW50ZXJuYWxUb3RhbEZvcm1hdHRlZBIvChRzZF9jYXJkX21vdW'
+    '50X2ZhaWxlZBgZIAEoCFIRc2RDYXJkTW91bnRGYWlsZWQSLQoTc2RfY2FyZF9tb3VudF9lcnJv'
+    'chgaIAEoCVIQc2RDYXJkTW91bnRFcnJvcg==');
 
 @$core.Deprecated('Use setStorageSettingsRequestDescriptor instead')
 const SetStorageSettingsRequest$json = {
@@ -262,20 +278,113 @@ final $typed_data.Uint8List setStorageSettingsRequestDescriptor = $convert.base6
     'JkaW5nc1N0b3JhZ2VUeXBlEjoKGXN1cnZlaWxsYW5jZV9zdG9yYWdlX3R5cGUYBCABKAlSF3N1'
     'cnZlaWxsYW5jZVN0b3JhZ2VUeXBl');
 
+@$core.Deprecated('Use cleanupImpactDescriptor instead')
+const CleanupImpact$json = {
+  '1': 'CleanupImpact',
+  '2': [
+    {'1': 'file_count', '3': 1, '4': 1, '5': 5, '10': 'fileCount'},
+    {'1': 'total_bytes', '3': 2, '4': 1, '5': 3, '10': 'totalBytes'},
+  ],
+};
+
+/// Descriptor for `CleanupImpact`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List cleanupImpactDescriptor = $convert.base64Decode(
+    'Cg1DbGVhbnVwSW1wYWN0Eh0KCmZpbGVfY291bnQYASABKAVSCWZpbGVDb3VudBIfCgt0b3RhbF'
+    '9ieXRlcxgCIAEoA1IKdG90YWxCeXRlcw==');
+
 @$core.Deprecated('Use setStorageSettingsResponseDescriptor instead')
 const SetStorageSettingsResponse$json = {
   '1': 'SetStorageSettingsResponse',
   '2': [
     {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
     {'1': 'error', '3': 2, '4': 1, '5': 9, '10': 'error'},
+    {
+      '1': 'recordings_impact',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.CleanupImpact',
+      '10': 'recordingsImpact'
+    },
+    {
+      '1': 'surveillance_impact',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.CleanupImpact',
+      '10': 'surveillanceImpact'
+    },
   ],
 };
 
 /// Descriptor for `SetStorageSettingsResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List setStorageSettingsResponseDescriptor =
+final $typed_data.Uint8List setStorageSettingsResponseDescriptor = $convert.base64Decode(
+    'ChpTZXRTdG9yYWdlU2V0dGluZ3NSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEh'
+    'QKBWVycm9yGAIgASgJUgVlcnJvchJJChFyZWNvcmRpbmdzX2ltcGFjdBgDIAEoCzIcLmJsYWRl'
+    'd2F0Y2gudjEuQ2xlYW51cEltcGFjdFIQcmVjb3JkaW5nc0ltcGFjdBJNChNzdXJ2ZWlsbGFuY2'
+    'VfaW1wYWN0GAQgASgLMhwuYmxhZGV3YXRjaC52MS5DbGVhbnVwSW1wYWN0UhJzdXJ2ZWlsbGFu'
+    'Y2VJbXBhY3Q=');
+
+@$core.Deprecated('Use previewStorageLimitChangeRequestDescriptor instead')
+const PreviewStorageLimitChangeRequest$json = {
+  '1': 'PreviewStorageLimitChangeRequest',
+  '2': [
+    {
+      '1': 'recordings_limit_mb',
+      '3': 1,
+      '4': 1,
+      '5': 3,
+      '10': 'recordingsLimitMb'
+    },
+    {
+      '1': 'surveillance_limit_mb',
+      '3': 2,
+      '4': 1,
+      '5': 3,
+      '10': 'surveillanceLimitMb'
+    },
+  ],
+};
+
+/// Descriptor for `PreviewStorageLimitChangeRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List previewStorageLimitChangeRequestDescriptor =
     $convert.base64Decode(
-        'ChpTZXRTdG9yYWdlU2V0dGluZ3NSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEh'
-        'QKBWVycm9yGAIgASgJUgVlcnJvcg==');
+        'CiBQcmV2aWV3U3RvcmFnZUxpbWl0Q2hhbmdlUmVxdWVzdBIuChNyZWNvcmRpbmdzX2xpbWl0X2'
+        '1iGAEgASgDUhFyZWNvcmRpbmdzTGltaXRNYhIyChVzdXJ2ZWlsbGFuY2VfbGltaXRfbWIYAiAB'
+        'KANSE3N1cnZlaWxsYW5jZUxpbWl0TWI=');
+
+@$core.Deprecated('Use previewStorageLimitChangeResponseDescriptor instead')
+const PreviewStorageLimitChangeResponse$json = {
+  '1': 'PreviewStorageLimitChangeResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'error', '3': 2, '4': 1, '5': 9, '10': 'error'},
+    {
+      '1': 'recordings_impact',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.CleanupImpact',
+      '10': 'recordingsImpact'
+    },
+    {
+      '1': 'surveillance_impact',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.CleanupImpact',
+      '10': 'surveillanceImpact'
+    },
+  ],
+};
+
+/// Descriptor for `PreviewStorageLimitChangeResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List previewStorageLimitChangeResponseDescriptor = $convert.base64Decode(
+    'CiFQcmV2aWV3U3RvcmFnZUxpbWl0Q2hhbmdlUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3'
+    'VjY2VzcxIUCgVlcnJvchgCIAEoCVIFZXJyb3ISSQoRcmVjb3JkaW5nc19pbXBhY3QYAyABKAsy'
+    'HC5ibGFkZXdhdGNoLnYxLkNsZWFudXBJbXBhY3RSEHJlY29yZGluZ3NJbXBhY3QSTQoTc3Vydm'
+    'VpbGxhbmNlX2ltcGFjdBgEIAEoCzIcLmJsYWRld2F0Y2gudjEuQ2xlYW51cEltcGFjdFISc3Vy'
+    'dmVpbGxhbmNlSW1wYWN0');
 
 @$core.Deprecated('Use getExternalStorageRequestDescriptor instead')
 const GetExternalStorageRequest$json = {
@@ -667,6 +776,11 @@ const $core.Map<$core.String, $core.dynamic> StorageServiceBase$json = {
       '3': '.bladewatch.v1.SetStorageSettingsResponse'
     },
     {
+      '1': 'PreviewStorageLimitChange',
+      '2': '.bladewatch.v1.PreviewStorageLimitChangeRequest',
+      '3': '.bladewatch.v1.PreviewStorageLimitChangeResponse'
+    },
+    {
       '1': 'GetExternalStorage',
       '2': '.bladewatch.v1.GetExternalStorageRequest',
       '3': '.bladewatch.v1.GetExternalStorageResponse'
@@ -711,6 +825,11 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.GetStorageSettingsResponse': GetStorageSettingsResponse$json,
   '.bladewatch.v1.SetStorageSettingsRequest': SetStorageSettingsRequest$json,
   '.bladewatch.v1.SetStorageSettingsResponse': SetStorageSettingsResponse$json,
+  '.bladewatch.v1.CleanupImpact': CleanupImpact$json,
+  '.bladewatch.v1.PreviewStorageLimitChangeRequest':
+      PreviewStorageLimitChangeRequest$json,
+  '.bladewatch.v1.PreviewStorageLimitChangeResponse':
+      PreviewStorageLimitChangeResponse$json,
   '.bladewatch.v1.GetExternalStorageRequest': GetExternalStorageRequest$json,
   '.bladewatch.v1.GetExternalStorageResponse': GetExternalStorageResponse$json,
   '.bladewatch.v1.SetExternalConfigRequest': SetExternalConfigRequest$json,
@@ -737,17 +856,19 @@ final $typed_data.Uint8List storageServiceDescriptor = $convert.base64Decode(
     'dldFN0b3JhZ2VTZXR0aW5nc1JlcXVlc3QaKS5ibGFkZXdhdGNoLnYxLkdldFN0b3JhZ2VTZXR0'
     'aW5nc1Jlc3BvbnNlEmkKElNldFN0b3JhZ2VTZXR0aW5ncxIoLmJsYWRld2F0Y2gudjEuU2V0U3'
     'RvcmFnZVNldHRpbmdzUmVxdWVzdBopLmJsYWRld2F0Y2gudjEuU2V0U3RvcmFnZVNldHRpbmdz'
-    'UmVzcG9uc2USaQoSR2V0RXh0ZXJuYWxTdG9yYWdlEiguYmxhZGV3YXRjaC52MS5HZXRFeHRlcm'
-    '5hbFN0b3JhZ2VSZXF1ZXN0GikuYmxhZGV3YXRjaC52MS5HZXRFeHRlcm5hbFN0b3JhZ2VSZXNw'
-    'b25zZRJmChFTZXRFeHRlcm5hbENvbmZpZxInLmJsYWRld2F0Y2gudjEuU2V0RXh0ZXJuYWxDb2'
-    '5maWdSZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5TZXRFeHRlcm5hbENvbmZpZ1Jlc3BvbnNlEl0K'
-    'DlRyaWdnZXJDbGVhbnVwEiQuYmxhZGV3YXRjaC52MS5UcmlnZ2VyQ2xlYW51cFJlcXVlc3QaJS'
-    '5ibGFkZXdhdGNoLnYxLlRyaWdnZXJDbGVhbnVwUmVzcG9uc2USXQoOUHJldmlld0NsZWFudXAS'
-    'JC5ibGFkZXdhdGNoLnYxLlByZXZpZXdDbGVhbnVwUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuUH'
-    'Jldmlld0NsZWFudXBSZXNwb25zZRJ1ChZSZWZyZXNoRXh0ZXJuYWxTdG9yYWdlEiwuYmxhZGV3'
-    'YXRjaC52MS5SZWZyZXNoRXh0ZXJuYWxTdG9yYWdlUmVxdWVzdBotLmJsYWRld2F0Y2gudjEuUm'
-    'VmcmVzaEV4dGVybmFsU3RvcmFnZVJlc3BvbnNlEmYKEUxpc3RGb3JtYXRWb2x1bWVzEicuYmxh'
-    'ZGV3YXRjaC52MS5MaXN0Rm9ybWF0Vm9sdW1lc1JlcXVlc3QaKC5ibGFkZXdhdGNoLnYxLkxpc3'
-    'RGb3JtYXRWb2x1bWVzUmVzcG9uc2USVwoMRm9ybWF0Vm9sdW1lEiIuYmxhZGV3YXRjaC52MS5G'
-    'b3JtYXRWb2x1bWVSZXF1ZXN0GiMuYmxhZGV3YXRjaC52MS5Gb3JtYXRWb2x1bWVSZXNwb25zZQ'
-    '==');
+    'UmVzcG9uc2USfgoZUHJldmlld1N0b3JhZ2VMaW1pdENoYW5nZRIvLmJsYWRld2F0Y2gudjEuUH'
+    'Jldmlld1N0b3JhZ2VMaW1pdENoYW5nZVJlcXVlc3QaMC5ibGFkZXdhdGNoLnYxLlByZXZpZXdT'
+    'dG9yYWdlTGltaXRDaGFuZ2VSZXNwb25zZRJpChJHZXRFeHRlcm5hbFN0b3JhZ2USKC5ibGFkZX'
+    'dhdGNoLnYxLkdldEV4dGVybmFsU3RvcmFnZVJlcXVlc3QaKS5ibGFkZXdhdGNoLnYxLkdldEV4'
+    'dGVybmFsU3RvcmFnZVJlc3BvbnNlEmYKEVNldEV4dGVybmFsQ29uZmlnEicuYmxhZGV3YXRjaC'
+    '52MS5TZXRFeHRlcm5hbENvbmZpZ1JlcXVlc3QaKC5ibGFkZXdhdGNoLnYxLlNldEV4dGVybmFs'
+    'Q29uZmlnUmVzcG9uc2USXQoOVHJpZ2dlckNsZWFudXASJC5ibGFkZXdhdGNoLnYxLlRyaWdnZX'
+    'JDbGVhbnVwUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVHJpZ2dlckNsZWFudXBSZXNwb25zZRJd'
+    'Cg5QcmV2aWV3Q2xlYW51cBIkLmJsYWRld2F0Y2gudjEuUHJldmlld0NsZWFudXBSZXF1ZXN0Gi'
+    'UuYmxhZGV3YXRjaC52MS5QcmV2aWV3Q2xlYW51cFJlc3BvbnNlEnUKFlJlZnJlc2hFeHRlcm5h'
+    'bFN0b3JhZ2USLC5ibGFkZXdhdGNoLnYxLlJlZnJlc2hFeHRlcm5hbFN0b3JhZ2VSZXF1ZXN0Gi'
+    '0uYmxhZGV3YXRjaC52MS5SZWZyZXNoRXh0ZXJuYWxTdG9yYWdlUmVzcG9uc2USZgoRTGlzdEZv'
+    'cm1hdFZvbHVtZXMSJy5ibGFkZXdhdGNoLnYxLkxpc3RGb3JtYXRWb2x1bWVzUmVxdWVzdBooLm'
+    'JsYWRld2F0Y2gudjEuTGlzdEZvcm1hdFZvbHVtZXNSZXNwb25zZRJXCgxGb3JtYXRWb2x1bWUS'
+    'Ii5ibGFkZXdhdGNoLnYxLkZvcm1hdFZvbHVtZVJlcXVlc3QaIy5ibGFkZXdhdGNoLnYxLkZvcm'
+    '1hdFZvbHVtZVJlc3BvbnNl');

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bladewatch/v1/storage.proto.
  */
 export const file_bladewatch_v1_storage: GenFile = /*@__PURE__*/
-  fileDesc("ChtibGFkZXdhdGNoL3YxL3N0b3JhZ2UucHJvdG8SDWJsYWRld2F0Y2gudjEiUgoKVm9sdW1lSW5mbxIRCgl2b2x1bWVfaWQYASABKAkSDAoEdXVpZBgCIAEoCRIPCgdtb3VudGVkGAMgASgIEhIKCm1vdW50X3BhdGgYBCABKAkiGwoZR2V0U3RvcmFnZVNldHRpbmdzUmVxdWVzdCK2BgoaR2V0U3RvcmFnZVNldHRpbmdzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIbChNyZWNvcmRpbmdzX2xpbWl0X21iGAIgASgDEh0KFXN1cnZlaWxsYW5jZV9saW1pdF9tYhgDIAEoAxIUCgxtaW5fbGltaXRfbWIYBCABKAMSFAoMbWF4X2xpbWl0X21iGAUgASgDEhwKFG1heF9saW1pdF9tYl9zZF9jYXJkGAYgASgDEhcKD3JlY29yZGluZ3NfcGF0aBgHIAEoCRIZChFzdXJ2ZWlsbGFuY2VfcGF0aBgIIAEoCRItChVyZWNvcmRpbmdzX3NpemVfYnl0ZXMYCSABKANSDnJlY29yZGluZ3NTaXplEjEKF3N1cnZlaWxsYW5jZV9zaXplX2J5dGVzGAogASgDUhBzdXJ2ZWlsbGFuY2VTaXplEhgKEHJlY29yZGluZ3NfY291bnQYCyABKAUSGgoSc3VydmVpbGxhbmNlX2NvdW50GAwgASgFEh8KF3JlY29yZGluZ3Nfc3RvcmFnZV90eXBlGA0gASgJEiEKGXN1cnZlaWxsYW5jZV9zdG9yYWdlX3R5cGUYDiABKAkSGQoRc2RfY2FyZF9hdmFpbGFibGUYDyABKAgSFAoMc2RfY2FyZF9wYXRoGBAgASgJEisKEnNkX2NhcmRfZnJlZV9ieXRlcxgRIAEoA1IPc2RDYXJkRnJlZVNwYWNlEi0KE3NkX2NhcmRfdG90YWxfYnl0ZXMYEiABKANSEHNkQ2FyZFRvdGFsU3BhY2USHgoWc2RfY2FyZF9mcmVlX2Zvcm1hdHRlZBgTIAEoCRIfChdzZF9jYXJkX3RvdGFsX2Zvcm1hdHRlZBgUIAEoCRIuChNpbnRlcm5hbF9mcmVlX2J5dGVzGBUgASgDUhFpbnRlcm5hbEZyZWVTcGFjZRIwChRpbnRlcm5hbF90b3RhbF9ieXRlcxgWIAEoA1ISaW50ZXJuYWxUb3RhbFNwYWNlEh8KF2ludGVybmFsX2ZyZWVfZm9ybWF0dGVkGBcgASgJEiAKGGludGVybmFsX3RvdGFsX2Zvcm1hdHRlZBgYIAEoCSKbAQoZU2V0U3RvcmFnZVNldHRpbmdzUmVxdWVzdBIbChNyZWNvcmRpbmdzX2xpbWl0X21iGAEgASgDEh0KFXN1cnZlaWxsYW5jZV9saW1pdF9tYhgCIAEoAxIfChdyZWNvcmRpbmdzX3N0b3JhZ2VfdHlwZRgDIAEoCRIhChlzdXJ2ZWlsbGFuY2Vfc3RvcmFnZV90eXBlGAQgASgJIjwKGlNldFN0b3JhZ2VTZXR0aW5nc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiGwoZR2V0RXh0ZXJuYWxTdG9yYWdlUmVxdWVzdCLmBgoaR2V0RXh0ZXJuYWxTdG9yYWdlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIZChFzZF9jYXJkX2F2YWlsYWJsZRgCIAEoCBIUCgxzZF9jYXJkX3BhdGgYAyABKAkSJgoSc2RfY2FyZF9mcmVlX2J5dGVzGAQgASgDUgpzZENhcmRGcmVlEigKE3NkX2NhcmRfdG90YWxfYnl0ZXMYBSABKANSC3NkQ2FyZFRvdGFsEh4KFnNkX2NhcmRfZnJlZV9mb3JtYXR0ZWQYBiABKAkSHwoXc2RfY2FyZF90b3RhbF9mb3JtYXR0ZWQYByABKAkSHAoUc2RfY2FyZF91c2VkX3BlcmNlbnQYCCABKAUSEAoIY2RyX3BhdGgYCSABKAkSIQoPY2RyX3VzYWdlX2J5dGVzGAogASgDUghjZHJVc2FnZRIbChNjZHJfdXNhZ2VfZm9ybWF0dGVkGAsgASgJEhYKDmNkcl9maWxlX2NvdW50GAwgASgFEi0KE2Nkcl9wcm90ZWN0ZWRfYnl0ZXMYDSABKANSEGNkclByb3RlY3RlZFNpemUSHwoXY2RyX3Byb3RlY3RlZF9mb3JtYXR0ZWQYDiABKAkSLQoTY2RyX2RlbGV0YWJsZV9ieXRlcxgPIAEoA1IQY2RyRGVsZXRhYmxlU2l6ZRIfChdjZHJfZGVsZXRhYmxlX2Zvcm1hdHRlZBgQIAEoCRIXCg9jbGVhbnVwX2VuYWJsZWQYESABKAgSGQoRcmVzZXJ2ZWRfc3BhY2VfbWIYEiABKAMSFwoPcHJvdGVjdGVkX2hvdXJzGBMgASgFEhYKDm1pbl9maWxlc19rZWVwGBQgASgFEhkKEW1vbml0b3JpbmdfYWN0aXZlGBUgASgIEhkKEXRvdGFsX2J5dGVzX2ZyZWVkGBYgASgDEiMKG3RvdGFsX2J5dGVzX2ZyZWVkX2Zvcm1hdHRlZBgXIAEoCRIbChN0b3RhbF9maWxlc19kZWxldGVkGBggASgFEi0KFGxhc3RfY2xlYW51cF90aW1lX21zGBkgASgDUg9sYXN0Q2xlYW51cFRpbWUSHwoXYmxhZGV3YXRjaF91c2VzX3NkX2NhcmQYGiABKAgSHgoWcmVjb21tZW5kX2F1dG9fY2xlYW51cBgbIAEoCCJ3ChhTZXRFeHRlcm5hbENvbmZpZ1JlcXVlc3QSDwoHZW5hYmxlZBgBIAEoCBIZChFyZXNlcnZlZF9zcGFjZV9tYhgCIAEoAxIXCg9wcm90ZWN0ZWRfaG91cnMYAyABKAUSFgoObWluX2ZpbGVzX2tlZXAYBCABKAUioAEKGVNldEV4dGVybmFsQ29uZmlnUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIXCg9jbGVhbnVwX2VuYWJsZWQYAiABKAgSGQoRcmVzZXJ2ZWRfc3BhY2VfbWIYAyABKAMSFwoPcHJvdGVjdGVkX2hvdXJzGAQgASgFEhYKDm1pbl9maWxlc19rZWVwGAUgASgFEg0KBWVycm9yGAYgASgJIi4KFVRyaWdnZXJDbGVhbnVwUmVxdWVzdBIVCg1ieXRlc190b19mcmVlGAEgASgDInUKFlRyaWdnZXJDbGVhbnVwUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBITCgtieXRlc19mcmVlZBgCIAEoAxIVCg1maWxlc19kZWxldGVkGAMgASgFEg8KB21lc3NhZ2UYBCABKAkSDQoFZXJyb3IYBSABKAkiLgoVUHJldmlld0NsZWFudXBSZXF1ZXN0EhUKDWJ5dGVzX3RvX2ZyZWUYASABKAMiTQoSUHJldmlld0NsZWFudXBGaWxlEgwKBHBhdGgYASABKAkSGAoKc2l6ZV9ieXRlcxgCIAEoA1IEc2l6ZUoECAMQBFIJYWdlX2hvdXJzIq8BChZQcmV2aWV3Q2xlYW51cFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSMAoFZmlsZXMYAiADKAsyIS5ibGFkZXdhdGNoLnYxLlByZXZpZXdDbGVhbnVwRmlsZRIoChV0b3RhbF9kZWxldGFibGVfYnl0ZXMYAyABKANSCXRvdGFsU2l6ZRIoChV0b3RhbF9kZWxldGFibGVfY291bnQYBCABKAVSCWZpbGVDb3VudCIfCh1SZWZyZXNoRXh0ZXJuYWxTdG9yYWdlUmVxdWVzdCIxCh5SZWZyZXNoRXh0ZXJuYWxTdG9yYWdlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCIaChhMaXN0Rm9ybWF0Vm9sdW1lc1JlcXVlc3QiWAoZTGlzdEZvcm1hdFZvbHVtZXNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEioKB3ZvbHVtZXMYAiADKAsyGS5ibGFkZXdhdGNoLnYxLlZvbHVtZUluZm8iKAoTRm9ybWF0Vm9sdW1lUmVxdWVzdBIRCgl2b2x1bWVfaWQYASABKAkiWwoURm9ybWF0Vm9sdW1lUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJEhIKCm1vdW50X3BhdGgYAyABKAkSDQoFZXJyb3IYBCABKAkqYAoLU3RvcmFnZVR5cGUSHAoYU1RPUkFHRV9UWVBFX1VOU1BFQ0lGSUVEEAASGQoVU1RPUkFHRV9UWVBFX0lOVEVSTkFMEAESGAoUU1RPUkFHRV9UWVBFX1NEX0NBUkQQAjKvBwoOU3RvcmFnZVNlcnZpY2USaQoSR2V0U3RvcmFnZVNldHRpbmdzEiguYmxhZGV3YXRjaC52MS5HZXRTdG9yYWdlU2V0dGluZ3NSZXF1ZXN0GikuYmxhZGV3YXRjaC52MS5HZXRTdG9yYWdlU2V0dGluZ3NSZXNwb25zZRJpChJTZXRTdG9yYWdlU2V0dGluZ3MSKC5ibGFkZXdhdGNoLnYxLlNldFN0b3JhZ2VTZXR0aW5nc1JlcXVlc3QaKS5ibGFkZXdhdGNoLnYxLlNldFN0b3JhZ2VTZXR0aW5nc1Jlc3BvbnNlEmkKEkdldEV4dGVybmFsU3RvcmFnZRIoLmJsYWRld2F0Y2gudjEuR2V0RXh0ZXJuYWxTdG9yYWdlUmVxdWVzdBopLmJsYWRld2F0Y2gudjEuR2V0RXh0ZXJuYWxTdG9yYWdlUmVzcG9uc2USZgoRU2V0RXh0ZXJuYWxDb25maWcSJy5ibGFkZXdhdGNoLnYxLlNldEV4dGVybmFsQ29uZmlnUmVxdWVzdBooLmJsYWRld2F0Y2gudjEuU2V0RXh0ZXJuYWxDb25maWdSZXNwb25zZRJdCg5UcmlnZ2VyQ2xlYW51cBIkLmJsYWRld2F0Y2gudjEuVHJpZ2dlckNsZWFudXBSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5UcmlnZ2VyQ2xlYW51cFJlc3BvbnNlEl0KDlByZXZpZXdDbGVhbnVwEiQuYmxhZGV3YXRjaC52MS5QcmV2aWV3Q2xlYW51cFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlByZXZpZXdDbGVhbnVwUmVzcG9uc2USdQoWUmVmcmVzaEV4dGVybmFsU3RvcmFnZRIsLmJsYWRld2F0Y2gudjEuUmVmcmVzaEV4dGVybmFsU3RvcmFnZVJlcXVlc3QaLS5ibGFkZXdhdGNoLnYxLlJlZnJlc2hFeHRlcm5hbFN0b3JhZ2VSZXNwb25zZRJmChFMaXN0Rm9ybWF0Vm9sdW1lcxInLmJsYWRld2F0Y2gudjEuTGlzdEZvcm1hdFZvbHVtZXNSZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5MaXN0Rm9ybWF0Vm9sdW1lc1Jlc3BvbnNlElcKDEZvcm1hdFZvbHVtZRIiLmJsYWRld2F0Y2gudjEuRm9ybWF0Vm9sdW1lUmVxdWVzdBojLmJsYWRld2F0Y2gudjEuRm9ybWF0Vm9sdW1lUmVzcG9uc2VCHgoabmV0LmJsYWRld2F0Y2guYXBwLmdycGMudjFQAWIGcHJvdG8z");
+  fileDesc("ChtibGFkZXdhdGNoL3YxL3N0b3JhZ2UucHJvdG8SDWJsYWRld2F0Y2gudjEiUgoKVm9sdW1lSW5mbxIRCgl2b2x1bWVfaWQYASABKAkSDAoEdXVpZBgCIAEoCRIPCgdtb3VudGVkGAMgASgIEhIKCm1vdW50X3BhdGgYBCABKAkiGwoZR2V0U3RvcmFnZVNldHRpbmdzUmVxdWVzdCLxBgoaR2V0U3RvcmFnZVNldHRpbmdzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIbChNyZWNvcmRpbmdzX2xpbWl0X21iGAIgASgDEh0KFXN1cnZlaWxsYW5jZV9saW1pdF9tYhgDIAEoAxIUCgxtaW5fbGltaXRfbWIYBCABKAMSFAoMbWF4X2xpbWl0X21iGAUgASgDEhwKFG1heF9saW1pdF9tYl9zZF9jYXJkGAYgASgDEhcKD3JlY29yZGluZ3NfcGF0aBgHIAEoCRIZChFzdXJ2ZWlsbGFuY2VfcGF0aBgIIAEoCRItChVyZWNvcmRpbmdzX3NpemVfYnl0ZXMYCSABKANSDnJlY29yZGluZ3NTaXplEjEKF3N1cnZlaWxsYW5jZV9zaXplX2J5dGVzGAogASgDUhBzdXJ2ZWlsbGFuY2VTaXplEhgKEHJlY29yZGluZ3NfY291bnQYCyABKAUSGgoSc3VydmVpbGxhbmNlX2NvdW50GAwgASgFEh8KF3JlY29yZGluZ3Nfc3RvcmFnZV90eXBlGA0gASgJEiEKGXN1cnZlaWxsYW5jZV9zdG9yYWdlX3R5cGUYDiABKAkSGQoRc2RfY2FyZF9hdmFpbGFibGUYDyABKAgSFAoMc2RfY2FyZF9wYXRoGBAgASgJEisKEnNkX2NhcmRfZnJlZV9ieXRlcxgRIAEoA1IPc2RDYXJkRnJlZVNwYWNlEi0KE3NkX2NhcmRfdG90YWxfYnl0ZXMYEiABKANSEHNkQ2FyZFRvdGFsU3BhY2USHgoWc2RfY2FyZF9mcmVlX2Zvcm1hdHRlZBgTIAEoCRIfChdzZF9jYXJkX3RvdGFsX2Zvcm1hdHRlZBgUIAEoCRIuChNpbnRlcm5hbF9mcmVlX2J5dGVzGBUgASgDUhFpbnRlcm5hbEZyZWVTcGFjZRIwChRpbnRlcm5hbF90b3RhbF9ieXRlcxgWIAEoA1ISaW50ZXJuYWxUb3RhbFNwYWNlEh8KF2ludGVybmFsX2ZyZWVfZm9ybWF0dGVkGBcgASgJEiAKGGludGVybmFsX3RvdGFsX2Zvcm1hdHRlZBgYIAEoCRIcChRzZF9jYXJkX21vdW50X2ZhaWxlZBgZIAEoCBIbChNzZF9jYXJkX21vdW50X2Vycm9yGBogASgJIpsBChlTZXRTdG9yYWdlU2V0dGluZ3NSZXF1ZXN0EhsKE3JlY29yZGluZ3NfbGltaXRfbWIYASABKAMSHQoVc3VydmVpbGxhbmNlX2xpbWl0X21iGAIgASgDEh8KF3JlY29yZGluZ3Nfc3RvcmFnZV90eXBlGAMgASgJEiEKGXN1cnZlaWxsYW5jZV9zdG9yYWdlX3R5cGUYBCABKAkiOAoNQ2xlYW51cEltcGFjdBISCgpmaWxlX2NvdW50GAEgASgFEhMKC3RvdGFsX2J5dGVzGAIgASgDIrABChpTZXRTdG9yYWdlU2V0dGluZ3NSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJEjcKEXJlY29yZGluZ3NfaW1wYWN0GAMgASgLMhwuYmxhZGV3YXRjaC52MS5DbGVhbnVwSW1wYWN0EjkKE3N1cnZlaWxsYW5jZV9pbXBhY3QYBCABKAsyHC5ibGFkZXdhdGNoLnYxLkNsZWFudXBJbXBhY3QiXgogUHJldmlld1N0b3JhZ2VMaW1pdENoYW5nZVJlcXVlc3QSGwoTcmVjb3JkaW5nc19saW1pdF9tYhgBIAEoAxIdChVzdXJ2ZWlsbGFuY2VfbGltaXRfbWIYAiABKAMitwEKIVByZXZpZXdTdG9yYWdlTGltaXRDaGFuZ2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJEjcKEXJlY29yZGluZ3NfaW1wYWN0GAMgASgLMhwuYmxhZGV3YXRjaC52MS5DbGVhbnVwSW1wYWN0EjkKE3N1cnZlaWxsYW5jZV9pbXBhY3QYBCABKAsyHC5ibGFkZXdhdGNoLnYxLkNsZWFudXBJbXBhY3QiGwoZR2V0RXh0ZXJuYWxTdG9yYWdlUmVxdWVzdCLmBgoaR2V0RXh0ZXJuYWxTdG9yYWdlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIZChFzZF9jYXJkX2F2YWlsYWJsZRgCIAEoCBIUCgxzZF9jYXJkX3BhdGgYAyABKAkSJgoSc2RfY2FyZF9mcmVlX2J5dGVzGAQgASgDUgpzZENhcmRGcmVlEigKE3NkX2NhcmRfdG90YWxfYnl0ZXMYBSABKANSC3NkQ2FyZFRvdGFsEh4KFnNkX2NhcmRfZnJlZV9mb3JtYXR0ZWQYBiABKAkSHwoXc2RfY2FyZF90b3RhbF9mb3JtYXR0ZWQYByABKAkSHAoUc2RfY2FyZF91c2VkX3BlcmNlbnQYCCABKAUSEAoIY2RyX3BhdGgYCSABKAkSIQoPY2RyX3VzYWdlX2J5dGVzGAogASgDUghjZHJVc2FnZRIbChNjZHJfdXNhZ2VfZm9ybWF0dGVkGAsgASgJEhYKDmNkcl9maWxlX2NvdW50GAwgASgFEi0KE2Nkcl9wcm90ZWN0ZWRfYnl0ZXMYDSABKANSEGNkclByb3RlY3RlZFNpemUSHwoXY2RyX3Byb3RlY3RlZF9mb3JtYXR0ZWQYDiABKAkSLQoTY2RyX2RlbGV0YWJsZV9ieXRlcxgPIAEoA1IQY2RyRGVsZXRhYmxlU2l6ZRIfChdjZHJfZGVsZXRhYmxlX2Zvcm1hdHRlZBgQIAEoCRIXCg9jbGVhbnVwX2VuYWJsZWQYESABKAgSGQoRcmVzZXJ2ZWRfc3BhY2VfbWIYEiABKAMSFwoPcHJvdGVjdGVkX2hvdXJzGBMgASgFEhYKDm1pbl9maWxlc19rZWVwGBQgASgFEhkKEW1vbml0b3JpbmdfYWN0aXZlGBUgASgIEhkKEXRvdGFsX2J5dGVzX2ZyZWVkGBYgASgDEiMKG3RvdGFsX2J5dGVzX2ZyZWVkX2Zvcm1hdHRlZBgXIAEoCRIbChN0b3RhbF9maWxlc19kZWxldGVkGBggASgFEi0KFGxhc3RfY2xlYW51cF90aW1lX21zGBkgASgDUg9sYXN0Q2xlYW51cFRpbWUSHwoXYmxhZGV3YXRjaF91c2VzX3NkX2NhcmQYGiABKAgSHgoWcmVjb21tZW5kX2F1dG9fY2xlYW51cBgbIAEoCCJ3ChhTZXRFeHRlcm5hbENvbmZpZ1JlcXVlc3QSDwoHZW5hYmxlZBgBIAEoCBIZChFyZXNlcnZlZF9zcGFjZV9tYhgCIAEoAxIXCg9wcm90ZWN0ZWRfaG91cnMYAyABKAUSFgoObWluX2ZpbGVzX2tlZXAYBCABKAUioAEKGVNldEV4dGVybmFsQ29uZmlnUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIXCg9jbGVhbnVwX2VuYWJsZWQYAiABKAgSGQoRcmVzZXJ2ZWRfc3BhY2VfbWIYAyABKAMSFwoPcHJvdGVjdGVkX2hvdXJzGAQgASgFEhYKDm1pbl9maWxlc19rZWVwGAUgASgFEg0KBWVycm9yGAYgASgJIi4KFVRyaWdnZXJDbGVhbnVwUmVxdWVzdBIVCg1ieXRlc190b19mcmVlGAEgASgDInUKFlRyaWdnZXJDbGVhbnVwUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBITCgtieXRlc19mcmVlZBgCIAEoAxIVCg1maWxlc19kZWxldGVkGAMgASgFEg8KB21lc3NhZ2UYBCABKAkSDQoFZXJyb3IYBSABKAkiLgoVUHJldmlld0NsZWFudXBSZXF1ZXN0EhUKDWJ5dGVzX3RvX2ZyZWUYASABKAMiTQoSUHJldmlld0NsZWFudXBGaWxlEgwKBHBhdGgYASABKAkSGAoKc2l6ZV9ieXRlcxgCIAEoA1IEc2l6ZUoECAMQBFIJYWdlX2hvdXJzIq8BChZQcmV2aWV3Q2xlYW51cFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSMAoFZmlsZXMYAiADKAsyIS5ibGFkZXdhdGNoLnYxLlByZXZpZXdDbGVhbnVwRmlsZRIoChV0b3RhbF9kZWxldGFibGVfYnl0ZXMYAyABKANSCXRvdGFsU2l6ZRIoChV0b3RhbF9kZWxldGFibGVfY291bnQYBCABKAVSCWZpbGVDb3VudCIfCh1SZWZyZXNoRXh0ZXJuYWxTdG9yYWdlUmVxdWVzdCIxCh5SZWZyZXNoRXh0ZXJuYWxTdG9yYWdlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCIaChhMaXN0Rm9ybWF0Vm9sdW1lc1JlcXVlc3QiWAoZTGlzdEZvcm1hdFZvbHVtZXNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEioKB3ZvbHVtZXMYAiADKAsyGS5ibGFkZXdhdGNoLnYxLlZvbHVtZUluZm8iKAoTRm9ybWF0Vm9sdW1lUmVxdWVzdBIRCgl2b2x1bWVfaWQYASABKAkiWwoURm9ybWF0Vm9sdW1lUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJEhIKCm1vdW50X3BhdGgYAyABKAkSDQoFZXJyb3IYBCABKAkqYAoLU3RvcmFnZVR5cGUSHAoYU1RPUkFHRV9UWVBFX1VOU1BFQ0lGSUVEEAASGQoVU1RPUkFHRV9UWVBFX0lOVEVSTkFMEAESGAoUU1RPUkFHRV9UWVBFX1NEX0NBUkQQAjKvCAoOU3RvcmFnZVNlcnZpY2USaQoSR2V0U3RvcmFnZVNldHRpbmdzEiguYmxhZGV3YXRjaC52MS5HZXRTdG9yYWdlU2V0dGluZ3NSZXF1ZXN0GikuYmxhZGV3YXRjaC52MS5HZXRTdG9yYWdlU2V0dGluZ3NSZXNwb25zZRJpChJTZXRTdG9yYWdlU2V0dGluZ3MSKC5ibGFkZXdhdGNoLnYxLlNldFN0b3JhZ2VTZXR0aW5nc1JlcXVlc3QaKS5ibGFkZXdhdGNoLnYxLlNldFN0b3JhZ2VTZXR0aW5nc1Jlc3BvbnNlEn4KGVByZXZpZXdTdG9yYWdlTGltaXRDaGFuZ2USLy5ibGFkZXdhdGNoLnYxLlByZXZpZXdTdG9yYWdlTGltaXRDaGFuZ2VSZXF1ZXN0GjAuYmxhZGV3YXRjaC52MS5QcmV2aWV3U3RvcmFnZUxpbWl0Q2hhbmdlUmVzcG9uc2USaQoSR2V0RXh0ZXJuYWxTdG9yYWdlEiguYmxhZGV3YXRjaC52MS5HZXRFeHRlcm5hbFN0b3JhZ2VSZXF1ZXN0GikuYmxhZGV3YXRjaC52MS5HZXRFeHRlcm5hbFN0b3JhZ2VSZXNwb25zZRJmChFTZXRFeHRlcm5hbENvbmZpZxInLmJsYWRld2F0Y2gudjEuU2V0RXh0ZXJuYWxDb25maWdSZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5TZXRFeHRlcm5hbENvbmZpZ1Jlc3BvbnNlEl0KDlRyaWdnZXJDbGVhbnVwEiQuYmxhZGV3YXRjaC52MS5UcmlnZ2VyQ2xlYW51cFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlRyaWdnZXJDbGVhbnVwUmVzcG9uc2USXQoOUHJldmlld0NsZWFudXASJC5ibGFkZXdhdGNoLnYxLlByZXZpZXdDbGVhbnVwUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuUHJldmlld0NsZWFudXBSZXNwb25zZRJ1ChZSZWZyZXNoRXh0ZXJuYWxTdG9yYWdlEiwuYmxhZGV3YXRjaC52MS5SZWZyZXNoRXh0ZXJuYWxTdG9yYWdlUmVxdWVzdBotLmJsYWRld2F0Y2gudjEuUmVmcmVzaEV4dGVybmFsU3RvcmFnZVJlc3BvbnNlEmYKEUxpc3RGb3JtYXRWb2x1bWVzEicuYmxhZGV3YXRjaC52MS5MaXN0Rm9ybWF0Vm9sdW1lc1JlcXVlc3QaKC5ibGFkZXdhdGNoLnYxLkxpc3RGb3JtYXRWb2x1bWVzUmVzcG9uc2USVwoMRm9ybWF0Vm9sdW1lEiIuYmxhZGV3YXRjaC52MS5Gb3JtYXRWb2x1bWVSZXF1ZXN0GiMuYmxhZGV3YXRjaC52MS5Gb3JtYXRWb2x1bWVSZXNwb25zZUIeChpuZXQuYmxhZGV3YXRjaC5hcHAuZ3JwYy52MVABYgZwcm90bzM");
 
 /**
  * VolumeInfo describes one removable public volume visible to StorageManager.
@@ -182,6 +182,20 @@ export type GetStorageSettingsResponse = Message<"bladewatch.v1.GetStorageSettin
    * @generated from field: string internal_total_formatted = 24;
    */
   internalTotalFormatted: string;
+
+  /**
+   * True when an SD card configured for storage failed to mount after repeated attempts at
+   * daemon startup and the daemon kept the SD_CARD preference (not silently downgraded to
+   * internal). See sd_card_mount_error for a user-facing message.
+   *
+   * @generated from field: bool sd_card_mount_failed = 25;
+   */
+  sdCardMountFailed: boolean;
+
+  /**
+   * @generated from field: string sd_card_mount_error = 26;
+   */
+  sdCardMountError: string;
 };
 
 /**
@@ -224,6 +238,31 @@ export const SetStorageSettingsRequestSchema: GenMessage<SetStorageSettingsReque
   messageDesc(file_bladewatch_v1_storage, 3);
 
 /**
+ * CleanupImpact reports the real (not estimated) effect of a limit on existing files, from
+ * the identical selection algorithm StorageManager.ensureSpace uses.
+ *
+ * @generated from message bladewatch.v1.CleanupImpact
+ */
+export type CleanupImpact = Message<"bladewatch.v1.CleanupImpact"> & {
+  /**
+   * @generated from field: int32 file_count = 1;
+   */
+  fileCount: number;
+
+  /**
+   * @generated from field: int64 total_bytes = 2;
+   */
+  totalBytes: bigint;
+};
+
+/**
+ * Describes the message bladewatch.v1.CleanupImpact.
+ * Use `create(CleanupImpactSchema)` to create a new message.
+ */
+export const CleanupImpactSchema: GenMessage<CleanupImpact> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_storage, 4);
+
+/**
  * @generated from message bladewatch.v1.SetStorageSettingsResponse
  */
 export type SetStorageSettingsResponse = Message<"bladewatch.v1.SetStorageSettingsResponse"> & {
@@ -236,6 +275,20 @@ export type SetStorageSettingsResponse = Message<"bladewatch.v1.SetStorageSettin
    * @generated from field: string error = 2;
    */
   error: string;
+
+  /**
+   * Present only when applying this request actually deleted at least one existing file for
+   * the corresponding category -- informational; PreviewStorageLimitChange is how a caller
+   * finds this out BEFORE applying.
+   *
+   * @generated from field: bladewatch.v1.CleanupImpact recordings_impact = 3;
+   */
+  recordingsImpact?: CleanupImpact | undefined;
+
+  /**
+   * @generated from field: bladewatch.v1.CleanupImpact surveillance_impact = 4;
+   */
+  surveillanceImpact?: CleanupImpact | undefined;
 };
 
 /**
@@ -243,7 +296,69 @@ export type SetStorageSettingsResponse = Message<"bladewatch.v1.SetStorageSettin
  * Use `create(SetStorageSettingsResponseSchema)` to create a new message.
  */
 export const SetStorageSettingsResponseSchema: GenMessage<SetStorageSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 4);
+  messageDesc(file_bladewatch_v1_storage, 5);
+
+/**
+ * @generated from message bladewatch.v1.PreviewStorageLimitChangeRequest
+ */
+export type PreviewStorageLimitChangeRequest = Message<"bladewatch.v1.PreviewStorageLimitChangeRequest"> & {
+  /**
+   * 0 = do not preview recordings.
+   *
+   * @generated from field: int64 recordings_limit_mb = 1;
+   */
+  recordingsLimitMb: bigint;
+
+  /**
+   * 0 = do not preview surveillance.
+   *
+   * @generated from field: int64 surveillance_limit_mb = 2;
+   */
+  surveillanceLimitMb: bigint;
+};
+
+/**
+ * Describes the message bladewatch.v1.PreviewStorageLimitChangeRequest.
+ * Use `create(PreviewStorageLimitChangeRequestSchema)` to create a new message.
+ */
+export const PreviewStorageLimitChangeRequestSchema: GenMessage<PreviewStorageLimitChangeRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_storage, 6);
+
+/**
+ * @generated from message bladewatch.v1.PreviewStorageLimitChangeResponse
+ */
+export type PreviewStorageLimitChangeResponse = Message<"bladewatch.v1.PreviewStorageLimitChangeResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string error = 2;
+   */
+  error: string;
+
+  /**
+   * Present iff recordings_limit_mb was set in the request.
+   *
+   * @generated from field: bladewatch.v1.CleanupImpact recordings_impact = 3;
+   */
+  recordingsImpact?: CleanupImpact | undefined;
+
+  /**
+   * Present iff surveillance_limit_mb was set in the request.
+   *
+   * @generated from field: bladewatch.v1.CleanupImpact surveillance_impact = 4;
+   */
+  surveillanceImpact?: CleanupImpact | undefined;
+};
+
+/**
+ * Describes the message bladewatch.v1.PreviewStorageLimitChangeResponse.
+ * Use `create(PreviewStorageLimitChangeResponseSchema)` to create a new message.
+ */
+export const PreviewStorageLimitChangeResponseSchema: GenMessage<PreviewStorageLimitChangeResponse> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_storage, 7);
 
 /**
  * @generated from message bladewatch.v1.GetExternalStorageRequest
@@ -256,7 +371,7 @@ export type GetExternalStorageRequest = Message<"bladewatch.v1.GetExternalStorag
  * Use `create(GetExternalStorageRequestSchema)` to create a new message.
  */
 export const GetExternalStorageRequestSchema: GenMessage<GetExternalStorageRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 5);
+  messageDesc(file_bladewatch_v1_storage, 8);
 
 /**
  * @generated from message bladewatch.v1.GetExternalStorageResponse
@@ -403,7 +518,7 @@ export type GetExternalStorageResponse = Message<"bladewatch.v1.GetExternalStora
  * Use `create(GetExternalStorageResponseSchema)` to create a new message.
  */
 export const GetExternalStorageResponseSchema: GenMessage<GetExternalStorageResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 6);
+  messageDesc(file_bladewatch_v1_storage, 9);
 
 /**
  * @generated from message bladewatch.v1.SetExternalConfigRequest
@@ -435,7 +550,7 @@ export type SetExternalConfigRequest = Message<"bladewatch.v1.SetExternalConfigR
  * Use `create(SetExternalConfigRequestSchema)` to create a new message.
  */
 export const SetExternalConfigRequestSchema: GenMessage<SetExternalConfigRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 7);
+  messageDesc(file_bladewatch_v1_storage, 10);
 
 /**
  * @generated from message bladewatch.v1.SetExternalConfigResponse
@@ -477,7 +592,7 @@ export type SetExternalConfigResponse = Message<"bladewatch.v1.SetExternalConfig
  * Use `create(SetExternalConfigResponseSchema)` to create a new message.
  */
 export const SetExternalConfigResponseSchema: GenMessage<SetExternalConfigResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 8);
+  messageDesc(file_bladewatch_v1_storage, 11);
 
 /**
  * @generated from message bladewatch.v1.TriggerCleanupRequest
@@ -494,7 +609,7 @@ export type TriggerCleanupRequest = Message<"bladewatch.v1.TriggerCleanupRequest
  * Use `create(TriggerCleanupRequestSchema)` to create a new message.
  */
 export const TriggerCleanupRequestSchema: GenMessage<TriggerCleanupRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 9);
+  messageDesc(file_bladewatch_v1_storage, 12);
 
 /**
  * @generated from message bladewatch.v1.TriggerCleanupResponse
@@ -531,7 +646,7 @@ export type TriggerCleanupResponse = Message<"bladewatch.v1.TriggerCleanupRespon
  * Use `create(TriggerCleanupResponseSchema)` to create a new message.
  */
 export const TriggerCleanupResponseSchema: GenMessage<TriggerCleanupResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 10);
+  messageDesc(file_bladewatch_v1_storage, 13);
 
 /**
  * @generated from message bladewatch.v1.PreviewCleanupRequest
@@ -551,7 +666,7 @@ export type PreviewCleanupRequest = Message<"bladewatch.v1.PreviewCleanupRequest
  * Use `create(PreviewCleanupRequestSchema)` to create a new message.
  */
 export const PreviewCleanupRequestSchema: GenMessage<PreviewCleanupRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 11);
+  messageDesc(file_bladewatch_v1_storage, 14);
 
 /**
  * @generated from message bladewatch.v1.PreviewCleanupFile
@@ -573,7 +688,7 @@ export type PreviewCleanupFile = Message<"bladewatch.v1.PreviewCleanupFile"> & {
  * Use `create(PreviewCleanupFileSchema)` to create a new message.
  */
 export const PreviewCleanupFileSchema: GenMessage<PreviewCleanupFile> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 12);
+  messageDesc(file_bladewatch_v1_storage, 15);
 
 /**
  * @generated from message bladewatch.v1.PreviewCleanupResponse
@@ -605,7 +720,7 @@ export type PreviewCleanupResponse = Message<"bladewatch.v1.PreviewCleanupRespon
  * Use `create(PreviewCleanupResponseSchema)` to create a new message.
  */
 export const PreviewCleanupResponseSchema: GenMessage<PreviewCleanupResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 13);
+  messageDesc(file_bladewatch_v1_storage, 16);
 
 /**
  * @generated from message bladewatch.v1.RefreshExternalStorageRequest
@@ -618,7 +733,7 @@ export type RefreshExternalStorageRequest = Message<"bladewatch.v1.RefreshExtern
  * Use `create(RefreshExternalStorageRequestSchema)` to create a new message.
  */
 export const RefreshExternalStorageRequestSchema: GenMessage<RefreshExternalStorageRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 14);
+  messageDesc(file_bladewatch_v1_storage, 17);
 
 /**
  * @generated from message bladewatch.v1.RefreshExternalStorageResponse
@@ -635,7 +750,7 @@ export type RefreshExternalStorageResponse = Message<"bladewatch.v1.RefreshExter
  * Use `create(RefreshExternalStorageResponseSchema)` to create a new message.
  */
 export const RefreshExternalStorageResponseSchema: GenMessage<RefreshExternalStorageResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 15);
+  messageDesc(file_bladewatch_v1_storage, 18);
 
 /**
  * @generated from message bladewatch.v1.ListFormatVolumesRequest
@@ -648,7 +763,7 @@ export type ListFormatVolumesRequest = Message<"bladewatch.v1.ListFormatVolumesR
  * Use `create(ListFormatVolumesRequestSchema)` to create a new message.
  */
 export const ListFormatVolumesRequestSchema: GenMessage<ListFormatVolumesRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 16);
+  messageDesc(file_bladewatch_v1_storage, 19);
 
 /**
  * @generated from message bladewatch.v1.ListFormatVolumesResponse
@@ -670,7 +785,7 @@ export type ListFormatVolumesResponse = Message<"bladewatch.v1.ListFormatVolumes
  * Use `create(ListFormatVolumesResponseSchema)` to create a new message.
  */
 export const ListFormatVolumesResponseSchema: GenMessage<ListFormatVolumesResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 17);
+  messageDesc(file_bladewatch_v1_storage, 20);
 
 /**
  * @generated from message bladewatch.v1.FormatVolumeRequest
@@ -687,7 +802,7 @@ export type FormatVolumeRequest = Message<"bladewatch.v1.FormatVolumeRequest"> &
  * Use `create(FormatVolumeRequestSchema)` to create a new message.
  */
 export const FormatVolumeRequestSchema: GenMessage<FormatVolumeRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 18);
+  messageDesc(file_bladewatch_v1_storage, 21);
 
 /**
  * @generated from message bladewatch.v1.FormatVolumeResponse
@@ -719,7 +834,7 @@ export type FormatVolumeResponse = Message<"bladewatch.v1.FormatVolumeResponse">
  * Use `create(FormatVolumeResponseSchema)` to create a new message.
  */
 export const FormatVolumeResponseSchema: GenMessage<FormatVolumeResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_storage, 19);
+  messageDesc(file_bladewatch_v1_storage, 22);
 
 /**
  * StorageType selects the physical storage medium.
@@ -753,15 +868,16 @@ export const StorageTypeSchema: GenEnum<StorageType> = /*@__PURE__*/
  * StorageService manages recording storage limits and external drive cleanup.
  *
  * HTTP mapping (QualitySettingsApiHandler + ExternalStorageApiHandler + FormatStorageApiHandler):
- *   GetStorageSettings      GET  /api/settings/storage
- *   SetStorageSettings      POST /api/settings/storage
- *   GetExternalStorage      GET  /api/storage/external
- *   SetExternalConfig       POST /api/storage/external/config
- *   TriggerCleanup          POST /api/storage/external/cleanup
- *   PreviewCleanup          GET  /api/storage/external/preview
- *   RefreshExternalStorage  POST /api/storage/external/refresh
- *   ListFormatVolumes       GET  /api/storage/format
- *   FormatVolume            POST /api/storage/format
+ *   GetStorageSettings         GET  /api/settings/storage
+ *   SetStorageSettings         POST /api/settings/storage
+ *   PreviewStorageLimitChange  POST /api/settings/storage/preview
+ *   GetExternalStorage         GET  /api/storage/external
+ *   SetExternalConfig          POST /api/storage/external/config
+ *   TriggerCleanup             POST /api/storage/external/cleanup
+ *   PreviewCleanup             GET  /api/storage/external/preview
+ *   RefreshExternalStorage     POST /api/storage/external/refresh
+ *   ListFormatVolumes          GET  /api/storage/format
+ *   FormatVolume               POST /api/storage/format
  *
  * @generated from service bladewatch.v1.StorageService
  */
@@ -781,6 +897,19 @@ export const StorageService: GenService<{
     methodKind: "unary";
     input: typeof SetStorageSettingsRequestSchema;
     output: typeof SetStorageSettingsResponseSchema;
+  },
+  /**
+   * BladeWatch-gyg1.4: a separate, read-only RPC -- deliberately not a "dry run" flag on
+   * SetStorageSettings -- so a client can preview a lowered limit's real impact with a
+   * guarantee that SetStorageSettings itself was never called, and therefore nothing was
+   * written and no cleanup ran.
+   *
+   * @generated from rpc bladewatch.v1.StorageService.PreviewStorageLimitChange
+   */
+  previewStorageLimitChange: {
+    methodKind: "unary";
+    input: typeof PreviewStorageLimitChangeRequestSchema;
+    output: typeof PreviewStorageLimitChangeResponseSchema;
   },
   /**
    * @generated from rpc bladewatch.v1.StorageService.GetExternalStorage

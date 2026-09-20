@@ -108,4 +108,57 @@ public class SettingsServiceClient(
     ),
   )
 
+
+  /**
+   *  BladeWatch-qwqq: these four replace the last /api/settings/&#42; JSON calls any first-party
+   *  client still made over REST — the web SPA's status-overlay toggles and the Flutter
+   *  recording screen's telemetry-field picker.
+   */
+  override suspend fun getStatusOverlay(request: GetStatusOverlayRequest, headers: Headers): ResponseMessage<GetStatusOverlayResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SettingsService/GetStatusOverlay",
+      net.bladewatch.app.grpc.v1.GetStatusOverlayRequest::class,
+      net.bladewatch.app.grpc.v1.GetStatusOverlayResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun setStatusOverlay(request: SetStatusOverlayRequest, headers: Headers): ResponseMessage<SetStatusOverlayResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SettingsService/SetStatusOverlay",
+      net.bladewatch.app.grpc.v1.SetStatusOverlayRequest::class,
+      net.bladewatch.app.grpc.v1.SetStatusOverlayResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun getTelemetryOverlayFields(request: GetTelemetryOverlayFieldsRequest, headers: Headers): ResponseMessage<GetTelemetryOverlayFieldsResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SettingsService/GetTelemetryOverlayFields",
+      net.bladewatch.app.grpc.v1.GetTelemetryOverlayFieldsRequest::class,
+      net.bladewatch.app.grpc.v1.GetTelemetryOverlayFieldsResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun setTelemetryOverlayFields(request: SetTelemetryOverlayFieldsRequest, headers: Headers): ResponseMessage<SetTelemetryOverlayFieldsResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SettingsService/SetTelemetryOverlayFields",
+      net.bladewatch.app.grpc.v1.SetTelemetryOverlayFieldsRequest::class,
+      net.bladewatch.app.grpc.v1.SetTelemetryOverlayFieldsResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
 }

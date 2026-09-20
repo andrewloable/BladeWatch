@@ -71,6 +71,23 @@ void main() {
       expect(controller.telemetry, hasLength(2));
     });
 
+    test('derives energyUsedKwh from energyPerKm * distanceKm rather than showing blank', () async {
+      // Mirrors a real report: SoC dropped and electric cost was nonzero (proving the daemon
+      // measured real energy use), but the Energy tile showed "--" because energyUsedKwh was
+      // hardcoded to 0.0 instead of being derived from the energyPerKm field that was right
+      // there in the same response.
+      final resp = aTripDetailResponse();
+      (resp['trip']['summary'] as Map<String, dynamic>)['energyPerKm'] = 0.18;
+      rpc.stubJson('TripsService', 'GetTrip', resp);
+      rpc.stubJson('TripsService', 'GetTelemetry', {'success': true, 'telemetry': []});
+
+      await controller.load(1);
+
+      final detail = controller.detail!;
+      expect(detail.distanceKm, 20.0);
+      expect(detail.energyUsedKwh, closeTo(0.18 * 20.0, 1e-9));
+    });
+
     test('skips a telemetry sample with unparseable JSON rather than crashing', () async {
       rpc.stubJson('TripsService', 'GetTrip', aTripDetailResponse());
       rpc.stubJson('TripsService', 'GetTelemetry', {

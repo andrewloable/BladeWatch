@@ -1333,6 +1333,11 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 este mês';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'Online';
 
   @override
@@ -1525,10 +1530,93 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => 'Prioridade de gravação';
+
+  @override
+  String get settings_recording_priority_description =>
+      'Como a gravação lida com uma perda súbita de energia.';
+
+  @override
+  String get settings_recording_priority_performance_label => 'Desempenho';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Usa menos CPU. Se a energia for cortada abruptamente, o segmento de gravação atual (até ao seu Limite de Gravação) pode perder-se.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Fiabilidade';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Usa um pouco mais de CPU para guardar com mais frequência. Se a energia for cortada abruptamente, perde-se no máximo cerca de um minuto.';
+
+  @override
+  String get settings_recording_overlay_fields_title =>
+      'Campos de sobreposição';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Escolhe o que aparece na sobreposição gravada nas gravações contínuas.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Velocidade';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Mudança';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'Pisca esquerdo';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'Pisca direito';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Pedal de travão';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal =>
+      'Pedal do acelerador';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Cinto do condutor';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Cinto do passageiro';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'Data e hora';
+
+  @override
   String get settings_recording_quality_title => 'Qualidade da gravação';
 
   @override
   String get settings_recording_storage_title => 'Armazenamento de gravações';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'Eliminar gravações?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Isto irá eliminar $arg1 gravações ($arg2).',
+      one: 'Isto irá eliminar $arg1 gravação ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Impacto desconhecido';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Não foi possível determinar o que esta alteração iria eliminar. Reduzir o limite pode remover gravações existentes.';
 
   @override
   String get settings_recording_storage_location_label =>
@@ -1542,6 +1630,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'Cartão SD (N/D)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'O cartão SD não foi montado';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -1960,6 +2052,27 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => 'Refrigeração máx.: DESATIVADA';
+
+  @override
+  String get vehicle_screen_on => 'Ecrã: LIGADO';
+
+  @override
+  String get vehicle_screen_off => 'Ecrã: DESLIGADO';
+
+  @override
+  String get vehicle_media_volume_label => 'Volume multimédia';
+
+  @override
+  String get vehicle_media_mute => 'Silenciar';
+
+  @override
+  String get vehicle_media_muted => 'Silenciado';
+
+  @override
+  String get vehicle_front_defrost => 'Descongelamento dianteiro';
+
+  @override
+  String get vehicle_rear_defrost => 'Descongelamento traseiro';
 
   @override
   String get vehicle_temp_label => 'Temperatura';
@@ -2812,6 +2925,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => 'Percebi';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'O modo sentinela consome energia extra da bateria de 12V enquanto está ativo.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'Outra aplicação está a utilizar a câmara neste momento.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -4143,6 +4264,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '$arg1 este mês';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => 'Online';
 
   @override
@@ -4335,10 +4461,93 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String get settings_recording_priority_title => 'Prioridade de gravação';
+
+  @override
+  String get settings_recording_priority_description =>
+      'Como a gravação lida com uma perda repentina de energia.';
+
+  @override
+  String get settings_recording_priority_performance_label => 'Desempenho';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      'Usa menos CPU. Se a energia for cortada abruptamente, o segmento de gravação atual (até o seu Limite de Gravação) pode ser perdido.';
+
+  @override
+  String get settings_recording_priority_reliability_label => 'Confiabilidade';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      'Usa um pouco mais de CPU para salvar com mais frequência. Se a energia for cortada abruptamente, no máximo cerca de um minuto pode ser perdido.';
+
+  @override
+  String get settings_recording_overlay_fields_title =>
+      'Campos de sobreposição';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      'Escolha o que aparece na sobreposição gravada nas gravações contínuas.';
+
+  @override
+  String get settings_recording_overlay_field_speed => 'Velocidade';
+
+  @override
+  String get settings_recording_overlay_field_gear => 'Marcha';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left =>
+      'Seta esquerda';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right =>
+      'Seta direita';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => 'Pedal de freio';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal =>
+      'Pedal do acelerador';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver =>
+      'Cinto do motorista';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger =>
+      'Cinto do passageiro';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => 'Data e hora';
+
+  @override
   String get settings_recording_quality_title => 'Qualidade da gravação';
 
   @override
   String get settings_recording_storage_title => 'Armazenamento de gravações';
+
+  @override
+  String get settings_recording_storage_confirm_title => 'Excluir gravações?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: 'Isso excluirá $arg1 gravações ($arg2).',
+      one: 'Isso excluirá $arg1 gravação ($arg2).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title =>
+      'Impacto desconhecido';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      'Não foi possível determinar o que esta alteração excluiria. Reduzir o limite pode remover gravações existentes.';
 
   @override
   String get settings_recording_storage_location_label =>
@@ -4352,6 +4561,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settings_recording_storage_sd_card_na => 'Cartão SD (N/D)';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title =>
+      'O cartão SD não foi montado';
 
   @override
   String get settings_recording_storage_limit_label =>
@@ -4770,6 +4983,27 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get vehicle_max_cooling_off => 'Refrigeração máx.: DESATIVADA';
+
+  @override
+  String get vehicle_screen_on => 'Tela: LIGADA';
+
+  @override
+  String get vehicle_screen_off => 'Tela: DESLIGADA';
+
+  @override
+  String get vehicle_media_volume_label => 'Volume da mídia';
+
+  @override
+  String get vehicle_media_mute => 'Silenciar';
+
+  @override
+  String get vehicle_media_muted => 'Silenciado';
+
+  @override
+  String get vehicle_front_defrost => 'Desembaçador dianteiro';
+
+  @override
+  String get vehicle_rear_defrost => 'Desembaçador traseiro';
 
   @override
   String get vehicle_temp_label => 'Temperatura';
@@ -5621,4 +5855,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dashboard_tor_help_close => 'Entendi';
+
+  @override
+  String get surveillance_general_battery_warning =>
+      'O modo sentinela consome energia extra da bateria de 12V enquanto estiver ativo.';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      'Outro aplicativo está usando a câmera neste momento.';
 }

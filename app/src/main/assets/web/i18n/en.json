@@ -1561,7 +1561,8 @@
     "badgeConnecting": "○ Connecting…",
     "notConnected": "Camera stream not connected",
     "retry": "Retry",
-    "decoderUnsupported": "This browser cannot play the live stream. It needs a browser with video decoding support, such as Chrome or Edge. Tor Browser and Firefox ESR do not have it yet."
+    "decoderUnsupported": "This browser cannot play the live stream. It needs a browser with video decoding support, such as Chrome or Edge. Tor Browser and Firefox ESR do not have it yet.",
+    "stillFrameLabel": "Still image — not live video"
   },
   "location": {
     "openInGoogleMaps": "Open in Google Maps",

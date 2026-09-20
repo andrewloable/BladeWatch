@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "รูปแบบข้อมูลไม่ถูกต้อง: {0}",
     "performance_no_data": "ยังไม่มีข้อมูลประสิทธิภาพ",
     "soh_not_initialized": "ระบบคำนวณ SOH ยังไม่เริ่มทำงาน",
+    "soh_nominal_range": "ความจุระบุต้องอยู่ระหว่าง 8 ถึง 120 kWh",
     "reset_no_categories": "ไม่ได้ระบุหมวดหมู่",
     "reset_unknown_category": "ไม่รู้จักหมวดหมู่",
     "reset_trip_in_progress": "กำลังบันทึกทริป ให้ปิด ACC ก่อน",
@@ -75,6 +76,8 @@
     "surveillance_invalid_quadrant_with_id": "มุมกล้องไม่ถูกต้อง: {0}",
     "surveillance_event_frame_failed_with_detail": "บันทึกภาพเหตุการณ์ไม่ได้: {0}",
     "surveillance_no_frame_available": "ไม่มีภาพ ให้เปิดโหมดเฝ้าระวังหรือบันทึกก่อน",
+    "telemetry_overlay_unknown_type_with_id": "ประเภทการบันทึกที่ไม่รู้จัก: {0}",
+    "telemetry_overlay_fields_missing": "ขาด \"fields\"",
     "update_app_context_not_ready": "แอพยังไม่พร้อม",
     "update_check_timed_out": "หมดเวลาเช็กอัปเดต",
     "update_disabled_in_public_mode": "อัปเดตไม่ได้ในโหมด Public ให้เปลี่ยนเป็น Private ในรถก่อน",
@@ -118,7 +121,11 @@
     "area_hood": "ฝากระโปรงหน้า",
     "area_trunk": "ฝากระโปรงท้าย",
     "area_fuel_cap": "ฝาชาร์จ",
-    "area_door_n": "ประตู {0}"
+    "area_door_n": "ประตู {0}",
+    "trip_started": "เริ่มการเดินทาง",
+    "trip_ended": "การเดินทางสิ้นสุด",
+    "trip_summary_km": "{0} km · {1} นาที",
+    "trip_summary_mi": "{0} mi · {1} นาที"
   },
   "vehicle_control": {
     "cloud_required": "เชื่อมบัญชี BYD ในการตั้งค่า เพื่อใช้การควบคุมนี้",
@@ -130,6 +137,7 @@
     "cloud_failed": "ไม่สามารถหารถได้  ลองอีกครั้งเมื่อรถตื่น",
     "rate_limited": "คําสั่งยังคงอยู่ในกระบวนการ รอไม่กี่วินาที",
     "not_supported": "การควบคุมนี้ไม่ได้มีอยู่ตอนนี้",
+    "blocked_moving": "ไม่พร้อมใช้งานขณะที่รถกำลังเคลื่อนที่",
     "find_car_label": "ค้นหารถ",
     "battery_heat_label": "แพทเทอรี่",
     "close_all_windows_label": "ทั้งหมดปิดหน้าต่าง"

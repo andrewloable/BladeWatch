@@ -7,7 +7,6 @@ import android.os.UserManager
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import net.bladewatch.app.BuildConfig
-import net.bladewatch.app.config.SecretConfigBridge
 import net.bladewatch.app.ui.model.DaemonType
 
 /**

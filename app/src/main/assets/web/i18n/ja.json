@@ -1557,7 +1557,8 @@
     "badgeLive": "● ライブ",
     "badgeConnecting": "○ 接続中…",
     "notConnected": "カメラ映像が接続されていません",
-    "decoderUnsupported": "このブラウザーではライブ映像を再生できません。Chrome や Edge など、動画デコードに対応したブラウザーが必要です。Tor Browser と Firefox ESR はまだ対応していません。"
+    "decoderUnsupported": "このブラウザーではライブ映像を再生できません。Chrome や Edge など、動画デコードに対応したブラウザーが必要です。Tor Browser と Firefox ESR はまだ対応していません。",
+    "stillFrameLabel": "静止画像 — ライブ映像ではありません"
   },
   "location": {
     "themeAuto": "自動運転",

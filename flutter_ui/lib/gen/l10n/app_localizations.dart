@@ -2415,6 +2415,12 @@ abstract class AppLocalizations {
   /// **'Tunnel · {arg1}'**
   String diagnostics_network_tunnel_label(Object arg1);
 
+  /// No description provided for @diagnostics_network_data_usage_line.
+  ///
+  /// In en, this message translates to:
+  /// **'{arg1} this month'**
+  String diagnostics_network_data_usage_line(Object arg1);
+
   /// No description provided for @diagnostics_tunnel_state_online.
   ///
   /// In en, this message translates to:
@@ -2745,6 +2751,108 @@ abstract class AppLocalizations {
   /// **'{arg1} min'**
   String settings_recording_limit_minutes(Object arg1);
 
+  /// No description provided for @settings_recording_priority_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording Priority'**
+  String get settings_recording_priority_title;
+
+  /// No description provided for @settings_recording_priority_description.
+  ///
+  /// In en, this message translates to:
+  /// **'How recording handles a sudden loss of power.'**
+  String get settings_recording_priority_description;
+
+  /// No description provided for @settings_recording_priority_performance_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get settings_recording_priority_performance_label;
+
+  /// No description provided for @settings_recording_priority_performance_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses less CPU. If power is cut abruptly, the current recording segment (up to your Recording Limit) may be lost.'**
+  String get settings_recording_priority_performance_desc;
+
+  /// No description provided for @settings_recording_priority_reliability_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Reliability'**
+  String get settings_recording_priority_reliability_label;
+
+  /// No description provided for @settings_recording_priority_reliability_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses a bit more CPU to save more often. If power is cut abruptly, at most about a minute may be lost.'**
+  String get settings_recording_priority_reliability_desc;
+
+  /// No description provided for @settings_recording_overlay_fields_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Overlay Fields'**
+  String get settings_recording_overlay_fields_title;
+
+  /// No description provided for @settings_recording_overlay_fields_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what appears in the burned-in overlay on continuous recordings.'**
+  String get settings_recording_overlay_fields_description;
+
+  /// No description provided for @settings_recording_overlay_field_speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get settings_recording_overlay_field_speed;
+
+  /// No description provided for @settings_recording_overlay_field_gear.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear'**
+  String get settings_recording_overlay_field_gear;
+
+  /// No description provided for @settings_recording_overlay_field_turn_signal_left.
+  ///
+  /// In en, this message translates to:
+  /// **'Left turn signal'**
+  String get settings_recording_overlay_field_turn_signal_left;
+
+  /// No description provided for @settings_recording_overlay_field_turn_signal_right.
+  ///
+  /// In en, this message translates to:
+  /// **'Right turn signal'**
+  String get settings_recording_overlay_field_turn_signal_right;
+
+  /// No description provided for @settings_recording_overlay_field_brake_pedal.
+  ///
+  /// In en, this message translates to:
+  /// **'Brake pedal'**
+  String get settings_recording_overlay_field_brake_pedal;
+
+  /// No description provided for @settings_recording_overlay_field_accel_pedal.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerator pedal'**
+  String get settings_recording_overlay_field_accel_pedal;
+
+  /// No description provided for @settings_recording_overlay_field_seatbelt_driver.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver seatbelt'**
+  String get settings_recording_overlay_field_seatbelt_driver;
+
+  /// No description provided for @settings_recording_overlay_field_seatbelt_passenger.
+  ///
+  /// In en, this message translates to:
+  /// **'Passenger seatbelt'**
+  String get settings_recording_overlay_field_seatbelt_passenger;
+
+  /// No description provided for @settings_recording_overlay_field_timestamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Date and time'**
+  String get settings_recording_overlay_field_timestamp;
+
   /// No description provided for @settings_recording_quality_title.
   ///
   /// In en, this message translates to:
@@ -2756,6 +2864,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recording Storage'**
   String get settings_recording_storage_title;
+
+  /// No description provided for @settings_recording_storage_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete recordings?'**
+  String get settings_recording_storage_confirm_title;
+
+  /// No description provided for @settings_recording_storage_confirm_message.
+  ///
+  /// In en, this message translates to:
+  /// **'{arg1, plural, one{This will delete {arg1} recording ({arg2}).} other{This will delete {arg1} recordings ({arg2}).}}'**
+  String settings_recording_storage_confirm_message(num arg1, Object arg2);
+
+  /// No description provided for @settings_recording_storage_confirm_unknown_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Impact unknown'**
+  String get settings_recording_storage_confirm_unknown_title;
+
+  /// No description provided for @settings_recording_storage_confirm_unknown_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not determine what this change would delete. Lowering the limit may remove existing recordings.'**
+  String get settings_recording_storage_confirm_unknown_message;
 
   /// No description provided for @settings_recording_storage_location_label.
   ///
@@ -2780,6 +2912,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SD Card (N/A)'**
   String get settings_recording_storage_sd_card_na;
+
+  /// No description provided for @settings_recording_storage_sd_mount_failed_title.
+  ///
+  /// In en, this message translates to:
+  /// **'SD card did not mount'**
+  String get settings_recording_storage_sd_mount_failed_title;
 
   /// No description provided for @settings_recording_storage_limit_label.
   ///
@@ -3434,6 +3572,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Max Cooling: OFF'**
   String get vehicle_max_cooling_off;
+
+  /// No description provided for @vehicle_screen_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen: ON'**
+  String get vehicle_screen_on;
+
+  /// No description provided for @vehicle_screen_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen: OFF'**
+  String get vehicle_screen_off;
+
+  /// No description provided for @vehicle_media_volume_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Media Volume'**
+  String get vehicle_media_volume_label;
+
+  /// No description provided for @vehicle_media_mute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get vehicle_media_mute;
+
+  /// No description provided for @vehicle_media_muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get vehicle_media_muted;
+
+  /// No description provided for @vehicle_front_defrost.
+  ///
+  /// In en, this message translates to:
+  /// **'Front Defrost'**
+  String get vehicle_front_defrost;
+
+  /// No description provided for @vehicle_rear_defrost.
+  ///
+  /// In en, this message translates to:
+  /// **'Rear Defrost'**
+  String get vehicle_rear_defrost;
 
   /// No description provided for @vehicle_temp_label.
   ///
@@ -4963,6 +5143,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Got it'**
   String get dashboard_tor_help_close;
+
+  /// No description provided for @surveillance_general_battery_warning.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentry mode uses extra 12V battery power while armed.'**
+  String get surveillance_general_battery_warning;
+
+  /// No description provided for @surveillance_general_camera_contention_warning.
+  ///
+  /// In en, this message translates to:
+  /// **'Another app is using the camera right now.'**
+  String get surveillance_general_camera_contention_warning;
 }
 
 class _AppLocalizationsDelegate

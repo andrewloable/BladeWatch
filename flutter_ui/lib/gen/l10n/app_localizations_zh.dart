@@ -1277,6 +1277,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '本月 $arg1';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => '在线';
 
   @override
@@ -1458,10 +1463,85 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get settings_recording_priority_title => '录制优先级';
+
+  @override
+  String get settings_recording_priority_description => '录制如何应对突然断电。';
+
+  @override
+  String get settings_recording_priority_performance_label => '性能';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      '占用更少 CPU。如果电源突然中断,当前录制片段(最长至您设置的录制时长上限)可能会丢失。';
+
+  @override
+  String get settings_recording_priority_reliability_label => '可靠性';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      '占用稍多 CPU 以更频繁地保存。如果电源突然中断,最多丢失约一分钟。';
+
+  @override
+  String get settings_recording_overlay_fields_title => '叠层字段';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      '选择连续录制中烧录叠层显示的内容。';
+
+  @override
+  String get settings_recording_overlay_field_speed => '速度';
+
+  @override
+  String get settings_recording_overlay_field_gear => '挡位';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left => '左转向灯';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right => '右转向灯';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => '刹车踏板';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => '油门踏板';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver => '驾驶员安全带';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger => '乘客安全带';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => '日期和时间';
+
+  @override
   String get settings_recording_quality_title => '录制画质';
 
   @override
   String get settings_recording_storage_title => '录制存储';
+
+  @override
+  String get settings_recording_storage_confirm_title => '删除录制内容?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '此操作将删除 $arg1 个录制文件($arg2)。',
+      one: '此操作将删除 $arg1 个录制文件($arg2)。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title => '影响未知';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      '无法确定此更改将删除哪些内容。降低限制可能会删除现有录制内容。';
 
   @override
   String get settings_recording_storage_location_label => '存储位置';
@@ -1474,6 +1554,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD 卡（不可用）';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title => 'SD 卡未挂载';
 
   @override
   String get settings_recording_storage_limit_label => '存储上限 — 达到后自动删除最旧的';
@@ -1868,6 +1951,27 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get vehicle_max_cooling_off => '最大制冷：关';
+
+  @override
+  String get vehicle_screen_on => '屏幕：开';
+
+  @override
+  String get vehicle_screen_off => '屏幕：关';
+
+  @override
+  String get vehicle_media_volume_label => '媒体音量';
+
+  @override
+  String get vehicle_media_mute => '静音';
+
+  @override
+  String get vehicle_media_muted => '已静音';
+
+  @override
+  String get vehicle_front_defrost => '前挡除雾';
+
+  @override
+  String get vehicle_rear_defrost => '后挡除雾';
 
   @override
   String get vehicle_temp_label => '温度';
@@ -2700,6 +2804,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dashboard_tor_help_close => '知道了';
+
+  @override
+  String get surveillance_general_battery_warning => '哨兵模式启用期间会额外消耗12V电瓶电量。';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      '目前有其他应用正在使用摄像头。';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -3975,6 +4086,11 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '本月 $arg1';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => '在线';
 
   @override
@@ -4156,10 +4272,85 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
+  String get settings_recording_priority_title => '录制优先级';
+
+  @override
+  String get settings_recording_priority_description => '录制如何应对突然断电。';
+
+  @override
+  String get settings_recording_priority_performance_label => '性能';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      '占用更少 CPU。如果电源突然中断,当前录制片段(最长至您设置的录制时长上限)可能会丢失。';
+
+  @override
+  String get settings_recording_priority_reliability_label => '可靠性';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      '占用稍多 CPU 以更频繁地保存。如果电源突然中断,最多丢失约一分钟。';
+
+  @override
+  String get settings_recording_overlay_fields_title => '叠层字段';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      '选择连续录制中烧录叠层显示的内容。';
+
+  @override
+  String get settings_recording_overlay_field_speed => '速度';
+
+  @override
+  String get settings_recording_overlay_field_gear => '挡位';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left => '左转向灯';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right => '右转向灯';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => '刹车踏板';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => '油门踏板';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver => '驾驶员安全带';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger => '乘客安全带';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => '日期和时间';
+
+  @override
   String get settings_recording_quality_title => '录制画质';
 
   @override
   String get settings_recording_storage_title => '录制存储';
+
+  @override
+  String get settings_recording_storage_confirm_title => '删除录制内容?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '此操作将删除 $arg1 个录制文件($arg2)。',
+      one: '此操作将删除 $arg1 个录制文件($arg2)。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title => '影响未知';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      '无法确定此更改将删除哪些内容。降低限制可能会删除现有录制内容。';
 
   @override
   String get settings_recording_storage_location_label => '存储位置';
@@ -4172,6 +4363,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD 卡（不可用）';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title => 'SD 卡未挂载';
 
   @override
   String get settings_recording_storage_limit_label => '存储上限 — 达到后自动删除最旧的';
@@ -4566,6 +4760,27 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get vehicle_max_cooling_off => '最大制冷：关';
+
+  @override
+  String get vehicle_screen_on => '屏幕：开';
+
+  @override
+  String get vehicle_screen_off => '屏幕：关';
+
+  @override
+  String get vehicle_media_volume_label => '媒体音量';
+
+  @override
+  String get vehicle_media_mute => '静音';
+
+  @override
+  String get vehicle_media_muted => '已静音';
+
+  @override
+  String get vehicle_front_defrost => '前挡除雾';
+
+  @override
+  String get vehicle_rear_defrost => '后挡除雾';
 
   @override
   String get vehicle_temp_label => '温度';
@@ -5398,6 +5613,13 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get dashboard_tor_help_close => '知道了';
+
+  @override
+  String get surveillance_general_battery_warning => '哨兵模式启用期间会额外消耗12V电瓶电量。';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      '目前有其他应用正在使用摄像头。';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -6674,6 +6896,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String diagnostics_network_data_usage_line(Object arg1) {
+    return '本月 $arg1';
+  }
+
+  @override
   String get diagnostics_tunnel_state_online => '線上';
 
   @override
@@ -6855,10 +7082,85 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
+  String get settings_recording_priority_title => '錄影優先順序';
+
+  @override
+  String get settings_recording_priority_description => '錄影如何應對突然斷電。';
+
+  @override
+  String get settings_recording_priority_performance_label => '效能';
+
+  @override
+  String get settings_recording_priority_performance_desc =>
+      '佔用較少 CPU。如果電源突然中斷,目前的錄影片段(最長至您設定的錄影時間上限)可能會遺失。';
+
+  @override
+  String get settings_recording_priority_reliability_label => '可靠性';
+
+  @override
+  String get settings_recording_priority_reliability_desc =>
+      '佔用稍多 CPU 以更頻繁地儲存。如果電源突然中斷,最多遺失約一分鐘。';
+
+  @override
+  String get settings_recording_overlay_fields_title => '疊層欄位';
+
+  @override
+  String get settings_recording_overlay_fields_description =>
+      '選擇連續錄影中烧錄疊層顯示的內容。';
+
+  @override
+  String get settings_recording_overlay_field_speed => '速度';
+
+  @override
+  String get settings_recording_overlay_field_gear => '檔位';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_left => '左轉燈';
+
+  @override
+  String get settings_recording_overlay_field_turn_signal_right => '右轉燈';
+
+  @override
+  String get settings_recording_overlay_field_brake_pedal => '刹車踏板';
+
+  @override
+  String get settings_recording_overlay_field_accel_pedal => '油門踏板';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_driver => '駕駛座安全帶';
+
+  @override
+  String get settings_recording_overlay_field_seatbelt_passenger => '乘客座安全帶';
+
+  @override
+  String get settings_recording_overlay_field_timestamp => '日期與時間';
+
+  @override
   String get settings_recording_quality_title => '錄影畫質';
 
   @override
   String get settings_recording_storage_title => '錄影儲存';
+
+  @override
+  String get settings_recording_storage_confirm_title => '刪除錄影內容?';
+
+  @override
+  String settings_recording_storage_confirm_message(num arg1, Object arg2) {
+    String _temp0 = intl.Intl.pluralLogic(
+      arg1,
+      locale: localeName,
+      other: '此操作將刪除 $arg1 個錄影檔案($arg2)。',
+      one: '此操作將刪除 $arg1 個錄影檔案($arg2)。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_recording_storage_confirm_unknown_title => '影響未知';
+
+  @override
+  String get settings_recording_storage_confirm_unknown_message =>
+      '無法確定此變更將刪除哪些內容。降低限制可能會刪除現有錄影內容。';
 
   @override
   String get settings_recording_storage_location_label => '儲存位置';
@@ -6871,6 +7173,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get settings_recording_storage_sd_card_na => 'SD 卡（不可用）';
+
+  @override
+  String get settings_recording_storage_sd_mount_failed_title => 'SD 卡未掛載';
 
   @override
   String get settings_recording_storage_limit_label => '儲存上限 — 達到後自動刪除最舊的';
@@ -7265,6 +7570,27 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get vehicle_max_cooling_off => '最大冷氣：關';
+
+  @override
+  String get vehicle_screen_on => '螢幕：開';
+
+  @override
+  String get vehicle_screen_off => '螢幕：關';
+
+  @override
+  String get vehicle_media_volume_label => '媒體音量';
+
+  @override
+  String get vehicle_media_mute => '靜音';
+
+  @override
+  String get vehicle_media_muted => '已靜音';
+
+  @override
+  String get vehicle_front_defrost => '前擋除霧';
+
+  @override
+  String get vehicle_rear_defrost => '後擋除霧';
 
   @override
   String get vehicle_temp_label => '溫度';
@@ -8097,4 +8423,11 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get dashboard_tor_help_close => '知道了';
+
+  @override
+  String get surveillance_general_battery_warning => '哨兵模式啟用期間會額外消耗12V電瓶電量。';
+
+  @override
+  String get surveillance_general_camera_contention_warning =>
+      '目前有其他應用程式正在使用攝影機。';
 }

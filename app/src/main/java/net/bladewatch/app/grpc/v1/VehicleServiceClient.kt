@@ -26,6 +26,8 @@ import com.connectrpc.StreamType
  *    SetClimate           POST /api/vehicle/climate
  *    SetSeat              POST /api/vehicle/seat
  *    SetLights            POST /api/vehicle/lights
+ *    SetScreen            POST /api/vehicle/screen
+ *    SetMediaVolume       POST /api/vehicle/media-volume
  *    SetAdas              POST /api/vehicle/adas
  *    SetBatteryHeat       POST /api/vehicle/battery-heat
  *    GetChargingSchedule  GET  /api/vehicle/charging-schedule
@@ -183,6 +185,30 @@ public class VehicleServiceClient(
   )
 
 
+  override suspend fun setScreen(request: SetScreenRequest, headers: Headers): ResponseMessage<VehicleCommandResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.VehicleService/SetScreen",
+      net.bladewatch.app.grpc.v1.SetScreenRequest::class,
+      net.bladewatch.app.grpc.v1.VehicleCommandResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun setMediaVolume(request: SetMediaVolumeRequest, headers: Headers): ResponseMessage<VehicleCommandResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.VehicleService/SetMediaVolume",
+      net.bladewatch.app.grpc.v1.SetMediaVolumeRequest::class,
+      net.bladewatch.app.grpc.v1.VehicleCommandResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
   override suspend fun setAdas(request: SetAdasRequest, headers: Headers): ResponseMessage<VehicleCommandResponse> = client.unary(
     request,
     headers,
@@ -286,6 +312,40 @@ public class VehicleServiceClient(
     "bladewatch.v1.VehicleService/StopGps",
       net.bladewatch.app.grpc.v1.StopGpsRequest::class,
       net.bladewatch.app.grpc.v1.StopGpsResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  /**
+   *  BladeWatch-jwko: issues the short-lived second factor that actuating commands require from
+   *  a non-loopback caller. Never itself gated — you cannot need a token to get a token.
+   */
+  override suspend fun issueActionToken(request: IssueActionTokenRequest, headers: Headers): ResponseMessage<IssueActionTokenResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.VehicleService/IssueActionToken",
+      net.bladewatch.app.grpc.v1.IssueActionTokenRequest::class,
+      net.bladewatch.app.grpc.v1.IssueActionTokenResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  /**
+   *  BladeWatch-6mnq: read-only probe of which declared ADAS_* ids actually resolve from the SDK
+   *  on this car (BladeWatch-2pnn.3). It was REST-only, and the reference said to add an RPC
+   *  "if a client needs it" — removing the REST surface is exactly that moment, and without this
+   *  the diagnostic would simply have vanished.
+   */
+  override suspend fun getAdasInventory(request: GetAdasInventoryRequest, headers: Headers): ResponseMessage<GetAdasInventoryResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.VehicleService/GetAdasInventory",
+      net.bladewatch.app.grpc.v1.GetAdasInventoryRequest::class,
+      net.bladewatch.app.grpc.v1.GetAdasInventoryResponse::class,
       StreamType.UNARY,
     ),
   )

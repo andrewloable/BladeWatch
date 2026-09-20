@@ -180,6 +180,23 @@ private static final long serialVersionUID = 0L;
     return restoreFanLevel_;
   }
 
+  public static final int CYCLE_MODE_FIELD_NUMBER = 10;
+  private int cycleMode_ = 0;
+  /**
+   * <pre>
+   * BladeWatch-2000.1. Value meaning is not established in source (see
+   * docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+   * already is; the UI does not offer a labelled picker for either.
+   * </pre>
+   *
+   * <code>int32 cycle_mode = 10 [json_name = "cycleMode"];</code>
+   * @return The cycleMode.
+   */
+  @java.lang.Override
+  public int getCycleMode() {
+    return cycleMode_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -221,6 +238,9 @@ private static final long serialVersionUID = 0L;
     if (restoreFanLevel_ != 0) {
       output.writeInt32(9, restoreFanLevel_);
     }
+    if (cycleMode_ != 0) {
+      output.writeInt32(10, cycleMode_);
+    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -259,6 +279,10 @@ private static final long serialVersionUID = 0L;
     if (restoreFanLevel_ != 0) {
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(9, restoreFanLevel_);
+    }
+    if (cycleMode_ != 0) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeInt32Size(10, cycleMode_);
     }
     return size;
   }
@@ -304,6 +328,8 @@ private static final long serialVersionUID = 0L;
             other.getRestoreTempC())) return false;
     if (getRestoreFanLevel()
         != other.getRestoreFanLevel()) return false;
+    if (getCycleMode()
+        != other.getCycleMode()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -338,6 +364,8 @@ private static final long serialVersionUID = 0L;
         java.lang.Double.doubleToLongBits(getRestoreTempC()));
     hash = (37 * hash) + RESTORE_FAN_LEVEL_FIELD_NUMBER;
     hash = (53 * hash) + getRestoreFanLevel();
+    hash = (37 * hash) + CYCLE_MODE_FIELD_NUMBER;
+    hash = (53 * hash) + getCycleMode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -478,6 +506,7 @@ private static final long serialVersionUID = 0L;
       restoreAcOn_ = false;
       restoreTempC_ = 0D;
       restoreFanLevel_ = 0;
+      cycleMode_ = 0;
       return this;
     }
 
@@ -538,6 +567,9 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00000100) != 0)) {
         result.restoreFanLevel_ = restoreFanLevel_;
       }
+      if (((from_bitField0_ & 0x00000200) != 0)) {
+        result.cycleMode_ = cycleMode_;
+      }
     }
 
     @java.lang.Override
@@ -580,6 +612,9 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getRestoreFanLevel() != 0) {
         setRestoreFanLevel(other.getRestoreFanLevel());
+      }
+      if (other.getCycleMode() != 0) {
+        setCycleMode(other.getCycleMode());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -652,6 +687,11 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000100;
               break;
             } // case 72
+            case 80: {
+              cycleMode_ = input.readInt32();
+              bitField0_ |= 0x00000200;
+              break;
+            } // case 80
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -1005,6 +1045,56 @@ private static final long serialVersionUID = 0L;
     public Builder clearRestoreFanLevel() {
       bitField0_ = (bitField0_ & ~0x00000100);
       restoreFanLevel_ = 0;
+      onChanged();
+      return this;
+    }
+
+    private int cycleMode_ ;
+    /**
+     * <pre>
+     * BladeWatch-2000.1. Value meaning is not established in source (see
+     * docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+     * already is; the UI does not offer a labelled picker for either.
+     * </pre>
+     *
+     * <code>int32 cycle_mode = 10 [json_name = "cycleMode"];</code>
+     * @return The cycleMode.
+     */
+    @java.lang.Override
+    public int getCycleMode() {
+      return cycleMode_;
+    }
+    /**
+     * <pre>
+     * BladeWatch-2000.1. Value meaning is not established in source (see
+     * docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+     * already is; the UI does not offer a labelled picker for either.
+     * </pre>
+     *
+     * <code>int32 cycle_mode = 10 [json_name = "cycleMode"];</code>
+     * @param value The cycleMode to set.
+     * @return This builder for chaining.
+     */
+    public Builder setCycleMode(int value) {
+
+      cycleMode_ = value;
+      bitField0_ |= 0x00000200;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * BladeWatch-2000.1. Value meaning is not established in source (see
+     * docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
+     * already is; the UI does not offer a labelled picker for either.
+     * </pre>
+     *
+     * <code>int32 cycle_mode = 10 [json_name = "cycleMode"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearCycleMode() {
+      bitField0_ = (bitField0_ & ~0x00000200);
+      cycleMode_ = 0;
       onChanged();
       return this;
     }

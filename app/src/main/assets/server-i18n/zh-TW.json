@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "不有效的要求體:{0}",
     "performance_no_data": "沒有開始對性能監測或尚未收集任何數據",
     "soh_not_initialized": "沒有啟動的 estimator",
+    "soh_nominal_range": "標稱容量必須介於 8 至 120 kWh 之間",
     "reset_no_categories": "沒有指定類別",
     "reset_unknown_category": "不知名類別",
     "reset_trip_in_progress": "先關閉ACC",
@@ -75,6 +76,8 @@
     "surveillance_invalid_quadrant_with_id": "不有效的四分之一:{0}",
     "surveillance_event_frame_failed_with_detail": "沒有處理事件框架: {0}",
     "surveillance_no_frame_available": "沒有圖片可用  首先開始監控或記錄事件",
+    "telemetry_overlay_unknown_type_with_id": "未知的錄製類型：{0}",
+    "telemetry_overlay_fields_missing": "缺少 \"fields\"",
     "update_app_context_not_ready": "應用程式背景未準備好",
     "update_check_timed_out": "更新查詢時間已結束",
     "update_disabled_in_public_mode": "在公共共享模式下禁用更新. 在車內應用程式中首先切換到私人模式.",
@@ -118,7 +121,11 @@
     "area_hood": "子的子",
     "area_trunk": "箱子",
     "area_fuel_cap": "燃料封鎖",
-    "area_door_n": "門 {0}"
+    "area_door_n": "門 {0}",
+    "trip_started": "行程已開始",
+    "trip_ended": "行程已結束",
+    "trip_summary_km": "{0} km · {1} 分鐘",
+    "trip_summary_mi": "{0} 英哩 · {1} 分鐘"
   },
   "vehicle_control": {
     "cloud_required": "在設定中連接BYD帳戶,",
@@ -130,6 +137,7 @@
     "cloud_failed": "當車子醒來時再試一次.",
     "rate_limited": "命令仍在進行中 等待幾秒",
     "not_supported": "這種控制器目前無法使用.",
+    "blocked_moving": "車輛行駛時無法使用。",
     "find_car_label": "找一個車",
     "battery_heat_label": "熱熱的電池",
     "close_all_windows_label": "所有的窗戶關閉"
