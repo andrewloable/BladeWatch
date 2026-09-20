@@ -31,13 +31,33 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false # never abort a half-finished release build
 
+# Action versions: each is the LOWEST major that actually runs on Node 24.
+#
+# GitHub deprecated the Node 20 runtime (2025-09-19); actions still declaring it are force-run
+# on Node 24 and warn on every build. Every bump below is a runtime-only change -- each
+# project's own release notes say so, they add no behaviour.
+#
+# The versions are not uniform and that is deliberate. upload-artifact@v5 STILL declares
+# node20 (its notes: "v5 had preliminary support for Node.js 24, however this action was by
+# default still running on Node.js 20"), so v6 is the first that clears the warning. Do not
+# "tidy" these to a single number without re-checking each action.yml's `runs.using`.
+#
+# Newer majors exist (checkout v7, setup-node v7, upload-artifact v7, setup-java v6,
+# gradle/actions v6). They are deliberately NOT taken here: the goal was to clear a runtime
+# deprecation, and each extra major crosses changes nobody has read.
+#
+# upload-artifact@v6 requires Actions Runner >= 2.327.1. Fine on GitHub-hosted runners; check
+# before moving this job to self-hosted.
+#
+# subosito/flutter-action@v2 is absent from this list on purpose -- it is a composite action
+# with no Node runtime of its own, so the deprecation does not touch it.
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # Need main's history to verify the tag actually sits on it - a shallow
           # clone has neither main nor the ancestry to check against.
@@ -76,7 +96,7 @@ jobs:
 
       # JDK 17: AGP for compileSdk 36 requires 17+. The modules themselves target
       # Java 11 bytecode (sourceCompatibility in app/build.gradle.kts).
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -92,7 +112,7 @@ jobs:
       # file" even though the lockfile is perfectly valid. web/ also pulls
       # rollup-plugin-visualizer, which declares `node >= 22`, so 20 was wrong twice
       # over. Keep this in step with the Node you develop on.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: npm
@@ -122,7 +142,7 @@ jobs:
           flutter-version: '3.44.4'
           channel: stable
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       # app/build.gradle.kts pins ndkVersion = "26.1.10909125"; the native C++
       # (OpenH264 / opencv-mobile / TFLite) will not configure without it.
@@ -230,7 +250,7 @@ jobs:
             echo "unsigned OK: $(basename "$apk")"
           done
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: apks-${{ github.ref_name }}
           path: dist/*.apk
@@ -243,7 +263,7 @@ jobs:
       # and uploaded as a workflow artifact, just not published as a release.
       - name: Attach both APKs to the release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*.apk
           fail_on_unmatched_files: true
