@@ -25,7 +25,7 @@ class StealthPanelBacklightStillWiredTest {
     @Test
     @Throws(IOException::class)
     fun stealthPanelCallSitesStillInvokeSetBacklightState() {
-        val daemon = read("daemon/AccSentryDaemon.java")
+        val daemon = readAccSentryDaemon()
         Assert.assertTrue(
             "AccSentryDaemon no longer calls setBacklightState(true) -- the stealth panel's wake path is gone",
             daemon.contains("setBacklightState(true)")
@@ -39,8 +39,12 @@ class StealthPanelBacklightStillWiredTest {
     @Test
     @Throws(IOException::class)
     fun setBacklightStateDelegatesToTheSharedController() {
-        val daemon = read("daemon/AccSentryDaemon.java")
-        val body = extractMethodBody(daemon, "private static void setBacklightState(boolean on)")
+        val daemon = readAccSentryDaemon()
+        val signature = if (daemon.contains("private static void setBacklightState(boolean on)"))
+            "private static void setBacklightState(boolean on)"
+        else
+            "private fun setBacklightState(on: Boolean)"
+        val body = extractMethodBody(daemon, signature)
         Assert.assertTrue(
             "AccSentryDaemon.setBacklightState no longer delegates to BacklightController -- either the " +
                 "extraction was reverted (fine, as long as the reflection logic itself is still there) or " +
@@ -81,6 +85,30 @@ class StealthPanelBacklightStillWiredTest {
         private fun read(relative: String): String {
             val p = sourceRoot().resolve("com/loabletech/bladewatch").resolve(relative)
             Assert.assertTrue("missing source file: $p", Files.isRegularFile(p))
+            return String(Files.readAllBytes(p), StandardCharsets.UTF_8)
+        }
+
+        /**
+         * Reads AccSentryDaemon in whichever language it is written in today. The app sources
+         * are migrating from Java to Kotlin (BladeWatch-dmrg), and a guard that keeps asking
+         * for a ".java" that no longer exists stops guarding without ever failing. Both
+         * spellings present means a half-finished conversion, and this would read the stale
+         * copy.
+         */
+        @Throws(IOException::class)
+        private fun readAccSentryDaemon(): String {
+            val dir = sourceRoot().resolve("com/loabletech/bladewatch/daemon")
+            val java = dir.resolve("AccSentryDaemon.java")
+            val kotlin = dir.resolve("AccSentryDaemon.kt")
+            val hasJava = Files.isRegularFile(java)
+            val hasKotlin = Files.isRegularFile(kotlin)
+            Assert.assertTrue("missing AccSentryDaemon source (.java or .kt)", hasJava || hasKotlin)
+            Assert.assertFalse(
+                "both AccSentryDaemon.java and .kt exist -- a half-finished conversion; this guard would " +
+                    "read the stale copy",
+                hasJava && hasKotlin
+            )
+            val p = if (hasJava) java else kotlin
             return String(Files.readAllBytes(p), StandardCharsets.UTF_8)
         }
 

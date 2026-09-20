@@ -225,7 +225,7 @@ object SentryEventHandler : BydEventClient.EventListener {
                 }
             }
             
-            override fun onError(error: String) {
+            override fun onError(error: String?) {
                 log("Recording error: $error")
                 isRecording = false
             }
@@ -251,7 +251,7 @@ object SentryEventHandler : BydEventClient.EventListener {
                 onRecordingStopped?.invoke()
             }
             
-            override fun onError(error: String) {
+            override fun onError(error: String?) {
                 log("Stop recording error: $error")
                 isRecording = false
             }

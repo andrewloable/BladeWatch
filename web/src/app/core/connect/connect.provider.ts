@@ -6,6 +6,7 @@ import {
 import { createConnectTransport } from '@connectrpc/connect-web';
 import { type Transport } from '@connectrpc/connect';
 import { authInterceptor } from './auth.interceptor';
+import { vehicleActionInterceptor } from './vehicle-action.interceptor';
 
 /** Injection token for the ConnectRPC transport. */
 export const CONNECT_TRANSPORT = new InjectionToken<Transport>('ConnectTransport');
@@ -26,7 +27,9 @@ export function provideConnect(): EnvironmentProviders {
       useFactory: () =>
         createConnectTransport({
           baseUrl: '',
-          interceptors: [authInterceptor],
+          // vehicleActionInterceptor runs after auth so the issue call it makes already
+          // carries the session JWT (BladeWatch-jwko).
+          interceptors: [authInterceptor, vehicleActionInterceptor],
           // Tolerate response fields not modeled in the proto. The daemon's
           // GetStatus re-emits the full REST /status JSON verbatim (the cosmetic
           // `status` string, nested `gps`, `network.signal`,

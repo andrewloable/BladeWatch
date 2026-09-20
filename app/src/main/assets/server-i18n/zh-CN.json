@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "无效的请求机构:{0}",
     "performance_no_data": "性能监测尚未启动或尚未收集数据",
     "soh_not_initialized": "没有启动的SohEstimator",
+    "soh_nominal_range": "标称容量必须在 8 至 120 kWh 之间",
     "reset_no_categories": "没有指定类别",
     "reset_unknown_category": "不知名类别",
     "reset_trip_in_progress": "旅程正在进行 首先关闭ACC",

@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Ugyldig oppfordringsorgan: {0}",
     "performance_no_data": "Prestasjonsovervåkning ikke startet eller ingen data er samlet inn ennå",
     "soh_not_initialized": "SohEstimator ikke initialisert",
+    "soh_nominal_range": "Nominell kapasitet må være mellom 8 og 120 kWh",
     "reset_no_categories": "Ingen kategorier angitt",
     "reset_unknown_category": "Ukjent kategori",
     "reset_trip_in_progress": "Reise i gang  slå av ACC først",

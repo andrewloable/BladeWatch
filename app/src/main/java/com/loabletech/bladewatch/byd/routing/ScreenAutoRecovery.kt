@@ -72,7 +72,7 @@ class ScreenAutoRecovery internal constructor(
     internal fun isArmed(): Boolean = armed
 
     /** Test visibility only -- whether a poll is currently scheduled. */
-    internal fun isPolling(): Boolean = poller.isPolling
+    internal fun isPolling(): Boolean = poller.isPolling()
 
     /** Internal so tests (same module) can drive it directly without a real poll tick. */
     internal fun onSample(decision: DrivingSafetyGuard.Decision) {

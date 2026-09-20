@@ -26,7 +26,7 @@ public class MarkedRecordingsExcludedFromCleanupTest {
     @Test
     public void ensureSpaceDeletionLoopConsultsMarkedRecordingsStore() throws IOException {
         String source = read("storage/StorageManager.java");
-        String body = extractMethodBody(source, "private boolean ensureSpace(");
+        String body = extractMethodBody(source, ensureSpaceSignature(source));
         Assert.assertTrue(
                 "StorageManager.ensureSpace() no longer references MarkedRecordingsStore -- "
                         + "the cleanup sweep can delete a bookmarked clip. Skip marked files in "
@@ -48,7 +48,7 @@ public class MarkedRecordingsExcludedFromCleanupTest {
     @Test
     public void ensureSpaceEarlyReturnIsKeyedOnPoolSizeNotOnAnEmptySelection() throws IOException {
         String source = read("storage/StorageManager.java");
-        String body = extractMethodBody(source, "private boolean ensureSpace(");
+        String body = extractMethodBody(source, ensureSpaceSignature(source));
 
         Assert.assertFalse(
                 "StorageManager.ensureSpace() returns early on an empty selection. That is also "
@@ -65,10 +65,39 @@ public class MarkedRecordingsExcludedFromCleanupTest {
                 body.contains("selection.poolSizeAtStart <= targetSize"));
     }
 
+    /**
+     * The `ensureSpace` signature, in whichever language {@code StorageManager} is written in
+     * today. Java spells it {@code private boolean ensureSpace(} and Kotlin
+     * {@code private fun ensureSpace(} -- a guard that only knows one of them stops guarding the
+     * moment the file is converted, without ever failing (BladeWatch-dmrg).
+     */
+    private static String ensureSpaceSignature(String source) {
+        return source.contains("private boolean ensureSpace(")
+                ? "private boolean ensureSpace(" : "private fun ensureSpace(";
+    }
+
+    /**
+     * Read a source file by path, in whichever language it is written in today. The extension in
+     * the argument is advisory: the app sources are migrating from Java to Kotlin
+     * (BladeWatch-dmrg), and a guard that keeps asking for a ".java" that no longer exists stops
+     * guarding without ever failing. Both spellings present means a half-finished conversion, and
+     * this would read the stale copy.
+     */
     private static String read(String relative) throws IOException {
-        Path p = sourceRoot().resolve("com/loabletech/bladewatch").resolve(relative);
-        Assert.assertTrue("missing source file: " + p, Files.isRegularFile(p));
-        return new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+        int dot = relative.lastIndexOf('.');
+        String base = relative.endsWith(".java") || relative.endsWith(".kt")
+                ? relative.substring(0, dot) : relative;
+        Path dir = sourceRoot().resolve("com/loabletech/bladewatch");
+        Path java = dir.resolve(base + ".java");
+        Path kotlin = dir.resolve(base + ".kt");
+        boolean hasJava = Files.isRegularFile(java);
+        boolean hasKotlin = Files.isRegularFile(kotlin);
+        Assert.assertTrue("missing source file (.java or .kt): " + dir.resolve(base),
+                hasJava || hasKotlin);
+        Assert.assertFalse("both a .java and a .kt exist for " + base
+                + " -- a half-finished conversion; this guard would read the stale copy",
+                hasJava && hasKotlin);
+        return new String(Files.readAllBytes(hasJava ? java : kotlin), StandardCharsets.UTF_8);
     }
 
     private static Path sourceRoot() {

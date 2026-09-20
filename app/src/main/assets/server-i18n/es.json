@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Organismo de solicitud inválido: {0}",
     "performance_no_data": "No se ha iniciado el seguimiento del rendimiento o aún no se han recogido datos",
     "soh_not_initialized": "SohEstimator no iniciado",
+    "soh_nominal_range": "La capacidad nominal debe estar entre 8 y 120 kWh",
     "reset_no_categories": "No se han especificado categorías",
     "reset_unknown_category": "Categoría desconocida",
     "reset_trip_in_progress": "Viaje en curso  apagar ACC primero",

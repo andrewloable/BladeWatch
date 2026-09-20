@@ -1,10 +1,7 @@
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 
 import 'package:bladewatch_ui/gen/bladewatch/v1/system.pb.dart';
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 
 import 'performance_models.dart';
@@ -15,40 +12,29 @@ enum PerformanceViewState { connecting, ready }
 /// Controller behind the Performance dashboard — BladeWatch-yz1e.4. Ground
 /// truth: `app/src/main/java/com/loabletech/bladewatch/ui/fragment/performance/PerformanceController.kt`.
 ///
-/// Deliberate transport split, not a simplification of native's own
-/// behaviour: [poll] uses the typed [SystemServiceClient.getPerformance] RPC
-/// (which wraps the same `GET /api/performance` handler natively hits with
-/// raw `HttpURLConnection`) since that RPC already exists — no reason to
-/// duplicate a second raw-HTTP GET path when a typed one is available. But
-/// [connect]/[disconnect]/the per-poll heartbeat have NO RPC equivalent
-/// (`PerformanceApiHandler`'s "SOTA on-demand" `/connect`/`/heartbeat`/
-/// `/disconnect` client-registration endpoints are plain REST, not wrapped
-/// by any `SystemService` RPC) — skipping them is not an option: without a
-/// registered client, `PerformanceMonitor.clientConnected()` never fires,
-/// `isRunning()` stays false, and every poll would return the "no_data"
-/// wrapper forever (verified by reading `PerformanceMonitor.java` directly,
-/// not assumed) — so those 3 calls go over raw HTTP via [RawHttpSender],
-/// same as native, with a JWT from [JwtSource] exactly like [ConnectClient]
-/// mints one.
+/// Every call goes over ConnectRPC. This used to be a deliberate transport
+/// split: [connect]/[disconnect]/the per-poll heartbeat had no RPC equivalent
+/// and went over raw HTTP to `PerformanceApiHandler`'s REST endpoints, while
+/// [poll] used the typed RPC. BladeWatch-qwqq added
+/// `PerformanceConnect`/`PerformanceHeartbeat`/`PerformanceDisconnect`, so the
+/// split is gone.
+///
+/// Skipping the session calls is still not an option: without a registered
+/// client, `PerformanceMonitor.clientConnected()` never fires, `isRunning()`
+/// stays false, and every poll returns the "no_data" wrapper forever.
 ///
 /// The 3-second poll timer itself is owned by the screen widget, not this
 /// controller — same convention as every other periodic-refresh screen in
 /// this port.
 class PerformanceController extends ChangeNotifier with DisposedSafeNotifier {
   final SystemServiceClient _systemService;
-  final JwtSource _jwtSource;
-  final RawHttpSender _send;
-  final Uri _baseUrl;
 
+  // jwtSource / send / baseUrl used to be required here for the raw-HTTP REST calls
+  // (BladeWatch-qwqq). Every call now goes through SystemServiceClient, which mints its own
+  // JWT and owns the transport, so they are gone rather than kept as dead parameters.
   PerformanceController({
     required SystemServiceClient systemService,
-    required JwtSource jwtSource,
-    RawHttpSender? send,
-    Uri? baseUrl,
-  })  : _systemService = systemService, // ignore: prefer_initializing_formals
-        _jwtSource = jwtSource, // ignore: prefer_initializing_formals
-        _send = send ?? createIoHttpSender(),
-        _baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080');
+  }) : _systemService = systemService; // ignore: prefer_initializing_formals
 
   PerformanceViewState _state = PerformanceViewState.connecting;
   PerformanceViewState get state => _state;
@@ -59,11 +45,18 @@ class PerformanceController extends ChangeNotifier with DisposedSafeNotifier {
   String? _clientId;
 
   Future<void> connect() async {
-    final response = await _postJson('/api/performance/connect', {
-      'clientId': 'bladewatch-flutter-${DateTime.now().millisecondsSinceEpoch}',
-    });
-    final id = response?['clientId'];
-    if (id is String && id.isNotEmpty) _clientId = id;
+    try {
+      final response = await _systemService.performanceConnect(
+        PerformanceConnectRequest(
+          clientId: 'bladewatch-flutter-${DateTime.now().millisecondsSinceEpoch}',
+        ),
+      );
+      // Keep the id the SERVER registered, not the one we asked for — heartbeats
+      // that do not match it would let the session time out under an open panel.
+      if (response.clientId.isNotEmpty) _clientId = response.clientId;
+    } catch (_) {
+      // Best-effort: a failed registration must not break the screen.
+    }
   }
 
   Future<void> poll() async {
@@ -92,31 +85,29 @@ class PerformanceController extends ChangeNotifier with DisposedSafeNotifier {
 
     final id = _clientId;
     if (id != null) {
-      await _postJson('/api/performance/heartbeat', {'clientId': id});
+      try {
+        await _systemService.performanceHeartbeat(
+          PerformanceHeartbeatRequest(clientId: id),
+        );
+      } catch (_) {
+        // A missed heartbeat is recoverable: the next poll sends another.
+      }
     }
   }
 
   Future<void> disconnect() async {
     final id = _clientId;
     if (id == null) return;
-    await _postJson('/api/performance/disconnect', {'clientId': id});
+    try {
+      await _systemService.performanceDisconnect(
+        PerformanceDisconnectRequest(clientId: id),
+      );
+    } catch (_) {
+      // The monitor times the session out on its own if this never lands.
+    }
     _clientId = null;
   }
 
-  Future<Map<String, dynamic>?> _postJson(String path, Map<String, dynamic> body) async {
-    try {
-      final jwt = await _jwtSource.mintJwt();
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        if (jwt != null) 'Authorization': 'Bearer $jwt',
-      };
-      final response = await _send(_baseUrl.replace(path: path), headers, jsonEncode(body));
-      if (response.statusCode < 200 || response.statusCode >= 300 || response.body.isEmpty) return null;
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    } catch (_) {
-      return null;
-    }
-  }
 
   static CpuMetrics? _cpuFrom(Object? json) {
     if (json is! Map) return null;

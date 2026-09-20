@@ -1,6 +1,4 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
 import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
@@ -10,18 +8,11 @@ import 'package:bladewatch_ui/screens/settings/settings_recording_models.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:bladewatch_ui/gen/bladewatch/v1/settings.pb.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
 import 'package:bladewatch_ui/widgets/bw_choice_chip.dart';
-
-class _FakeJwtSource implements JwtSource {
-  @override
-  Future<String?> mintJwt() async => 'fake.jwt.token';
-
-  @override
-  Future<int> stateVersion() async => 0;
-}
 
 void main() {
   late FakeRpcClient rpc;
@@ -30,19 +21,16 @@ void main() {
     rpc = FakeRpcClient();
   });
 
-  RecordingSettingsController buildController({RawGetSender? getSender, RawHttpSender? postSender}) =>
+  RecordingSettingsController buildController() =>
       RecordingSettingsController(
         systemService: SystemServiceClient(rpc),
         recordingsService: RecordingsServiceClient(rpc),
         settingsService: SettingsServiceClient(rpc),
         storageService: StorageServiceClient(rpc),
-        jwtSource: _FakeJwtSource(),
         // initState() always calls loadOverlayFields(), even on tests that never open the
-        // Capture tab — it catches its own errors internally, so a throwing default here is
-        // safe for every existing test and makes "no real socket, ever, unless a test opts in"
-        // explicit rather than accidental.
-        getSender: getSender ?? (uri, headers) async => throw Exception('not stubbed in this test'),
-        postSender: postSender ?? (uri, headers, body) async => throw Exception('not stubbed in this test'),
+        // Capture tab. It catches its own errors, and FakeRpcClient throws for any RPC a test
+        // has not stubbed, so "no real socket, ever" still holds without the raw senders that
+        // used to be injected here (BladeWatch-qwqq).
       );
 
   void stubHappyPath({bool sdCardAvailable = true}) {
@@ -658,12 +646,16 @@ void main() {
   group('overlay field checklist', () {
     testWidgets('shows a checkbox per field, checked according to the loaded selection', (tester) async {
       stubHappyPath();
-      final controller = buildController(
-        getSender: (uri, headers) async => const RawHttpResponse(
-          200,
-          '{"success":true,"availableFields":["SPEED","GEAR"],"selections":{"continuous":["SPEED"],"surveillance":[],"proximity":[]}}',
-        ),
-      );
+      rpc.stubJson('SettingsService', 'GetTelemetryOverlayFields', {
+        'success': true,
+        'availableFields': ['SPEED', 'GEAR'],
+        'selections': {
+          'continuous': {'fields': ['SPEED']},
+          'surveillance': {'fields': <String>[]},
+          'proximity': {'fields': <String>[]},
+        },
+      });
+      final controller = buildController();
       await pump(tester, controller);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('recording.tab.capture')));
@@ -695,13 +687,8 @@ void main() {
 
     testWidgets('tapping a checkbox toggles it and sends the new selection to the daemon', (tester) async {
       stubHappyPath();
-      String? sentBody;
-      final controller = buildController(
-        postSender: (uri, headers, body) async {
-          sentBody = body;
-          return const RawHttpResponse(200, '{"success":true}');
-        },
-      );
+      rpc.stubJson('SettingsService', 'SetTelemetryOverlayFields', {'success': true});
+      final controller = buildController();
       await pump(tester, controller);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('recording.tab.capture')));
@@ -709,15 +696,17 @@ void main() {
 
       final before =
           tester.widget<CheckboxListTile>(find.byKey(const ValueKey('recording.overlayField.gear')));
-      expect(before.value, isTrue); // default-all selection, since getSender throws by default
+      expect(before.value, isTrue); // default-all: the load RPC is unstubbed here
 
       await tester.tap(find.byKey(const ValueKey('recording.overlayField.gear')));
       await tester.pumpAndSettle();
 
       final after = tester.widget<CheckboxListTile>(find.byKey(const ValueKey('recording.overlayField.gear')));
       expect(after.value, isFalse);
-      expect(sentBody, isNotNull);
-      expect(sentBody, isNot(contains('GEAR')));
+      final sent = rpc.calls
+          .firstWhere((call) => call.method == 'SetTelemetryOverlayFields')
+          .request as SetTelemetryOverlayFieldsRequest;
+      expect(sent.fields.contains('GEAR'), isFalse);
     });
   });
 }

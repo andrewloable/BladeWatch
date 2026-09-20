@@ -226,6 +226,36 @@ public final class System extends com.google.protobuf.GeneratedFile {
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_bladewatch_v1_GetModelsManifestResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_PerformanceConnectRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_PerformanceConnectRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_PerformanceConnectResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_PerformanceConnectResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_PerformanceHeartbeatRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_PerformanceHeartbeatRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_PerformanceHeartbeatResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_PerformanceHeartbeatResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_PerformanceDisconnectRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_PerformanceDisconnectRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_PerformanceDisconnectResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_PerformanceDisconnectResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -348,43 +378,63 @@ public final class System extends com.google.protobuf.GeneratedFile {
       "SelectedModelResponse\022\016\n\002ok\030\001 \001(\010R\002ok\022\024\n" +
       "\005error\030\002 \001(\tR\005error\"\032\n\030GetModelsManifest" +
       "Request\"@\n\031GetModelsManifestResponse\022#\n\r" +
-      "manifest_json\030\001 \001(\tR\014manifestJson2\374\n\n\rSy" +
-      "stemService\022N\n\tGetStatus\022\037.bladewatch.v1" +
-      ".GetStatusRequest\032 .bladewatch.v1.GetSta" +
-      "tusResponse\022]\n\016GetPerformance\022$.bladewat" +
-      "ch.v1.GetPerformanceRequest\032%.bladewatch" +
-      ".v1.GetPerformanceResponse\022Z\n\rPlayAudioT" +
-      "est\022#.bladewatch.v1.PlayAudioTestRequest" +
-      "\032$.bladewatch.v1.PlayAudioTestResponse\022Q" +
-      "\n\nListModels\022 .bladewatch.v1.ListModelsR" +
-      "equest\032!.bladewatch.v1.ListModelsRespons" +
-      "e\022Z\n\rDownloadModel\022#.bladewatch.v1.Downl" +
-      "oadModelRequest\032$.bladewatch.v1.Download" +
-      "ModelResponse\022Z\n\rGetSohNominal\022#.bladewa" +
-      "tch.v1.GetSohNominalRequest\032$.bladewatch" +
-      ".v1.GetSohNominalResponse\022Z\n\rSetSohNomin" +
-      "al\022#.bladewatch.v1.SetSohNominalRequest\032" +
-      "$.bladewatch.v1.SetSohNominalResponse\022W\n" +
-      "\014GetSohStatus\022\".bladewatch.v1.GetSohStat" +
-      "usRequest\032#.bladewatch.v1.GetSohStatusRe" +
-      "sponse\022K\n\010ResetSoh\022\036.bladewatch.v1.Reset" +
-      "SohRequest\032\037.bladewatch.v1.ResetSohRespo" +
-      "nse\022c\n\020ResetPerformance\022&.bladewatch.v1." +
-      "ResetPerformanceRequest\032\'.bladewatch.v1." +
-      "ResetPerformanceResponse\022`\n\017GetParkingDe" +
-      "lta\022%.bladewatch.v1.GetParkingDeltaReque" +
-      "st\032&.bladewatch.v1.GetParkingDeltaRespon" +
-      "se\022Z\n\rGetLastCharge\022#.bladewatch.v1.GetL" +
-      "astChargeRequest\032$.bladewatch.v1.GetLast" +
-      "ChargeResponse\022c\n\020GetSelectedModel\022&.bla" +
-      "dewatch.v1.GetSelectedModelRequest\032\'.bla" +
-      "dewatch.v1.GetSelectedModelResponse\022c\n\020S" +
-      "etSelectedModel\022&.bladewatch.v1.SetSelec" +
-      "tedModelRequest\032\'.bladewatch.v1.SetSelec" +
-      "tedModelResponse\022f\n\021GetModelsManifest\022\'." +
-      "bladewatch.v1.GetModelsManifestRequest\032(" +
-      ".bladewatch.v1.GetModelsManifestResponse" +
-      "B\036\n\032net.bladewatch.app.grpc.v1P\001b\006proto3"
+      "manifest_json\030\001 \001(\tR\014manifestJson\"8\n\031Per" +
+      "formanceConnectRequest\022\033\n\tclient_id\030\001 \001(" +
+      "\tR\010clientId\"i\n\032PerformanceConnectRespons" +
+      "e\022\030\n\007success\030\001 \001(\010R\007success\022\033\n\tclient_id" +
+      "\030\002 \001(\tR\010clientId\022\024\n\005error\030\003 \001(\tR\005error\":" +
+      "\n\033PerformanceHeartbeatRequest\022\033\n\tclient_" +
+      "id\030\001 \001(\tR\010clientId\"N\n\034PerformanceHeartbe" +
+      "atResponse\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005" +
+      "error\030\002 \001(\tR\005error\";\n\034PerformanceDisconn" +
+      "ectRequest\022\033\n\tclient_id\030\001 \001(\tR\010clientId\"" +
+      "O\n\035PerformanceDisconnectResponse\022\030\n\007succ" +
+      "ess\030\001 \001(\010R\007success\022\024\n\005error\030\002 \001(\tR\005error" +
+      "2\314\r\n\rSystemService\022N\n\tGetStatus\022\037.bladew" +
+      "atch.v1.GetStatusRequest\032 .bladewatch.v1" +
+      ".GetStatusResponse\022]\n\016GetPerformance\022$.b" +
+      "ladewatch.v1.GetPerformanceRequest\032%.bla" +
+      "dewatch.v1.GetPerformanceResponse\022Z\n\rPla" +
+      "yAudioTest\022#.bladewatch.v1.PlayAudioTest" +
+      "Request\032$.bladewatch.v1.PlayAudioTestRes" +
+      "ponse\022Q\n\nListModels\022 .bladewatch.v1.List" +
+      "ModelsRequest\032!.bladewatch.v1.ListModels" +
+      "Response\022Z\n\rDownloadModel\022#.bladewatch.v" +
+      "1.DownloadModelRequest\032$.bladewatch.v1.D" +
+      "ownloadModelResponse\022Z\n\rGetSohNominal\022#." +
+      "bladewatch.v1.GetSohNominalRequest\032$.bla" +
+      "dewatch.v1.GetSohNominalResponse\022Z\n\rSetS" +
+      "ohNominal\022#.bladewatch.v1.SetSohNominalR" +
+      "equest\032$.bladewatch.v1.SetSohNominalResp" +
+      "onse\022W\n\014GetSohStatus\022\".bladewatch.v1.Get" +
+      "SohStatusRequest\032#.bladewatch.v1.GetSohS" +
+      "tatusResponse\022K\n\010ResetSoh\022\036.bladewatch.v" +
+      "1.ResetSohRequest\032\037.bladewatch.v1.ResetS" +
+      "ohResponse\022c\n\020ResetPerformance\022&.bladewa" +
+      "tch.v1.ResetPerformanceRequest\032\'.bladewa" +
+      "tch.v1.ResetPerformanceResponse\022`\n\017GetPa" +
+      "rkingDelta\022%.bladewatch.v1.GetParkingDel" +
+      "taRequest\032&.bladewatch.v1.GetParkingDelt" +
+      "aResponse\022Z\n\rGetLastCharge\022#.bladewatch." +
+      "v1.GetLastChargeRequest\032$.bladewatch.v1." +
+      "GetLastChargeResponse\022c\n\020GetSelectedMode" +
+      "l\022&.bladewatch.v1.GetSelectedModelReques" +
+      "t\032\'.bladewatch.v1.GetSelectedModelRespon" +
+      "se\022c\n\020SetSelectedModel\022&.bladewatch.v1.S" +
+      "etSelectedModelRequest\032\'.bladewatch.v1.S" +
+      "etSelectedModelResponse\022f\n\021GetModelsMani" +
+      "fest\022\'.bladewatch.v1.GetModelsManifestRe" +
+      "quest\032(.bladewatch.v1.GetModelsManifestR" +
+      "esponse\022i\n\022PerformanceConnect\022(.bladewat" +
+      "ch.v1.PerformanceConnectRequest\032).bladew" +
+      "atch.v1.PerformanceConnectResponse\022o\n\024Pe" +
+      "rformanceHeartbeat\022*.bladewatch.v1.Perfo" +
+      "rmanceHeartbeatRequest\032+.bladewatch.v1.P" +
+      "erformanceHeartbeatResponse\022r\n\025Performan" +
+      "ceDisconnect\022+.bladewatch.v1.Performance" +
+      "DisconnectRequest\032,.bladewatch.v1.Perfor" +
+      "manceDisconnectResponseB\036\n\032net.bladewatc" +
+      "h.app.grpc.v1P\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -630,6 +680,42 @@ public final class System extends com.google.protobuf.GeneratedFile {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_GetModelsManifestResponse_descriptor,
         new java.lang.String[] { "ManifestJson", });
+    internal_static_bladewatch_v1_PerformanceConnectRequest_descriptor =
+      getDescriptor().getMessageType(40);
+    internal_static_bladewatch_v1_PerformanceConnectRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_PerformanceConnectRequest_descriptor,
+        new java.lang.String[] { "ClientId", });
+    internal_static_bladewatch_v1_PerformanceConnectResponse_descriptor =
+      getDescriptor().getMessageType(41);
+    internal_static_bladewatch_v1_PerformanceConnectResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_PerformanceConnectResponse_descriptor,
+        new java.lang.String[] { "Success", "ClientId", "Error", });
+    internal_static_bladewatch_v1_PerformanceHeartbeatRequest_descriptor =
+      getDescriptor().getMessageType(42);
+    internal_static_bladewatch_v1_PerformanceHeartbeatRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_PerformanceHeartbeatRequest_descriptor,
+        new java.lang.String[] { "ClientId", });
+    internal_static_bladewatch_v1_PerformanceHeartbeatResponse_descriptor =
+      getDescriptor().getMessageType(43);
+    internal_static_bladewatch_v1_PerformanceHeartbeatResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_PerformanceHeartbeatResponse_descriptor,
+        new java.lang.String[] { "Success", "Error", });
+    internal_static_bladewatch_v1_PerformanceDisconnectRequest_descriptor =
+      getDescriptor().getMessageType(44);
+    internal_static_bladewatch_v1_PerformanceDisconnectRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_PerformanceDisconnectRequest_descriptor,
+        new java.lang.String[] { "ClientId", });
+    internal_static_bladewatch_v1_PerformanceDisconnectResponse_descriptor =
+      getDescriptor().getMessageType(45);
+    internal_static_bladewatch_v1_PerformanceDisconnectResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_PerformanceDisconnectResponse_descriptor,
+        new java.lang.String[] { "Success", "Error", });
     descriptor.resolveAllFeaturesImmutable();
   }
 

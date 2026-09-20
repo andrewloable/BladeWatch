@@ -226,7 +226,7 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
 
             var currentSpeed = 0.0
             try {
-                currentSpeed = GpsMonitor.getInstance().getSpeed() * 3.6 // m/s to km/h
+                currentSpeed = GpsMonitor.getInstance().speed * 3.6 // m/s to km/h
             } catch (e: Exception) {
                 logger.debug("Could not read speed: " + e.message)
             }
@@ -361,9 +361,9 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
 
         val storage = JSONObject()
         try {
-            storage.put("storageType", sm.getTripsStorageType().name)
-            storage.put("limitMb", sm.getTripsLimitMb())
-            val usedBytes = sm.getTripsSize().toDouble()
+            storage.put("storageType", sm.tripsStorageType.name)
+            storage.put("limitMb", sm.tripsLimitMb)
+            val usedBytes = sm.tripsSize.toDouble()
             val usedMb = usedBytes / (1024.0 * 1024.0)
             if (usedMb < 0.1 && usedBytes > 0) {
                 // Show small sizes in KB.
@@ -373,9 +373,9 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
                 storage.put("usedMb", (usedMb * 10.0).roundToLong() / 10.0)
                 storage.put("usedUnit", "MB")
             }
-            storage.put("sdCardAvailable", sm.isSdCardAvailable())
+            storage.put("sdCardAvailable", sm.isSdCardAvailable)
             storage.put("tripsCount", db?.getTripCount() ?: 0)
-            storage.put("storagePath", sm.getTripsPath())
+            storage.put("storagePath", sm.tripsPath)
         } catch (e: Exception) {
             logger.error("Error reading storage settings", e)
         }
@@ -401,7 +401,7 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
 
             var limitChanged = false
             if (bodyJson.has("storageLimitMb")) {
-                sm.setTripsLimitMb(bodyJson.getLong("storageLimitMb"))
+                sm.tripsLimitMb = bodyJson.getLong("storageLimitMb")
                 limitChanged = true
             }
 

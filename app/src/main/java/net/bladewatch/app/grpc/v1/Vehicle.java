@@ -256,6 +256,26 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_bladewatch_v1_StopGpsResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_IssueActionTokenRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_IssueActionTokenRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_IssueActionTokenResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_IssueActionTokenResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetAdasInventoryRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetAdasInventoryRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_GetAdasInventoryResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_GetAdasInventoryResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -400,59 +420,71 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
       "\n\007message\030\002 \001(\tR\007message\022#\n\rlocation_jso" +
       "n\030\003 \001(\tR\014locationJson\"\020\n\016StopGpsRequest\"" +
       "E\n\017StopGpsResponse\022\030\n\007success\030\001 \001(\010R\007suc" +
-      "cess\022\030\n\007message\030\002 \001(\tR\007message2\371\017\n\016Vehic" +
-      "leService\022Y\n\010GetState\022%.bladewatch.v1.Ge" +
-      "tVehicleStateRequest\032&.bladewatch.v1.Get" +
-      "VehicleStateResponse\022c\n\020GetAcDiagnostics" +
-      "\022&.bladewatch.v1.GetAcDiagnosticsRequest" +
-      "\032\'.bladewatch.v1.GetAcDiagnosticsRespons" +
-      "e\022i\n\022GetSeatDiagnostics\022(.bladewatch.v1." +
-      "GetSeatDiagnosticsRequest\032).bladewatch.v" +
-      "1.GetSeatDiagnosticsResponse\022I\n\004Lock\022\032.b" +
-      "ladewatch.v1.LockRequest\032%.bladewatch.v1" +
-      ".VehicleCommandResponse\022M\n\006Unlock\022\034.blad" +
-      "ewatch.v1.UnlockRequest\032%.bladewatch.v1." +
-      "VehicleCommandResponse\022K\n\005Trunk\022\033.bladew" +
-      "atch.v1.TrunkRequest\032%.bladewatch.v1.Veh" +
-      "icleCommandResponse\022U\n\nMoveWindow\022 .blad" +
-      "ewatch.v1.MoveWindowRequest\032%.bladewatch" +
-      ".v1.VehicleCommandResponse\022K\n\005Flash\022\033.bl" +
-      "adewatch.v1.FlashRequest\032%.bladewatch.v1" +
-      ".VehicleCommandResponse\022O\n\007FindCar\022\035.bla" +
-      "dewatch.v1.FindCarRequest\032%.bladewatch.v" +
-      "1.VehicleCommandResponse\022U\n\nSetClimate\022 " +
-      ".bladewatch.v1.SetClimateRequest\032%.blade" +
-      "watch.v1.VehicleCommandResponse\022O\n\007SetSe" +
-      "at\022\035.bladewatch.v1.SetSeatRequest\032%.blad" +
-      "ewatch.v1.VehicleCommandResponse\022S\n\tSetL" +
-      "ights\022\037.bladewatch.v1.SetLightsRequest\032%" +
-      ".bladewatch.v1.VehicleCommandResponse\022S\n" +
-      "\tSetScreen\022\037.bladewatch.v1.SetScreenRequ" +
-      "est\032%.bladewatch.v1.VehicleCommandRespon" +
-      "se\022]\n\016SetMediaVolume\022$.bladewatch.v1.Set" +
-      "MediaVolumeRequest\032%.bladewatch.v1.Vehic" +
-      "leCommandResponse\022O\n\007SetAdas\022\035.bladewatc" +
-      "h.v1.SetAdasRequest\032%.bladewatch.v1.Vehi" +
-      "cleCommandResponse\022]\n\016SetBatteryHeat\022$.b" +
-      "ladewatch.v1.SetBatteryHeatRequest\032%.bla" +
-      "dewatch.v1.VehicleCommandResponse\022l\n\023Get" +
-      "ChargingSchedule\022).bladewatch.v1.GetChar" +
-      "gingScheduleRequest\032*.bladewatch.v1.GetC" +
-      "hargingScheduleResponse\022g\n\023SetChargingSc" +
-      "hedule\022).bladewatch.v1.SetChargingSchedu" +
-      "leRequest\032%.bladewatch.v1.VehicleCommand" +
-      "Response\022W\n\014GetChargeCap\022\".bladewatch.v1" +
-      ".GetChargeCapRequest\032#.bladewatch.v1.Get" +
-      "ChargeCapResponse\022Y\n\014SetChargeCap\022\".blad" +
-      "ewatch.v1.SetChargeCapRequest\032%.bladewat" +
-      "ch.v1.VehicleCommandResponse\022]\n\016GetGpsLo" +
-      "cation\022$.bladewatch.v1.GetGpsLocationReq" +
-      "uest\032%.bladewatch.v1.GetGpsLocationRespo" +
-      "nse\022K\n\010StartGps\022\036.bladewatch.v1.StartGps" +
-      "Request\032\037.bladewatch.v1.StartGpsResponse" +
-      "\022H\n\007StopGps\022\035.bladewatch.v1.StopGpsReque" +
-      "st\032\036.bladewatch.v1.StopGpsResponseB\036\n\032ne" +
-      "t.bladewatch.app.grpc.v1P\001b\006proto3"
+      "cess\022\030\n\007message\030\002 \001(\tR\007message\"\031\n\027IssueA" +
+      "ctionTokenRequest\"\216\001\n\030IssueActionTokenRe" +
+      "sponse\022\030\n\007success\030\001 \001(\010R\007success\022\024\n\005toke" +
+      "n\030\002 \001(\tR\005token\022,\n\022expires_in_seconds\030\003 \001" +
+      "(\005R\020expiresInSeconds\022\024\n\005error\030\004 \001(\tR\005err" +
+      "or\"\031\n\027GetAdasInventoryRequest\"Q\n\030GetAdas" +
+      "InventoryResponse\022\030\n\007success\030\001 \001(\010R\007succ" +
+      "ess\022\033\n\tadas_json\030\002 \001(\tR\010adasJson2\303\021\n\016Veh" +
+      "icleService\022Y\n\010GetState\022%.bladewatch.v1." +
+      "GetVehicleStateRequest\032&.bladewatch.v1.G" +
+      "etVehicleStateResponse\022c\n\020GetAcDiagnosti" +
+      "cs\022&.bladewatch.v1.GetAcDiagnosticsReque" +
+      "st\032\'.bladewatch.v1.GetAcDiagnosticsRespo" +
+      "nse\022i\n\022GetSeatDiagnostics\022(.bladewatch.v" +
+      "1.GetSeatDiagnosticsRequest\032).bladewatch" +
+      ".v1.GetSeatDiagnosticsResponse\022I\n\004Lock\022\032" +
+      ".bladewatch.v1.LockRequest\032%.bladewatch." +
+      "v1.VehicleCommandResponse\022M\n\006Unlock\022\034.bl" +
+      "adewatch.v1.UnlockRequest\032%.bladewatch.v" +
+      "1.VehicleCommandResponse\022K\n\005Trunk\022\033.blad" +
+      "ewatch.v1.TrunkRequest\032%.bladewatch.v1.V" +
+      "ehicleCommandResponse\022U\n\nMoveWindow\022 .bl" +
+      "adewatch.v1.MoveWindowRequest\032%.bladewat" +
+      "ch.v1.VehicleCommandResponse\022K\n\005Flash\022\033." +
+      "bladewatch.v1.FlashRequest\032%.bladewatch." +
+      "v1.VehicleCommandResponse\022O\n\007FindCar\022\035.b" +
+      "ladewatch.v1.FindCarRequest\032%.bladewatch" +
+      ".v1.VehicleCommandResponse\022U\n\nSetClimate" +
+      "\022 .bladewatch.v1.SetClimateRequest\032%.bla" +
+      "dewatch.v1.VehicleCommandResponse\022O\n\007Set" +
+      "Seat\022\035.bladewatch.v1.SetSeatRequest\032%.bl" +
+      "adewatch.v1.VehicleCommandResponse\022S\n\tSe" +
+      "tLights\022\037.bladewatch.v1.SetLightsRequest" +
+      "\032%.bladewatch.v1.VehicleCommandResponse\022" +
+      "S\n\tSetScreen\022\037.bladewatch.v1.SetScreenRe" +
+      "quest\032%.bladewatch.v1.VehicleCommandResp" +
+      "onse\022]\n\016SetMediaVolume\022$.bladewatch.v1.S" +
+      "etMediaVolumeRequest\032%.bladewatch.v1.Veh" +
+      "icleCommandResponse\022O\n\007SetAdas\022\035.bladewa" +
+      "tch.v1.SetAdasRequest\032%.bladewatch.v1.Ve" +
+      "hicleCommandResponse\022]\n\016SetBatteryHeat\022$" +
+      ".bladewatch.v1.SetBatteryHeatRequest\032%.b" +
+      "ladewatch.v1.VehicleCommandResponse\022l\n\023G" +
+      "etChargingSchedule\022).bladewatch.v1.GetCh" +
+      "argingScheduleRequest\032*.bladewatch.v1.Ge" +
+      "tChargingScheduleResponse\022g\n\023SetCharging" +
+      "Schedule\022).bladewatch.v1.SetChargingSche" +
+      "duleRequest\032%.bladewatch.v1.VehicleComma" +
+      "ndResponse\022W\n\014GetChargeCap\022\".bladewatch." +
+      "v1.GetChargeCapRequest\032#.bladewatch.v1.G" +
+      "etChargeCapResponse\022Y\n\014SetChargeCap\022\".bl" +
+      "adewatch.v1.SetChargeCapRequest\032%.bladew" +
+      "atch.v1.VehicleCommandResponse\022]\n\016GetGps" +
+      "Location\022$.bladewatch.v1.GetGpsLocationR" +
+      "equest\032%.bladewatch.v1.GetGpsLocationRes" +
+      "ponse\022K\n\010StartGps\022\036.bladewatch.v1.StartG" +
+      "psRequest\032\037.bladewatch.v1.StartGpsRespon" +
+      "se\022H\n\007StopGps\022\035.bladewatch.v1.StopGpsReq" +
+      "uest\032\036.bladewatch.v1.StopGpsResponse\022c\n\020" +
+      "IssueActionToken\022&.bladewatch.v1.IssueAc" +
+      "tionTokenRequest\032\'.bladewatch.v1.IssueAc" +
+      "tionTokenResponse\022c\n\020GetAdasInventory\022&." +
+      "bladewatch.v1.GetAdasInventoryRequest\032\'." +
+      "bladewatch.v1.GetAdasInventoryResponseB\036" +
+      "\n\032net.bladewatch.app.grpc.v1P\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -734,6 +766,30 @@ public final class Vehicle extends com.google.protobuf.GeneratedFile {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_StopGpsResponse_descriptor,
         new java.lang.String[] { "Success", "Message", });
+    internal_static_bladewatch_v1_IssueActionTokenRequest_descriptor =
+      getDescriptor().getMessageType(46);
+    internal_static_bladewatch_v1_IssueActionTokenRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_IssueActionTokenRequest_descriptor,
+        new java.lang.String[] { });
+    internal_static_bladewatch_v1_IssueActionTokenResponse_descriptor =
+      getDescriptor().getMessageType(47);
+    internal_static_bladewatch_v1_IssueActionTokenResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_IssueActionTokenResponse_descriptor,
+        new java.lang.String[] { "Success", "Token", "ExpiresInSeconds", "Error", });
+    internal_static_bladewatch_v1_GetAdasInventoryRequest_descriptor =
+      getDescriptor().getMessageType(48);
+    internal_static_bladewatch_v1_GetAdasInventoryRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetAdasInventoryRequest_descriptor,
+        new java.lang.String[] { });
+    internal_static_bladewatch_v1_GetAdasInventoryResponse_descriptor =
+      getDescriptor().getMessageType(49);
+    internal_static_bladewatch_v1_GetAdasInventoryResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_GetAdasInventoryResponse_descriptor,
+        new java.lang.String[] { "Success", "AdasJson", });
     descriptor.resolveAllFeaturesImmutable();
   }
 

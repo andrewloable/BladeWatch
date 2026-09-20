@@ -375,7 +375,11 @@ class RangeEstimator @JvmOverloads constructor(
         // 1. Exact match
         val exact = database.getBucket(exactKey)
         if (exact != null && exact.sampleCount >= MIN_BUCKET_SAMPLES) {
-            return BucketResult(exact.bucketKey, exact.getMean(), exact.getStdDev(), exact.sampleCount)
+            // bucketKey is nullable on the row (it always was in Java, just unchecked); the
+            // bucket came back from getBucket(exactKey), so exactKey is the right fallback.
+            return BucketResult(
+                exact.bucketKey ?: exactKey, exact.getMean(), exact.getStdDev(), exact.sampleCount
+            )
         }
 
         // 2. Neighbour blend — buckets sharing 2 of 3 dimensions

@@ -114,6 +114,83 @@ The 30 kWh threshold is **inherited from Overdrive and was not re-derived on thi
 The same rule also appears in `VehicleDataMonitor.isPhevVehicle` as a startup fallback
 for a different caller; if one moves, move both.
 
+### Where "nominal pack capacity" comes from
+
+`VehicleDataMonitor.getNominalCapacityKwh()` delegates to `NominalCapacityResolver.resolve`,
+which answers in this order (BladeWatch-x4lf):
+
+0. **The owner's explicit override**, set through `POST /api/performance/soh/nominal` and
+   stored as `vehicle.nominalKwhOverride`. It outranks everything below, because every other
+   source here is inference and this one is not (BladeWatch-b9vl). Validated to 8-120 kWh; 0 or
+   unset means "not set" and falls straight back to auto-detection.
+1. `BydVehicleData.chargingCapacityKwh`, **but only when it does not contradict the catalogue
+   below** (`NominalCapacityResolver.agreesWithCatalogue`, ±50%). A per-vehicle figure should
+   outrank a per-trim constant, because a trim can ship more than one battery option; what it
+   must not do is redefine the pack as something the trim could not be.
+
+   This field is **not** a verified pack-spec source (BladeWatch-phim). Both of its writers in
+   `BydDataCollector` accept it unvalidated — the poll at line 1428 on `capKwh > 0`, the
+   `onChargingCapacityChanged` callback at line 3427 on `0 < cap < 200`, a window that admits
+   the entire 0-100 percentage range — and that callback's own comment describes the event as
+   *"purely diagnostic for charging session size"*. It sits among `getChargingType`,
+   `getChargingPercent` and gun state: charger session getters, not pack specification.
+
+   It does not answer at all on this head unit today: had it returned anything usable, the
+   recorded `remaining_kwh` would have been the SoC-derived value, not the raw mirrored one it
+   actually holds. The guard therefore only starts mattering from the next AC charge onward.
+2. `nominalKwh` for the configured `vehicle.modelId`, from
+   `app/src/main/assets/web/shared/models/manifest.json` (extracted to
+   `/data/local/tmp/web/shared/models/`), read by `ModelsApiHandler.nominalKwhForSelectedModel()`.
+   Authoritative per trim and independent of any live signal being interpreted correctly.
+3. `remainKwh / (soc/100)` — **only when that channel is really reporting energy.**
+4. Otherwise `0.0`, meaning unknown. Callers must treat it as unknown; inventing a plausible
+   number is what caused the defect below.
+
+`VehicleDataMonitor.getBatteryRemainPowerKwh()` used to end with "no nominal capacity: use the
+raw BMS value if available", which turned that honest `0.0` straight back into the mirrored
+number (BladeWatch-ofe9). It now goes through `NominalCapacityResolver.trustworthyRemainKwh`,
+which refuses a reading that mirrors SoC and returns `0.0` instead. That path is reachable
+whenever the catalogue cannot answer — an unlisted or unset `vehicle.modelId`, or early boot
+before the web assets holding `models/manifest.json` are extracted. All five callers already
+guard on `> 0`; in `SOC_HISTORY` a stored `0` is the established "no data" sentinel, honoured by
+both of that table's readers, so it is left as is rather than made `NULL`.
+
+**The `remainKwh` channel on this car is not energy — it mirrors SoC percent 1:1.** Measured off
+the device's own SoC history (963 rows, 2026-09-19): `soc=73/remain=72.9`, `soc=77/remain=77.0`,
+`soc=79/remain=78.8`. Dividing that by `soc/100` yields ≈100 for *any* pack, and ~100 kWh reads
+as a perfectly plausible BEV capacity, so nothing downstream flagged it. On this 18.3 kWh
+PHEV it inflated every trip's energy, cost and efficiency by ~5.2× and pinned the efficiency
+score at 0. `NominalCapacityResolver.looksLikeSocMirror` rejects the derived value when the two
+track within 2 percentage points; a genuine ~100 kWh pack trips that check too, which is
+deliberate — one honest "unknown" costs less than silently corrupting every recorded trip.
+
+Two consequences of the catalogue now being consulted, both intended:
+
+- **Tier 0 above never fired on this car before.** Capacity resolved to ~100 kWh, so drivetrain
+  detection fell through to the fuel probes it was meant to pre-empt. It now returns 18.3 and
+  classifies PHEV outright.
+- **`remainKwh` writers all validate now.** `handleChargingCapacityChanged` used to write the
+  callback value into `remainKwh` with no checks at all, so it could clobber a validated poll;
+  it now goes through `BydSignalRules` like the three polled sources (BladeWatch-62tg). And
+  `SocHistoryDatabase.recordAccEvent` used to store the raw channel into
+  `ACC_EVENTS.remaining_kwh`, which surfaces as `deltaKwh` on the `GetParkingDelta` RPC — a
+  ~5.4x overstatement of parked energy loss. It now uses the same validating accessor as the
+  other writers in that file (BladeWatch-hdt7).
+- **The one-time PHEV migrations in `CameraDaemon` now run.** Both are gated on
+  `nominalKwh > 0 && nominalKwh < 30.0` and had therefore never fired: the marker-gated
+  consumption-bucket clear (which resets the personalised range estimator until ~3 trips per
+  bucket rebuild) and `SocHistoryDatabase.fixStaleRemainingKwh`.
+- **Historical trips are repaired on the next `TripDatabase.init`** by
+  `TripEnergyMigration` (BladeWatch-aa3i). It recomputes `kwhStart`/`kwhEnd` from each trip's
+  SoC endpoints against the real pack capacity, then `energyPerKm`, `electricCost` and
+  `tripCost` from those, mirroring `TripRecord.getEnergyUsedKwh`'s tiers so repaired history
+  sits on the same axis as everything recorded since. It is gated on the DATA — a row is
+  repaired only while its stored energy still mirrors SoC — so it is idempotent without a
+  marker file and survives a database restore. Efficiency **scores** are not recomputed and
+  remain as scored at the time. Verified against the device's own database: 10 of 10 trips
+  corrected on the first pass, 0 on the second, and trip 193's repaired 0.1236 kWh/km agrees
+  to 0.2% with the 1.1 kWh its lifetime electricity counter independently recorded.
+
 ## Polling and Listeners
 
 The collector combines initial reads, polling, and listeners.
@@ -233,7 +310,7 @@ gating each command individually was tried once already for trunk-open and rejec
 
 Before the `hasSdkPath()` check, `execute` calls the pure, unit-tested
 `DrivingSafetyGuard.evaluate(gear, speedKmh, requireKnownState)`
-([DrivingSafetyGuard.java](../app/src/main/java/com/loabletech/bladewatch/byd/routing/DrivingSafetyGuard.java)).
+([DrivingSafetyGuard.kt](../app/src/main/java/com/loabletech/bladewatch/byd/routing/DrivingSafetyGuard.kt)).
 Its two inputs:
 
 - **Gear**, from `GearMonitor.getInstance().getCurrentGear()`. Any gear other than `P` is
@@ -258,7 +335,7 @@ Explicit screen on/off (`VehicleCommandRouter.ScreenOnCommand`/`ScreenOffCommand
 `POST /api/vehicle/screen` and `VehicleService.SetScreen`) actuates BYD's vendor
 `PowerManager.TurnBacklightOn`/`TurnBacklightOff` reflection, the same primitive
 `AccSentryDaemon`'s stealth panel already used — extracted into
-[BacklightController.java](../app/src/main/java/com/loabletech/bladewatch/byd/BacklightController.java)
+[BacklightController.kt](../app/src/main/java/com/loabletech/bladewatch/byd/BacklightController.kt)
 so both share one implementation instead of two that could drift.
 
 This is the one command with a **directional** exception to the interlock above. The three
@@ -275,7 +352,7 @@ safety requirements are non-negotiable:
    evaluation itself.
 3. If the screen was turned off via this control and the vehicle then leaves the parked state,
    it is turned back on **automatically, with no user action** —
-   [ScreenAutoRecovery.java](../app/src/main/java/com/loabletech/bladewatch/byd/routing/ScreenAutoRecovery.java)
+   [ScreenAutoRecovery.kt](../app/src/main/java/com/loabletech/bladewatch/byd/routing/ScreenAutoRecovery.kt)
    arms itself on a successful `ScreenOffCommand`, polls `DrivingSafetyGuard`'s decision only
    while armed (`ConditionalPoller`, BladeWatch-t1lg.2 — zero polling otherwise), and fires
    `ScreenOnCommand` the moment the decision is no longer `ALLOW`.
@@ -312,7 +389,7 @@ charging would fabricate trip boundaries.
 which silently substitutes its hardcoded numeric literal whenever the real SDK field is
 absent — and the failure logs at DEBUG, which R8 strips in release. A declared id therefore
 proves nothing about whether a given car actually has that field. `AdasFieldInventory`
-([AdasFieldInventory.java](../app/src/main/java/com/loabletech/bladewatch/byd/AdasFieldInventory.java))
+([AdasFieldInventory.kt](../app/src/main/java/com/loabletech/bladewatch/byd/AdasFieldInventory.kt))
 answers that, on demand only (`GET /api/vehicle/adas-inventory`, JWT-gated like every other
 `/api/vehicle/*` route) — it is read-only and never runs on a timer.
 
@@ -387,11 +464,11 @@ History note: an earlier change integrated a native **Filament** 3D engine for t
 ## Source References
 
 - BYD manifest permissions: [AndroidManifest.xml:35](../app/src/main/AndroidManifest.xml#L35), [AndroidManifest.xml:120](../app/src/main/AndroidManifest.xml#L120), [AndroidManifest.xml:193](../app/src/main/AndroidManifest.xml#L193).
-- BYD SDK stub strategy and dependencies: [build.gradle.kts:413](../app/build.gradle.kts#L413), [build.gradle.kts:476](../app/build.gradle.kts#L476), [IAccModeManager.java:5](../app/src/main/java/android/os/IAccModeManager.java#L5).
-- Local telemetry collector and reflection-based device access: [BydDataCollector.java:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L20), [BydDataCollector.java:247](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L247), [BydDataCollector.java:3907](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L3907).
-- ACC, gear, and event plumbing: [BydFeatureIds.java](../app/src/main/java/com/loabletech/bladewatch/byd/BydFeatureIds.java) (replaced `BydConstants.java`, removed in `8e98aaf`), [GearMonitor.java:132](../app/src/main/java/com/loabletech/bladewatch/monitor/GearMonitor.java#L132), [CameraDaemon.java:1905](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L1905), [CameraDaemon.java:2206](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L2206).
-- Door lock and surveillance gating: [CameraDaemon.java:1764](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L1764), [CameraDaemon.java:1439](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L1439), [AccSentryDaemon.java:1900](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.java#L1900).
-- Vehicle control contract and routing: [vehicle.proto:32](../proto/bladewatch/v1/vehicle.proto#L32), [VehicleControlApiHandler.java:43](../app/src/main/java/com/loabletech/bladewatch/server/VehicleControlApiHandler.java#L43), [VehicleCommandRouter.java:17](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.java#L17), [VehicleCommandRouter.java:315](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.java#L315).
-- Local SDK control primitives: [BydDataCollector.java:3839](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L3839), [BydDataCollector.java:4803](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L4803), [BydDataCollector.java:5064](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L5064).
-- GPS / location: [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51), [GpsApiHandler.java:18](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.java#L18), [GpsApiHandler.java:24](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.java#L24), [GpsMonitor.java:23](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.java#L23), [GpsMonitor.java:84](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.java#L84), [GpsMonitor.java:253](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.java#L253).
+- BYD SDK stub strategy and dependencies: [build.gradle.kts:413](../app/build.gradle.kts#L413), [build.gradle.kts:476](../app/build.gradle.kts#L476), [IAccModeManager.kt:5](../app/src/main/java/android/os/IAccModeManager.kt#L5).
+- Local telemetry collector and reflection-based device access: [BydDataCollector.kt:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L20), [BydDataCollector.kt:247](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L247), [BydDataCollector.kt:3907](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L3907).
+- ACC, gear, and event plumbing: [BydFeatureIds.kt](../app/src/main/java/com/loabletech/bladewatch/byd/BydFeatureIds.kt) (replaced `BydConstants.java`, removed in `8e98aaf`), [GearMonitor.kt:132](../app/src/main/java/com/loabletech/bladewatch/monitor/GearMonitor.kt#L132), [CameraDaemon.kt:1905](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1905), [CameraDaemon.kt:2206](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L2206).
+- Door lock and surveillance gating: [CameraDaemon.kt:1764](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1764), [CameraDaemon.kt:1439](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1439), [AccSentryDaemon.kt:1900](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.kt#L1900).
+- Vehicle control contract and routing: [vehicle.proto:32](../proto/bladewatch/v1/vehicle.proto#L32), [VehicleControlApiHandler.kt:43](../app/src/main/java/com/loabletech/bladewatch/server/VehicleControlApiHandler.kt#L43), [VehicleCommandRouter.kt:17](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.kt#L17), [VehicleCommandRouter.kt:315](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.kt#L315).
+- Local SDK control primitives: [BydDataCollector.kt:3839](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L3839), [BydDataCollector.kt:4803](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L4803), [BydDataCollector.kt:5064](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L5064).
+- GPS / location: [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51), [GpsApiHandler.kt:18](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.kt#L18), [GpsApiHandler.kt:24](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.kt#L24), [GpsMonitor.kt:23](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L23), [GpsMonitor.kt:84](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L84), [GpsMonitor.kt:253](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L253).
 - 3D vehicle hero (Three.js in a WebView — **not** Filament, see the Adreno 610 note in [build-and-operations.md](build-and-operations.md)): [hero.html:15](../app/src/main/assets/web/hero/hero.html#L15), [hero.html:20](../app/src/main/assets/web/hero/hero.html#L20), [flutter_ui/lib/screens/vehicle/vehicle_hero.dart](../flutter_ui/lib/screens/vehicle/vehicle_hero.dart).

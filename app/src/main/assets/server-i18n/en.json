@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Invalid request body: {0}",
     "performance_no_data": "Performance monitoring not started or no data collected yet",
     "soh_not_initialized": "SohEstimator not initialized",
+    "soh_nominal_range": "Nominal capacity must be between 8 and 120 kWh",
     "reset_no_categories": "No categories specified",
     "reset_unknown_category": "Unknown category",
     "reset_trip_in_progress": "Trip in progress — turn ACC off first",

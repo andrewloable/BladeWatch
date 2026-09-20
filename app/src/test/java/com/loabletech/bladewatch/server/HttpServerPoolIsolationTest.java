@@ -40,13 +40,27 @@ import org.junit.Test;
  */
 public class HttpServerPoolIsolationTest {
 
+    /**
+     * HttpServer's source, in whichever language it is written in today. The server layer is
+     * migrating from Java to Kotlin (BladeWatch-9rut); a guard that keeps asking for a ".java"
+     * that no longer exists stops guarding without ever failing.
+     */
     private static String source() throws Exception {
-        Path p = Path.of("src/main/java/com/loabletech/bladewatch/server/HttpServer.java");
-        if (!Files.isRegularFile(p)) {
-            p = Path.of("app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java");
-        }
-        Assert.assertTrue("could not locate HttpServer.java", Files.isRegularFile(p));
-        return new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+        Path java = locate("HttpServer.java");
+        Path kotlin = locate("HttpServer.kt");
+        Assert.assertTrue("could not locate HttpServer (.java or .kt)",
+                java != null || kotlin != null);
+        Assert.assertFalse("both HttpServer.java and HttpServer.kt exist -- a half-finished "
+                + "conversion; this guard would read the stale copy", java != null && kotlin != null);
+        return new String(Files.readAllBytes(java != null ? java : kotlin),
+                StandardCharsets.UTF_8);
+    }
+
+    private static Path locate(String filename) {
+        Path p = Path.of("src/main/java/com/loabletech/bladewatch/server/" + filename);
+        if (Files.isRegularFile(p)) return p;
+        p = Path.of("app/src/main/java/com/loabletech/bladewatch/server/" + filename);
+        return Files.isRegularFile(p) ? p : null;
     }
 
     @Test
@@ -126,7 +140,11 @@ public class HttpServerPoolIsolationTest {
     @Test
     public void aFailedUpgradeDoesNotClaimOwnership() throws Exception {
         String src = source();
+        // Both spellings: Java declares "private boolean handleWebSocketUpgrade", Kotlin
+        // "private fun handleWebSocketUpgrade(...): Boolean". Matching one would silently stop
+        // finding the method (BladeWatch-9rut).
         int sig = src.indexOf("private boolean handleWebSocketUpgrade");
+        if (sig < 0) sig = src.indexOf("private fun handleWebSocketUpgrade");
         Assert.assertTrue("handleWebSocketUpgrade must report ownership transfer", sig > 0);
 
         String body = src.substring(sig, Math.min(src.length(), sig + 2500));

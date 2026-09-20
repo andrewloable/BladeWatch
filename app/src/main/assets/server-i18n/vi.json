@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Cơ quan yêu cầu không hợp lệ: {0}",
     "performance_no_data": "Việc giám sát hiệu suất chưa bắt đầu hoặc chưa thu thập dữ liệu",
     "soh_not_initialized": "SohEstimator không được khởi động",
+    "soh_nominal_range": "Dung lượng danh định phải nằm trong khoảng 8 đến 120 kWh",
     "reset_no_categories": "Không có danh mục nào được chỉ định",
     "reset_unknown_category": "Loại không biết",
     "reset_trip_in_progress": "Chuyến đi đang diễn ra  tắt ACC trước",

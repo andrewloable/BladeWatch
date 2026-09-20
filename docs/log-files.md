@@ -59,7 +59,7 @@ Every run therefore starts with a banner ([SessionBanner.kt](app/src/main/java/c
 
 ```
 ========================================================================
-BLADEWATCH-SESSION [2026-09-15 10:30:00.000] process=camera-daemon version=1.3.1.0 branch=feature-v1.3.1.0 build=debug
+BLADEWATCH-SESSION [2026-09-15 10:30:00.000] process=camera-daemon version=1.3.2.0 branch=feature-v1.3.2.0 build=debug
 ========================================================================
 ```
 
@@ -82,7 +82,7 @@ filename. **Before treating any log entry as a live fault, check which banner it
 under.**
 
 - **LogCleaner** ([LogCleaner.kt](app/src/main/java/com/loabletech/bladewatch/logging/LogCleaner.kt)): periodic sweep that deletes old `*.log` and rotated `*.log.<n>` files by retention policy.
-- Verbosity is gated by [DaemonLogConfig.java](app/src/main/java/com/loabletech/bladewatch/logging/DaemonLogConfig.java); in release builds with all flags `false`, R8 strips log calls (see CLAUDE.md → Logging).
+- Verbosity is gated by [DaemonLogConfig.kt](app/src/main/java/com/loabletech/bladewatch/logging/DaemonLogConfig.kt); in release builds with all flags `false`, R8 strips log calls (see CLAUDE.md → Logging).
 
 ## Quick commands
 
@@ -108,7 +108,7 @@ adb -s $CAR_IP:5555 shell 'rm -f /data/local/tmp/*.log /data/local/tmp/*.log.*; 
 Co-located in `/data/local/tmp` but used for process coordination, not logging:
 
 - `*_daemon.pid` — daemon PID files (e.g. `sentry_daemon.pid`)
-- `*.lock` — singleton locks (e.g. `acc_sentry_daemon.lock`, `camera_daemon.lock`)
+- `*.lock` — singleton locks (`camera_daemon.lock`, `sentry_daemon.lock`, `acc_sentry_daemon.lock`); each holds the owning PID
 - `camera_daemon.ready` — readiness sentinel (PID of a fully-started CameraDaemon, world-readable `644`); read by the app's `DaemonReadinessChecker` (see `daemons-and-processes.md`)
 - `camera_daemon.disabled` / `cam_watchdog.pid` — camera disable sentinel / camera-watchdog PID (the watchdog script respawns the daemon)
 - `bladewatch_ipc_token` — IPC bootstrap token (see `ipc-auth-and-secrets.md`)

@@ -213,4 +213,46 @@ public class SystemServiceClient(
     ),
   )
 
+
+  /**
+   *  BladeWatch-qwqq: the Diagnostics performance panel's session lifecycle. Monitoring is
+   *  on-demand — it starts when a client connects and stops when the last one goes away — so
+   *  these three are what keep it running while a panel is open. The Flutter controller already
+   *  calls GetPerformance over Connect and these three over REST, in the same class.
+   */
+  override suspend fun performanceConnect(request: PerformanceConnectRequest, headers: Headers): ResponseMessage<PerformanceConnectResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SystemService/PerformanceConnect",
+      net.bladewatch.app.grpc.v1.PerformanceConnectRequest::class,
+      net.bladewatch.app.grpc.v1.PerformanceConnectResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun performanceHeartbeat(request: PerformanceHeartbeatRequest, headers: Headers): ResponseMessage<PerformanceHeartbeatResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SystemService/PerformanceHeartbeat",
+      net.bladewatch.app.grpc.v1.PerformanceHeartbeatRequest::class,
+      net.bladewatch.app.grpc.v1.PerformanceHeartbeatResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  override suspend fun performanceDisconnect(request: PerformanceDisconnectRequest, headers: Headers): ResponseMessage<PerformanceDisconnectResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.SystemService/PerformanceDisconnect",
+      net.bladewatch.app.grpc.v1.PerformanceDisconnectRequest::class,
+      net.bladewatch.app.grpc.v1.PerformanceDisconnectResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
 }

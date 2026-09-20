@@ -3786,6 +3786,263 @@ class StopGpsResponse extends $pb.GeneratedMessage {
   void clearMessage() => $_clearField(2);
 }
 
+class IssueActionTokenRequest extends $pb.GeneratedMessage {
+  factory IssueActionTokenRequest() => IssueActionTokenRequest._();
+
+  IssueActionTokenRequest._();
+
+  factory IssueActionTokenRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      IssueActionTokenRequest()..mergeFromBuffer(data, registry);
+  factory IssueActionTokenRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      IssueActionTokenRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'IssueActionTokenRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: IssueActionTokenRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  IssueActionTokenRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  IssueActionTokenRequest copyWith(
+          void Function(IssueActionTokenRequest) updates) =>
+      super.copyWith((message) => updates(message as IssueActionTokenRequest))
+          as IssueActionTokenRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use IssueActionTokenRequest() / IssueActionTokenRequest.new instead')
+  static IssueActionTokenRequest create() => IssueActionTokenRequest._();
+  static $pb.GeneratedMessage $_createMessage() => IssueActionTokenRequest._();
+  @$core.override
+  IssueActionTokenRequest createEmptyInstance() => IssueActionTokenRequest._();
+  @$core.pragma('dart2js:noInline')
+  static IssueActionTokenRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<IssueActionTokenRequest>(
+          IssueActionTokenRequest.$_createMessage);
+  static IssueActionTokenRequest? _defaultInstance;
+}
+
+class IssueActionTokenResponse extends $pb.GeneratedMessage {
+  factory IssueActionTokenResponse({
+    $core.bool? success,
+    $core.String? token,
+    $core.int? expiresInSeconds,
+    $core.String? error,
+  }) {
+    final result = IssueActionTokenResponse._();
+    if (success != null) result.success = success;
+    if (token != null) result.token = token;
+    if (expiresInSeconds != null) result.expiresInSeconds = expiresInSeconds;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  IssueActionTokenResponse._();
+
+  factory IssueActionTokenResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      IssueActionTokenResponse()..mergeFromBuffer(data, registry);
+  factory IssueActionTokenResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      IssueActionTokenResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'IssueActionTokenResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: IssueActionTokenResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'token')
+    ..aI(3, _omitFieldNames ? '' : 'expiresInSeconds')
+    ..aOS(4, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  IssueActionTokenResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  IssueActionTokenResponse copyWith(
+          void Function(IssueActionTokenResponse) updates) =>
+      super.copyWith((message) => updates(message as IssueActionTokenResponse))
+          as IssueActionTokenResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use IssueActionTokenResponse() / IssueActionTokenResponse.new instead')
+  static IssueActionTokenResponse create() => IssueActionTokenResponse._();
+  static $pb.GeneratedMessage $_createMessage() => IssueActionTokenResponse._();
+  @$core.override
+  IssueActionTokenResponse createEmptyInstance() =>
+      IssueActionTokenResponse._();
+  @$core.pragma('dart2js:noInline')
+  static IssueActionTokenResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<IssueActionTokenResponse>(
+          IssueActionTokenResponse.$_createMessage);
+  static IssueActionTokenResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  /// Present the token as the X-Vehicle-Action-Token header on actuating VehicleService calls.
+  @$pb.TagNumber(2)
+  $core.String get token => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set token($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasToken() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearToken() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.int get expiresInSeconds => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set expiresInSeconds($core.int value) => $_setSignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasExpiresInSeconds() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearExpiresInSeconds() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get error => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set error($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasError() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearError() => $_clearField(4);
+}
+
+class GetAdasInventoryRequest extends $pb.GeneratedMessage {
+  factory GetAdasInventoryRequest() => GetAdasInventoryRequest._();
+
+  GetAdasInventoryRequest._();
+
+  factory GetAdasInventoryRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetAdasInventoryRequest()..mergeFromBuffer(data, registry);
+  factory GetAdasInventoryRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetAdasInventoryRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetAdasInventoryRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetAdasInventoryRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetAdasInventoryRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetAdasInventoryRequest copyWith(
+          void Function(GetAdasInventoryRequest) updates) =>
+      super.copyWith((message) => updates(message as GetAdasInventoryRequest))
+          as GetAdasInventoryRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetAdasInventoryRequest() / GetAdasInventoryRequest.new instead')
+  static GetAdasInventoryRequest create() => GetAdasInventoryRequest._();
+  static $pb.GeneratedMessage $_createMessage() => GetAdasInventoryRequest._();
+  @$core.override
+  GetAdasInventoryRequest createEmptyInstance() => GetAdasInventoryRequest._();
+  @$core.pragma('dart2js:noInline')
+  static GetAdasInventoryRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetAdasInventoryRequest>(
+          GetAdasInventoryRequest.$_createMessage);
+  static GetAdasInventoryRequest? _defaultInstance;
+}
+
+class GetAdasInventoryResponse extends $pb.GeneratedMessage {
+  factory GetAdasInventoryResponse({
+    $core.bool? success,
+    $core.String? adasJson,
+  }) {
+    final result = GetAdasInventoryResponse._();
+    if (success != null) result.success = success;
+    if (adasJson != null) result.adasJson = adasJson;
+    return result;
+  }
+
+  GetAdasInventoryResponse._();
+
+  factory GetAdasInventoryResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetAdasInventoryResponse()..mergeFromBuffer(data, registry);
+  factory GetAdasInventoryResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetAdasInventoryResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetAdasInventoryResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetAdasInventoryResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'adasJson')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetAdasInventoryResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetAdasInventoryResponse copyWith(
+          void Function(GetAdasInventoryResponse) updates) =>
+      super.copyWith((message) => updates(message as GetAdasInventoryResponse))
+          as GetAdasInventoryResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetAdasInventoryResponse() / GetAdasInventoryResponse.new instead')
+  static GetAdasInventoryResponse create() => GetAdasInventoryResponse._();
+  static $pb.GeneratedMessage $_createMessage() => GetAdasInventoryResponse._();
+  @$core.override
+  GetAdasInventoryResponse createEmptyInstance() =>
+      GetAdasInventoryResponse._();
+  @$core.pragma('dart2js:noInline')
+  static GetAdasInventoryResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetAdasInventoryResponse>(
+          GetAdasInventoryResponse.$_createMessage);
+  static GetAdasInventoryResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  /// The `adas` object as JSON: {sdkClassPresent, declared:[...], sdkOnly:[...]}.
+  /// NOTE: sdkClassPresent alone does NOT mean this car has ADAS — see byd-integrations.md.
+  @$pb.TagNumber(2)
+  $core.String get adasJson => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set adasJson($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasAdasJson() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearAdasJson() => $_clearField(2);
+}
+
 /// VehicleService exposes BYD vehicle state reads and control commands.
 ///
 /// HTTP mapping:
@@ -3909,6 +4166,22 @@ class VehicleServiceApi {
           $pb.ClientContext? ctx, StopGpsRequest request) =>
       _client.invoke<StopGpsResponse>(
           ctx, 'VehicleService', 'StopGps', request, StopGpsResponse());
+
+  /// BladeWatch-jwko: issues the short-lived second factor that actuating commands require from
+  /// a non-loopback caller. Never itself gated — you cannot need a token to get a token.
+  $async.Future<IssueActionTokenResponse> issueActionToken(
+          $pb.ClientContext? ctx, IssueActionTokenRequest request) =>
+      _client.invoke<IssueActionTokenResponse>(ctx, 'VehicleService',
+          'IssueActionToken', request, IssueActionTokenResponse());
+
+  /// BladeWatch-6mnq: read-only probe of which declared ADAS_* ids actually resolve from the SDK
+  /// on this car (BladeWatch-2pnn.3). It was REST-only, and the reference said to add an RPC
+  /// "if a client needs it" — removing the REST surface is exactly that moment, and without this
+  /// the diagnostic would simply have vanished.
+  $async.Future<GetAdasInventoryResponse> getAdasInventory(
+          $pb.ClientContext? ctx, GetAdasInventoryRequest request) =>
+      _client.invoke<GetAdasInventoryResponse>(ctx, 'VehicleService',
+          'GetAdasInventory', request, GetAdasInventoryResponse());
 }
 
 const $core.bool _omitFieldNames =

@@ -43,14 +43,14 @@ android {
         versionCode = flutter.versionCode
 
         // versionName is written out explicitly because BladeWatch versions have
-        // FOUR parts ("1.3.1.0", matching app/build.gradle.kts) and a pubspec
-        // version must be valid semver — `version: 1.3.1.0+13100` is rejected by
+        // FOUR parts ("1.3.2.0", matching app/build.gradle.kts) and a pubspec
+        // version must be valid semver — `version: 1.3.2.0+13200` is rejected by
         // pub outright, so `flutter.versionName` can only ever yield "1.3.1".
         //
         // The two APKs are installed as a pair and the About screen reads this
         // value through package_info_plus, so they must report the same string.
         // Keep this in step with app/build.gradle.kts's versionName.
-        versionName = "1.3.1.0"
+        versionName = "1.3.2.0"
 
         // BYD head unit is arm64-v8a only — same reasoning as the main app's
         // splits.abi block.

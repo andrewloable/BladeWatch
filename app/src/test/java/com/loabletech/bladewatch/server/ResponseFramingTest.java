@@ -107,7 +107,15 @@ public class ResponseFramingTest {
         return f;
     }
 
-    /** Every .java file under the source tree, so a NEW response writer is covered too. */
+    /**
+     * Every source file under the tree, in either language, so a NEW response writer is covered
+     * too. Kotlin is included deliberately: the server layer is migrating (BladeWatch-9rut), and
+     * a .java-only walk would quietly stop seeing writers as they convert. The scan below reads
+     * CONCATENATED string literals, so a converted writer must keep building its header block
+     * that way rather than switching to a Kotlin string template -- a "$status" interpolation
+     * would not match, and this guard is the only thing between a missing Content-Length and a
+     * desynchronised keep-alive connection.
+     */
     private static List<File> allJavaSources() {
         List<File> out = new ArrayList<>();
         java.util.Deque<File> stack = new java.util.ArrayDeque<>();
@@ -117,7 +125,7 @@ public class ResponseFramingTest {
             if (kids == null) continue;
             for (File k : kids) {
                 if (k.isDirectory()) stack.push(k);
-                else if (k.getName().endsWith(".java")) out.add(k);
+                else if (k.getName().endsWith(".java") || k.getName().endsWith(".kt")) out.add(k);
             }
         }
         return out;
@@ -192,8 +200,8 @@ public class ResponseFramingTest {
      */
     @Test
     public void notModifiedStaysBodiless() throws Exception {
-        File f = new File(sourceRoot(), "server/HttpResponse.java");
-        String src = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+        String src = new String(Files.readAllBytes(source("server/HttpResponse").toPath()),
+                StandardCharsets.UTF_8);
 
         int at = src.indexOf("sendNotModified");
         Assert.assertTrue("sendNotModified is gone — was the 304 path removed?", at > 0);
@@ -227,13 +235,16 @@ public class ResponseFramingTest {
      */
     @Test
     public void closingPathsDoNotAdvertiseKeepAlive() throws Exception {
-        File f = new File(sourceRoot(), "server/HttpServer.java");
         String[] lines = stripComments(
-                new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8)).split("\n", -1);
+                new String(Files.readAllBytes(source("server/HttpServer").toPath()),
+                        StandardCharsets.UTF_8)).split("\n", -1);
 
         int start = -1, end = -1;
         for (int i = 0; i < lines.length; i++) {
-            if (start < 0 && lines[i].contains("private void handleClient")) start = i;
+            // Both spellings: Java declares "private void handleClient", Kotlin
+            // "private fun handleClient". Matching one would silently stop finding the method.
+            if (start < 0 && (lines[i].contains("private void handleClient")
+                    || lines[i].contains("private fun handleClient"))) start = i;
             else if (start >= 0 && lines[i].equals("    }")) { end = i; break; }
         }
         Assert.assertTrue("could not locate handleClient", start >= 0 && end > start);
@@ -247,8 +258,13 @@ public class ResponseFramingTest {
             String before = ctx.toString();
             boolean wrote = false;
             for (String w : writes) if (before.contains(w)) { wrote = true; break; }
-            if (wrote && !before.contains("setKeepAlive(false)")) {
-                offenders.add("HttpServer.java:" + (i + 1));
+            // Both spellings: Java calls out.setKeepAlive(false), Kotlin assigns
+            // out.isKeepAlive = false. Matching only the Java form would let every closing path
+            // pass vacuously once this file converts (BladeWatch-9rut).
+            boolean announcedClose = before.contains("setKeepAlive(false)")
+                    || before.replace(" ", "").contains("isKeepAlive=false");
+            if (wrote && !announcedClose) {
+                offenders.add("HttpServer:" + (i + 1));
             }
         }
 
@@ -274,7 +290,8 @@ public class ResponseFramingTest {
             String src = stripComments(
                     new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
             // The single permitted definition lives in HttpResponse.connectionHeader.
-            if (f.getName().equals("HttpResponse.java")) continue;
+            if (f.getName().equals("HttpResponse.java")
+                    || f.getName().equals("HttpResponse.kt")) continue;
             // The 101 upgrade legitimately sends "Connection: Upgrade".
             String withoutUpgrade = src.replace("Connection: Upgrade", "");
             if (withoutUpgrade.contains("\"Connection: ")
@@ -288,4 +305,21 @@ public class ResponseFramingTest {
                         + "per-request keep-alive decision: " + offenders,
                 offenders.isEmpty());
     }
+
+    /**
+     * Resolve a source file by path without its extension. The server layer is migrating from
+     * Java to Kotlin (BladeWatch-9rut); a guard that keeps asking for a ".java" that no longer
+     * exists stops guarding without ever failing.
+     */
+    private static File source(String relativeNoExtension) {
+        File java = new File(sourceRoot(), relativeNoExtension + ".java");
+        File kotlin = new File(sourceRoot(), relativeNoExtension + ".kt");
+        Assert.assertTrue("missing " + relativeNoExtension + " (.java or .kt)",
+                java.isFile() || kotlin.isFile());
+        Assert.assertFalse("both a .java and a .kt exist for " + relativeNoExtension
+                + " -- a half-finished conversion; this guard would read the stale copy",
+                java.isFile() && kotlin.isFile());
+        return java.isFile() ? java : kotlin;
+    }
+
 }

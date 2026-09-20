@@ -55,6 +55,16 @@ service VehicleService {
   rpc GetGpsLocation(GetGpsLocationRequest) returns (GetGpsLocationResponse);
   rpc StartGps(StartGpsRequest) returns (StartGpsResponse);
   rpc StopGps(StopGpsRequest) returns (StopGpsResponse);
+
+  // BladeWatch-jwko: issues the short-lived second factor that actuating commands require from
+  // a non-loopback caller. Never itself gated — you cannot need a token to get a token.
+  rpc IssueActionToken(IssueActionTokenRequest) returns (IssueActionTokenResponse);
+
+  // BladeWatch-6mnq: read-only probe of which declared ADAS_* ids actually resolve from the SDK
+  // on this car (BladeWatch-2pnn.3). It was REST-only, and the reference said to add an RPC
+  // "if a client needs it" — removing the REST surface is exactly that moment, and without this
+  // the diagnostic would simply have vanished.
+  rpc GetAdasInventory(GetAdasInventoryRequest) returns (GetAdasInventoryResponse);
 }
 
 // DoorStatus holds per-door lock state: 1=locked, 2=unlocked, -1=unknown.
@@ -368,4 +378,29 @@ message StopGpsRequest {}
 message StopGpsResponse {
   bool success = 1;
   string message = 2;
+}
+
+
+// ---- vehicle action token (uy93.5, restored on Connect by BladeWatch-jwko) ----
+
+message IssueActionTokenRequest {}
+
+message IssueActionTokenResponse {
+  bool success = 1;
+  // Present the token as the X-Vehicle-Action-Token header on actuating VehicleService calls.
+  string token = 2;
+  int32 expires_in_seconds = 3;
+  string error = 4;
+}
+
+
+// ---- ADAS field inventory ----
+
+message GetAdasInventoryRequest {}
+
+message GetAdasInventoryResponse {
+  bool success = 1;
+  // The `adas` object as JSON: {sdkClassPresent, declared:[...], sdkOnly:[...]}.
+  // NOTE: sdkClassPresent alone does NOT mean this car has ADAS — see byd-integrations.md.
+  string adas_json = 2;
 }

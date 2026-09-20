@@ -175,9 +175,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           recordingsService: deps.recordingsService,
           settingsService: deps.settingsService,
           storageService: deps.storageService,
-          jwtSource: deps.jwtSource,
-          getSender: deps.overlayFieldsGetSender,
-          postSender: deps.overlayFieldsPostSender,
         );
         controller = c;
         content = SettingsRecordingScreen(controller: c);

@@ -10,6 +10,27 @@ class SettingsServiceClient {
 
   const SettingsServiceClient(this._transport);
 
+  // BladeWatch-qwqq: the telemetry-field picker, moved off direct REST.
+  Future<GetTelemetryOverlayFieldsResponse> getTelemetryOverlayFields(
+          GetTelemetryOverlayFieldsRequest request) =>
+      _transport.call(
+        'SettingsService',
+        'GetTelemetryOverlayFields',
+        request,
+        (json) => GetTelemetryOverlayFieldsResponse()
+          ..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<SetTelemetryOverlayFieldsResponse> setTelemetryOverlayFields(
+          SetTelemetryOverlayFieldsRequest request) =>
+      _transport.call(
+        'SettingsService',
+        'SetTelemetryOverlayFields',
+        request,
+        (json) => SetTelemetryOverlayFieldsResponse()
+          ..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
   Future<GetQualityResponse> getQuality(GetQualityRequest request) => _transport.call(
         'SettingsService',
         'GetQuality',

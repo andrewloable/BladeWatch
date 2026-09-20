@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "不正な要求体: {0}",
     "performance_no_data": "性能モニタリングが開始されていないか,まだデータ収集されていない",
     "soh_not_initialized": "SohEstimator は初期化されていない",
+    "soh_nominal_range": "公称容量は 8～120 kWh の範囲で指定してください",
     "reset_no_categories": "指定されたカテゴリーはありません",
     "reset_unknown_category": "未知のカテゴリー",
     "reset_trip_in_progress": "進んでいる旅  ACC を最初にオフにします",

@@ -1,47 +1,31 @@
 import 'dart:convert';
 
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
+import 'package:bladewatch_ui/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/diagnostics/performance_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
 
-class _FakeJwtSource implements JwtSource {
-  @override
-  Future<String?> mintJwt() async => 'jwt-1';
-  @override
-  Future<int> stateVersion() async => 0;
-}
-
+/// BladeWatch-qwqq: this controller used to reach the daemon two ways — the typed
+/// GetPerformance RPC for polling, and raw HTTP to REST for connect/heartbeat/disconnect,
+/// because those three had no RPC equivalent. They do now, so the split and its raw-HTTP
+/// plumbing (jwtSource / send / baseUrl) are gone, and these tests assert RPC calls rather
+/// than captured HTTP requests.
 void main() {
   late FakeRpcClient rpc;
-  late List<(Uri, Map<String, String>, String)> sentRequests;
-  late RawHttpResponse Function(Uri uri, Map<String, String> headers, String body) respondWith;
   late PerformanceController controller;
 
   setUp(() {
     rpc = FakeRpcClient();
-    sentRequests = [];
-    respondWith = (uri, headers, body) => const RawHttpResponse(200, '{"status":"ok","clientId":"c1"}');
-    controller = PerformanceController(
-      systemService: SystemServiceClient(rpc),
-      jwtSource: _FakeJwtSource(),
-      baseUrl: Uri.parse('http://127.0.0.1:8080'),
-      send: (uri, headers, body) async {
-        sentRequests.add((uri, headers, body));
-        return respondWith(uri, headers, body);
-      },
-    );
+    rpc.stubJson('SystemService', 'PerformanceConnect', {'success': true, 'clientId': 'c1'});
+    rpc.stubJson('SystemService', 'PerformanceHeartbeat', {'success': true});
+    rpc.stubJson('SystemService', 'PerformanceDisconnect', {'success': true});
+    controller = PerformanceController(systemService: SystemServiceClient(rpc));
   });
 
-  test('defaults to the real IO sender and 127.0.0.1:8080 when neither is given', () {
-    expect(
-      () => PerformanceController(systemService: SystemServiceClient(rpc), jwtSource: _FakeJwtSource()),
-      returnsNormally,
-    );
-  });
+  List<RpcCall> callsTo(String method) =>
+      rpc.calls.where((c) => c.method == method).toList();
 
   test('starts in the connecting state with no snapshot', () {
     expect(controller.state, PerformanceViewState.connecting);
@@ -49,19 +33,38 @@ void main() {
   });
 
   group('connect', () {
-    test('POSTs to /api/performance/connect with a clientId', () async {
+    test('registers a session over PerformanceConnect with a non-empty clientId', () async {
       await controller.connect();
 
-      expect(sentRequests, hasLength(1));
-      final (uri, _, body) = sentRequests.single;
-      expect(uri.path, '/api/performance/connect');
-      final decoded = jsonDecode(body) as Map;
-      expect(decoded['clientId'], isA<String>());
-      expect((decoded['clientId'] as String), isNotEmpty);
+      final calls = callsTo('PerformanceConnect');
+      expect(calls, hasLength(1));
+      final request = calls.single.request as PerformanceConnectRequest;
+      expect(request.clientId, isNotEmpty);
     });
 
-    test('does not throw and does not block polling from starting even if the daemon rejects connect', () async {
-      respondWith = (uri, headers, body) => const RawHttpResponse(500, 'error');
+    test('keeps the id the SERVER registered, not the one it asked for', () async {
+      // Monitoring is on-demand and keyed by the registered id. If the controller kept its
+      // own id instead, every heartbeat would miss and the session would time out under a
+      // panel the user is still looking at.
+      rpc.stubJson('SystemService', 'PerformanceConnect',
+          {'success': true, 'clientId': 'server-assigned-id'});
+      // poll() returns early if GetPerformance fails, BEFORE it heartbeats, so without this
+      // the assertion below would pass for the wrong reason on an empty call list.
+      rpc.stubJson('SystemService', 'GetPerformance',
+          {'success': true, 'performanceJson': '{}'});
+
+      await controller.connect();
+      await controller.poll();
+
+      final beats = callsTo('PerformanceHeartbeat');
+      expect(beats, hasLength(1));
+      expect((beats.single.request as PerformanceHeartbeatRequest).clientId,
+          'server-assigned-id');
+    });
+
+    test('does not throw or block polling when the daemon rejects connect', () async {
+      rpc.stubError('SystemService', 'PerformanceConnect',
+          const ConnectError('internal', 'nope'));
 
       await controller.connect();
       await controller.poll();
@@ -152,14 +155,12 @@ void main() {
     test('sends a heartbeat with the clientId after connect', () async {
       await controller.connect();
       rpc.stubJson('SystemService', 'GetPerformance', {'success': true, 'performanceJson': '{}'});
-      sentRequests.clear();
 
       await controller.poll();
 
-      expect(sentRequests, hasLength(1));
-      expect(sentRequests.single.$1.path, '/api/performance/heartbeat');
-      final decoded = jsonDecode(sentRequests.single.$3) as Map;
-      expect(decoded['clientId'], 'c1');
+      final beats = callsTo('PerformanceHeartbeat');
+      expect(beats, hasLength(1));
+      expect((beats.single.request as PerformanceHeartbeatRequest).clientId, 'c1');
     });
 
     test('does not send a heartbeat if connect was never called', () async {
@@ -167,7 +168,7 @@ void main() {
 
       await controller.poll();
 
-      expect(sentRequests, isEmpty);
+      expect(callsTo('PerformanceHeartbeat'), isEmpty);
     });
 
     test('notifies listeners on a successful poll', () async {
@@ -182,22 +183,20 @@ void main() {
   });
 
   group('disconnect', () {
-    test('POSTs to /api/performance/disconnect with the clientId', () async {
+    test('releases the session over PerformanceDisconnect with the clientId', () async {
       await controller.connect();
-      sentRequests.clear();
 
       await controller.disconnect();
 
-      expect(sentRequests, hasLength(1));
-      expect(sentRequests.single.$1.path, '/api/performance/disconnect');
-      final decoded = jsonDecode(sentRequests.single.$3) as Map;
-      expect(decoded['clientId'], 'c1');
+      final calls = callsTo('PerformanceDisconnect');
+      expect(calls, hasLength(1));
+      expect((calls.single.request as PerformanceDisconnectRequest).clientId, 'c1');
     });
 
     test('is a harmless no-op if connect was never called', () async {
       await controller.disconnect();
 
-      expect(sentRequests, isEmpty);
+      expect(callsTo('PerformanceDisconnect'), isEmpty);
     });
   });
 }

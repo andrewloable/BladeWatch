@@ -140,7 +140,7 @@ class TripDetector {
     private fun handleActiveGearChange(newGear: Int) {
         if (newGear == GearMonitor.GEAR_P) {
             // Only start the debounce if the car is actually stopped.
-            val speed = GpsMonitor.getInstance().getSpeed()
+            val speed = GpsMonitor.getInstance().speed
             if (speed <= 0.5f) {
                 logger.info("Gear P + speed=0 -> starting ${PARK_DEBOUNCE_MS / 1000}s debounce")
                 state = State.PARK_PENDING
@@ -208,8 +208,8 @@ class TripDetector {
         try {
             val gps = GpsMonitor.getInstance()
             if (gps.hasLocation()) {
-                trip.startLat = gps.getLatitude()
-                trip.startLon = gps.getLongitude()
+                trip.startLat = gps.latitude
+                trip.startLon = gps.longitude
             }
         } catch (e: Exception) {
             logger.error("Failed to read start GPS: " + e.message)
@@ -315,8 +315,8 @@ class TripDetector {
         try {
             val gps = GpsMonitor.getInstance()
             if (gps.hasLocation()) {
-                trip.endLat = gps.getLatitude()
-                trip.endLon = gps.getLongitude()
+                trip.endLat = gps.latitude
+                trip.endLon = gps.longitude
             }
         } catch (e: Exception) {
             logger.error("Failed to read end GPS: " + e.message)

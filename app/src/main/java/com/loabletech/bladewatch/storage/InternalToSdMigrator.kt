@@ -135,13 +135,13 @@ object InternalToSdMigrator {
     fun migrate(storage: StorageManager, tripDb: TripDatabase?, catalogReconcile: Runnable?) {
         var mediaMoved = 0
         mediaMoved += moveCategory(
-            storage.getInternalRecordingsDir(), storage.getSdCardRecordingsDir(), storage.isRecordingActive()
+            storage.internalRecordingsDir, storage.sdCardRecordingsDir, storage.isRecordingActive
         )
         mediaMoved += moveCategory(
-            storage.getInternalSurveillanceDir(), storage.getSdCardSurveillanceDir(), storage.isSurveillanceActive()
+            storage.internalSurveillanceDir, storage.sdCardSurveillanceDir, storage.isSurveillanceActive
         )
         mediaMoved += moveCategory(
-            storage.getInternalProximityDir(), storage.getSdCardProximityDir(), storage.isSurveillanceActive()
+            storage.internalProximityDir, storage.sdCardProximityDir, storage.isSurveillanceActive
         )
         if (mediaMoved > 0 && catalogReconcile != null) {
             try {
@@ -150,6 +150,6 @@ object InternalToSdMigrator {
                 logger.warn("Media catalog reconcile after migration failed: ${e.message}")
             }
         }
-        migrateTrips(storage.getInternalTripsDir(), storage.getSdCardTripsDir(), tripDb)
+        migrateTrips(storage.internalTripsDir, storage.sdCardTripsDir, tripDb)
     }
 }

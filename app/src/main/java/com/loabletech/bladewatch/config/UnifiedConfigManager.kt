@@ -706,6 +706,26 @@ object UnifiedConfigManager {
     }
 
     /**
+     * The owner's explicit nominal pack capacity in kWh, or 0 when unset (BladeWatch-b9vl).
+     *
+     * Stored in the `vehicle` section next to `modelId`, because it describes the same thing:
+     * which car this is. `NominalCapacityResolver` validates the range — this only reads it.
+     */
+    @JvmStatic
+    fun getNominalCapacityOverrideKwh(): Double = getVehicle().optDouble("nominalKwhOverride", 0.0)
+
+    /**
+     * Set or clear the owner's nominal pack capacity. Pass 0 to clear it and fall back to
+     * auto-detection.
+     */
+    @JvmStatic
+    fun setNominalCapacityOverrideKwh(kwh: Double): Boolean {
+        val patch = JSONObject()
+        patch.put("nominalKwhOverride", if (kwh.isNaN() || kwh <= 0) 0.0 else kwh)
+        return updateSection("vehicle", patch)
+    }
+
+    /**
      * Get vehicle appearance config section (selected 3D model + body color).
      */
     @JvmStatic

@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "รูปแบบข้อมูลไม่ถูกต้อง: {0}",
     "performance_no_data": "ยังไม่มีข้อมูลประสิทธิภาพ",
     "soh_not_initialized": "ระบบคำนวณ SOH ยังไม่เริ่มทำงาน",
+    "soh_nominal_range": "ความจุระบุต้องอยู่ระหว่าง 8 ถึง 120 kWh",
     "reset_no_categories": "ไม่ได้ระบุหมวดหมู่",
     "reset_unknown_category": "ไม่รู้จักหมวดหมู่",
     "reset_trip_in_progress": "กำลังบันทึกทริป ให้ปิด ACC ก่อน",

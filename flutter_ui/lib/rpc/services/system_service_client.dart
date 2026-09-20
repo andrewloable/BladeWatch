@@ -24,6 +24,38 @@ class SystemServiceClient {
         (json) => GetPerformanceResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
+  // BladeWatch-qwqq: the performance panel's session lifecycle, moved off the last direct
+  // REST calls the Flutter app made. Monitoring is on-demand, so these keep it running while
+  // the Diagnostics panel is open.
+  Future<PerformanceConnectResponse> performanceConnect(PerformanceConnectRequest request) =>
+      _transport.call(
+        'SystemService',
+        'PerformanceConnect',
+        request,
+        (json) => PerformanceConnectResponse()
+          ..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<PerformanceHeartbeatResponse> performanceHeartbeat(
+          PerformanceHeartbeatRequest request) =>
+      _transport.call(
+        'SystemService',
+        'PerformanceHeartbeat',
+        request,
+        (json) => PerformanceHeartbeatResponse()
+          ..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<PerformanceDisconnectResponse> performanceDisconnect(
+          PerformanceDisconnectRequest request) =>
+      _transport.call(
+        'SystemService',
+        'PerformanceDisconnect',
+        request,
+        (json) => PerformanceDisconnectResponse()
+          ..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
   Future<PlayAudioTestResponse> playAudioTest(PlayAudioTestRequest request) => _transport.call(
         'SystemService',
         'PlayAudioTest',

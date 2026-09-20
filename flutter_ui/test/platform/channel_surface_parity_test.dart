@@ -98,22 +98,38 @@ void main() {
   /// input. `flutter test` re-runs unconditionally, so the guard cannot go stale.
   test('every IPC command the UI sends is one the daemon handles', () {
     var kotlinRoot = Directory('android/app/src/main/kotlin');
-    var daemonFile = File('../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java');
+    var daemonBase = '../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer';
     if (!kotlinRoot.existsSync()) {
       kotlinRoot = Directory('flutter_ui/android/app/src/main/kotlin');
-      daemonFile = File('app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java');
+      daemonBase = 'app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer';
     }
+    // Resolve the daemon file in whichever language it is written in today. The server layer is
+    // migrating to Kotlin (BladeWatch-9rut); a guard that keeps asking for a '.java' that no
+    // longer exists stops guarding without ever failing.
+    final asJava = File('$daemonBase.java');
+    final asKotlin = File('$daemonBase.kt');
+    expect(asJava.existsSync() && asKotlin.existsSync(), isFalse,
+        reason: 'both TcpCommandServer.java and .kt exist — a half-finished conversion; '
+            'this guard would read the stale copy');
+    final daemonFile = asJava.existsSync() ? asJava : asKotlin;
     expect(kotlinRoot.existsSync() && daemonFile.existsSync(), isTrue,
-        reason: 'could not locate the Kotlin root and TcpCommandServer.java');
+        reason: 'could not locate the Kotlin root and TcpCommandServer');
 
     // [A-Za-z_]+, not [a-z_]+: the daemon mixes snake_case ("secret_get") and
     // camelCase ("daemonStatus", "tunnelStatus") command names. A lowercase-only
     // pattern silently skipped 2 of the 15 commands on BOTH sides, so a rename of
     // either would have been reported as "all clear" -- a guard that cannot fail.
-    final handled = RegExp(r'^\s*case\s+"([A-Za-z_]+)"\s*:', multiLine: true)
-        .allMatches(daemonFile.readAsStringSync())
-        .map((m) => m.group(1)!)
-        .toSet();
+    // Both dispatch shapes: Java's `case "start":` and Kotlin's `"start" -> {`. Matching only
+    // one would make this guard pass vacuously the moment the daemon file converts.
+    final daemonSource = daemonFile.readAsStringSync();
+    final handled = <String>{
+      for (final m in RegExp(r'^\s*case\s+"([A-Za-z_]+)"\s*:', multiLine: true)
+          .allMatches(daemonSource))
+        m.group(1)!,
+      for (final m in RegExp(r'^\s*"([A-Za-z_]+)"\s*->', multiLine: true)
+          .allMatches(daemonSource))
+        m.group(1)!,
+    };
     expect(handled, isNotEmpty, reason: 'no case labels found — has the dispatch changed shape?');
 
     final sent = <String, String>{};
@@ -202,7 +218,7 @@ void main() {
   /// daemon host is another — and a bug report would name the wrong build.
   ///
   /// It lives in two files unavoidably. BladeWatch versions have FOUR parts
-  /// ("1.3.1.0") and a pubspec version must be valid semver: `version: 1.3.1.0+13100`
+  /// ("1.3.2.0") and a pubspec version must be valid semver: `version: 1.3.2.0+13200`
   /// is rejected by pub outright, so `flutter.versionName` can only ever yield
   /// "1.3.0". flutter_ui/android/app/build.gradle.kts therefore writes versionName
   /// out explicitly, which is a copy of the one in app/build.gradle.kts. This pins

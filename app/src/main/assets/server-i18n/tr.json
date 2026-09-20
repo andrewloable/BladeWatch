@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Geçersiz talep organı: {0}",
     "performance_no_data": "Performans izleme başlatılmamış veya henüz bir veri toplanmamış",
     "soh_not_initialized": "SohEstimator başlatılmamış",
+    "soh_nominal_range": "Nominal kapasite 8 ile 120 kWh arasında olmalıdır",
     "reset_no_categories": "Belgilendirilmemiş kategoriler",
     "reset_unknown_category": "Bilinmeyen kategori",
     "reset_trip_in_progress": "Yolculuk devam ediyor  ACC'i önce kapat",

@@ -1383,6 +1383,658 @@ class SetRecordingModeResponse extends $pb.GeneratedMessage {
   void clearError() => $_clearField(3);
 }
 
+class GetStatusOverlayRequest extends $pb.GeneratedMessage {
+  factory GetStatusOverlayRequest() => GetStatusOverlayRequest._();
+
+  GetStatusOverlayRequest._();
+
+  factory GetStatusOverlayRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetStatusOverlayRequest()..mergeFromBuffer(data, registry);
+  factory GetStatusOverlayRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetStatusOverlayRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetStatusOverlayRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetStatusOverlayRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetStatusOverlayRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetStatusOverlayRequest copyWith(
+          void Function(GetStatusOverlayRequest) updates) =>
+      super.copyWith((message) => updates(message as GetStatusOverlayRequest))
+          as GetStatusOverlayRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetStatusOverlayRequest() / GetStatusOverlayRequest.new instead')
+  static GetStatusOverlayRequest create() => GetStatusOverlayRequest._();
+  static $pb.GeneratedMessage $_createMessage() => GetStatusOverlayRequest._();
+  @$core.override
+  GetStatusOverlayRequest createEmptyInstance() => GetStatusOverlayRequest._();
+  @$core.pragma('dart2js:noInline')
+  static GetStatusOverlayRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetStatusOverlayRequest>(
+          GetStatusOverlayRequest.$_createMessage);
+  static GetStatusOverlayRequest? _defaultInstance;
+}
+
+class GetStatusOverlayResponse extends $pb.GeneratedMessage {
+  factory GetStatusOverlayResponse({
+    $core.bool? success,
+    $core.bool? cameraVisible,
+    $core.bool? tripVisible,
+  }) {
+    final result = GetStatusOverlayResponse._();
+    if (success != null) result.success = success;
+    if (cameraVisible != null) result.cameraVisible = cameraVisible;
+    if (tripVisible != null) result.tripVisible = tripVisible;
+    return result;
+  }
+
+  GetStatusOverlayResponse._();
+
+  factory GetStatusOverlayResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetStatusOverlayResponse()..mergeFromBuffer(data, registry);
+  factory GetStatusOverlayResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetStatusOverlayResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetStatusOverlayResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetStatusOverlayResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOB(2, _omitFieldNames ? '' : 'cameraVisible')
+    ..aOB(3, _omitFieldNames ? '' : 'tripVisible')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetStatusOverlayResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetStatusOverlayResponse copyWith(
+          void Function(GetStatusOverlayResponse) updates) =>
+      super.copyWith((message) => updates(message as GetStatusOverlayResponse))
+          as GetStatusOverlayResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetStatusOverlayResponse() / GetStatusOverlayResponse.new instead')
+  static GetStatusOverlayResponse create() => GetStatusOverlayResponse._();
+  static $pb.GeneratedMessage $_createMessage() => GetStatusOverlayResponse._();
+  @$core.override
+  GetStatusOverlayResponse createEmptyInstance() =>
+      GetStatusOverlayResponse._();
+  @$core.pragma('dart2js:noInline')
+  static GetStatusOverlayResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetStatusOverlayResponse>(
+          GetStatusOverlayResponse.$_createMessage);
+  static GetStatusOverlayResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get cameraVisible => $_getBF(1);
+  @$pb.TagNumber(2)
+  set cameraVisible($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasCameraVisible() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearCameraVisible() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.bool get tripVisible => $_getBF(2);
+  @$pb.TagNumber(3)
+  set tripVisible($core.bool value) => $_setBool(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasTripVisible() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearTripVisible() => $_clearField(3);
+}
+
+/// Both fields are optional in the REST body this replaces: omitting one leaves it unchanged.
+/// Proto3 has no field presence for bare bools, so each carries an explicit "set" companion
+/// rather than being silently interpreted as false.
+class SetStatusOverlayRequest extends $pb.GeneratedMessage {
+  factory SetStatusOverlayRequest({
+    $core.bool? cameraVisible,
+    $core.bool? setCameraVisible,
+    $core.bool? tripVisible,
+    $core.bool? setTripVisible,
+  }) {
+    final result = SetStatusOverlayRequest._();
+    if (cameraVisible != null) result.cameraVisible = cameraVisible;
+    if (setCameraVisible != null) result.setCameraVisible = setCameraVisible;
+    if (tripVisible != null) result.tripVisible = tripVisible;
+    if (setTripVisible != null) result.setTripVisible = setTripVisible;
+    return result;
+  }
+
+  SetStatusOverlayRequest._();
+
+  factory SetStatusOverlayRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetStatusOverlayRequest()..mergeFromBuffer(data, registry);
+  factory SetStatusOverlayRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetStatusOverlayRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SetStatusOverlayRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: SetStatusOverlayRequest.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'cameraVisible')
+    ..aOB(2, _omitFieldNames ? '' : 'setCameraVisible')
+    ..aOB(3, _omitFieldNames ? '' : 'tripVisible')
+    ..aOB(4, _omitFieldNames ? '' : 'setTripVisible')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetStatusOverlayRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetStatusOverlayRequest copyWith(
+          void Function(SetStatusOverlayRequest) updates) =>
+      super.copyWith((message) => updates(message as SetStatusOverlayRequest))
+          as SetStatusOverlayRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use SetStatusOverlayRequest() / SetStatusOverlayRequest.new instead')
+  static SetStatusOverlayRequest create() => SetStatusOverlayRequest._();
+  static $pb.GeneratedMessage $_createMessage() => SetStatusOverlayRequest._();
+  @$core.override
+  SetStatusOverlayRequest createEmptyInstance() => SetStatusOverlayRequest._();
+  @$core.pragma('dart2js:noInline')
+  static SetStatusOverlayRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetStatusOverlayRequest>(
+          SetStatusOverlayRequest.$_createMessage);
+  static SetStatusOverlayRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get cameraVisible => $_getBF(0);
+  @$pb.TagNumber(1)
+  set cameraVisible($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasCameraVisible() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCameraVisible() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get setCameraVisible => $_getBF(1);
+  @$pb.TagNumber(2)
+  set setCameraVisible($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasSetCameraVisible() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSetCameraVisible() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.bool get tripVisible => $_getBF(2);
+  @$pb.TagNumber(3)
+  set tripVisible($core.bool value) => $_setBool(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasTripVisible() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearTripVisible() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.bool get setTripVisible => $_getBF(3);
+  @$pb.TagNumber(4)
+  set setTripVisible($core.bool value) => $_setBool(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasSetTripVisible() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearSetTripVisible() => $_clearField(4);
+}
+
+class SetStatusOverlayResponse extends $pb.GeneratedMessage {
+  factory SetStatusOverlayResponse({
+    $core.bool? success,
+    $core.bool? cameraVisible,
+    $core.bool? tripVisible,
+    $core.String? error,
+  }) {
+    final result = SetStatusOverlayResponse._();
+    if (success != null) result.success = success;
+    if (cameraVisible != null) result.cameraVisible = cameraVisible;
+    if (tripVisible != null) result.tripVisible = tripVisible;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  SetStatusOverlayResponse._();
+
+  factory SetStatusOverlayResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetStatusOverlayResponse()..mergeFromBuffer(data, registry);
+  factory SetStatusOverlayResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetStatusOverlayResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SetStatusOverlayResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: SetStatusOverlayResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOB(2, _omitFieldNames ? '' : 'cameraVisible')
+    ..aOB(3, _omitFieldNames ? '' : 'tripVisible')
+    ..aOS(4, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetStatusOverlayResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetStatusOverlayResponse copyWith(
+          void Function(SetStatusOverlayResponse) updates) =>
+      super.copyWith((message) => updates(message as SetStatusOverlayResponse))
+          as SetStatusOverlayResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use SetStatusOverlayResponse() / SetStatusOverlayResponse.new instead')
+  static SetStatusOverlayResponse create() => SetStatusOverlayResponse._();
+  static $pb.GeneratedMessage $_createMessage() => SetStatusOverlayResponse._();
+  @$core.override
+  SetStatusOverlayResponse createEmptyInstance() =>
+      SetStatusOverlayResponse._();
+  @$core.pragma('dart2js:noInline')
+  static SetStatusOverlayResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetStatusOverlayResponse>(
+          SetStatusOverlayResponse.$_createMessage);
+  static SetStatusOverlayResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get cameraVisible => $_getBF(1);
+  @$pb.TagNumber(2)
+  set cameraVisible($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasCameraVisible() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearCameraVisible() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.bool get tripVisible => $_getBF(2);
+  @$pb.TagNumber(3)
+  set tripVisible($core.bool value) => $_setBool(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasTripVisible() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearTripVisible() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get error => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set error($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasError() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearError() => $_clearField(4);
+}
+
+class GetTelemetryOverlayFieldsRequest extends $pb.GeneratedMessage {
+  factory GetTelemetryOverlayFieldsRequest() =>
+      GetTelemetryOverlayFieldsRequest._();
+
+  GetTelemetryOverlayFieldsRequest._();
+
+  factory GetTelemetryOverlayFieldsRequest.fromBuffer(
+          $core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetTelemetryOverlayFieldsRequest()..mergeFromBuffer(data, registry);
+  factory GetTelemetryOverlayFieldsRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetTelemetryOverlayFieldsRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetTelemetryOverlayFieldsRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetTelemetryOverlayFieldsRequest.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetTelemetryOverlayFieldsRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetTelemetryOverlayFieldsRequest copyWith(
+          void Function(GetTelemetryOverlayFieldsRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as GetTelemetryOverlayFieldsRequest))
+          as GetTelemetryOverlayFieldsRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetTelemetryOverlayFieldsRequest() / GetTelemetryOverlayFieldsRequest.new instead')
+  static GetTelemetryOverlayFieldsRequest create() =>
+      GetTelemetryOverlayFieldsRequest._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      GetTelemetryOverlayFieldsRequest._();
+  @$core.override
+  GetTelemetryOverlayFieldsRequest createEmptyInstance() =>
+      GetTelemetryOverlayFieldsRequest._();
+  @$core.pragma('dart2js:noInline')
+  static GetTelemetryOverlayFieldsRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetTelemetryOverlayFieldsRequest>(
+          GetTelemetryOverlayFieldsRequest.$_createMessage);
+  static GetTelemetryOverlayFieldsRequest? _defaultInstance;
+}
+
+class GetTelemetryOverlayFieldsResponse extends $pb.GeneratedMessage {
+  factory GetTelemetryOverlayFieldsResponse({
+    $core.bool? success,
+    $core.Iterable<$core.String>? availableFields,
+    $core.Iterable<$core.MapEntry<$core.String, FieldList>>? selections,
+  }) {
+    final result = GetTelemetryOverlayFieldsResponse._();
+    if (success != null) result.success = success;
+    if (availableFields != null) result.availableFields.addAll(availableFields);
+    if (selections != null) result.selections.addEntries(selections);
+    return result;
+  }
+
+  GetTelemetryOverlayFieldsResponse._();
+
+  factory GetTelemetryOverlayFieldsResponse.fromBuffer(
+          $core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetTelemetryOverlayFieldsResponse()..mergeFromBuffer(data, registry);
+  factory GetTelemetryOverlayFieldsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      GetTelemetryOverlayFieldsResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetTelemetryOverlayFieldsResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: GetTelemetryOverlayFieldsResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..pPS(2, _omitFieldNames ? '' : 'availableFields')
+    ..m<$core.String, FieldList>(3, _omitFieldNames ? '' : 'selections',
+        entryClassName: 'GetTelemetryOverlayFieldsResponse.SelectionsEntry',
+        keyFieldType: $pb.PbFieldType.OS,
+        valueFieldType: $pb.PbFieldType.OM,
+        valueCreator: FieldList.$_createMessage,
+        valueDefaultOrMaker: FieldList.getDefault,
+        packageName: const $pb.PackageName('bladewatch.v1'))
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetTelemetryOverlayFieldsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetTelemetryOverlayFieldsResponse copyWith(
+          void Function(GetTelemetryOverlayFieldsResponse) updates) =>
+      super.copyWith((message) =>
+              updates(message as GetTelemetryOverlayFieldsResponse))
+          as GetTelemetryOverlayFieldsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use GetTelemetryOverlayFieldsResponse() / GetTelemetryOverlayFieldsResponse.new instead')
+  static GetTelemetryOverlayFieldsResponse create() =>
+      GetTelemetryOverlayFieldsResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      GetTelemetryOverlayFieldsResponse._();
+  @$core.override
+  GetTelemetryOverlayFieldsResponse createEmptyInstance() =>
+      GetTelemetryOverlayFieldsResponse._();
+  @$core.pragma('dart2js:noInline')
+  static GetTelemetryOverlayFieldsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetTelemetryOverlayFieldsResponse>(
+          GetTelemetryOverlayFieldsResponse.$_createMessage);
+  static GetTelemetryOverlayFieldsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  /// Every OverlayField enum name the daemon knows about.
+  @$pb.TagNumber(2)
+  $pb.PbList<$core.String> get availableFields => $_getList(1);
+
+  /// Per recording type ("continuous"/"surveillance"/"proximity") -> selected field names.
+  @$pb.TagNumber(3)
+  $pb.PbMap<$core.String, FieldList> get selections => $_getMap(2);
+}
+
+class FieldList extends $pb.GeneratedMessage {
+  factory FieldList({
+    $core.Iterable<$core.String>? fields,
+  }) {
+    final result = FieldList._();
+    if (fields != null) result.fields.addAll(fields);
+    return result;
+  }
+
+  FieldList._();
+
+  factory FieldList.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      FieldList()..mergeFromBuffer(data, registry);
+  factory FieldList.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      FieldList()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'FieldList',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: FieldList.$_createMessage)
+    ..pPS(1, _omitFieldNames ? '' : 'fields')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FieldList clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FieldList copyWith(void Function(FieldList) updates) =>
+      super.copyWith((message) => updates(message as FieldList)) as FieldList;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated('Use FieldList() / FieldList.new instead')
+  static FieldList create() => FieldList._();
+  static $pb.GeneratedMessage $_createMessage() => FieldList._();
+  @$core.override
+  FieldList createEmptyInstance() => FieldList._();
+  @$core.pragma('dart2js:noInline')
+  static FieldList getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<FieldList>(FieldList.$_createMessage);
+  static FieldList? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $pb.PbList<$core.String> get fields => $_getList(0);
+}
+
+class SetTelemetryOverlayFieldsRequest extends $pb.GeneratedMessage {
+  factory SetTelemetryOverlayFieldsRequest({
+    $core.String? type,
+    $core.Iterable<$core.String>? fields,
+  }) {
+    final result = SetTelemetryOverlayFieldsRequest._();
+    if (type != null) result.type = type;
+    if (fields != null) result.fields.addAll(fields);
+    return result;
+  }
+
+  SetTelemetryOverlayFieldsRequest._();
+
+  factory SetTelemetryOverlayFieldsRequest.fromBuffer(
+          $core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetTelemetryOverlayFieldsRequest()..mergeFromBuffer(data, registry);
+  factory SetTelemetryOverlayFieldsRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetTelemetryOverlayFieldsRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SetTelemetryOverlayFieldsRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: SetTelemetryOverlayFieldsRequest.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'type')
+    ..pPS(2, _omitFieldNames ? '' : 'fields')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetTelemetryOverlayFieldsRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetTelemetryOverlayFieldsRequest copyWith(
+          void Function(SetTelemetryOverlayFieldsRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as SetTelemetryOverlayFieldsRequest))
+          as SetTelemetryOverlayFieldsRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use SetTelemetryOverlayFieldsRequest() / SetTelemetryOverlayFieldsRequest.new instead')
+  static SetTelemetryOverlayFieldsRequest create() =>
+      SetTelemetryOverlayFieldsRequest._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      SetTelemetryOverlayFieldsRequest._();
+  @$core.override
+  SetTelemetryOverlayFieldsRequest createEmptyInstance() =>
+      SetTelemetryOverlayFieldsRequest._();
+  @$core.pragma('dart2js:noInline')
+  static SetTelemetryOverlayFieldsRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetTelemetryOverlayFieldsRequest>(
+          SetTelemetryOverlayFieldsRequest.$_createMessage);
+  static SetTelemetryOverlayFieldsRequest? _defaultInstance;
+
+  /// One of "continuous", "surveillance", "proximity". An unknown type is a bad request.
+  @$pb.TagNumber(1)
+  $core.String get type => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set type($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasType() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearType() => $_clearField(1);
+
+  /// OverlayField enum names. An unknown name is dropped by the resolver, not rejected here,
+  /// mirroring how a persisted config file is already treated by the reader.
+  @$pb.TagNumber(2)
+  $pb.PbList<$core.String> get fields => $_getList(1);
+}
+
+class SetTelemetryOverlayFieldsResponse extends $pb.GeneratedMessage {
+  factory SetTelemetryOverlayFieldsResponse({
+    $core.bool? success,
+    $core.String? error,
+  }) {
+    final result = SetTelemetryOverlayFieldsResponse._();
+    if (success != null) result.success = success;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  SetTelemetryOverlayFieldsResponse._();
+
+  factory SetTelemetryOverlayFieldsResponse.fromBuffer(
+          $core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetTelemetryOverlayFieldsResponse()..mergeFromBuffer(data, registry);
+  factory SetTelemetryOverlayFieldsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      SetTelemetryOverlayFieldsResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SetTelemetryOverlayFieldsResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: SetTelemetryOverlayFieldsResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetTelemetryOverlayFieldsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SetTelemetryOverlayFieldsResponse copyWith(
+          void Function(SetTelemetryOverlayFieldsResponse) updates) =>
+      super.copyWith((message) =>
+              updates(message as SetTelemetryOverlayFieldsResponse))
+          as SetTelemetryOverlayFieldsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use SetTelemetryOverlayFieldsResponse() / SetTelemetryOverlayFieldsResponse.new instead')
+  static SetTelemetryOverlayFieldsResponse create() =>
+      SetTelemetryOverlayFieldsResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      SetTelemetryOverlayFieldsResponse._();
+  @$core.override
+  SetTelemetryOverlayFieldsResponse createEmptyInstance() =>
+      SetTelemetryOverlayFieldsResponse._();
+  @$core.pragma('dart2js:noInline')
+  static SetTelemetryOverlayFieldsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetTelemetryOverlayFieldsResponse>(
+          SetTelemetryOverlayFieldsResponse.$_createMessage);
+  static SetTelemetryOverlayFieldsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get error => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set error($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasError() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearError() => $_clearField(2);
+}
+
 /// SettingsService manages recording quality, appearance, and locale settings.
 ///
 /// HTTP mapping:
@@ -1426,6 +2078,34 @@ class SettingsServiceApi {
           $pb.ClientContext? ctx, SetRecordingModeRequest request) =>
       _client.invoke<SetRecordingModeResponse>(ctx, 'SettingsService',
           'SetRecordingMode', request, SetRecordingModeResponse());
+
+  /// BladeWatch-qwqq: these four replace the last /api/settings/* JSON calls any first-party
+  /// client still made over REST — the web SPA's status-overlay toggles and the Flutter
+  /// recording screen's telemetry-field picker.
+  $async.Future<GetStatusOverlayResponse> getStatusOverlay(
+          $pb.ClientContext? ctx, GetStatusOverlayRequest request) =>
+      _client.invoke<GetStatusOverlayResponse>(ctx, 'SettingsService',
+          'GetStatusOverlay', request, GetStatusOverlayResponse());
+  $async.Future<SetStatusOverlayResponse> setStatusOverlay(
+          $pb.ClientContext? ctx, SetStatusOverlayRequest request) =>
+      _client.invoke<SetStatusOverlayResponse>(ctx, 'SettingsService',
+          'SetStatusOverlay', request, SetStatusOverlayResponse());
+  $async.Future<GetTelemetryOverlayFieldsResponse> getTelemetryOverlayFields(
+          $pb.ClientContext? ctx, GetTelemetryOverlayFieldsRequest request) =>
+      _client.invoke<GetTelemetryOverlayFieldsResponse>(
+          ctx,
+          'SettingsService',
+          'GetTelemetryOverlayFields',
+          request,
+          GetTelemetryOverlayFieldsResponse());
+  $async.Future<SetTelemetryOverlayFieldsResponse> setTelemetryOverlayFields(
+          $pb.ClientContext? ctx, SetTelemetryOverlayFieldsRequest request) =>
+      _client.invoke<SetTelemetryOverlayFieldsResponse>(
+          ctx,
+          'SettingsService',
+          'SetTelemetryOverlayFields',
+          request,
+          SetTelemetryOverlayFieldsResponse());
 }
 
 const $core.bool _omitFieldNames =

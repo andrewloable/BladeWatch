@@ -67,6 +67,10 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.StartGpsRequest request);
   $async.Future<$0.StopGpsResponse> stopGps(
       $pb.ServerContext ctx, $0.StopGpsRequest request);
+  $async.Future<$0.IssueActionTokenResponse> issueActionToken(
+      $pb.ServerContext ctx, $0.IssueActionTokenRequest request);
+  $async.Future<$0.GetAdasInventoryResponse> getAdasInventory(
+      $pb.ServerContext ctx, $0.GetAdasInventoryRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
@@ -116,6 +120,10 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
         return $0.StartGpsRequest();
       case 'StopGps':
         return $0.StopGpsRequest();
+      case 'IssueActionToken':
+        return $0.IssueActionTokenRequest();
+      case 'GetAdasInventory':
+        return $0.GetAdasInventoryRequest();
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -172,6 +180,10 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
         return startGps(ctx, request as $0.StartGpsRequest);
       case 'StopGps':
         return stopGps(ctx, request as $0.StopGpsRequest);
+      case 'IssueActionToken':
+        return issueActionToken(ctx, request as $0.IssueActionTokenRequest);
+      case 'GetAdasInventory':
+        return getAdasInventory(ctx, request as $0.GetAdasInventoryRequest);
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }

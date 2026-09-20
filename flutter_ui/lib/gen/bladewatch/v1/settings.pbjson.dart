@@ -483,6 +483,167 @@ final $typed_data.Uint8List setRecordingModeResponseDescriptor =
         'ChhTZXRSZWNvcmRpbmdNb2RlUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxISCg'
         'Rtb2RlGAIgASgJUgRtb2RlEhQKBWVycm9yGAMgASgJUgVlcnJvcg==');
 
+@$core.Deprecated('Use getStatusOverlayRequestDescriptor instead')
+const GetStatusOverlayRequest$json = {
+  '1': 'GetStatusOverlayRequest',
+};
+
+/// Descriptor for `GetStatusOverlayRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getStatusOverlayRequestDescriptor =
+    $convert.base64Decode('ChdHZXRTdGF0dXNPdmVybGF5UmVxdWVzdA==');
+
+@$core.Deprecated('Use getStatusOverlayResponseDescriptor instead')
+const GetStatusOverlayResponse$json = {
+  '1': 'GetStatusOverlayResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'camera_visible', '3': 2, '4': 1, '5': 8, '10': 'cameraVisible'},
+    {'1': 'trip_visible', '3': 3, '4': 1, '5': 8, '10': 'tripVisible'},
+  ],
+};
+
+/// Descriptor for `GetStatusOverlayResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getStatusOverlayResponseDescriptor = $convert.base64Decode(
+    'ChhHZXRTdGF0dXNPdmVybGF5UmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIlCg'
+    '5jYW1lcmFfdmlzaWJsZRgCIAEoCFINY2FtZXJhVmlzaWJsZRIhCgx0cmlwX3Zpc2libGUYAyAB'
+    'KAhSC3RyaXBWaXNpYmxl');
+
+@$core.Deprecated('Use setStatusOverlayRequestDescriptor instead')
+const SetStatusOverlayRequest$json = {
+  '1': 'SetStatusOverlayRequest',
+  '2': [
+    {'1': 'camera_visible', '3': 1, '4': 1, '5': 8, '10': 'cameraVisible'},
+    {
+      '1': 'set_camera_visible',
+      '3': 2,
+      '4': 1,
+      '5': 8,
+      '10': 'setCameraVisible'
+    },
+    {'1': 'trip_visible', '3': 3, '4': 1, '5': 8, '10': 'tripVisible'},
+    {'1': 'set_trip_visible', '3': 4, '4': 1, '5': 8, '10': 'setTripVisible'},
+  ],
+};
+
+/// Descriptor for `SetStatusOverlayRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setStatusOverlayRequestDescriptor = $convert.base64Decode(
+    'ChdTZXRTdGF0dXNPdmVybGF5UmVxdWVzdBIlCg5jYW1lcmFfdmlzaWJsZRgBIAEoCFINY2FtZX'
+    'JhVmlzaWJsZRIsChJzZXRfY2FtZXJhX3Zpc2libGUYAiABKAhSEHNldENhbWVyYVZpc2libGUS'
+    'IQoMdHJpcF92aXNpYmxlGAMgASgIUgt0cmlwVmlzaWJsZRIoChBzZXRfdHJpcF92aXNpYmxlGA'
+    'QgASgIUg5zZXRUcmlwVmlzaWJsZQ==');
+
+@$core.Deprecated('Use setStatusOverlayResponseDescriptor instead')
+const SetStatusOverlayResponse$json = {
+  '1': 'SetStatusOverlayResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'camera_visible', '3': 2, '4': 1, '5': 8, '10': 'cameraVisible'},
+    {'1': 'trip_visible', '3': 3, '4': 1, '5': 8, '10': 'tripVisible'},
+    {'1': 'error', '3': 4, '4': 1, '5': 9, '10': 'error'},
+  ],
+};
+
+/// Descriptor for `SetStatusOverlayResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setStatusOverlayResponseDescriptor = $convert.base64Decode(
+    'ChhTZXRTdGF0dXNPdmVybGF5UmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIlCg'
+    '5jYW1lcmFfdmlzaWJsZRgCIAEoCFINY2FtZXJhVmlzaWJsZRIhCgx0cmlwX3Zpc2libGUYAyAB'
+    'KAhSC3RyaXBWaXNpYmxlEhQKBWVycm9yGAQgASgJUgVlcnJvcg==');
+
+@$core.Deprecated('Use getTelemetryOverlayFieldsRequestDescriptor instead')
+const GetTelemetryOverlayFieldsRequest$json = {
+  '1': 'GetTelemetryOverlayFieldsRequest',
+};
+
+/// Descriptor for `GetTelemetryOverlayFieldsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getTelemetryOverlayFieldsRequestDescriptor =
+    $convert.base64Decode('CiBHZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVxdWVzdA==');
+
+@$core.Deprecated('Use getTelemetryOverlayFieldsResponseDescriptor instead')
+const GetTelemetryOverlayFieldsResponse$json = {
+  '1': 'GetTelemetryOverlayFieldsResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'available_fields', '3': 2, '4': 3, '5': 9, '10': 'availableFields'},
+    {
+      '1': 'selections',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.bladewatch.v1.GetTelemetryOverlayFieldsResponse.SelectionsEntry',
+      '10': 'selections'
+    },
+  ],
+  '3': [GetTelemetryOverlayFieldsResponse_SelectionsEntry$json],
+};
+
+@$core.Deprecated('Use getTelemetryOverlayFieldsResponseDescriptor instead')
+const GetTelemetryOverlayFieldsResponse_SelectionsEntry$json = {
+  '1': 'SelectionsEntry',
+  '2': [
+    {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
+    {
+      '1': 'value',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.FieldList',
+      '10': 'value'
+    },
+  ],
+  '7': {'7': true},
+};
+
+/// Descriptor for `GetTelemetryOverlayFieldsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getTelemetryOverlayFieldsResponseDescriptor = $convert.base64Decode(
+    'CiFHZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3'
+    'VjY2VzcxIpChBhdmFpbGFibGVfZmllbGRzGAIgAygJUg9hdmFpbGFibGVGaWVsZHMSYAoKc2Vs'
+    'ZWN0aW9ucxgDIAMoCzJALmJsYWRld2F0Y2gudjEuR2V0VGVsZW1ldHJ5T3ZlcmxheUZpZWxkc1'
+    'Jlc3BvbnNlLlNlbGVjdGlvbnNFbnRyeVIKc2VsZWN0aW9ucxpXCg9TZWxlY3Rpb25zRW50cnkS'
+    'EAoDa2V5GAEgASgJUgNrZXkSLgoFdmFsdWUYAiABKAsyGC5ibGFkZXdhdGNoLnYxLkZpZWxkTG'
+    'lzdFIFdmFsdWU6AjgB');
+
+@$core.Deprecated('Use fieldListDescriptor instead')
+const FieldList$json = {
+  '1': 'FieldList',
+  '2': [
+    {'1': 'fields', '3': 1, '4': 3, '5': 9, '10': 'fields'},
+  ],
+};
+
+/// Descriptor for `FieldList`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List fieldListDescriptor =
+    $convert.base64Decode('CglGaWVsZExpc3QSFgoGZmllbGRzGAEgAygJUgZmaWVsZHM=');
+
+@$core.Deprecated('Use setTelemetryOverlayFieldsRequestDescriptor instead')
+const SetTelemetryOverlayFieldsRequest$json = {
+  '1': 'SetTelemetryOverlayFieldsRequest',
+  '2': [
+    {'1': 'type', '3': 1, '4': 1, '5': 9, '10': 'type'},
+    {'1': 'fields', '3': 2, '4': 3, '5': 9, '10': 'fields'},
+  ],
+};
+
+/// Descriptor for `SetTelemetryOverlayFieldsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setTelemetryOverlayFieldsRequestDescriptor =
+    $convert.base64Decode(
+        'CiBTZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVxdWVzdBISCgR0eXBlGAEgASgJUgR0eXBlEh'
+        'YKBmZpZWxkcxgCIAMoCVIGZmllbGRz');
+
+@$core.Deprecated('Use setTelemetryOverlayFieldsResponseDescriptor instead')
+const SetTelemetryOverlayFieldsResponse$json = {
+  '1': 'SetTelemetryOverlayFieldsResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'error', '3': 2, '4': 1, '5': 9, '10': 'error'},
+  ],
+};
+
+/// Descriptor for `SetTelemetryOverlayFieldsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setTelemetryOverlayFieldsResponseDescriptor =
+    $convert.base64Decode(
+        'CiFTZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3'
+        'VjY2VzcxIUCgVlcnJvchgCIAEoCVIFZXJyb3I=');
+
 const $core.Map<$core.String, $core.dynamic> SettingsServiceBase$json = {
   '1': 'SettingsService',
   '2': [
@@ -521,6 +682,26 @@ const $core.Map<$core.String, $core.dynamic> SettingsServiceBase$json = {
       '2': '.bladewatch.v1.SetRecordingModeRequest',
       '3': '.bladewatch.v1.SetRecordingModeResponse'
     },
+    {
+      '1': 'GetStatusOverlay',
+      '2': '.bladewatch.v1.GetStatusOverlayRequest',
+      '3': '.bladewatch.v1.GetStatusOverlayResponse'
+    },
+    {
+      '1': 'SetStatusOverlay',
+      '2': '.bladewatch.v1.SetStatusOverlayRequest',
+      '3': '.bladewatch.v1.SetStatusOverlayResponse'
+    },
+    {
+      '1': 'GetTelemetryOverlayFields',
+      '2': '.bladewatch.v1.GetTelemetryOverlayFieldsRequest',
+      '3': '.bladewatch.v1.GetTelemetryOverlayFieldsResponse'
+    },
+    {
+      '1': 'SetTelemetryOverlayFields',
+      '2': '.bladewatch.v1.SetTelemetryOverlayFieldsRequest',
+      '3': '.bladewatch.v1.SetTelemetryOverlayFieldsResponse'
+    },
   ],
 };
 
@@ -551,6 +732,21 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.SetLocaleResponse': SetLocaleResponse$json,
   '.bladewatch.v1.SetRecordingModeRequest': SetRecordingModeRequest$json,
   '.bladewatch.v1.SetRecordingModeResponse': SetRecordingModeResponse$json,
+  '.bladewatch.v1.GetStatusOverlayRequest': GetStatusOverlayRequest$json,
+  '.bladewatch.v1.GetStatusOverlayResponse': GetStatusOverlayResponse$json,
+  '.bladewatch.v1.SetStatusOverlayRequest': SetStatusOverlayRequest$json,
+  '.bladewatch.v1.SetStatusOverlayResponse': SetStatusOverlayResponse$json,
+  '.bladewatch.v1.GetTelemetryOverlayFieldsRequest':
+      GetTelemetryOverlayFieldsRequest$json,
+  '.bladewatch.v1.GetTelemetryOverlayFieldsResponse':
+      GetTelemetryOverlayFieldsResponse$json,
+  '.bladewatch.v1.GetTelemetryOverlayFieldsResponse.SelectionsEntry':
+      GetTelemetryOverlayFieldsResponse_SelectionsEntry$json,
+  '.bladewatch.v1.FieldList': FieldList$json,
+  '.bladewatch.v1.SetTelemetryOverlayFieldsRequest':
+      SetTelemetryOverlayFieldsRequest$json,
+  '.bladewatch.v1.SetTelemetryOverlayFieldsResponse':
+      SetTelemetryOverlayFieldsResponse$json,
 };
 
 /// Descriptor for `SettingsService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -566,4 +762,12 @@ final $typed_data.Uint8List settingsServiceDescriptor = $convert.base64Decode(
     'bnNlEk4KCVNldExvY2FsZRIfLmJsYWRld2F0Y2gudjEuU2V0TG9jYWxlUmVxdWVzdBogLmJsYW'
     'Rld2F0Y2gudjEuU2V0TG9jYWxlUmVzcG9uc2USYwoQU2V0UmVjb3JkaW5nTW9kZRImLmJsYWRl'
     'd2F0Y2gudjEuU2V0UmVjb3JkaW5nTW9kZVJlcXVlc3QaJy5ibGFkZXdhdGNoLnYxLlNldFJlY2'
-    '9yZGluZ01vZGVSZXNwb25zZQ==');
+    '9yZGluZ01vZGVSZXNwb25zZRJjChBHZXRTdGF0dXNPdmVybGF5EiYuYmxhZGV3YXRjaC52MS5H'
+    'ZXRTdGF0dXNPdmVybGF5UmVxdWVzdBonLmJsYWRld2F0Y2gudjEuR2V0U3RhdHVzT3ZlcmxheV'
+    'Jlc3BvbnNlEmMKEFNldFN0YXR1c092ZXJsYXkSJi5ibGFkZXdhdGNoLnYxLlNldFN0YXR1c092'
+    'ZXJsYXlSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5TZXRTdGF0dXNPdmVybGF5UmVzcG9uc2USfg'
+    'oZR2V0VGVsZW1ldHJ5T3ZlcmxheUZpZWxkcxIvLmJsYWRld2F0Y2gudjEuR2V0VGVsZW1ldHJ5'
+    'T3ZlcmxheUZpZWxkc1JlcXVlc3QaMC5ibGFkZXdhdGNoLnYxLkdldFRlbGVtZXRyeU92ZXJsYX'
+    'lGaWVsZHNSZXNwb25zZRJ+ChlTZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzEi8uYmxhZGV3YXRj'
+    'aC52MS5TZXRUZWxlbWV0cnlPdmVybGF5RmllbGRzUmVxdWVzdBowLmJsYWRld2F0Y2gudjEuU2'
+    'V0VGVsZW1ldHJ5T3ZlcmxheUZpZWxkc1Jlc3BvbnNl');

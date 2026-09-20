@@ -40,6 +40,14 @@ service SystemService {
   rpc GetSelectedModel(GetSelectedModelRequest) returns (GetSelectedModelResponse);
   rpc SetSelectedModel(SetSelectedModelRequest) returns (SetSelectedModelResponse);
   rpc GetModelsManifest(GetModelsManifestRequest) returns (GetModelsManifestResponse);
+
+  // BladeWatch-qwqq: the Diagnostics performance panel's session lifecycle. Monitoring is
+  // on-demand — it starts when a client connects and stops when the last one goes away — so
+  // these three are what keep it running while a panel is open. The Flutter controller already
+  // calls GetPerformance over Connect and these three over REST, in the same class.
+  rpc PerformanceConnect(PerformanceConnectRequest) returns (PerformanceConnectResponse);
+  rpc PerformanceHeartbeat(PerformanceHeartbeatRequest) returns (PerformanceHeartbeatResponse);
+  rpc PerformanceDisconnect(PerformanceDisconnectRequest) returns (PerformanceDisconnectResponse);
 }
 
 // BatteryInfo carries the Android battery level and charge state.
@@ -313,4 +321,37 @@ message GetModelsManifestRequest {}
 message GetModelsManifestResponse {
   // Full manifest JSON from /data/local/tmp/web/shared/models/manifest.json.
   string manifest_json = 1;
+}
+
+
+// ---- performance monitoring session lifecycle ----
+
+message PerformanceConnectRequest {
+  // Caller-chosen id. The server echoes back the id it registered, which is the one that must
+  // be used for heartbeat and disconnect.
+  string client_id = 1;
+}
+
+message PerformanceConnectResponse {
+  bool success = 1;
+  string client_id = 2;
+  string error = 3;
+}
+
+message PerformanceHeartbeatRequest {
+  string client_id = 1;
+}
+
+message PerformanceHeartbeatResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message PerformanceDisconnectRequest {
+  string client_id = 1;
+}
+
+message PerformanceDisconnectResponse {
+  bool success = 1;
+  string error = 2;
 }

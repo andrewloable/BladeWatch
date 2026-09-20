@@ -58,4 +58,16 @@ public interface SystemServiceClientInterface {
   public suspend fun setSelectedModel(request: SetSelectedModelRequest, headers: Headers = emptyMap()): ResponseMessage<SetSelectedModelResponse>
 
   public suspend fun getModelsManifest(request: GetModelsManifestRequest, headers: Headers = emptyMap()): ResponseMessage<GetModelsManifestResponse>
+
+  /**
+   *  BladeWatch-qwqq: the Diagnostics performance panel's session lifecycle. Monitoring is
+   *  on-demand — it starts when a client connects and stops when the last one goes away — so
+   *  these three are what keep it running while a panel is open. The Flutter controller already
+   *  calls GetPerformance over Connect and these three over REST, in the same class.
+   */
+  public suspend fun performanceConnect(request: PerformanceConnectRequest, headers: Headers = emptyMap()): ResponseMessage<PerformanceConnectResponse>
+
+  public suspend fun performanceHeartbeat(request: PerformanceHeartbeatRequest, headers: Headers = emptyMap()): ResponseMessage<PerformanceHeartbeatResponse>
+
+  public suspend fun performanceDisconnect(request: PerformanceDisconnectRequest, headers: Headers = emptyMap()): ResponseMessage<PerformanceDisconnectResponse>
 }

@@ -210,12 +210,12 @@ class SurveillanceConfigManager(
     private fun parseConfig(json: JSONObject): SurveillanceConfig {
         val config = SurveillanceConfig()
         
-        if (json.has(KEY_BLOCK_SIZE)) config.setBlockSize(json.optInt(KEY_BLOCK_SIZE, 32))
-        if (json.has(KEY_REQUIRED_BLOCKS)) config.setRequiredBlocks(json.optInt(KEY_REQUIRED_BLOCKS, 3))
-        if (json.has(KEY_SENSITIVITY)) config.setSensitivity(json.optDouble(KEY_SENSITIVITY, 0.04).toFloat())
-        if (json.has(KEY_FLASH_IMMUNITY)) config.setFlashImmunity(json.optInt(KEY_FLASH_IMMUNITY, 2))
-        if (json.has(KEY_TEMPORAL_FRAMES)) config.setTemporalFrames(json.optInt(KEY_TEMPORAL_FRAMES, 3))
-        if (json.has(KEY_USE_CHROMA)) config.setUseChroma(json.optBoolean(KEY_USE_CHROMA, false))
+        if (json.has(KEY_BLOCK_SIZE)) config.blockSize = json.optInt(KEY_BLOCK_SIZE, 32)
+        if (json.has(KEY_REQUIRED_BLOCKS)) config.requiredBlocks = json.optInt(KEY_REQUIRED_BLOCKS, 3)
+        if (json.has(KEY_SENSITIVITY)) config.sensitivity = json.optDouble(KEY_SENSITIVITY, 0.04).toFloat()
+        if (json.has(KEY_FLASH_IMMUNITY)) config.flashImmunity = json.optInt(KEY_FLASH_IMMUNITY, 2)
+        if (json.has(KEY_TEMPORAL_FRAMES)) config.temporalFrames = json.optInt(KEY_TEMPORAL_FRAMES, 3)
+        if (json.has(KEY_USE_CHROMA)) config.isUseChroma = json.optBoolean(KEY_USE_CHROMA, false)
         if (json.has(KEY_MIN_DISTANCE) && json.has(KEY_MAX_DISTANCE)) {
             config.setDistanceRange(
                 json.optDouble(KEY_MIN_DISTANCE, 2.0).toFloat(),
@@ -229,26 +229,26 @@ class SurveillanceConfigManager(
                 json.optDouble(KEY_VERTICAL_FOV, 50.0).toFloat()
             )
         }
-        if (json.has(KEY_AI_CONFIDENCE)) config.setAiConfidence(json.optDouble(KEY_AI_CONFIDENCE, 0.25).toFloat())
-        if (json.has(KEY_MIN_OBJECT_SIZE)) config.setMinObjectSize(json.optDouble(KEY_MIN_OBJECT_SIZE, 0.12).toFloat())
-        if (json.has(KEY_DETECT_PERSON)) config.setDetectPerson(json.optBoolean(KEY_DETECT_PERSON, true))
-        if (json.has(KEY_DETECT_CAR)) config.setDetectCar(json.optBoolean(KEY_DETECT_CAR, true))
-        if (json.has(KEY_DETECT_BIKE)) config.setDetectBike(json.optBoolean(KEY_DETECT_BIKE, false))
-        if (json.has(KEY_PRE_RECORD_SECONDS)) config.setPreRecordSeconds(json.optInt(KEY_PRE_RECORD_SECONDS, 5))
-        if (json.has(KEY_POST_RECORD_SECONDS)) config.setPostRecordSeconds(json.optInt(KEY_POST_RECORD_SECONDS, 10))
+        if (json.has(KEY_AI_CONFIDENCE)) config.aiConfidence = json.optDouble(KEY_AI_CONFIDENCE, 0.25).toFloat()
+        if (json.has(KEY_MIN_OBJECT_SIZE)) config.minObjectSize = json.optDouble(KEY_MIN_OBJECT_SIZE, 0.12).toFloat()
+        if (json.has(KEY_DETECT_PERSON)) config.isDetectPerson = json.optBoolean(KEY_DETECT_PERSON, true)
+        if (json.has(KEY_DETECT_CAR)) config.isDetectCar = json.optBoolean(KEY_DETECT_CAR, true)
+        if (json.has(KEY_DETECT_BIKE)) config.isDetectBike = json.optBoolean(KEY_DETECT_BIKE, false)
+        if (json.has(KEY_PRE_RECORD_SECONDS)) config.preRecordSeconds = json.optInt(KEY_PRE_RECORD_SECONDS, 5)
+        if (json.has(KEY_POST_RECORD_SECONDS)) config.postRecordSeconds = json.optInt(KEY_POST_RECORD_SECONDS, 10)
 
         // V2 Pipeline settings
-        if (json.has(KEY_ENVIRONMENT_PRESET)) config.setEnvironmentPreset(json.optString(KEY_ENVIRONMENT_PRESET, "outdoor"))
-        if (json.has(KEY_SENSITIVITY_LEVEL)) config.setSensitivityLevel(json.optInt(KEY_SENSITIVITY_LEVEL, 3))
-        if (json.has(KEY_DETECTION_ZONE)) config.setDetectionZone(json.optString(KEY_DETECTION_ZONE, "normal"))
-        if (json.has(KEY_LOITERING_TIME)) config.setLoiteringTimeSeconds(json.optInt(KEY_LOITERING_TIME, 3))
+        if (json.has(KEY_ENVIRONMENT_PRESET)) config.environmentPreset = json.optString(KEY_ENVIRONMENT_PRESET, "outdoor")
+        if (json.has(KEY_SENSITIVITY_LEVEL)) config.sensitivityLevel = json.optInt(KEY_SENSITIVITY_LEVEL, 3)
+        if (json.has(KEY_DETECTION_ZONE)) config.detectionZone = json.optString(KEY_DETECTION_ZONE, "normal")
+        if (json.has(KEY_LOITERING_TIME)) config.loiteringTimeSeconds = json.optInt(KEY_LOITERING_TIME, 3)
         if (json.has(KEY_CAMERA_FRONT)) config.setCameraEnabled(0, json.optBoolean(KEY_CAMERA_FRONT, true))
         if (json.has(KEY_CAMERA_RIGHT)) config.setCameraEnabled(1, json.optBoolean(KEY_CAMERA_RIGHT, true))
         if (json.has(KEY_CAMERA_REAR)) config.setCameraEnabled(2, json.optBoolean(KEY_CAMERA_REAR, true))
         if (json.has(KEY_CAMERA_LEFT)) config.setCameraEnabled(3, json.optBoolean(KEY_CAMERA_LEFT, true))
-        if (json.has(KEY_MOTION_HEATMAP)) config.setMotionHeatmapEnabled(json.optBoolean(KEY_MOTION_HEATMAP, false))
-        if (json.has(KEY_FILTER_DEBUG_LOG)) config.setFilterDebugLogEnabled(json.optBoolean(KEY_FILTER_DEBUG_LOG, false))
-        if (json.has(KEY_SHADOW_FILTER)) config.setShadowFilterMode(json.optInt(KEY_SHADOW_FILTER, 2))
+        if (json.has(KEY_MOTION_HEATMAP)) config.isMotionHeatmapEnabled = json.optBoolean(KEY_MOTION_HEATMAP, false)
+        if (json.has(KEY_FILTER_DEBUG_LOG)) config.isFilterDebugLogEnabled = json.optBoolean(KEY_FILTER_DEBUG_LOG, false)
+        if (json.has(KEY_SHADOW_FILTER)) config.shadowFilterMode = json.optInt(KEY_SHADOW_FILTER, 2)
         
         // Per-quadrant overrides
         val overrides = json.optJSONObject("quadrantOverrides")

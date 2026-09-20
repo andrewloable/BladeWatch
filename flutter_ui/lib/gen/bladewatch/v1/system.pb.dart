@@ -3155,6 +3155,431 @@ class GetModelsManifestResponse extends $pb.GeneratedMessage {
   void clearManifestJson() => $_clearField(1);
 }
 
+class PerformanceConnectRequest extends $pb.GeneratedMessage {
+  factory PerformanceConnectRequest({
+    $core.String? clientId,
+  }) {
+    final result = PerformanceConnectRequest._();
+    if (clientId != null) result.clientId = clientId;
+    return result;
+  }
+
+  PerformanceConnectRequest._();
+
+  factory PerformanceConnectRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceConnectRequest()..mergeFromBuffer(data, registry);
+  factory PerformanceConnectRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceConnectRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PerformanceConnectRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: PerformanceConnectRequest.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'clientId')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceConnectRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceConnectRequest copyWith(
+          void Function(PerformanceConnectRequest) updates) =>
+      super.copyWith((message) => updates(message as PerformanceConnectRequest))
+          as PerformanceConnectRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use PerformanceConnectRequest() / PerformanceConnectRequest.new instead')
+  static PerformanceConnectRequest create() => PerformanceConnectRequest._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      PerformanceConnectRequest._();
+  @$core.override
+  PerformanceConnectRequest createEmptyInstance() =>
+      PerformanceConnectRequest._();
+  @$core.pragma('dart2js:noInline')
+  static PerformanceConnectRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PerformanceConnectRequest>(
+          PerformanceConnectRequest.$_createMessage);
+  static PerformanceConnectRequest? _defaultInstance;
+
+  /// Caller-chosen id. The server echoes back the id it registered, which is the one that must
+  /// be used for heartbeat and disconnect.
+  @$pb.TagNumber(1)
+  $core.String get clientId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set clientId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasClientId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearClientId() => $_clearField(1);
+}
+
+class PerformanceConnectResponse extends $pb.GeneratedMessage {
+  factory PerformanceConnectResponse({
+    $core.bool? success,
+    $core.String? clientId,
+    $core.String? error,
+  }) {
+    final result = PerformanceConnectResponse._();
+    if (success != null) result.success = success;
+    if (clientId != null) result.clientId = clientId;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  PerformanceConnectResponse._();
+
+  factory PerformanceConnectResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceConnectResponse()..mergeFromBuffer(data, registry);
+  factory PerformanceConnectResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceConnectResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PerformanceConnectResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: PerformanceConnectResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'clientId')
+    ..aOS(3, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceConnectResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceConnectResponse copyWith(
+          void Function(PerformanceConnectResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as PerformanceConnectResponse))
+          as PerformanceConnectResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use PerformanceConnectResponse() / PerformanceConnectResponse.new instead')
+  static PerformanceConnectResponse create() => PerformanceConnectResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      PerformanceConnectResponse._();
+  @$core.override
+  PerformanceConnectResponse createEmptyInstance() =>
+      PerformanceConnectResponse._();
+  @$core.pragma('dart2js:noInline')
+  static PerformanceConnectResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PerformanceConnectResponse>(
+          PerformanceConnectResponse.$_createMessage);
+  static PerformanceConnectResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get clientId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set clientId($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasClientId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearClientId() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get error => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set error($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasError() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearError() => $_clearField(3);
+}
+
+class PerformanceHeartbeatRequest extends $pb.GeneratedMessage {
+  factory PerformanceHeartbeatRequest({
+    $core.String? clientId,
+  }) {
+    final result = PerformanceHeartbeatRequest._();
+    if (clientId != null) result.clientId = clientId;
+    return result;
+  }
+
+  PerformanceHeartbeatRequest._();
+
+  factory PerformanceHeartbeatRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceHeartbeatRequest()..mergeFromBuffer(data, registry);
+  factory PerformanceHeartbeatRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceHeartbeatRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PerformanceHeartbeatRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: PerformanceHeartbeatRequest.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'clientId')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceHeartbeatRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceHeartbeatRequest copyWith(
+          void Function(PerformanceHeartbeatRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as PerformanceHeartbeatRequest))
+          as PerformanceHeartbeatRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use PerformanceHeartbeatRequest() / PerformanceHeartbeatRequest.new instead')
+  static PerformanceHeartbeatRequest create() =>
+      PerformanceHeartbeatRequest._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      PerformanceHeartbeatRequest._();
+  @$core.override
+  PerformanceHeartbeatRequest createEmptyInstance() =>
+      PerformanceHeartbeatRequest._();
+  @$core.pragma('dart2js:noInline')
+  static PerformanceHeartbeatRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PerformanceHeartbeatRequest>(
+          PerformanceHeartbeatRequest.$_createMessage);
+  static PerformanceHeartbeatRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get clientId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set clientId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasClientId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearClientId() => $_clearField(1);
+}
+
+class PerformanceHeartbeatResponse extends $pb.GeneratedMessage {
+  factory PerformanceHeartbeatResponse({
+    $core.bool? success,
+    $core.String? error,
+  }) {
+    final result = PerformanceHeartbeatResponse._();
+    if (success != null) result.success = success;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  PerformanceHeartbeatResponse._();
+
+  factory PerformanceHeartbeatResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceHeartbeatResponse()..mergeFromBuffer(data, registry);
+  factory PerformanceHeartbeatResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceHeartbeatResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PerformanceHeartbeatResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: PerformanceHeartbeatResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceHeartbeatResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceHeartbeatResponse copyWith(
+          void Function(PerformanceHeartbeatResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as PerformanceHeartbeatResponse))
+          as PerformanceHeartbeatResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use PerformanceHeartbeatResponse() / PerformanceHeartbeatResponse.new instead')
+  static PerformanceHeartbeatResponse create() =>
+      PerformanceHeartbeatResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      PerformanceHeartbeatResponse._();
+  @$core.override
+  PerformanceHeartbeatResponse createEmptyInstance() =>
+      PerformanceHeartbeatResponse._();
+  @$core.pragma('dart2js:noInline')
+  static PerformanceHeartbeatResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PerformanceHeartbeatResponse>(
+          PerformanceHeartbeatResponse.$_createMessage);
+  static PerformanceHeartbeatResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get error => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set error($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasError() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearError() => $_clearField(2);
+}
+
+class PerformanceDisconnectRequest extends $pb.GeneratedMessage {
+  factory PerformanceDisconnectRequest({
+    $core.String? clientId,
+  }) {
+    final result = PerformanceDisconnectRequest._();
+    if (clientId != null) result.clientId = clientId;
+    return result;
+  }
+
+  PerformanceDisconnectRequest._();
+
+  factory PerformanceDisconnectRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceDisconnectRequest()..mergeFromBuffer(data, registry);
+  factory PerformanceDisconnectRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceDisconnectRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PerformanceDisconnectRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: PerformanceDisconnectRequest.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'clientId')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceDisconnectRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceDisconnectRequest copyWith(
+          void Function(PerformanceDisconnectRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as PerformanceDisconnectRequest))
+          as PerformanceDisconnectRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use PerformanceDisconnectRequest() / PerformanceDisconnectRequest.new instead')
+  static PerformanceDisconnectRequest create() =>
+      PerformanceDisconnectRequest._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      PerformanceDisconnectRequest._();
+  @$core.override
+  PerformanceDisconnectRequest createEmptyInstance() =>
+      PerformanceDisconnectRequest._();
+  @$core.pragma('dart2js:noInline')
+  static PerformanceDisconnectRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PerformanceDisconnectRequest>(
+          PerformanceDisconnectRequest.$_createMessage);
+  static PerformanceDisconnectRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get clientId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set clientId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasClientId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearClientId() => $_clearField(1);
+}
+
+class PerformanceDisconnectResponse extends $pb.GeneratedMessage {
+  factory PerformanceDisconnectResponse({
+    $core.bool? success,
+    $core.String? error,
+  }) {
+    final result = PerformanceDisconnectResponse._();
+    if (success != null) result.success = success;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  PerformanceDisconnectResponse._();
+
+  factory PerformanceDisconnectResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceDisconnectResponse()..mergeFromBuffer(data, registry);
+  factory PerformanceDisconnectResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      PerformanceDisconnectResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PerformanceDisconnectResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: PerformanceDisconnectResponse.$_createMessage)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceDisconnectResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PerformanceDisconnectResponse copyWith(
+          void Function(PerformanceDisconnectResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as PerformanceDisconnectResponse))
+          as PerformanceDisconnectResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use PerformanceDisconnectResponse() / PerformanceDisconnectResponse.new instead')
+  static PerformanceDisconnectResponse create() =>
+      PerformanceDisconnectResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      PerformanceDisconnectResponse._();
+  @$core.override
+  PerformanceDisconnectResponse createEmptyInstance() =>
+      PerformanceDisconnectResponse._();
+  @$core.pragma('dart2js:noInline')
+  static PerformanceDisconnectResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PerformanceDisconnectResponse>(
+          PerformanceDisconnectResponse.$_createMessage);
+  static PerformanceDisconnectResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get error => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set error($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasError() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearError() => $_clearField(2);
+}
+
 /// SystemService exposes daemon status, performance metrics, AI model management,
 /// and audio testing.
 ///
@@ -3239,6 +3664,23 @@ class SystemServiceApi {
           $pb.ClientContext? ctx, GetModelsManifestRequest request) =>
       _client.invoke<GetModelsManifestResponse>(ctx, 'SystemService',
           'GetModelsManifest', request, GetModelsManifestResponse());
+
+  /// BladeWatch-qwqq: the Diagnostics performance panel's session lifecycle. Monitoring is
+  /// on-demand — it starts when a client connects and stops when the last one goes away — so
+  /// these three are what keep it running while a panel is open. The Flutter controller already
+  /// calls GetPerformance over Connect and these three over REST, in the same class.
+  $async.Future<PerformanceConnectResponse> performanceConnect(
+          $pb.ClientContext? ctx, PerformanceConnectRequest request) =>
+      _client.invoke<PerformanceConnectResponse>(ctx, 'SystemService',
+          'PerformanceConnect', request, PerformanceConnectResponse());
+  $async.Future<PerformanceHeartbeatResponse> performanceHeartbeat(
+          $pb.ClientContext? ctx, PerformanceHeartbeatRequest request) =>
+      _client.invoke<PerformanceHeartbeatResponse>(ctx, 'SystemService',
+          'PerformanceHeartbeat', request, PerformanceHeartbeatResponse());
+  $async.Future<PerformanceDisconnectResponse> performanceDisconnect(
+          $pb.ClientContext? ctx, PerformanceDisconnectRequest request) =>
+      _client.invoke<PerformanceDisconnectResponse>(ctx, 'SystemService',
+          'PerformanceDisconnect', request, PerformanceDisconnectResponse());
 }
 
 const $core.bool _omitFieldNames =

@@ -88,7 +88,12 @@ public class ApiReferenceCoversEveryRpcTest {
         Path impls = root.resolve("com/loabletech/bladewatch/server/connect/impl");
         Assert.assertTrue("missing Connect impl directory: " + impls, Files.isDirectory(impls));
         try (Stream<Path> s = Files.list(impls)) {
-            return s.filter(p -> p.getFileName().toString().endsWith(".java"))
+            // Both spellings: the Connect impls are being migrated to Kotlin
+            // (BladeWatch-9rut), and a .java-only filter would quietly scan nothing.
+            return s.filter(p -> {
+                        String n = p.getFileName().toString();
+                        return n.endsWith(".java") || n.endsWith(".kt");
+                    })
                     .collect(Collectors.toList());
         }
     }

@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Nicht gültiges Anforderungsorgan: {0}",
     "performance_no_data": "Die Überwachung der Leistung ist nicht begonnen oder noch keine Daten gesammelt wurden",
     "soh_not_initialized": "SohEstimator nicht initialisiert",
+    "soh_nominal_range": "Die Nennkapazität muss zwischen 8 und 120 kWh liegen",
     "reset_no_categories": "Keine spezifizierten Kategorien",
     "reset_unknown_category": "Unbekannte Kategorie",
     "reset_trip_in_progress": "Fahrt im Gange  Schalten Sie ACC zuerst aus",

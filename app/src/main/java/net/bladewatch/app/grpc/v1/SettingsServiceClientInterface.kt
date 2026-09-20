@@ -33,4 +33,17 @@ public interface SettingsServiceClientInterface {
   public suspend fun setLocale(request: SetLocaleRequest, headers: Headers = emptyMap()): ResponseMessage<SetLocaleResponse>
 
   public suspend fun setRecordingMode(request: SetRecordingModeRequest, headers: Headers = emptyMap()): ResponseMessage<SetRecordingModeResponse>
+
+  /**
+   *  BladeWatch-qwqq: these four replace the last /api/settings/&#42; JSON calls any first-party
+   *  client still made over REST — the web SPA's status-overlay toggles and the Flutter
+   *  recording screen's telemetry-field picker.
+   */
+  public suspend fun getStatusOverlay(request: GetStatusOverlayRequest, headers: Headers = emptyMap()): ResponseMessage<GetStatusOverlayResponse>
+
+  public suspend fun setStatusOverlay(request: SetStatusOverlayRequest, headers: Headers = emptyMap()): ResponseMessage<SetStatusOverlayResponse>
+
+  public suspend fun getTelemetryOverlayFields(request: GetTelemetryOverlayFieldsRequest, headers: Headers = emptyMap()): ResponseMessage<GetTelemetryOverlayFieldsResponse>
+
+  public suspend fun setTelemetryOverlayFields(request: SetTelemetryOverlayFieldsRequest, headers: Headers = emptyMap()): ResponseMessage<SetTelemetryOverlayFieldsResponse>
 }

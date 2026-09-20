@@ -231,8 +231,8 @@ answer these, in the close reason or PR description:
 - Native motion pipeline: [motion_pipeline_v2.cpp](../app/src/main/cpp/surveillance/motion_pipeline_v2.cpp), [motion_pipeline_v2.h](../app/src/main/cpp/surveillance/motion_pipeline_v2.h)
 - Texture tracker: [texture_tracker.h](../app/src/main/cpp/surveillance/texture_tracker.h), `texture_tracker.cpp`
 - YOLO gate: [YoloDetector.kt](../app/src/main/java/com/loabletech/bladewatch/ai/YoloDetector.kt)
-- Detection orchestration, sustained-motion/deterrent gating: [SurveillanceEngineGpu.java](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java)
-- GPU pipeline plumbing (encoder, downscaler, recorder wiring): [GpuSurveillancePipeline.java](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.java)
-- Suppressors: [SafeLocationManager.java](../app/src/main/java/com/loabletech/bladewatch/surveillance/SafeLocationManager.java), [SurveillanceSchedule.java](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceSchedule.java)
+- Detection orchestration, sustained-motion/deterrent gating: [SurveillanceEngineGpu.kt](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.kt)
+- GPU pipeline plumbing (encoder, downscaler, recorder wiring): [GpuSurveillancePipeline.kt](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.kt)
+- Suppressors: [SafeLocationManager.kt](../app/src/main/java/com/loabletech/bladewatch/surveillance/SafeLocationManager.kt), [SurveillanceSchedule.kt](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceSchedule.kt)
 - Outer suppressor gating call sites: `AccSentryDaemon.java` (~line 1946–1959), `CameraDaemon.java` (~lines 1515, 2025–2037, 2264–2270)
-- Encoder quality (not a detection channel): [AdaptiveBitrateController.java](../app/src/main/java/com/loabletech/bladewatch/surveillance/AdaptiveBitrateController.java)
+- Encoder quality (not a detection channel): [AdaptiveBitrateController.kt](../app/src/main/java/com/loabletech/bladewatch/surveillance/AdaptiveBitrateController.kt)

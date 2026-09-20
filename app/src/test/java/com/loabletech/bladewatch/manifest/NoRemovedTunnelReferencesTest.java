@@ -42,7 +42,7 @@ public class NoRemovedTunnelReferencesTest {
      * The one file allowed to say it, and why. Pinned to the exact path so a second
      * occurrence anywhere — including elsewhere in this same file — still fails.
      */
-    private static final String ALLOWED_FILE = "AuthMiddleware.java";
+    private static final String ALLOWED_FILE = "AuthMiddleware.kt";
     private static final int ALLOWED_OCCURRENCES = 1;
 
     /** Everything a developer edits. Build output and dependencies are not ours to police. */

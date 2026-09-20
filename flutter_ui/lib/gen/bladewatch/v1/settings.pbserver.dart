@@ -35,6 +35,14 @@ abstract class SettingsServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.SetLocaleRequest request);
   $async.Future<$0.SetRecordingModeResponse> setRecordingMode(
       $pb.ServerContext ctx, $0.SetRecordingModeRequest request);
+  $async.Future<$0.GetStatusOverlayResponse> getStatusOverlay(
+      $pb.ServerContext ctx, $0.GetStatusOverlayRequest request);
+  $async.Future<$0.SetStatusOverlayResponse> setStatusOverlay(
+      $pb.ServerContext ctx, $0.SetStatusOverlayRequest request);
+  $async.Future<$0.GetTelemetryOverlayFieldsResponse> getTelemetryOverlayFields(
+      $pb.ServerContext ctx, $0.GetTelemetryOverlayFieldsRequest request);
+  $async.Future<$0.SetTelemetryOverlayFieldsResponse> setTelemetryOverlayFields(
+      $pb.ServerContext ctx, $0.SetTelemetryOverlayFieldsRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
@@ -52,6 +60,14 @@ abstract class SettingsServiceBase extends $pb.GeneratedService {
         return $0.SetLocaleRequest();
       case 'SetRecordingMode':
         return $0.SetRecordingModeRequest();
+      case 'GetStatusOverlay':
+        return $0.GetStatusOverlayRequest();
+      case 'SetStatusOverlay':
+        return $0.SetStatusOverlayRequest();
+      case 'GetTelemetryOverlayFields':
+        return $0.GetTelemetryOverlayFieldsRequest();
+      case 'SetTelemetryOverlayFields':
+        return $0.SetTelemetryOverlayFieldsRequest();
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -74,6 +90,16 @@ abstract class SettingsServiceBase extends $pb.GeneratedService {
         return setLocale(ctx, request as $0.SetLocaleRequest);
       case 'SetRecordingMode':
         return setRecordingMode(ctx, request as $0.SetRecordingModeRequest);
+      case 'GetStatusOverlay':
+        return getStatusOverlay(ctx, request as $0.GetStatusOverlayRequest);
+      case 'SetStatusOverlay':
+        return setStatusOverlay(ctx, request as $0.SetStatusOverlayRequest);
+      case 'GetTelemetryOverlayFields':
+        return getTelemetryOverlayFields(
+            ctx, request as $0.GetTelemetryOverlayFieldsRequest);
+      case 'SetTelemetryOverlayFields':
+        return setTelemetryOverlayFields(
+            ctx, request as $0.SetTelemetryOverlayFieldsRequest);
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }

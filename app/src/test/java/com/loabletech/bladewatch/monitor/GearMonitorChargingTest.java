@@ -92,10 +92,28 @@ public class GearMonitorChargingTest {
                 read("byd/routing/VehicleCommandRouter.java").contains("getEffectiveGear"));
     }
 
+    /**
+     * Read a source file by path, in whichever language it is written in today. The extension in
+     * the argument is advisory: the app sources are migrating from Java to Kotlin
+     * (BladeWatch-dmrg), and a guard that keeps asking for a ".java" that no longer exists stops
+     * guarding without ever failing. Both spellings present means a half-finished conversion, and
+     * this would read the stale copy.
+     */
     private static String read(String relative) throws IOException {
-        Path p = sourceRoot().resolve("com/loabletech/bladewatch").resolve(relative);
-        assertTrue("missing source file: " + p, Files.isRegularFile(p));
-        return new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+        int dot = relative.lastIndexOf('.');
+        String base = relative.endsWith(".java") || relative.endsWith(".kt")
+                ? relative.substring(0, dot) : relative;
+        Path dir = sourceRoot().resolve("com/loabletech/bladewatch");
+        Path java = dir.resolve(base + ".java");
+        Path kotlin = dir.resolve(base + ".kt");
+        boolean hasJava = Files.isRegularFile(java);
+        boolean hasKotlin = Files.isRegularFile(kotlin);
+        assertTrue("missing source file (.java or .kt): " + dir.resolve(base),
+                hasJava || hasKotlin);
+        assertFalse("both a .java and a .kt exist for " + base
+                + " -- a half-finished conversion; this guard would read the stale copy",
+                hasJava && hasKotlin);
+        return new String(Files.readAllBytes(hasJava ? java : kotlin), StandardCharsets.UTF_8);
     }
 
     private static Path sourceRoot() {

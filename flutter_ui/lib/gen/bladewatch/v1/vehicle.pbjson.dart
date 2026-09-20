@@ -935,6 +935,62 @@ final $typed_data.Uint8List stopGpsResponseDescriptor = $convert.base64Decode(
     'Cg9TdG9wR3BzUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIYCgdtZXNzYWdlGA'
     'IgASgJUgdtZXNzYWdl');
 
+@$core.Deprecated('Use issueActionTokenRequestDescriptor instead')
+const IssueActionTokenRequest$json = {
+  '1': 'IssueActionTokenRequest',
+};
+
+/// Descriptor for `IssueActionTokenRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List issueActionTokenRequestDescriptor =
+    $convert.base64Decode('ChdJc3N1ZUFjdGlvblRva2VuUmVxdWVzdA==');
+
+@$core.Deprecated('Use issueActionTokenResponseDescriptor instead')
+const IssueActionTokenResponse$json = {
+  '1': 'IssueActionTokenResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'token', '3': 2, '4': 1, '5': 9, '10': 'token'},
+    {
+      '1': 'expires_in_seconds',
+      '3': 3,
+      '4': 1,
+      '5': 5,
+      '10': 'expiresInSeconds'
+    },
+    {'1': 'error', '3': 4, '4': 1, '5': 9, '10': 'error'},
+  ],
+};
+
+/// Descriptor for `IssueActionTokenResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List issueActionTokenResponseDescriptor = $convert.base64Decode(
+    'ChhJc3N1ZUFjdGlvblRva2VuUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIUCg'
+    'V0b2tlbhgCIAEoCVIFdG9rZW4SLAoSZXhwaXJlc19pbl9zZWNvbmRzGAMgASgFUhBleHBpcmVz'
+    'SW5TZWNvbmRzEhQKBWVycm9yGAQgASgJUgVlcnJvcg==');
+
+@$core.Deprecated('Use getAdasInventoryRequestDescriptor instead')
+const GetAdasInventoryRequest$json = {
+  '1': 'GetAdasInventoryRequest',
+};
+
+/// Descriptor for `GetAdasInventoryRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getAdasInventoryRequestDescriptor =
+    $convert.base64Decode('ChdHZXRBZGFzSW52ZW50b3J5UmVxdWVzdA==');
+
+@$core.Deprecated('Use getAdasInventoryResponseDescriptor instead')
+const GetAdasInventoryResponse$json = {
+  '1': 'GetAdasInventoryResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'adas_json', '3': 2, '4': 1, '5': 9, '10': 'adasJson'},
+  ],
+};
+
+/// Descriptor for `GetAdasInventoryResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getAdasInventoryResponseDescriptor =
+    $convert.base64Decode(
+        'ChhHZXRBZGFzSW52ZW50b3J5UmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIbCg'
+        'lhZGFzX2pzb24YAiABKAlSCGFkYXNKc29u');
+
 const $core.Map<$core.String, $core.dynamic> VehicleServiceBase$json = {
   '1': 'VehicleService',
   '2': [
@@ -1053,6 +1109,16 @@ const $core.Map<$core.String, $core.dynamic> VehicleServiceBase$json = {
       '2': '.bladewatch.v1.StopGpsRequest',
       '3': '.bladewatch.v1.StopGpsResponse'
     },
+    {
+      '1': 'IssueActionToken',
+      '2': '.bladewatch.v1.IssueActionTokenRequest',
+      '3': '.bladewatch.v1.IssueActionTokenResponse'
+    },
+    {
+      '1': 'GetAdasInventory',
+      '2': '.bladewatch.v1.GetAdasInventoryRequest',
+      '3': '.bladewatch.v1.GetAdasInventoryResponse'
+    },
   ],
 };
 
@@ -1106,6 +1172,10 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.StartGpsResponse': StartGpsResponse$json,
   '.bladewatch.v1.StopGpsRequest': StopGpsRequest$json,
   '.bladewatch.v1.StopGpsResponse': StopGpsResponse$json,
+  '.bladewatch.v1.IssueActionTokenRequest': IssueActionTokenRequest$json,
+  '.bladewatch.v1.IssueActionTokenResponse': IssueActionTokenResponse$json,
+  '.bladewatch.v1.GetAdasInventoryRequest': GetAdasInventoryRequest$json,
+  '.bladewatch.v1.GetAdasInventoryResponse': GetAdasInventoryResponse$json,
 };
 
 /// Descriptor for `VehicleService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -1146,4 +1216,8 @@ final $typed_data.Uint8List vehicleServiceDescriptor = $convert.base64Decode(
     'V0R3BzTG9jYXRpb25SZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5HZXRHcHNMb2NhdGlvblJlc3Bv'
     'bnNlEksKCFN0YXJ0R3BzEh4uYmxhZGV3YXRjaC52MS5TdGFydEdwc1JlcXVlc3QaHy5ibGFkZX'
     'dhdGNoLnYxLlN0YXJ0R3BzUmVzcG9uc2USSAoHU3RvcEdwcxIdLmJsYWRld2F0Y2gudjEuU3Rv'
-    'cEdwc1JlcXVlc3QaHi5ibGFkZXdhdGNoLnYxLlN0b3BHcHNSZXNwb25zZQ==');
+    'cEdwc1JlcXVlc3QaHi5ibGFkZXdhdGNoLnYxLlN0b3BHcHNSZXNwb25zZRJjChBJc3N1ZUFjdG'
+    'lvblRva2VuEiYuYmxhZGV3YXRjaC52MS5Jc3N1ZUFjdGlvblRva2VuUmVxdWVzdBonLmJsYWRl'
+    'd2F0Y2gudjEuSXNzdWVBY3Rpb25Ub2tlblJlc3BvbnNlEmMKEEdldEFkYXNJbnZlbnRvcnkSJi'
+    '5ibGFkZXdhdGNoLnYxLkdldEFkYXNJbnZlbnRvcnlSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5H'
+    'ZXRBZGFzSW52ZW50b3J5UmVzcG9uc2U=');

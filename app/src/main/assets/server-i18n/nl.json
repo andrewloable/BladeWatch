@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Niet geldig verzoek: {0}",
     "performance_no_data": "Niet gestart met de prestatiemonitoring of nog geen gegevens zijn verzameld",
     "soh_not_initialized": "SohEstimator niet geïnitieerd",
+    "soh_nominal_range": "De nominale capaciteit moet tussen 8 en 120 kWh liggen",
     "reset_no_categories": "Geen specifieke categorieën",
     "reset_unknown_category": "Onbekende categorie",
     "reset_trip_in_progress": "Reis in gang  draai ACC eerst uit",

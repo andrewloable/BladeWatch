@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
 
@@ -9,8 +7,6 @@ import '../../gen/bladewatch/v1/recordings.pb.dart';
 import '../../gen/bladewatch/v1/settings.pb.dart';
 import '../../gen/bladewatch/v1/storage.pb.dart';
 import '../../gen/bladewatch/v1/system.pb.dart' hide RecordingStatus;
-import '../../rpc/jwt_source.dart';
-import '../../rpc/raw_http_sender.dart';
 import '../../rpc/services/recordings_service_client.dart';
 import '../../rpc/services/settings_service_client.dart';
 import '../../rpc/services/storage_service_client.dart';
@@ -38,27 +34,19 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
     required RecordingsServiceClient recordingsService,
     required SettingsServiceClient settingsService,
     required StorageServiceClient storageService,
-    required JwtSource jwtSource,
-    Uri? baseUrl,
-    RawGetSender? getSender,
-    RawHttpSender? postSender,
   })  : _systemService = systemService, // ignore: prefer_initializing_formals
         _recordingsService = recordingsService, // ignore: prefer_initializing_formals
         _settingsService = settingsService, // ignore: prefer_initializing_formals
-        _storageService = storageService, // ignore: prefer_initializing_formals
-        _jwtSource = jwtSource, // ignore: prefer_initializing_formals
-        _baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'), // ignore: prefer_initializing_formals
-        _getSender = getSender ?? createIoGetSender(), // ignore: prefer_initializing_formals
-        _postSender = postSender ?? createIoHttpSender(); // ignore: prefer_initializing_formals
+        _storageService = storageService; // ignore: prefer_initializing_formals
 
+  // jwtSource / baseUrl / getSender / postSender used to be required for the raw-HTTP
+  // telemetry-overlay calls (BladeWatch-qwqq). Those now go through SettingsServiceClient,
+  // which owns the transport and mints its own JWT, so they are gone rather than left as
+  // dead parameters.
   final SystemServiceClient _systemService;
   final RecordingsServiceClient _recordingsService;
   final SettingsServiceClient _settingsService;
   final StorageServiceClient _storageService;
-  final JwtSource _jwtSource;
-  final Uri _baseUrl;
-  final RawGetSender _getSender;
-  final RawHttpSender _postSender;
 
   bool _loading = true;
   bool get loading => _loading;
@@ -308,20 +296,16 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
   /// user's saved choice.
   Future<void> loadOverlayFields() async {
     try {
-      final jwt = await _jwtSource.mintJwt();
-      final uri = _baseUrl.replace(path: '/api/settings/telemetry-overlay/fields');
-      final headers = <String, String>{
-        if (jwt != null) 'Authorization': 'Bearer $jwt',
-      };
-      final resp = await _getSender(uri, headers);
-      if (resp.statusCode != 200) return;
-      final json = jsonDecode(resp.body) as Map<String, dynamic>;
-      final selections = json['selections'] as Map<String, dynamic>?;
-      final continuous = selections?['continuous'] as List<dynamic>?;
+      final resp = await _settingsService
+          .getTelemetryOverlayFields(GetTelemetryOverlayFieldsRequest());
+      // The proto models selections as map<string, FieldList>, so each entry wraps its
+      // array — an absent "continuous" key means the daemon did not answer, which must
+      // leave the saved choice alone rather than clear it.
+      final continuous = resp.selections['continuous'];
       if (continuous == null) return;
       final fields = <OverlayField>{};
-      for (final name in continuous) {
-        final field = OverlayField.fromValue(name as String);
+      for (final name in continuous.fields) {
+        final field = OverlayField.fromValue(name);
         if (field != null) fields.add(field);
       }
       _overlayFields = fields;
@@ -347,18 +331,13 @@ class RecordingSettingsController extends ChangeNotifier with DisposedSafeNotifi
     notifyListeners();
 
     try {
-      final jwt = await _jwtSource.mintJwt();
-      final uri = _baseUrl.replace(path: '/api/settings/telemetry-overlay/fields');
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        if (jwt != null) 'Authorization': 'Bearer $jwt',
-      };
-      final body = jsonEncode({
-        'type': 'continuous',
-        'fields': [for (final f in next) f.value],
-      });
-      final resp = await _postSender(uri, headers, body);
-      if (resp.statusCode != 200) {
+      final resp = await _settingsService.setTelemetryOverlayFields(
+        SetTelemetryOverlayFieldsRequest(
+          type: 'continuous',
+          fields: [for (final f in next) f.value],
+        ),
+      );
+      if (!resp.success) {
         _overlayFields = before;
         notifyListeners();
       }

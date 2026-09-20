@@ -235,7 +235,7 @@ class MainActivity : Activity() {
         net.bladewatch.app.logging.DebugAppLogger.syncEnabled()
         try {
             val sm = net.bladewatch.app.storage.StorageManager.getInstance()
-            if (!sm.isSdCardAvailable()) sm.refreshSdCard()
+            if (!sm.isSdCardAvailable) sm.refreshSdCard()
         } catch (_: Throwable) {}
     }
 

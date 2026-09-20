@@ -10,7 +10,26 @@ http://127.0.0.1:8080
 
 The server exposes two parallel API surfaces over the same port:
 
-1. **REST** — plain JSON over `/api/*`, plus `/status`, `/video/*`, `/thumb/*`, etc. This is the original surface. It has **no first-party client left** since Phase 4 deleted the in-app WebView: the Flutter in-car UI and the Angular SPA both use Connect. It stays because the Connect handlers wrap it and because `/video/*` and `/thumb/*` are plain URLs a browser or player can hit directly.
+1. **HTTP, for things a browser must fetch directly.** There is **no REST JSON API any more**
+   (BladeWatch-6mnq). What the server still serves over plain HTTP is not an API:
+
+   | Route | Why it cannot be an RPC |
+   |---|---|
+   | `/`, `angular/*`, `/assets/*` | the SPA bundle itself |
+   | `/login`, `/login.html` | pre-auth page; no Connect client exists yet when it loads |
+   | `/auth/status`, `/auth/token`, `/auth/logout` | the login bootstrap those pages call |
+   | `/manifest.json`, `/sw.js`, `/favicon.ico`, `/credits.json` | static assets |
+   | `/i18n/*`, `/shared/*` | catalogs and legacy assets |
+   | `/video/*` | player byte-range requests (Range, 206, ETag) |
+   | `/thumb/*` | `<img src>`, additionally auth'd by a signed `?t=` token |
+   | `/api/stream/still` | a JPEG the live view consumes as an image URL |
+   | `/hero/*` | the three.js vehicle page |
+
+   Everything else — every JSON endpoint that used to live under `/api/*`, and `/status` — is a
+   ConnectRPC method. `AuthApiHandler` is the one handler that still has an HTTP entry point
+   for JSON, because the login bootstrap needs it; `RecordingsApiHandler` and
+   `StreamingApiHandler` keep one for their binary routes only.
+
 2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by both the Flutter in-car UI (Dart client, `flutter_ui/lib/rpc/`) and the Angular SPA. See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers to keep the two surfaces in 1:1 parity, so the REST families below are the source of truth for behaviour.
 
 ## Auth
@@ -75,17 +94,16 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 | Service (`bladewatch.v1.*`) | RPC methods | Mirrors REST |
 | --- | --- | --- |
 | `AuthService` | `Login`, `Logout`, `GetAuthStatus`, `InvalidateAuthCache` | `/auth/token`, `/auth/logout`, `/auth/status` |
-| `SystemService` | `GetStatus`, `GetPerformance`, `PlayAudioTest`, `ListModels`, `DownloadModel`, `GetSelectedModel`, `SetSelectedModel`, `GetModelsManifest`, `GetSohNominal`/`SetSohNominal`, `GetSohStatus`, `ResetSoh`, `ResetPerformance`, `GetParkingDelta`, `GetLastCharge` | `/status`, `/api/performance*`, `/api/audio/test-avas`, `/api/models/*` |
+| `SystemService` | `GetStatus`, `GetPerformance`, `PlayAudioTest`, `ListModels`, `DownloadModel`, `GetSelectedModel`, `SetSelectedModel`, `GetModelsManifest`, `GetSohNominal`/`SetSohNominal`, `GetSohStatus`, `ResetSoh`, `ResetPerformance`, `GetParkingDelta`, `GetLastCharge`, `PerformanceConnect`, `PerformanceHeartbeat`, `PerformanceDisconnect` | `/status`, `/api/performance*`, `/api/audio/test-avas`, `/api/models/*` |
 | `RecordingsService` | `ListRecordings`, `GetDates`, `GetStats`, `DeleteRecording`, `BatchDelete`, `SyncCatalog`, `GetInflightStatus`, `GetEventTimeline`, `MarkRecording` | `/api/recordings*`, `/api/events/*` |
 | `TripsService` | `ListTrips`, `GetTrip`, `DeleteTrip`, `GetSummary`, `GetDna`, `GetRange`, `GetConfig`/`SetConfig`, `GetStorage`/`SetStorage`, `SyncTrips`, `GetTelemetry`, `GetSimilarTrips`, `GetGpsTrace` | `/api/trips*` |
 | `SurveillanceService` | `GetConfig`/`SetConfig`, `GetStatus`, `Enable`, `Disable`, `GetHeatmap`, `GetSnapshot`, `GetFilterLog`, `SyncCatalog` | `/api/surveillance/*` |
 | `SafeLocationsService` | `ListZones`, `AddZone`, `UpdateZone`, `DeleteZone`, `Toggle` | `/api/surveillance/safe-locations*` |
 | `StreamService` | `Enable`, `Disable`, `GetStatus`, `GetQuality`/`SetQuality`, `GetViewMode`/`SetViewMode` | `/api/stream/*` |
 | — | `GET /api/stream/still` (REST-only, no Connect RPC): the still-frame fallback JPEG for browsers with no usable H.264 decoder (BladeWatch-y78o.1) | `/api/stream/still` |
-| `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` |
+| `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode`, `GetStatusOverlay`/`SetStatusOverlay`, `GetTelemetryOverlayFields`/`SetTelemetryOverlayFields` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` |
 | `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `PreviewStorageLimitChange`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
-| `VehicleService` | `GetState`, `GetAcDiagnostics`, `GetSeatDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported) | `/api/vehicle/*`, `/api/gps/*` |
-| — | `GET /api/vehicle/adas-inventory` (REST-only, no Connect RPC): read-only probe of which declared `ADAS_*` ids actually resolve from the SDK on this car (BladeWatch-2pnn.3) | `/api/vehicle/adas-inventory` |
+| `VehicleService` | `GetState`, `GetAcDiagnostics`, `GetSeatDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported), `IssueActionToken`, `GetAdasInventory` | `/api/vehicle/*`, `/api/gps/*` |
 | `NotificationsService` | `GetCategories`, `Subscribe`, `Unsubscribe`, `ListSubscriptions`, `UpdatePreferences`, `SendTest` | `/api/notifications/*`, `/api/push/*` |
 
 The full request/response message shapes are in `proto/bladewatch/v1/*.proto`
@@ -343,7 +361,7 @@ return the not-supported responses described under
 - `GET /api/vehicle/state` — returns current door/window/trunk/lock/battery/climate/tyre/seats/lights/ADAS state.
 - `GET /api/vehicle/ac-diagnostics` — read-only AC SDK method probe.
 - `GET /api/vehicle/seat-diagnostics` — read-only seat hardware capability probe.
-- `GET /api/vehicle/adas-inventory` — read-only ADAS field inventory (BladeWatch-2pnn.3). REST-only for now — no ConnectRPC/proto mapping exists yet, unlike the other diagnostics endpoints above; add one in a follow-up if a client needs it. Returns `{ success, adas: { sdkClassPresent, declared: [...], sdkOnly: [...] } }` — see [byd-integrations.md](byd-integrations.md#adas-field-inventory-bladewatch-2pnn3) for the shape and the (important) caveat that `sdkClassPresent` alone does not mean "this car has ADAS".
+- `VehicleService.GetAdasInventory` — read-only ADAS field inventory (BladeWatch-2pnn.3). It WAS REST-only, with a note to add an RPC "if a client needs it"; removing the REST surface was that moment (BladeWatch-6mnq), and without the RPC the diagnostic would simply have vanished. Returns `{ success, adas: { sdkClassPresent, declared: [...], sdkOnly: [...] } }` — see [byd-integrations.md](byd-integrations.md#adas-field-inventory-bladewatch-2pnn3) for the shape and the (important) caveat that `sdkClassPresent` alone does not mean "this car has ADAS".
 - `POST /api/vehicle/trunk` — body `{ "action": "open" | "close" | "stop" }`.
 - `POST /api/vehicle/window` — see window variants below.
 - `POST /api/vehicle/climate` — body `{ "action": "power_on"|"power_off"|"set_temp"|"set_fan"|"max_cooling", ... }`.
@@ -431,10 +449,22 @@ Handled by `PerformanceApiHandler`:
 - `GET /api/performance/last-charge`.
 - SOC-related endpoints under `/api/performance/soc`.
 - Battery-related endpoints under `/api/performance/battery`.
-- `GET /api/performance/soh` — returns "not available"; SoH estimation has been removed.
-- `POST /api/performance/soh/reset` — returns "not available".
-- `GET /api/performance/soh/nominal` — returns BYD-local nominal capacity only.
-- `POST /api/performance/soh/nominal`.
+- `GET /api/performance/soh` — nominal pack CAPACITY and its source. SoH *estimation* is still
+  gone (there is no BYD-local degradation source, so `displaySoh` is 0 and `displaySource` is
+  `unavailable`), but capacity is resolvable and is what the dashboard read-outs consume.
+  `success` is false only when capacity genuinely cannot be determined.
+- `POST /api/performance/soh/reset` — still a stub; returns "not available". SoH estimation has
+  been removed and there is nothing to reset.
+- `GET /api/performance/soh/nominal` — `{nominalKwh, nominalSource}`. `nominalKwh` is JSON null
+  when unknown, never a fake zero. `nominalSource` is one of `user`, `sdk`, `catalogue`,
+  `derived`, `unset`, computed by `NominalCapacityResolver.sourceOf` from the same inputs and in
+  the same order that pick the value, so the two cannot drift.
+- `POST /api/performance/soh/nominal` — body `{"nominalKwh": 18.3}` sets the owner's override,
+  `{"nominalKwh": null}` clears it and returns to auto-detection. Validated to 8-120 kWh; an
+  out-of-range value is refused with `errors.soh_nominal_range` rather than stored, because a
+  typo must not be able to redefine the pack and corrupt every trip from then on. The override
+  outranks every detected source — see "Where nominal pack capacity comes from" in
+  `byd-integrations.md` (BladeWatch-b9vl).
 - `POST /api/performance/reset`.
 
 ## Models

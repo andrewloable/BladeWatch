@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "Недействительный орган обращения: {0}",
     "performance_no_data": "Мониторинг производительности не начался или пока не собираются данные",
     "soh_not_initialized": "SohEstimator не инициирован",
+    "soh_nominal_range": "Номинальная ёмкость должна быть от 8 до 120 кВт·ч",
     "reset_no_categories": "Категории не указаны",
     "reset_unknown_category": "Неизвестная категория",
     "reset_trip_in_progress": "Путешествие в процессе  сначала выключите ACC",

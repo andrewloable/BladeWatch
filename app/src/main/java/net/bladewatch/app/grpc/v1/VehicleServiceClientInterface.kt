@@ -81,4 +81,18 @@ public interface VehicleServiceClientInterface {
   public suspend fun startGps(request: StartGpsRequest, headers: Headers = emptyMap()): ResponseMessage<StartGpsResponse>
 
   public suspend fun stopGps(request: StopGpsRequest, headers: Headers = emptyMap()): ResponseMessage<StopGpsResponse>
+
+  /**
+   *  BladeWatch-jwko: issues the short-lived second factor that actuating commands require from
+   *  a non-loopback caller. Never itself gated — you cannot need a token to get a token.
+   */
+  public suspend fun issueActionToken(request: IssueActionTokenRequest, headers: Headers = emptyMap()): ResponseMessage<IssueActionTokenResponse>
+
+  /**
+   *  BladeWatch-6mnq: read-only probe of which declared ADAS_* ids actually resolve from the SDK
+   *  on this car (BladeWatch-2pnn.3). It was REST-only, and the reference said to add an RPC
+   *  "if a client needs it" — removing the REST surface is exactly that moment, and without this
+   *  the diagnostic would simply have vanished.
+   */
+  public suspend fun getAdasInventory(request: GetAdasInventoryRequest, headers: Headers = emptyMap()): ResponseMessage<GetAdasInventoryResponse>
 }

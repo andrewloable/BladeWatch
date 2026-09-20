@@ -65,7 +65,7 @@ class ClimateCommandCollectorWiringTest {
 
     companion object {
         private fun assertCallsOnlyItsOwn(source: String, className: String, expectedMethod: String, mustNotCall: Array<String>) {
-            val body = extractClassBody(source, "class $className extends VehicleCommand")
+            val body = extractCommandClassBody(source, className)
             Assert.assertTrue(
                 "$className.executeViaSdk must call BydDataCollector.$expectedMethod",
                 body.contains("$expectedMethod(")
@@ -88,17 +88,53 @@ class ClimateCommandCollectorWiringTest {
             return p
         }
 
+        /**
+         * Read a source file by path, in whichever language it is written in today. The
+         * extension in the argument is advisory: the app sources are migrating from Java to
+         * Kotlin (BladeWatch-dmrg), and a guard that keeps asking for a ".java" that no longer
+         * exists stops guarding without ever failing. Both spellings present means a
+         * half-finished conversion, and this would read the stale copy.
+         */
         @Throws(IOException::class)
         private fun read(relative: String): String {
-            val p = sourceRoot().resolve("com/loabletech/bladewatch").resolve(relative)
-            Assert.assertTrue("missing source file: $p", Files.isRegularFile(p))
-            return String(Files.readAllBytes(p), StandardCharsets.UTF_8)
+            val base = relative.substringBeforeLast('.')
+            val dir = sourceRoot().resolve("com/loabletech/bladewatch")
+            val java = dir.resolve("$base.java")
+            val kotlin = dir.resolve("$base.kt")
+            val hasJava = Files.isRegularFile(java)
+            val hasKotlin = Files.isRegularFile(kotlin)
+            Assert.assertTrue("missing source file (.java or .kt): " + dir.resolve(base),
+                hasJava || hasKotlin)
+            Assert.assertFalse(
+                "both a .java and a .kt exist for $base -- a half-finished conversion; " +
+                    "this guard would read the stale copy",
+                hasJava && hasKotlin
+            )
+            return String(
+                Files.readAllBytes(if (hasJava) java else kotlin), StandardCharsets.UTF_8
+            )
+        }
+
+        /**
+         * The body of one VehicleCommand subclass, in whichever language it is written in
+         * today: Java spells the declaration `class X extends VehicleCommand`, Kotlin spells
+         * it `class X(...) : VehicleCommand()`. Matching only one leaves this guard unable to
+         * find the class at all once the file is converted -- and a guard that cannot run is
+         * worse than no guard.
+         */
+        private fun extractCommandClassBody(source: String, className: String): String {
+            val decl = Regex("""class\s+${Regex.escape(className)}\b[^{]*VehicleCommand[^{]*""")
+            val m = decl.find(source)
+            Assert.assertTrue(
+                "could not find a VehicleCommand subclass named '$className' in either " +
+                    "language's spelling",
+                m != null
+            )
+            return extractClassBody(source, m!!.range.first, className)
         }
 
         /** Naive brace-counting extraction of one class's body, starting at its declaration. */
-        private fun extractClassBody(source: String, declaration: String): String {
-            val idx = source.indexOf(declaration)
-            Assert.assertTrue("could not find class declaration '$declaration' in source", idx >= 0)
+        private fun extractClassBody(source: String, idx: Int, declaration: String): String {
             val openBrace = source.indexOf('{', idx)
             Assert.assertTrue("could not find opening brace after '$declaration'", openBrace >= 0)
             var depth = 0

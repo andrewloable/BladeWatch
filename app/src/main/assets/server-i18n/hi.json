@@ -43,6 +43,7 @@
     "invalid_request_body_with_detail": "अमान्य अनुरोध निकायः {0}",
     "performance_no_data": "प्रदर्शन निगरानी शुरू नहीं हुई या अभी तक कोई डेटा एकत्र नहीं किया गया है",
     "soh_not_initialized": "SohEstimator प्रारंभ नहीं किया गया",
+    "soh_nominal_range": "नाममात्र क्षमता 8 और 120 kWh के बीच होनी चाहिए",
     "reset_no_categories": "कोई श्रेणी निर्दिष्ट नहीं",
     "reset_unknown_category": "अज्ञात श्रेणी",
     "reset_trip_in_progress": "यात्रा चल रही है  पहले ACC बंद करें",

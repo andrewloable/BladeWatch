@@ -87,7 +87,7 @@ class MediaVolumeController(private val device: MediaVolumeDevice) {
         @JvmStatic
         fun getInstance(): MediaVolumeController {
             return instance ?: synchronized(this) {
-                instance ?: MediaVolumeController(AudioManagerVolumeDevice(CameraDaemon.getAppContext())).also { instance = it }
+                instance ?: MediaVolumeController(AudioManagerVolumeDevice(CameraDaemon.getAppContext()!!)).also { instance = it }
             }
         }
     }

@@ -39,6 +39,35 @@ BladeWatch is built around long-running processes that survive normal Android UI
 - `StatusOverlayService`: overlay status display.
 - `KeepAliveAccessibilityService`: accessibility-backed keepalive support.
 
+## ssc_skip also blocks SERVICE starts, not just broadcasts
+
+BYD's `ssc_skip` is known here for suppressing broadcasts to the app package (BladeWatch-5rew,
+and why the Flutter APK's `wakeServiceHost()` uses an explicit component start rather than a
+broadcast). It applies the same rule to **service starts**: a shell-UID (2000) `am
+start-foreground-service` targeting the app UID is ignored outright when that UID is not already
+running. Measured on the head unit 2026-09-19:
+
+```text
+ActivityManager: ssc_skip startServiceLocked 2000 want to start 10073, package net.bladewatch.app
+ActivityManager: UID 10073 is not running
+ActivityManager: packageName 10073  NOT RUNNING
+ActivityManager: ssc_skip startServiceLocked 2000 want to start 10073 package net.bladewatch.app ignored !!!
+```
+
+**ActivityManager reports this as `Error: Not found; no service started.` with exit 255**, which
+reads like a missing component and is why it went undiagnosed — the component resolves fine, and
+`dumpsys activity services` shows a `ServiceRecord` for it with `app=null`. The real reason is
+only in logcat.
+
+The fix is the same explicit-component start used for the broadcast case: bring the host up with
+`am start -n net.bladewatch.app/.ui.MainActivity` (a bootstrap that calls `moveTaskToBack(true)`
+immediately, so nothing appears on screen), then issue the service start, which then exits 0.
+`SentryDaemon.restartLocationService` does this automatically, gated on
+`needsServiceHostWake(...)` so a live host is not restarted.
+
+This only affects callers running as the shell UID. `ServiceLauncher` runs inside the app
+process, so the UID is by definition already up and the rule does not bite.
+
 ## Boot and Revival Behavior
 
 `BootReceiver` responds to:
@@ -83,6 +112,42 @@ Startup timing (measured from app launch / boot):
 - Health checks begin around `90 seconds`.
 - Health checks repeat every `30 seconds` (`HEALTH_CHECK_INTERVAL_MS`).
 - Within the core group, daemons are further staggered: Camera daemon first, Sentry daemon `+5 s`, ACC sentry daemon `+10 s`.
+
+**Staggering is not mutual exclusion.** Each daemon also holds an exclusive `FileLock` on its
+own PID-bearing lock file under `/data/local/tmp`, and that is what actually prevents a second
+instance:
+
+| Daemon | Lock file | Implementation |
+|---|---|---|
+| Camera | `camera_daemon.lock` | `DaemonSingletonLock` |
+| Sentry | `sentry_daemon.lock` | `DaemonSingletonLock` |
+| ACC sentry | `acc_sentry_daemon.lock` | `DaemonSingletonLock` |
+
+All three share one implementation since BladeWatch-8d5u. The lock FILENAMES stay distinct and
+must not be renamed — the clean-reinstall block in `CLAUDE.md` removes them by glob
+(`camera_daemon.lock` and `*sentry*.lock`), so a rename silently breaks that cleanup and leaves a
+`SIGKILL`ed daemon unable to restart. `AllDaemonsShareOneSingletonLockTest` pins both the shared
+implementation and the three paths.
+
+`SentryDaemon` had no lock until BladeWatch-f0y3. Its only guard was `isDaemonRunning()`, which
+PINGs the control port — a liveness probe, not a lock. It answers true only once an instance has
+already bound the port, so two daemons launched inside that window both probe, both find nobody
+home, and both start. Observed on the head unit 2026-09-19: PIDs 9244 and 9351 one second apart,
+both alive, every periodic task running twice. The port ping is retained as a cheap first check.
+
+A lock naming a dead PID, junk, or our own PID is treated as reclaimable — a daemon killed with
+`SIGKILL` (as the clean-reinstall procedure in `CLAUDE.md` does) must be able to start again.
+That reclaim logic was learned on this hardware inside `CameraDaemon` and was extracted verbatim;
+`AccSentryDaemon`'s old copy had none of it, so a lock naming a dead PID could only be cleared by
+hand.
+
+Releasing does **not** delete the lock file, which is a deliberate change from the two older
+copies (they deleted at `CameraDaemon:1288` and `AccSentryDaemon:562`). Unlinking a path another
+process may already hold a lock on is the classic double-winner race: the rival keeps its lock on
+an orphaned inode while the next starter creates a fresh file and locks that, so both believe they
+are the singleton. A leftover file is harmless — the next acquire finds no OS lock, takes it and
+overwrites the PID. `CameraDaemon` still deletes its READY SENTINEL on release, which is a
+different thing: readiness probes read its presence as "this daemon is up".
 
 The manager tracks daemons intentionally stopped by the user (`userStoppedDaemons`) so health checks do not immediately restart them. The user-stopped set is cleared on each fresh app launch / boot.
 
@@ -146,7 +211,7 @@ The daemon signals "startup complete" by writing its PID to a sentinel file:
 
 It is written world-readable (`644`, via `setReadable(true, false)`) so the app UID can stat it. A stale sentinel left by a `kill -9`'d daemon is the reason readiness is **not** decided by the sentinel alone.
 
-`DaemonReadinessChecker` (app-side, [DaemonReadinessChecker.java](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.java)) decides readiness with two checks:
+`DaemonReadinessChecker` (app-side, [DaemonReadinessChecker.kt](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.kt)) decides readiness with two checks:
 
 - The sentinel exists and is non-empty, AND
 - a short-lived TCP connect to `127.0.0.1:19876` (the command port) succeeds (`PROBE_TIMEOUT_MS = 1000`).
@@ -157,7 +222,7 @@ The TCP connect is the authoritative liveness signal — it is UID-independent a
 
 ### Recording mode manager
 
-`RecordingModeManager` ([RecordingModeManager.java](../app/src/main/java/com/loabletech/bladewatch/recording/RecordingModeManager.java)) coordinates four mutually-exclusive modes (`NONE`, `CONTINUOUS`, `DRIVE_MODE`, `PROXIMITY_GUARD`) driven by ACC state and gear.
+`RecordingModeManager` ([RecordingModeManager.kt](../app/src/main/java/com/loabletech/bladewatch/recording/RecordingModeManager.kt)) coordinates four mutually-exclusive modes (`NONE`, `CONTINUOUS`, `DRIVE_MODE`, `PROXIMITY_GUARD`) driven by ACC state and gear.
 
 `ChargingDetector`'s fused charging state (`BladeWatch-nmao.1`) is an additional input: `CONTINUOUS` and `DRIVE_MODE` are suppressed while the fused detector reports charging, so a spurious non-P gear read at a wallbox cannot start a drive recording. `PROXIMITY_GUARD` is deliberately excluded — a car at a public charger is exactly when radar triggers matter most. The decision is a pure static, `RecordingModeManager.isSuppressedByCharging(Mode, boolean)`, consulted once at the top of `activateMode` so every activation path (constructor auto-activate, `setMode`, ACC-on, gear-change, and hardware resync) is gated the same way without duplicating the check. `RecordingModeManager` seeds the flag from `ChargingDetector.getInstance().isCharging()` at construction (a daemon that boots already plugged in starts suppressed) and subscribes/unsubscribes a `FusedStateListener` in its constructor/`shutdown()`; on the charging-started edge it deactivates the running mode immediately, and on charging-ended it retries activation through the same warmup path the constructor and resync use, so a still-open pipeline resumes recording with no teardown.
 
@@ -390,10 +455,10 @@ Camera daemon
 ## Source References
 
 - Android components declared in manifest: [AndroidManifest.xml:207](../app/src/main/AndroidManifest.xml#L207), [AndroidManifest.xml:255](../app/src/main/AndroidManifest.xml#L255), [AndroidManifest.xml:306](../app/src/main/AndroidManifest.xml#L306), [AndroidManifest.xml:312](../app/src/main/AndroidManifest.xml#L312), [AndroidManifest.xml:327](../app/src/main/AndroidManifest.xml#L327).
-- Application, activity, receivers, and foreground services: [BladeWatchApplication.kt:18](../app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt#L18), [MainActivity.kt:46](../app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt#L46), [BootReceiver.kt:24](../app/src/main/java/com/loabletech/bladewatch/receiver/BootReceiver.kt#L24), [ProcessRevivalReceiver.kt:29](../app/src/main/java/com/loabletech/bladewatch/receiver/ProcessRevivalReceiver.kt#L29), [LocationBootReceiver.kt:14](../app/src/main/java/com/loabletech/bladewatch/receiver/LocationBootReceiver.kt#L14), [DaemonKeepaliveService.kt:30](../app/src/main/java/com/loabletech/bladewatch/services/DaemonKeepaliveService.kt#L30), [LocationSidecarService.java:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.java#L32).
-- Daemon startup and shell launch: [DaemonStartupManager.kt:15](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L15), [DaemonStartupManager.kt:73](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L73), [DaemonStartupManager.kt:418](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L418), [DaemonKeepaliveService.kt:72](../app/src/main/java/com/loabletech/bladewatch/services/DaemonKeepaliveService.kt#L72), [AdbDaemonLauncher.kt:17](../app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt#L17), [DaemonBootstrap.java:22](../app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.java#L22).
-- Camera daemon ports and server setup: [CameraDaemon.java:51](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L51), [CameraDaemon.java:377](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L377), [CameraDaemon.java:381](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L381), [TcpCommandServer.java:22](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L22), [SurveillanceIpcServer.java:23](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L23), [HttpServer.java:49](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L49).
-- Daemon readiness sentinel and probe: [CameraDaemon.java:242](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L242), [CameraDaemon.java:633](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L633), [DaemonReadinessChecker.java:33](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.java#L33), [DaemonReadinessChecker.java:59](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.java#L59).
-- TCP and surveillance IPC commands: [CameraDaemonClient.java:61](../app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.java#L61), [TcpCommandServer.java:93](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L93), [TcpCommandServer.java:108](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L108), [SurveillanceIpcServer.java:75](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L75), [SurveillanceIpcServer.java:107](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L107).
-- Location sidecar IPC: [LocationSidecarService.java:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.java#L32), [AccSentryDaemon.java:2078](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.java#L2078).
+- Application, activity, receivers, and foreground services: [BladeWatchApplication.kt:18](../app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt#L18), [MainActivity.kt:46](../app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt#L46), [BootReceiver.kt:24](../app/src/main/java/com/loabletech/bladewatch/receiver/BootReceiver.kt#L24), [ProcessRevivalReceiver.kt:29](../app/src/main/java/com/loabletech/bladewatch/receiver/ProcessRevivalReceiver.kt#L29), [LocationBootReceiver.kt:14](../app/src/main/java/com/loabletech/bladewatch/receiver/LocationBootReceiver.kt#L14), [DaemonKeepaliveService.kt:30](../app/src/main/java/com/loabletech/bladewatch/services/DaemonKeepaliveService.kt#L30), [LocationSidecarService.kt:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.kt#L32).
+- Daemon startup and shell launch: [DaemonStartupManager.kt:15](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L15), [DaemonStartupManager.kt:73](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L73), [DaemonStartupManager.kt:418](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L418), [DaemonKeepaliveService.kt:72](../app/src/main/java/com/loabletech/bladewatch/services/DaemonKeepaliveService.kt#L72), [AdbDaemonLauncher.kt:17](../app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt#L17), [DaemonBootstrap.kt:22](../app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.kt#L22).
+- Camera daemon ports and server setup: [CameraDaemon.kt:51](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L51), [CameraDaemon.kt:377](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L377), [CameraDaemon.kt:381](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L381), [TcpCommandServer.kt:22](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.kt#L22), [SurveillanceIpcServer.kt:23](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.kt#L23), [HttpServer.kt:49](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.kt#L49).
+- Daemon readiness sentinel and probe: [CameraDaemon.kt:242](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L242), [CameraDaemon.kt:633](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L633), [DaemonReadinessChecker.kt:33](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.kt#L33), [DaemonReadinessChecker.kt:59](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.kt#L59).
+- TCP and surveillance IPC commands: [CameraDaemonClient.kt:61](../app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.kt#L61), [TcpCommandServer.kt:93](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.kt#L93), [TcpCommandServer.kt:108](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.kt#L108), [SurveillanceIpcServer.kt:75](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.kt#L75), [SurveillanceIpcServer.kt:107](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.kt#L107).
+- Location sidecar IPC: [LocationSidecarService.kt:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.kt#L32), [AccSentryDaemon.kt:2078](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.kt#L2078).
 - Tor tunnel process: [TorLauncher.kt:44](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L44), [TorLauncher.kt:92](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L92).

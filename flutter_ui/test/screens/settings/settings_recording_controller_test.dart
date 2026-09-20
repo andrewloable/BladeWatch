@@ -1,36 +1,23 @@
-import 'dart:convert';
 
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
 import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
 import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_models.dart';
+import 'package:bladewatch_ui/gen/bladewatch/v1/settings.pb.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_rpc_client.dart';
 
-class _FakeJwtSource implements JwtSource {
-  @override
-  Future<String?> mintJwt() async => 'fake.jwt.token';
-
-  @override
-  Future<int> stateVersion() async => 0;
-}
-
 void main() {
   late FakeRpcClient rpc;
 
-  RecordingSettingsController build({RawGetSender? getSender, RawHttpSender? postSender}) => RecordingSettingsController(
+  RecordingSettingsController build() => RecordingSettingsController(
         systemService: SystemServiceClient(rpc),
         recordingsService: RecordingsServiceClient(rpc),
         settingsService: SettingsServiceClient(rpc),
         storageService: StorageServiceClient(rpc),
-        jwtSource: _FakeJwtSource(),
-        getSender: getSender,
-        postSender: postSender,
       );
 
   void stubHappyPath() {
@@ -538,25 +525,21 @@ void main() {
     });
   });
 
-  // BladeWatch-y78o.5: the telemetry overlay field checklist. A plain REST endpoint (see
-  // QualitySettingsApiHandler.java), not a Connect RPC — these use the injected raw GET/POST
-  // senders directly rather than FakeRpcClient.
+  // BladeWatch-y78o.5: the telemetry overlay field checklist. It used to be a plain REST
+  // endpoint driven through injected raw GET/POST senders; BladeWatch-qwqq moved it onto
+  // SettingsService, so these drive FakeRpcClient like every other group here.
   group('overlay fields', () {
     test('loadOverlayFields() populates the selection from the daemon response', () async {
-      final c = build(
-        getSender: (uri, headers) async => RawHttpResponse(
-          200,
-          jsonEncode({
-            'success': true,
-            'availableFields': ['SPEED', 'GEAR'],
-            'selections': {
-              'continuous': ['SPEED'],
-              'surveillance': [],
-              'proximity': [],
-            },
-          }),
-        ),
-      );
+      rpc.stubJson('SettingsService', 'GetTelemetryOverlayFields', {
+        'success': true,
+        'availableFields': ['SPEED', 'GEAR'],
+        'selections': {
+          'continuous': {'fields': ['SPEED']},
+          'surveillance': {'fields': <String>[]},
+          'proximity': {'fields': <String>[]},
+        },
+      });
+      final c = build();
 
       await c.loadOverlayFields();
 
@@ -564,32 +547,47 @@ void main() {
     });
 
     test('loadOverlayFields() leaves the default (all fields) selection on a failure', () async {
-      final c = build(getSender: (uri, headers) async => throw Exception('connection refused'));
+      rpc.stubError('SettingsService', 'GetTelemetryOverlayFields',
+          const ConnectError('unavailable', 'connection refused'));
+      final c = build();
 
       await c.loadOverlayFields();
 
       expect(c.overlayFields, OverlayField.values.toSet());
     });
 
-    test('setOverlayFieldEnabled() removes a field optimistically and keeps it removed on success', () async {
-      String? sentBody;
-      final c = build(
-        postSender: (uri, headers, body) async {
-          sentBody = body;
-          return const RawHttpResponse(200, '{"success":true}');
-        },
-      );
+    test('loadOverlayFields() leaves the selection alone when the daemon omits continuous',
+        () async {
+      // An absent key is "no answer", not "nothing selected" — clearing the user's saved
+      // choice because a response was partial is the failure this guards.
+      rpc.stubJson('SettingsService', 'GetTelemetryOverlayFields',
+          {'success': true, 'availableFields': <String>[], 'selections': <String, Object>{}});
+      final c = build();
+
+      await c.loadOverlayFields();
+
+      expect(c.overlayFields, OverlayField.values.toSet());
+    });
+
+    test('setOverlayFieldEnabled() removes a field optimistically and keeps it removed on success',
+        () async {
+      rpc.stubJson('SettingsService', 'SetTelemetryOverlayFields', {'success': true});
+      final c = build();
 
       await c.setOverlayFieldEnabled(OverlayField.brakePedal, false);
 
       expect(c.overlayFields.contains(OverlayField.brakePedal), isFalse);
-      final sent = jsonDecode(sentBody!) as Map<String, dynamic>;
-      expect(sent['type'], 'continuous');
-      expect((sent['fields'] as List).contains('BRAKE_PEDAL'), isFalse);
+      final sent = rpc.calls
+          .firstWhere((call) => call.method == 'SetTelemetryOverlayFields')
+          .request as SetTelemetryOverlayFieldsRequest;
+      expect(sent.type, 'continuous');
+      expect(sent.fields.contains('BRAKE_PEDAL'), isFalse);
     });
 
-    test('setOverlayFieldEnabled() reverts the optimistic change when the daemon write fails', () async {
-      final c = build(postSender: (uri, headers, body) async => const RawHttpResponse(500, '{"success":false}'));
+    test('setOverlayFieldEnabled() reverts the optimistic change when the daemon write fails',
+        () async {
+      rpc.stubJson('SettingsService', 'SetTelemetryOverlayFields', {'success': false});
+      final c = build();
       final before = c.overlayFields;
 
       await c.setOverlayFieldEnabled(OverlayField.timestamp, false);
@@ -598,8 +596,11 @@ void main() {
       expect(c.overlayFields.contains(OverlayField.timestamp), isTrue);
     });
 
-    test('setOverlayFieldEnabled() reverts on a thrown exception, not just a bad status', () async {
-      final c = build(postSender: (uri, headers, body) async => throw Exception('connection refused'));
+    test('setOverlayFieldEnabled() reverts on a thrown exception, not just a failed response',
+        () async {
+      rpc.stubError('SettingsService', 'SetTelemetryOverlayFields',
+          const ConnectError('unavailable', 'connection refused'));
+      final c = build();
       final before = c.overlayFields;
 
       await c.setOverlayFieldEnabled(OverlayField.gear, false);

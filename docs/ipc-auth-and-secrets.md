@@ -61,7 +61,7 @@ The app cannot write to `/data/local/tmp` and cannot read files that are mode
 > on regardless of external-storage state.
 
 ⚠️ **The `bladewatch_ipc_token` permission is load-bearing.** It is written by
-`IpcTokenManager.generate()` ([IpcTokenManager.java](../app/src/main/java/com/loabletech/bladewatch/server/IpcTokenManager.java)).
+`IpcTokenManager.generate()` ([IpcTokenManager.kt](../app/src/main/java/com/loabletech/bladewatch/server/IpcTokenManager.kt)).
 A bare `new FileWriter(path)` creates it mode `600` (shell-only), which the app
 cannot read — and then **every app→daemon IPC call fails silently**. The
 generator explicitly `setReadable(true, false)` to make it `644`, and **repairs
@@ -233,6 +233,37 @@ existing setting.
 
 ## Caller-UID gate (defence in depth on top of the token)
 
+## Vehicle actuation: a second factor from non-loopback callers
+
+Commands that actuate the physical car need a short-lived **vehicle action token** in addition
+to the session JWT, presented as `X-Vehicle-Action-Token`. Callers on loopback — the in-car
+Flutter UI — are exempt and never need one; the threat model is a browser reaching the daemon
+over the tunnel or the LAN.
+
+| | |
+|---|---|
+| Gated methods | `VehicleService.{SetClimate, MoveWindow, Trunk, SetSeat, SetLights, SetAdas, SetChargeCap, SetScreen, SetMediaVolume}` |
+| Not gated | every `Get*`, plus `StartGps`/`StopGps` (they drive the daemon's GPS monitor, not the car) and `IssueActionToken` itself |
+| Issued by | `VehicleService.IssueActionToken`, signed with `deviceSecret`, valid for `VehicleActionToken.WINDOW_SECONDS` |
+| Enforced in | `HttpServer`, before Connect dispatch — it is the only layer with the peer address |
+| Which methods | `VehicleActionGate` |
+
+**This control was inert for roughly the whole life of the Connect API** (BladeWatch-jwko). It
+was written as `path.startsWith("/api/vehicle/")` when the API was REST, and every client moved
+to `/bladewatch.v1.VehicleService/*` without the predicate following. Nothing failed, nothing
+logged, and the code still read as though the car were protected — so over the tunnel a session
+JWT alone actuated it. It was found only when the dead REST route was deleted.
+
+The lesson is in the guard, not the prose: `VehicleActionGateTest.everyVehicleCommandIsClassified`
+scans the registered `VehicleService` RPCs and fails on any that is neither gated nor explicitly
+declared read-only. A new command cannot be added without someone deciding which it is, which is
+precisely the omission that made this inert the first time.
+
+The web client attaches the token in `vehicle-action.interceptor.ts`, caching it until a second
+before expiry and collapsing concurrent commands onto one issue call. If issuing fails it sends
+the command WITHOUT a token and lets the server refuse — failing open in the client would defeat
+the control.
+
 Because `bladewatch_ipc_token` is **world-readable by design** (the app UID must
 read it), the token alone is not a trust boundary: any local process that can
 read it could otherwise drive privileged IPC — `secret_get/put/delete` and
@@ -255,7 +286,7 @@ accept() → PeerCredentials.resolvePeerUid(socket)   // map (clientPort, server
   matched on the per-user base app-id). Every other UID — including other
   installed apps — is rejected.
 - **Transport:** a Java TCP `Socket` can't read `SO_PEERCRED`, so
-  [PeerCredentials.java](../app/src/main/java/com/loabletech/bladewatch/server/PeerCredentials.java)
+  [PeerCredentials.kt](../app/src/main/java/com/loabletech/bladewatch/server/PeerCredentials.kt)
   locates the client's row in `/proc/net/tcp` / `/proc/net/tcp6` by its
   `(localPort, remotePort)` pair (unique for an established loopback connection)
   and reads the owning UID. The daemon runs as shell (2000), which retains read
@@ -296,7 +327,7 @@ LiveStreamClient.runStream()                          // native live view
 
 ## Auth init retry backoff
 
-`AuthManager.initialize()` ([AuthManager.java](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java))
+`AuthManager.initialize()` ([AuthManager.kt](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.kt))
 records `lastInitAttemptMs` when persistence fails and refuses to retry for at
 least 3 seconds (`INIT_RETRY_INTERVAL_MS`).  Without this backoff the app can
 hammer the daemon's IPC server with rejected connections at 1 Hz while waiting
