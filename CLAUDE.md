@@ -161,6 +161,20 @@ adb -s $CAR_IP:5555 uninstall net.bladewatch.app
 # Verified on 2026-09-15 -- the unsanitised form below failed on branch feature/v1.3.1.0.
 adb -s $CAR_IP:5555 install "app/build/outputs/apk/debug/bladewatch-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')-arm64-v8a-debug.apk"
 
+# LAUNCHING AFTER THE REINSTALL NEEDS --activity-clear-task. MainActivity calls
+# moveTaskToBack(true) immediately, so its task record survives force-stop and the
+# uninstall/reinstall. A plain `am start` then reports "Activity not started, its
+# current task has been brought to the front" (or "intent has been delivered to
+# currently running top-most instance") and NO PROCESS IS CREATED -- `pidof
+# net.bladewatch.app` stays empty, nothing is logged, and it looks like the app is
+# crashing on startup when in fact it never ran. `am start -S` does NOT fix it.
+# Measured on this head unit 2026-09-20: three failed launches, then this worked
+# first try:
+adb -s $CAR_IP:5555 shell 'am force-stop net.bladewatch.app; sleep 1; am start -n net.bladewatch.app/net.bladewatch.app.ui.MainActivity --activity-clear-task --activity-clear-top'
+# Note the component is net.bladewatch.app.ui.MainActivity -- the Gradle package
+# rename maps com/loabletech/bladewatch/** to net.bladewatch.app.**, so the source
+# path and the runtime class name deliberately disagree.
+
 # !! UNINSTALLING WIPES THE APP'S ADB KEY PAIR from its filesDir (AdbShellExecutor
 # !! stores it at files/adbkey + files/adbkey.pub). The next launch generates a NEW,
 # !! unauthorized key, so every AdbShellExecutor call fails with "ADB auth pending"

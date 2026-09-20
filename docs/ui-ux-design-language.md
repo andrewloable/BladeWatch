@@ -47,8 +47,49 @@ until the overlay follows; the Angular SPA has no automated gate and must be
 updated by hand.
 
 **Target device.** BYD Seal 15.6″ rotatable infotainment — landscape
-`1920×1080` (`960×540dp`), portrait `1080×1920` (`540×960dp`). The design
-language is tuned for this large, bright, glanceable surface, not a phone.
+`1920×1080`, portrait `1080×1920`. The design language is tuned for this large,
+bright, glanceable surface, not a phone.
+
+**In dp, measured on the head unit 2026-09-20.** `wm density` reports **240**, so the
+device pixel ratio is `240/160 = 1.5`. Three different numbers matter and conflating
+them is how layouts get mis-sized:
+
+| Landscape | px | dp | What it is |
+|---|---|---|---|
+| Display | `1920×1080` | `1280×720` | The panel. Not a layout budget. |
+| Usable window | `1920×906` | `1280×604` | After the system status and bottom bars — `dumpsys window` reports `mStable=[0,84][1920,990]`. |
+| Screen body | `1920×830` | `1280×553` | After the app's own toolbar. **This is what a screen actually lays out in.** |
+
+This line previously claimed `960×540dp` / `540×960dp`, which assumes density 320. The
+width was genuinely wrong — `960` against a real `1280`. The height was wrong about the
+display but landed near the real *body* height by coincidence, which is why layout
+arithmetic done against `540dp` looked plausible. Measure with
+`adb shell wm size; wm density` for the display and `adb shell dumpsys window | grep mStable`
+for the usable window; do not trust any of these numbers from memory.
+
+**Both orientations must lay out.** The unit rotates, and a screen built for only one of
+them does not merely look cramped in the other — it clips. The Vehicle screen shipped a
+single `Stack` whose hero, tyre cards and control panel shared no constraint, which was
+fine in portrait and covered the car entirely in landscape (BladeWatch-vuul).
+
+### Responsive breakpoints
+
+The spacing table below is the token set for *rhythm*; it has no entry for a breakpoint,
+so these are recorded here instead of being reinvented per screen. Each is measured, not
+picked:
+
+| Constant | Value | Why that number |
+|---|---|---|
+| wide-layout minimum width | `700dp` | Between the device's two orientations (`1280dp` landscape, `720dp` portrait), so in practice it is an orientation switch, expressed as a width so it degrades sensibly elsewhere. |
+| two-up control minimum width | `500dp` | A stepper's −/value/+ cluster is rigid: two `48dp` icon buttons plus the value, so only its label can absorb a squeeze. Two steppers in a `432dp` column overflowed by 16px. |
+| portrait controls maximum height | `0.55` of the screen | A **cap**, not a target — the panel shrink-wraps its content and scrolls past it. The car takes whatever is left. |
+
+**Do not express the portrait split as `Expanded` + `Flexible`.** Both are flex children
+with flex `1`, so `RenderFlex` splits the height 50/50 no matter what the content wants:
+the hero is capped at half the screen and the slack becomes dead space at the bottom.
+Measured at `720×1280`: hero `640`, controls `200`, `440px` of nothing underneath. Make
+the controls a **non-flex** child with a bounded height — non-flex children are measured
+first, so the single remaining flex child takes everything left.
 
 ## UI Refactor Ground Rules
 

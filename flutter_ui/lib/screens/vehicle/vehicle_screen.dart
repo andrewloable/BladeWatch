@@ -88,118 +88,223 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
     final hero = (widget.heroBuilder ?? (ctx, ctrl) => VehicleHero(controller: ctrl))(context, c);
 
-    return Stack(
+    final heroPane = _HeroPane(l10n: l10n, theme: theme, controller: c, hero: hero);
+    final controls = _ControlsPanel(
+      l10n: l10n,
+      theme: theme,
+      controller: c,
+      tab: _tab,
+      onTabSelected: (t) => setState(() => _tab = t),
+    );
+
+    // BladeWatch-vuul: the head unit ROTATES. Landscape lays out in ~1280x553dp of screen
+    // body (1280x720dp display, less the system bars and the app toolbar — measured, see
+    // docs/ui-ux-design-language.md); portrait is the transpose.
+    // (docs/ui-ux-design-language.md, "Target device"). This screen was built for portrait and
+    // silently broke in landscape: the controls panel wanted roughly 44 (appearance bar)
+    // + 48 (tab chips) + 360 (a fixed maxHeight) = ~452dp of the ~553dp available, leaving
+    // ~100dp for tyre cards that need 252dp, and because
+    // it was a Stack sibling of a Positioned.fill hero and four Positioned tyre cards, nothing
+    // shared a constraint. The panel simply covered the car and sliced the tyre cards through
+    // the middle of their kPa line.
+    //
+    // Two orientations, two arrangements, and in BOTH the hero and the controls are laid out
+    // with real constraints rather than absolute offsets, so neither can eat the other.
+    return LayoutBuilder(
+      builder: (context, box) => box.maxWidth >= _wideLayoutMinWidth
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(flex: 55, child: heroPane),
+                Expanded(flex: 45, child: controls),
+              ],
+            )
+          : Column(
+              children: [
+                Expanded(child: heroPane),
+                // ConstrainedBox, NOT Flexible. Flexible here is a trap: it and the
+                // Expanded above are both flex children with flex 1, so RenderFlex splits
+                // the height 50/50 — the hero is capped at half the screen, the controls
+                // take only their content, and the slack becomes dead space at the bottom.
+                // Measured at 720x1280: hero 640, controls 200, 440px of nothing below it.
+                //
+                // A non-flex child is measured first and the single remaining flex child
+                // gets everything left, so the car takes all the room the controls do not.
+                // The bound is still needed: _ControlsPanel shrink-wraps around a Flexible
+                // scroll area, which cannot resolve against an unbounded height.
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: box.maxHeight * _portraitControlsMaxFraction),
+                  child: controls,
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+/// Most of a portrait screen the controls may occupy; the car gets the rest. Only a cap —
+/// the panel shrink-wraps its content and scrolls beyond this, it does not stretch to it.
+///
+/// Canonical value: see "Responsive breakpoints" in docs/ui-ux-design-language.md.
+const double _portraitControlsMaxFraction = 0.55;
+
+/// Above this width the screen splits into two columns. Sits between the head unit's two
+/// orientations — 720dp portrait, 1280dp landscape (density 240, so dpr 1.5) — so in practice
+/// it is an orientation switch, expressed as a width so it degrades sensibly at any other size.
+///
+/// Canonical value: see "Responsive breakpoints" in docs/ui-ux-design-language.md.
+const double _wideLayoutMinWidth = 700;
+
+// ─────────────────────────── Hero pane ────────────────────────────────────
+
+/// The car and everything describing the car itself: the 3D model, the four tyre pressures,
+/// lock state, charge/fuel and the colour picker.
+///
+/// The tyre cards anchor to this pane's four CORNERS. That is both why they can no longer be
+/// clipped and a better map of the physical car than the previous `Positioned(top: 60 …)` /
+/// `Positioned(top: 156 …)` offsets: left column the right-hand wheels, right column the
+/// left-hand wheels, top row rear, bottom row front — the same arrangement those offsets
+/// produced, now stated as intent instead of arithmetic.
+class _HeroPane extends StatelessWidget {
+  final AppLocalizations l10n;
+  final ThemeData theme;
+  final VehicleController controller;
+  final Widget hero;
+
+  const _HeroPane({required this.l10n, required this.theme, required this.controller, required this.hero});
+
+  @override
+  Widget build(BuildContext context) {
+    final tyres = controller.state.tyres;
+    return Column(
       children: [
-        Positioned.fill(child: hero),
-        ..._tyreCardPositions(theme, c),
-        Column(
-          children: [
-            _StatusCard(l10n: l10n, theme: theme, controller: c),
-            if (c.hasError)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(l10n.vehicle_data_unavailable, style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
+        Expanded(
+          child: Stack(
+            children: [
+              Positioned.fill(child: hero),
+              // Lock pill top-centre, in the gap between the two tyre columns.
+              Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _LockPill(l10n: l10n, theme: theme, controller: controller),
+                ),
               ),
-            const Spacer(),
-            _BottomPanel(l10n: l10n, theme: theme, controller: c, tab: _tab, onTabSelected: (t) => setState(() => _tab = t)),
-          ],
+              _corner(Alignment.topLeft, _TyreCard(label: 'RR', tyre: tyres.rr, theme: theme)),
+              _corner(Alignment.bottomLeft, _TyreCard(label: 'FR', tyre: tyres.fr, theme: theme)),
+              _corner(Alignment.topRight, _TyreCard(label: 'RL', tyre: tyres.rl, theme: theme)),
+              _corner(Alignment.bottomRight, _TyreCard(label: 'FL', tyre: tyres.fl, theme: theme)),
+            ],
+          ),
         ),
+        if (controller.hasError)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(l10n.vehicle_data_unavailable, style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
+          ),
+        _ChargeCard(l10n: l10n, theme: theme, controller: controller),
+        _AppearanceBar(l10n: l10n, theme: theme, controller: controller),
       ],
     );
   }
 
-  List<Widget> _tyreCardPositions(ThemeData theme, VehicleController c) {
-    final tyres = c.state.tyres;
-    return [
-      Positioned(top: 60, left: 14, width: 96, child: _TyreCard(label: 'RR', tyre: tyres.rr, theme: theme)),
-      Positioned(top: 60 + 96, left: 14, width: 96, child: _TyreCard(label: 'FR', tyre: tyres.fr, theme: theme)),
-      Positioned(top: 60, right: 14, width: 96, child: _TyreCard(label: 'RL', tyre: tyres.rl, theme: theme)),
-      Positioned(top: 60 + 96, right: 14, width: 96, child: _TyreCard(label: 'FL', tyre: tyres.fl, theme: theme)),
-    ];
-  }
+  Widget _corner(Alignment alignment, Widget card) => Align(
+        alignment: alignment,
+        child: Padding(padding: const EdgeInsets.all(12), child: SizedBox(width: 96, child: card)),
+      );
 }
 
 // ─────────────────────────── Status card ─────────────────────────────────
 
-class _StatusCard extends StatelessWidget {
+/// Lock state only. This was `_StatusCard`, which also carried the charge/fuel readout as a
+/// translucent pill floating over the middle of the car — it overlapped the model, and being
+/// translucent it let the 3D render show through its own numbers. Charge and fuel now live in
+/// [_ChargeCard], below the car, where they are simply readable.
+class _LockPill extends StatelessWidget {
   final AppLocalizations l10n;
   final ThemeData theme;
   final VehicleController controller;
 
-  const _StatusCard({required this.l10n, required this.theme, required this.controller});
+  const _LockPill({required this.l10n, required this.theme, required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final state = controller.state;
-    final lockVal = state.doors.overall;
-    final (dotColor, lockLabel) = switch (lockVal) {
+    final (dotColor, lockLabel) = switch (controller.state.doors.overall) {
       1 => (theme.colorScheme.primary, l10n.vehicle_locked),
       2 => (theme.colorScheme.error, l10n.vehicle_unlocked),
-      _ => (Colors.grey, '—'),
+      _ => (Colors.grey, '\u2014'),
     };
-    final battery = state.battery;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
-      // Stack, not a spaceBetween Row: the readout pill used to sit hard right,
-      // where it ran into the RL/FL tyre cards (Positioned right: 14) — and
-      // because the pill is translucent the card behind it SHOWED THROUGH
-      // rather than being hidden. It grew tall enough to collide once the PHEV
-      // fuel rows were added. Centring it puts it in the gap between the two
-      // tyre columns, which is empty at every width the head unit runs.
-      child: Stack(
-        alignment: Alignment.topCenter,
+    return _GlassPill(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Align(
-            alignment: Alignment.topLeft,
-            child: _GlassPill(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(key: const ValueKey('vehicle.status.lockDot'), width: 10, height: 10, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
-                const SizedBox(width: 7),
-                Text(lockLabel, key: const ValueKey('vehicle.status.lockText')),
-              ],
-            ),
-            ),
-          ),
-          _GlassPill(
-            child: Column(
-              // Centred text, because the pill is no longer anchored to the
-              // right edge that end-alignment was reading against.
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  battery.soc > 0 ? l10n.vehicle_status_charge_fmt(battery.soc) : l10n.vehicle_status_charge_unknown,
-                  key: const ValueKey('vehicle.status.charge'),
-                  style: theme.textTheme.titleMedium,
-                ),
-                Text(
-                  battery.soc > 0 ? l10n.vehicle_status_range_fmt(battery.rangeKm) : l10n.vehicle_status_range_unknown,
-                  key: const ValueKey('vehicle.status.range'),
-                  style: theme.textTheme.bodySmall,
-                ),
-                // PHEV only. A BEV never reports these, so the two rows simply
-                // do not exist there rather than reading "Fuel: 0%" on a car
-                // with no tank.
-                if (battery.hasFuel) ...[
-                  Text(
-                    l10n.vehicle_status_fuel_fmt(battery.fuelPercent),
-                    key: const ValueKey('vehicle.status.fuel'),
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  Text(
-                    l10n.vehicle_status_fuel_range_fmt(battery.fuelRangeKm),
-                    key: const ValueKey('vehicle.status.fuelRange'),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ],
-            ),
-          ),
+          Container(key: const ValueKey('vehicle.status.lockDot'), width: 10, height: 10, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+          const SizedBox(width: 7),
+          Text(lockLabel, key: const ValueKey('vehicle.status.lockText')),
         ],
       ),
     );
   }
+}
+
+// ─────────────────────────── Charge / fuel ────────────────────────────────
+
+/// Charge, range and — on a PHEV — fuel and fuel range, as a solid card under the car rather
+/// than a translucent pill on top of it. Laid out as a wrapping row of value/label pairs so it
+/// stays one line in the landscape hero column and reflows rather than clipping when narrow.
+class _ChargeCard extends StatelessWidget {
+  final AppLocalizations l10n;
+  final ThemeData theme;
+  final VehicleController controller;
+
+  const _ChargeCard({required this.l10n, required this.theme, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final battery = controller.state.battery;
+    final known = battery.soc > 0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Wrap(
+          alignment: WrapAlignment.spaceEvenly,
+          spacing: 20,
+          runSpacing: 8,
+          children: [
+            _stat(
+              known ? l10n.vehicle_status_charge_fmt(battery.soc) : l10n.vehicle_status_charge_unknown,
+              known ? l10n.vehicle_status_range_fmt(battery.rangeKm) : l10n.vehicle_status_range_unknown,
+              const ValueKey('vehicle.status.charge'),
+              const ValueKey('vehicle.status.range'),
+            ),
+            // PHEV only. A BEV never reports these, so the pair simply does not exist there
+            // rather than reading "Fuel: 0%" on a car with no tank.
+            if (battery.hasFuel)
+              _stat(
+                l10n.vehicle_status_fuel_fmt(battery.fuelPercent),
+                l10n.vehicle_status_fuel_range_fmt(battery.fuelRangeKm),
+                const ValueKey('vehicle.status.fuel'),
+                const ValueKey('vehicle.status.fuelRange'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _stat(String value, String sub, Key valueKey, Key subKey) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value, key: valueKey, style: theme.textTheme.titleMedium),
+          Text(sub, key: subKey, style: theme.textTheme.bodySmall),
+        ],
+      );
 }
 
 class _GlassPill extends StatelessWidget {
@@ -284,14 +389,14 @@ class _TyreCard extends StatelessWidget {
 
 // ─────────────────────────── Bottom panel ─────────────────────────────────
 
-class _BottomPanel extends StatelessWidget {
+class _ControlsPanel extends StatelessWidget {
   final AppLocalizations l10n;
   final ThemeData theme;
   final VehicleController controller;
   final VehicleTab tab;
   final void Function(VehicleTab) onTabSelected;
 
-  const _BottomPanel({required this.l10n, required this.theme, required this.controller, required this.tab, required this.onTabSelected});
+  const _ControlsPanel({required this.l10n, required this.theme, required this.controller, required this.tab, required this.onTabSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -317,7 +422,8 @@ class _BottomPanel extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _AppearanceBar(l10n: l10n, theme: theme, controller: controller),
+          // The appearance bar (colour swatches + model name) moved into _HeroPane: it
+          // describes the car, not the controls (BladeWatch-vuul).
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Row(
@@ -335,8 +441,12 @@ class _BottomPanel extends StatelessWidget {
               ],
             ),
           ),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 360),
+          // Flexible, NOT a fixed maxHeight: 360. That constant was the direct cause of
+          // BladeWatch-vuul — 360 plus the tab chips plus the appearance bar came to ~452dp,
+          // more than a landscape head unit's ~553dp of screen body leaves, so the panel grew over the car and
+          // clipped the tyre cards. Taking whatever room the parent gives and scrolling inside
+          // it means the tab content can never push past its own pane again.
+          Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: switch (effectiveTab) {
@@ -402,10 +512,22 @@ class _AppearanceBar extends StatelessWidget {
             child: CircleAvatar(radius: 14, backgroundColor: theme.colorScheme.surfaceContainerHighest, child: const Text('+')),
           ),
           const Spacer(),
-          GestureDetector(
-            key: const ValueKey('vehicle.model.name'),
-            onTap: canPickModel ? () => _showModelPicker(context) : null,
-            child: Text(modelLabel, style: theme.textTheme.labelMedium?.copyWith(color: canPickModel ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant)),
+          // Flexible + ellipsis, not a bare Text. The swatches are fixed-width, so the model
+          // name is the only thing that can absorb a narrow pane — and in the landscape
+          // two-column layout this bar lives in the ~528dp hero column rather than the full
+          // 1280dp, where an unbounded label overflowed the Row.
+          Flexible(
+            child: GestureDetector(
+              key: const ValueKey('vehicle.model.name'),
+              onTap: canPickModel ? () => _showModelPicker(context) : null,
+              child: Text(
+                modelLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: theme.textTheme.labelMedium?.copyWith(color: canPickModel ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
           ),
         ],
       ),
@@ -503,6 +625,10 @@ class _AppearanceBar extends StatelessWidget {
 
 // ─────────────────────────── Climate tab ──────────────────────────────────
 
+/// Minimum width at which the climate tab puts two controls on one row. See `_ClimateTab._pair`,
+/// and "Responsive breakpoints" in docs/ui-ux-design-language.md for the canonical value.
+const double _twoUpMinWidth = 500;
+
 class _ClimateTab extends StatelessWidget {
   final AppLocalizations l10n;
   final ThemeData theme;
@@ -511,7 +637,10 @@ class _ClimateTab extends StatelessWidget {
   const _ClimateTab({required this.l10n, required this.theme, required this.controller});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      LayoutBuilder(builder: (context, box) => _build(context, box.maxWidth >= _twoUpMinWidth));
+
+  Widget _build(BuildContext context, bool twoUp) {
     final c = controller;
     final insideTemp = c.state.climate.insideTempC;
     return Column(
@@ -521,40 +650,32 @@ class _ClimateTab extends StatelessWidget {
           Text(l10n.vehicle_inside_temp_fmt(insideTemp.toStringAsFixed(1)), style: theme.textTheme.bodySmall),
           const SizedBox(height: 6),
         ],
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton(
-                key: const ValueKey('vehicle.climate.ac'),
-                style: FilledButton.styleFrom(backgroundColor: c.acOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
-                onPressed: () async {
-                  final error = await c.toggleAc();
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                },
-                child: Text(c.acOn ? l10n.vehicle_ac_on : l10n.vehicle_ac_off),
-              ),
+        _pair(
+          twoUp,
+            FilledButton(
+              key: const ValueKey('vehicle.climate.ac'),
+              style: FilledButton.styleFrom(backgroundColor: c.acOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              onPressed: () async {
+                final error = await c.toggleAc();
+                if (context.mounted && error != null) showVehicleCommandError(context, error);
+              },
+              child: Text(c.acOn ? l10n.vehicle_ac_on : l10n.vehicle_ac_off),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: FilledButton(
-                key: const ValueKey('vehicle.climate.maxCooling'),
-                style: FilledButton.styleFrom(backgroundColor: c.maxCooling ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
-                onPressed: () async {
-                  final error = await c.toggleMaxCooling();
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                },
-                child: Text(c.maxCooling ? l10n.vehicle_max_cooling_on : l10n.vehicle_max_cooling_off),
-              ),
+            FilledButton(
+              key: const ValueKey('vehicle.climate.maxCooling'),
+              style: FilledButton.styleFrom(backgroundColor: c.maxCooling ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
+              onPressed: () async {
+                final error = await c.toggleMaxCooling();
+                if (context.mounted && error != null) showVehicleCommandError(context, error);
+              },
+              child: Text(c.maxCooling ? l10n.vehicle_max_cooling_on : l10n.vehicle_max_cooling_off),
             ),
-          ],
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(child: _stepper(context, l10n.vehicle_temp_label, '${c.setpointC}°C', 'vehicle.climate.temp', c.decTemp, c.incTemp)),
-            const SizedBox(width: 8),
-            Expanded(child: _stepper(context, l10n.vehicle_fan_speed_label, l10n.vehicle_fan_level(c.fanLevel), 'vehicle.climate.fan', c.decFan, c.incFan)),
-          ],
+        _pair(
+          twoUp,
+          _stepper(context, l10n.vehicle_temp_label, '${c.setpointC}°C', 'vehicle.climate.temp', c.decTemp, c.incTemp),
+          _stepper(context, l10n.vehicle_fan_speed_label, l10n.vehicle_fan_level(c.fanLevel), 'vehicle.climate.fan', c.decFan, c.incFan),
         ),
         const SizedBox(height: 8),
         FilledButton(
@@ -567,55 +688,44 @@ class _ClimateTab extends StatelessWidget {
           child: Text(c.screenOn ? l10n.vehicle_screen_on : l10n.vehicle_screen_off),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-                child: _stepper(context, l10n.vehicle_media_volume_label, '${c.mediaVolumePercent}%',
-                    'vehicle.media.volume', c.stepVolumeDown, c.stepVolumeUp)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: FilledButton(
-                key: const ValueKey('vehicle.media.mute'),
-                style: FilledButton.styleFrom(
-                    backgroundColor: c.mediaMuted ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
-                onPressed: () async {
-                  final error = await c.toggleMute();
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                },
-                child: Text(c.mediaMuted ? l10n.vehicle_media_muted : l10n.vehicle_media_mute),
-              ),
-            ),
-          ],
+        _pair(
+          twoUp,
+          _stepper(context, l10n.vehicle_media_volume_label, '${c.mediaVolumePercent}%',
+              'vehicle.media.volume', c.stepVolumeDown, c.stepVolumeUp),
+          FilledButton(
+            key: const ValueKey('vehicle.media.mute'),
+            style: FilledButton.styleFrom(
+                backgroundColor: c.mediaMuted ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
+            onPressed: () async {
+              final error = await c.toggleMute();
+              if (context.mounted && error != null) showVehicleCommandError(context, error);
+            },
+            child: Text(c.mediaMuted ? l10n.vehicle_media_muted : l10n.vehicle_media_mute),
+          ),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton(
-                key: const ValueKey('vehicle.climate.frontDefrost'),
-                style: FilledButton.styleFrom(
-                    backgroundColor: c.frontDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
-                onPressed: () async {
-                  final error = await c.toggleFrontDefrost();
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                },
-                child: Text(l10n.vehicle_front_defrost),
-              ),
+        _pair(
+          twoUp,
+            FilledButton(
+              key: const ValueKey('vehicle.climate.frontDefrost'),
+              style: FilledButton.styleFrom(
+                  backgroundColor: c.frontDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              onPressed: () async {
+                final error = await c.toggleFrontDefrost();
+                if (context.mounted && error != null) showVehicleCommandError(context, error);
+              },
+              child: Text(l10n.vehicle_front_defrost),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: FilledButton(
-                key: const ValueKey('vehicle.climate.rearDefrost'),
-                style: FilledButton.styleFrom(
-                    backgroundColor: c.rearDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
-                onPressed: () async {
-                  final error = await c.toggleRearDefrost();
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                },
-                child: Text(l10n.vehicle_rear_defrost),
-              ),
+            FilledButton(
+              key: const ValueKey('vehicle.climate.rearDefrost'),
+              style: FilledButton.styleFrom(
+                  backgroundColor: c.rearDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              onPressed: () async {
+                final error = await c.toggleRearDefrost();
+                if (context.mounted && error != null) showVehicleCommandError(context, error);
+              },
+              child: Text(l10n.vehicle_rear_defrost),
             ),
-          ],
         ),
       ],
     );
@@ -623,6 +733,17 @@ class _ClimateTab extends StatelessWidget {
 
 
   /// Climate stepper. The callbacks return an error message (null on success) so
+  /// Two controls side by side when there is room, stacked when there is not.
+  ///
+  /// A stepper's minus/value/plus cluster is rigid — two 48dp icon buttons plus the value —
+  /// so only its label can absorb a squeeze, and below some width the pair overflows however
+  /// the label is constrained. The landscape controls column is ~432dp at the 960dp width the
+  /// tests pump (45% of it), where
+  /// the temperature and fan steppers overflowed by 16px.
+  Widget _pair(bool twoUp, Widget a, Widget b) => twoUp
+      ? Row(children: [Expanded(child: a), const SizedBox(width: 8), Expanded(child: b)])
+      : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [a, const SizedBox(height: 8), b]);
+
   /// a refused command can be SHOWN — they used to be bare VoidCallbacks, which
   /// is why a refusal was silent and the optimistic value stayed on screen.
   Widget _stepper(

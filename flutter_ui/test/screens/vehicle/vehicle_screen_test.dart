@@ -84,8 +84,8 @@ void main() {
     rpc = FakeRpcClient();
   });
 
-  Future<void> pump(WidgetTester tester, VehicleController controller, {ThemeData? theme}) async {
-    tester.view.physicalSize = const Size(1600, 1000);
+  Future<void> pump(WidgetTester tester, VehicleController controller, {ThemeData? theme, Size? size}) async {
+    tester.view.physicalSize = size ?? const Size(1600, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -794,6 +794,138 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Action failed. Check vehicle connection.'), findsOneWidget);
+    });
+  });
+
+  // ───────────────────── BladeWatch-vuul: responsive layout ──────────────────
+  //
+  // The head unit ROTATES. The sizes below are a deliberately CONSERVATIVE stand-in for the
+  // real body (~1280x553dp landscape, measured — see docs/ui-ux-design-language.md): smaller in
+  // both axes, so anything that fits here fits on the car. This screen was built
+  // for portrait and broke in landscape — the controls panel wanted ~452dp of the ~553dp
+  // available (a fixed maxHeight: 360, plus tab chips, plus the appearance bar) and, being a
+  // Stack sibling of a Positioned.fill hero and four Positioned tyre cards, nothing shared a
+  // constraint. The panel covered the car and sliced the tyre cards through their kPa line.
+  //
+  // These assert real geometry at the two real device sizes. The project's testing notes warn
+  // that `flutter test` uses a fixed-width placeholder font, so text FIT is not measurable
+  // here — which is why nothing below asserts text width or overflow. Card position and
+  // containment are font-independent, and they are what actually regressed.
+  group('responsive layout', () {
+    const landscape = Size(960, 540);
+    const portrait = Size(540, 960);
+
+    /// The real thing, measured: display 1280x720dp, less the system bars
+    /// (dumpsys window mStable=[0,84][1920,990]) and the app toolbar. The two sizes above are
+    /// deliberately tighter; this one is the configuration the car actually runs, and it takes
+    /// a DIFFERENT branch — at 1280 wide the controls column is 576dp, so the climate controls
+    /// go two-up, where at 960 they stack.
+    const deviceLandscape = Size(1280, 553);
+
+    Future<void> pumpAt(WidgetTester tester, Size size) async {
+      stubState(doorsOverall: 1, soc: 62, rangeKm: 210, fuelPercent: 74, fuelRangeKm: 480);
+      stubAppearance();
+      await pump(tester, buildController(), size: size);
+      await tester.pumpAndSettle();
+    }
+
+    void expectAllTyreCardsOnScreen(WidgetTester tester, Size size) {
+      final screen = Rect.fromLTWH(0, 0, size.width, size.height);
+      for (final label in ['RR', 'FR', 'RL', 'FL']) {
+        final card = tester.getRect(find.text(label));
+        expect(
+          screen.contains(card.topLeft) && screen.contains(card.bottomRight),
+          isTrue,
+          reason: '$label tyre card is clipped by the viewport at $size — $card',
+        );
+      }
+    }
+
+    testWidgets('landscape keeps all four tyre cards fully on screen', (tester) async {
+      await pumpAt(tester, landscape);
+      expectAllTyreCardsOnScreen(tester, landscape);
+    });
+
+    testWidgets('portrait keeps all four tyre cards fully on screen', (tester) async {
+      await pumpAt(tester, portrait);
+      expectAllTyreCardsOnScreen(tester, portrait);
+    });
+
+    testWidgets('the real head-unit landscape size keeps all four tyre cards on screen', (tester) async {
+      await pumpAt(tester, deviceLandscape);
+      expectAllTyreCardsOnScreen(tester, deviceLandscape);
+
+      // And the controls are still beside the car, not over it.
+      final chips = tester.getRect(find.byKey(const ValueKey('vehicle.tab.climate')));
+      for (final label in ['RR', 'FR', 'RL', 'FL']) {
+        expect(tester.getRect(find.text(label)).right <= chips.left, isTrue,
+            reason: '$label tyre card runs under the controls column at $deviceLandscape');
+      }
+    });
+
+    testWidgets('landscape puts the controls beside the car, not over it', (tester) async {
+      await pumpAt(tester, landscape);
+
+      // The tab chips mark the left edge of the controls column; every tyre card must sit
+      // entirely to their left. In the broken layout the panel spanned the full width and
+      // covered all four.
+      final chips = tester.getRect(find.byKey(const ValueKey('vehicle.tab.climate')));
+      for (final label in ['RR', 'FR', 'RL', 'FL']) {
+        final card = tester.getRect(find.text(label));
+        expect(card.right <= chips.left, isTrue, reason: '$label tyre card runs under the controls column');
+      }
+    });
+
+    /// The car must take every pixel the controls do not.
+    ///
+    /// The first version of this layout used Expanded(hero) + Flexible(controls). Both are
+    /// flex children with flex 1, so RenderFlex split the height 50/50: the hero was capped at
+    /// half the screen, the controls took only their content, and the remainder became dead
+    /// space at the bottom. Measured at 720x1280 — hero 640, controls 200, 440px of nothing.
+    /// Containment and ordering assertions do not see trailing slack, so this measures it.
+    testWidgets('portrait leaves no dead space below the controls', (tester) async {
+      await pumpAt(tester, portrait);
+
+      final chips = tester.getRect(find.byKey(const ValueKey('vehicle.tab.climate')));
+      final heroBottom = tester.getRect(find.byKey(const ValueKey('vehicle.status.charge'))).bottom;
+
+      // The controls start where the hero ends — no gap between the two panes …
+      expect(chips.top - heroBottom < portrait.height * 0.2, isTrue,
+          reason: 'gap of ${chips.top - heroBottom}px between the hero and the controls');
+      // … and the hero occupies well over half the screen, rather than exactly half.
+      expect(heroBottom > portrait.height * 0.5, isTrue,
+          reason: 'hero ends at $heroBottom of ${portrait.height} — it is being capped at 50%');
+    });
+
+    testWidgets('portrait stacks the controls below the car', (tester) async {
+      await pumpAt(tester, portrait);
+
+      final chips = tester.getRect(find.byKey(const ValueKey('vehicle.tab.climate')));
+      final charge = tester.getRect(find.byKey(const ValueKey('vehicle.status.charge')));
+      expect(charge.bottom <= chips.top, isTrue, reason: 'controls are not below the hero in portrait');
+    });
+
+    // One orientation per test: the controller polls on a timer, so pumping a second size in
+    // the same test never lets pumpAndSettle reach a quiescent frame.
+    void expectChargeClearOfTyreCards(WidgetTester tester, Size size) {
+      final charge = tester.getRect(find.byKey(const ValueKey('vehicle.status.charge')));
+      for (final label in ['RR', 'FR', 'RL', 'FL']) {
+        expect(
+          charge.overlaps(tester.getRect(find.text(label))),
+          isFalse,
+          reason: 'charge readout overlaps the $label tyre card at $size',
+        );
+      }
+    }
+
+    testWidgets('landscape keeps the charge readout clear of the tyre cards', (tester) async {
+      await pumpAt(tester, landscape);
+      expectChargeClearOfTyreCards(tester, landscape);
+    });
+
+    testWidgets('portrait keeps the charge readout clear of the tyre cards', (tester) async {
+      await pumpAt(tester, portrait);
+      expectChargeClearOfTyreCards(tester, portrait);
     });
   });
 }

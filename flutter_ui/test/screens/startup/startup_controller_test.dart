@@ -60,7 +60,6 @@ void main() {
       expect(c.phase, StartupPhase.preparing);
       expect(c.showContinueButton, isFalse);
       expect(c.navigateToDashboard, isFalse);
-      expect(c.channelErrorMessage, isNull);
     });
   });
 
@@ -195,7 +194,14 @@ void main() {
   });
 
   group('channel errors', () {
-    test('a thrown PlatformChannelError is captured, not rethrown, and does not crash tick()', () async {
+    // BladeWatch-t7js: these used to assert that the raw exception text was captured into
+    // channelErrorMessage, which the screen then printed across its header in red. On the
+    // head unit that produced "PlatformChannelError(daemonNotUp): ... ECONNREFUSED" as the
+    // headline under "Getting your dashcam ready". daemonNotUp is the EXPECTED answer here
+    // for the first ~45s after boot, so what these now pin is that the failure is absorbed
+    // and the screen keeps telling the truth through the rows.
+
+    test('a thrown PlatformChannelError does not escape tick() and leaves rows waiting', () async {
       fakeChannel.stubError(
         'daemon',
         'processStatus',
@@ -205,20 +211,25 @@ void main() {
 
       await c.tick();
 
-      expect(c.channelErrorMessage, isNotNull);
-      expect(c.channelErrorMessage, contains('daemon not up'));
+      expect(c.phase, StartupPhase.preparing);
+      for (final d in CoreDaemon.values) {
+        expect(c.rows[d]!.status, DaemonRowStatus.waiting);
+      }
     });
 
-    test('a timeout is captured the same way', () async {
+    test('a timeout is absorbed the same way', () async {
       fakeChannel.stubTimeout('daemon', 'processStatus');
       final c = buildController();
 
       await c.tick();
 
-      expect(c.channelErrorMessage, isNotNull);
+      expect(c.phase, StartupPhase.preparing);
+      for (final d in CoreDaemon.values) {
+        expect(c.rows[d]!.status, DaemonRowStatus.waiting);
+      }
     });
 
-    test('a later successful tick clears a previous channel error', () async {
+    test('a failing channel does not poison later ticks once it recovers', () async {
       fakeChannel.stubError(
         'daemon',
         'processStatus',
@@ -226,11 +237,14 @@ void main() {
       );
       final c = buildController();
       await c.tick();
-      expect(c.channelErrorMessage, isNotNull);
+      expect(c.rows[CoreDaemon.values.first]!.status, DaemonRowStatus.waiting);
 
-      stubStatuses();
+      stubStatuses(camera: true, sentry: true, accSentry: true);
       await c.tick();
-      expect(c.channelErrorMessage, isNull);
+
+      for (final d in CoreDaemon.values) {
+        expect(c.rows[d]!.status, DaemonRowStatus.ready);
+      }
     });
   });
 

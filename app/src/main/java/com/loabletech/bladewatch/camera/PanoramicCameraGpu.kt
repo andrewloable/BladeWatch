@@ -780,11 +780,19 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
             }
         }
 
+        // Snapshot the opened handle once. cameraObj is @Volatile and other threads null it
+        // (the release path, and the coordinator yielding the camera to the native BYD app).
+        // Re-reading the field at each reflective call site below turned that race into
+        // Method.invoke's "null receiver" NPE, which propagated out of the GL post lambda and
+        // killed the render thread — observed on the head unit 2026-09-20 (BladeWatch-ydl3).
+        val cam = cameraObj
+            ?: throw RuntimeException("AVMCamera handle was released during open (id=$cameraId)")
+
         // Set FPS BEFORE addPreviewSurface. On DiLink 3.x firmware the HAL
         // rejects setCameraFps once a preview surface is attached — even before
         // startPreview. Order must be open → setCameraFps → addPreviewSurface →
         // startPreview to match the BYD HAL state machine.
-        val fpsOk = AvmCameraHelper.setCameraFps(cameraObj, targetFps)
+        val fpsOk = AvmCameraHelper.setCameraFps(cam, targetFps)
         fpsSetCameraResult = if (fpsOk)
             "startup:setCameraFps($targetFps)=ok"
         else
@@ -796,7 +804,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
         // Connect surface — mode 0 works on Seal, other models may need different mode
         val mAddSurface = avmClass.getDeclaredMethod("addPreviewSurface", Surface::class.java, Int::class.javaPrimitiveType)
         mAddSurface.isAccessible = true
-        mAddSurface.invoke(cameraObj, cameraSurface, cameraSurfaceMode)
+        mAddSurface.invoke(cam, cameraSurface, cameraSurfaceMode)
 
         // Start preview — required for real frame data on BYD Seal HAL.
         // The HAL supports multiple consumers calling startPreview simultaneously.
@@ -804,7 +812,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
         // has already initialized before we reach here, preventing race conditions.
         val mStart = avmClass.getDeclaredMethod("startPreview")
         mStart.isAccessible = true
-        mStart.invoke(cameraObj)
+        mStart.invoke(cam)
         logger.info("Camera started (id=$cameraId, targetFps=$targetFps)")
     }
 

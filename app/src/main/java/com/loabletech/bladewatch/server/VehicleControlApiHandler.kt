@@ -200,13 +200,18 @@ object VehicleControlApiHandler {
         if (data.acStartState != BydVehicleData.UNAVAILABLE) {
             climate.put("acOn", vehiclePoweredOn && data.acStartState == 1)
         }
-        val acSetpointC = collector.getAcTemperature(1)
-        if (acSetpointC in 16..35) {
-            climate.put("setpointC", acSetpointC)
-            climate.put("insideTempC", acSetpointC)
-        } else if (!data.insideTempC.isNaN()) {
-            climate.put("insideTempC", data.insideTempC)
-        }
+        // Setpoint and cabin temperature come from DIFFERENT positions of the same getter.
+        // Both used to read position 1, so "inside temperature" was the driver's chosen
+        // setpoint: it tracked the stepper exactly and never rose on a hot day. Measured on
+        // the head unit with the cabin at 36C, position 1 read 24 — the setpoint —
+        // and position 4 read 36. See BydDataCollector.AC_TEMP_POS_CABIN (BladeWatch-gkjl).
+        val temps = selectClimateTemps(
+            setpointRaw = collector.getAcTemperature(BydDataCollector.AC_TEMP_POS_SETPOINT),
+            cabinRaw = collector.getAcTemperature(BydDataCollector.AC_TEMP_POS_CABIN),
+            cachedInsideC = data.insideTempC,
+        )
+        temps.setpointC?.let { climate.put("setpointC", it) }
+        temps.insideTempC?.let { climate.put("insideTempC", it) }
         if (data.acWindMode != BydVehicleData.UNAVAILABLE) {
             climate.put("windMode", data.acWindMode)
         }
@@ -1036,5 +1041,38 @@ object VehicleControlApiHandler {
             logger.warn("Failed to build routed response JSON: " + ignored.message)
         }
         return resp
+    }
+
+    /** What [handleVehicleStatus] should report for the two climate temperatures. */
+    data class ClimateTemps(val setpointC: Int?, val insideTempC: Double?)
+
+    /**
+     * Picks the climate setpoint and the cabin temperature from the two raw
+     * `getTemprature(position)` readings, plus the collector's cached cabin value as a
+     * fallback. A null field means OMIT it from the response.
+     *
+     * Extracted as a pure `@JvmStatic` so the decision is testable without a live
+     * [BydDataCollector], which needs a real BYD head unit — the same reason
+     * `StorageManager.selectFilesToDelete` was extracted.
+     *
+     * The bug this encodes against (BladeWatch-gkjl): both values used to be read from
+     * position 1, so the Vehicle screen showed the driver's chosen setpoint as the cabin
+     * reading. It tracked the temperature stepper exactly and never rose on a hot day.
+     * Measured on the head unit with the cabin at 36C, position 1 read 24 and position 4
+     * read 36.
+     *
+     * When no reading passes its range check the field is omitted rather than defaulted: the
+     * Flutter side maps absent/0.0 to null and hides the row, which is the honest degraded
+     * state. Showing a plausible-but-wrong number is precisely what went wrong here.
+     */
+    @JvmStatic
+    internal fun selectClimateTemps(setpointRaw: Int, cabinRaw: Int, cachedInsideC: Double): ClimateTemps {
+        val setpoint = setpointRaw.takeIf { it in BydDataCollector.AC_SETPOINT_RANGE_C }
+        val inside = when {
+            cabinRaw in BydDataCollector.CABIN_TEMP_RANGE_C -> cabinRaw.toDouble()
+            !cachedInsideC.isNaN() -> cachedInsideC
+            else -> null
+        }
+        return ClimateTemps(setpoint, inside)
     }
 }

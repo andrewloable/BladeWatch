@@ -1989,6 +1989,14 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
         private const val DEFAULT_SEGMENT_DURATION_MS = 5 * 60 * 1000L
 
         /**
+         * How long a file must sit untouched before either orphan sweeper will reap it.
+         * Shared so [cleanupOrphanedTmpFiles] and [cleanupOrphanedSidecars] cannot drift:
+         * both are guarding the same window, the gap between a sidecar being written and
+         * its .mp4 being renamed off .tmp.
+         */
+        private const val ORPHAN_MIN_AGE_MS = 5 * 60 * 1000L
+
+        /**
          * Implements loop recording by deleting oldest segments when storage is low.
          *
          * CRITICAL: Protects files that are currently being written to prevent corruption.
@@ -2097,12 +2105,102 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
             val now = System.currentTimeMillis()
             for (f in orphans) {
                 val age = now - f.lastModified()
-                if (age > 5 * 60 * 1000) { // Older than 5 minutes
+                if (age > ORPHAN_MIN_AGE_MS) {
                     val size = f.length()
                     if (f.delete()) {
                         logger.info("Cleaned orphan: " + f.name + " (" + (size / 1024) + " KB, age=" + (age / 1000) + "s)")
                     }
                 }
+            }
+        }
+
+        /**
+         * Reaps sidecars whose .mp4 is already gone: `<base>.json`, `<base>.jpg`,
+         * `<base>.srt` and `thumb_<base>_a*.jpg` with no `<base>.mp4` beside them.
+         *
+         * [deleteSegmentSidecars] and StorageManager's reaper keep these in step going
+         * forward, but nothing reaps what an older build, a crash between the sidecar
+         * write and the .mp4 rename, or any future gap in a deletion path already
+         * stranded. Measured on the head unit 2026-09-20: 823 orphans, 111 MB, nine
+         * days, entirely undetected (BladeWatch-k3b0 / BladeWatch-g8ee).
+         *
+         * What that costs, precisely — an earlier version of this comment overstated it
+         * and the correction is worth keeping. `StorageManager.getDirectoriesTotalSize`
+         * counts only `.mp4` and `.json` toward a category limit, so orphaned `.jpg` and
+         * `.srt` are invisible to limit accounting and cost disk only. All 823 found were
+         * `.jpg`/`.srt`, so the real damage there was 111 MB of a shared SD card, not
+         * deleted footage. An orphaned `.json` IS counted, and that one does consume quota
+         * and make the reaper delete more real footage to hit its target — rare, because
+         * both deletion paths have always handled `.json`, but a crash between the `.json`
+         * write and the `.mp4` rename still strands one with nothing to sweep it.
+         *
+         * Startup-only, like [cleanupOrphanedTmpFiles] — the leak accrues at roughly
+         * 12 MB/day and k3b0 stops new orphans at the source, so a scheduler would buy
+         * nothing.
+         *
+         * Pass the category's WHOLE directory list in one call —
+         * `StorageManager.sweepableDirs(category)`. That accessor exists for two reasons:
+         * it keeps this function away from the shared legacy base (which holds
+         * `bladewatch_secrets.json`, not media), and passing every directory at once is what
+         * makes the pooled base set above correct.
+         */
+        @JvmStatic
+        fun cleanupOrphanedSidecars(directories: List<File>) {
+            val listings = directories
+                .filter { it.exists() && it.isDirectory }
+                .mapNotNull { dir -> dir.listFiles()?.let { dir to it } }
+            if (listings.isEmpty()) return
+
+            // Live segment bases, pooled across EVERY directory of the category — not just
+            // the one being swept. InternalToSdMigrator.moveIfEligible moves files one at a
+            // time and skips any file younger than its own age gate, so it routinely leaves
+            // "<base>.mp4" on the SD card while "<base>.jpg" is still on internal. Sweeping a
+            // mirror in isolation would read that as an orphan and delete a live segment's
+            // sidecars. A segment mid-write is "<base>.mp4.tmp" and its sidecars land before
+            // the rename, so count those as present too.
+            val bases = HashSet<String>()
+            for ((_, files) in listings) {
+                for (f in files) {
+                    val n = f.name
+                    when {
+                        n.endsWith(".mp4.tmp") -> bases.add(n.substring(0, n.length - 8))
+                        n.endsWith(".mp4") -> bases.add(n.substring(0, n.length - 4))
+                    }
+                }
+            }
+
+            val now = System.currentTimeMillis()
+            var freed = 0L
+            var count = 0
+            for (f in listings.flatMap { it.second.asList() }) {
+                val n = f.name
+                val base = when {
+                    n.startsWith("thumb_") && n.endsWith(".jpg") ->
+                        // Inverse of the forward "thumb_<base>_a..." rule in
+                        // deleteSegmentSidecars, so the two can never disagree about
+                        // which segment a thumbnail belongs to.
+                        // ponytail: O(files x segments) string compares, once at daemon
+                        // start over a few thousand names. Index the bases by prefix if a
+                        // directory ever gets big enough for that to matter.
+                        bases.firstOrNull { n.startsWith("thumb_" + it + "_a") }
+                    n.endsWith(".jpg") || n.endsWith(".srt") || n.endsWith(".json") ->
+                        n.substring(0, n.lastIndexOf('.'))
+                    // .mp4, .tmp, .broken and anything unrecognised: not ours to reap.
+                    else -> continue
+                }
+                if (base != null && bases.contains(base)) continue
+                if (now - f.lastModified() < ORPHAN_MIN_AGE_MS) continue
+                val size = f.length()
+                if (f.delete()) {
+                    freed += size
+                    count++
+                }
+            }
+            if (count > 0) {
+                logger.info(
+                    "Cleaned " + count + " orphaned sidecars (" + (freed / 1024) + " KB) across " +
+                        listings.joinToString(", ") { it.first.absolutePath }
+                )
             }
         }
 
@@ -2138,6 +2236,13 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
             if (heroFile.exists()) {
                 val s = heroFile.length()
                 if (heroFile.delete()) freed += s
+            }
+            // SRT subtitle track written by SrtWriter as "<base>.srt". Without this it
+            // outlives the segment forever (BladeWatch-k3b0).
+            val srtFile = File(parent, "$base.srt")
+            if (srtFile.exists()) {
+                val s = srtFile.length()
+                if (srtFile.delete()) freed += s
             }
             // Anchor with "_a" so sibling segment thumbs (e.g. <base>_2's actor
             // thumbs at "thumb_<base>_2_a*.jpg") aren't swept when this segment

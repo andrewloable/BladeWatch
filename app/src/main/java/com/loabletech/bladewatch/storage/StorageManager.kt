@@ -1333,6 +1333,31 @@ class StorageManager private constructor() {
     }
 
     /**
+     * Every directory a media category's segments can live in — active, the internal/SD
+     * mirror, and the dedicated legacy path — MINUS the shared flat legacy base.
+     *
+     * For orphan sweepers, which delete by "this file's `.mp4` is missing" rather than by
+     * an explicit selection. [getReapableDirs] is not safe for them as-is.
+     *
+     * The exclusion is load-bearing, not tidiness. `getReapableDirs("recordings")` adds
+     * [LEGACY_APP_FILES_DIR] itself, which is not a media directory: it also holds
+     * `bladewatch_secrets.json` (`SecretConfigStore.LEGACY_PATH`) and
+     * `bladewatch_config.json` (`UnifiedConfigManager.LEGACY_APP_FILES_CONFIG`), plus
+     * `.bladewatch_device_id`. A sidecar sweeper pointed at it sees two `.json` files with
+     * no matching `.mp4` and deletes the device's legacy secrets and config.
+     *
+     * [ensureSpace] survives that directory only because it passes a category `namePrefix`.
+     * A sweeper cannot use the same guard: per-actor thumbnails are named
+     * `thumb_<base>_a*.jpg` and do not carry the category prefix, so prefix-filtering would
+     * skip exactly the files the sweep exists for.
+     *
+     * "trips" is deliberately not a sweepable category. Trip telemetry is `<tripId>.jsonl.gz`
+     * with no `.mp4` anywhere — nothing there is a sidecar.
+     */
+    fun sweepableDirs(category: String): List<File> =
+        sweepableDirsFrom(category, getReapableDirs(category))
+
+    /**
      * Sum .mp4 files across the given dirs, deduplicating by filename
      * (so a clip mirrored on internal + SD-card isn't counted twice).
      *
@@ -1732,14 +1757,34 @@ class StorageManager private constructor() {
                 }
                 logInfo("Deleted old file: " + file.absolutePath + " (" + formatSize(fileSize) + ")")
 
-                // Also delete the JSON sidecar (event timeline) sitting next
-                // to the mp4 — it's keyed off the mp4 filename, so when the
-                // mp4 goes the sidecar is dead weight.
-                val jsonName = file.name.replace(".mp4", ".json")
-                val jsonSidecar = File(file.parentFile, jsonName)
-                if (jsonSidecar.exists()) {
-                    if (!jsonSidecar.delete()) {
-                        deleteFileViaShell(jsonSidecar)
+                // Also delete every sidecar sitting next to the mp4 — they are all keyed off
+                // the mp4 filename, so when the mp4 goes they are dead weight
+                // (BladeWatch-k3b0 — 823 orphaned .jpg/.srt found on the head unit, 111 MB).
+                //
+                // Note what this does and does not cost, because an earlier version of this
+                // comment got it wrong: getDirectoriesTotalSize counts only .mp4 and .json,
+                // so orphaned .jpg/.srt waste disk on a shared SD card but never inflate a
+                // category limit. An orphaned .json does inflate it, and would make this very
+                // loop delete more real footage to reach its target.
+                val parentDir = file.parentFile
+                if (parentDir != null && file.name.endsWith(".mp4")) {
+                    val base = file.name.substring(0, file.name.length - 4)
+
+                    // Event timeline JSON, hero JPEG, and SRT subtitle track.
+                    for (sidecarName in listOf("$base.json", "$base.jpg", "$base.srt")) {
+                        val sidecar = File(parentDir, sidecarName)
+                        if (sidecar.exists() && !sidecar.delete()) {
+                            deleteFileViaShell(sidecar)
+                        }
+                    }
+
+                    // Per-actor thumbnails. Anchor with "_a" so a sibling segment's thumbs
+                    // (e.g. "thumb_<base>_2_a*.jpg") aren't swept when <base> is reaped.
+                    val perActorPrefix = "thumb_${base}_a"
+                    parentDir.listFiles { _, name ->
+                        name.startsWith(perActorPrefix) && name.endsWith(".jpg")
+                    }?.forEach { thumb ->
+                        if (!thumb.delete()) deleteFileViaShell(thumb)
                     }
                 }
 
@@ -2619,6 +2664,21 @@ class StorageManager private constructor() {
          * prefix so they don't reap a sibling category's files. Returns null
          * for categories whose dirs are all category-dedicated.
          */
+        /**
+         * The decision behind [sweepableDirs], as a static taking its input rather than
+         * reading it — a StorageManager cannot be constructed in a JVM test (it needs real
+         * `/storage/emulated/0` paths and `StatFs`), which is the same reason
+         * [selectFilesToDelete] was extracted this way. The guard this encodes is
+         * security-relevant, so it needs to be reachable by a test.
+         */
+        @JvmStatic
+        internal fun sweepableDirsFrom(category: String, reapableDirs: List<File>): List<File> =
+            when (category) {
+                "recordings", "surveillance", "proximity" ->
+                    reapableDirs.filter { it.absolutePath != LEGACY_APP_FILES_DIR }
+                else -> emptyList()
+            }
+
         private fun namePrefixForCategory(category: String): String? = when (category) {
             "recordings" -> "cam"        // cam_*, cam2_*, …
             "surveillance" -> "event_"

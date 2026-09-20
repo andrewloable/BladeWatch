@@ -31,6 +31,50 @@ cut abruptly, at most about a minute may be lost" (segment length capped to 1 mi
 regardless of `segmentMinutes`). New installs default to Reliability; an existing config
 migrates once to Performance, preserving its pre-existing (uncapped) behaviour.
 
+**Orphan sweeping at daemon startup (BladeWatch-k3b0, BladeWatch-g8ee).** Every `.jpg`,
+`.srt` and `.json` in `recordings/` and `surveillance/` is a sidecar keyed to an `.mp4`
+basename — hero JPEG `<base>.jpg`, per-actor thumbnails `thumb_<base>_a*.jpg`, subtitle
+track `<base>.srt`, event timeline `<base>.json`. Both deletion paths
+(`StorageManager.ensureSpace` and `HardwareEventRecorderGpu.deleteSegmentSidecars`) take
+the whole set with the `.mp4`, and `CameraDaemon` additionally runs two sweepers at
+startup:
+
+| Sweeper | Reaps |
+|---|---|
+| `cleanupOrphanedTmpFiles` | `.tmp` / `.broken` older than 5 minutes |
+| `cleanupOrphanedSidecars` | sidecars with no `<base>.mp4` beside them, older than 5 minutes |
+
+Measured on the head unit 2026-09-20 before the fix: 823 orphans, 111 MB, nine days,
+undetected — `startPeriodicCleanup` is size-driven and oldest-first, so it cannot tell an
+orphan from real footage.
+
+**What an orphan actually costs, because it is easy to overstate.**
+`getDirectoriesTotalSize` counts only `.mp4` and `.json` toward a category limit
+(`StorageManager.kt`, the `namePrefix`/extension filter). Orphaned `.jpg` and `.srt` are
+therefore invisible to limit accounting: they waste disk on a card shared with CDR footage,
+but they never inflate a limit and never cause extra footage to be deleted. All 823 found
+were `.jpg`/`.srt`. An orphaned `.json` *is* counted, so that one does consume quota and
+make the reaper delete more real footage — rare, because both deletion paths have always
+handled `.json`, but a crash between the `.json` write and the `.mp4` rename still strands
+one. A side effect of the same rule: thumbnails and subtitle tracks sit outside the
+configured limit entirely, so a category limit is not a cap on disk used. A segment mid-write is `<base>.mp4.tmp`, and its sidecars are written before
+the rename, so the sweeper counts an in-flight `.mp4.tmp` as a live base and the 5-minute
+window covers the gap. Thumbnail attribution is anchored on `_a` (`thumb_<base>_a…`) so a
+live `<base>` never shelters a reaped `<base>_2`'s thumbnails, and vice versa.
+
+**Which directories get swept — and the one that must not.** The sweepers run over
+`StorageManager.sweepableDirs(category)` for `recordings`, `surveillance` and `proximity`:
+every place a category's segments live, including the internal/SD mirror and the dedicated
+legacy path, so an orphan left behind by a storage switch is still reachable. It
+deliberately drops the shared flat legacy base
+`/storage/emulated/0/Android/data/net.bladewatch.app/files`, which `getReapableDirs`
+includes for `recordings`. That directory is not a media directory — it holds
+`bladewatch_secrets.json`, `bladewatch_config.json` and `.bladewatch_device_id`, and a
+sidecar sweeper pointed at it would delete all the `.json` files as orphans. `ensureSpace`
+is safe there only because it passes a category name prefix; a sweeper cannot, since
+`thumb_<base>_a*.jpg` carries no category prefix. `trips` is not sweepable at all — trip
+telemetry is `<tripId>.jsonl.gz` with no `.mp4` anywhere.
+
 **Telemetry overlay field selection (BladeWatch-y78o.5).** `OverlayBitmapRenderer` draws a
 burned-in bar (speed, gear, left/right turn signal, brake/accelerator pedal,
 driver/passenger seatbelt, timestamp) into continuous/drive-mode/proximity-triggered

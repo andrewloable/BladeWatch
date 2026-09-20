@@ -1595,11 +1595,12 @@ class BydDataCollector private constructor() {
             }
             val unit = BydDeviceHelper.callGetter(device, "getTemperatureUnit")
             if (unit is Number) b.tempUnit(unit.toInt())
-            // Inside temp (position 1)
-            val insideTemp = BydDeviceHelper.callGetter(device, "getTemprature", 1)
+            // Cabin temperature. Position 4, NOT 1 — 1/2/3 are the per-zone setpoints, which
+            // is what this used to read (BladeWatch-gkjl). See AC_TEMP_POS_CABIN.
+            val insideTemp = BydDeviceHelper.callGetter(device, "getTemprature", AC_TEMP_POS_CABIN)
             if (insideTemp is Number) {
                 val t = insideTemp.toInt()
-                if (t in -50..60) b.insideTempC(t.toDouble())
+                if (t in CABIN_TEMP_RANGE_C) b.insideTempC(t.toDouble())
             }
         } catch (e: Exception) {
             logger.debug("collectAc error: " + e.message)
@@ -2514,10 +2515,13 @@ class BydDataCollector private constructor() {
      * Called from collectAll() (trips, SOC history consume these).
      */
     private fun collectInstrumentExtended(b: BydVehicleData.Builder) {
-        // Cabin temperature is already read via acDevice.getTemprature(1) in
-        // collectAc(). Do not poll AC_TEMP_INSIDE here: BYD firmware denies
-        // feature 0x3d800030 for this UID every cycle, creating log noise while
-        // adding no data on the tested head unit.
+        // Cabin temperature is already read via acDevice.getTemprature(AC_TEMP_POS_CABIN) in
+        // collectAc(). This comment used to say position 1; that was wrong — position 1 is the
+        // driver-zone setpoint, and reading it here is what made the Vehicle screen report the
+        // setpoint as the cabin temperature (BladeWatch-gkjl).
+        //
+        // Do not poll AC_TEMP_INSIDE here: BYD firmware denies feature 0x3d800030 for this UID
+        // every cycle, creating log noise while adding no data on the tested head unit.
 
         // Per-tyre temperature from InstrumentDevice via feature ID get() calls.
         // Slot mapping from BYDAutoFeatureIds.Instrument:
@@ -5364,6 +5368,38 @@ class BydDataCollector private constructor() {
          * startup fallback; if one moves, move both.
          */
         const val PHEV_MAX_NOMINAL_KWH = 30.0
+
+        /**
+         * Positions for `BYDAutoAcDevice.getTemprature(int)` (BYD's spelling).
+         *
+         * Measured on the head unit 2026-09-20 via GetAcDiagnostics, AC off, car parked, all
+         * three zones set to 24 and the cabin hot:
+         *
+         *     0 -> -2147482645   1 -> 24   2 -> 24   3 -> 24   4 -> 36   5,6 -> -2147482645
+         *
+         * 1/2/3 are the per-zone SETPOINTS and 4 is the CABIN sensor. This mattered: both the
+         * setpoint and "inside temperature" used to be read from position 1, so the Vehicle
+         * screen reported the driver's chosen temperature as the cabin reading and it never
+         * moved off the stepper value (BladeWatch-gkjl).
+         *
+         * -2147482645 is `Int.MIN_VALUE + 1003`, the SDK's "unavailable" sentinel; both range
+         * guards below reject it.
+         *
+         * Position 4 is not the OUTSIDE temperature — that comes from a different device
+         * entirely, `instrumentDevice.getOutCarTemperature()`, in [collectInstrument].
+         */
+        const val AC_TEMP_POS_SETPOINT = 1
+        const val AC_TEMP_POS_CABIN = 4
+
+        /** Plausible setpoint range. Narrow on purpose — the BYD climate UI cannot leave it. */
+        val AC_SETPOINT_RANGE_C = 16..35
+
+        /**
+         * Plausible cabin range. Deliberately much wider than the setpoint range: a closed car
+         * in direct sun readily passes 60C, so the old -50..60 guard would have discarded a
+         * real reading on exactly the days the number matters most.
+         */
+        val CABIN_TEMP_RANGE_C = -50..90
 
         /**
          * Pure drivetrain decision, split out from [computeIsPhev] so the ORDER of the

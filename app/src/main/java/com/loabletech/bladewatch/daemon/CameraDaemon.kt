@@ -1468,13 +1468,32 @@ object CameraDaemon {
 
             log("GPU Surveillance initialized: " + PANO_WIDTH + "x" + PANO_HEIGHT + " -> 2560x1920 (mosaic)")
 
-            // Clean up orphaned .tmp files from previous crashed recordings
+            // Clean up orphaned .tmp files from previous crashed recordings, plus
+            // sidecars (.jpg/.srt/.json) whose .mp4 is already gone.
+            //
+            // Sweep EVERY directory a category's segments can live in, not just the active
+            // one: the reaper deletes across the internal/SD mirror and the legacy path too,
+            // so an orphan left in the mirror after a storage switch was previously
+            // unreachable forever. sweepableDirs drops the shared flat legacy base — see its
+            // doc comment, pointing a sidecar sweeper at that directory deletes the legacy
+            // secrets and config files.
             try {
                 val sm = StorageManager.getInstance()
-                HardwareEventRecorderGpu.cleanupOrphanedTmpFiles(sm.recordingsDir)
-                HardwareEventRecorderGpu.cleanupOrphanedTmpFiles(sm.surveillanceDir)
+                val sweptTmp = HashSet<String>()
+                for (category in listOf("recordings", "surveillance", "proximity")) {
+                    val dirs = sm.sweepableDirs(category)
+                    for (dir in dirs) {
+                        if (sweptTmp.add(dir.absolutePath)) {
+                            HardwareEventRecorderGpu.cleanupOrphanedTmpFiles(dir)
+                        }
+                    }
+                    // One call per category, never per directory: the sidecar sweeper needs
+                    // every directory at once or a segment split across the internal/SD
+                    // mirror by a partial migration reads as an orphan.
+                    HardwareEventRecorderGpu.cleanupOrphanedSidecars(dirs)
+                }
             } catch (e: Exception) {
-                log("Tmp cleanup error: " + e.message)
+                log("Orphan cleanup error: " + e.message)
             }
 
             // Initialize TelemetryDataCollector for overlay (needs app context)
