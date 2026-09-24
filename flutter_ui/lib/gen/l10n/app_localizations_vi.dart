@@ -2960,4 +2960,36 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get pairing_error => 'Dịch vụ camera không phản hồi. Hãy thử lại.';
+
+  @override
+  String get daemon_name_pear => 'Truy cập từ xa (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Có thể truy cập từ mọi nơi';
+
+  @override
+  String get pear_status_unreachable =>
+      'Không thể truy cập: không có kết nối với mạng Pear';
+
+  @override
+  String get pear_status_unknown => 'Không rõ khả năng truy cập';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thiết bị đã kết nối',
+      zero: 'Không có thiết bị nào kết nối',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Kết nối gần nhất: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Tắt';
 }

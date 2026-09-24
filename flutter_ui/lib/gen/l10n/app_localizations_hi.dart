@@ -2960,4 +2960,37 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get pairing_error =>
       'कैमरा सेवा ने जवाब नहीं दिया। फिर से प्रयास करें।';
+
+  @override
+  String get daemon_name_pear => 'रिमोट एक्सेस (Pear)';
+
+  @override
+  String get pear_status_reachable => 'कहीं से भी पहुँच योग्य';
+
+  @override
+  String get pear_status_unreachable =>
+      'पहुँच योग्य नहीं: Pear नेटवर्क से कोई कनेक्शन नहीं';
+
+  @override
+  String get pear_status_unknown => 'पहुँच की स्थिति अज्ञात';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count डिवाइस कनेक्ट हैं',
+      one: '$count डिवाइस कनेक्ट है',
+      zero: 'कोई डिवाइस कनेक्ट नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'अंतिम कनेक्शन: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'बंद';
 }

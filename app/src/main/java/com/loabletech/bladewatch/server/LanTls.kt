@@ -47,7 +47,13 @@ object LanTls {
     internal const val SECTION = "lanTls"
     private const val PRIVATE_KEY = "privateKeyPkcs8"
     private const val CERTIFICATE = "certificateDer"
-    private const val COMMON_NAME = "BladeWatch"
+    /**
+     * Deliberately generic (BladeWatch-cjhz): the subject is readable by anything on the LAN before
+     * any credential, and "BladeWatch" announced that a BladeWatch car is parked here. Nothing
+     * checks it -- the companion pins the fingerprint. Only NEW identities get it: an existing
+     * certificate is never rotated, or every paired companion would lose the car.
+     */
+    private const val COMMON_NAME = "localhost"
 
     class Identity(val privateKey: PrivateKey, val certificate: X509Certificate) {
         /**

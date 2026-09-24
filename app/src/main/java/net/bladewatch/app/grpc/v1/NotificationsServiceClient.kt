@@ -20,6 +20,7 @@ import com.connectrpc.StreamType
  *    ListSubscriptions    GET  /api/push/subscriptions
  *    UpdatePreferences    POST /api/push/preferences
  *    SendTest             POST /api/push/test
+ *    ListInbox            (Connect only)
  */
 public class NotificationsServiceClient(
   private val client: ProtocolClientInterface,
@@ -91,6 +92,23 @@ public class NotificationsServiceClient(
     "bladewatch.v1.NotificationsService/SendTest",
       net.bladewatch.app.grpc.v1.SendTestRequest::class,
       net.bladewatch.app.grpc.v1.SendTestResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  /**
+   *  Store and forward (BladeWatch-rdtj.14): the car keeps the notifications it raised, and a
+   *  companion fetches the ones it has not seen whenever it connects -- over the LAN or Pear, with
+   *  no push service in between. Oldest first.
+   */
+  override suspend fun listInbox(request: ListInboxRequest, headers: Headers): ResponseMessage<ListInboxResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.NotificationsService/ListInbox",
+      net.bladewatch.app.grpc.v1.ListInboxRequest::class,
+      net.bladewatch.app.grpc.v1.ListInboxResponse::class,
       StreamType.UNARY,
     ),
   )

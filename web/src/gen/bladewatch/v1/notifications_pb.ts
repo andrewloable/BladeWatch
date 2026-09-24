@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bladewatch/v1/notifications.proto.
  */
 export const file_bladewatch_v1_notifications: GenFile = /*@__PURE__*/
-  fileDesc("CiFibGFkZXdhdGNoL3YxL25vdGlmaWNhdGlvbnMucHJvdG8SDWJsYWRld2F0Y2gudjEiTAoOUXVpZXRIb3Vyc1ByZWYSEQoJc3RhcnRfbWluGAEgASgFEg8KB2VuZF9taW4YAiABKAUSFgoOYWxsb3dfY3JpdGljYWwYAyABKAgiKAoIUHVzaEtleXMSDgoGcDI1NmRoGAEgASgJEgwKBGF1dGgYAiABKAkiwQEKFlB1c2hTdWJzY3JpcHRpb25SZWNvcmQSCgoCaWQYASABKAkSDQoFbGFiZWwYAiABKAkSEgoKY3JlYXRlZF9hdBgDIAEoAxIUCgxsYXN0X3NlZW5fYXQYBCABKAMSFAoMbWluX3NldmVyaXR5GAUgASgJEhgKEG11dGVkX2NhdGVnb3JpZXMYBiADKAkSMgoLcXVpZXRfaG91cnMYByABKAsyHS5ibGFkZXdhdGNoLnYxLlF1aWV0SG91cnNQcmVmIhYKFEdldENhdGVnb3JpZXNSZXF1ZXN0IkoKFUdldENhdGVnb3JpZXNSZXNwb25zZRIXCg9jYXRlZ29yaWVzX2pzb24YASABKAkSGAoQdmFwaWRfcHVibGljX2tleRgCIAEoCSJaChBTdWJzY3JpYmVSZXF1ZXN0EhAKCGVuZHBvaW50GAEgASgJEiUKBGtleXMYAiABKAsyFy5ibGFkZXdhdGNoLnYxLlB1c2hLZXlzEg0KBWxhYmVsGAMgASgJIj8KEVN1YnNjcmliZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSCgoCaWQYAiABKAkSDQoFZXJyb3IYAyABKAkiMgoSVW5zdWJzY3JpYmVSZXF1ZXN0EgoKAmlkGAEgASgJEhAKCGVuZHBvaW50GAIgASgJIiYKE1Vuc3Vic2NyaWJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCIaChhMaXN0U3Vic2NyaXB0aW9uc1JlcXVlc3QiagoZTGlzdFN1YnNjcmlwdGlvbnNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEjwKDXN1YnNjcmlwdGlvbnMYAiADKAsyJS5ibGFkZXdhdGNoLnYxLlB1c2hTdWJzY3JpcHRpb25SZWNvcmQiowEKGFVwZGF0ZVByZWZlcmVuY2VzUmVxdWVzdBIKCgJpZBgBIAEoCRIYChBtdXRlZF9jYXRlZ29yaWVzGAIgAygJEhQKDG1pbl9zZXZlcml0eRgDIAEoCRIyCgtxdWlldF9ob3VycxgEIAEoCzIdLmJsYWRld2F0Y2gudjEuUXVpZXRIb3Vyc1ByZWYSFwoPaGFzX3F1aWV0X2hvdXJzGAUgASgIIjsKGVVwZGF0ZVByZWZlcmVuY2VzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSI1Cg9TZW5kVGVzdFJlcXVlc3QSEAoIY2F0ZWdvcnkYASABKAkSEAoIc2V2ZXJpdHkYAiABKAkiIwoQU2VuZFRlc3RSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIKqIBChROb3RpZmljYXRpb25TZXZlcml0eRIlCiFOT1RJRklDQVRJT05fU0VWRVJJVFlfVU5TUEVDSUZJRUQQABIeChpOT1RJRklDQVRJT05fU0VWRVJJVFlfSU5GTxABEh8KG05PVElGSUNBVElPTl9TRVZFUklUWV9BTEVSVBACEiIKHk5PVElGSUNBVElPTl9TRVZFUklUWV9DUklUSUNBTBADMrUEChROb3RpZmljYXRpb25zU2VydmljZRJaCg1HZXRDYXRlZ29yaWVzEiMuYmxhZGV3YXRjaC52MS5HZXRDYXRlZ29yaWVzUmVxdWVzdBokLmJsYWRld2F0Y2gudjEuR2V0Q2F0ZWdvcmllc1Jlc3BvbnNlEk4KCVN1YnNjcmliZRIfLmJsYWRld2F0Y2gudjEuU3Vic2NyaWJlUmVxdWVzdBogLmJsYWRld2F0Y2gudjEuU3Vic2NyaWJlUmVzcG9uc2USVAoLVW5zdWJzY3JpYmUSIS5ibGFkZXdhdGNoLnYxLlVuc3Vic2NyaWJlUmVxdWVzdBoiLmJsYWRld2F0Y2gudjEuVW5zdWJzY3JpYmVSZXNwb25zZRJmChFMaXN0U3Vic2NyaXB0aW9ucxInLmJsYWRld2F0Y2gudjEuTGlzdFN1YnNjcmlwdGlvbnNSZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5MaXN0U3Vic2NyaXB0aW9uc1Jlc3BvbnNlEmYKEVVwZGF0ZVByZWZlcmVuY2VzEicuYmxhZGV3YXRjaC52MS5VcGRhdGVQcmVmZXJlbmNlc1JlcXVlc3QaKC5ibGFkZXdhdGNoLnYxLlVwZGF0ZVByZWZlcmVuY2VzUmVzcG9uc2USSwoIU2VuZFRlc3QSHi5ibGFkZXdhdGNoLnYxLlNlbmRUZXN0UmVxdWVzdBofLmJsYWRld2F0Y2gudjEuU2VuZFRlc3RSZXNwb25zZUIeChpuZXQuYmxhZGV3YXRjaC5hcHAuZ3JwYy52MVABYgZwcm90bzM");
+  fileDesc("CiFibGFkZXdhdGNoL3YxL25vdGlmaWNhdGlvbnMucHJvdG8SDWJsYWRld2F0Y2gudjEiTAoOUXVpZXRIb3Vyc1ByZWYSEQoJc3RhcnRfbWluGAEgASgFEg8KB2VuZF9taW4YAiABKAUSFgoOYWxsb3dfY3JpdGljYWwYAyABKAgiKAoIUHVzaEtleXMSDgoGcDI1NmRoGAEgASgJEgwKBGF1dGgYAiABKAkiwQEKFlB1c2hTdWJzY3JpcHRpb25SZWNvcmQSCgoCaWQYASABKAkSDQoFbGFiZWwYAiABKAkSEgoKY3JlYXRlZF9hdBgDIAEoAxIUCgxsYXN0X3NlZW5fYXQYBCABKAMSFAoMbWluX3NldmVyaXR5GAUgASgJEhgKEG11dGVkX2NhdGVnb3JpZXMYBiADKAkSMgoLcXVpZXRfaG91cnMYByABKAsyHS5ibGFkZXdhdGNoLnYxLlF1aWV0SG91cnNQcmVmIhYKFEdldENhdGVnb3JpZXNSZXF1ZXN0IkoKFUdldENhdGVnb3JpZXNSZXNwb25zZRIXCg9jYXRlZ29yaWVzX2pzb24YASABKAkSGAoQdmFwaWRfcHVibGljX2tleRgCIAEoCSJaChBTdWJzY3JpYmVSZXF1ZXN0EhAKCGVuZHBvaW50GAEgASgJEiUKBGtleXMYAiABKAsyFy5ibGFkZXdhdGNoLnYxLlB1c2hLZXlzEg0KBWxhYmVsGAMgASgJIj8KEVN1YnNjcmliZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSCgoCaWQYAiABKAkSDQoFZXJyb3IYAyABKAkiMgoSVW5zdWJzY3JpYmVSZXF1ZXN0EgoKAmlkGAEgASgJEhAKCGVuZHBvaW50GAIgASgJIiYKE1Vuc3Vic2NyaWJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCIaChhMaXN0U3Vic2NyaXB0aW9uc1JlcXVlc3QiagoZTGlzdFN1YnNjcmlwdGlvbnNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEjwKDXN1YnNjcmlwdGlvbnMYAiADKAsyJS5ibGFkZXdhdGNoLnYxLlB1c2hTdWJzY3JpcHRpb25SZWNvcmQiowEKGFVwZGF0ZVByZWZlcmVuY2VzUmVxdWVzdBIKCgJpZBgBIAEoCRIYChBtdXRlZF9jYXRlZ29yaWVzGAIgAygJEhQKDG1pbl9zZXZlcml0eRgDIAEoCRIyCgtxdWlldF9ob3VycxgEIAEoCzIdLmJsYWRld2F0Y2gudjEuUXVpZXRIb3Vyc1ByZWYSFwoPaGFzX3F1aWV0X2hvdXJzGAUgASgIIjsKGVVwZGF0ZVByZWZlcmVuY2VzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSI1Cg9TZW5kVGVzdFJlcXVlc3QSEAoIY2F0ZWdvcnkYASABKAkSEAoIc2V2ZXJpdHkYAiABKAkiIwoQU2VuZFRlc3RSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIrQBCgpJbmJveEVudHJ5EgoKAmlkGAEgASgDEhQKDHRpbWVzdGFtcF9tcxgCIAEoAxIQCghjYXRlZ29yeRgDIAEoCRI1CghzZXZlcml0eRgEIAEoDjIjLmJsYWRld2F0Y2gudjEuTm90aWZpY2F0aW9uU2V2ZXJpdHkSDQoFdGl0bGUYBSABKAkSDAoEYm9keRgGIAEoCRIRCgljbGlja191cmwYByABKAkSCwoDdGFnGAggASgJIjMKEExpc3RJbmJveFJlcXVlc3QSEAoIYWZ0ZXJfaWQYASABKAMSDQoFbGltaXQYAiABKAUiZQoRTGlzdEluYm94UmVzcG9uc2USKgoHZW50cmllcxgBIAMoCzIZLmJsYWRld2F0Y2gudjEuSW5ib3hFbnRyeRIRCglsYXRlc3RfaWQYAiABKAMSEQoJb2xkZXN0X2lkGAMgASgDKqIBChROb3RpZmljYXRpb25TZXZlcml0eRIlCiFOT1RJRklDQVRJT05fU0VWRVJJVFlfVU5TUEVDSUZJRUQQABIeChpOT1RJRklDQVRJT05fU0VWRVJJVFlfSU5GTxABEh8KG05PVElGSUNBVElPTl9TRVZFUklUWV9BTEVSVBACEiIKHk5PVElGSUNBVElPTl9TRVZFUklUWV9DUklUSUNBTBADMoUFChROb3RpZmljYXRpb25zU2VydmljZRJaCg1HZXRDYXRlZ29yaWVzEiMuYmxhZGV3YXRjaC52MS5HZXRDYXRlZ29yaWVzUmVxdWVzdBokLmJsYWRld2F0Y2gudjEuR2V0Q2F0ZWdvcmllc1Jlc3BvbnNlEk4KCVN1YnNjcmliZRIfLmJsYWRld2F0Y2gudjEuU3Vic2NyaWJlUmVxdWVzdBogLmJsYWRld2F0Y2gudjEuU3Vic2NyaWJlUmVzcG9uc2USVAoLVW5zdWJzY3JpYmUSIS5ibGFkZXdhdGNoLnYxLlVuc3Vic2NyaWJlUmVxdWVzdBoiLmJsYWRld2F0Y2gudjEuVW5zdWJzY3JpYmVSZXNwb25zZRJmChFMaXN0U3Vic2NyaXB0aW9ucxInLmJsYWRld2F0Y2gudjEuTGlzdFN1YnNjcmlwdGlvbnNSZXF1ZXN0GiguYmxhZGV3YXRjaC52MS5MaXN0U3Vic2NyaXB0aW9uc1Jlc3BvbnNlEmYKEVVwZGF0ZVByZWZlcmVuY2VzEicuYmxhZGV3YXRjaC52MS5VcGRhdGVQcmVmZXJlbmNlc1JlcXVlc3QaKC5ibGFkZXdhdGNoLnYxLlVwZGF0ZVByZWZlcmVuY2VzUmVzcG9uc2USSwoIU2VuZFRlc3QSHi5ibGFkZXdhdGNoLnYxLlNlbmRUZXN0UmVxdWVzdBofLmJsYWRld2F0Y2gudjEuU2VuZFRlc3RSZXNwb25zZRJOCglMaXN0SW5ib3gSHy5ibGFkZXdhdGNoLnYxLkxpc3RJbmJveFJlcXVlc3QaIC5ibGFkZXdhdGNoLnYxLkxpc3RJbmJveFJlc3BvbnNlQh4KGm5ldC5ibGFkZXdhdGNoLmFwcC5ncnBjLnYxUAFiBnByb3RvMw");
 
 /**
  * QuietHoursPref defines a window (minutes since midnight) during which
@@ -383,6 +383,126 @@ export const SendTestResponseSchema: GenMessage<SendTestResponse> = /*@__PURE__*
   messageDesc(file_bladewatch_v1_notifications, 14);
 
 /**
+ * One notification the car raised, kept for companions (BladeWatch-rdtj.14).
+ *
+ * @generated from message bladewatch.v1.InboxEntry
+ */
+export type InboxEntry = Message<"bladewatch.v1.InboxEntry"> & {
+  /**
+   * Strictly increasing, and never reused -- also across daemon restarts.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: int64 timestamp_ms = 2;
+   */
+  timestampMs: bigint;
+
+  /**
+   * Dotted category, e.g. "surveillance.motion".
+   *
+   * @generated from field: string category = 3;
+   */
+  category: string;
+
+  /**
+   * @generated from field: bladewatch.v1.NotificationSeverity severity = 4;
+   */
+  severity: NotificationSeverity;
+
+  /**
+   * @generated from field: string title = 5;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string body = 6;
+   */
+  body: string;
+
+  /**
+   * Deep link the source gave, e.g. to the recording; empty when none.
+   *
+   * @generated from field: string click_url = 7;
+   */
+  clickUrl: string;
+
+  /**
+   * Events with the same tag supersede each other (e.g. "recording in progress" by the final
+   * alert): the car keeps only the newest, and a companion should show only the newest it has.
+   * Empty when the source gave none.
+   *
+   * @generated from field: string tag = 8;
+   */
+  tag: string;
+};
+
+/**
+ * Describes the message bladewatch.v1.InboxEntry.
+ * Use `create(InboxEntrySchema)` to create a new message.
+ */
+export const InboxEntrySchema: GenMessage<InboxEntry> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_notifications, 15);
+
+/**
+ * @generated from message bladewatch.v1.ListInboxRequest
+ */
+export type ListInboxRequest = Message<"bladewatch.v1.ListInboxRequest"> & {
+  /**
+   * Entries with an id greater than this; 0 for everything still held.
+   *
+   * @generated from field: int64 after_id = 1;
+   */
+  afterId: bigint;
+
+  /**
+   * At most this many, oldest first; 0 means 100, and it is capped at 500.
+   *
+   * @generated from field: int32 limit = 2;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message bladewatch.v1.ListInboxRequest.
+ * Use `create(ListInboxRequestSchema)` to create a new message.
+ */
+export const ListInboxRequestSchema: GenMessage<ListInboxRequest> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_notifications, 16);
+
+/**
+ * @generated from message bladewatch.v1.ListInboxResponse
+ */
+export type ListInboxResponse = Message<"bladewatch.v1.ListInboxResponse"> & {
+  /**
+   * @generated from field: repeated bladewatch.v1.InboxEntry entries = 1;
+   */
+  entries: InboxEntry[];
+
+  /**
+   * The newest and oldest ids the car still holds (0 when empty). The inbox is bounded: a
+   * companion whose after_id is below oldest_id - 1 missed entries that were dropped.
+   *
+   * @generated from field: int64 latest_id = 2;
+   */
+  latestId: bigint;
+
+  /**
+   * @generated from field: int64 oldest_id = 3;
+   */
+  oldestId: bigint;
+};
+
+/**
+ * Describes the message bladewatch.v1.ListInboxResponse.
+ * Use `create(ListInboxResponseSchema)` to create a new message.
+ */
+export const ListInboxResponseSchema: GenMessage<ListInboxResponse> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_notifications, 17);
+
+/**
  * NotificationSeverity mirrors NotificationEvent.Severity.
  *
  * @generated from enum bladewatch.v1.NotificationSeverity
@@ -425,6 +545,7 @@ export const NotificationSeveritySchema: GenEnum<NotificationSeverity> = /*@__PU
  *   ListSubscriptions    GET  /api/push/subscriptions
  *   UpdatePreferences    POST /api/push/preferences
  *   SendTest             POST /api/push/test
+ *   ListInbox            (Connect only)
  *
  * @generated from service bladewatch.v1.NotificationsService
  */
@@ -476,6 +597,18 @@ export const NotificationsService: GenService<{
     methodKind: "unary";
     input: typeof SendTestRequestSchema;
     output: typeof SendTestResponseSchema;
+  },
+  /**
+   * Store and forward (BladeWatch-rdtj.14): the car keeps the notifications it raised, and a
+   * companion fetches the ones it has not seen whenever it connects -- over the LAN or Pear, with
+   * no push service in between. Oldest first.
+   *
+   * @generated from rpc bladewatch.v1.NotificationsService.ListInbox
+   */
+  listInbox: {
+    methodKind: "unary";
+    input: typeof ListInboxRequestSchema;
+    output: typeof ListInboxResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_bladewatch_v1_notifications, 0);

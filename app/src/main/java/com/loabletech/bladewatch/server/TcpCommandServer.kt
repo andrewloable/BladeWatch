@@ -8,6 +8,7 @@ import net.bladewatch.app.monitor.AccMonitor
 import net.bladewatch.app.storage.StorageManager
 import org.json.JSONArray
 import net.bladewatch.app.auth.CompanionPairing
+import net.bladewatch.app.daemon.PearStatus
 import net.bladewatch.app.daemon.PearTopic
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -684,6 +685,19 @@ class TcpCommandServer(private val port: Int) {
                 response.put("enabled", readDaemonEnabled("TOR_TUNNEL"))
             }
 
+            // BladeWatch-rdtj.17: the Pear peer for the in-car UI -- running, the owner's switch, and
+            // whether the car can actually be found (DHT online, from pear_daemon's status file),
+            // plus connected companions and when one last connected. Never the topic or a peer key.
+            "pearStatus" -> {
+                val report = PearStatus.report(
+                    pearStatusFileForTest ?: File(PearStatus.PATH),
+                    isProcessRunning(DAEMON_PROCESS_NAMES["PEAR_PEER"]),
+                    readDaemonEnabled("PEAR_PEER"),
+                    System.currentTimeMillis(),
+                )
+                report.keys().forEach { key -> response.put(key, report.get(key)) }
+            }
+
             // BladeWatch-abcx: enable/disable an OPTIONAL daemon from a UI that has no ADB.
             // Deliberately NOT a generic "run this daemon command" primitive: `type` is checked
             // against a fixed allow-list before anything happens, and no part of it ever reaches a
@@ -809,6 +823,11 @@ class TcpCommandServer(private val port: Int) {
         /** ponytail: test seam — null = live SECRET_STORE; non-null = injected store. */
         @JvmField
         var secretStoreForTest: SecretConfigStore? = null
+
+        /** Test seam for `pearStatus`: where pear_daemon's status file is read from. */
+        @JvmStatic
+        @Volatile
+        var pearStatusFileForTest: File? = null
 
         /**
          * BladeWatch-1xt9: mirrors DaemonType.processName in

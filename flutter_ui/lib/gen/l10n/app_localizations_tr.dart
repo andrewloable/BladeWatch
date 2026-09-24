@@ -2963,4 +2963,36 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pairing_error => 'Kamera hizmeti yanıt vermedi. Tekrar deneyin.';
+
+  @override
+  String get daemon_name_pear => 'Uzaktan erişim (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Her yerden erişilebilir';
+
+  @override
+  String get pear_status_unreachable => 'Erişilemiyor: Pear ağına bağlantı yok';
+
+  @override
+  String get pear_status_unknown => 'Erişilebilirlik bilinmiyor';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cihaz bağlı',
+      one: '$count cihaz bağlı',
+      zero: 'Bağlı cihaz yok',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Son bağlantı: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Kapalı';
 }

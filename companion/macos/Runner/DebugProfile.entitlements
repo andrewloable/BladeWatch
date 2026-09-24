@@ -4,6 +4,9 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<false/>
+	<!-- Pairing scans the car's QR code; a hardened-runtime build needs this to reach the camera. -->
+	<key>com.apple.security.device.camera</key>
+	<true/>
 	<key>com.apple.security.cs.allow-jit</key>
 	<true/>
 	<key>com.apple.security.network.server</key>

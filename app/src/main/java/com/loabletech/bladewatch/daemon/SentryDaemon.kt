@@ -1,6 +1,5 @@
 package net.bladewatch.app.daemon
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.ContextWrapper
@@ -28,13 +27,13 @@ import java.net.SocketTimeoutException
  * Sentry Daemon - runs as system user (UID 1000) via privileged shell.
  *
  * RESPONSIBILITIES:
- * 1. ACQUIRE ACC LOCK - This is the CRITICAL one that prevents force_suspend!
- * 2. Acquire WakeLock to prevent CPU sleep
- * 3. Whitelist UIDs (1000, 2000, app UID) for network access
- * 4. Whitelist app package via accmodemanager
- * 5. Keep WiFi enabled
+ * 1. Acquire WakeLock to prevent CPU sleep
+ * 2. Whitelist UIDs (1000, 2000, app UID) for network access
+ * 3. Keep WiFi enabled
  *
- * UID 1000 (system) has android.permission.DEVICE_ACC which is required for ACC Lock!
+ * No ACC lock and no ACC whitelist (accmodemanager acquireAccLock / setPkg2AccWhiteList): both
+ * need the signature permission DEVICE_ACC, which neither shell nor the app holds
+ * (BladeWatch-ese8, BladeWatch-u43d). Only the old UID 1000 launch path had it.
  */
 object SentryDaemon {
 
@@ -65,14 +64,6 @@ object SentryDaemon {
     /** net.bladewatch.app */
     private fun appPackageName(): String = Safe.s("b+URlanuKqV+a8w43uR6VwE1hpEbteNkkdukhTGHkdY=")
 
-    /** accmodemanager */
-    private fun serviceAccMode(): String = Safe.s("tr877WU3+MV4zFtCjanWUw==")
-
-    /** byd_datacached */
-    private fun serviceBydDataCache(): String = Safe.s("JQiIxMJxYlF8spk2fIi8Sg==")
-
-    /** bg_datacache */
-    private fun serviceBgDataCache(): String = Safe.s("m84QJmAGTQpH+XP36MaDpA==")
 
     /** /data/local/tmp */
     private fun pathDataLocalTmp(): String = Safe.s("vuaMjrmBGBFh07qqnUuL8w==")
@@ -92,8 +83,6 @@ object SentryDaemon {
     private fun cmdWifiEnableAlt(): String =
         Safe.s("OHt1ORBfaA6jti9DhL+LSDghCI3qSNr9WYGyb82Ov2DsCnMgXaYKKKOzpoICOnGX")
 
-    // ACC Lock - COMMENTED OUT (using whitelistAppPackageOld instead)
-    // private static Object accLockObject = null;
     private var appContext: Context? = null
 
     @JvmStatic
@@ -174,11 +163,10 @@ object SentryDaemon {
                 startControlSocket()
                 logT("startControlSocket done")
 
-                // ACC whitelist and protection DISABLED - causes BYD default dashcam
-                // to lose video signal when running as privileged (UID 1000).
-                // The setPkg2AccWhiteList call elevates our app's camera priority
-                // above the BYD dashcam, stealing its AVMCamera feed.
-                // whitelistAppPackageOld();
+                // No ACC whitelist. setPkg2AccWhiteList needs the signature permission
+                // DEVICE_ACC, which shell and the app lack (BladeWatch-ese8); and back when this
+                // daemon ran as system and the call worked, it raised BladeWatch's camera
+                // priority above BYD's own dashcam and took its AVMCamera feed.
                 // protectDaemon(context);
 
                 // Keep WiFi enabled
@@ -188,7 +176,6 @@ object SentryDaemon {
                 log("WARNING: Running without context - using shell fallbacks")
                 writePidFile()
                 startControlSocket()
-                // protectDaemonViaShell(); // DISABLED - same reason as above
                 enableWifi()
                 logT("fallback setup done (no context)")
             }
@@ -223,69 +210,15 @@ object SentryDaemon {
     // ==================== DAEMON PROTECTION ====================
 
     private fun protectDaemon(context: Context) {
-        val myUid = Process.myUid()
-        val isSystem = myUid == 1000
-
         log("=== PROTECTING DAEMON ===")
 
         // 1. Acquire WakeLock
         acquireWakeLock(context)
 
-        // 2. Whitelist UIDs for network access
-        val uidsToWhitelist = if (isSystem) intArrayOf(1000, 2000) else intArrayOf(myUid)
-        for (uid in uidsToWhitelist) {
-            whitelistUidForNetwork(context, uid)
-        }
-
-        // 3. Whitelist app package
-        whitelistAppPackage(context)
-
-        // 4. Whitelist app UID if running as system
-        if (isSystem) {
-            whitelistAppUid(context)
-        }
-
         log("=== DAEMON PROTECTION COMPLETE ===")
     }
 
-    private fun protectDaemonViaShell() {
-        log("=== PROTECTING DAEMON (shell fallback) ===")
 
-        val pkg = appPackageName()
-
-        // Whitelist UIDs
-        for (uid in intArrayOf(1000, 2000)) {
-            shellWhitelistUid(uid.toString())
-        }
-
-        // Whitelist package
-        shellWhitelistPackage(pkg)
-
-        log("=== SHELL FALLBACK COMPLETE ===")
-    }
-
-    /** `service call` fallback for the two data-cache services, codes 1..3. */
-    private fun shellWhitelistUid(uidStr: String) {
-        for (code in 1..3) {
-            execShell(
-                "service call " + serviceBydDataCache() + " " + code +
-                    " s16 '" + uidStr + "' i32 0 2>/dev/null"
-            )
-            execShell(
-                "service call " + serviceBgDataCache() + " " + code +
-                    " s16 '" + uidStr + "' i32 0 2>/dev/null"
-            )
-        }
-    }
-
-    /** `service call` fallback for accmodemanager, codes 1..5. */
-    private fun shellWhitelistPackage(pkg: String) {
-        for (code in 1..5) {
-            execShell(
-                "service call " + serviceAccMode() + " " + code + " s16 '" + pkg + "' 2>/dev/null"
-            )
-        }
-    }
 
     private fun acquireWakeLock(context: Context) {
         try {
@@ -300,84 +233,6 @@ object SentryDaemon {
         }
     }
 
-    @SuppressLint("WrongConstant")
-    private fun whitelistUidForNetwork(context: Context, uid: Int) {
-        val uidStr = uid.toString()
-        log("Whitelisting UID $uid...")
-
-        // Try byd_datacached
-        try {
-            val service = context.getSystemService(serviceBydDataCache())
-            if (service != null) {
-                service.javaClass
-                    .getMethod("setAppStartupData", String::class.java, Integer.TYPE)
-                    .invoke(service, uidStr, 0)
-                log("  byd_datacached: OK")
-                return
-            }
-        } catch (e: Exception) {
-            log("whitelistUidForNetwork byd_datacached failed: " + e.message)
-        }
-
-        // Try bg_datacache
-        try {
-            val service = context.getSystemService(serviceBgDataCache())
-            if (service != null) {
-                service.javaClass
-                    .getMethod("setAppOpsData", String::class.java, Integer.TYPE)
-                    .invoke(service, uidStr, 0)
-                log("  bg_datacache: OK")
-                return
-            }
-        } catch (e: Exception) {
-            log("whitelistUidForNetwork bg_datacache failed: " + e.message)
-        }
-
-        // Shell fallback
-        shellWhitelistUid(uidStr)
-        log("  shell fallback: done")
-    }
-
-    @SuppressLint("WrongConstant")
-    private fun whitelistAppPackage(context: Context) {
-        val pkg = appPackageName()
-        log("Whitelisting package $pkg...")
-
-        try {
-            val accManager = context.getSystemService(serviceAccMode())
-            if (accManager != null) {
-                val mServiceField = accManager.javaClass.getDeclaredField("mService")
-                mServiceField.isAccessible = true
-                val iAccService = mServiceField.get(accManager)
-
-                if (iAccService != null) {
-                    val whitelistMethod = iAccService.javaClass
-                        .getDeclaredMethod("setPkg2AccWhiteList", String::class.java)
-                    whitelistMethod.isAccessible = true
-                    whitelistMethod.invoke(iAccService, pkg)
-                    log("  accmodemanager: OK")
-                    return
-                }
-            }
-        } catch (e: Exception) {
-            log("whitelistAppPackage accmodemanager failed: " + e.message)
-        }
-
-        // Shell fallback
-        shellWhitelistPackage(pkg)
-        log("  shell fallback: done")
-    }
-
-    private fun whitelistAppUid(context: Context) {
-        val pkg = appPackageName()
-        try {
-            val appUid = context.packageManager.getApplicationInfo(pkg, 0).uid
-            log("App UID: $appUid")
-            whitelistUidForNetwork(context, appUid)
-        } catch (e: Exception) {
-            log("Could not get app UID: " + e.message)
-        }
-    }
 
     private fun enableWifi() {
         log("Enabling WiFi (async)...")

@@ -1,3 +1,4 @@
+import 'package:fixnum/fixnum.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/notifications.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/notifications_service_client.dart';
@@ -97,6 +98,28 @@ void main() {
       expect(fake.calls.single.method, 'SendTest');
       expect(fake.calls.single.request, isA<SendTestRequest>());
     });
+
+    test('listInbox sends NotificationsService/ListInbox and decodes the car\'s JSON entries', () async {
+      // The car writes int64 as JSON numbers and severity as the enum name.
+      fake.stubJson('NotificationsService', 'ListInbox', <String, dynamic>{
+        'entries': [
+          {'id': 7, 'timestampMs': 1700000000000, 'category': 'surveillance.motion', 'severity': 'NOTIFICATION_SEVERITY_ALERT', 'title': 't', 'body': 'b', 'clickUrl': '', 'tag': 'x'},
+        ],
+        'latestId': 9,
+        'oldestId': 3,
+      });
+
+      final result = await client.listInbox(ListInboxRequest(afterId: Int64(6)));
+
+      expect(fake.calls.single.method, 'ListInbox');
+      expect((fake.calls.single.request as ListInboxRequest).afterId, Int64(6));
+      expect(result.entries.single.id, Int64(7));
+      expect(result.entries.single.severity, NotificationSeverity.NOTIFICATION_SEVERITY_ALERT);
+      expect(result.entries.single.tag, 'x');
+      expect(result.latestId, Int64(9));
+      expect(result.oldestId, Int64(3));
+    });
+
 
   });
 }

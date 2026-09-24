@@ -58,7 +58,7 @@ melos run test
 `melos bootstrap` writes a `pubspec_overrides.yaml` into each app; it is gitignored and
 regenerated every time. IDE-file generation is off in `melos.yaml`.
 
-**flutter_pear is pinned exactly** (`flutter_pear: 0.4.3`, `flutter_pear_test: 0.4.3`), never
+**flutter_pear is pinned exactly** (`flutter_pear: 0.4.4`, `flutter_pear_test: 0.4.4`), never
 with a caret: before 1.0 its minor versions may break the API. Its per-platform wiring is in
 place and is not optional — `minSdk = 29` and `arm64-v8a`/`x86_64` only on Android (the
 manifest merger fails below 29, and an `armeabi-v7a` build has none of its native libraries,
@@ -72,6 +72,29 @@ It also needs
 and the App Sandbox off in both macOS entitlements files (it blocks the `bare` subprocess).
 `dart run flutter_pear:doctor` from `companion/` checks the host. Note that its `--fix` writes
 a placeholder usage description, which must be replaced with the app's real use.
+
+**The companion's screens (BladeWatch-rdtj.11)** add a few dependencies, each with a reason:
+- `mobile_scanner` scans the pairing QR (Android, iOS, macOS; elsewhere the code's text is pasted).
+- `video_player` plays clips (Android, iOS, macOS; elsewhere they download).
+- `flutter_map` and `latlong2` draw the location and trip maps, the same as the in-car UI.
+- `path_provider` finds the private store file.
+- `package_info_plus` shows the app version.
+- `intl` formats dates.
+- `bladewatch_theme` supplies the shared M3 tokens.
+
+The platform wiring they need is already in place:
+- **Both Apple platforms:** `NSCameraUsageDescription` and
+  `NSAppTransportSecurity/NSAllowsLocalNetworking` in `Info.plist`. The native player fetches
+  clips over plain HTTP from the app's own gateway on 127.0.0.1, which pins the car's TLS
+  itself.
+- **macOS:** `com.apple.security.device.camera` in both entitlements files, for
+  hardened-runtime builds.
+- **Android:** `android:allowBackup="false"`, because the store file holds this device's
+  credential for the car.
+
+The bundle id is `net.bladewatch.companion` on every platform. The app is named
+"BladeWatch" (the macOS product is `BladeWatch.app`). Both were template defaults until
+they were aligned, before anything shipped.
 
 The repository also contains two non-Gradle build inputs that feed the Android build:
 
@@ -221,7 +244,7 @@ Separately, every translated locale's `strings.xml` carries 7 keys (`rail_integr
 
 ### Flutter theme and navigation shell (BladeWatch-ncbb.4)
 
-`flutter_ui/lib/theme/` builds the light/dark `ThemeData` from the Android M3 tokens (`color_tokens.dart`, `dimens_tokens.dart`, `type_tokens.dart` — every value is asserted in a test against the real `colors_m3.xml` / `dimens_bladewatch.xml` / `themes_bladewatch.xml` XML, not hand-copied and trusted); `bladewatch_theme.dart` assembles them into `BladeWatchTheme.light()`/`.dark()`. See `docs/ui-ux-design-language.md` for the design rationale.
+`packages/bladewatch_theme/` (moved from `flutter_ui/lib/theme/` by BladeWatch-rdtj.11 so the companion shares it; `flutter_ui/lib/theme/*.dart` are now one-line re-exports) builds the light/dark `ThemeData` from the Android M3 tokens (`color_tokens.dart`, `dimens_tokens.dart`, `type_tokens.dart` — every value is asserted in a test against the real `colors_m3.xml` / `dimens_bladewatch.xml` / `themes_bladewatch.xml` XML, not hand-copied and trusted); `bladewatch_theme.dart` assembles them into `BladeWatchTheme.light()`/`.dark()`. See `docs/ui-ux-design-language.md` for the design rationale.
 
 `flutter_ui/lib/shell/` is the nav shell: `app_shell.dart` (`AppShell`, the toolbar + accent stripe + rail + content composition — built from **both** `activity_main_new.xml` and `layout-land/activity_main_new.xml`, switching on `MediaQuery` orientation the same way Android's `-land` resource qualifier does, since the two differ in more than layout direction — see the widget's doc comment), `nav_rail.dart` (the 9-destination rail + About divider), `shell_controller.dart` (`ShellController`, a plain `ChangeNotifier` — drive-side resolution and the selected route, no Flutter imports), `rail_destination.dart` (the 9-item ground truth, ported from `MainActivity.kt`'s `RailItem(...)` list), `route_stubs.dart` (the 11 `BwRoutes` Epic 2 fills in one at a time, plus the extra `settingsAbout` route — see its doc comment for why that one isn't in the 11), `drive_side.dart` (the `DriveSide` enum).
 
@@ -511,7 +534,7 @@ Flutter in-car UI commands, run from `flutter_ui/`:
 ```bash
 flutter analyze
 flutter test                                         # 1443 tests, zero skipped
-flutter test --coverage                              # then: tools/check_flutter_coverage.sh
+flutter test --coverage --coverage-package '^(bladewatch_ui|bladewatch_theme)$'   # then: tools/check_flutter_coverage.sh
 flutter build apk --target-platform android-arm64 --debug
 flutter run -d "$CAR_IP:5555"                        # hot reload, no Gradle, no daemon restart
 ```
@@ -631,17 +654,37 @@ The three Dart gates all live in `flutter_ui/android`'s Gradle build, because it
 ### Release builds in CI (`.github/workflows/release.yml`)
 
 Tag builds only, and **no secrets**: the keystore never touches GitHub. Pushing a
-tag matching `v*` builds **both** APKs — `net.bladewatch.app` (service host) and
-`net.bladewatch.flutter` (in-car UI) — **unsigned**, and attaches both to the
-GitHub Release. Creating a release through the GitHub UI on a new tag creates that
+tag matching `v*` builds **three** APKs, all **unsigned**, and attaches them to the
+GitHub Release: `net.bladewatch.app` (service host) and `net.bladewatch.flutter`
+(in-car UI) for the car, and `net.bladewatch.companion` for the owner's phone
+(BladeWatch-rdtj.15). Creating a release through the GitHub UI on a new tag creates that
 tag, which fires the same `push` event, so both routes are covered by one trigger.
 Ordinary pushes and pull requests build nothing. `workflow_dispatch` re-runs an
 existing tag.
 
-**Both APKs are required.** They are not variants of each other: the service host
+**Both car APKs are required.** They are not variants of each other: the service host
 has no launcher icon and runs the daemons; the Flutter APK is the only thing the
 driver opens. Installing one without the other gives either a UI with no daemon or
 daemons with no UI.
+
+**The companion ships for Android only.** It is one APK with `arm64-v8a` and `x86_64`
+(`--split-per-abi` fails by design, see the Project Layout notes), about 200 MB. Most
+of that is bare-kit: `libbare-kit.so` is about 65 MB per ABI. A further 50 MB is
+flutter_pear's desktop prebuilds, which flutter_pear declares as universal Flutter
+assets, so they ship in the Android APK too (upstream flutter_pear-9ng). iOS, macOS,
+Windows and Linux builds exist but CI builds none of them: each needs its own runner,
+and iOS and macOS need Apple signing, which a secret-free workflow cannot do. The
+release notes say so. Do not claim a platform there until CI attaches it.
+
+**bare-kit is cached.** Its `prebuilds.zip` is 418 MB, and two builds unpack it:
+`fetchBareKit` (the service host, for `pear_daemon`) and flutter_pear_bare (the
+companion). Each looks in its own `build/` directory and downloads it when absent. The
+workflow reads the pin from `app/build.gradle.kts`, restores one copy from
+`actions/cache` (or downloads and verifies it), and places it in both directories. Both
+builds re-verify the SHA-256, so a bad cache entry fails the build instead of shipping.
+flutter_pear_bare pins the same version and checksum. When either pin moves, move the
+other too: a mismatch only costs a download, but the car and the companion must run the
+same bare-kit.
 
 #### Signing the CI APKs
 
@@ -655,13 +698,22 @@ done
 apksigner verify --print-certs bladewatch-*-arm64-v8a.apk | grep 'SHA-256 digest'
 ```
 
-Both digests must match. `android:sharedUserId` collapses the two packages into one
+The two car digests must match. `android:sharedUserId` collapses the two packages into one
 UID *only* when their certificates are identical, and the daemon's loopback IPC on
 19876/19877 authorises by peer UID — a mismatched pair installs cleanly and then
 fails at runtime with the UI unable to reach the daemon.
 
-The workflow enforces that both APKs come out unsigned, and fails if either is
-signed or if fewer than two are produced. A half-signed pair is the dangerous
+The loop signs the companion too, which is the simplest choice. The companion shares no
+UID, so its key does not *have* to match the car's. What matters is that **every companion
+release is signed with the same key**: Android refuses an update signed with a different
+one, so a phone would have to uninstall the companion, which loses its pairing. Locally,
+`companion/android/app/build.gradle.kts` signs a release with `KEYSTORE_FILE` (default
+`app/release.jks`) when it exists, and otherwise leaves it unsigned. It used to fall back
+to the debug key, Flutter's template default, and a debug-signed release on a phone can
+never take the real one as an update.
+
+The workflow enforces that all three APKs come out unsigned, and fails if any is
+signed or if the count is not exactly three. A half-signed pair is the dangerous
 outcome: signing the other half later with a real key can never match a debug
 certificate baked in during the build.
 
@@ -687,7 +739,7 @@ pin (`sdk: ^3.12.2` today): a higher floor fails the workflow at `pub get`.
 `flutter analyze` for all three Dart packages, `flutter_ui`'s tests, and — after the UI
 build, which injects `flutter_ui/android/gradlew` — the Flutter APK's Kover gate together
 with the three Dart coverage gates (which also run the `bladewatch_rpc` and `companion`
-tests). The companion itself is not built or shipped by this workflow.
+tests).
 
 ### Recommended checks after code changes
 
@@ -795,7 +847,7 @@ Suggested mapping:
 - Verified native downloads and asset extraction tasks: [build.gradle.kts:72](../app/build.gradle.kts#L72), [build.gradle.kts:124](../app/build.gradle.kts#L124), [build.gradle.kts:138](../app/build.gradle.kts#L138), [build.gradle.kts:226](../app/build.gradle.kts#L226).
 - Angular web build and proto codegen tasks: [build.gradle.kts:487](../app/build.gradle.kts#L487), [build.gradle.kts:497](../app/build.gradle.kts#L497), [build.gradle.kts:520](../app/build.gradle.kts#L520), [buf.gen.yaml:1](../proto/buf.gen.yaml#L1), [package.json:5](../web/package.json#L5), [playwright.config.ts:17](../web/playwright.config.ts#L17).
 - Plugin and library versions: [libs.versions.toml:1](../gradle/libs.versions.toml#L1).
-- BYD stub compile/runtime behavior: [build.gradle.kts:413](../app/build.gradle.kts#L413), [IAccModeManager.java:5](../app/src/main/java/android/os/IAccModeManager.java#L5).
+- BYD stub compile/runtime behavior: [build.gradle.kts:413](../app/build.gradle.kts#L413), [BYDAutoManager.java:1](../app/src/main/java/android/hardware/BYDAutoManager.java#L1).
 - Native build and hardening: [CMakeLists.txt:50](../app/src/main/cpp/CMakeLists.txt#L50), [CMakeLists.txt:98](../app/src/main/cpp/CMakeLists.txt#L98).
 - Post-update daemon reset: [BootReceiver.kt:24](../app/src/main/java/com/loabletech/bladewatch/receiver/BootReceiver.kt#L24), [DaemonStartupManager.kt:15](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L15).
 - Operational files, logs, config, and storage: [UnifiedConfigManager.kt:30](../app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt#L30), [SecretConfigStore.kt:22](../app/src/main/java/com/loabletech/bladewatch/config/SecretConfigStore.kt#L22), [StorageManager.java:100](../app/src/main/java/com/loabletech/bladewatch/storage/StorageManager.java#L100), [DaemonLogger.java:382](../app/src/main/java/com/loabletech/bladewatch/logging/DaemonLogger.java#L382).

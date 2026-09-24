@@ -2948,4 +2948,36 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get pairing_error => 'บริการกล้องไม่ตอบสนอง โปรดลองอีกครั้ง';
+
+  @override
+  String get daemon_name_pear => 'การเข้าถึงระยะไกล (Pear)';
+
+  @override
+  String get pear_status_reachable => 'เข้าถึงได้จากทุกที่';
+
+  @override
+  String get pear_status_unreachable =>
+      'เข้าถึงไม่ได้: ไม่ได้เชื่อมต่อกับเครือข่าย Pear';
+
+  @override
+  String get pear_status_unknown => 'ไม่ทราบสถานะการเข้าถึง';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'เชื่อมต่อ $count อุปกรณ์',
+      zero: 'ไม่มีอุปกรณ์ที่เชื่อมต่อ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'เชื่อมต่อล่าสุด: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'ปิด';
 }

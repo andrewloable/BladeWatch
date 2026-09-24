@@ -2970,4 +2970,37 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get pairing_error =>
       'De cameraservice reageerde niet. Probeer het opnieuw.';
+
+  @override
+  String get daemon_name_pear => 'Toegang op afstand (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Overal bereikbaar';
+
+  @override
+  String get pear_status_unreachable =>
+      'Niet bereikbaar: geen verbinding met het Pear-netwerk';
+
+  @override
+  String get pear_status_unknown => 'Bereikbaarheid onbekend';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count apparaten verbonden',
+      one: '$count apparaat verbonden',
+      zero: 'Geen apparaten verbonden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Laatste verbinding: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Uit';
 }

@@ -272,6 +272,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
     @Throws(Exception::class)
     fun start() {
         logger.info("Starting GPU camera pipeline...")
+        val gen = generation.incrementAndGet()
         startTime = System.currentTimeMillis()
 
         // SOTA: Initialize BYD camera coordinator for cooperative sharing
@@ -361,8 +362,22 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
         // Initialize on GL thread
         newGlHandler.post {
             try {
+                // BladeWatch-honj: stop() can land before or during this post -- the daemon's startup
+                // ACC event does exactly that. quitSafely() still runs it, and it used to set running
+                // and start a watchdog for a GL thread that was already quitting: no heartbeat ever
+                // came, and 10 s later that orphan killed the healthy daemon the next start() built.
+                if (generation.get() != gen) return@post
                 initializeGl()
                 startCamera()
+                if (generation.get() != gen) {
+                    logger.warn("Stopped while starting — not starting the render loop or watchdog")
+                    cameraObj?.let {
+                        BydCameraCoordinator.closeCamera(it, cameraSurfaceMode)
+                        cameraObj = null
+                        cameraCoordinator?.notifyPosCloseCamera()
+                    }
+                    return@post
+                }
 
                 // SOTA: Setup event callback for HAL error detection (-10086, 8)
                 val coord = cameraCoordinator
@@ -376,7 +391,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
                 newGlHandler.post(this::renderLoop)
 
                 // Start watchdog
-                startWatchdog()
+                startWatchdog(gen)
 
                 logger.info("GPU camera pipeline started")
             } catch (e: Exception) {
@@ -1800,7 +1815,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
      * will call System.exit(0) to force a process restart, since EGL
      * contexts cannot be recovered from a blocked thread.
      */
-    private fun startWatchdog() {
+    private fun startWatchdog(gen: Int) {
         lastGlThreadHeartbeat = System.currentTimeMillis()
         firstFrameReceived = false
 
@@ -1828,12 +1843,15 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
                     else
                         GL_THREAD_WARMUP_TIMEOUT_MS
 
-                    if (timeSinceHeartbeat > effectiveTimeout) {
+                    val verdict = watchdogVerdict(gen, generation.get(), timeSinceHeartbeat, effectiveTimeout)
+                    if (verdict == WatchdogVerdict.SUPERSEDED) break
+                    if (verdict == WatchdogVerdict.HUNG) {
                         logger.error(
                             "CRITICAL: GL thread blocked for " + timeSinceHeartbeat +
                                 "ms - forcing process restart" +
                                 (if (firstFrameReceived) "" else " (during camera warmup)")
                         )
+                        glThread?.let { gl -> logger.error("GL thread stack: " + gl.stackTrace.take(25).joinToString(" <- ")) }
 
                         // Try to flush logs before exit
                         try {
@@ -1916,6 +1934,9 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
     // GL-hang timeout that can force a process restart. Must stay @Volatile (it was `volatile`
     // in the Java original) or the watchdog can read a stale value indefinitely.
     @Volatile private var firstFrameReceived = false
+
+    /** Bumped by every start() and stop(); a start whose number is stale was stopped (BladeWatch-honj). */
+    private val generation = java.util.concurrent.atomic.AtomicInteger()
 
     /**
      * SOTA: Yields the camera to the native BYD AVM app.
@@ -2105,6 +2126,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
      */
     fun stop() {
         logger.info("Stopping GPU camera pipeline...")
+        generation.incrementAndGet()
         running = false
 
         // Stop watchdog
@@ -2664,9 +2686,21 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
      */
     fun isProbeComplete(): Boolean = probeComplete
 
+    internal enum class WatchdogVerdict { HEALTHY, SUPERSEDED, HUNG }
+
     companion object {
         private const val TAG = "PanoramicCameraGpu"
         private val logger = DaemonLogger.getInstance(TAG)
+
+        /**
+         * What the GL watchdog of start number [gen] does. Only the CURRENT start's watchdog may
+         * restart the process; one whose start was stopped exits instead (BladeWatch-honj).
+         */
+        internal fun watchdogVerdict(gen: Int, currentGen: Int, sinceHeartbeatMs: Long, timeoutMs: Long) = when {
+            gen != currentGen -> WatchdogVerdict.SUPERSEDED
+            sinceHeartbeatMs > timeoutMs -> WatchdogVerdict.HUNG
+            else -> WatchdogVerdict.HEALTHY
+        }
         private const val PHYSICAL_CAMERA_ID = 1
         private const val MAX_CAMERA_ID = 5     // Probe camera IDs 0-5
 

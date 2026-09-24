@@ -208,6 +208,7 @@ class MainActivity : FlutterActivity() {
                 "daemon.status" -> result.success(jsonToMap(daemonControl.status()))
                 "daemon.processStatus" -> result.success(jsonToMap(daemonControl.processStatus()))
                 "daemon.tunnelStatus" -> result.success(jsonToMap(daemonControl.tunnelStatus()))
+                "daemon.pearStatus" -> result.success(jsonToMap(daemonControl.pearStatus()))
                 "daemon.setEnabled" -> {
                     val args = requireArgs(call)
                     result.success(

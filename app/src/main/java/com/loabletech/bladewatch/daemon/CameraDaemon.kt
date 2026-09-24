@@ -33,6 +33,7 @@ import net.bladewatch.app.monitor.PerformanceMonitor
 import net.bladewatch.app.monitor.SocHistoryDatabase
 import net.bladewatch.app.monitor.VehicleDataMonitor
 import net.bladewatch.app.notifications.CategoryRegistry
+import net.bladewatch.app.notifications.CompanionInbox
 import net.bladewatch.app.notifications.NotificationBus
 import net.bladewatch.app.notifications.push.SubscriptionStore
 import net.bladewatch.app.notifications.push.VapidKeyStore
@@ -494,7 +495,10 @@ object CameraDaemon {
         // Register Connect protocol service implementations
         val cd = http.connectDispatcher
         AuthServiceImpl().register(cd)
-        NotificationsServiceImpl().register(cd)
+        // BladeWatch-rdtj.14: held for the companion from boot, registry or not.
+        val inbox = CompanionInbox(File(CompanionInbox.PATH))
+        NotificationBus.get().subscribe(inbox)
+        NotificationsServiceImpl(inbox).register(cd)
         SettingsServiceImpl().register(cd)
         StreamServiceImpl().register(cd)
         StorageServiceImpl().register(cd)

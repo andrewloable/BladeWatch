@@ -298,6 +298,20 @@ object AuthMiddleware {
     fun isLocalAppCaller(trust: ListenerTrust, address: java.net.InetAddress): Boolean =
         trust == ListenerTrust.LOCAL_APPS && address.isLoopbackAddress
 
+    /**
+     * The trust a connection actually gets. The in-car listener's local trust is for BladeWatch, not
+     * for every app on the head unit: Android loopback is shared, and LOCAL_APPS both opens the
+     * debug-build Tier 2 bypass and skips the vehicle-action second factor -- so any installed app
+     * used to get the whole API, vehicle control included, with no credential (BladeWatch-g5u7).
+     * A connection keeps LOCAL_APPS only when its peer UID is one the IPC server trusts too
+     * ([PeerCredentials]: the BladeWatch app UID, shell, system, root). Any other peer -- or one
+     * whose UID cannot be resolved -- is served exactly like a remote caller. [peerTrusted] is only
+     * evaluated on the in-car listener; the lookup reads /proc/net.
+     */
+    @JvmStatic
+    fun effectiveTrust(listener: ListenerTrust, peerTrusted: () -> Boolean): ListenerTrust =
+        if (listener == ListenerTrust.LOCAL_APPS && !peerTrusted()) ListenerTrust.REMOTE else listener
+
     /** Whether a path is public (no auth required). */
     @JvmStatic
     fun isPublicPath(path: String): Boolean {

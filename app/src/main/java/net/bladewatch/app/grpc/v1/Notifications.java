@@ -101,6 +101,21 @@ public final class Notifications extends com.google.protobuf.GeneratedFile {
   static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_bladewatch_v1_SendTestResponse_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_InboxEntry_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_InboxEntry_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_ListInboxRequest_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_ListInboxRequest_fieldAccessorTable;
+  static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_bladewatch_v1_ListInboxResponse_descriptor;
+  static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_bladewatch_v1_ListInboxResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -148,26 +163,39 @@ public final class Notifications extends com.google.protobuf.GeneratedFile {
       "r\"I\n\017SendTestRequest\022\032\n\010category\030\001 \001(\tR\010" +
       "category\022\032\n\010severity\030\002 \001(\tR\010severity\",\n\020" +
       "SendTestResponse\022\030\n\007success\030\001 \001(\010R\007succe" +
-      "ss*\242\001\n\024NotificationSeverity\022%\n!NOTIFICAT" +
-      "ION_SEVERITY_UNSPECIFIED\020\000\022\036\n\032NOTIFICATI" +
-      "ON_SEVERITY_INFO\020\001\022\037\n\033NOTIFICATION_SEVER" +
-      "ITY_ALERT\020\002\022\"\n\036NOTIFICATION_SEVERITY_CRI" +
-      "TICAL\020\0032\265\004\n\024NotificationsService\022Z\n\rGetC" +
-      "ategories\022#.bladewatch.v1.GetCategoriesR" +
-      "equest\032$.bladewatch.v1.GetCategoriesResp" +
-      "onse\022N\n\tSubscribe\022\037.bladewatch.v1.Subscr" +
-      "ibeRequest\032 .bladewatch.v1.SubscribeResp" +
-      "onse\022T\n\013Unsubscribe\022!.bladewatch.v1.Unsu" +
-      "bscribeRequest\032\".bladewatch.v1.Unsubscri" +
-      "beResponse\022f\n\021ListSubscriptions\022\'.bladew" +
-      "atch.v1.ListSubscriptionsRequest\032(.blade" +
-      "watch.v1.ListSubscriptionsResponse\022f\n\021Up" +
-      "datePreferences\022\'.bladewatch.v1.UpdatePr" +
-      "eferencesRequest\032(.bladewatch.v1.UpdateP" +
-      "referencesResponse\022K\n\010SendTest\022\036.bladewa" +
-      "tch.v1.SendTestRequest\032\037.bladewatch.v1.S" +
-      "endTestResponseB\036\n\032net.bladewatch.app.gr" +
-      "pc.v1P\001b\006proto3"
+      "ss\"\365\001\n\nInboxEntry\022\016\n\002id\030\001 \001(\003R\002id\022!\n\014tim" +
+      "estamp_ms\030\002 \001(\003R\013timestampMs\022\032\n\010category" +
+      "\030\003 \001(\tR\010category\022?\n\010severity\030\004 \001(\0162#.bla" +
+      "dewatch.v1.NotificationSeverityR\010severit" +
+      "y\022\024\n\005title\030\005 \001(\tR\005title\022\022\n\004body\030\006 \001(\tR\004b" +
+      "ody\022\033\n\tclick_url\030\007 \001(\tR\010clickUrl\022\020\n\003tag\030" +
+      "\010 \001(\tR\003tag\"C\n\020ListInboxRequest\022\031\n\010after_" +
+      "id\030\001 \001(\003R\007afterId\022\024\n\005limit\030\002 \001(\005R\005limit\"" +
+      "\202\001\n\021ListInboxResponse\0223\n\007entries\030\001 \003(\0132\031" +
+      ".bladewatch.v1.InboxEntryR\007entries\022\033\n\tla" +
+      "test_id\030\002 \001(\003R\010latestId\022\033\n\toldest_id\030\003 \001" +
+      "(\003R\010oldestId*\242\001\n\024NotificationSeverity\022%\n" +
+      "!NOTIFICATION_SEVERITY_UNSPECIFIED\020\000\022\036\n\032" +
+      "NOTIFICATION_SEVERITY_INFO\020\001\022\037\n\033NOTIFICA" +
+      "TION_SEVERITY_ALERT\020\002\022\"\n\036NOTIFICATION_SE" +
+      "VERITY_CRITICAL\020\0032\205\005\n\024NotificationsServi" +
+      "ce\022Z\n\rGetCategories\022#.bladewatch.v1.GetC" +
+      "ategoriesRequest\032$.bladewatch.v1.GetCate" +
+      "goriesResponse\022N\n\tSubscribe\022\037.bladewatch" +
+      ".v1.SubscribeRequest\032 .bladewatch.v1.Sub" +
+      "scribeResponse\022T\n\013Unsubscribe\022!.bladewat" +
+      "ch.v1.UnsubscribeRequest\032\".bladewatch.v1" +
+      ".UnsubscribeResponse\022f\n\021ListSubscription" +
+      "s\022\'.bladewatch.v1.ListSubscriptionsReque" +
+      "st\032(.bladewatch.v1.ListSubscriptionsResp" +
+      "onse\022f\n\021UpdatePreferences\022\'.bladewatch.v" +
+      "1.UpdatePreferencesRequest\032(.bladewatch." +
+      "v1.UpdatePreferencesResponse\022K\n\010SendTest" +
+      "\022\036.bladewatch.v1.SendTestRequest\032\037.blade" +
+      "watch.v1.SendTestResponse\022N\n\tListInbox\022\037" +
+      ".bladewatch.v1.ListInboxRequest\032 .bladew" +
+      "atch.v1.ListInboxResponseB\036\n\032net.bladewa" +
+      "tch.app.grpc.v1P\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -263,6 +291,24 @@ public final class Notifications extends com.google.protobuf.GeneratedFile {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_bladewatch_v1_SendTestResponse_descriptor,
         new java.lang.String[] { "Success", });
+    internal_static_bladewatch_v1_InboxEntry_descriptor =
+      getDescriptor().getMessageType(15);
+    internal_static_bladewatch_v1_InboxEntry_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_InboxEntry_descriptor,
+        new java.lang.String[] { "Id", "TimestampMs", "Category", "Severity", "Title", "Body", "ClickUrl", "Tag", });
+    internal_static_bladewatch_v1_ListInboxRequest_descriptor =
+      getDescriptor().getMessageType(16);
+    internal_static_bladewatch_v1_ListInboxRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_ListInboxRequest_descriptor,
+        new java.lang.String[] { "AfterId", "Limit", });
+    internal_static_bladewatch_v1_ListInboxResponse_descriptor =
+      getDescriptor().getMessageType(17);
+    internal_static_bladewatch_v1_ListInboxResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_bladewatch_v1_ListInboxResponse_descriptor,
+        new java.lang.String[] { "Entries", "LatestId", "OldestId", });
     descriptor.resolveAllFeaturesImmutable();
   }
 

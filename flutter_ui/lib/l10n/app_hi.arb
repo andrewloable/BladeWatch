@@ -1136,5 +1136,12 @@
   "pairing_remove": "हटाएँ",
   "pairing_remove_confirm_title": "{name} हटाएँ?",
   "pairing_remove_confirm_body": "इसकी पहुँच तुरंत समाप्त हो जाएगी। आपके अन्य डिवाइस काम करते रहेंगे।",
-  "pairing_error": "कैमरा सेवा ने जवाब नहीं दिया। फिर से प्रयास करें।"
+  "pairing_error": "कैमरा सेवा ने जवाब नहीं दिया। फिर से प्रयास करें।",
+  "daemon_name_pear": "रिमोट एक्सेस (Pear)",
+  "pear_status_reachable": "कहीं से भी पहुँच योग्य",
+  "pear_status_unreachable": "पहुँच योग्य नहीं: Pear नेटवर्क से कोई कनेक्शन नहीं",
+  "pear_status_unknown": "पहुँच की स्थिति अज्ञात",
+  "pear_devices_connected": "{count, plural, =0{कोई डिवाइस कनेक्ट नहीं} one{{count} डिवाइस कनेक्ट है} other{{count} डिवाइस कनेक्ट हैं}}",
+  "pear_last_connection": "अंतिम कनेक्शन: {time}",
+  "pear_tile_off": "बंद"
 }

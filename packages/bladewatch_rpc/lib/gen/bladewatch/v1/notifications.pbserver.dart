@@ -33,6 +33,8 @@ abstract class NotificationsServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.UpdatePreferencesRequest request);
   $async.Future<$0.SendTestResponse> sendTest(
       $pb.ServerContext ctx, $0.SendTestRequest request);
+  $async.Future<$0.ListInboxResponse> listInbox(
+      $pb.ServerContext ctx, $0.ListInboxRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
@@ -48,6 +50,8 @@ abstract class NotificationsServiceBase extends $pb.GeneratedService {
         return $0.UpdatePreferencesRequest();
       case 'SendTest':
         return $0.SendTestRequest();
+      case 'ListInbox':
+        return $0.ListInboxRequest();
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -68,6 +72,8 @@ abstract class NotificationsServiceBase extends $pb.GeneratedService {
         return updatePreferences(ctx, request as $0.UpdatePreferencesRequest);
       case 'SendTest':
         return sendTest(ctx, request as $0.SendTestRequest);
+      case 'ListInbox':
+        return listInbox(ctx, request as $0.ListInboxRequest);
       default:
         throw $core.ArgumentError('Unknown method: $methodName');
     }

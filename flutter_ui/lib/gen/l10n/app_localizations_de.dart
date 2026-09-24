@@ -2985,4 +2985,37 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get pairing_error =>
       'Der Kameradienst hat nicht geantwortet. Bitte erneut versuchen.';
+
+  @override
+  String get daemon_name_pear => 'Fernzugriff (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Von überall erreichbar';
+
+  @override
+  String get pear_status_unreachable =>
+      'Nicht erreichbar: keine Verbindung zum Pear-Netzwerk';
+
+  @override
+  String get pear_status_unknown => 'Erreichbarkeit unbekannt';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Geräte verbunden',
+      one: '$count Gerät verbunden',
+      zero: 'Keine Geräte verbunden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Letzte Verbindung: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Aus';
 }

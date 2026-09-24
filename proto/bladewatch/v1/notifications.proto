@@ -14,6 +14,7 @@ option java_multiple_files = true;
 //   ListSubscriptions    GET  /api/push/subscriptions
 //   UpdatePreferences    POST /api/push/preferences
 //   SendTest             POST /api/push/test
+//   ListInbox            (Connect only)
 service NotificationsService {
   rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
   rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
@@ -21,6 +22,10 @@ service NotificationsService {
   rpc ListSubscriptions(ListSubscriptionsRequest) returns (ListSubscriptionsResponse);
   rpc UpdatePreferences(UpdatePreferencesRequest) returns (UpdatePreferencesResponse);
   rpc SendTest(SendTestRequest) returns (SendTestResponse);
+  // Store and forward (BladeWatch-rdtj.14): the car keeps the notifications it raised, and a
+  // companion fetches the ones it has not seen whenever it connects -- over the LAN or Pear, with
+  // no push service in between. Oldest first.
+  rpc ListInbox(ListInboxRequest) returns (ListInboxResponse);
 }
 
 // NotificationSeverity mirrors NotificationEvent.Severity.
@@ -114,4 +119,37 @@ message SendTestRequest {
 
 message SendTestResponse {
   bool success = 1;
+}
+
+// One notification the car raised, kept for companions (BladeWatch-rdtj.14).
+message InboxEntry {
+  // Strictly increasing, and never reused -- also across daemon restarts.
+  int64 id = 1;
+  int64 timestamp_ms = 2;
+  // Dotted category, e.g. "surveillance.motion".
+  string category = 3;
+  NotificationSeverity severity = 4;
+  string title = 5;
+  string body = 6;
+  // Deep link the source gave, e.g. to the recording; empty when none.
+  string click_url = 7;
+  // Events with the same tag supersede each other (e.g. "recording in progress" by the final
+  // alert): the car keeps only the newest, and a companion should show only the newest it has.
+  // Empty when the source gave none.
+  string tag = 8;
+}
+
+message ListInboxRequest {
+  // Entries with an id greater than this; 0 for everything still held.
+  int64 after_id = 1;
+  // At most this many, oldest first; 0 means 100, and it is capped at 500.
+  int32 limit = 2;
+}
+
+message ListInboxResponse {
+  repeated InboxEntry entries = 1;
+  // The newest and oldest ids the car still holds (0 when empty). The inbox is bounded: a
+  // companion whose after_id is below oldest_id - 1 missed entries that were dropped.
+  int64 latest_id = 2;
+  int64 oldest_id = 3;
 }

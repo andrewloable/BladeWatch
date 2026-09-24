@@ -1,19 +1,24 @@
+import 'package:bladewatch_companion/inbox_sync.dart';
 import 'package:bladewatch_companion/transport/car_auth.dart';
 import 'package:bladewatch_companion/transport/lan_prober.dart';
 import 'package:bladewatch_companion/transport/local_gateway.dart';
 import 'package:bladewatch_companion/transport/pear_link.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/notifications.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_rpc/pairing/pairing_payload.dart';
 import 'package:bladewatch_rpc/rpc/connect_client.dart';
 import 'package:bladewatch_rpc/rpc/connect_error.dart';
 import 'package:bladewatch_rpc/rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/services/notifications_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:fixnum/fixnum.dart';
 import 'package:flutter_pear/flutter_pear.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-/// BladeWatch-rdtj.6/.7/.8 on real hardware: find the car, pair with it, and call it.
+/// BladeWatch-rdtj.6/.7/.8/.14 on real hardware: find the car, pair with it, call it, and
+/// collect an alert from its inbox.
 ///
 /// Needs a powered car and a FRESH pairing QR's text (single use, five minutes), so it is
 /// skipped without one:
@@ -90,12 +95,26 @@ void main() {
       // ...and answers once the QR's code is redeemed and the companion has logged in.
       final auth = CarAuth(gateway.baseUrl);
       final credential = await auth.redeem(qr.code, name: 'companion e2e');
-      final client = SystemServiceClient(ConnectClient(jwtSource: CompanionJwtSource(auth, credential), baseUrl: gateway.baseUrl));
+      final rpc = ConnectClient(jwtSource: CompanionJwtSource(auth, credential), baseUrl: gateway.baseUrl);
+      final client = SystemServiceClient(rpc);
       final status = await client.getStatus(GetStatusRequest());
       expect(status.deviceId, qr.deviceId, reason: 'the car that answered is the one that showed the QR');
 
       // A used code is worthless.
       await expectLater(auth.redeem(qr.code), throwsA(isA<CarAuthRefused>()));
+
+      // Store and forward: an alert the car raised is collected over this route, once.
+      final notifications = NotificationsServiceClient(rpc);
+      final before = await collectInbox(notifications, Int64.ZERO);
+      await notifications.sendTest(SendTestRequest(category: 'surveillance.motion', severity: 'info'));
+      InboxBatch after = const InboxBatch([], Int64.ZERO);
+      for (var i = 0; i < 20 && after.entries.isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 250)); // the bus delivers async
+        after = await collectInbox(notifications, before.cursor);
+      }
+      expect(after.entries.map((e) => e.title), ['Test notification']);
+      expect(after.entries.single.severity, NotificationSeverity.NOTIFICATION_SEVERITY_INFO);
+      expect((await collectInbox(notifications, after.cursor)).entries, isEmpty);
 
       if (_soakSeconds > 0) {
         final reRouted = <TransportPhase>[];

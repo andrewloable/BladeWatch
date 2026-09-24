@@ -2858,6 +2858,37 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pairing_error => '摄像头服务没有响应。请重试。';
+
+  @override
+  String get daemon_name_pear => '远程访问 (Pear)';
+
+  @override
+  String get pear_status_reachable => '可从任何地方访问';
+
+  @override
+  String get pear_status_unreachable => '无法访问：未连接到 Pear 网络';
+
+  @override
+  String get pear_status_unknown => '访问状态未知';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已连接 $count 台设备',
+      zero: '没有已连接的设备',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '上次连接：$time';
+  }
+
+  @override
+  String get pear_tile_off => '关闭';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -5714,6 +5745,37 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get pairing_error => '摄像头服务没有响应。请重试。';
+
+  @override
+  String get daemon_name_pear => '远程访问 (Pear)';
+
+  @override
+  String get pear_status_reachable => '可从任何地方访问';
+
+  @override
+  String get pear_status_unreachable => '无法访问：未连接到 Pear 网络';
+
+  @override
+  String get pear_status_unknown => '访问状态未知';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已连接 $count 台设备',
+      zero: '没有已连接的设备',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '上次连接：$time';
+  }
+
+  @override
+  String get pear_tile_off => '关闭';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -8571,4 +8633,35 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get pairing_error => '攝影機服務沒有回應。請再試一次。';
+
+  @override
+  String get daemon_name_pear => '遠端存取 (Pear)';
+
+  @override
+  String get pear_status_reachable => '可從任何地方存取';
+
+  @override
+  String get pear_status_unreachable => '無法存取：未連線至 Pear 網路';
+
+  @override
+  String get pear_status_unknown => '存取狀態不明';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已連線 $count 台裝置',
+      zero: '沒有已連線的裝置',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '上次連線：$time';
+  }
+
+  @override
+  String get pear_tile_off => '關閉';
 }

@@ -351,6 +351,13 @@ Notification features include:
 
 Surveillance and proximity events deliver notifications through Web Push. There is no Telegram notification path.
 
+**Companion app: store and forward (BladeWatch-rdtj.14).** The car keeps every notification
+it raised: the last 200, for up to 14 days. A newer event with the same tag replaces the
+older one. Each time the companion connects, over the LAN or Pear, it collects the alerts
+it has not seen yet (`NotificationsService.ListInbox`). No push service is involved: an
+alert reaches the phone the next time the companion connects, not the moment it happens.
+The owner chose that trade over depending on a central push relay.
+
 Tapping a push opens the Angular SPA at the route for that category — `/events?filter=sentry` or `/events?filter=proximity` for surveillance and proximity clips, `/vehicle` for TPMS, door, and charging alerts, `/trips` for trip lifecycle alerts. Event pushes also carry the clip name as `file=`, which opens that recording directly, and a pre-signed snapshot URL as `hero=`, which the events page renders as an inline banner. The banner exists because iOS Safari ignores `options.image` on Web Push, so the snapshot never reaches the OS notification banner; only a same-origin `/thumb/` path is accepted for `hero=`. Category click targets live in [notifications-categories.json](../app/src/main/assets/notifications-categories.json) as `defaultClickUrl`, used when an event carries no URL of its own.
 
 `trips.started` and `trips.ended` (`TripEventNotifier`, BladeWatch-nmao.3) notify on trip boundaries detected by the gear-based `TripDetector` state machine. Both are **off by default** — a trip ends every time the owner parks, and a notification on every park is how people turn all notifications off. `trips.ended`'s payload carries the trip's distance and duration; discarded trips (below the minimum duration/distance thresholds) never publish anything.
@@ -369,6 +376,47 @@ five minutes; pairing switches on remote access over Pear, and the same dialog e
 offers the opt-in direct connection on the car's Wi-Fi. Paired devices are listed there and
 can be removed one at a time, which cuts off that device immediately without affecting the
 others. Pairing and removing are only possible in the car.
+
+**The companion app (v1.4.0.0, BladeWatch-rdtj.11).** The phone and desktop app that
+replaces the web UI. It reaches the car directly on its Wi-Fi when both are on one network,
+otherwise over Pear. It has every page the web app had:
+
+- Dashboard.
+- Live view.
+- Events, meaning the store-and-forward alerts plus the surveillance and proximity clips.
+- Recordings, with playback and delete.
+- Vehicle: status, climate, seats and windows.
+- Location, on a map.
+- Trips: routes, scores, range, driving DNA and storage.
+- Surveillance: arm and disarm, detection settings, camera snapshots and safe zones.
+- Notifications: which alert categories this device shows, and a test alert.
+- Settings.
+- Performance.
+- Diagnostics.
+- About.
+
+The web login is replaced by pairing: scan the in-car QR, or paste its text.
+
+- **Connection state is explicit on every page.** It is one of three: still looking for the
+  car (a Pear lookup can take a minute), can't reach it (it keeps retrying), or the car
+  removed this device (pair again). None of these is ever a spinner that never resolves.
+- **Live view is refreshed stills for now.** It shows the four-camera mosaic, updated every
+  few seconds, and works on every platform without a video decoder. H.264 video, and with it
+  the per-camera views, is a follow-up.
+- **Window control asks first, every time.** From a phone, nobody can see whether a hand or
+  a pet is in a window. Climate and seat changes are reversible and don't ask. Every command
+  carries the car's short-lived action token, and the car's own safety interlock still
+  decides.
+- **The app is in all 17 of the web app's languages.**
+- **Platforms.** It runs on Android, iOS, macOS, Windows and Linux. Clips play in the app on
+  Android, iOS and macOS; elsewhere they download. The QR scanner uses the camera on Android,
+  iOS and macOS; elsewhere, paste the code's text.
+
+**Remote access status (v1.4.0.0).** Settings -> Services lists "Remote access (Pear)" with
+its switch, and, while it runs, whether the car can be reached from anywhere right now
+(which a running process alone does not mean), how many paired devices are connected, and
+when one last connected. The dashboard's Remote access tile shows the same while Pear is on:
+Online, Offline, Starting, or Running when reachability cannot be determined.
 
 LAN HTTP is disabled by default. The Tor onion service fronts the authenticated local web server directly with no intermediate proxy. The onion address is a capability URL, not authentication: the password/JWT layer stays mandatory.
 

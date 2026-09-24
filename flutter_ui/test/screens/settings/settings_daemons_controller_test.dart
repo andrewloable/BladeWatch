@@ -19,32 +19,48 @@ void main() {
   });
 
   group('load()', () {
-    test('populates all 4 daemon rows from daemon.processStatus', () async {
+    test('populates all 5 daemon rows from daemon.processStatus', () async {
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false, 'PEAR_PEER': true},
       });
       final c = build();
 
       await c.load();
 
       expect(c.loading, isFalse);
-      expect(c.rows, hasLength(4));
+      expect(c.rows, hasLength(5));
+      expect(c.rows.firstWhere((r) => r.kind == DaemonKind.pearPeer).running, isTrue);
       expect(c.rows.firstWhere((r) => r.kind == DaemonKind.camera).running, isTrue);
       expect(c.rows.firstWhere((r) => r.kind == DaemonKind.sentry).running, isFalse);
       expect(c.rows.firstWhere((r) => r.kind == DaemonKind.accSentry).running, isTrue);
       expect(c.rows.firstWhere((r) => r.kind == DaemonKind.torTunnel).running, isFalse);
     });
 
-    test('a channel failure reports all 4 daemons as stopped rather than crashing', () async {
+    test('a channel failure reports all 5 daemons as stopped rather than crashing', () async {
       channel.stubError('daemon', 'processStatus', const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'));
       final c = build();
 
       await c.load();
 
       expect(c.loading, isFalse);
-      expect(c.rows, hasLength(4));
+      expect(c.rows, hasLength(5));
       expect(c.rows.every((r) => !r.running), isTrue);
+    });
+
+    test('reads the Pear status, and its failure leaves the rows alone', () async {
+      channel
+        ..stub('daemon', 'processStatus', {'daemons': {'PEAR_PEER': true}})
+        ..stub('daemon', 'pearStatus', {'running': true, 'enabled': true, 'reachable': false, 'companions': 1});
+      final c = build();
+      await c.load();
+      expect(c.pear.reachable, isFalse);
+      expect(c.pear.devicesConnected, 1);
+
+      channel.stubError('daemon', 'pearStatus', const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'));
+      await c.load();
+      expect(c.pear.reachable, isNull);
+      expect(c.rows.firstWhere((r) => r.kind == DaemonKind.pearPeer).running, isTrue);
     });
   });
 
@@ -78,9 +94,9 @@ void main() {
       expect(c.rows.firstWhere((r) => r.kind == DaemonKind.torTunnel).running, isTrue);
     });
 
-    // BladeWatch-abcx: only the Tor tunnel is toggleable. The other three are
-    // refused HERE, without an IPC call, because the reasons are structural — see
-    // DaemonKind.canToggle.
+    // BladeWatch-abcx: only the remote-access daemons (Tor tunnel, Pear peer) are
+    // toggleable. The other three are refused HERE, without an IPC call, because the
+    // reasons are structural — see DaemonKind.canToggle.
     test('a non-toggleable daemon is refused without calling the capability at all', () async {
       channel.stub('daemon', 'processStatus', {
         'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
@@ -97,8 +113,22 @@ void main() {
       }
 
       expect(called, 0, reason: 'no IPC round trip for a fact this process already knows');
-      expect(c.rows.every((r) => r.kind == DaemonKind.torTunnel || r.running), isTrue,
+      expect(c.rows.every((r) => r.kind.canToggle || r.running), isTrue,
           reason: 'the refused daemons must be left running');
+    });
+
+    test('the Pear peer is toggleable, like the Tor tunnel', () async {
+      channel.stub('daemon', 'processStatus', {'daemons': {'PEAR_PEER': false}});
+      final toggled = <(DaemonKind, bool)>[];
+      final c = build(setDaemonEnabled: (kind, enabled) async {
+        toggled.add((kind, enabled));
+        return true;
+      });
+      await c.load();
+
+      expect(DaemonKind.pearPeer.canToggle, isTrue);
+      expect(await c.toggle(DaemonKind.pearPeer, true), isTrue);
+      expect(toggled, [(DaemonKind.pearPeer, true)]);
     });
 
     test('a capability that returns false leaves state as-is', () async {
@@ -130,7 +160,7 @@ void main() {
 
       expect(
         fake.calls.map((c) => (c.args as Map)['type']).toList(),
-        ['CAMERA_DAEMON', 'SENTRY_DAEMON', 'ACC_SENTRY_DAEMON', 'TOR_TUNNEL'],
+        ['CAMERA_DAEMON', 'SENTRY_DAEMON', 'ACC_SENTRY_DAEMON', 'TOR_TUNNEL', 'PEAR_PEER'],
       );
     });
 

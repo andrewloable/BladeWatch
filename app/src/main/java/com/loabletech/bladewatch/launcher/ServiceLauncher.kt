@@ -189,31 +189,27 @@ class ServiceLauncher(
     // ==================== ACC WHITELIST ====================
     
     /**
-     * Inject app into BYD ACC mode whitelist via ADB shell.
-     * This allows WiFi to stay active when car is powered off.
+     * Background-run app ops and the deviceidle (battery optimisation) exemption, via ADB shell.
+     *
+     * There is no BYD ACC-whitelist step any more (BladeWatch-u43d): `setprop
+     * persist.sys.acc.whitelist` never took effect (the property is empty on the head unit), and
+     * `service call accmodemanager 1/2/3` meant set (refused: DEVICE_ACC is a signature
+     * permission), REMOVE from the whitelist, and getAccModeStatus -- measured 2026-09-24.
      */
     fun injectAccWhitelist(packageName: String, callback: LaunchCallback) {
         logManager.info(TAG, "Injecting ACC whitelist for $packageName...")
         callback.onLog("Injecting ACC whitelist for $packageName...")
         
         val commands = listOf(
-            // Method 1: setprop (persistent property)
-            "setprop persist.sys.acc.whitelist '$packageName' 2>&1",
-            // Method 2: service call with different transaction codes
-            "service call accmodemanager 1 s16 '$packageName' 2>/dev/null",
-            "service call accmodemanager 2 s16 '$packageName' 2>/dev/null",
-            "service call accmodemanager 3 s16 '$packageName' 2>/dev/null",
-            // Method 3: appops
+            // App ops
             "appops set $packageName RUN_IN_BACKGROUND allow 2>/dev/null",
             "appops set $packageName RUN_ANY_IN_BACKGROUND allow 2>/dev/null",
             "appops set $packageName WAKE_LOCK allow 2>/dev/null",
-            // Method 4: Disable battery optimization
+            // Battery optimisation exemption
             "dumpsys deviceidle whitelist +$packageName 2>/dev/null",
-            // Method 5: BYD Start Control whitelist
-            "settings put global ssc_whitelist '$packageName' 2>/dev/null",
-            "settings put secure ssc_whitelist '$packageName' 2>/dev/null",
-            // Method 6: BYD app startup manager
-            "content call --uri content://com.byd.appstartup/whitelist --method add --arg '$packageName' 2>/dev/null"
+            // No BYD start-control step: the settings and provider once written here are not what
+            // BYD reads. Auto-start is decided by BYD Auto-Start, which only the owner can change
+            // (BladeWatch-mgvv, docs/daemons-and-processes.md "After a reboot").
         )
         
         executeCommandSequence(commands, 0, callback) {

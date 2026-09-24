@@ -2945,4 +2945,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairing_error => 'The camera service did not respond. Try again.';
+
+  @override
+  String get daemon_name_pear => 'Remote access (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Reachable from anywhere';
+
+  @override
+  String get pear_status_unreachable =>
+      'Not reachable: no connection to the Pear network';
+
+  @override
+  String get pear_status_unknown => 'Reachability unknown';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count devices connected',
+      one: '$count device connected',
+      zero: 'No devices connected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Last connection: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Off';
 }

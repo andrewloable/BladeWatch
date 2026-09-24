@@ -40,6 +40,12 @@ class SettingsDaemonsController extends ChangeNotifier with DisposedSafeNotifier
   List<DaemonRowState> _rows = const [];
   List<DaemonRowState> get rows => _rows;
 
+  /// BladeWatch-rdtj.17: what the Pear row shows beyond running/off -- whether the car can be
+  /// found right now, and its connected devices. Read separately, so a failure here never
+  /// blanks the other rows.
+  PearStatus _pear = PearStatus.unknown;
+  PearStatus get pear => _pear;
+
   Future<void> load() async {
     try {
       final status = await _daemonChannel.daemonStatus();
@@ -52,6 +58,11 @@ class SettingsDaemonsController extends ChangeNotifier with DisposedSafeNotifier
           .toList();
     } catch (_) {
       _rows = DaemonKind.values.map((k) => DaemonRowState(kind: k, running: false)).toList();
+    }
+    try {
+      _pear = await _daemonChannel.pearStatus();
+    } catch (_) {
+      _pear = PearStatus.unknown;
     }
     _loading = false;
     notifyListeners();

@@ -1137,5 +1137,12 @@
   "pairing_remove": "Entfernen",
   "pairing_remove_confirm_title": "{name} entfernen?",
   "pairing_remove_confirm_body": "Es verliert sofort den Zugriff. Ihre anderen Geräte funktionieren weiter.",
-  "pairing_error": "Der Kameradienst hat nicht geantwortet. Bitte erneut versuchen."
+  "pairing_error": "Der Kameradienst hat nicht geantwortet. Bitte erneut versuchen.",
+  "daemon_name_pear": "Fernzugriff (Pear)",
+  "pear_status_reachable": "Von überall erreichbar",
+  "pear_status_unreachable": "Nicht erreichbar: keine Verbindung zum Pear-Netzwerk",
+  "pear_status_unknown": "Erreichbarkeit unbekannt",
+  "pear_devices_connected": "{count, plural, =0{Keine Geräte verbunden} one{{count} Gerät verbunden} other{{count} Geräte verbunden}}",
+  "pear_last_connection": "Letzte Verbindung: {time}",
+  "pear_tile_off": "Aus"
 }

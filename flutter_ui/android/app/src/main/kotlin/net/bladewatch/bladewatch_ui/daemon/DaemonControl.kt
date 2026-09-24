@@ -45,6 +45,12 @@ class DaemonControl(private val ipc: IpcCommandSender) {
     fun tunnelStatus(): JSONObject = ipc.sendCommand(JSONObject().put("cmd", "tunnelStatus"))
 
     /**
+     * BladeWatch-rdtj.17: the Pear peer -- running, switched on, reachable (DHT online; null when
+     * unknown), connected companions and when one last connected. Never a topic or key.
+     */
+    fun pearStatus(): JSONObject = ipc.sendCommand(JSONObject().put("cmd", "pearStatus"))
+
+    /**
      * BladeWatch-abcx: enable or disable an OPTIONAL daemon. The daemon refuses any type
      * outside its own allow-list — currently TOR_TUNNEL alone — so passing anything else
      * comes back as an error rather than doing something partial.

@@ -276,6 +276,73 @@ const SendTestResponse$json = {
 final $typed_data.Uint8List sendTestResponseDescriptor = $convert.base64Decode(
     'ChBTZW5kVGVzdFJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3M=');
 
+@$core.Deprecated('Use inboxEntryDescriptor instead')
+const InboxEntry$json = {
+  '1': 'InboxEntry',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 3, '10': 'id'},
+    {'1': 'timestamp_ms', '3': 2, '4': 1, '5': 3, '10': 'timestampMs'},
+    {'1': 'category', '3': 3, '4': 1, '5': 9, '10': 'category'},
+    {
+      '1': 'severity',
+      '3': 4,
+      '4': 1,
+      '5': 14,
+      '6': '.bladewatch.v1.NotificationSeverity',
+      '10': 'severity'
+    },
+    {'1': 'title', '3': 5, '4': 1, '5': 9, '10': 'title'},
+    {'1': 'body', '3': 6, '4': 1, '5': 9, '10': 'body'},
+    {'1': 'click_url', '3': 7, '4': 1, '5': 9, '10': 'clickUrl'},
+    {'1': 'tag', '3': 8, '4': 1, '5': 9, '10': 'tag'},
+  ],
+};
+
+/// Descriptor for `InboxEntry`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List inboxEntryDescriptor = $convert.base64Decode(
+    'CgpJbmJveEVudHJ5Eg4KAmlkGAEgASgDUgJpZBIhCgx0aW1lc3RhbXBfbXMYAiABKANSC3RpbW'
+    'VzdGFtcE1zEhoKCGNhdGVnb3J5GAMgASgJUghjYXRlZ29yeRI/CghzZXZlcml0eRgEIAEoDjIj'
+    'LmJsYWRld2F0Y2gudjEuTm90aWZpY2F0aW9uU2V2ZXJpdHlSCHNldmVyaXR5EhQKBXRpdGxlGA'
+    'UgASgJUgV0aXRsZRISCgRib2R5GAYgASgJUgRib2R5EhsKCWNsaWNrX3VybBgHIAEoCVIIY2xp'
+    'Y2tVcmwSEAoDdGFnGAggASgJUgN0YWc=');
+
+@$core.Deprecated('Use listInboxRequestDescriptor instead')
+const ListInboxRequest$json = {
+  '1': 'ListInboxRequest',
+  '2': [
+    {'1': 'after_id', '3': 1, '4': 1, '5': 3, '10': 'afterId'},
+    {'1': 'limit', '3': 2, '4': 1, '5': 5, '10': 'limit'},
+  ],
+};
+
+/// Descriptor for `ListInboxRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listInboxRequestDescriptor = $convert.base64Decode(
+    'ChBMaXN0SW5ib3hSZXF1ZXN0EhkKCGFmdGVyX2lkGAEgASgDUgdhZnRlcklkEhQKBWxpbWl0GA'
+    'IgASgFUgVsaW1pdA==');
+
+@$core.Deprecated('Use listInboxResponseDescriptor instead')
+const ListInboxResponse$json = {
+  '1': 'ListInboxResponse',
+  '2': [
+    {
+      '1': 'entries',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.bladewatch.v1.InboxEntry',
+      '10': 'entries'
+    },
+    {'1': 'latest_id', '3': 2, '4': 1, '5': 3, '10': 'latestId'},
+    {'1': 'oldest_id', '3': 3, '4': 1, '5': 3, '10': 'oldestId'},
+  ],
+};
+
+/// Descriptor for `ListInboxResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listInboxResponseDescriptor = $convert.base64Decode(
+    'ChFMaXN0SW5ib3hSZXNwb25zZRIzCgdlbnRyaWVzGAEgAygLMhkuYmxhZGV3YXRjaC52MS5Jbm'
+    'JveEVudHJ5UgdlbnRyaWVzEhsKCWxhdGVzdF9pZBgCIAEoA1IIbGF0ZXN0SWQSGwoJb2xkZXN0'
+    'X2lkGAMgASgDUghvbGRlc3RJZA==');
+
 const $core.Map<$core.String, $core.dynamic> NotificationsServiceBase$json = {
   '1': 'NotificationsService',
   '2': [
@@ -309,6 +376,11 @@ const $core.Map<$core.String, $core.dynamic> NotificationsServiceBase$json = {
       '2': '.bladewatch.v1.SendTestRequest',
       '3': '.bladewatch.v1.SendTestResponse'
     },
+    {
+      '1': 'ListInbox',
+      '2': '.bladewatch.v1.ListInboxRequest',
+      '3': '.bladewatch.v1.ListInboxResponse'
+    },
   ],
 };
 
@@ -330,6 +402,9 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.UpdatePreferencesResponse': UpdatePreferencesResponse$json,
   '.bladewatch.v1.SendTestRequest': SendTestRequest$json,
   '.bladewatch.v1.SendTestResponse': SendTestResponse$json,
+  '.bladewatch.v1.ListInboxRequest': ListInboxRequest$json,
+  '.bladewatch.v1.ListInboxResponse': ListInboxResponse$json,
+  '.bladewatch.v1.InboxEntry': InboxEntry$json,
 };
 
 /// Descriptor for `NotificationsService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -344,4 +419,5 @@ final $typed_data.Uint8List notificationsServiceDescriptor = $convert.base64Deco
     'VwZGF0ZVByZWZlcmVuY2VzEicuYmxhZGV3YXRjaC52MS5VcGRhdGVQcmVmZXJlbmNlc1JlcXVl'
     'c3QaKC5ibGFkZXdhdGNoLnYxLlVwZGF0ZVByZWZlcmVuY2VzUmVzcG9uc2USSwoIU2VuZFRlc3'
     'QSHi5ibGFkZXdhdGNoLnYxLlNlbmRUZXN0UmVxdWVzdBofLmJsYWRld2F0Y2gudjEuU2VuZFRl'
-    'c3RSZXNwb25zZQ==');
+    'c3RSZXNwb25zZRJOCglMaXN0SW5ib3gSHy5ibGFkZXdhdGNoLnYxLkxpc3RJbmJveFJlcXVlc3'
+    'QaIC5ibGFkZXdhdGNoLnYxLkxpc3RJbmJveFJlc3BvbnNl');

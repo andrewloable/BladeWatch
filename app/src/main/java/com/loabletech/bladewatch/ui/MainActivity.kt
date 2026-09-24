@@ -8,7 +8,6 @@ import net.bladewatch.app.R
 import net.bladewatch.app.launcher.AdbDaemonLauncher
 import net.bladewatch.app.storage.StorageSetup
 import net.bladewatch.app.ui.daemon.DaemonStartupManager
-import net.bladewatch.app.util.BydDataCacheWhitelist
 
 /**
  * The daemon APK's startup bootstrap. **This is not a UI.**
@@ -22,11 +21,13 @@ import net.bladewatch.app.util.BydDataCacheWhitelist
  *     launch.
  *  2. `DeviceIdGenerator.init` then `generateDeviceId`, **before any daemon starts**,
  *     because the daemon reads the synced device-id file.
- *  3. `BydDataCacheWhitelist.applyAll` on a background thread — `ActivityThread.systemMain()`
- *     can block for over a minute waiting for system services.
- *  4. `DaemonStartupManager` with its staggered timing (core ~45s, optional ~60s, health
+ *  3. `DaemonStartupManager` with its staggered timing (core ~45s, optional ~60s, health
  *     checks from ~90s every 30s).
- *  5. The one-shot cleanup of the APK the removed in-app updater used to stage.
+ *  4. The one-shot cleanup of the APK the removed in-app updater used to stage.
+ *
+ * There is no BYD ACC whitelisting: `accmodemanager.setPkg2AccWhiteList` needs the signature
+ * permission DEVICE_ACC, which neither the app nor shell holds, so it failed on every launch
+ * (BladeWatch-ese8, measured on the head unit).
  *
  * It has NO launcher entry (BladeWatch-81g9.1). It is started explicitly: by the Flutter
  * UI when the user opens it, by `BootReceiver`, by `DaemonKeepaliveService`, and by a
@@ -107,17 +108,6 @@ class MainActivity : Activity() {
         // Must happen BEFORE any daemon starts
         val deviceId = net.bladewatch.app.util.DeviceIdGenerator.generateDeviceId(this)
         android.util.Log.i("MainActivity", "Device ID initialized: $deviceId")
-
-        // Apply BYD whitelist (ACC + data cache) to prevent background killing
-        // CRITICAL: Run on background thread to avoid blocking UI on boot
-        // ActivityThread.systemMain() can block for 1+ minute waiting for system services
-        Thread {
-            try {
-                BydDataCacheWhitelist.applyAll(this)
-            } catch (e: Exception) {
-                android.util.Log.e("MainActivity", "BYD whitelist error: ${e.message}")
-            }
-        }.start()
 
         // Initialize daemon startup manager (no ViewModel — see the class comment)
         daemonStartupManager = DaemonStartupManager(this)

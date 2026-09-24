@@ -199,7 +199,10 @@ tasks.register<Exec>("flutterTestCoverage") {
     description = "Run flutter test --coverage for flutter_ui"
     group = "verification"
     workingDir = flutterUiDir
-    commandLine(flutterBin, "test", "--coverage")
+    // bladewatch_theme too (BladeWatch-rdtj.11): the tokens moved out of flutter_ui/lib/theme
+    // into a shared package, and flutter_ui's theme tests are what exercise them. Without this
+    // flag the lcov reports this package only, and the move would drop them out of every gate.
+    commandLine(flutterBin, "test", "--coverage", "--coverage-package", "^(bladewatch_ui|bladewatch_theme)$")
 }
 
 tasks.register<Exec>("checkFlutterCoverage") {

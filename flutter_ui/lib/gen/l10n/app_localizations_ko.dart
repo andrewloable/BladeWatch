@@ -2883,4 +2883,35 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pairing_error => '카메라 서비스가 응답하지 않았습니다. 다시 시도하세요.';
+
+  @override
+  String get daemon_name_pear => '원격 액세스 (Pear)';
+
+  @override
+  String get pear_status_reachable => '어디서나 연결 가능';
+
+  @override
+  String get pear_status_unreachable => '연결 불가: Pear 네트워크에 연결되지 않음';
+
+  @override
+  String get pear_status_unknown => '연결 가능 여부 알 수 없음';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '기기 $count대 연결됨',
+      zero: '연결된 기기 없음',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '마지막 연결: $time';
+  }
+
+  @override
+  String get pear_tile_off => '꺼짐';
 }

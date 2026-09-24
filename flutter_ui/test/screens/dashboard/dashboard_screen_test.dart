@@ -563,6 +563,45 @@ void main() {
     expect(navigated, ['recordings']);
   });
 
+  // BladeWatch-rdtj.17: while the Pear peer is on, the Remote access tile reports whether the car
+  // can actually be found -- not just whether a process runs.
+  group('Remote access tile with the Pear peer on', () {
+    Future<void> pumpWithPear(WidgetTester tester, Map<String, Object?> pear) async {
+      stubHappyPath();
+      channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, ...pear});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+    }
+
+    Finder inTile(String text) =>
+        find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.text(text));
+    final dot = find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.byKey(const ValueKey('tile.statusDot')));
+
+    testWidgets('reachable reads Online, with the status dot', (tester) async {
+      await pumpWithPear(tester, {'running': true, 'reachable': true});
+      expect(inTile('Online'), findsOneWidget);
+      expect(dot, findsOneWidget);
+    });
+
+    testWidgets('running but unreachable reads Offline, no dot', (tester) async {
+      await pumpWithPear(tester, {'running': true, 'reachable': false});
+      expect(inTile('Offline'), findsOneWidget);
+      expect(dot, findsNothing);
+    });
+
+    testWidgets('unknown reachability reads Running, no dot', (tester) async {
+      await pumpWithPear(tester, {'running': true, 'reachable': null});
+      expect(inTile('Running'), findsOneWidget);
+      expect(dot, findsNothing);
+    });
+
+    testWidgets('switched on but not up yet reads Starting', (tester) async {
+      await pumpWithPear(tester, {'running': false, 'reachable': false});
+      expect(inTile('Starting'), findsOneWidget);
+      expect(dot, findsNothing);
+    });
+  });
+
   testWidgets('tapping the tunnel tile navigates to diagnostics', (tester) async {
     stubHappyPath();
     final controller = buildController();

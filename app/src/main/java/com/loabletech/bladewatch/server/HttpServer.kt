@@ -348,7 +348,9 @@ class HttpServer(private val port: Int) {
         }
     }
 
-    private fun handleClient(client: Socket, trust: ListenerTrust) {
+    private fun handleClient(client: Socket, listenerTrust: ListenerTrust) {
+        // BladeWatch-g5u7: an app on the head unit that is not BladeWatch is not LOCAL_APPS.
+        val trust = AuthMiddleware.effectiveTrust(listenerTrust) { PeerCredentials.isTrustedPeer(client) }
         // BladeWatch-sxzg: set when the socket's ownership passes to the streaming pool. The
         // finally below MUST NOT close it then — the stream is still using it, and closing here
         // would tear down every live view the moment it started.
@@ -1043,11 +1045,6 @@ class HttpServer(private val port: Int) {
         val lanEnabled = UnifiedConfigManager.isLanHttpEnabled()
         network.put("lanHttpEnabled", lanEnabled)
         network.put("httpBind", "127.0.0.1")
-        network.put(
-            "lanTls",
-            JSONObject().put("enabled", lanEnabled).put("port", LanTls.PORT)
-                .put("listening", lanTlsSocket?.isClosed == false)
-        )
         status.put("network", network)
 
         return status

@@ -378,6 +378,30 @@ The auth manager uses a device id and secret to derive local access tokens. Lega
 
 The current release auth model uses a JWT HMAC secret stored through the secret/config bridge.
 
+### On the companion device
+
+The companion app keeps one file, `companion.json`, in its private application-support
+directory. It holds the paired car (device id, Pear topic, TLS pin, probe key, and this
+device's companion id and token), the alert cursor, the chosen language and the muted alert
+categories. It is replaced atomically, and on macOS and Linux it is mode 600, set before the
+token is written. The token logs in as this device until the car un-pairs it, so Android
+backup is off for the app (`allowBackup="false"`).
+
+### Companion Alert Inbox
+
+```text
+/data/local/tmp/bladewatch_inbox.json
+```
+
+`CompanionInbox` (BladeWatch-rdtj.14) is a `NotificationBus` sink in `byd_cam_daemon`. It
+keeps the car's notifications until a companion collects them. The file is mode 600,
+shell-owned, and replaced atomically. It holds `nextId` plus up to 200 entries from the
+last 14 days. Each entry has an id, time, category, severity, title, body, click URL and
+tag. The event's `data` extras are never stored. The click URL is stored, though, and for a
+clip alert it names the clip (`file=`) and the snapshot link (`hero=`), just as the push
+payload does. The file records when the car was disturbed, so treat it as personal data. Deleting it only resets the
+ids, and companions recover from that on their own.
+
 ## Media Storage
 
 Main media base directory:

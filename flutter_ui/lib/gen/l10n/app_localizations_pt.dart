@@ -2984,6 +2984,38 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get pairing_error =>
       'O serviço da câmara não respondeu. Tente novamente.';
+
+  @override
+  String get daemon_name_pear => 'Acesso remoto (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Acessível a partir de qualquer lugar';
+
+  @override
+  String get pear_status_unreachable => 'Inacessível: sem ligação à rede Pear';
+
+  @override
+  String get pear_status_unknown => 'Acessibilidade desconhecida';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dispositivos ligados',
+      one: '$count dispositivo ligado',
+      zero: 'Nenhum dispositivo ligado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Última ligação: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Desligado';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -5965,4 +5997,37 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get pairing_error =>
       'O serviço da câmera não respondeu. Tente de novo.';
+
+  @override
+  String get daemon_name_pear => 'Acesso remoto (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Acessível de qualquer lugar';
+
+  @override
+  String get pear_status_unreachable =>
+      'Inacessível: sem conexão com a rede Pear';
+
+  @override
+  String get pear_status_unknown => 'Acessibilidade desconhecida';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dispositivos conectados',
+      one: '$count dispositivo conectado',
+      zero: 'Nenhum dispositivo conectado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Última conexão: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Desligado';
 }

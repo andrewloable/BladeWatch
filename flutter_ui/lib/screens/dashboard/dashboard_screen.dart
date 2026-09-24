@@ -373,8 +373,25 @@ class _MetricRow extends StatelessWidget {
             ? l10n.dashboard_recordings_value_live(rec.todayCount)
             : rec.todayCount.toString();
 
-    final tunnelValue =
-        controller.tunnel.phase == TunnelPhase.online ? l10n.dashboard_tunnel_online : l10n.dashboard_tunnel_offline;
+    // BladeWatch-rdtj.17: while the Pear peer is on, this tile reports IT -- whether the car can
+    // be found right now, not merely whether a process runs. Otherwise it keeps reporting the tor
+    // tunnel, until tor is removed (rdtj.12) and the tile is Pear's alone.
+    final pear = controller.pear;
+    final String remoteValue;
+    final bool remoteOnline;
+    if (pear.enabled) {
+      remoteValue = !pear.running
+          ? l10n.startup_status_starting
+          : switch (pear.reachable) {
+              true => l10n.dashboard_tunnel_online,
+              false => l10n.dashboard_tunnel_offline,
+              null => l10n.surveillance_general_status_running,
+            };
+      remoteOnline = pear.running && pear.reachable == true;
+    } else {
+      remoteOnline = controller.tunnel.phase == TunnelPhase.online;
+      remoteValue = remoteOnline ? l10n.dashboard_tunnel_online : l10n.dashboard_tunnel_offline;
+    }
 
     final daemons = controller.daemonsSummary;
     final daemonsValue = l10n.dashboard_daemons_running(daemons.running, daemons.total);
@@ -405,11 +422,12 @@ class _MetricRow extends StatelessWidget {
         key: const ValueKey('tile.tunnel'),
         icon: Icons.dashboard_outlined,
         title: l10n.dashboard_metric_tunnel,
-        value: tunnelValue,
+        value: remoteValue,
         theme: theme,
-        onTap: onTunnelTap,
+        // Pear's details -- reachability, connected devices -- live on the Services screen.
+        onTap: pear.enabled ? onDaemonsTap : onTunnelTap,
         // Native's remote-access card is the only one with a status dot.
-        showStatusDot: controller.tunnel.phase == TunnelPhase.online,
+        showStatusDot: remoteOnline,
       ),
       _MetricTile(
         key: const ValueKey('tile.daemons'),
@@ -510,6 +528,7 @@ class _MetricTile extends StatelessWidget {
                     const Spacer(),
                     if (showStatusDot)
                       Container(
+                        key: const ValueKey('tile.statusDot'),
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),

@@ -2,6 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>BladeWatch uses the camera to scan the pairing code your car shows.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Clips play from the app's own gateway at http://127.0.0.1, which pins the car's TLS
+		     itself; the native player would otherwise refuse plain HTTP even on loopback. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>BladeWatch looks for your car on the Wi-Fi network you share with it, and connects to it directly when it finds it.</string>
 	<key>CFBundleDevelopmentRegion</key>

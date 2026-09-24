@@ -52,4 +52,11 @@ class NotificationsServiceClient {
         (json) => SendTestResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
+  Future<ListInboxResponse> listInbox(ListInboxRequest request) => _transport.call(
+        'NotificationsService',
+        'ListInbox',
+        request,
+        (json) => ListInboxResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
 }

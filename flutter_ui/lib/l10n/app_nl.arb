@@ -1136,5 +1136,12 @@
   "pairing_remove": "Verwijderen",
   "pairing_remove_confirm_title": "{name} verwijderen?",
   "pairing_remove_confirm_body": "Het verliest direct de toegang. Je andere apparaten blijven werken.",
-  "pairing_error": "De cameraservice reageerde niet. Probeer het opnieuw."
+  "pairing_error": "De cameraservice reageerde niet. Probeer het opnieuw.",
+  "daemon_name_pear": "Toegang op afstand (Pear)",
+  "pear_status_reachable": "Overal bereikbaar",
+  "pear_status_unreachable": "Niet bereikbaar: geen verbinding met het Pear-netwerk",
+  "pear_status_unknown": "Bereikbaarheid onbekend",
+  "pear_devices_connected": "{count, plural, =0{Geen apparaten verbonden} one{{count} apparaat verbonden} other{{count} apparaten verbonden}}",
+  "pear_last_connection": "Laatste verbinding: {time}",
+  "pear_tile_off": "Uit"
 }

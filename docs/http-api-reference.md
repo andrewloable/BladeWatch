@@ -8,6 +8,25 @@ Base URL by default:
 http://127.0.0.1:8080
 ```
 
+## Listeners and what each one trusts
+
+The same routes are served on up to four listeners. The routes are identical on each; the
+difference is the auth posture. That posture comes from the listener a request arrived on,
+never from its source address. tor and the Pear pump both deliver remote traffic from
+127.0.0.1, so a loopback address proves nothing (`ListenerTrust`, BladeWatch-rdtj.4).
+
+| Listener | Who connects | Trust | Notes |
+|---|---|---|---|
+| `127.0.0.1:8080`, plain HTTP | the in-car UI and the service host | `LOCAL_APPS`, only when the peer UID is BladeWatch's own (or shell, system, root); otherwise `REMOTE` | The only listener that can get the debug-build loopback bypass or skip the vehicle-action second factor. Another app on the head unit is served like a remote caller (BladeWatch-g5u7). |
+| `127.0.0.1:8081`, plain HTTP | tor, for the onion service | `REMOTE` | Loopback only. Exists so tor never lands on 8080 (BladeWatch-ur11). Goes away with tor (rdtj.12). |
+| `127.0.0.1:8444`, TLS | `PearStreamPump`, carrying a companion's Pear stream | `REMOTE` | Serves the LAN listener's certificate. The companion runs TLS end to end over the Pear stream and pins that certificate, so pear_daemon never sees plaintext. |
+| `0.0.0.0:8443`, TLS | a companion or browser on the car's network | `REMOTE` | Only when the owner opts in (`network.lanHttpEnabled`, off by default). Self-signed certificate, pinned by fingerprint from the pairing QR. |
+
+`REMOTE` means every protected route needs a JWT, and every vehicle action also needs an
+`X-Vehicle-Action-Token` from `VehicleService/IssueActionToken`. Plain HTTP never binds beyond loopback. `SystemService/GetStatus` reports
+`network.lanHttpEnabled` and `network.httpBind` (always `127.0.0.1`). The LAN listener's port
+and fingerprint reach the in-car UI over IPC (`lanTlsInfo`), not through status.
+
 The server exposes two parallel API surfaces over the same port:
 
 1. **HTTP, for things a browser must fetch directly.** There is **no REST JSON API any more**
@@ -40,8 +59,9 @@ middleware runs, so they are reachable without a session):
 - `GET /auth/status` — returns the device id hint for the login page. Public.
 - `POST /auth/token` — body `{token}`; validates the device token and, on
   success, issues a JWT and sets the `byd_session` (HttpOnly) + `byd_auth=1`
-  (hint) cookies. Rate-limited to 10 attempts/min per client identity
-  (X-Forwarded-For when present, else socket), then a 30s lockout.
+  (hint) cookies. Rate-limited to 10 attempts/min per client identity,
+  which is the socket's peer IP (X-Forwarded-For is ignored), then a 30 s lockout. Any 30
+  failures across all callers within 2 minutes trigger a 5-minute global lockout (BladeWatch-rlgv).
 - `POST /auth/logout` — clears the session cookies. Idempotent.
 - `POST /auth/pair` — body `{code, name}`; redeems a single-use pairing code from the in-car QR
   (BladeWatch-rdtj.7) and answers `{success, companionId, token}` exactly once, or
@@ -110,7 +130,7 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 | `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode`, `GetStatusOverlay`/`SetStatusOverlay`, `GetTelemetryOverlayFields`/`SetTelemetryOverlayFields` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` |
 | `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `PreviewStorageLimitChange`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
 | `VehicleService` | `GetState`, `GetAcDiagnostics`, `GetSeatDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported), `IssueActionToken`, `GetAdasInventory` | `/api/vehicle/*`, `/api/gps/*` |
-| `NotificationsService` | `GetCategories`, `Subscribe`, `Unsubscribe`, `ListSubscriptions`, `UpdatePreferences`, `SendTest` | `/api/notifications/*`, `/api/push/*` |
+| `NotificationsService` | `GetCategories`, `Subscribe`, `Unsubscribe`, `ListSubscriptions`, `UpdatePreferences`, `SendTest`, `ListInbox` | `/api/notifications/*`, `/api/push/*` (`ListInbox`: Connect only) |
 
 The full request/response message shapes are in `proto/bladewatch/v1/*.proto`
 (one file per service, plus `common.proto`). Regenerate stubs with
@@ -503,6 +523,14 @@ Handled by `NotificationApiHandler`:
 
 Connect mirror: `NotificationsService.{GetCategories,Subscribe,Unsubscribe,
 ListSubscriptions,UpdatePreferences,SendTest}`.
+
+`NotificationsService.ListInbox` is Connect only, with no REST twin. It serves the
+companion's store-and-forward alerts (BladeWatch-rdtj.14, `CompanionInbox`). Request
+`{afterId, limit}`: `limit` 0 means 100 and is capped at 500. The response is
+`{entries, latestId, oldestId}`, oldest first, containing only entries with an id
+above `afterId`. Ids strictly increase and are never reused, so a companion that sends
+back the last id it saw can neither skip nor repeat an alert. If `latestId` is below
+the companion's cursor, the car's inbox was wiped, and the companion starts over from 0.
 
 ## Status and Control
 

@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConnectClients } from '../../core/connect/connect-clients';
 import type { SafeZone } from '../../../gen/bladewatch/v1/safe_locations_pb';
+import type { SurveillanceConfig } from '../../../gen/bladewatch/v1/surveillance_pb';
+import { withEdits } from './config-edits';
 
 @Component({
   selector: 'app-surveillance',
@@ -44,6 +46,9 @@ export default class SurveillanceComponent implements OnInit {
 
   readonly quadrants = [1, 2, 3, 4];
 
+  /** Sent back with every save, so fields this page does not edit survive it (q0p4). */
+  private loadedConfig: SurveillanceConfig | undefined;
+
   ngOnInit(): void {
     this.loadAll();
   }
@@ -57,6 +62,7 @@ export default class SurveillanceComponent implements OnInit {
       ]);
 
       const cfg = config.config;
+      this.loadedConfig = cfg;
       if (cfg) {
         this.sensitivity.set(cfg.sensitivity ?? 3);
         this.distancePreset.set(cfg.distancePreset ?? 'BALANCED');
@@ -107,7 +113,7 @@ export default class SurveillanceComponent implements OnInit {
     this.statusMsg.set('');
     try {
       await this.clients.surveillance.setConfig({
-        config: {
+        config: withEdits(this.loadedConfig, {
           sensitivity: this.sensitivity(),
           distancePreset: this.distancePreset() as any,
           aiEnabled: this.aiEnabled(),
@@ -119,7 +125,7 @@ export default class SurveillanceComponent implements OnInit {
           detectCar: this.detectCar(),
           detectBike: this.detectBike(),
           nightMode: this.nightMode(),
-        },
+        }),
       });
       this.statusMsg.set('Settings saved');
     } catch {

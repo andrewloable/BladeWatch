@@ -80,4 +80,17 @@ class SettingsServiceClient {
         (json) => SetRecordingModeResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
+  Future<GetStatusOverlayResponse> getStatusOverlay(GetStatusOverlayRequest request) => _transport.call(
+        'SettingsService',
+        'GetStatusOverlay',
+        request,
+        (json) => GetStatusOverlayResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
+
+  Future<SetStatusOverlayResponse> setStatusOverlay(SetStatusOverlayRequest request) => _transport.call(
+        'SettingsService',
+        'SetStatusOverlay',
+        request,
+        (json) => SetStatusOverlayResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
 }

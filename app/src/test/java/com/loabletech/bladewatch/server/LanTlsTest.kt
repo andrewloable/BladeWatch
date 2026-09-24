@@ -51,7 +51,8 @@ class LanTlsTest {
         assertEquals("EC", cert.publicKey.algorithm)
         assertEquals("SHA256withECDSA", cert.sigAlgName)
         assertEquals(cert.subjectX500Principal, cert.issuerX500Principal)
-        assertTrue(cert.subjectX500Principal.name, cert.subjectX500Principal.name.contains("CN=BladeWatch"))
+        // Generic on purpose: the subject is readable pre-auth by the whole LAN (BladeWatch-cjhz).
+        assertEquals("CN=localhost", cert.subjectX500Principal.name)
     }
 
     @Test

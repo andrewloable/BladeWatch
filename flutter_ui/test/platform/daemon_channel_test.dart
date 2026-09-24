@@ -83,6 +83,37 @@ void main() {
     // a fixture, it is a capability granting network access to a real car.
     const onion = 'http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion';
 
+    test('pearStatus reads reachability, connected devices and the last connection', () async {
+      final fake = FakePlatformChannel()
+        ..stub('daemon', 'pearStatus', <Object?, Object?>{
+          'status': 'ok',
+          'running': true,
+          'enabled': true,
+          'reachable': true,
+          'companions': 2,
+          'lastCompanionAt': 1700000000000,
+        });
+      final s = await DaemonChannel(fake).pearStatus();
+      expect(fake.calls.single.method, 'pearStatus');
+      expect(s.running, isTrue);
+      expect(s.enabled, isTrue);
+      expect(s.reachable, isTrue);
+      expect(s.devicesConnected, 2);
+      expect(s.lastConnection, DateTime.fromMillisecondsSinceEpoch(1700000000000));
+    });
+
+    test('pearStatus keeps unknown reachability unknown, and tolerates a sparse reply', () async {
+      final fake = FakePlatformChannel()
+        ..stub('daemon', 'pearStatus', <Object?, Object?>{'status': 'ok', 'reachable': null, 'lastCompanionAt': null});
+      final s = await DaemonChannel(fake).pearStatus();
+      expect(s.reachable, isNull, reason: 'null means "cannot tell", never "not reachable"');
+      expect(s.running, isFalse);
+      expect(s.enabled, isFalse);
+      expect(s.devicesConnected, 0);
+      expect(s.lastConnection, isNull);
+      expect(PearStatus.unknown.reachable, isNull);
+    });
+
     test('tunnelStatus reports the onion URL the daemon publishes', () async {
       final fake = FakePlatformChannel()
         ..stub('daemon', 'tunnelStatus', <Object?, Object?>{

@@ -129,4 +129,12 @@ class VehicleServiceClient {
         (json) => StopGpsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
+  /// The short-lived second factor every remote caller needs on an actuating command
+  /// (`X-Vehicle-Action-Token`, VehicleActionGate on the car).
+  Future<IssueActionTokenResponse> issueActionToken(IssueActionTokenRequest request) => _transport.call(
+        'VehicleService',
+        'IssueActionToken',
+        request,
+        (json) => IssueActionTokenResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
+      );
 }

@@ -271,11 +271,13 @@ UI at all; `verifyWebAssetsPresent` now fails the build in that state instead.
 
 ### Release builds in CI
 
-`.github/workflows/release.yml` builds **both** APKs on a `v*` tag and attaches them
-to the GitHub Release. It needs **no secrets**: both come out unsigned, and the
-workflow fails if either is signed or if fewer than two are produced. Sign the pair
+`.github/workflows/release.yml` builds **three** APKs on a `v*` tag and attaches them
+to the GitHub Release: the two car APKs and the companion (Android only; CI builds no
+other companion platform). It needs **no secrets**: all three come out unsigned, and the
+workflow fails if any is signed or if the count is not exactly three. Sign the car pair
 afterwards with the same key — `android:sharedUserId` only collapses them into one
-UID when the certificates are identical.
+UID when the certificates are identical. The companion needs no matching key, but every
+release of it must use the same key, or phones cannot update it.
 
 A tag build is a **detached HEAD**, so the branch embedded in the service host APK
 filename becomes the literal `HEAD`; the workflow globs for the file and stamps the
@@ -331,9 +333,9 @@ Camera frame → GPU downscale → native motion pipeline → per-quadrant state
 
 ## Key Source Locations
 
-- In-car UI (Flutter): [flutter_ui/lib/main.dart](flutter_ui/lib/main.dart), [flutter_ui/lib/shell/](flutter_ui/lib/shell/), [flutter_ui/lib/screens/](flutter_ui/lib/screens/), [flutter_ui/lib/theme/](flutter_ui/lib/theme/), [flutter_ui/lib/l10n/](flutter_ui/lib/l10n/)
+- In-car UI (Flutter): [flutter_ui/lib/main.dart](flutter_ui/lib/main.dart), [flutter_ui/lib/shell/](flutter_ui/lib/shell/), [flutter_ui/lib/screens/](flutter_ui/lib/screens/), [packages/bladewatch_theme/lib/](packages/bladewatch_theme/lib/) (shared with the companion; flutter_ui/lib/theme re-exports it), [flutter_ui/lib/l10n/](flutter_ui/lib/l10n/)
 - Connect client + generated messages, shared by both Flutter apps: [packages/bladewatch_rpc/lib/rpc/](packages/bladewatch_rpc/lib/rpc/), [packages/bladewatch_rpc/lib/gen/](packages/bladewatch_rpc/lib/gen/) (was `flutter_ui/lib/rpc` + `lib/gen/bladewatch` until BladeWatch-rdtj.10)
-- Companion app (phones/desktops, flutter_pear): [companion/lib/main.dart](companion/lib/main.dart); workspace: [melos.yaml](melos.yaml)
+- Companion app (phones/desktops, flutter_pear): [companion/lib/main.dart](companion/lib/main.dart), [companion/lib/app.dart](companion/lib/app.dart) (shell), [companion/lib/car/](companion/lib/car/) (session, store, connection-state page), [companion/lib/screens/](companion/lib/screens/) (one per web page), [companion/lib/transport/](companion/lib/transport/); strings are the web catalogs in [companion/assets/i18n/](companion/assets/i18n/) read by [companion/lib/i18n.dart](companion/lib/i18n.dart); workspace: [melos.yaml](melos.yaml)
 - Flutter-side Kotlin (MethodChannels + Live View texture plugin): [flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt](flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt)
 - Service host entry: [BladeWatchApplication.kt](app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt), [MainActivity.kt](app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt) (bootstrap only)
 - Daemon launch: [DaemonStartupManager.kt](app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt), [AdbDaemonLauncher.kt](app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt), [DaemonBootstrap.kt](app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.kt)
@@ -383,7 +385,7 @@ car's `pear_daemon` runs), or directly when on the car's LAN (epic BladeWatch-rd
 **one** place in this repo where iOS/macOS/Windows/Linux targets are correct — a platform
 directory belongs here, never under `flutter_ui/`. It never runs on the head unit.
 
-- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.3`) — never a caret; before 1.0 its
+- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.4`) — never a caret; before 1.0 its
   minor versions may break the API.
 - Android ships arm64-v8a + x86_64 only, and that holds **only** because
   `companion/android/gradle.properties` sets `disable-abi-filtering=true`: without it the Flutter
@@ -443,7 +445,7 @@ and `buildAngularWebUI` already owns the "is the web toolchain present" question
 
 ```bash
 cd flutter_ui && flutter analyze && flutter test
-cd flutter_ui && flutter test --coverage && cd .. && tools/check_flutter_coverage.sh
+cd flutter_ui && flutter test --coverage --coverage-package '^(bladewatch_ui|bladewatch_theme)$' && cd .. && tools/check_flutter_coverage.sh
 ```
 
 **Shared RPC package (Dart)** — `packages/bladewatch_rpc/` is the Connect client, the generated

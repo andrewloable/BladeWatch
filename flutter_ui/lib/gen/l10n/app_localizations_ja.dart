@@ -2880,4 +2880,35 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pairing_error => 'カメラサービスが応答しませんでした。もう一度お試しください。';
+
+  @override
+  String get daemon_name_pear => 'リモートアクセス (Pear)';
+
+  @override
+  String get pear_status_reachable => 'どこからでも接続可能';
+
+  @override
+  String get pear_status_unreachable => '接続不可: Pear ネットワークに接続されていません';
+
+  @override
+  String get pear_status_unknown => '接続状態は不明';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 台のデバイスが接続中',
+      zero: '接続中のデバイスはありません',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '最終接続: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'オフ';
 }

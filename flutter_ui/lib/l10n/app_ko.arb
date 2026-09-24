@@ -1136,5 +1136,12 @@
   "pairing_remove": "삭제",
   "pairing_remove_confirm_title": "{name}을(를) 삭제할까요?",
   "pairing_remove_confirm_body": "즉시 액세스 권한을 잃습니다. 다른 기기는 계속 작동합니다.",
-  "pairing_error": "카메라 서비스가 응답하지 않았습니다. 다시 시도하세요."
+  "pairing_error": "카메라 서비스가 응답하지 않았습니다. 다시 시도하세요.",
+  "daemon_name_pear": "원격 액세스 (Pear)",
+  "pear_status_reachable": "어디서나 연결 가능",
+  "pear_status_unreachable": "연결 불가: Pear 네트워크에 연결되지 않음",
+  "pear_status_unknown": "연결 가능 여부 알 수 없음",
+  "pear_devices_connected": "{count, plural, =0{연결된 기기 없음} other{기기 {count}대 연결됨}}",
+  "pear_last_connection": "마지막 연결: {time}",
+  "pear_tile_off": "꺼짐"
 }

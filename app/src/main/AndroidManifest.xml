@@ -197,10 +197,7 @@
     <uses-permission android:name="android.permission.BYDDIAGNOSTIC_SEND_BUFFER" />
     <!-- Generic BYD -->
     <uses-permission android:name="android.permission.BYD" />
-    <uses-permission android:name="android.permission.DEVICE_ACC" />
     <uses-permission android:name="android.permission.DEVICE_POWER" />
-    <!-- Data cache (for ACC whitelist) -->
-    <uses-permission android:name="android.permission.ACCESS_APPOPSDATA" />
     
     <!-- Overlay permission for floating status indicator (user must grant manually) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />

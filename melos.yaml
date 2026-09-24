@@ -1,10 +1,11 @@
 name: bladewatch
 
-# BladeWatch-rdtj.10: the repo's three Dart packages. melos only runs pub get and the scripts
+# BladeWatch-rdtj.10: the repo's Dart packages. melos only runs pub get and the scripts
 # below across them -- each is still its own Flutter project with its own platform scope:
 #
 #   flutter_ui/              the in-car UI. BYD Android head unit ONLY (see CLAUDE.md).
 #   packages/bladewatch_rpc/ the Connect client + generated messages both apps share.
+#   packages/bladewatch_theme/ the M3 tokens + ThemeData both apps share (gated through flutter_ui).
 #   companion/               the phone/desktop app. The ONE home for iOS/macOS/Windows/Linux.
 #
 # The coverage gates are not scripts here; see "Coverage gates" in docs/build-and-operations.md.

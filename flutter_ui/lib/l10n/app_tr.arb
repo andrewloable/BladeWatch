@@ -1136,5 +1136,12 @@
   "pairing_remove": "Kaldır",
   "pairing_remove_confirm_title": "{name} kaldırılsın mı?",
   "pairing_remove_confirm_body": "Erişimini hemen kaybeder. Diğer cihazlarınız çalışmaya devam eder.",
-  "pairing_error": "Kamera hizmeti yanıt vermedi. Tekrar deneyin."
+  "pairing_error": "Kamera hizmeti yanıt vermedi. Tekrar deneyin.",
+  "daemon_name_pear": "Uzaktan erişim (Pear)",
+  "pear_status_reachable": "Her yerden erişilebilir",
+  "pear_status_unreachable": "Erişilemiyor: Pear ağına bağlantı yok",
+  "pear_status_unknown": "Erişilebilirlik bilinmiyor",
+  "pear_devices_connected": "{count, plural, =0{Bağlı cihaz yok} one{{count} cihaz bağlı} other{{count} cihaz bağlı}}",
+  "pear_last_connection": "Son bağlantı: {time}",
+  "pear_tile_off": "Kapalı"
 }

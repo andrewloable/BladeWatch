@@ -5239,6 +5239,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The camera service did not respond. Try again.'**
   String get pairing_error;
+
+  /// No description provided for @daemon_name_pear.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote access (Pear)'**
+  String get daemon_name_pear;
+
+  /// No description provided for @pear_status_reachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reachable from anywhere'**
+  String get pear_status_reachable;
+
+  /// No description provided for @pear_status_unreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable: no connection to the Pear network'**
+  String get pear_status_unreachable;
+
+  /// No description provided for @pear_status_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Reachability unknown'**
+  String get pear_status_unknown;
+
+  /// No description provided for @pear_devices_connected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No devices connected} one{{count} device connected} other{{count} devices connected}}'**
+  String pear_devices_connected(int count);
+
+  /// No description provided for @pear_last_connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Last connection: {time}'**
+  String pear_last_connection(String time);
+
+  /// No description provided for @pear_tile_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get pear_tile_off;
 }
 
 class _AppLocalizationsDelegate

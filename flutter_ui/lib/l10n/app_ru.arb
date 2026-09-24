@@ -1136,5 +1136,12 @@
   "pairing_remove": "Удалить",
   "pairing_remove_confirm_title": "Удалить {name}?",
   "pairing_remove_confirm_body": "Устройство сразу потеряет доступ. Остальные ваши устройства продолжат работать.",
-  "pairing_error": "Служба камеры не ответила. Повторите попытку."
+  "pairing_error": "Служба камеры не ответила. Повторите попытку.",
+  "daemon_name_pear": "Удалённый доступ (Pear)",
+  "pear_status_reachable": "Доступен откуда угодно",
+  "pear_status_unreachable": "Недоступен: нет подключения к сети Pear",
+  "pear_status_unknown": "Доступность неизвестна",
+  "pear_devices_connected": "{count, plural, =0{Нет подключённых устройств} one{{count} устройство подключено} few{{count} устройства подключено} many{{count} устройств подключено} other{{count} устройства подключено}}",
+  "pear_last_connection": "Последнее подключение: {time}",
+  "pear_tile_off": "Выкл."
 }

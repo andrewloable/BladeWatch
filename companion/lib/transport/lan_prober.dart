@@ -25,15 +25,21 @@ class LanEndpoint {
 /// Wire format: `LanDiscoveryResponder` (app/src/main/java/com/loabletech/bladewatch/server/). A
 /// reply counts only if its HMAC verifies under the probe key, it echoes THIS probe's nonce, and
 /// the fingerprint it carries is the one pinned at pairing; anything else is silently ignored.
+/// How a probe datagram leaves: [RawDatagramSocket.send], replaceable in tests because the real
+/// failure (EHOSTUNREACH after a failed ARP) cannot be staged on demand.
+typedef ProbeSend = void Function(RawDatagramSocket socket, List<int> data, InternetAddress address, int port);
+
 class LanProber {
-  LanProber(this._key, {this.port = 18443, Random? random, DateTime Function()? now})
+  LanProber(this._key, {this.port = 18443, Random? random, DateTime Function()? now, ProbeSend? send})
       : _random = random ?? Random.secure(),
-        _now = now ?? DateTime.now;
+        _now = now ?? DateTime.now,
+        _send = send ?? ((socket, data, address, port) => socket.send(data, address, port));
 
   final List<int> _key;
   final int port;
   final Random _random;
   final DateTime Function() _now;
+  final ProbeSend _send;
 
   static const _probeMagic = 'BWPROBE1';
   static const _replyMagic = 'BWREPLY1';
@@ -48,20 +54,33 @@ class LanProber {
     final probe = buildProbe(_key, nonce, _now().millisecondsSinceEpoch);
     final result = Completer<LanEndpoint?>();
     final timer = Timer(timeout, () => result.isCompleted ? null : result.complete(null));
-    socket.listen((event) {
-      if (event != RawSocketEvent.read) return;
-      final datagram = socket.receive();
-      if (datagram == null || result.isCompleted) return;
-      final endpoint = _verifyReply(datagram, nonce, pinnedFingerprint);
-      if (endpoint != null) result.complete(endpoint);
-    });
-    for (final address in candidates) {
-      socket.send(probe, address, port);
+    socket.listen(
+      (event) {
+        if (event != RawSocketEvent.read) return;
+        final datagram = socket.receive();
+        if (datagram == null || result.isCompleted) return;
+        final endpoint = _verifyReply(datagram, nonce, pinnedFingerprint);
+        if (endpoint != null) result.complete(endpoint);
+      },
+      // dart:io reports a failed send (EHOSTUNREACH for a host whose ARP failed, measured on a Mac
+      // against the head unit) LATER, as an error on this stream -- not by throwing from send().
+      // Unhandled, each one was an uncaught async error that killed the route selection
+      // (BladeWatch-gfmk).
+      onError: (Object _) {},
+    );
+    try {
+      for (final address in candidates) {
+        try {
+          _send(socket, probe, address, port);
+        } on SocketException {
+          // A send that fails synchronously: skip that host, keep probing the rest.
+        }
+      }
+      return await result.future;
+    } finally {
+      timer.cancel();
+      socket.close();
     }
-    final endpoint = await result.future;
-    timer.cancel();
-    socket.close();
-    return endpoint;
   }
 
   LanEndpoint? _verifyReply(Datagram d, Uint8List nonce, String pinnedFingerprint) {

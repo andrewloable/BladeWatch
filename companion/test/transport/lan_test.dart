@@ -74,6 +74,19 @@ void main() {
       expect(await prober().find(here, pinnedFingerprint: 'aa' * 32, timeout: const Duration(milliseconds: 400)), isNull);
     });
 
+    test('an unroutable host among the candidates is skipped, not fatal (gfmk)', () async {
+      final unroutable = InternetAddress('10.255.255.1');
+      final tried = <InternetAddress>[];
+      final p = LanProber(key, port: car.socket.port, send: (socket, data, address, port) {
+        tried.add(address);
+        if (address == unroutable) throw const SocketException('Send failed', osError: OSError('No route to host', 65));
+        socket.send(data, address, port);
+      });
+      final found = await p.find([unroutable, ...here], pinnedFingerprint: 'aa' * 32);
+      expect(found, isNotNull);
+      expect(tried.first, unroutable, reason: 'it was tried first, and its failure did not stop the rest');
+    });
+
     test('silence is not the car', () async {
       car.silent = true;
       expect(await prober().find(here, pinnedFingerprint: 'aa' * 32, timeout: const Duration(milliseconds: 300)), isNull);

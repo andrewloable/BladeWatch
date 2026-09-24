@@ -68,6 +68,31 @@ void main() {
     await s.dispose();
   });
 
+  test('a LAN probe that throws counts as no answer, and Pear is tried (gfmk)', () async {
+    final bridge = MuxBridge(QuietLink());
+    final s = selector(findOnLan: () async => throw const SocketException('No route to host'), connectPear: (_) async => bridge);
+    await s.evaluate();
+    expect(s.phase, TransportPhase.pear);
+    await s.dispose();
+  });
+
+  test('a Pear step that throws ends in failed, which still retries by itself (gfmk)', () async {
+    var attempts = 0;
+    final s = selector(
+      findOnLan: () async => throw StateError('probe'),
+      connectPear: (_) async {
+        attempts++;
+        throw StateError('worklet');
+      },
+      retryAfter: const Duration(milliseconds: 100),
+    );
+    await s.evaluate();
+    expect(s.phase, TransportPhase.failed);
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    expect(attempts, greaterThanOrEqualTo(2));
+    await s.dispose();
+  });
+
   test('"still looking" and "failed" are different phases, and a failure retries by itself', () async {
     var attempts = 0;
     final s = selector(

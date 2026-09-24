@@ -63,6 +63,20 @@ class DaemonControlTest {
     }
 
     @Test
+    fun `pearStatus sends the pearStatus command and passes the report through`() {
+        val ipc = FakeIpc {
+            JSONObject().put("status", "ok").put("running", true).put("enabled", true)
+                .put("reachable", JSONObject.NULL).put("companions", 1).put("lastCompanionAt", 1_700_000_000_000L)
+        }
+        val response = DaemonControl(ipc).pearStatus()
+
+        assertEquals("pearStatus", ipc.sentCommands.single().optString("cmd"))
+        assertEquals(true, response.getBoolean("running"))
+        assertEquals(true, response.isNull("reachable"))
+        assertEquals(1, response.getInt("companions"))
+    }
+
+    @Test
     fun `tunnelStatus sends the tunnelStatus command and returns the url`() {
         val ipc = FakeIpc {
             JSONObject().put("status", "ok").put("running", true)

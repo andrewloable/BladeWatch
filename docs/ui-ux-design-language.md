@@ -8,7 +8,7 @@ shape scale, elevation model, and motion curves — and additionally adopts
 indicators) tuned for a large in-car display.
 
 > **This changed in Phase 4.** The native Kotlin shell that used to be the source
-> of truth was deleted (`BladeWatch-81g9.2`). `flutter_ui/lib/theme/*_tokens.dart`
+> of truth was deleted (`BladeWatch-81g9.2`). `packages/bladewatch_theme/lib/*_tokens.dart`
 > is now authoritative; the Android XML themes survive only for the two surfaces
 > the service host still draws (the status overlay and `SetupGuideDialog`) and
 > must be kept in step with Dart, not the other way round. The parity tests under
@@ -33,7 +33,7 @@ be updated by hand when a role changes.
 
 | Layer | Renders | Role |
 |-------|---------|------|
-| **Flutter** (`flutter_ui/`, `net.bladewatch.flutter`) | the whole in-car UI: nav rail, every screen, every dialog | **M3 source of truth** — [color_tokens.dart](../flutter_ui/lib/theme/color_tokens.dart), [type_tokens.dart](../flutter_ui/lib/theme/type_tokens.dart), [dimens_tokens.dart](../flutter_ui/lib/theme/dimens_tokens.dart), assembled in [bladewatch_theme.dart](../flutter_ui/lib/theme/bladewatch_theme.dart) |
+| **Flutter** (`flutter_ui/`, `net.bladewatch.flutter`, and the companion app) | the whole in-car UI: nav rail, every screen, every dialog; the companion's screens | **M3 source of truth**, shared by both apps through `packages/bladewatch_theme` (BladeWatch-rdtj.11) — [color_tokens.dart](../packages/bladewatch_theme/lib/color_tokens.dart), [type_tokens.dart](../packages/bladewatch_theme/lib/type_tokens.dart), [dimens_tokens.dart](../packages/bladewatch_theme/lib/dimens_tokens.dart), assembled in [bladewatch_theme.dart](../packages/bladewatch_theme/lib/bladewatch_theme.dart) |
 | **Android XML** (`net.bladewatch.app`) | the status overlay and `SetupGuideDialog` **only** | **Derived.** [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (+ `values-night`), [themes_bladewatch.xml](../app/src/main/res/values/themes_bladewatch.xml), [dimens_bladewatch.xml](../app/src/main/res/values/dimens_bladewatch.xml). Kept in step by the parity tests in `flutter_ui/test/theme/` |
 | **Web SPA** (Angular 19, `web/`) | remote browser / tunnel client | **Derived, by hand.** Component-scoped SCSS under `web/src`, not wired to `design-tokens.css` |
 
@@ -176,7 +176,7 @@ complete; dark is the default on the head unit.
 `status-success`, `status-warning`, `status-danger`, `status-info` — SOC/battery
 state, sentry state, alerts.
 
-- Flutter (source of truth): [color_tokens.dart](../flutter_ui/lib/theme/color_tokens.dart).
+- Flutter (source of truth): [color_tokens.dart](../packages/bladewatch_theme/lib/color_tokens.dart).
 - **Reaching them from a widget:** `Theme.of(context).extension<BwStatusColors>()!`.
   `ColorScheme` has no success/warning slot, so these four are registered as a
   `ThemeExtension` on both themes rather than being squeezed into an M3 role.
@@ -475,7 +475,7 @@ These files live in `drawable/` but are **not** Material Symbols icons and must
 
 ### Token pipeline
 
-- [color_tokens.dart](../flutter_ui/lib/theme/color_tokens.dart) is the
+- [color_tokens.dart](../packages/bladewatch_theme/lib/color_tokens.dart) is the
   **source of truth** for color roles.
   [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (+ `values-night`)
   mirrors it for the status overlay; `flutter_ui/test/theme/color_tokens_test.dart`
@@ -506,10 +506,10 @@ These files live in `drawable/` but are **not** Material Symbols icons and must
 ## Source References
 
 - Flutter theme (source of truth):
-  [bladewatch_theme.dart](../flutter_ui/lib/theme/bladewatch_theme.dart),
-  [color_tokens.dart](../flutter_ui/lib/theme/color_tokens.dart),
-  [type_tokens.dart](../flutter_ui/lib/theme/type_tokens.dart),
-  [dimens_tokens.dart](../flutter_ui/lib/theme/dimens_tokens.dart).
+  [bladewatch_theme.dart](../packages/bladewatch_theme/lib/bladewatch_theme.dart),
+  [color_tokens.dart](../packages/bladewatch_theme/lib/color_tokens.dart),
+  [type_tokens.dart](../packages/bladewatch_theme/lib/type_tokens.dart),
+  [dimens_tokens.dart](../packages/bladewatch_theme/lib/dimens_tokens.dart).
 - Dart ↔ XML parity gates: [flutter_ui/test/theme/](../flutter_ui/test/theme/).
 - M3 theme parent, color roles, and component widgets (overlay / setup dialog):
   [themes_bladewatch.xml:15](../app/src/main/res/values/themes_bladewatch.xml#L15)

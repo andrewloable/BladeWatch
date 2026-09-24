@@ -1632,6 +1632,11 @@ class GpuSurveillancePipeline(
     val latestStillFrame: ByteArray?
         get() = stillFrameRefresher?.current()
 
+    /** See [WebSocketStreamServer.noteStillViewer]. */
+    fun noteStillViewer() {
+        webSocketServer?.noteStillViewer()
+    }
+
     /**
      * The stream view mode (which camera to show): 0=Mosaic (2x2 grid), 1=Front, 2=Right,
      * 3=Rear, 4=Left. Reads -1 when streaming is not enabled.

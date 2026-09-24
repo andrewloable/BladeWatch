@@ -45,6 +45,7 @@ object StreamingApiHandler {
     @Throws(Exception::class)
     private fun handleStillFrame(out: OutputStream) {
         val pipeline = CameraDaemon.getGpuPipeline()
+        pipeline?.noteStillViewer() // a still viewer keeps streaming from idling out (rdtj.11)
         sendStillFrame(out, pipeline?.latestStillFrame)
     }
 

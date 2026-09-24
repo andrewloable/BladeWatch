@@ -1,17 +1,19 @@
-/// The 4 daemon processes `daemon.processStatus` reports on (BladeWatch-1xt9).
+/// The daemon processes `daemon.processStatus` reports on (BladeWatch-1xt9).
 /// [nativeKey] is the exact key that IPC response uses.
 enum DaemonKind {
   camera('CAMERA_DAEMON'),
   sentry('SENTRY_DAEMON'),
   accSentry('ACC_SENTRY_DAEMON'),
-  torTunnel('TOR_TUNNEL');
+  torTunnel('TOR_TUNNEL'),
+  pearPeer('PEAR_PEER');
 
   final String nativeKey;
   const DaemonKind(this.nativeKey);
 
   /// Whether this daemon can be started/stopped from this UI (BladeWatch-abcx).
   ///
-  /// Only the Tor tunnel can, and the reasons are structural, not missing work:
+  /// Only the two remote-access daemons can -- the Tor tunnel and the Pear peer -- and the
+  /// reasons the others cannot are structural, not missing work:
   ///
   /// - **Camera** hosts the loopback IPC server this app talks to. Stopping it kills
   ///   the only channel that could start it again — this APK has no ADB.
@@ -22,7 +24,7 @@ enum DaemonKind {
   ///
   /// The daemon enforces the same list; this is what lets the UI say so up front
   /// instead of letting the user discover it by toggling.
-  bool get canToggle => this == DaemonKind.torTunnel;
+  bool get canToggle => this == DaemonKind.torTunnel || this == DaemonKind.pearPeer;
 }
 
 /// Ground truth: `DaemonAdapter.kt`'s per-row bind logic, reduced to what

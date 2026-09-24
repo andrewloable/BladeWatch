@@ -77,6 +77,21 @@ class DaemonChannel {
     );
   }
 
+  /// BladeWatch-rdtj.17: the Pear peer -- whether it runs, whether the owner switched it on,
+  /// and whether the car can actually be found right now ([PearStatus.reachable]). Never a
+  /// topic or key: the daemon does not send any.
+  Future<PearStatus> pearStatus() async {
+    final r = await _asStringMap(_channel.invoke('daemon', 'pearStatus'));
+    final last = r['lastCompanionAt'];
+    return PearStatus(
+      running: r['running'] as bool? ?? false,
+      enabled: r['enabled'] as bool? ?? false,
+      reachable: r['reachable'] as bool?,
+      devicesConnected: (r['companions'] as num?)?.toInt() ?? 0,
+      lastConnection: last is num ? DateTime.fromMillisecondsSinceEpoch(last.toInt()) : null,
+    );
+  }
+
   /// Just the address, for callers that only render a link — the Diagnostics network
   /// card (which derives "connecting" from the daemon list it already has) and the
   /// toolbar status pill. Null while tor is still bootstrapping, which is correct for
@@ -131,4 +146,34 @@ class DaemonStatus {
   final Map<String, bool> enabled;
 
   const DaemonStatus({required this.running, required this.enabled});
+}
+
+/// What the daemon reports about the Pear peer (BladeWatch-rdtj.17).
+class PearStatus {
+  /// The pear_daemon process is alive. Says nothing about reachability on its own.
+  final bool running;
+
+  /// The owner has switched remote access on (pairing does it too).
+  final bool enabled;
+
+  /// Whether the car can be found right now: running, joined to its topic, and HyperDHT
+  /// online. Null when the car's pear-end cannot tell (older than flutter_pear 0.4.4).
+  final bool? reachable;
+
+  /// Paired devices connected over Pear at the moment.
+  final int devicesConnected;
+
+  /// When a paired device last connected over Pear; null if none has since pear_daemon started.
+  final DateTime? lastConnection;
+
+  const PearStatus({
+    required this.running,
+    required this.enabled,
+    this.reachable,
+    this.devicesConnected = 0,
+    this.lastConnection,
+  });
+
+  /// Nothing known yet: before the first read, or when the daemon cannot be reached.
+  static const unknown = PearStatus(running: false, enabled: false);
 }

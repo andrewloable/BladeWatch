@@ -17,6 +17,11 @@ import net.bladewatch.app.ui.daemon.DaemonStartupManager
  *
  * The service itself is a no-op for accessibility events; its sole purpose is process keep-alive.
  *
+ * On DiLink 3.0 the accessibility manager's bind at boot does not stick. The service binds once the
+ * service host runs and [net.bladewatch.app.launcher.ServiceLauncher] writes the accessibility
+ * settings, so it protects a running process but never starts one: the boot broadcast does that
+ * (BladeWatch-0z74, docs/daemons-and-processes.md "After a reboot").
+ *
  * Enable via ADB (one-time):
  * ```
  *   settings put secure enabled_accessibility_services net.bladewatch.app/net.bladewatch.app.services.KeepAliveAccessibilityService

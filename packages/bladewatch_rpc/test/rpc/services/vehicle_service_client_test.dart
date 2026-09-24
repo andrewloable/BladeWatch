@@ -239,5 +239,16 @@ void main() {
       expect(fake.calls.single.request, isA<SetMediaVolumeRequest>());
     });
 
+
+    test('issueActionToken sends VehicleService/IssueActionToken and decodes the token', () async {
+      fake.stubJson('VehicleService', 'IssueActionToken', <String, dynamic>{'success': true, 'token': 't', 'expiresInSeconds': 30});
+
+      final result = await client.issueActionToken(IssueActionTokenRequest());
+
+      expect(result.token, 't');
+      expect(result.expiresInSeconds, 30);
+      expect(fake.calls.single.method, 'IssueActionToken');
+    });
+
   });
 }

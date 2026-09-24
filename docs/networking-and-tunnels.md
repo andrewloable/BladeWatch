@@ -59,8 +59,21 @@ A browser pointed at `https://<car>:8443` gets a certificate warning: there is n
 CA to vouch for the car. The web app over the LAN therefore now needs that warning
 accepted; the companion app does not, because it pins.
 
-`GET /status` reports `httpBind` (always `127.0.0.1`), `lanHttpEnabled` (the
-opt-in), and `lanTls: {enabled, port, listening}`.
+What turning LAN access on exposes to the rest of the LAN (BladeWatch-cjhz), before any
+credential:
+
+- **Any client is served, pinned or not.** Only the companion pins. A browser user who
+  clicks through the warning can be man-in-the-middled on a shared network and would hand
+  over their login. This ends with the web app (rdtj.13).
+- **That a car is there.** Port 8443 answers. The certificate subject used to say
+  `CN=BladeWatch`; identities created now say `CN=localhost`. An existing certificate keeps
+  its subject, because re-minting it would unpair every companion. Until web/ retires, the
+  login page it serves carries the product name anyway. The discovery responder (udp/18443)
+  stays silent to anything that is not signed with the pairing key.
+
+`SystemService/GetStatus` reports `network.httpBind` (always `127.0.0.1`) and
+`network.lanHttpEnabled` (the opt-in). The listener's port and fingerprint reach the in-car UI
+over IPC (`lanTlsInfo`), and reach a companion through the pairing QR.
 
 ### LAN discovery (udp/18443)
 
@@ -108,6 +121,14 @@ connects from `127.0.0.1`, and so does the Pear stream pump. Only `LOCAL_APPS`
 (8080) can reach the Tier 2 loopback safety net or skip the vehicle-action second
 factor; every other listener is `REMOTE`. `checkAuth` overloads that do not name a
 listener assume `REMOTE`, so a listener added later fails closed.
+
+And even on 8080, `LOCAL_APPS` is for BladeWatch, not for every app on the head unit:
+Android loopback is shared. Each connection's peer UID is resolved from `/proc/net`
+(`PeerCredentials`, the same check the IPC ports use), and only the BladeWatch app UID,
+shell, system and root keep `LOCAL_APPS`; any other app -- or a peer whose UID cannot be
+resolved -- is served as `REMOTE` (`AuthMiddleware.effectiveTrust`, BladeWatch-g5u7).
+Before that, a debug build handed any installed app the whole API, vehicle control
+included, with no credential.
 
 The tunnels therefore enter on their own loopback listeners, never on 8080: tor on
 **8081** (BladeWatch-ur11 -- tor used to land on 8080, so every remote request over it
@@ -282,7 +303,10 @@ connection the accepting side re-runs discovery straight away, which tags exactl
 the peer announces, and holds the peer's messages until then instead of dropping them. The
 car's `app/src/main/assets/pear/pear-end.bundle` must be built from a flutter_pear with that
 fix -- flutter_pear 0.4.3 or later; 0.4.2's does not work. The car's copy is byte-identical to the one
-inside the published 0.4.3 package (the companion is pinned to 0.4.3 too). Only the car needs it -- a companion is normally the dialing side,
+inside the published 0.4.4 package (sha256 `089e42ee…`, checked against the pub.dev archive on
+2026-09-24; the companion is pinned to 0.4.4 too). 0.4.4 adds what the car's Pear status needs:
+`dht.status`, so "reachable" is HyperDHT's own answer, not a guess from process liveness (rdtj.17).
+It also lowers the held-message cap to 256 KiB per untagged connection. Only the car needs it -- a companion is normally the dialing side,
 and when it is not, its own lookup right after joining tags the connection in seconds -- and it
 changes nothing on the wire, so a fixed car works with a 0.4.2 companion. With it, the first
 pinned handshake through Pear took 11.3 s and the whole route 19.9-25 s (same network, public
@@ -400,6 +424,13 @@ and friends for why: Firefox borrows the platform's H.264 decoder and Linux has 
 default). The web client (`web/src/app/pages/live/still-frame-player.ts`) selects this tier
 automatically — see `stream-tier.ts` — and shows a persistent "still image, not live video"
 banner so the owner never mistakes a stale frame for a live one.
+
+The companion's live view uses this tier on every platform (BladeWatch-rdtj.11). Stills flow
+only while streaming is enabled, and streaming idles out 30 s after the last WebSocket viewer
+leaves, which a still-frame viewer never was. Each `/api/stream/still` request therefore
+counts as viewer activity (`WebSocketStreamServer.noteStillViewer`), so streaming lasts
+exactly as long as someone keeps looking. A 503 means it has not started yet: the companion
+calls `StreamService/Enable`, no more than once every 10 s.
 
 **No JPEG encode on the hot camera path.** The source is
 `SurveillanceEngineGpu.getLatestMosaicFrame()`, the same continuously-updated RGB buffer

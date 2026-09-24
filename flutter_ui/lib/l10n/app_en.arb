@@ -2154,5 +2154,19 @@
   "pairing_remove_confirm_body": "It loses access right away. Your other devices keep working.",
   "@pairing_remove_confirm_body": {},
   "pairing_error": "The camera service did not respond. Try again.",
-  "@pairing_error": {}
+  "@pairing_error": {},
+  "daemon_name_pear": "Remote access (Pear)",
+  "@daemon_name_pear": {},
+  "pear_status_reachable": "Reachable from anywhere",
+  "@pear_status_reachable": {},
+  "pear_status_unreachable": "Not reachable: no connection to the Pear network",
+  "@pear_status_unreachable": {},
+  "pear_status_unknown": "Reachability unknown",
+  "@pear_status_unknown": {},
+  "pear_devices_connected": "{count, plural, =0{No devices connected} one{{count} device connected} other{{count} devices connected}}",
+  "@pear_devices_connected": {"placeholders": {"count": {"type": "int"}}},
+  "pear_last_connection": "Last connection: {time}",
+  "@pear_last_connection": {"placeholders": {"time": {"type": "String"}}},
+  "pear_tile_off": "Off",
+  "@pear_tile_off": {}
 }

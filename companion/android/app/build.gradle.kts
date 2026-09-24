@@ -4,6 +4,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// The release keystore, when there is one: KEYSTORE_FILE, else the repo's app/release.jks.
+// The companion does not share a UID with the head-unit APKs, so no key is REQUIRED to match
+// theirs; what matters is that every release is signed with the same key forever, because
+// Android refuses an update signed differently (docs/build-and-operations.md, "Signing").
+val releaseKeystore = file(System.getenv("KEYSTORE_FILE") ?: "../../../app/release.jks")
+
 android {
     namespace = "net.bladewatch.bladewatch_companion"
     compileSdk = flutter.compileSdkVersion
@@ -42,11 +48,21 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = releaseKeystore
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: "key0"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // UNSIGNED without a keystore -- which is every CI build: the release workflow emits
+            // it unsigned and fails if it is not. It must never fall back to the debug key: a
+            // phone that installed a debug-signed release could not take the real one as an update.
+            signingConfig = if (releaseKeystore.exists()) signingConfigs.getByName("release") else null
         }
     }
 }

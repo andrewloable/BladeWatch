@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Bladewatch Companion</string>
+	<string>BladeWatch</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>bladewatch_companion</string>
+	<string>BladeWatch</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -66,6 +66,15 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>BladeWatch uses the camera to scan the pairing code your car shows.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Clips play from the app's own gateway at http://127.0.0.1, which pins the car's TLS
+		     itself; the native player would otherwise refuse plain HTTP even on loopback. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>BladeWatch looks for your car on the Wi-Fi network you share with it, and connects to it directly when it finds it.</string>
 </dict>

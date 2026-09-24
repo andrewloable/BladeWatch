@@ -1,0 +1,14 @@
+name: bladewatch_theme
+description: >-
+  BladeWatch's M3 design tokens and ThemeData, shared by the in-car UI (flutter_ui)
+  and the companion app (companion). Moved from flutter_ui/lib/theme by
+  BladeWatch-rdtj.11 so the two apps cannot drift. Tested and coverage-gated through
+  flutter_ui (its theme tests, and checkFlutterCoverage's --coverage-package).
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter

@@ -2992,4 +2992,39 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pairing_error => 'Служба камеры не ответила. Повторите попытку.';
+
+  @override
+  String get daemon_name_pear => 'Удалённый доступ (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Доступен откуда угодно';
+
+  @override
+  String get pear_status_unreachable =>
+      'Недоступен: нет подключения к сети Pear';
+
+  @override
+  String get pear_status_unknown => 'Доступность неизвестна';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count устройства подключено',
+      many: '$count устройств подключено',
+      few: '$count устройства подключено',
+      one: '$count устройство подключено',
+      zero: 'Нет подключённых устройств',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Последнее подключение: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Выкл.';
 }

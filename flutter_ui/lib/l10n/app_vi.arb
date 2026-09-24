@@ -1136,5 +1136,12 @@
   "pairing_remove": "Xóa",
   "pairing_remove_confirm_title": "Xóa {name}?",
   "pairing_remove_confirm_body": "Thiết bị sẽ mất quyền truy cập ngay. Các thiết bị khác của bạn vẫn hoạt động bình thường.",
-  "pairing_error": "Dịch vụ camera không phản hồi. Hãy thử lại."
+  "pairing_error": "Dịch vụ camera không phản hồi. Hãy thử lại.",
+  "daemon_name_pear": "Truy cập từ xa (Pear)",
+  "pear_status_reachable": "Có thể truy cập từ mọi nơi",
+  "pear_status_unreachable": "Không thể truy cập: không có kết nối với mạng Pear",
+  "pear_status_unknown": "Không rõ khả năng truy cập",
+  "pear_devices_connected": "{count, plural, =0{Không có thiết bị nào kết nối} other{{count} thiết bị đã kết nối}}",
+  "pear_last_connection": "Kết nối gần nhất: {time}",
+  "pear_tile_off": "Tắt"
 }

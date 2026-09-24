@@ -43,6 +43,9 @@ dependencies:
   # (BladeWatch-rdtj.10). A path dependency inside this melos workspace.
   bladewatch_rpc:
     path: ../packages/bladewatch_rpc
+  # The shared M3 tokens and ThemeData (moved from flutter_ui/lib/theme, BladeWatch-rdtj.11).
+  bladewatch_theme:
+    path: ../packages/bladewatch_theme
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2

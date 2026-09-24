@@ -3001,4 +3001,37 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get pairing_error => 'Le service caméra n\'a pas répondu. Réessayez.';
+
+  @override
+  String get daemon_name_pear => 'Accès à distance (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Accessible de partout';
+
+  @override
+  String get pear_status_unreachable =>
+      'Inaccessible : pas de connexion au réseau Pear';
+
+  @override
+  String get pear_status_unknown => 'Accessibilité inconnue';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count appareils connectés',
+      one: '$count appareil connecté',
+      zero: 'Aucun appareil connecté',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Dernière connexion : $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Désactivé';
 }

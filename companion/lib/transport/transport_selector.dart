@@ -59,7 +59,14 @@ class TransportSelector {
     _retry?.cancel();
     _set(TransportPhase.discovering);
 
-    final lan = await findOnLan();
+    // A step that throws found nothing: the selection must always end in lan, pear or failed --
+    // failed is what schedules the retry (BladeWatch-gfmk).
+    LanEndpoint? lan;
+    try {
+      lan = await findOnLan();
+    } catch (_) {
+      lan = null;
+    }
     if (generation != _generation) return;
     if (lan != null) {
       _route(LanRoute(lan));
@@ -67,9 +74,14 @@ class TransportSelector {
       return;
     }
 
-    final bridge = await connectPear(() {
-      if (generation == _generation) unawaited(evaluate());
-    });
+    MuxBridge? bridge;
+    try {
+      bridge = await connectPear(() {
+        if (generation == _generation) unawaited(evaluate());
+      });
+    } catch (_) {
+      bridge = null;
+    }
     if (generation != _generation) {
       bridge?.shutdown(); // superseded while connecting
       return;

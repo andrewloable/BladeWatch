@@ -37,7 +37,7 @@ BladeWatch is built around long-running processes that survive normal Android UI
 - `DaemonKeepaliveService`: sticky foreground service, wake lock holder, daemon kickoff, process revival scheduling, status overlay coordination.
 - `LocationSidecarService`: foreground location service that sends GPS to daemon IPC.
 - `StatusOverlayService`: overlay status display.
-- `KeepAliveAccessibilityService`: intended as an accessibility-backed keepalive; on DiLink 3.0 it is enabled but never bound (see "After a reboot" below).
+- `KeepAliveAccessibilityService`: accessibility-backed keepalive. On DiLink 3.0 it binds only once the service host is already running, so it protects a running process but never starts one (see "After a reboot" below).
 
 ## ssc_skip also blocks SERVICE starts, not just broadcasts
 
@@ -101,14 +101,36 @@ everything is skipped. The value is writable only with `android.permission.ACCES
 **protection level signature**, held solely by `com.byd.appstartmanagement` -- a binder call from
 shell fails with "Neither user 2000 nor current process has android.permission.ACCESS_APPOPSDATA",
 and the app UID fails the same way. Hence the owner step. It also means these never worked here:
-the `ssc_whitelist` settings `ServiceLauncher` writes (BYD does not read them),
+the `ssc_whitelist` settings `ServiceLauncher` wrote (BYD does not read them),
 `setAppOpsData`/`setAppStartupData` from `BydDataCacheWhitelist`, `AccSentryDaemon`,
-`SentryDaemon` and `AccModeHelper`, and `content://com.byd.appstartup` (no such provider).
+`SentryDaemon` and `AccModeHelper`, and `content://com.byd.appstartup` (no such provider) --
+all deleted in BladeWatch-mgvv. The service host's BYD ACC whitelist call
+(`accmodemanager.setPkg2AccWhiteList`) went the same way in BladeWatch-ese8: it needs
+`android.permission.DEVICE_ACC`, **protection level signature**, and failed on every launch with
+"Neither user 10073 nor current process has android.permission.DEVICE_ACC" (measured on the head
+unit; shell does not hold it either). When the daemons once ran as system (UID 1000), where the
+call worked, it raised BladeWatch's camera priority above BYD's own dashcam and took its feed.
+The last shell-side copies went in BladeWatch-u43d: `AccSentryDaemon`'s direct binder
+transactions and `ServiceLauncher`'s `service call accmodemanager` / `setprop
+persist.sys.acc.whitelist` lines. They were measured first: the binder calls fail as shell with
+the same DEVICE_ACC SecurityException, the property was always empty, and the codes they used were
+wrong anyway -- the head unit's `android.os.IAccModeManager` numbers them 1 setPkg2AccWhiteList,
+2 rmPkg2AccWhiteList, 3 getAccModeStatus, 4 requestSuspending, 5 acquireAccLock,
+6 releaseAccLock, 7 addListener, 8 removeListener, so "code 5" was taking an ACC lock, not
+whitelisting. The manifest no longer requests DEVICE_ACC or ACCESS_APPOPSDATA; the installer
+stripped both (signature level) on every install. Newer firmware (Android 12+, `byd_datacached`) is a different
+service that other BYD apps call from a shell-UID daemon; if DiLink 4+ support is ever added,
+measure it there rather than assume either way.
 
-`KeepAliveAccessibilityService` is enabled in `enabled_accessibility_services`, but the
-accessibility manager never binds it on this firmware: before the grant it sat in "Binding
-services" with every connection record DEAD, and after the grant and a reboot it is listed as
-enabled only. It restarts nothing; the boot broadcast is what brings the daemons back.
+`KeepAliveAccessibilityService` stays in `enabled_accessibility_services`, but the accessibility
+manager's own bind at boot does not stick on this firmware. Before the grant it sat in "Binding
+services" with every connection record DEAD; after the grant and a reboot it was listed as enabled
+only. It does bind while the service host runs (BladeWatch-0z74, measured 2026-09-24).
+`ServiceLauncher.enableAccessibilityKeepAlive` writes `accessibility_enabled 1`, the accessibility
+manager rebinds on that write, and "AccessibilityService connected" follows within half a second.
+After a force-stop, SentryDaemon revived the host 2 s later and the service was bound again 5 s
+after that. While it is bound the service host runs at oom adj 50. It restarts nothing, though:
+the boot broadcast is what brings the daemons back.
 
 ## Boot and Revival Behavior
 
@@ -242,6 +264,17 @@ Responsibilities:
 6. Confirms `TCP_PORT` is actually accepting connections (polls up to 5s), then writes the ready sentinel.
 
 The daemon uses an Android Looper and defensive retry handling around BYD listener paths because some firmware listeners can fail or crash unexpectedly.
+
+**GL watchdog.** `PanoramicCameraGpu` runs a watchdog that `System.exit(0)`s the daemon (the
+wrapper restarts it 10 s later) when the GL thread misses its heartbeat for 3 s, or 10 s before
+the first frame. Each `start()`/`stop()` bumps a generation number, and only the current start's
+watchdog may exit (BladeWatch-honj). Before that, the ACC-off recovery in `CameraDaemon.main`,
+which stops the pipeline it has just started whenever the car boots with ACC off, could land
+before the camera's GL init post ran. `quitSafely()` still ran that post, which set `running` and
+started a watchdog for a GL thread that was already gone. Ten seconds later the orphaned watchdog
+killed the healthy daemon the next `start()` had built. That was 7 of the starts measured on
+2026-09-24 with ACC off, every post-install start among them. With the fix, 10 consecutive starts
+ran clean. The CRITICAL line now carries the GL thread's stack.
 
 ### Ready sentinel and readiness probe
 
@@ -418,6 +451,17 @@ starts on the optional tier (+60 s) only once enabled — pairing a companion is
 it. Enabled state follows the same `daemons` config section as tor, so it can be toggled from
 the Flutter UI over `daemon_set_enabled`. Crash recovery is tor's too: a worklet that dies
 makes the process exit, and the 30 s health check relaunches it.
+
+**Status for the in-car UI (BladeWatch-rdtj.17).** Running and reachable are different
+questions: a live peer on a head unit with no network cannot be found. pear_daemon keeps
+`/data/local/tmp/pear_status.json` (mode 600; `PearStatus`) -- whether the topic is joined,
+whether HyperDHT is online (pear-end's `dht.status`, polled every 30 s; flutter_pear 0.4.4+,
+unknown on older bundles), how many paired devices are connected, and when one last connected.
+Counts and times only, never the topic or a peer key. byd_cam_daemon's `pearStatus` IPC command
+serves it with liveness and the owner's switch: `reachable` is true only when the process runs,
+the file is under 90 s old, the topic is joined and the DHT is online; null when the bundle
+cannot tell. Settings -> Services shows it under "Remote access (Pear)", and the dashboard's
+Remote access tile reports it while Pear is switched on.
 
 Runtime paths:
 

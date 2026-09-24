@@ -2951,4 +2951,37 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get pairing_error => 'Kameratjenesten svarte ikke. Prøv igjen.';
+
+  @override
+  String get daemon_name_pear => 'Fjerntilgang (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Tilgjengelig fra hvor som helst';
+
+  @override
+  String get pear_status_unreachable =>
+      'Ikke tilgjengelig: ingen forbindelse til Pear-nettverket';
+
+  @override
+  String get pear_status_unknown => 'Tilgjengelighet ukjent';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count enheter tilkoblet',
+      one: '$count enhet tilkoblet',
+      zero: 'Ingen enheter tilkoblet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Siste tilkobling: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Av';
 }

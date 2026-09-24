@@ -33,16 +33,26 @@ export default class PerformanceComponent implements OnInit, OnDestroy {
 
   private pollTimer?: ReturnType<typeof setInterval>;
 
+  /**
+   * The car only measures while a client holds a session and heartbeats inside its 10 s timeout
+   * (PerformanceMonitor); GetPerformance alone does not start it. Without this the page showed
+   * zeros unless the in-car Diagnostics panel happened to be open.
+   */
+  private readonly clientId = `web-${Math.random().toString(36).slice(2)}`;
+
   ngOnInit(): void {
+    this.clients.system.performanceConnect({ clientId: this.clientId }).catch(() => {});
     this.poll();
     this.pollTimer = setInterval(() => this.poll(), 3000);
   }
 
   ngOnDestroy(): void {
     clearInterval(this.pollTimer);
+    this.clients.system.performanceDisconnect({ clientId: this.clientId }).catch(() => {});
   }
 
   private async poll(): Promise<void> {
+    this.clients.system.performanceHeartbeat({ clientId: this.clientId }).catch(() => {});
     try {
       const resp = await this.clients.system.getPerformance({});
       if (resp.performanceJson) {

@@ -36,11 +36,17 @@ Definitions, because the stream dictates them:
   A path that cannot carry the stream shows up as fps below loopback and growing gaps, not as a
   latency number.
 - **Stalls**: gaps between frames over 500 ms.
-- **Why the probe is not `GetStatus`.** `GetStatus` stalls about 700 ms whenever one of the car's
-  periodic cache refreshes lands on the request -- measured on loopback with NO video: p50
-  5.7 ms, p99 703 ms over 120 calls paced 0.5 s apart; with live view running the stall shows at
-  p95. A probe with its own 700 ms tail would hide the path's. `StreamService/GetQuality` reads
-  memory only (loopback during video: p50 4.8 ms, max 18 ms).
+- **Why the probe is not `GetStatus`.** A probe must cost nothing on the car, or a handler's own
+  time hides the path's. `GetStatus` used to stall about 700 ms whenever its battery refresh --
+  an IPC round trip to the surveillance daemon -- landed on the request (loopback, no video:
+  p50 5.7 ms, p99 703 ms over 120 calls paced 0.5 s apart; during live view it showed at p95).
+  BladeWatch-1996 moved that refresh off the request -- and the network refresh, which ran
+  `dumpsys wifi` inline every 10 s and stalled it 600-850 ms on the same schedule. After both
+  (head unit, loopback, no video, 2026-09-24): p50 6.2 ms, p95 19.5 ms, p99 64 ms, max 68 ms
+  over 120 calls paced 0.5 s apart; a 200-call burst ran at 583 calls/s, p50 1.4 ms. The probe
+  still stays
+  `StreamService/GetQuality`, which reads memory only (loopback during video: p50 4.8 ms, max
+  18 ms), so baselines taken before and after compare.
 
 There is no tor baseline, by the owner's decision (2026-09-24): tor is being removed
 (rdtj.12), so Pear is compared against loopback and LAN TLS. The harness can still reach a

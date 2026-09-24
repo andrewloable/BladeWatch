@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- allowBackup off: files/companion.json holds this device's credential for the car, and
+         a cloud backup would put it on someone else's servers (BladeWatch-rdtj.11). -->
     <application
-        android:label="bladewatch_companion"
+        android:label="BladeWatch"
+        android:allowBackup="false"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

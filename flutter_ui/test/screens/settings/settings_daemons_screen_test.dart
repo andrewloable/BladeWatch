@@ -41,9 +41,9 @@ void main() {
     ));
   }
 
-  testWidgets('renders all 4 daemon rows with their running state', (tester) async {
+  testWidgets('renders all 5 daemon rows with their running state', (tester) async {
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false, 'PEAR_PEER': false},
     });
     await pumpTall(tester, buildController());
     await tester.pumpAndSettle();
@@ -52,15 +52,68 @@ void main() {
     expect(find.byKey(const ValueKey('daemon.sentry')), findsOneWidget);
     expect(find.byKey(const ValueKey('daemon.accSentry')), findsOneWidget);
     expect(find.byKey(const ValueKey('daemon.torTunnel')), findsOneWidget);
-    expect(find.text('2 of 4 running'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daemon.pearPeer')), findsOneWidget);
+    expect(find.text('Remote access (Pear)'), findsOneWidget);
+    expect(find.text('2 of 5 running'), findsOneWidget);
   });
 
-  testWidgets('a processStatus failure still renders the 4 rows, all stopped', (tester) async {
+  // BladeWatch-rdtj.17: running and reachable are different questions.
+  testWidgets('a running Pear peer shows reachability, connected devices and the last connection', (tester) async {
+    channel
+      ..stub('daemon', 'processStatus', {'daemons': {'PEAR_PEER': true}, 'enabled': {'PEAR_PEER': true}})
+      ..stub('daemon', 'pearStatus', {
+        'running': true,
+        'enabled': true,
+        'reachable': false,
+        'companions': 2,
+        'lastCompanionAt': DateTime(2026, 9, 24, 14, 5).millisecondsSinceEpoch,
+      });
+    await pumpTall(tester, buildController());
+    await tester.pumpAndSettle();
+
+    final row = find.byKey(const ValueKey('daemon.pearPeer'));
+    String subtitle() =>
+        (tester.widget<ListTile>(find.descendant(of: row, matching: find.byType(ListTile))).subtitle! as Text).data!;
+    expect(subtitle(), contains('Running'));
+    expect(subtitle(), contains('Not reachable: no connection to the Pear network'),
+        reason: 'the process is up but the car cannot be found');
+    expect(subtitle(), contains('2 devices connected'));
+    expect(subtitle(), contains('Last connection: Sep 24, 14:05'));
+    expect(find.byIcon(Icons.hub_outlined), findsOneWidget);
+  });
+
+  testWidgets('Pear: reachable, unknown, and switched on but not up yet', (tester) async {
+    channel
+      ..stub('daemon', 'processStatus', {'daemons': {'PEAR_PEER': true}, 'enabled': {'PEAR_PEER': true}})
+      ..stub('daemon', 'pearStatus', {'running': true, 'enabled': true, 'reachable': true, 'companions': 1});
+    final c = buildController();
+    await pumpTall(tester, c);
+    await tester.pumpAndSettle();
+    final row = find.byKey(const ValueKey('daemon.pearPeer'));
+    String subtitle() =>
+        (tester.widget<ListTile>(find.descendant(of: row, matching: find.byType(ListTile))).subtitle! as Text).data!;
+    expect(subtitle(), contains('Reachable from anywhere'));
+    expect(subtitle(), contains('1 device connected'));
+    expect(subtitle(), isNot(contains('Last connection')));
+
+    channel.stub('daemon', 'pearStatus', {'running': true, 'enabled': true, 'reachable': null});
+    await c.refresh();
+    await tester.pumpAndSettle();
+    expect(subtitle(), contains('Reachability unknown'));
+    expect(subtitle(), contains('No devices connected'));
+
+    channel.stub('daemon', 'processStatus', {'daemons': {'PEAR_PEER': false}, 'enabled': {'PEAR_PEER': true}});
+    await c.refresh();
+    await tester.pumpAndSettle();
+    expect(subtitle(), 'Starting', reason: 'switched on, not up yet -- and not "Starting Tor tunnel"');
+  });
+
+  testWidgets('a processStatus failure still renders the 5 rows, all stopped', (tester) async {
     channel.stubError('daemon', 'processStatus', const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'));
     await pumpTall(tester, buildController());
     await tester.pumpAndSettle();
 
-    expect(find.text('0 of 4 running'), findsOneWidget);
+    expect(find.text('0 of 5 running'), findsOneWidget);
   });
 
   testWidgets('toggling a non-tunnel daemon without a capability shows the unsupported message', (tester) async {

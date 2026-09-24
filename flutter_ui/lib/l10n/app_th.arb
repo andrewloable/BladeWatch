@@ -1136,5 +1136,12 @@
   "pairing_remove": "นำออก",
   "pairing_remove_confirm_title": "นำ {name} ออกหรือไม่",
   "pairing_remove_confirm_body": "อุปกรณ์นี้จะเสียสิทธิ์เข้าถึงทันที อุปกรณ์อื่นของคุณยังใช้งานได้ตามปกติ",
-  "pairing_error": "บริการกล้องไม่ตอบสนอง โปรดลองอีกครั้ง"
+  "pairing_error": "บริการกล้องไม่ตอบสนอง โปรดลองอีกครั้ง",
+  "daemon_name_pear": "การเข้าถึงระยะไกล (Pear)",
+  "pear_status_reachable": "เข้าถึงได้จากทุกที่",
+  "pear_status_unreachable": "เข้าถึงไม่ได้: ไม่ได้เชื่อมต่อกับเครือข่าย Pear",
+  "pear_status_unknown": "ไม่ทราบสถานะการเข้าถึง",
+  "pear_devices_connected": "{count, plural, =0{ไม่มีอุปกรณ์ที่เชื่อมต่อ} other{เชื่อมต่อ {count} อุปกรณ์}}",
+  "pear_last_connection": "เชื่อมต่อล่าสุด: {time}",
+  "pear_tile_off": "ปิด"
 }

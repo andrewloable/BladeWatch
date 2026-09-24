@@ -32,6 +32,13 @@ packages:
       relative: true
     source: path
     version: "0.0.0"
+  bladewatch_theme:
+    dependency: "direct main"
+    description:
+      path: "../packages/bladewatch_theme"
+      relative: true
+    source: path
+    version: "0.0.0"
   boolean_selector:
     dependency: transitive
     description:

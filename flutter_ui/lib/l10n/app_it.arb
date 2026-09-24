@@ -1136,5 +1136,12 @@
   "pairing_remove": "Rimuovi",
   "pairing_remove_confirm_title": "Rimuovere {name}?",
   "pairing_remove_confirm_body": "Perde subito l'accesso. Gli altri dispositivi continuano a funzionare.",
-  "pairing_error": "Il servizio fotocamera non ha risposto. Riprova."
+  "pairing_error": "Il servizio fotocamera non ha risposto. Riprova.",
+  "daemon_name_pear": "Accesso remoto (Pear)",
+  "pear_status_reachable": "Raggiungibile ovunque",
+  "pear_status_unreachable": "Non raggiungibile: nessuna connessione alla rete Pear",
+  "pear_status_unknown": "Raggiungibilità sconosciuta",
+  "pear_devices_connected": "{count, plural, =0{Nessun dispositivo connesso} one{{count} dispositivo connesso} other{{count} dispositivi connessi}}",
+  "pear_last_connection": "Ultima connessione: {time}",
+  "pear_tile_off": "Disattivato"
 }

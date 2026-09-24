@@ -134,5 +134,15 @@ void main() {
       expect(fake.calls.single.request, isA<SetTelemetryOverlayFieldsRequest>());
     });
 
+
+    test('getStatusOverlay and setStatusOverlay send SettingsService/*StatusOverlay and decode', () async {
+      fake.stubJson('SettingsService', 'GetStatusOverlay', <String, dynamic>{'cameraVisible': true});
+      fake.stubJson('SettingsService', 'SetStatusOverlay', <String, dynamic>{'success': true});
+
+      expect((await client.getStatusOverlay(GetStatusOverlayRequest())).cameraVisible, isTrue);
+      expect((await client.setStatusOverlay(SetStatusOverlayRequest(tripVisible: true, setTripVisible: true))).success, isTrue);
+      expect(fake.calls.map((c) => c.method), ['GetStatusOverlay', 'SetStatusOverlay']);
+    });
+
   });
 }

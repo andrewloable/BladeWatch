@@ -1,9 +1,16 @@
-# Build BOTH release APKs, unsigned, and attach them to the GitHub Release.
+# Build all THREE release APKs, unsigned, and attach them to the GitHub Release.
 #
-# BladeWatch ships as two APKs that share one UID:
+# Two go on the head unit and share one UID:
 #   net.bladewatch.app     — service host: daemons, receivers, BYD integration, no UI
 #   net.bladewatch.flutter — the in-car UI the driver opens
-# Both are produced here. They are NOT interchangeable and both must be installed.
+# They are NOT interchangeable and both must be installed.
+#
+# The third goes on the owner's phone (BladeWatch-rdtj.15):
+#   net.bladewatch.companion — reaches the car over Pear, or directly on its LAN
+# Android only. The companion also targets iOS, macOS, Windows and Linux, but CI builds
+# none of them: each needs its own runner, and iOS/macOS need Apple signing this
+# workflow deliberately has no secrets for. Do not list a platform here until CI
+# actually builds and attaches it.
 #
 # Runs ONLY for a tag, and ONLY when that tag is on main. Creating a release through
 # the GitHub UI on a new tag also creates that tag, which fires this same `push` event,
@@ -144,6 +151,48 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
+      # bare-kit's prebuilds.zip is 418 MB, and TWO builds unpack it: the service host
+      # (fetchBareKit, for pear_daemon) and the companion (flutter_pear_bare). Each looks
+      # for it in its own build/ dir and downloads it when absent, so one cached copy is
+      # seeded into both. Both builds still verify its SHA-256 before using it, so a bad
+      # cache entry fails the build, never ships. The version and checksum are read from
+      # app/build.gradle.kts, and flutter_pear_bare pins the same pair (re-check both when
+      # either bumps). A mismatch only costs a download: the seeded copy lands in a
+      # version directory nobody looks in.
+      - name: Resolve the bare-kit pin
+        id: barekit
+        run: |
+          set -euo pipefail
+          ver=$(sed -n 's/^val bareKitVersion = "\(.*\)"$/\1/p' app/build.gradle.kts)
+          sha=$(sed -n 's/^val bareKitSha256 = "\(.*\)"$/\1/p' app/build.gradle.kts)
+          test -n "$ver" && test -n "$sha" || { echo "::error::bare-kit pin not found in app/build.gradle.kts"; exit 1; }
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/bare-kit/prebuilds.zip
+          key: bare-kit-${{ steps.barekit.outputs.version }}-${{ steps.barekit.outputs.sha256 }}
+
+      - name: Seed bare-kit prebuilds for both builds
+        env:
+          VER: ${{ steps.barekit.outputs.version }}
+          SHA: ${{ steps.barekit.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          zip=~/bare-kit/prebuilds.zip
+          mkdir -p ~/bare-kit
+          # Missing and corrupt are the same case: fetch, verify, THEN move into place.
+          if ! echo "$SHA  $zip" | sha256sum -c --status - 2>/dev/null; then
+            curl -fsSL --retry 3 -o "$zip.part" "https://github.com/holepunchto/bare-kit/releases/download/v$VER/prebuilds.zip"
+            echo "$SHA  $zip.part" | sha256sum -c -
+            mv -f "$zip.part" "$zip"
+          fi
+          for d in "app/build/bare-kit/$VER" "companion/build/flutter_pear_bare/bare-kit/$VER"; do
+            mkdir -p "$d"
+            cp -f "$zip" "$d/prebuilds.zip"
+          done
+
       # app/build.gradle.kts pins ndkVersion = "26.1.10909125"; the native C++
       # (OpenH264 / opencv-mobile / TFLite) will not configure without it.
       # OpenH264 and opencv-mobile themselves are downloaded and checksum-verified
@@ -192,6 +241,15 @@ jobs:
         working-directory: flutter_ui
         run: flutter build apk --release --target-platform android-arm64
 
+      # One APK with arm64-v8a and x86_64 only: flutter_pear ships native code for those
+      # two, and companion/android/gradle.properties (disable-abi-filtering) keeps the
+      # Flutter plugin from adding armeabi-v7a, which would install on a 32-bit phone and
+      # then fail at worklet start. --split-per-abi fails at configuration by design.
+      # Unsigned for the same reason as the other two: no keystore in CI.
+      - name: Build companion APK (net.bladewatch.companion)
+        working-directory: companion
+        run: flutter build apk --release
+
       # The Flutter APK's privileged Kotlin layer — IPC client, JWT minting, daemon control,
       # secret/public config, the Live View texture plugin, the LocationListener — is a
       # SEPARATE Gradle build with its own Kover gate at a 100% bound. The repo-root
@@ -218,39 +276,44 @@ jobs:
           fi
           ./gradlew --no-daemon koverVerify checkFlutterCoverage checkRpcCoverage checkCompanionCoverage
 
-      # Collect BOTH APKs under tag-stamped, self-describing names.
+      # Collect all three APKs under tag-stamped, self-describing names.
       #
       # The service host APK is named bladewatch-<git branch>-arm64-v8a-release.apk
       # by applicationVariants in app/build.gradle.kts. A tag build is a DETACHED
       # HEAD, so `git rev-parse --abbrev-ref HEAD` returns the literal "HEAD" and the
       # file lands as bladewatch-HEAD-...; glob for it rather than guessing, and
       # stamp the tag on the uploaded name instead.
-      - name: Stage both APKs
+      - name: Stage all three APKs
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           mkdir -p dist
           host=$(ls app/build/outputs/apk/release/*.apk | head -1)
           ui=flutter_ui/build/app/outputs/flutter-apk/app-release.apk
-          test -f "$host" || { echo "::error::service host APK not found"; exit 1; }
-          test -f "$ui"   || { echo "::error::in-car UI APK not found"; exit 1; }
-          cp -f "$host" "dist/bladewatch-service-host-${TAG}-arm64-v8a-unsigned.apk"
-          cp -f "$ui"   "dist/bladewatch-ui-${TAG}-arm64-v8a-unsigned.apk"
+          companion=companion/build/app/outputs/flutter-apk/app-release.apk
+          test -f "$host"      || { echo "::error::service host APK not found"; exit 1; }
+          test -f "$ui"        || { echo "::error::in-car UI APK not found"; exit 1; }
+          test -f "$companion" || { echo "::error::companion APK not found"; exit 1; }
+          cp -f "$host"      "dist/bladewatch-service-host-${TAG}-arm64-v8a-unsigned.apk"
+          cp -f "$ui"        "dist/bladewatch-ui-${TAG}-arm64-v8a-unsigned.apk"
+          cp -f "$companion" "dist/bladewatch-companion-${TAG}-android-unsigned.apk"
           ls -la dist
 
-      # Both must be UNSIGNED and both must be present. A half-signed pair is the
+      # All three must be UNSIGNED and present. A half-signed head-unit pair is the
       # dangerous outcome: android:sharedUserId collapses the two packages into one
       # UID only when their certificates are IDENTICAL, and the daemon's loopback
       # IPC on 19876/19877 authorises by peer UID. If one APK arrived carrying a
       # stray (e.g. debug) certificate, signing the other with your real key would
-      # produce a pair that installs but cannot talk to itself.
-      - name: Verify both APKs are present and unsigned
+      # produce a pair that installs but cannot talk to itself. The companion shares no UID,
+      # but a CI-signed copy could only have come from a debug key, and a phone that installed
+      # that could never take the real release as an update.
+      - name: Verify all three APKs are present and unsigned
         run: |
           set -euo pipefail
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           count=$(ls dist/*.apk | wc -l)
-          if [ "$count" -ne 2 ]; then
-            echo "::error::expected 2 APKs (service host + in-car UI), found $count"
+          if [ "$count" -ne 3 ]; then
+            echo "::error::expected 3 APKs (service host + in-car UI + companion), found $count"
             exit 1
           fi
           for apk in dist/*.apk; do
@@ -270,9 +333,9 @@ jobs:
       # Tags only. On a workflow_dispatch run the ref is a BRANCH, and
       # action-gh-release requires a tag — without this guard a manual run would do
       # the entire build and then fail on the very last step. Skipping it turns
-      # workflow_dispatch into a useful dry run: both APKs still get built, verified
+      # workflow_dispatch into a useful dry run: all three APKs still get built, verified
       # and uploaded as a workflow artifact, just not published as a release.
-      - name: Attach both APKs to the release
+      - name: Attach the APKs to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
@@ -280,12 +343,21 @@ jobs:
           fail_on_unmatched_files: true
           generate_release_notes: true
           body: |
-            ## Two APKs — install BOTH
+            ## Two APKs for the car — install BOTH
 
             | APK | Package | Role |
             |---|---|---|
             | `bladewatch-service-host-*` | `net.bladewatch.app` | Daemons, receivers, BYD integration. No launcher icon. |
             | `bladewatch-ui-*` | `net.bladewatch.flutter` | The in-car UI. The only launcher icon. |
+
+            ## One APK for your phone
+
+            | APK | Package | Role |
+            |---|---|---|
+            | `bladewatch-companion-*` | `net.bladewatch.companion` | Android phones (arm64 and x86_64). Reaches the car over Pear from anywhere, or directly on the car's Wi-Fi. Never install it on the car. |
+
+            Only the Android build is attached. The companion also runs on iOS, macOS, Windows
+            and Linux, but those are built from source for now.
 
             ### These are UNSIGNED and cannot be installed as-is
 
@@ -303,6 +375,30 @@ jobs:
             apksigner verify --print-certs bladewatch-*-arm64-v8a.apk | grep 'SHA-256 digest'
             ```
 
+            The loop above signs the companion too. Its key does not have to match the car's,
+            but pick one and keep it: Android refuses an update signed with a different key,
+            so a phone would have to uninstall the companion and pair again.
+
             Adding `sharedUserId` changes the UID, so the first install after switching
             keys needs an uninstall of both packages, not an upgrade. See CLAUDE.md for
             the daemon-stop procedure and the ADB-key preservation recipe.
+
+            ### After installing or updating on the car
+
+            BYD's firmware re-restricts BladeWatch every time either car APK is installed or
+            updated. Open **BYD Auto-Start** and allow BladeWatch again (uncheck both entries),
+            or dashcam and sentry will not start after the next reboot.
+
+            ### Upgrading from v1.3.x: Tor is replaced by Pear
+
+            Remote access now goes through the companion app over Pear, not a Tor onion
+            address. **Onion URLs and QR codes saved from v1.3.x stop working**, and nothing
+            migrates them. To reach the car again:
+
+            1. Install the companion APK on your phone.
+            2. On the car's dashboard, tap **Pair a device** and scan the code with the
+               companion. The code works once and expires after five minutes. Pairing turns
+               remote access on.
+            3. Optional: in the same dialog, turn on **Direct connection on this Wi-Fi** to let
+               the phone connect straight to the car when both are on the same network. It is
+               off unless you turn it on.

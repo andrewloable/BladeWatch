@@ -151,8 +151,7 @@ Important native areas:
 1. Android starts `BladeWatchApplication`.
 2. The application initializes logging, preferences, locale/theme, and starts `DaemonKeepaliveService`.
 3. The service host's `MainActivity` initializes storage, device identity
-   (`DeviceIdGenerator` **before any daemon starts**), the BYD data-cache /
-   ACC whitelist on a background thread, daemon startup management, the location
+   (`DeviceIdGenerator` **before any daemon starts**), daemon startup management, the location
    sidecar, and the status overlay — then immediately backgrounds itself.
 4. `BootReceiver` handles boot, package replacement, screen, power, network, and BYD ACC events.
 5. `DaemonKeepaliveService` runs as a sticky foreground service, holds a partial wake lock, and schedules process revival.

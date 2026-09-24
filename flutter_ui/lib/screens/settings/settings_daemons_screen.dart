@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../theme/color_tokens.dart';
 
 import '../../gen/l10n/app_localizations.dart';
 import 'settings_daemons_controller.dart';
+import '../../platform/daemon_channel.dart';
 import 'settings_daemons_models.dart';
 
 /// Ground truth: `DaemonsFragment.kt` + `DaemonAdapter.kt`, reduced to what
@@ -71,12 +73,14 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
   /// let the two UIs drift apart; that task added the matching
   /// `daemon_name_*` string resources to native as well, so the English wording
   /// stays byte-identical while the other 16 locales finally translate.
-  /// "Tor Tunnel" is a product name and is deliberately untranslated.
+  /// "Tor Tunnel" is a product name and is deliberately untranslated. The Pear peer is
+  /// "Remote access (Pear)": what it does is translated, the product name is not.
   String _daemonLabel(AppLocalizations l10n, DaemonKind kind) => switch (kind) {
         DaemonKind.camera => l10n.daemon_name_camera,
         DaemonKind.sentry => l10n.daemon_name_surveillance,
         DaemonKind.accSentry => l10n.daemon_name_acc,
         DaemonKind.torTunnel => l10n.daemon_name_tor,
+        DaemonKind.pearPeer => l10n.daemon_name_pear,
       };
 
   /// Per-service icon, matching DaemonAdapter.getDaemonIcon.
@@ -85,6 +89,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         DaemonKind.sentry => Icons.shield_outlined,
         DaemonKind.accSentry => Icons.directions_car_outlined,
         DaemonKind.torTunnel => Icons.link,
+        DaemonKind.pearPeer => Icons.hub_outlined,
       };
 
   /// The log each service writes, from `DaemonAdapter.getLogFilePath`.
@@ -98,7 +103,26 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         DaemonKind.sentry => '/data/local/tmp/sentry_daemon.log',
         DaemonKind.accSentry => '/data/local/tmp/acc_sentry_daemon.log',
         DaemonKind.torTunnel => '/data/local/tmp/tor.log',
+        DaemonKind.pearPeer => '/data/local/tmp/pear_daemon.log',
       };
+
+  /// BladeWatch-rdtj.17: what an owner needs to know about remote access beyond "the process
+  /// is up" -- whether the car can be found right now, which is a different question (a live
+  /// peer on a head unit with no network is not reachable), plus its connected devices and
+  /// the last time one connected. Never a topic or key; the daemon sends none.
+  String _pearDetails(AppLocalizations l10n, PearStatus pear) {
+    final lines = <String>[
+      switch (pear.reachable) {
+        true => l10n.pear_status_reachable,
+        false => l10n.pear_status_unreachable,
+        null => l10n.pear_status_unknown,
+      },
+      l10n.pear_devices_connected(pear.devicesConnected),
+    ];
+    final last = pear.lastConnection;
+    if (last != null) lines.add(l10n.pear_last_connection(DateFormat('MMM d, HH:mm').format(last)));
+    return lines.join('\n');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,9 +149,13 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
             // bootstrap measured on the head unit). Showing that as a plain "Waiting"
             // is what made the row look like the toggle had failed.
             final statusText = row.running
-                ? l10n.surveillance_general_status_running
+                ? row.kind == DaemonKind.pearPeer
+                    ? '${l10n.surveillance_general_status_running}\n${_pearDetails(l10n, c.pear)}'
+                    : l10n.surveillance_general_status_running
                 : row.pending
-                    ? l10n.dashboard_starting_tor
+                    ? row.kind == DaemonKind.pearPeer
+                        ? l10n.startup_status_starting
+                        : l10n.dashboard_starting_tor
                     : l10n.startup_status_waiting;
             final statusColor = row.running
                 ? _successColor(theme)

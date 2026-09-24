@@ -1136,5 +1136,12 @@
   "pairing_remove": "Fjern",
   "pairing_remove_confirm_title": "Fjerne {name}?",
   "pairing_remove_confirm_body": "Den mister tilgangen med en gang. De andre enhetene dine fortsetter å virke.",
-  "pairing_error": "Kameratjenesten svarte ikke. Prøv igjen."
+  "pairing_error": "Kameratjenesten svarte ikke. Prøv igjen.",
+  "daemon_name_pear": "Fjerntilgang (Pear)",
+  "pear_status_reachable": "Tilgjengelig fra hvor som helst",
+  "pear_status_unreachable": "Ikke tilgjengelig: ingen forbindelse til Pear-nettverket",
+  "pear_status_unknown": "Tilgjengelighet ukjent",
+  "pear_devices_connected": "{count, plural, =0{Ingen enheter tilkoblet} one{{count} enhet tilkoblet} other{{count} enheter tilkoblet}}",
+  "pear_last_connection": "Siste tilkobling: {time}",
+  "pear_tile_off": "Av"
 }

@@ -54,6 +54,7 @@ object PearDaemon {
     // pear-end request ids; any number works, these just have to be unique while in flight.
     private const val ID_ATTACH_INFO = 1
     private const val ID_SWARM_JOIN = 2
+    private const val ID_DHT_STATUS = 3
     private const val FIRST_WRITE_ID = 100 // connection.write requests count up from here
 
     private const val SWEEP_INTERVAL_MS = 30_000L
@@ -126,8 +127,10 @@ object PearDaemon {
         private var nextWriteId = FIRST_WRITE_ID
         private val writesInFlight = HashMap<Int, String>() // connection.write id -> peer
         private val pump = PearStreamPump(send = ::sendToPeer)
+        private val status = PearStatus(File(PearStatus.PATH))
 
         fun start(topic: String) {
+            status.write() // replaces whatever a previous run left: not joined yet
             armRead()
             request(ID_ATTACH_INFO, "attach.info", JSONObject())
             request(ID_SWARM_JOIN, "swarm.join", JSONObject().put("topic", topic))
@@ -176,6 +179,7 @@ object PearDaemon {
         private fun scheduleSweep() {
             handler.postDelayed({
                 pump.sweepIdle()
+                request(ID_DHT_STATUS, "dht.status", JSONObject())
                 scheduleSweep()
             }, SWEEP_INTERVAL_MS)
         }
@@ -209,6 +213,15 @@ object PearDaemon {
                 ID_SWARM_JOIN -> {
                     if (!frame.has("ok")) die("swarm.join failed: ${frame.opt("err")}")
                     log.info("joined this car's topic; announcing on the DHT")
+                    status.joined = true
+                    status.write()
+                    request(ID_DHT_STATUS, "dht.status", JSONObject())
+                }
+                ID_DHT_STATUS -> {
+                    // An error means this pear-end has no dht.status (older than flutter_pear 0.4.4):
+                    // reachability is then unknown, not false.
+                    status.online = frame.optJSONObject("ok")?.optBoolean("online")
+                    status.write()
                 }
                 // A failed connection.write means pear-end no longer knows the peer: its streams are
                 // dead even if the connection.close event has not arrived yet.
@@ -220,7 +233,12 @@ object PearDaemon {
             when (event) {
                 "swarm.lifecycle" -> p?.optString("state")?.takeIf { it.isNotEmpty() }
                     ?.let { log.info("swarm state: $it") }
-                "swarm.connection" -> log.info("companion connected (peers=${++peers})")
+                "swarm.connection" -> {
+                    log.info("companion connected (peers=${++peers})")
+                    status.companions = peers
+                    status.lastCompanionAt = System.currentTimeMillis()
+                    status.write()
+                }
                 "connection.data" -> {
                     val peer = p?.optString("peer").orEmpty()
                     val message = try {
@@ -231,7 +249,10 @@ object PearDaemon {
                     if (peer.isNotEmpty()) pump.onMessage(peer, message)
                 }
                 "connection.close" -> {
-                    log.info("companion disconnected (peers=${--peers})")
+                    peers = (peers - 1).coerceAtLeast(0)
+                    log.info("companion disconnected (peers=$peers)")
+                    status.companions = peers
+                    status.write()
                     p?.optString("peer")?.takeIf { it.isNotEmpty() }?.let(pump::onPeerClosed)
                 }
                 "worklet.crash" -> die("worklet crashed: ${p?.optString("kind")}: ${p?.optString("message")}")

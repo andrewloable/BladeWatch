@@ -85,6 +85,10 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   TunnelState _tunnel = const TunnelState.loading();
   TunnelState get tunnel => _tunnel;
 
+  /// BladeWatch-rdtj.17: the Pear peer, which the Remote access tile reports while it is on.
+  PearStatus _pear = PearStatus.unknown;
+  PearStatus get pear => _pear;
+
   /// The daemon's canonical device id (same identity `AuthManager`'s JWT
   /// `sub` claim uses) — see this class's doc comment for why the Flutter
   /// port sources it from `GetStatus` rather than native's ADB-based
@@ -104,6 +108,7 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
       _refreshVehicleTile(),
       _refreshAccessCode(),
       _refreshTunnel(),
+      _refreshPear(),
     ]);
     notifyListeners();
   }
@@ -178,6 +183,14 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
       _accessCode = AccessCodeState(loading: false, secret: secret, visible: _accessCode.visible);
     } catch (_) {
       _accessCode = AccessCodeState(loading: false, secret: null, visible: _accessCode.visible);
+    }
+  }
+
+  Future<void> _refreshPear() async {
+    try {
+      _pear = await _daemonChannel.pearStatus();
+    } catch (_) {
+      _pear = PearStatus.unknown;
     }
   }
 

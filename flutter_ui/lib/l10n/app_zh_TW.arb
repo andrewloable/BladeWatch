@@ -1136,5 +1136,12 @@
   "pairing_remove": "移除",
   "pairing_remove_confirm_title": "要移除 {name} 嗎？",
   "pairing_remove_confirm_body": "它會立即失去存取權限。您的其他裝置不受影響。",
-  "pairing_error": "攝影機服務沒有回應。請再試一次。"
+  "pairing_error": "攝影機服務沒有回應。請再試一次。",
+  "daemon_name_pear": "遠端存取 (Pear)",
+  "pear_status_reachable": "可從任何地方存取",
+  "pear_status_unreachable": "無法存取：未連線至 Pear 網路",
+  "pear_status_unknown": "存取狀態不明",
+  "pear_devices_connected": "{count, plural, =0{沒有已連線的裝置} other{已連線 {count} 台裝置}}",
+  "pear_last_connection": "上次連線：{time}",
+  "pear_tile_off": "關閉"
 }

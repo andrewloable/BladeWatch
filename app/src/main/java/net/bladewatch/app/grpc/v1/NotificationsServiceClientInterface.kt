@@ -17,6 +17,7 @@ import com.connectrpc.ResponseMessage
  *    ListSubscriptions    GET  /api/push/subscriptions
  *    UpdatePreferences    POST /api/push/preferences
  *    SendTest             POST /api/push/test
+ *    ListInbox            (Connect only)
  */
 public interface NotificationsServiceClientInterface {
   public suspend fun getCategories(request: GetCategoriesRequest, headers: Headers = emptyMap()): ResponseMessage<GetCategoriesResponse>
@@ -30,4 +31,11 @@ public interface NotificationsServiceClientInterface {
   public suspend fun updatePreferences(request: UpdatePreferencesRequest, headers: Headers = emptyMap()): ResponseMessage<UpdatePreferencesResponse>
 
   public suspend fun sendTest(request: SendTestRequest, headers: Headers = emptyMap()): ResponseMessage<SendTestResponse>
+
+  /**
+   *  Store and forward (BladeWatch-rdtj.14): the car keeps the notifications it raised, and a
+   *  companion fetches the ones it has not seen whenever it connects -- over the LAN or Pear, with
+   *  no push service in between. Oldest first.
+   */
+  public suspend fun listInbox(request: ListInboxRequest, headers: Headers = emptyMap()): ResponseMessage<ListInboxResponse>
 }
