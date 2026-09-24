@@ -2942,4 +2942,54 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'Камеру сейчас использует другое приложение.';
+
+  @override
+  String get pairing_title => 'Подключить устройство';
+
+  @override
+  String get pairing_scan_hint =>
+      'Отсканируйте в приложении BladeWatch на телефоне или компьютере. Код действует один раз.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'Истекает через $time';
+  }
+
+  @override
+  String get pairing_expired => 'Срок действия этого кода истёк.';
+
+  @override
+  String get pairing_new_code => 'Новый код';
+
+  @override
+  String get pairing_remote_note =>
+      'Подключение включает удалённый доступ к этому автомобилю.';
+
+  @override
+  String get pairing_lan_title => 'Прямое подключение в этой сети Wi-Fi';
+
+  @override
+  String get pairing_lan_body =>
+      'Подключённое устройство в той же сети Wi-Fi, что и автомобиль, соединяется с ним напрямую и с шифрованием, без выхода в интернет. Выключено, пока вы не включите.';
+
+  @override
+  String get pairing_devices_title => 'Подключённые устройства';
+
+  @override
+  String get pairing_devices_empty => 'Подключённых устройств пока нет.';
+
+  @override
+  String get pairing_remove => 'Удалить';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return 'Удалить $name?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Устройство сразу потеряет доступ. Остальные ваши устройства продолжат работать.';
+
+  @override
+  String get pairing_error => 'Служба камеры не ответила. Повторите попытку.';
 }

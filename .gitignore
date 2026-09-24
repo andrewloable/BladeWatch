@@ -61,6 +61,10 @@ app/src/main/assets/web/angular/
 # Flutter in-car UI (flutter_ui/)
 flutter_ui/build/
 flutter_ui/.dart_tool/
+# melos workspace (BladeWatch-rdtj.10). bootstrap writes a pubspec_overrides.yaml into every
+# package that depends on another workspace package; it is regenerated on every bootstrap.
+/.dart_tool/
+pubspec_overrides.yaml
 flutter_ui/android/.gradle/
 flutter_ui/android/.kotlin/
 flutter_ui/.flutter-plugins*
@@ -108,6 +112,11 @@ Temporary Items
 # Tunnel binary: downloaded and SHA-256-verified by the downloadTor Gradle task,
 # never committed (the 19.2 MB binary it replaces used to be).
 app/src/main/jniLibs/arm64-v8a/libtor.so
+
+# Bare Kit native libraries (BladeWatch-rdtj.2): downloaded and SHA-256-verified by the
+# fetchBareKit Gradle task, same treatment as libtor.so above.
+app/src/main/jniLibs/arm64-v8a/libbare-kit.so
+app/src/main/jniLibs/arm64-v8a/libc++_shared.so
 
 # Local dewarp preview frames (BladeWatch-3dg8). Real camera frames of a real
 # place — PII, and invisible to grep. Never commit.

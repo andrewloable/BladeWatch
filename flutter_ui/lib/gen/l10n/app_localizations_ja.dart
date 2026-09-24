@@ -2831,4 +2831,53 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       '現在、別のアプリがカメラを使用しています。';
+
+  @override
+  String get pairing_title => 'デバイスをペアリング';
+
+  @override
+  String get pairing_scan_hint =>
+      'スマートフォンまたはコンピューターの BladeWatch アプリでスキャンしてください。コードは 1 回だけ有効です。';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '残り $time';
+  }
+
+  @override
+  String get pairing_expired => 'このコードは期限切れです。';
+
+  @override
+  String get pairing_new_code => '新しいコード';
+
+  @override
+  String get pairing_remote_note => 'ペアリングすると、この車へのリモートアクセスがオンになります。';
+
+  @override
+  String get pairing_lan_title => 'この Wi-Fi で直接接続';
+
+  @override
+  String get pairing_lan_body =>
+      '車と同じ Wi-Fi 上のペアリング済みデバイスが、インターネットを経由せずに暗号化して直接接続します。オンにするまではオフです。';
+
+  @override
+  String get pairing_devices_title => 'ペアリング済みのデバイス';
+
+  @override
+  String get pairing_devices_empty => 'ペアリング済みのデバイスはまだありません。';
+
+  @override
+  String get pairing_remove => '削除';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '$name を削除しますか?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'すぐにアクセスできなくなります。他のデバイスは引き続き使用できます。';
+
+  @override
+  String get pairing_error => 'カメラサービスが応答しませんでした。もう一度お試しください。';
 }

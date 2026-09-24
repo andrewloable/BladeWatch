@@ -1,6 +1,6 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_controller.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_models.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_player_screen.dart';
@@ -9,7 +9,7 @@ import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import '../../fakes/fake_video_player_platform.dart';
 
 class _FakeJwtSource implements JwtSource {

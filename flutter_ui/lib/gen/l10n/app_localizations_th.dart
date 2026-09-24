@@ -2898,4 +2898,54 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'แอปอื่นกำลังใช้กล้องอยู่ในขณะนี้';
+
+  @override
+  String get pairing_title => 'จับคู่อุปกรณ์';
+
+  @override
+  String get pairing_scan_hint =>
+      'สแกนด้วยแอป BladeWatch บนโทรศัพท์หรือคอมพิวเตอร์ของคุณ รหัสนี้ใช้ได้ครั้งเดียว';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'หมดอายุใน $time';
+  }
+
+  @override
+  String get pairing_expired => 'รหัสนี้หมดอายุแล้ว';
+
+  @override
+  String get pairing_new_code => 'รหัสใหม่';
+
+  @override
+  String get pairing_remote_note =>
+      'การจับคู่จะเปิดการเข้าถึงระยะไกลสำหรับรถคันนี้';
+
+  @override
+  String get pairing_lan_title => 'เชื่อมต่อโดยตรงผ่าน Wi-Fi นี้';
+
+  @override
+  String get pairing_lan_body =>
+      'อุปกรณ์ที่จับคู่แล้วซึ่งอยู่ใน Wi-Fi เดียวกับรถจะเชื่อมต่อโดยตรงและเข้ารหัส โดยไม่ผ่านอินเทอร์เน็ต ปิดอยู่จนกว่าคุณจะเปิด';
+
+  @override
+  String get pairing_devices_title => 'อุปกรณ์ที่จับคู่แล้ว';
+
+  @override
+  String get pairing_devices_empty => 'ยังไม่มีอุปกรณ์ที่จับคู่';
+
+  @override
+  String get pairing_remove => 'นำออก';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return 'นำ $name ออกหรือไม่';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'อุปกรณ์นี้จะเสียสิทธิ์เข้าถึงทันที อุปกรณ์อื่นของคุณยังใช้งานได้ตามปกติ';
+
+  @override
+  String get pairing_error => 'บริการกล้องไม่ตอบสนอง โปรดลองอีกครั้ง';
 }

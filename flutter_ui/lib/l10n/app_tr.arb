@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "Nöbetçi modu etkinken 12V akünün fazladan gücünü kullanır.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "Şu anda kamerayı başka bir uygulama kullanıyor.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Cihaz eşleştir",
+  "pairing_scan_hint": "Telefonunuzdaki veya bilgisayarınızdaki BladeWatch uygulamasıyla tarayın. Kod yalnızca bir kez çalışır.",
+  "pairing_expires_in": "{time} içinde sona erer",
+  "pairing_expired": "Bu kodun süresi doldu.",
+  "pairing_new_code": "Yeni kod",
+  "pairing_remote_note": "Eşleştirme, bu araç için uzaktan erişimi açar.",
+  "pairing_lan_title": "Bu Wi-Fi üzerinden doğrudan bağlantı",
+  "pairing_lan_body": "Araçla aynı Wi-Fi ağındaki eşleştirilmiş bir cihaz, internete çıkmadan doğrudan ve şifreli olarak bağlanır. Siz açana kadar kapalıdır.",
+  "pairing_devices_title": "Eşleştirilmiş cihazlar",
+  "pairing_devices_empty": "Henüz eşleştirilmiş cihaz yok.",
+  "pairing_remove": "Kaldır",
+  "pairing_remove_confirm_title": "{name} kaldırılsın mı?",
+  "pairing_remove_confirm_body": "Erişimini hemen kaybeder. Diğer cihazlarınız çalışmaya devam eder.",
+  "pairing_error": "Kamera hizmeti yanıt vermedi. Tekrar deneyin."
 }

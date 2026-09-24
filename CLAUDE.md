@@ -70,6 +70,16 @@ cd flutter_ui && flutter analyze && flutter test
 cd flutter_ui && flutter build apk --target-platform android-arm64 --debug
 cd flutter_ui && flutter run -d "$CAR_IP:5555"   # hot reload; no Gradle, no daemon restart
 
+# --- companion (net.bladewatch.companion, phones/desktops), from companion/ ---
+# NOT a head-unit app: never install it on the car. See "Platform Scope".
+cd companion && flutter analyze && flutter test
+cd companion && flutter build apk --debug        # arm64-v8a + x86_64 only
+cd companion && flutter build macos --debug
+
+# --- every Dart package at once (melos workspace), from the repo root ---
+# once: dart pub global activate melos
+melos bootstrap && melos run analyze && melos run test
+
 # --- service host (net.bladewatch.app), from the repo root ---
 # Debug build
 ./gradlew assembleDebug
@@ -119,7 +129,7 @@ adb -s $CAR_IP:5555 shell '
   #   pidof acc_sentry_daemon -> 4571
   #   pidof acc_sentry_daem   -> (nothing)
   #   pidof main              -> 2851 3102 4571   (comm for all three is "main")
-  killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon 2>/dev/null
+  killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon pear_daemon 2>/dev/null
   # NO `pkill -9 -f` belt-and-braces line here. There used to be one, claiming the
   # bracket trick kept it from matching this shell. It does not -- see the tor
   # block below -- and it killed the adb session mid-procedure, so every step
@@ -147,9 +157,15 @@ adb -s $CAR_IP:5555 shell '
   # !! Delete it and tor mints a brand-new address on the next start, silently
   # !! breaking every QR code the owner has ever scanned, with no way back. The
   # !! tunnel is stopped by killing the process, never by deleting its directory.
-  rm -f /data/local/tmp/start_*.sh /data/local/tmp/camera_daemon.lock /data/local/tmp/*sentry*.lock /data/local/tmp/*sentry*.pid 2>/dev/null
+  # !!
+  # !! The SAME goes for /data/local/tmp/pear (BladeWatch-rdtj.3): pear_daemon's storage,
+  # !! which holds the car's permanent Pear identity once a companion is paired. Delete it
+  # !! and every paired companion loses the car. Also keep it 0700: pear-end creates its
+  # !! corestore inside it as 0777, so the parent's mode is the only thing keeping it
+  # !! private. Only the lock FILE /data/local/tmp/pear_daemon.lock may be removed.
+  rm -f /data/local/tmp/start_*.sh /data/local/tmp/camera_daemon.lock /data/local/tmp/*sentry*.lock /data/local/tmp/*sentry*.pid /data/local/tmp/pear_daemon.lock 2>/dev/null
   sleep 1
-  ps -A -o PID,ARGS 2>/dev/null | grep -E "byd_cam_daemon|sentry_daemon|acc_sentry|bladewatch_to[r]" | grep -v grep || echo "all daemons stopped"
+  ps -A -o PID,ARGS 2>/dev/null | grep -E "byd_cam_daemon|sentry_daemon|acc_sentry|bladewatch_to[r]|pear_daemo[n]" | grep -v grep || echo "all daemons stopped"
 '
 # NOTE: killing daemons can briefly drop the ADB-over-TCP connection; if so,
 # reconnect: until [ "$(adb -s $CAR_IP:5555 get-state)" = device ]; do adb connect $CAR_IP:5555; sleep 3; done
@@ -194,10 +210,37 @@ adb -s $CAR_IP:5555 shell 'am force-stop net.bladewatch.app; sleep 1; am start -
 #   # ... uninstall + install ... then launch once so filesDir exists, then:
 #   adb -s $CAR_IP:5555 shell "run-as net.bladewatch.app sh -c 'cat > files/adbkey'"     < /tmp/adbkey
 #   adb -s $CAR_IP:5555 shell "run-as net.bladewatch.app sh -c 'cat > files/adbkey.pub'" < /tmp/adbkey.pub
+#
+#   # THEN RELAUNCH -- MANDATORY, the restore alone starts nothing:
+#   adb -s $CAR_IP:5555 shell 'am force-stop net.bladewatch.app; sleep 1; am start -n net.bladewatch.app/net.bladewatch.app.ui.MainActivity --activity-clear-task --activity-clear-top'
+#
+#   # AND VERIFY for up to ~90 s. If any line has no pid after that, the car has NO
+#   # dashcam/sentry -- stop and fix it, do not move on:
+#   adb -s $CAR_IP:5555 shell 'for n in byd_cam_daemon sentry_daemon acc_sentry_daemon; do printf "%s %s\n" $n "$(pidof $n)"; done'
+#
+#   # Only once all three are up -- until then it is the only copy that can redo the restore:
 #   rm -f /tmp/adbkey /tmp/adbkey.pub       # it is a private key -- do not leave it lying around
+#
+# WHY: the "launch once so filesDir exists" above runs BEFORE the key is back, so that
+# process loaded a freshly generated, UNAUTHORIZED key and could not launch a single
+# daemon; rewriting the files later does not reach the already-running process. Skipping
+# this relaunch left the car without dashcam or sentry overnight on 2026-09-23 while the
+# procedure appeared to have succeeded (BladeWatch-10u6). Measured 2026-09-24: all three
+# daemons back 55-65 s after the relaunch.
+#
+# Any LATER `install -r` kills the app process too, so re-run the relaunch + verify after
+# it. (`install -r` itself never touches files/adbkey -- only an uninstall does.)
 #
 # NEVER move this key to shared storage to "solve" this. A world-readable ADB
 # private key hands any installed app shell-level ADB on the head unit.
+
+# !! EVERY install or update of EITHER APK (install -r included) makes BYD restrict the
+# !! shared UID from starting at boot again: the NEXT REBOOT then starts no daemon, no dashcam,
+# !! no sentry, until someone opens the app (BladeWatch-8net). After installing, allow both
+# !! BladeWatch entries in BYD Auto-Start (uncheck both) on the head unit -- an owner action; no
+# !! shell or app code can do it (signature permission). To open it:
+# !!   adb -s $CAR_IP:5555 shell am start -n com.byd.appstartmanagement/.frame.AppStartManagement
+# !! Details: docs/daemons-and-processes.md "After a reboot".
 
 # The FLUTTER APK needs none of the above -- it installs over itself:
 adb -s $CAR_IP:5555 install flutter_ui/build/app/outputs/flutter-apk/app-debug.apk
@@ -244,14 +287,15 @@ See `docs/build-and-operations.md` for the toolchain pins and the signing recipe
 
 BladeWatch is a hybrid Android + shell-daemon + embedded web app. The critical design split:
 
-**Flutter UI process** (`net.bladewatch.flutter`) — every screen, in Dart under `flutter_ui/lib/`, with plain `ChangeNotifier` controllers (no Riverpod/BLoC). Talks to the daemon over ConnectRPC on 8080 with a JWT; privileged operations go through MethodChannels to a small Kotlin layer **in the same APK**, which uses loopback IPC on 19876. On first `onResume` it explicitly starts the service host's `MainActivity` (`wakeServiceHost()`) — an explicit component start, because BYD's `ssc_skip` suppresses broadcasts to the app package.
+**Flutter UI process** (`net.bladewatch.flutter`) — every screen, in Dart under `flutter_ui/lib/`, with plain `ChangeNotifier` controllers (no Riverpod/BLoC). Talks to the daemon over ConnectRPC on 8080 with a JWT; privileged operations go through MethodChannels to a small Kotlin layer **in the same APK**, which uses loopback IPC on 19876. On first `onResume` it explicitly starts the service host's `MainActivity` (`wakeServiceHost()`) — an explicit component start, because BYD's `ssc_skip` suppresses broadcasts to the app package unless it is allowed in BYD Auto-Start, which every install/update resets (docs/daemons-and-processes.md, "After a reboot").
 
 **Service host process** (`net.bladewatch.app`) — no UI: `BladeWatchApplication`, `MainActivity` (startup bootstrap only — extends `Activity`, never calls `setContentView`, `moveTaskToBack(true)` immediately; kept `exported` as the ADB recovery path), boot/power receivers, `DaemonKeepaliveService`, `DaemonStartupManager`, `StatusOverlayService`.
 
 **Shell-launched daemon processes** — launched via `app_process` ADB shell, run outside Activity lifecycle:
-- `CameraDaemon` — the central long-running process. Owns the camera/GPU pipeline, H.264/H.265 recording, WebSocket live streaming, HTTP API server (`127.0.0.1:8080`), TCP command server (`127.0.0.1:19876`), surveillance IPC server (`127.0.0.1:19877`), telemetry, trips.
+- `CameraDaemon` — the central long-running process. Owns the camera/GPU pipeline, H.264/H.265 recording, WebSocket live streaming, HTTP API server (`127.0.0.1:8080` for the in-car UI, `127.0.0.1:8081` REMOTE for tor, `127.0.0.1:8444` REMOTE TLS for the Pear pump, `0.0.0.0:8443` TLS when LAN access is on), TCP command server (`127.0.0.1:19876`), surveillance IPC server (`127.0.0.1:19877`), telemetry, trips.
 - `SentryDaemon` / `AccSentryDaemon` — surveillance orchestration.
-- Tor onion service (`TorLauncher`, binary shipped as `libtor.so` in `jniLibs/`) — **the only remaining tunnel/proxy daemon**. Runs as `bladewatch_tor`, exposes `127.0.0.1:8080` as a v3 onion service, and needs no account, token or registration. Unlike its predecessor the binary is NOT committed: `downloadTor` fetches and SHA-256-verifies it at build time. Cloudflared, Tailscale, sing-box and the Telegram daemon were all removed; do not re-add generic kills for them. **`/data/local/tmp/tor/hs` holds the permanent onion identity key — killing the tunnel is fine, deleting that directory is not.** See `docs/networking-and-tunnels.md`.
+- `PearDaemon` (`pear_daemon`, launched by `PearLauncher`) — the Pear peer replacing tor in v1.4.0.0 (epic BladeWatch-rdtj). Hosts a bare-kit worklet running pear-end and joins this car's Hyperswarm topic (`PearTopic`, seeded from the secret store). **Opt-in** (`PEAR_PEER`, off by default, like tor). Runs only with six verified runtime requirements — see its class doc; the two that bite first are a stand-in Application (bare-kit's worker-thread hook aborts on a null `currentApplication()`) and `-Djava.library.path` with the APK's lib dir FIRST. **`/data/local/tmp/pear` will hold the car's permanent Pear identity — never delete it.**
+- Tor onion service (`TorLauncher`, binary shipped as `libtor.so` in `jniLibs/`) — the remaining tunnel daemon until `.12` removes it. Runs as `bladewatch_tor`, exposes `127.0.0.1:8081` (the REMOTE loopback listener; never 8080 -- BladeWatch-ur11) as a v3 onion service, and needs no account, token or registration. Unlike its predecessor the binary is NOT committed: `downloadTor` fetches and SHA-256-verifies it at build time. Cloudflared, Tailscale, sing-box and the Telegram daemon were all removed; do not re-add generic kills for them. **`/data/local/tmp/tor/hs` holds the permanent onion identity key — killing the tunnel is fine, deleting that directory is not.** See `docs/networking-and-tunnels.md`.
 
 **Embedded web UI** — the Angular 19 SPA under `web/`, built into `app/src/main/assets/web/angular/` and extracted to `/data/local/tmp/web` at runtime. Talks to CameraDaemon over ConnectRPC. It serves **remote browser / tunnel clients only** — the in-car UI is Flutter and does not embed it.
 
@@ -264,7 +308,7 @@ Daemon launch is intentionally staggered to let the head unit settle: core daemo
 ### Cross-Process Coordination
 
 All cross-process config and secrets live under `/data/local/tmp`:
-- Config: `/data/local/tmp/bladewatch_config.json` (owned by `UnifiedConfigManager`)
+- Config: `/storage/emulated/0/BladeWatch/data/bladewatch_config.json` (canonical, owned by `UnifiedConfigManager`), mirrored to `/data/local/tmp/bladewatch_config.json` for older readers -- read the canonical file when checking a value
 - Secrets: `/data/local/tmp/bladewatch_secrets.json` (owned by `SecretConfigStore`)
 - Media: `/storage/emulated/0/BladeWatch/{recordings,surveillance,proximity,trips}`
 
@@ -287,7 +331,9 @@ Camera frame → GPU downscale → native motion pipeline → per-quadrant state
 
 ## Key Source Locations
 
-- In-car UI (Flutter): [flutter_ui/lib/main.dart](flutter_ui/lib/main.dart), [flutter_ui/lib/shell/](flutter_ui/lib/shell/), [flutter_ui/lib/screens/](flutter_ui/lib/screens/), [flutter_ui/lib/theme/](flutter_ui/lib/theme/), [flutter_ui/lib/rpc/](flutter_ui/lib/rpc/), [flutter_ui/lib/l10n/](flutter_ui/lib/l10n/)
+- In-car UI (Flutter): [flutter_ui/lib/main.dart](flutter_ui/lib/main.dart), [flutter_ui/lib/shell/](flutter_ui/lib/shell/), [flutter_ui/lib/screens/](flutter_ui/lib/screens/), [flutter_ui/lib/theme/](flutter_ui/lib/theme/), [flutter_ui/lib/l10n/](flutter_ui/lib/l10n/)
+- Connect client + generated messages, shared by both Flutter apps: [packages/bladewatch_rpc/lib/rpc/](packages/bladewatch_rpc/lib/rpc/), [packages/bladewatch_rpc/lib/gen/](packages/bladewatch_rpc/lib/gen/) (was `flutter_ui/lib/rpc` + `lib/gen/bladewatch` until BladeWatch-rdtj.10)
+- Companion app (phones/desktops, flutter_pear): [companion/lib/main.dart](companion/lib/main.dart); workspace: [melos.yaml](melos.yaml)
 - Flutter-side Kotlin (MethodChannels + Live View texture plugin): [flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt](flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/MainActivity.kt)
 - Service host entry: [BladeWatchApplication.kt](app/src/main/java/com/loabletech/bladewatch/BladeWatchApplication.kt), [MainActivity.kt](app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt) (bootstrap only)
 - Daemon launch: [DaemonStartupManager.kt](app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt), [AdbDaemonLauncher.kt](app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt), [DaemonBootstrap.kt](app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.kt)
@@ -309,12 +355,13 @@ Classes in `android.hardware.*` and `android.os.*` are **compile-time stubs only
 
 ## Platform Scope (read before writing or running any test)
 
-Two front-ends with **different** platform scopes. Confusing them wastes effort on targets that
+Three front-ends with **different** platform scopes. Confusing them wastes effort on targets that
 do not exist, or skips a target that does.
 
 **Native Flutter app (`flutter_ui/`) — BYD Android head unit ONLY.**
-One device: arm64, BYD DiLink v3, Android 10 / API 29. There is no BladeWatch on a phone, a
-tablet, a desktop or a browser.
+One device: arm64, BYD DiLink v3, Android 10 / API 29. There is no in-car UI on a phone, a
+tablet, a desktop or a browser — the owner's phones and desktops get the companion app below,
+never a build of this one.
 
 - **Do NOT test, build, or debug for iOS, macOS, Windows, Linux or Flutter web.** Not with
   simulators, not with `flutter test -d chrome`, not "just to check".
@@ -330,11 +377,30 @@ tablet, a desktop or a browser.
   host-toolchain problem, not an iOS target — fix it with `sudo xcodebuild -license accept`,
   never by adding iOS support.
 
+**Companion app (`companion/`) — phones and desktops: Android, iOS, macOS, Windows, Linux.**
+The owner's app for reaching the car from anywhere over Pear (flutter_pear, the same stack the
+car's `pear_daemon` runs), or directly when on the car's LAN (epic BladeWatch-rdtj). It is the
+**one** place in this repo where iOS/macOS/Windows/Linux targets are correct — a platform
+directory belongs here, never under `flutter_ui/`. It never runs on the head unit.
+
+- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.3`) — never a caret; before 1.0 its
+  minor versions may break the API.
+- Android ships arm64-v8a + x86_64 only, and that holds **only** because
+  `companion/android/gradle.properties` sets `disable-abi-filtering=true`: without it the Flutter
+  Gradle plugin silently replaces the app's `abiFilters` with its own list, armeabi-v7a included,
+  and a 32-bit phone installs an APK that fails at worklet start. `--split-per-abi` therefore
+  fails at configuration — intended.
+- `flutter test` covers Dart logic (flutter_pear_test ships fakes). `integration_test/` boots
+  the REAL worklet and needs a real target: `flutter test integration_test -d macos`, or an
+  API 29+ arm64 emulator. Never treat two peers on one machine or behind one NAT as a real P2P
+  test — router hairpinning fails it with no flutter_pear code involved.
+
 **Web app (`web/`) — browsers, including phones.**
 This one IS reached from a phone: it is what the owner opens when away from the car, over the
 tunnel. Mobile browsers — iOS Safari included — are in scope here, and that is not a
 contradiction of the rule above. A mobile *browser* is a supported client of the web app; a
-native *iOS build* of the Flutter app is not a thing that exists.
+native *iOS build* of the in-car Flutter app is not a thing that exists (the native phone app
+is the companion).
 
 ```bash
 cd web && npm run typecheck           # tsc --noEmit — `vite build` does NOT typecheck
@@ -365,7 +431,7 @@ and `buildAngularWebUI` already owns the "is the web toolchain present" question
 
 ## Testing
 
-**Service host (Kotlin/Java)** — 24 JVM test files under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
+**Service host (Kotlin/Java)** — 110 JVM test files (860 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
 
 ```bash
 # NOTE: `:app:test` is an aggregate lifecycle task and does NOT accept --tests
@@ -373,12 +439,23 @@ and `buildAngularWebUI` already owns the "is the web toolchain present" question
 ./gradlew :app:testDebugUnitTest --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
 ```
 
-**In-car UI (Dart)** — 111 test files under `flutter_ui/test/`, ~1450 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
+**In-car UI (Dart)** — 98 test files under `flutter_ui/test/`, 1443 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
 
 ```bash
 cd flutter_ui && flutter analyze && flutter test
 cd flutter_ui && flutter test --coverage && cd .. && tools/check_flutter_coverage.sh
 ```
+
+**Shared RPC package (Dart)** — `packages/bladewatch_rpc/` is the Connect client, the generated
+messages and `FakeRpcClient`, moved out of `flutter_ui/lib` in BladeWatch-rdtj.10 so the
+companion shares one copy: 18 test files, 157 tests, gated at **100%**. Its tests left
+`flutter_ui/test` with it, so `cd flutter_ui && flutter test` no longer runs them:
+
+```bash
+cd packages/bladewatch_rpc && flutter analyze && flutter test
+```
+
+**Companion (Dart)** — see "Platform Scope"; gated at 98% (measured 98.03% once the rdtj.8 transport landed).
 
 **In-car UI (Kotlin)** — the Flutter APK's privileged layer (IPC client, JWT
 minting, daemon control, secret/public config, the Live View texture plugin) has
@@ -397,9 +474,19 @@ This was not previously written down, and the gate had silently dropped to 96.2%
 — `PublicConfigChannel.getCameraProbe()` shipped for the Diagnostics camera tile
 with no test. Run it whenever you touch `flutter_ui/android/app/src/main/kotlin/`.
 
-All three coverage gates **ratchet upward and may never be lowered**.
+All five coverage gates — service host Kover, `flutter_ui/android` Kover, and the Dart gates for
+`flutter_ui`, `bladewatch_rpc` and `companion` — **ratchet upward and may never be lowered**.
+The three Dart gates live in the in-car UI's Gradle build:
+`cd flutter_ui/android && ./gradlew checkFlutterCoverage checkRpcCoverage checkCompanionCoverage`.
+Bounds, measurements and history: "Coverage gates" in `docs/build-and-operations.md`.
 
 **Gradle up-to-date blindness:** a test that reads a file which is not on the classpath (a manifest, a source tree scanned as data) will not re-run when that file changes, so it can pass against a mutation. Declare such files as explicit test `inputs` — `app/build.gradle.kts` does this for `AndroidManifest.xml` and `src/main/java`. A guard that cannot fail is worse than no guard.
+
+**Moving code can drop it out of a scan.** The structural guards that read source trees as data
+(`NoRemovedTunnelReferencesTest`, `NoSelfMatchingProcessCommandsTest`) list their directories
+explicitly. Moving `flutter_ui/lib/rpc` into `packages/bladewatch_rpc` silently took it out of
+both until the new path was added to each guard AND to the Gradle `inputs` list. When code moves
+to a new tree, add the tree to both.
 
 ## Shell Command Safety
 

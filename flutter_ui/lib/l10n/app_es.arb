@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "El modo centinela consume energía adicional de la batería de 12V mientras está activo.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "Otra aplicación está usando la cámara en este momento.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Vincular un dispositivo",
+  "pairing_scan_hint": "Escanéalo con la app BladeWatch en tu teléfono u ordenador. El código funciona una sola vez.",
+  "pairing_expires_in": "Caduca en {time}",
+  "pairing_expired": "Este código ha caducado.",
+  "pairing_new_code": "Nuevo código",
+  "pairing_remote_note": "Al vincular se activa el acceso remoto a este coche.",
+  "pairing_lan_title": "Conexión directa en esta Wi-Fi",
+  "pairing_lan_body": "Un dispositivo vinculado en la misma Wi-Fi que el coche se conecta directamente y cifrado, sin pasar por internet. Desactivado hasta que lo actives.",
+  "pairing_devices_title": "Dispositivos vinculados",
+  "pairing_devices_empty": "Aún no hay dispositivos vinculados.",
+  "pairing_remove": "Quitar",
+  "pairing_remove_confirm_title": "¿Quitar {name}?",
+  "pairing_remove_confirm_body": "Pierde el acceso de inmediato. Tus otros dispositivos siguen funcionando.",
+  "pairing_error": "El servicio de cámara no respondió. Inténtalo de nuevo."
 }

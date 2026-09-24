@@ -27,6 +27,29 @@ import java.net.URLEncoder
  * /auth/status is still public but only returns deviceId for loopback callers. Tunnel/LAN callers
  * receive status:ok with no deviceId, to prevent brute-force aid.
  */
+/**
+ * Which HttpServer listener a request arrived on -- and therefore whether a loopback source address
+ * means anything (BladeWatch-rdtj.4).
+ *
+ * Loopback is not a trustworthy signal on its own. tor already delivers remote traffic from
+ * 127.0.0.1, and the Pear stream pump will too: at the socket level both are indistinguishable from
+ * an app on the head unit. So trust is a property of the LISTENER, declared where it is created,
+ * rather than something inferred from the peer address -- and anything not explicitly declared
+ * local is [REMOTE]. A new listener, or a new caller of [AuthMiddleware.checkAuth], fails closed.
+ */
+enum class ListenerTrust {
+    /**
+     * `127.0.0.1:8080`, where the in-car UI and the service host connect. The only listener eligible
+     * for the Tier 2 loopback safety net or the vehicle-action second-factor exemption. (tor landed
+     * here until BladeWatch-ur11 gave it its own REMOTE listener; Tier 2 keeps its tunnel check as
+     * a second line.)
+     */
+    LOCAL_APPS,
+
+    /** Every other listener -- LAN TLS on 8443, the Pear pump's TLS on 8444, tor's on 8081. Loopback proves nothing. */
+    REMOTE,
+}
+
 object AuthMiddleware {
 
     // Paths that don't require authentication
@@ -34,6 +57,8 @@ object AuthMiddleware {
         "/auth/status", // Login page polls this; deviceId returned only to loopback callers
         "/auth/token",
         "/auth/logout",
+        AuthApiHandler.PAIR_PATH, // companion pairing (rdtj.7): a single-use code is the credential
+        AuthApiHandler.COMPANION_LOGIN_PATH, // companion token -> JWT; rate-limited like /auth/token
         "/login.html",
         "/login",
         "/favicon.ico",
@@ -127,6 +152,25 @@ object AuthMiddleware {
         out: OutputStream,
         clientAddress: SocketAddress?,
         hasTunnelHeaders: Boolean
+    ): Boolean = checkAuth(
+        path, cookieHeader, authHeader, out, clientAddress, hasTunnelHeaders, ListenerTrust.REMOTE
+    )
+
+    /**
+     * The full check. [trust] is the listener the request arrived on: only [ListenerTrust.LOCAL_APPS]
+     * can ever reach the Tier 2 loopback safety net, and every shorter overload passes
+     * [ListenerTrust.REMOTE], so a caller that does not say otherwise fails closed.
+     */
+    @JvmStatic
+    @Throws(Exception::class)
+    fun checkAuth(
+        path: String,
+        cookieHeader: String?,
+        authHeader: String?,
+        out: OutputStream,
+        clientAddress: SocketAddress?,
+        hasTunnelHeaders: Boolean,
+        trust: ListenerTrust
     ): Boolean {
         // Tier 0 — public paths (login UI, static assets, login submission)
         if (isPublicPath(path)) {
@@ -183,8 +227,11 @@ object AuthMiddleware {
         // hand full API access to anyone who knew the onion address — and debug is the build that
         // actually goes on the car, because preserving the ADB key across a reinstall needs
         // run-as. Header sniffing cannot close this; the tunnel being up is the signal.
-        if (isLoopbackBypassAllowed() && !hasTunnelHeaders && !isTunnelActive() &&
-            clientAddress != null
+        //
+        // BladeWatch-rdtj.4: and ONLY on the in-car listener. The Pear pump reaches this server from
+        // 127.0.0.1 too, and so will anything added later; the listener decides, not the address.
+        if (trust == ListenerTrust.LOCAL_APPS && isLoopbackBypassAllowed() && !hasTunnelHeaders &&
+            !isTunnelActive() && clientAddress != null
         ) {
             val addrStr = clientAddress.toString()
             if (addrStr.contains("127.0.0.1") || addrStr.contains("/0:0:0:0:0:0:0:1")) {
@@ -240,6 +287,16 @@ object AuthMiddleware {
         tunnelActiveCheckedAtMs = now
         return active
     }
+
+    /**
+     * Whether a request comes from an app on the head unit itself, for the vehicle-action
+     * second-factor exemption in HttpServer. That exemption used to be `isLoopbackAddress` alone,
+     * which the Pear pump would have satisfied from 127.0.0.1 -- letting a remote peer actuate the
+     * car on a session JWT alone. Requires the in-car listener as well (BladeWatch-rdtj.4).
+     */
+    @JvmStatic
+    fun isLocalAppCaller(trust: ListenerTrust, address: java.net.InetAddress): Boolean =
+        trust == ListenerTrust.LOCAL_APPS && address.isLoopbackAddress
 
     /** Whether a path is public (no auth required). */
     @JvmStatic

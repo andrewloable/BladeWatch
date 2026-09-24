@@ -1,17 +1,17 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_models.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:bladewatch_ui/gen/bladewatch/v1/settings.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/settings.pb.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import 'package:bladewatch_ui/widgets/bw_choice_chip.dart';
 
 void main() {

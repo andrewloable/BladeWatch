@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "센트리 모드가 작동 중일 때는 12V 배터리 전력을 추가로 사용합니다.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "지금 다른 앱이 카메라를 사용하고 있습니다.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "기기 페어링",
+  "pairing_scan_hint": "휴대폰이나 컴퓨터의 BladeWatch 앱으로 스캔하세요. 코드는 한 번만 사용할 수 있습니다.",
+  "pairing_expires_in": "{time} 후 만료",
+  "pairing_expired": "이 코드는 만료되었습니다.",
+  "pairing_new_code": "새 코드",
+  "pairing_remote_note": "페어링하면 이 차량의 원격 액세스가 켜집니다.",
+  "pairing_lan_title": "이 Wi-Fi에서 직접 연결",
+  "pairing_lan_body": "차량과 같은 Wi-Fi에 있는 페어링된 기기가 인터넷을 거치지 않고 암호화된 상태로 직접 연결합니다. 켜기 전까지는 꺼져 있습니다.",
+  "pairing_devices_title": "페어링된 기기",
+  "pairing_devices_empty": "아직 페어링된 기기가 없습니다.",
+  "pairing_remove": "삭제",
+  "pairing_remove_confirm_title": "{name}을(를) 삭제할까요?",
+  "pairing_remove_confirm_body": "즉시 액세스 권한을 잃습니다. 다른 기기는 계속 작동합니다.",
+  "pairing_error": "카메라 서비스가 응답하지 않았습니다. 다시 시도하세요."
 }

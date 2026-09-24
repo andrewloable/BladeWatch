@@ -1,5 +1,5 @@
-import '../../rpc/services/vehicle_service_client.dart';
-import '../../gen/bladewatch/v1/vehicle.pb.dart' show GetVehicleStateRequest;
+import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart' show GetVehicleStateRequest;
 import '../../platform/public_config_channel.dart';
 
 /// The Network health tile's bottom-line tunnel status — ported from

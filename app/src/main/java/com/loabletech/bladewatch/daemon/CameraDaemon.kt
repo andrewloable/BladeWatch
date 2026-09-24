@@ -18,6 +18,7 @@ import net.bladewatch.app.byd.BydDeviceHelper
 import net.bladewatch.app.camera.AvcHalWarmup
 import net.bladewatch.app.camera.BydCameraCoordinator
 import net.bladewatch.app.camera.PanoramicCameraGpu
+import net.bladewatch.app.auth.AuthManager
 import net.bladewatch.app.config.SecretConfigStore
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.daemon.proxy.Safe
@@ -41,6 +42,8 @@ import net.bladewatch.app.notifications.sinks.PushSink
 import net.bladewatch.app.recording.RecordingModeManager
 import net.bladewatch.app.server.HttpServer
 import net.bladewatch.app.server.IpcTokenManager
+import net.bladewatch.app.server.LanDiscoveryResponder
+import net.bladewatch.app.server.LanTls
 import net.bladewatch.app.server.NotificationApiHandler
 import net.bladewatch.app.server.SurveillanceIpcServer
 import net.bladewatch.app.server.TcpCommandServer
@@ -159,6 +162,7 @@ object CameraDaemon {
     private var tcpServer: TcpCommandServer? = null
     private var httpServer: HttpServer? = null
     private var ipcServer: SurveillanceIpcServer? = null
+    private var lanDiscovery: LanDiscoveryResponder? = null
     private var accMonitor: AccMonitor? = null
 
     // ==================== SURVEILLANCE ====================
@@ -589,6 +593,20 @@ object CameraDaemon {
         Thread(tcp::start, "TcpServer").start()
         Thread(http::start, "HttpServer").start()
         Thread(ipc, "SurveillanceIPC").start()
+        // BladeWatch-rdtj.5: answers signed LAN probes; idles unbound until LAN access is on.
+        val discovery = LanDiscoveryResponder(
+            probeKey = { LanDiscoveryResponder.probeKey(SecretConfigStore()) },
+            replyInfo = {
+                AuthManager.getState()?.deviceId?.let { id ->
+                    LanDiscoveryResponder.ReplyInfo(
+                        LanTls.loadOrCreate(SecretConfigStore()).fingerprintSha256, id
+                    )
+                }
+            },
+            enabled = { UnifiedConfigManager.isLanHttpEnabled() },
+        )
+        lanDiscovery = discovery
+        Thread(discovery::run, "LanDiscovery").start()
         Thread(acc::start, "AccMonitor").start()
         logT("server threads started (TcpServer, HttpServer, SurveillanceIPC, AccMonitor)")
 
@@ -1113,6 +1131,7 @@ object CameraDaemon {
         tcpServer?.stop()
         httpServer?.stop()
         ipcServer?.stop()
+        lanDiscovery?.stop()
 
         // Shutdown StorageManager (schedulers, executors)
         try {

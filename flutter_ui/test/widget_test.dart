@@ -3,9 +3,9 @@ import 'package:bladewatch_ui/platform/auth_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/platform/prefs_channel.dart';
 import 'package:bladewatch_ui/platform/setup_channel.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_controller.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_screen.dart';
 import 'package:bladewatch_ui/screens/diagnostics/adb_console_screen.dart';
@@ -36,7 +36,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'fakes/fake_platform_channel.dart';
-import 'fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
   testWidgets('BladeWatchApp boots into the Startup screen, not straight to the shell', (tester) async {

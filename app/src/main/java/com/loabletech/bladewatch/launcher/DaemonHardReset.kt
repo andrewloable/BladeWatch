@@ -78,7 +78,12 @@ object DaemonHardReset {
      * window for a half-killed watchdog to re-spawn between commands.
      *
      * Process names come from launcher constants: `byd_cam_daemon`, `sentry_daemon`,
-     * `acc_sentry_daemon`, `bladewatch_tor`.
+     * `acc_sentry_daemon`, `bladewatch_tor`, `pear_daemon`.
+     *
+     * **The same goes for `/data/local/tmp/pear`** (BladeWatch-rdtj.3): pear_daemon's storage,
+     * which holds the car's permanent Pear identity once a companion is paired. Only the lock file
+     * `pear_daemon.lock` (matched by `*_daemon.lock`) may go; `rm -f` cannot remove a directory,
+     * and no clause may ever be widened into one that can.
      *
      * **NEVER add anything that deletes `/data/local/tmp/tor/hs`.** That directory holds
      * `hs_ed25519_secret_key`, which IS the car's permanent onion address — lose it and tor mints
@@ -143,5 +148,5 @@ object DaemonHardReset {
 
     @JvmStatic
     internal fun hardResetCommand(): String =
-        "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done"
+        "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor pear_daemon 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done"
 }

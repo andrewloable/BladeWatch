@@ -71,8 +71,13 @@ class TorLauncher(
         /** Where tor writes the onion address, mode 600 and shell-owned. */
         const val HOSTNAME_FILE = "$HS_DIR/hostname"
 
-        /** The local web server the onion service fronts. */
-        private const val LOCAL_HTTP = "127.0.0.1:8080"
+        /**
+         * The local web server the onion service fronts: its REMOTE loopback listener, never 8080
+         * (BladeWatch-ur11). tor delivers every remote request from 127.0.0.1, so on 8080 -- the
+         * in-car UI's listener -- a remote visitor was treated as a head-unit app and skipped the
+         * vehicle-control second factor. 8081 carries the same routes with REMOTE trust.
+         */
+        private val LOCAL_HTTP = "127.0.0.1:${net.bladewatch.app.server.HttpServer.REMOTE_LOOPBACK_PORT}"
 
         /**
          * The whole configuration. Five lines, and every one of them earns its place:
@@ -82,7 +87,7 @@ class TorLauncher(
          * - `DataDirectory` — the consensus cache. Keeping it is what turns an 82 s cold start
          *   into a 6 s warm one. Safe to delete; it costs only a slow bootstrap.
          * - `HiddenServiceDir` — holds the permanent identity key. NOT safe to delete, ever.
-         * - `HiddenServicePort 80 -> 127.0.0.1:8080` — plain HTTP inside the tunnel is correct:
+         * - `HiddenServicePort 80 -> 127.0.0.1:8081` — plain HTTP inside the tunnel is correct:
          *   the onion protocol already encrypts end to end and authenticates the service by its
          *   key, so there is no TLS to add and no certificate to pin.
          * - `Log notice file` — the bootstrap gate in `TcpCommandServer.isTorBootstrapped()`

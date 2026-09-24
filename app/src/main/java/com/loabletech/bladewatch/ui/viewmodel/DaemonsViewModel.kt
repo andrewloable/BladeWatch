@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import net.bladewatch.app.launcher.AdbDaemonLauncher
+import net.bladewatch.app.launcher.PearLauncher
 import net.bladewatch.app.launcher.TorLauncher
 import net.bladewatch.app.logging.LogManager
 import net.bladewatch.app.ui.daemon.*
@@ -31,6 +32,8 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
     // Expose the tunnel controller for tunnel URL access
     val torController: TorController
 
+    val pearController: PearController
+
     // Expose camera daemon controller for startup manager
     val cameraDaemonController: CameraDaemonController
 
@@ -47,13 +50,15 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
     
     init {
         torController = TorController(app, adbLauncher)
+        pearController = PearController(app, adbLauncher)
         cameraDaemonController = CameraDaemonController(app, adbLauncher)
 
         controllers = mapOf(
             DaemonType.CAMERA_DAEMON to cameraDaemonController,
             DaemonType.SENTRY_DAEMON to SentryDaemonController(adbLauncher),
             DaemonType.ACC_SENTRY_DAEMON to AccSentryDaemonController(adbLauncher),
-            DaemonType.TOR_TUNNEL to torController
+            DaemonType.TOR_TUNNEL to torController,
+            DaemonType.PEAR_PEER to pearController
         )
         
         // Initialize all states as stopped
@@ -70,21 +75,27 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
         // Periodic refresh for tunnel daemons (every 30 seconds)
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(object : Runnable {
             override fun run() {
-                // Only refresh tunnel statuses periodically
+                // Only refresh the remote-access daemons periodically
                 refreshDaemonStatus(DaemonType.TOR_TUNNEL)
+                refreshDaemonStatus(DaemonType.PEAR_PEER)
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 30000)
             }
         }, 30000)
     }
     
-    fun startDaemon(type: DaemonType) {
+    /**
+     * @param persistEnabled record an optional daemon as enabled. True only when a person asked
+     *   for the start; automatic starts pass false (BladeWatch-17l7) -- saving "enabled" from a
+     *   health-check relaunch wrote a stale value back over an owner's switch-off.
+     */
+    fun startDaemon(type: DaemonType, persistEnabled: Boolean = true) {
         val controller = controllers[type] ?: return
         
         // Clear user-stopped flag so health check can manage this daemon
         DaemonStartupManager.clearUserStopped(type)
 
         // For optional daemons, save the enabled state so they auto-start on app restart
-        if (type in DaemonStartupManager.OPTIONAL_DAEMONS) {
+        if (persistEnabled && type in DaemonStartupManager.OPTIONAL_DAEMONS) {
             startupManager?.onDaemonToggled(type, true)
         }
         
@@ -196,6 +207,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
             DaemonType.SENTRY_DAEMON -> "sentry_daemon"
             DaemonType.ACC_SENTRY_DAEMON -> "acc_sentry_daemon"
             DaemonType.TOR_TUNNEL -> TorLauncher.TOR_PROCESS
+            DaemonType.PEAR_PEER -> PearLauncher.PEAR_PROCESS
         }
     }
     
@@ -205,6 +217,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
             DaemonType.SENTRY_DAEMON -> listOf("sentry_daemon")
             DaemonType.ACC_SENTRY_DAEMON -> listOf("acc_sentry_daemon")
             DaemonType.TOR_TUNNEL -> listOf(TorLauncher.TOR_PROCESS)
+            DaemonType.PEAR_PEER -> listOf(PearLauncher.PEAR_PROCESS)
         }
     }
     

@@ -3,14 +3,14 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 
 import 'package:bladewatch_ui/adb/adb_client.dart';
-import 'package:bladewatch_ui/gen/bladewatch/v1/storage.pb.dart';
-import 'package:bladewatch_ui/gen/bladewatch/v1/surveillance.pb.dart';
-import 'package:bladewatch_ui/gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/storage.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/platform/network_channel.dart';
-import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 
 import 'diagnostics_models.dart';
 import '../../shell/disposed_safe_notifier.dart';

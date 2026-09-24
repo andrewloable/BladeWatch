@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import '../../gen/bladewatch/v1/system.pb.dart' as sys;
-import '../../gen/bladewatch/v1/vehicle.pb.dart' as pb;
-import '../../rpc/services/system_service_client.dart';
-import '../../rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart' as sys;
+import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart' as pb;
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
 import 'vehicle_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 

@@ -26,6 +26,8 @@ The app cannot write to `/data/local/tmp` and cannot read files that are mode
 | config | `/storage/emulated/0/BladeWatch/data/bladewatch_config.json` | world-rw (`setReadable/Writable(true, false)`) | non-secret config | app + daemon (direct) |
 | secrets | `/data/local/tmp/bladewatch_secrets.json` | `shell` `rw-------` (owner-only, and **actually enforced** — see below) | device secret, tunnel tokens, cloud creds | **daemon only**; app fetches values over IPC |
 | IPC token | `/data/local/tmp/bladewatch_ipc_token` | `shell` `644` (world-readable) | shared token that authenticates loopback IPC | **app + daemon** — app MUST be able to read it |
+| secrets write lock | `/data/local/tmp/bladewatch_secrets.json.lock` | `shell` `rw-------` (created so, atomically) | serialises read-modify-write across CameraDaemon and pear_daemon (BladeWatch-rdtj.3) | shell processes only -- world-readable, an app could take a shared lock and block every secret write |
+| config write lock | `/data/local/tmp/bladewatch_config.json.lock` | world-rw | serialises config writes across the service host and the daemons (BladeWatch-17l7) | app + daemon -- the app must open it too; waits are bounded so it cannot be used to hang a write |
 
 > **Why the secrets file is back in `/data/local/tmp` (BladeWatch-078u).**
 > It briefly lived at
@@ -211,8 +213,10 @@ would tell the user there is no tunnel while one is actively coming up.
 shell. The PIDs it signals come from this server's own procfs scan, keyed by a process
 name looked up from the enum — never from the wire.
 
-The allow-list currently holds **TOR_TUNNEL alone** (BladeWatch-abcx), and the other
-three are excluded for structural reasons, not missing work:
+The allow-list holds **TOR_TUNNEL and PEAR_PEER** (BladeWatch-abcx; PEAR_PEER added by
+BladeWatch-rdtj.3 on the same terms — an optional daemon whose enabled state persists and
+whose launch the health check performs). The other three are excluded for structural
+reasons, not missing work:
 
 | Daemon | Why not |
 |---|---|
@@ -220,49 +224,18 @@ three are excluded for structural reasons, not missing work:
 | `SENTRY_DAEMON`, `ACC_SENTRY_DAEMON` | Core daemons. `DaemonStartupManager`'s health check relaunches them within 30 s unless they are in `userStoppedDaemons` — an in-memory set in the *app* process that the daemon cannot reach — so a stop here would silently undo itself. |
 
 Enabling only **records the intent**: `DaemonStartupManager`'s health check performs the
-launch through `TorLauncher` within ~30 s.
+launch through `TorLauncher` / `PearLauncher` within ~30 s.
 Disabling records the intent **and kills the process**, because that health check only
 ever relaunches, never kills — without the kill the tunnel would keep serving until the
 next reboot while the switch read "off".
 
 The shared state is `UnifiedConfigManager`'s `daemons` section
-(`{"TOR_TUNNEL": <bool>}`), which both APKs can reach. `DaemonStartupManager` prefers it
+(`{"TOR_TUNNEL": <bool>, "PEAR_PEER": <bool>}`), which both APKs can reach. `DaemonStartupManager` prefers it
 and falls back to `PreferencesManager` (app-private SharedPreferences, invisible to the
 Flutter APK) when the key is unset, so an install predating the section keeps its
 existing setting.
 
 ## Caller-UID gate (defence in depth on top of the token)
-
-## Vehicle actuation: a second factor from non-loopback callers
-
-Commands that actuate the physical car need a short-lived **vehicle action token** in addition
-to the session JWT, presented as `X-Vehicle-Action-Token`. Callers on loopback — the in-car
-Flutter UI — are exempt and never need one; the threat model is a browser reaching the daemon
-over the tunnel or the LAN.
-
-| | |
-|---|---|
-| Gated methods | `VehicleService.{SetClimate, MoveWindow, Trunk, SetSeat, SetLights, SetAdas, SetChargeCap, SetScreen, SetMediaVolume}` |
-| Not gated | every `Get*`, plus `StartGps`/`StopGps` (they drive the daemon's GPS monitor, not the car) and `IssueActionToken` itself |
-| Issued by | `VehicleService.IssueActionToken`, signed with `deviceSecret`, valid for `VehicleActionToken.WINDOW_SECONDS` |
-| Enforced in | `HttpServer`, before Connect dispatch — it is the only layer with the peer address |
-| Which methods | `VehicleActionGate` |
-
-**This control was inert for roughly the whole life of the Connect API** (BladeWatch-jwko). It
-was written as `path.startsWith("/api/vehicle/")` when the API was REST, and every client moved
-to `/bladewatch.v1.VehicleService/*` without the predicate following. Nothing failed, nothing
-logged, and the code still read as though the car were protected — so over the tunnel a session
-JWT alone actuated it. It was found only when the dead REST route was deleted.
-
-The lesson is in the guard, not the prose: `VehicleActionGateTest.everyVehicleCommandIsClassified`
-scans the registered `VehicleService` RPCs and fails on any that is neither gated nor explicitly
-declared read-only. A new command cannot be added without someone deciding which it is, which is
-precisely the omission that made this inert the first time.
-
-The web client attaches the token in `vehicle-action.interceptor.ts`, caching it until a second
-before expiry and collapsing concurrent commands onto one issue call. If issuing fails it sends
-the command WITHOUT a token and lets the server refuse — failing open in the client would defeat
-the control.
 
 Because `bladewatch_ipc_token` is **world-readable by design** (the app UID must
 read it), the token alone is not a trust boundary: any local process that can
@@ -306,6 +279,123 @@ accept() → PeerCredentials.resolvePeerUid(socket)   // map (clientPort, server
   never trusted (fail-closed, after a brief retry to absorb the race).
 - This is what gates the privileged `secret_*` / `config_put` / GPS / update
   commands — the 644 token is **not** loosened or changed.
+
+## Vehicle actuation: a second factor from anything but the in-car listener
+
+Commands that actuate the physical car need a short-lived **vehicle action token** in addition
+to the session JWT, presented as `X-Vehicle-Action-Token`. The in-car Flutter UI is exempt and
+never needs one; the threat model is a browser or companion reaching the daemon from outside.
+
+**Exempt means the `LOCAL_APPS` listener (127.0.0.1:8080) AND a loopback peer** —
+`AuthMiddleware.isLocalAppCaller` (BladeWatch-rdtj.4). It used to be the loopback address
+alone, which the Pear stream pump would have satisfied: it reaches the server from
+127.0.0.1, so a remote peer would have actuated the car on a session JWT alone. The LAN TLS
+listener and the tunnels' listeners (127.0.0.1:8081 for tor, 127.0.0.1:8444 for the Pear
+pump) are `REMOTE` and always need the token. tor used to land on 8080 from loopback and was therefore exempt all
+along; BladeWatch-ur11 moved it to 8081. The web app already sends the token
+(`vehicle-action.interceptor.ts`), so remote vehicle control over tor keeps working.
+
+| | |
+|---|---|
+| Gated methods | `VehicleService.{SetClimate, MoveWindow, Trunk, SetSeat, SetLights, SetAdas, SetChargeCap, SetScreen, SetMediaVolume}` |
+| Not gated | every `Get*`, plus `StartGps`/`StopGps` (they drive the daemon's GPS monitor, not the car) and `IssueActionToken` itself |
+| Issued by | `VehicleService.IssueActionToken`, signed with `deviceSecret`, valid for `VehicleActionToken.WINDOW_SECONDS` |
+| Enforced in | `HttpServer`, before Connect dispatch — it is the only layer with the peer address |
+| Which methods | `VehicleActionGate` |
+
+**This control was inert for roughly the whole life of the Connect API** (BladeWatch-jwko). It
+was written as `path.startsWith("/api/vehicle/")` when the API was REST, and every client moved
+to `/bladewatch.v1.VehicleService/*` without the predicate following. Nothing failed, nothing
+logged, and the code still read as though the car were protected — so over the tunnel a session
+JWT alone actuated it. It was found only when the dead REST route was deleted.
+
+The lesson is in the guard, not the prose: `VehicleActionGateTest.everyVehicleCommandIsClassified`
+scans the registered `VehicleService` RPCs and fails on any that is neither gated nor explicitly
+declared read-only. A new command cannot be added without someone deciding which it is, which is
+precisely the omission that made this inert the first time.
+
+The web client attaches the token in `vehicle-action.interceptor.ts`, caching it until a second
+before expiry and collapsing concurrent commands onto one issue call. If issuing fails it sends
+the command WITHOUT a token and lets the server refuse — failing open in the client would defeat
+the control.
+
+## Pear and LAN TLS secrets (v1.4.0.0)
+
+New sections in the 600 secret store, shell-only, and -- unlike every older section --
+**unreachable over IPC**. byd_cam_daemon and pear_daemon read them from the store directly;
+nothing in either APK ever needs them. So `TcpCommandServer` refuses every `secret_*` command
+(get, get_section, put, delete) whose section is one of these four, case-insensitively
+(`isDaemonOnlySecretSection`, BladeWatch-rdtj.16, pinned by `DaemonOnlySecretSectionTest`):
+the app UID -- trusted, but the widest target on the head unit -- can neither read the LAN TLS
+private key, the topic seed or the probe key, nor plant a companion. Older sections, the auth
+`deviceSecret` among them, remain reachable, because the app mints JWTs with it.
+
+| Section.key | Holds | Written by |
+|---|---|---|
+| `pear.topicSeed` | 32 random bytes (hex); the car's Hyperswarm topic is SHA-256 over a domain tag and this seed (`PearTopic`) | `pear_daemon` on first start |
+| `lanTls.privateKeyPkcs8`, `lanTls.certificateDer` | the LAN listener's EC P-256 key and self-signed certificate (base64) | `byd_cam_daemon`, on first use (`LanTls`) |
+| `lanDiscovery.probeKey` | 32 random bytes (hex); HMAC key for LAN discovery probes and replies (`LanDiscoveryResponder`) | `byd_cam_daemon`, on first use |
+| `companions.*` | paired companions (id, name, pairing time) | `byd_cam_daemon`, on redemption (`CompanionPairing`) |
+| `companions.<id>` | one paired companion app: `{name, pairedAt}` (JSON). The id is 16 random bytes (hex); its token is derived, not stored -- see below | `byd_cam_daemon`, when a pairing code is redeemed |
+
+None is ever rotated silently: a new seed is a new topic, a new certificate a new pin,
+and a new probe key makes every paired companion's probes go unanswered. A malformed seed or probe key fails loudly
+instead; an unreadable TLS identity is replaced, and logged as an error, because the
+listener cannot serve without one.
+
+`lanTlsInfo` on 19876 answers `{"status":"ok","fingerprintSha256":…,"port":8443,"enabled":…}`
+for the pairing flow, creating the identity if none exists. The fingerprint is not secret,
+but it is deliberately IPC-only: a companion must learn what to pin out of band, never from
+the connection it is deciding whether to trust.
+
+## Companion pairing (BladeWatch-rdtj.7)
+
+The owner, in the car, taps **Pair a device** on the dashboard. The in-car UI asks the daemon
+for a pairing QR (`pairingMint` on 19876) and shows it in a dialog -- never continuously on the
+dashboard: a permanently visible pairing code is a permanently visible way in.
+
+**The QR is not a credential.** It is unpadded base64url JSON:
+`{v, deviceId, pearTopic, tlsPort, tlsFp, probeKey, code, exp}` -- what the companion needs to
+FIND the car (the Pear topic, the LAN discovery probe key) and TRUST it (the TLS pin), plus a
+**single-use `code`** that expires after **5 minutes**. The companion redeems the code once,
+over whichever path reaches the car, at `POST /auth/pair` and only then receives its own
+credential. A QR photographed over the owner's shoulder is worthless once used or expired.
+Codes are held in memory in byd_cam_daemon: consumed by the first attempt that names them, at
+most four outstanding (the newest wins), cancelled by a daemon restart.
+
+**Per-companion credentials, derived rather than stored.** Redemption creates a companion id
+(16 random bytes) recorded in the secret store's `companions` section, and returns
+`token = base64url(HMAC-SHA256(deviceSecret, "bladewatch/companion/v1" || 0x00 || id))` exactly
+once. The companion trades `{companionId, token}` for a session JWT at `POST /auth/companion`;
+that JWT carries the id as `cid`. The device secret never leaves the car on this path: it is not
+in the QR, and no pairing code in Dart (flutter_ui or the companion) handles it. (The in-car UI's
+older "show access code" feature does fetch the device secret for display -- the web login's
+access code IS it; that predates pairing and goes with the web app, BladeWatch-rdtj.13.)
+
+**Revocation touches exactly one companion.** `pairingRevoke` deletes the id: its token stops
+verifying AND every JWT already minted for it stops validating immediately (`validateJwt`
+checks `cid` against the paired list), while every other companion keeps working. Rotating the
+device secret still revokes all of them at once.
+
+**Pair, list and revoke are in-car only -- deliberately.** `pairingMint`, `pairingList`,
+`pairingRevoke` and `lanAccessSet` exist only on the IPC server (127.0.0.1:19876, peer UID +
+IPC token), which only the in-car UI can reach. A companion reaches `HttpServer`, never this
+port. So pairing and un-pairing need someone at the car: a stolen phone can neither un-pair the
+owner's other devices nor pair itself further. This is a decision, not an accident of which port
+the commands landed on; remote revocation would need its own Connect endpoint and its own
+threat analysis, and does not exist.
+
+Minting also switches the Pear peer on (`PEAR_PEER`): pairing is what turns remote access on,
+and a companion that is not on the car's Wi-Fi can only redeem its code over Pear. The LAN
+opt-in (`lanAccessSet`, `network.lanHttpEnabled`) is a separate, explained switch in the same
+dialog and is never flipped silently.
+
+Both endpoints share `/auth/token`'s brute-force limits: a per-caller bucket keyed on the peer's
+IP -- it used to be IP:port, a fresh bucket on every reconnect, fixed in BladeWatch-rdtj.16 --
+plus a global lockout. Pear and tor traffic all arrive from 127.0.0.1, so remote clients share
+one bucket, and anyone who can reach these endpoints can trigger the global 5-minute lockout
+for everyone (BladeWatch-rlgv). Every credential behind them is at least 128 bits, so neither
+limit is what stops guessing.
 
 ## JWT + live-view flow
 

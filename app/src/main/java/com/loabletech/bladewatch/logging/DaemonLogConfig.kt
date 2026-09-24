@@ -44,6 +44,18 @@ object DaemonLogConfig {
     /** BydEventDaemon - BYD vehicle event listener */
     const val BYD_EVENT_DAEMON = false
 
+    /** PearDaemon - bare-kit worklet host, Hyperswarm topic join (pear_daemon) */
+    const val PEAR_DAEMON = false
+
+    /**
+     * PearLauncher - pear_daemon launch/stop/probe, in the service host. Gates every one of its
+     * log calls; failures still reach DaemonStartupManager through LaunchCallback.onError.
+     */
+    const val PEAR_LAUNCHER = false
+
+    /** PearStreamPump - Pear stream <-> loopback TCP pump in pear_daemon. Never logs payload bytes. */
+    const val PEAR_PUMP = false
+
     // ==================== GPU PIPELINE ====================
     
     /** GpuPipeline - GPU surveillance pipeline orchestration */
@@ -168,6 +180,9 @@ object DaemonLogConfig {
     /** PerformanceApiHandler - performance API handler */
     const val PERFORMANCE_API_HANDLER = false
 
+    /** LanDiscoveryResponder - signed UDP LAN discovery probes (runs in CameraDaemon) */
+    const val LAN_DISCOVERY = false
+
     // ==================== TAG LOOKUP ====================
     
     private val ENABLED_TAGS: MutableSet<String> = HashSet()
@@ -178,7 +193,7 @@ object DaemonLogConfig {
      */
     const val ANY_LOGGING_ENABLED = ENABLE_ALL
         || CAMERA_DAEMON || ACC_SENTRY_DAEMON || SENTRY_DAEMON
-        || BYD_EVENT_DAEMON
+        || BYD_EVENT_DAEMON || PEAR_DAEMON || PEAR_LAUNCHER || PEAR_PUMP
         || GPU_PIPELINE || PANORAMIC_CAMERA || EGL_CORE || GL_UTIL
         || GPU_MOSAIC_RECORDER || GPU_DOWNSCALER || GPU_STREAM_SCALER
         || HW_ENCODER || ADAPTIVE_BITRATE || H264_CIRCULAR_BUFFER
@@ -192,7 +207,7 @@ object DaemonLogConfig {
         || TELEMETRY_DATA_COLLECTOR
         || OVERLAY_RENDERER || TRIP_ANALYTICS || STORAGE_MANAGER
         || EXTERNAL_STORAGE_CLEANER || HTTP_SERVER || SURVEILLANCE_IPC
-        || PERFORMANCE_API_HANDLER
+        || PERFORMANCE_API_HANDLER || LAN_DISCOVERY
     
     init {
         if (!ENABLE_ALL) {
@@ -200,6 +215,9 @@ object DaemonLogConfig {
             if (ACC_SENTRY_DAEMON)          ENABLED_TAGS.add("AccSentryDaemon")
             if (SENTRY_DAEMON)              ENABLED_TAGS.add("SentryDaemon")
             if (BYD_EVENT_DAEMON)           ENABLED_TAGS.add("BydEventDaemon")
+            if (PEAR_DAEMON)                ENABLED_TAGS.add("PearDaemon")
+            if (PEAR_LAUNCHER)              ENABLED_TAGS.add("PearLauncher")
+            if (PEAR_PUMP)                  ENABLED_TAGS.add("PearStreamPump")
             if (GPU_PIPELINE)               ENABLED_TAGS.add("GpuPipeline")
             if (PANORAMIC_CAMERA)           ENABLED_TAGS.add("PanoramicCameraGpu")
             if (EGL_CORE)                   ENABLED_TAGS.add("EGLCore")
@@ -242,6 +260,7 @@ object DaemonLogConfig {
             if (HTTP_SERVER)                ENABLED_TAGS.add("HttpServer")
             if (SURVEILLANCE_IPC)           ENABLED_TAGS.add("SurveillanceIPC")
             if (PERFORMANCE_API_HANDLER)    ENABLED_TAGS.add("PerformanceApiHandler")
+            if (LAN_DISCOVERY)              ENABLED_TAGS.add("LanDiscovery")
         }
     }
 

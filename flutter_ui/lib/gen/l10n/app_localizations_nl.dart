@@ -2919,4 +2919,55 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'Een andere app gebruikt op dit moment de camera.';
+
+  @override
+  String get pairing_title => 'Apparaat koppelen';
+
+  @override
+  String get pairing_scan_hint =>
+      'Scan met de BladeWatch-app op je telefoon of computer. De code werkt maar één keer.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'Verloopt over $time';
+  }
+
+  @override
+  String get pairing_expired => 'Deze code is verlopen.';
+
+  @override
+  String get pairing_new_code => 'Nieuwe code';
+
+  @override
+  String get pairing_remote_note =>
+      'Koppelen zet externe toegang voor deze auto aan.';
+
+  @override
+  String get pairing_lan_title => 'Directe verbinding via deze wifi';
+
+  @override
+  String get pairing_lan_body =>
+      'Een gekoppeld apparaat op dezelfde wifi als de auto maakt rechtstreeks en versleuteld verbinding, zonder via internet. Uit tot je het aanzet.';
+
+  @override
+  String get pairing_devices_title => 'Gekoppelde apparaten';
+
+  @override
+  String get pairing_devices_empty => 'Nog geen apparaten gekoppeld.';
+
+  @override
+  String get pairing_remove => 'Verwijderen';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '$name verwijderen?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Het verliest direct de toegang. Je andere apparaten blijven werken.';
+
+  @override
+  String get pairing_error =>
+      'De cameraservice reageerde niet. Probeer het opnieuw.';
 }

@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:bladewatch_ui/gen/bladewatch/v1/trips.pb.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:fixnum/fixnum.dart';
 
 import 'trips_models.dart';

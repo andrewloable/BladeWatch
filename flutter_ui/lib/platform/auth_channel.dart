@@ -1,4 +1,4 @@
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/jwt_source.dart';
 
 import 'platform_channel.dart';
 

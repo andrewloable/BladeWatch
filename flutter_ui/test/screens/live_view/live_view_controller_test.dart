@@ -2,18 +2,18 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:bladewatch_ui/gen/bladewatch/v1/stream.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/stream.pb.dart';
 import 'package:bladewatch_ui/platform/live_view_texture_channel.dart';
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/stream_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/live_view/live_view_controller.dart';
 import 'package:bladewatch_ui/screens/live_view/live_view_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_platform_channel.dart';
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 class _FakeJwtSource implements JwtSource {
   String? next = 'fake.jwt.token';

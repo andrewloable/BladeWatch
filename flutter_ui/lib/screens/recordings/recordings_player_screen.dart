@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../gen/l10n/app_localizations.dart';
-import '../../rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/jwt_source.dart';
 import 'recordings_media_urls.dart';
 import 'recordings_player_controller.dart';
 

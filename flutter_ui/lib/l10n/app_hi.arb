@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "सेंट्री मोड सक्रिय रहने पर 12V बैटरी की अतिरिक्त बिजली उपयोग करता है।",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "कोई अन्य ऐप अभी कैमरा उपयोग कर रहा है।",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "डिवाइस जोड़ें",
+  "pairing_scan_hint": "अपने फ़ोन या कंप्यूटर पर BladeWatch ऐप से स्कैन करें। यह कोड केवल एक बार काम करता है।",
+  "pairing_expires_in": "{time} में समाप्त होगा",
+  "pairing_expired": "इस कोड की अवधि समाप्त हो गई है।",
+  "pairing_new_code": "नया कोड",
+  "pairing_remote_note": "जोड़ने से इस कार के लिए रिमोट एक्सेस चालू हो जाता है।",
+  "pairing_lan_title": "इस वाई-फ़ाई पर सीधा कनेक्शन",
+  "pairing_lan_body": "कार वाले ही वाई-फ़ाई पर जुड़ा हुआ डिवाइस इंटरनेट के बिना सीधे और एन्क्रिप्टेड रूप से कनेक्ट होता है। जब तक आप इसे चालू न करें, यह बंद रहता है।",
+  "pairing_devices_title": "जुड़े हुए डिवाइस",
+  "pairing_devices_empty": "अभी तक कोई डिवाइस नहीं जोड़ा गया।",
+  "pairing_remove": "हटाएँ",
+  "pairing_remove_confirm_title": "{name} हटाएँ?",
+  "pairing_remove_confirm_body": "इसकी पहुँच तुरंत समाप्त हो जाएगी। आपके अन्य डिवाइस काम करते रहेंगे।",
+  "pairing_error": "कैमरा सेवा ने जवाब नहीं दिया। फिर से प्रयास करें।"
 }

@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "Vaktmodus bruker ekstra strøm fra 12V-batteriet mens den er aktivert.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "En annen app bruker kameraet akkurat nå.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Koble til en enhet",
+  "pairing_scan_hint": "Skann med BladeWatch-appen på telefonen eller datamaskinen. Koden virker bare én gang.",
+  "pairing_expires_in": "Utløper om {time}",
+  "pairing_expired": "Denne koden er utløpt.",
+  "pairing_new_code": "Ny kode",
+  "pairing_remote_note": "Tilkobling slår på fjerntilgang for denne bilen.",
+  "pairing_lan_title": "Direkte tilkobling på dette Wi-Fi-nettet",
+  "pairing_lan_body": "En tilkoblet enhet på samme Wi-Fi som bilen kobler seg direkte og kryptert til den, uten å gå via internett. Av til du slår den på.",
+  "pairing_devices_title": "Tilkoblede enheter",
+  "pairing_devices_empty": "Ingen enheter er koblet til ennå.",
+  "pairing_remove": "Fjern",
+  "pairing_remove_confirm_title": "Fjerne {name}?",
+  "pairing_remove_confirm_body": "Den mister tilgangen med en gang. De andre enhetene dine fortsetter å virke.",
+  "pairing_error": "Kameratjenesten svarte ikke. Prøv igjen."
 }

@@ -1,15 +1,15 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/safe_locations_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_controller.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
   late FakeRpcClient rpc;

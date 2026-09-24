@@ -17,6 +17,7 @@ import net.bladewatch.bladewatch_ui.auth.JwtMinter
 import net.bladewatch.bladewatch_ui.config.PublicConfigChannel
 import net.bladewatch.bladewatch_ui.config.SecretConfigChannel
 import net.bladewatch.bladewatch_ui.daemon.DaemonControl
+import net.bladewatch.bladewatch_ui.pairing.PairingControl
 import net.bladewatch.bladewatch_ui.ipc.IpcClient
 import net.bladewatch.bladewatch_ui.liveview.LiveViewTexturePlugin
 import net.bladewatch.bladewatch_ui.location.LocationServiceChannel
@@ -47,6 +48,7 @@ class MainActivity : FlutterActivity() {
     private val ipcClient = IpcClient()
     private val jwtMinter = JwtMinter(ipcClient)
     private val daemonControl = DaemonControl(ipcClient)
+    private val pairingControl = PairingControl(ipcClient)
     private val secretConfig = SecretConfigChannel(ipcClient)
     private val publicConfig = PublicConfigChannel(ipcClient)
 
@@ -212,6 +214,14 @@ class MainActivity : FlutterActivity() {
                         jsonToMap(daemonControl.setDaemonEnabled(args.string("type"), args.bool("enabled"))),
                     )
                 }
+
+                // BladeWatch-rdtj.7: the "Pair a device" flow. The payload is shown as a QR and
+                // never logged; it is single-use and expires in minutes.
+                "pairing.mint" -> result.success(jsonToMap(pairingControl.mint()))
+                "pairing.list" -> result.success(jsonToMap(pairingControl.list()))
+                "pairing.revoke" -> result.success(jsonToMap(pairingControl.revoke(requireArgs(call).string("id"))))
+                "pairing.setLanAccess" ->
+                    result.success(jsonToMap(pairingControl.setLanAccess(requireArgs(call).bool("enabled"))))
 
                 "config.get" -> {
                     val args = requireArgs(call)

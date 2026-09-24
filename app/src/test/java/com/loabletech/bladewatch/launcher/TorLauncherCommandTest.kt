@@ -21,11 +21,15 @@ class TorLauncherCommandTest {
     fun `torrc points the onion service at the daemon's local http server`() {
         val torrc = TorLauncher.torrcContents()
 
-        // The whole point of the tunnel: expose 127.0.0.1:8080 as an onion service on port 80.
+        // The whole point of the tunnel: expose the local HTTP server as an onion service on port
+        // 80 -- through its REMOTE loopback listener (BladeWatch-ur11). On 8080, the in-car UI's
+        // listener, every remote visitor was treated as a head-unit app and skipped the
+        // vehicle-control second factor.
         assertTrue(
-            "torrc must forward onion port 80 to the local HTTP server:\n$torrc",
-            torrc.lineSequence().any { it.trim() == "HiddenServicePort 80 127.0.0.1:8080" }
+            "torrc must forward onion port 80 to the remote loopback listener:\n$torrc",
+            torrc.lineSequence().any { it.trim() == "HiddenServicePort 80 127.0.0.1:8081" }
         )
+        assertTrue("tor must never land on the in-car UI's 8080 listener:\n$torrc", "8080" !in torrc)
         assertTrue(
             "torrc must declare the hidden-service directory:\n$torrc",
             torrc.lineSequence().any { it.trim() == "HiddenServiceDir ${TorLauncher.HS_DIR}" }

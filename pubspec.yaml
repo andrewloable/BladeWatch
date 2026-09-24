@@ -1,0 +1,10 @@
+# The melos workspace root (BladeWatch-rdtj.10) -- not an app or a library. melos requires a
+# pubspec here; see melos.yaml for the packages it manages.
+name: bladewatch_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+
+dev_dependencies:
+  melos: ^6.3.2

@@ -194,6 +194,71 @@ tasks.register("downloadTor") {
 // before any variant packages jniLibs.
 tasks.named("preBuild") { dependsOn("downloadTor") }
 
+// Bare Kit wiring (BladeWatch-rdtj.2 spike): fetch the pinned upstream holepunchto/bare-kit
+// prebuild release (checksum-verified) and extract classes.jar + arm64-v8a's .so files, the
+// same two-artifact shape flutter_pear_bare/android/build.gradle consumes it as -- a raw
+// classes.jar + jni/<abi>/*.so, NOT an AAR (upstream holepunchto/bare-android's own layout).
+//
+// Version and checksum are the EXACT pin flutter_pear_bare uses (re-verified against that
+// file 2026-09-23) -- the two hosts must agree, since the car and the companion talk the
+// same wire protocol. Re-verify this pin whenever flutter_pear's own pin changes; see
+// BladeWatch-rdtj.2's "STRATEGIC RISK" note on why a bump can silently raise the API floor
+// above what this head unit (API 29 exactly, no upgrade path) can run at all.
+val bareKitVersion = "2.5.5"
+val bareKitSha256 = "fc68740347c8532ba49d45bf61fae9ca1f1040dc7d6c99f2f92dc30c40e84e46"
+// arm64-v8a only -- the real head unit, not an x86_64 desktop-class emulator. Mirrors the
+// downloadTor task's own single-ABI choice just above.
+//
+// BOTH libraries the release ships for that ABI, not just libbare-kit.so: it NEEDS
+// libc++_shared.so (llvm-readelf -d), as do pear-end's udx/sodium/rocksdb/quickbit/simdle
+// addons. Without it the linker falls back to whatever libc++_shared.so the firmware keeps in
+// a system path -- some other NDK's build, ABI not guaranteed -- which is what silently
+// happened on the head unit; a stock API 29 image has none and fails outright with
+// "dlopen failed: library libc++_shared.so not found". This app's own CMake code links the
+// STL statically, so nothing else in the APK ships or loads it.
+val bareKitLibs = listOf("libbare-kit.so", "libc++_shared.so")
+tasks.register("fetchBareKit") {
+    val bareKitDir = file("${layout.buildDirectory.get().asFile}/bare-kit/${bareKitVersion}")
+    val classesJar = file("${bareKitDir}/android/bare-kit/classes.jar")
+    val soFiles = bareKitLibs.map { file("src/main/jniLibs/arm64-v8a/$it") }
+    val proj = project
+    inputs.property("bareKitVersion", bareKitVersion)
+    inputs.property("bareKitSha256", bareKitSha256)
+    outputs.file(classesJar)
+    outputs.files(soFiles)
+    doLast {
+        val zipFile = file("${bareKitDir}/prebuilds.zip")
+        proj.ensureDownloadedVerified(
+            "https://github.com/holepunchto/bare-kit/releases/download/v${bareKitVersion}/prebuilds.zip",
+            zipFile,
+            bareKitSha256,
+            "Bare Kit ${bareKitVersion} prebuilds.zip"
+        )
+        proj.copy {
+            from(proj.zipTree(zipFile)) {
+                include("android/bare-kit/classes.jar")
+                include("android/bare-kit/jni/arm64-v8a/**")
+            }
+            into(bareKitDir)
+        }
+        if (!classesJar.exists()) {
+            throw org.gradle.api.GradleException("Bare Kit archive did not contain classes.jar")
+        }
+        bareKitLibs.zip(soFiles).forEach { (name, dest) ->
+            val extracted = file("${bareKitDir}/android/bare-kit/jni/arm64-v8a/$name")
+            if (!extracted.exists()) {
+                throw org.gradle.api.GradleException(
+                    "Bare Kit archive did not contain jni/arm64-v8a/$name"
+                )
+            }
+            dest.parentFile.mkdirs()
+            extracted.copyTo(dest, overwrite = true)
+        }
+        println("✓ Bare Kit ${bareKitVersion} fetched and verified")
+    }
+}
+tasks.named("preBuild") { dependsOn("fetchBareKit") }
+
 // OpenCV-mobile version for surveillance module (minimal build, ~3MB vs ~20MB)
 // https://github.com/nihui/opencv-mobile
 val opencvMobileTag = "v31"
@@ -347,10 +412,20 @@ android {
 
     defaultConfig {
         applicationId = "net.bladewatch.app"
-        minSdk = 25
+        // 29, not the old 25: bare-kit's libbare-kit.so is built against API 29
+        // (.note.android.ident = 0x1d, verified by flutter_pear_bare's own build.gradle
+        // comment against the NDK sysroot stubs) and it is consumed here as a raw
+        // classes.jar + .so, not an AAR -- there is no manifest merger to fail loudly on a
+        // mismatch, only an UnsatisfiedLinkError on the first Pear.start() at runtime. The
+        // head unit is Android 10 / API 29 exactly, so this costs nothing on the only
+        // device this APK targets. BladeWatch-rdtj.2.
+        //
+        // targetSdk is deliberately left at 25 -- a separate axis (permissions, background
+        // execution limits) that could break the existing daemons; not touched by this bump.
+        minSdk = 29
         targetSdk = 25
-        versionCode = 13200
-        versionName = "1.3.2.0"
+        versionCode = 14000
+        versionName = "1.4.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization
@@ -556,6 +631,14 @@ dependencies {
     
     // ADB client for daemon launching
     implementation(libs.dadb)
+
+    // Bare Kit (BladeWatch-rdtj.2 spike): raw classes.jar, mirroring how
+    // flutter_pear_bare/android/build.gradle consumes the same upstream release. .builtBy
+    // tells Gradle's task-output validation that fetchBareKit produces this file.
+    implementation(
+        files("${layout.buildDirectory.get().asFile}/bare-kit/${bareKitVersion}/android/bare-kit/classes.jar")
+            .builtBy(tasks.named("fetchBareKit"))
+    )
     
     // WebSocket server for zero-latency H.264 streaming
     implementation("org.java-websocket:Java-WebSocket:1.5.4")
@@ -1302,6 +1385,8 @@ tasks.register("validateFlutterAndroidOnly") {
                     append("\nDelete the directory (rm -rf flutter_ui/<name>) and do NOT run\n")
                     append("`flutter create` inside flutter_ui/ — it re-scaffolds every platform.\n")
                     append("The in-car UI ships only as the arm64 Android APK net.bladewatch.flutter.\n")
+                    append("Phone and desktop targets belong in companion/, the BladeWatch companion\n")
+                    append("app — that is the one place in this repo where they are correct.\n")
                     append("Note: web/ at the REPO ROOT is the Angular SPA and is unrelated — this\n")
                     append("check only looks inside flutter_ui/.")
                 }
@@ -1348,6 +1433,8 @@ tasks.withType<Test>().configureEach {
     listOf(
         "app/src/main/assets", "app/src/main/res",
         "flutter_ui/lib", "flutter_ui/test", "flutter_ui/android/app/src",
+        "packages/bladewatch_rpc/lib", "packages/bladewatch_rpc/test",
+        "companion/lib", "companion/test", "companion/integration_test",
         "web/src", "web/e2e", "docs",
     ).forEach { rel ->
         val dir = rootProject.file(rel)

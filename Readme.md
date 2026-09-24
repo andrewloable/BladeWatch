@@ -40,7 +40,7 @@ adb install bladewatch-ui-*-arm64-v8a.apk
 
 ### 2. Initial Configuration
 1. **Authorize ADB:** On first launch, accept the ADB authentication prompt on your device screen.
-2. **Background Persistence:** In the head unit's autostart settings, make sure autostart is **enabled for both entries** — **"BladeWatch"** (the UI) and **"BladeWatch Service"** (the daemons). Two entries appear because BladeWatch is two APKs. This is critical: on this head unit BYD suppresses the usual boot broadcast, so autostart is what allows the app to run at boot at all. Enabling only the UI leaves the daemons dead.
+2. **Background Persistence:** Open **BYD Auto-Start** and **uncheck BOTH** entries — **"BladeWatch"** (the UI) and **"BladeWatch Service"** (the daemons). That list *restricts* auto-start, so unchecking an entry is what allows it to start. Two entries appear because BladeWatch is two APKs. This is critical: on this head unit BYD suppresses the usual boot broadcast, so auto-start is what allows the app to run at boot at all. Clearing only the UI leaves the daemons dead. BYD re-applies the restriction on every install, so redo this after each update.
 
 > ⚠️ **CRITICAL: Hard Reboot Required**
 > After the first installation and initial run, you must hard reboot the device:
@@ -126,9 +126,10 @@ Facts:
 6. Tell me what to do on the car's screen, in this order:
    - Accept the "Allow USB debugging?" prompt that appears on first launch. The app uses its
      own ADB key to start its background daemons; nothing works until this is accepted.
-   - In the head unit's BYD Auto-Start settings, allow BOTH "BladeWatch" and
-     "BladeWatch Service" to start automatically, otherwise nothing runs when the car is
-     switched on. BYD resets this on every install, so it must be redone after each update.
+   - In the head unit's BYD Auto-Start settings, UNCHECK BOTH "BladeWatch" and
+     "BladeWatch Service". That list restricts auto-start, so unchecking is what allows them
+     to start; otherwise nothing runs when the car is switched on. BYD resets this on every
+     install, so it must be redone after each update.
    - Hard-reboot the head unit: hold Volume Down for 5 seconds and wait for it to restart.
 
 Report each step's result as you go. Do not make mistakes: read every command's output before

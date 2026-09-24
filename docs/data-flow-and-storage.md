@@ -200,6 +200,18 @@ mirror is still written for older hardcoded readers (`StorageManager`,
 unified config at `/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_config.json`
 or the `/data/local/tmp` mirror is promoted to the new path rather than rebuilt.
 
+**Every write re-reads the file under a cross-process lock (BladeWatch-17l7).**
+The service host and CameraDaemon (including the Flutter UI's IPC writes) all
+write this file, and each used to start from its own mtime-keyed cache -- on the
+head unit an owner's `PEAR_PEER=false` was read back as `true` 18 s later and
+saved over. `UnifiedConfigManager` now takes an fcntl lock on
+`/data/local/tmp/bladewatch_config.json.lock` (on the real filesystem, so both
+uids lock the same inode) and starts every change from the file as it is on disk.
+The lock file is world-writable because the app uid must open it too, so the wait
+is bounded (2 s) and a write proceeds unlocked rather than hang. The daemon
+switches that drive health-check relaunches (`isDaemonEnabled`) are read from
+disk, never the cache.
+
 `UnifiedConfigManager` is the main config source. It stores app and daemon settings for:
 
 - Surveillance.
@@ -331,23 +343,25 @@ stored efficiency figure would change meaning and historical comparison would br
 Main secret path:
 
 ```text
-/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json
+/data/local/tmp/bladewatch_secrets.json
 ```
 
-The secret store lives under the user-visible BladeWatch app-files tree so
-secrets survive uninstall/reinstall. On upgrade the store falls back to reading
-from the legacy `/data/local/tmp/bladewatch_secrets.json` path if the primary
-file is absent; once a write succeeds to the primary, the legacy file is
-deleted so plaintext secrets are never left in `/data/local/tmp`.
+`shell` `rw-------`, and on this real filesystem the mode is actually enforced:
+only the shell-UID daemons can read it, and the app fetches values over the
+token-gated IPC. It briefly lived on sdcardfs
+(`/storage/emulated/0/Android/data/net.bladewatch.app/files/`), where `600` was
+silently ignored; BladeWatch-078u moved it back. A copy found at that old path is
+read once when the primary is absent and deleted on the first successful write.
+It lives outside the app's data, so it survives an uninstall/reinstall.
 
-**At-rest permission enforcement note (BYD DiLink v3):** the primary path is on
-sdcardfs (`/storage/emulated/0`). POSIX mode bits are set to `rw-------` via
-`Files.setPosixFilePermissions`, but sdcardfs enforces permissions primarily via
-Android permission grants rather than traditional Unix mode bits — `mode 600` is
-best-effort on this filesystem. The long-term fix is moving secrets to a
-daemon-held native key store (Track1 `uy93.12`). Until then, the primary
-protection is restricting writes to the shell-UID daemon and requiring the IPC
-token for all app→daemon secret reads.
+**Writes take a cross-process lock (BladeWatch-rdtj.3).** CameraDaemon and
+pear_daemon both write this file, each by read-modify-write, so
+`SecretConfigStore` holds an exclusive fcntl lock on
+`/data/local/tmp/bladewatch_secrets.json.lock` for the whole cycle. Without it
+two first-run writes could silently drop each other's section -- a lost TLS
+identity, probe key or Pear topic seed unpairs every companion. The lock file is
+created `600` in the same call: world-readable, any app could take a shared lock
+and block every secret write.
 
 `SecretConfigStore` stores secret sections such as auth device secret and tunnel tokens. The file is created with owner-only (`rw-------`) permissions. Direct writes are restricted to shell UID where practical; the Android app uses the TCP bridge when it cannot access the file directly.
 
@@ -651,7 +665,7 @@ Notification APIs expose categories, push subscription management, preferences, 
 - Camera-to-recording path: [PanoramicCameraGpu.java:39](../app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.java#L39), [GpuMosaicRecorder.java:31](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuMosaicRecorder.java#L31), [HardwareEventRecorderGpu.java:56](../app/src/main/java/com/loabletech/bladewatch/surveillance/HardwareEventRecorderGpu.java#L56), [StorageManager.java:2234](../app/src/main/java/com/loabletech/bladewatch/storage/StorageManager.java#L2234).
 - Live-stream path: [GpuSurveillancePipeline.java:30](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.java#L30), [WebSocketStreamServer.java:19](../app/src/main/java/com/loabletech/bladewatch/streaming/WebSocketStreamServer.java#L19), [HttpServer.java:538](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L538).
 - Surveillance-event path: [GpuDownscaler.java:51](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuDownscaler.java#L51), [SurveillanceEngineGpu.java:635](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java#L635), [SurveillanceEngineGpu.java:3095](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java#L3095).
-- Web UI to daemon: [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [AuthMiddleware.java:135](../app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java#L135). (The in-car `WebViewFragment` client was deleted in Phase 4; the SPA now serves remote browsers only, and the in-car UI is the Flutter app's Dart ConnectRPC client, [flutter_ui/lib/rpc/](../flutter_ui/lib/rpc/).)
+- Web UI to daemon: [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [AuthMiddleware.java:135](../app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java#L135). (The in-car `WebViewFragment` client was deleted in Phase 4; the SPA now serves remote browsers only, and the in-car UI is the Flutter app's Dart ConnectRPC client, [packages/bladewatch_rpc/lib/rpc/](../packages/bladewatch_rpc/lib/rpc/), shared with the companion app.)
 - App TCP client to daemon: [CameraDaemonClient.java:24](../app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.java#L24), [TcpCommandServer.java:22](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L22), [CameraDaemon.java:53](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L53).
 - Location IPC: [LocationSidecarService.java:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.java#L32), [SurveillanceIpcServer.java:23](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L23), [CameraDaemon.java:383](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L383).
 - BYD local data flow: [BydDataCollector.java:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L20).

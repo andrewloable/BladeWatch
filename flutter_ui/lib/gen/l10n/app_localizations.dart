@@ -5155,6 +5155,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Another app is using the camera right now.'**
   String get surveillance_general_camera_contention_warning;
+
+  /// No description provided for @pairing_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a device'**
+  String get pairing_title;
+
+  /// No description provided for @pairing_scan_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan with the BladeWatch app on your phone or computer. The code works once.'**
+  String get pairing_scan_hint;
+
+  /// No description provided for @pairing_expires_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {time}'**
+  String pairing_expires_in(String time);
+
+  /// No description provided for @pairing_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired.'**
+  String get pairing_expired;
+
+  /// No description provided for @pairing_new_code.
+  ///
+  /// In en, this message translates to:
+  /// **'New code'**
+  String get pairing_new_code;
+
+  /// No description provided for @pairing_remote_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing turns on remote access for this car.'**
+  String get pairing_remote_note;
+
+  /// No description provided for @pairing_lan_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct connection on this Wi-Fi'**
+  String get pairing_lan_title;
+
+  /// No description provided for @pairing_lan_body.
+  ///
+  /// In en, this message translates to:
+  /// **'A paired device on the same Wi-Fi as the car connects to it directly and encrypted, without going through the internet. Off unless you turn it on.'**
+  String get pairing_lan_body;
+
+  /// No description provided for @pairing_devices_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired devices'**
+  String get pairing_devices_title;
+
+  /// No description provided for @pairing_devices_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No devices paired yet.'**
+  String get pairing_devices_empty;
+
+  /// No description provided for @pairing_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get pairing_remove;
+
+  /// No description provided for @pairing_remove_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String pairing_remove_confirm_title(String name);
+
+  /// No description provided for @pairing_remove_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It loses access right away. Your other devices keep working.'**
+  String get pairing_remove_confirm_body;
+
+  /// No description provided for @pairing_error.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera service did not respond. Try again.'**
+  String get pairing_error;
 }
 
 class _AppLocalizationsDelegate

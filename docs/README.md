@@ -24,6 +24,7 @@ the Tor tunnel process.
 - [Surveillance Implementation](surveillance-implementation.md) documents sentry-mode activation, the GPU/native motion pipeline, AI confirmation, recording lifecycle, safe locations, schedules, APIs, and guardrails.
 - [360 Camera Recording](360-camera-recording.md) explains how the shared 360 camera GPU/encoder stack records surveillance events and ACC-on driving clips.
 - [Build and Operations](build-and-operations.md) covers build inputs, native dependencies, assets, tests, updates, issue tracking, and release/session procedures.
+- [Throughput Harness](throughput-harness.md) defines how every remote-access path (loopback, LAN TLS, tor, Pear) is measured, so the numbers compare.
 - [Log Files](log-files.md) documents where each daemon and the app process write logs on the device, the UID split, rotation/retention, and quick tail/clear commands.
 
 ## Source Areas
@@ -52,7 +53,7 @@ Each detailed document includes a `Source References` section. References use `f
 - Surveillance IPC TCP: `127.0.0.1:19877`.
 - Embedded web server: `127.0.0.1:8080` by default, or `0.0.0.0:8080` only when LAN HTTP is explicitly enabled.
 - Main shared config: `/storage/emulated/0/BladeWatch/data/bladewatch_config.json` (mirrored to `/data/local/tmp/bladewatch_config.json` for legacy readers).
-- Shared daemon secret store: `/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json` (owner-only `rw-------`; `/data/local/tmp/bladewatch_secrets.json` is the legacy mirror).
+- Shared daemon secret store: `/data/local/tmp/bladewatch_secrets.json` (`shell` `rw-------`, enforced on that filesystem; the app reads it only over IPC). It left sdcardfs in BladeWatch-078u -- see `ipc-auth-and-secrets.md`.
 - Media base directory: `/storage/emulated/0/BladeWatch`.
 
 ## Security Notes

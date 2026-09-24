@@ -1,9 +1,11 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
+import 'package:bladewatch_ui/screens/pairing/pairing_dialog.dart';
+import 'package:bladewatch_ui/platform/pairing_channel.dart';
 import 'package:bladewatch_ui/platform/auth_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_controller.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
@@ -12,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../fakes/fake_platform_channel.dart';
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
   // Obviously fake. Never put a real onion address in a fixture: it is a capability
@@ -67,7 +69,7 @@ void main() {
     navigated = [];
   });
 
-  Widget wrap(DashboardController controller, {Locale? locale, ThemeData? theme}) => MaterialApp(
+  Widget wrap(DashboardController controller, {Locale? locale, ThemeData? theme, PairingChannel? pairing}) => MaterialApp(
         theme: theme ?? BladeWatchTheme.light(),
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -76,6 +78,7 @@ void main() {
           controller: controller,
           systemService: SystemServiceClient(rpc),
           onNavigate: (route) => navigated.add(route),
+          pairingChannel: pairing,
         ),
       );
 
@@ -84,15 +87,39 @@ void main() {
   // virtual surface means every tile — including ones below the fold on a
   // real device — is actually built and tappable without each test having
   // to fight ListView scroll-position/cache-extent timing individually.
-  Future<void> pumpDashboard(WidgetTester tester, DashboardController controller, {Locale? locale, ThemeData? theme}) async {
+  Future<void> pumpDashboard(WidgetTester tester, DashboardController controller, {Locale? locale, ThemeData? theme, PairingChannel? pairing}) async {
     tester.view.physicalSize = const Size(1400, 3200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    await tester.pumpWidget(wrap(controller, locale: locale, theme: theme));
+    await tester.pumpWidget(wrap(controller, locale: locale, theme: theme, pairing: pairing));
   }
+
+  // BladeWatch-rdtj.7: pairing is an explicit action, never a QR sitting on the dashboard.
+  testWidgets('Pair a device opens the pairing dialog, which mints its QR only then', (tester) async {
+    final pairing = FakePlatformChannel()
+      ..stub('pairing', 'mint', {'payload': 'qr-text', 'expiresAt': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch})
+      ..stub('pairing', 'list', {'companions': []});
+    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
+    await tester.pump();
+    expect(pairing.calls, isEmpty, reason: 'nothing is minted until the owner asks');
+    expect(find.byKey(const ValueKey('pairing.qr')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('dashboard.pair')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(PairingDialog), findsOneWidget);
+    expect(pairing.calls.map((c) => c.method), containsAll(['mint', 'list']));
+    expect(find.byKey(const ValueKey('pairing.qr')), findsOneWidget);
+  });
+
+  testWidgets('without a pairing channel there is no pairing action', (tester) async {
+    await pumpDashboard(tester, buildController());
+    await tester.pump();
+    expect(find.byKey(const ValueKey('dashboard.pair')), findsNothing);
+  });
 
   testWidgets('loading state shows pending placeholders, not a crash', (tester) async {
     final controller = buildController();

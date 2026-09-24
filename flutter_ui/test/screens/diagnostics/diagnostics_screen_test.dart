@@ -2,9 +2,9 @@ import 'package:bladewatch_ui/adb/adb_client.dart';
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/platform/network_channel.dart';
-import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/diagnostics/adb_console_controller.dart';
 import 'package:bladewatch_ui/screens/diagnostics/adb_console_screen.dart';
 import 'package:bladewatch_ui/screens/diagnostics/diagnostics_controller.dart';
@@ -17,7 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_adb_connection.dart';
 import '../../fakes/fake_platform_channel.dart';
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
   late FakeRpcClient rpc;

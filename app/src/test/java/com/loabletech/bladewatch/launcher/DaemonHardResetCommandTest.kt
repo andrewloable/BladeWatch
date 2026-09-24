@@ -36,7 +36,7 @@ class DaemonHardResetCommandTest {
         Assert.assertEquals(
             "the Kotlin translation changed the sweep. Kotlin interpolates \$ in a string "
                 + "literal; every \$ in this command must be escaped.",
-            "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done",
+            "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor pear_daemon 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done",
             DaemonHardReset.hardResetCommand()
         )
     }
@@ -63,6 +63,29 @@ class DaemonHardResetCommandTest {
             Assert.assertFalse(
                 "a glob over the tor directory would take hs/ with it: " + t,
                 t.contains("/data/local/tmp/tor/*") || t.contains("-rf /data/local/tmp/tor"))
+        }
+    }
+
+    @Test
+    fun killsThePearPeer() {
+        // BladeWatch-rdtj.3. Without this a "hard reset" leaves the Pear peer running.
+        val cmd = DaemonHardReset.hardResetCommand()
+        Assert.assertTrue("hard reset must kill pear_daemon, spelled in full: " + cmd,
+            cmd.contains("killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor pear_daemon "))
+    }
+
+    @Test
+    fun neverRemovesThePearStorageDirectory() {
+        // /data/local/tmp/pear will hold the car's permanent Pear identity -- the same hazard as
+        // tor's hs/ above. Removing pear_daemon.lock is fine; touching the directory is not.
+        val cmd = DaemonHardReset.hardResetCommand()
+        for (line in cmd.split(";")) {
+            val t = line.trim()
+            if (!t.startsWith("rm")) continue
+            Assert.assertFalse("recursive rm could take the pear directory: " + t, t.contains("-r"))
+            Assert.assertFalse("must not name the pear directory: " + t,
+                t.contains("/data/local/tmp/pear ") || t.contains("/data/local/tmp/pear/") ||
+                    t.contains("/data/local/tmp/pear*") || t.endsWith("/data/local/tmp/pear"))
         }
     }
 

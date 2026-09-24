@@ -2910,4 +2910,54 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'Một ứng dụng khác đang sử dụng camera ngay bây giờ.';
+
+  @override
+  String get pairing_title => 'Ghép nối thiết bị';
+
+  @override
+  String get pairing_scan_hint =>
+      'Quét bằng ứng dụng BladeWatch trên điện thoại hoặc máy tính. Mã chỉ dùng được một lần.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'Hết hạn sau $time';
+  }
+
+  @override
+  String get pairing_expired => 'Mã này đã hết hạn.';
+
+  @override
+  String get pairing_new_code => 'Mã mới';
+
+  @override
+  String get pairing_remote_note =>
+      'Ghép nối sẽ bật quyền truy cập từ xa cho xe này.';
+
+  @override
+  String get pairing_lan_title => 'Kết nối trực tiếp qua Wi-Fi này';
+
+  @override
+  String get pairing_lan_body =>
+      'Thiết bị đã ghép nối trong cùng mạng Wi-Fi với xe sẽ kết nối trực tiếp và được mã hóa, không đi qua internet. Tắt cho đến khi bạn bật.';
+
+  @override
+  String get pairing_devices_title => 'Thiết bị đã ghép nối';
+
+  @override
+  String get pairing_devices_empty => 'Chưa có thiết bị nào được ghép nối.';
+
+  @override
+  String get pairing_remove => 'Xóa';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Thiết bị sẽ mất quyền truy cập ngay. Các thiết bị khác của bạn vẫn hoạt động bình thường.';
+
+  @override
+  String get pairing_error => 'Dịch vụ camera không phản hồi. Hãy thử lại.';
 }

@@ -37,7 +37,7 @@ BladeWatch is built around long-running processes that survive normal Android UI
 - `DaemonKeepaliveService`: sticky foreground service, wake lock holder, daemon kickoff, process revival scheduling, status overlay coordination.
 - `LocationSidecarService`: foreground location service that sends GPS to daemon IPC.
 - `StatusOverlayService`: overlay status display.
-- `KeepAliveAccessibilityService`: accessibility-backed keepalive support.
+- `KeepAliveAccessibilityService`: intended as an accessibility-backed keepalive; on DiLink 3.0 it is enabled but never bound (see "After a reboot" below).
 
 ## ssc_skip also blocks SERVICE starts, not just broadcasts
 
@@ -67,6 +67,48 @@ immediately, so nothing appears on screen), then issue the service start, which 
 
 This only affects callers running as the shell UID. `ServiceLauncher` runs inside the app
 process, so the UID is by definition already up and the rule does not bite.
+
+## After a reboot: allow BladeWatch in BYD Auto-Start (BladeWatch-8net)
+
+**Out of the box, nothing starts BladeWatch after the head unit reboots**: no dashcam, no sentry
+until someone opens the app. The fix is an owner action, not code. On the head unit, open
+**BYD Auto-Start** (`com.byd.appstartmanagement`; the in-car Setup Guide's auto-start step opens
+it, and it reappears after every new build to say so; from a shell:
+`am start -n com.byd.appstartmanagement/.frame.AppStartManagement`) and allow BOTH BladeWatch entries (it lists
+one per APK and it *restricts*, so allowing means unchecking both; the rule itself is keyed by
+the UID the two share). **Every install or update of
+EITHER APK undoes it**: on `PACKAGE_ADDED`, `PACKAGE_REPLACED` and `MY_PACKAGE_REPLACED` BYD writes
+`1` ("restricted") for the UID and persists it (`AppOps$UserTableData.putInt(uid, 1)`), and an
+uninstall deletes the entry. So redo it after every `adb install`, `install -r` included -- which
+is how 8net happened: a reinstall the evening before re-restricted the UID, and the 02:07 boot
+started nothing. The persisted table (`content://appops/settings`, `com.byd.providers.appops`)
+is not exported (system UID), so shell cannot restore it either.
+
+Measured on the head unit 2026-09-24. Before, a cold boot left all three daemons down
+(`ssc_skip reciever ... BOOT_COMPLETED ... ignored !!!`). After allowing it, the next reboot
+(no UI touched) started the service host for `BootReceiver` 26 s after boot
+(`am_proc_start ... broadcast, {.../BootReceiver}`); `BOOT_COMPLETED` was delivered with no
+"ignored"; all three daemons were up at 88 s.
+
+Why, read from the firmware (services.jar / framework.jar, disassembled): `ssc_skip` -- on while
+`persist.sys.relatestart` is true, the default -- skips a broadcast, service start or provider
+start to a third-party UID unless the package is on BYD's `AutoStartWhite` strategy list or
+`isTargetAppEnabledStartedBy3rd(uid)` holds. That reads a per-UID value from the
+`bg_datacache` system service (`AppOpsDataCachedService`): exactly `1` means "only while the app
+is already running"; no entry or anything else means allowed. So once BladeWatch runs, starts get
+through (which is why this hides during development); after a cold boot nothing runs and
+everything is skipped. The value is writable only with `android.permission.ACCESS_APPOPSDATA`,
+**protection level signature**, held solely by `com.byd.appstartmanagement` -- a binder call from
+shell fails with "Neither user 2000 nor current process has android.permission.ACCESS_APPOPSDATA",
+and the app UID fails the same way. Hence the owner step. It also means these never worked here:
+the `ssc_whitelist` settings `ServiceLauncher` writes (BYD does not read them),
+`setAppOpsData`/`setAppStartupData` from `BydDataCacheWhitelist`, `AccSentryDaemon`,
+`SentryDaemon` and `AccModeHelper`, and `content://com.byd.appstartup` (no such provider).
+
+`KeepAliveAccessibilityService` is enabled in `enabled_accessibility_services`, but the
+accessibility manager never binds it on this firmware: before the grant it sat in "Binding
+services" with every connection record DEAD, and after the grant and a reboot it is listed as
+enabled only. It restarts nothing; the boot broadcast is what brings the daemons back.
 
 ## Boot and Revival Behavior
 
@@ -288,14 +330,13 @@ The server uses a fixed thread pool (8 threads) for concurrent local requests.
 `HttpServer` listens on:
 
 ```text
-127.0.0.1:8080
+127.0.0.1:8080   the in-car UI and local apps     (listener trust LOCAL_APPS)
+127.0.0.1:8081   tor's way in                     (REMOTE)
+127.0.0.1:8444   TLS, the Pear pump's way in      (REMOTE)
+0.0.0.0:8443     TLS, only while LAN access is on (REMOTE)
 ```
 
-If LAN HTTP is explicitly enabled, it binds:
-
-```text
-0.0.0.0:8080
-```
+Plain HTTP never binds anything but loopback; LAN access is the TLS listener's job.
 
 Responsibilities:
 
@@ -335,7 +376,7 @@ Runtime paths:
 /data/local/tmp/tor.log           notice log; the tunnelStatus bootstrap gate reads this
 ```
 
-It fronts the local HTTP server at `http://127.0.0.1:8080` as a v3 onion service on port 80,
+It fronts the local HTTP server at `http://127.0.0.1:8081` (the REMOTE loopback listener, never 8080 -- BladeWatch-ur11) as a v3 onion service on port 80,
 with no intermediate proxy layer. There is no account, token or registration, and the
 address is permanent because it is derived from a key in the hidden-service directory.
 
@@ -355,6 +396,64 @@ working.
 Startup timing measured on the head unit: ~82 s from a cold start to `Bootstrapped 100%`,
 ~6 s on a restart with a populated `DataDirectory`. `tunnelStatus` reports
 `running: true, url: null` throughout that window.
+
+## Pear Peer Process
+
+`PearDaemon` is the Pear peer that replaces the tor tunnel as the remote-access transport
+(epic BladeWatch-rdtj). It is an `app_process` daemon like `sentry_daemon`, launched by
+`PearLauncher` as shell UID with `--nice-name=pear_daemon`, and it hosts a bare-kit worklet
+running pear-end — the stock flutter_pear worklet bundle, shipped as
+`assets/pear/pear-end.bundle`. On boot it joins this car's Hyperswarm topic so a paired
+companion can find the car from anywhere.
+
+It also carries the companion's traffic. `PearStreamPump`, inside this process, turns each
+stream a companion opens over its Pear connection (`PearMux` framing) into a TCP connection
+to byd_cam_daemon's Pear TLS listener, 127.0.0.1:8444, and copies bytes both ways —
+a real cross-process hop, so it retries while byd_cam_daemon is (re)starting and closes
+pumped streams cleanly when it goes away. Protocol and limits: `docs/networking-and-tunnels.md`
+"Stream multiplexing".
+
+It is **opt-in**: `DaemonType.PEAR_PEER` is an optional daemon, off by default like tor, and
+starts on the optional tier (+60 s) only once enabled — pairing a companion is what enables
+it. Enabled state follows the same `daemons` config section as tor, so it can be toggled from
+the Flutter UI over `daemon_set_enabled`. Crash recovery is tor's too: a worklet that dies
+makes the process exit, and the 30 s health check relaunches it.
+
+Runtime paths:
+
+```text
+/data/local/tmp/pear               pear-end's storage (0700) — NEVER delete, see below
+/data/local/tmp/pear_daemon.log    stderr/stdout of the process (errors only, see DaemonLogConfig)
+/data/local/tmp/pear_daemon.lock   singleton lock; safe to remove when the daemon is stopped
+```
+
+The topic is `PearTopic`: SHA-256 over a domain tag and a random 32-byte seed kept in the
+600 secret store (`pear.topicSeed`), created on first use. It is deliberately independent
+of the auth device secret, so rotating that secret revokes sessions without also making
+paired companions lose the car.
+
+Six runtime requirements were found and verified on the head unit (BladeWatch-rdtj.2), and
+the daemon crashes or silently fails without any one of them — each is documented at its
+site in `PearDaemon`, `PearLauncher` and `app/build.gradle.kts`:
+
+1. A stand-in `Application` bound into `ActivityThread.mInitialApplication` before the
+   worklet starts. bare-kit's `bare_kit__on_thread_enter` dereferences
+   `currentApplication()` unchecked on every native thread it creates; in an `app_process`
+   daemon that is null and ART aborts the process.
+2. The worklet and its IPC on a thread with a prepared **and pumped** Looper — IPC captures
+   the calling thread's `ALooper` with no null check.
+3. `-Djava.library.path` with the APK's native dir first, as CameraDaemon's launch does.
+4. bare-kit's own `libc++_shared.so` and pear-end's addon libraries in the APK.
+5. Storage under `/data/local/tmp`, not the app's `filesDir`, which shell cannot write.
+6. `minSdk 29` — bare-kit's real floor (see the API-29 risk in the rdtj.2 close reason).
+
+Measured on the head unit (2026-09-24): `attach.info` answered about 3 s after launch;
+112 MB PSS, 0.0 % CPU at idle, alongside the camera daemon recording normally.
+
+**`/data/local/tmp/pear` will hold the car's permanent Pear identity** once a companion is
+paired, the same hazard as tor's `hs/` directory: killing the process is fine, deleting the
+directory strands every paired companion. Keep it 0700 as well — pear-end creates its
+corestore inside it as 0777, so the parent's mode is the only thing keeping it private.
 
 ## Conditional Polling
 

@@ -257,6 +257,7 @@ public class DaemonStatusCommandTest {
                 new JSONObject().put("cmd", "daemonStatus")).getJSONObject("enabled");
 
         Assert.assertTrue(enabled.has("TOR_TUNNEL"));
+        Assert.assertTrue(enabled.has("PEAR_PEER"));
         for (String notToggleable : new String[] {
                 "CAMERA_DAEMON", "SENTRY_DAEMON", "ACC_SENTRY_DAEMON"}) {
             Assert.assertFalse(notToggleable + " is not toggleable and must not claim to be",
@@ -271,7 +272,7 @@ public class DaemonStatusCommandTest {
                 new JSONObject().put("cmd", "daemonStatus")).getJSONObject("daemons");
 
         for (String key : new String[] {
-                "CAMERA_DAEMON", "SENTRY_DAEMON", "ACC_SENTRY_DAEMON", "TOR_TUNNEL"}) {
+                "CAMERA_DAEMON", "SENTRY_DAEMON", "ACC_SENTRY_DAEMON", "TOR_TUNNEL", "PEAR_PEER"}) {
             Assert.assertTrue("liveness for " + key + " disappeared", daemons.has(key));
         }
     }

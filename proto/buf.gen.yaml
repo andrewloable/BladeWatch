@@ -27,13 +27,13 @@ plugins:
 
   # Dart protobuf message classes for the Flutter in-car UI (BladeWatch-ncbb.1).
   # Messages only — no RPC client generation. The Flutter APK talks to the
-  # daemon over plain HTTP + protobuf-JSON (see flutter_ui/lib/rpc/), hand-written
+  # daemon over plain HTTP + protobuf-JSON (see packages/bladewatch_rpc/lib/rpc/), hand-written
   # to mirror app/src/main/java/com/loabletech/bladewatch/client/ConnectClientProvider.kt,
   # using each message's generated toProto3Json()/fromProto3Json().
   # Pinned to v25.1.0 (this plugin's own release tags track protoc/protobuf
   # release trains, like the Java plugin above — NOT the `protobuf` Dart pub
   # package's independent version numbers) to match protobuf: ^6.1.0 in
-  # flutter_ui/pubspec.yaml. Follow the Java entry's precedent: do not
+  # packages/bladewatch_rpc/pubspec.yaml. Follow the Java entry's precedent: do not
   # unpin — see docs/build-and-operations.md for how to bump both together.
   - remote: buf.build/protocolbuffers/dart:v25.1.0
-    out: ../flutter_ui/lib/gen
+    out: ../packages/bladewatch_rpc/lib/gen

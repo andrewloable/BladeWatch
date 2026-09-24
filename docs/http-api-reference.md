@@ -30,7 +30,7 @@ The server exposes two parallel API surfaces over the same port:
    for JSON, because the login bootstrap needs it; `RecordingsApiHandler` and
    `StreamingApiHandler` keep one for their binary routes only.
 
-2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by both the Flutter in-car UI (Dart client, `flutter_ui/lib/rpc/`) and the Angular SPA. See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers to keep the two surfaces in 1:1 parity, so the REST families below are the source of truth for behaviour.
+2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by both the Flutter in-car UI (Dart client, `packages/bladewatch_rpc/lib/rpc/`, shared with the companion app) and the Angular SPA. See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers to keep the two surfaces in 1:1 parity, so the REST families below are the source of truth for behaviour.
 
 ## Auth
 
@@ -43,13 +43,19 @@ middleware runs, so they are reachable without a session):
   (hint) cookies. Rate-limited to 10 attempts/min per client identity
   (X-Forwarded-For when present, else socket), then a 30s lockout.
 - `POST /auth/logout` — clears the session cookies. Idempotent.
+- `POST /auth/pair` — body `{code, name}`; redeems a single-use pairing code from the in-car QR
+  (BladeWatch-rdtj.7) and answers `{success, companionId, token}` exactly once, or
+  `{success:false, error:"pairing_code_refused"}`. Public; same rate limits as `/auth/token`.
+- `POST /auth/companion` — body `{companionId, token}`; a paired companion's token for a session
+  JWT, returned in the body (`{success, jwt, expiresIn}`), not a cookie. The JWT carries `cid`
+  and stops validating the moment that companion is un-paired. Public; same rate limits.
 
 The login page is served as a static file:
 
 - `GET /login` / `GET /login.html` → `local/login.html`.
 
 Most other routes require a JWT Bearer token or `byd_session` cookie (see
-`AuthMiddleware`). `/auth/status`, `/login`, `/login.html`, `/manifest.json`,
+`AuthMiddleware`). `/auth/status`, `/auth/pair`, `/auth/companion`, `/login`, `/login.html`, `/manifest.json`,
 `/sw.js`, `/favicon.ico`, `/shared/*`, `/i18n/*`, and the Connect login RPC
 `/bladewatch.v1.AuthService/Login` are the only paths that bypass auth.
 `/thumb/*` additionally accepts a signed `?t=` thumbnail token.

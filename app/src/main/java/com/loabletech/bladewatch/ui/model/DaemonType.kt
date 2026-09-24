@@ -11,5 +11,7 @@ enum class DaemonType(val displayName: String, val processName: String) {
     ACC_SENTRY_DAEMON("ACC Sentry", "acc_sentry_daemon"),
     // Process name matches the basename the binary is installed under — see
     // TorLauncher.TOR_PROCESS, which is the single source of truth for both.
-    TOR_TUNNEL("Tor Tunnel", "bladewatch_tor")
+    TOR_TUNNEL("Tor Tunnel", "bladewatch_tor"),
+    // The --nice-name pear_daemon is launched with — see PearLauncher.PEAR_PROCESS.
+    PEAR_PEER("Pear Peer", "pear_daemon")
 }

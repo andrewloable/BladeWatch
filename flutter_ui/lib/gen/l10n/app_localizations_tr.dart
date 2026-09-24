@@ -2913,4 +2913,54 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'Şu anda kamerayı başka bir uygulama kullanıyor.';
+
+  @override
+  String get pairing_title => 'Cihaz eşleştir';
+
+  @override
+  String get pairing_scan_hint =>
+      'Telefonunuzdaki veya bilgisayarınızdaki BladeWatch uygulamasıyla tarayın. Kod yalnızca bir kez çalışır.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time içinde sona erer';
+  }
+
+  @override
+  String get pairing_expired => 'Bu kodun süresi doldu.';
+
+  @override
+  String get pairing_new_code => 'Yeni kod';
+
+  @override
+  String get pairing_remote_note =>
+      'Eşleştirme, bu araç için uzaktan erişimi açar.';
+
+  @override
+  String get pairing_lan_title => 'Bu Wi-Fi üzerinden doğrudan bağlantı';
+
+  @override
+  String get pairing_lan_body =>
+      'Araçla aynı Wi-Fi ağındaki eşleştirilmiş bir cihaz, internete çıkmadan doğrudan ve şifreli olarak bağlanır. Siz açana kadar kapalıdır.';
+
+  @override
+  String get pairing_devices_title => 'Eşleştirilmiş cihazlar';
+
+  @override
+  String get pairing_devices_empty => 'Henüz eşleştirilmiş cihaz yok.';
+
+  @override
+  String get pairing_remove => 'Kaldır';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '$name kaldırılsın mı?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Erişimini hemen kaybeder. Diğer cihazlarınız çalışmaya devam eder.';
+
+  @override
+  String get pairing_error => 'Kamera hizmeti yanıt vermedi. Tekrar deneyin.';
 }

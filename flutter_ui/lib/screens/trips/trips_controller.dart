@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart';
 // DnaScores/TripsConfig/TripsStorage collide with this file's own hand-written
 // model classes of the same name — same shape as yz1e.3's RecordingStatus
 // collision.
-import 'package:bladewatch_ui/gen/bladewatch/v1/trips.pb.dart' hide DnaScores;
-import 'package:bladewatch_ui/gen/bladewatch/v1/trips.pb.dart' as pb show DnaScores;
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart' hide DnaScores;
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart' as pb show DnaScores;
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:fixnum/fixnum.dart';
 
 import 'trips_models.dart';

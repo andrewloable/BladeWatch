@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:bladewatch_ui/gen/bladewatch/v1/system.pb.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/diagnostics/performance_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 /// BladeWatch-qwqq: this controller used to reach the daemon two ways — the typed
 /// GetPerformance RPC for polling, and raw HTTP to REST for connect/heartbeat/disconnect,

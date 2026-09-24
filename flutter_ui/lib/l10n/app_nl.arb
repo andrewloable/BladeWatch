@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "Bewakingsmodus gebruikt extra stroom uit de 12V-accu zolang deze actief is.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "Een andere app gebruikt op dit moment de camera.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Apparaat koppelen",
+  "pairing_scan_hint": "Scan met de BladeWatch-app op je telefoon of computer. De code werkt maar één keer.",
+  "pairing_expires_in": "Verloopt over {time}",
+  "pairing_expired": "Deze code is verlopen.",
+  "pairing_new_code": "Nieuwe code",
+  "pairing_remote_note": "Koppelen zet externe toegang voor deze auto aan.",
+  "pairing_lan_title": "Directe verbinding via deze wifi",
+  "pairing_lan_body": "Een gekoppeld apparaat op dezelfde wifi als de auto maakt rechtstreeks en versleuteld verbinding, zonder via internet. Uit tot je het aanzet.",
+  "pairing_devices_title": "Gekoppelde apparaten",
+  "pairing_devices_empty": "Nog geen apparaten gekoppeld.",
+  "pairing_remove": "Verwijderen",
+  "pairing_remove_confirm_title": "{name} verwijderen?",
+  "pairing_remove_confirm_body": "Het verliest direct de toegang. Je andere apparaten blijven werken.",
+  "pairing_error": "De cameraservice reageerde niet. Probeer het opnieuw."
 }

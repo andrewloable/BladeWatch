@@ -95,9 +95,54 @@ public class AuthMiddlewareTest {
 
         boolean allowed = AuthMiddleware.checkAuth(
                 "/api/vehicle/trunk", null, null, new ByteArrayOutputStream(),
-                new InetSocketAddress("127.0.0.1", 8080), false);
+                new InetSocketAddress("127.0.0.1", 8080), false, ListenerTrust.LOCAL_APPS);
 
         Assert.assertTrue("local callers still need the safety net", allowed);
+    }
+
+    // --- BladeWatch-rdtj.4: trust belongs to the LISTENER, not the source address ---
+
+    @Test
+    public void aRemoteListenerNeverGetsTheLoopbackBypass() throws Exception {
+        // The LAN TLS listener, and the Pear pump's: the pump reaches this server from 127.0.0.1,
+        // exactly like tor, so a loopback address proves nothing there. With every other Tier 2
+        // condition forced OPEN -- debug bypass on, no tunnel -- a REMOTE listener must still deny.
+        AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
+        AuthMiddleware.setTunnelActiveOverride(Boolean.FALSE);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        boolean allowed = AuthMiddleware.checkAuth(
+                "/api/vehicle/trunk", null, null, out,
+                new InetSocketAddress("127.0.0.1", 8081), false, ListenerTrust.REMOTE);
+
+        Assert.assertFalse("a remote peer arriving via loopback must not inherit local trust", allowed);
+        Assert.assertTrue(out.toString("UTF-8").contains("401 Unauthorized"));
+    }
+
+    @Test
+    public void aCallerThatDoesNotDeclareItsListenerFailsClosed() throws Exception {
+        // Stands in for any listener or caller added later without thinking about trust: the
+        // shorter overloads assume REMOTE, so forgetting is a denial, never an open door.
+        AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
+        AuthMiddleware.setTunnelActiveOverride(Boolean.FALSE);
+
+        boolean allowed = AuthMiddleware.checkAuth(
+                "/api/vehicle/trunk", null, null, new ByteArrayOutputStream(),
+                new InetSocketAddress("127.0.0.1", 8080), false);
+
+        Assert.assertFalse("an undeclared listener must default to REMOTE", allowed);
+    }
+
+    @Test
+    public void onlyTheLocalListenerOnLoopbackIsExemptFromTheVehicleSecondFactor() throws Exception {
+        java.net.InetAddress loopback = java.net.InetAddress.getByName("127.0.0.1");
+        java.net.InetAddress lan = java.net.InetAddress.getByName("192.0.2.10");
+
+        Assert.assertTrue(AuthMiddleware.isLocalAppCaller(ListenerTrust.LOCAL_APPS, loopback));
+        // The Pear pump: loopback, but remote. Must need the action token.
+        Assert.assertFalse(AuthMiddleware.isLocalAppCaller(ListenerTrust.REMOTE, loopback));
+        Assert.assertFalse(AuthMiddleware.isLocalAppCaller(ListenerTrust.REMOTE, lan));
+        Assert.assertFalse(AuthMiddleware.isLocalAppCaller(ListenerTrust.LOCAL_APPS, lan));
     }
 
     @Test

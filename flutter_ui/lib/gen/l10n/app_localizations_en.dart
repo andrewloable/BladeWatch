@@ -2895,4 +2895,54 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'Another app is using the camera right now.';
+
+  @override
+  String get pairing_title => 'Pair a device';
+
+  @override
+  String get pairing_scan_hint =>
+      'Scan with the BladeWatch app on your phone or computer. The code works once.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'Expires in $time';
+  }
+
+  @override
+  String get pairing_expired => 'This code has expired.';
+
+  @override
+  String get pairing_new_code => 'New code';
+
+  @override
+  String get pairing_remote_note =>
+      'Pairing turns on remote access for this car.';
+
+  @override
+  String get pairing_lan_title => 'Direct connection on this Wi-Fi';
+
+  @override
+  String get pairing_lan_body =>
+      'A paired device on the same Wi-Fi as the car connects to it directly and encrypted, without going through the internet. Off unless you turn it on.';
+
+  @override
+  String get pairing_devices_title => 'Paired devices';
+
+  @override
+  String get pairing_devices_empty => 'No devices paired yet.';
+
+  @override
+  String get pairing_remove => 'Remove';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'It loses access right away. Your other devices keep working.';
+
+  @override
+  String get pairing_error => 'The camera service did not respond. Try again.';
 }

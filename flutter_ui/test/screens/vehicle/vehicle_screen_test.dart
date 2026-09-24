@@ -1,13 +1,13 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
 import 'package:bladewatch_ui/screens/vehicle/vehicle_controller.dart';
 import 'package:bladewatch_ui/screens/vehicle/vehicle_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
   late FakeRpcClient rpc;

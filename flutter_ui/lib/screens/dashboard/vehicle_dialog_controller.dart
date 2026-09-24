@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import '../../gen/bladewatch/v1/system.pb.dart';
-import '../../rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'dashboard_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 

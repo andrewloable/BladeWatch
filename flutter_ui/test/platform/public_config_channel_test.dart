@@ -3,8 +3,8 @@ import 'package:bladewatch_ui/platform/public_config_channel.dart';
 import 'package:bladewatch_ui/screens/diagnostics/diagnostics_models.dart';
 
 import '../fakes/fake_platform_channel.dart';
-import '../fakes/fake_rpc_client.dart';
-import 'package:bladewatch_ui/rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
 
 void main() {
   _cameraProbeSourceTests();

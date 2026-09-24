@@ -471,7 +471,15 @@ object AuthManager {
 
     /** Generate a JWT session token. */
     @JvmStatic
-    fun generateJwt(): String? {
+    fun generateJwt(): String? = generateJwt(null)
+
+    /**
+     * A JWT session token; [companionId] non-null mints one for a paired companion app
+     * (BladeWatch-rdtj.7), carrying it as `cid` so [validateJwt] can refuse it the moment that
+     * companion is un-paired, without disturbing any other session.
+     */
+    @JvmStatic
+    fun generateJwt(companionId: String?): String? {
         val state = getState() ?: return null
 
         return try {
@@ -481,6 +489,7 @@ object AuthManager {
             val payloadJson = "{\"sub\":\"" + escapeJson(state.deviceId) + "\"," +
                 "\"iat\":" + now + "," +
                 "\"exp\":" + exp + "," +
+                (if (companionId != null) "\"cid\":\"" + escapeJson(companionId) + "\"," else "") +
                 "\"ver\":" + state.tokenEpoch + "}"
 
             val content = base64UrlEncode(headerJson.toByteArray(StandardCharsets.UTF_8)) +
@@ -631,6 +640,12 @@ object AuthManager {
             }
             if (tokenDeviceId != state.deviceId) {
                 return JwtValidation.failure("Device mismatch")
+            }
+
+            // A companion's session dies with its pairing (BladeWatch-rdtj.7).
+            val companionId = extractJsonString(payloadJson, "cid")
+            if (companionId != null && !CompanionPairing.shared.isPaired(companionId)) {
+                return JwtValidation.failure("Companion un-paired")
             }
 
             JwtValidation.success(tokenDeviceId)

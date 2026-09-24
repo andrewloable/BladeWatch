@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import '../../theme/color_tokens.dart';
 
 import '../../gen/l10n/app_localizations.dart';
-import '../../rpc/jwt_source.dart';
-import '../../rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'recordings_controller.dart';
 import 'thumbnail_image.dart';
 import 'recordings_models.dart';

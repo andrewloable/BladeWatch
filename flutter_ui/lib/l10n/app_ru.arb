@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "Режим охраны расходует дополнительную энергию 12-вольтовой батареи, пока он активен.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "Камеру сейчас использует другое приложение.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Подключить устройство",
+  "pairing_scan_hint": "Отсканируйте в приложении BladeWatch на телефоне или компьютере. Код действует один раз.",
+  "pairing_expires_in": "Истекает через {time}",
+  "pairing_expired": "Срок действия этого кода истёк.",
+  "pairing_new_code": "Новый код",
+  "pairing_remote_note": "Подключение включает удалённый доступ к этому автомобилю.",
+  "pairing_lan_title": "Прямое подключение в этой сети Wi-Fi",
+  "pairing_lan_body": "Подключённое устройство в той же сети Wi-Fi, что и автомобиль, соединяется с ним напрямую и с шифрованием, без выхода в интернет. Выключено, пока вы не включите.",
+  "pairing_devices_title": "Подключённые устройства",
+  "pairing_devices_empty": "Подключённых устройств пока нет.",
+  "pairing_remove": "Удалить",
+  "pairing_remove_confirm_title": "Удалить {name}?",
+  "pairing_remove_confirm_body": "Устройство сразу потеряет доступ. Остальные ваши устройства продолжат работать.",
+  "pairing_error": "Служба камеры не ответила. Повторите попытку."
 }

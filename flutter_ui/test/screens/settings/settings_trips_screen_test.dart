@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/rpc_transport.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/rpc_transport.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/settings/settings_trips_screen.dart';
 import 'package:bladewatch_ui/screens/trips/trips_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import 'package:bladewatch_ui/widgets/bw_choice_chip.dart';
 
 /// These cases moved here with the pane itself: they were the Trips screen's

@@ -5,6 +5,9 @@ import net.bladewatch.app.recording.RecordingPriority
 import org.json.JSONObject
 import java.io.File
 import java.io.FileWriter
+import java.nio.channels.FileChannel
+import java.nio.channels.FileLock
+import java.nio.file.StandardOpenOption
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
 
@@ -48,6 +51,33 @@ object UnifiedConfigManager {
     private const val LEGACY_SENTRY_CONFIG = "/data/local/tmp/sentry_config.json"
     private const val LEGACY_CAMERA_SETTINGS = "/data/local/tmp/camera_settings.json"
     private const val LEGACY_SYSTEM_CONFIG = "/data/data/com.android.providers.settings/sentry_config.json"
+
+    /**
+     * Cross-process write lock (BladeWatch-17l7). On the real filesystem, not next to the canonical
+     * sdcardfs file, so both uids lock the same inode. See [withCrossProcessLock].
+     */
+    private const val CONFIG_LOCK_PATH = "/data/local/tmp/bladewatch_config.json.lock"
+    private const val CROSS_PROCESS_LOCK_WAIT_MS = 2_000L
+
+    // ponytail: test seam -- null = the device paths above; a directory puts the canonical file,
+    // the mirror, the old app-files home and the lock in it, so a JVM test can run the real I/O.
+    @Volatile private var baseDirForTest: File? = null
+    private val canonicalPath: String
+        get() = baseDirForTest?.let { File(it, "bladewatch_config.json").path } ?: CONFIG_PATH
+    private val mirrorPath: String
+        get() = baseDirForTest?.let { File(it, "mirror/bladewatch_config.json").path } ?: LEGACY_CONFIG_PATH
+    private val appFilesPath: String
+        get() = baseDirForTest?.let { File(it, "appfiles/bladewatch_config.json").path } ?: LEGACY_APP_FILES_CONFIG
+    private val lockPath: String
+        get() = baseDirForTest?.let { File(it, "bladewatch_config.json.lock").path } ?: CONFIG_LOCK_PATH
+
+    /** Test seam: point every path at [dir] (null = the device paths again) and drop the cache. */
+    @JvmStatic
+    internal fun useDirectoryForTest(dir: File?) = synchronized(this) {
+        baseDirForTest = dir
+        cachedConfig = null
+        lastModified.set(0)
+    }
     
     // In-memory cache
     @Volatile
@@ -66,10 +96,10 @@ object UnifiedConfigManager {
      */
     @JvmStatic
     fun init() {
-        val configFile = File(CONFIG_PATH)
+        val configFile = File(canonicalPath)
 
         if (configFile.exists()) {
-            Log.i(TAG, "Unified config exists at $CONFIG_PATH")
+            Log.i(TAG, "Unified config exists at $canonicalPath")
             loadConfig()
             return
         }
@@ -79,8 +109,8 @@ object UnifiedConfigManager {
         // new persistent location via loadConfig() (which re-saves to
         // CONFIG_PATH) instead of rebuilding from the much older per-feature
         // legacy configs and losing user settings.
-        if (File(LEGACY_APP_FILES_CONFIG).exists() || File(LEGACY_CONFIG_PATH).exists()) {
-            Log.i(TAG, "Promoting prior unified config to $CONFIG_PATH")
+        if (File(appFilesPath).exists() || File(mirrorPath).exists()) {
+            Log.i(TAG, "Promoting prior unified config to $canonicalPath")
             loadConfig()
             return
         }
@@ -189,7 +219,7 @@ object UnifiedConfigManager {
         saveConfigInternal(unified)
         cachedConfig = unified
         
-        Log.i(TAG, "Migration complete. Unified config saved to $CONFIG_PATH")
+        Log.i(TAG, "Migration complete. Unified config saved to $canonicalPath")
     }
     
     private fun copyIfExists(from: JSONObject, to: JSONObject, key: String, newKey: String = key) {
@@ -318,9 +348,9 @@ object UnifiedConfigManager {
      */
     @JvmStatic
     fun loadConfig(): JSONObject {
-        val configFile = File(CONFIG_PATH)
-        val legacyAppFilesConfigFile = File(LEGACY_APP_FILES_CONFIG)
-        val legacyConfigFile = File(LEGACY_CONFIG_PATH)
+        val configFile = File(canonicalPath)
+        val legacyAppFilesConfigFile = File(appFilesPath)
+        val legacyConfigFile = File(mirrorPath)
 
         // Check if file changed since last load
         if (cachedConfig != null && configFile.exists()) {
@@ -388,14 +418,14 @@ object UnifiedConfigManager {
             // (almost always) be greater than the file's mtime, so the
             // fileModified <= lastModified check would never trip and
             // a cross-UID write would never invalidate the cache.
-            lastModified.set(File(CONFIG_PATH).lastModified())
+            lastModified.set(File(canonicalPath).lastModified())
             notifyListeners("all", config)
         }
         return success
     }
     
     private fun saveConfigInternal(config: JSONObject): Boolean {
-        val configFile = File(CONFIG_PATH)
+        val configFile = File(canonicalPath)
         configFile.parentFile?.mkdirs()
         val payload = config.toString(2)
 
@@ -418,7 +448,7 @@ object UnifiedConfigManager {
             tmpFile.setReadable(true, false)
             tmpFile.setWritable(true, false)
             if (tmpFile.renameTo(configFile)) {
-                Log.i(TAG, "Config saved to $CONFIG_PATH (atomic)")
+                Log.i(TAG, "Config saved to $canonicalPath (atomic)")
                 mirrorLegacyConfig(payload)
                 return true
             }
@@ -443,7 +473,7 @@ object UnifiedConfigManager {
                 configFile.setReadable(true, false)
                 configFile.setWritable(true, false)
                 try { tmpFile.delete() } catch (_: Exception) {}
-                Log.i(TAG, "Config saved to $CONFIG_PATH (direct)")
+                Log.i(TAG, "Config saved to $canonicalPath (direct)")
                 mirrorLegacyConfig(payload)
                 true
             }
@@ -454,9 +484,9 @@ object UnifiedConfigManager {
     }
 
     private fun mirrorLegacyConfig(payload: String) {
-        if (CONFIG_PATH == LEGACY_CONFIG_PATH) return
+        if (canonicalPath == mirrorPath) return
         try {
-            val legacyFile = File(LEGACY_CONFIG_PATH)
+            val legacyFile = File(mirrorPath)
             legacyFile.parentFile?.mkdirs()
             FileWriter(legacyFile).use { it.write(payload) }
             legacyFile.setReadable(true, false)
@@ -670,7 +700,9 @@ object UnifiedConfigManager {
      */
     @JvmStatic
     fun isDaemonEnabled(daemonType: String): Boolean? {
-        val daemons = loadConfig().optJSONObject("daemons") ?: return null
+        // From DISK, not the cache (BladeWatch-17l7): this decides whether a health check relaunches
+        // remote access, and a stale cached "true" undid an owner's switch-off on the head unit.
+        val daemons = (readConfigFromDisk() ?: loadConfig()).optJSONObject("daemons") ?: return null
         if (!daemons.has(daemonType)) return null
         return daemons.optBoolean(daemonType, false)
     }
@@ -692,17 +724,14 @@ object UnifiedConfigManager {
      * Deliberately NOT expressible through [updateValues], which can only write values.
      */
     @JvmStatic
-    fun removeDaemonEntry(daemonType: String): Boolean {
-        synchronized(this) {
-            val config = loadConfig()
-            val daemons = config.optJSONObject("daemons") ?: return false
-            if (!daemons.has(daemonType)) return false
-            daemons.remove(daemonType)
-            config.put("daemons", daemons)
-            val success = saveConfig(config)
-            if (success) notifyListeners("daemons", daemons)
-            return success
-        }
+    fun removeDaemonEntry(daemonType: String): Boolean = mutate { config ->
+        val daemons = config.optJSONObject("daemons") ?: return@mutate false
+        if (!daemons.has(daemonType)) return@mutate false
+        daemons.remove(daemonType)
+        config.put("daemons", daemons)
+        val success = saveConfig(config)
+        if (success) notifyListeners("daemons", daemons)
+        success
     }
 
     /**
@@ -777,63 +806,107 @@ object UnifiedConfigManager {
      * Update a specific section of the config.
      */
     @JvmStatic
-    fun updateSection(section: String, data: JSONObject): Boolean {
-        synchronized(this) {
-            val config = loadConfig()
-            // Merge into existing section to preserve keys not present in data
-            // (e.g. surveillanceEnabled is set separately from detection params)
-            val existing = config.optJSONObject(section) ?: JSONObject()
-            var changed = stripSensitiveKeys(section, existing)
-            val keys = data.keys()
-            while (keys.hasNext()) {
-                val key = keys.next()
-                if (isSensitiveKey(section, key)) {
-                    Log.w(TAG, "Ignoring sensitive key write to public config: $section.$key")
-                    continue
-                }
-                changed = true
-                existing.put(key, data.get(key))
+    fun updateSection(section: String, data: JSONObject): Boolean = mutate { config ->
+        // Merge into existing section to preserve keys not present in data
+        // (e.g. surveillanceEnabled is set separately from detection params)
+        val existing = config.optJSONObject(section) ?: JSONObject()
+        var changed = stripSensitiveKeys(section, existing)
+        val keys = data.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            if (isSensitiveKey(section, key)) {
+                Log.w(TAG, "Ignoring sensitive key write to public config: $section.$key")
+                continue
             }
-            config.put(section, existing)
-            if (!changed) {
-                return false
-            }
-            val success = saveConfig(config)
-            if (success) {
-                notifyListeners(section, existing)
-            }
-            return success
+            changed = true
+            existing.put(key, data.get(key))
         }
+        config.put(section, existing)
+        if (!changed) return@mutate false
+        val success = saveConfig(config)
+        if (success) {
+            notifyListeners(section, existing)
+        }
+        success
     }
     
     /**
      * Update individual values within a section.
      */
     @JvmStatic
-    fun updateValues(section: String, values: Map<String, Any>): Boolean {
-        synchronized(this) {
-            val config = loadConfig()
-            val sectionObj = config.optJSONObject(section) ?: JSONObject()
-            var changed = stripSensitiveKeys(section, sectionObj)
-            
-            values.forEach { (key, value) ->
-                if (isSensitiveKey(section, key)) {
-                    Log.w(TAG, "Ignoring sensitive key write to public config: $section.$key")
-                    return@forEach
-                }
-                changed = true
-                sectionObj.put(key, value)
+    fun updateValues(section: String, values: Map<String, Any>): Boolean = mutate { config ->
+        val sectionObj = config.optJSONObject(section) ?: JSONObject()
+        var changed = stripSensitiveKeys(section, sectionObj)
+
+        values.forEach { (key, value) ->
+            if (isSensitiveKey(section, key)) {
+                Log.w(TAG, "Ignoring sensitive key write to public config: $section.$key")
+                return@forEach
             }
-            
-            config.put(section, sectionObj)
-            if (!changed) {
-                return false
+            changed = true
+            sectionObj.put(key, value)
+        }
+
+        config.put(section, sectionObj)
+        if (!changed) return@mutate false
+        val success = saveConfig(config)
+        if (success) {
+            notifyListeners(section, sectionObj)
+        }
+        success
+    }
+
+    /**
+     * Every read-modify-write of the config goes through here (BladeWatch-17l7).
+     *
+     * Several processes write this file -- the service host, CameraDaemon (including the Flutter
+     * UI's IPC writes) -- and each used to start from its own in-memory cache. That cache is only
+     * refreshed when the file's mtime looks newer, so a writer could save a stale whole-file copy
+     * over someone else's change: on the head unit an owner's PEAR_PEER=false came back as true.
+     * Now each change starts from the file AS IT IS ON DISK, under a lock every process shares.
+     */
+    private inline fun mutate(change: (JSONObject) -> Boolean): Boolean = synchronized(this) {
+        withCrossProcessLock { change(readConfigFromDisk() ?: loadConfig()) }
+    }
+
+    /**
+     * The canonical file exactly as it is now, bypassing the cache; null when it is missing or
+     * does not parse, and the caller then falls back to [loadConfig], which also owns first-run
+     * creation and legacy promotion.
+     */
+    private fun readConfigFromDisk(): JSONObject? = try {
+        File(canonicalPath).takeIf { it.exists() }?.let { JSONObject(it.readText()) }
+    } catch (_: Exception) {
+        null
+    }
+
+    /**
+     * Runs [action] holding an fcntl lock on [lockPath] when one can be had within
+     * [CROSS_PROCESS_LOCK_WAIT_MS], and unlocked otherwise. The lock file must be world-writable --
+     * the app uid has to open it for writing and cannot create files in /data/local/tmp itself --
+     * so any app could sit on it. A config write must never hang on that: falling back to the old
+     * unlocked write is the right failure for a file that holds no secrets. (The secret store's
+     * lock is owner-only for exactly the opposite reason.)
+     */
+    private inline fun <T> withCrossProcessLock(action: () -> T): T {
+        val lockFile = File(lockPath)
+        val channel = try {
+            FileChannel.open(lockFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+                .also { lockFile.setReadable(true, false); lockFile.setWritable(true, false) }
+        } catch (_: Exception) {
+            null // e.g. the app uid before any shell process has created the file
+        }
+        var lock: FileLock? = null
+        try {
+            val deadline = System.currentTimeMillis() + CROSS_PROCESS_LOCK_WAIT_MS
+            while (channel != null && lock == null && System.currentTimeMillis() < deadline) {
+                lock = try { channel.tryLock() } catch (_: Exception) { break }
+                if (lock == null) Thread.sleep(2)
             }
-            val success = saveConfig(config)
-            if (success) {
-                notifyListeners(section, sectionObj)
-            }
-            return success
+            return action()
+        } finally {
+            try { lock?.release() } catch (_: Exception) {}
+            try { channel?.close() } catch (_: Exception) {}
         }
     }
     
@@ -971,26 +1044,26 @@ object UnifiedConfigManager {
      * Get the config file path (for debugging).
      */
     @JvmStatic
-    fun getConfigPath(): String = CONFIG_PATH
+    fun getConfigPath(): String = canonicalPath
     
     /**
      * Check if config file exists.
      */
     @JvmStatic
-    fun configExists(): Boolean = File(CONFIG_PATH).exists() ||
-        File(LEGACY_APP_FILES_CONFIG).exists() ||
-        File(LEGACY_CONFIG_PATH).exists()
+    fun configExists(): Boolean = File(canonicalPath).exists() ||
+        File(appFilesPath).exists() ||
+        File(mirrorPath).exists()
     
     /**
      * Get last modified timestamp.
      */
     @JvmStatic
     fun getLastModified(): Long {
-        val primary = File(CONFIG_PATH)
+        val primary = File(canonicalPath)
         if (primary.exists()) return primary.lastModified()
-        val appFiles = File(LEGACY_APP_FILES_CONFIG)
+        val appFiles = File(appFilesPath)
         if (appFiles.exists()) return appFiles.lastModified()
-        val legacy = File(LEGACY_CONFIG_PATH)
+        val legacy = File(mirrorPath)
         return if (legacy.exists()) legacy.lastModified() else 0L
     }
 }

@@ -4,9 +4,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.LinkedHashMap
 
@@ -62,6 +64,9 @@ class SecretConfigStore @JvmOverloads constructor(
          * copy does not linger.
          */
         const val LEGACY_PATH = "/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json"
+
+        /** See [mutateRoot]: FileLock is per process, so this process's own writers queue here first. */
+        private val PROCESS_WRITE_LOCK = Any()
     }
 
     private val lock = Any()
@@ -142,6 +147,24 @@ class SecretConfigStore @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Stores [candidate] only if [key] has no value -- one check-and-set under the cross-process
+     * lock -- and returns whichever value is stored afterwards, or null if the store could not be
+     * written (BladeWatch-rdtj.7).
+     *
+     * For values created on first use by more than one process: the Pear topic seed is reached by
+     * pear_daemon AND by CameraDaemon's pairing command. With a separate get-then-put, both could
+     * find it missing, both generate one, and the loser would keep a seed -- and so a topic -- that
+     * is not the stored one.
+     */
+    fun putStringIfAbsent(section: String, key: String, candidate: String): String? = synchronized(lock) {
+        var stored: String? = null
+        val written = mutateSection(section) { target ->
+            stored = target[key]?.toString()?.takeIf { it.isNotEmpty() } ?: candidate.also { target[key] = it }
+        }
+        if (written) stored else null
+    }
+
     fun putLong(section: String, key: String, value: Long): Boolean = synchronized(lock) {
         mutateSection(section) { target -> target[key] = value }
     }
@@ -172,11 +195,42 @@ class SecretConfigStore @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Read-modify-write under an exclusive lock that spans PROCESSES (BladeWatch-rdtj.3).
+     *
+     * More than one process writes this file -- CameraDaemon, and pear_daemon since the Pear peer.
+     * Without a cross-process lock two writes can both start from the same old root, and the later
+     * rename silently drops the earlier one's section. What that loses -- the auth secret, the LAN
+     * TLS identity, the probe key, the Pear topic seed -- is regenerated on next use, which unpairs
+     * every companion with no error anywhere.
+     *
+     * An fcntl lock on a sidecar file, created `600` in the same call so no other uid can ever open
+     * it (a world-readable lock file would let any co-resident app take a shared lock and block
+     * every secret write). FileLock belongs to the whole process, and a second lock() from the same
+     * JVM throws, so [PROCESS_WRITE_LOCK] queues this process's own writers first. Readers need no
+     * lock: [writeRootMap] publishes by atomic rename.
+     */
     private fun mutateRoot(mutator: (MutableMap<String, Any?>) -> Unit): Boolean {
         ensureWritableOrThrow()
-        val root = readRootMap()
-        mutator(root)
-        return writeRootMap(root)
+        val lockPath = File(file.parentFile, file.name + ".lock").toPath()
+        synchronized(PROCESS_WRITE_LOCK) {
+            val lockChannel = try {
+                FileChannel.open(
+                    lockPath,
+                    setOf(StandardOpenOption.CREATE, StandardOpenOption.WRITE),
+                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))
+                )
+            } catch (_: java.io.IOException) {
+                return false // can't even create the lock file: unwritable, reported like writeRootMap does
+            }
+            lockChannel.use { channel ->
+                channel.lock().use {
+                    val root = readRootMap()
+                    mutator(root)
+                    return writeRootMap(root)
+                }
+            }
+        }
     }
 
     private fun loadSectionMap(section: String): MutableMap<String, Any?> {

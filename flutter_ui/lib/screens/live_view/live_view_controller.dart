@@ -3,14 +3,14 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-import '../../gen/bladewatch/v1/recordings.pb.dart';
-import '../../gen/bladewatch/v1/stream.pb.dart';
-import '../../gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/stream.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import '../../platform/live_view_texture_channel.dart';
-import '../../rpc/jwt_source.dart';
-import '../../rpc/services/recordings_service_client.dart';
-import '../../rpc/services/stream_service_client.dart';
-import '../../rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'live_view_models.dart';
 
 /// Narrow abstraction over `dart:io`'s `WebSocket` — the plugin's only test

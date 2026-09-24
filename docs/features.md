@@ -363,6 +363,13 @@ Remote access options include:
 - Opt-in LAN HTTP.
 - Tor onion service (permanent address, no account or token).
 
+**Companion app pairing (v1.4.0.0).** "Pair a device" on the in-car dashboard shows a QR
+for the BladeWatch companion app (phones and desktops). The code works once and expires after
+five minutes; pairing switches on remote access over Pear, and the same dialog explains and
+offers the opt-in direct connection on the car's Wi-Fi. Paired devices are listed there and
+can be removed one at a time, which cuts off that device immediately without affecting the
+others. Pairing and removing are only possible in the car.
+
 LAN HTTP is disabled by default. The Tor onion service fronts the authenticated local web server directly with no intermediate proxy. The onion address is a capability URL, not authentication: the password/JWT layer stays mandatory.
 
 ## Updates

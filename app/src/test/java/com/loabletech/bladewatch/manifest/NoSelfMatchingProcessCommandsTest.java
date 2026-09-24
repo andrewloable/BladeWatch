@@ -45,9 +45,12 @@ import org.junit.Test;
  */
 public class NoSelfMatchingProcessCommandsTest {
 
-    /** Trees whose contents end up inside a shell command on the head unit. */
+    /**
+     * Trees whose contents end up inside a shell command on the head unit. bladewatch_rpc is
+     * flutter_ui/lib/rpc, moved (BladeWatch-rdtj.10); companion/ never runs on the head unit.
+     */
     private static final String[] SCANNED = {
-        "app/src/main/java", "flutter_ui/lib",
+        "app/src/main/java", "flutter_ui/lib", "packages/bladewatch_rpc/lib",
         "flutter_ui/android/app/src/main/kotlin",
     };
 

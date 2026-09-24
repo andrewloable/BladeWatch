@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "โหมดเซนทรีใช้พลังงานแบตเตอรี่ 12V เพิ่มเติมขณะทำงาน",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "แอปอื่นกำลังใช้กล้องอยู่ในขณะนี้",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "จับคู่อุปกรณ์",
+  "pairing_scan_hint": "สแกนด้วยแอป BladeWatch บนโทรศัพท์หรือคอมพิวเตอร์ของคุณ รหัสนี้ใช้ได้ครั้งเดียว",
+  "pairing_expires_in": "หมดอายุใน {time}",
+  "pairing_expired": "รหัสนี้หมดอายุแล้ว",
+  "pairing_new_code": "รหัสใหม่",
+  "pairing_remote_note": "การจับคู่จะเปิดการเข้าถึงระยะไกลสำหรับรถคันนี้",
+  "pairing_lan_title": "เชื่อมต่อโดยตรงผ่าน Wi-Fi นี้",
+  "pairing_lan_body": "อุปกรณ์ที่จับคู่แล้วซึ่งอยู่ใน Wi-Fi เดียวกับรถจะเชื่อมต่อโดยตรงและเข้ารหัส โดยไม่ผ่านอินเทอร์เน็ต ปิดอยู่จนกว่าคุณจะเปิด",
+  "pairing_devices_title": "อุปกรณ์ที่จับคู่แล้ว",
+  "pairing_devices_empty": "ยังไม่มีอุปกรณ์ที่จับคู่",
+  "pairing_remove": "นำออก",
+  "pairing_remove_confirm_title": "นำ {name} ออกหรือไม่",
+  "pairing_remove_confirm_body": "อุปกรณ์นี้จะเสียสิทธิ์เข้าถึงทันที อุปกรณ์อื่นของคุณยังใช้งานได้ตามปกติ",
+  "pairing_error": "บริการกล้องไม่ตอบสนอง โปรดลองอีกครั้ง"
 }

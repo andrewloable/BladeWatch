@@ -1,6 +1,7 @@
 package net.bladewatch.app.server
 
 import net.bladewatch.app.auth.AuthManager
+import net.bladewatch.app.auth.CompanionPairing
 import net.bladewatch.app.daemon.CameraDaemon
 import org.json.JSONObject
 import java.io.OutputStream
@@ -40,6 +41,10 @@ object AuthApiHandler {
 
     // Bounded map size: prevents OOM from identity rotation (an attacker flooding new IPs)
     private const val MAX_IDENTITY_BUCKETS = 256
+
+    /** Companion pairing (BladeWatch-rdtj.7). Public, rate-limited; listed in AuthMiddleware. */
+    const val PAIR_PATH = "/auth/pair"
+    const val COMPANION_LOGIN_PATH = "/auth/companion"
 
     private val rateLimits = ConcurrentHashMap<String, RateLimitBucket>()
 
@@ -97,7 +102,61 @@ object AuthApiHandler {
             return handleLogout(out, secureCookie)
         }
 
+        // BladeWatch-rdtj.7: the companion app's two public calls. Same brute-force limits as
+        // /auth/token -- a pairing code and a companion token are both things to guess.
+        if (method == "POST" && (path == PAIR_PATH || path == COMPANION_LOGIN_PATH)) {
+            val idForLimit = if (!rateLimitIdentity.isNullOrEmpty()) rateLimitIdentity else "unknown"
+            val rateError = checkRateLimit(idForLimit)
+            if (rateError != null) {
+                HttpResponse.sendJson(out, JSONObject().put("success", false).put("error", rateError).toString())
+                return true
+            }
+            return if (path == PAIR_PATH) handlePairRedeem(body, out, idForLimit) else handleCompanionLogin(body, out, idForLimit)
+        }
+
         return false
+    }
+
+    /**
+     * Trades the single-use code from an in-car pairing QR for a companion credential
+     * (BladeWatch-rdtj.7). The credential is returned once, here, and never again. Errors are
+     * stable codes, not localized text: the companion shows its own message.
+     */
+    private fun handlePairRedeem(body: String?, out: OutputStream, rateLimitIdentity: String): Boolean {
+        val request = try { JSONObject(body ?: "") } catch (e: Exception) { JSONObject() }
+        val credential = CompanionPairing.shared.redeem(request.optString("code", ""), request.optString("name", ""))
+        val response = JSONObject()
+        if (credential == null) {
+            response.put("success", false).put("error", "pairing_code_refused")
+            recordGlobalFailure()
+        } else {
+            clearRateLimit(rateLimitIdentity)
+            response.put("success", true).put("companionId", credential.companionId).put("token", credential.token)
+            log("Companion paired")
+        }
+        HttpResponse.sendJson(out, response.toString())
+        return true
+    }
+
+    /** A paired companion trades its token for a session JWT, carried in the body, not a cookie. */
+    private fun handleCompanionLogin(body: String?, out: OutputStream, rateLimitIdentity: String): Boolean {
+        val request = try { JSONObject(body ?: "") } catch (e: Exception) { JSONObject() }
+        val companionId = request.optString("companionId", "")
+        val jwt = if (CompanionPairing.shared.verify(companionId, request.optString("token", ""))) {
+            AuthManager.generateJwt(companionId)
+        } else {
+            null
+        }
+        val response = JSONObject()
+        if (jwt == null) {
+            response.put("success", false).put("error", "companion_refused")
+            recordGlobalFailure()
+        } else {
+            clearRateLimit(rateLimitIdentity)
+            response.put("success", true).put("jwt", jwt).put("expiresIn", AuthManager.getJwtExpirySeconds())
+        }
+        HttpResponse.sendJson(out, response.toString())
+        return true
     }
 
     /** @return null if the request may proceed, an error string if it is rate limited. */

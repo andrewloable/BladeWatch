@@ -2901,4 +2901,54 @@ class AppLocalizationsNb extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'En annen app bruker kameraet akkurat nå.';
+
+  @override
+  String get pairing_title => 'Koble til en enhet';
+
+  @override
+  String get pairing_scan_hint =>
+      'Skann med BladeWatch-appen på telefonen eller datamaskinen. Koden virker bare én gang.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'Utløper om $time';
+  }
+
+  @override
+  String get pairing_expired => 'Denne koden er utløpt.';
+
+  @override
+  String get pairing_new_code => 'Ny kode';
+
+  @override
+  String get pairing_remote_note =>
+      'Tilkobling slår på fjerntilgang for denne bilen.';
+
+  @override
+  String get pairing_lan_title => 'Direkte tilkobling på dette Wi-Fi-nettet';
+
+  @override
+  String get pairing_lan_body =>
+      'En tilkoblet enhet på samme Wi-Fi som bilen kobler seg direkte og kryptert til den, uten å gå via internett. Av til du slår den på.';
+
+  @override
+  String get pairing_devices_title => 'Tilkoblede enheter';
+
+  @override
+  String get pairing_devices_empty => 'Ingen enheter er koblet til ennå.';
+
+  @override
+  String get pairing_remove => 'Fjern';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return 'Fjerne $name?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Den mister tilgangen med en gang. De andre enhetene dine fortsetter å virke.';
+
+  @override
+  String get pairing_error => 'Kameratjenesten svarte ikke. Prøv igjen.';
 }

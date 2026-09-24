@@ -2811,6 +2811,53 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       '目前有其他应用正在使用摄像头。';
+
+  @override
+  String get pairing_title => '配对设备';
+
+  @override
+  String get pairing_scan_hint => '用手机或电脑上的 BladeWatch 应用扫描。此代码仅可使用一次。';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time 后过期';
+  }
+
+  @override
+  String get pairing_expired => '此代码已过期。';
+
+  @override
+  String get pairing_new_code => '新代码';
+
+  @override
+  String get pairing_remote_note => '配对会开启此车辆的远程访问。';
+
+  @override
+  String get pairing_lan_title => '通过此 Wi-Fi 直接连接';
+
+  @override
+  String get pairing_lan_body =>
+      '与车辆处于同一 Wi-Fi 的已配对设备会直接进行加密连接，无需经过互联网。在您开启前保持关闭。';
+
+  @override
+  String get pairing_devices_title => '已配对的设备';
+
+  @override
+  String get pairing_devices_empty => '尚未配对任何设备。';
+
+  @override
+  String get pairing_remove => '移除';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '移除 $name？';
+  }
+
+  @override
+  String get pairing_remove_confirm_body => '它会立即失去访问权限。您的其他设备不受影响。';
+
+  @override
+  String get pairing_error => '摄像头服务没有响应。请重试。';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -5620,6 +5667,53 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   @override
   String get surveillance_general_camera_contention_warning =>
       '目前有其他应用正在使用摄像头。';
+
+  @override
+  String get pairing_title => '配对设备';
+
+  @override
+  String get pairing_scan_hint => '用手机或电脑上的 BladeWatch 应用扫描。此代码仅可使用一次。';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time 后过期';
+  }
+
+  @override
+  String get pairing_expired => '此代码已过期。';
+
+  @override
+  String get pairing_new_code => '新代码';
+
+  @override
+  String get pairing_remote_note => '配对会开启此车辆的远程访问。';
+
+  @override
+  String get pairing_lan_title => '通过此 Wi-Fi 直接连接';
+
+  @override
+  String get pairing_lan_body =>
+      '与车辆处于同一 Wi-Fi 的已配对设备会直接进行加密连接，无需经过互联网。在您开启前保持关闭。';
+
+  @override
+  String get pairing_devices_title => '已配对的设备';
+
+  @override
+  String get pairing_devices_empty => '尚未配对任何设备。';
+
+  @override
+  String get pairing_remove => '移除';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '移除 $name？';
+  }
+
+  @override
+  String get pairing_remove_confirm_body => '它会立即失去访问权限。您的其他设备不受影响。';
+
+  @override
+  String get pairing_error => '摄像头服务没有响应。请重试。';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -8430,4 +8524,51 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   @override
   String get surveillance_general_camera_contention_warning =>
       '目前有其他應用程式正在使用攝影機。';
+
+  @override
+  String get pairing_title => '配對裝置';
+
+  @override
+  String get pairing_scan_hint => '使用手機或電腦上的 BladeWatch 應用程式掃描。此代碼僅能使用一次。';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time 後到期';
+  }
+
+  @override
+  String get pairing_expired => '此代碼已過期。';
+
+  @override
+  String get pairing_new_code => '新代碼';
+
+  @override
+  String get pairing_remote_note => '配對會開啟這輛車的遠端存取。';
+
+  @override
+  String get pairing_lan_title => '透過此 Wi-Fi 直接連線';
+
+  @override
+  String get pairing_lan_body =>
+      '與車輛在同一個 Wi-Fi 的已配對裝置會直接以加密方式連線，不經過網際網路。在您開啟前保持關閉。';
+
+  @override
+  String get pairing_devices_title => '已配對的裝置';
+
+  @override
+  String get pairing_devices_empty => '尚未配對任何裝置。';
+
+  @override
+  String get pairing_remove => '移除';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '要移除 $name 嗎？';
+  }
+
+  @override
+  String get pairing_remove_confirm_body => '它會立即失去存取權限。您的其他裝置不受影響。';
+
+  @override
+  String get pairing_error => '攝影機服務沒有回應。請再試一次。';
 }

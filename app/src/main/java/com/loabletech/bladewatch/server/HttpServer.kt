@@ -6,6 +6,7 @@ import android.util.Base64
 import net.bladewatch.app.BuildConfig
 import net.bladewatch.app.auth.AuthManager
 import net.bladewatch.app.byd.BydDataCollector
+import net.bladewatch.app.config.SecretConfigStore
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.daemon.CameraDaemon
 import net.bladewatch.app.monitor.AccMonitor
@@ -34,6 +35,7 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.net.URLDecoder
+import javax.net.ssl.SSLServerSocket
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -46,8 +48,12 @@ import kotlin.math.min
 import kotlin.math.roundToLong
 
 /**
- * HTTP server — serves the web UI and the WebSocket H.264 stream. Listens on 127.0.0.1:8080 by
- * default; LAN binding is an explicit unsafe mode.
+ * HTTP server — serves the web UI and the WebSocket H.264 stream.
+ *
+ * Plain HTTP listens on 127.0.0.1:8080 ONLY, under every configuration: plaintext never leaves the
+ * device (BladeWatch-rdtj.4). LAN access, when the owner opts in (`network.lanHttpEnabled`), is a
+ * SECOND listener -- TLS on 0.0.0.0:[LanTls.PORT] with a pinned self-signed certificate. Every
+ * listener declares its [ListenerTrust]; only 8080 is [ListenerTrust.LOCAL_APPS].
  *
  * Single-port WebSocket: the /ws endpoint upgrades to WebSocket for H.264 streaming, so the tunnel
  * can expose both HTTP and WebSocket through one onion port.
@@ -104,6 +110,10 @@ class HttpServer(private val port: Int) {
         AuthManager.initialize()
         CameraDaemon.log("Auth system initialized")
 
+        Thread({ runLanTlsListener() }, "http-lan-tls").apply { isDaemon = true; start() }
+        Thread({ runRemoteLoopbackListener() }, "http-remote-loopback").apply { isDaemon = true; start() }
+        Thread({ runPearTlsListener() }, "http-pear-tls").apply { isDaemon = true; start() }
+
         while (running && CameraDaemon.isRunning()) {
             try {
                 serverSocket?.let { existing ->
@@ -118,17 +128,17 @@ class HttpServer(private val port: Int) {
                     }
                 }
 
-                val bindHost = if (UnifiedConfigManager.isLanHttpEnabled()) "0.0.0.0" else "127.0.0.1"
-                val socket = ServerSocket(port, 10, InetAddress.getByName(bindHost))
+                // Loopback, always. LAN access is the TLS listener's job (runLanTlsListener).
+                val socket = ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))
                 socket.reuseAddress = true
                 serverSocket = socket
-                CameraDaemon.log("HTTP server listening on $bindHost:$port")
+                CameraDaemon.log("HTTP server listening on 127.0.0.1:$port")
 
                 while (running && CameraDaemon.isRunning() && !socket.isClosed) {
                     try {
                         val client = socket.accept()
                         CameraDaemon.log("HTTP client: " + client.remoteSocketAddress)
-                        threadPool.execute { handleClient(client) }
+                        threadPool.execute { handleClient(client, ListenerTrust.LOCAL_APPS) }
                     } catch (e: SocketException) {
                         if (running) {
                             CameraDaemon.log("WARN: HTTP socket error: " + e.message)
@@ -172,11 +182,173 @@ class HttpServer(private val port: Int) {
         } catch (e: Exception) {
             CameraDaemon.log("WARN: HTTP stop() serverSocket.close() failed: " + e.message)
         }
+        try {
+            lanTlsSocket?.close()
+        } catch (e: Exception) {
+            CameraDaemon.log("WARN: HTTP stop() LAN TLS socket close() failed: " + e.message)
+        }
+        try {
+            remoteLoopbackSocket?.close()
+        } catch (e: Exception) {
+            CameraDaemon.log("WARN: HTTP stop() remote loopback socket close() failed: " + e.message)
+        }
+        try {
+            pearTlsSocket?.close()
+        } catch (e: Exception) {
+            CameraDaemon.log("WARN: HTTP stop() Pear TLS socket close() failed: " + e.message)
+        }
         threadPool.shutdownNow()
         streamPool.shutdownNow()
     }
 
-    private fun handleClient(client: Socket) {
+    @Volatile
+    private var lanTlsSocket: ServerSocket? = null
+
+    @Volatile
+    private var remoteLoopbackSocket: ServerSocket? = null
+
+    @Volatile
+    private var pearTlsSocket: ServerSocket? = null
+
+    /**
+     * 127.0.0.1:[PEAR_TLS_PORT] -- TLS, with the SAME pinned certificate as the LAN listener, and
+     * every connection [ListenerTrust.REMOTE]. PearStreamPump connects here; the companion runs TLS
+     * end to end through the Pear stream to this listener.
+     *
+     * Why TLS on top of Pear's own encryption: pear-end's Hyperswarm key pair is random per worklet
+     * start and never exposed, so nothing pins the car's Pear identity. Without this, anyone who
+     * knows the topic -- a revoked phone, a photographed QR -- could answer as the car, or relay
+     * between a companion and the real car, and read the companion's token, JWT and video. The
+     * certificate pin from pairing authenticates the car end to end through any relay (owner's
+     * decision, BladeWatch-rdtj.8). Loopback only, and independent of the LAN opt-in.
+     */
+    /**
+     * Who a login attempt counts against: the peer's IP alone. Remote transports all arrive from
+     * 127.0.0.1, so tor and Pear clients share one bucket -- accepted: every credential behind these
+     * endpoints is at least 128 bits, and the global lockout bounds guessing regardless.
+     */
+    private fun rateLimitIdentity(client: Socket): String = client.inetAddress?.hostAddress ?: "unknown"
+
+    private fun runPearTlsListener() {
+        while (running && CameraDaemon.isRunning()) {
+            try {
+                val identity = LanTls.loadOrCreate(SecretConfigStore()) { e ->
+                    CameraDaemon.log("ERROR: stored LAN TLS identity unreadable (${e.message}); " +
+                        "minting a new one -- paired companions must re-pair")
+                }
+                val socket = LanTls.serverSocketFactory(identity)
+                    .createServerSocket(PEAR_TLS_PORT, 10, InetAddress.getByName("127.0.0.1")) as SSLServerSocket
+                socket.enabledProtocols = LanTls.enabledProtocols(socket.supportedProtocols)
+                socket.use {
+                    pearTlsSocket = it
+                    CameraDaemon.log("Pear TLS listener on 127.0.0.1:$PEAR_TLS_PORT")
+                    while (running && CameraDaemon.isRunning() && !it.isClosed) {
+                        val client = it.accept()
+                        threadPool.execute { handleClient(client, ListenerTrust.REMOTE) }
+                    }
+                }
+            } catch (e: Exception) {
+                if (!running) return
+                CameraDaemon.log("ERROR: Pear TLS listener: ${e.message}")
+                try {
+                    Thread.sleep(3000)
+                } catch (ie: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    return
+                }
+            }
+        }
+    }
+
+    /**
+     * 127.0.0.1:[REMOTE_LOOPBACK_PORT] -- where the tor onion service hands its connections in
+     * (BladeWatch-ur11). pear_daemon's stream pump has its own TLS listener, [runPearTlsListener].
+     *
+     * Loopback like 8080, but every connection is [ListenerTrust.REMOTE]. A tunnel opens a plain
+     * TCP connection to loopback, which at the socket level is indistinguishable from an app on the
+     * head unit; landing it on its own listener is what denies the far end the loopback bypass and
+     * the vehicle second-factor exemption -- by construction, not by remembering to mark a tunnel
+     * as active. Always on: loopback-only, and REMOTE is the strictest trust there is.
+     */
+    private fun runRemoteLoopbackListener() {
+        while (running && CameraDaemon.isRunning()) {
+            try {
+                ServerSocket(REMOTE_LOOPBACK_PORT, 10, InetAddress.getByName("127.0.0.1")).use { socket ->
+                    remoteLoopbackSocket = socket
+                    CameraDaemon.log("Remote loopback listener on 127.0.0.1:$REMOTE_LOOPBACK_PORT")
+                    while (running && CameraDaemon.isRunning() && !socket.isClosed) {
+                        val client = socket.accept()
+                        threadPool.execute { handleClient(client, ListenerTrust.REMOTE) }
+                    }
+                }
+            } catch (e: Exception) {
+                if (!running) return
+                CameraDaemon.log("ERROR: remote loopback listener: ${e.message}")
+                try {
+                    Thread.sleep(3000)
+                } catch (ie: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    return
+                }
+            }
+        }
+    }
+
+    /**
+     * The LAN listener: TLS on 0.0.0.0:[LanTls.PORT], only while the owner has LAN access switched
+     * on (BladeWatch-rdtj.4). Every connection it accepts is [ListenerTrust.REMOTE].
+     *
+     * The flag is re-read every [LAN_TLS_RECHECK_MS] -- the accept times out to do it -- so turning
+     * LAN access off closes the port within seconds rather than at the next daemon restart, and
+     * turning it on during pairing works without one.
+     */
+    private fun runLanTlsListener() {
+        while (running && CameraDaemon.isRunning()) {
+            try {
+                if (!UnifiedConfigManager.isLanHttpEnabled()) {
+                    Thread.sleep(LAN_TLS_RECHECK_MS.toLong())
+                    continue
+                }
+                val identity = LanTls.loadOrCreate(SecretConfigStore()) { e ->
+                    CameraDaemon.log("ERROR: stored LAN TLS identity unreadable (${e.message}); " +
+                        "minting a new one -- paired companions must re-pair")
+                }
+                val socket = LanTls.serverSocketFactory(identity)
+                    .createServerSocket(LanTls.PORT, 10, InetAddress.getByName("0.0.0.0")) as SSLServerSocket
+                socket.enabledProtocols = LanTls.enabledProtocols(socket.supportedProtocols)
+                socket.soTimeout = LAN_TLS_RECHECK_MS
+                lanTlsSocket = socket
+                CameraDaemon.log("LAN TLS listener on 0.0.0.0:${LanTls.PORT}")
+                try {
+                    while (running && CameraDaemon.isRunning() && UnifiedConfigManager.isLanHttpEnabled()) {
+                        try {
+                            val client = socket.accept()
+                            threadPool.execute { handleClient(client, ListenerTrust.REMOTE) }
+                        } catch (e: SocketTimeoutException) {
+                            // Deliberate: the loop condition re-reads the opt-in flag.
+                        }
+                    }
+                } finally {
+                    socket.close()
+                    lanTlsSocket = null
+                    CameraDaemon.log("LAN TLS listener closed")
+                }
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return
+            } catch (e: Exception) {
+                CameraDaemon.log("ERROR: LAN TLS listener: ${e.message}")
+                try {
+                    Thread.sleep(5000)
+                } catch (ie: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    return
+                }
+            }
+        }
+    }
+
+    private fun handleClient(client: Socket, trust: ListenerTrust) {
         // BladeWatch-sxzg: set when the socket's ownership passes to the streaming pool. The
         // finally below MUST NOT close it then — the stream is still using it, and closing here
         // would tear down every live view the moment it started.
@@ -374,7 +546,7 @@ class HttpServer(private val port: Int) {
                     out.isKeepAlive = false // see the auth gate below
                     val wsAuthorized = AuthMiddleware.checkAuth(
                         wsPathOnly, cookieHeader, wsAuthHeader, out,
-                        client.remoteSocketAddress, hasTunnelHeaders
+                        client.remoteSocketAddress, hasTunnelHeaders, trust
                     )
                     out.isKeepAlive = keepAlive
                     if (!wsAuthorized) {
@@ -385,13 +557,14 @@ class HttpServer(private val port: Int) {
                     return
                 }
 
-                // Route auth endpoints (all public). The /auth/token endpoint is rate-limited by
-                // socket address. We never key on X-Forwarded-For because it is client-controlled
-                // — rotating it defeats per-IP limits.
+                // Route auth endpoints (all public). The login endpoints are rate-limited by the
+                // peer's IP -- never X-Forwarded-For, which is client-controlled, and never the
+                // socket address with its port, which is a new bucket on every reconnect and made
+                // the per-caller limit a no-op (BladeWatch-rdtj.16).
                 if (path.startsWith("/auth/")) {
                     AuthApiHandler.handle(
                         method, path, body, out,
-                        client.remoteSocketAddress.toString(), hasTunnelHeaders
+                        rateLimitIdentity(client), hasTunnelHeaders
                     )
                     out.flush()
                     if (!keepAlive) break
@@ -430,7 +603,7 @@ class HttpServer(private val port: Int) {
                 out.isKeepAlive = false
                 val authorized = AuthMiddleware.checkAuth(
                     path, cookieHeader, authHeader, out,
-                    client.remoteSocketAddress, hasTunnelHeaders
+                    client.remoteSocketAddress, hasTunnelHeaders, trust
                 )
                 out.isKeepAlive = keepAlive
                 if (!authorized) {
@@ -448,8 +621,11 @@ class HttpServer(private val port: Int) {
                 // Connect path now. VehicleActionGate owns which methods actuate, and its test
                 // fails when a VehicleService RPC is registered without being classified, so this
                 // cannot decay by omission the way it did before.
+                //
+                // BladeWatch-rdtj.4: "loopback" alone is no longer the test -- the Pear pump reaches
+                // this server from 127.0.0.1, and a remote peer must not skip the second factor.
                 if (VehicleActionGate.requiresActionToken(path) &&
-                    !client.inetAddress.isLoopbackAddress
+                    !AuthMiddleware.isLocalAppCaller(trust, client.inetAddress)
                 ) {
                     val actionState = AuthManager.getState()
                     if (actionState == null ||
@@ -469,10 +645,9 @@ class HttpServer(private val port: Int) {
                     }
                 }
 
-                // Derive the client identity for Connect rate limiting. Always use the real TCP
-                // peer — X-Forwarded-For is client-controlled and must not be trusted for
-                // rate-limit keying.
-                val connectClientIdentity = client.remoteSocketAddress.toString()
+                // The client identity for Connect's rate limiting (AuthService's login): the real
+                // TCP peer's IP, as for /auth/ above.
+                val connectClientIdentity = rateLimitIdentity(client)
 
                 // Route to the modular handlers first
                 if (routeToHandlers(
@@ -862,14 +1037,17 @@ class HttpServer(private val port: Int) {
         val dataUsage = NetworkMonitor.getDataUsageInfo()
         network.put("thisMonthBytes", dataUsage.optLong("thisMonthBytes", 0L))
         network.put("lastMonthBytes", dataUsage.optLong("lastMonthBytes", 0L))
-        if (UnifiedConfigManager.isLanHttpEnabled()) {
-            network.put("lanHttpEnabled", true)
-            network.put("httpBind", "0.0.0.0")
-            network.put("httpModeWarning", "LAN HTTP is unsafe on shared networks")
-        } else {
-            network.put("lanHttpEnabled", false)
-            network.put("httpBind", "127.0.0.1")
-        }
+        // The owner's opt-in for LAN access, which is now TLS on its own port; plain HTTP never
+        // binds beyond loopback (BladeWatch-rdtj.4), so the old "LAN HTTP is unsafe" warning and
+        // a 0.0.0.0 httpBind no longer exist.
+        val lanEnabled = UnifiedConfigManager.isLanHttpEnabled()
+        network.put("lanHttpEnabled", lanEnabled)
+        network.put("httpBind", "127.0.0.1")
+        network.put(
+            "lanTls",
+            JSONObject().put("enabled", lanEnabled).put("port", LanTls.PORT)
+                .put("listening", lanTlsSocket?.isClosed == false)
+        )
         status.put("network", network)
 
         return status
@@ -1351,6 +1529,15 @@ class HttpServer(private val port: Int) {
          * weeks.
          */
         private const val SOCKET_TIMEOUT_MS = 15000
+
+        /** How often the LAN TLS listener re-reads the owner's opt-in (see runLanTlsListener). */
+        private const val LAN_TLS_RECHECK_MS = 5000
+
+        /** See [runRemoteLoopbackListener]. TorLauncher points here, never at 8080. */
+        const val REMOTE_LOOPBACK_PORT = 8081
+
+        /** See [runPearTlsListener]. PearStreamPump points here. */
+        const val PEAR_TLS_PORT = 8444
 
         private const val WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 

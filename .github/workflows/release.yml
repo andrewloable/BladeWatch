@@ -169,11 +169,18 @@ jobs:
 
       # A release built from unverified source is worse than a slow release.
       # Delete this step if you want tag builds to be build-only.
+      #
+      # bladewatch_rpc is flutter_ui's Connect client, moved into a shared package
+      # (BladeWatch-rdtj.10); its tests left flutter_ui/test with it, so it needs its own
+      # line or they stop running. companion/ is the phone/desktop app. The tests of both
+      # run under their coverage gates in the in-car UI Kotlin step below.
       - name: Quality gates
         run: |
           set -euo pipefail
           ./gradlew --no-daemon test koverVerify
-          cd flutter_ui && flutter analyze && flutter test
+          (cd flutter_ui && flutter analyze && flutter test)
+          (cd packages/bladewatch_rpc && flutter analyze)
+          (cd companion && flutter analyze)
 
       # No KEYSTORE_FILE in the environment, so both projects fall through to their
       # unsigned release path: app/ sets signingConfig = null, and
@@ -196,7 +203,11 @@ jobs:
       # AFTER the UI build, not with the other gates: flutter_ui/android/.gitignore ignores
       # `/gradlew`, so the wrapper does not exist in a fresh checkout. Flutter injects it
       # during `flutter build`, which is the step above.
-      - name: Quality gate — in-car UI Kotlin layer
+      #
+      # The three Dart coverage gates live in the same Gradle build, each with its bound:
+      # flutter_ui, packages/bladewatch_rpc and companion (see "Coverage gates" in
+      # docs/build-and-operations.md). They run here for the same reason koverVerify does.
+      - name: Quality gates — in-car UI Kotlin layer and Dart coverage
         working-directory: flutter_ui/android
         run: |
           set -euo pipefail
@@ -205,7 +216,7 @@ jobs:
             echo "the preceding 'flutter build apk' step — that step must run before this one."
             exit 1
           fi
-          ./gradlew --no-daemon koverVerify
+          ./gradlew --no-daemon koverVerify checkFlutterCoverage checkRpcCoverage checkCompanionCoverage
 
       # Collect BOTH APKs under tag-stamped, self-describing names.
       #

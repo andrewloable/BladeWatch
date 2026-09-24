@@ -7,6 +7,8 @@ import net.bladewatch.app.daemon.CameraDaemon
 import net.bladewatch.app.monitor.AccMonitor
 import net.bladewatch.app.storage.StorageManager
 import org.json.JSONArray
+import net.bladewatch.app.auth.CompanionPairing
+import net.bladewatch.app.daemon.PearTopic
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.File
@@ -43,6 +45,20 @@ class TcpCommandServer(private val port: Int) {
     private var running = true
 
     private fun store(): SecretConfigStore = secretStoreForTest ?: SECRET_STORE
+
+    /**
+     * Secret-store sections only byd_cam_daemon itself uses -- it reads them from the store
+     * directly, never over IPC. Refused to every secret_* command in both directions
+     * (BladeWatch-rdtj.16): the app UID is trusted, but it is the widest target on the head unit,
+     * and without this it could read the LAN TLS private key, the Pear topic seed and the discovery
+     * probe key, or plant a companion credential. Case-insensitive, as the auth guard is.
+     */
+    internal fun isDaemonOnlySecretSection(section: String): Boolean =
+        DAEMON_ONLY_SECRET_SECTIONS.any { it.equals(section, ignoreCase = true) }
+
+    private val DAEMON_ONLY_SECRET_SECTIONS = setOf(
+        LanTls.SECTION, PearTopic.SECTION, LanDiscoveryResponder.SECTION, CompanionPairing.SECTION,
+    )
 
     fun start() {
         CameraDaemon.log("TCP server starting on port $port")
@@ -182,6 +198,12 @@ class TcpCommandServer(private val port: Int) {
         val response = JSONObject()
 
         CameraDaemon.log("Processing command: $action")
+
+        if (action.startsWith("secret_") && isDaemonOnlySecretSection(cmd.optString("section", ""))) {
+            response.put("status", "error")
+            response.put("message", "Secret section not available over IPC")
+            return response
+        }
 
         when (action) {
             "start" -> {
@@ -559,6 +581,92 @@ class TcpCommandServer(private val port: Int) {
             //    and then takes ~82 s (cold) or ~6 s (warm) to reach the network — measured on
             //    the head unit 2026-09-14. Publishing the address in that window puts an "online"
             //    QR code on screen for a service nothing can reach yet.
+            // BladeWatch-rdtj.4: what a companion needs to reach this car over the LAN -- the TLS
+            // listener's port and the SHA-256 pin of its certificate, for the pairing QR
+            // (BladeWatch-rdtj.7). A certificate fingerprint is not secret, but it is served over
+            // IPC only on purpose: a companion must learn what to trust out of band, never from the
+            // very connection it is deciding whether to trust.
+            //
+            // Creates the identity if none exists yet, so pairing can happen before LAN access is
+            // ever switched on; LanTls.loadOrCreate is synchronized against the listener doing the
+            // same, so both always agree on one certificate.
+            // BladeWatch-rdtj.7: pairing the companion app. In-car only BY CONSTRUCTION, not by
+            // accident: this server binds 127.0.0.1 and admits only the app UID (PeerCredentials),
+            // so pairing and un-pairing need someone at the car -- a stolen phone can neither
+            // un-pair the owner's other devices nor pair itself further. A remote companion reaches
+            // HttpServer, never this port. Remote revocation would need its own endpoint and its
+            // own threat analysis; it is deliberately absent.
+            "pairingMint" -> {
+                val deviceId = AuthManager.getState()?.deviceId
+                    ?: throw IllegalStateException("auth not initialised")
+                val identity = LanTls.loadOrCreate(store()) { e ->
+                    CameraDaemon.log(
+                        "ERROR: stored LAN TLS identity unreadable (" + e.message +
+                            "); minting a new one -- paired companions must re-pair"
+                    )
+                }
+                val payload = CompanionPairing.shared.mint(
+                    CompanionPairing.Identity(
+                        deviceId = deviceId,
+                        pearTopic = PearTopic.topicHex(store()),
+                        tlsPort = LanTls.PORT,
+                        tlsFingerprint = identity.fingerprintSha256,
+                        probeKey = LanDiscoveryResponder.probeKey(store()).joinToString("") { "%02x".format(it) },
+                    )
+                )
+                // Pairing is what switches remote access on: the Pear peer is opt-in, and a
+                // companion that is not on the car's Wi-Fi can only redeem its code over Pear.
+                recordDaemonEnabled("PEAR_PEER", true)
+                response.put("status", "ok")
+                response.put("payload", payload.encode())
+                response.put("expiresAt", payload.expiresAt)
+                response.put("lanEnabled", readLanEnabled())
+            }
+
+            "pairingList" -> {
+                val companions = JSONArray()
+                CompanionPairing.shared.list().forEach {
+                    companions.put(JSONObject().put("id", it.id).put("name", it.name).put("pairedAt", it.pairedAt))
+                }
+                response.put("status", "ok")
+                response.put("companions", companions)
+            }
+
+            "pairingRevoke" -> {
+                if (CompanionPairing.shared.revoke(cmd.optString("id", ""))) {
+                    response.put("status", "ok")
+                } else {
+                    response.put("status", "error")
+                    response.put("message", "no such companion")
+                }
+            }
+
+            // The owner's LAN-access opt-in (network.lanHttpEnabled), switched from the pairing
+            // flow. The TLS listener and the discovery responder follow it within 5 s.
+            "lanAccessSet" -> {
+                val enabled = cmd.optBoolean("enabled", false)
+                if (recordLanEnabled(enabled)) {
+                    response.put("status", "ok")
+                    response.put("enabled", enabled)
+                } else {
+                    response.put("status", "error")
+                    response.put("message", "could not write the LAN access setting")
+                }
+            }
+
+            "lanTlsInfo" -> {
+                val identity = LanTls.loadOrCreate(store()) { e ->
+                    CameraDaemon.log(
+                        "ERROR: stored LAN TLS identity unreadable (" + e.message +
+                            "); minting a new one -- paired companions must re-pair"
+                    )
+                }
+                response.put("status", "ok")
+                response.put("fingerprintSha256", identity.fingerprintSha256)
+                response.put("port", LanTls.PORT)
+                response.put("enabled", readLanEnabled())
+            }
+
             "tunnelStatus" -> {
                 val tunnelRunning = isProcessRunning(DAEMON_PROCESS_NAMES["TOR_TUNNEL"])
                 val tunnelUrl =
@@ -581,7 +689,7 @@ class TcpCommandServer(private val port: Int) {
             // against a fixed allow-list before anything happens, and no part of it ever reaches a
             // shell.
             //
-            // Scope is TOR_TUNNEL only, on purpose:
+            // Scope is TOR_TUNNEL and PEAR_PEER only, on purpose:
             //
             //  - CAMERA_DAEMON hosts THIS server. Stopping it kills the socket answering the
             //    request, and the Flutter APK has no ADB, so nothing could start it again — a
@@ -591,9 +699,9 @@ class TcpCommandServer(private val port: Int) {
             //    in-memory, app-process-only `userStoppedDaemons` set that this process cannot
             //    reach, so a stop here would silently undo itself.
             //
-            // TOR_TUNNEL has none of those problems: it is an OPTIONAL daemon whose enabled state
-            // already persists, and the health check both starts it (through TorLauncher) and
-            // leaves it alone when disabled. So enabling is just recording the intent and letting
+            // TOR_TUNNEL and PEAR_PEER have none of those problems: each is an OPTIONAL daemon
+            // whose enabled state already persists, and the health check both starts it (through
+            // TorLauncher / PearLauncher) and leaves it alone when disabled. So enabling is just recording the intent and letting
             // the existing launcher do the work; only disabling additionally has to kill the
             // running process, because the health check never kills, it only relaunches.
             "daemon_set_enabled" -> {
@@ -719,7 +827,9 @@ class TcpCommandServer(private val port: Int) {
                 // Renamed, not just re-pathed: argv[0] basename is the discriminator (see
                 // isProcessRunning), and a bare "tor" is generic enough to collide. 14 chars,
                 // under the kernel's 15-char cap on /proc/<pid>/comm so killall still matches.
-                "TOR_TUNNEL" to "bladewatch_tor"
+                "TOR_TUNNEL" to "bladewatch_tor",
+                // PearLauncher.PEAR_PROCESS -- the --nice-name, i.e. argv[0]; 11 chars.
+                "PEAR_PEER" to "pear_daemon"
             )
         )
 
@@ -773,7 +883,7 @@ class TcpCommandServer(private val port: Int) {
          * other three are excluded; this is the enforcement, not the documentation.
          */
         private val TOGGLEABLE_DAEMONS: Set<String> =
-            Collections.unmodifiableSet(linkedSetOf("TOR_TUNNEL"))
+            Collections.unmodifiableSet(linkedSetOf("TOR_TUNNEL", "PEAR_PEER"))
 
         /**
          * ponytail: test seam — non-null stands in for the real `camera` config section.
@@ -789,6 +899,25 @@ class TcpCommandServer(private val port: Int) {
          */
         @JvmField
         var daemonEnabledWritesForTest: MutableMap<String, Boolean>? = null
+
+        /** ponytail: test seam -- non-null stands in for `network.lanHttpEnabled`. */
+        @JvmField
+        var lanEnabledForTest: Boolean? = null
+
+        /** Writes the LAN opt-in; with [lanEnabledForTest] set, records it there instead. */
+        private fun recordLanEnabled(enabled: Boolean): Boolean {
+            if (lanEnabledForTest != null) {
+                lanEnabledForTest = enabled
+                return true
+            }
+            return UnifiedConfigManager.setLanHttpEnabled(enabled)
+        }
+
+        private fun readLanEnabled(): Boolean = lanEnabledForTest ?: try {
+            UnifiedConfigManager.isLanHttpEnabled()
+        } catch (t: Throwable) {
+            false // unreadable config: report LAN access off rather than claim it is on
+        }
 
         /** Test seam mirroring [daemonEnabledWritesForTest]; null = read the real config. */
         @JvmField

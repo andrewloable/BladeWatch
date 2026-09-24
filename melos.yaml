@@ -1,0 +1,30 @@
+name: bladewatch
+
+# BladeWatch-rdtj.10: the repo's three Dart packages. melos only runs pub get and the scripts
+# below across them -- each is still its own Flutter project with its own platform scope:
+#
+#   flutter_ui/              the in-car UI. BYD Android head unit ONLY (see CLAUDE.md).
+#   packages/bladewatch_rpc/ the Connect client + generated messages both apps share.
+#   companion/               the phone/desktop app. The ONE home for iOS/macOS/Windows/Linux.
+#
+# The coverage gates are not scripts here; see "Coverage gates" in docs/build-and-operations.md.
+packages:
+  - flutter_ui
+  - packages/*
+  - companion
+
+# No generated .idea/ or melos_*.iml: they are per-developer IDE state, and this repo's
+# Android Studio project is the Gradle build at the root.
+ide:
+  intellij:
+    enabled: false
+
+scripts:
+  analyze:
+    exec: flutter analyze .
+    description: Analyze every package.
+  test:
+    exec: flutter test
+    packageFilters:
+      dirExists: test
+    description: Run tests in packages that have them.

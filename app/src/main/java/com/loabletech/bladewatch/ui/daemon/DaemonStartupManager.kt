@@ -6,6 +6,7 @@ import android.os.Looper
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.launcher.AdbDaemonLauncher
 import net.bladewatch.app.launcher.AdbShellExecutor
+import net.bladewatch.app.launcher.PearLauncher
 import net.bladewatch.app.launcher.TorLauncher
 import net.bladewatch.app.logging.LogManager
 import net.bladewatch.app.ui.model.DaemonType
@@ -40,6 +41,7 @@ class DaemonStartupManager(
 
         val OPTIONAL_DAEMONS: List<DaemonType> = listOf(
             DaemonType.TOR_TUNNEL,
+            DaemonType.PEAR_PEER,
         )
 
         // Track intentional stops so health check doesn't fight the user
@@ -52,6 +54,17 @@ class DaemonStartupManager(
         fun clearUserStopped(type: DaemonType) {
             userStoppedDaemons.remove(type)
         }
+
+        /**
+         * Whether a health check that found [type] not running should start it again.
+         *
+         * An optional daemon's switch is read again NOW, not trusted from the top of the health
+         * check (BladeWatch-17l7): the process probe is an async ADB round trip, and relaunching
+         * remote access the owner switched off in between is the failure that matters.
+         */
+        @JvmStatic
+        internal fun shouldRelaunch(type: DaemonType, isRunning: Boolean, enabledNow: () -> Boolean): Boolean =
+            !isRunning && (type !in OPTIONAL_DAEMONS || enabledNow())
 
         // Keep strong reference to prevent GC during delayed startup
         @Volatile
@@ -302,6 +315,28 @@ class DaemonStartupManager(
         log.info(TAG, "Starting optional daemons from preferences...")
 
         startTunnelFromPreferences(vm)
+        startPearFromPreferences(vm)
+    }
+
+    /**
+     * Opt-in, like tor: a car appears on the public DHT only once its owner has enabled the Pear
+     * peer (pairing a companion is what turns it on). Reads [isOptionalDaemonEnabled], the same
+     * cross-process-aware check the health check uses, so a switch flipped in the Flutter UI is
+     * honoured here too.
+     */
+    private fun startPearFromPreferences(vm: DaemonsViewModel) {
+        if (!isOptionalDaemonEnabled(DaemonType.PEAR_PEER)) {
+            log.info(TAG, "Pear peer not enabled by user")
+            return
+        }
+        vm.pearController.isRunning { isRunning ->
+            if (isRunning) {
+                log.info(TAG, "Pear peer already running, skipping start")
+            } else {
+                log.info(TAG, "Starting Pear peer (user enabled)...")
+                handler.post { vm.startDaemon(DaemonType.PEAR_PEER, persistEnabled = false) }
+            }
+        }
     }
 
     private fun startTunnelFromPreferences(vm: DaemonsViewModel) {
@@ -327,6 +362,10 @@ class DaemonStartupManager(
             if (PreferencesManager.isDaemonEnabled(DaemonType.TOR_TUNNEL)) {
                 log.info(TAG, "Boot: Starting Tor...")
                 startTorOnBoot()
+            }
+            if (isOptionalDaemonEnabled(DaemonType.PEAR_PEER)) {
+                log.info(TAG, "Boot: Starting Pear peer...")
+                startPearOnBoot()
             }
         } catch (e: Exception) {
             log.error(TAG, "Error starting optional daemons: ${e.message}")
@@ -359,6 +398,11 @@ class DaemonStartupManager(
                 log.error(TAG, "Boot: Tor error: $error")
             }
         })
+    }
+
+    /** Start pear_daemon with no ViewModel -- the boot path and the health check's fallback. */
+    private fun startPearOnBoot() {
+        PearLauncher(context, AdbShellExecutor(context), log).launch(createLogCallback("Pear"))
     }
 
     /**
@@ -520,7 +564,7 @@ class DaemonStartupManager(
         }
 
         adbLauncher.isDaemonRunning(type.processName) { isRunning ->
-            if (!isRunning) {
+            if (shouldRelaunch(type, isRunning) { isOptionalDaemonEnabled(type) }) {
                 log.warn(TAG, "Health check: ${type.displayName} is DEAD — relaunching...")
                 relaunchDaemon(type)
             }
@@ -530,7 +574,9 @@ class DaemonStartupManager(
     private fun relaunchDaemon(type: DaemonType) {
         val vm = daemonsViewModel
         if (vm != null) {
-            handler.post { vm.startDaemon(type) }
+            // A relaunch is not the owner asking for it: never re-save "enabled" from here
+            // (BladeWatch-17l7) -- a stale read written back is how a switch-off undid itself.
+            handler.post { vm.startDaemon(type, persistEnabled = false) }
         } else {
             // Fallback: ADB-only launch for when ViewModel is not available (boot path)
             when (type) {
@@ -556,6 +602,10 @@ class DaemonStartupManager(
                     // which is exactly what this fallback is for.
                     log.info(TAG, "HealthCheck: relaunching Tor tunnel")
                     startTorOnBoot()
+                }
+                DaemonType.PEAR_PEER -> {
+                    log.info(TAG, "HealthCheck: relaunching Pear peer")
+                    startPearOnBoot()
                 }
             }
         }

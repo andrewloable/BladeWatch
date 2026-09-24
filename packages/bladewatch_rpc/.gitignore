@@ -1,0 +1,4 @@
+# Build and test output -- the same entries `flutter create` writes for a package.
+.dart_tool/
+build/
+coverage/

@@ -89,7 +89,7 @@ public class DaemonSetEnabledCommandTest {
 
     @Test
     public void refusesAnUnknownOrEmptyType() throws Exception {
-        for (String type : new String[] {"", "NOT_A_DAEMON", "tor", "tor_tunnel"}) {
+        for (String type : new String[] {"", "NOT_A_DAEMON", "tor", "tor_tunnel", "pear", "pear_peer"}) {
             Assert.assertEquals("type must match the enum exactly: " + type,
                     "error", setEnabled(type, false).getString("status"));
         }
@@ -132,6 +132,37 @@ public class DaemonSetEnabledCommandTest {
         Assert.assertTrue(TcpCommandServer.killedPidsForTest.isEmpty());
         // Recording the intent IS the whole of "start": the health check does the launch.
         Assert.assertEquals(Boolean.TRUE, TcpCommandServer.daemonEnabledWritesForTest.get("TOR_TUNNEL"));
+    }
+
+    // --- BladeWatch-rdtj.3: the Pear peer is toggleable on the same terms as tor ---
+
+    @Test
+    public void disablingThePearPeerKillsOnlyPearDaemon() throws Exception {
+        fakeProcess(401, "pear_daemon");
+        // The nohup wrapper PearLauncher starts it through. Its command line CONTAINS
+        // "pear_daemon", so a substring match would kill it too -- which is the pkill -f bug
+        // that kills the ADB shell. Only argv[0] may match.
+        fakeProcess(402, "sh", "-c", "CLASSPATH=/data/app/x/base.apk app_process /system/bin "
+                + "--nice-name=pear_daemon net.bladewatch.app.daemon.PearDaemon");
+        fakeProcess(403, "/data/local/tmp/bladewatch_tor", "-f", "/data/local/tmp/tor/torrc");
+        fakeProcess(404, "byd_cam_daemon");
+
+        JSONObject resp = setEnabled("PEAR_PEER", false);
+
+        Assert.assertEquals("ok", resp.getString("status"));
+        Assert.assertEquals(java.util.Collections.singletonList(401), TcpCommandServer.killedPidsForTest);
+        Assert.assertEquals(Boolean.FALSE, TcpCommandServer.daemonEnabledWritesForTest.get("PEAR_PEER"));
+    }
+
+    @Test
+    public void enablingThePearPeerRecordsIntentAndKillsNothing() throws Exception {
+        fakeProcess(405, "pear_daemon");
+
+        JSONObject resp = setEnabled("PEAR_PEER", true);
+
+        Assert.assertEquals("ok", resp.getString("status"));
+        Assert.assertTrue(TcpCommandServer.killedPidsForTest.isEmpty());
+        Assert.assertEquals(Boolean.TRUE, TcpCommandServer.daemonEnabledWritesForTest.get("PEAR_PEER"));
     }
 
     @Test

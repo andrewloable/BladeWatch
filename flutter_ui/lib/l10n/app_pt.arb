@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "O modo sentinela consome energia extra da bateria de 12V enquanto está ativo.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "Outra aplicação está a utilizar a câmara neste momento.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Emparelhar um dispositivo",
+  "pairing_scan_hint": "Digitalize com a aplicação BladeWatch no seu telemóvel ou computador. O código só funciona uma vez.",
+  "pairing_expires_in": "Expira em {time}",
+  "pairing_expired": "Este código expirou.",
+  "pairing_new_code": "Novo código",
+  "pairing_remote_note": "Emparelhar ativa o acesso remoto a este carro.",
+  "pairing_lan_title": "Ligação direta nesta rede Wi-Fi",
+  "pairing_lan_body": "Um dispositivo emparelhado na mesma rede Wi-Fi do carro liga-se diretamente e de forma encriptada, sem passar pela internet. Desativado até o ativar.",
+  "pairing_devices_title": "Dispositivos emparelhados",
+  "pairing_devices_empty": "Ainda não há dispositivos emparelhados.",
+  "pairing_remove": "Remover",
+  "pairing_remove_confirm_title": "Remover {name}?",
+  "pairing_remove_confirm_body": "Perde o acesso imediatamente. Os seus outros dispositivos continuam a funcionar.",
+  "pairing_error": "O serviço da câmara não respondeu. Tente novamente."
 }

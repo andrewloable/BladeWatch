@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 
-import '../../gen/bladewatch/v1/recordings.pb.dart';
-import '../../gen/bladewatch/v1/system.pb.dart';
-import '../../gen/bladewatch/v1/trips.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
 import '../../platform/auth_channel.dart';
 import '../../platform/daemon_channel.dart';
-import '../../rpc/services/recordings_service_client.dart';
-import '../../rpc/services/system_service_client.dart';
-import '../../rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'dashboard_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 

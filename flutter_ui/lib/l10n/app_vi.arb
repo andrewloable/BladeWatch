@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "Chế độ canh gác sử dụng thêm điện năng từ ắc quy 12V khi đang bật.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "Một ứng dụng khác đang sử dụng camera ngay bây giờ.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Ghép nối thiết bị",
+  "pairing_scan_hint": "Quét bằng ứng dụng BladeWatch trên điện thoại hoặc máy tính. Mã chỉ dùng được một lần.",
+  "pairing_expires_in": "Hết hạn sau {time}",
+  "pairing_expired": "Mã này đã hết hạn.",
+  "pairing_new_code": "Mã mới",
+  "pairing_remote_note": "Ghép nối sẽ bật quyền truy cập từ xa cho xe này.",
+  "pairing_lan_title": "Kết nối trực tiếp qua Wi-Fi này",
+  "pairing_lan_body": "Thiết bị đã ghép nối trong cùng mạng Wi-Fi với xe sẽ kết nối trực tiếp và được mã hóa, không đi qua internet. Tắt cho đến khi bạn bật.",
+  "pairing_devices_title": "Thiết bị đã ghép nối",
+  "pairing_devices_empty": "Chưa có thiết bị nào được ghép nối.",
+  "pairing_remove": "Xóa",
+  "pairing_remove_confirm_title": "Xóa {name}?",
+  "pairing_remove_confirm_body": "Thiết bị sẽ mất quyền truy cập ngay. Các thiết bị khác của bạn vẫn hoạt động bình thường.",
+  "pairing_error": "Dịch vụ camera không phản hồi. Hãy thử lại."
 }

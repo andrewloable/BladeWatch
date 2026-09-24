@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "哨兵模式启用期间会额外消耗12V电瓶电量。",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "目前有其他应用正在使用摄像头。",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "配对设备",
+  "pairing_scan_hint": "用手机或电脑上的 BladeWatch 应用扫描。此代码仅可使用一次。",
+  "pairing_expires_in": "{time} 后过期",
+  "pairing_expired": "此代码已过期。",
+  "pairing_new_code": "新代码",
+  "pairing_remote_note": "配对会开启此车辆的远程访问。",
+  "pairing_lan_title": "通过此 Wi-Fi 直接连接",
+  "pairing_lan_body": "与车辆处于同一 Wi-Fi 的已配对设备会直接进行加密连接，无需经过互联网。在您开启前保持关闭。",
+  "pairing_devices_title": "已配对的设备",
+  "pairing_devices_empty": "尚未配对任何设备。",
+  "pairing_remove": "移除",
+  "pairing_remove_confirm_title": "移除 {name}？",
+  "pairing_remove_confirm_body": "它会立即失去访问权限。您的其他设备不受影响。",
+  "pairing_error": "摄像头服务没有响应。请重试。"
 }

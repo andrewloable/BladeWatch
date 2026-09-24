@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "センサーモードが作動している間、12Vバッテリーの電力を追加で消費します。",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "現在、別のアプリがカメラを使用しています。",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "デバイスをペアリング",
+  "pairing_scan_hint": "スマートフォンまたはコンピューターの BladeWatch アプリでスキャンしてください。コードは 1 回だけ有効です。",
+  "pairing_expires_in": "残り {time}",
+  "pairing_expired": "このコードは期限切れです。",
+  "pairing_new_code": "新しいコード",
+  "pairing_remote_note": "ペアリングすると、この車へのリモートアクセスがオンになります。",
+  "pairing_lan_title": "この Wi-Fi で直接接続",
+  "pairing_lan_body": "車と同じ Wi-Fi 上のペアリング済みデバイスが、インターネットを経由せずに暗号化して直接接続します。オンにするまではオフです。",
+  "pairing_devices_title": "ペアリング済みのデバイス",
+  "pairing_devices_empty": "ペアリング済みのデバイスはまだありません。",
+  "pairing_remove": "削除",
+  "pairing_remove_confirm_title": "{name} を削除しますか?",
+  "pairing_remove_confirm_body": "すぐにアクセスできなくなります。他のデバイスは引き続き使用できます。",
+  "pairing_error": "カメラサービスが応答しませんでした。もう一度お試しください。"
 }

@@ -1122,5 +1122,19 @@
   "surveillance_general_battery_warning": "La modalità sentinella consuma energia extra dalla batteria a 12V mentre è attiva.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "Un'altra app sta utilizzando la fotocamera in questo momento.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Associa un dispositivo",
+  "pairing_scan_hint": "Scansiona con l'app BladeWatch sul telefono o sul computer. Il codice funziona una sola volta.",
+  "pairing_expires_in": "Scade tra {time}",
+  "pairing_expired": "Questo codice è scaduto.",
+  "pairing_new_code": "Nuovo codice",
+  "pairing_remote_note": "L'associazione attiva l'accesso remoto per questa auto.",
+  "pairing_lan_title": "Connessione diretta su questa Wi-Fi",
+  "pairing_lan_body": "Un dispositivo associato sulla stessa Wi-Fi dell'auto si collega direttamente e in modo cifrato, senza passare da Internet. Disattivata finché non la attivi.",
+  "pairing_devices_title": "Dispositivi associati",
+  "pairing_devices_empty": "Nessun dispositivo associato.",
+  "pairing_remove": "Rimuovi",
+  "pairing_remove_confirm_title": "Rimuovere {name}?",
+  "pairing_remove_confirm_body": "Perde subito l'accesso. Gli altri dispositivi continuano a funzionare.",
+  "pairing_error": "Il servizio fotocamera non ha risposto. Riprova."
 }

@@ -8,6 +8,7 @@ import 'platform/adb_key_channel.dart';
 import 'platform/auth_channel.dart';
 import 'platform/config_channel.dart';
 import 'platform/daemon_channel.dart';
+import 'platform/pairing_channel.dart';
 import 'platform/live_view_texture_channel.dart';
 import 'platform/location_channel.dart';
 import 'platform/method_channel_bridge.dart';
@@ -15,17 +16,17 @@ import 'platform/network_channel.dart';
 import 'platform/prefs_channel.dart';
 import 'platform/public_config_channel.dart';
 import 'platform/setup_channel.dart';
-import 'rpc/connect_client.dart';
-import 'rpc/raw_http_sender.dart';
-import 'rpc/services/recordings_service_client.dart';
-import 'rpc/services/safe_locations_service_client.dart';
-import 'rpc/services/settings_service_client.dart';
-import 'rpc/services/storage_service_client.dart';
-import 'rpc/services/stream_service_client.dart';
-import 'rpc/services/surveillance_service_client.dart';
-import 'rpc/services/system_service_client.dart';
-import 'rpc/services/trips_service_client.dart';
-import 'rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_rpc/rpc/connect_client.dart';
+import 'package:bladewatch_rpc/rpc/raw_http_sender.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
 import 'screens/dashboard/dashboard_controller.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/diagnostics/adb_console_controller.dart';
@@ -166,6 +167,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
   // transport, mirroring ConnectClientProvider.longSurveillanceService().
   late final SurveillanceServiceClient _longSurveillanceService = SurveillanceServiceClient(_longRpcTransport);
   late final DaemonChannel _daemonChannel = DaemonChannel(MethodChannelBridge());
+  late final PairingChannel _pairingChannel = PairingChannel(MethodChannelBridge());
   late final ConfigChannel _configChannel = ConfigChannel(MethodChannelBridge());
   late final PublicConfigChannel _publicConfigChannel = PublicConfigChannel(MethodChannelBridge());
   late final PrefsChannel _prefsChannel = PrefsChannel(MethodChannelBridge());
@@ -340,6 +342,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                       controller: _dashboardController,
                       systemService: _systemService,
                       onNavigate: _shellController.selectRoute,
+                      pairingChannel: _pairingChannel,
                     ),
                     settingsScreen: SettingsScreen(
                       deps: SettingsHubDependencies(

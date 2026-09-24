@@ -2942,4 +2942,55 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'Otra aplicación está usando la cámara en este momento.';
+
+  @override
+  String get pairing_title => 'Vincular un dispositivo';
+
+  @override
+  String get pairing_scan_hint =>
+      'Escanéalo con la app BladeWatch en tu teléfono u ordenador. El código funciona una sola vez.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'Caduca en $time';
+  }
+
+  @override
+  String get pairing_expired => 'Este código ha caducado.';
+
+  @override
+  String get pairing_new_code => 'Nuevo código';
+
+  @override
+  String get pairing_remote_note =>
+      'Al vincular se activa el acceso remoto a este coche.';
+
+  @override
+  String get pairing_lan_title => 'Conexión directa en esta Wi-Fi';
+
+  @override
+  String get pairing_lan_body =>
+      'Un dispositivo vinculado en la misma Wi-Fi que el coche se conecta directamente y cifrado, sin pasar por internet. Desactivado hasta que lo actives.';
+
+  @override
+  String get pairing_devices_title => 'Dispositivos vinculados';
+
+  @override
+  String get pairing_devices_empty => 'Aún no hay dispositivos vinculados.';
+
+  @override
+  String get pairing_remove => 'Quitar';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '¿Quitar $name?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Pierde el acceso de inmediato. Tus otros dispositivos siguen funcionando.';
+
+  @override
+  String get pairing_error =>
+      'El servicio de cámara no respondió. Inténtalo de nuevo.';
 }

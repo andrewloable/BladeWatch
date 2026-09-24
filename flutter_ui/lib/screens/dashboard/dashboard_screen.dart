@@ -1,11 +1,13 @@
 import 'dart:async' show unawaited;
+import '../../platform/pairing_channel.dart';
+import '../pairing/pairing_dialog.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../gen/l10n/app_localizations.dart';
-import '../../rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import '../../shell/route_stubs.dart' show BwRoutes;
 import 'dashboard_controller.dart';
 import 'dashboard_models.dart';
@@ -31,7 +33,16 @@ class DashboardScreen extends StatefulWidget {
   final SystemServiceClient systemService;
   final void Function(String route) onNavigate;
 
-  const DashboardScreen({super.key, required this.controller, required this.systemService, required this.onNavigate});
+  /// BladeWatch-rdtj.7: the "Pair a device" action. Null hides it (tests that do not exercise it).
+  final PairingChannel? pairingChannel;
+
+  const DashboardScreen({
+    super.key,
+    required this.controller,
+    required this.systemService,
+    required this.onNavigate,
+    this.pairingChannel,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -131,6 +142,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
                 const SizedBox(height: 12),
                 _HeroChips(controller: c, l10n: l10n, theme: theme),
+                // An explicit action, never a QR on the dashboard: a permanently visible pairing
+                // code would be a permanently visible way in (BladeWatch-rdtj.7).
+                if (widget.pairingChannel != null) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FilledButton.tonalIcon(
+                      key: const ValueKey('dashboard.pair'),
+                      onPressed: () => showPairingDialog(context, widget.pairingChannel!),
+                      icon: const Icon(Icons.qr_code_2),
+                      label: Text(l10n.pairing_title),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 metrics,
               ],

@@ -1123,5 +1123,19 @@
   "surveillance_general_battery_warning": "Der Wächtermodus verbraucht zusätzlichen Strom aus der 12-V-Batterie, solange er aktiv ist.",
   "@surveillance_general_battery_warning": {},
   "surveillance_general_camera_contention_warning": "Eine andere App verwendet die Kamera gerade.",
-  "@surveillance_general_camera_contention_warning": {}
+  "@surveillance_general_camera_contention_warning": {},
+  "pairing_title": "Gerät koppeln",
+  "pairing_scan_hint": "Mit der BladeWatch-App auf Ihrem Telefon oder Computer scannen. Der Code funktioniert nur einmal.",
+  "pairing_expires_in": "Läuft ab in {time}",
+  "pairing_expired": "Dieser Code ist abgelaufen.",
+  "pairing_new_code": "Neuer Code",
+  "pairing_remote_note": "Durch das Koppeln wird der Fernzugriff für dieses Fahrzeug eingeschaltet.",
+  "pairing_lan_title": "Direktverbindung über dieses WLAN",
+  "pairing_lan_body": "Ein gekoppeltes Gerät im selben WLAN wie das Fahrzeug verbindet sich direkt und verschlüsselt, ohne Umweg über das Internet. Aus, bis Sie es einschalten.",
+  "pairing_devices_title": "Gekoppelte Geräte",
+  "pairing_devices_empty": "Noch keine Geräte gekoppelt.",
+  "pairing_remove": "Entfernen",
+  "pairing_remove_confirm_title": "{name} entfernen?",
+  "pairing_remove_confirm_body": "Es verliert sofort den Zugriff. Ihre anderen Geräte funktionieren weiter.",
+  "pairing_error": "Der Kameradienst hat nicht geantwortet. Bitte erneut versuchen."
 }

@@ -43,14 +43,14 @@ android {
         versionCode = flutter.versionCode
 
         // versionName is written out explicitly because BladeWatch versions have
-        // FOUR parts ("1.3.2.0", matching app/build.gradle.kts) and a pubspec
-        // version must be valid semver — `version: 1.3.2.0+13200` is rejected by
+        // FOUR parts ("1.4.0.0", matching app/build.gradle.kts) and a pubspec
+        // version must be valid semver — `version: 1.4.0.0+14000` is rejected by
         // pub outright, so `flutter.versionName` can only ever yield "1.3.1".
         //
         // The two APKs are installed as a pair and the About screen reads this
         // value through package_info_plus, so they must report the same string.
         // Keep this in step with app/build.gradle.kts's versionName.
-        versionName = "1.3.2.0"
+        versionName = "1.4.0.0"
 
         // BYD head unit is arm64-v8a only — same reasoning as the main app's
         // splits.abi block.
@@ -214,3 +214,53 @@ tasks.register<Exec>("checkFlutterCoverage") {
 // pattern: a verification task wired into the lifecycle so `check` (and
 // therefore CI) cannot silently skip it.
 tasks.named("check") { dependsOn("checkFlutterCoverage") }
+
+// BladeWatch-rdtj.10: packages/bladewatch_rpc (the Connect client + generated
+// messages, extracted from flutter_ui/lib/{rpc,gen/bladewatch} so the companion
+// app can share them) is gated on ITS OWN tests. Without this the extraction
+// would have silently dropped that code out of every gate: flutter_ui's lcov only
+// reports flutter_ui's own files. 100 = the measured figure at extraction
+// (381/381), and like every gate here it may only ever be raised.
+val rpcPackageDir = flutterUiDir.parentFile.resolve("packages/bladewatch_rpc")
+
+tasks.register<Exec>("rpcTestCoverage") {
+    description = "Run flutter test --coverage for packages/bladewatch_rpc"
+    group = "verification"
+    workingDir = rpcPackageDir
+    commandLine(flutterBin, "test", "--coverage")
+}
+
+tasks.register<Exec>("checkRpcCoverage") {
+    description = "Fail the build if bladewatch_rpc's Dart line coverage (lib/gen excluded) is below threshold"
+    group = "verification"
+    dependsOn("rpcTestCoverage")
+    workingDir = flutterUiDir.parentFile // repo root
+    commandLine("tools/check_flutter_coverage.sh", "100", "packages/bladewatch_rpc")
+}
+
+tasks.named("check") { dependsOn("checkRpcCoverage") }
+
+// BladeWatch-rdtj.10: the fourth gate, for companion/ (the phone/desktop app).
+// Registered here with the other Dart gates because this is the only Gradle
+// build that already requires the Flutter toolchain, and the one whose wrapper
+// the release workflow has. 98 = the floor of 299/305 lines (98.03%) measured
+// once rdtj.8's transport landed; it started at 83, the scaffold's 5/6. Raised
+// as the companion grows, never lowered.
+val companionDir = flutterUiDir.parentFile.resolve("companion")
+
+tasks.register<Exec>("companionTestCoverage") {
+    description = "Run flutter test --coverage for companion"
+    group = "verification"
+    workingDir = companionDir
+    commandLine(flutterBin, "test", "--coverage")
+}
+
+tasks.register<Exec>("checkCompanionCoverage") {
+    description = "Fail the build if the companion's Dart line coverage is below threshold"
+    group = "verification"
+    dependsOn("companionTestCoverage")
+    workingDir = flutterUiDir.parentFile // repo root
+    commandLine("tools/check_flutter_coverage.sh", "98", "companion")
+}
+
+tasks.named("check") { dependsOn("checkCompanionCoverage") }

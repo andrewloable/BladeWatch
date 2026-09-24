@@ -1,9 +1,9 @@
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_controller.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 Map<String, dynamic> _entry({
   required String filename,

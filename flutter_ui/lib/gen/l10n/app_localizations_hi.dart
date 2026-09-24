@@ -2909,4 +2909,55 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get surveillance_general_camera_contention_warning =>
       'कोई अन्य ऐप अभी कैमरा उपयोग कर रहा है।';
+
+  @override
+  String get pairing_title => 'डिवाइस जोड़ें';
+
+  @override
+  String get pairing_scan_hint =>
+      'अपने फ़ोन या कंप्यूटर पर BladeWatch ऐप से स्कैन करें। यह कोड केवल एक बार काम करता है।';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time में समाप्त होगा';
+  }
+
+  @override
+  String get pairing_expired => 'इस कोड की अवधि समाप्त हो गई है।';
+
+  @override
+  String get pairing_new_code => 'नया कोड';
+
+  @override
+  String get pairing_remote_note =>
+      'जोड़ने से इस कार के लिए रिमोट एक्सेस चालू हो जाता है।';
+
+  @override
+  String get pairing_lan_title => 'इस वाई-फ़ाई पर सीधा कनेक्शन';
+
+  @override
+  String get pairing_lan_body =>
+      'कार वाले ही वाई-फ़ाई पर जुड़ा हुआ डिवाइस इंटरनेट के बिना सीधे और एन्क्रिप्टेड रूप से कनेक्ट होता है। जब तक आप इसे चालू न करें, यह बंद रहता है।';
+
+  @override
+  String get pairing_devices_title => 'जुड़े हुए डिवाइस';
+
+  @override
+  String get pairing_devices_empty => 'अभी तक कोई डिवाइस नहीं जोड़ा गया।';
+
+  @override
+  String get pairing_remove => 'हटाएँ';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '$name हटाएँ?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'इसकी पहुँच तुरंत समाप्त हो जाएगी। आपके अन्य डिवाइस काम करते रहेंगे।';
+
+  @override
+  String get pairing_error =>
+      'कैमरा सेवा ने जवाब नहीं दिया। फिर से प्रयास करें।';
 }

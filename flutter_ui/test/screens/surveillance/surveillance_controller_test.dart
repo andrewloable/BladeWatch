@@ -1,15 +1,15 @@
-import 'package:bladewatch_ui/gen/bladewatch/v1/storage.pb.dart' show SetStorageSettingsRequest;
-import 'package:bladewatch_ui/gen/bladewatch/v1/surveillance.pb.dart' show SetSurveillanceConfigRequest;
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/safe_locations_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/storage.pb.dart' show SetStorageSettingsRequest;
+import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart' show SetSurveillanceConfigRequest;
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
 import 'package:bladewatch_ui/screens/settings/settings_recording_models.dart' show StorageLimitImpactStatus;
 import 'package:bladewatch_ui/screens/surveillance/surveillance_controller.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
   late FakeRpcClient rpc;

@@ -47,11 +47,16 @@ object DaemonBootstrap {
      * Initialize the daemon environment and return an app context.
      * Safe to call multiple times - will return cached context after first init.
      *
+     * @param grantPermissions run the `pm grant` pass over the service host's manifest permissions.
+     *   CameraDaemon needs it (the BYD HAL checks permissions natively). pear_daemon does not -- its
+     *   network access comes from the shell uid's own groups -- and the pass cost it 17.75 s of
+     *   `pm grant` calls on every start before the worklet could boot (measured on the head unit,
+     *   BladeWatch-rdtj.3), so it passes false.
      * @return App context with permission bypass, or null if init failed
      */
     @JvmStatic
     @Synchronized
-    fun init(): Context? {
+    fun init(grantPermissions: Boolean = true): Context? {
         if (isInitialized) {
             return context
         }
@@ -72,7 +77,7 @@ object DaemonBootstrap {
             // PermissionBypassContext fakes PERMISSION_GRANTED locally, but pm grant
             // ensures the OS-level permission state is correct for cases where the
             // BYD HAL native layer checks permissions outside our context wrapper.
-            PermissionGranter.grantAllPermissions(BOOTSTRAP_PACKAGE)
+            if (grantPermissions) PermissionGranter.grantAllPermissions(BOOTSTRAP_PACKAGE)
 
             // Step 3: Verify Safe.s() decryption works (pure Kotlin, no native libs needed)
             if (verifySafeWorking()) {
