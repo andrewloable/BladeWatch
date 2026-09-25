@@ -1,6 +1,6 @@
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart' show SetSelectedModelRequest;
 import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart'
-    show MoveWindowRequest, SetClimateRequest, SetMediaVolumeRequest, SetScreenRequest, SetSeatRequest;
+    show MoveWindowRequest, SetClimateRequest, SetMediaVolumeRequest, SetScreenRequest;
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
 import 'package:bladewatch_ui/screens/vehicle/vehicle_controller.dart';
@@ -29,18 +29,11 @@ void main() {
     int sunshade = -1,
     bool capSunroof = false,
     bool capSunshade = false,
-    bool capDriverHeat = false,
-    bool capPassengerHeat = false,
-    bool capDriverCool = false,
-    bool capPassengerCool = false,
-    bool capDriverMemory = false,
     int soc = 50,
     int rangeKm = 36,
-    List<int> heat = const [0, 0],
-    List<int> cool = const [0, 0],
     bool acOn = false,
     int setpointC = 22,
-    double insideTempC = 0.0,
+    double? outsideTempC,
     int fanLevel = 3,
     bool maxCooling = false,
     int mediaVolumePercent = 40,
@@ -53,17 +46,9 @@ void main() {
       'windows': {'lf': lf, 'rf': rf, 'lr': lr, 'rr': rr, 'sunroof': sunroof, 'sunshade': sunshade},
       'capabilities': {
         'windows': {'sunroof': capSunroof, 'sunshade': capSunshade},
-        'seats': {
-          'driverHeat': capDriverHeat,
-          'passengerHeat': capPassengerHeat,
-          'driverCool': capDriverCool,
-          'passengerCool': capPassengerCool,
-          'driverMemoryRecall': capDriverMemory,
-        },
       },
       'battery': {'soc': soc, 'rangeKm': rangeKm},
-      'seats': {'heat': heat, 'cool': cool},
-      'climate': {'acOn': acOn, 'setpointC': setpointC, 'insideTempC': insideTempC, 'fanLevel': fanLevel, 'maxCooling': maxCooling},
+      'climate': {'acOn': acOn, 'setpointC': setpointC, 'outsideTempC': ?outsideTempC, 'fanLevel': fanLevel, 'maxCooling': maxCooling},
       'mediaVolumePercent': mediaVolumePercent,
       'mediaMuted': mediaMuted,
       'tyres': {
@@ -97,7 +82,7 @@ void main() {
 
   group('load()/poll()', () {
     test('happy path populates state', () async {
-      stubState(doorsOverall: 2, lf: 30, soc: 62, rangeKm: 210, heat: [1, 2], cool: [0, 0], acOn: true, setpointC: 24, fanLevel: 5);
+      stubState(doorsOverall: 2, lf: 30, soc: 62, rangeKm: 210, acOn: true, setpointC: 24, fanLevel: 5);
       final c = build();
 
       await c.load();
@@ -108,8 +93,6 @@ void main() {
       expect(c.state.windows.lf, 30);
       expect(c.state.battery.soc, 62);
       expect(c.state.battery.rangeKm, 210);
-      expect(c.driverHeat, 1);
-      expect(c.passengerHeat, 2);
       expect(c.acOn, isTrue);
       expect(c.setpointC, 24);
       expect(c.fanLevel, 5);
@@ -129,10 +112,8 @@ void main() {
         'windows': {'lf': -5, 'rf': 0, 'lr': 0, 'rr': 0, 'sunroof': -1, 'sunshade': -1},
         'capabilities': {
           'windows': {},
-          'seats': {},
         },
         'battery': {},
-        'seats': {'heat': [], 'cool': []},
         'climate': {},
         'tyres': {'fl': {}, 'fr': {}, 'rl': {}, 'rr': {}},
       });
@@ -159,18 +140,26 @@ void main() {
       expect(c.state.tyres.fl.temperatureC, 29);
     });
 
-    test('insideTempC 0.0 maps to null (unset sentinel)', () async {
-      stubState(insideTempC: 0.0);
+    // BladeWatch-eh3u: the outside air -- the car exposes no cabin temperature.
+    test('an absent outside temperature maps to null', () async {
+      stubState();
       final c = build();
       await c.load();
-      expect(c.state.climate.insideTempC, isNull);
+      expect(c.state.climate.outsideTempC, isNull);
     });
 
-    test('insideTempC real value maps through', () async {
-      stubState(insideTempC: 26.5);
+    test('0 C outside is a real reading, not "absent"', () async {
+      stubState(outsideTempC: 0.0);
       final c = build();
       await c.load();
-      expect(c.state.climate.insideTempC, 26.5);
+      expect(c.state.climate.outsideTempC, 0.0);
+    });
+
+    test('an outside temperature maps through', () async {
+      stubState(outsideTempC: 26.5);
+      final c = build();
+      await c.load();
+      expect(c.state.climate.outsideTempC, 26.5);
     });
 
     test('resp.success:false counts as a failure and keeps old state', () async {
@@ -862,174 +851,6 @@ void main() {
     });
   });
 
-  group('seats: heat/cool cycle (fire-and-forget)', () {
-    test('driver heat cycles 0->1->2->0 and clears vent when turning on', () async {
-      stubState(heat: [0, 0], cool: [1, 0]);
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      final c = build();
-      await c.load();
-      expect(c.driverVent, 1);
-
-      await c.cycleSeatHeat(1);
-
-      expect(c.driverHeat, 1);
-      expect(c.driverVent, 0);
-      final req = rpc.calls.last.request as SetSeatRequest;
-      expect(req.seatIndex, 1);
-      expect(req.action, 'heating');
-      expect(req.level, 1);
-    });
-
-    test('driver heat cycles from 2 back to 0', () async {
-      stubState(heat: [2, 0]);
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      final c = build();
-      await c.load();
-
-      await c.cycleSeatHeat(1);
-
-      expect(c.driverHeat, 0);
-    });
-
-    test('passenger heat cycles and clears passenger vent when turning on', () async {
-      stubState(heat: [0, 0], cool: [0, 1]);
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      final c = build();
-      await c.load();
-      expect(c.passengerVent, 1);
-
-      await c.cycleSeatHeat(2);
-
-      expect(c.passengerHeat, 1);
-      expect(c.passengerVent, 0);
-      final req = rpc.calls.last.request as SetSeatRequest;
-      expect(req.seatIndex, 2);
-      expect(req.action, 'heating');
-    });
-
-    test('passenger cool cycles and clears passenger heat when turning on', () async {
-      stubState(heat: [0, 1], cool: [0, 0]);
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      final c = build();
-      await c.load();
-      expect(c.passengerHeat, 1);
-
-      await c.cycleSeatCool(2);
-
-      expect(c.passengerVent, 1);
-      expect(c.passengerHeat, 0);
-      final req = rpc.calls.last.request as SetSeatRequest;
-      expect(req.seatIndex, 2);
-      expect(req.action, 'ventilation');
-    });
-
-    test('a THROWN seat failure reverts and reports', () async {
-      stubState();
-      rpc.stubError('VehicleService', 'SetSeat', const ConnectError('unavailable', 'down'));
-      final c = build();
-      await c.load();
-
-      // Was: `await c.cycleSeatHeat(1); expect(c.driverHeat, 1);` — asserting the
-      // UI should show heat level 1 on a seat whose command FAILED.
-      expect(await c.cycleSeatHeat(1), isNotNull);
-      expect(c.driverHeat, 0, reason: 'a failed command must not show the seat as heated');
-    });
-
-    // The refusal path: the daemon returns 200 with success:false, so nothing
-    // throws and a catch-only guard never runs.
-    test('a REFUSED seat command reverts every seat field', () async {
-      stubState();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': false, 'message': 'Seat unavailable'});
-      final c = build();
-      await c.load();
-
-      expect(await c.cycleSeatCool(1), 'Seat unavailable');
-      // cycleSeatCool clears heat when it turns vent on, so BOTH must come back.
-      expect(c.driverVent, 0);
-      expect(c.driverHeat, 0);
-    });
-
-    test('is debounced per seat/action key independently', () async {
-      stubState();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      final c = build();
-      await c.load();
-
-      await c.cycleSeatHeat(1);
-      final afterFirst = rpc.calls.length;
-      await c.cycleSeatHeat(1);
-      expect(rpc.calls.length, afterFirst);
-
-      await c.cycleSeatCool(1);
-      expect(rpc.calls.length, afterFirst + 1);
-    });
-  });
-
-  group('seats: memory recall (pending-tracked)', () {
-    test('succeeds and clears pending', () async {
-      stubState();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      final c = build();
-      await c.load();
-
-      final future = c.recallSeatPosition(1);
-      expect(c.isPending('seat_mem1'), isTrue);
-      final error = await future;
-
-      expect(error, isNull);
-      expect(c.isPending('seat_mem1'), isFalse);
-      final req = rpc.calls.last.request as SetSeatRequest;
-      expect(req.action, 'position');
-      expect(req.seatIndex, 1);
-    });
-
-    test('failure returns the message and clears pending', () async {
-      stubState();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': false, 'message': 'no memory saved'});
-      final c = build();
-      await c.load();
-
-      final error = await c.recallSeatPosition(2);
-
-      expect(error, 'no memory saved');
-      expect(c.isPending('seat_mem2'), isFalse);
-    });
-
-    /// Was: `expect(..., 'failed')`. That pinned a hardcoded English literal as
-    /// the user-visible reason — on a screen that ships in 17 locales, where no
-    /// catalog could ever translate it. The fallback is now the empty string,
-    /// which `showVehicleCommandError` renders as the localised
-    /// `vehicle_action_failed`.
-    ///
-    /// It must stay NON-null either way: null is how every call site spells
-    /// success, so returning null for a refusal reverts the control and then
-    /// tells the driver nothing.
-    test('failure with no message falls back to outcome, then to the localised generic', () async {
-      stubState();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': false, 'outcome': 'not_supported'});
-      final c = build();
-      await c.load();
-      expect(await c.recallSeatPosition(1), 'not_supported');
-
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': false});
-      fakeNow += 1000;
-      final blank = await c.recallSeatPosition(1);
-      expect(blank, isNotNull, reason: 'null would be read as success by every caller');
-      expect(blank, isEmpty, reason: 'the screen substitutes vehicle_action_failed');
-    });
-
-    test('throwing returns the exception text', () async {
-      stubState();
-      rpc.stubError('VehicleService', 'SetSeat', const ConnectError('unavailable', 'down'));
-      final c = build();
-      await c.load();
-
-      final error = await c.recallSeatPosition(1);
-
-      expect(error, isNotNull);
-    });
-  });
-
   group('windows (pending-tracked)', () {
     test('setWindowPercent succeeds', () async {
       stubState();
@@ -1118,32 +939,9 @@ void main() {
   });
 
   /// The revert paths of the BladeWatch success:false sweep, completing the
-  /// halves each command was missing. Both failure shapes must revert, and
-  /// every command had only ONE of them pinned: cycleSeatHeat proved the thrown
-  /// path, cycleSeatCool the refused path, and decTemp neither. A revert that is
-  /// only exercised in one direction is a revert that has been half-checked.
+  /// halves each command was missing. Both failure shapes must revert. A revert
+  /// that is only exercised in one direction is a revert that has been half-checked.
   group('refusal/throw symmetry', () {
-    test('a REFUSED cycleSeatHeat reverts, like the thrown path does', () async {
-      stubState();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': false, 'message': 'Seat refused'});
-      final c = build();
-      await c.load();
-
-      expect(await c.cycleSeatHeat(1), 'Seat refused');
-      expect(c.driverHeat, 0, reason: 'a refused command must not show the seat as heated');
-    });
-
-    test('a THROWN cycleSeatCool reverts, like the refused path does', () async {
-      stubState();
-      rpc.stubError('VehicleService', 'SetSeat', const ConnectError('unavailable', 'down'));
-      final c = build();
-      await c.load();
-
-      expect(await c.cycleSeatCool(1), isNotNull);
-      expect(c.driverVent, 0, reason: 'a failed command must not show the seat as vented');
-      expect(c.driverHeat, 0);
-    });
-
     test('a REFUSED decTemp restores the temperature it decremented', () async {
       stubState(setpointC: 24);
       rpc.stubJson('VehicleService', 'SetClimate', {'success': false, 'message': 'Climate unavailable'});

@@ -165,14 +165,19 @@ void main() {
       expect(await login.stateVersion(), 0);
     });
 
-    test('a rate limit or an unreachable car is not a refusal', () async {
+    // BladeWatch-w7by: auth_unavailable is the car saying it cannot tell right now (secret store
+    // unreadable, auth not loaded after a restart) -- retry, never "removed".
+    test('a rate limit, a car that cannot tell yet, or an unreachable car is not a refusal', () async {
       final seen = <Uri>[];
       var refused = 0;
       final login = CompanionLogin(
-        CarAuth(Uri.parse('http://car'), send: answering(['{"success":false,"error":"Locked for 30s"}', 'not json'], seen)),
+        CarAuth(Uri.parse('http://car'),
+            send: answering(
+                ['{"success":false,"error":"Locked for 30s"}', 'not json', '{"success":false,"error":"auth_unavailable"}'], seen)),
         testCredential,
         () => refused++,
       );
+      expect(await login.mintJwt(), isNull);
       expect(await login.mintJwt(), isNull);
       expect(await login.mintJwt(), isNull);
       final down = CompanionLogin(
@@ -182,7 +187,7 @@ void main() {
       );
       expect(await down.mintJwt(), isNull);
       expect(refused, 0);
-      expect(seen, hasLength(2));
+      expect(seen, hasLength(3), reason: 'each answer was a real attempt, and none latched');
     });
 
     test('cached reuses a JWT for 4 minutes, then logs in again', () async {

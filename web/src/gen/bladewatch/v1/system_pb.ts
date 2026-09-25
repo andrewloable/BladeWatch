@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bladewatch/v1/system.proto.
  */
 export const file_bladewatch_v1_system: GenFile = /*@__PURE__*/
-  fileDesc("ChpibGFkZXdhdGNoL3YxL3N5c3RlbS5wcm90bxINYmxhZGV3YXRjaC52MSJSCgtCYXR0ZXJ5SW5mbxINCgVsZXZlbBgBIAEoCUoECAIQA0oECAMQBEoECAQQBVIGc3RhdHVzUgtpc19jaGFyZ2luZ1INc3RhdHVzX3N0cmluZyKOAQoMQ2hhcmdpbmdJbmZvEhIKCnN0YXRlX25hbWUYASABKAkSDgoGc3RhdHVzGAIgASgJEhoKEmNoYXJnaW5nX3Bvd2VyX2tfdxgDIAEoARIWCg5pc19kaXNjaGFyZ2luZxgEIAEoCBIQCghpc19lcnJvchgFIAEoCBIUCgxpc19lc3RpbWF0ZWQYBiABKAgiTwoHU29jSW5mbxIPCgdwZXJjZW50GAEgASgBEg4KBmlzX2xvdxgCIAEoCBITCgtpc19jcml0aWNhbBgDIAEoCBIOCgZzdGF0dXMYBCABKAkinAEKCVJhbmdlSW5mbxIVCg1lbGVjX3JhbmdlX2ttGAEgASgBEhUKDWZ1ZWxfcmFuZ2Vfa20YAiABKAESFgoOdG90YWxfcmFuZ2Vfa20YAyABKAESDgoGaXNfbG93GAQgASgIEhMKC2lzX2NyaXRpY2FsGAUgASgIEg4KBnN0YXR1cxgGIAEoCRIUCgxmdWVsX3BlcmNlbnQYByABKAEiGgoHU29oSW5mbxIPCgdwZXJjZW50GAEgASgBIngKD1JlY29yZGluZ1N0YXR1cxIXCg9jb25maWd1cmVkX21vZGUYASABKAkSFAoMaXNfcmVjb3JkaW5nGAIgASgIEhgKEHBpcGVsaW5lX3J1bm5pbmcYAyABKAgSDAoEZ2VhchgEIAEoCRIOCgZhY2Nfb24YBSABKAgiZgoKVHJpcFN0YXR1cxIPCgdlbmFibGVkGAEgASgIEhMKC3RyaXBfYWN0aXZlGAIgASgIEhcKD3RyaXBfc3RhcnRfdGltZRgDIAEoAxIZChF0cmlwX2R1cmF0aW9uX3NlYxgEIAEoAyKxAQoLTmV0d29ya0luZm8SDAoEdHlwZRgBIAEoCRIMCgRzc2lkGAIgASgJEgoKAmlwGAMgASgJEhgKEGxhbl9odHRwX2VuYWJsZWQYBCABKAgSEQoJaHR0cF9iaW5kGAUgASgJEhkKEWh0dHBfbW9kZV93YXJuaW5nGAYgASgJEhgKEHRoaXNfbW9udGhfYnl0ZXMYByABKAMSGAoQbGFzdF9tb250aF9ieXRlcxgIIAEoAyJSCg1HcHNTdGF0dXNJbmZvEgsKA2xhdBgBIAEoARILCgNsbmcYAiABKAESEQoJc3BlZWRfa21oGAMgASgBEhQKDGhhc19sb2NhdGlvbhgEIAEoCCISChBHZXRTdGF0dXNSZXF1ZXN0IsoFChFHZXRTdGF0dXNSZXNwb25zZRIRCglkZXZpY2VfaWQYASABKAkSGgoSdmVoaWNsZV9kYXRhX3JlYWR5GAIgASgIEhMKC2FwcF92ZXJzaW9uGAMgASgJEhEKCXJlY29yZGluZxgEIAMoBRIPCgd2aWV3aW5nGAUgAygFEg4KBmFjdGl2ZRgGIAMoBRIRCglhdmFpbGFibGUYByADKAUSKwoHYmF0dGVyeRgIIAEoCzIaLmJsYWRld2F0Y2gudjEuQmF0dGVyeUluZm8SCwoDYWNjGAkgASgIEi0KCGNoYXJnaW5nGAogASgLMhsuYmxhZGV3YXRjaC52MS5DaGFyZ2luZ0luZm8SIwoDc29jGAsgASgLMhYuYmxhZGV3YXRjaC52MS5Tb2NJbmZvEicKBXJhbmdlGAwgASgLMhguYmxhZGV3YXRjaC52MS5SYW5nZUluZm8SIwoDc29oGA0gASgLMhYuYmxhZGV3YXRjaC52MS5Tb2hJbmZvEhUKDWRpc3RhbmNlX3VuaXQYDiABKAkSDgoGbG9jYWxlGA8gASgJEhwKFHNhZmVfem9uZV9zdXBwcmVzc2VkGBAgASgIEhQKDGluX3NhZmVfem9uZRgRIAEoCBIWCg5zYWZlX3pvbmVfbmFtZRgSIAEoCRIYChBncHVfc3VydmVpbGxhbmNlGBMgASgIEjgKEHJlY29yZGluZ19zdGF0dXMYFCABKAsyHi5ibGFkZXdhdGNoLnYxLlJlY29yZGluZ1N0YXR1cxIuCgt0cmlwX3N0YXR1cxgVIAEoCzIZLmJsYWRld2F0Y2gudjEuVHJpcFN0YXR1cxIrCgduZXR3b3JrGBcgASgLMhouYmxhZGV3YXRjaC52MS5OZXR3b3JrSW5mbxIaChJ2ZWhpY2xlX2RhdGFfZXJyb3IYGCABKAlKBAgWEBdSCGdwc19qc29uIhcKFUdldFBlcmZvcm1hbmNlUmVxdWVzdCJDChZHZXRQZXJmb3JtYW5jZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSGAoQcGVyZm9ybWFuY2VfanNvbhgCIAEoCSIrChRQbGF5QXVkaW9UZXN0UmVxdWVzdBITCgtkdXJhdGlvbl9tcxgBIAEoBSJIChVQbGF5QXVkaW9UZXN0UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJEg0KBWVycm9yGAMgASgJIkwKCU1vZGVsSW5mbxIMCgRuYW1lGAEgASgJEhIKCmRvd25sb2FkZWQYAyABKAgSEgoKc2l6ZV9ieXRlcxgEIAEoA0oECAIQA1IDdXJsIhMKEUxpc3RNb2RlbHNSZXF1ZXN0Ik0KEkxpc3RNb2RlbHNSZXNwb25zZRIoCgZtb2RlbHMYAiADKAsyGC5ibGFkZXdhdGNoLnYxLk1vZGVsSW5mb0oECAEQAlIHc3VjY2VzcyIxChREb3dubG9hZE1vZGVsUmVxdWVzdBILCgN1cmwYASABKAkSDAoEbmFtZRgCIAEoCSJIChVEb3dubG9hZE1vZGVsUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJEg0KBWVycm9yGAMgASgJIhYKFEdldFNvaE5vbWluYWxSZXF1ZXN0IlkKFUdldFNvaE5vbWluYWxSZXNwb25zZRIYCgtub21pbmFsX2t3aBgBIAEoAUgAiAEBEhYKDm5vbWluYWxfc291cmNlGAIgASgJQg4KDF9ub21pbmFsX2t3aCJAChRTZXRTb2hOb21pbmFsUmVxdWVzdBIYCgtub21pbmFsX2t3aBgBIAEoAUgAiAEBQg4KDF9ub21pbmFsX2t3aCI3ChVTZXRTb2hOb21pbmFsUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSIVChNHZXRTb2hTdGF0dXNSZXF1ZXN0IpkBChRHZXRTb2hTdGF0dXNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhwKFG5vbWluYWxfY2FwYWNpdHlfa3doGAIgASgBEhYKDm5vbWluYWxfc291cmNlGAMgASgJEhMKC2Rpc3BsYXlfc29oGAQgASgBEhYKDmRpc3BsYXlfc291cmNlGAUgASgJEg0KBWVycm9yGAYgASgJIhEKD1Jlc2V0U29oUmVxdWVzdCIyChBSZXNldFNvaFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiLQoXUmVzZXRQZXJmb3JtYW5jZVJlcXVlc3QSEgoKY2F0ZWdvcmllcxgBIAMoCSJQChhSZXNldFBlcmZvcm1hbmNlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIUCgxyZXN1bHRzX2pzb24YAiABKAkSDQoFZXJyb3IYAyABKAkiLwoWR2V0UGFya2luZ0RlbHRhUmVxdWVzdBIVCg1tYXhfYWdlX2hvdXJzGAEgASgFIj4KF0dldFBhcmtpbmdEZWx0YVJlc3BvbnNlEhEKCWF2YWlsYWJsZRgBIAEoCBIQCghyYXdfanNvbhgCIAEoCSIqChRHZXRMYXN0Q2hhcmdlUmVxdWVzdBISCgpob3Vyc19iYWNrGAEgASgFIjwKFUdldExhc3RDaGFyZ2VSZXNwb25zZRIRCglhdmFpbGFibGUYASABKAgSEAoIcmF3X2pzb24YAiABKAkiGQoXR2V0U2VsZWN0ZWRNb2RlbFJlcXVlc3QiOwoYR2V0U2VsZWN0ZWRNb2RlbFJlc3BvbnNlEhAKCG1vZGVsX2lkGAEgASgJEg0KBWNvbG9yGAIgASgJIjoKF1NldFNlbGVjdGVkTW9kZWxSZXF1ZXN0EhAKCG1vZGVsX2lkGAEgASgJEg0KBWNvbG9yGAIgASgJIjUKGFNldFNlbGVjdGVkTW9kZWxSZXNwb25zZRIKCgJvaxgBIAEoCBINCgVlcnJvchgCIAEoCSIaChhHZXRNb2RlbHNNYW5pZmVzdFJlcXVlc3QiMgoZR2V0TW9kZWxzTWFuaWZlc3RSZXNwb25zZRIVCg1tYW5pZmVzdF9qc29uGAEgASgJIi4KGVBlcmZvcm1hbmNlQ29ubmVjdFJlcXVlc3QSEQoJY2xpZW50X2lkGAEgASgJIk8KGlBlcmZvcm1hbmNlQ29ubmVjdFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSEQoJY2xpZW50X2lkGAIgASgJEg0KBWVycm9yGAMgASgJIjAKG1BlcmZvcm1hbmNlSGVhcnRiZWF0UmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkiPgocUGVyZm9ybWFuY2VIZWFydGJlYXRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJIjEKHFBlcmZvcm1hbmNlRGlzY29ubmVjdFJlcXVlc3QSEQoJY2xpZW50X2lkGAEgASgJIj8KHVBlcmZvcm1hbmNlRGlzY29ubmVjdFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkyzA0KDVN5c3RlbVNlcnZpY2USTgoJR2V0U3RhdHVzEh8uYmxhZGV3YXRjaC52MS5HZXRTdGF0dXNSZXF1ZXN0GiAuYmxhZGV3YXRjaC52MS5HZXRTdGF0dXNSZXNwb25zZRJdCg5HZXRQZXJmb3JtYW5jZRIkLmJsYWRld2F0Y2gudjEuR2V0UGVyZm9ybWFuY2VSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5HZXRQZXJmb3JtYW5jZVJlc3BvbnNlEloKDVBsYXlBdWRpb1Rlc3QSIy5ibGFkZXdhdGNoLnYxLlBsYXlBdWRpb1Rlc3RSZXF1ZXN0GiQuYmxhZGV3YXRjaC52MS5QbGF5QXVkaW9UZXN0UmVzcG9uc2USUQoKTGlzdE1vZGVscxIgLmJsYWRld2F0Y2gudjEuTGlzdE1vZGVsc1JlcXVlc3QaIS5ibGFkZXdhdGNoLnYxLkxpc3RNb2RlbHNSZXNwb25zZRJaCg1Eb3dubG9hZE1vZGVsEiMuYmxhZGV3YXRjaC52MS5Eb3dubG9hZE1vZGVsUmVxdWVzdBokLmJsYWRld2F0Y2gudjEuRG93bmxvYWRNb2RlbFJlc3BvbnNlEloKDUdldFNvaE5vbWluYWwSIy5ibGFkZXdhdGNoLnYxLkdldFNvaE5vbWluYWxSZXF1ZXN0GiQuYmxhZGV3YXRjaC52MS5HZXRTb2hOb21pbmFsUmVzcG9uc2USWgoNU2V0U29oTm9taW5hbBIjLmJsYWRld2F0Y2gudjEuU2V0U29oTm9taW5hbFJlcXVlc3QaJC5ibGFkZXdhdGNoLnYxLlNldFNvaE5vbWluYWxSZXNwb25zZRJXCgxHZXRTb2hTdGF0dXMSIi5ibGFkZXdhdGNoLnYxLkdldFNvaFN0YXR1c1JlcXVlc3QaIy5ibGFkZXdhdGNoLnYxLkdldFNvaFN0YXR1c1Jlc3BvbnNlEksKCFJlc2V0U29oEh4uYmxhZGV3YXRjaC52MS5SZXNldFNvaFJlcXVlc3QaHy5ibGFkZXdhdGNoLnYxLlJlc2V0U29oUmVzcG9uc2USYwoQUmVzZXRQZXJmb3JtYW5jZRImLmJsYWRld2F0Y2gudjEuUmVzZXRQZXJmb3JtYW5jZVJlcXVlc3QaJy5ibGFkZXdhdGNoLnYxLlJlc2V0UGVyZm9ybWFuY2VSZXNwb25zZRJgCg9HZXRQYXJraW5nRGVsdGESJS5ibGFkZXdhdGNoLnYxLkdldFBhcmtpbmdEZWx0YVJlcXVlc3QaJi5ibGFkZXdhdGNoLnYxLkdldFBhcmtpbmdEZWx0YVJlc3BvbnNlEloKDUdldExhc3RDaGFyZ2USIy5ibGFkZXdhdGNoLnYxLkdldExhc3RDaGFyZ2VSZXF1ZXN0GiQuYmxhZGV3YXRjaC52MS5HZXRMYXN0Q2hhcmdlUmVzcG9uc2USYwoQR2V0U2VsZWN0ZWRNb2RlbBImLmJsYWRld2F0Y2gudjEuR2V0U2VsZWN0ZWRNb2RlbFJlcXVlc3QaJy5ibGFkZXdhdGNoLnYxLkdldFNlbGVjdGVkTW9kZWxSZXNwb25zZRJjChBTZXRTZWxlY3RlZE1vZGVsEiYuYmxhZGV3YXRjaC52MS5TZXRTZWxlY3RlZE1vZGVsUmVxdWVzdBonLmJsYWRld2F0Y2gudjEuU2V0U2VsZWN0ZWRNb2RlbFJlc3BvbnNlEmYKEUdldE1vZGVsc01hbmlmZXN0EicuYmxhZGV3YXRjaC52MS5HZXRNb2RlbHNNYW5pZmVzdFJlcXVlc3QaKC5ibGFkZXdhdGNoLnYxLkdldE1vZGVsc01hbmlmZXN0UmVzcG9uc2USaQoSUGVyZm9ybWFuY2VDb25uZWN0EiguYmxhZGV3YXRjaC52MS5QZXJmb3JtYW5jZUNvbm5lY3RSZXF1ZXN0GikuYmxhZGV3YXRjaC52MS5QZXJmb3JtYW5jZUNvbm5lY3RSZXNwb25zZRJvChRQZXJmb3JtYW5jZUhlYXJ0YmVhdBIqLmJsYWRld2F0Y2gudjEuUGVyZm9ybWFuY2VIZWFydGJlYXRSZXF1ZXN0GisuYmxhZGV3YXRjaC52MS5QZXJmb3JtYW5jZUhlYXJ0YmVhdFJlc3BvbnNlEnIKFVBlcmZvcm1hbmNlRGlzY29ubmVjdBIrLmJsYWRld2F0Y2gudjEuUGVyZm9ybWFuY2VEaXNjb25uZWN0UmVxdWVzdBosLmJsYWRld2F0Y2gudjEuUGVyZm9ybWFuY2VEaXNjb25uZWN0UmVzcG9uc2VCHgoabmV0LmJsYWRld2F0Y2guYXBwLmdycGMudjFQAWIGcHJvdG8z");
+  fileDesc("ChpibGFkZXdhdGNoL3YxL3N5c3RlbS5wcm90bxINYmxhZGV3YXRjaC52MSJSCgtCYXR0ZXJ5SW5mbxINCgVsZXZlbBgBIAEoCUoECAIQA0oECAMQBEoECAQQBVIGc3RhdHVzUgtpc19jaGFyZ2luZ1INc3RhdHVzX3N0cmluZyKOAQoMQ2hhcmdpbmdJbmZvEhIKCnN0YXRlX25hbWUYASABKAkSDgoGc3RhdHVzGAIgASgJEhoKEmNoYXJnaW5nX3Bvd2VyX2tfdxgDIAEoARIWCg5pc19kaXNjaGFyZ2luZxgEIAEoCBIQCghpc19lcnJvchgFIAEoCBIUCgxpc19lc3RpbWF0ZWQYBiABKAgiTwoHU29jSW5mbxIPCgdwZXJjZW50GAEgASgBEg4KBmlzX2xvdxgCIAEoCBITCgtpc19jcml0aWNhbBgDIAEoCBIOCgZzdGF0dXMYBCABKAkinAEKCVJhbmdlSW5mbxIVCg1lbGVjX3JhbmdlX2ttGAEgASgBEhUKDWZ1ZWxfcmFuZ2Vfa20YAiABKAESFgoOdG90YWxfcmFuZ2Vfa20YAyABKAESDgoGaXNfbG93GAQgASgIEhMKC2lzX2NyaXRpY2FsGAUgASgIEg4KBnN0YXR1cxgGIAEoCRIUCgxmdWVsX3BlcmNlbnQYByABKAEiGgoHU29oSW5mbxIPCgdwZXJjZW50GAEgASgBIngKD1JlY29yZGluZ1N0YXR1cxIXCg9jb25maWd1cmVkX21vZGUYASABKAkSFAoMaXNfcmVjb3JkaW5nGAIgASgIEhgKEHBpcGVsaW5lX3J1bm5pbmcYAyABKAgSDAoEZ2VhchgEIAEoCRIOCgZhY2Nfb24YBSABKAgiZgoKVHJpcFN0YXR1cxIPCgdlbmFibGVkGAEgASgIEhMKC3RyaXBfYWN0aXZlGAIgASgIEhcKD3RyaXBfc3RhcnRfdGltZRgDIAEoAxIZChF0cmlwX2R1cmF0aW9uX3NlYxgEIAEoAyKxAQoLTmV0d29ya0luZm8SDAoEdHlwZRgBIAEoCRIMCgRzc2lkGAIgASgJEgoKAmlwGAMgASgJEhgKEGxhbl9odHRwX2VuYWJsZWQYBCABKAgSEQoJaHR0cF9iaW5kGAUgASgJEhkKEWh0dHBfbW9kZV93YXJuaW5nGAYgASgJEhgKEHRoaXNfbW9udGhfYnl0ZXMYByABKAMSGAoQbGFzdF9tb250aF9ieXRlcxgIIAEoAyJSCg1HcHNTdGF0dXNJbmZvEgsKA2xhdBgBIAEoARILCgNsbmcYAiABKAESEQoJc3BlZWRfa21oGAMgASgBEhQKDGhhc19sb2NhdGlvbhgEIAEoCCISChBHZXRTdGF0dXNSZXF1ZXN0IvwFChFHZXRTdGF0dXNSZXNwb25zZRIRCglkZXZpY2VfaWQYASABKAkSGgoSdmVoaWNsZV9kYXRhX3JlYWR5GAIgASgIEhMKC2FwcF92ZXJzaW9uGAMgASgJEhEKCXJlY29yZGluZxgEIAMoBRIPCgd2aWV3aW5nGAUgAygFEg4KBmFjdGl2ZRgGIAMoBRIRCglhdmFpbGFibGUYByADKAUSKwoHYmF0dGVyeRgIIAEoCzIaLmJsYWRld2F0Y2gudjEuQmF0dGVyeUluZm8SCwoDYWNjGAkgASgIEi0KCGNoYXJnaW5nGAogASgLMhsuYmxhZGV3YXRjaC52MS5DaGFyZ2luZ0luZm8SIwoDc29jGAsgASgLMhYuYmxhZGV3YXRjaC52MS5Tb2NJbmZvEicKBXJhbmdlGAwgASgLMhguYmxhZGV3YXRjaC52MS5SYW5nZUluZm8SIwoDc29oGA0gASgLMhYuYmxhZGV3YXRjaC52MS5Tb2hJbmZvEhUKDWRpc3RhbmNlX3VuaXQYDiABKAkSDgoGbG9jYWxlGA8gASgJEhwKFHNhZmVfem9uZV9zdXBwcmVzc2VkGBAgASgIEhQKDGluX3NhZmVfem9uZRgRIAEoCBIWCg5zYWZlX3pvbmVfbmFtZRgSIAEoCRIYChBncHVfc3VydmVpbGxhbmNlGBMgASgIEjgKEHJlY29yZGluZ19zdGF0dXMYFCABKAsyHi5ibGFkZXdhdGNoLnYxLlJlY29yZGluZ1N0YXR1cxIuCgt0cmlwX3N0YXR1cxgVIAEoCzIZLmJsYWRld2F0Y2gudjEuVHJpcFN0YXR1cxIrCgduZXR3b3JrGBcgASgLMhouYmxhZGV3YXRjaC52MS5OZXR3b3JrSW5mbxIaChJ2ZWhpY2xlX2RhdGFfZXJyb3IYGCABKAkSMAoMZHJpdmVfc3RhdHVzGBkgASgLMhouYmxhZGV3YXRjaC52MS5Ecml2ZVN0YXR1c0oECBYQF1IIZ3BzX2pzb24inwEKC0RyaXZlU3RhdHVzEgwKBGdlYXIYASABKAkSEgoKZHJpdmVfbW9kZRgCIAEoCRIWCg5kcml2ZV9tb2RlX3JhdxgDIAEoBRIRCglhdXRvX2hvbGQYBCABKAkSFQoNYXV0b19ob2xkX3JhdxgFIAEoBRITCgtlbmVyZ3lfbW9kZRgGIAEoCRIXCg9lbmVyZ3lfbW9kZV9yYXcYByABKAUiFwoVR2V0UGVyZm9ybWFuY2VSZXF1ZXN0IkMKFkdldFBlcmZvcm1hbmNlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIYChBwZXJmb3JtYW5jZV9qc29uGAIgASgJIisKFFBsYXlBdWRpb1Rlc3RSZXF1ZXN0EhMKC2R1cmF0aW9uX21zGAEgASgFIkgKFVBsYXlBdWRpb1Rlc3RSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSDQoFZXJyb3IYAyABKAkiTAoJTW9kZWxJbmZvEgwKBG5hbWUYASABKAkSEgoKZG93bmxvYWRlZBgDIAEoCBISCgpzaXplX2J5dGVzGAQgASgDSgQIAhADUgN1cmwiEwoRTGlzdE1vZGVsc1JlcXVlc3QiTQoSTGlzdE1vZGVsc1Jlc3BvbnNlEigKBm1vZGVscxgCIAMoCzIYLmJsYWRld2F0Y2gudjEuTW9kZWxJbmZvSgQIARACUgdzdWNjZXNzIjEKFERvd25sb2FkTW9kZWxSZXF1ZXN0EgsKA3VybBgBIAEoCRIMCgRuYW1lGAIgASgJIkgKFURvd25sb2FkTW9kZWxSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSDQoFZXJyb3IYAyABKAkiFgoUR2V0U29oTm9taW5hbFJlcXVlc3QiWQoVR2V0U29oTm9taW5hbFJlc3BvbnNlEhgKC25vbWluYWxfa3doGAEgASgBSACIAQESFgoObm9taW5hbF9zb3VyY2UYAiABKAlCDgoMX25vbWluYWxfa3doIkAKFFNldFNvaE5vbWluYWxSZXF1ZXN0EhgKC25vbWluYWxfa3doGAEgASgBSACIAQFCDgoMX25vbWluYWxfa3doIjcKFVNldFNvaE5vbWluYWxSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJIhUKE0dldFNvaFN0YXR1c1JlcXVlc3QimQEKFEdldFNvaFN0YXR1c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSHAoUbm9taW5hbF9jYXBhY2l0eV9rd2gYAiABKAESFgoObm9taW5hbF9zb3VyY2UYAyABKAkSEwoLZGlzcGxheV9zb2gYBCABKAESFgoOZGlzcGxheV9zb3VyY2UYBSABKAkSDQoFZXJyb3IYBiABKAkiEQoPUmVzZXRTb2hSZXF1ZXN0IjIKEFJlc2V0U29oUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSItChdSZXNldFBlcmZvcm1hbmNlUmVxdWVzdBISCgpjYXRlZ29yaWVzGAEgAygJIlAKGFJlc2V0UGVyZm9ybWFuY2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhQKDHJlc3VsdHNfanNvbhgCIAEoCRINCgVlcnJvchgDIAEoCSIvChZHZXRQYXJraW5nRGVsdGFSZXF1ZXN0EhUKDW1heF9hZ2VfaG91cnMYASABKAUiPgoXR2V0UGFya2luZ0RlbHRhUmVzcG9uc2USEQoJYXZhaWxhYmxlGAEgASgIEhAKCHJhd19qc29uGAIgASgJIioKFEdldExhc3RDaGFyZ2VSZXF1ZXN0EhIKCmhvdXJzX2JhY2sYASABKAUiPAoVR2V0TGFzdENoYXJnZVJlc3BvbnNlEhEKCWF2YWlsYWJsZRgBIAEoCBIQCghyYXdfanNvbhgCIAEoCSIZChdHZXRTZWxlY3RlZE1vZGVsUmVxdWVzdCI7ChhHZXRTZWxlY3RlZE1vZGVsUmVzcG9uc2USEAoIbW9kZWxfaWQYASABKAkSDQoFY29sb3IYAiABKAkiOgoXU2V0U2VsZWN0ZWRNb2RlbFJlcXVlc3QSEAoIbW9kZWxfaWQYASABKAkSDQoFY29sb3IYAiABKAkiNQoYU2V0U2VsZWN0ZWRNb2RlbFJlc3BvbnNlEgoKAm9rGAEgASgIEg0KBWVycm9yGAIgASgJIhoKGEdldE1vZGVsc01hbmlmZXN0UmVxdWVzdCIyChlHZXRNb2RlbHNNYW5pZmVzdFJlc3BvbnNlEhUKDW1hbmlmZXN0X2pzb24YASABKAkiLgoZUGVyZm9ybWFuY2VDb25uZWN0UmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkiTwoaUGVyZm9ybWFuY2VDb25uZWN0UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIRCgljbGllbnRfaWQYAiABKAkSDQoFZXJyb3IYAyABKAkiMAobUGVyZm9ybWFuY2VIZWFydGJlYXRSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCSI+ChxQZXJmb3JtYW5jZUhlYXJ0YmVhdFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiMQocUGVyZm9ybWFuY2VEaXNjb25uZWN0UmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkiPwodUGVyZm9ybWFuY2VEaXNjb25uZWN0UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCTLMDQoNU3lzdGVtU2VydmljZRJOCglHZXRTdGF0dXMSHy5ibGFkZXdhdGNoLnYxLkdldFN0YXR1c1JlcXVlc3QaIC5ibGFkZXdhdGNoLnYxLkdldFN0YXR1c1Jlc3BvbnNlEl0KDkdldFBlcmZvcm1hbmNlEiQuYmxhZGV3YXRjaC52MS5HZXRQZXJmb3JtYW5jZVJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLkdldFBlcmZvcm1hbmNlUmVzcG9uc2USWgoNUGxheUF1ZGlvVGVzdBIjLmJsYWRld2F0Y2gudjEuUGxheUF1ZGlvVGVzdFJlcXVlc3QaJC5ibGFkZXdhdGNoLnYxLlBsYXlBdWRpb1Rlc3RSZXNwb25zZRJRCgpMaXN0TW9kZWxzEiAuYmxhZGV3YXRjaC52MS5MaXN0TW9kZWxzUmVxdWVzdBohLmJsYWRld2F0Y2gudjEuTGlzdE1vZGVsc1Jlc3BvbnNlEloKDURvd25sb2FkTW9kZWwSIy5ibGFkZXdhdGNoLnYxLkRvd25sb2FkTW9kZWxSZXF1ZXN0GiQuYmxhZGV3YXRjaC52MS5Eb3dubG9hZE1vZGVsUmVzcG9uc2USWgoNR2V0U29oTm9taW5hbBIjLmJsYWRld2F0Y2gudjEuR2V0U29oTm9taW5hbFJlcXVlc3QaJC5ibGFkZXdhdGNoLnYxLkdldFNvaE5vbWluYWxSZXNwb25zZRJaCg1TZXRTb2hOb21pbmFsEiMuYmxhZGV3YXRjaC52MS5TZXRTb2hOb21pbmFsUmVxdWVzdBokLmJsYWRld2F0Y2gudjEuU2V0U29oTm9taW5hbFJlc3BvbnNlElcKDEdldFNvaFN0YXR1cxIiLmJsYWRld2F0Y2gudjEuR2V0U29oU3RhdHVzUmVxdWVzdBojLmJsYWRld2F0Y2gudjEuR2V0U29oU3RhdHVzUmVzcG9uc2USSwoIUmVzZXRTb2gSHi5ibGFkZXdhdGNoLnYxLlJlc2V0U29oUmVxdWVzdBofLmJsYWRld2F0Y2gudjEuUmVzZXRTb2hSZXNwb25zZRJjChBSZXNldFBlcmZvcm1hbmNlEiYuYmxhZGV3YXRjaC52MS5SZXNldFBlcmZvcm1hbmNlUmVxdWVzdBonLmJsYWRld2F0Y2gudjEuUmVzZXRQZXJmb3JtYW5jZVJlc3BvbnNlEmAKD0dldFBhcmtpbmdEZWx0YRIlLmJsYWRld2F0Y2gudjEuR2V0UGFya2luZ0RlbHRhUmVxdWVzdBomLmJsYWRld2F0Y2gudjEuR2V0UGFya2luZ0RlbHRhUmVzcG9uc2USWgoNR2V0TGFzdENoYXJnZRIjLmJsYWRld2F0Y2gudjEuR2V0TGFzdENoYXJnZVJlcXVlc3QaJC5ibGFkZXdhdGNoLnYxLkdldExhc3RDaGFyZ2VSZXNwb25zZRJjChBHZXRTZWxlY3RlZE1vZGVsEiYuYmxhZGV3YXRjaC52MS5HZXRTZWxlY3RlZE1vZGVsUmVxdWVzdBonLmJsYWRld2F0Y2gudjEuR2V0U2VsZWN0ZWRNb2RlbFJlc3BvbnNlEmMKEFNldFNlbGVjdGVkTW9kZWwSJi5ibGFkZXdhdGNoLnYxLlNldFNlbGVjdGVkTW9kZWxSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5TZXRTZWxlY3RlZE1vZGVsUmVzcG9uc2USZgoRR2V0TW9kZWxzTWFuaWZlc3QSJy5ibGFkZXdhdGNoLnYxLkdldE1vZGVsc01hbmlmZXN0UmVxdWVzdBooLmJsYWRld2F0Y2gudjEuR2V0TW9kZWxzTWFuaWZlc3RSZXNwb25zZRJpChJQZXJmb3JtYW5jZUNvbm5lY3QSKC5ibGFkZXdhdGNoLnYxLlBlcmZvcm1hbmNlQ29ubmVjdFJlcXVlc3QaKS5ibGFkZXdhdGNoLnYxLlBlcmZvcm1hbmNlQ29ubmVjdFJlc3BvbnNlEm8KFFBlcmZvcm1hbmNlSGVhcnRiZWF0EiouYmxhZGV3YXRjaC52MS5QZXJmb3JtYW5jZUhlYXJ0YmVhdFJlcXVlc3QaKy5ibGFkZXdhdGNoLnYxLlBlcmZvcm1hbmNlSGVhcnRiZWF0UmVzcG9uc2UScgoVUGVyZm9ybWFuY2VEaXNjb25uZWN0EisuYmxhZGV3YXRjaC52MS5QZXJmb3JtYW5jZURpc2Nvbm5lY3RSZXF1ZXN0GiwuYmxhZGV3YXRjaC52MS5QZXJmb3JtYW5jZURpc2Nvbm5lY3RSZXNwb25zZUIeChpuZXQuYmxhZGV3YXRjaC5hcHAuZ3JwYy52MVABYgZwcm90bzM");
 
 /**
  * BatteryInfo carries the Android battery level and charge state.
@@ -496,6 +496,13 @@ export type GetStatusResponse = Message<"bladewatch.v1.GetStatusResponse"> & {
    * @generated from field: string vehicle_data_error = 24;
    */
   vehicleDataError: string;
+
+  /**
+   * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+   *
+   * @generated from field: bladewatch.v1.DriveStatus drive_status = 25;
+   */
+  driveStatus?: DriveStatus | undefined;
 };
 
 /**
@@ -504,6 +511,70 @@ export type GetStatusResponse = Message<"bladewatch.v1.GetStatusResponse"> & {
  */
 export const GetStatusResponseSchema: GenMessage<GetStatusResponse> = /*@__PURE__*/
   messageDesc(file_bladewatch_v1_system, 10);
+
+/**
+ * DriveStatus: labels only where measured on a head unit, "UNKNOWN" otherwise; the raw SDK values
+ * (-1 when unavailable) always, so an unmeasured one can be mapped from a status query alone.
+ *
+ * @generated from message bladewatch.v1.DriveStatus
+ */
+export type DriveStatus = Message<"bladewatch.v1.DriveStatus"> & {
+  /**
+   * "P" / "R" / "N" / "D" / "M" / "S", or "UNKNOWN".
+   *
+   * @generated from field: string gear = 1;
+   */
+  gear: string;
+
+  /**
+   * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+   *
+   * @generated from field: string drive_mode = 2;
+   */
+  driveMode: string;
+
+  /**
+   * BYDAutoEnergyDevice.getOperationMode().
+   *
+   * @generated from field: int32 drive_mode_raw = 3;
+   */
+  driveModeRaw: number;
+
+  /**
+   * "DISABLED" / "ENABLED" / "ACTIVE", or "UNKNOWN".
+   *
+   * @generated from field: string auto_hold = 4;
+   */
+  autoHold: string;
+
+  /**
+   * BYDAutoADASDevice.getAVHState().
+   *
+   * @generated from field: int32 auto_hold_raw = 5;
+   */
+  autoHoldRaw: number;
+
+  /**
+   * "EV" / "HEV", or "UNKNOWN".
+   *
+   * @generated from field: string energy_mode = 6;
+   */
+  energyMode: string;
+
+  /**
+   * BYDAutoEnergyDevice.getEnergyMode().
+   *
+   * @generated from field: int32 energy_mode_raw = 7;
+   */
+  energyModeRaw: number;
+};
+
+/**
+ * Describes the message bladewatch.v1.DriveStatus.
+ * Use `create(DriveStatusSchema)` to create a new message.
+ */
+export const DriveStatusSchema: GenMessage<DriveStatus> = /*@__PURE__*/
+  messageDesc(file_bladewatch_v1_system, 11);
 
 /**
  * @generated from message bladewatch.v1.GetPerformanceRequest
@@ -516,7 +587,7 @@ export type GetPerformanceRequest = Message<"bladewatch.v1.GetPerformanceRequest
  * Use `create(GetPerformanceRequestSchema)` to create a new message.
  */
 export const GetPerformanceRequestSchema: GenMessage<GetPerformanceRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 11);
+  messageDesc(file_bladewatch_v1_system, 12);
 
 /**
  * @generated from message bladewatch.v1.GetPerformanceResponse
@@ -540,7 +611,7 @@ export type GetPerformanceResponse = Message<"bladewatch.v1.GetPerformanceRespon
  * Use `create(GetPerformanceResponseSchema)` to create a new message.
  */
 export const GetPerformanceResponseSchema: GenMessage<GetPerformanceResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 12);
+  messageDesc(file_bladewatch_v1_system, 13);
 
 /**
  * @generated from message bladewatch.v1.PlayAudioTestRequest
@@ -559,7 +630,7 @@ export type PlayAudioTestRequest = Message<"bladewatch.v1.PlayAudioTestRequest">
  * Use `create(PlayAudioTestRequestSchema)` to create a new message.
  */
 export const PlayAudioTestRequestSchema: GenMessage<PlayAudioTestRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 13);
+  messageDesc(file_bladewatch_v1_system, 14);
 
 /**
  * @generated from message bladewatch.v1.PlayAudioTestResponse
@@ -586,7 +657,7 @@ export type PlayAudioTestResponse = Message<"bladewatch.v1.PlayAudioTestResponse
  * Use `create(PlayAudioTestResponseSchema)` to create a new message.
  */
 export const PlayAudioTestResponseSchema: GenMessage<PlayAudioTestResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 14);
+  messageDesc(file_bladewatch_v1_system, 15);
 
 /**
  * ModelInfo describes one downloadable AI model.
@@ -615,7 +686,7 @@ export type ModelInfo = Message<"bladewatch.v1.ModelInfo"> & {
  * Use `create(ModelInfoSchema)` to create a new message.
  */
 export const ModelInfoSchema: GenMessage<ModelInfo> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 15);
+  messageDesc(file_bladewatch_v1_system, 16);
 
 /**
  * @generated from message bladewatch.v1.ListModelsRequest
@@ -628,7 +699,7 @@ export type ListModelsRequest = Message<"bladewatch.v1.ListModelsRequest"> & {
  * Use `create(ListModelsRequestSchema)` to create a new message.
  */
 export const ListModelsRequestSchema: GenMessage<ListModelsRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 16);
+  messageDesc(file_bladewatch_v1_system, 17);
 
 /**
  * @generated from message bladewatch.v1.ListModelsResponse
@@ -645,7 +716,7 @@ export type ListModelsResponse = Message<"bladewatch.v1.ListModelsResponse"> & {
  * Use `create(ListModelsResponseSchema)` to create a new message.
  */
 export const ListModelsResponseSchema: GenMessage<ListModelsResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 17);
+  messageDesc(file_bladewatch_v1_system, 18);
 
 /**
  * @generated from message bladewatch.v1.DownloadModelRequest
@@ -667,7 +738,7 @@ export type DownloadModelRequest = Message<"bladewatch.v1.DownloadModelRequest">
  * Use `create(DownloadModelRequestSchema)` to create a new message.
  */
 export const DownloadModelRequestSchema: GenMessage<DownloadModelRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 18);
+  messageDesc(file_bladewatch_v1_system, 19);
 
 /**
  * @generated from message bladewatch.v1.DownloadModelResponse
@@ -694,7 +765,7 @@ export type DownloadModelResponse = Message<"bladewatch.v1.DownloadModelResponse
  * Use `create(DownloadModelResponseSchema)` to create a new message.
  */
 export const DownloadModelResponseSchema: GenMessage<DownloadModelResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 19);
+  messageDesc(file_bladewatch_v1_system, 20);
 
 /**
  * SOH nominal capacity endpoints.
@@ -709,7 +780,7 @@ export type GetSohNominalRequest = Message<"bladewatch.v1.GetSohNominalRequest">
  * Use `create(GetSohNominalRequestSchema)` to create a new message.
  */
 export const GetSohNominalRequestSchema: GenMessage<GetSohNominalRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 20);
+  messageDesc(file_bladewatch_v1_system, 21);
 
 /**
  * @generated from message bladewatch.v1.GetSohNominalResponse
@@ -735,7 +806,7 @@ export type GetSohNominalResponse = Message<"bladewatch.v1.GetSohNominalResponse
  * Use `create(GetSohNominalResponseSchema)` to create a new message.
  */
 export const GetSohNominalResponseSchema: GenMessage<GetSohNominalResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 21);
+  messageDesc(file_bladewatch_v1_system, 22);
 
 /**
  * @generated from message bladewatch.v1.SetSohNominalRequest
@@ -754,7 +825,7 @@ export type SetSohNominalRequest = Message<"bladewatch.v1.SetSohNominalRequest">
  * Use `create(SetSohNominalRequestSchema)` to create a new message.
  */
 export const SetSohNominalRequestSchema: GenMessage<SetSohNominalRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 22);
+  messageDesc(file_bladewatch_v1_system, 23);
 
 /**
  * @generated from message bladewatch.v1.SetSohNominalResponse
@@ -776,7 +847,7 @@ export type SetSohNominalResponse = Message<"bladewatch.v1.SetSohNominalResponse
  * Use `create(SetSohNominalResponseSchema)` to create a new message.
  */
 export const SetSohNominalResponseSchema: GenMessage<SetSohNominalResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 23);
+  messageDesc(file_bladewatch_v1_system, 24);
 
 /**
  * SOH status (stub — estimation has been removed).
@@ -791,7 +862,7 @@ export type GetSohStatusRequest = Message<"bladewatch.v1.GetSohStatusRequest"> &
  * Use `create(GetSohStatusRequestSchema)` to create a new message.
  */
 export const GetSohStatusRequestSchema: GenMessage<GetSohStatusRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 24);
+  messageDesc(file_bladewatch_v1_system, 25);
 
 /**
  * @generated from message bladewatch.v1.GetSohStatusResponse
@@ -833,7 +904,7 @@ export type GetSohStatusResponse = Message<"bladewatch.v1.GetSohStatusResponse">
  * Use `create(GetSohStatusResponseSchema)` to create a new message.
  */
 export const GetSohStatusResponseSchema: GenMessage<GetSohStatusResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 25);
+  messageDesc(file_bladewatch_v1_system, 26);
 
 /**
  * @generated from message bladewatch.v1.ResetSohRequest
@@ -846,7 +917,7 @@ export type ResetSohRequest = Message<"bladewatch.v1.ResetSohRequest"> & {
  * Use `create(ResetSohRequestSchema)` to create a new message.
  */
 export const ResetSohRequestSchema: GenMessage<ResetSohRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 26);
+  messageDesc(file_bladewatch_v1_system, 27);
 
 /**
  * @generated from message bladewatch.v1.ResetSohResponse
@@ -868,7 +939,7 @@ export type ResetSohResponse = Message<"bladewatch.v1.ResetSohResponse"> & {
  * Use `create(ResetSohResponseSchema)` to create a new message.
  */
 export const ResetSohResponseSchema: GenMessage<ResetSohResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 27);
+  messageDesc(file_bladewatch_v1_system, 28);
 
 /**
  * Bulk performance data reset.
@@ -890,7 +961,7 @@ export type ResetPerformanceRequest = Message<"bladewatch.v1.ResetPerformanceReq
  * Use `create(ResetPerformanceRequestSchema)` to create a new message.
  */
 export const ResetPerformanceRequestSchema: GenMessage<ResetPerformanceRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 28);
+  messageDesc(file_bladewatch_v1_system, 29);
 
 /**
  * @generated from message bladewatch.v1.ResetPerformanceResponse
@@ -919,7 +990,7 @@ export type ResetPerformanceResponse = Message<"bladewatch.v1.ResetPerformanceRe
  * Use `create(ResetPerformanceResponseSchema)` to create a new message.
  */
 export const ResetPerformanceResponseSchema: GenMessage<ResetPerformanceResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 29);
+  messageDesc(file_bladewatch_v1_system, 30);
 
 /**
  * Parking energy-delta and last-charge endpoints.
@@ -940,7 +1011,7 @@ export type GetParkingDeltaRequest = Message<"bladewatch.v1.GetParkingDeltaReque
  * Use `create(GetParkingDeltaRequestSchema)` to create a new message.
  */
 export const GetParkingDeltaRequestSchema: GenMessage<GetParkingDeltaRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 30);
+  messageDesc(file_bladewatch_v1_system, 31);
 
 /**
  * @generated from message bladewatch.v1.GetParkingDeltaResponse
@@ -964,7 +1035,7 @@ export type GetParkingDeltaResponse = Message<"bladewatch.v1.GetParkingDeltaResp
  * Use `create(GetParkingDeltaResponseSchema)` to create a new message.
  */
 export const GetParkingDeltaResponseSchema: GenMessage<GetParkingDeltaResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 31);
+  messageDesc(file_bladewatch_v1_system, 32);
 
 /**
  * @generated from message bladewatch.v1.GetLastChargeRequest
@@ -983,7 +1054,7 @@ export type GetLastChargeRequest = Message<"bladewatch.v1.GetLastChargeRequest">
  * Use `create(GetLastChargeRequestSchema)` to create a new message.
  */
 export const GetLastChargeRequestSchema: GenMessage<GetLastChargeRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 32);
+  messageDesc(file_bladewatch_v1_system, 33);
 
 /**
  * @generated from message bladewatch.v1.GetLastChargeResponse
@@ -1007,7 +1078,7 @@ export type GetLastChargeResponse = Message<"bladewatch.v1.GetLastChargeResponse
  * Use `create(GetLastChargeResponseSchema)` to create a new message.
  */
 export const GetLastChargeResponseSchema: GenMessage<GetLastChargeResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 33);
+  messageDesc(file_bladewatch_v1_system, 34);
 
 /**
  * Vehicle model selection and manifest.
@@ -1022,7 +1093,7 @@ export type GetSelectedModelRequest = Message<"bladewatch.v1.GetSelectedModelReq
  * Use `create(GetSelectedModelRequestSchema)` to create a new message.
  */
 export const GetSelectedModelRequestSchema: GenMessage<GetSelectedModelRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 34);
+  messageDesc(file_bladewatch_v1_system, 35);
 
 /**
  * @generated from message bladewatch.v1.GetSelectedModelResponse
@@ -1044,7 +1115,7 @@ export type GetSelectedModelResponse = Message<"bladewatch.v1.GetSelectedModelRe
  * Use `create(GetSelectedModelResponseSchema)` to create a new message.
  */
 export const GetSelectedModelResponseSchema: GenMessage<GetSelectedModelResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 35);
+  messageDesc(file_bladewatch_v1_system, 36);
 
 /**
  * @generated from message bladewatch.v1.SetSelectedModelRequest
@@ -1066,7 +1137,7 @@ export type SetSelectedModelRequest = Message<"bladewatch.v1.SetSelectedModelReq
  * Use `create(SetSelectedModelRequestSchema)` to create a new message.
  */
 export const SetSelectedModelRequestSchema: GenMessage<SetSelectedModelRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 36);
+  messageDesc(file_bladewatch_v1_system, 37);
 
 /**
  * @generated from message bladewatch.v1.SetSelectedModelResponse
@@ -1088,7 +1159,7 @@ export type SetSelectedModelResponse = Message<"bladewatch.v1.SetSelectedModelRe
  * Use `create(SetSelectedModelResponseSchema)` to create a new message.
  */
 export const SetSelectedModelResponseSchema: GenMessage<SetSelectedModelResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 37);
+  messageDesc(file_bladewatch_v1_system, 38);
 
 /**
  * @generated from message bladewatch.v1.GetModelsManifestRequest
@@ -1101,7 +1172,7 @@ export type GetModelsManifestRequest = Message<"bladewatch.v1.GetModelsManifestR
  * Use `create(GetModelsManifestRequestSchema)` to create a new message.
  */
 export const GetModelsManifestRequestSchema: GenMessage<GetModelsManifestRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 38);
+  messageDesc(file_bladewatch_v1_system, 39);
 
 /**
  * @generated from message bladewatch.v1.GetModelsManifestResponse
@@ -1120,7 +1191,7 @@ export type GetModelsManifestResponse = Message<"bladewatch.v1.GetModelsManifest
  * Use `create(GetModelsManifestResponseSchema)` to create a new message.
  */
 export const GetModelsManifestResponseSchema: GenMessage<GetModelsManifestResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 39);
+  messageDesc(file_bladewatch_v1_system, 40);
 
 /**
  * @generated from message bladewatch.v1.PerformanceConnectRequest
@@ -1140,7 +1211,7 @@ export type PerformanceConnectRequest = Message<"bladewatch.v1.PerformanceConnec
  * Use `create(PerformanceConnectRequestSchema)` to create a new message.
  */
 export const PerformanceConnectRequestSchema: GenMessage<PerformanceConnectRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 40);
+  messageDesc(file_bladewatch_v1_system, 41);
 
 /**
  * @generated from message bladewatch.v1.PerformanceConnectResponse
@@ -1167,7 +1238,7 @@ export type PerformanceConnectResponse = Message<"bladewatch.v1.PerformanceConne
  * Use `create(PerformanceConnectResponseSchema)` to create a new message.
  */
 export const PerformanceConnectResponseSchema: GenMessage<PerformanceConnectResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 41);
+  messageDesc(file_bladewatch_v1_system, 42);
 
 /**
  * @generated from message bladewatch.v1.PerformanceHeartbeatRequest
@@ -1184,7 +1255,7 @@ export type PerformanceHeartbeatRequest = Message<"bladewatch.v1.PerformanceHear
  * Use `create(PerformanceHeartbeatRequestSchema)` to create a new message.
  */
 export const PerformanceHeartbeatRequestSchema: GenMessage<PerformanceHeartbeatRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 42);
+  messageDesc(file_bladewatch_v1_system, 43);
 
 /**
  * @generated from message bladewatch.v1.PerformanceHeartbeatResponse
@@ -1206,7 +1277,7 @@ export type PerformanceHeartbeatResponse = Message<"bladewatch.v1.PerformanceHea
  * Use `create(PerformanceHeartbeatResponseSchema)` to create a new message.
  */
 export const PerformanceHeartbeatResponseSchema: GenMessage<PerformanceHeartbeatResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 43);
+  messageDesc(file_bladewatch_v1_system, 44);
 
 /**
  * @generated from message bladewatch.v1.PerformanceDisconnectRequest
@@ -1223,7 +1294,7 @@ export type PerformanceDisconnectRequest = Message<"bladewatch.v1.PerformanceDis
  * Use `create(PerformanceDisconnectRequestSchema)` to create a new message.
  */
 export const PerformanceDisconnectRequestSchema: GenMessage<PerformanceDisconnectRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 44);
+  messageDesc(file_bladewatch_v1_system, 45);
 
 /**
  * @generated from message bladewatch.v1.PerformanceDisconnectResponse
@@ -1245,7 +1316,7 @@ export type PerformanceDisconnectResponse = Message<"bladewatch.v1.PerformanceDi
  * Use `create(PerformanceDisconnectResponseSchema)` to create a new message.
  */
 export const PerformanceDisconnectResponseSchema: GenMessage<PerformanceDisconnectResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_system, 45);
+  messageDesc(file_bladewatch_v1_system, 46);
 
 /**
  * SystemService exposes daemon status, performance metrics, AI model management,

@@ -355,4 +355,31 @@ public interface GetStatusResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getVehicleDataErrorBytes();
+
+  /**
+   * <pre>
+   * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+   * </pre>
+   *
+   * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+   * @return Whether the driveStatus field is set.
+   */
+  boolean hasDriveStatus();
+  /**
+   * <pre>
+   * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+   * </pre>
+   *
+   * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+   * @return The driveStatus.
+   */
+  net.bladewatch.app.grpc.v1.DriveStatus getDriveStatus();
+  /**
+   * <pre>
+   * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+   * </pre>
+   *
+   * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+   */
+  net.bladewatch.app.grpc.v1.DriveStatusOrBuilder getDriveStatusOrBuilder();
 }

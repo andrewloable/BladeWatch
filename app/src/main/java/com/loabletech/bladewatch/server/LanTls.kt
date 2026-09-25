@@ -86,6 +86,11 @@ object LanTls {
         val storedKey = store.getString(SECTION, PRIVATE_KEY)
         val storedCert = store.getString(SECTION, CERTIFICATE)
         if (storedKey != null && storedCert != null) {
+            // A stored identity that does not PARSE is damaged, not unlucky: the store publishes by
+            // atomic rename, and a store it could not read never reaches here as data -- its
+            // writes are refused instead (SecretConfigStore, BladeWatch-w7by). The companions
+            // pinned to it cannot connect either way, so replacing it is the only way pairing
+            // works again; it is reported so the log says why they must re-pair.
             try {
                 return parse(storedKey, storedCert)
             } catch (e: Exception) {

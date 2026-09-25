@@ -38,6 +38,11 @@ void main() {
     store.file.writeAsStringSync('{ nope');
     await store.load();
     expect(store.car, isNull);
+    // BladeWatch-w7by: what would not load is kept, owner-only, before any save can overwrite it.
+    final kept = store.file.parent.listSync().whereType<File>().where((f) => f.path.contains('.damaged-')).toList();
+    expect(kept, hasLength(1));
+    expect(kept.single.readAsStringSync(), '{ nope');
+    if (Platform.isMacOS || Platform.isLinux) expect((kept.single.statSync().mode & 0x1ff), 0x180);
 
     store.car = testCar();
     await store.save();

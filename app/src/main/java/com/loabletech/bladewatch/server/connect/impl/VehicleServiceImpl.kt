@@ -13,7 +13,7 @@ import org.json.JSONObject
  * Connect protocol handler for bladewatch.v1.VehicleService.
  *
  * VehicleControlApiHandler routes:
- *   GetState, GetAcDiagnostics, GetSeatDiagnostics, Trunk, MoveWindow, SetClimate, SetSeat,
+ *   GetState, GetAcDiagnostics, Trunk, MoveWindow, SetClimate,
  *   SetLights, SetAdas, SetScreen, SetMediaVolume, GetChargeCap, SetChargeCap
  *
  * GpsApiHandler routes:
@@ -26,9 +26,6 @@ class VehicleServiceImpl {
         dispatcher.register(
             "bladewatch.v1.VehicleService", "GetAcDiagnostics", this::handleGetAcDiagnostics
         )
-        dispatcher.register(
-            "bladewatch.v1.VehicleService", "GetSeatDiagnostics", this::handleGetSeatDiagnostics
-        )
         // NOT REGISTERED (BladeWatch-c2h1): Lock, Unlock, Flash, FindCar, SetBatteryHeat,
         // Get/SetChargingSchedule. The proto still declares them so the wire contract is unchanged
         // for existing clients, but none had a local SDK primitive once 61b4d7f removed the BYD
@@ -38,7 +35,6 @@ class VehicleServiceImpl {
         dispatcher.register("bladewatch.v1.VehicleService", "Trunk", this::handleTrunk)
         dispatcher.register("bladewatch.v1.VehicleService", "MoveWindow", this::handleMoveWindow)
         dispatcher.register("bladewatch.v1.VehicleService", "SetClimate", this::handleSetClimate)
-        dispatcher.register("bladewatch.v1.VehicleService", "SetSeat", this::handleSetSeat)
         dispatcher.register("bladewatch.v1.VehicleService", "SetLights", this::handleSetLights)
         dispatcher.register("bladewatch.v1.VehicleService", "SetAdas", this::handleSetAdas)
         dispatcher.register("bladewatch.v1.VehicleService", "SetScreen", this::handleSetScreen)
@@ -89,16 +85,6 @@ class VehicleServiceImpl {
         }
 
     @Throws(ConnectException::class)
-    private fun handleGetSeatDiagnostics(req: String?, clientIdentity: String?): ConnectResponse =
-        // REST emits {success, seats:{...}}; proto GetSeatDiagnosticsResponse has a string
-        // raw_json (json rawJson). Stringify the seats object into rawJson.
-        json {
-            reshapeObjectToJsonString(
-                VehicleControlApiHandler.handleSeatDiagnostics(), "seats", "rawJson"
-            )
-        }
-
-    @Throws(ConnectException::class)
     private fun handleTrunk(req: String?, clientIdentity: String?): ConnectResponse =
         json { VehicleControlApiHandler.handleTrunk(req) }
 
@@ -109,10 +95,6 @@ class VehicleServiceImpl {
     @Throws(ConnectException::class)
     private fun handleSetClimate(req: String?, clientIdentity: String?): ConnectResponse =
         json { VehicleControlApiHandler.handleClimate(req) }
-
-    @Throws(ConnectException::class)
-    private fun handleSetSeat(req: String?, clientIdentity: String?): ConnectResponse =
-        json { VehicleControlApiHandler.handleSeat(req) }
 
     @Throws(ConnectException::class)
     private fun handleSetLights(req: String?, clientIdentity: String?): ConnectResponse =

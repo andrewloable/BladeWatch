@@ -107,13 +107,13 @@ The primary web UI is an Angular 19 single-page app (source in `web/`, built wit
 
 Angular pages (routes), each built for 1:1 parity with its in-car counterpart:
 
-- Dashboard — stats / connect hub (week trip stats, status chips, metric tiles, device-ID + tunnel-URL QR connect card).
+- Dashboard — stats / connect hub (week trip stats, status chips, metric tiles, device-ID + tunnel-URL QR connect card). In-car status chips also show the gear, drive mode (ECO / NORMAL / SPORT), Auto Hold (on / off) and, on a DM-i, EV / HEV (BladeWatch-7zp9, -os88; a dash for anything unmeasured -- see byd-integrations.md). The THIS WEEK card shows its trip count and distance once, in its tiles (BladeWatch-by8d).
 - Live — full-bleed camera view with All/Front/Right/Rear/Left selector over the WebSocket stream.
 - Recording — dashcam vs surveillance library with day calendar navigation, actor/severity/type filter chips, multi-select delete, and an in-page video player.
 - Surveillance — sensitivity, distance preset, AI gate + confidence, per-class detection, pre/post windows, quadrant snapshots, heatmap, and safe-location zones.
 - Events — surveillance (sentry) event clips with the shared player.
 - Trips — Trips / Stats / Storage tabs, Leaflet route map, driving DNA, personalized range, electricity-rate config.
-- Vehicle — Climate / Seats / Windows control tabs, read-only lock + charge/range pills, TPMS cards, and a GPS card.
+- Vehicle — Climate / Windows control tabs, read-only lock + charge/range pills, TPMS cards, and a GPS card.
 - Location — full-screen Leaflet map with a heading-rotated car marker, follow/recenter, and Auto/Light/Dark map themes.
 - Diagnostics — Network / Storage / Camera / Battery health tiles, a Camera Probe dialog, and a Battery Health (SOH) dialog. (No ADB console — ADB is excluded from the web build.)
 - Notifications — Web Push subscribe/unsubscribe, VAPID key, and test push.
@@ -202,11 +202,12 @@ The collector isolates failures by device type so one unavailable BYD API does n
 
 The in-car app includes a Vehicle screen under `flutter_ui/lib/screens/vehicle/`. Its tab bar exposes three control tabs:
 
-- **Climate** — AC on/off, max cooling toggle, temperature and fan speed, and an explicit screen on/off control (BladeWatch-2000.3 — see below).
-- **Seats** — heat and ventilation level for driver and passenger (Off / Low / High). The tab is hidden when no seat controls are available.
-- **Windows** — per-window open/close/vent controls (LF, RF, LR, RR) plus an all-windows close/vent/open.
+- **Climate** — AC on/off, max cooling toggle, temperature and fan speed, the outside temperature (the car exposes no cabin temperature — BladeWatch-eh3u), and an explicit screen on/off control (BladeWatch-2000.3 — see below).
+- **Windows** — per-window open/close/vent controls (LF, RF, LR, RR) plus an all-windows close/vent/open. The sunroof offers 0 / 50 / 100 %, the only stops its hardware has, and shows where the app last sent it (BladeWatch-b3n7).
 
-The Angular web `Vehicle` page mirrors the same three tabs (Climate / Seats / Windows), plus read-only lock and charge/range pills, TPMS cards, and a GPS card.
+There is no seat control anywhere in BladeWatch: seat heating, ventilation and memory recall were removed end to end on the owner's decision (BladeWatch-7bx4, 2026-09-25).
+
+The Angular web `Vehicle` page mirrors the same two tabs (Climate / Windows), plus read-only lock and charge/range pills, TPMS cards, and a GPS card.
 
 The hero region above the tabs shows a Three.js-rendered car with a tyre-pressure overlay: per-corner cards (FL/FR/RL/RR) colour-coded by pressure tier (NORMAL/CAUTION/WARN/ALERT/MUTED), with alert cards distinguishing fast vs slow air-leak states. The hero renders in a `webview_flutter` WebView pointed at `app/src/main/assets/web/hero/hero.html`; **the previously attempted native Filament port was removed because the BYD Adreno 610 GL driver crashes under continuous gltfio rendering — do not reintroduce it.**
 
@@ -223,11 +224,10 @@ Lock/Unlock/Flash were removed from both the in-car view and the web page by des
   - If the screen was switched off by this control and the vehicle then leaves the parked state, it is turned back on automatically (`ScreenAutoRecovery`) with no user action required.
   - No screen-off timer, schedule, or automation hook exists or is permitted — off is explicit-only.
 - Media volume and mute (BladeWatch-2000.2) — set to an absolute 0-100%, step up/down, mute/unmute (restores the exact pre-mute level, not a default). Android's own `AudioManager` (`STREAM_MUSIC`) only, no BYD SDK. Deliberately **not** routed through `VehicleCommandRouter` — adjusting volume is ordinary, safe-while-driving behaviour (a physical volume knob is never gated on being parked), unlike the actuations that router gates. Touches only the volume level — no audio route, focus request, output device change, or sound playback of any kind.
-- Seats (heat / ventilation).
 - Windows (per-window and all-windows position).
 - Read-only lock state, charge/range, and TPMS.
 - GPS location (`GetGpsLocation`, also used by the Location screen).
-- Diagnostics and state reads (AC / seat diagnostics, charge cap).
+- Diagnostics and state reads (AC diagnostics, charge cap).
 
 ## Trips and Analytics
 
@@ -243,6 +243,14 @@ Trip functionality includes:
 - Trip config.
 - Trip storage management.
 - PHEV fuel leg: litres burned, fuel cost, and a dual-leg trip cost.
+- Period costs (BladeWatch-39d2, -mgi9, -c149): the fuel, electric and total cost of a period's
+  trips, on the dashboard's THIS WEEK card (in-car and companion, under the trip count, distance
+  and drive time), on the Trips Stats tab under Personalized Range, and in the Period Summary.
+  One definition in `packages/bladewatch_rpc/lib/trips/trip_costs.dart` (`TripCosts`): per trip,
+  `tripCost` is the total and the electric half is `tripCost - fuelCost`, so trips from before the
+  fuel leg count fully as electric. Every trip of the period is summed (paging past ListTrips'
+  100 per call). Fuel is left out on a car that recorded none; with no rate set the card says so
+  instead of showing zeros; amounts in different currencies are never added.
 
 ### Fixed: blank Energy tile and 0% "Today" efficiency (Flutter)
 
@@ -385,7 +393,7 @@ otherwise over Pear. It has every page the web app had:
 - Live view.
 - Events, meaning the store-and-forward alerts plus the surveillance and proximity clips.
 - Recordings, with playback and delete.
-- Vehicle: status, climate, seats and windows.
+- Vehicle: status, climate and windows.
 - Location, on a map.
 - Trips: routes, scores, range, driving DNA and storage.
 - Surveillance: arm and disarm, detection settings, camera snapshots and safe zones.
@@ -397,6 +405,9 @@ otherwise over Pear. It has every page the web app had:
 
 The web login is replaced by pairing: scan the in-car QR, or paste its text.
 
+- **Paired stays paired.** Only removing the device in the car, or Unpair in the companion, ends
+  a pairing; restarts, updates, reboots and a car that cannot answer yet do not (BladeWatch-w7by;
+  see ipc-auth-and-secrets.md, "Companion pairing").
 - **Connection state is explicit on every page.** It is one of three: still looking for the
   car (a Pear lookup can take a minute), can't reach it (it keeps retrying), or the car
   removed this device (pair again). None of these is ever a spinner that never resolves.
@@ -404,7 +415,7 @@ The web login is replaced by pairing: scan the in-car QR, or paste its text.
   few seconds, and works on every platform without a video decoder. H.264 video, and with it
   the per-camera views, is a follow-up.
 - **Window control asks first, every time.** From a phone, nobody can see whether a hand or
-  a pet is in a window. Climate and seat changes are reversible and don't ask. Every command
+  a pet is in a window. Climate changes are reversible and don't ask. Every command
   carries the car's short-lived action token, and the car's own safety interlock still
   decides.
 - **The app is in all 17 of the web app's languages.**

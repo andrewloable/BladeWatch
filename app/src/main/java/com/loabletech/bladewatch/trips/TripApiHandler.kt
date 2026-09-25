@@ -4,7 +4,6 @@ import android.hardware.bydauto.instrument.BYDAutoInstrumentDevice
 import java.io.File
 import java.util.regex.Pattern
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.roundToLong
 import net.bladewatch.app.byd.BydDataCollector
 import net.bladewatch.app.logging.DaemonLogger
@@ -179,18 +178,19 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
         return response
     }
 
-    /** GET /api/trips/summary — weekly rollup. Query: days (default 7). */
+    /**
+     * GET /api/trips/summary — ONE rollup over exactly the last `days` days (default 7), from the
+     * same trips GET /api/trips lists (BladeWatch-jkuz). It used to return the most recent
+     * (days + 6) / 7 CALENDAR-week rollups, so "7 Days" meant "this week so far": on a Thursday
+     * it said 5 trips / 41.3 km beside a list, and a dashboard, of 10 trips / 74.2 km.
+     */
     private fun handleGetSummary(params: Map<String, String>): JSONObject {
         val days = getIntParam(params, "days", 7)
-        // Convert days to approximate weeks, rounding up.
-        val weeks = max(1, (days + 6) / 7)
-
         val db = manager.getDatabase() ?: return errorResponse("Trip database not available", 500)
 
         val rollupsArray = JSONArray()
-        for (rollup in db.getRecentWeeklyRollups(weeks)) {
-            rollupsArray.put(rollup.toJson())
-        }
+        val trips = db.getTrips(days, Int.MAX_VALUE)
+        if (trips.isNotEmpty()) rollupsArray.put(WeeklyRollup.ofTrips(trips).toJson())
 
         return successResponse("summary", rollupsArray, "summary")
     }

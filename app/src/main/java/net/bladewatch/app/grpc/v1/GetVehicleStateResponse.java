@@ -269,32 +269,6 @@ private static final long serialVersionUID = 0L;
     return adas_ == null ? net.bladewatch.app.grpc.v1.AdasStatus.getDefaultInstance() : adas_;
   }
 
-  public static final int SEATS_FIELD_NUMBER = 10;
-  private net.bladewatch.app.grpc.v1.SeatStatus seats_;
-  /**
-   * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-   * @return Whether the seats field is set.
-   */
-  @java.lang.Override
-  public boolean hasSeats() {
-    return ((bitField0_ & 0x00000100) != 0);
-  }
-  /**
-   * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-   * @return The seats.
-   */
-  @java.lang.Override
-  public net.bladewatch.app.grpc.v1.SeatStatus getSeats() {
-    return seats_ == null ? net.bladewatch.app.grpc.v1.SeatStatus.getDefaultInstance() : seats_;
-  }
-  /**
-   * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-   */
-  @java.lang.Override
-  public net.bladewatch.app.grpc.v1.SeatStatusOrBuilder getSeatsOrBuilder() {
-    return seats_ == null ? net.bladewatch.app.grpc.v1.SeatStatus.getDefaultInstance() : seats_;
-  }
-
   public static final int CLIMATE_FIELD_NUMBER = 11;
   private net.bladewatch.app.grpc.v1.ClimateStatus climate_;
   /**
@@ -303,7 +277,7 @@ private static final long serialVersionUID = 0L;
    */
   @java.lang.Override
   public boolean hasClimate() {
-    return ((bitField0_ & 0x00000200) != 0);
+    return ((bitField0_ & 0x00000100) != 0);
   }
   /**
    * <code>.bladewatch.v1.ClimateStatus climate = 11 [json_name = "climate"];</code>
@@ -329,7 +303,7 @@ private static final long serialVersionUID = 0L;
    */
   @java.lang.Override
   public boolean hasTyres() {
-    return ((bitField0_ & 0x00000400) != 0);
+    return ((bitField0_ & 0x00000200) != 0);
   }
   /**
    * <code>.bladewatch.v1.TyreStatus tyres = 12 [json_name = "tyres"];</code>
@@ -455,12 +429,9 @@ private static final long serialVersionUID = 0L;
       output.writeMessage(9, getAdas());
     }
     if (((bitField0_ & 0x00000100) != 0)) {
-      output.writeMessage(10, getSeats());
-    }
-    if (((bitField0_ & 0x00000200) != 0)) {
       output.writeMessage(11, getClimate());
     }
-    if (((bitField0_ & 0x00000400) != 0)) {
+    if (((bitField0_ & 0x00000200) != 0)) {
       output.writeMessage(12, getTyres());
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(error_)) {
@@ -514,13 +485,9 @@ private static final long serialVersionUID = 0L;
     }
     if (((bitField0_ & 0x00000100) != 0)) {
       size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(10, getSeats());
-    }
-    if (((bitField0_ & 0x00000200) != 0)) {
-      size += com.google.protobuf.CodedOutputStream
         .computeMessageSize(11, getClimate());
     }
-    if (((bitField0_ & 0x00000400) != 0)) {
+    if (((bitField0_ & 0x00000200) != 0)) {
       size += com.google.protobuf.CodedOutputStream
         .computeMessageSize(12, getTyres());
     }
@@ -601,11 +568,6 @@ private static final long serialVersionUID = 0L;
       if (!getAdas()
           .equals(other.getAdas())) return false;
     }
-    if (hasSeats() != other.hasSeats()) return false;
-    if (hasSeats()) {
-      if (!getSeats()
-          .equals(other.getSeats())) return false;
-    }
     if (hasClimate() != other.hasClimate()) return false;
     if (hasClimate()) {
       if (!getClimate()
@@ -667,10 +629,6 @@ private static final long serialVersionUID = 0L;
     if (hasAdas()) {
       hash = (37 * hash) + ADAS_FIELD_NUMBER;
       hash = (53 * hash) + getAdas().hashCode();
-    }
-    if (hasSeats()) {
-      hash = (37 * hash) + SEATS_FIELD_NUMBER;
-      hash = (53 * hash) + getSeats().hashCode();
     }
     if (hasClimate()) {
       hash = (37 * hash) + CLIMATE_FIELD_NUMBER;
@@ -825,7 +783,6 @@ private static final long serialVersionUID = 0L;
         internalGetBatteryFieldBuilder();
         internalGetLightsFieldBuilder();
         internalGetAdasFieldBuilder();
-        internalGetSeatsFieldBuilder();
         internalGetClimateFieldBuilder();
         internalGetTyresFieldBuilder();
       }
@@ -874,11 +831,6 @@ private static final long serialVersionUID = 0L;
       if (adasBuilder_ != null) {
         adasBuilder_.dispose();
         adasBuilder_ = null;
-      }
-      seats_ = null;
-      if (seatsBuilder_ != null) {
-        seatsBuilder_.dispose();
-        seatsBuilder_ = null;
       }
       climate_ = null;
       if (climateBuilder_ != null) {
@@ -979,30 +931,24 @@ private static final long serialVersionUID = 0L;
         to_bitField0_ |= 0x00000080;
       }
       if (((from_bitField0_ & 0x00000200) != 0)) {
-        result.seats_ = seatsBuilder_ == null
-            ? seats_
-            : seatsBuilder_.build();
-        to_bitField0_ |= 0x00000100;
-      }
-      if (((from_bitField0_ & 0x00000400) != 0)) {
         result.climate_ = climateBuilder_ == null
             ? climate_
             : climateBuilder_.build();
-        to_bitField0_ |= 0x00000200;
+        to_bitField0_ |= 0x00000100;
       }
-      if (((from_bitField0_ & 0x00000800) != 0)) {
+      if (((from_bitField0_ & 0x00000400) != 0)) {
         result.tyres_ = tyresBuilder_ == null
             ? tyres_
             : tyresBuilder_.build();
-        to_bitField0_ |= 0x00000400;
+        to_bitField0_ |= 0x00000200;
       }
-      if (((from_bitField0_ & 0x00001000) != 0)) {
+      if (((from_bitField0_ & 0x00000800) != 0)) {
         result.error_ = error_;
       }
-      if (((from_bitField0_ & 0x00002000) != 0)) {
+      if (((from_bitField0_ & 0x00001000) != 0)) {
         result.mediaVolumePercent_ = mediaVolumePercent_;
       }
-      if (((from_bitField0_ & 0x00004000) != 0)) {
+      if (((from_bitField0_ & 0x00002000) != 0)) {
         result.mediaMuted_ = mediaMuted_;
       }
       result.bitField0_ |= to_bitField0_;
@@ -1047,9 +993,6 @@ private static final long serialVersionUID = 0L;
       if (other.hasAdas()) {
         mergeAdas(other.getAdas());
       }
-      if (other.hasSeats()) {
-        mergeSeats(other.getSeats());
-      }
       if (other.hasClimate()) {
         mergeClimate(other.getClimate());
       }
@@ -1058,7 +1001,7 @@ private static final long serialVersionUID = 0L;
       }
       if (!other.getError().isEmpty()) {
         error_ = other.error_;
-        bitField0_ |= 0x00001000;
+        bitField0_ |= 0x00000800;
         onChanged();
       }
       if (other.getMediaVolumePercent() != 0) {
@@ -1154,40 +1097,33 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000100;
               break;
             } // case 74
-            case 82: {
-              input.readMessage(
-                  internalGetSeatsFieldBuilder().getBuilder(),
-                  extensionRegistry);
-              bitField0_ |= 0x00000200;
-              break;
-            } // case 82
             case 90: {
               input.readMessage(
                   internalGetClimateFieldBuilder().getBuilder(),
                   extensionRegistry);
-              bitField0_ |= 0x00000400;
+              bitField0_ |= 0x00000200;
               break;
             } // case 90
             case 98: {
               input.readMessage(
                   internalGetTyresFieldBuilder().getBuilder(),
                   extensionRegistry);
-              bitField0_ |= 0x00000800;
+              bitField0_ |= 0x00000400;
               break;
             } // case 98
             case 106: {
               error_ = input.readStringRequireUtf8();
-              bitField0_ |= 0x00001000;
+              bitField0_ |= 0x00000800;
               break;
             } // case 106
             case 112: {
               mediaVolumePercent_ = input.readInt32();
-              bitField0_ |= 0x00002000;
+              bitField0_ |= 0x00001000;
               break;
             } // case 112
             case 120: {
               mediaMuted_ = input.readBool();
-              bitField0_ |= 0x00004000;
+              bitField0_ |= 0x00002000;
               break;
             } // case 120
             default: {
@@ -2207,127 +2143,6 @@ private static final long serialVersionUID = 0L;
       return adasBuilder_;
     }
 
-    private net.bladewatch.app.grpc.v1.SeatStatus seats_;
-    private com.google.protobuf.SingleFieldBuilder<
-        net.bladewatch.app.grpc.v1.SeatStatus, net.bladewatch.app.grpc.v1.SeatStatus.Builder, net.bladewatch.app.grpc.v1.SeatStatusOrBuilder> seatsBuilder_;
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     * @return Whether the seats field is set.
-     */
-    public boolean hasSeats() {
-      return ((bitField0_ & 0x00000200) != 0);
-    }
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     * @return The seats.
-     */
-    public net.bladewatch.app.grpc.v1.SeatStatus getSeats() {
-      if (seatsBuilder_ == null) {
-        return seats_ == null ? net.bladewatch.app.grpc.v1.SeatStatus.getDefaultInstance() : seats_;
-      } else {
-        return seatsBuilder_.getMessage();
-      }
-    }
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     */
-    public Builder setSeats(net.bladewatch.app.grpc.v1.SeatStatus value) {
-      if (seatsBuilder_ == null) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        seats_ = value;
-      } else {
-        seatsBuilder_.setMessage(value);
-      }
-      bitField0_ |= 0x00000200;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     */
-    public Builder setSeats(
-        net.bladewatch.app.grpc.v1.SeatStatus.Builder builderForValue) {
-      if (seatsBuilder_ == null) {
-        seats_ = builderForValue.build();
-      } else {
-        seatsBuilder_.setMessage(builderForValue.build());
-      }
-      bitField0_ |= 0x00000200;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     */
-    public Builder mergeSeats(net.bladewatch.app.grpc.v1.SeatStatus value) {
-      if (seatsBuilder_ == null) {
-        if (((bitField0_ & 0x00000200) != 0) &&
-          seats_ != null &&
-          seats_ != net.bladewatch.app.grpc.v1.SeatStatus.getDefaultInstance()) {
-          getSeatsBuilder().mergeFrom(value);
-        } else {
-          seats_ = value;
-        }
-      } else {
-        seatsBuilder_.mergeFrom(value);
-      }
-      if (seats_ != null) {
-        bitField0_ |= 0x00000200;
-        onChanged();
-      }
-      return this;
-    }
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     */
-    public Builder clearSeats() {
-      bitField0_ = (bitField0_ & ~0x00000200);
-      seats_ = null;
-      if (seatsBuilder_ != null) {
-        seatsBuilder_.dispose();
-        seatsBuilder_ = null;
-      }
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     */
-    public net.bladewatch.app.grpc.v1.SeatStatus.Builder getSeatsBuilder() {
-      bitField0_ |= 0x00000200;
-      onChanged();
-      return internalGetSeatsFieldBuilder().getBuilder();
-    }
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     */
-    public net.bladewatch.app.grpc.v1.SeatStatusOrBuilder getSeatsOrBuilder() {
-      if (seatsBuilder_ != null) {
-        return seatsBuilder_.getMessageOrBuilder();
-      } else {
-        return seats_ == null ?
-            net.bladewatch.app.grpc.v1.SeatStatus.getDefaultInstance() : seats_;
-      }
-    }
-    /**
-     * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-     */
-    private com.google.protobuf.SingleFieldBuilder<
-        net.bladewatch.app.grpc.v1.SeatStatus, net.bladewatch.app.grpc.v1.SeatStatus.Builder, net.bladewatch.app.grpc.v1.SeatStatusOrBuilder> 
-        internalGetSeatsFieldBuilder() {
-      if (seatsBuilder_ == null) {
-        seatsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-            net.bladewatch.app.grpc.v1.SeatStatus, net.bladewatch.app.grpc.v1.SeatStatus.Builder, net.bladewatch.app.grpc.v1.SeatStatusOrBuilder>(
-                getSeats(),
-                getParentForChildren(),
-                isClean());
-        seats_ = null;
-      }
-      return seatsBuilder_;
-    }
-
     private net.bladewatch.app.grpc.v1.ClimateStatus climate_;
     private com.google.protobuf.SingleFieldBuilder<
         net.bladewatch.app.grpc.v1.ClimateStatus, net.bladewatch.app.grpc.v1.ClimateStatus.Builder, net.bladewatch.app.grpc.v1.ClimateStatusOrBuilder> climateBuilder_;
@@ -2336,7 +2151,7 @@ private static final long serialVersionUID = 0L;
      * @return Whether the climate field is set.
      */
     public boolean hasClimate() {
-      return ((bitField0_ & 0x00000400) != 0);
+      return ((bitField0_ & 0x00000200) != 0);
     }
     /**
      * <code>.bladewatch.v1.ClimateStatus climate = 11 [json_name = "climate"];</code>
@@ -2361,7 +2176,7 @@ private static final long serialVersionUID = 0L;
       } else {
         climateBuilder_.setMessage(value);
       }
-      bitField0_ |= 0x00000400;
+      bitField0_ |= 0x00000200;
       onChanged();
       return this;
     }
@@ -2375,7 +2190,7 @@ private static final long serialVersionUID = 0L;
       } else {
         climateBuilder_.setMessage(builderForValue.build());
       }
-      bitField0_ |= 0x00000400;
+      bitField0_ |= 0x00000200;
       onChanged();
       return this;
     }
@@ -2384,7 +2199,7 @@ private static final long serialVersionUID = 0L;
      */
     public Builder mergeClimate(net.bladewatch.app.grpc.v1.ClimateStatus value) {
       if (climateBuilder_ == null) {
-        if (((bitField0_ & 0x00000400) != 0) &&
+        if (((bitField0_ & 0x00000200) != 0) &&
           climate_ != null &&
           climate_ != net.bladewatch.app.grpc.v1.ClimateStatus.getDefaultInstance()) {
           getClimateBuilder().mergeFrom(value);
@@ -2395,7 +2210,7 @@ private static final long serialVersionUID = 0L;
         climateBuilder_.mergeFrom(value);
       }
       if (climate_ != null) {
-        bitField0_ |= 0x00000400;
+        bitField0_ |= 0x00000200;
         onChanged();
       }
       return this;
@@ -2404,7 +2219,7 @@ private static final long serialVersionUID = 0L;
      * <code>.bladewatch.v1.ClimateStatus climate = 11 [json_name = "climate"];</code>
      */
     public Builder clearClimate() {
-      bitField0_ = (bitField0_ & ~0x00000400);
+      bitField0_ = (bitField0_ & ~0x00000200);
       climate_ = null;
       if (climateBuilder_ != null) {
         climateBuilder_.dispose();
@@ -2417,7 +2232,7 @@ private static final long serialVersionUID = 0L;
      * <code>.bladewatch.v1.ClimateStatus climate = 11 [json_name = "climate"];</code>
      */
     public net.bladewatch.app.grpc.v1.ClimateStatus.Builder getClimateBuilder() {
-      bitField0_ |= 0x00000400;
+      bitField0_ |= 0x00000200;
       onChanged();
       return internalGetClimateFieldBuilder().getBuilder();
     }
@@ -2457,7 +2272,7 @@ private static final long serialVersionUID = 0L;
      * @return Whether the tyres field is set.
      */
     public boolean hasTyres() {
-      return ((bitField0_ & 0x00000800) != 0);
+      return ((bitField0_ & 0x00000400) != 0);
     }
     /**
      * <code>.bladewatch.v1.TyreStatus tyres = 12 [json_name = "tyres"];</code>
@@ -2482,7 +2297,7 @@ private static final long serialVersionUID = 0L;
       } else {
         tyresBuilder_.setMessage(value);
       }
-      bitField0_ |= 0x00000800;
+      bitField0_ |= 0x00000400;
       onChanged();
       return this;
     }
@@ -2496,7 +2311,7 @@ private static final long serialVersionUID = 0L;
       } else {
         tyresBuilder_.setMessage(builderForValue.build());
       }
-      bitField0_ |= 0x00000800;
+      bitField0_ |= 0x00000400;
       onChanged();
       return this;
     }
@@ -2505,7 +2320,7 @@ private static final long serialVersionUID = 0L;
      */
     public Builder mergeTyres(net.bladewatch.app.grpc.v1.TyreStatus value) {
       if (tyresBuilder_ == null) {
-        if (((bitField0_ & 0x00000800) != 0) &&
+        if (((bitField0_ & 0x00000400) != 0) &&
           tyres_ != null &&
           tyres_ != net.bladewatch.app.grpc.v1.TyreStatus.getDefaultInstance()) {
           getTyresBuilder().mergeFrom(value);
@@ -2516,7 +2331,7 @@ private static final long serialVersionUID = 0L;
         tyresBuilder_.mergeFrom(value);
       }
       if (tyres_ != null) {
-        bitField0_ |= 0x00000800;
+        bitField0_ |= 0x00000400;
         onChanged();
       }
       return this;
@@ -2525,7 +2340,7 @@ private static final long serialVersionUID = 0L;
      * <code>.bladewatch.v1.TyreStatus tyres = 12 [json_name = "tyres"];</code>
      */
     public Builder clearTyres() {
-      bitField0_ = (bitField0_ & ~0x00000800);
+      bitField0_ = (bitField0_ & ~0x00000400);
       tyres_ = null;
       if (tyresBuilder_ != null) {
         tyresBuilder_.dispose();
@@ -2538,7 +2353,7 @@ private static final long serialVersionUID = 0L;
      * <code>.bladewatch.v1.TyreStatus tyres = 12 [json_name = "tyres"];</code>
      */
     public net.bladewatch.app.grpc.v1.TyreStatus.Builder getTyresBuilder() {
-      bitField0_ |= 0x00000800;
+      bitField0_ |= 0x00000400;
       onChanged();
       return internalGetTyresFieldBuilder().getBuilder();
     }
@@ -2613,7 +2428,7 @@ private static final long serialVersionUID = 0L;
         java.lang.String value) {
       if (value == null) { throw new NullPointerException(); }
       error_ = value;
-      bitField0_ |= 0x00001000;
+      bitField0_ |= 0x00000800;
       onChanged();
       return this;
     }
@@ -2623,7 +2438,7 @@ private static final long serialVersionUID = 0L;
      */
     public Builder clearError() {
       error_ = getDefaultInstance().getError();
-      bitField0_ = (bitField0_ & ~0x00001000);
+      bitField0_ = (bitField0_ & ~0x00000800);
       onChanged();
       return this;
     }
@@ -2637,7 +2452,7 @@ private static final long serialVersionUID = 0L;
       if (value == null) { throw new NullPointerException(); }
       checkByteStringIsUtf8(value);
       error_ = value;
-      bitField0_ |= 0x00001000;
+      bitField0_ |= 0x00000800;
       onChanged();
       return this;
     }
@@ -2669,7 +2484,7 @@ private static final long serialVersionUID = 0L;
     public Builder setMediaVolumePercent(int value) {
 
       mediaVolumePercent_ = value;
-      bitField0_ |= 0x00002000;
+      bitField0_ |= 0x00001000;
       onChanged();
       return this;
     }
@@ -2683,7 +2498,7 @@ private static final long serialVersionUID = 0L;
      * @return This builder for chaining.
      */
     public Builder clearMediaVolumePercent() {
-      bitField0_ = (bitField0_ & ~0x00002000);
+      bitField0_ = (bitField0_ & ~0x00001000);
       mediaVolumePercent_ = 0;
       onChanged();
       return this;
@@ -2706,7 +2521,7 @@ private static final long serialVersionUID = 0L;
     public Builder setMediaMuted(boolean value) {
 
       mediaMuted_ = value;
-      bitField0_ |= 0x00004000;
+      bitField0_ |= 0x00002000;
       onChanged();
       return this;
     }
@@ -2715,7 +2530,7 @@ private static final long serialVersionUID = 0L;
      * @return This builder for chaining.
      */
     public Builder clearMediaMuted() {
-      bitField0_ = (bitField0_ & ~0x00004000);
+      bitField0_ = (bitField0_ & ~0x00002000);
       mediaMuted_ = false;
       onChanged();
       return this;

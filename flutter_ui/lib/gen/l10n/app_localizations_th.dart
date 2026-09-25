@@ -1735,17 +1735,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get dashboard_trips_this_week => 'สัปดาห์นี้';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 ทริป',
-      one: '$arg1 ทริป',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1974,9 +1963,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get vehicle_tab_climate => 'แอร์';
 
   @override
-  String get vehicle_tab_seats => 'เบาะนั่ง';
-
-  @override
   String get vehicle_tab_windows => 'กระจก';
 
   @override
@@ -2058,43 +2044,9 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'ในรถ: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'ภายนอก: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'คนขับ';
-
-  @override
-  String get vehicle_seat_passenger => 'ผู้โดยสาร';
-
-  @override
-  String get vehicle_seat_no_controls => 'รถคันนี้ไม่มีระบบควบคุมเบาะ';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'อุ่นเบาะ $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'เย็นเบาะ $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(ปิด)';
-
-  @override
-  String get vehicle_heat_low => '(ต่ำ)';
-
-  @override
-  String get vehicle_heat_high => '(สูง)';
-
-  @override
-  String get vehicle_seat_pos_1 => 'ตำแหน่ง 1';
-
-  @override
-  String get vehicle_seat_pos_2 => 'ตำแหน่ง 2';
 
   @override
   String get vehicle_all_windows => 'กระจกทั้งหมด';
@@ -2980,4 +2932,39 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get pear_tile_off => 'ปิด';
+
+  @override
+  String get trips_cost_total => 'ค่าใช้จ่ายรวม';
+
+  @override
+  String get trips_cost_no_rate =>
+      'ตั้งค่าอัตราค่าไฟฟ้าในการตั้งค่าการเดินทางเพื่อดูค่าใช้จ่าย';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'การเดินทางคิดค่าใช้จ่ายมากกว่าหนึ่งสกุลเงิน จึงไม่แสดงยอดรวม';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'เกียร์ $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'โหมด: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'ปิด';
+
+  @override
+  String get auto_hold_enabled => 'เปิด';
+
+  @override
+  String get auto_hold_active => 'กำลังหยุดรถ';
 }

@@ -48,6 +48,40 @@ void main() {
       expect(find.text('2'), findsOneWidget);
       expect(find.text('1h 0m'), findsOneWidget);
       expect((s.rpc.calls.firstWhere((c) => c.method == 'ListTrips').request as dynamic).days, 7);
+      expect(find.text(t('trip.cost_hint')), findsOneWidget, reason: 'no rate set: say so, no zeros');
+      await unmount(tester);
+    });
+
+    // BladeWatch-39d2: the week's fuel, electric and total cost.
+    testWidgets('this week shows what it cost, and never sums across currencies', (tester) async {
+      final s = TestSession(phase: TransportPhase.pear);
+      status(s);
+      s.rpc.stubJson('TripsService', 'ListTrips', {
+        'trips': [
+          {'distanceKm': 10.0, 'durationSeconds': 600, 'tripCost': 150.0, 'fuelCost': 100.0, 'currency': 'PHP', 'hasFuelData': true},
+          {'distanceKm': 6.0, 'durationSeconds': 3000, 'tripCost': 30.0, 'currency': 'PHP'},
+        ],
+      });
+      await pumpScreen(tester, s, const DashboardScreen(), size: const Size(420, 1600));
+      await tester.pump();
+      expect(find.text('100.00 PHP'), findsOneWidget);
+      expect(find.text('80.00 PHP'), findsOneWidget);
+      expect(find.text('180.00 PHP'), findsOneWidget);
+      expect(find.text(t('companion.total_cost')), findsOneWidget);
+      await unmount(tester);
+
+      final m = TestSession(phase: TransportPhase.pear);
+      status(m);
+      m.rpc.stubJson('TripsService', 'ListTrips', {
+        'trips': [
+          {'tripCost': 10.0, 'currency': 'PHP'},
+          {'tripCost': 10.0, 'currency': 'USD'},
+        ],
+      });
+      await pumpScreen(tester, m, const DashboardScreen(), size: const Size(420, 1600));
+      await tester.pump();
+      expect(find.text(t('companion.costs_mixed_currency')), findsOneWidget);
+      expect(find.text(t('companion.total_cost')), findsNothing);
       await unmount(tester);
     });
 

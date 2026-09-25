@@ -451,23 +451,6 @@ class BydSignalRulesTest {
         assertEquals(BydSignalRules.LOCK_API_UNKNOWN, BydSignalRules.deriveOverallLock(IntArray(0)))
     }
 
-    // ── seats ────────────────────────────────────────────────────────────────────
-
-    @Test
-    fun `seat level shifts from the sdk one-based scale to zero-based`() {
-        assertEquals("SDK off", 0, BydSignalRules.normalizeSeatGetterLevel(1))
-        assertEquals("SDK low", 1, BydSignalRules.normalizeSeatGetterLevel(2))
-        assertEquals("SDK high", 2, BydSignalRules.normalizeSeatGetterLevel(3))
-    }
-
-    @Test
-    fun `unsupported seat readings are unknown not off`() {
-        assertEquals("must not collapse to 0=off",
-            -1, BydSignalRules.normalizeSeatGetterLevel(BydSignalRules.NO_VALUE))
-        assertEquals(-1, BydSignalRules.normalizeSeatGetterLevel(0))
-        assertEquals(-1, BydSignalRules.normalizeSeatGetterLevel(4))
-    }
-
     // ── units ────────────────────────────────────────────────────────────────────
 
     /**

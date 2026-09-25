@@ -101,15 +101,36 @@ class CompanionPairing(
         return Credential(id, token(secret, id))
     }
 
-    /** True when [companionId] is paired and [token] is its token. Constant-time on the token. */
-    fun verify(companionId: String, token: String): Boolean {
-        if (!isPaired(companionId)) return false
-        val secret = deviceSecret()?.takeIf { it.isNotEmpty() } ?: return false
-        return MessageDigest.isEqual(
+    /** What a login with [companionId] and [token] gets (BladeWatch-w7by). */
+    enum class Verdict {
+        /** Paired, and the token is its token. */
+        OK,
+
+        /** The car definitely does not accept this credential: never paired, removed, or a wrong token. */
+        REFUSED,
+
+        /**
+         * The car cannot tell right now -- its secret store is unreadable, or the device secret is
+         * not loaded yet. Must never read as "removed": the companion would stop and ask to pair
+         * again, un-pairing itself over something that passes.
+         */
+        UNAVAILABLE,
+    }
+
+    /** Constant-time on the token. */
+    fun check(companionId: String, token: String): Verdict {
+        if (!store.isReadable()) return Verdict.UNAVAILABLE
+        if (!isPaired(companionId)) return Verdict.REFUSED
+        val secret = deviceSecret()?.takeIf { it.isNotEmpty() } ?: return Verdict.UNAVAILABLE
+        val matches = MessageDigest.isEqual(
             token(secret, companionId).toByteArray(StandardCharsets.UTF_8),
             token.toByteArray(StandardCharsets.UTF_8)
         )
+        return if (matches) Verdict.OK else Verdict.REFUSED
     }
+
+    /** True when [companionId] is paired and [token] is its token. */
+    fun verify(companionId: String, token: String): Boolean = check(companionId, token) == Verdict.OK
 
     fun isPaired(companionId: String): Boolean =
         companionId.length == ID_HEX_CHARS && store.getString(SECTION, companionId) != null

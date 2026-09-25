@@ -106,9 +106,7 @@
 }
 .stepper-value { font-size: 16px; font-weight: 700; color: var(--text-primary, #fff); min-width: 52px; text-align: center; }
 
-.seat-block, .win-block { padding: 6px 0; }
-.seat-block + .seat-block { border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.06)); margin-top: 6px; }
-.seat-title { font-size: 13px; font-weight: 600; color: var(--text-muted, #71717A); text-transform: uppercase; letter-spacing: 0.04em; margin: 8px 0 2px; }
+.win-block { padding: 6px 0; }
 
 .btn-group { display: inline-flex; gap: 6px; }
 .mini, .preset {

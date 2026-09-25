@@ -9,6 +9,7 @@ import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_controller.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/util/currency.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -138,6 +139,103 @@ void main() {
     expect(find.text('2'), findsOneWidget); // trip count
     expect(find.text('12.2 km'), findsOneWidget);
     expect(find.text('18m'), findsOneWidget); // 780+300=1080s -> 18m
+    // BladeWatch-by8d: count and distance once each -- no headline repeating the tiles.
+    expect(find.textContaining('12.2 km'), findsOneWidget);
+    expect(find.textContaining('2 trips'), findsNothing);
+  });
+
+  // BladeWatch-7zp9: gear, drive mode and Auto Hold -- a dash for anything the car could not name.
+  group('drive state chips', () {
+    Finder chip(String key, String text) => find.descendant(of: find.byKey(ValueKey(key)), matching: find.text(text));
+
+    testWidgets('shows what the car names, and a dash for what it does not', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {
+        'deviceId': 'byd-test',
+        'recording': [1],
+        'driveStatus': {
+          'gear': 'D',
+          'driveMode': 'UNKNOWN',
+          'driveModeRaw': 1,
+          'autoHold': 'ACTIVE',
+          'autoHoldRaw': 2,
+          'energyMode': 'HEV',
+          'energyModeRaw': 3,
+        },
+      });
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      expect(chip('chip.gear', 'Gear D'), findsOneWidget);
+      expect(chip('chip.driveMode', 'Mode: –'), findsOneWidget);
+      expect(chip('chip.autoHold', 'Auto Hold: Holding'), findsOneWidget);
+      expect(chip('chip.energyMode', 'HEV'), findsOneWidget); // BladeWatch-os88
+    });
+
+    testWidgets('a car that sends none shows dashes, never a guessed P / off', (tester) async {
+      stubHappyPath();
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      expect(chip('chip.gear', 'Gear –'), findsOneWidget);
+      expect(chip('chip.autoHold', 'Auto Hold: –'), findsOneWidget);
+      // BladeWatch-os88: no EV / HEV to name is no chip at all, not a dash.
+      expect(find.byKey(const ValueKey('chip.energyMode')), findsNothing);
+    });
+
+    testWidgets('Auto Hold on and off read as such', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'P', 'autoHold': 'ENABLED'}});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      expect(chip('chip.autoHold', 'Auto Hold: On'), findsOneWidget);
+      expect(chip('chip.gear', 'Gear P'), findsOneWidget);
+
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'autoHold': 'DISABLED'}});
+      await tester.pump(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+      expect(chip('chip.autoHold', 'Auto Hold: Off'), findsOneWidget);
+    });
+  });
+
+  // BladeWatch-39d2: the week's fuel, electric and total cost, under the three stats it kept.
+  group('this week\'s costs', () {
+    Future<void> pumpWith(WidgetTester tester, List<Map<String, Object?>> trips) async {
+      stubHappyPath();
+      rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': trips});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a PHEV week shows fuel, electric and total', (tester) async {
+      await pumpWith(tester, [
+        {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780, 'tripCost': 150.0, 'fuelCost': 100.0, 'currency': 'PHP', 'hasFuelData': true},
+        {'id': '2', 'distanceKm': 3.2, 'durationSeconds': 300, 'tripCost': 30.0, 'currency': 'PHP'},
+      ]);
+      final costs = find.byKey(const ValueKey('tripStats.costs'));
+      String? money(double v) => Currency.format(v, 'PHP');
+      for (final (label, value) in [('Fuel Cost', 100.0), ('Electric Cost', 80.0), ('Total Cost', 180.0)]) {
+        expect(find.descendant(of: costs, matching: find.text(label)), findsOneWidget);
+        expect(find.descendant(of: costs, matching: find.text(money(value)!)), findsOneWidget, reason: label);
+      }
+      expect(find.text('2'), findsWidgets, reason: 'trip count kept');
+      expect(find.text('12.2 km'), findsWidgets, reason: 'distance kept');
+    });
+
+    testWidgets('a BEV week leaves fuel out rather than showing 0', (tester) async {
+      await pumpWith(tester, [
+        {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780, 'tripCost': 40.0, 'currency': 'PHP'},
+      ]);
+      expect(find.text('Fuel Cost'), findsNothing);
+      expect(find.text('Electric Cost'), findsOneWidget);
+      expect(find.text('Total Cost'), findsOneWidget);
+    });
+
+    testWidgets('with no rate set it says so instead of showing zeros', (tester) async {
+      await pumpWith(tester, [
+        {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780},
+      ]);
+      expect(find.byKey(const ValueKey('tripStats.costs')), findsNothing);
+      expect(find.text('Set an electricity rate in Trip settings to see costs.'), findsOneWidget);
+    });
   });
 
   testWidgets('recordings tile shows the live dot prefix while recording', (tester) async {
@@ -600,6 +698,22 @@ void main() {
       expect(inTile('Starting'), findsOneWidget);
       expect(dot, findsNothing);
     });
+
+    // BladeWatch-rdtj.21: on the head unit the tile said Online long after the car lost its network.
+    testWidgets('the tile follows the car while the page stays open', (tester) async {
+      await pumpWithPear(tester, {'running': true, 'reachable': true});
+      expect(inTile('Online'), findsOneWidget);
+
+      channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, 'running': true, 'reachable': false});
+      await tester.pump(const Duration(seconds: 14));
+      await tester.pumpAndSettle();
+      expect(inTile('Online'), findsOneWidget, reason: 'not yet: the page re-reads every 15 s');
+
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(inTile('Offline'), findsOneWidget);
+      expect(dot, findsNothing);
+    });
   });
 
   testWidgets('tapping the tunnel tile navigates to diagnostics', (tester) async {
@@ -800,13 +914,14 @@ void main() {
       expect(heroCard.color, BladeWatchTheme.light().colorScheme.primaryContainer);
     });
 
-    testWidgets('the hero headline combines trip count and distance on one line', (tester) async {
+    testWidgets('the hero has no headline repeating its trip count and distance', (tester) async {
       stubHappyPath();
       await pumpHeadUnit(tester, buildController());
 
-      // Native reads "2 trips · 12.2 km"; the port showed only "2 trips" and
-      // dropped the distance from the headline.
-      expect(find.text('2 trips · 12.2 km'), findsOneWidget);
+      // Native's "2 trips · 12.2 km" headline sat right above the Trips and
+      // Distance tiles, so the owner read both twice (BladeWatch-by8d).
+      expect(find.text('2 trips · 12.2 km'), findsNothing);
+      expect(find.text('12.2 km'), findsOneWidget);
     });
 
     testWidgets('View all trips sits above the hero stats, not below them', (tester) async {

@@ -129,7 +129,7 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 | — | `GET /api/stream/still` (REST-only, no Connect RPC): the still-frame fallback JPEG for browsers with no usable H.264 decoder (BladeWatch-y78o.1) | `/api/stream/still` |
 | `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode`, `GetStatusOverlay`/`SetStatusOverlay`, `GetTelemetryOverlayFields`/`SetTelemetryOverlayFields` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` |
 | `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `PreviewStorageLimitChange`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
-| `VehicleService` | `GetState`, `GetAcDiagnostics`, `GetSeatDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported), `IssueActionToken`, `GetAdasInventory` | `/api/vehicle/*`, `/api/gps/*` |
+| `VehicleService` | `GetState`, `GetAcDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported), `IssueActionToken`, `GetAdasInventory` | `/api/vehicle/*`, `/api/gps/*` |
 | `NotificationsService` | `GetCategories`, `Subscribe`, `Unsubscribe`, `ListSubscriptions`, `UpdatePreferences`, `SendTest`, `ListInbox` | `/api/notifications/*`, `/api/push/*` (`ListInbox`: Connect only) |
 
 The full request/response message shapes are in `proto/bladewatch/v1/*.proto`
@@ -312,7 +312,7 @@ Handled by `TripApiHandler`:
 - `GET /api/trips/{id}/telemetry`.
 - `GET /api/trips/{id}/similar`.
 - `GET /api/trips/{id}/gps`.
-- `GET /api/trips/summary`.
+- `GET /api/trips/summary` — `?days=N` (default 7): ONE rollup aggregated over exactly the trips of the last N days, the same trips `GET /api/trips` lists (BladeWatch-jkuz); an empty list when there are none. It used to return the last (N+6)/7 calendar-week rollups, so "7 Days" meant "this week so far".
 - `GET /api/trips/dna`.
 - `GET /api/trips/range`.
 - `GET /api/trips/config` — also returns `isPhev`, a LIVE drivetrain read rather than a
@@ -375,23 +375,22 @@ Handled by `AudioTestApiHandler`:
 ## Vehicle Control
 
 Handled by `VehicleControlApiHandler`. Connect mirror: `VehicleService` (e.g.
-`GetState`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`,
-`SetAdas`, `GetChargeCap`/`SetChargeCap`, `GetAcDiagnostics`,
-`GetSeatDiagnostics`). The cloud-only RPCs (`Lock`, `Unlock`, `Flash`, `FindCar`,
+`GetState`, `Trunk`, `MoveWindow`, `SetClimate`, `SetLights`,
+`SetAdas`, `GetChargeCap`/`SetChargeCap`, `GetAcDiagnostics`). Seat control (`SetSeat`,
+`GetSeatDiagnostics`, the seat state and capabilities) was removed end to end in
+BladeWatch-7bx4; the proto reserves its field numbers. The cloud-only RPCs (`Lock`, `Unlock`, `Flash`, `FindCar`,
 `SetBatteryHeat`, `Get`/`SetChargingSchedule`) exist in the proto for parity but
 return the not-supported responses described under
 [Removed or unsupported endpoints](#removed-or-unsupported-endpoints).
 
 ### Endpoints
 
-- `GET /api/vehicle/state` — returns current door/window/trunk/lock/battery/climate/tyre/seats/lights/ADAS state.
+- `GET /api/vehicle/state` — returns current door/window/trunk/lock/battery/climate/tyre/lights/ADAS state. `climate` carries `setpointC` and `outsideTempC` (absent when unavailable; there is no cabin temperature — `insideTempC` was the outside air and is gone, BladeWatch-eh3u). `windows.sunroof` is the stop of the last successful sunroof command (BladeWatch-b3n7).
 - `GET /api/vehicle/ac-diagnostics` — read-only AC SDK method probe.
-- `GET /api/vehicle/seat-diagnostics` — read-only seat hardware capability probe.
 - `VehicleService.GetAdasInventory` — read-only ADAS field inventory (BladeWatch-2pnn.3). It WAS REST-only, with a note to add an RPC "if a client needs it"; removing the REST surface was that moment (BladeWatch-6mnq), and without the RPC the diagnostic would simply have vanished. Returns `{ success, adas: { sdkClassPresent, declared: [...], sdkOnly: [...] } }` — see [byd-integrations.md](byd-integrations.md#adas-field-inventory-bladewatch-2pnn3) for the shape and the (important) caveat that `sdkClassPresent` alone does not mean "this car has ADAS".
 - `POST /api/vehicle/trunk` — body `{ "action": "open" | "close" | "stop" }`.
 - `POST /api/vehicle/window` — see window variants below.
 - `POST /api/vehicle/climate` — body `{ "action": "power_on"|"power_off"|"set_temp"|"set_fan"|"max_cooling", ... }`.
-- `POST /api/vehicle/seat` — body `{ "action": "heating"|"ventilation"|"position", "position": 1–4, "level": 0–3, ... }`.
 - `POST /api/vehicle/lights` — body `{ "action": "dayTimeLight", "on": bool }` (ConnectRPC) or `{ "target": "dayTimeLight", "enable": bool }` (legacy REST). The boolean key is required; omitting both `on` and `enable` returns an error.
 - `POST /api/vehicle/adas` — body `{ "action": "speedLimitWarning", "on": bool }` (ConnectRPC) or `{ "target": "speedLimitWarning", "enable": bool }` (legacy REST). The boolean key is required; omitting both `on` and `enable` returns an error.
 - `GET /api/vehicle/charge-cap` — returns `{ success, percent, enabled, supported }`. `supported` is `null` until the first write-read-back probe; the UI shows optimistically until then.

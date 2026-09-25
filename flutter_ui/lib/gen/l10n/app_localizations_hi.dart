@@ -1742,17 +1742,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dashboard_trips_this_week => 'इस सप्ताह';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 यात्राएँ',
-      one: '$arg1 यात्रा',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1981,9 +1970,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get vehicle_tab_climate => 'क्लाइमेट';
 
   @override
-  String get vehicle_tab_seats => 'सीटें';
-
-  @override
   String get vehicle_tab_windows => 'खिड़कियाँ';
 
   @override
@@ -2065,44 +2051,9 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'अंदर: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'बाहर: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'ड्राइवर';
-
-  @override
-  String get vehicle_seat_passenger => 'यात्री';
-
-  @override
-  String get vehicle_seat_no_controls =>
-      'इस वाहन के लिए कोई सीट नियंत्रण उपलब्ध नहीं।';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'हीट $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'कूल $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(बंद)';
-
-  @override
-  String get vehicle_heat_low => '(कम)';
-
-  @override
-  String get vehicle_heat_high => '(अधिक)';
-
-  @override
-  String get vehicle_seat_pos_1 => 'पद 1';
-
-  @override
-  String get vehicle_seat_pos_2 => 'पद 2';
 
   @override
   String get vehicle_all_windows => 'सभी खिड़कियाँ';
@@ -2993,4 +2944,39 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pear_tile_off => 'बंद';
+
+  @override
+  String get trips_cost_total => 'कुल लागत';
+
+  @override
+  String get trips_cost_no_rate =>
+      'लागत देखने के लिए ट्रिप सेटिंग्स में बिजली की दर सेट करें।';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'ट्रिप की लागत एक से अधिक मुद्राओं में है, इसलिए कुल नहीं दिखाया गया।';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'गियर $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'मोड: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'ऑटो होल्ड: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'बंद';
+
+  @override
+  String get auto_hold_enabled => 'चालू';
+
+  @override
+  String get auto_hold_active => 'रोके हुए';
 }

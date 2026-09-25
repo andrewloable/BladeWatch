@@ -27,6 +27,7 @@ class CompanionPairingTest {
 
     private val secret = "device-secret-for-tests"
     private val clock = AtomicLong(1_700_000_000_000)
+    private lateinit var storeFile: File
     private lateinit var store: SecretConfigStore
     private lateinit var pairing: CompanionPairing
 
@@ -40,7 +41,8 @@ class CompanionPairingTest {
 
     @Before
     fun setUp() {
-        store = SecretConfigStore(File(Files.createTempDirectory("pairing").toFile(), "secrets.json"))
+        storeFile = File(Files.createTempDirectory("pairing").toFile(), "secrets.json")
+        store = SecretConfigStore(storeFile)
         pairing = CompanionPairing(store, { secret }, clock::get, SecureRandom())
         CompanionPairing.sharedForTest = pairing
         AuthManager.setTestState(AuthManager.AuthState().apply { deviceId = "byd-test"; deviceSecret = secret })
@@ -144,6 +146,30 @@ class CompanionPairingTest {
     fun `nothing is paired without a device secret`() {
         val noSecret = CompanionPairing(store, { null }, clock::get, SecureRandom())
         assertNull(noSecret.redeem(noSecret.mint(identity).code, "x"))
+    }
+
+    // BladeWatch-w7by: only a definite "not paired" may tell a companion it was removed.
+    @Test
+    fun `only a definite no is REFUSED, and a car that cannot tell says UNAVAILABLE`() {
+        val a = pairing.redeem(pairing.mint(identity).code, "A")!!
+        assertEquals(CompanionPairing.Verdict.OK, pairing.check(a.companionId, a.token))
+        assertEquals(CompanionPairing.Verdict.REFUSED, pairing.check(a.companionId, "wrong"))
+        assertEquals(CompanionPairing.Verdict.REFUSED, pairing.check("0".repeat(32), a.token))
+
+        val noSecretYet = CompanionPairing(store, { null }, clock::get, SecureRandom())
+        assertEquals("auth not loaded is not removal",
+            CompanionPairing.Verdict.UNAVAILABLE, noSecretYet.check(a.companionId, a.token))
+
+        val intact = storeFile.readText()
+        storeFile.writeText(intact.dropLast(5)) // a store that cannot be parsed right now
+        assertEquals("an unreadable store is not an empty one",
+            CompanionPairing.Verdict.UNAVAILABLE, pairing.check(a.companionId, a.token))
+        storeFile.writeText(intact)
+        assertEquals(CompanionPairing.Verdict.OK, pairing.check(a.companionId, a.token))
+
+        assertTrue(pairing.revoke(a.companionId))
+        assertEquals("removal in the car is REFUSED",
+            CompanionPairing.Verdict.REFUSED, pairing.check(a.companionId, a.token))
     }
 
     @Test

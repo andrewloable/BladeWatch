@@ -1748,17 +1748,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_trips_this_week => 'Deze week';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 ritten',
-      one: '$arg1 rit',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1989,9 +1978,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get vehicle_tab_climate => 'Klimaat';
 
   @override
-  String get vehicle_tab_seats => 'Zitplaatsen';
-
-  @override
   String get vehicle_tab_windows => 'Ramen';
 
   @override
@@ -2074,44 +2060,9 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'Binnen: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'Buiten: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'Bestuurder';
-
-  @override
-  String get vehicle_seat_passenger => 'Passagier';
-
-  @override
-  String get vehicle_seat_no_controls =>
-      'Geen stoelbediening beschikbaar voor dit voertuig.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'Verwarmen $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'Koelen $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(Uit)';
-
-  @override
-  String get vehicle_heat_low => '(Laag)';
-
-  @override
-  String get vehicle_heat_high => '(Hoog)';
-
-  @override
-  String get vehicle_seat_pos_1 => 'Positie 1';
-
-  @override
-  String get vehicle_seat_pos_2 => 'Positie 2';
 
   @override
   String get vehicle_all_windows => 'Alle ramen';
@@ -3003,4 +2954,39 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get pear_tile_off => 'Uit';
+
+  @override
+  String get trips_cost_total => 'Totale kosten';
+
+  @override
+  String get trips_cost_no_rate =>
+      'Stel een elektriciteitstarief in bij de ritinstellingen om kosten te zien.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'Ritten zijn in meer dan één valuta berekend, dus er wordt geen totaal getoond.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'Versnelling $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'Modus: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'Uit';
+
+  @override
+  String get auto_hold_enabled => 'Aan';
+
+  @override
+  String get auto_hold_active => 'Houdt vast';
 }

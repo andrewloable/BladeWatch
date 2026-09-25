@@ -1,3 +1,5 @@
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
+
 /// Trip-stats hero state — ground truth: `DashboardFragment.refreshTripStats()`.
 class TripStatsState {
   final bool loading;
@@ -10,12 +12,16 @@ class TripStatsState {
   final double totalDistanceKm;
   final int totalDurationSeconds;
 
+  /// What the week's trips cost (BladeWatch-39d2).
+  final TripCosts costs;
+
   const TripStatsState({
     required this.loading,
     required this.available,
     required this.tripCount,
     required this.totalDistanceKm,
     required this.totalDurationSeconds,
+    this.costs = const TripCosts(),
   });
 
   const TripStatsState.loading()
@@ -23,14 +29,16 @@ class TripStatsState {
         available = false,
         tripCount = 0,
         totalDistanceKm = 0,
-        totalDurationSeconds = 0;
+        totalDurationSeconds = 0,
+        costs = const TripCosts();
 
   const TripStatsState.unavailable()
       : loading = false,
         available = false,
         tripCount = 0,
         totalDistanceKm = 0,
-        totalDurationSeconds = 0;
+        totalDurationSeconds = 0,
+        costs = const TripCosts();
 
   /// "0 km" / "1.2 km" below 1000km, "N km" (no decimal) at/above —
   /// `DashboardFragment.refreshTripStats()`'s `distanceStr` formatting.
@@ -220,4 +228,18 @@ String modelDisplayName(String? modelId) {
   if (names.containsKey(lower)) return names[lower]!;
   if (modelId.isEmpty) return modelId;
   return modelId[0].toUpperCase() + modelId.substring(1);
+}
+
+/// Gear, drive mode and Auto Hold as the car labels them (BladeWatch-7zp9). The car sends
+/// "UNKNOWN" for anything it has not measured, and that is shown as a dash, never a guess.
+class DriveInfo {
+  static const unknown = 'UNKNOWN';
+
+  final String gear;
+  final String driveMode;
+  final String autoHold;
+  /// "EV" / "HEV" on a DM-i (BladeWatch-os88).
+  final String energyMode;
+
+  const DriveInfo({this.gear = unknown, this.driveMode = unknown, this.autoHold = unknown, this.energyMode = unknown});
 }

@@ -93,7 +93,16 @@ class CarStore {
       language = j['language'] as String?;
       mutedCategories = {...?(j['muted'] as List?)?.cast<String>()};
     } catch (_) {
-      // First launch, or an unreadable file: start unpaired rather than crash.
+      // First launch (no file), or an unreadable one: start unpaired rather than crash. But keep
+      // a file that exists and would not load beside it first: the next save would otherwise
+      // overwrite the pairing it holds, un-pairing this device without anyone asking to
+      // (BladeWatch-w7by). Owner-only on desktops, like the store itself -- it holds the token.
+      try {
+        if (await file.exists()) {
+          final kept = await file.copy('${file.path}.damaged-${DateTime.now().millisecondsSinceEpoch}');
+          if (Platform.isMacOS || Platform.isLinux) await Process.run('chmod', ['600', kept.path]);
+        }
+      } catch (_) {}
     }
   }
 

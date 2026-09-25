@@ -75,32 +75,6 @@ private static final long serialVersionUID = 0L;
     return windows_ == null ? net.bladewatch.app.grpc.v1.WindowCapabilities.getDefaultInstance() : windows_;
   }
 
-  public static final int SEATS_FIELD_NUMBER = 2;
-  private net.bladewatch.app.grpc.v1.SeatCapabilities seats_;
-  /**
-   * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-   * @return Whether the seats field is set.
-   */
-  @java.lang.Override
-  public boolean hasSeats() {
-    return ((bitField0_ & 0x00000002) != 0);
-  }
-  /**
-   * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-   * @return The seats.
-   */
-  @java.lang.Override
-  public net.bladewatch.app.grpc.v1.SeatCapabilities getSeats() {
-    return seats_ == null ? net.bladewatch.app.grpc.v1.SeatCapabilities.getDefaultInstance() : seats_;
-  }
-  /**
-   * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-   */
-  @java.lang.Override
-  public net.bladewatch.app.grpc.v1.SeatCapabilitiesOrBuilder getSeatsOrBuilder() {
-    return seats_ == null ? net.bladewatch.app.grpc.v1.SeatCapabilities.getDefaultInstance() : seats_;
-  }
-
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -118,9 +92,6 @@ private static final long serialVersionUID = 0L;
     if (((bitField0_ & 0x00000001) != 0)) {
       output.writeMessage(1, getWindows());
     }
-    if (((bitField0_ & 0x00000002) != 0)) {
-      output.writeMessage(2, getSeats());
-    }
     getUnknownFields().writeTo(output);
   }
   private int computeSerializedSize_0() {
@@ -128,10 +99,6 @@ private static final long serialVersionUID = 0L;
     if (((bitField0_ & 0x00000001) != 0)) {
       size += com.google.protobuf.CodedOutputStream
         .computeMessageSize(1, getWindows());
-    }
-    if (((bitField0_ & 0x00000002) != 0)) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(2, getSeats());
     }
     return size;
   }
@@ -162,11 +129,6 @@ private static final long serialVersionUID = 0L;
       if (!getWindows()
           .equals(other.getWindows())) return false;
     }
-    if (hasSeats() != other.hasSeats()) return false;
-    if (hasSeats()) {
-      if (!getSeats()
-          .equals(other.getSeats())) return false;
-    }
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -181,10 +143,6 @@ private static final long serialVersionUID = 0L;
     if (hasWindows()) {
       hash = (37 * hash) + WINDOWS_FIELD_NUMBER;
       hash = (53 * hash) + getWindows().hashCode();
-    }
-    if (hasSeats()) {
-      hash = (37 * hash) + SEATS_FIELD_NUMBER;
-      hash = (53 * hash) + getSeats().hashCode();
     }
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
@@ -317,7 +275,6 @@ private static final long serialVersionUID = 0L;
       if (com.google.protobuf.GeneratedMessage
               .alwaysUseFieldBuilders) {
         internalGetWindowsFieldBuilder();
-        internalGetSeatsFieldBuilder();
       }
     }
     @java.lang.Override
@@ -328,11 +285,6 @@ private static final long serialVersionUID = 0L;
       if (windowsBuilder_ != null) {
         windowsBuilder_.dispose();
         windowsBuilder_ = null;
-      }
-      seats_ = null;
-      if (seatsBuilder_ != null) {
-        seatsBuilder_.dispose();
-        seatsBuilder_ = null;
       }
       return this;
     }
@@ -374,12 +326,6 @@ private static final long serialVersionUID = 0L;
             : windowsBuilder_.build();
         to_bitField0_ |= 0x00000001;
       }
-      if (((from_bitField0_ & 0x00000002) != 0)) {
-        result.seats_ = seatsBuilder_ == null
-            ? seats_
-            : seatsBuilder_.build();
-        to_bitField0_ |= 0x00000002;
-      }
       result.bitField0_ |= to_bitField0_;
     }
 
@@ -397,9 +343,6 @@ private static final long serialVersionUID = 0L;
       if (other == net.bladewatch.app.grpc.v1.VehicleCapabilities.getDefaultInstance()) return this;
       if (other.hasWindows()) {
         mergeWindows(other.getWindows());
-      }
-      if (other.hasSeats()) {
-        mergeSeats(other.getSeats());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -434,13 +377,6 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000001;
               break;
             } // case 10
-            case 18: {
-              input.readMessage(
-                  internalGetSeatsFieldBuilder().getBuilder(),
-                  extensionRegistry);
-              bitField0_ |= 0x00000002;
-              break;
-            } // case 18
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -577,127 +513,6 @@ private static final long serialVersionUID = 0L;
         windows_ = null;
       }
       return windowsBuilder_;
-    }
-
-    private net.bladewatch.app.grpc.v1.SeatCapabilities seats_;
-    private com.google.protobuf.SingleFieldBuilder<
-        net.bladewatch.app.grpc.v1.SeatCapabilities, net.bladewatch.app.grpc.v1.SeatCapabilities.Builder, net.bladewatch.app.grpc.v1.SeatCapabilitiesOrBuilder> seatsBuilder_;
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     * @return Whether the seats field is set.
-     */
-    public boolean hasSeats() {
-      return ((bitField0_ & 0x00000002) != 0);
-    }
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     * @return The seats.
-     */
-    public net.bladewatch.app.grpc.v1.SeatCapabilities getSeats() {
-      if (seatsBuilder_ == null) {
-        return seats_ == null ? net.bladewatch.app.grpc.v1.SeatCapabilities.getDefaultInstance() : seats_;
-      } else {
-        return seatsBuilder_.getMessage();
-      }
-    }
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     */
-    public Builder setSeats(net.bladewatch.app.grpc.v1.SeatCapabilities value) {
-      if (seatsBuilder_ == null) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        seats_ = value;
-      } else {
-        seatsBuilder_.setMessage(value);
-      }
-      bitField0_ |= 0x00000002;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     */
-    public Builder setSeats(
-        net.bladewatch.app.grpc.v1.SeatCapabilities.Builder builderForValue) {
-      if (seatsBuilder_ == null) {
-        seats_ = builderForValue.build();
-      } else {
-        seatsBuilder_.setMessage(builderForValue.build());
-      }
-      bitField0_ |= 0x00000002;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     */
-    public Builder mergeSeats(net.bladewatch.app.grpc.v1.SeatCapabilities value) {
-      if (seatsBuilder_ == null) {
-        if (((bitField0_ & 0x00000002) != 0) &&
-          seats_ != null &&
-          seats_ != net.bladewatch.app.grpc.v1.SeatCapabilities.getDefaultInstance()) {
-          getSeatsBuilder().mergeFrom(value);
-        } else {
-          seats_ = value;
-        }
-      } else {
-        seatsBuilder_.mergeFrom(value);
-      }
-      if (seats_ != null) {
-        bitField0_ |= 0x00000002;
-        onChanged();
-      }
-      return this;
-    }
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     */
-    public Builder clearSeats() {
-      bitField0_ = (bitField0_ & ~0x00000002);
-      seats_ = null;
-      if (seatsBuilder_ != null) {
-        seatsBuilder_.dispose();
-        seatsBuilder_ = null;
-      }
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     */
-    public net.bladewatch.app.grpc.v1.SeatCapabilities.Builder getSeatsBuilder() {
-      bitField0_ |= 0x00000002;
-      onChanged();
-      return internalGetSeatsFieldBuilder().getBuilder();
-    }
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     */
-    public net.bladewatch.app.grpc.v1.SeatCapabilitiesOrBuilder getSeatsOrBuilder() {
-      if (seatsBuilder_ != null) {
-        return seatsBuilder_.getMessageOrBuilder();
-      } else {
-        return seats_ == null ?
-            net.bladewatch.app.grpc.v1.SeatCapabilities.getDefaultInstance() : seats_;
-      }
-    }
-    /**
-     * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-     */
-    private com.google.protobuf.SingleFieldBuilder<
-        net.bladewatch.app.grpc.v1.SeatCapabilities, net.bladewatch.app.grpc.v1.SeatCapabilities.Builder, net.bladewatch.app.grpc.v1.SeatCapabilitiesOrBuilder> 
-        internalGetSeatsFieldBuilder() {
-      if (seatsBuilder_ == null) {
-        seatsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-            net.bladewatch.app.grpc.v1.SeatCapabilities, net.bladewatch.app.grpc.v1.SeatCapabilities.Builder, net.bladewatch.app.grpc.v1.SeatCapabilitiesOrBuilder>(
-                getSeats(),
-                getParentForChildren(),
-                isClean());
-        seats_ = null;
-      }
-      return seatsBuilder_;
     }
 
     // @@protoc_insertion_point(builder_scope:bladewatch.v1.VehicleCapabilities)

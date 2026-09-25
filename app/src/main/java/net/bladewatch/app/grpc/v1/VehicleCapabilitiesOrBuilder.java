@@ -24,19 +24,4 @@ public interface VehicleCapabilitiesOrBuilder extends
    * <code>.bladewatch.v1.WindowCapabilities windows = 1 [json_name = "windows"];</code>
    */
   net.bladewatch.app.grpc.v1.WindowCapabilitiesOrBuilder getWindowsOrBuilder();
-
-  /**
-   * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-   * @return Whether the seats field is set.
-   */
-  boolean hasSeats();
-  /**
-   * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-   * @return The seats.
-   */
-  net.bladewatch.app.grpc.v1.SeatCapabilities getSeats();
-  /**
-   * <code>.bladewatch.v1.SeatCapabilities seats = 2 [json_name = "seats"];</code>
-   */
-  net.bladewatch.app.grpc.v1.SeatCapabilitiesOrBuilder getSeatsOrBuilder();
 }

@@ -1743,17 +1743,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dashboard_trips_this_week => 'Bu Hafta';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 yolculuk',
-      one: '$arg1 yolculuk',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1986,9 +1975,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vehicle_tab_climate => 'Klima';
 
   @override
-  String get vehicle_tab_seats => 'Koltuklar';
-
-  @override
   String get vehicle_tab_windows => 'Camlar';
 
   @override
@@ -2071,43 +2057,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'İçeride: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'Dışarıda: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'Sürücü';
-
-  @override
-  String get vehicle_seat_passenger => 'Yolcu';
-
-  @override
-  String get vehicle_seat_no_controls => 'Bu araç için koltuk kontrolü yok.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'Isıtma $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'Soğutma $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(Kapalı)';
-
-  @override
-  String get vehicle_heat_low => '(Düşük)';
-
-  @override
-  String get vehicle_heat_high => '(Yüksek)';
-
-  @override
-  String get vehicle_seat_pos_1 => '1. pozisyon';
-
-  @override
-  String get vehicle_seat_pos_2 => '2. pozisyon';
 
   @override
   String get vehicle_all_windows => 'Tüm Pencereler';
@@ -2995,4 +2947,39 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pear_tile_off => 'Kapalı';
+
+  @override
+  String get trips_cost_total => 'Toplam maliyet';
+
+  @override
+  String get trips_cost_no_rate =>
+      'Maliyetleri görmek için yolculuk ayarlarında bir elektrik tarifesi belirleyin.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'Yolculuklar birden fazla para biriminde hesaplandığı için toplam gösterilmiyor.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'Vites $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'Mod: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'Kapalı';
+
+  @override
+  String get auto_hold_enabled => 'Açık';
+
+  @override
+  String get auto_hold_active => 'Tutuyor';
 }

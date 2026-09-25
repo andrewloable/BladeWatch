@@ -732,6 +732,44 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int DRIVE_STATUS_FIELD_NUMBER = 25;
+  private net.bladewatch.app.grpc.v1.DriveStatus driveStatus_;
+  /**
+   * <pre>
+   * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+   * </pre>
+   *
+   * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+   * @return Whether the driveStatus field is set.
+   */
+  @java.lang.Override
+  public boolean hasDriveStatus() {
+    return ((bitField0_ & 0x00000100) != 0);
+  }
+  /**
+   * <pre>
+   * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+   * </pre>
+   *
+   * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+   * @return The driveStatus.
+   */
+  @java.lang.Override
+  public net.bladewatch.app.grpc.v1.DriveStatus getDriveStatus() {
+    return driveStatus_ == null ? net.bladewatch.app.grpc.v1.DriveStatus.getDefaultInstance() : driveStatus_;
+  }
+  /**
+   * <pre>
+   * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+   * </pre>
+   *
+   * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+   */
+  @java.lang.Override
+  public net.bladewatch.app.grpc.v1.DriveStatusOrBuilder getDriveStatusOrBuilder() {
+    return driveStatus_ == null ? net.bladewatch.app.grpc.v1.DriveStatus.getDefaultInstance() : driveStatus_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -831,6 +869,9 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(vehicleDataError_)) {
       com.google.protobuf.GeneratedMessage.writeString(output, 24, vehicleDataError_);
+    }
+    if (((bitField0_ & 0x00000100) != 0)) {
+      output.writeMessage(25, getDriveStatus());
     }
     getUnknownFields().writeTo(output);
   }
@@ -962,6 +1003,10 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessage.isStringEmpty(vehicleDataError_)) {
       size += com.google.protobuf.GeneratedMessage.computeStringSize(24, vehicleDataError_);
     }
+    if (((bitField0_ & 0x00000100) != 0)) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeMessageSize(25, getDriveStatus());
+    }
     return size;
   }
   @java.lang.Override
@@ -1056,6 +1101,11 @@ private static final long serialVersionUID = 0L;
     }
     if (!getVehicleDataError()
         .equals(other.getVehicleDataError())) return false;
+    if (hasDriveStatus() != other.hasDriveStatus()) return false;
+    if (hasDriveStatus()) {
+      if (!getDriveStatus()
+          .equals(other.getDriveStatus())) return false;
+    }
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -1142,6 +1192,10 @@ private static final long serialVersionUID = 0L;
     }
     hash = (37 * hash) + VEHICLE_DATA_ERROR_FIELD_NUMBER;
     hash = (53 * hash) + getVehicleDataError().hashCode();
+    if (hasDriveStatus()) {
+      hash = (37 * hash) + DRIVE_STATUS_FIELD_NUMBER;
+      hash = (53 * hash) + getDriveStatus().hashCode();
+    }
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -1280,6 +1334,7 @@ private static final long serialVersionUID = 0L;
         internalGetRecordingStatusFieldBuilder();
         internalGetTripStatusFieldBuilder();
         internalGetNetworkFieldBuilder();
+        internalGetDriveStatusFieldBuilder();
       }
     }
     @java.lang.Override
@@ -1341,6 +1396,11 @@ private static final long serialVersionUID = 0L;
         networkBuilder_ = null;
       }
       vehicleDataError_ = "";
+      driveStatus_ = null;
+      if (driveStatusBuilder_ != null) {
+        driveStatusBuilder_.dispose();
+        driveStatusBuilder_ = null;
+      }
       return this;
     }
 
@@ -1472,6 +1532,12 @@ private static final long serialVersionUID = 0L;
       if (((from_bitField0_ & 0x00400000) != 0)) {
         result.vehicleDataError_ = vehicleDataError_;
       }
+      if (((from_bitField0_ & 0x00800000) != 0)) {
+        result.driveStatus_ = driveStatusBuilder_ == null
+            ? driveStatus_
+            : driveStatusBuilder_.build();
+        to_bitField0_ |= 0x00000100;
+      }
       result.bitField0_ |= to_bitField0_;
     }
 
@@ -1599,6 +1665,9 @@ private static final long serialVersionUID = 0L;
         vehicleDataError_ = other.vehicleDataError_;
         bitField0_ |= 0x00400000;
         onChanged();
+      }
+      if (other.hasDriveStatus()) {
+        mergeDriveStatus(other.getDriveStatus());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1801,6 +1870,13 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00400000;
               break;
             } // case 194
+            case 202: {
+              input.readMessage(
+                  internalGetDriveStatusFieldBuilder().getBuilder(),
+                  extensionRegistry);
+              bitField0_ |= 0x00800000;
+              break;
+            } // case 202
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -3844,6 +3920,163 @@ private static final long serialVersionUID = 0L;
       bitField0_ |= 0x00400000;
       onChanged();
       return this;
+    }
+
+    private net.bladewatch.app.grpc.v1.DriveStatus driveStatus_;
+    private com.google.protobuf.SingleFieldBuilder<
+        net.bladewatch.app.grpc.v1.DriveStatus, net.bladewatch.app.grpc.v1.DriveStatus.Builder, net.bladewatch.app.grpc.v1.DriveStatusOrBuilder> driveStatusBuilder_;
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     * @return Whether the driveStatus field is set.
+     */
+    public boolean hasDriveStatus() {
+      return ((bitField0_ & 0x00800000) != 0);
+    }
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     * @return The driveStatus.
+     */
+    public net.bladewatch.app.grpc.v1.DriveStatus getDriveStatus() {
+      if (driveStatusBuilder_ == null) {
+        return driveStatus_ == null ? net.bladewatch.app.grpc.v1.DriveStatus.getDefaultInstance() : driveStatus_;
+      } else {
+        return driveStatusBuilder_.getMessage();
+      }
+    }
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     */
+    public Builder setDriveStatus(net.bladewatch.app.grpc.v1.DriveStatus value) {
+      if (driveStatusBuilder_ == null) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        driveStatus_ = value;
+      } else {
+        driveStatusBuilder_.setMessage(value);
+      }
+      bitField0_ |= 0x00800000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     */
+    public Builder setDriveStatus(
+        net.bladewatch.app.grpc.v1.DriveStatus.Builder builderForValue) {
+      if (driveStatusBuilder_ == null) {
+        driveStatus_ = builderForValue.build();
+      } else {
+        driveStatusBuilder_.setMessage(builderForValue.build());
+      }
+      bitField0_ |= 0x00800000;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     */
+    public Builder mergeDriveStatus(net.bladewatch.app.grpc.v1.DriveStatus value) {
+      if (driveStatusBuilder_ == null) {
+        if (((bitField0_ & 0x00800000) != 0) &&
+          driveStatus_ != null &&
+          driveStatus_ != net.bladewatch.app.grpc.v1.DriveStatus.getDefaultInstance()) {
+          getDriveStatusBuilder().mergeFrom(value);
+        } else {
+          driveStatus_ = value;
+        }
+      } else {
+        driveStatusBuilder_.mergeFrom(value);
+      }
+      if (driveStatus_ != null) {
+        bitField0_ |= 0x00800000;
+        onChanged();
+      }
+      return this;
+    }
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     */
+    public Builder clearDriveStatus() {
+      bitField0_ = (bitField0_ & ~0x00800000);
+      driveStatus_ = null;
+      if (driveStatusBuilder_ != null) {
+        driveStatusBuilder_.dispose();
+        driveStatusBuilder_ = null;
+      }
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     */
+    public net.bladewatch.app.grpc.v1.DriveStatus.Builder getDriveStatusBuilder() {
+      bitField0_ |= 0x00800000;
+      onChanged();
+      return internalGetDriveStatusFieldBuilder().getBuilder();
+    }
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     */
+    public net.bladewatch.app.grpc.v1.DriveStatusOrBuilder getDriveStatusOrBuilder() {
+      if (driveStatusBuilder_ != null) {
+        return driveStatusBuilder_.getMessageOrBuilder();
+      } else {
+        return driveStatus_ == null ?
+            net.bladewatch.app.grpc.v1.DriveStatus.getDefaultInstance() : driveStatus_;
+      }
+    }
+    /**
+     * <pre>
+     * Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+     * </pre>
+     *
+     * <code>.bladewatch.v1.DriveStatus drive_status = 25 [json_name = "driveStatus"];</code>
+     */
+    private com.google.protobuf.SingleFieldBuilder<
+        net.bladewatch.app.grpc.v1.DriveStatus, net.bladewatch.app.grpc.v1.DriveStatus.Builder, net.bladewatch.app.grpc.v1.DriveStatusOrBuilder> 
+        internalGetDriveStatusFieldBuilder() {
+      if (driveStatusBuilder_ == null) {
+        driveStatusBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+            net.bladewatch.app.grpc.v1.DriveStatus, net.bladewatch.app.grpc.v1.DriveStatus.Builder, net.bladewatch.app.grpc.v1.DriveStatusOrBuilder>(
+                getDriveStatus(),
+                getParentForChildren(),
+                isClean());
+        driveStatus_ = null;
+      }
+      return driveStatusBuilder_;
     }
 
     // @@protoc_insertion_point(builder_scope:bladewatch.v1.GetStatusResponse)

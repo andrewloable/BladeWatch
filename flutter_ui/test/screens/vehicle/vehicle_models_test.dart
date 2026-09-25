@@ -2,41 +2,41 @@ import 'package:bladewatch_ui/screens/vehicle/vehicle_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('SeatCapabilities.anyAvailable', () {
-    test('false when nothing is available', () {
-      expect(const SeatCapabilities().anyAvailable, isFalse);
-    });
-
-    test('true when any single capability is available', () {
-      expect(const SeatCapabilities(driverHeat: true).anyAvailable, isTrue);
-      expect(const SeatCapabilities(passengerHeat: true).anyAvailable, isTrue);
-      expect(const SeatCapabilities(driverCool: true).anyAvailable, isTrue);
-      expect(const SeatCapabilities(passengerCool: true).anyAvailable, isTrue);
-      expect(const SeatCapabilities(driverMemoryRecall: true).anyAvailable, isTrue);
-    });
-  });
-
   group('presetFor', () {
     test('returns null for unknown (-1) or negative values', () {
       expect(presetFor(-1), isNull);
       expect(presetFor(-5), isNull);
     });
 
-    test('snaps to the nearest preset within +/-10', () {
+    test('closed (0-2%) lights 0%', () {
       expect(presetFor(0), 0);
-      expect(presetFor(5), 0);
-      expect(presetFor(10), 0);
-      expect(presetFor(25), 25);
-      expect(presetFor(50), 50);
-      expect(presetFor(75), 75);
-      expect(presetFor(90), 100);
+      expect(presetFor(2), 0);
+    });
+
+    // BladeWatch-rm6p: Vent 12% left the windows at 16/15/15/14 and only the first three lit.
+    test('a vented window always lights 25%, never nothing and never 0%', () {
+      for (final v in [3, 12, 14, 15, 16, 25]) {
+        expect(presetFor(v), 25, reason: '$v%');
+      }
+    });
+
+    test('an open window lights the nearest opening preset, ties to the higher', () {
+      expect(presetFor(37), 25);
+      expect(presetFor(38), 50);
+      expect(presetFor(62), 50);
+      expect(presetFor(63), 75);
+      expect(presetFor(88), 100);
       expect(presetFor(100), 100);
     });
 
-    test('returns null when farther than 10 from every preset', () {
-      expect(presetFor(12), isNull);
-      expect(presetFor(38), isNull);
-      expect(presetFor(62), isNull);
+    // BladeWatch-b3n7: the sunroof and sunshade only have close / half / open.
+    test('sun panels offer and light only 0 / 50 / 100', () {
+      expect(presetsForArea(4), kWindowPresets);
+      expect(presetsForArea(5), [0, 50, 100]);
+      expect(presetsForArea(6), [0, 50, 100]);
+      expect(presetFor(0, kSunPanelPresets), 0);
+      expect(presetFor(20, kSunPanelPresets), 50);
+      expect(presetFor(75, kSunPanelPresets), 100);
     });
   });
 

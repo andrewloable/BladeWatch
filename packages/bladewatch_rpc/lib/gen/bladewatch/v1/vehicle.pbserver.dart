@@ -25,8 +25,6 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.GetVehicleStateRequest request);
   $async.Future<$0.GetAcDiagnosticsResponse> getAcDiagnostics(
       $pb.ServerContext ctx, $0.GetAcDiagnosticsRequest request);
-  $async.Future<$0.GetSeatDiagnosticsResponse> getSeatDiagnostics(
-      $pb.ServerContext ctx, $0.GetSeatDiagnosticsRequest request);
   $async.Future<$0.VehicleCommandResponse> lock(
       $pb.ServerContext ctx, $0.LockRequest request);
   $async.Future<$0.VehicleCommandResponse> unlock(
@@ -41,8 +39,6 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $0.FindCarRequest request);
   $async.Future<$0.VehicleCommandResponse> setClimate(
       $pb.ServerContext ctx, $0.SetClimateRequest request);
-  $async.Future<$0.VehicleCommandResponse> setSeat(
-      $pb.ServerContext ctx, $0.SetSeatRequest request);
   $async.Future<$0.VehicleCommandResponse> setLights(
       $pb.ServerContext ctx, $0.SetLightsRequest request);
   $async.Future<$0.VehicleCommandResponse> setScreen(
@@ -78,8 +74,6 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
         return $0.GetVehicleStateRequest();
       case 'GetAcDiagnostics':
         return $0.GetAcDiagnosticsRequest();
-      case 'GetSeatDiagnostics':
-        return $0.GetSeatDiagnosticsRequest();
       case 'Lock':
         return $0.LockRequest();
       case 'Unlock':
@@ -94,8 +88,6 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
         return $0.FindCarRequest();
       case 'SetClimate':
         return $0.SetClimateRequest();
-      case 'SetSeat':
-        return $0.SetSeatRequest();
       case 'SetLights':
         return $0.SetLightsRequest();
       case 'SetScreen':
@@ -136,8 +128,6 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
         return getState(ctx, request as $0.GetVehicleStateRequest);
       case 'GetAcDiagnostics':
         return getAcDiagnostics(ctx, request as $0.GetAcDiagnosticsRequest);
-      case 'GetSeatDiagnostics':
-        return getSeatDiagnostics(ctx, request as $0.GetSeatDiagnosticsRequest);
       case 'Lock':
         return lock(ctx, request as $0.LockRequest);
       case 'Unlock':
@@ -152,8 +142,6 @@ abstract class VehicleServiceBase extends $pb.GeneratedService {
         return findCar(ctx, request as $0.FindCarRequest);
       case 'SetClimate':
         return setClimate(ctx, request as $0.SetClimateRequest);
-      case 'SetSeat':
-        return setSeat(ctx, request as $0.SetSeatRequest);
       case 'SetLights':
         return setLights(ctx, request as $0.SetLightsRequest);
       case 'SetScreen':

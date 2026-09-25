@@ -30,7 +30,6 @@ class BydVehicleData private constructor(b: Builder) {
     @JvmField val avgCellTempC: Double = b.avgCellTempC  // average pack temp (°C)
     @JvmField val waterTempC: Double = b.waterTempC  // coolant temp
     @JvmField val outsideTempC: Double = b.outsideTempC  // external temp
-    @JvmField val insideTempC: Double = b.insideTempC  // cabin temp
     @JvmField val bodyworkBattTempC: Double = b.bodyworkBattTempC  // battery temp from bodywork device
 
     // ==================== CELL VOLTAGE ====================
@@ -52,6 +51,8 @@ class BydVehicleData private constructor(b: Builder) {
     // ==================== ENERGY ====================
     @JvmField val energyMode: Int = b.energyMode  // EV/HEV
     @JvmField val operationMode: Int = b.operationMode  // ECO/SPORT/NORMAL
+    /** BYDAutoADASDevice.getAVHState(), raw (BladeWatch-7zp9); see DriveState. */
+    @JvmField val autoHoldState: Int = b.autoHoldState
     @JvmField val totalElecCon: Double = b.totalElecCon  // total electricity consumed
     @JvmField val totalFuelCon: Double = b.totalFuelCon  // total fuel consumed
 
@@ -108,9 +109,6 @@ class BydVehicleData private constructor(b: Builder) {
     // ==================== SEATBELTS ====================
     @JvmField val seatbeltStatus: IntArray? = b.seatbeltStatus  // [1-5]
 
-    // ==================== SEATS ====================
-    @JvmField val seatHeat: IntArray? = b.seatHeat  // [driver, passenger] — 0=off, 1=low, 2=high
-    @JvmField val seatCool: IntArray? = b.seatCool  // [driver, passenger] — 0=off, 1=low, 2=high
 
     // ==================== CLIMATE ====================
     @JvmField val acStartState: Int = b.acStartState
@@ -148,7 +146,6 @@ class BydVehicleData private constructor(b: Builder) {
     @JvmField val smartKeyWarnState: Int = b.smartKeyWarnState  // InstrumentDevice.getSmartKeySysWarnLightState()
 
     // ==================== EXTENDED THERMAL ====================
-    @JvmField val insideTempCelsius: Double = b.insideTempCelsius  // Cabin temp from AC_TEMP_INSIDE
 
     // ==================== EXTENDED CHARGING ====================
     @JvmField val chargingRestTimeHours: Int = b.chargingRestTimeHours
@@ -240,7 +237,6 @@ class BydVehicleData private constructor(b: Builder) {
             putIfValid(therm, "avgCellTempC", avgCellTempC)
             putIfValid(therm, "waterTempC", waterTempC)
             putIfValid(therm, "outsideTempC", outsideTempC)
-            putIfValid(therm, "insideTempC", insideTempC)
             putIfValid(therm, "bodyworkBattTempC", bodyworkBattTempC)
             putIfValid(therm, "bestBatteryTempC", getBestBatteryTemp())
             j.put("thermal", therm)
@@ -341,9 +337,7 @@ class BydVehicleData private constructor(b: Builder) {
 
             // Seatbelts
             if (seatbeltStatus != null) j.put("seatbeltStatus", intArrayToJson(seatbeltStatus))
-            if (seatHeat != null) j.put("seatHeat", intArrayToJson(seatHeat))
-            if (seatCool != null) j.put("seatCool", intArrayToJson(seatCool))
-
+        
             // Climate
             val clim = JSONObject()
             putIfSet(clim, "acOn", acStartState)
@@ -390,12 +384,6 @@ class BydVehicleData private constructor(b: Builder) {
             putIfSet(keyJson, "detectionReminder", keyDetectionReminder)
             putIfSet(keyJson, "smartKeyWarnState", smartKeyWarnState)
             if (keyJson.length() > 0) j.put("key", keyJson)
-
-            // Extended Thermal (insideTempCelsius)
-            // Note: insideTempCelsius is separate from the existing insideTempC in thermal
-            val extTherm = JSONObject()
-            putIfValid(extTherm, "insideTempCelsius", insideTempCelsius)
-            if (extTherm.length() > 0) j.put("extendedThermal", extTherm)
 
             // Extended Charging
             val extChg = JSONObject()
@@ -474,7 +462,6 @@ class BydVehicleData private constructor(b: Builder) {
         b.avgCellTempC = avgCellTempC
         b.waterTempC = waterTempC
         b.outsideTempC = outsideTempC
-        b.insideTempC = insideTempC
         b.bodyworkBattTempC = bodyworkBattTempC
         b.highCellVoltage = highCellVoltage
         b.lowCellVoltage = lowCellVoltage
@@ -488,6 +475,7 @@ class BydVehicleData private constructor(b: Builder) {
         b.enginePowerKw = enginePowerKw
         b.energyMode = energyMode
         b.operationMode = operationMode
+        b.autoHoldState = autoHoldState
         b.totalElecCon = totalElecCon
         b.totalFuelCon = totalFuelCon
         b.elecRangeKm = elecRangeKm
@@ -523,8 +511,6 @@ class BydVehicleData private constructor(b: Builder) {
         b.dayTimeLight = dayTimeLight
         b.speedLimitWarning = speedLimitWarning
         b.seatbeltStatus = seatbeltStatus
-        b.seatHeat = seatHeat
-        b.seatCool = seatCool
         b.acStartState = acStartState
         b.acCycleMode = acCycleMode
         b.acWindMode = acWindMode
@@ -544,7 +530,6 @@ class BydVehicleData private constructor(b: Builder) {
         b.keyPowerLowInd = keyPowerLowInd
         b.keyDetectionReminder = keyDetectionReminder
         b.smartKeyWarnState = smartKeyWarnState
-        b.insideTempCelsius = insideTempCelsius
         b.chargingRestTimeHours = chargingRestTimeHours
         b.chargingRestTimeMinutes = chargingRestTimeMinutes
         b.chargingPercent = chargingPercent
@@ -591,7 +576,6 @@ class BydVehicleData private constructor(b: Builder) {
         @JvmField var avgCellTempC: Double = Double.NaN
         @JvmField var waterTempC: Double = Double.NaN
         @JvmField var outsideTempC: Double = Double.NaN
-        @JvmField var insideTempC: Double = Double.NaN
         @JvmField var bodyworkBattTempC: Double = Double.NaN
         @JvmField var highCellVoltage: Double = Double.NaN
         @JvmField var lowCellVoltage: Double = Double.NaN
@@ -605,6 +589,7 @@ class BydVehicleData private constructor(b: Builder) {
         @JvmField var enginePowerKw: Double = Double.NaN
         @JvmField var energyMode: Int = UNAVAILABLE
         @JvmField var operationMode: Int = UNAVAILABLE
+        @JvmField var autoHoldState: Int = UNAVAILABLE
         @JvmField var totalElecCon: Double = Double.NaN
         @JvmField var totalFuelCon: Double = Double.NaN
         @JvmField var elecRangeKm: Int = UNAVAILABLE
@@ -640,8 +625,6 @@ class BydVehicleData private constructor(b: Builder) {
         @JvmField var dayTimeLight: Boolean = false
         @JvmField var speedLimitWarning: Boolean = false
         @JvmField var seatbeltStatus: IntArray? = null
-        @JvmField var seatHeat: IntArray? = null
-        @JvmField var seatCool: IntArray? = null
         @JvmField var acStartState: Int = UNAVAILABLE
         @JvmField var acCycleMode: Int = UNAVAILABLE
         @JvmField var acWindMode: Int = UNAVAILABLE
@@ -661,7 +644,6 @@ class BydVehicleData private constructor(b: Builder) {
         @JvmField var keyPowerLowInd: Int = UNAVAILABLE
         @JvmField var keyDetectionReminder: Int = UNAVAILABLE
         @JvmField var smartKeyWarnState: Int = UNAVAILABLE
-        @JvmField var insideTempCelsius: Double = Double.NaN
         @JvmField var chargingRestTimeHours: Int = UNAVAILABLE
         @JvmField var chargingRestTimeMinutes: Int = UNAVAILABLE
         @JvmField var chargingPercent: Int = UNAVAILABLE
@@ -705,7 +687,6 @@ class BydVehicleData private constructor(b: Builder) {
         fun avgCellTempC(v: Double): Builder = apply { avgCellTempC = v }
         fun waterTempC(v: Double): Builder = apply { waterTempC = v }
         fun outsideTempC(v: Double): Builder = apply { outsideTempC = v }
-        fun insideTempC(v: Double): Builder = apply { insideTempC = v }
         fun bodyworkBattTempC(v: Double): Builder = apply { bodyworkBattTempC = v }
         fun highCellVoltage(v: Double): Builder = apply { highCellVoltage = v }
         fun lowCellVoltage(v: Double): Builder = apply { lowCellVoltage = v }
@@ -719,6 +700,7 @@ class BydVehicleData private constructor(b: Builder) {
         fun enginePowerKw(v: Double): Builder = apply { enginePowerKw = v }
         fun energyMode(v: Int): Builder = apply { energyMode = v }
         fun operationMode(v: Int): Builder = apply { operationMode = v }
+        fun autoHoldState(v: Int): Builder = apply { autoHoldState = v }
         fun totalElecCon(v: Double): Builder = apply { totalElecCon = v }
         fun totalFuelCon(v: Double): Builder = apply { totalFuelCon = v }
         fun elecRangeKm(v: Int): Builder = apply { elecRangeKm = v }
@@ -754,8 +736,6 @@ class BydVehicleData private constructor(b: Builder) {
         fun dayTimeLight(v: Boolean): Builder = apply { dayTimeLight = v }
         fun speedLimitWarning(v: Boolean): Builder = apply { speedLimitWarning = v }
         fun seatbeltStatus(v: IntArray?): Builder = apply { seatbeltStatus = v }
-        fun seatHeat(v: IntArray?): Builder = apply { seatHeat = v }
-        fun seatCool(v: IntArray?): Builder = apply { seatCool = v }
         fun acStartState(v: Int): Builder = apply { acStartState = v }
         fun acCycleMode(v: Int): Builder = apply { acCycleMode = v }
         fun acWindMode(v: Int): Builder = apply { acWindMode = v }
@@ -775,7 +755,6 @@ class BydVehicleData private constructor(b: Builder) {
         fun keyPowerLowInd(v: Int): Builder = apply { keyPowerLowInd = v }
         fun keyDetectionReminder(v: Int): Builder = apply { keyDetectionReminder = v }
         fun smartKeyWarnState(v: Int): Builder = apply { smartKeyWarnState = v }
-        fun insideTempCelsius(v: Double): Builder = apply { insideTempCelsius = v }
         fun chargingRestTimeHours(v: Int): Builder = apply { chargingRestTimeHours = v }
         fun chargingRestTimeMinutes(v: Int): Builder = apply { chargingRestTimeMinutes = v }
         fun chargingPercent(v: Int): Builder = apply { chargingPercent = v }

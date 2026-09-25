@@ -24,20 +24,13 @@ void main() {
     int sunshade = -1,
     bool capSunroof = false,
     bool capSunshade = false,
-    bool capDriverHeat = false,
-    bool capPassengerHeat = false,
-    bool capDriverCool = false,
-    bool capPassengerCool = false,
-    bool capDriverMemory = false,
     int soc = 50,
     int rangeKm = 36,
     double? fuelPercent,
     int? fuelRangeKm,
-    List<int> heat = const [0, 0],
-    List<int> cool = const [0, 0],
     bool acOn = false,
     int setpointC = 22,
-    double insideTempC = 0.0,
+    double? outsideTempC,
     int fanLevel = 3,
     bool maxCooling = false,
     Map<String, Object?> flTyre = const {'kPa': 250, 'psi': 36.3, 'temperatureC': 29},
@@ -48,13 +41,6 @@ void main() {
       'windows': {'lf': lf, 'rf': rf, 'lr': lr, 'rr': rr, 'sunroof': sunroof, 'sunshade': sunshade},
       'capabilities': {
         'windows': {'sunroof': capSunroof, 'sunshade': capSunshade},
-        'seats': {
-          'driverHeat': capDriverHeat,
-          'passengerHeat': capPassengerHeat,
-          'driverCool': capDriverCool,
-          'passengerCool': capPassengerCool,
-          'driverMemoryRecall': capDriverMemory,
-        },
       },
       'battery': {
         'soc': soc,
@@ -64,8 +50,7 @@ void main() {
         'fuelPercent': ?fuelPercent,
         'fuelRangeKm': ?fuelRangeKm,
       },
-      'seats': {'heat': heat, 'cool': cool},
-      'climate': {'acOn': acOn, 'setpointC': setpointC, 'insideTempC': insideTempC, 'fanLevel': fanLevel, 'maxCooling': maxCooling},
+      'climate': {'acOn': acOn, 'setpointC': setpointC, 'outsideTempC': ?outsideTempC, 'fanLevel': fanLevel, 'maxCooling': maxCooling},
       'tyres': {
         'fl': flTyre,
         'fr': <String, Object?>{},
@@ -197,7 +182,8 @@ void main() {
   });
 
   group('tabs', () {
-    testWidgets('Seats tab is hidden when no seat capability is reported', (tester) async {
+    // BladeWatch-7bx4: seat control was removed end to end -- there is no Seats tab at all.
+    testWidgets('only Climate and Windows tabs exist', (tester) async {
       stubState();
       stubAppearance();
       await pump(tester, buildController());
@@ -206,15 +192,6 @@ void main() {
       expect(find.byKey(const ValueKey('vehicle.tab.climate')), findsOneWidget);
       expect(find.byKey(const ValueKey('vehicle.tab.seats')), findsNothing);
       expect(find.byKey(const ValueKey('vehicle.tab.windows')), findsOneWidget);
-    });
-
-    testWidgets('Seats tab appears when any seat capability is reported', (tester) async {
-      stubState(capDriverHeat: true);
-      stubAppearance();
-      await pump(tester, buildController());
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const ValueKey('vehicle.tab.seats')), findsOneWidget);
     });
 
     testWidgets('switching to Windows shows the window grid', (tester) async {
@@ -231,13 +208,15 @@ void main() {
   });
 
   group('climate tab', () {
-    testWidgets('shows inside temperature when known', (tester) async {
-      stubState(insideTempC: 26.5);
+    // BladeWatch-eh3u: labelled as what it is -- the outside air, not the cabin.
+    testWidgets('shows the outside temperature when known', (tester) async {
+      stubState(outsideTempC: 26.5);
       stubAppearance();
       await pump(tester, buildController());
       await tester.pumpAndSettle();
 
-      expect(find.text('Inside: 26.5°C'), findsOneWidget);
+      expect(find.text('Outside: 26.5°C'), findsOneWidget);
+      expect(find.textContaining('Inside'), findsNothing);
     });
 
     testWidgets('toggling AC calls SetClimate and flips the button label', (tester) async {
@@ -431,87 +410,6 @@ void main() {
     });
   });
 
-  group('seats tab', () {
-    Future<void> openSeats(WidgetTester tester) async {
-      await tester.tap(find.byKey(const ValueKey('vehicle.tab.seats')));
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('driver row shows only the capabilities the vehicle reports', (tester) async {
-      stubState(capDriverHeat: true);
-      stubAppearance();
-      await pump(tester, buildController());
-      await tester.pumpAndSettle();
-      await openSeats(tester);
-
-      expect(find.byKey(const ValueKey('vehicle.seat.heat.1')), findsOneWidget);
-      expect(find.byKey(const ValueKey('vehicle.seat.cool.1')), findsNothing);
-    });
-
-    testWidgets('cycling driver heat calls SetSeat and updates the label', (tester) async {
-      stubState(capDriverHeat: true, heat: [0, 0]);
-      stubAppearance();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      await pump(tester, buildController());
-      await tester.pumpAndSettle();
-      await openSeats(tester);
-
-      await tester.tap(find.byKey(const ValueKey('vehicle.seat.heat.1')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Heat (Low)'), findsOneWidget);
-    });
-
-    testWidgets('passenger cool control appears when capable and cycling calls SetSeat', (tester) async {
-      stubState(capPassengerCool: true, cool: [0, 0]);
-      stubAppearance();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      await pump(tester, buildController());
-      await tester.pumpAndSettle();
-      await openSeats(tester);
-
-      expect(find.byKey(const ValueKey('vehicle.seat.cool.2')), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey('vehicle.seat.cool.2')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Cool (Low)'), findsOneWidget);
-    });
-
-    testWidgets('memory recall buttons appear only for the driver and call SetSeat', (tester) async {
-      stubState(capDriverHeat: true, capDriverMemory: true);
-      stubAppearance();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
-      await pump(tester, buildController());
-      await tester.pumpAndSettle();
-      await openSeats(tester);
-
-      expect(find.byKey(const ValueKey('vehicle.seat.recall.1')), findsOneWidget);
-      expect(find.byKey(const ValueKey('vehicle.seat.recall.2')), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey('vehicle.seat.recall.1')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('vehicle.seat.recall.2')));
-      await tester.pumpAndSettle();
-
-      expect(rpc.calls.where((c) => c.method == 'SetSeat').length, greaterThanOrEqualTo(2));
-    });
-
-    testWidgets('a failed memory recall shows a snackbar', (tester) async {
-      stubState(capDriverHeat: true, capDriverMemory: true);
-      stubAppearance();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': false, 'message': 'no memory saved'});
-      await pump(tester, buildController());
-      await tester.pumpAndSettle();
-      await openSeats(tester);
-
-      await tester.tap(find.byKey(const ValueKey('vehicle.seat.recall.1')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('no memory saved'), findsOneWidget);
-    });
-  });
-
   group('windows tab', () {
     Future<void> openWindows(WidgetTester tester) async {
       await tester.tap(find.byKey(const ValueKey('vehicle.tab.windows')));
@@ -562,6 +460,44 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(rpc.calls.where((c) => c.method == 'MoveWindow').length, 3);
+    });
+
+    /// Whether the preset chip [key] is drawn highlighted (primary background).
+    bool lit(WidgetTester tester, String key) {
+      final button = tester.widget<TextButton>(find.byKey(ValueKey(key)));
+      final context = tester.element(find.byKey(ValueKey(key)));
+      return button.style!.backgroundColor!.resolve({}) == Theme.of(context).colorScheme.primary;
+    }
+
+    // BladeWatch-rm6p: after Vent 12% the car reported 16/15/15/14 and Rear Right lit nothing.
+    testWidgets('four vented windows all light the same preset', (tester) async {
+      stubState(lf: 16, rf: 15, lr: 15, rr: 14);
+      stubAppearance();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await openWindows(tester);
+
+      for (final area in [1, 2, 3, 4]) {
+        expect(lit(tester, 'vehicle.window.${area}_25'), isTrue, reason: 'window $area');
+        expect(lit(tester, 'vehicle.window.${area}_0'), isFalse, reason: 'an open window is not closed');
+      }
+    });
+
+    // BladeWatch-b3n7: 25% fully closed the sunroof and 75% fully opened it.
+    testWidgets('the sunroof offers only close / half / open', (tester) async {
+      stubState(capSunroof: true, sunroof: 50);
+      stubAppearance();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      await openWindows(tester);
+
+      for (final pct in [0, 50, 100]) {
+        expect(find.byKey(ValueKey('vehicle.window.5_$pct')), findsOneWidget);
+      }
+      expect(find.byKey(const ValueKey('vehicle.window.5_25')), findsNothing);
+      expect(find.byKey(const ValueKey('vehicle.window.5_75')), findsNothing);
+      expect(lit(tester, 'vehicle.window.5_50'), isTrue);
+      expect(find.byKey(const ValueKey('vehicle.window.1_25')), findsOneWidget, reason: 'side windows keep all five');
     });
 
     testWidgets('sunroof cell appears only when capable', (tester) async {
@@ -736,7 +672,7 @@ void main() {
   /// Before this, the appearance writes returned null for a blank refusal, so
   /// `error != null` was false and nothing was shown at all: the swatch snapped
   /// back with no explanation, which reads as a broken tap rather than a refused
-  /// command. The climate/seat paths showed a snackbar containing empty text.
+  /// command. The climate path showed a snackbar containing empty text.
   group('a refusal with no reason still reports', () {
     testWidgets('a blank appearance refusal shows the generic message', (tester) async {
       stubState();
@@ -765,34 +701,17 @@ void main() {
       expect(find.text('Action failed. Check vehicle connection.'), findsNothing);
     });
 
-    testWidgets('a blank seat refusal shows the generic message', (tester) async {
-      stubState(capDriverHeat: true, heat: [0, 0]);
+    // Was pinned on the seat buttons until seat control was removed (BladeWatch-7bx4); the
+    // AC toggle takes the same _mapCommand -> showVehicleCommandError path.
+    testWidgets('a blank climate refusal shows the generic message', (tester) async {
+      stubState(acOn: false);
       stubAppearance();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': false});
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': false});
       await pump(tester, buildController());
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('vehicle.tab.seats')));
-      await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('vehicle.seat.heat.1')));
+      await tester.tap(find.byKey(const ValueKey('vehicle.climate.ac')));
       await tester.pumpAndSettle();
-      expect(find.text('Action failed. Check vehicle connection.'), findsOneWidget);
-    });
-
-    /// The cool button is a hand-copied twin of the heat one, so it gets its own
-    /// case: every seat defect so far has been present in exactly one of the two.
-    testWidgets('a blank seat COOL refusal reports too, not just heat', (tester) async {
-      stubState(capDriverCool: true, cool: [0, 0]);
-      stubAppearance();
-      rpc.stubJson('VehicleService', 'SetSeat', {'success': false});
-      await pump(tester, buildController());
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('vehicle.tab.seats')));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const ValueKey('vehicle.seat.cool.1')));
-      await tester.pumpAndSettle();
-
       expect(find.text('Action failed. Check vehicle connection.'), findsOneWidget);
     });
   });

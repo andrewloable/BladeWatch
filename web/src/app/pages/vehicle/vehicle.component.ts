@@ -4,13 +4,14 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConnectClients } from '../../core/connect/connect-clients';
 
-type Tab = 'climate' | 'seats' | 'windows';
+type Tab = 'climate' | 'windows';
 interface GpsLocation { lat: number; lng: number; accuracy?: number; }
 
 /**
  * Vehicle — parity with native VehicleFragment (VehicleController/VehiclePanels).
  * Lock/Unlock/Flash were REMOVED by decision (native has no such control).
- * Polls GetState every 3s and exposes Climate / Seats / Windows control tabs,
+ * Polls GetState every 3s and exposes Climate / Windows control tabs (seat control was
+ * removed end to end, BladeWatch-7bx4),
  * read-only lock + charge/range pills, and TPMS cards. GPS card retained until
  * the dedicated Location screen ships.
  */
@@ -44,7 +45,6 @@ export default class VehicleComponent implements OnInit, OnDestroy {
   // ---- derived view state ----
   readonly climate = computed(() => this.state()?.climate ?? null);
   readonly battery = computed(() => this.state()?.battery ?? null);
-  readonly seats = computed(() => this.state()?.seats ?? null);
   readonly tyres = computed(() => {
     const t = this.state()?.tyres;
     if (!t) return [];
@@ -148,37 +148,6 @@ export default class VehicleComponent implements OnInit, OnDestroy {
     const f = Math.min(7, Math.max(1, Math.round((this.climate()?.fanLevel ?? 1) + delta)));
     this.control('fan', () => this.clients.vehicle.setClimate({ action: 'set_fan', fanLevel: f } as any));
   }
-
-  // ---- Seats (stateful: send full driver/passenger heat+vent every call) ----
-  private seatLevels() {
-    const s = this.seats();
-    const heat: number[] = s?.heat ?? [];
-    const cool: number[] = s?.cool ?? [];
-    return {
-      driverHeat: heat[0] ?? 0, passengerHeat: heat[1] ?? 0,
-      driverVent: cool[0] ?? 0, passengerVent: cool[1] ?? 0,
-    };
-  }
-  seatHeat(seat: 'driver' | 'passenger'): number {
-    const l = this.seatLevels();
-    return seat === 'driver' ? l.driverHeat : l.passengerHeat;
-  }
-  seatVent(seat: 'driver' | 'passenger'): number {
-    const l = this.seatLevels();
-    return seat === 'driver' ? l.driverVent : l.passengerVent;
-  }
-  cycleSeat(seat: 'driver' | 'passenger', kind: 'heat' | 'vent'): void {
-    const cur = kind === 'heat' ? this.seatHeat(seat) : this.seatVent(seat);
-    const next = (cur + 1) % 3; // Off -> Low -> High -> Off
-    const lv = { ...this.seatLevels() };
-    const seatIndex = seat === 'driver' ? 1 : 2;
-    if (kind === 'heat') lv[seat === 'driver' ? 'driverHeat' : 'passengerHeat'] = next;
-    else lv[seat === 'driver' ? 'driverVent' : 'passengerVent'] = next;
-    this.control(`${seat}-${kind}`, () => this.clients.vehicle.setSeat({
-      seatIndex, action: kind === 'heat' ? 'heating' : 'ventilation', level: next, ...lv,
-    } as any));
-  }
-  seatLabel(level: number): string { return ['Off', 'Low', 'High'][level] ?? 'Off'; }
 
   // ---- Windows (windowIndex 0=all,1=LF,2=RF,3=LR,4=RR; targetPercent or direction) ----
   readonly windowDefs = [

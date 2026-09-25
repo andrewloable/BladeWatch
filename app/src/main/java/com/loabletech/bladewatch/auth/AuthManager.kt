@@ -240,6 +240,17 @@ object AuthManager {
         // so callers (e.g. WebViewFragment) retry once the daemon has
         // booted and getState() can pull the canonical value.
         if (state == null || state.deviceSecret.isNullOrEmpty()) {
+            // BladeWatch-w7by: "not found" is only true when the daemon itself read the store and it
+            // was not there. From the app process it can just mean the daemon has not answered yet
+            // (an install restarts the app before the daemons): minting here then persisted a NEW
+            // secret once the daemon came up, and every companion token died with the old one.
+            if (!SecretConfigBridge.canMintSecrets()) {
+                log("Auth secret not readable from this process yet -- leaving it to the daemon")
+                cachedState = null
+                cachedConfigMtime = 0
+                lastInitAttemptMs = System.currentTimeMillis()
+                return null
+            }
             if (state == null) state = AuthState()
             if (state.deviceId.isNullOrEmpty()) {
                 state.deviceId = loadDeviceId()
@@ -1001,6 +1012,9 @@ object AuthManager {
     @JvmStatic
     fun clearTestState() {
         testStateOverride = null
+        cachedState = null
+        cachedConfigMtime = 0
+        lastInitAttemptMs = 0
     }
 
     @JvmStatic

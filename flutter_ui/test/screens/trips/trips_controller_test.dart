@@ -49,6 +49,26 @@ void main() {
     expect(controller.activeFilter, TripsDaysFilter.seven);
   });
 
+  // BladeWatch-mgi9 / -c149: costs are a sum over the WHOLE period, not the first page.
+  group('period costs', () {
+    test('are summed from the trips when the first page is not full', () async {
+      stubAllLoads(trips: [aTrip(id: 1), aTrip(id: 2)]);
+      await controller.load();
+      final costs = (controller.state as TripsLoaded).costs;
+      expect((costs.total, costs.currency), (5.0, 'USD'));
+      expect(rpc.calls.where((c) => c.method == 'ListTrips'), hasLength(1), reason: 'one page was enough');
+    });
+
+    test('page on past a full first page', () async {
+      stubAllLoads(trips: [for (var i = 0; i < 100; i++) aTrip(id: i)]);
+      await controller.load();
+      final lists = rpc.calls.where((c) => c.method == 'ListTrips').toList();
+      expect(lists.length, greaterThan(2));
+      expect((lists.last.request as dynamic).offset, greaterThan(0));
+      expect((controller.state as TripsLoaded).trips, hasLength(100), reason: 'the list itself is unchanged');
+    });
+  });
+
   group('load', () {
     test('populates a Loaded state from all 6 RPCs', () async {
       stubAllLoads(

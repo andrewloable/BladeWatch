@@ -1688,17 +1688,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboard_trips_this_week => '今週';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 回の走行',
-      one: '$arg1 回の走行',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1919,9 +1908,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get vehicle_tab_climate => 'エアコン';
 
   @override
-  String get vehicle_tab_seats => '座席';
-
-  @override
   String get vehicle_tab_windows => 'ウィンドウ';
 
   @override
@@ -2002,43 +1988,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '室内: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '車外: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '運転席';
-
-  @override
-  String get vehicle_seat_passenger => '助手席';
-
-  @override
-  String get vehicle_seat_no_controls => 'この車両ではシート操作を利用できません。';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '暖房 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '冷房 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '（オフ）';
-
-  @override
-  String get vehicle_heat_low => '（弱）';
-
-  @override
-  String get vehicle_heat_high => '（強）';
-
-  @override
-  String get vehicle_seat_pos_1 => '位置 1';
-
-  @override
-  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
   String get vehicle_all_windows => '全ウィンドウ';
@@ -2911,4 +2863,37 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pear_tile_off => 'オフ';
+
+  @override
+  String get trips_cost_total => '合計コスト';
+
+  @override
+  String get trips_cost_no_rate => '費用を表示するには、トリップ設定で電気料金を設定してください。';
+
+  @override
+  String get trips_cost_mixed_currency => 'トリップの費用が複数の通貨で記録されているため、合計は表示されません。';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'ギア $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'モード: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'オートホールド: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'オフ';
+
+  @override
+  String get auto_hold_enabled => 'オン';
+
+  @override
+  String get auto_hold_active => '保持中';
 }

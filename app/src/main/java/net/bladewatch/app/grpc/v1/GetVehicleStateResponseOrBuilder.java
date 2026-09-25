@@ -137,21 +137,6 @@ public interface GetVehicleStateResponseOrBuilder extends
   net.bladewatch.app.grpc.v1.AdasStatusOrBuilder getAdasOrBuilder();
 
   /**
-   * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-   * @return Whether the seats field is set.
-   */
-  boolean hasSeats();
-  /**
-   * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-   * @return The seats.
-   */
-  net.bladewatch.app.grpc.v1.SeatStatus getSeats();
-  /**
-   * <code>.bladewatch.v1.SeatStatus seats = 10 [json_name = "seats"];</code>
-   */
-  net.bladewatch.app.grpc.v1.SeatStatusOrBuilder getSeatsOrBuilder();
-
-  /**
    * <code>.bladewatch.v1.ClimateStatus climate = 11 [json_name = "climate"];</code>
    * @return Whether the climate field is set.
    */

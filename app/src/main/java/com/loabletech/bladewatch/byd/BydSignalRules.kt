@@ -271,21 +271,6 @@ object BydSignalRules {
         return if (sawLockedDoor) LOCK_API_LOCKED else LOCK_API_UNKNOWN
     }
 
-    // ── seats ────────────────────────────────────────────────────────────────────
-
-    /**
-     * Normalise a seat heat/vent level from the SDK's 1-based scale to the wire format's
-     * 0-based one: SDK 1=off/2=low/3=high becomes 0/1/2.
-     *
-     * @return the normalised level, or -1 when the firmware does not support the getter
-     */
-    @JvmStatic
-    fun normalizeSeatGetterLevel(raw: Int): Int {
-        if (raw == NO_VALUE) return -1
-        val normalized = raw - 1
-        return if (normalized in 0..2) normalized else -1
-    }
-
     // ── units ────────────────────────────────────────────────────────────────────
 
     /** Miles to kilometres. BYD getters return values in the cluster's configured unit. */

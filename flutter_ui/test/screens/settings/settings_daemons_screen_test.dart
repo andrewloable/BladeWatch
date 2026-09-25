@@ -5,6 +5,7 @@ import 'package:bladewatch_ui/screens/settings/settings_daemons_controller.dart'
 import 'package:bladewatch_ui/screens/settings/settings_daemons_models.dart';
 import 'package:bladewatch_ui/screens/settings/settings_daemons_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/theme/color_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,6 +17,22 @@ void main() {
   setUp(() {
     channel = FakePlatformChannel();
   });
+
+  /// The row's subtitle as one span: plain Text for most rows, Text.rich for a running Pear peer.
+  InlineSpan subtitleOf(WidgetTester tester, Finder row) {
+    final text = tester.widget<ListTile>(find.descendant(of: row, matching: find.byType(ListTile))).subtitle! as Text;
+    return text.textSpan ?? TextSpan(text: text.data);
+  }
+
+  /// The colour of the subtitle span whose text contains [needle].
+  Color? colorOf(WidgetTester tester, Finder row, String needle) {
+    Color? found;
+    subtitleOf(tester, row).visitChildren((span) {
+      if (span is TextSpan && (span.text ?? '').contains(needle)) found = span.style?.color;
+      return found == null;
+    });
+    return found;
+  }
 
   SettingsDaemonsController buildController({Future<bool> Function(DaemonKind, bool)? setDaemonEnabled}) =>
       SettingsDaemonsController(daemonChannel: DaemonChannel(channel), setDaemonEnabled: setDaemonEnabled);
@@ -72,14 +89,18 @@ void main() {
     await tester.pumpAndSettle();
 
     final row = find.byKey(const ValueKey('daemon.pearPeer'));
-    String subtitle() =>
-        (tester.widget<ListTile>(find.descendant(of: row, matching: find.byType(ListTile))).subtitle! as Text).data!;
+    String subtitle() => subtitleOf(tester, row).toPlainText();
     expect(subtitle(), contains('Running'));
     expect(subtitle(), contains('Not reachable: no connection to the Pear network'),
         reason: 'the process is up but the car cannot be found');
     expect(subtitle(), contains('2 devices connected'));
     expect(subtitle(), contains('Last connection: Sep 24, 14:05'));
     expect(find.byIcon(Icons.hub_outlined), findsOneWidget);
+    // BladeWatch-rdtj.20: not success green -- on the head unit that read as "fine".
+    final status = BladeWatchTheme.light().extension<BwStatusColors>()!;
+    expect(colorOf(tester, row, 'Running'), status.success);
+    expect(colorOf(tester, row, 'Not reachable'), status.warning);
+    expect(colorOf(tester, row, '2 devices'), isNot(status.success));
   });
 
   testWidgets('Pear: reachable, unknown, and switched on but not up yet', (tester) async {
@@ -90,16 +111,18 @@ void main() {
     await pumpTall(tester, c);
     await tester.pumpAndSettle();
     final row = find.byKey(const ValueKey('daemon.pearPeer'));
-    String subtitle() =>
-        (tester.widget<ListTile>(find.descendant(of: row, matching: find.byType(ListTile))).subtitle! as Text).data!;
+    String subtitle() => subtitleOf(tester, row).toPlainText();
     expect(subtitle(), contains('Reachable from anywhere'));
     expect(subtitle(), contains('1 device connected'));
     expect(subtitle(), isNot(contains('Last connection')));
+    final status = BladeWatchTheme.light().extension<BwStatusColors>()!;
+    expect(colorOf(tester, row, 'Reachable from anywhere'), status.success);
 
     channel.stub('daemon', 'pearStatus', {'running': true, 'enabled': true, 'reachable': null});
     await c.refresh();
     await tester.pumpAndSettle();
     expect(subtitle(), contains('Reachability unknown'));
+    expect(colorOf(tester, row, 'Reachability unknown'), isNot(anyOf(status.success, status.warning)));
     expect(subtitle(), contains('No devices connected'));
 
     channel.stub('daemon', 'processStatus', {'daemons': {'PEAR_PEER': false}, 'enabled': {'PEAR_PEER': true}});
@@ -386,6 +409,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('daemon.torTunnel.log')));
     await tester.pumpAndSettle();
     expect(requested.last, '/data/local/tmp/tor.log');
+
+    await tester.tap(find.text('DONE'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daemon.pearPeer.log')));
+    await tester.pumpAndSettle();
+    expect(requested.last, '/data/local/tmp/pear_daemon.log');
   });
 
   testWidgets('an unreadable log says so rather than claiming it is empty', (tester) async {

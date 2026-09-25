@@ -1,3 +1,4 @@
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -86,6 +87,12 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
       final configResp = results[4] as GetConfigResponse;
       final storageResp = results[5] as GetStorageResponse;
 
+      // Costs are a sum over the whole period (BladeWatch-mgi9, -c149), and the list above is its
+      // first page: page on only when that page came back full.
+      final firstPage = listResp.trips;
+      final periodTrips =
+          firstPage.length < 100 ? firstPage : await listTripsInPeriod(_tripsService.listTrips, _activeFilter.days);
+
       _state = TripsLoaded(
         trips: listResp.trips.map(_toTripItem).toList(),
         summary: _toSummary(summaryResp),
@@ -93,6 +100,7 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
         range: _toRange(rangeResp.rangeJson),
         config: configResp.hasConfig() ? _toConfig(configResp.config) : null,
         storage: storageResp.hasStorage() ? _toStorage(storageResp.storage) : null,
+        costs: TripCosts.of(periodTrips),
       );
     } catch (e) {
       _state = TripsError('$e');

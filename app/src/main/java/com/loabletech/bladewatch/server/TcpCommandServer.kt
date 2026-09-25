@@ -40,7 +40,15 @@ import kotlin.math.min
  */
 class TcpCommandServer(private val port: Int) {
 
+    @Volatile
     private var serverSocket: ServerSocket? = null
+
+    /**
+     * The port actually bound, -1 until then. Tests construct with port 0 and read this: picking
+     * a "free" port first and binding it later races any other process, and the debug and release
+     * test JVMs run these classes at the same time.
+     */
+    val boundPort: Int get() = serverSocket?.takeUnless { it.isClosed }?.localPort ?: -1
 
     @Volatile
     private var running = true

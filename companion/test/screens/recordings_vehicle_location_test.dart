@@ -108,8 +108,7 @@ void main() {
           'success': true,
           'doors': {'overall': 1},
           'battery': {'soc': 70.0, 'rangeKm': 300, 'fuelPercent': 40.0},
-          'climate': {'acOn': false, 'setpointC': 21.0, 'fanLevel': 3, 'insideTempC': 25.0},
-          'seats': {'heat': [0, 2], 'cool': [1, 0], 'ventilatedSupported': true},
+          'climate': {'acOn': false, 'setpointC': 21.0, 'fanLevel': 3, 'outsideTempC': 25.0},
           'windows': {'lf': 0, 'rf': 10, 'lr': 0, 'rr': 100},
           'tyres': {'fl': {'psi': 36.0, 'temperatureC': 20}, 'fr': {'psi': 35.0, 'airLeakState': 1}, 'rl': {}, 'rr': {}},
         });
@@ -119,10 +118,10 @@ void main() {
       state(s);
       s.rpc.stubJson('VehicleService', 'IssueActionToken', {'success': true, 'token': 'act-1', 'expiresInSeconds': 30});
       s.rpc.stubJson('VehicleService', 'SetClimate', {'success': true});
-      s.rpc.stubJson('VehicleService', 'SetSeat', {'success': true});
       await pumpScreen(tester, s, const VehicleScreen(), size: const Size(420, 2400));
       expect(find.text(t('companion.locked')), findsOneWidget);
       expect(find.text('21 °C'), findsOneWidget);
+      expect(find.text('25 °C'), findsOneWidget); // outside air (BladeWatch-eh3u)
       expect(find.textContaining(t('vehicle.leak')), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('climate.ac')));
@@ -140,19 +139,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('climate.max')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('seat.passenger-heat')));
-      await tester.pumpAndSettle();
-      final seat = s.rpc.calls.lastWhere((c) => c.method == 'SetSeat').request as SetSeatRequest;
-      expect((seat.seatIndex, seat.passengerHeat, seat.driverVent), (2, 0, 1), reason: 'the others sent as they are');
-      await tester.tap(find.byKey(const ValueKey('seat.driver-vent')));
-      await tester.pumpAndSettle();
-      expect((s.rpc.calls.lastWhere((c) => c.method == 'SetSeat').request as SetSeatRequest).driverVent, 2);
-      await tester.tap(find.byKey(const ValueKey('seat.driver-heat')));
-      await tester.pumpAndSettle();
-      expect((s.rpc.calls.lastWhere((c) => c.method == 'SetSeat').request as SetSeatRequest).driverHeat, 1);
-      await tester.tap(find.byKey(const ValueKey('seat.passenger-vent')));
-      await tester.pumpAndSettle();
-      expect((s.rpc.calls.lastWhere((c) => c.method == 'SetSeat').request as SetSeatRequest).passengerVent, 1);
+      expect(find.byKey(const ValueKey('seat.driver-heat')), findsNothing, reason: 'seat control was removed');
 
       expect(s.rpc.calls.where((c) => c.method == 'IssueActionToken'), hasLength(1), reason: 'one token for its lifetime');
       await unmount(tester);

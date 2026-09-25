@@ -102,16 +102,18 @@ object AuthApiHandler {
             return handleLogout(out, secureCookie)
         }
 
-        // BladeWatch-rdtj.7: the companion app's two public calls. Same brute-force limits as
-        // /auth/token -- a pairing code and a companion token are both things to guess.
+        // BladeWatch-rdtj.7: the companion app's two public calls.
+        //
+        // No rate limits here, deliberately (BladeWatch-rlgv). What they check cannot be guessed --
+        // a pairing code is 128 random bits, single-use and 5 minutes long; a companion id is 128
+        // random bits and its token an HMAC-SHA256 -- so a limit adds nothing against guessing and
+        // only hands anyone who can reach these (the LAN when it is on, anyone with the Pear topic)
+        // a way to lock every companion out: the global lockout blocked them all for 5 minutes per
+        // 30 bad tries, and every remote peer shares ONE 127.0.0.1 bucket. /auth/token keeps its
+        // limits -- an owner-set access code can be short -- until it goes with the web app.
         if (method == "POST" && (path == PAIR_PATH || path == COMPANION_LOGIN_PATH)) {
-            val idForLimit = if (!rateLimitIdentity.isNullOrEmpty()) rateLimitIdentity else "unknown"
-            val rateError = checkRateLimit(idForLimit)
-            if (rateError != null) {
-                HttpResponse.sendJson(out, JSONObject().put("success", false).put("error", rateError).toString())
-                return true
-            }
-            return if (path == PAIR_PATH) handlePairRedeem(body, out, idForLimit) else handleCompanionLogin(body, out, idForLimit)
+            val identity = if (!rateLimitIdentity.isNullOrEmpty()) rateLimitIdentity else "unknown"
+            return if (path == PAIR_PATH) handlePairRedeem(body, out, identity) else handleCompanionLogin(body, out, identity)
         }
 
         return false
@@ -128,7 +130,6 @@ object AuthApiHandler {
         val response = JSONObject()
         if (credential == null) {
             response.put("success", false).put("error", "pairing_code_refused")
-            recordGlobalFailure()
         } else {
             clearRateLimit(rateLimitIdentity)
             response.put("success", true).put("companionId", credential.companionId).put("token", credential.token)
@@ -142,15 +143,16 @@ object AuthApiHandler {
     private fun handleCompanionLogin(body: String?, out: OutputStream, rateLimitIdentity: String): Boolean {
         val request = try { JSONObject(body ?: "") } catch (e: Exception) { JSONObject() }
         val companionId = request.optString("companionId", "")
-        val jwt = if (CompanionPairing.shared.verify(companionId, request.optString("token", ""))) {
-            AuthManager.generateJwt(companionId)
-        } else {
-            null
-        }
+        val verdict = CompanionPairing.shared.check(companionId, request.optString("token", ""))
+        val jwt = if (verdict == CompanionPairing.Verdict.OK) AuthManager.generateJwt(companionId) else null
         val response = JSONObject()
-        if (jwt == null) {
+        if (verdict == CompanionPairing.Verdict.REFUSED) {
+            // The ONLY answer that tells a companion it was removed; it stops and asks to pair again.
             response.put("success", false).put("error", "companion_refused")
-            recordGlobalFailure()
+        } else if (jwt == null) {
+            // BladeWatch-w7by: the car could not tell (store unreadable, auth not loaded yet) or
+            // could not mint. Retryable -- never "refused", and no failed-guess count against anyone.
+            response.put("success", false).put("error", "auth_unavailable")
         } else {
             clearRateLimit(rateLimitIdentity)
             response.put("success", true).put("jwt", jwt).put("expiresIn", AuthManager.getJwtExpirySeconds())
@@ -220,6 +222,15 @@ object AuthApiHandler {
                     " failures) — global lockout for " + (GLOBAL_LOCKOUT_MS / 1000) + "s"
             )
         }
+    }
+
+    /** Test seam: forget every bucket and the global lockout. */
+    @JvmStatic
+    fun resetRateLimitsForTest() {
+        rateLimits.clear()
+        globalFailCount.set(0)
+        globalWindowStart.set(System.currentTimeMillis())
+        globalLockoutUntil = 0L
     }
 
     /** Reset the rate-limit bucket for an identity after a successful login. */

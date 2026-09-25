@@ -1735,17 +1735,6 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dashboard_trips_this_week => 'Denne uken';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 turer',
-      one: '$arg1 tur',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1975,9 +1964,6 @@ class AppLocalizationsNb extends AppLocalizations {
   String get vehicle_tab_climate => 'Klima';
 
   @override
-  String get vehicle_tab_seats => 'Seter';
-
-  @override
   String get vehicle_tab_windows => 'Vinduer';
 
   @override
@@ -2060,44 +2046,9 @@ class AppLocalizationsNb extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'Inne: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'Ute: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'Fører';
-
-  @override
-  String get vehicle_seat_passenger => 'Passasjer';
-
-  @override
-  String get vehicle_seat_no_controls =>
-      'Ingen setekontroller tilgjengelig for dette kjøretøyet.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'Varme $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'Kjøling $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(Av)';
-
-  @override
-  String get vehicle_heat_low => '(Lav)';
-
-  @override
-  String get vehicle_heat_high => '(Høy)';
-
-  @override
-  String get vehicle_seat_pos_1 => 'Posisjon 1';
-
-  @override
-  String get vehicle_seat_pos_2 => 'Posisjon 2';
 
   @override
   String get vehicle_all_windows => 'Alle vinduer';
@@ -2984,4 +2935,39 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get pear_tile_off => 'Av';
+
+  @override
+  String get trips_cost_total => 'Totalkostnad';
+
+  @override
+  String get trips_cost_no_rate =>
+      'Angi en strømpris i turinnstillingene for å se kostnader.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'Turene er kostnadsberegnet i mer enn én valuta, så ingen sum vises.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'Gir $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'Modus: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'Av';
+
+  @override
+  String get auto_hold_enabled => 'På';
+
+  @override
+  String get auto_hold_active => 'Holder';
 }

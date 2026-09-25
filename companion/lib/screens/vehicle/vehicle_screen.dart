@@ -41,12 +41,13 @@ class VehicleRefused implements Exception {
   String toString() => reason;
 }
 
-/// The web vehicle page's counterpart: state (doors, windows, battery, climate, seats, tyres)
-/// polled every 3 s, and climate, seat and window controls.
+/// The web vehicle page's counterpart: state (doors, windows, battery, climate, tyres) polled
+/// every 3 s, and climate and window controls. No seat controls: removed end to end
+/// (BladeWatch-7bx4).
 ///
 /// Remote-use safety: moving a window from a phone means nobody can see whether a hand or a pet
-/// is in the way, so every window command asks first. Climate and seats are reversible and
-/// harmless, so they do not.
+/// is in the way, so every window command asks first. Climate is reversible and harmless, so it
+/// does not.
 class VehicleScreen extends StatefulWidget {
   const VehicleScreen({super.key});
 
@@ -98,27 +99,6 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
       builder: (context, s) {
         final busy = _busy != null;
         final c = s.climate;
-        int level(List<int> l, int i) => i < l.length ? l[i] : 0;
-        String seatLabel(int l) => [tr('vehicle.off'), tr('vehicle.level_low'), tr('vehicle.level_high')][l.clamp(0, 2)];
-        Widget seat(String label, String key, int current, int seatIndex, String action, SetSeatRequest Function(int next) build) =>
-            ListTile(
-              key: ValueKey('seat.$key'),
-              title: Text(label),
-              trailing: Text(seatLabel(current)),
-              enabled: !busy,
-              onTap: () => _do(key, (v) => v.setSeat(build((current + 1) % 3))),
-            );
-        final heat = s.seats.heat;
-        final cool = s.seats.cool;
-        SetSeatRequest seatReq(int seatIndex, String action, int next, {int? dh, int? ph, int? dv, int? pv}) => SetSeatRequest(
-              seatIndex: seatIndex,
-              action: action,
-              level: next,
-              driverHeat: dh ?? level(heat, 0),
-              passengerHeat: ph ?? level(heat, 1),
-              driverVent: dv ?? level(cool, 0),
-              passengerVent: pv ?? level(cool, 1),
-            );
         return PageList(children: [
           Section(title: tr('vehicle.title'), children: [
             InfoRow(tr('vehicle.lock'), s.doors.overall == 0 ? tr('vehicle.unlocked') : tr('companion.locked')),
@@ -158,19 +138,7 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
                 keyName: 'fan',
                 onStep: (d) => _do('fan', (v) => v.setClimate(SetClimateRequest(action: 'set_fan', fanLevel: (c.fanLevel + d).clamp(1, 7)))),
               ),
-              InfoRow(tr('vehicle.cabin'), '${c.insideTempC.toStringAsFixed(0)} °C'),
-            ],
-          ]),
-          Section(title: tr('vehicle.seats'), children: [
-            seat('${tr('vehicle.driver')} · ${tr('vehicle.heat')}', 'driver-heat', level(heat, 0), 1, 'heating',
-                (n) => seatReq(1, 'heating', n, dh: n)),
-            seat('${tr('vehicle.passenger')} · ${tr('vehicle.heat')}', 'passenger-heat', level(heat, 1), 2, 'heating',
-                (n) => seatReq(2, 'heating', n, ph: n)),
-            if (s.seats.ventilatedSupported) ...[
-              seat('${tr('vehicle.driver')} · ${tr('vehicle.cool_vent')}', 'driver-vent', level(cool, 0), 1, 'ventilation',
-                  (n) => seatReq(1, 'ventilation', n, dv: n)),
-              seat('${tr('vehicle.passenger')} · ${tr('vehicle.cool_vent')}', 'passenger-vent', level(cool, 1), 2, 'ventilation',
-                  (n) => seatReq(2, 'ventilation', n, pv: n)),
+              if (c.hasOutsideTempC()) InfoRow(tr('vehicle.outside'), '${c.outsideTempC.toStringAsFixed(0)} °C'),
             ],
           ]),
           Section(title: tr('vehicle.windows'), children: [

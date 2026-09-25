@@ -1691,17 +1691,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_trips_this_week => '이번 주';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1회 주행',
-      one: '$arg1회 주행',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1922,9 +1911,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_tab_climate => '공조';
 
   @override
-  String get vehicle_tab_seats => '좌석';
-
-  @override
   String get vehicle_tab_windows => '창문';
 
   @override
@@ -2005,43 +1991,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '실내: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '외부: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '운전석';
-
-  @override
-  String get vehicle_seat_passenger => '조수석';
-
-  @override
-  String get vehicle_seat_no_controls => '이 차량에는 사용 가능한 좌석 제어 기능이 없습니다.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '열선 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '통풍 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(꺼짐)';
-
-  @override
-  String get vehicle_heat_low => '(약)';
-
-  @override
-  String get vehicle_heat_high => '(강)';
-
-  @override
-  String get vehicle_seat_pos_1 => '위치 1';
-
-  @override
-  String get vehicle_seat_pos_2 => '위치 2';
 
   @override
   String get vehicle_all_windows => '전체 창문';
@@ -2914,4 +2866,38 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pear_tile_off => '꺼짐';
+
+  @override
+  String get trips_cost_total => '총 비용';
+
+  @override
+  String get trips_cost_no_rate => '비용을 보려면 주행 설정에서 전기 요금을 설정하세요.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      '주행 비용이 여러 통화로 기록되어 있어 합계를 표시하지 않습니다.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return '기어 $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return '모드: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return '오토 홀드: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => '끔';
+
+  @override
+  String get auto_hold_enabled => '켬';
+
+  @override
+  String get auto_hold_active => '유지 중';
 }

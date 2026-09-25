@@ -59,7 +59,6 @@
   <!-- Control tabs -->
   <div class="tabs">
     <button class="tab" [class.active]="tab() === 'climate'" (click)="setTab('climate')">{{ 'vehicle.climate' | translate }}</button>
-    <button class="tab" [class.active]="tab() === 'seats'" (click)="setTab('seats')">{{ 'vehicle.seats' | translate }}</button>
     <button class="tab" [class.active]="tab() === 'windows'" (click)="setTab('windows')">{{ 'vehicle.windows' | translate }}</button>
   </div>
 
@@ -96,31 +95,11 @@
               <button (click)="changeFan(1)" [disabled]="busy() === 'fan'">+</button>
             </div>
           </div>
-          @if (c.insideTempC) {
-            <p class="hint">{{ 'vehicle.cabin' | translate }}: {{ c.insideTempC | number:'1.0-1' }}°C</p>
+          @if (c.outsideTempC !== undefined) {
+            <p class="hint">{{ 'vehicle.outside' | translate }}: {{ c.outsideTempC | number:'1.0-1' }}°C</p>
           }
         } @else {
           <p class="hint">{{ 'vehicle.climate_unavailable' | translate }}</p>
-        }
-      </div>
-    }
-
-    @case ('seats') {
-      <div class="card">
-        @for (seat of ['driver','passenger']; track seat) {
-          <div class="seat-block">
-            <div class="seat-title">{{ (seat === 'driver' ? 'vehicle.driver' : 'vehicle.passenger') | translate }}</div>
-            <div class="row">
-              <span class="row-label">{{ 'vehicle.heat' | translate }}</span>
-              <button class="cycle" [class.on]="seatHeat($any(seat)) > 0" (click)="cycleSeat($any(seat), 'heat')"
-                      [disabled]="busy() === seat + '-heat'">{{ seatLabel(seatHeat($any(seat))) }}</button>
-            </div>
-            <div class="row">
-              <span class="row-label">{{ 'vehicle.cool_vent' | translate }}</span>
-              <button class="cycle" [class.on]="seatVent($any(seat)) > 0" (click)="cycleSeat($any(seat), 'vent')"
-                      [disabled]="busy() === seat + '-vent'">{{ seatLabel(seatVent($any(seat))) }}</button>
-            </div>
-          </div>
         }
       </div>
     }

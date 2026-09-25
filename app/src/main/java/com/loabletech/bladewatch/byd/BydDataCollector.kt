@@ -677,6 +677,10 @@ class BydDataCollector private constructor() {
             collectSpeed(b)        // speed, accel, brake
             collectEngine(b)       // enginePower, motorSpeed/torque
             collectGearbox(b)      // gearMode
+            // BladeWatch-7zp9: the dashboard's drive mode, EV/HEV and Auto Hold. Only
+            // collectAllFull read these, so driveStatus kept its boot-time values.
+            collectEnergy(b)       // energyMode, operationMode
+            collectAdas(b)         // autoHoldState
         } else {
             val possiblyCharging = BydSignalRules.possiblyChargingWhileParked(
                 b.chargingPowerKw, b.externalChargingPowerKw,
@@ -726,7 +730,6 @@ class BydDataCollector private constructor() {
         collectAc(b)
         collectLight(b)
         collectAdas(b)
-        collectSettings(b)
         collectPower(b)
         collectSafetyBelt(b)
         collectTyre(b)
@@ -1595,13 +1598,8 @@ class BydDataCollector private constructor() {
             }
             val unit = BydDeviceHelper.callGetter(device, "getTemperatureUnit")
             if (unit is Number) b.tempUnit(unit.toInt())
-            // Cabin temperature. Position 4, NOT 1 — 1/2/3 are the per-zone setpoints, which
-            // is what this used to read (BladeWatch-gkjl). See AC_TEMP_POS_CABIN.
-            val insideTemp = BydDeviceHelper.callGetter(device, "getTemprature", AC_TEMP_POS_CABIN)
-            if (insideTemp is Number) {
-                val t = insideTemp.toInt()
-                if (t in CABIN_TEMP_RANGE_C) b.insideTempC(t.toDouble())
-            }
+            // No cabin temperature: getTemprature(4) is AC_TEMPERATURE_OUT, the outside air
+            // (BladeWatch-eh3u), which collectInstrument already reads. See AC_TEMP_POS_SETPOINT.
         } catch (e: Exception) {
             logger.debug("collectAc error: " + e.message)
         }
@@ -1639,25 +1637,11 @@ class BydDataCollector private constructor() {
             if (speedLimitWarning >= 0) {
                 b.speedLimitWarning(speedLimitWarning == 2)
             }
+            // BladeWatch-7zp9: Auto Hold, raw. Read-only -- setAVHState exists and is never called.
+            val avh = BydDeviceHelper.callGetter(device, "getAVHState")
+            if (avh is Number && avh.toInt() >= 0) b.autoHoldState(avh.toInt())
         } catch (e: Exception) {
             logger.debug("collectAdas error: " + e.message)
-        }
-    }
-
-    private fun collectSettings(b: BydVehicleData.Builder) {
-        settingDevice ?: return
-        try {
-            val seatHeat = intArrayOf(-1, -1)
-            val seatCool = intArrayOf(-1, -1)
-            // SDK returns 1=off, 2=low, 3=high — normalize to 0/1/2 for the wire format.
-            // On unsupported firmwares the getter returns null/throws → leave entry unknown (-1).
-            for (i in 0 until 2) {
-                seatHeat[i] = normalizeSeatGetterLevel(readSeatGetterRaw("getSeatHeatingState", i + 1))
-                seatCool[i] = normalizeSeatGetterLevel(readSeatGetterRaw("getSeatVentilatingState", i + 1))
-            }
-            b.seatHeat(seatHeat).seatCool(seatCool)
-        } catch (e: Exception) {
-            logger.debug("collectSettings error: " + e.message)
         }
     }
 
@@ -2515,13 +2499,9 @@ class BydDataCollector private constructor() {
      * Called from collectAll() (trips, SOC history consume these).
      */
     private fun collectInstrumentExtended(b: BydVehicleData.Builder) {
-        // Cabin temperature is already read via acDevice.getTemprature(AC_TEMP_POS_CABIN) in
-        // collectAc(). This comment used to say position 1; that was wrong — position 1 is the
-        // driver-zone setpoint, and reading it here is what made the Vehicle screen report the
-        // setpoint as the cabin temperature (BladeWatch-gkjl).
-        //
-        // Do not poll AC_TEMP_INSIDE here: BYD firmware denies feature 0x3d800030 for this UID
-        // every cycle, creating log noise while adding no data on the tested head unit.
+        // No cabin temperature exists for this app. Do not poll AC_TEMP_INSIDE (0x3d800030): it
+        // answers -10011 even through PermissionBypassContext (measured 2026-09-25), and
+        // getTemprature(4) is the OUTSIDE air, not the cabin (BladeWatch-eh3u).
 
         // Per-tyre temperature from InstrumentDevice via feature ID get() calls.
         // Slot mapping from BYDAutoFeatureIds.Instrument:
@@ -2994,10 +2974,6 @@ class BydDataCollector private constructor() {
             logger.info("  Adas listener registered")
             count++
         }
-        if (BydDeviceHelper.registerListener(settingDevice, this::onSettingsCallback)) {
-            logger.info("  Settings listener registered")
-            count++
-        }
         if (BydDeviceHelper.registerListener(radarDevice, this::onGenericCallback)) {
             logger.info("  Radar listener registered")
             count++
@@ -3399,30 +3375,6 @@ class BydDataCollector private constructor() {
                 }
             } catch (e: Exception) { logger.debug("onAdasCallback onDataEventChanged error: " + e.message) }
         }
-    }
-
-    private fun onSettingsCallback(method: String, args: Array<Any?>?) {
-        if ("onDataEventChanged" != method || args == null || args.size < 2) return
-        try {
-            val eventId = (args[0] as Number).toInt()
-            val iVal = BydDeviceHelper.getIntValue(args[1])
-            // SDK reports 1=off, 2=low, 3=high. Anything else is unknown — ignore.
-            if (iVal < 1 || iVal > 3) return
-
-            val normalized = iVal - 1
-            val current = snapshot.get() ?: return
-            val b = current.toBuilder()
-            val heat = if (current.seatHeat == null) IntArray(2) else current.seatHeat.clone()
-            val cool = if (current.seatCool == null) IntArray(2) else current.seatCool.clone()
-
-            if (eventId == BydFeatureIds.SET_DRIVER_SEAT_HEATING_STATE) heat[0] = normalized
-            else if (eventId == BydFeatureIds.SET_DRIVER_SEAT_VENTILATING_STATE) cool[0] = normalized
-            else if (eventId == BydFeatureIds.SET_PASSENGER_SEAT_HEATING_STATE) heat[1] = normalized
-            else if (eventId == BydFeatureIds.SET_PASSENGER_SEAT_VENTILATING_STATE) cool[1] = normalized
-            else return
-
-            snapshot.set(b.seatHeat(heat).seatCool(cool).build())
-        } catch (e: Exception) { logger.debug("onSettingsCallback onDataEventChanged error: " + e.message) }
     }
 
     // ==================== EXTENDED LISTENER HANDLERS ====================
@@ -4095,9 +4047,11 @@ class BydDataCollector private constructor() {
         // These panels expose hardware one-touch commands (open/close/half) that
         // auto-drive to the end stop, so issue those directly and skip the loop.
         if (area >= 5) {
-            val cmd = if (targetPercent >= 75) 1       // one-touch full open
-            else if (targetPercent <= 25) 2  // one-touch full close
-            else 4                            // half
+            val cmd = when (sunPanelStop(targetPercent)) {
+                100 -> 1 // one-touch full open
+                0 -> 2   // one-touch full close
+                else -> 4 // half
+            }
             return setWindowCommand(area, cmd)
         }
 
@@ -4720,217 +4674,6 @@ class BydDataCollector private constructor() {
         }
     }
 
-    // --- Seats ---
-
-    fun setSeatHeating(position: Int, level: Int): Boolean {
-        try {
-            if (position < 1 || position > 4) return false
-            if (level < 0 || level > 3) return false
-            // SDK method: settingDevice.setSeatHeatingState(position, normalizedLevel)
-            // Level normalization: coerceIn(level, 0, 2) + 1 → 0→1(off), 1→2(low), 2→3(high)
-            val normalizedLevel = Math.min(level, 2) + 1
-            val result = BydDeviceHelper.callMethod(settingDevice, "setSeatHeatingState", position, normalizedLevel)
-            return result is Int && result == 0
-        } catch (e: Exception) {
-            logger.debug("setSeatHeating failed: " + e.message)
-            return false
-        }
-    }
-
-    fun setSeatVentilation(position: Int, level: Int): Boolean {
-        try {
-            if (position < 1 || position > 4) return false
-            if (level < 0 || level > 3) return false
-            // Level normalization: coerceIn(level, 0, 2) + 1 → 0→1(off), 1→2(low), 2→3(high).
-            // Matches Commander's BYDCarController.normalizeSeatLevel().
-            val normalizedLevel = Math.min(level, 2) + 1
-
-            // Capability gate via BYDAutoSettingDevice.hasFeature(). The
-            // canonical SDK exposes this for hardware detection — if it
-            // returns DEVICE_NOT_HAS_THE_FEATURE we know the vehicle (e.g.
-            // Atto 3 base trim) doesn't have ventilated seats wired and we
-            // shouldn't pretend the SDK accepting the call means anything.
-            // Probed once per session and cached.
-            if (!seatVentFeatureProbed) {
-                seatVentFeatureProbed = true
-                seatVentFeatureSupported = probeHasFeature(settingDevice, "SEAT_VENTILATING")
-                if (!seatVentFeatureSupported) {
-                    logger.warn("Seat ventilation: hasFeature(\"SEAT_VENTILATING\") returned 0. "
-                        + "Vehicle hardware lacks ventilated seats. UI should grey out the control.")
-                }
-            }
-
-            // Use the canonical SDK method directly. Commander uses the same
-            // call (BYDCarController.setSeatVentilationInternal at line 3017
-            // of the decompile) and the BYD stub SDK at
-            // android/hardware/bydauto/setting/BYDAutoSettingDevice.java only
-            // defines this name. The previous "fallback chain" of
-            // setSeatBlowingState / setSeatCoolingState / etc. was guesswork
-            // — none of those exist in either Commander's reference or the
-            // stub SDK. Removed.
-            val m: Method
-            try {
-                m = settingDevice!!.javaClass.getMethod("setSeatVentilatingState", Int::class.javaPrimitiveType, Int::class.javaPrimitiveType)
-            } catch (nsme: NoSuchMethodException) {
-                logger.warn("Seat ventilation: setSeatVentilatingState not present on this firmware "
-                    + "(framework-side gap, not hardware) — cannot control ventilation.")
-                return false
-            }
-            val result = m.invoke(settingDevice, position, normalizedLevel)
-            val accepted = result is Int && result == 0
-            if (!accepted) {
-                logger.debug("setSeatVentilatingState(" + position + ", " + normalizedLevel
-                    + ") returned " + result)
-                return false
-            }
-            // Honest result: only return true when the hardware actually
-            // exists. Otherwise the SDK accepts the call but nothing happens
-            // physically and the UI would mislead the user with a green
-            // toast.
-            return seatVentFeatureSupported
-        } catch (e: Exception) {
-            logger.debug("setSeatVentilation failed: " + e.message)
-            return false
-        }
-    }
-
-    /**
-     * Recall a stored driver-side seat memory position (1 or 2).
-     * SDK feature lives on settingDevice — Adas.* IDs do not accept this set.
-     */
-    fun setSeatMemoryPosition(position: Int): Boolean {
-        try {
-            if (position < 1 || position > 2) return false
-            val result = BydDeviceHelper.callSetSingle(settingDevice, BydFeatureIds.SETTING_LF_MEMORY_LOCATION_WAKE_SET, position)
-            return result == 0
-        } catch (e: Exception) {
-            logger.debug("setSeatMemoryPosition failed: " + e.message)
-        }
-        return false
-    }
-
-    /** Cached BYDAutoSettingDevice.hasFeature("SEAT_VENTILATING") result; probed once. */
-    @Volatile private var seatVentFeatureProbed = false
-    @Volatile private var seatVentFeatureSupported = false
-
-    /**
-     * Probe (and cache) whether the trim has ventilated seats. Used by the
-     * vehicle-control UI to grey out the cool buttons on cars without the
-     * hardware (e.g. base-trim Atto 3, Seal without comfort package).
-     */
-    val isSeatVentilationSupported: Boolean
-        get() {
-            if (!seatVentFeatureProbed) {
-                seatVentFeatureProbed = true
-                seatVentFeatureSupported = probeHasFeature(settingDevice, "SEAT_VENTILATING")
-            }
-            return seatVentFeatureSupported
-        }
-
-    /** Read-only capability probe for seat heating. */
-    fun isSeatHeatingSupported(position: Int): Boolean =
-        normalizeSeatGetterLevel(readSeatGetterRaw("getSeatHeatingState", position)) >= 0
-
-    /** Read-only best-effort probe for driver seat memory recall support. */
-    val isDriverSeatMemoryRecallSupported: Boolean
-        get() {
-            val device = settingDevice ?: return false
-            val memorySet = BydDeviceHelper.callGetSingle(device, BydFeatureIds.SETTING_LF_MEMORY_LOCATION_SET)
-            val memoryWake = BydDeviceHelper.callGetSingle(device, BydFeatureIds.SETTING_LF_MEMORY_LOCATION_WAKE_SET)
-            return memorySet >= 0 || memoryWake >= 0
-        }
-
-    /** Read-only diagnostics used to verify trim-specific seat hardware on the actual car. */
-    fun diagnoseSeatCapabilities(): org.json.JSONObject {
-        val out = org.json.JSONObject()
-        try {
-            val device = settingDevice
-            out.put("settingDeviceClass", if (device == null) org.json.JSONObject.NULL else device.javaClass.name)
-
-            val methods = org.json.JSONObject()
-            methods.put("getSeatHeatingState", hasPublicMethod(device, "getSeatHeatingState", Int::class.javaPrimitiveType!!))
-            methods.put("setSeatHeatingState", hasPublicMethod(device, "setSeatHeatingState", Int::class.javaPrimitiveType!!, Int::class.javaPrimitiveType!!))
-            methods.put("getSeatVentilatingState", hasPublicMethod(device, "getSeatVentilatingState", Int::class.javaPrimitiveType!!))
-            methods.put("setSeatVentilatingState", hasPublicMethod(device, "setSeatVentilatingState", Int::class.javaPrimitiveType!!, Int::class.javaPrimitiveType!!))
-            methods.put("hasFeature", hasPublicMethod(device, "hasFeature", String::class.java))
-            out.put("methods", methods)
-
-            val heatRaw = org.json.JSONArray()
-            val heatLevel = org.json.JSONArray()
-            val heatSupported = org.json.JSONArray()
-            val coolRaw = org.json.JSONArray()
-            val coolLevel = org.json.JSONArray()
-            val coolGetterSupported = org.json.JSONArray()
-            for (pos in 1..2) {
-                val hr = readSeatGetterRaw("getSeatHeatingState", pos)
-                val hl = normalizeSeatGetterLevel(hr)
-                putIntOrNull(heatRaw, hr)
-                heatLevel.put(hl)
-                heatSupported.put(hl >= 0)
-
-                val cr = readSeatGetterRaw("getSeatVentilatingState", pos)
-                val cl = normalizeSeatGetterLevel(cr)
-                putIntOrNull(coolRaw, cr)
-                coolLevel.put(cl)
-                coolGetterSupported.put(cl >= 0)
-            }
-            out.put("heatRaw", heatRaw)
-            out.put("heatLevel", heatLevel)
-            out.put("heatSupportedByGetter", heatSupported)
-            out.put("coolRaw", coolRaw)
-            out.put("coolLevel", coolLevel)
-            out.put("coolSupportedByGetter", coolGetterSupported)
-
-            val hasFeature = org.json.JSONObject()
-            val candidates = arrayOf(
-                    "SEAT_HEATING", "SEAT_VENTILATING", "SEAT_MEMORY", "SEAT_POSITION"
-            )
-            for (feature in candidates) {
-                val value = probeHasFeatureValue(device, feature)
-                putIntOrNull(hasFeature, feature, value)
-            }
-            out.put("hasFeature", hasFeature)
-
-            val featureGet = org.json.JSONObject()
-            putIntOrNull(featureGet, "SETTING_LF_MEMORY_LOCATION_SET",
-                    BydDeviceHelper.callGetSingle(device, BydFeatureIds.SETTING_LF_MEMORY_LOCATION_SET))
-            putIntOrNull(featureGet, "SETTING_LF_MEMORY_LOCATION_WAKE_SET",
-                    BydDeviceHelper.callGetSingle(device, BydFeatureIds.SETTING_LF_MEMORY_LOCATION_WAKE_SET))
-            putIntOrNull(featureGet, "SET_DRIVER_SEAT_HEATING_STATE",
-                    BydDeviceHelper.callGetSingle(device, BydFeatureIds.SET_DRIVER_SEAT_HEATING_STATE))
-            putIntOrNull(featureGet, "SET_DRIVER_SEAT_VENTILATING_STATE",
-                    BydDeviceHelper.callGetSingle(device, BydFeatureIds.SET_DRIVER_SEAT_VENTILATING_STATE))
-            putIntOrNull(featureGet, "SET_PASSENGER_SEAT_HEATING_STATE",
-                    BydDeviceHelper.callGetSingle(device, BydFeatureIds.SET_PASSENGER_SEAT_HEATING_STATE))
-            putIntOrNull(featureGet, "SET_PASSENGER_SEAT_VENTILATING_STATE",
-                    BydDeviceHelper.callGetSingle(device, BydFeatureIds.SET_PASSENGER_SEAT_VENTILATING_STATE))
-            out.put("featureGet", featureGet)
-
-            val supported = org.json.JSONObject()
-            supported.put("driverHeat", isSeatHeatingSupported(1))
-            supported.put("passengerHeat", isSeatHeatingSupported(2))
-            supported.put("driverCool", isSeatVentilationSupported)
-            supported.put("passengerCool", isSeatVentilationSupported)
-            supported.put("driverMemoryRecall", isDriverSeatMemoryRecallSupported)
-            out.put("supported", supported)
-        } catch (e: Exception) {
-            try {
-                out.put("error", e.message)
-            } catch (ignored: Exception) {
-                // Keep diagnostics best-effort.
-            }
-        }
-        return out
-    }
-
-    private fun readSeatGetterRaw(methodName: String, position: Int): Int {
-        if (position < 1 || position > 2) return Int.MIN_VALUE
-        val value = BydDeviceHelper.callGetter(settingDevice, methodName, position)
-        return if (value is Number) value.toInt() else Int.MIN_VALUE
-    }
-
-    private fun normalizeSeatGetterLevel(raw: Int): Int = BydSignalRules.normalizeSeatGetterLevel(raw)
-
     // --- Lights ---
 
     fun setDayTimeLight(enable: Boolean): Boolean {
@@ -5370,36 +5113,33 @@ class BydDataCollector private constructor() {
         const val PHEV_MAX_NOMINAL_KWH = 30.0
 
         /**
-         * Positions for `BYDAutoAcDevice.getTemprature(int)` (BYD's spelling).
+         * The setpoint position for `BYDAutoAcDevice.getTemprature(int)` (BYD's spelling).
          *
-         * Measured on the head unit 2026-09-20 via GetAcDiagnostics, AC off, car parked, all
-         * three zones set to 24 and the cabin hot:
+         * The SDK names the positions: AC_TEMPERATURE_MAIN=1, _DEPUTY=2, _REAR=3 are the
+         * per-zone SETPOINTS and AC_TEMPERATURE_OUT=4 is the OUTSIDE air (read off the head
+         * unit's class 2026-09-25). There is no cabin position. Position 4 was once reported as
+         * the cabin (BladeWatch-gkjl), which read 33 while the owner's thermometer in the cabin
+         * said 28 and the instrument's getOutCarTemperature said 32 (BladeWatch-eh3u).
          *
-         *     0 -> -2147482645   1 -> 24   2 -> 24   3 -> 24   4 -> 36   5,6 -> -2147482645
-         *
-         * 1/2/3 are the per-zone SETPOINTS and 4 is the CABIN sensor. This mattered: both the
-         * setpoint and "inside temperature" used to be read from position 1, so the Vehicle
-         * screen reported the driver's chosen temperature as the cabin reading and it never
-         * moved off the stepper value (BladeWatch-gkjl).
-         *
-         * -2147482645 is `Int.MIN_VALUE + 1003`, the SDK's "unavailable" sentinel; both range
-         * guards below reject it.
-         *
-         * Position 4 is not the OUTSIDE temperature — that comes from a different device
-         * entirely, `instrumentDevice.getOutCarTemperature()`, in [collectInstrument].
+         * -2147482645 is `Int.MIN_VALUE + 1003`, the SDK's "unavailable" sentinel; the range
+         * guard below rejects it.
          */
         const val AC_TEMP_POS_SETPOINT = 1
-        const val AC_TEMP_POS_CABIN = 4
+
+        /**
+         * Where a sunroof / sunshade one-touch command for [targetPercent] comes to rest: the
+         * panels only have open, half and close (BladeWatch-b3n7), so 25 and 75 snap.
+         */
+        @JvmStatic
+        fun sunPanelStop(targetPercent: Int): Int = when {
+            targetPercent >= 75 -> 100
+            targetPercent <= 25 -> 0
+            else -> 50
+        }
 
         /** Plausible setpoint range. Narrow on purpose — the BYD climate UI cannot leave it. */
         val AC_SETPOINT_RANGE_C = 16..35
 
-        /**
-         * Plausible cabin range. Deliberately much wider than the setpoint range: a closed car
-         * in direct sun readily passes 60C, so the old -50..60 guard would have discarded a
-         * real reading on exactly the days the number matters most.
-         */
-        val CABIN_TEMP_RANGE_C = -50..90
 
         /**
          * Pure drivetrain decision, split out from [computeIsPhev] so the ORDER of the
@@ -5435,55 +5175,6 @@ class BydDataCollector private constructor() {
                 return DRIVETRAIN_PHEV_PROVISIONAL
             }
             return DRIVETRAIN_UNKNOWN
-        }
-
-        private fun hasPublicMethod(target: Any?, methodName: String, vararg parameterTypes: Class<*>): Boolean {
-            if (target == null) return false
-            return try {
-                target.javaClass.getMethod(methodName, *parameterTypes)
-                true
-            } catch (e: Exception) {
-                false
-            }
-        }
-
-        /**
-         * Capability probe via BYDAutoSettingDevice.hasFeature(String).
-         * Returns DEVICE_HAS_THE_FEATURE (1) on supported vehicles per the
-         * canonical SDK. Treat any result == 1 as supported.
-         */
-        private fun probeHasFeature(settingDevice: Any?, feature: String?): Boolean {
-            if (settingDevice == null || feature == null) return false
-            return try {
-                val m = settingDevice.javaClass.getMethod("hasFeature", String::class.java)
-                val result = m.invoke(settingDevice, feature)
-                if (result is Number) {
-                    result.toInt() == 1
-                } else {
-                    false
-                }
-            } catch (e: Exception) {
-                false
-            }
-        }
-
-        private fun probeHasFeatureValue(settingDevice: Any?, feature: String?): Int {
-            if (settingDevice == null || feature == null) return Int.MIN_VALUE
-            return try {
-                val m = settingDevice.javaClass.getMethod("hasFeature", String::class.java)
-                val result = m.invoke(settingDevice, feature)
-                if (result is Number) result.toInt() else Int.MIN_VALUE
-            } catch (e: Exception) {
-                Int.MIN_VALUE
-            }
-        }
-
-        private fun putIntOrNull(array: org.json.JSONArray, value: Int) {
-            array.put(if (value == Int.MIN_VALUE || value < 0) org.json.JSONObject.NULL else value)
-        }
-
-        private fun putIntOrNull(obj: org.json.JSONObject, key: String, value: Int) {
-            obj.put(key, if (value == Int.MIN_VALUE || value < 0) org.json.JSONObject.NULL else value)
         }
 
         private fun putObjectOrNull(obj: org.json.JSONObject, key: String, value: Any?) {

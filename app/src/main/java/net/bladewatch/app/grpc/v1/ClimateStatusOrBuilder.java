@@ -23,12 +23,6 @@ public interface ClimateStatusOrBuilder extends
   double getSetpointC();
 
   /**
-   * <code>double inside_temp_c = 3 [json_name = "insideTempC"];</code>
-   * @return The insideTempC.
-   */
-  double getInsideTempC();
-
-  /**
    * <code>int32 wind_mode = 4 [json_name = "windMode"];</code>
    * @return The windMode.
    */
@@ -45,4 +39,25 @@ public interface ClimateStatusOrBuilder extends
    * @return The maxCooling.
    */
   boolean getMaxCooling();
+
+  /**
+   * <pre>
+   * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+   * optional, because 0 C is a real outside temperature.
+   * </pre>
+   *
+   * <code>optional double outside_temp_c = 7 [json_name = "outsideTempC"];</code>
+   * @return Whether the outsideTempC field is set.
+   */
+  boolean hasOutsideTempC();
+  /**
+   * <pre>
+   * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+   * optional, because 0 C is a real outside temperature.
+   * </pre>
+   *
+   * <code>optional double outside_temp_c = 7 [json_name = "outsideTempC"];</code>
+   * @return The outsideTempC.
+   */
+  double getOutsideTempC();
 }

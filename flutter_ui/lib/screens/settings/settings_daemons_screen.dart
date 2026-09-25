@@ -110,18 +110,23 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
   /// is up" -- whether the car can be found right now, which is a different question (a live
   /// peer on a head unit with no network is not reachable), plus its connected devices and
   /// the last time one connected. Never a topic or key; the daemon sends none.
-  String _pearDetails(AppLocalizations l10n, PearStatus pear) {
-    final lines = <String>[
-      switch (pear.reachable) {
-        true => l10n.pear_status_reachable,
-        false => l10n.pear_status_unreachable,
-        null => l10n.pear_status_unknown,
-      },
-      l10n.pear_devices_connected(pear.devicesConnected),
-    ];
+  ///
+  /// Each line in its own colour (BladeWatch-rdtj.20): the whole row used to be success green,
+  /// so on the head unit "Not reachable" read as fine at a glance.
+  Text _pearSubtitle(ThemeData theme, AppLocalizations l10n, PearStatus pear) {
+    final neutral = theme.colorScheme.onSurfaceVariant;
     final last = pear.lastConnection;
-    if (last != null) lines.add(l10n.pear_last_connection(DateFormat('MMM d, HH:mm').format(last)));
-    return lines.join('\n');
+    return Text.rich(TextSpan(style: theme.textTheme.bodyMedium, children: [
+      TextSpan(text: l10n.surveillance_general_status_running, style: TextStyle(color: _successColor(theme))),
+      switch (pear.reachable) {
+        true => TextSpan(text: '\n${l10n.pear_status_reachable}', style: TextStyle(color: _successColor(theme))),
+        false => TextSpan(text: '\n${l10n.pear_status_unreachable}', style: TextStyle(color: _warningColor(theme))),
+        null => TextSpan(text: '\n${l10n.pear_status_unknown}', style: TextStyle(color: neutral)),
+      },
+      TextSpan(text: '\n${l10n.pear_devices_connected(pear.devicesConnected)}', style: TextStyle(color: neutral)),
+      if (last != null)
+        TextSpan(text: '\n${l10n.pear_last_connection(DateFormat('MMM d, HH:mm').format(last))}', style: TextStyle(color: neutral)),
+    ]));
   }
 
   @override
@@ -149,9 +154,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
             // bootstrap measured on the head unit). Showing that as a plain "Waiting"
             // is what made the row look like the toggle had failed.
             final statusText = row.running
-                ? row.kind == DaemonKind.pearPeer
-                    ? '${l10n.surveillance_general_status_running}\n${_pearDetails(l10n, c.pear)}'
-                    : l10n.surveillance_general_status_running
+                ? l10n.surveillance_general_status_running
                 : row.pending
                     ? row.kind == DaemonKind.pearPeer
                         ? l10n.startup_status_starting
@@ -182,7 +185,9 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
                   ],
                 ),
                 title: Text(_daemonLabel(l10n, row.kind)),
-                subtitle: Text(statusText, style: theme.textTheme.bodyMedium?.copyWith(color: statusColor)),
+                subtitle: row.running && row.kind == DaemonKind.pearPeer
+                    ? _pearSubtitle(theme, l10n, c.pear)
+                    : Text(statusText, style: theme.textTheme.bodyMedium?.copyWith(color: statusColor)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

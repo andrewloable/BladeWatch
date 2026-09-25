@@ -1,3 +1,5 @@
+import 'trip_costs_view.dart';
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
@@ -187,7 +189,7 @@ class _TripsTab extends StatelessWidget {
         _FilterRow(activeFilter: activeFilter, onSelect: onSelectFilter),
         const SizedBox(height: 8),
         if (state.summary != null) ...[
-          _SummaryCard(summary: state.summary!, distanceUnit: distUnit),
+          _SummaryCard(summary: state.summary!, distanceUnit: distUnit, costs: state.costs),
           const SizedBox(height: 12),
         ],
         if (state.trips.isEmpty)
@@ -209,7 +211,10 @@ class _SummaryCard extends StatelessWidget {
   final TripsSummary summary;
   final String distanceUnit;
 
-  const _SummaryCard({required this.summary, required this.distanceUnit});
+  /// BladeWatch-c149: the period's fuel, electric and total cost, after what it always showed.
+  final TripCosts costs;
+
+  const _SummaryCard({required this.summary, required this.distanceUnit, this.costs = const TripCosts()});
 
   @override
   Widget build(BuildContext context) {
@@ -240,6 +245,8 @@ class _SummaryCard extends StatelessWidget {
                 ]),
               ),
             ]),
+            const SizedBox(height: 8),
+            _CostFigures(key: const ValueKey('trips.summaryCosts'), costs: costs, stat: _stat),
           ],
         ),
       ),
@@ -256,6 +263,24 @@ class _SummaryCard extends StatelessWidget {
           ]),
         );
       });
+}
+
+/// A period's fuel, electric and total cost drawn with the caller's [stat] cell, or the line
+/// that says why there are none (BladeWatch-mgi9, -c149; the wording is tripCostDisplay's).
+class _CostFigures extends StatelessWidget {
+  final TripCosts costs;
+  final Widget Function(String value, String label) stat;
+
+  const _CostFigures({super.key, required this.costs, required this.stat});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final d = tripCostDisplay(costs, AppLocalizations.of(context)!);
+    final message = d.message;
+    if (message != null) return Text(message, style: TextStyle(color: theme.colorScheme.onSurfaceVariant));
+    return Row(children: [for (final (value, label) in d.figures) Expanded(child: stat(value, label))]);
+  }
 }
 
 class _TripRow extends StatelessWidget {
@@ -376,6 +401,27 @@ class _StatsTab extends StatelessWidget {
                               formatDistance(range.builtInFuelRangeKm, distanceUnit, decimals: 0)),
                           style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
               ],
+            ]),
+          ),
+        ),
+        // BladeWatch-mgi9: what the active period cost, under Personalized Range.
+        const SizedBox(height: 12),
+        Card(
+          key: const ValueKey('trips.costCard'),
+          color: theme.colorScheme.surfaceContainer,
+          elevation: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l10n.trips_detail_cost, style: theme.textTheme.labelLarge),
+              const SizedBox(height: 8),
+              _CostFigures(
+                costs: state.costs,
+                stat: (value, label) => Column(children: [
+                  Text(value, style: theme.textTheme.titleMedium),
+                  Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                ]),
+              ),
             ]),
           ),
         ),

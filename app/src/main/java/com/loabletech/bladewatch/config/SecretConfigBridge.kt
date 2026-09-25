@@ -33,6 +33,22 @@ object SecretConfigBridge {
     // (no shared mutable state), so concurrent callers are safe. Holding lock across a 30-180s
     // IPC call would serialize every config accessor process-wide.
 
+    /**
+     * Whether this process may CREATE a secret that others depend on (the device secret every
+     * companion token derives from): only the daemon, which owns the store, and only while the
+     * store is readable. Everyone else reads through IPC, and "could not read it" -- the app
+     * process before the daemon answers, a store read failing -- must never pass for "it does not
+     * exist": minting then replaces the real secret and un-pairs every companion (BladeWatch-w7by,
+     * seen on the head unit when an install restarted the app before the daemon).
+     */
+    @JvmStatic
+    fun canMintSecrets(): Boolean {
+        directStoreForTest?.let { return it.isReadable() }
+        return synchronized(lock) {
+            try { directStore.canWriteDirectly() && directStore.isReadable() } catch (_: Exception) { false }
+        }
+    }
+
     @JvmStatic
     fun getString(section: String, key: String): String? {
         directStoreForTest?.let { return it.getString(section, key) }

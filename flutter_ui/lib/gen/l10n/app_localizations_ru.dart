@@ -1763,19 +1763,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dashboard_trips_this_week => 'На этой неделе';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 поездки',
-      many: '$arg1 поездок',
-      few: '$arg1 поездки',
-      one: '$arg1 поездка',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 км';
   }
@@ -2011,9 +1998,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get vehicle_tab_climate => 'Климат';
 
   @override
-  String get vehicle_tab_seats => 'Сиденья';
-
-  @override
   String get vehicle_tab_windows => 'Окна';
 
   @override
@@ -2095,44 +2079,9 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'В салоне: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'Снаружи: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'Водитель';
-
-  @override
-  String get vehicle_seat_passenger => 'Пассажир';
-
-  @override
-  String get vehicle_seat_no_controls =>
-      'Для этого авто нет управления сиденьями.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'Подогрев $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'Охлаждение $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(Выкл)';
-
-  @override
-  String get vehicle_heat_low => '(Низк.)';
-
-  @override
-  String get vehicle_heat_high => '(Выс.)';
-
-  @override
-  String get vehicle_seat_pos_1 => 'Положение 1';
-
-  @override
-  String get vehicle_seat_pos_2 => 'Положение 2';
 
   @override
   String get vehicle_all_windows => 'Все окна';
@@ -3027,4 +2976,39 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pear_tile_off => 'Выкл.';
+
+  @override
+  String get trips_cost_total => 'Общая стоимость';
+
+  @override
+  String get trips_cost_no_rate =>
+      'Укажите тариф на электроэнергию в настройках поездок, чтобы видеть стоимость.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'Стоимость поездок указана в разных валютах, поэтому итог не показан.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'Передача $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'Режим: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'Выкл.';
+
+  @override
+  String get auto_hold_enabled => 'Вкл.';
+
+  @override
+  String get auto_hold_active => 'Удерживает';
 }

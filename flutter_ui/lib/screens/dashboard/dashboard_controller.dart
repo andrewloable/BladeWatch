@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
-import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
 import '../../platform/auth_channel.dart';
 import '../../platform/daemon_channel.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
 import 'dashboard_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 
@@ -70,6 +70,9 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   TripStatsState _tripStats = const TripStatsState.loading();
   TripStatsState get tripStats => _tripStats;
 
+  DriveInfo _drive = const DriveInfo();
+  DriveInfo get drive => _drive;
+
   RecordingsMetricState _recordingsMetric = const RecordingsMetricState.loading();
   RecordingsMetricState get recordingsMetric => _recordingsMetric;
 
@@ -115,19 +118,21 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
 
   Future<void> _refreshTripStats() async {
     try {
-      final response = await _tripsService.listTrips(ListTripsRequest(days: 7, limit: 100));
+      // Every trip of the week, not the first page: the costs are a sum (BladeWatch-39d2).
+      final trips = await listTripsInPeriod(_tripsService.listTrips, 7);
       var distanceKm = 0.0;
       var durationSeconds = 0;
-      for (final trip in response.trips) {
+      for (final trip in trips) {
         distanceKm += trip.distanceKm;
         durationSeconds += trip.durationSeconds;
       }
       _tripStats = TripStatsState(
         loading: false,
         available: true,
-        tripCount: response.trips.length,
+        tripCount: trips.length,
         totalDistanceKm: distanceKm,
         totalDurationSeconds: durationSeconds,
+        costs: TripCosts.of(trips),
       );
     } catch (_) {
       _tripStats = const TripStatsState.unavailable();
@@ -142,6 +147,14 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
       final status = await _systemService.getStatus(GetStatusRequest());
       isRecording = status.recording.isNotEmpty;
       if (status.deviceId.isNotEmpty) _deviceId = status.deviceId;
+      String label(String v) => v.isEmpty ? DriveInfo.unknown : v;
+      final d = status.driveStatus;
+      _drive = DriveInfo(
+        gear: label(d.gear),
+        driveMode: label(d.driveMode),
+        autoHold: label(d.autoHold),
+        energyMode: label(d.energyMode),
+      );
     } catch (_) {
       // Leave isRecording/deviceId at their defaults; the count fetch below is independent.
     }

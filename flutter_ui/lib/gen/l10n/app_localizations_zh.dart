@@ -1672,17 +1672,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_trips_this_week => '本周';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1次行程',
-      one: '$arg1次行程',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1902,9 +1891,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_tab_climate => '空调';
 
   @override
-  String get vehicle_tab_seats => '座椅';
-
-  @override
   String get vehicle_tab_windows => '车窗';
 
   @override
@@ -1985,43 +1971,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '车内：$arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '车外：$arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '主驾';
-
-  @override
-  String get vehicle_seat_passenger => '副驾';
-
-  @override
-  String get vehicle_seat_no_controls => '此车辆无可用的座椅控制。';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '加热 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '通风 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '（关）';
-
-  @override
-  String get vehicle_heat_low => '（低）';
-
-  @override
-  String get vehicle_heat_high => '（高）';
-
-  @override
-  String get vehicle_seat_pos_1 => '位置1';
-
-  @override
-  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
   String get vehicle_all_windows => '所有车窗';
@@ -2889,6 +2841,39 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pear_tile_off => '关闭';
+
+  @override
+  String get trips_cost_total => '总费用';
+
+  @override
+  String get trips_cost_no_rate => '请在行程设置中设置电价以查看费用。';
+
+  @override
+  String get trips_cost_mixed_currency => '行程费用使用了多种货币，因此不显示总计。';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return '挡位 $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return '模式：$mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return '自动驻车：$state';
+  }
+
+  @override
+  String get auto_hold_disabled => '关';
+
+  @override
+  String get auto_hold_enabled => '开';
+
+  @override
+  String get auto_hold_active => '驻车中';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -4559,17 +4544,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dashboard_trips_this_week => '本周';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1次行程',
-      one: '$arg1次行程',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -4789,9 +4763,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_tab_climate => '空调';
 
   @override
-  String get vehicle_tab_seats => '座椅';
-
-  @override
   String get vehicle_tab_windows => '车窗';
 
   @override
@@ -4872,43 +4843,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '车内：$arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '车外：$arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '主驾';
-
-  @override
-  String get vehicle_seat_passenger => '副驾';
-
-  @override
-  String get vehicle_seat_no_controls => '此车辆无可用的座椅控制。';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '加热 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '通风 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '（关）';
-
-  @override
-  String get vehicle_heat_low => '（低）';
-
-  @override
-  String get vehicle_heat_high => '（高）';
-
-  @override
-  String get vehicle_seat_pos_1 => '位置1';
-
-  @override
-  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
   String get vehicle_all_windows => '所有车窗';
@@ -5776,6 +5713,39 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get pear_tile_off => '关闭';
+
+  @override
+  String get trips_cost_total => '总费用';
+
+  @override
+  String get trips_cost_no_rate => '请在行程设置中设置电价以查看费用。';
+
+  @override
+  String get trips_cost_mixed_currency => '行程费用使用了多种货币，因此不显示总计。';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return '挡位 $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return '模式：$mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return '自动驻车：$state';
+  }
+
+  @override
+  String get auto_hold_disabled => '关';
+
+  @override
+  String get auto_hold_enabled => '开';
+
+  @override
+  String get auto_hold_active => '驻车中';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -7447,17 +7417,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dashboard_trips_this_week => '本週';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 趟行程',
-      one: '$arg1 趟行程',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -7677,9 +7636,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_tab_climate => '空調';
 
   @override
-  String get vehicle_tab_seats => '座位';
-
-  @override
   String get vehicle_tab_windows => '車窗';
 
   @override
@@ -7760,43 +7716,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '車內：$arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '車外：$arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '駕駛座';
-
-  @override
-  String get vehicle_seat_passenger => '副駕駛座';
-
-  @override
-  String get vehicle_seat_no_controls => '此車輛無可用的座椅控制。';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '加熱 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '通風 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '（關）';
-
-  @override
-  String get vehicle_heat_low => '（低）';
-
-  @override
-  String get vehicle_heat_high => '（高）';
-
-  @override
-  String get vehicle_seat_pos_1 => '位置 1';
-
-  @override
-  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
   String get vehicle_all_windows => '所有車窗';
@@ -8664,4 +8586,37 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get pear_tile_off => '關閉';
+
+  @override
+  String get trips_cost_total => '總費用';
+
+  @override
+  String get trips_cost_no_rate => '請在行程設定中設定電價以查看費用。';
+
+  @override
+  String get trips_cost_mixed_currency => '行程費用使用了多種貨幣，因此不顯示總計。';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return '檔位 $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return '模式：$mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return '自動駐車：$state';
+  }
+
+  @override
+  String get auto_hold_disabled => '關';
+
+  @override
+  String get auto_hold_enabled => '開';
+
+  @override
+  String get auto_hold_active => '駐車中';
 }

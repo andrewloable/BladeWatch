@@ -13,7 +13,6 @@ const ACTUATING = new Set([
   'SetClimate',
   'MoveWindow',
   'Trunk',
-  'SetSeat',
   'SetLights',
   'SetAdas',
   'SetChargeCap',

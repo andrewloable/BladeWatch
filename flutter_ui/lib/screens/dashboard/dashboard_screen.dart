@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 import '../../platform/pairing_channel.dart';
 import '../pairing/pairing_dialog.dart';
 
@@ -11,6 +11,7 @@ import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import '../../shell/route_stubs.dart' show BwRoutes;
 import 'dashboard_controller.dart';
 import 'dashboard_models.dart';
+import '../trips/trip_costs_view.dart';
 import 'vehicle_dialog_controller.dart';
 import '../../widgets/bw_choice_chip.dart';
 
@@ -49,11 +50,19 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  /// BladeWatch-rdtj.21: the tiles are status, so they re-read while the page is up. It used to
+  /// load once, and on the head unit "Remote access: Online" stayed on screen after the car had
+  /// lost its network. 15 s: the Pear status it shows is itself refreshed every 30 s.
+  static const Duration _refreshInterval = Duration(seconds: 15);
+
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
     widget.controller.refresh();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) => widget.controller.refresh());
   }
 
   void _onChanged() {
@@ -62,6 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     widget.controller.removeListener(_onChanged);
     super.dispose();
   }
@@ -189,17 +199,16 @@ class _TripStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Native's headline combines count and distance on one line
-    // ("3 trips · 21.0 km"). DashboardFragment builds it by hand with English
-    // "trip"/"trips" hardcoded; composing it from the localised plural here
-    // gives the same result without inheriting that bug.
+    // A headline only when the tiles below have nothing to say. Native's
+    // "3 trips · 21.0 km" headline repeated the Trips and Distance tiles right
+    // under it, so the owner saw both twice (BladeWatch-by8d).
     final headline = state.loading
         ? l10n.dashboard_trips_loading
         : !state.available
             ? l10n.dashboard_trips_unavailable
             : state.tripCount == 0
                 ? l10n.dashboard_trips_no_data
-                : '${l10n.dashboard_trips_count(state.tripCount)} · ${state.distanceLabel}';
+                : null;
     final pending = l10n.dashboard_metric_value_pending;
     // The hero is the focal point of the screen, so it takes the filled
     // primaryContainer role as native does. Everything inside it must therefore
@@ -233,8 +242,11 @@ class _TripStatsCard extends StatelessWidget {
                 ),
               ],
             ),
-            Text(headline, style: theme.textTheme.headlineMedium?.copyWith(color: onHero)),
-            const SizedBox(height: 16),
+            if (headline != null) ...[
+              Text(headline, style: theme.textTheme.headlineMedium?.copyWith(color: onHero)),
+              const SizedBox(height: 16),
+            ] else
+              const SizedBox(height: 8),
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -268,8 +280,45 @@ class _TripStatsCard extends StatelessWidget {
                 ],
               ),
             ),
+            // BladeWatch-39d2: what the week cost, under the three it always showed.
+            if (state.available && state.tripCount > 0) ...[
+              const SizedBox(height: 16),
+              _TripCostsRow(costs: tripCostDisplay(state.costs, l10n), theme: theme, color: onHero),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The week's fuel, electric and total cost in the hero's stat style, or the line that says
+/// why there are none (no rate set; more than one currency).
+class _TripCostsRow extends StatelessWidget {
+  final ({List<(String, String)> figures, String? message}) costs;
+  final ThemeData theme;
+  final Color color;
+
+  const _TripCostsRow({required this.costs, required this.theme, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final message = costs.message;
+    if (message != null) {
+      return Text(message,
+          key: const ValueKey('tripStats.costs.message'),
+          style: theme.textTheme.bodySmall?.copyWith(color: color.withValues(alpha: 0.8)));
+    }
+    return IntrinsicHeight(
+      key: const ValueKey('tripStats.costs'),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final (i, (value, label)) in costs.figures.indexed) ...[
+            if (i > 0) _StatDivider(color: color),
+            Expanded(child: _Stat(label: label, value: value, theme: theme, color: color)),
+          ],
+        ],
       ),
     );
   }
@@ -332,8 +381,31 @@ class _HeroChips extends StatelessWidget {
           controller.recordingsMetric.isRecording ? l10n.dashboard_chip_recording_active : l10n.dashboard_chip_recording_idle,
         ),
       ),
+      // BladeWatch-7zp9: the car's state. A dash for anything the car could not (or has not been
+      // measured to) name -- never a guessed P / NORMAL / off.
+      ..._driveChips(controller.drive),
     ];
     return Wrap(spacing: 8, runSpacing: 4, children: chips);
+  }
+
+  List<Widget> _driveChips(DriveInfo d) {
+    String known(String v, String Function(String) show) => v == DriveInfo.unknown ? '–' : show(v);
+    return [
+      Chip(key: const ValueKey('chip.gear'), label: Text(l10n.dashboard_chip_gear(known(d.gear, (g) => g)))),
+      Chip(key: const ValueKey('chip.driveMode'), label: Text(l10n.dashboard_chip_drive_mode(known(d.driveMode, (m) => m)))),
+      Chip(
+        key: const ValueKey('chip.autoHold'),
+        label: Text(l10n.dashboard_chip_auto_hold(known(d.autoHold, (a) => switch (a) {
+              'ACTIVE' => l10n.auto_hold_active,
+              'ENABLED' => l10n.auto_hold_enabled,
+              'DISABLED' => l10n.auto_hold_disabled,
+              _ => '–',
+            }))),
+      ),
+      // BladeWatch-os88: EV / HEV, as the car itself labels them in every language. Hidden, not a
+      // dash, when unknown: a car with no HEV mode has nothing to show.
+      if (d.energyMode != DriveInfo.unknown) Chip(key: const ValueKey('chip.energyMode'), label: Text(d.energyMode)),
+    ];
   }
 }
 

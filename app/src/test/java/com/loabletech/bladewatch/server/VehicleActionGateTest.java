@@ -37,7 +37,7 @@ public class VehicleActionGateTest {
     @Test
     public void actuationFromTheTunnelNeedsTheSecondFactor() {
         for (String method : new String[] {
-                "SetClimate", "MoveWindow", "Trunk", "SetSeat", "SetLights",
+                "SetClimate", "MoveWindow", "Trunk", "SetLights",
                 "SetAdas", "SetChargeCap", "SetScreen", "SetMediaVolume" }) {
             assertTrue(method + " actuates the car and must require an action token",
                     VehicleActionGate.requiresActionToken(
@@ -50,7 +50,7 @@ public class VehicleActionGateTest {
         // Gating a read would make the About and Vehicle pages demand a token to display
         // anything, for no security gain — nothing here touches the car.
         for (String method : new String[] {
-                "GetState", "GetChargeCap", "GetAcDiagnostics", "GetSeatDiagnostics",
+                "GetState", "GetChargeCap", "GetAcDiagnostics",
                 "GetGpsLocation", "StartGps", "StopGps", "IssueActionToken" }) {
             assertFalse(method + " does not actuate the car and must not be gated",
                     VehicleActionGate.requiresActionToken(

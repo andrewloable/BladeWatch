@@ -25,7 +25,6 @@ import net.bladewatch.app.grpc.v1.SetConfigRequest;
 import net.bladewatch.app.grpc.v1.SetLightsRequest;
 import net.bladewatch.app.grpc.v1.SetQualityRequest;
 import net.bladewatch.app.grpc.v1.SetQualityResponse;
-import net.bladewatch.app.grpc.v1.SetSeatRequest;
 import net.bladewatch.app.grpc.v1.SetViewModeRequest;
 
 import org.junit.Assert;
@@ -113,15 +112,6 @@ public class ConnectWireParityTest {
                 .build());
         assertNoKey(j, "maxCooling");
         assertHasKey(j, "restoreTempC");
-    }
-
-    @Test
-    public void setSeat_emitsSeatIndex() throws Exception {
-        // BladeWatch-rxe: handler must read seatIndex, not position.
-        String j = json(SetSeatRequest.newBuilder()
-                .setSeatIndex(2).setAction("heating").setLevel(1).build());
-        assertField(j, "\"seatIndex\":2");
-        assertNoKey(j, "position");
     }
 
     @Test

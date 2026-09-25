@@ -297,7 +297,7 @@ along; BladeWatch-ur11 moved it to 8081. The web app already sends the token
 
 | | |
 |---|---|
-| Gated methods | `VehicleService.{SetClimate, MoveWindow, Trunk, SetSeat, SetLights, SetAdas, SetChargeCap, SetScreen, SetMediaVolume}` |
+| Gated methods | `VehicleService.{SetClimate, MoveWindow, Trunk, SetLights, SetAdas, SetChargeCap, SetScreen, SetMediaVolume}` |
 | Not gated | every `Get*`, plus `StartGps`/`StopGps` (they drive the daemon's GPS monitor, not the car) and `IssueActionToken` itself |
 | Issued by | `VehicleService.IssueActionToken`, signed with `deviceSecret`, valid for `VehicleActionToken.WINDOW_SECONDS` |
 | Enforced in | `HttpServer`, before Connect dispatch — it is the only layer with the peer address |
@@ -390,12 +390,37 @@ and a companion that is not on the car's Wi-Fi can only redeem its code over Pea
 opt-in (`lanAccessSet`, `network.lanHttpEnabled`) is a separate, explained switch in the same
 dialog and is never flipped silently.
 
-Both endpoints share `/auth/token`'s brute-force limits: a per-caller bucket keyed on the peer's
-IP -- it used to be IP:port, a fresh bucket on every reconnect, fixed in BladeWatch-rdtj.16 --
-plus a global lockout. Pear and tor traffic all arrive from 127.0.0.1, so remote clients share
-one bucket, and anyone who can reach these endpoints can trigger the global 5-minute lockout
-for everyone (BladeWatch-rlgv). Every credential behind them is at least 128 bits, so neither
-limit is what stops guessing.
+`/auth/pair` and `/auth/companion` have NO rate limits (BladeWatch-rlgv, 2026-09-25). What they
+check cannot be guessed -- a pairing code is 128 random bits, single-use, 5 minutes; a companion
+id is 128 random bits and its token an HMAC-SHA256 -- so a limit added nothing against guessing
+and only handed anyone who can reach them a way to lock every companion out: 30 bad tries set
+off a global 5-minute lockout, and Pear and tor traffic all arrive from 127.0.0.1, so remote
+clients shared one per-caller bucket. Their failures no longer count toward the global cap
+either. `/auth/token` keeps both limits (an owner-set access code can be short) until it goes
+with the web app (BladeWatch-rdtj.13); a lockout there does not touch companions
+(`CompanionLoginLockoutTest`).
+
+**A pairing lasts until someone removes it (BladeWatch-w7by).** The only ways a companion stops
+working are `pairingRevoke` in the car and Unpair in the companion. Everything else keeps it
+paired, and four rules make that so:
+
+- *Only a definite no is `companion_refused`.* `CompanionPairing.check()` answers OK, REFUSED (not
+  paired, removed, or a wrong token) or UNAVAILABLE (the secret store could not be read, or the
+  device secret is not loaded yet, e.g. right after a daemon start). `/auth/companion` sends
+  `companion_refused` -- the one answer the companion treats as "removed" -- only for REFUSED;
+  otherwise `auth_unavailable`, which it retries, and which counts no failed guess.
+- *Only the daemon mints the device secret, and only when its store says it is absent.*
+  Measured 2026-09-25: an install restarted the service host app before the daemons; its IPC read
+  of the secret failed, `AuthManager` minted a new one and persisted it once the daemon answered,
+  and every companion token (an HMAC of that secret) died. `SecretConfigBridge.canMintSecrets()`
+  now allows it only in the daemon, while `isReadable()`; everyone else waits.
+- *A store that could not be read is never written over.* A write reads the whole store first;
+  when that read fails it is refused, instead of saving "empty + this change" and dropping the
+  auth secret, every paired companion, the TLS identity, the probe key and the Pear topic seed.
+  Content that reads but does not parse is real damage (writes publish by atomic rename): it is
+  started over as before, but a `600` copy `bladewatch_secrets.json.damaged-<ms>` is kept first.
+- *The companion keeps what it cannot load.* Its `CarStore` copies a file that will not load
+  aside before anything can overwrite it.
 
 ## JWT + live-view flow
 

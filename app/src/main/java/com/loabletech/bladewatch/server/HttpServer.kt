@@ -1,5 +1,7 @@
 package net.bladewatch.app.server
 
+import net.bladewatch.app.byd.BydVehicleData
+import net.bladewatch.app.byd.DriveState
 import android.content.res.AssetManager
 import android.media.MediaCodec
 import android.util.Base64
@@ -1005,6 +1007,23 @@ class HttpServer(private val port: Int) {
             status.put("recordingStatus", recordingStatus)
         } catch (e: Exception) {
             // Recording status not available
+        }
+
+        // BladeWatch-7zp9/os88: gear, drive mode, Auto Hold and EV/HEV for the dashboard -- labels only where
+        // measured, raw values always (DriveState).
+        try {
+            val data = BydDataCollector.getInstance()?.data
+            status.put(
+                "driveStatus",
+                DriveState.toJson(
+                    gear = CameraDaemon.getRecordingModeManager()?.let { RecordingModeManager.gearToString(it.currentGear) },
+                    operationModeRaw = data?.operationMode ?: BydVehicleData.UNAVAILABLE,
+                    autoHoldRaw = data?.autoHoldState ?: BydVehicleData.UNAVAILABLE,
+                    energyModeRaw = data?.energyMode ?: BydVehicleData.UNAVAILABLE,
+                )
+            )
+        } catch (e: Exception) {
+            CameraDaemon.log("DEBUG: drive status failed: " + e.message)
         }
 
         // Trip analytics status (for the status overlay)

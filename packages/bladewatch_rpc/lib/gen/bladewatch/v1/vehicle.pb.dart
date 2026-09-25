@@ -332,120 +332,12 @@ class WindowCapabilities extends $pb.GeneratedMessage {
   void clearSunshade() => $_clearField(2);
 }
 
-class SeatCapabilities extends $pb.GeneratedMessage {
-  factory SeatCapabilities({
-    $core.bool? driverHeat,
-    $core.bool? passengerHeat,
-    $core.bool? driverCool,
-    $core.bool? passengerCool,
-    $core.bool? driverMemoryRecall,
-  }) {
-    final result = SeatCapabilities._();
-    if (driverHeat != null) result.driverHeat = driverHeat;
-    if (passengerHeat != null) result.passengerHeat = passengerHeat;
-    if (driverCool != null) result.driverCool = driverCool;
-    if (passengerCool != null) result.passengerCool = passengerCool;
-    if (driverMemoryRecall != null)
-      result.driverMemoryRecall = driverMemoryRecall;
-    return result;
-  }
-
-  SeatCapabilities._();
-
-  factory SeatCapabilities.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      SeatCapabilities()..mergeFromBuffer(data, registry);
-  factory SeatCapabilities.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      SeatCapabilities()..mergeFromJson(json, registry);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SeatCapabilities',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
-      createEmptyInstance: SeatCapabilities.$_createMessage)
-    ..aOB(1, _omitFieldNames ? '' : 'driverHeat')
-    ..aOB(2, _omitFieldNames ? '' : 'passengerHeat')
-    ..aOB(3, _omitFieldNames ? '' : 'driverCool')
-    ..aOB(4, _omitFieldNames ? '' : 'passengerCool')
-    ..aOB(5, _omitFieldNames ? '' : 'driverMemoryRecall')
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SeatCapabilities clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SeatCapabilities copyWith(void Function(SeatCapabilities) updates) =>
-      super.copyWith((message) => updates(message as SeatCapabilities))
-          as SeatCapabilities;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  @$core.Deprecated('Use SeatCapabilities() / SeatCapabilities.new instead')
-  static SeatCapabilities create() => SeatCapabilities._();
-  static $pb.GeneratedMessage $_createMessage() => SeatCapabilities._();
-  @$core.override
-  SeatCapabilities createEmptyInstance() => SeatCapabilities._();
-  @$core.pragma('dart2js:noInline')
-  static SeatCapabilities getDefault() =>
-      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SeatCapabilities>(
-          SeatCapabilities.$_createMessage);
-  static SeatCapabilities? _defaultInstance;
-
-  @$pb.TagNumber(1)
-  $core.bool get driverHeat => $_getBF(0);
-  @$pb.TagNumber(1)
-  set driverHeat($core.bool value) => $_setBool(0, value);
-  @$pb.TagNumber(1)
-  $core.bool hasDriverHeat() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearDriverHeat() => $_clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.bool get passengerHeat => $_getBF(1);
-  @$pb.TagNumber(2)
-  set passengerHeat($core.bool value) => $_setBool(1, value);
-  @$pb.TagNumber(2)
-  $core.bool hasPassengerHeat() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearPassengerHeat() => $_clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.bool get driverCool => $_getBF(2);
-  @$pb.TagNumber(3)
-  set driverCool($core.bool value) => $_setBool(2, value);
-  @$pb.TagNumber(3)
-  $core.bool hasDriverCool() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearDriverCool() => $_clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.bool get passengerCool => $_getBF(3);
-  @$pb.TagNumber(4)
-  set passengerCool($core.bool value) => $_setBool(3, value);
-  @$pb.TagNumber(4)
-  $core.bool hasPassengerCool() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearPassengerCool() => $_clearField(4);
-
-  @$pb.TagNumber(5)
-  $core.bool get driverMemoryRecall => $_getBF(4);
-  @$pb.TagNumber(5)
-  set driverMemoryRecall($core.bool value) => $_setBool(4, value);
-  @$pb.TagNumber(5)
-  $core.bool hasDriverMemoryRecall() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearDriverMemoryRecall() => $_clearField(5);
-}
-
 class VehicleCapabilities extends $pb.GeneratedMessage {
   factory VehicleCapabilities({
     WindowCapabilities? windows,
-    SeatCapabilities? seats,
   }) {
     final result = VehicleCapabilities._();
     if (windows != null) result.windows = windows;
-    if (seats != null) result.seats = seats;
     return result;
   }
 
@@ -464,8 +356,6 @@ class VehicleCapabilities extends $pb.GeneratedMessage {
       createEmptyInstance: VehicleCapabilities.$_createMessage)
     ..aOM<WindowCapabilities>(1, _omitFieldNames ? '' : 'windows',
         subBuilder: WindowCapabilities.$_createMessage)
-    ..aOM<SeatCapabilities>(2, _omitFieldNames ? '' : 'seats',
-        subBuilder: SeatCapabilities.$_createMessage)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -501,17 +391,6 @@ class VehicleCapabilities extends $pb.GeneratedMessage {
   void clearWindows() => $_clearField(1);
   @$pb.TagNumber(1)
   WindowCapabilities ensureWindows() => $_ensure(0);
-
-  @$pb.TagNumber(2)
-  SeatCapabilities get seats => $_getN(1);
-  @$pb.TagNumber(2)
-  set seats(SeatCapabilities value) => $_setField(2, value);
-  @$pb.TagNumber(2)
-  $core.bool hasSeats() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearSeats() => $_clearField(2);
-  @$pb.TagNumber(2)
-  SeatCapabilities ensureSeats() => $_ensure(1);
 }
 
 class TrunkStatus extends $pb.GeneratedMessage {
@@ -899,92 +778,22 @@ class AdasStatus extends $pb.GeneratedMessage {
   void clearSpeedLimitWarning() => $_clearField(1);
 }
 
-class SeatStatus extends $pb.GeneratedMessage {
-  factory SeatStatus({
-    $core.Iterable<$core.int>? heat,
-    $core.Iterable<$core.int>? cool,
-    $core.bool? ventilatedSupported,
-  }) {
-    final result = SeatStatus._();
-    if (heat != null) result.heat.addAll(heat);
-    if (cool != null) result.cool.addAll(cool);
-    if (ventilatedSupported != null)
-      result.ventilatedSupported = ventilatedSupported;
-    return result;
-  }
-
-  SeatStatus._();
-
-  factory SeatStatus.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      SeatStatus()..mergeFromBuffer(data, registry);
-  factory SeatStatus.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      SeatStatus()..mergeFromJson(json, registry);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SeatStatus',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
-      createEmptyInstance: SeatStatus.$_createMessage)
-    ..p<$core.int>(1, _omitFieldNames ? '' : 'heat', $pb.PbFieldType.K3)
-    ..p<$core.int>(2, _omitFieldNames ? '' : 'cool', $pb.PbFieldType.K3)
-    ..aOB(3, _omitFieldNames ? '' : 'ventilatedSupported')
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SeatStatus clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SeatStatus copyWith(void Function(SeatStatus) updates) =>
-      super.copyWith((message) => updates(message as SeatStatus)) as SeatStatus;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  @$core.Deprecated('Use SeatStatus() / SeatStatus.new instead')
-  static SeatStatus create() => SeatStatus._();
-  static $pb.GeneratedMessage $_createMessage() => SeatStatus._();
-  @$core.override
-  SeatStatus createEmptyInstance() => SeatStatus._();
-  @$core.pragma('dart2js:noInline')
-  static SeatStatus getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SeatStatus>(SeatStatus.$_createMessage);
-  static SeatStatus? _defaultInstance;
-
-  /// Heating levels per seat index [0-2], 0=off.
-  @$pb.TagNumber(1)
-  $pb.PbList<$core.int> get heat => $_getList(0);
-
-  /// Cooling levels per seat index [0-2], 0=off.
-  @$pb.TagNumber(2)
-  $pb.PbList<$core.int> get cool => $_getList(1);
-
-  @$pb.TagNumber(3)
-  $core.bool get ventilatedSupported => $_getBF(2);
-  @$pb.TagNumber(3)
-  set ventilatedSupported($core.bool value) => $_setBool(2, value);
-  @$pb.TagNumber(3)
-  $core.bool hasVentilatedSupported() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearVentilatedSupported() => $_clearField(3);
-}
-
 class ClimateStatus extends $pb.GeneratedMessage {
   factory ClimateStatus({
     $core.bool? acOn,
     $core.double? setpointC,
-    $core.double? insideTempC,
     $core.int? windMode,
     $core.int? fanLevel,
     $core.bool? maxCooling,
+    $core.double? outsideTempC,
   }) {
     final result = ClimateStatus._();
     if (acOn != null) result.acOn = acOn;
     if (setpointC != null) result.setpointC = setpointC;
-    if (insideTempC != null) result.insideTempC = insideTempC;
     if (windMode != null) result.windMode = windMode;
     if (fanLevel != null) result.fanLevel = fanLevel;
     if (maxCooling != null) result.maxCooling = maxCooling;
+    if (outsideTempC != null) result.outsideTempC = outsideTempC;
     return result;
   }
 
@@ -1003,10 +812,10 @@ class ClimateStatus extends $pb.GeneratedMessage {
       createEmptyInstance: ClimateStatus.$_createMessage)
     ..aOB(1, _omitFieldNames ? '' : 'acOn')
     ..aD(2, _omitFieldNames ? '' : 'setpointC')
-    ..aD(3, _omitFieldNames ? '' : 'insideTempC')
     ..aI(4, _omitFieldNames ? '' : 'windMode')
     ..aI(5, _omitFieldNames ? '' : 'fanLevel')
     ..aOB(6, _omitFieldNames ? '' : 'maxCooling')
+    ..aD(7, _omitFieldNames ? '' : 'outsideTempC')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1049,41 +858,43 @@ class ClimateStatus extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   void clearSetpointC() => $_clearField(2);
 
-  @$pb.TagNumber(3)
-  $core.double get insideTempC => $_getN(2);
-  @$pb.TagNumber(3)
-  set insideTempC($core.double value) => $_setDouble(2, value);
-  @$pb.TagNumber(3)
-  $core.bool hasInsideTempC() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearInsideTempC() => $_clearField(3);
-
   @$pb.TagNumber(4)
-  $core.int get windMode => $_getIZ(3);
+  $core.int get windMode => $_getIZ(2);
   @$pb.TagNumber(4)
-  set windMode($core.int value) => $_setSignedInt32(3, value);
+  set windMode($core.int value) => $_setSignedInt32(2, value);
   @$pb.TagNumber(4)
-  $core.bool hasWindMode() => $_has(3);
+  $core.bool hasWindMode() => $_has(2);
   @$pb.TagNumber(4)
   void clearWindMode() => $_clearField(4);
 
   @$pb.TagNumber(5)
-  $core.int get fanLevel => $_getIZ(4);
+  $core.int get fanLevel => $_getIZ(3);
   @$pb.TagNumber(5)
-  set fanLevel($core.int value) => $_setSignedInt32(4, value);
+  set fanLevel($core.int value) => $_setSignedInt32(3, value);
   @$pb.TagNumber(5)
-  $core.bool hasFanLevel() => $_has(4);
+  $core.bool hasFanLevel() => $_has(3);
   @$pb.TagNumber(5)
   void clearFanLevel() => $_clearField(5);
 
   @$pb.TagNumber(6)
-  $core.bool get maxCooling => $_getBF(5);
+  $core.bool get maxCooling => $_getBF(4);
   @$pb.TagNumber(6)
-  set maxCooling($core.bool value) => $_setBool(5, value);
+  set maxCooling($core.bool value) => $_setBool(4, value);
   @$pb.TagNumber(6)
-  $core.bool hasMaxCooling() => $_has(5);
+  $core.bool hasMaxCooling() => $_has(4);
   @$pb.TagNumber(6)
   void clearMaxCooling() => $_clearField(6);
+
+  /// Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+  /// optional, because 0 C is a real outside temperature.
+  @$pb.TagNumber(7)
+  $core.double get outsideTempC => $_getN(5);
+  @$pb.TagNumber(7)
+  set outsideTempC($core.double value) => $_setDouble(5, value);
+  @$pb.TagNumber(7)
+  $core.bool hasOutsideTempC() => $_has(5);
+  @$pb.TagNumber(7)
+  void clearOutsideTempC() => $_clearField(7);
 }
 
 class TyrePressure extends $pb.GeneratedMessage {
@@ -1360,7 +1171,6 @@ class GetVehicleStateResponse extends $pb.GeneratedMessage {
     BatteryStatus? battery,
     LightStatus? lights,
     AdasStatus? adas,
-    SeatStatus? seats,
     ClimateStatus? climate,
     TyreStatus? tyres,
     $core.String? error,
@@ -1377,7 +1187,6 @@ class GetVehicleStateResponse extends $pb.GeneratedMessage {
     if (battery != null) result.battery = battery;
     if (lights != null) result.lights = lights;
     if (adas != null) result.adas = adas;
-    if (seats != null) result.seats = seats;
     if (climate != null) result.climate = climate;
     if (tyres != null) result.tyres = tyres;
     if (error != null) result.error = error;
@@ -1417,8 +1226,6 @@ class GetVehicleStateResponse extends $pb.GeneratedMessage {
         subBuilder: LightStatus.$_createMessage)
     ..aOM<AdasStatus>(9, _omitFieldNames ? '' : 'adas',
         subBuilder: AdasStatus.$_createMessage)
-    ..aOM<SeatStatus>(10, _omitFieldNames ? '' : 'seats',
-        subBuilder: SeatStatus.$_createMessage)
     ..aOM<ClimateStatus>(11, _omitFieldNames ? '' : 'climate',
         subBuilder: ClimateStatus.$_createMessage)
     ..aOM<TyreStatus>(12, _omitFieldNames ? '' : 'tyres',
@@ -1549,65 +1356,54 @@ class GetVehicleStateResponse extends $pb.GeneratedMessage {
   @$pb.TagNumber(9)
   AdasStatus ensureAdas() => $_ensure(8);
 
-  @$pb.TagNumber(10)
-  SeatStatus get seats => $_getN(9);
-  @$pb.TagNumber(10)
-  set seats(SeatStatus value) => $_setField(10, value);
-  @$pb.TagNumber(10)
-  $core.bool hasSeats() => $_has(9);
-  @$pb.TagNumber(10)
-  void clearSeats() => $_clearField(10);
-  @$pb.TagNumber(10)
-  SeatStatus ensureSeats() => $_ensure(9);
-
   @$pb.TagNumber(11)
-  ClimateStatus get climate => $_getN(10);
+  ClimateStatus get climate => $_getN(9);
   @$pb.TagNumber(11)
   set climate(ClimateStatus value) => $_setField(11, value);
   @$pb.TagNumber(11)
-  $core.bool hasClimate() => $_has(10);
+  $core.bool hasClimate() => $_has(9);
   @$pb.TagNumber(11)
   void clearClimate() => $_clearField(11);
   @$pb.TagNumber(11)
-  ClimateStatus ensureClimate() => $_ensure(10);
+  ClimateStatus ensureClimate() => $_ensure(9);
 
   @$pb.TagNumber(12)
-  TyreStatus get tyres => $_getN(11);
+  TyreStatus get tyres => $_getN(10);
   @$pb.TagNumber(12)
   set tyres(TyreStatus value) => $_setField(12, value);
   @$pb.TagNumber(12)
-  $core.bool hasTyres() => $_has(11);
+  $core.bool hasTyres() => $_has(10);
   @$pb.TagNumber(12)
   void clearTyres() => $_clearField(12);
   @$pb.TagNumber(12)
-  TyreStatus ensureTyres() => $_ensure(11);
+  TyreStatus ensureTyres() => $_ensure(10);
 
   @$pb.TagNumber(13)
-  $core.String get error => $_getSZ(12);
+  $core.String get error => $_getSZ(11);
   @$pb.TagNumber(13)
-  set error($core.String value) => $_setString(12, value);
+  set error($core.String value) => $_setString(11, value);
   @$pb.TagNumber(13)
-  $core.bool hasError() => $_has(12);
+  $core.bool hasError() => $_has(11);
   @$pb.TagNumber(13)
   void clearError() => $_clearField(13);
 
   /// BladeWatch-2000.2: 0-100, converted from the raw AudioManager stream index so the UI
   /// shows the real value rather than a local guess.
   @$pb.TagNumber(14)
-  $core.int get mediaVolumePercent => $_getIZ(13);
+  $core.int get mediaVolumePercent => $_getIZ(12);
   @$pb.TagNumber(14)
-  set mediaVolumePercent($core.int value) => $_setSignedInt32(13, value);
+  set mediaVolumePercent($core.int value) => $_setSignedInt32(12, value);
   @$pb.TagNumber(14)
-  $core.bool hasMediaVolumePercent() => $_has(13);
+  $core.bool hasMediaVolumePercent() => $_has(12);
   @$pb.TagNumber(14)
   void clearMediaVolumePercent() => $_clearField(14);
 
   @$pb.TagNumber(15)
-  $core.bool get mediaMuted => $_getBF(14);
+  $core.bool get mediaMuted => $_getBF(13);
   @$pb.TagNumber(15)
-  set mediaMuted($core.bool value) => $_setBool(14, value);
+  set mediaMuted($core.bool value) => $_setBool(13, value);
   @$pb.TagNumber(15)
-  $core.bool hasMediaMuted() => $_has(14);
+  $core.bool hasMediaMuted() => $_has(13);
   @$pb.TagNumber(15)
   void clearMediaMuted() => $_clearField(15);
 }
@@ -1707,125 +1503,6 @@ class GetAcDiagnosticsResponse extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<GetAcDiagnosticsResponse>(
           GetAcDiagnosticsResponse.$_createMessage);
   static GetAcDiagnosticsResponse? _defaultInstance;
-
-  @$pb.TagNumber(1)
-  $core.bool get success => $_getBF(0);
-  @$pb.TagNumber(1)
-  set success($core.bool value) => $_setBool(0, value);
-  @$pb.TagNumber(1)
-  $core.bool hasSuccess() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearSuccess() => $_clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.String get rawJson => $_getSZ(1);
-  @$pb.TagNumber(2)
-  set rawJson($core.String value) => $_setString(1, value);
-  @$pb.TagNumber(2)
-  $core.bool hasRawJson() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearRawJson() => $_clearField(2);
-}
-
-class GetSeatDiagnosticsRequest extends $pb.GeneratedMessage {
-  factory GetSeatDiagnosticsRequest() => GetSeatDiagnosticsRequest._();
-
-  GetSeatDiagnosticsRequest._();
-
-  factory GetSeatDiagnosticsRequest.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      GetSeatDiagnosticsRequest()..mergeFromBuffer(data, registry);
-  factory GetSeatDiagnosticsRequest.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      GetSeatDiagnosticsRequest()..mergeFromJson(json, registry);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'GetSeatDiagnosticsRequest',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
-      createEmptyInstance: GetSeatDiagnosticsRequest.$_createMessage)
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  GetSeatDiagnosticsRequest clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  GetSeatDiagnosticsRequest copyWith(
-          void Function(GetSeatDiagnosticsRequest) updates) =>
-      super.copyWith((message) => updates(message as GetSeatDiagnosticsRequest))
-          as GetSeatDiagnosticsRequest;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  @$core.Deprecated(
-      'Use GetSeatDiagnosticsRequest() / GetSeatDiagnosticsRequest.new instead')
-  static GetSeatDiagnosticsRequest create() => GetSeatDiagnosticsRequest._();
-  static $pb.GeneratedMessage $_createMessage() =>
-      GetSeatDiagnosticsRequest._();
-  @$core.override
-  GetSeatDiagnosticsRequest createEmptyInstance() =>
-      GetSeatDiagnosticsRequest._();
-  @$core.pragma('dart2js:noInline')
-  static GetSeatDiagnosticsRequest getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<GetSeatDiagnosticsRequest>(
-          GetSeatDiagnosticsRequest.$_createMessage);
-  static GetSeatDiagnosticsRequest? _defaultInstance;
-}
-
-class GetSeatDiagnosticsResponse extends $pb.GeneratedMessage {
-  factory GetSeatDiagnosticsResponse({
-    $core.bool? success,
-    $core.String? rawJson,
-  }) {
-    final result = GetSeatDiagnosticsResponse._();
-    if (success != null) result.success = success;
-    if (rawJson != null) result.rawJson = rawJson;
-    return result;
-  }
-
-  GetSeatDiagnosticsResponse._();
-
-  factory GetSeatDiagnosticsResponse.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      GetSeatDiagnosticsResponse()..mergeFromBuffer(data, registry);
-  factory GetSeatDiagnosticsResponse.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      GetSeatDiagnosticsResponse()..mergeFromJson(json, registry);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'GetSeatDiagnosticsResponse',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
-      createEmptyInstance: GetSeatDiagnosticsResponse.$_createMessage)
-    ..aOB(1, _omitFieldNames ? '' : 'success')
-    ..aOS(2, _omitFieldNames ? '' : 'rawJson')
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  GetSeatDiagnosticsResponse clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  GetSeatDiagnosticsResponse copyWith(
-          void Function(GetSeatDiagnosticsResponse) updates) =>
-      super.copyWith(
-              (message) => updates(message as GetSeatDiagnosticsResponse))
-          as GetSeatDiagnosticsResponse;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  @$core.Deprecated(
-      'Use GetSeatDiagnosticsResponse() / GetSeatDiagnosticsResponse.new instead')
-  static GetSeatDiagnosticsResponse create() => GetSeatDiagnosticsResponse._();
-  static $pb.GeneratedMessage $_createMessage() =>
-      GetSeatDiagnosticsResponse._();
-  @$core.override
-  GetSeatDiagnosticsResponse createEmptyInstance() =>
-      GetSeatDiagnosticsResponse._();
-  @$core.pragma('dart2js:noInline')
-  static GetSeatDiagnosticsResponse getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<GetSeatDiagnosticsResponse>(
-          GetSeatDiagnosticsResponse.$_createMessage);
-  static GetSeatDiagnosticsResponse? _defaultInstance;
 
   @$pb.TagNumber(1)
   $core.bool get success => $_getBF(0);
@@ -2432,137 +2109,6 @@ class SetClimateRequest extends $pb.GeneratedMessage {
   $core.bool hasCycleMode() => $_has(9);
   @$pb.TagNumber(10)
   void clearCycleMode() => $_clearField(10);
-}
-
-class SetSeatRequest extends $pb.GeneratedMessage {
-  factory SetSeatRequest({
-    $core.int? seatIndex,
-    $core.String? action,
-    $core.int? level,
-    $core.int? driverHeat,
-    $core.int? driverVent,
-    $core.int? passengerHeat,
-    $core.int? passengerVent,
-  }) {
-    final result = SetSeatRequest._();
-    if (seatIndex != null) result.seatIndex = seatIndex;
-    if (action != null) result.action = action;
-    if (level != null) result.level = level;
-    if (driverHeat != null) result.driverHeat = driverHeat;
-    if (driverVent != null) result.driverVent = driverVent;
-    if (passengerHeat != null) result.passengerHeat = passengerHeat;
-    if (passengerVent != null) result.passengerVent = passengerVent;
-    return result;
-  }
-
-  SetSeatRequest._();
-
-  factory SetSeatRequest.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      SetSeatRequest()..mergeFromBuffer(data, registry);
-  factory SetSeatRequest.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      SetSeatRequest()..mergeFromJson(json, registry);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SetSeatRequest',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
-      createEmptyInstance: SetSeatRequest.$_createMessage)
-    ..aI(1, _omitFieldNames ? '' : 'seatIndex')
-    ..aOS(2, _omitFieldNames ? '' : 'action')
-    ..aI(3, _omitFieldNames ? '' : 'level')
-    ..aI(4, _omitFieldNames ? '' : 'driverHeat')
-    ..aI(5, _omitFieldNames ? '' : 'driverVent')
-    ..aI(6, _omitFieldNames ? '' : 'passengerHeat')
-    ..aI(7, _omitFieldNames ? '' : 'passengerVent')
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetSeatRequest clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetSeatRequest copyWith(void Function(SetSeatRequest) updates) =>
-      super.copyWith((message) => updates(message as SetSeatRequest))
-          as SetSeatRequest;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  @$core.Deprecated('Use SetSeatRequest() / SetSeatRequest.new instead')
-  static SetSeatRequest create() => SetSeatRequest._();
-  static $pb.GeneratedMessage $_createMessage() => SetSeatRequest._();
-  @$core.override
-  SetSeatRequest createEmptyInstance() => SetSeatRequest._();
-  @$core.pragma('dart2js:noInline')
-  static SetSeatRequest getDefault() =>
-      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SetSeatRequest>(
-          SetSeatRequest.$_createMessage);
-  static SetSeatRequest? _defaultInstance;
-
-  /// Seat index: 1=driver, 2=passenger.
-  @$pb.TagNumber(1)
-  $core.int get seatIndex => $_getIZ(0);
-  @$pb.TagNumber(1)
-  set seatIndex($core.int value) => $_setSignedInt32(0, value);
-  @$pb.TagNumber(1)
-  $core.bool hasSeatIndex() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearSeatIndex() => $_clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.String get action => $_getSZ(1);
-  @$pb.TagNumber(2)
-  set action($core.String value) => $_setString(1, value);
-  @$pb.TagNumber(2)
-  $core.bool hasAction() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearAction() => $_clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.int get level => $_getIZ(2);
-  @$pb.TagNumber(3)
-  set level($core.int value) => $_setSignedInt32(2, value);
-  @$pb.TagNumber(3)
-  $core.bool hasLevel() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearLevel() => $_clearField(3);
-
-  /// Full current seat state: cloud API is stateful and requires these on every call.
-  @$pb.TagNumber(4)
-  $core.int get driverHeat => $_getIZ(3);
-  @$pb.TagNumber(4)
-  set driverHeat($core.int value) => $_setSignedInt32(3, value);
-  @$pb.TagNumber(4)
-  $core.bool hasDriverHeat() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearDriverHeat() => $_clearField(4);
-
-  @$pb.TagNumber(5)
-  $core.int get driverVent => $_getIZ(4);
-  @$pb.TagNumber(5)
-  set driverVent($core.int value) => $_setSignedInt32(4, value);
-  @$pb.TagNumber(5)
-  $core.bool hasDriverVent() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearDriverVent() => $_clearField(5);
-
-  @$pb.TagNumber(6)
-  $core.int get passengerHeat => $_getIZ(5);
-  @$pb.TagNumber(6)
-  set passengerHeat($core.int value) => $_setSignedInt32(5, value);
-  @$pb.TagNumber(6)
-  $core.bool hasPassengerHeat() => $_has(5);
-  @$pb.TagNumber(6)
-  void clearPassengerHeat() => $_clearField(6);
-
-  @$pb.TagNumber(7)
-  $core.int get passengerVent => $_getIZ(6);
-  @$pb.TagNumber(7)
-  set passengerVent($core.int value) => $_setSignedInt32(6, value);
-  @$pb.TagNumber(7)
-  $core.bool hasPassengerVent() => $_has(6);
-  @$pb.TagNumber(7)
-  void clearPassengerVent() => $_clearField(7);
 }
 
 class SetLightsRequest extends $pb.GeneratedMessage {
@@ -4048,7 +3594,6 @@ class GetAdasInventoryResponse extends $pb.GeneratedMessage {
 /// HTTP mapping:
 ///   GetState             GET  /api/vehicle/state
 ///   GetAcDiagnostics     GET  /api/vehicle/ac-diagnostics
-///   GetSeatDiagnostics   GET  /api/vehicle/seat-diagnostics
 ///   Lock                 POST /api/vehicle/lock
 ///   Unlock               POST /api/vehicle/unlock
 ///   Trunk                POST /api/vehicle/trunk
@@ -4056,7 +3601,6 @@ class GetAdasInventoryResponse extends $pb.GeneratedMessage {
 ///   Flash                POST /api/vehicle/flash
 ///   FindCar              POST /api/vehicle/find-car
 ///   SetClimate           POST /api/vehicle/climate
-///   SetSeat              POST /api/vehicle/seat
 ///   SetLights            POST /api/vehicle/lights
 ///   SetScreen            POST /api/vehicle/screen
 ///   SetMediaVolume       POST /api/vehicle/media-volume
@@ -4082,10 +3626,6 @@ class VehicleServiceApi {
           $pb.ClientContext? ctx, GetAcDiagnosticsRequest request) =>
       _client.invoke<GetAcDiagnosticsResponse>(ctx, 'VehicleService',
           'GetAcDiagnostics', request, GetAcDiagnosticsResponse());
-  $async.Future<GetSeatDiagnosticsResponse> getSeatDiagnostics(
-          $pb.ClientContext? ctx, GetSeatDiagnosticsRequest request) =>
-      _client.invoke<GetSeatDiagnosticsResponse>(ctx, 'VehicleService',
-          'GetSeatDiagnostics', request, GetSeatDiagnosticsResponse());
   $async.Future<VehicleCommandResponse> lock(
           $pb.ClientContext? ctx, LockRequest request) =>
       _client.invoke<VehicleCommandResponse>(
@@ -4114,10 +3654,6 @@ class VehicleServiceApi {
           $pb.ClientContext? ctx, SetClimateRequest request) =>
       _client.invoke<VehicleCommandResponse>(ctx, 'VehicleService',
           'SetClimate', request, VehicleCommandResponse());
-  $async.Future<VehicleCommandResponse> setSeat(
-          $pb.ClientContext? ctx, SetSeatRequest request) =>
-      _client.invoke<VehicleCommandResponse>(
-          ctx, 'VehicleService', 'SetSeat', request, VehicleCommandResponse());
   $async.Future<VehicleCommandResponse> setLights(
           $pb.ClientContext? ctx, SetLightsRequest request) =>
       _client.invoke<VehicleCommandResponse>(ctx, 'VehicleService', 'SetLights',

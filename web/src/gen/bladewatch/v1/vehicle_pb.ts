@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bladewatch/v1/vehicle.proto.
  */
 export const file_bladewatch_v1_vehicle: GenFile = /*@__PURE__*/
-  fileDesc("ChtibGFkZXdhdGNoL3YxL3ZlaGljbGUucHJvdG8SDWJsYWRld2F0Y2gudjEiagoKRG9vclN0YXR1cxIKCgJsZhgBIAEoBRIKCgJyZhgCIAEoBRIKCgJschgDIAEoBRIKCgJychgEIAEoBRINCgV0cnVuaxgFIAEoBRIMCgRob29kGAYgASgFEg8KB292ZXJhbGwYByABKAUiYQoMV2luZG93U3RhdHVzEgoKAmxmGAEgASgFEgoKAnJmGAIgASgFEgoKAmxyGAMgASgFEgoKAnJyGAQgASgFEg8KB3N1bnJvb2YYBSABKAUSEAoIc3Vuc2hhZGUYBiABKAUiNwoSV2luZG93Q2FwYWJpbGl0aWVzEg8KB3N1bnJvb2YYASABKAgSEAoIc3Vuc2hhZGUYAiABKAgiigEKEFNlYXRDYXBhYmlsaXRpZXMSEwoLZHJpdmVyX2hlYXQYASABKAgSFgoOcGFzc2VuZ2VyX2hlYXQYAiABKAgSEwoLZHJpdmVyX2Nvb2wYAyABKAgSFgoOcGFzc2VuZ2VyX2Nvb2wYBCABKAgSHAoUZHJpdmVyX21lbW9yeV9yZWNhbGwYBSABKAgieQoTVmVoaWNsZUNhcGFiaWxpdGllcxIyCgd3aW5kb3dzGAEgASgLMiEuYmxhZGV3YXRjaC52MS5XaW5kb3dDYXBhYmlsaXRpZXMSLgoFc2VhdHMYAiABKAsyHy5ibGFkZXdhdGNoLnYxLlNlYXRDYXBhYmlsaXRpZXMiIgoLVHJ1bmtTdGF0dXMSEwoLbG9ja19zdGF0dXMYASABKAUiMAoNU3Vucm9vZlN0YXR1cxINCgVzdGF0ZRgBIAEoBRIQCghwb3NpdGlvbhgCIAEoBSJ2Cg1CYXR0ZXJ5U3RhdHVzEgsKA3NvYxgBIAEoARIQCghyYW5nZV9rbRgCIAEoBRIZChFib2R5d29ya19yYW5nZV9rbRgDIAEoBRIUCgxmdWVsX3BlcmNlbnQYBCABKAESFQoNZnVlbF9yYW5nZV9rbRgFIAEoBSJaCgtMaWdodFN0YXR1cxIQCghsb3dfYmVhbRgBIAEoCBIRCgloaWdoX2JlYW0YAiABKAgSDgoGaGF6YXJkGAMgASgIEhYKDmRheV90aW1lX2xpZ2h0GAQgASgIIikKCkFkYXNTdGF0dXMSGwoTc3BlZWRfbGltaXRfd2FybmluZxgBIAEoCCJGCgpTZWF0U3RhdHVzEgwKBGhlYXQYASADKAUSDAoEY29vbBgCIAMoBRIcChR2ZW50aWxhdGVkX3N1cHBvcnRlZBgDIAEoCCKEAQoNQ2xpbWF0ZVN0YXR1cxINCgVhY19vbhgBIAEoCBISCgpzZXRwb2ludF9jGAIgASgBEhUKDWluc2lkZV90ZW1wX2MYAyABKAESEQoJd2luZF9tb2RlGAQgASgFEhEKCWZhbl9sZXZlbBgFIAEoBRITCgttYXhfY29vbGluZxgGIAEoCCKXAQoMVHlyZVByZXNzdXJlEgwKBGtfcGEYASABKAUSCwoDcHNpGAIgASgBEhwKBnRlbXBfYxgDIAEoBVIMdGVtcGVyYXR1cmVDEhYKDnByZXNzdXJlX3N0YXRlGAQgASgFEiAKCmxlYWtfc3RhdGUYBSABKAVSDGFpckxlYWtTdGF0ZRIUCgxzaWduYWxfc3RhdGUYBiABKAUisAEKClR5cmVTdGF0dXMSJwoCZmwYASABKAsyGy5ibGFkZXdhdGNoLnYxLlR5cmVQcmVzc3VyZRInCgJmchgCIAEoCzIbLmJsYWRld2F0Y2gudjEuVHlyZVByZXNzdXJlEicKAnJsGAMgASgLMhsuYmxhZGV3YXRjaC52MS5UeXJlUHJlc3N1cmUSJwoCcnIYBCABKAsyGy5ibGFkZXdhdGNoLnYxLlR5cmVQcmVzc3VyZSIYChZHZXRWZWhpY2xlU3RhdGVSZXF1ZXN0It8EChdHZXRWZWhpY2xlU3RhdGVSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEigKBWRvb3JzGAIgASgLMhkuYmxhZGV3YXRjaC52MS5Eb29yU3RhdHVzEiwKB3dpbmRvd3MYAyABKAsyGy5ibGFkZXdhdGNoLnYxLldpbmRvd1N0YXR1cxI4CgxjYXBhYmlsaXRpZXMYBCABKAsyIi5ibGFkZXdhdGNoLnYxLlZlaGljbGVDYXBhYmlsaXRpZXMSKQoFdHJ1bmsYBSABKAsyGi5ibGFkZXdhdGNoLnYxLlRydW5rU3RhdHVzEi0KB3N1bnJvb2YYBiABKAsyHC5ibGFkZXdhdGNoLnYxLlN1bnJvb2ZTdGF0dXMSLQoHYmF0dGVyeRgHIAEoCzIcLmJsYWRld2F0Y2gudjEuQmF0dGVyeVN0YXR1cxIqCgZsaWdodHMYCCABKAsyGi5ibGFkZXdhdGNoLnYxLkxpZ2h0U3RhdHVzEicKBGFkYXMYCSABKAsyGS5ibGFkZXdhdGNoLnYxLkFkYXNTdGF0dXMSKAoFc2VhdHMYCiABKAsyGS5ibGFkZXdhdGNoLnYxLlNlYXRTdGF0dXMSLQoHY2xpbWF0ZRgLIAEoCzIcLmJsYWRld2F0Y2gudjEuQ2xpbWF0ZVN0YXR1cxIoCgV0eXJlcxgMIAEoCzIZLmJsYWRld2F0Y2gudjEuVHlyZVN0YXR1cxINCgVlcnJvchgNIAEoCRIcChRtZWRpYV92b2x1bWVfcGVyY2VudBgOIAEoBRITCgttZWRpYV9tdXRlZBgPIAEoCCIZChdHZXRBY0RpYWdub3N0aWNzUmVxdWVzdCI9ChhHZXRBY0RpYWdub3N0aWNzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIQCghyYXdfanNvbhgCIAEoCSIbChlHZXRTZWF0RGlhZ25vc3RpY3NSZXF1ZXN0Ij8KGkdldFNlYXREaWFnbm9zdGljc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSEAoIcmF3X2pzb24YAiABKAkiaAoWVmVoaWNsZUNvbW1hbmRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSDQoFZXJyb3IYAyABKAkSDwoHb3V0Y29tZRgEIAEoCRIMCgRwYXRoGAUgASgJIg0KC0xvY2tSZXF1ZXN0Ig8KDVVubG9ja1JlcXVlc3QiDgoMRmxhc2hSZXF1ZXN0IhAKDkZpbmRDYXJSZXF1ZXN0Ih4KDFRydW5rUmVxdWVzdBIOCgZhY3Rpb24YASABKAkibAoRTW92ZVdpbmRvd1JlcXVlc3QSFAoMd2luZG93X2luZGV4GAEgASgFEhEKCWRpcmVjdGlvbhgCIAEoCRIbCg50YXJnZXRfcGVyY2VudBgDIAEoBUgAiAEBQhEKD190YXJnZXRfcGVyY2VudCLcAQoRU2V0Q2xpbWF0ZVJlcXVlc3QSDgoGYWN0aW9uGAEgASgJEgoKAm9uGAIgASgIEhIKCnNldHBvaW50X2MYAyABKAESEQoJZmFuX2xldmVsGAQgASgFEhEKCXdpbmRfbW9kZRgFIAEoBRITCgttYXhfY29vbGluZxgGIAEoCBIVCg1yZXN0b3JlX2FjX29uGAcgASgIEhYKDnJlc3RvcmVfdGVtcF9jGAggASgBEhkKEXJlc3RvcmVfZmFuX2xldmVsGAkgASgFEhIKCmN5Y2xlX21vZGUYCiABKAUinQEKDlNldFNlYXRSZXF1ZXN0EhIKCnNlYXRfaW5kZXgYASABKAUSDgoGYWN0aW9uGAIgASgJEg0KBWxldmVsGAMgASgFEhMKC2RyaXZlcl9oZWF0GAQgASgFEhMKC2RyaXZlcl92ZW50GAUgASgFEhYKDnBhc3Nlbmdlcl9oZWF0GAYgASgFEhYKDnBhc3Nlbmdlcl92ZW50GAcgASgFIjoKEFNldExpZ2h0c1JlcXVlc3QSDgoGYWN0aW9uGAEgASgJEg8KAm9uGAIgASgISACIAQFCBQoDX29uIioKEFNldFNjcmVlblJlcXVlc3QSDwoCb24YASABKAhIAIgBAUIFCgNfb24iSQoVU2V0TWVkaWFWb2x1bWVSZXF1ZXN0Eg4KBmFjdGlvbhgBIAEoCRIUCgdwZXJjZW50GAIgASgFSACIAQFCCgoIX3BlcmNlbnQiOAoOU2V0QWRhc1JlcXVlc3QSDgoGYWN0aW9uGAEgASgJEg8KAm9uGAIgASgISACIAQFCBQoDX29uIi8KFVNldEJhdHRlcnlIZWF0UmVxdWVzdBIPCgJvbhgBIAEoCEgAiAEBQgUKA19vbiIcChpHZXRDaGFyZ2luZ1NjaGVkdWxlUmVxdWVzdCK5AQobR2V0Q2hhcmdpbmdTY2hlZHVsZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHZW5hYmxlZBgCIAEoCBIZChFzdGFydF9jaGFyZ2VfdGltZRgDIAEoCRIXCg9lbmRfY2hhcmdlX3RpbWUYBCABKAkSEgoKY2hhcmdlX3dheRgFIAEoBRINCgVlcnJvchgGIAEoCRIRCglzdXBwb3J0ZWQYByABKAgSDgoGcmVhc29uGAggASgJIoYBChpTZXRDaGFyZ2luZ1NjaGVkdWxlUmVxdWVzdBIZChFzdGFydF9jaGFyZ2VfdGltZRgBIAEoCRIXCg9lbmRfY2hhcmdlX3RpbWUYAiABKAkSEgoKY2hhcmdlX3dheRgDIAEoBRIUCgdlbmFibGVkGAQgASgISACIAQFCCgoIX2VuYWJsZWQiFQoTR2V0Q2hhcmdlQ2FwUmVxdWVzdCKgAQoUR2V0Q2hhcmdlQ2FwUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIUCgdwZXJjZW50GAIgASgFSACIAQESFAoHZW5hYmxlZBgDIAEoCEgBiAEBEhYKCXN1cHBvcnRlZBgEIAEoCEgCiAEBEg0KBWVycm9yGAUgASgJQgoKCF9wZXJjZW50QgoKCF9lbmFibGVkQgwKCl9zdXBwb3J0ZWQiSAoTU2V0Q2hhcmdlQ2FwUmVxdWVzdBIPCgdwZXJjZW50GAEgASgFEhQKB2VuYWJsZWQYAiABKAhIAIgBAUIKCghfZW5hYmxlZCIXChVHZXRHcHNMb2NhdGlvblJlcXVlc3QiWQoWR2V0R3BzTG9jYXRpb25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWxvY2F0aW9uX2pzb24YAiABKAkSFwoPZ29vZ2xlX21hcHNfdXJsGAMgASgJIhEKD1N0YXJ0R3BzUmVxdWVzdCJLChBTdGFydEdwc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCRIVCg1sb2NhdGlvbl9qc29uGAMgASgJIhAKDlN0b3BHcHNSZXF1ZXN0IjMKD1N0b3BHcHNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiGQoXSXNzdWVBY3Rpb25Ub2tlblJlcXVlc3QiZQoYSXNzdWVBY3Rpb25Ub2tlblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFdG9rZW4YAiABKAkSGgoSZXhwaXJlc19pbl9zZWNvbmRzGAMgASgFEg0KBWVycm9yGAQgASgJIhkKF0dldEFkYXNJbnZlbnRvcnlSZXF1ZXN0Ij4KGEdldEFkYXNJbnZlbnRvcnlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhEKCWFkYXNfanNvbhgCIAEoCTLDEQoOVmVoaWNsZVNlcnZpY2USWQoIR2V0U3RhdGUSJS5ibGFkZXdhdGNoLnYxLkdldFZlaGljbGVTdGF0ZVJlcXVlc3QaJi5ibGFkZXdhdGNoLnYxLkdldFZlaGljbGVTdGF0ZVJlc3BvbnNlEmMKEEdldEFjRGlhZ25vc3RpY3MSJi5ibGFkZXdhdGNoLnYxLkdldEFjRGlhZ25vc3RpY3NSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5HZXRBY0RpYWdub3N0aWNzUmVzcG9uc2USaQoSR2V0U2VhdERpYWdub3N0aWNzEiguYmxhZGV3YXRjaC52MS5HZXRTZWF0RGlhZ25vc3RpY3NSZXF1ZXN0GikuYmxhZGV3YXRjaC52MS5HZXRTZWF0RGlhZ25vc3RpY3NSZXNwb25zZRJJCgRMb2NrEhouYmxhZGV3YXRjaC52MS5Mb2NrUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJNCgZVbmxvY2sSHC5ibGFkZXdhdGNoLnYxLlVubG9ja1JlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USSwoFVHJ1bmsSGy5ibGFkZXdhdGNoLnYxLlRydW5rUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJVCgpNb3ZlV2luZG93EiAuYmxhZGV3YXRjaC52MS5Nb3ZlV2luZG93UmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJLCgVGbGFzaBIbLmJsYWRld2F0Y2gudjEuRmxhc2hSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEk8KB0ZpbmRDYXISHS5ibGFkZXdhdGNoLnYxLkZpbmRDYXJSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlElUKClNldENsaW1hdGUSIC5ibGFkZXdhdGNoLnYxLlNldENsaW1hdGVSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEk8KB1NldFNlYXQSHS5ibGFkZXdhdGNoLnYxLlNldFNlYXRSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlElMKCVNldExpZ2h0cxIfLmJsYWRld2F0Y2gudjEuU2V0TGlnaHRzUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJTCglTZXRTY3JlZW4SHy5ibGFkZXdhdGNoLnYxLlNldFNjcmVlblJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USXQoOU2V0TWVkaWFWb2x1bWUSJC5ibGFkZXdhdGNoLnYxLlNldE1lZGlhVm9sdW1lUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJPCgdTZXRBZGFzEh0uYmxhZGV3YXRjaC52MS5TZXRBZGFzUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJdCg5TZXRCYXR0ZXJ5SGVhdBIkLmJsYWRld2F0Y2gudjEuU2V0QmF0dGVyeUhlYXRSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEmwKE0dldENoYXJnaW5nU2NoZWR1bGUSKS5ibGFkZXdhdGNoLnYxLkdldENoYXJnaW5nU2NoZWR1bGVSZXF1ZXN0GiouYmxhZGV3YXRjaC52MS5HZXRDaGFyZ2luZ1NjaGVkdWxlUmVzcG9uc2USZwoTU2V0Q2hhcmdpbmdTY2hlZHVsZRIpLmJsYWRld2F0Y2gudjEuU2V0Q2hhcmdpbmdTY2hlZHVsZVJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USVwoMR2V0Q2hhcmdlQ2FwEiIuYmxhZGV3YXRjaC52MS5HZXRDaGFyZ2VDYXBSZXF1ZXN0GiMuYmxhZGV3YXRjaC52MS5HZXRDaGFyZ2VDYXBSZXNwb25zZRJZCgxTZXRDaGFyZ2VDYXASIi5ibGFkZXdhdGNoLnYxLlNldENoYXJnZUNhcFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USXQoOR2V0R3BzTG9jYXRpb24SJC5ibGFkZXdhdGNoLnYxLkdldEdwc0xvY2F0aW9uUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuR2V0R3BzTG9jYXRpb25SZXNwb25zZRJLCghTdGFydEdwcxIeLmJsYWRld2F0Y2gudjEuU3RhcnRHcHNSZXF1ZXN0Gh8uYmxhZGV3YXRjaC52MS5TdGFydEdwc1Jlc3BvbnNlEkgKB1N0b3BHcHMSHS5ibGFkZXdhdGNoLnYxLlN0b3BHcHNSZXF1ZXN0Gh4uYmxhZGV3YXRjaC52MS5TdG9wR3BzUmVzcG9uc2USYwoQSXNzdWVBY3Rpb25Ub2tlbhImLmJsYWRld2F0Y2gudjEuSXNzdWVBY3Rpb25Ub2tlblJlcXVlc3QaJy5ibGFkZXdhdGNoLnYxLklzc3VlQWN0aW9uVG9rZW5SZXNwb25zZRJjChBHZXRBZGFzSW52ZW50b3J5EiYuYmxhZGV3YXRjaC52MS5HZXRBZGFzSW52ZW50b3J5UmVxdWVzdBonLmJsYWRld2F0Y2gudjEuR2V0QWRhc0ludmVudG9yeVJlc3BvbnNlQh4KGm5ldC5ibGFkZXdhdGNoLmFwcC5ncnBjLnYxUAFiBnByb3RvMw");
+  fileDesc("ChtibGFkZXdhdGNoL3YxL3ZlaGljbGUucHJvdG8SDWJsYWRld2F0Y2gudjEiagoKRG9vclN0YXR1cxIKCgJsZhgBIAEoBRIKCgJyZhgCIAEoBRIKCgJschgDIAEoBRIKCgJychgEIAEoBRINCgV0cnVuaxgFIAEoBRIMCgRob29kGAYgASgFEg8KB292ZXJhbGwYByABKAUiYQoMV2luZG93U3RhdHVzEgoKAmxmGAEgASgFEgoKAnJmGAIgASgFEgoKAmxyGAMgASgFEgoKAnJyGAQgASgFEg8KB3N1bnJvb2YYBSABKAUSEAoIc3Vuc2hhZGUYBiABKAUiNwoSV2luZG93Q2FwYWJpbGl0aWVzEg8KB3N1bnJvb2YYASABKAgSEAoIc3Vuc2hhZGUYAiABKAgiVgoTVmVoaWNsZUNhcGFiaWxpdGllcxIyCgd3aW5kb3dzGAEgASgLMiEuYmxhZGV3YXRjaC52MS5XaW5kb3dDYXBhYmlsaXRpZXNKBAgCEANSBXNlYXRzIiIKC1RydW5rU3RhdHVzEhMKC2xvY2tfc3RhdHVzGAEgASgFIjAKDVN1bnJvb2ZTdGF0dXMSDQoFc3RhdGUYASABKAUSEAoIcG9zaXRpb24YAiABKAUidgoNQmF0dGVyeVN0YXR1cxILCgNzb2MYASABKAESEAoIcmFuZ2Vfa20YAiABKAUSGQoRYm9keXdvcmtfcmFuZ2Vfa20YAyABKAUSFAoMZnVlbF9wZXJjZW50GAQgASgBEhUKDWZ1ZWxfcmFuZ2Vfa20YBSABKAUiWgoLTGlnaHRTdGF0dXMSEAoIbG93X2JlYW0YASABKAgSEQoJaGlnaF9iZWFtGAIgASgIEg4KBmhhemFyZBgDIAEoCBIWCg5kYXlfdGltZV9saWdodBgEIAEoCCIpCgpBZGFzU3RhdHVzEhsKE3NwZWVkX2xpbWl0X3dhcm5pbmcYASABKAgisgEKDUNsaW1hdGVTdGF0dXMSDQoFYWNfb24YASABKAgSEgoKc2V0cG9pbnRfYxgCIAEoARIRCgl3aW5kX21vZGUYBCABKAUSEQoJZmFuX2xldmVsGAUgASgFEhMKC21heF9jb29saW5nGAYgASgIEhsKDm91dHNpZGVfdGVtcF9jGAcgASgBSACIAQFCEQoPX291dHNpZGVfdGVtcF9jSgQIAxAEUg1pbnNpZGVfdGVtcF9jIpcBCgxUeXJlUHJlc3N1cmUSDAoEa19wYRgBIAEoBRILCgNwc2kYAiABKAESHAoGdGVtcF9jGAMgASgFUgx0ZW1wZXJhdHVyZUMSFgoOcHJlc3N1cmVfc3RhdGUYBCABKAUSIAoKbGVha19zdGF0ZRgFIAEoBVIMYWlyTGVha1N0YXRlEhQKDHNpZ25hbF9zdGF0ZRgGIAEoBSKwAQoKVHlyZVN0YXR1cxInCgJmbBgBIAEoCzIbLmJsYWRld2F0Y2gudjEuVHlyZVByZXNzdXJlEicKAmZyGAIgASgLMhsuYmxhZGV3YXRjaC52MS5UeXJlUHJlc3N1cmUSJwoCcmwYAyABKAsyGy5ibGFkZXdhdGNoLnYxLlR5cmVQcmVzc3VyZRInCgJychgEIAEoCzIbLmJsYWRld2F0Y2gudjEuVHlyZVByZXNzdXJlIhgKFkdldFZlaGljbGVTdGF0ZVJlcXVlc3QiwgQKF0dldFZlaGljbGVTdGF0ZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSKAoFZG9vcnMYAiABKAsyGS5ibGFkZXdhdGNoLnYxLkRvb3JTdGF0dXMSLAoHd2luZG93cxgDIAEoCzIbLmJsYWRld2F0Y2gudjEuV2luZG93U3RhdHVzEjgKDGNhcGFiaWxpdGllcxgEIAEoCzIiLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNhcGFiaWxpdGllcxIpCgV0cnVuaxgFIAEoCzIaLmJsYWRld2F0Y2gudjEuVHJ1bmtTdGF0dXMSLQoHc3Vucm9vZhgGIAEoCzIcLmJsYWRld2F0Y2gudjEuU3Vucm9vZlN0YXR1cxItCgdiYXR0ZXJ5GAcgASgLMhwuYmxhZGV3YXRjaC52MS5CYXR0ZXJ5U3RhdHVzEioKBmxpZ2h0cxgIIAEoCzIaLmJsYWRld2F0Y2gudjEuTGlnaHRTdGF0dXMSJwoEYWRhcxgJIAEoCzIZLmJsYWRld2F0Y2gudjEuQWRhc1N0YXR1cxItCgdjbGltYXRlGAsgASgLMhwuYmxhZGV3YXRjaC52MS5DbGltYXRlU3RhdHVzEigKBXR5cmVzGAwgASgLMhkuYmxhZGV3YXRjaC52MS5UeXJlU3RhdHVzEg0KBWVycm9yGA0gASgJEhwKFG1lZGlhX3ZvbHVtZV9wZXJjZW50GA4gASgFEhMKC21lZGlhX211dGVkGA8gASgISgQIChALUgVzZWF0cyIZChdHZXRBY0RpYWdub3N0aWNzUmVxdWVzdCI9ChhHZXRBY0RpYWdub3N0aWNzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIQCghyYXdfanNvbhgCIAEoCSJoChZWZWhpY2xlQ29tbWFuZFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCRINCgVlcnJvchgDIAEoCRIPCgdvdXRjb21lGAQgASgJEgwKBHBhdGgYBSABKAkiDQoLTG9ja1JlcXVlc3QiDwoNVW5sb2NrUmVxdWVzdCIOCgxGbGFzaFJlcXVlc3QiEAoORmluZENhclJlcXVlc3QiHgoMVHJ1bmtSZXF1ZXN0Eg4KBmFjdGlvbhgBIAEoCSJsChFNb3ZlV2luZG93UmVxdWVzdBIUCgx3aW5kb3dfaW5kZXgYASABKAUSEQoJZGlyZWN0aW9uGAIgASgJEhsKDnRhcmdldF9wZXJjZW50GAMgASgFSACIAQFCEQoPX3RhcmdldF9wZXJjZW50ItwBChFTZXRDbGltYXRlUmVxdWVzdBIOCgZhY3Rpb24YASABKAkSCgoCb24YAiABKAgSEgoKc2V0cG9pbnRfYxgDIAEoARIRCglmYW5fbGV2ZWwYBCABKAUSEQoJd2luZF9tb2RlGAUgASgFEhMKC21heF9jb29saW5nGAYgASgIEhUKDXJlc3RvcmVfYWNfb24YByABKAgSFgoOcmVzdG9yZV90ZW1wX2MYCCABKAESGQoRcmVzdG9yZV9mYW5fbGV2ZWwYCSABKAUSEgoKY3ljbGVfbW9kZRgKIAEoBSI6ChBTZXRMaWdodHNSZXF1ZXN0Eg4KBmFjdGlvbhgBIAEoCRIPCgJvbhgCIAEoCEgAiAEBQgUKA19vbiIqChBTZXRTY3JlZW5SZXF1ZXN0Eg8KAm9uGAEgASgISACIAQFCBQoDX29uIkkKFVNldE1lZGlhVm9sdW1lUmVxdWVzdBIOCgZhY3Rpb24YASABKAkSFAoHcGVyY2VudBgCIAEoBUgAiAEBQgoKCF9wZXJjZW50IjgKDlNldEFkYXNSZXF1ZXN0Eg4KBmFjdGlvbhgBIAEoCRIPCgJvbhgCIAEoCEgAiAEBQgUKA19vbiIvChVTZXRCYXR0ZXJ5SGVhdFJlcXVlc3QSDwoCb24YASABKAhIAIgBAUIFCgNfb24iHAoaR2V0Q2hhcmdpbmdTY2hlZHVsZVJlcXVlc3QiuQEKG0dldENoYXJnaW5nU2NoZWR1bGVSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB2VuYWJsZWQYAiABKAgSGQoRc3RhcnRfY2hhcmdlX3RpbWUYAyABKAkSFwoPZW5kX2NoYXJnZV90aW1lGAQgASgJEhIKCmNoYXJnZV93YXkYBSABKAUSDQoFZXJyb3IYBiABKAkSEQoJc3VwcG9ydGVkGAcgASgIEg4KBnJlYXNvbhgIIAEoCSKGAQoaU2V0Q2hhcmdpbmdTY2hlZHVsZVJlcXVlc3QSGQoRc3RhcnRfY2hhcmdlX3RpbWUYASABKAkSFwoPZW5kX2NoYXJnZV90aW1lGAIgASgJEhIKCmNoYXJnZV93YXkYAyABKAUSFAoHZW5hYmxlZBgEIAEoCEgAiAEBQgoKCF9lbmFibGVkIhUKE0dldENoYXJnZUNhcFJlcXVlc3QioAEKFEdldENoYXJnZUNhcFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSFAoHcGVyY2VudBgCIAEoBUgAiAEBEhQKB2VuYWJsZWQYAyABKAhIAYgBARIWCglzdXBwb3J0ZWQYBCABKAhIAogBARINCgVlcnJvchgFIAEoCUIKCghfcGVyY2VudEIKCghfZW5hYmxlZEIMCgpfc3VwcG9ydGVkIkgKE1NldENoYXJnZUNhcFJlcXVlc3QSDwoHcGVyY2VudBgBIAEoBRIUCgdlbmFibGVkGAIgASgISACIAQFCCgoIX2VuYWJsZWQiFwoVR2V0R3BzTG9jYXRpb25SZXF1ZXN0IlkKFkdldEdwc0xvY2F0aW9uUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIVCg1sb2NhdGlvbl9qc29uGAIgASgJEhcKD2dvb2dsZV9tYXBzX3VybBgDIAEoCSIRCg9TdGFydEdwc1JlcXVlc3QiSwoQU3RhcnRHcHNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSFQoNbG9jYXRpb25fanNvbhgDIAEoCSIQCg5TdG9wR3BzUmVxdWVzdCIzCg9TdG9wR3BzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJIhkKF0lzc3VlQWN0aW9uVG9rZW5SZXF1ZXN0ImUKGElzc3VlQWN0aW9uVG9rZW5SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBXRva2VuGAIgASgJEhoKEmV4cGlyZXNfaW5fc2Vjb25kcxgDIAEoBRINCgVlcnJvchgEIAEoCSIZChdHZXRBZGFzSW52ZW50b3J5UmVxdWVzdCI+ChhHZXRBZGFzSW52ZW50b3J5UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIRCglhZGFzX2pzb24YAiABKAkyhxAKDlZlaGljbGVTZXJ2aWNlElkKCEdldFN0YXRlEiUuYmxhZGV3YXRjaC52MS5HZXRWZWhpY2xlU3RhdGVSZXF1ZXN0GiYuYmxhZGV3YXRjaC52MS5HZXRWZWhpY2xlU3RhdGVSZXNwb25zZRJjChBHZXRBY0RpYWdub3N0aWNzEiYuYmxhZGV3YXRjaC52MS5HZXRBY0RpYWdub3N0aWNzUmVxdWVzdBonLmJsYWRld2F0Y2gudjEuR2V0QWNEaWFnbm9zdGljc1Jlc3BvbnNlEkkKBExvY2sSGi5ibGFkZXdhdGNoLnYxLkxvY2tSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEk0KBlVubG9jaxIcLmJsYWRld2F0Y2gudjEuVW5sb2NrUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJLCgVUcnVuaxIbLmJsYWRld2F0Y2gudjEuVHJ1bmtSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlElUKCk1vdmVXaW5kb3cSIC5ibGFkZXdhdGNoLnYxLk1vdmVXaW5kb3dSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEksKBUZsYXNoEhsuYmxhZGV3YXRjaC52MS5GbGFzaFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USTwoHRmluZENhchIdLmJsYWRld2F0Y2gudjEuRmluZENhclJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USVQoKU2V0Q2xpbWF0ZRIgLmJsYWRld2F0Y2gudjEuU2V0Q2xpbWF0ZVJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USUwoJU2V0TGlnaHRzEh8uYmxhZGV3YXRjaC52MS5TZXRMaWdodHNSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlElMKCVNldFNjcmVlbhIfLmJsYWRld2F0Y2gudjEuU2V0U2NyZWVuUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJdCg5TZXRNZWRpYVZvbHVtZRIkLmJsYWRld2F0Y2gudjEuU2V0TWVkaWFWb2x1bWVSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEk8KB1NldEFkYXMSHS5ibGFkZXdhdGNoLnYxLlNldEFkYXNSZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5WZWhpY2xlQ29tbWFuZFJlc3BvbnNlEl0KDlNldEJhdHRlcnlIZWF0EiQuYmxhZGV3YXRjaC52MS5TZXRCYXR0ZXJ5SGVhdFJlcXVlc3QaJS5ibGFkZXdhdGNoLnYxLlZlaGljbGVDb21tYW5kUmVzcG9uc2USbAoTR2V0Q2hhcmdpbmdTY2hlZHVsZRIpLmJsYWRld2F0Y2gudjEuR2V0Q2hhcmdpbmdTY2hlZHVsZVJlcXVlc3QaKi5ibGFkZXdhdGNoLnYxLkdldENoYXJnaW5nU2NoZWR1bGVSZXNwb25zZRJnChNTZXRDaGFyZ2luZ1NjaGVkdWxlEikuYmxhZGV3YXRjaC52MS5TZXRDaGFyZ2luZ1NjaGVkdWxlUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJXCgxHZXRDaGFyZ2VDYXASIi5ibGFkZXdhdGNoLnYxLkdldENoYXJnZUNhcFJlcXVlc3QaIy5ibGFkZXdhdGNoLnYxLkdldENoYXJnZUNhcFJlc3BvbnNlElkKDFNldENoYXJnZUNhcBIiLmJsYWRld2F0Y2gudjEuU2V0Q2hhcmdlQ2FwUmVxdWVzdBolLmJsYWRld2F0Y2gudjEuVmVoaWNsZUNvbW1hbmRSZXNwb25zZRJdCg5HZXRHcHNMb2NhdGlvbhIkLmJsYWRld2F0Y2gudjEuR2V0R3BzTG9jYXRpb25SZXF1ZXN0GiUuYmxhZGV3YXRjaC52MS5HZXRHcHNMb2NhdGlvblJlc3BvbnNlEksKCFN0YXJ0R3BzEh4uYmxhZGV3YXRjaC52MS5TdGFydEdwc1JlcXVlc3QaHy5ibGFkZXdhdGNoLnYxLlN0YXJ0R3BzUmVzcG9uc2USSAoHU3RvcEdwcxIdLmJsYWRld2F0Y2gudjEuU3RvcEdwc1JlcXVlc3QaHi5ibGFkZXdhdGNoLnYxLlN0b3BHcHNSZXNwb25zZRJjChBJc3N1ZUFjdGlvblRva2VuEiYuYmxhZGV3YXRjaC52MS5Jc3N1ZUFjdGlvblRva2VuUmVxdWVzdBonLmJsYWRld2F0Y2gudjEuSXNzdWVBY3Rpb25Ub2tlblJlc3BvbnNlEmMKEEdldEFkYXNJbnZlbnRvcnkSJi5ibGFkZXdhdGNoLnYxLkdldEFkYXNJbnZlbnRvcnlSZXF1ZXN0GicuYmxhZGV3YXRjaC52MS5HZXRBZGFzSW52ZW50b3J5UmVzcG9uc2VCHgoabmV0LmJsYWRld2F0Y2guYXBwLmdycGMudjFQAWIGcHJvdG8z");
 
 /**
  * DoorStatus holds per-door lock state: 1=locked, 2=unlocked, -1=unknown.
@@ -128,43 +128,6 @@ export const WindowCapabilitiesSchema: GenMessage<WindowCapabilities> = /*@__PUR
   messageDesc(file_bladewatch_v1_vehicle, 2);
 
 /**
- * @generated from message bladewatch.v1.SeatCapabilities
- */
-export type SeatCapabilities = Message<"bladewatch.v1.SeatCapabilities"> & {
-  /**
-   * @generated from field: bool driver_heat = 1;
-   */
-  driverHeat: boolean;
-
-  /**
-   * @generated from field: bool passenger_heat = 2;
-   */
-  passengerHeat: boolean;
-
-  /**
-   * @generated from field: bool driver_cool = 3;
-   */
-  driverCool: boolean;
-
-  /**
-   * @generated from field: bool passenger_cool = 4;
-   */
-  passengerCool: boolean;
-
-  /**
-   * @generated from field: bool driver_memory_recall = 5;
-   */
-  driverMemoryRecall: boolean;
-};
-
-/**
- * Describes the message bladewatch.v1.SeatCapabilities.
- * Use `create(SeatCapabilitiesSchema)` to create a new message.
- */
-export const SeatCapabilitiesSchema: GenMessage<SeatCapabilities> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 3);
-
-/**
  * @generated from message bladewatch.v1.VehicleCapabilities
  */
 export type VehicleCapabilities = Message<"bladewatch.v1.VehicleCapabilities"> & {
@@ -172,11 +135,6 @@ export type VehicleCapabilities = Message<"bladewatch.v1.VehicleCapabilities"> &
    * @generated from field: bladewatch.v1.WindowCapabilities windows = 1;
    */
   windows?: WindowCapabilities | undefined;
-
-  /**
-   * @generated from field: bladewatch.v1.SeatCapabilities seats = 2;
-   */
-  seats?: SeatCapabilities | undefined;
 };
 
 /**
@@ -184,7 +142,7 @@ export type VehicleCapabilities = Message<"bladewatch.v1.VehicleCapabilities"> &
  * Use `create(VehicleCapabilitiesSchema)` to create a new message.
  */
 export const VehicleCapabilitiesSchema: GenMessage<VehicleCapabilities> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 4);
+  messageDesc(file_bladewatch_v1_vehicle, 3);
 
 /**
  * @generated from message bladewatch.v1.TrunkStatus
@@ -201,7 +159,7 @@ export type TrunkStatus = Message<"bladewatch.v1.TrunkStatus"> & {
  * Use `create(TrunkStatusSchema)` to create a new message.
  */
 export const TrunkStatusSchema: GenMessage<TrunkStatus> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 5);
+  messageDesc(file_bladewatch_v1_vehicle, 4);
 
 /**
  * @generated from message bladewatch.v1.SunroofStatus
@@ -223,7 +181,7 @@ export type SunroofStatus = Message<"bladewatch.v1.SunroofStatus"> & {
  * Use `create(SunroofStatusSchema)` to create a new message.
  */
 export const SunroofStatusSchema: GenMessage<SunroofStatus> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 6);
+  messageDesc(file_bladewatch_v1_vehicle, 5);
 
 /**
  * @generated from message bladewatch.v1.BatteryStatus
@@ -267,7 +225,7 @@ export type BatteryStatus = Message<"bladewatch.v1.BatteryStatus"> & {
  * Use `create(BatteryStatusSchema)` to create a new message.
  */
 export const BatteryStatusSchema: GenMessage<BatteryStatus> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 7);
+  messageDesc(file_bladewatch_v1_vehicle, 6);
 
 /**
  * @generated from message bladewatch.v1.LightStatus
@@ -299,7 +257,7 @@ export type LightStatus = Message<"bladewatch.v1.LightStatus"> & {
  * Use `create(LightStatusSchema)` to create a new message.
  */
 export const LightStatusSchema: GenMessage<LightStatus> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 8);
+  messageDesc(file_bladewatch_v1_vehicle, 7);
 
 /**
  * @generated from message bladewatch.v1.AdasStatus
@@ -316,38 +274,7 @@ export type AdasStatus = Message<"bladewatch.v1.AdasStatus"> & {
  * Use `create(AdasStatusSchema)` to create a new message.
  */
 export const AdasStatusSchema: GenMessage<AdasStatus> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 9);
-
-/**
- * @generated from message bladewatch.v1.SeatStatus
- */
-export type SeatStatus = Message<"bladewatch.v1.SeatStatus"> & {
-  /**
-   * Heating levels per seat index [0-2], 0=off.
-   *
-   * @generated from field: repeated int32 heat = 1;
-   */
-  heat: number[];
-
-  /**
-   * Cooling levels per seat index [0-2], 0=off.
-   *
-   * @generated from field: repeated int32 cool = 2;
-   */
-  cool: number[];
-
-  /**
-   * @generated from field: bool ventilated_supported = 3;
-   */
-  ventilatedSupported: boolean;
-};
-
-/**
- * Describes the message bladewatch.v1.SeatStatus.
- * Use `create(SeatStatusSchema)` to create a new message.
- */
-export const SeatStatusSchema: GenMessage<SeatStatus> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 10);
+  messageDesc(file_bladewatch_v1_vehicle, 8);
 
 /**
  * @generated from message bladewatch.v1.ClimateStatus
@@ -364,11 +291,6 @@ export type ClimateStatus = Message<"bladewatch.v1.ClimateStatus"> & {
   setpointC: number;
 
   /**
-   * @generated from field: double inside_temp_c = 3;
-   */
-  insideTempC: number;
-
-  /**
    * @generated from field: int32 wind_mode = 4;
    */
   windMode: number;
@@ -382,6 +304,14 @@ export type ClimateStatus = Message<"bladewatch.v1.ClimateStatus"> & {
    * @generated from field: bool max_cooling = 6;
    */
   maxCooling: boolean;
+
+  /**
+   * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+   * optional, because 0 C is a real outside temperature.
+   *
+   * @generated from field: optional double outside_temp_c = 7;
+   */
+  outsideTempC?: number | undefined;
 };
 
 /**
@@ -389,7 +319,7 @@ export type ClimateStatus = Message<"bladewatch.v1.ClimateStatus"> & {
  * Use `create(ClimateStatusSchema)` to create a new message.
  */
 export const ClimateStatusSchema: GenMessage<ClimateStatus> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 11);
+  messageDesc(file_bladewatch_v1_vehicle, 9);
 
 /**
  * @generated from message bladewatch.v1.TyrePressure
@@ -431,7 +361,7 @@ export type TyrePressure = Message<"bladewatch.v1.TyrePressure"> & {
  * Use `create(TyrePressureSchema)` to create a new message.
  */
 export const TyrePressureSchema: GenMessage<TyrePressure> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 12);
+  messageDesc(file_bladewatch_v1_vehicle, 10);
 
 /**
  * @generated from message bladewatch.v1.TyreStatus
@@ -463,7 +393,7 @@ export type TyreStatus = Message<"bladewatch.v1.TyreStatus"> & {
  * Use `create(TyreStatusSchema)` to create a new message.
  */
 export const TyreStatusSchema: GenMessage<TyreStatus> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 13);
+  messageDesc(file_bladewatch_v1_vehicle, 11);
 
 /**
  * @generated from message bladewatch.v1.GetVehicleStateRequest
@@ -476,7 +406,7 @@ export type GetVehicleStateRequest = Message<"bladewatch.v1.GetVehicleStateReque
  * Use `create(GetVehicleStateRequestSchema)` to create a new message.
  */
 export const GetVehicleStateRequestSchema: GenMessage<GetVehicleStateRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 14);
+  messageDesc(file_bladewatch_v1_vehicle, 12);
 
 /**
  * @generated from message bladewatch.v1.GetVehicleStateResponse
@@ -528,11 +458,6 @@ export type GetVehicleStateResponse = Message<"bladewatch.v1.GetVehicleStateResp
   adas?: AdasStatus | undefined;
 
   /**
-   * @generated from field: bladewatch.v1.SeatStatus seats = 10;
-   */
-  seats?: SeatStatus | undefined;
-
-  /**
    * @generated from field: bladewatch.v1.ClimateStatus climate = 11;
    */
   climate?: ClimateStatus | undefined;
@@ -566,7 +491,7 @@ export type GetVehicleStateResponse = Message<"bladewatch.v1.GetVehicleStateResp
  * Use `create(GetVehicleStateResponseSchema)` to create a new message.
  */
 export const GetVehicleStateResponseSchema: GenMessage<GetVehicleStateResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 15);
+  messageDesc(file_bladewatch_v1_vehicle, 13);
 
 /**
  * @generated from message bladewatch.v1.GetAcDiagnosticsRequest
@@ -579,7 +504,7 @@ export type GetAcDiagnosticsRequest = Message<"bladewatch.v1.GetAcDiagnosticsReq
  * Use `create(GetAcDiagnosticsRequestSchema)` to create a new message.
  */
 export const GetAcDiagnosticsRequestSchema: GenMessage<GetAcDiagnosticsRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 16);
+  messageDesc(file_bladewatch_v1_vehicle, 14);
 
 /**
  * @generated from message bladewatch.v1.GetAcDiagnosticsResponse
@@ -601,42 +526,7 @@ export type GetAcDiagnosticsResponse = Message<"bladewatch.v1.GetAcDiagnosticsRe
  * Use `create(GetAcDiagnosticsResponseSchema)` to create a new message.
  */
 export const GetAcDiagnosticsResponseSchema: GenMessage<GetAcDiagnosticsResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 17);
-
-/**
- * @generated from message bladewatch.v1.GetSeatDiagnosticsRequest
- */
-export type GetSeatDiagnosticsRequest = Message<"bladewatch.v1.GetSeatDiagnosticsRequest"> & {
-};
-
-/**
- * Describes the message bladewatch.v1.GetSeatDiagnosticsRequest.
- * Use `create(GetSeatDiagnosticsRequestSchema)` to create a new message.
- */
-export const GetSeatDiagnosticsRequestSchema: GenMessage<GetSeatDiagnosticsRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 18);
-
-/**
- * @generated from message bladewatch.v1.GetSeatDiagnosticsResponse
- */
-export type GetSeatDiagnosticsResponse = Message<"bladewatch.v1.GetSeatDiagnosticsResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
-
-  /**
-   * @generated from field: string raw_json = 2;
-   */
-  rawJson: string;
-};
-
-/**
- * Describes the message bladewatch.v1.GetSeatDiagnosticsResponse.
- * Use `create(GetSeatDiagnosticsResponseSchema)` to create a new message.
- */
-export const GetSeatDiagnosticsResponseSchema: GenMessage<GetSeatDiagnosticsResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 19);
+  messageDesc(file_bladewatch_v1_vehicle, 15);
 
 /**
  * VehicleCommandResponse is a generic response for write commands.
@@ -680,7 +570,7 @@ export type VehicleCommandResponse = Message<"bladewatch.v1.VehicleCommandRespon
  * Use `create(VehicleCommandResponseSchema)` to create a new message.
  */
 export const VehicleCommandResponseSchema: GenMessage<VehicleCommandResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 20);
+  messageDesc(file_bladewatch_v1_vehicle, 16);
 
 /**
  * @generated from message bladewatch.v1.LockRequest
@@ -693,7 +583,7 @@ export type LockRequest = Message<"bladewatch.v1.LockRequest"> & {
  * Use `create(LockRequestSchema)` to create a new message.
  */
 export const LockRequestSchema: GenMessage<LockRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 21);
+  messageDesc(file_bladewatch_v1_vehicle, 17);
 
 /**
  * @generated from message bladewatch.v1.UnlockRequest
@@ -706,7 +596,7 @@ export type UnlockRequest = Message<"bladewatch.v1.UnlockRequest"> & {
  * Use `create(UnlockRequestSchema)` to create a new message.
  */
 export const UnlockRequestSchema: GenMessage<UnlockRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 22);
+  messageDesc(file_bladewatch_v1_vehicle, 18);
 
 /**
  * @generated from message bladewatch.v1.FlashRequest
@@ -719,7 +609,7 @@ export type FlashRequest = Message<"bladewatch.v1.FlashRequest"> & {
  * Use `create(FlashRequestSchema)` to create a new message.
  */
 export const FlashRequestSchema: GenMessage<FlashRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 23);
+  messageDesc(file_bladewatch_v1_vehicle, 19);
 
 /**
  * @generated from message bladewatch.v1.FindCarRequest
@@ -732,7 +622,7 @@ export type FindCarRequest = Message<"bladewatch.v1.FindCarRequest"> & {
  * Use `create(FindCarRequestSchema)` to create a new message.
  */
 export const FindCarRequestSchema: GenMessage<FindCarRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 24);
+  messageDesc(file_bladewatch_v1_vehicle, 20);
 
 /**
  * @generated from message bladewatch.v1.TrunkRequest
@@ -751,7 +641,7 @@ export type TrunkRequest = Message<"bladewatch.v1.TrunkRequest"> & {
  * Use `create(TrunkRequestSchema)` to create a new message.
  */
 export const TrunkRequestSchema: GenMessage<TrunkRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 25);
+  messageDesc(file_bladewatch_v1_vehicle, 21);
 
 /**
  * @generated from message bladewatch.v1.MoveWindowRequest
@@ -786,7 +676,7 @@ export type MoveWindowRequest = Message<"bladewatch.v1.MoveWindowRequest"> & {
  * Use `create(MoveWindowRequestSchema)` to create a new message.
  */
 export const MoveWindowRequestSchema: GenMessage<MoveWindowRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 26);
+  messageDesc(file_bladewatch_v1_vehicle, 22);
 
 /**
  * @generated from message bladewatch.v1.SetClimateRequest
@@ -854,58 +744,7 @@ export type SetClimateRequest = Message<"bladewatch.v1.SetClimateRequest"> & {
  * Use `create(SetClimateRequestSchema)` to create a new message.
  */
 export const SetClimateRequestSchema: GenMessage<SetClimateRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 27);
-
-/**
- * @generated from message bladewatch.v1.SetSeatRequest
- */
-export type SetSeatRequest = Message<"bladewatch.v1.SetSeatRequest"> & {
-  /**
-   * Seat index: 1=driver, 2=passenger.
-   *
-   * @generated from field: int32 seat_index = 1;
-   */
-  seatIndex: number;
-
-  /**
-   * @generated from field: string action = 2;
-   */
-  action: string;
-
-  /**
-   * @generated from field: int32 level = 3;
-   */
-  level: number;
-
-  /**
-   * Full current seat state: cloud API is stateful and requires these on every call.
-   *
-   * @generated from field: int32 driver_heat = 4;
-   */
-  driverHeat: number;
-
-  /**
-   * @generated from field: int32 driver_vent = 5;
-   */
-  driverVent: number;
-
-  /**
-   * @generated from field: int32 passenger_heat = 6;
-   */
-  passengerHeat: number;
-
-  /**
-   * @generated from field: int32 passenger_vent = 7;
-   */
-  passengerVent: number;
-};
-
-/**
- * Describes the message bladewatch.v1.SetSeatRequest.
- * Use `create(SetSeatRequestSchema)` to create a new message.
- */
-export const SetSeatRequestSchema: GenMessage<SetSeatRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 28);
+  messageDesc(file_bladewatch_v1_vehicle, 23);
 
 /**
  * @generated from message bladewatch.v1.SetLightsRequest
@@ -931,7 +770,7 @@ export type SetLightsRequest = Message<"bladewatch.v1.SetLightsRequest"> & {
  * Use `create(SetLightsRequestSchema)` to create a new message.
  */
 export const SetLightsRequestSchema: GenMessage<SetLightsRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 29);
+  messageDesc(file_bladewatch_v1_vehicle, 24);
 
 /**
  * BladeWatch-2000.3. Same explicit-presence reasoning as SetLightsRequest.on above: a
@@ -951,7 +790,7 @@ export type SetScreenRequest = Message<"bladewatch.v1.SetScreenRequest"> & {
  * Use `create(SetScreenRequestSchema)` to create a new message.
  */
 export const SetScreenRequestSchema: GenMessage<SetScreenRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 30);
+  messageDesc(file_bladewatch_v1_vehicle, 25);
 
 /**
  * BladeWatch-2000.2: media volume and mute. Not routed through VehicleCommandRouter -- see
@@ -980,7 +819,7 @@ export type SetMediaVolumeRequest = Message<"bladewatch.v1.SetMediaVolumeRequest
  * Use `create(SetMediaVolumeRequestSchema)` to create a new message.
  */
 export const SetMediaVolumeRequestSchema: GenMessage<SetMediaVolumeRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 31);
+  messageDesc(file_bladewatch_v1_vehicle, 26);
 
 /**
  * @generated from message bladewatch.v1.SetAdasRequest
@@ -1006,7 +845,7 @@ export type SetAdasRequest = Message<"bladewatch.v1.SetAdasRequest"> & {
  * Use `create(SetAdasRequestSchema)` to create a new message.
  */
 export const SetAdasRequestSchema: GenMessage<SetAdasRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 32);
+  messageDesc(file_bladewatch_v1_vehicle, 27);
 
 /**
  * @generated from message bladewatch.v1.SetBatteryHeatRequest
@@ -1027,7 +866,7 @@ export type SetBatteryHeatRequest = Message<"bladewatch.v1.SetBatteryHeatRequest
  * Use `create(SetBatteryHeatRequestSchema)` to create a new message.
  */
 export const SetBatteryHeatRequestSchema: GenMessage<SetBatteryHeatRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 33);
+  messageDesc(file_bladewatch_v1_vehicle, 28);
 
 /**
  * @generated from message bladewatch.v1.GetChargingScheduleRequest
@@ -1040,7 +879,7 @@ export type GetChargingScheduleRequest = Message<"bladewatch.v1.GetChargingSched
  * Use `create(GetChargingScheduleRequestSchema)` to create a new message.
  */
 export const GetChargingScheduleRequestSchema: GenMessage<GetChargingScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 34);
+  messageDesc(file_bladewatch_v1_vehicle, 29);
 
 /**
  * @generated from message bladewatch.v1.GetChargingScheduleResponse
@@ -1096,7 +935,7 @@ export type GetChargingScheduleResponse = Message<"bladewatch.v1.GetChargingSche
  * Use `create(GetChargingScheduleResponseSchema)` to create a new message.
  */
 export const GetChargingScheduleResponseSchema: GenMessage<GetChargingScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 35);
+  messageDesc(file_bladewatch_v1_vehicle, 30);
 
 /**
  * @generated from message bladewatch.v1.SetChargingScheduleRequest
@@ -1133,7 +972,7 @@ export type SetChargingScheduleRequest = Message<"bladewatch.v1.SetChargingSched
  * Use `create(SetChargingScheduleRequestSchema)` to create a new message.
  */
 export const SetChargingScheduleRequestSchema: GenMessage<SetChargingScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 36);
+  messageDesc(file_bladewatch_v1_vehicle, 31);
 
 /**
  * @generated from message bladewatch.v1.GetChargeCapRequest
@@ -1146,7 +985,7 @@ export type GetChargeCapRequest = Message<"bladewatch.v1.GetChargeCapRequest"> &
  * Use `create(GetChargeCapRequestSchema)` to create a new message.
  */
 export const GetChargeCapRequestSchema: GenMessage<GetChargeCapRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 37);
+  messageDesc(file_bladewatch_v1_vehicle, 32);
 
 /**
  * @generated from message bladewatch.v1.GetChargeCapResponse
@@ -1187,7 +1026,7 @@ export type GetChargeCapResponse = Message<"bladewatch.v1.GetChargeCapResponse">
  * Use `create(GetChargeCapResponseSchema)` to create a new message.
  */
 export const GetChargeCapResponseSchema: GenMessage<GetChargeCapResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 38);
+  messageDesc(file_bladewatch_v1_vehicle, 33);
 
 /**
  * @generated from message bladewatch.v1.SetChargeCapRequest
@@ -1213,7 +1052,7 @@ export type SetChargeCapRequest = Message<"bladewatch.v1.SetChargeCapRequest"> &
  * Use `create(SetChargeCapRequestSchema)` to create a new message.
  */
 export const SetChargeCapRequestSchema: GenMessage<SetChargeCapRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 39);
+  messageDesc(file_bladewatch_v1_vehicle, 34);
 
 /**
  * @generated from message bladewatch.v1.GetGpsLocationRequest
@@ -1226,7 +1065,7 @@ export type GetGpsLocationRequest = Message<"bladewatch.v1.GetGpsLocationRequest
  * Use `create(GetGpsLocationRequestSchema)` to create a new message.
  */
 export const GetGpsLocationRequestSchema: GenMessage<GetGpsLocationRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 40);
+  messageDesc(file_bladewatch_v1_vehicle, 35);
 
 /**
  * @generated from message bladewatch.v1.GetGpsLocationResponse
@@ -1255,7 +1094,7 @@ export type GetGpsLocationResponse = Message<"bladewatch.v1.GetGpsLocationRespon
  * Use `create(GetGpsLocationResponseSchema)` to create a new message.
  */
 export const GetGpsLocationResponseSchema: GenMessage<GetGpsLocationResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 41);
+  messageDesc(file_bladewatch_v1_vehicle, 36);
 
 /**
  * @generated from message bladewatch.v1.StartGpsRequest
@@ -1268,7 +1107,7 @@ export type StartGpsRequest = Message<"bladewatch.v1.StartGpsRequest"> & {
  * Use `create(StartGpsRequestSchema)` to create a new message.
  */
 export const StartGpsRequestSchema: GenMessage<StartGpsRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 42);
+  messageDesc(file_bladewatch_v1_vehicle, 37);
 
 /**
  * @generated from message bladewatch.v1.StartGpsResponse
@@ -1295,7 +1134,7 @@ export type StartGpsResponse = Message<"bladewatch.v1.StartGpsResponse"> & {
  * Use `create(StartGpsResponseSchema)` to create a new message.
  */
 export const StartGpsResponseSchema: GenMessage<StartGpsResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 43);
+  messageDesc(file_bladewatch_v1_vehicle, 38);
 
 /**
  * @generated from message bladewatch.v1.StopGpsRequest
@@ -1308,7 +1147,7 @@ export type StopGpsRequest = Message<"bladewatch.v1.StopGpsRequest"> & {
  * Use `create(StopGpsRequestSchema)` to create a new message.
  */
 export const StopGpsRequestSchema: GenMessage<StopGpsRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 44);
+  messageDesc(file_bladewatch_v1_vehicle, 39);
 
 /**
  * @generated from message bladewatch.v1.StopGpsResponse
@@ -1330,7 +1169,7 @@ export type StopGpsResponse = Message<"bladewatch.v1.StopGpsResponse"> & {
  * Use `create(StopGpsResponseSchema)` to create a new message.
  */
 export const StopGpsResponseSchema: GenMessage<StopGpsResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 45);
+  messageDesc(file_bladewatch_v1_vehicle, 40);
 
 /**
  * @generated from message bladewatch.v1.IssueActionTokenRequest
@@ -1343,7 +1182,7 @@ export type IssueActionTokenRequest = Message<"bladewatch.v1.IssueActionTokenReq
  * Use `create(IssueActionTokenRequestSchema)` to create a new message.
  */
 export const IssueActionTokenRequestSchema: GenMessage<IssueActionTokenRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 46);
+  messageDesc(file_bladewatch_v1_vehicle, 41);
 
 /**
  * @generated from message bladewatch.v1.IssueActionTokenResponse
@@ -1377,7 +1216,7 @@ export type IssueActionTokenResponse = Message<"bladewatch.v1.IssueActionTokenRe
  * Use `create(IssueActionTokenResponseSchema)` to create a new message.
  */
 export const IssueActionTokenResponseSchema: GenMessage<IssueActionTokenResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 47);
+  messageDesc(file_bladewatch_v1_vehicle, 42);
 
 /**
  * @generated from message bladewatch.v1.GetAdasInventoryRequest
@@ -1390,7 +1229,7 @@ export type GetAdasInventoryRequest = Message<"bladewatch.v1.GetAdasInventoryReq
  * Use `create(GetAdasInventoryRequestSchema)` to create a new message.
  */
 export const GetAdasInventoryRequestSchema: GenMessage<GetAdasInventoryRequest> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 48);
+  messageDesc(file_bladewatch_v1_vehicle, 43);
 
 /**
  * @generated from message bladewatch.v1.GetAdasInventoryResponse
@@ -1415,7 +1254,7 @@ export type GetAdasInventoryResponse = Message<"bladewatch.v1.GetAdasInventoryRe
  * Use `create(GetAdasInventoryResponseSchema)` to create a new message.
  */
 export const GetAdasInventoryResponseSchema: GenMessage<GetAdasInventoryResponse> = /*@__PURE__*/
-  messageDesc(file_bladewatch_v1_vehicle, 49);
+  messageDesc(file_bladewatch_v1_vehicle, 44);
 
 /**
  * VehicleService exposes BYD vehicle state reads and control commands.
@@ -1423,7 +1262,6 @@ export const GetAdasInventoryResponseSchema: GenMessage<GetAdasInventoryResponse
  * HTTP mapping:
  *   GetState             GET  /api/vehicle/state
  *   GetAcDiagnostics     GET  /api/vehicle/ac-diagnostics
- *   GetSeatDiagnostics   GET  /api/vehicle/seat-diagnostics
  *   Lock                 POST /api/vehicle/lock
  *   Unlock               POST /api/vehicle/unlock
  *   Trunk                POST /api/vehicle/trunk
@@ -1431,7 +1269,6 @@ export const GetAdasInventoryResponseSchema: GenMessage<GetAdasInventoryResponse
  *   Flash                POST /api/vehicle/flash
  *   FindCar              POST /api/vehicle/find-car
  *   SetClimate           POST /api/vehicle/climate
- *   SetSeat              POST /api/vehicle/seat
  *   SetLights            POST /api/vehicle/lights
  *   SetScreen            POST /api/vehicle/screen
  *   SetMediaVolume       POST /api/vehicle/media-volume
@@ -1463,14 +1300,6 @@ export const VehicleService: GenService<{
     methodKind: "unary";
     input: typeof GetAcDiagnosticsRequestSchema;
     output: typeof GetAcDiagnosticsResponseSchema;
-  },
-  /**
-   * @generated from rpc bladewatch.v1.VehicleService.GetSeatDiagnostics
-   */
-  getSeatDiagnostics: {
-    methodKind: "unary";
-    input: typeof GetSeatDiagnosticsRequestSchema;
-    output: typeof GetSeatDiagnosticsResponseSchema;
   },
   /**
    * @generated from rpc bladewatch.v1.VehicleService.Lock
@@ -1526,14 +1355,6 @@ export const VehicleService: GenService<{
   setClimate: {
     methodKind: "unary";
     input: typeof SetClimateRequestSchema;
-    output: typeof VehicleCommandResponseSchema;
-  },
-  /**
-   * @generated from rpc bladewatch.v1.VehicleService.SetSeat
-   */
-  setSeat: {
-    methodKind: "unary";
-    input: typeof SetSeatRequestSchema;
     output: typeof VehicleCommandResponseSchema;
   },
   /**

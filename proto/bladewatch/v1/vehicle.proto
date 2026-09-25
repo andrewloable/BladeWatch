@@ -10,7 +10,6 @@ option java_multiple_files = true;
 // HTTP mapping:
 //   GetState             GET  /api/vehicle/state
 //   GetAcDiagnostics     GET  /api/vehicle/ac-diagnostics
-//   GetSeatDiagnostics   GET  /api/vehicle/seat-diagnostics
 //   Lock                 POST /api/vehicle/lock
 //   Unlock               POST /api/vehicle/unlock
 //   Trunk                POST /api/vehicle/trunk
@@ -18,7 +17,6 @@ option java_multiple_files = true;
 //   Flash                POST /api/vehicle/flash
 //   FindCar              POST /api/vehicle/find-car
 //   SetClimate           POST /api/vehicle/climate
-//   SetSeat              POST /api/vehicle/seat
 //   SetLights            POST /api/vehicle/lights
 //   SetScreen            POST /api/vehicle/screen
 //   SetMediaVolume       POST /api/vehicle/media-volume
@@ -34,7 +32,6 @@ option java_multiple_files = true;
 service VehicleService {
   rpc GetState(GetVehicleStateRequest) returns (GetVehicleStateResponse);
   rpc GetAcDiagnostics(GetAcDiagnosticsRequest) returns (GetAcDiagnosticsResponse);
-  rpc GetSeatDiagnostics(GetSeatDiagnosticsRequest) returns (GetSeatDiagnosticsResponse);
   rpc Lock(LockRequest) returns (VehicleCommandResponse);
   rpc Unlock(UnlockRequest) returns (VehicleCommandResponse);
   rpc Trunk(TrunkRequest) returns (VehicleCommandResponse);
@@ -42,7 +39,6 @@ service VehicleService {
   rpc Flash(FlashRequest) returns (VehicleCommandResponse);
   rpc FindCar(FindCarRequest) returns (VehicleCommandResponse);
   rpc SetClimate(SetClimateRequest) returns (VehicleCommandResponse);
-  rpc SetSeat(SetSeatRequest) returns (VehicleCommandResponse);
   rpc SetLights(SetLightsRequest) returns (VehicleCommandResponse);
   rpc SetScreen(SetScreenRequest) returns (VehicleCommandResponse);
   rpc SetMediaVolume(SetMediaVolumeRequest) returns (VehicleCommandResponse);
@@ -93,17 +89,11 @@ message WindowCapabilities {
   bool sunshade = 2;
 }
 
-message SeatCapabilities {
-  bool driver_heat = 1;
-  bool passenger_heat = 2;
-  bool driver_cool = 3;
-  bool passenger_cool = 4;
-  bool driver_memory_recall = 5;
-}
-
 message VehicleCapabilities {
   WindowCapabilities windows = 1;
-  SeatCapabilities seats = 2;
+  // Seat control was removed end to end (BladeWatch-7bx4).
+  reserved 2;
+  reserved "seats";
 }
 
 message TrunkStatus {
@@ -141,21 +131,20 @@ message AdasStatus {
   bool speed_limit_warning = 1;
 }
 
-message SeatStatus {
-  // Heating levels per seat index [0-2], 0=off.
-  repeated int32 heat = 1;
-  // Cooling levels per seat index [0-2], 0=off.
-  repeated int32 cool = 2;
-  bool ventilated_supported = 3;
-}
-
 message ClimateStatus {
+  // 3 was inside_temp_c: it carried BYDAutoAcDevice.getTemprature(4), which is the SDK's
+  // AC_TEMPERATURE_OUT -- the outside air, not the cabin (BladeWatch-eh3u). The car exposes no
+  // cabin temperature to this app.
+  reserved 3;
+  reserved "inside_temp_c";
   bool ac_on = 1;
   double setpoint_c = 2;
-  double inside_temp_c = 3;
   int32 wind_mode = 4;
   int32 fan_level = 5;
   bool max_cooling = 6;
+  // Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+  // optional, because 0 C is a real outside temperature.
+  optional double outside_temp_c = 7;
 }
 
 message TyrePressure {
@@ -186,7 +175,9 @@ message GetVehicleStateResponse {
   BatteryStatus battery = 7;
   LightStatus lights = 8;
   AdasStatus adas = 9;
-  SeatStatus seats = 10;
+  // Seat status was removed with seat control (BladeWatch-7bx4).
+  reserved 10;
+  reserved "seats";
   ClimateStatus climate = 11;
   TyreStatus tyres = 12;
   string error = 13;
@@ -198,12 +189,6 @@ message GetVehicleStateResponse {
 
 message GetAcDiagnosticsRequest {}
 message GetAcDiagnosticsResponse {
-  bool success = 1;
-  string raw_json = 2;
-}
-
-message GetSeatDiagnosticsRequest {}
-message GetSeatDiagnosticsResponse {
   bool success = 1;
   string raw_json = 2;
 }
@@ -256,18 +241,6 @@ message SetClimateRequest {
   // docs/byd-integrations.md) -- carried through unlabeled, the same way wind_mode above
   // already is; the UI does not offer a labelled picker for either.
   int32 cycle_mode = 10;
-}
-
-message SetSeatRequest {
-  // Seat index: 1=driver, 2=passenger.
-  int32 seat_index = 1;
-  string action = 2;
-  int32 level = 3;
-  // Full current seat state: cloud API is stateful and requires these on every call.
-  int32 driver_heat = 4;
-  int32 driver_vent = 5;
-  int32 passenger_heat = 6;
-  int32 passenger_vent = 7;
 }
 
 message SetLightsRequest {

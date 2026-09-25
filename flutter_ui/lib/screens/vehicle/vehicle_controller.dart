@@ -11,7 +11,8 @@ import '../../shell/disposed_safe_notifier.dart';
 
 /// Ground truth: `VehicleController.kt` (behaviour) + `VehicleClient.kt`
 /// (RPC mapping). See `vehicle_models.dart`'s doc comment for why only
-/// Climate/Seats/Windows are ported and which RPCs are in scope.
+/// Climate/Windows are ported and which RPCs are in scope. Seat control was removed end to end
+/// (BladeWatch-7bx4).
 ///
 /// Deliberately not ported: `VehicleStateCache`'s disk-backed "stale but
 /// instant first paint" cache (native's `filesDir/vehicle_state.json`).
@@ -49,7 +50,7 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
   // blip.
   bool get hasError => _failCount >= 3;
 
-  // Local optimistic climate/seat state, synced from `_state` on every
+  // Local optimistic climate state, synced from `_state` on every
   // successful poll — matches native's identical `applyStateToViews()` sync.
   bool _acOn = false;
   bool get acOn => _acOn;
@@ -72,14 +73,6 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
   int get fanLevel => _fanLevel;
   bool _maxCooling = false;
   bool get maxCooling => _maxCooling;
-  int _driverHeat = 0;
-  int get driverHeat => _driverHeat;
-  int _driverVent = 0;
-  int get driverVent => _driverVent;
-  int _passengerHeat = 0;
-  int get passengerHeat => _passengerHeat;
-  int _passengerVent = 0;
-  int get passengerVent => _passengerVent;
 
   final Map<String, bool> _inFlight = {};
   bool isPending(String key) => _inFlight[key] == true;
@@ -140,13 +133,6 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
         ),
         capabilities: VehicleCapabilities(
           windows: WindowCapabilities(sunroof: m.capabilities.windows.sunroof, sunshade: m.capabilities.windows.sunshade),
-          seats: SeatCapabilities(
-            driverHeat: m.capabilities.seats.driverHeat,
-            passengerHeat: m.capabilities.seats.passengerHeat,
-            driverCool: m.capabilities.seats.driverCool,
-            passengerCool: m.capabilities.seats.passengerCool,
-            driverMemoryRecall: m.capabilities.seats.driverMemoryRecall,
-          ),
         ),
         battery: BatteryInfo(
           soc: m.battery.soc.toInt(),
@@ -154,11 +140,10 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
           fuelPercent: m.battery.fuelPercent.toInt(),
           fuelRangeKm: m.battery.fuelRangeKm,
         ),
-        seats: SeatsInfo(heat: m.seats.heat.toList(), cool: m.seats.cool.toList()),
         climate: ClimateInfo(
           acOn: m.climate.acOn,
           setpointC: m.climate.setpointC.toInt().clamp(16, 35),
-          insideTempC: m.climate.insideTempC != 0.0 ? m.climate.insideTempC : null,
+          outsideTempC: m.climate.hasOutsideTempC() ? m.climate.outsideTempC : null,
           fanLevel: m.climate.fanLevel.clamp(1, 7),
           maxCooling: m.climate.maxCooling,
         ),
@@ -169,10 +154,6 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
       _failCount = 0;
       // Sync local optimistic state from the freshly-polled server truth —
       // matches native's applyStateToViews() overwriting any pending edits.
-      _driverHeat = newState.seats.heat.isNotEmpty ? newState.seats.heat[0] : 0;
-      _passengerHeat = newState.seats.heat.length > 1 ? newState.seats.heat[1] : 0;
-      _driverVent = newState.seats.cool.isNotEmpty ? newState.seats.cool[0] : 0;
-      _passengerVent = newState.seats.cool.length > 1 ? newState.seats.cool[1] : 0;
       _acOn = newState.climate.acOn;
       _setpointC = newState.climate.setpointC;
       _fanLevel = newState.climate.fanLevel;
@@ -559,110 +540,6 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
 
   static pb.SetClimateRequest _climateOnRequest(int temp) => pb.SetClimateRequest(action: 'power_on', on: true, setpointC: temp.toDouble());
   static pb.SetClimateRequest _climateOffRequest() => pb.SetClimateRequest(action: 'power_off', on: false);
-
-  // ─────────────────────────── Seats ──────────────────────────────────
-
-  /// Fire-and-forget cycle 0->1->2->0, like native's seat heat/cool
-  /// buttons: no error feedback, no revert on failure. Heat and vent are
-  /// mutually exclusive per seat (enabling one zeroes the other).
-  Future<String?> cycleSeatHeat(int position) async {
-    final key = 'seat_heat_$position';
-    if (!_debounce(key)) return null;
-    // Snapshot all four: a heat press can clear vent and vice versa, so
-    // reverting only the pressed field would leave the other one wrong.
-    final before = [_driverHeat, _driverVent, _passengerHeat, _passengerVent];
-    final current = position == 1 ? _driverHeat : _passengerHeat;
-    final newLevel = (current + 1) % 3;
-    if (position == 1) {
-      _driverHeat = newLevel;
-      if (newLevel > 0) _driverVent = 0;
-    } else {
-      _passengerHeat = newLevel;
-      if (newLevel > 0) _passengerVent = 0;
-    }
-    notifyListeners();
-    void revert() {
-      _driverHeat = before[0];
-      _driverVent = before[1];
-      _passengerHeat = before[2];
-      _passengerVent = before[3];
-      notifyListeners();
-    }
-    try {
-      final result = _mapCommand(await _vehicleService.setSeat(pb.SetSeatRequest(
-        seatIndex: position,
-        action: 'heating',
-        level: newLevel,
-        driverHeat: _driverHeat,
-        driverVent: _driverVent,
-        passengerHeat: _passengerHeat,
-        passengerVent: _passengerVent,
-      )));
-      if (!result.ok) {
-        revert();
-        return result.failure;
-      }
-    } catch (e) {
-      revert();
-      return e.toString();
-    }
-    return null;
-  }
-
-  Future<String?> cycleSeatCool(int position) async {
-    final key = 'seat_cool_$position';
-    if (!_debounce(key)) return null;
-    // Snapshot all four: a heat press can clear vent and vice versa, so
-    // reverting only the pressed field would leave the other one wrong.
-    final before = [_driverHeat, _driverVent, _passengerHeat, _passengerVent];
-    final current = position == 1 ? _driverVent : _passengerVent;
-    final newLevel = (current + 1) % 3;
-    if (position == 1) {
-      _driverVent = newLevel;
-      if (newLevel > 0) _driverHeat = 0;
-    } else {
-      _passengerVent = newLevel;
-      if (newLevel > 0) _passengerHeat = 0;
-    }
-    notifyListeners();
-    void revert() {
-      _driverHeat = before[0];
-      _driverVent = before[1];
-      _passengerHeat = before[2];
-      _passengerVent = before[3];
-      notifyListeners();
-    }
-    try {
-      final result = _mapCommand(await _vehicleService.setSeat(pb.SetSeatRequest(
-        seatIndex: position,
-        action: 'ventilation',
-        level: newLevel,
-        driverHeat: _driverHeat,
-        driverVent: _driverVent,
-        passengerHeat: _passengerHeat,
-        passengerVent: _passengerVent,
-      )));
-      if (!result.ok) {
-        revert();
-        return result.failure;
-      }
-    } catch (e) {
-      revert();
-      return e.toString();
-    }
-    return null;
-  }
-
-  /// Uses the pending/inFlight-tracked pattern (native: `doVehicleAction`) —
-  /// unlike the heat/cool cycle buttons above, memory recall shows a
-  /// pending state and surfaces a failure message.
-  Future<String?> recallSeatPosition(int position) async {
-    final key = 'seat_mem$position';
-    return _doAction(key, () async {
-      final resp = await _vehicleService.setSeat(pb.SetSeatRequest(seatIndex: position, action: 'position'));
-      return _mapCommand(resp);
-    });
-  }
 
   // ─────────────────────────── Windows ────────────────────────────────
 

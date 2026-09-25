@@ -1259,12 +1259,6 @@
   "@dashboard_tunnel_connecting": {},
   "dashboard_trips_this_week": "This Week",
   "@dashboard_trips_this_week": {},
-  "dashboard_trips_count": "{arg1, plural, one{{arg1} trip} other{{arg1} trips}}",
-  "@dashboard_trips_count": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
   "dashboard_trips_distance_km": "{arg1} km",
   "@dashboard_trips_distance_km": {
     "placeholders": {
@@ -1442,8 +1436,6 @@
   "@vehicle_tab_trunk": {},
   "vehicle_tab_climate": "Climate",
   "@vehicle_tab_climate": {},
-  "vehicle_tab_seats": "Seats",
-  "@vehicle_tab_seats": {},
   "vehicle_tab_windows": "Windows",
   "@vehicle_tab_windows": {},
   "vehicle_tab_lights": "Lights",
@@ -1500,40 +1492,12 @@
       "arg1": {}
     }
   },
-  "vehicle_inside_temp_fmt": "Inside: {arg1}°C",
-  "@vehicle_inside_temp_fmt": {
+  "vehicle_outside_temp_fmt": "Outside: {arg1}°C",
+  "@vehicle_outside_temp_fmt": {
     "placeholders": {
       "arg1": {}
     }
   },
-  "vehicle_seat_driver": "Driver",
-  "@vehicle_seat_driver": {},
-  "vehicle_seat_passenger": "Passenger",
-  "@vehicle_seat_passenger": {},
-  "vehicle_seat_no_controls": "No seat controls available for this vehicle.",
-  "@vehicle_seat_no_controls": {},
-  "vehicle_seat_heat_label": "Heat {arg1}",
-  "@vehicle_seat_heat_label": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_seat_cool_label": "Cool {arg1}",
-  "@vehicle_seat_cool_label": {
-    "placeholders": {
-      "arg1": {}
-    }
-  },
-  "vehicle_heat_off": "(Off)",
-  "@vehicle_heat_off": {},
-  "vehicle_heat_low": "(Low)",
-  "@vehicle_heat_low": {},
-  "vehicle_heat_high": "(High)",
-  "@vehicle_heat_high": {},
-  "vehicle_seat_pos_1": "Pos 1",
-  "@vehicle_seat_pos_1": {},
-  "vehicle_seat_pos_2": "Pos 2",
-  "@vehicle_seat_pos_2": {},
   "vehicle_all_windows": "All Windows",
   "@vehicle_all_windows": {},
   "vehicle_window_awake_note": "Works only while the car is awake.",
@@ -2168,5 +2132,23 @@
   "pear_last_connection": "Last connection: {time}",
   "@pear_last_connection": {"placeholders": {"time": {"type": "String"}}},
   "pear_tile_off": "Off",
-  "@pear_tile_off": {}
+  "@pear_tile_off": {},
+  "trips_cost_total": "Total Cost",
+  "@trips_cost_total": {},
+  "trips_cost_no_rate": "Set an electricity rate in Trip settings to see costs.",
+  "@trips_cost_no_rate": {},
+  "trips_cost_mixed_currency": "Trips are costed in more than one currency, so no total is shown.",
+  "@trips_cost_mixed_currency": {},
+  "dashboard_chip_gear": "Gear {gear}",
+  "@dashboard_chip_gear": {"placeholders": {"gear": {"type": "String"}}},
+  "dashboard_chip_drive_mode": "Mode: {mode}",
+  "@dashboard_chip_drive_mode": {"placeholders": {"mode": {"type": "String"}}},
+  "dashboard_chip_auto_hold": "Auto Hold: {state}",
+  "@dashboard_chip_auto_hold": {"placeholders": {"state": {"type": "String"}}},
+  "auto_hold_disabled": "Off",
+  "@auto_hold_disabled": {},
+  "auto_hold_enabled": "On",
+  "@auto_hold_enabled": {},
+  "auto_hold_active": "Holding",
+  "@auto_hold_active": {}
 }

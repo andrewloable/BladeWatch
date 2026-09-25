@@ -24,13 +24,6 @@ class VehicleServiceClient {
         (json) => GetAcDiagnosticsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );
 
-  Future<GetSeatDiagnosticsResponse> getSeatDiagnostics(GetSeatDiagnosticsRequest request) => _transport.call(
-        'VehicleService',
-        'GetSeatDiagnostics',
-        request,
-        (json) => GetSeatDiagnosticsResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
-
 
 
   Future<VehicleCommandResponse> trunk(TrunkRequest request) => _transport.call(
@@ -52,13 +45,6 @@ class VehicleServiceClient {
   Future<VehicleCommandResponse> setClimate(SetClimateRequest request) => _transport.call(
         'VehicleService',
         'SetClimate',
-        request,
-        (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
-      );
-
-  Future<VehicleCommandResponse> setSeat(SetSeatRequest request) => _transport.call(
-        'VehicleService',
-        'SetSeat',
         request,
         (json) => VehicleCommandResponse()..mergeFromProto3Json(json ?? const {}, ignoreUnknownFields: true),
       );

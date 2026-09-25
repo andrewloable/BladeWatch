@@ -101,6 +101,20 @@ class SecretConfigStore @JvmOverloads constructor(
         return !file.exists() || file.canWrite() || file.parentFile?.canWrite() == true
     }
 
+    /**
+     * False when the store exists but cannot be read or parsed right now. Reads see such a store
+     * as empty, so a caller that must not take "missing" for "gone" -- a pairing check, which would
+     * otherwise tell a paired companion it was removed (BladeWatch-w7by) -- asks this first.
+     */
+    fun isReadable(): Boolean = synchronized(lock) {
+        try {
+            readRootMap(strict = true)
+            true
+        } catch (_: IllegalStateException) {
+            false
+        }
+    }
+
     fun getString(section: String, key: String): String? = synchronized(lock) {
         val sectionMap = loadSectionMap(section)
         val value = sectionMap[key]?.toString() ?: return null
@@ -225,7 +239,23 @@ class SecretConfigStore @JvmOverloads constructor(
             }
             lockChannel.use { channel ->
                 channel.lock().use {
-                    val root = readRootMap()
+                    // Strict: a store that could not be READ right now is not an empty one. Writing
+                    // "empty + this change" over it would drop the auth secret, every paired
+                    // companion, the TLS identity, the probe key and the Pear topic seed in one go
+                    // (BladeWatch-w7by). Refuse the write; the file stays as it is.
+                    //
+                    // Content that reads but does not PARSE is different: writes publish by atomic
+                    // rename, so that is real damage, not a race, and refusing every write for good
+                    // would leave auth unable to ever initialise. Start over as before, but keep
+                    // the damaged file beside it first, so what it held can still be recovered.
+                    val root = try {
+                        readRootMap(strict = true)
+                    } catch (_: CorruptStoreException) {
+                        keepDamagedCopy()
+                        LinkedHashMap()
+                    } catch (_: IllegalStateException) {
+                        return false
+                    }
                     mutator(root)
                     return writeRootMap(root)
                 }
@@ -281,27 +311,49 @@ class SecretConfigStore @JvmOverloads constructor(
         return writeRootMap(carried)
     }
 
-    private fun readRootMap(): MutableMap<String, Any?> {
+    private fun readRootMap(strict: Boolean = false): MutableMap<String, Any?> {
         if (!file.exists()) {
             val legacyFile = File(effectiveLegacyPath)
             if (!legacyFile.exists() || legacyFile.absolutePath == file.absolutePath) {
                 return LinkedHashMap()
             }
-            return readRootMapFromFile(legacyFile)
+            return readRootMapFromFile(legacyFile, strict)
         }
-        return readRootMapFromFile(file)
+        return readRootMapFromFile(file, strict)
     }
 
-    private fun readRootMapFromFile(source: File): MutableMap<String, Any?> {
+    /** Content that was read but does not parse: damage, not a transient failure. */
+    private class CorruptStoreException(cause: Exception) : IllegalStateException("secret store damaged", cause)
+
+    /**
+     * Lenient by default: a reader that cannot read the store sees it empty. [strict] (writes)
+     * throws instead -- [IllegalStateException] when it could not be read, [CorruptStoreException]
+     * when it was read but does not parse -- so an unreadable store is never taken for an empty one.
+     */
+    private fun readRootMapFromFile(source: File, strict: Boolean = false): MutableMap<String, Any?> {
+        val content = try {
+            source.readText()
+        } catch (e: Exception) {
+            if (strict) throw IllegalStateException("secret store unreadable: " + source.absolutePath, e)
+            return LinkedHashMap()
+        }
+        if (content.isBlank()) return LinkedHashMap()
         return try {
-            val content = source.readText()
-            if (content.isBlank()) {
-                LinkedHashMap()
-            } else {
-                JsonParser(content).parseObject()
-            }
-        } catch (_: Exception) {
+            JsonParser(content).parseObject()
+        } catch (e: Exception) {
+            if (strict) throw CorruptStoreException(e)
             LinkedHashMap()
+        }
+    }
+
+    /** A copy of a damaged store, owner-only like the store itself, before it is started over. */
+    private fun keepDamagedCopy() {
+        try {
+            val copy = File(file.parentFile, file.name + ".damaged-" + System.currentTimeMillis())
+            file.copyTo(copy, overwrite = false)
+            Files.setPosixFilePermissions(copy.toPath(), PosixFilePermissions.fromString("rw-------"))
+        } catch (_: Exception) {
+            // Best effort: never block the recovery write on keeping the evidence.
         }
     }
 

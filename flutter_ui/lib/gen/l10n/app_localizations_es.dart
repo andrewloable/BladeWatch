@@ -1764,17 +1764,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dashboard_trips_this_week => 'Esta semana';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 viajes',
-      one: '$arg1 viaje',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -2008,9 +1997,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get vehicle_tab_climate => 'Climatización';
 
   @override
-  String get vehicle_tab_seats => 'Asientos';
-
-  @override
   String get vehicle_tab_windows => 'Ventanas';
 
   @override
@@ -2093,44 +2079,9 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'Interior: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'Exterior: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'Conductor';
-
-  @override
-  String get vehicle_seat_passenger => 'Pasajero';
-
-  @override
-  String get vehicle_seat_no_controls =>
-      'No hay controles de asiento disponibles para este vehículo.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'Calor $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'Frío $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(Apagado)';
-
-  @override
-  String get vehicle_heat_low => '(Bajo)';
-
-  @override
-  String get vehicle_heat_high => '(Alto)';
-
-  @override
-  String get vehicle_seat_pos_1 => 'Posición 1';
-
-  @override
-  String get vehicle_seat_pos_2 => 'Posición 2';
 
   @override
   String get vehicle_all_windows => 'Todas las ventanas';
@@ -3026,4 +2977,39 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pear_tile_off => 'Desactivado';
+
+  @override
+  String get trips_cost_total => 'Coste total';
+
+  @override
+  String get trips_cost_no_rate =>
+      'Configura una tarifa eléctrica en los ajustes de viajes para ver los costes.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'Los viajes tienen costes en más de una moneda, por lo que no se muestra un total.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'Marcha $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'Modo: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'Desactivado';
+
+  @override
+  String get auto_hold_enabled => 'Activado';
+
+  @override
+  String get auto_hold_active => 'Reteniendo';
 }

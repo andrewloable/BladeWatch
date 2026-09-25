@@ -3105,12 +3105,6 @@ abstract class AppLocalizations {
   /// **'This Week'**
   String get dashboard_trips_this_week;
 
-  /// No description provided for @dashboard_trips_count.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1, plural, one{{arg1} trip} other{{arg1} trips}}'**
-  String dashboard_trips_count(num arg1);
-
   /// No description provided for @dashboard_trips_distance_km.
   ///
   /// In en, this message translates to:
@@ -3471,12 +3465,6 @@ abstract class AppLocalizations {
   /// **'Climate'**
   String get vehicle_tab_climate;
 
-  /// No description provided for @vehicle_tab_seats.
-  ///
-  /// In en, this message translates to:
-  /// **'Seats'**
-  String get vehicle_tab_seats;
-
   /// No description provided for @vehicle_tab_windows.
   ///
   /// In en, this message translates to:
@@ -3633,71 +3621,11 @@ abstract class AppLocalizations {
   /// **'Level {arg1}'**
   String vehicle_fan_level(Object arg1);
 
-  /// No description provided for @vehicle_inside_temp_fmt.
+  /// No description provided for @vehicle_outside_temp_fmt.
   ///
   /// In en, this message translates to:
-  /// **'Inside: {arg1}°C'**
-  String vehicle_inside_temp_fmt(Object arg1);
-
-  /// No description provided for @vehicle_seat_driver.
-  ///
-  /// In en, this message translates to:
-  /// **'Driver'**
-  String get vehicle_seat_driver;
-
-  /// No description provided for @vehicle_seat_passenger.
-  ///
-  /// In en, this message translates to:
-  /// **'Passenger'**
-  String get vehicle_seat_passenger;
-
-  /// No description provided for @vehicle_seat_no_controls.
-  ///
-  /// In en, this message translates to:
-  /// **'No seat controls available for this vehicle.'**
-  String get vehicle_seat_no_controls;
-
-  /// No description provided for @vehicle_seat_heat_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Heat {arg1}'**
-  String vehicle_seat_heat_label(Object arg1);
-
-  /// No description provided for @vehicle_seat_cool_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Cool {arg1}'**
-  String vehicle_seat_cool_label(Object arg1);
-
-  /// No description provided for @vehicle_heat_off.
-  ///
-  /// In en, this message translates to:
-  /// **'(Off)'**
-  String get vehicle_heat_off;
-
-  /// No description provided for @vehicle_heat_low.
-  ///
-  /// In en, this message translates to:
-  /// **'(Low)'**
-  String get vehicle_heat_low;
-
-  /// No description provided for @vehicle_heat_high.
-  ///
-  /// In en, this message translates to:
-  /// **'(High)'**
-  String get vehicle_heat_high;
-
-  /// No description provided for @vehicle_seat_pos_1.
-  ///
-  /// In en, this message translates to:
-  /// **'Pos 1'**
-  String get vehicle_seat_pos_1;
-
-  /// No description provided for @vehicle_seat_pos_2.
-  ///
-  /// In en, this message translates to:
-  /// **'Pos 2'**
-  String get vehicle_seat_pos_2;
+  /// **'Outside: {arg1}°C'**
+  String vehicle_outside_temp_fmt(Object arg1);
 
   /// No description provided for @vehicle_all_windows.
   ///
@@ -5281,6 +5209,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Off'**
   String get pear_tile_off;
+
+  /// No description provided for @trips_cost_total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Cost'**
+  String get trips_cost_total;
+
+  /// No description provided for @trips_cost_no_rate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set an electricity rate in Trip settings to see costs.'**
+  String get trips_cost_no_rate;
+
+  /// No description provided for @trips_cost_mixed_currency.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips are costed in more than one currency, so no total is shown.'**
+  String get trips_cost_mixed_currency;
+
+  /// No description provided for @dashboard_chip_gear.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear {gear}'**
+  String dashboard_chip_gear(String gear);
+
+  /// No description provided for @dashboard_chip_drive_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode: {mode}'**
+  String dashboard_chip_drive_mode(String mode);
+
+  /// No description provided for @dashboard_chip_auto_hold.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Hold: {state}'**
+  String dashboard_chip_auto_hold(String state);
+
+  /// No description provided for @auto_hold_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get auto_hold_disabled;
+
+  /// No description provided for @auto_hold_enabled.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get auto_hold_enabled;
+
+  /// No description provided for @auto_hold_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Holding'**
+  String get auto_hold_active;
 }
 
 class _AppLocalizationsDelegate

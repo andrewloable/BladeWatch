@@ -2,6 +2,7 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
 import 'package:bladewatch_theme/color_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +24,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> with LoadersState {
   late final _system = SystemServiceClient(context.session.rpc);
   late final _status = loader(() => _system.getStatus(GetStatusRequest()), poll: const Duration(seconds: 5));
-  late final _week = loader(() => TripsServiceClient(context.session.rpc).listTrips(ListTripsRequest(days: 7, limit: 100)));
+  // Every trip of the week, not the first page: the costs are a sum (BladeWatch-39d2).
+  late final _week = loader(() => listTripsInPeriod(TripsServiceClient(context.session.rpc).listTrips, 7));
 
   @override
   Widget build(BuildContext context) => LoaderView(
@@ -32,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> with LoadersState {
           _Chips(status: s),
           const SizedBox(height: 12),
           _Battery(status: s, system: _system),
-          ListenableBuilder(listenable: _week, builder: (context, _) => _Week(trips: _week.value?.trips, unit: s.distanceUnit)),
+          ListenableBuilder(listenable: _week, builder: (context, _) => _Week(trips: _week.value, unit: s.distanceUnit)),
         ]),
       );
 }
@@ -106,10 +108,21 @@ class _Week extends StatelessWidget {
     final t = trips;
     final km = t?.fold<double>(0, (a, e) => a + e.distanceKm) ?? 0;
     final secs = t?.fold<int>(0, (a, e) => a + e.durationSeconds) ?? 0;
+    // BladeWatch-39d2: what the week cost, under the three it always showed. Fuel is left out
+    // on a car that recorded none; no sum is given across currencies.
+    final costs = t == null || t.isEmpty ? null : TripCosts.of(t);
+    String money(double v) => '${v.toStringAsFixed(2)} ${costs!.currency}';
     return Section(title: tr('dashboard.this_week'), children: [
       InfoRow(tr('dashboard.trips'), t == null ? '—' : '${t.length}'),
       InfoRow(tr('dashboard.distance'), t == null ? '—' : Fmt.distance(km, unit: unit)),
       InfoRow(tr('dashboard.drive_time'), t == null ? '—' : Fmt.duration(secs)),
+      if (costs != null && costs.costed) ...[
+        if (costs.hasFuel) InfoRow(tr('trips.fuel_cost'), money(costs.fuel)),
+        InfoRow(tr('trips.electric_cost'), money(costs.electric)),
+        InfoRow(tr('companion.total_cost'), money(costs.total)),
+      ] else if (costs != null)
+        Text(tr(costs.mixedCurrencies ? 'companion.costs_mixed_currency' : 'trip.cost_hint'),
+            key: const ValueKey('week.costs.message')),
     ]);
   }
 }

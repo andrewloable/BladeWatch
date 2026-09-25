@@ -21,6 +21,7 @@ the Tor tunnel process.
 - [Networking and Tunnels](networking-and-tunnels.md) covers HTTP, WebSocket streaming, auth, LAN mode, the Tor onion service, and remote access behavior.
 - [HTTP API Reference](http-api-reference.md) lists the embedded web API route families and known endpoints.
 - [BYD Integrations](byd-integrations.md) explains local BYD hardware APIs, compile-time stubs, telemetry collection, and local vehicle controls.
+- [BYD Head Unit → CAN Bus Access](byd-can.md) documents whether the head unit can reach the vehicle CAN bus directly: the SPI/MCU bridge, BYD's closed HAL, and the signature-permission gate that confines BladeWatch to decoded signals only.
 - [Surveillance Implementation](surveillance-implementation.md) documents sentry-mode activation, the GPU/native motion pipeline, AI confirmation, recording lifecycle, safe locations, schedules, APIs, and guardrails.
 - [360 Camera Recording](360-camera-recording.md) explains how the shared 360 camera GPU/encoder stack records surveillance events and ACC-on driving clips.
 - [Build and Operations](build-and-operations.md) covers build inputs, native dependencies, assets, tests, updates, issue tracking, and release/session procedures.

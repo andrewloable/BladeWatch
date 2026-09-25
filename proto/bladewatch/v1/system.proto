@@ -179,6 +179,27 @@ message GetStatusResponse {
   NetworkInfo network = 23;
   // Populated only when vehicle data block throws.
   string vehicle_data_error = 24;
+  // Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+  DriveStatus drive_status = 25;
+}
+
+// DriveStatus: labels only where measured on a head unit, "UNKNOWN" otherwise; the raw SDK values
+// (-1 when unavailable) always, so an unmeasured one can be mapped from a status query alone.
+message DriveStatus {
+  // "P" / "R" / "N" / "D" / "M" / "S", or "UNKNOWN".
+  string gear = 1;
+  // "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+  string drive_mode = 2;
+  // BYDAutoEnergyDevice.getOperationMode().
+  int32 drive_mode_raw = 3;
+  // "DISABLED" / "ENABLED" / "ACTIVE", or "UNKNOWN".
+  string auto_hold = 4;
+  // BYDAutoADASDevice.getAVHState().
+  int32 auto_hold_raw = 5;
+  // "EV" / "HEV", or "UNKNOWN".
+  string energy_mode = 6;
+  // BYDAutoEnergyDevice.getEnergyMode().
+  int32 energy_mode_raw = 7;
 }
 
 message GetPerformanceRequest {}

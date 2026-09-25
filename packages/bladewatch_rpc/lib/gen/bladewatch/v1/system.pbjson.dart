@@ -297,6 +297,14 @@ const GetStatusResponse$json = {
       '5': 9,
       '10': 'vehicleDataError'
     },
+    {
+      '1': 'drive_status',
+      '3': 25,
+      '4': 1,
+      '5': 11,
+      '6': '.bladewatch.v1.DriveStatus',
+      '10': 'driveStatus'
+    },
   ],
   '9': [
     {'1': 22, '2': 23},
@@ -323,7 +331,30 @@ final $typed_data.Uint8List getStatusResponseDescriptor = $convert.base64Decode(
     'dGF0dXNSD3JlY29yZGluZ1N0YXR1cxI6Cgt0cmlwX3N0YXR1cxgVIAEoCzIZLmJsYWRld2F0Y2'
     'gudjEuVHJpcFN0YXR1c1IKdHJpcFN0YXR1cxI0CgduZXR3b3JrGBcgASgLMhouYmxhZGV3YXRj'
     'aC52MS5OZXR3b3JrSW5mb1IHbmV0d29yaxIsChJ2ZWhpY2xlX2RhdGFfZXJyb3IYGCABKAlSEH'
-    'ZlaGljbGVEYXRhRXJyb3JKBAgWEBdSCGdwc19qc29u');
+    'ZlaGljbGVEYXRhRXJyb3ISPQoMZHJpdmVfc3RhdHVzGBkgASgLMhouYmxhZGV3YXRjaC52MS5E'
+    'cml2ZVN0YXR1c1ILZHJpdmVTdGF0dXNKBAgWEBdSCGdwc19qc29u');
+
+@$core.Deprecated('Use driveStatusDescriptor instead')
+const DriveStatus$json = {
+  '1': 'DriveStatus',
+  '2': [
+    {'1': 'gear', '3': 1, '4': 1, '5': 9, '10': 'gear'},
+    {'1': 'drive_mode', '3': 2, '4': 1, '5': 9, '10': 'driveMode'},
+    {'1': 'drive_mode_raw', '3': 3, '4': 1, '5': 5, '10': 'driveModeRaw'},
+    {'1': 'auto_hold', '3': 4, '4': 1, '5': 9, '10': 'autoHold'},
+    {'1': 'auto_hold_raw', '3': 5, '4': 1, '5': 5, '10': 'autoHoldRaw'},
+    {'1': 'energy_mode', '3': 6, '4': 1, '5': 9, '10': 'energyMode'},
+    {'1': 'energy_mode_raw', '3': 7, '4': 1, '5': 5, '10': 'energyModeRaw'},
+  ],
+};
+
+/// Descriptor for `DriveStatus`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List driveStatusDescriptor = $convert.base64Decode(
+    'CgtEcml2ZVN0YXR1cxISCgRnZWFyGAEgASgJUgRnZWFyEh0KCmRyaXZlX21vZGUYAiABKAlSCW'
+    'RyaXZlTW9kZRIkCg5kcml2ZV9tb2RlX3JhdxgDIAEoBVIMZHJpdmVNb2RlUmF3EhsKCWF1dG9f'
+    'aG9sZBgEIAEoCVIIYXV0b0hvbGQSIgoNYXV0b19ob2xkX3JhdxgFIAEoBVILYXV0b0hvbGRSYX'
+    'cSHwoLZW5lcmd5X21vZGUYBiABKAlSCmVuZXJneU1vZGUSJgoPZW5lcmd5X21vZGVfcmF3GAcg'
+    'ASgFUg1lbmVyZ3lNb2RlUmF3');
 
 @$core.Deprecated('Use getPerformanceRequestDescriptor instead')
 const GetPerformanceRequest$json = {
@@ -948,6 +979,7 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
   '.bladewatch.v1.RecordingStatus': RecordingStatus$json,
   '.bladewatch.v1.TripStatus': TripStatus$json,
   '.bladewatch.v1.NetworkInfo': NetworkInfo$json,
+  '.bladewatch.v1.DriveStatus': DriveStatus$json,
   '.bladewatch.v1.GetPerformanceRequest': GetPerformanceRequest$json,
   '.bladewatch.v1.GetPerformanceResponse': GetPerformanceResponse$json,
   '.bladewatch.v1.PlayAudioTestRequest': PlayAudioTestRequest$json,

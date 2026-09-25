@@ -32,7 +32,11 @@ import java.util.concurrent.Executors
  */
 class SurveillanceIpcServer(private val port: Int) : Runnable {
 
+    @Volatile
     private var serverSocket: ServerSocket? = null
+
+    /** The port actually bound, -1 until then -- see TcpCommandServer.boundPort. */
+    val boundPort: Int get() = serverSocket?.takeUnless { it.isClosed }?.localPort ?: -1
 
     @Volatile
     private var running = true

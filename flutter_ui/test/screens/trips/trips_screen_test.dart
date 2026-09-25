@@ -4,6 +4,7 @@ import 'package:bladewatch_ui/screens/trips/trip_detail_controller.dart';
 import 'package:bladewatch_ui/screens/trips/trip_detail_screen.dart';
 import 'package:bladewatch_ui/screens/trips/trips_controller.dart';
 import 'package:bladewatch_ui/screens/trips/trips_screen.dart';
+import 'package:bladewatch_ui/util/currency.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -136,6 +137,50 @@ void main() {
 
     expect(find.text('320 km'), findsOneWidget);
     expect(find.textContaining('BYD estimate'), findsOneWidget);
+  });
+
+  // BladeWatch-mgi9 / -c149: the period's fuel, electric and total cost.
+  group('period costs', () {
+    List<Map<String, dynamic>> costedTrips() => [
+          {...aTrip(id: 1), 'tripCost': 150.0, 'fuelCost': 100.0, 'currency': 'PHP', 'hasFuelData': true},
+          {...aTrip(id: 2), 'tripCost': 30.0, 'currency': 'PHP'},
+        ];
+
+    testWidgets('the Stats tab shows them under Personalized Range', (tester) async {
+      stubAllLoads(trips: costedTrips());
+      await pumpScreen(tester);
+      await tester.tap(find.byKey(const ValueKey('trips.tab.stats')));
+      await tester.pumpAndSettle();
+
+      final card = find.byKey(const ValueKey('trips.costCard'));
+      for (final (label, value) in [('Fuel Cost', 100.0), ('Electric Cost', 80.0), ('Total Cost', 180.0)]) {
+        expect(find.descendant(of: card, matching: find.text(label)), findsOneWidget);
+        expect(find.descendant(of: card, matching: find.text(Currency.format(value, 'PHP'))), findsOneWidget, reason: label);
+      }
+      expect(find.byKey(const ValueKey('trips.rangeCard')), findsOneWidget, reason: 'range kept');
+      final range = tester.getTopLeft(find.byKey(const ValueKey('trips.rangeCard')));
+      expect(tester.getTopLeft(card).dy, greaterThan(range.dy), reason: 'under Personalized Range');
+    });
+
+    testWidgets('the Period Summary shows them after its own figures', (tester) async {
+      stubAllLoads(trips: costedTrips());
+      await pumpScreen(tester);
+
+      final costs = find.byKey(const ValueKey('trips.summaryCosts'));
+      expect(find.descendant(of: costs, matching: find.text('Total Cost')), findsOneWidget);
+      expect(find.descendant(of: costs, matching: find.text(Currency.format(180, 'PHP'))), findsOneWidget);
+    });
+
+    testWidgets('with no rate set it says so instead of showing zeros', (tester) async {
+      stubAllLoads(trips: [{...aTrip(id: 1), 'tripCost': 0.0}]);
+      await pumpScreen(tester);
+      await tester.tap(find.byKey(const ValueKey('trips.tab.stats')));
+      await tester.pumpAndSettle();
+
+      expect(find.descendant(
+          of: find.byKey(const ValueKey('trips.costCard')),
+          matching: find.text('Set an electricity rate in Trip settings to see costs.')), findsOneWidget);
+    });
   });
 
   testWidgets('Stats tab shows "not enough data" when there is no range estimate', (tester) async {

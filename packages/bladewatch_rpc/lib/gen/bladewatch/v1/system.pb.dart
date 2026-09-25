@@ -982,6 +982,7 @@ class GetStatusResponse extends $pb.GeneratedMessage {
     TripStatus? tripStatus,
     NetworkInfo? network,
     $core.String? vehicleDataError,
+    DriveStatus? driveStatus,
   }) {
     final result = GetStatusResponse._();
     if (deviceId != null) result.deviceId = deviceId;
@@ -1008,6 +1009,7 @@ class GetStatusResponse extends $pb.GeneratedMessage {
     if (tripStatus != null) result.tripStatus = tripStatus;
     if (network != null) result.network = network;
     if (vehicleDataError != null) result.vehicleDataError = vehicleDataError;
+    if (driveStatus != null) result.driveStatus = driveStatus;
     return result;
   }
 
@@ -1055,6 +1057,8 @@ class GetStatusResponse extends $pb.GeneratedMessage {
     ..aOM<NetworkInfo>(23, _omitFieldNames ? '' : 'network',
         subBuilder: NetworkInfo.$_createMessage)
     ..aOS(24, _omitFieldNames ? '' : 'vehicleDataError')
+    ..aOM<DriveStatus>(25, _omitFieldNames ? '' : 'driveStatus',
+        subBuilder: DriveStatus.$_createMessage)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1282,6 +1286,156 @@ class GetStatusResponse extends $pb.GeneratedMessage {
   $core.bool hasVehicleDataError() => $_has(22);
   @$pb.TagNumber(24)
   void clearVehicleDataError() => $_clearField(24);
+
+  /// Gear, drive mode and Auto Hold for the dashboard (BladeWatch-7zp9).
+  @$pb.TagNumber(25)
+  DriveStatus get driveStatus => $_getN(23);
+  @$pb.TagNumber(25)
+  set driveStatus(DriveStatus value) => $_setField(25, value);
+  @$pb.TagNumber(25)
+  $core.bool hasDriveStatus() => $_has(23);
+  @$pb.TagNumber(25)
+  void clearDriveStatus() => $_clearField(25);
+  @$pb.TagNumber(25)
+  DriveStatus ensureDriveStatus() => $_ensure(23);
+}
+
+/// DriveStatus: labels only where measured on a head unit, "UNKNOWN" otherwise; the raw SDK values
+/// (-1 when unavailable) always, so an unmeasured one can be mapped from a status query alone.
+class DriveStatus extends $pb.GeneratedMessage {
+  factory DriveStatus({
+    $core.String? gear,
+    $core.String? driveMode,
+    $core.int? driveModeRaw,
+    $core.String? autoHold,
+    $core.int? autoHoldRaw,
+    $core.String? energyMode,
+    $core.int? energyModeRaw,
+  }) {
+    final result = DriveStatus._();
+    if (gear != null) result.gear = gear;
+    if (driveMode != null) result.driveMode = driveMode;
+    if (driveModeRaw != null) result.driveModeRaw = driveModeRaw;
+    if (autoHold != null) result.autoHold = autoHold;
+    if (autoHoldRaw != null) result.autoHoldRaw = autoHoldRaw;
+    if (energyMode != null) result.energyMode = energyMode;
+    if (energyModeRaw != null) result.energyModeRaw = energyModeRaw;
+    return result;
+  }
+
+  DriveStatus._();
+
+  factory DriveStatus.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      DriveStatus()..mergeFromBuffer(data, registry);
+  factory DriveStatus.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      DriveStatus()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'DriveStatus',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'bladewatch.v1'),
+      createEmptyInstance: DriveStatus.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'gear')
+    ..aOS(2, _omitFieldNames ? '' : 'driveMode')
+    ..aI(3, _omitFieldNames ? '' : 'driveModeRaw')
+    ..aOS(4, _omitFieldNames ? '' : 'autoHold')
+    ..aI(5, _omitFieldNames ? '' : 'autoHoldRaw')
+    ..aOS(6, _omitFieldNames ? '' : 'energyMode')
+    ..aI(7, _omitFieldNames ? '' : 'energyModeRaw')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DriveStatus clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DriveStatus copyWith(void Function(DriveStatus) updates) =>
+      super.copyWith((message) => updates(message as DriveStatus))
+          as DriveStatus;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated('Use DriveStatus() / DriveStatus.new instead')
+  static DriveStatus create() => DriveStatus._();
+  static $pb.GeneratedMessage $_createMessage() => DriveStatus._();
+  @$core.override
+  DriveStatus createEmptyInstance() => DriveStatus._();
+  @$core.pragma('dart2js:noInline')
+  static DriveStatus getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DriveStatus>(
+          DriveStatus.$_createMessage);
+  static DriveStatus? _defaultInstance;
+
+  /// "P" / "R" / "N" / "D" / "M" / "S", or "UNKNOWN".
+  @$pb.TagNumber(1)
+  $core.String get gear => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set gear($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasGear() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearGear() => $_clearField(1);
+
+  /// "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+  @$pb.TagNumber(2)
+  $core.String get driveMode => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set driveMode($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasDriveMode() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearDriveMode() => $_clearField(2);
+
+  /// BYDAutoEnergyDevice.getOperationMode().
+  @$pb.TagNumber(3)
+  $core.int get driveModeRaw => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set driveModeRaw($core.int value) => $_setSignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasDriveModeRaw() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearDriveModeRaw() => $_clearField(3);
+
+  /// "DISABLED" / "ENABLED" / "ACTIVE", or "UNKNOWN".
+  @$pb.TagNumber(4)
+  $core.String get autoHold => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set autoHold($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasAutoHold() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearAutoHold() => $_clearField(4);
+
+  /// BYDAutoADASDevice.getAVHState().
+  @$pb.TagNumber(5)
+  $core.int get autoHoldRaw => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set autoHoldRaw($core.int value) => $_setSignedInt32(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasAutoHoldRaw() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearAutoHoldRaw() => $_clearField(5);
+
+  /// "EV" / "HEV", or "UNKNOWN".
+  @$pb.TagNumber(6)
+  $core.String get energyMode => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set energyMode($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasEnergyMode() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearEnergyMode() => $_clearField(6);
+
+  /// BYDAutoEnergyDevice.getEnergyMode().
+  @$pb.TagNumber(7)
+  $core.int get energyModeRaw => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set energyModeRaw($core.int value) => $_setSignedInt32(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasEnergyModeRaw() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearEnergyModeRaw() => $_clearField(7);
 }
 
 class GetPerformanceRequest extends $pb.GeneratedMessage {
