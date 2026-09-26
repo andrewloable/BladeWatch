@@ -194,6 +194,36 @@ void main() {
       await tester.pumpAndSettle();
       expect(chip('chip.autoHold', 'Auto Hold: Off'), findsOneWidget);
     });
+
+    // The owner switched EV/HEV and Auto Hold and the chips never moved: they waited on the
+    // full 15 s reload. They now follow within one 2 s drive tick, whatever the other tiles do.
+    testWidgets('the drive chips follow the car within 2 s, without the full reload', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'P', 'autoHold': 'ENABLED', 'energyMode': 'EV'}});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      expect(chip('chip.energyMode', 'EV'), findsOneWidget);
+
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'D', 'autoHold': 'DISABLED', 'energyMode': 'HEV'}});
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(chip('chip.energyMode', 'HEV'), findsOneWidget);
+      expect(chip('chip.autoHold', 'Auto Hold: Off'), findsOneWidget);
+      expect(chip('chip.gear', 'Gear D'), findsOneWidget);
+    });
+
+    testWidgets('a failed drive tick keeps the chips as they were', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'P', 'energyMode': 'EV'}});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+
+      rpc.stubError('SystemService', 'GetStatus', const ConnectError('unavailable', 'down'));
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(chip('chip.energyMode', 'EV'), findsOneWidget);
+      expect(chip('chip.gear', 'Gear P'), findsOneWidget);
+    });
   });
 
   // BladeWatch-39d2: the week's fuel, electric and total cost, under the three stats it kept.

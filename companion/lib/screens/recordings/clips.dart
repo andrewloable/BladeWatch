@@ -127,12 +127,15 @@ Future<void> openClip(BuildContext context, String filename) {
 }
 
 class ClipPlayerScreen extends StatefulWidget {
-  const ClipPlayerScreen({super.key, required this.filename, this.canPlay});
+  const ClipPlayerScreen({super.key, required this.filename, this.canPlay, this.retryPause = const Duration(seconds: 2)});
 
   final String filename;
 
   /// Test seam; by default the platforms video_player implements.
   final bool? canPlay;
+
+  /// The pause before the n-th attempt to recover a playing clip is n times this.
+  final Duration retryPause;
 
   @override
   State<ClipPlayerScreen> createState() => _ClipPlayerScreenState();
@@ -142,6 +145,14 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
   VideoPlayerController? _video;
   bool _failed = false;
   String? _saved;
+
+  // BladeWatch-tayl: a clip that was playing when the connection dropped carries on from where
+  // it was, once the route is back -- up to [_maxRecoveries] times -- instead of dying on an error.
+  static const _maxRecoveries = 5;
+  Duration _at = Duration.zero;
+  bool _played = false;
+  bool _recovering = false;
+  int _recoveries = 0;
 
   bool get _canPlay => widget.canPlay ?? (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
 
@@ -157,12 +168,46 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
     try {
       final video = VideoPlayerController.networkUrl(session.baseUrl.resolve(_path), httpHeaders: await session.authHeaders());
       _video = video;
+      video.addListener(() => _onValue(video));
       await video.initialize();
+      if (_at > Duration.zero) await video.seekTo(_at);
       await video.play();
+      _played = true;
       if (mounted) setState(() {});
     } catch (_) {
-      if (mounted) setState(() => _failed = true);
+      // A clip that never played is simply unavailable; one that was playing gets another go.
+      if (_played) {
+        unawaited(_recover());
+      } else if (mounted) {
+        setState(() => _failed = true);
+      }
     }
+  }
+
+  void _onValue(VideoPlayerController video) {
+    if (!identical(video, _video)) return;
+    final v = video.value;
+    if (v.hasError) {
+      if (_played) unawaited(_recover());
+    } else if (v.isInitialized && v.position > Duration.zero) {
+      _at = v.position;
+    }
+  }
+
+  Future<void> _recover() async {
+    if (_recovering || !mounted) return;
+    _recovering = true;
+    final old = _video;
+    setState(() => _video = null); // the spinner, while it reconnects
+    unawaited(old?.dispose());
+    if (++_recoveries > _maxRecoveries) {
+      _recovering = false;
+      if (mounted) setState(() => _failed = true);
+      return;
+    }
+    await Future<void>.delayed(widget.retryPause * _recoveries);
+    _recovering = false;
+    if (mounted) await _start(context.session);
   }
 
   Future<void> _save() async {

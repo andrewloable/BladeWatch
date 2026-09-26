@@ -51,6 +51,17 @@ object PearDaemon {
 
     private const val BUNDLE_ASSET = "pear/pear-end.bundle"
 
+    /**
+     * The car's swarm.join: its topic, accepting companions it cannot find announced
+     * (BladeWatch-lw0o). pear-end otherwise uses a connection a companion dialed in only once its
+     * own discovery finds that companion's announcement -- about a minute of retries -- and from a
+     * phone behind a slow or randomizing NAT it often never does: the connection sits open and
+     * silent (5 of 8 routes from a hotspot, 2026-09-26). Honoured by pear-end only while this is
+     * the worklet's sole topic with the option, which it is; an older pear-end ignores it.
+     */
+    internal fun joinParams(topic: String): JSONObject =
+        JSONObject().put("topic", topic).put("acceptUnannounced", true)
+
     // pear-end request ids; any number works, these just have to be unique while in flight.
     private const val ID_ATTACH_INFO = 1
     private const val ID_SWARM_JOIN = 2
@@ -133,7 +144,7 @@ object PearDaemon {
             status.write() // replaces whatever a previous run left: not joined yet
             armRead()
             request(ID_ATTACH_INFO, "attach.info", JSONObject())
-            request(ID_SWARM_JOIN, "swarm.join", JSONObject().put("topic", topic))
+            request(ID_SWARM_JOIN, "swarm.join", joinParams(topic))
             scheduleSweep()
         }
 

@@ -55,7 +55,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// lost its network. 15 s: the Pear status it shows is itself refreshed every 30 s.
   static const Duration _refreshInterval = Duration(seconds: 15);
 
+  /// The drive chips on their own short cycle (see DashboardController.refreshDrive).
+  static const Duration _driveInterval = Duration(seconds: 2);
+
   Timer? _refreshTimer;
+  Timer? _driveTimer;
 
   @override
   void initState() {
@@ -63,6 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     widget.controller.addListener(_onChanged);
     widget.controller.refresh();
     _refreshTimer = Timer.periodic(_refreshInterval, (_) => widget.controller.refresh());
+    _driveTimer = Timer.periodic(_driveInterval, (_) => widget.controller.refreshDrive());
   }
 
   void _onChanged() {
@@ -72,6 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _driveTimer?.cancel();
     widget.controller.removeListener(_onChanged);
     super.dispose();
   }

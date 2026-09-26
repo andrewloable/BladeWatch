@@ -211,9 +211,11 @@ void main() {
       await carRpc.call(PearMethod.attachInfo);
       final topic = PearCrypto.unsafeTopicFromString('bladewatch-test-car');
 
-      final carSwarm = await PearSwarm.join(carRpc, topic);
+      // As in production: the car accepts dialers it never finds announced, and the companion
+      // never announces (BladeWatch-lw0o, -qryk).
+      final carSwarm = await PearSwarm.join(carRpc, topic, acceptUnannounced: true);
       carSwarm.connections.listen((c) => FakeCarPump(PearConnectionLink(c), car.port));
-      final companionSwarm = await PearSwarm.join(companionRpc, topic);
+      final companionSwarm = await PearSwarm.join(companionRpc, topic, announce: false);
 
       var dropped = false;
       final bridge = await findCarOverPear(pearLinks(companionSwarm), pin, onClosed: () => dropped = true);

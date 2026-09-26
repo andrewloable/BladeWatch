@@ -90,6 +90,39 @@ Per path:
 | LAN TLS | a machine on the car's network, LAN access on | `https://<car-ip>:8443 --pin <tlsFp from the pairing QR>` |
 | Pear (.18/.19) | a companion on a DIFFERENT network | the companion `LocalGateway`'s `http://127.0.0.1:<port>`, route forced to Pear |
 
+### Running the Pear path
+
+[companion/integration_test/pear_bench_test.dart](../companion/integration_test/pear_bench_test.dart)
+is the companion side. It opens the companion's own `LocalGateway` with the route forced to Pear
+(the LAN is never probed) and runs this harness, unchanged, through it, so the Pear numbers come
+from the same code as the baselines. It also measures what only a companion can, as JSON lines:
+cold start (Pear start to the first answered `GetStatus`, DHT lookup included, `BW_COLD_STARTS`
+times), a dashboard-shaped burst (status, trips, recordings and vehicle state concurrently, 20
+rounds) and thumbnails (sequential, then four at a time, with outcomes by HTTP status).
+
+```bash
+# On the car's LAN, before leaving it: Pear on, a fresh pairing code (single use, 5 min).
+# Pair once; bench.json (mode 600) keeps the credential for every later run.
+flutter test integration_test/pear_bench_test.dart -d macos \
+  --dart-define=BW_DIR=<dir, mode 700, harness classes in <dir>/classes> \
+  --dart-define=BW_PAIRING="$(cat <dir>/qr.txt)"
+
+# From the other network:
+flutter test integration_test/pear_bench_test.dart -d macos --dart-define=BW_DIR=<dir> \
+  --dart-define=BW_QUALITY=MEDIUM \
+  "--dart-define=BW_RUN=video --seconds 600 --probe-every 2"
+flutter test integration_test/pear_bench_test.dart -d macos --dart-define=BW_DIR=<dir> \
+  "--dart-define=BW_RUN=rpc --count 200;rpc --count 120 --every 0.5;clip --count 3 --bytes 16777216" \
+  --dart-define=BW_BURST=true --dart-define=BW_COLD_STARTS=20
+```
+
+`BW_QUALITY` sets the live-view preset before the harness starts, never during a run; the car's
+current preset and the presets it offers are logged either way. The harness `rpc` mode takes
+`--call Service/Method` for the per-call latencies (`TripsService/ListTrips`,
+`RecordingsService/ListRecordings`, `VehicleService/GetState`). The JWT is written to
+`<dir>/jwt` (mode 600) for the harness and deleted when the run ends. Afterwards delete `<dir>`
+and remove the "pear bench" device in the car.
+
 ## Results
 
 The numbers live in the close reasons of rdtj.9 (baselines), rdtj.18 and rdtj.19 (Pear), as

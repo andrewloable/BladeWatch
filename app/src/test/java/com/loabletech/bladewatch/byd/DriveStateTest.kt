@@ -15,9 +15,10 @@ class DriveStateTest {
 
     @Test
     fun `the values measured on the head unit get their labels`() {
-        assertEquals("ECO", DriveState.driveMode(1))
+        // ECO and NORMAL both read 1 on the car, so 1 names both, never one of them.
+        assertEquals("ECO/NORMAL", DriveState.driveMode(1))
         assertEquals("SPORT", DriveState.driveMode(2))
-        assertEquals("NORMAL", DriveState.driveMode(3))
+        assertEquals("UNKNOWN", DriveState.driveMode(3)) // predicted NORMAL by a constant family; never observed
         assertEquals("DISABLED", DriveState.autoHold(0))
         assertEquals("ENABLED", DriveState.autoHold(1))
         assertEquals("EV", DriveState.energyMode(1))

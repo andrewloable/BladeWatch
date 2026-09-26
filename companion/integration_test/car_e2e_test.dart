@@ -65,7 +65,7 @@ void main() {
       connectPear: (onClosed) async {
         if (_route != 'pear') return null;
         pear ??= await Pear.start();
-        final swarm = await pear!.join(PearKey.fromHex(qr.pearTopic));
+        final swarm = await pear!.join(PearKey.fromHex(qr.pearTopic), announce: false);
         // Enough to tell "no peer ever connected" (NAT) from "a peer connected but was not the car".
         // ignore: avoid_print
         swarm.state.listen((s) => print('swarm ${s.state.name}${s.error == null ? '' : ' ${s.error!.code}'}'));

@@ -406,7 +406,7 @@ each control:
 
 | Getter | Measured | Label |
 |---|---|---|
-| `getOperationMode` | 1 in ECO, 2 in SPORT | ECO / SPORT, so the `ENERGY_OPERATION_ECONOMY` family: NORMAL=3 |
+| `getOperationMode` | 1 in ECO **and** in NORMAL, 2 in SPORT | ECO/NORMAL / SPORT. Neither SDK constant family fits (both predict distinct values for ECO and NORMAL), and a full dump of every no-arg int getter in ECO and in NORMAL differed only in the mode-change buzzer (2026-09-26) |
 | `getAVHState` | 0 with Auto Hold off, 1 with it on | DISABLED / ENABLED; the value while actually holding is not yet measured |
 | `getEnergyMode` | 1 in EV, 3 in HEV (`energyMode` + `energyModeRaw`) | EV / HEV |
 

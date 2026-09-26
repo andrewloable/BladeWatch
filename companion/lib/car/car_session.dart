@@ -140,7 +140,10 @@ class CarSession extends ChangeNotifier {
     final gateway = await LocalGateway.start();
     Pear? pear;
     PearSwarm? swarm;
-    final join = joinTopic ?? (topic) async => (pear ??= await Pear.start()).join(topic);
+    // Dial-only (BladeWatch-qryk): announcing left a DHT record per session that outlived it by
+    // 20 minutes, and every later dialer tried it first. The car joins with acceptUnannounced, so
+    // it uses this connection without ever finding an announcement (BladeWatch-lw0o).
+    final join = joinTopic ?? (topic) async => (pear ??= await Pear.start()).join(topic, announce: false);
     final selector = TransportSelector(
       gateway: gateway,
       pinnedFingerprint: car.tlsFingerprint,

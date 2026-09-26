@@ -13,16 +13,17 @@ import org.json.JSONObject
  * would be shown as fact, so an unmeasured value maps to [UNKNOWN] and the dashboard shows "–".
  * The raw values go on the wire so the measurement needs nothing but a status query.
  *
- * Measured on the owner's DM-i head unit 2026-09-25 with the owner switching each control:
- * getOperationMode ECO=1, SPORT=2 -- the ENERGY_OPERATION_ECONOMY family, so NORMAL=3 by the same
- * constants; getAVHState off=0, on=1 (the value while actually holding is not yet measured);
- * getEnergyMode EV=1, HEV=3 (BladeWatch-os88).
+ * Measured on the owner's DM-i head unit 2026-09-25/26 with the owner switching each control:
+ * getOperationMode reads 1 in BOTH ECO and NORMAL and 2 in SPORT -- neither constant family fits,
+ * and no other getter differs between ECO and NORMAL (a full getter dump in each), so 1 is
+ * "ECO/NORMAL", never a guessed one of the two; getAVHState off=0, on=1 (the value while
+ * actually holding is not yet measured); getEnergyMode EV=1, HEV=3 (BladeWatch-os88).
  */
 object DriveState {
     const val UNKNOWN = "UNKNOWN"
 
-    /** Raw getOperationMode -> ECO / NORMAL / SPORT. */
-    private val DRIVE_MODES: Map<Int, String> = mapOf(1 to "ECO", 2 to "SPORT", 3 to "NORMAL")
+    /** Raw getOperationMode -> label. The car reads 1 for ECO and NORMAL alike. */
+    private val DRIVE_MODES: Map<Int, String> = mapOf(1 to "ECO/NORMAL", 2 to "SPORT")
 
     /** Raw getAVHState -> DISABLED / ENABLED / ACTIVE. ponytail: ACTIVE awaits a measured hold. */
     private val AUTO_HOLD: Map<Int, String> = mapOf(0 to "DISABLED", 1 to "ENABLED")

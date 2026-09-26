@@ -36,7 +36,7 @@ dependencies:
   # The Pear P2P transport (BladeWatch-rdtj epic). Pinned EXACTLY, never a caret:
   # flutter_pear is pre-1.0 and its README says minor versions may break the API
   # without notice. Bump deliberately, and re-check its Android minSdk floor.
-  flutter_pear: 0.4.4
+  flutter_pear: 0.4.5
 
   # The same Connect client + generated messages the in-car UI uses -- one copy,
   # shared through this melos workspace (BladeWatch-rdtj.10).
@@ -70,7 +70,10 @@ dev_dependencies:
 
   # In-memory fakes for the whole flutter_pear API, so P2P logic is unit-testable
   # with no radio and no peer. Pinned to the same exact version as flutter_pear.
-  flutter_pear_test: 0.4.4
+  flutter_pear_test: 0.4.5
+
+  # A fake video platform for the player's recovery tests (BladeWatch-tayl).
+  video_player_platform_interface: ^6.9.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

@@ -242,4 +242,15 @@ class DriveInfo {
   final String energyMode;
 
   const DriveInfo({this.gear = unknown, this.driveMode = unknown, this.autoHold = unknown, this.energyMode = unknown});
+
+  @override
+  bool operator ==(Object other) =>
+      other is DriveInfo &&
+      other.gear == gear &&
+      other.driveMode == driveMode &&
+      other.autoHold == autoHold &&
+      other.energyMode == energyMode;
+
+  @override
+  int get hashCode => Object.hash(gear, driveMode, autoHold, energyMode);
 }

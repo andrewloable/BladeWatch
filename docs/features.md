@@ -107,7 +107,7 @@ The primary web UI is an Angular 19 single-page app (source in `web/`, built wit
 
 Angular pages (routes), each built for 1:1 parity with its in-car counterpart:
 
-- Dashboard — stats / connect hub (week trip stats, status chips, metric tiles, device-ID + tunnel-URL QR connect card). In-car status chips also show the gear, drive mode (ECO / NORMAL / SPORT), Auto Hold (on / off) and, on a DM-i, EV / HEV (BladeWatch-7zp9, -os88; a dash for anything unmeasured -- see byd-integrations.md). The THIS WEEK card shows its trip count and distance once, in its tiles (BladeWatch-by8d).
+- Dashboard — stats / connect hub (week trip stats, status chips, metric tiles, device-ID + tunnel-URL QR connect card). In-car status chips also show the gear, drive mode (ECO/NORMAL or SPORT -- the car reports one value for ECO and NORMAL), Auto Hold (on / off) and, on a DM-i, EV / HEV (BladeWatch-7zp9, -os88; a dash for anything unmeasured -- see byd-integrations.md). The THIS WEEK card shows its trip count and distance once, in its tiles (BladeWatch-by8d).
 - Live — full-bleed camera view with All/Front/Right/Rear/Left selector over the WebSocket stream.
 - Recording — dashcam vs surveillance library with day calendar navigation, actor/severity/type filter chips, multi-select delete, and an in-page video player.
 - Surveillance — sensitivity, distance preset, AI gate + confidence, per-class detection, pre/post windows, quadrant snapshots, heatmap, and safe-location zones.
@@ -413,7 +413,11 @@ The web login is replaced by pairing: scan the in-car QR, or paste its text.
   removed this device (pair again). None of these is ever a spinner that never resolves.
 - **Live view is refreshed stills for now.** It shows the four-camera mosaic, updated every
   few seconds, and works on every platform without a video decoder. H.264 video, and with it
-  the per-camera views, is a follow-up.
+  the per-camera views, is a follow-up. A dropped connection only skips stills: the last one
+  stays on screen with its time, and the next arrives once the route is back.
+- **A dropped connection does not end a clip or a download** (BladeWatch-tayl). A clip that
+  was playing reconnects and carries on from where it was (up to five tries); a download that
+  drops resumes from the byte it reached, with a Range request, instead of starting over.
 - **Window control asks first, every time.** From a phone, nobody can see whether a hand or
   a pet is in a window. Climate changes are reversible and don't ask. Every command
   carries the car's short-lived action token, and the car's own safety interlock still

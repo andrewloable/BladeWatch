@@ -302,15 +302,40 @@ The fix is upstream, in flutter_pear's pear-end (`tagInboundConnection`): on an 
 connection the accepting side re-runs discovery straight away, which tags exactly the topics
 the peer announces, and holds the peer's messages until then instead of dropping them. The
 car's `app/src/main/assets/pear/pear-end.bundle` must be built from a flutter_pear with that
-fix -- flutter_pear 0.4.3 or later; 0.4.2's does not work. The car's copy is byte-identical to the one
-inside the published 0.4.4 package (sha256 `089e42ee…`, checked against the pub.dev archive on
-2026-09-24; the companion is pinned to 0.4.4 too). 0.4.4 adds what the car's Pear status needs:
+fix -- flutter_pear 0.4.3 or later; 0.4.2's does not work. Until 2026-09-26 the car's copy was
+byte-identical to the one inside the published 0.4.4 package (sha256 `089e42ee…`, checked against
+the pub.dev archive on 2026-09-24); it is now the published 0.4.5 one, which carries the
+accept-unannounced option below. 0.4.4 adds what the car's Pear status needs:
 `dht.status`, so "reachable" is HyperDHT's own answer, not a guess from process liveness (rdtj.17).
 It also lowers the held-message cap to 256 KiB per untagged connection. Only the car needs it -- a companion is normally the dialing side,
 and when it is not, its own lookup right after joining tags the connection in seconds -- and it
 changes nothing on the wire, so a fixed car works with a 0.4.2 companion. With it, the first
 pinned handshake through Pear took 11.3 s and the whole route 19.9-25 s (same network, public
 DHT, 2026-09-24): the car's tagging query is most of that.
+
+### The car accepts companions it cannot find announced (BladeWatch-lw0o)
+
+Tagging by announcement is a race. The accepting side retries discovery at 0, 1, 3, 7, 15 and
+30 s and then gives up, and a companion behind a slow or randomizing NAT often has not landed
+its announcement by then: its Pear connection forms, the car never uses it, and the route fails
+after the 90 s search. Measured 2026-09-26 from a phone hotspot (HyperDHT randomized=true): 5 of
+8 routes failed, the companion seeing "swarm connected" and a peer while the car's
+`lastCompanionAt` never moved.
+
+So the car joins its topic with `acceptUnannounced` (`PearDaemon.joinParams`): pear-end
+attributes an inbound connection to the car's topic the moment it arrives, because it is the
+worklet's only topic with that option. The car's `app/src/main/assets/pear/pear-end.bundle` is
+therefore the published flutter_pear 0.4.5 bundle, which has that option: byte-identical to the
+one inside the pub.dev package (sha256 `00f9adc4…`, checked 2026-09-26); the companion is pinned
+to 0.4.5 too. An older bundle ignores the flag. From the same hotspot afterwards, every attempt whose Pear
+connection formed reached the car (13 of 13); the 7 of 20 that failed never formed a connection
+at all -- NAT traversal from a randomizing NAT, BladeWatch-idfn.
+
+The same option lets the companion join WITHOUT announcing (`announce: false`,
+`CarSession.open`), so a session no longer leaves a DHT record that outlives it by 20 minutes
+and costs every later dialer a failing dial (BladeWatch-qryk). A companion that announces still
+works: the car accepts it either way. The car itself still leaves one dead record per
+`pear_daemon` restart: pear-end's key pair is random per start.
 
 ### The companion's side (`companion/lib/transport/`)
 

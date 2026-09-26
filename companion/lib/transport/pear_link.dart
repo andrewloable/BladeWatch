@@ -72,5 +72,5 @@ Future<bool> _completesPinnedTls(MuxBridge bridge, String fingerprint) async {
   }
 }
 
-/// Every peer connection [swarm] (the car's topic, `pear.join(PearKey.fromHex(topic))`) yields.
+/// Every peer connection [swarm] (the car's topic, `pear.join(PearKey.fromHex(topic), announce: false)`) yields.
 Stream<PeerLink> pearLinks(PearSwarm swarm) => swarm.connections.map(PearConnectionLink.new);

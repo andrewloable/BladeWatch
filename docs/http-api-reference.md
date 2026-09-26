@@ -78,7 +78,7 @@ Most other routes require a JWT Bearer token or `byd_session` cookie (see
 `AuthMiddleware`). `/auth/status`, `/auth/pair`, `/auth/companion`, `/login`, `/login.html`, `/manifest.json`,
 `/sw.js`, `/favicon.ico`, `/shared/*`, `/i18n/*`, and the Connect login RPC
 `/bladewatch.v1.AuthService/Login` are the only paths that bypass auth.
-`/thumb/*` additionally accepts a signed `?t=` thumbnail token.
+`/thumb/*` additionally accepts a signed `?t=` thumbnail token. `/thumb/<clip>.mp4` answers a small JPEG: the clip's hero frame when one exists (scaled to a 480 px long edge and cached as `thumbs/hero_<name>.jpg` when larger -- some heroes are 2560x1920, BladeWatch-820b), else a generated 320x180 frame (202 while it is being made). `/thumb/<name>.jpg` returns that file as stored.
 
 ## Connect / gRPC Layer
 

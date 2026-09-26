@@ -527,7 +527,7 @@ export type DriveStatus = Message<"bladewatch.v1.DriveStatus"> & {
   gear: string;
 
   /**
-   * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+   * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
    *
    * @generated from field: string drive_mode = 2;
    */

@@ -32,7 +32,7 @@ public interface DriveStatusOrBuilder extends
 
   /**
    * <pre>
-   * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+   * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
    * </pre>
    *
    * <code>string drive_mode = 2 [json_name = "driveMode"];</code>
@@ -41,7 +41,7 @@ public interface DriveStatusOrBuilder extends
   java.lang.String getDriveMode();
   /**
    * <pre>
-   * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+   * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
    * </pre>
    *
    * <code>string drive_mode = 2 [json_name = "driveMode"];</code>

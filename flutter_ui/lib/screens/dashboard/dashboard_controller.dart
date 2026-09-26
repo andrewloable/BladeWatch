@@ -116,6 +116,31 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
     notifyListeners();
   }
 
+  /// Gear, drive mode, Auto Hold and EV/HEV change under the driver's hand, so the screen reads
+  /// them on their own short cycle: through [refresh] a change waited for the slowest tile of the
+  /// 15 s reload, and the owner saw EV/HEV and Auto Hold never move (BladeWatch-7zp9).
+  Future<void> refreshDrive() async {
+    try {
+      final drive = _driveOf(await _systemService.getStatus(GetStatusRequest()));
+      if (drive == _drive) return;
+      _drive = drive;
+      notifyListeners();
+    } catch (_) {
+      // Keep what is shown; the next tick or the full refresh tries again.
+    }
+  }
+
+  static DriveInfo _driveOf(GetStatusResponse status) {
+    String label(String v) => v.isEmpty ? DriveInfo.unknown : v;
+    final d = status.driveStatus;
+    return DriveInfo(
+      gear: label(d.gear),
+      driveMode: label(d.driveMode),
+      autoHold: label(d.autoHold),
+      energyMode: label(d.energyMode),
+    );
+  }
+
   Future<void> _refreshTripStats() async {
     try {
       // Every trip of the week, not the first page: the costs are a sum (BladeWatch-39d2).
@@ -147,14 +172,7 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
       final status = await _systemService.getStatus(GetStatusRequest());
       isRecording = status.recording.isNotEmpty;
       if (status.deviceId.isNotEmpty) _deviceId = status.deviceId;
-      String label(String v) => v.isEmpty ? DriveInfo.unknown : v;
-      final d = status.driveStatus;
-      _drive = DriveInfo(
-        gear: label(d.gear),
-        driveMode: label(d.driveMode),
-        autoHold: label(d.autoHold),
-        energyMode: label(d.energyMode),
-      );
+      _drive = _driveOf(status);
     } catch (_) {
       // Leave isRecording/deviceId at their defaults; the count fetch below is independent.
     }

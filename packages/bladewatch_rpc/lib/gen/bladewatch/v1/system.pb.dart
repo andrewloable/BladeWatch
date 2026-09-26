@@ -1377,7 +1377,7 @@ class DriveStatus extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearGear() => $_clearField(1);
 
-  /// "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+  /// "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
   @$pb.TagNumber(2)
   $core.String get driveMode => $_getSZ(1);
   @$pb.TagNumber(2)

@@ -385,7 +385,7 @@ car's `pear_daemon` runs), or directly when on the car's LAN (epic BladeWatch-rd
 **one** place in this repo where iOS/macOS/Windows/Linux targets are correct — a platform
 directory belongs here, never under `flutter_ui/`. It never runs on the head unit.
 
-- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.4`) — never a caret; before 1.0 its
+- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.5`) — never a caret; before 1.0 its
   minor versions may break the API.
 - Android ships arm64-v8a + x86_64 only, and that holds **only** because
   `companion/android/gradle.properties` sets `disable-abi-filtering=true`: without it the Flutter

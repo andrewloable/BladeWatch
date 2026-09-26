@@ -1,6 +1,7 @@
 package net.bladewatch.app.server
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import net.bladewatch.app.daemon.CameraDaemon
 import net.bladewatch.app.media.RecordingsDatabase
@@ -156,6 +157,62 @@ object RecordingsApiHandler {
         return false
     }
 
+    /** Long edge of a hero served as a clip's grid thumbnail. */
+    internal const val HERO_THUMB_EDGE = 480
+
+    /**
+     * A clip's hero JPEG as a grid thumbnail -- never the hero at full resolution (BladeWatch-820b).
+     * Some heroes are 2560x1920 (~900 KB): over Pear from a phone that cost 1.5-3 s per image and
+     * ~20 MB for a 24-clip grid, against ~17 KB for a generated thumbnail. A hero already within
+     * [HERO_THUMB_EDGE] is served as is; a larger one from a scaled copy cached as hero_<name>,
+     * rebuilt when the hero is newer. Null on any failure: the caller then serves the hero itself,
+     * as before. Direct /thumb/<name>.jpg requests are not routed here -- they get the file.
+     */
+    private fun heroThumbnail(hero: File, cacheDir: File, thumbName: String): File? = try {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(hero.path, bounds)
+        val cached = File(cacheDir, "hero_$thumbName")
+        when {
+            bounds.outWidth <= 0 || bounds.outHeight <= 0 -> null
+            maxOf(bounds.outWidth, bounds.outHeight) <= HERO_THUMB_EDGE -> hero
+            cached.length() > 0 && cached.lastModified() >= hero.lastModified() -> cached
+            else -> writeScaledHero(hero, bounds.outWidth, bounds.outHeight, cached)
+        }
+    } catch (e: Exception) {
+        CameraDaemon.log("Hero thumbnail failed: " + e.message)
+        null
+    }
+
+    private fun writeScaledHero(hero: File, width: Int, height: Int, cached: File): File? {
+        val decoded = BitmapFactory.decodeFile(
+            hero.path,
+            BitmapFactory.Options().apply { inSampleSize = sampleSizeFor(width, height, HERO_THUMB_EDGE) }
+        ) ?: return null
+        val (w, h) = scaledTo(decoded.width, decoded.height, HERO_THUMB_EDGE)
+        val scaled = if (w == decoded.width && h == decoded.height) decoded else Bitmap.createScaledBitmap(decoded, w, h, true)
+        // Atomic: two requests for the same clip may both get here; each renames a whole file.
+        val tmp = File(cached.parentFile, cached.name + "." + Thread.currentThread().id + ".tmp")
+        FileOutputStream(tmp).use { scaled.compress(Bitmap.CompressFormat.JPEG, 75, it) }
+        if (scaled !== decoded) scaled.recycle()
+        decoded.recycle()
+        return if (tmp.renameTo(cached)) cached else null.also { tmp.delete() }
+    }
+
+    /** BitmapFactory inSampleSize: the largest power of two that keeps the long edge >= [edge]. */
+    internal fun sampleSizeFor(width: Int, height: Int, edge: Int): Int {
+        var sample = 1
+        while (maxOf(width, height) / (sample * 2) >= edge) sample *= 2
+        return sample
+    }
+
+    /** [width]x[height] with its long edge brought down to [edge], aspect kept; never enlarged. */
+    internal fun scaledTo(width: Int, height: Int, edge: Int): Pair<Int, Int> {
+        val long = maxOf(width, height)
+        if (long <= edge) return width to height
+        return (width.toLong() * edge / long).toInt().coerceAtLeast(1) to
+            (height.toLong() * edge / long).toInt().coerceAtLeast(1)
+    }
+
     // Background thumbnail generator
     private val thumbExecutor = Executors.newSingleThreadExecutor()
     private val pendingThumbs: MutableSet<String> =
@@ -207,7 +264,7 @@ object RecordingsApiHandler {
         // legacy clips without a hero file fall through to the cache + MediaMetadataRetriever path.
         val heroSibling = findSiblingJpeg(thumbName)
         if (heroSibling != null && heroSibling.exists() && heroSibling.length() > 0) {
-            HttpResponse.sendImage(out, heroSibling, "image/jpeg")
+            HttpResponse.sendImage(out, heroThumbnail(heroSibling, cacheDir, thumbName) ?: heroSibling, "image/jpeg")
             return
         }
 

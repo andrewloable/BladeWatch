@@ -109,7 +109,7 @@ private static final long serialVersionUID = 0L;
   private volatile java.lang.Object driveMode_ = "";
   /**
    * <pre>
-   * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+   * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
    * </pre>
    *
    * <code>string drive_mode = 2 [json_name = "driveMode"];</code>
@@ -130,7 +130,7 @@ private static final long serialVersionUID = 0L;
   }
   /**
    * <pre>
-   * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+   * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
    * </pre>
    *
    * <code>string drive_mode = 2 [json_name = "driveMode"];</code>
@@ -829,7 +829,7 @@ private static final long serialVersionUID = 0L;
     private java.lang.Object driveMode_ = "";
     /**
      * <pre>
-     * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+     * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
      * </pre>
      *
      * <code>string drive_mode = 2 [json_name = "driveMode"];</code>
@@ -849,7 +849,7 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <pre>
-     * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+     * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
      * </pre>
      *
      * <code>string drive_mode = 2 [json_name = "driveMode"];</code>
@@ -870,7 +870,7 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <pre>
-     * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+     * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
      * </pre>
      *
      * <code>string drive_mode = 2 [json_name = "driveMode"];</code>
@@ -887,7 +887,7 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <pre>
-     * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+     * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
      * </pre>
      *
      * <code>string drive_mode = 2 [json_name = "driveMode"];</code>
@@ -901,7 +901,7 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <pre>
-     * "ECO" / "NORMAL" / "SPORT", or "UNKNOWN".
+     * "ECO/NORMAL" (the car reads one value for both) / "SPORT", or "UNKNOWN".
      * </pre>
      *
      * <code>string drive_mode = 2 [json_name = "driveMode"];</code>

@@ -58,7 +58,7 @@ melos run test
 `melos bootstrap` writes a `pubspec_overrides.yaml` into each app; it is gitignored and
 regenerated every time. IDE-file generation is off in `melos.yaml`.
 
-**flutter_pear is pinned exactly** (`flutter_pear: 0.4.4`, `flutter_pear_test: 0.4.4`), never
+**flutter_pear is pinned exactly** (`flutter_pear: 0.4.5`, `flutter_pear_test: 0.4.5`), never
 with a caret: before 1.0 its minor versions may break the API. Its per-platform wiring is in
 place and is not optional — `minSdk = 29` and `arm64-v8a`/`x86_64` only on Android (the
 manifest merger fails below 29, and an `armeabi-v7a` build has none of its native libraries,
