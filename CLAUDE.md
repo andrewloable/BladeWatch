@@ -130,42 +130,35 @@ adb -s $CAR_IP:5555 shell '
   #   pidof acc_sentry_daem   -> (nothing)
   #   pidof main              -> 2851 3102 4571   (comm for all three is "main")
   killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon pear_daemon 2>/dev/null
-  # NO `pkill -9 -f` belt-and-braces line here. There used to be one, claiming the
-  # bracket trick kept it from matching this shell. It does not -- see the tor
-  # block below -- and it killed the adb session mid-procedure, so every step
-  # after it silently never ran.
-  # Kill the Tor tunnel — the only remaining BladeWatch tunnel daemon.
+  # NO `pkill -9 -f` belt-and-braces line here, and never add one. There used to be
+  # one, claiming the bracket trick kept it from matching this shell. It does not, and
+  # this is verified-on-device important: toybox pkill matches the pattern as a literal
+  # SUBSTRING of each /proc/<pid>/cmdline, and this adb shell's own cmdline is the whole
+  # script you are reading -- the pattern included, and the "[b]racketed" spelling too,
+  # which substring matching finds in the script text just the same. It killed the adb
+  # session mid-procedure (observed: exit 137), so every step after it silently never
+  # ran. killall matches `comm` / basename(argv[0]), which is "sh" for this shell, so it
+  # cannot match itself.
   #
-  # killall, NOT pkill -f, and this is verified-on-device important: toybox pkill
-  # matches the pattern as a literal SUBSTRING of each /proc/<pid>/cmdline, and
-  # this adb shell's own cmdline is the whole script you are reading — including
-  # the pattern. So `pkill -9 -f /data/local/tmp/bladewatch_tor` kills the ADB
-  # shell mid-procedure (observed: exit 137, daemons never stopped). The usual
-  # bracket trick does NOT save you here either, because substring matching finds
-  # the literal "[b]ladewatch_tor" in the script text too.
-  #
-  # killall matches `comm` / basename(argv[0]), which is "sh" for this shell and
-  # "bladewatch_tor" for the tunnel, so it cannot match itself. The name is 14
-  # characters precisely so it survives the kernel's 15-char cap on comm — see
-  # TorLauncher.TOR_PROCESS.
-  killall -9 bladewatch_tor 2>/dev/null
+  # A Tor tunnel left running by a v1.3.x install needs no step here: tor was removed in
+  # v1.4.0.0 (BladeWatch-rdtj.12), and the service host kills a stale one on every launch
+  # (BladeWatch-rdtj.23).
   am force-stop net.bladewatch.app
   # Remove launcher scripts + stale locks/sentinels so nothing relaunches.
   #
-  # !! NEVER widen any of these globs to cover /data/local/tmp/tor. That directory
-  # !! holds hs/hs_ed25519_secret_key, which IS the car's permanent onion address.
-  # !! Delete it and tor mints a brand-new address on the next start, silently
-  # !! breaking every QR code the owner has ever scanned, with no way back. The
-  # !! tunnel is stopped by killing the process, never by deleting its directory.
+  # !! NEVER widen any of these globs to cover /data/local/tmp/pear (BladeWatch-rdtj.3):
+  # !! pear_daemon's storage, which holds the car's permanent Pear identity once a companion
+  # !! is paired. Delete it and every paired companion loses the car. Also keep it 0700:
+  # !! pear-end creates its corestore inside it as 0777, so the parent's mode is the only
+  # !! thing keeping it private. Only the lock FILE /data/local/tmp/pear_daemon.lock may be
+  # !! removed.
   # !!
-  # !! The SAME goes for /data/local/tmp/pear (BladeWatch-rdtj.3): pear_daemon's storage,
-  # !! which holds the car's permanent Pear identity once a companion is paired. Delete it
-  # !! and every paired companion loses the car. Also keep it 0700: pear-end creates its
-  # !! corestore inside it as 0777, so the parent's mode is the only thing keeping it
-  # !! private. Only the lock FILE /data/local/tmp/pear_daemon.lock may be removed.
+  # !! /data/local/tmp/tor is what a v1.3.x install left behind: the old onion identity key.
+  # !! Nothing reads it since v1.4.0.0, but deleting it is still a deliberate owner decision,
+  # !! never a side effect of this procedure.
   rm -f /data/local/tmp/start_*.sh /data/local/tmp/camera_daemon.lock /data/local/tmp/*sentry*.lock /data/local/tmp/*sentry*.pid /data/local/tmp/pear_daemon.lock 2>/dev/null
   sleep 1
-  ps -A -o PID,ARGS 2>/dev/null | grep -E "byd_cam_daemon|sentry_daemon|acc_sentry|bladewatch_to[r]|pear_daemo[n]" | grep -v grep || echo "all daemons stopped"
+  ps -A -o PID,ARGS 2>/dev/null | grep -E "byd_cam_daemon|sentry_daemon|acc_sentry|pear_daemo[n]" | grep -v grep || echo "all daemons stopped"
 '
 # NOTE: killing daemons can briefly drop the ADB-over-TCP connection; if so,
 # reconnect: until [ "$(adb -s $CAR_IP:5555 get-state)" = device ]; do adb connect $CAR_IP:5555; sleep 3; done
@@ -294,12 +287,12 @@ BladeWatch is a hybrid Android + shell-daemon + embedded web app. The critical d
 **Service host process** (`net.bladewatch.app`) — no UI: `BladeWatchApplication`, `MainActivity` (startup bootstrap only — extends `Activity`, never calls `setContentView`, `moveTaskToBack(true)` immediately; kept `exported` as the ADB recovery path), boot/power receivers, `DaemonKeepaliveService`, `DaemonStartupManager`, `StatusOverlayService`.
 
 **Shell-launched daemon processes** — launched via `app_process` ADB shell, run outside Activity lifecycle:
-- `CameraDaemon` — the central long-running process. Owns the camera/GPU pipeline, H.264/H.265 recording, WebSocket live streaming, HTTP API server (`127.0.0.1:8080` for the in-car UI, `127.0.0.1:8081` REMOTE for tor, `127.0.0.1:8444` REMOTE TLS for the Pear pump, `0.0.0.0:8443` TLS when LAN access is on), TCP command server (`127.0.0.1:19876`), surveillance IPC server (`127.0.0.1:19877`), telemetry, trips.
+- `CameraDaemon` — the central long-running process. Owns the camera/GPU pipeline, H.264/H.265 recording, WebSocket live streaming, HTTP API server (`127.0.0.1:8080` for the in-car UI, `127.0.0.1:8444` REMOTE TLS for the Pear pump, `0.0.0.0:8443` TLS when LAN access is on), TCP command server (`127.0.0.1:19876`), surveillance IPC server (`127.0.0.1:19877`), telemetry, trips.
 - `SentryDaemon` / `AccSentryDaemon` — surveillance orchestration.
-- `PearDaemon` (`pear_daemon`, launched by `PearLauncher`) — the Pear peer replacing tor in v1.4.0.0 (epic BladeWatch-rdtj). Hosts a bare-kit worklet running pear-end and joins this car's Hyperswarm topic (`PearTopic`, seeded from the secret store). **Opt-in** (`PEAR_PEER`, off by default, like tor). Runs only with six verified runtime requirements — see its class doc; the two that bite first are a stand-in Application (bare-kit's worker-thread hook aborts on a null `currentApplication()`) and `-Djava.library.path` with the APK's lib dir FIRST. **`/data/local/tmp/pear` will hold the car's permanent Pear identity — never delete it.**
-- Tor onion service (`TorLauncher`, binary shipped as `libtor.so` in `jniLibs/`) — the remaining tunnel daemon until `.12` removes it. Runs as `bladewatch_tor`, exposes `127.0.0.1:8081` (the REMOTE loopback listener; never 8080 -- BladeWatch-ur11) as a v3 onion service, and needs no account, token or registration. Unlike its predecessor the binary is NOT committed: `downloadTor` fetches and SHA-256-verifies it at build time. Cloudflared, Tailscale, sing-box and the Telegram daemon were all removed; do not re-add generic kills for them. **`/data/local/tmp/tor/hs` holds the permanent onion identity key — killing the tunnel is fine, deleting that directory is not.** See `docs/networking-and-tunnels.md`.
+- `PearDaemon` (`pear_daemon`, launched by `PearLauncher`) — the Pear peer, BladeWatch's only remote-access path since v1.4.0.0 (epic BladeWatch-rdtj). Hosts a bare-kit worklet running pear-end and joins this car's Hyperswarm topic (`PearTopic`, seeded from the secret store). **Opt-in** (`PEAR_PEER`, off by default; pairing switches it on). Runs only with six verified runtime requirements — see its class doc; the two that bite first are a stand-in Application (bare-kit's worker-thread hook aborts on a null `currentApplication()`) and `-Djava.library.path` with the APK's lib dir FIRST. **`/data/local/tmp/pear` holds the car's permanent Pear identity — never delete it.**
+- **No tunnel daemons.** The Tor onion service was removed in v1.4.0.0 (BladeWatch-rdtj.12), after cloudflared, Tailscale, sing-box and the Telegram daemon; do not re-add generic kills for any of them. `LegacyTunnelCleanup` kills a stale `bladewatch_tor` left by a v1.3.x install on every launch (BladeWatch-rdtj.23) and drops the stale `TOR_TUNNEL` config key; neither it nor `DaemonHardReset` touches `/data/local/tmp/tor`. With tor went the REMOTE loopback listener on 8081 — nothing relays into 8080, which is why the Tier 2 loopback bypass no longer needs a tunnel-active check. See `docs/networking-and-tunnels.md`.
 
-**Embedded web UI** — the Angular 19 SPA under `web/`, built into `app/src/main/assets/web/angular/` and extracted to `/data/local/tmp/web` at runtime. Talks to CameraDaemon over ConnectRPC. It serves **remote browser / tunnel clients only** — the in-car UI is Flutter and does not embed it.
+**Embedded web UI** — the Angular 19 SPA under `web/`, built into `app/src/main/assets/web/angular/` and extracted to `/data/local/tmp/web` at runtime. Talks to CameraDaemon over ConnectRPC. It serves **browsers on the car's network (LAN access, 8443) only** — the in-car UI is Flutter and does not embed it, and remote access is the companion.
 
 **BYD integrations** — local firmware APIs accessed via reflection (stubs in `android.hardware.*` and `android.os.*` compile against stubs; real classes loaded at runtime from boot classloader). **Local SDK only — there is no BYD cloud path.** The whole `byd/cloud/` package (client, MQTT subscriber, Bangcle white-box crypto) was deleted in `61b4d7f`; `VehicleCommandRouter.Path` is now `{SDK, NONE}`, and commands that only ever had a cloud implementation (Lock, Unlock, Flash, FindCar, SetBatteryHeat, charging schedule) resolve to `NOT_SUPPORTED`. See `docs/byd-integrations.md`.
 
@@ -398,8 +391,9 @@ directory belongs here, never under `flutter_ui/`. It never runs on the head uni
   test — router hairpinning fails it with no flutter_pear code involved.
 
 **Web app (`web/`) — browsers, including phones.**
-This one IS reached from a phone: it is what the owner opens when away from the car, over the
-tunnel. Mobile browsers — iOS Safari included — are in scope here, and that is not a
+This one IS reached from a phone's browser, over the car's LAN (TLS on 8443 while LAN access is
+on). Away from the car the owner uses the companion; the web app itself is due for deletion
+(BladeWatch-rdtj.22). Until then mobile browsers — iOS Safari included — are in scope here, and that is not a
 contradiction of the rule above. A mobile *browser* is a supported client of the web app; a
 native *iOS build* of the in-car Flutter app is not a thing that exists (the native phone app
 is the companion).
@@ -526,10 +520,10 @@ update it; read it only for its WebView-quirk notes.
 
 ## Security Notes
 
-- `/data/local/tmp/bladewatch_secrets.json` contains device tokens and tunnel tokens. Never log or copy these values. It is mode `600` (shell-only); the app fetches values it needs over token-gated IPC, not by reading this file.
+- `/data/local/tmp/bladewatch_secrets.json` contains device tokens and remote-access secrets. Never log or copy these values. It is mode `600` (shell-only); the app fetches values it needs over token-gated IPC, not by reading this file.
 - `/data/local/tmp/bladewatch_ipc_token` MUST stay world-readable (`644`). It is the bootstrap token the app uses to authenticate IPC to the daemon; if it reverts to `600`, every app→daemon secret fetch fails and the UI shows "Camera unavailable". See `docs/ipc-auth-and-secrets.md`.
 - LAN HTTP (`http://<car-ip>:8080`) is disabled by default and must remain opt-in. The server binds to `127.0.0.1` by default.
-- Tunnel URLs are only safe when paired with JWT token auth.
+- Remote access (the Pear pump into 8444, LAN TLS on 8443) runs on `REMOTE` listener trust: every request needs a JWT, and the loopback bypass must never reach it.
 - **BYD vehicle control APIs affect the physical car — test conservatively.** This applies to the local SDK commands that still exist (climate, windows, seats, trunk, lights, ADAS, charge cap), which actuate real hardware. The cloud control path is gone (see Architecture above), so the risk now lives entirely in `VehicleCommandRouter`'s SDK path — not a reason to relax the rule.
 - VLESS proxy credentials use encrypted `Safe.s("...")` values — use `generate_safe_enc.py` to encrypt before committing.
 

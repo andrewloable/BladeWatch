@@ -8,7 +8,7 @@ only launcher icon) and `net.bladewatch.app` (the UI-less service host that runs
 the foreground services, receivers and privileged shell-launched daemons). It
 coordinates the in-car UI, camera and surveillance pipelines, local and remote
 web access, BYD vehicle telemetry, trip analytics, Web Push notifications, and
-the Tor tunnel process.
+the Pear peer that remote access runs over.
 
 ## Document Map
 
@@ -18,14 +18,14 @@ the Tor tunnel process.
 - [Data Flow and Storage](data-flow-and-storage.md) explains where data comes from, how it moves between components, and where it is persisted.
 - [Daemons and Processes](daemons-and-processes.md) documents Android components, app-process daemons, watchdogs, foreground services, and local IPC ports.
 - [IPC, Authentication & Secrets](ipc-auth-and-secrets.md) explains the app/daemon UID split, the IPC token bootstrap, the secret-fetch and JWT flows, the **required `/data/local/tmp` file permissions**, and the failure modes that surface as "Camera unavailable".
-- [Networking and Tunnels](networking-and-tunnels.md) covers HTTP, WebSocket streaming, auth, LAN mode, the Tor onion service, and remote access behavior.
+- [Networking and Tunnels](networking-and-tunnels.md) covers HTTP, WebSocket streaming, auth, LAN mode, the Pear peer, and remote access behavior.
 - [HTTP API Reference](http-api-reference.md) lists the embedded web API route families and known endpoints.
 - [BYD Integrations](byd-integrations.md) explains local BYD hardware APIs, compile-time stubs, telemetry collection, and local vehicle controls.
 - [BYD Head Unit → CAN Bus Access](byd-can.md) documents whether the head unit can reach the vehicle CAN bus directly: the SPI/MCU bridge, BYD's closed HAL, and the signature-permission gate that confines BladeWatch to decoded signals only.
 - [Surveillance Implementation](surveillance-implementation.md) documents sentry-mode activation, the GPU/native motion pipeline, AI confirmation, recording lifecycle, safe locations, schedules, APIs, and guardrails.
 - [360 Camera Recording](360-camera-recording.md) explains how the shared 360 camera GPU/encoder stack records surveillance events and ACC-on driving clips.
 - [Build and Operations](build-and-operations.md) covers build inputs, native dependencies, assets, tests, updates, issue tracking, and release/session procedures.
-- [Throughput Harness](throughput-harness.md) defines how every remote-access path (loopback, LAN TLS, tor, Pear) is measured, so the numbers compare.
+- [Throughput Harness](throughput-harness.md) defines how every remote-access path (loopback, LAN TLS, Pear) is measured, so the numbers compare.
 - [Log Files](log-files.md) documents where each daemon and the app process write logs on the device, the UID split, rotation/retention, and quick tail/clear commands.
 
 ## Source Areas

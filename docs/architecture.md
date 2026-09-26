@@ -34,7 +34,7 @@ Service host APK (net.bladewatch.app) -- no launcher entry
   -> foreground services and boot receivers
   -> DaemonStartupManager
   -> ADB shell / app_process launchers
-  -> CameraDaemon, SentryDaemon, AccSentryDaemon, Tor onion service
+  -> CameraDaemon, SentryDaemon, AccSentryDaemon, PearDaemon (opt-in)
 
 CameraDaemon
   -> local TCP command server on 127.0.0.1:19876
@@ -80,8 +80,8 @@ WorkManager, Dadb, OkHttp, ConnectRPC-Kotlin, protobuf-java, TensorFlow Lite, H2
 WebSocket support, and native CMake builds. Navigation, osmdroid and ZXing were
 dropped with the native UI (`BladeWatch-81g9.3`). appcompat, Material and
 lifecycle stayed: `AppCompatDelegate` drives the night mode the status overlay
-reads, `SetupGuideDialog` builds a Material AlertDialog, and `TorController` /
-`DaemonsViewModel` publish daemon state as `LiveData`.
+reads, `SetupGuideDialog` builds a Material AlertDialog, and `DaemonsViewModel`
+publishes daemon state as `LiveData`.
 
 The embedded web UI is a separate Angular 19 project under `web/` (Vite +
 `@analogjs/vite-plugin-angular`, ConnectRPC, Leaflet, `@ngx-translate`, qrcode).
@@ -131,7 +131,7 @@ Core daemon roles:
 - Camera daemon: camera, recording, streaming, HTTP API, WebSocket, telemetry, storage, Web Push notifications, trips.
 - Sentry daemon: surveillance mode orchestration.
 - ACC sentry daemon: ACC-aware sentry behavior.
-- Tor onion service (`bladewatch_tor`): optional remote access tunnel.
+- Pear peer (`pear_daemon`): remote access for the companion app. Opt-in; pairing switches it on. It replaced the Tor onion service in v1.4.0.0 (BladeWatch-rdtj.12).
 
 ### Native Libraries
 
@@ -143,8 +143,8 @@ Important native areas:
 - `app/src/main/cpp/surveillance/`.
 - `app/src/main/cpp/CMakeLists.txt`.
 - Downloaded OpenH264 and opencv-mobile artifacts handled by Gradle tasks.
-- `libtor.so` in `jniLibs/` for the Tor tunnel — downloaded and SHA-256-verified at build
-  time by `downloadTor`, not committed.
+- bare-kit's `libbare-kit.so` in `jniLibs/` for the Pear peer — fetched and SHA-256-verified
+  at build time by `fetchBareKit`, not committed.
 
 ## Startup Lifecycle
 
@@ -155,8 +155,8 @@ Important native areas:
    sidecar, and the status overlay — then immediately backgrounds itself.
 4. `BootReceiver` handles boot, package replacement, screen, power, network, and BYD ACC events.
 5. `DaemonKeepaliveService` runs as a sticky foreground service, holds a partial wake lock, and schedules process revival.
-6. `DaemonStartupManager` delays launch to let the vehicle head unit settle, then starts core daemons and the optional Tor tunnel.
-7. `AdbDaemonLauncher` and lower launchers execute shell commands that start Java daemons or the native tor binary.
+6. `DaemonStartupManager` delays launch to let the vehicle head unit settle, then starts core daemons and the optional Pear peer.
+7. `AdbDaemonLauncher` and lower launchers execute shell commands that start the Java daemons; `PearLauncher` starts pear_daemon.
 
 Core daemon timing is intentionally staggered:
 
@@ -192,11 +192,11 @@ Owns the startup bootstrap. It draws nothing — the in-car UI is Flutter, see
 
 ### `DaemonStartupManager`
 
-Coordinates daemon launch, optional Tor tunnel launch, health checks, and user-stopped daemon state. It treats camera, sentry, and ACC sentry as core daemons and treats the Tor tunnel as the optional tunnel daemon.
+Coordinates daemon launch, the optional Pear peer's launch, health checks, and user-stopped daemon state. It treats camera, sentry, and ACC sentry as core daemons and the Pear peer (`PEAR_PEER`) as the one optional daemon.
 
 ### `AdbDaemonLauncher`
 
-Facade over daemon and tunnel launchers. It starts camera, sentry, ACC sentry, and the Tor tunnel through shell execution.
+Facade over the daemon launchers. It starts camera, sentry and ACC sentry through shell execution; the Pear peer goes through `PearLauncher` / `PearController` instead.
 
 ### `DaemonBootstrap`
 
@@ -235,11 +235,11 @@ The main local BYD telemetry collector. It discovers BYD framework devices throu
 - Reflection is used heavily for BYD local APIs so the app can compile with stubs but run against the vehicle firmware classes.
 - Shared JSON files under `/data/local/tmp` are used for cross-process config and secrets.
 - Daemons expose local TCP/HTTP IPC rather than relying on Activity-bound Android services.
-- The embedded web UI is an Angular 19 SPA that talks to the daemon over ConnectRPC; the in-car UI is Flutter, so the SPA serves remote browser / tunnel clients only.
+- The embedded web UI is an Angular 19 SPA that talks to the daemon over ConnectRPC; the in-car UI is Flutter, so the SPA serves browsers on the car's network (LAN access) only; remote access is the companion.
 - Two UIs track the same 12 ConnectRPC services by convention: Flutter in the car, Angular in the browser. There is no shared UI code between them — only the protos.
-- Optional remote access is layered over the local web server through the Tor onion service instead of exposing internet-facing server code directly. The onion address is a capability URL, not authentication: the password/JWT layer in front of the web server stays mandatory.
+- Optional remote access is layered over the local web server through the Pear peer instead of exposing internet-facing server code directly: the companion's TLS runs end to end over the Pear stream into `127.0.0.1:8444`, which is `REMOTE` listener trust, so the JWT layer stays mandatory.
 - Surveillance and camera paths prioritize long-running stability over tight coupling with Android UI lifecycle.
-- **BladeWatch is server-free by design, permanently** (decided BladeWatch-tren.3). The project operates no backend of its own; nothing leaves the car unless the owner points it somewhere (e.g. the Tor onion service, which needs no account, token, or registration). This is a permanent product decision, not a temporary resource constraint, and the following stay permanently out of scope as a result: push notifications while the car is offline, multi-user access to one car, an account/pairing flow, community-authored automations, hazard-sharing between cars, diagnostic log upload with a short code, and car APK distribution from a server.
+- **BladeWatch is server-free by design, permanently** (decided BladeWatch-tren.3). The project operates no backend of its own; nothing leaves the car unless the owner points it somewhere (e.g. the Pear peer, which finds the car on the public Hyperswarm DHT and needs no account, token, or registration). This is a permanent product decision, not a temporary resource constraint, and the following stay permanently out of scope as a result: push notifications while the car is offline, multi-user access to one car, an account flow (the companion pairs device-to-device by QR, with no server), community-authored automations, hazard-sharing between cars, diagnostic log upload with a short code, and car APK distribution from a server.
 
 ## Major Risk Areas
 

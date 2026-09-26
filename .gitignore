@@ -109,12 +109,12 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Tunnel binary: downloaded and SHA-256-verified by the downloadTor Gradle task,
-# never committed (the 19.2 MB binary it replaces used to be).
+# The tor binary older builds downloaded (tor removed in BladeWatch-rdtj.12). Still ignored so a
+# leftover copy in a working tree can never be committed.
 app/src/main/jniLibs/arm64-v8a/libtor.so
 
 # Bare Kit native libraries (BladeWatch-rdtj.2): downloaded and SHA-256-verified by the
-# fetchBareKit Gradle task, same treatment as libtor.so above.
+# fetchBareKit Gradle task, never committed.
 app/src/main/jniLibs/arm64-v8a/libbare-kit.so
 app/src/main/jniLibs/arm64-v8a/libc++_shared.so
 

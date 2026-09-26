@@ -7,18 +7,17 @@ import net.bladewatch.app.logging.DaemonLogConfig
 import net.bladewatch.app.logging.LogManager
 
 /**
- * Launches and stops `pear_daemon` ([net.bladewatch.app.daemon.PearDaemon]), the Pear peer that
- * replaces the tor onion service as BladeWatch's remote-access transport.
+ * Launches and stops `pear_daemon` ([net.bladewatch.app.daemon.PearDaemon]), the Pear peer:
+ * BladeWatch's remote-access transport.
  *
  * It is an `app_process` daemon like sentry_daemon, run as shell UID over ADB. Restart-on-crash is
- * NOT here: like tor, it is DaemonStartupManager's 30 s health check that relaunches a dead,
+ * NOT here: DaemonStartupManager's 30 s health check is what relaunches a dead,
  * enabled optional daemon. This class only knows how to start, stop and probe one.
  *
  * ## The storage directory is not ours to delete
  *
  * [net.bladewatch.app.daemon.PearDaemon.STORAGE_DIR] will hold the car's permanent Pear identity.
- * [stopCommand] kills the process and nothing else, on purpose, exactly as TorLauncher never
- * touches tor's hs/ directory -- a stop must be reversible.
+ * [stopCommand] kills the process and nothing else, on purpose -- a stop must be reversible.
  */
 class PearLauncher(
     private val context: Context,
@@ -56,8 +55,8 @@ class PearLauncher(
          * (BladeWatch-rdtj.2).
          *
          * The already-running check is inside the single shell invocation, not a Kotlin
-         * check-then-act across two ADB round trips: TorLauncher learned that two callers racing
-         * start a daemon twice (measured 2026-09-15). PearDaemon's singleton lock backs this up.
+         * check-then-act across two ADB round trips: two callers racing that way started a daemon
+         * twice (measured 2026-09-15). PearDaemon's singleton lock backs this up.
          * `pidof`, never `pgrep`: pgrep matches `comm`, which is "main" for every app_process
          * daemon, so it could never find this one.
          */

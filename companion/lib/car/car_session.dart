@@ -152,9 +152,17 @@ class CarSession extends ChangeNotifier {
               .find(await LanProber.candidates(), pinnedFingerprint: car.tlsFingerprint),
       connectPear: (onClosed) async {
         try {
-          // One join for the session's life: the swarm reconnects to the car by itself, and a
-          // second join of the same topic would be a second swarm.
-          final s = swarm ??= await join(PearKey.fromHex(car.pearTopic));
+          // A fresh join every time the car is looked for (BladeWatch-rdtj.24). The selector only
+          // asks with no live link -- at start, after a drop, on a retry, after a network change --
+          // and an old dial-only swarm does not find the car again on its own: after a car-side
+          // pear_daemon restart it redialed for minutes and never connected, while a new join
+          // found the car in about 2 s. A new swarm also gets the replay of connections that
+          // already exist, which PearSwarm.connections gives its FIRST listener only. The old one
+          // is left first, so there is never a second swarm on the topic.
+          final previous = swarm;
+          swarm = null;
+          if (previous != null) await previous.leave().catchError((Object _) {});
+          final s = swarm = await join(PearKey.fromHex(car.pearTopic));
           return await findCarOverPear(pearLinks(s), car.tlsFingerprint, onClosed: onClosed);
         } catch (_) {
           return null; // Pear unavailable: the selector reports failed and retries.

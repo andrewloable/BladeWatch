@@ -1,6 +1,6 @@
 /// The 3 daemons the Startup screen watches — ground truth: `coreDaemons` in
 /// `app/src/main/java/com/loabletech/bladewatch/ui/fragment/StartupFragment.kt`.
-/// `DaemonType` has a 4th value, `TOR_TUNNEL`, deliberately excluded here —
+/// `DaemonType` has a 4th value, `PEAR_PEER`, deliberately excluded here —
 /// do not add it to this screen.
 enum CoreDaemon { camera, sentry, accSentry }
 

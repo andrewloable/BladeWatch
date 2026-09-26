@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bladewatch_companion/car/media.dart';
+import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support.dart';
@@ -12,8 +14,10 @@ void main() {
   // 0..255 repeating, so a resumed download that stitched the wrong bytes would not compare equal.
   final full = List<int>.generate(100000, (i) => i % 256);
   var cutAfter = 0; // /video/flaky.mp4: bytes sent before the connection is cut (0 = never)
+  void Function()? onCut; // runs just before the cut: e.g. the session losing its route
 
   setUp(() async {
+    onCut = null;
     auth.clear();
     ranges.clear();
     car = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -38,6 +42,7 @@ void main() {
           final socket = await r.response.detachSocket();
           socket.add(full.sublist(from, from + cutAfter));
           await socket.flush();
+          onCut?.call();
           socket.destroy();
           cutAfter = 0;
           return;
@@ -92,5 +97,36 @@ void main() {
     expect(ranges, [null, 'bytes=40000-'], reason: 'the retry asks only for what is missing');
     expect(dest.readAsBytesSync(), full);
     expect(File('${dest.path}.part').existsSync(), isFalse);
+  });
+
+  // BladeWatch-tayl, measured from mobile data: reconnects took 5 s to 90+ s, and a download that
+  // spent its few quick attempts during the outage was lost. A drop the session sees must wait for
+  // the route, not use up tries -- with ONE attempt this passes only if the drop costs none.
+  test('a drop while the route is down costs no attempt: it waits for the session, then resumes', () async {
+    final s = session();
+    final dest = File('${Directory.systemTemp.createTempSync('dl').path}/flaky.mp4');
+    cutAfter = 40000;
+    onCut = () {
+      s.phases.add(TransportPhase.discovering);
+      Timer(const Duration(milliseconds: 300), () => s.phases.add(TransportPhase.pear));
+    };
+    expect(await downloadMedia(s.session, '/video/flaky.mp4', dest, attempts: 1, backoff: Duration.zero), isTrue);
+    expect(ranges, [null, 'bytes=40000-']);
+    expect(dest.readAsBytesSync(), full);
+  });
+
+  test('a route that never comes back gives up after its patience, leaving nothing behind', () async {
+    final s = session();
+    final dest = File('${Directory.systemTemp.createTempSync('dl').path}/flaky.mp4');
+    cutAfter = 40000;
+    onCut = () => s.phases.add(TransportPhase.discovering);
+    final watch = Stopwatch()..start();
+    expect(
+      await downloadMedia(s.session, '/video/flaky.mp4', dest, backoff: Duration.zero, patience: const Duration(milliseconds: 400)),
+      isFalse,
+    );
+    expect(watch.elapsed, lessThan(const Duration(seconds: 5)), reason: 'bounded by patience, not by a hang');
+    expect(File('${dest.path}.part').existsSync(), isFalse);
+    expect(dest.existsSync(), isFalse);
   });
 }

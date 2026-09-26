@@ -47,11 +47,11 @@ class UnifiedConfigManagerTest {
         UnifiedConfigManager.setDaemonEnabled("PEAR_PEER", true) // this process now caches true
         writeTheCacheCannotSee { it.getJSONObject("daemons").put("PEAR_PEER", false) }
 
-        UnifiedConfigManager.setDaemonEnabled("TOR_TUNNEL", false) // an unrelated write
+        UnifiedConfigManager.setDaemonEnabled("ACC_SENTRY_DAEMON", false) // an unrelated write
 
         val daemons = JSONObject(file.readText()).getJSONObject("daemons")
         assertEquals("the owner's switch-off was saved over", false, daemons.getBoolean("PEAR_PEER"))
-        assertEquals(false, daemons.getBoolean("TOR_TUNNEL"))
+        assertEquals(false, daemons.getBoolean("ACC_SENTRY_DAEMON"))
     }
 
     @Test

@@ -7,7 +7,6 @@ import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.launcher.AdbDaemonLauncher
 import net.bladewatch.app.launcher.AdbShellExecutor
 import net.bladewatch.app.launcher.PearLauncher
-import net.bladewatch.app.launcher.TorLauncher
 import net.bladewatch.app.logging.LogManager
 import net.bladewatch.app.ui.model.DaemonType
 import net.bladewatch.app.ui.util.PreferencesManager
@@ -40,7 +39,6 @@ class DaemonStartupManager(
         )
 
         val OPTIONAL_DAEMONS: List<DaemonType> = listOf(
-            DaemonType.TOR_TUNNEL,
             DaemonType.PEAR_PEER,
         )
 
@@ -92,13 +90,9 @@ class DaemonStartupManager(
      * ADB key had been wiped and no daemon could start.
      *
      * It used to simply schedule a second full set of delayed work on top of the first, so
-     * everything fired TWICE, about a second apart. Measured on the head unit 2026-09-15 in
-     * tor's own log:
-     *
-     *     09:26:31 [notice] Tor 0.4.8.14
-     *     09:26:31 [notice] Tor 0.4.8.14          <- two starts, same second
-     *     09:26:31 [warn]  ...another Tor process is running with the same data directory...
-     *     09:26:36 [err]   No, it's still there. Exiting.
+     * everything fired TWICE, about a second apart. Measured on the head unit 2026-09-15: the
+     * remote-access daemon of the time logged two starts in the same second, and the second copy
+     * exited five seconds later on finding the first one's data directory locked.
      *
      * Dropping the previously queued work first makes a second call REPLACE the first rather
      * than duplicate it, which is what the recovery path actually wants. A plain one-shot
@@ -214,8 +208,8 @@ class DaemonStartupManager(
         log.info(TAG, "=== Checking all daemon statuses ===")
         daemonsViewModel?.let { vm ->
             DaemonType.values().forEach { type -> vm.refreshDaemonStatus(type, logResult = true) }
-            // Camera daemon defaults to private stream mode. Public exposure is opt-in
-            // via the Tor tunnel in the Daemons settings, not a global mode.
+            // Camera daemon defaults to private stream mode. Remote access is opt-in (the Pear
+            // peer, switched on by pairing a companion), not a global mode.
             log.info(TAG, "Syncing camera daemon stream mode to: private")
             vm.cameraDaemonController.setStreamMode("private")
         }
@@ -314,12 +308,11 @@ class DaemonStartupManager(
         }
         log.info(TAG, "Starting optional daemons from preferences...")
 
-        startTunnelFromPreferences(vm)
         startPearFromPreferences(vm)
     }
 
     /**
-     * Opt-in, like tor: a car appears on the public DHT only once its owner has enabled the Pear
+     * Opt-in: a car appears on the public DHT only once its owner has enabled the Pear
      * peer (pairing a companion is what turns it on). Reads [isOptionalDaemonEnabled], the same
      * cross-process-aware check the health check uses, so a switch flipped in the Flutter UI is
      * honoured here too.
@@ -339,30 +332,9 @@ class DaemonStartupManager(
         }
     }
 
-    private fun startTunnelFromPreferences(vm: DaemonsViewModel) {
-        val tunnelEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TOR_TUNNEL)
-
-        if (tunnelEnabled) {
-            vm.torController.isRunning { isRunning ->
-                if (isRunning) {
-                    log.info(TAG, "Tor already running, skipping start")
-                } else {
-                    log.info(TAG, "Starting Tor (user enabled)...")
-                    handler.post { vm.startDaemon(DaemonType.TOR_TUNNEL) }
-                }
-            }
-        } else {
-            log.info(TAG, "No tunnel enabled by user")
-        }
-    }
-
     private fun startOptionalDaemonsViaAdb() {
         log.info(TAG, "Starting optional daemons via ADB...")
         try {
-            if (PreferencesManager.isDaemonEnabled(DaemonType.TOR_TUNNEL)) {
-                log.info(TAG, "Boot: Starting Tor...")
-                startTorOnBoot()
-            }
             if (isOptionalDaemonEnabled(DaemonType.PEAR_PEER)) {
                 log.info(TAG, "Boot: Starting Pear peer...")
                 startPearOnBoot()
@@ -372,69 +344,9 @@ class DaemonStartupManager(
         }
     }
     
-    /**
-     * Start the Tor tunnel on boot using TorLauncher directly.
-     *
-     * A cold boot is the slow case: tor took ~82 s to bootstrap on the head unit with an
-     * empty DataDirectory, against ~6 s once the consensus cache is warm. TorLauncher waits
-     * it out; nothing here needs to.
-     */
-    private fun startTorOnBoot() {
-        val adbShellExecutor = AdbShellExecutor(context)
-        val torLauncher = TorLauncher(context, adbShellExecutor, log)
-
-        torLauncher.launchTor(object : TorLauncher.TorCallback {
-            override fun onLog(message: String) {
-                log.debug(TAG, "[Tor Boot] $message")
-            }
-
-            override fun onTunnelUrl(url: String) {
-                // The address is a capability granting network access to this car, and
-                // daemon logs end up in bug reports. Record that it came up, not what it is.
-                log.info(TAG, "Boot: Tor onion service is live")
-            }
-
-            override fun onError(error: String) {
-                log.error(TAG, "Boot: Tor error: $error")
-            }
-        })
-    }
-
     /** Start pear_daemon with no ViewModel -- the boot path and the health check's fallback. */
     private fun startPearOnBoot() {
         PearLauncher(context, AdbShellExecutor(context), log).launch(createLogCallback("Pear"))
-    }
-
-    /**
-     * Restart tunnel if enabled. When forceRestart=true, kills existing tunnel first
-     * so it can pick up new settings.
-     */
-    private fun restartTunnelIfEnabled(vm: DaemonsViewModel, forceRestart: Boolean = false) {
-        val tunnelEnabled = PreferencesManager.isDaemonEnabled(DaemonType.TOR_TUNNEL)
-
-        if (tunnelEnabled) {
-            vm.torController.isRunning { isRunning ->
-                if (isRunning && forceRestart) {
-                    log.info(TAG, "Restarting Tor to apply new settings...")
-                    handler.post {
-                        vm.stopDaemon(DaemonType.TOR_TUNNEL)
-                        handler.postDelayed({
-                            log.info(TAG, "Starting Tor with new settings")
-                            vm.startDaemon(DaemonType.TOR_TUNNEL)
-                        }, 2000)
-                    }
-                } else if (!isRunning) {
-                    log.info(TAG, "Starting Tor (user enabled)")
-                    handler.post { vm.startDaemon(DaemonType.TOR_TUNNEL) }
-                } else {
-                    log.info(TAG, "Tor already running, no restart needed")
-                }
-            }
-        }
-    }
-
-    private fun startTunnelIfEnabled(vm: DaemonsViewModel) {
-        restartTunnelIfEnabled(vm, forceRestart = false)
     }
 
     fun onDaemonToggled(type: DaemonType, enabled: Boolean) {
@@ -455,7 +367,7 @@ class DaemonStartupManager(
      *
      * BladeWatch-abcx: the cross-process `daemons` config section WINS when it has an
      * entry, because that is the only place the Flutter APK can write — otherwise a
-     * tunnel switched off there would be relaunched here within 30 s and the switch would
+     * daemon switched off there would be relaunched here within 30 s and the switch would
      * appear to undo itself. SharedPreferences remains the fallback so an install that
      * pre-dates the config section keeps its existing setting instead of silently
      * flipping off.
@@ -593,15 +505,6 @@ class DaemonStartupManager(
                         onSuccess = { log.info(TAG, "HealthCheck: ACC Sentry restarted") },
                         onError = { e -> log.error(TAG, "HealthCheck: ACC Sentry restart failed: $e") }
                     )
-                }
-                DaemonType.TOR_TUNNEL -> {
-                    // BladeWatch-3lbz.8: without this branch the tunnel fell through to the
-                    // warning below and was never relaunched on the boot path, so remote
-                    // access did not come back after a reboot even with the tunnel enabled.
-                    // startTorOnBoot needs no ViewModel — it drives TorLauncher directly,
-                    // which is exactly what this fallback is for.
-                    log.info(TAG, "HealthCheck: relaunching Tor tunnel")
-                    startTorOnBoot()
                 }
                 DaemonType.PEAR_PEER -> {
                     log.info(TAG, "HealthCheck: relaunching Pear peer")

@@ -22,7 +22,7 @@ import javax.crypto.spec.SecretKeySpec
  * Authentication Manager for BYD Champ.
  *
  * Simple device token authentication - no external OAuth needed.
- * Works with any tunnel (the Tor onion service, or a LAN address) since no origin
+ * Works over any transport (Pear, or a LAN address) since no origin
  * validation is required.
  *
  * Auth Flow:

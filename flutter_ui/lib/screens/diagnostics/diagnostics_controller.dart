@@ -31,16 +31,12 @@ const _trafficMonitorStatusCommand =
 /// health and Performance are separate screens/dialogs
 /// ([AdbConsoleController] etc.), not part of this controller.
 ///
-/// [tunnelUrlSource] (BladeWatch-m1po) and [cameraConfigSource]
-/// (BladeWatch-hygs) are the same class of injected, currently-unresolved
-/// IPC gap as elsewhere in this port — both default to native's own
-/// fallback values.
+/// [pearStatusSource] and [cameraConfigSource] (BladeWatch-hygs) are injected so the tests need no
+/// platform channel; both default to "nothing known".
 ///
-/// [tunnelState] simplifies native's 3-way daemon status (STOPPED/STARTING/
-/// RUNNING) to what `DaemonChannel.processStatus()` actually reports
-/// (running or not): "connecting" here means the tunnel daemon process is up
-/// but hasn't minted a URL yet, not literally adbd's STARTING status value,
-/// which this port has no channel to read.
+/// [tunnelState] is remote access, i.e. the Pear peer (tor was removed, BladeWatch-rdtj.12):
+/// online once the car can be found on the DHT, connecting while the peer runs but cannot be found
+/// (yet), offline when it is off or down.
 class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
   final DaemonChannel _daemonChannel;
   final StorageServiceClient _storageService;
@@ -48,7 +44,7 @@ class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
   final NetworkChannel _networkChannel;
   final SurveillanceServiceClient _surveillanceService;
   final AdbConnection Function() _adbConnectionFactory;
-  final Future<String?> Function() _tunnelUrlSource;
+  final Future<PearStatus> Function() _pearStatusSource;
   final Future<CameraProbeConfig> Function() _cameraConfigSource;
   final Future<int?> Function() _batterySocSource;
 
@@ -59,7 +55,7 @@ class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
     required NetworkChannel networkChannel,
     required SurveillanceServiceClient surveillanceService,
     required AdbConnection Function() adbConnectionFactory,
-    Future<String?> Function() tunnelUrlSource = _noTunnelUrl,
+    Future<PearStatus> Function() pearStatusSource = _noPear,
     Future<CameraProbeConfig> Function() cameraConfigSource = _defaultCameraConfig,
     Future<int?> Function() batterySocSource = _noBatterySoc,
   })  : _daemonChannel = daemonChannel, // ignore: prefer_initializing_formals
@@ -68,11 +64,11 @@ class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
         _networkChannel = networkChannel, // ignore: prefer_initializing_formals
         _surveillanceService = surveillanceService, // ignore: prefer_initializing_formals
         _adbConnectionFactory = adbConnectionFactory, // ignore: prefer_initializing_formals
-        _tunnelUrlSource = tunnelUrlSource, // ignore: prefer_initializing_formals
+        _pearStatusSource = pearStatusSource, // ignore: prefer_initializing_formals
         _cameraConfigSource = cameraConfigSource, // ignore: prefer_initializing_formals
         _batterySocSource = batterySocSource; // ignore: prefer_initializing_formals
 
-  static Future<String?> _noTunnelUrl() async => null;
+  static Future<PearStatus> _noPear() async => PearStatus.unknown;
   static Future<CameraProbeConfig> _defaultCameraConfig() async => const CameraProbeConfig();
   static Future<int?> _noBatterySoc() async => null;
 
@@ -138,14 +134,12 @@ class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
       _ssid = null;
     }
 
-    final tunnelUrl = await _safeTunnelUrl();
-    if (tunnelUrl != null && tunnelUrl.isNotEmpty) {
-      _tunnelState = TunnelState.online;
-    } else if (daemons['TOR_TUNNEL'] == true) {
-      _tunnelState = TunnelState.connecting;
-    } else {
-      _tunnelState = TunnelState.offline;
-    }
+    final pear = await _safePear();
+    _tunnelState = !pear.enabled || !pear.running
+        ? TunnelState.offline
+        : pear.reachable == true
+            ? TunnelState.online
+            : TunnelState.connecting;
 
     try {
       final resp = await _systemService.getStatus(GetStatusRequest());
@@ -155,11 +149,11 @@ class DiagnosticsController extends ChangeNotifier with DisposedSafeNotifier {
     }
   }
 
-  Future<String?> _safeTunnelUrl() async {
+  Future<PearStatus> _safePear() async {
     try {
-      return await _tunnelUrlSource();
+      return await _pearStatusSource();
     } catch (_) {
-      return null;
+      return PearStatus.unknown;
     }
   }
 

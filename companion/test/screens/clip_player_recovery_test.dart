@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bladewatch_companion/screens/recordings/clips.dart';
+import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,5 +115,46 @@ void main() {
     }
     expect(platform.created, 6, reason: 'the first player and five recoveries');
     expect(find.text(t('errors.load_failed')), findsOneWidget);
+  });
+
+  // BladeWatch-tayl, from mobile data: reconnects took 5 s to 90+ s. Drops the session sees must
+  // wait for the route rather than use up the five tries -- seven long outages in a row still play.
+  testWidgets('drops while the route is down wait for it and never use up the tries', (tester) async {
+    final s = TestSession();
+    await pumpScreen(tester, s, const ClipPlayerScreen(filename: 'a.mp4', canPlay: true, retryPause: Duration(milliseconds: 10)));
+    await tester.pump();
+    await tester.pump();
+    for (var i = 0; i < 7; i++) {
+      await s.go(tester, TransportPhase.discovering);
+      platform.drop(platform.created);
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget, reason: 'waiting, not failed');
+      await tester.pump(const Duration(seconds: 90)); // a long outage
+      await s.go(tester, TransportPhase.pear);
+      await tester.pump();
+      await tester.pump();
+    }
+    expect(platform.created, 8, reason: 'seven outages, seven recoveries, none of them counted');
+    expect(find.text(t('errors.load_failed')), findsNothing);
+    expect(find.byType(VideoPlayer), findsOneWidget);
+  });
+
+  testWidgets('an outage longer than its patience says the clip will not load', (tester) async {
+    final s = TestSession();
+    await pumpScreen(
+      tester,
+      s,
+      const ClipPlayerScreen(filename: 'a.mp4', canPlay: true, retryPause: Duration(milliseconds: 10), patience: Duration(seconds: 5)),
+    );
+    await tester.pump();
+    await tester.pump();
+    await s.go(tester, TransportPhase.discovering);
+    platform.drop(1);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pump();
+    expect(find.text(t('errors.load_failed')), findsOneWidget);
+    expect(platform.created, 1, reason: 'nothing to reconnect to');
   });
 }

@@ -11,9 +11,8 @@ class AdbPresetCommand {
 /// Ported from `PresetCommands.ALL` — same labels, commands and categories,
 /// same order.
 const List<AdbPresetCommand> adbPresetCommands = [
-  AdbPresetCommand(label: 'Process Status', command: "ps -ef | grep -E 'daemon|bladewatch_tor'", category: 'Status'),
+  AdbPresetCommand(label: 'Process Status', command: "ps -ef | grep -E 'daemon'", category: 'Status'),
   AdbPresetCommand(label: 'Port Status', command: "netstat -tlnp | grep -E '8080|8554'", category: 'Status'),
-  AdbPresetCommand(label: 'Tor Logs', command: 'cat /data/local/tmp/tor.log | tail -50', category: 'Logs'),
   AdbPresetCommand(label: 'Camera Logs', command: 'cat /data/local/tmp/byd_cam_daemon.log | tail -50', category: 'Logs'),
   AdbPresetCommand(label: 'Sentry Logs', command: 'cat /data/local/tmp/sentry_daemon.log | tail -50', category: 'Logs'),
   // BladeWatch-6jj1: these run in THIS app's ADB console, so the old `pkill -f` forms

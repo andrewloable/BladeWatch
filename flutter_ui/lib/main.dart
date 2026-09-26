@@ -188,8 +188,6 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
         recordingsService: _recordingsService,
         systemService: _systemService,
         daemonChannel: _daemonChannel,
-        authChannel: _authChannel,
-        tunnelStatusSource: _daemonChannel.tunnelStatus,
       );
 
   late final SettingsAboutController _settingsAboutController =
@@ -224,11 +222,9 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
     networkChannel: _networkChannel,
     surveillanceService: _surveillanceService,
     adbConnectionFactory: () => AdbClient(keys: _adbKeyChannel),
-    // BladeWatch-i2wv: the real tunnel source, the same one DashboardController
-    // uses. It was left on the always-null default here long after
-    // BladeWatch-m1po built it, so the Diagnostics Network card reported the
-    // tunnel offline unconditionally.
-    tunnelUrlSource: _daemonChannel.tunnelUrl,
+    // Remote access is the Pear peer (BladeWatch-rdtj.12); without the real source the Network
+    // card would report it offline unconditionally (the BladeWatch-i2wv lesson).
+    pearStatusSource: _daemonChannel.pearStatus,
     // BladeWatch-i2wv: the real probed-camera read. `camera` was added to the
     // daemon's READABLE config allowlist only — it stays unwritable over IPC,
     // because this tile needs to read it and nothing more.
@@ -335,9 +331,6 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                 ? AppShell(
                     controller: _shellController,
                     onLanguageTap: () => _showLanguagePicker(context),
-                    // BladeWatch-0kru: real tunnel URL, so the pill shows the
-                    // actual address or nothing at all.
-                    tunnelUrlSource: _daemonChannel.tunnelUrl,
                     dashboardScreen: DashboardScreen(
                       controller: _dashboardController,
                       systemService: _systemService,

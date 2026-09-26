@@ -24,8 +24,9 @@ The app cannot write to `/data/local/tmp` and cannot read files that are mode
 | File | Primary path (current) | Owner / mode | Why | Who reads it |
 |---|---|---|---|---|
 | config | `/storage/emulated/0/BladeWatch/data/bladewatch_config.json` | world-rw (`setReadable/Writable(true, false)`) | non-secret config | app + daemon (direct) |
-| secrets | `/data/local/tmp/bladewatch_secrets.json` | `shell` `rw-------` (owner-only, and **actually enforced** — see below) | device secret, tunnel tokens, cloud creds | **daemon only**; app fetches values over IPC |
+| secrets | `/data/local/tmp/bladewatch_secrets.json` | `shell` `rw-------` (owner-only, and **actually enforced** — see below) | device secret, the Pear topic seed, paired companions | **daemon only**; app fetches values over IPC |
 | IPC token | `/data/local/tmp/bladewatch_ipc_token` | `shell` `644` (world-readable) | shared token that authenticates loopback IPC | **app + daemon** — app MUST be able to read it |
+| Pear identity | `/data/local/tmp/pear/swarm-identity.seed` | `shell` `rw-------`, inside the `0700` `pear/` dir | the seed of the car's Hyperswarm key pair, one identity across restarts (BladeWatch-rdtj.24) | pear_daemon only (pear-end reads it at worklet start); never logged or copied -- whoever holds it is the car's Pear peer |
 | secrets write lock | `/data/local/tmp/bladewatch_secrets.json.lock` | `shell` `rw-------` (created so, atomically) | serialises read-modify-write across CameraDaemon and pear_daemon (BladeWatch-rdtj.3) | shell processes only -- world-readable, an app could take a shared lock and block every secret write |
 | config write lock | `/data/local/tmp/bladewatch_config.json.lock` | world-rw | serialises config writes across the service host and the daemons (BladeWatch-17l7) | app + daemon -- the app must open it too; waits are bounded so it cannot be used to hang a write |
 
@@ -160,48 +161,19 @@ No cross-process notification is needed after a write: `StatusOverlayService
 .loadConfig()` invalidates its cache on the file's mtime, so a write from the
 daemon is visible to the app process (and vice versa) without a restart.
 
-## Tunnel URL over IPC
+## Pear status over IPC
 
-`tunnelStatus` on 19876 (BladeWatch-m1po) answers
-`{"status":"ok","running":<bool>,"url":<string|null>}`.
+`pearStatus` on 19876 (BladeWatch-rdtj.17) answers the Pear peer's liveness, the owner's
+switch, whether the car can be found right now, how many paired devices are connected and
+when one last connected — never the topic or a peer key. Details: `daemons-and-processes.md`,
+"Pear Peer Process".
 
-The Flutter APK cannot reach either place the service host keeps this value —
-`TorController`'s in-memory `LiveData`, or `PreferencesManager`'s app-private
-`SharedPreferences` — so the daemon reads tor's own files instead:
-`/data/local/tmp/tor/hs/hostname` for the address and `/data/local/tmp/tor.log` for the
-bootstrap state. No shell and no ADB: the daemon already runs as shell UID, the same UID
-tor was launched under, and the hostname file is mode 600 so the app UID could not read it
-anyway.
-
-**The URL is gated on TWO things, and both are load-bearing.**
-
-1. *The tunnel process is alive.* Liveness is an **argv[0]** match read from procfs, not a
-   `pgrep -f` over whole command lines: `-f` matched any process that merely mentioned a
-   daemon name, which defeated this gate (BladeWatch-xzhv — observed with a shell that
-   only wrote to the tunnel's log file). `app_process --nice-name=<n>` overwrites argv[0]
-   with the nice-name, and tor is exec'd by path, so the comparison is on the basename of
-   argv[0], by exact equality — which also keeps `sentry_daemon` from matching
-   `acc_sentry_daemon`. The binary is installed as `bladewatch_tor` so that basename is
-   both distinctive and inside the kernel's 15-character cap on `comm`.
-
-2. *tor has bootstrapped.* This gate is specific to Tor and did not exist for the previous
-   tunnel, which only printed its URL once it was already live. tor writes `hs/hostname`
-   about a second after its FIRST launch and then keeps it forever, reboots included, so
-   the file says nothing about reachability. A cold start takes ~82 s to reach
-   `Bootstrapped 100%` (~6 s warm), and publishing the address during that window would
-   put an "online" QR code on the Dashboard for a service nothing can reach.
-
-The bootstrap check reads the tail of `tor.log` — never the whole file, which cost 85 MB+
-allocations in the implementation this replaces — and tracks the **latest** of
-`Bootstrapped 0%` and `Bootstrapped 100%` rather than merely searching for 100%. tor
-appends to one log across launches, so after a restart the previous run's success line sits
-above the new run's start; taking the last one is what stops a restart republishing the
-address early.
-
-`running=true` with `url=null` is a real state (tor up, not yet reachable), not an error.
-`DaemonChannel.tunnelStatus()` surfaces both fields, and the Dashboard renders that state
-as "connecting" — with Tor it can last well over a minute, so collapsing it into "offline"
-would tell the user there is no tunnel while one is actively coming up.
+It replaced `tunnelStatus`, which published the Tor onion address and went with tor in
+v1.4.0.0 (BladeWatch-rdtj.12). Liveness is the same **argv[0]** match read from procfs as
+`daemonStatus`, not a `pgrep -f` over whole command lines: `-f` matched any process that
+merely mentioned a daemon name (BladeWatch-xzhv). `app_process --nice-name=<n>` overwrites
+argv[0] with the nice-name, so the comparison is on the basename of argv[0], by exact
+equality — which also keeps `sentry_daemon` from matching `acc_sentry_daemon`.
 
 ## Daemon enable/disable over IPC
 
@@ -213,9 +185,10 @@ would tell the user there is no tunnel while one is actively coming up.
 shell. The PIDs it signals come from this server's own procfs scan, keyed by a process
 name looked up from the enum — never from the wire.
 
-The allow-list holds **TOR_TUNNEL and PEAR_PEER** (BladeWatch-abcx; PEAR_PEER added by
-BladeWatch-rdtj.3 on the same terms — an optional daemon whose enabled state persists and
-whose launch the health check performs). The other three are excluded for structural
+The allow-list holds **PEAR_PEER** alone (BladeWatch-rdtj.3) — an optional daemon whose
+enabled state persists and whose launch the health check performs. It held TOR_TUNNEL too
+(BladeWatch-abcx) until tor was removed in v1.4.0.0 (BladeWatch-rdtj.12); a request naming
+it is now refused like any other unknown type. The other three are excluded for structural
 reasons, not missing work:
 
 | Daemon | Why not |
@@ -224,13 +197,13 @@ reasons, not missing work:
 | `SENTRY_DAEMON`, `ACC_SENTRY_DAEMON` | Core daemons. `DaemonStartupManager`'s health check relaunches them within 30 s unless they are in `userStoppedDaemons` — an in-memory set in the *app* process that the daemon cannot reach — so a stop here would silently undo itself. |
 
 Enabling only **records the intent**: `DaemonStartupManager`'s health check performs the
-launch through `TorLauncher` / `PearLauncher` within ~30 s.
+launch through `PearLauncher` within ~30 s.
 Disabling records the intent **and kills the process**, because that health check only
-ever relaunches, never kills — without the kill the tunnel would keep serving until the
+ever relaunches, never kills — without the kill the peer would keep serving until the
 next reboot while the switch read "off".
 
 The shared state is `UnifiedConfigManager`'s `daemons` section
-(`{"TOR_TUNNEL": <bool>, "PEAR_PEER": <bool>}`), which both APKs can reach. `DaemonStartupManager` prefers it
+(`{"PEAR_PEER": <bool>}`), which both APKs can reach. `DaemonStartupManager` prefers it
 and falls back to `PreferencesManager` (app-private SharedPreferences, invisible to the
 Flutter APK) when the key is unset, so an install predating the section keeps its
 existing setting.
@@ -290,10 +263,10 @@ never needs one; the threat model is a browser or companion reaching the daemon 
 `AuthMiddleware.isLocalAppCaller` (BladeWatch-rdtj.4). It used to be the loopback address
 alone, which the Pear stream pump would have satisfied: it reaches the server from
 127.0.0.1, so a remote peer would have actuated the car on a session JWT alone. The LAN TLS
-listener and the tunnels' listeners (127.0.0.1:8081 for tor, 127.0.0.1:8444 for the Pear
-pump) are `REMOTE` and always need the token. tor used to land on 8080 from loopback and was therefore exempt all
-along; BladeWatch-ur11 moved it to 8081. The web app already sends the token
-(`vehicle-action.interceptor.ts`), so remote vehicle control over tor keeps working.
+listener and the Pear pump's listener (127.0.0.1:8444) are `REMOTE` and always need the
+token. (tor, removed in v1.4.0.0, first landed on 8080 from loopback and was therefore exempt;
+BladeWatch-ur11 moved it to its own REMOTE listener on 8081, which went with it.) The web app
+already sends the token (`vehicle-action.interceptor.ts`).
 
 | | |
 |---|---|
@@ -306,8 +279,8 @@ along; BladeWatch-ur11 moved it to 8081. The web app already sends the token
 **This control was inert for roughly the whole life of the Connect API** (BladeWatch-jwko). It
 was written as `path.startsWith("/api/vehicle/")` when the API was REST, and every client moved
 to `/bladewatch.v1.VehicleService/*` without the predicate following. Nothing failed, nothing
-logged, and the code still read as though the car were protected — so over the tunnel a session
-JWT alone actuated it. It was found only when the dead REST route was deleted.
+logged, and the code still read as though the car were protected — so over the tunnel of the
+day a session JWT alone actuated it. It was found only when the dead REST route was deleted.
 
 The lesson is in the guard, not the prose: `VehicleActionGateTest.everyVehicleCommandIsClassified`
 scans the registered `VehicleService` RPCs and fails on any that is neither gated nor explicitly
@@ -369,8 +342,8 @@ most four outstanding (the newest wins), cancelled by a daemon restart.
 once. The companion trades `{companionId, token}` for a session JWT at `POST /auth/companion`;
 that JWT carries the id as `cid`. The device secret never leaves the car on this path: it is not
 in the QR, and no pairing code in Dart (flutter_ui or the companion) handles it. (The in-car UI's
-older "show access code" feature does fetch the device secret for display -- the web login's
-access code IS it; that predates pairing and goes with the web app, BladeWatch-rdtj.13.)
+older "show access code" feature, which fetched the device secret for display as the web login's
+access code, went with the Dashboard's Connect card in v1.4.0.0, BladeWatch-rdtj.12.)
 
 **Revocation touches exactly one companion.** `pairingRevoke` deletes the id: its token stops
 verifying AND every JWT already minted for it stops validating immediately (`validateJwt`
@@ -394,7 +367,7 @@ dialog and is never flipped silently.
 check cannot be guessed -- a pairing code is 128 random bits, single-use, 5 minutes; a companion
 id is 128 random bits and its token an HMAC-SHA256 -- so a limit added nothing against guessing
 and only handed anyone who can reach them a way to lock every companion out: 30 bad tries set
-off a global 5-minute lockout, and Pear and tor traffic all arrive from 127.0.0.1, so remote
+off a global 5-minute lockout, and Pear traffic (tor's too, while it existed) arrives from 127.0.0.1, so remote
 clients shared one per-caller bucket. Their failures no longer count toward the global cap
 either. `/auth/token` keeps both limits (an owner-set access code can be short) until it goes
 with the web app (BladeWatch-rdtj.13); a lockout there does not touch companions

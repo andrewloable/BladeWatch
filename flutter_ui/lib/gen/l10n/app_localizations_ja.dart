@@ -55,15 +55,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cd_qr_code => 'QRコード';
 
   @override
-  String get cd_show_hide_token => '表示/隠すトークン';
-
-  @override
-  String get cd_copy_token => 'トークンをコピー';
-
-  @override
-  String get cd_copy_url => 'URLをコピー';
-
-  @override
   String get cd_clear_logs => 'ログをクリア';
 
   @override
@@ -179,47 +170,16 @@ class AppLocalizationsJa extends AppLocalizations {
       '起動時に車種に合ったカメラを自動選択します。カメラ1 = BYD Seal、カメラ0 = Attoシリーズ。カメラIDを変更した後は、設定を反映させるためにカメラサービスを再起動してください。';
 
   @override
-  String get dashboard_scan_to_connect => 'スキャンして接続';
-
-  @override
   String get dashboard_qr_waiting => 'トンネルを待ってる';
 
   @override
   String get dashboard_daemons_running_default => '0/5 実行中';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'アクセスコード';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => '再生する記号';
 
   @override
-  String get dashboard_set_password => 'パスワード設定';
-
-  @override
   String get cd_set_password => 'カスタムパスワードを設定';
-
-  @override
-  String get dialog_set_password_title => 'カスタムパスワードを設定';
-
-  @override
-  String get dialog_set_password_message =>
-      '新しいアクセスパスワードを入力してください。自動生成されたトークンを置き換えます。';
-
-  @override
-  String get dialog_set_password_hint => '新しいパスワード（12文字以上）';
-
-  @override
-  String get toast_password_set => 'パスワードを更新しました';
-
-  @override
-  String get toast_password_too_short => 'パスワードは12文字以上にしてください';
 
   @override
   String get toast_password_save_failed => 'パスワードを保存できません — サービスが未準備です';
@@ -566,9 +526,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get daemon_name_acc => 'ACC監視';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => '背景サービス';
 
   @override
@@ -783,9 +740,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get reset_label_trip_files => '旅行テレメトリファイル';
 
   @override
-  String get toast_access_code_copied => 'アクセスコードをコピーした';
-
-  @override
   String get dialog_regenerate_token_title => '再生する記号';
 
   @override
@@ -808,21 +762,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toast_token_regenerated => 'トークン再生';
 
   @override
-  String get dashboard_no_tunnel => 'トンネルが走らない';
-
-  @override
-  String get dashboard_starting_tor => 'Tor トンネルを起動中…';
-
-  @override
   String get dashboard_waiting_url => 'トンネルURLを待ってる';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 実行中';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'アクセスコード';
@@ -1280,11 +1225,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get diagnostics_metric_online => 'オンライン';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'トンネル · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -1766,7 +1706,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings_section_surveillance_subtitle => 'スケジュール、動体検知感度、物体検知。';
 
   @override
-  String get settings_section_daemons_subtitle => 'Tor トンネルとバックグラウンド サービス。';
+  String get settings_section_daemons_subtitle =>
+      'リモートアクセス (Pear)とバックグラウンド サービス。';
 
   @override
   String get settings_about_row_title => 'BladeWatchについて';
@@ -2744,37 +2685,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => '保存に失敗しました';
-
-  @override
-  String get dashboard_tor_bootstrapping => 'Tor に接続中…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'このアドレスの開き方';
-
-  @override
-  String get dashboard_tor_help_title => 'このアドレスを開く';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: Google Play または F-Droid から Tor Browser をインストールし、起動してアドレスを貼り付けます。';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone・iPad: App Store から Onion Browser をインストールし、起動してアドレスを貼り付けます。iOS 版の Tor Browser はありません。';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows・macOS・Linux: torproject.org から Tor Browser をダウンロードし、起動してアドレスを貼り付けます。';
-
-  @override
-  String get dashboard_tor_help_password_note => 'ページを開いた後もパスワードが必要です。';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'スキャンして Tor Browser のダウンロードページへ';
-
-  @override
-  String get dashboard_tor_help_close => '閉じる';
 
   @override
   String get surveillance_general_battery_warning =>

@@ -1,24 +1,24 @@
 package net.bladewatch.app.server
 
 import java.io.File
-import net.bladewatch.app.launcher.TorLauncher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * BladeWatch-rdtj.6 / BladeWatch-ur11: the tunnels' ways in are REMOTE listeners on loopback.
+ * BladeWatch-rdtj.6 / -ur11 / -rdtj.12: remote traffic's way in is a REMOTE listener on loopback.
  *
- * The Pear pump and the tor onion service both open TCP connections to 127.0.0.1, which at the
- * socket level look exactly like an app on the head unit. What keeps a remote peer from the
- * in-car UI's privileges -- the Tier 2 loopback bypass, the vehicle second-factor exemption -- is
- * that they land on listeners whose connections are ListenerTrust.REMOTE: tor on
- * [HttpServer.REMOTE_LOOPBACK_PORT], the Pear pump on [HttpServer.PEAR_TLS_PORT].
+ * The Pear pump opens TCP connections to 127.0.0.1, which at the socket level look exactly like an
+ * app on the head unit. What keeps a remote peer from the in-car UI's privileges -- the Tier 2
+ * loopback bypass, the vehicle second-factor exemption -- is that it lands on
+ * [HttpServer.PEAR_TLS_PORT], a listener whose connections are ListenerTrust.REMOTE, and NEVER on
+ * 8080. With tor removed that is the whole defence (AuthMiddleware no longer looks for a tunnel
+ * process), so the pump's target is pinned here.
  * HttpServer cannot run in a JVM test, so its listener wiring is read as source (a declared test
  * input). The trust decisions themselves are AuthMiddlewareTest's: aRemoteListenerNeverGetsTheLoopbackBypass
- * (bypass forced on, no tunnel, REMOTE on port 8081 still refused) and
- * onlyTheLocalListenerOnLoopbackIsExemptFromTheVehicleSecondFactor.
+ * (bypass forced on, REMOTE on 8444 still refused), vehicleControlOverThePearPumpWithoutAJwtIsA401
+ * and onlyTheLocalListenerOnLoopbackIsExemptFromTheVehicleSecondFactor.
  */
 class RemoteLoopbackListenerTest {
 
@@ -28,17 +28,17 @@ class RemoteLoopbackListenerTest {
     }
 
     @Test
-    fun `the remote loopback listener binds loopback only and serves every connection as REMOTE`() {
-        val body = src.substringAfter("private fun runRemoteLoopbackListener()").substringBefore("\n    }\n")
-        assertTrue(body, body.contains("ServerSocket(REMOTE_LOOPBACK_PORT, 10, InetAddress.getByName(\"127.0.0.1\"))"))
-        assertTrue(body, body.contains("handleClient(client, ListenerTrust.REMOTE)"))
-        assertFalse(body, body.contains("LOCAL_APPS"))
+    fun `the Pear pump connects to the REMOTE Pear TLS listener, never to the in-car one`() {
+        val pump = listOf(File("src/main/java/com/loabletech/bladewatch/daemon/PearStreamPump.kt"),
+            File("app/src/main/java/com/loabletech/bladewatch/daemon/PearStreamPump.kt")).first { it.isFile }.readText()
+        assertTrue(pump.contains("Socket(InetAddress.getByName(\"127.0.0.1\"), HttpServer.PEAR_TLS_PORT)"))
+        assertFalse("the pump must never target 8080", pump.contains("8080"))
+        assertEquals(8444, HttpServer.PEAR_TLS_PORT)
     }
 
     @Test
     fun `only the in-car UI's listener is LOCAL_APPS`() {
         assertEquals(1, Regex("""handleClient\(client, ListenerTrust\.LOCAL_APPS\)""").findAll(src).count())
-        assertEquals(8081, HttpServer.REMOTE_LOOPBACK_PORT)
     }
 
     @Test
@@ -57,10 +57,5 @@ class RemoteLoopbackListenerTest {
         assertFalse(src.contains("remoteSocketAddress.toString()"))
         assertTrue(src.contains("private fun rateLimitIdentity(client: Socket): String = client.inetAddress?.hostAddress"))
         assertEquals(2, Regex("""rateLimitIdentity\(client\)""").findAll(src).count())
-    }
-
-    @Test
-    fun `tor forwards to the remote loopback listener`() {
-        assertTrue(TorLauncher.torrcContents().contains("127.0.0.1:${HttpServer.REMOTE_LOOPBACK_PORT}"))
     }
 }

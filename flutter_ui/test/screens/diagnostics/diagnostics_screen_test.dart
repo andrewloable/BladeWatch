@@ -26,10 +26,10 @@ void main() {
   late DiagnosticsController controller;
   late bool settingsOpened;
 
-  void stubDaemons({bool camera = true, bool tor = false}) {
+  void stubDaemons({bool camera = true}) {
     platform.stub('daemon', 'processStatus', {
       'status': 'ok',
-      'daemons': {'CAMERA_DAEMON': camera, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': tor},
+      'daemons': {'CAMERA_DAEMON': camera, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
     });
   }
 

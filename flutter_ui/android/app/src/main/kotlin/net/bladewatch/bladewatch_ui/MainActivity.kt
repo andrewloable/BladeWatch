@@ -156,8 +156,8 @@ class MainActivity : FlutterActivity() {
         // cannot catch this: there is no main-thread policy off-device.
         //
         // Serial (the default) is deliberate: it preserves the ordering the
-        // daemon's single-connection-per-command IPC expects, e.g. secret_put
-        // followed by auth_invalidate in JwtMinter.putDeviceSecret.
+        // daemon's single-connection-per-command IPC expects, so a write is
+        // always seen before any command that acts on it.
         //
         // The handful of methods that genuinely need the Activity thread hop back
         // explicitly with runOnUiThread -- see location.requestPermission and
@@ -196,18 +196,11 @@ class MainActivity : FlutterActivity() {
                     jwtMinter.invalidate()
                     result.success(null)
                 }
-                "auth.getAccessCode" -> result.success(jwtMinter.getAccessCode())
-                "auth.regenerateAccessCode" -> result.success(jwtMinter.regenerateAccessCode())
-                "auth.setCustomAccessCode" -> {
-                    val args = requireArgs(call)
-                    result.success(jwtMinter.setCustomAccessCode(args.string("password")))
-                }
 
                 "daemon.start" -> result.success(jsonToMap(daemonControl.start()))
                 "daemon.stop" -> result.success(jsonToMap(daemonControl.stop()))
                 "daemon.status" -> result.success(jsonToMap(daemonControl.status()))
                 "daemon.processStatus" -> result.success(jsonToMap(daemonControl.processStatus()))
-                "daemon.tunnelStatus" -> result.success(jsonToMap(daemonControl.tunnelStatus()))
                 "daemon.pearStatus" -> result.success(jsonToMap(daemonControl.pearStatus()))
                 "daemon.setEnabled" -> {
                     val args = requireArgs(call)

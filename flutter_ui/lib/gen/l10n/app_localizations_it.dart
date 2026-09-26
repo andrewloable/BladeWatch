@@ -55,15 +55,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get cd_qr_code => 'Codice QR';
 
   @override
-  String get cd_show_hide_token => 'Mostra/nascondi token';
-
-  @override
-  String get cd_copy_token => 'Copia token';
-
-  @override
-  String get cd_copy_url => 'Copia URL';
-
-  @override
   String get cd_clear_logs => 'Cancella i log';
 
   @override
@@ -180,48 +171,16 @@ class AppLocalizationsIt extends AppLocalizations {
       'Auto sceglie la fotocamera giusta per il tuo allestimento a ogni avvio. Camera 1 = BYD Seal, Camera 0 = allestimenti Atto. Riavvia il servizio fotocamera dopo aver cambiato l\'ID della fotocamera affinché l\'impostazione abbia effetto.';
 
   @override
-  String get dashboard_scan_to_connect => 'Scansione per connettere';
-
-  @override
   String get dashboard_qr_waiting => 'Aspettando il tunnel...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 in esecuzione';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'Codice di accesso';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'Rigenera token';
 
   @override
-  String get dashboard_set_password => 'Imposta password';
-
-  @override
   String get cd_set_password => 'Imposta password personalizzata';
-
-  @override
-  String get dialog_set_password_title => 'Imposta password personalizzata';
-
-  @override
-  String get dialog_set_password_message =>
-      'Inserisci una nuova password di accesso. Sostituisce il token generato automaticamente.';
-
-  @override
-  String get dialog_set_password_hint => 'Nuova password (min. 12 caratteri)';
-
-  @override
-  String get toast_password_set => 'Password aggiornata';
-
-  @override
-  String get toast_password_too_short =>
-      'La password deve avere almeno 12 caratteri';
 
   @override
   String get toast_password_save_failed =>
@@ -581,9 +540,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get daemon_name_acc => 'Sorveglianza ACC';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => 'Servizi di background';
 
   @override
@@ -810,9 +766,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get reset_label_trip_files => 'Archivi di telemetria di viaggio';
 
   @override
-  String get toast_access_code_copied => 'Codice di accesso copiato';
-
-  @override
   String get dialog_regenerate_token_title => 'Rigenera token';
 
   @override
@@ -835,21 +788,12 @@ class AppLocalizationsIt extends AppLocalizations {
   String get toast_token_regenerated => 'Token rigenerato';
 
   @override
-  String get dashboard_no_tunnel => 'Nessun tunnel in corso';
-
-  @override
-  String get dashboard_starting_tor => 'Avvio del tunnel Tor…';
-
-  @override
   String get dashboard_waiting_url => 'In attesa del tunnel URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 in esecuzione';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Codice di accesso';
@@ -1330,11 +1274,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get diagnostics_metric_online => 'Online';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'Tunnel · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -1844,7 +1783,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Tunnel Tor e servizi in background.';
+      'Accesso remoto (Pear) e servizi in background.';
 
   @override
   String get settings_about_row_title => 'A proposito di BladeWatch';
@@ -2853,38 +2792,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Salvataggio non riuscito';
-
-  @override
-  String get dashboard_tor_bootstrapping => 'Connessione a Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'Come aprire questo indirizzo';
-
-  @override
-  String get dashboard_tor_help_title => 'Aprire questo indirizzo';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: installa Tor Browser da Google Play o F-Droid, aprilo e incolla l\'indirizzo.';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone e iPad: installa Onion Browser dall\'App Store, aprilo e incolla l\'indirizzo. Tor Browser non è disponibile su iOS.';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS e Linux: scarica Tor Browser da torproject.org, aprilo e incolla l\'indirizzo.';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'La password sarà comunque necessaria al caricamento della pagina.';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'Scansiona per la pagina di download di Tor Browser';
-
-  @override
-  String get dashboard_tor_help_close => 'Ho capito';
 
   @override
   String get surveillance_general_battery_warning =>

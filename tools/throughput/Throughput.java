@@ -388,7 +388,7 @@ public class Throughput {
 
         Socket open() throws Exception {
             Socket raw = socks == null ? new Socket() : new Socket(new Proxy(Proxy.Type.SOCKS, socks));
-            // Unresolved: an onion name must reach tor, not the local resolver.
+            // Unresolved: the proxy resolves the name, which the local resolver may not know.
             raw.connect(socks == null ? new InetSocketAddress(host, port) : InetSocketAddress.createUnresolved(host, port), 60000);
             raw.setTcpNoDelay(true);
             if (!tls) return raw;

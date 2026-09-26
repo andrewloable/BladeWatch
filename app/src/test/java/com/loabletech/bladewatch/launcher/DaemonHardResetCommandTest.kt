@@ -4,16 +4,16 @@ import org.junit.Assert
 import org.junit.Test
 
 /**
- * BladeWatch-3lbz.2: the hard-reset sweep must kill tor WITHOUT destroying the onion identity.
+ * BladeWatch-3lbz.2 / -rdtj.12: the hard-reset sweep kills daemons WITHOUT deleting an identity.
  *
- * `/data/local/tmp/tor/hs/hs_ed25519_secret_key` is the permanent remote-access identity of this
- * car. Delete it and tor generates a brand-new onion address on the next start: every QR code the
- * owner ever scanned, every bookmark, every saved link stops working, silently and irreversibly.
- * There is no recovery — the key IS the address.
+ * `/data/local/tmp/pear` holds the car's permanent Pear identity (delete it and every paired
+ * companion loses the car), and `/data/local/tmp/tor` an older build's onion identity, whose
+ * removal is an explicit owner decision -- never a sweep's side effect. The sweep still kills a
+ * tor process an older build left running, since it runs exactly when the package is replaced.
  *
  * That makes this a guard against a plausible FUTURE edit, not against today's code. The sweep
  * already wipes locks and sentinels with an `rm -f` over the daemon lock files, so
- * widening one of those globs to "tidy up" the tor directory is an easy and fatal mistake. The
+ * widening one of those globs to "tidy up" a data directory is an easy and fatal mistake. The
  * test asserts on the generated command string, which is why [DaemonHardReset.hardResetCommand]
  * exists as a separate method at all.
  *
@@ -41,10 +41,11 @@ class DaemonHardResetCommandTest {
         )
     }
 
+    /** Tor was removed (BladeWatch-rdtj.12); an upgraded car can still have an older build's running. */
     @Test
-    fun killsTor() {
+    fun killsATorLeftRunningByAnOlderBuild() {
         val cmd = DaemonHardReset.hardResetCommand()
-        Assert.assertTrue("hard reset must kill the tor tunnel process: " + cmd,
+        Assert.assertTrue("hard reset must kill an older build's tor process: " + cmd,
             cmd.contains("bladewatch_tor"))
     }
 
@@ -55,8 +56,8 @@ class DaemonHardResetCommandTest {
             val t = line.trim()
             if (!t.startsWith("rm")) continue
             Assert.assertFalse(
-                "hard reset must never delete the hidden-service directory — that is the car's "
-                    + "permanent onion address, and losing it breaks every QR code ever scanned. "
+                "hard reset must never delete the hidden-service directory — it holds an older "
+                    + "build's onion key, and removing it is the owner's decision, never a sweep's. "
                     + "Offending clause: " + t,
                 t.contains("/data/local/tmp/tor/hs") || t.contains("/data/local/tmp/tor "))
             // A bare glob over the tor directory would sweep hs/ up with everything else.

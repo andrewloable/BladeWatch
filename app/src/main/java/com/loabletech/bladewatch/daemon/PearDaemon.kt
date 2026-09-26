@@ -23,7 +23,7 @@ import to.holepunch.bare.kit.Worklet
  * from anywhere.
  *
  * Launched by [net.bladewatch.app.launcher.PearLauncher] as
- * `app_process -Djava.library.path=... --nice-name=pear_daemon`. Supervised the way tor is: if the
+ * `app_process -Djava.library.path=... --nice-name=pear_daemon`. Supervised by exiting: if the
  * worklet dies, this process exits and DaemonStartupManager's 30 s health check relaunches it.
  *
  * Every runtime requirement below was found and verified by the BladeWatch-rdtj.2 spike on the real
@@ -44,10 +44,24 @@ object PearDaemon {
      * cannot write the app's private data. 0700, because pear-end creates its corestore INSIDE as
      * 0777 -- this directory's mode is the only thing keeping it private.
      *
-     * Once pairing exists this holds the car's permanent Pear identity. Deleting it strands every
-     * paired companion, exactly like deleting tor's hs/ directory. Never remove it to "reset" state.
+     * It holds the car's permanent Pear identity, `swarm-identity.seed` (mode 0600), which pear-end
+     * writes on the first start with [PERSISTENT_IDENTITY]. Deleting it strands every paired
+     * companion, with no way back but pairing each one again. Never remove it to "reset" state.
      */
     const val STORAGE_DIR = "/data/local/tmp/pear"
+
+    /**
+     * BladeWatch-rdtj.24: keep one Pear identity across restarts. Without it pear-end draws a random
+     * key pair on every start, so a companion's swarm went on redialing the dead key after a
+     * pear_daemon restart and never reached the car again, and each restart left a dead announcer
+     * on the DHT for 20 minutes that every companion cold start dialed and timed out on (5
+     * announcers, 4 dead, after 5 restarts; about 9 s per failed dial). Needs pear-end from the
+     * flutter_pear release that added the flag; an older pear-end ignores it.
+     */
+    internal const val PERSISTENT_IDENTITY = "--persistent-identity"
+
+    /** pear-end's argv under BareKit: the storage root first, then the options. */
+    internal val workletArgs: Array<String> get() = arrayOf(STORAGE_DIR, PERSISTENT_IDENTITY)
 
     private const val BUNDLE_ASSET = "pear/pear-end.bundle"
 
@@ -113,7 +127,7 @@ object PearDaemon {
             val worklet = Worklet(null)
             val source = ByteBuffer.allocateDirect(bundle.size).apply { put(bundle); flip() }
             // The first argument only names the bundle for stack traces; the bytes come from source.
-            worklet.start("/pear-end.bundle", source, arrayOf(STORAGE_DIR))
+            worklet.start("/pear-end.bundle", source, workletArgs)
             Session(IPC(worklet), handler).start(topic)
         } catch (t: Throwable) {
             die("boot failed: ${t.javaClass.name}: ${t.message}", t)

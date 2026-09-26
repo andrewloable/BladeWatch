@@ -62,12 +62,6 @@ void main() {
     expect(s.total, 0);
   });
 
-  test('TunnelState.loading() sentinel', () {
-    const s = TunnelState.loading();
-    expect(s.phase, TunnelPhase.offline);
-    expect(s.url, isNull);
-  });
-
   group('VehicleDialogState', () {
     test('loading() sentinel', () {
       // Deliberately NOT `const`: a const invocation is folded at compile time
@@ -119,24 +113,6 @@ void main() {
       expect(withModel.hasModel, isTrue);
       expect(noModel.hasModel, isFalse);
       expect(emptyModel.hasModel, isFalse, reason: 'an empty id is not a selection');
-    });
-  });
-
-  group('AccessCodeState', () {
-    test('loading() sentinel', () {
-      const s = AccessCodeState.loading();
-      expect(s.loading, isTrue);
-      expect(s.displayValue, isNull);
-    });
-
-    test('displayValue is null when not visible, even with a secret', () {
-      const s = AccessCodeState(loading: false, secret: 'shh-fake-secret', visible: false);
-      expect(s.displayValue, isNull);
-    });
-
-    test('displayValue is the secret when visible', () {
-      const s = AccessCodeState(loading: false, secret: 'shh-fake-secret', visible: true);
-      expect(s.displayValue, 'shh-fake-secret');
     });
   });
 

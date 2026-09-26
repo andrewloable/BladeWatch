@@ -24,7 +24,6 @@ class HealthCheckRelaunchTest {
     @Test
     fun `an optional daemon switched off since the check is not relaunched`() {
         assertFalse(DaemonStartupManager.shouldRelaunch(DaemonType.PEAR_PEER, isRunning = false) { false })
-        assertFalse(DaemonStartupManager.shouldRelaunch(DaemonType.TOR_TUNNEL, isRunning = false) { false })
     }
 
     @Test

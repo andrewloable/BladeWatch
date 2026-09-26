@@ -219,24 +219,6 @@ abstract class AppLocalizations {
   /// **'QR Code'**
   String get cd_qr_code;
 
-  /// No description provided for @cd_show_hide_token.
-  ///
-  /// In en, this message translates to:
-  /// **'Show/Hide Token'**
-  String get cd_show_hide_token;
-
-  /// No description provided for @cd_copy_token.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy Token'**
-  String get cd_copy_token;
-
-  /// No description provided for @cd_copy_url.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy URL'**
-  String get cd_copy_url;
-
   /// No description provided for @cd_clear_logs.
   ///
   /// In en, this message translates to:
@@ -465,12 +447,6 @@ abstract class AppLocalizations {
   /// **'Auto picks the right camera for your trim on every boot. Camera 1 = BYD Seal, Camera 0 = Atto trims. Restart the camera service after changing camera ID for the setting to take effect.'**
   String get camera_selection_hint;
 
-  /// No description provided for @dashboard_scan_to_connect.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan to Connect'**
-  String get dashboard_scan_to_connect;
-
   /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
@@ -483,71 +459,17 @@ abstract class AppLocalizations {
   /// **'0/5 Running'**
   String get dashboard_daemons_running_default;
 
-  /// No description provided for @dashboard_device_id_loading.
-  ///
-  /// In en, this message translates to:
-  /// **'…'**
-  String get dashboard_device_id_loading;
-
-  /// No description provided for @dashboard_access_code.
-  ///
-  /// In en, this message translates to:
-  /// **'Access Code'**
-  String get dashboard_access_code;
-
-  /// No description provided for @dashboard_token_masked.
-  ///
-  /// In en, this message translates to:
-  /// **'••••••••'**
-  String get dashboard_token_masked;
-
   /// No description provided for @dashboard_regenerate_token.
   ///
   /// In en, this message translates to:
   /// **'Regenerate Token'**
   String get dashboard_regenerate_token;
 
-  /// No description provided for @dashboard_set_password.
-  ///
-  /// In en, this message translates to:
-  /// **'Set Password'**
-  String get dashboard_set_password;
-
   /// No description provided for @cd_set_password.
   ///
   /// In en, this message translates to:
   /// **'Set custom password'**
   String get cd_set_password;
-
-  /// No description provided for @dialog_set_password_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Set Custom Password'**
-  String get dialog_set_password_title;
-
-  /// No description provided for @dialog_set_password_message.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a new access password. This replaces the auto-generated token.'**
-  String get dialog_set_password_message;
-
-  /// No description provided for @dialog_set_password_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'New password (min 12 characters)'**
-  String get dialog_set_password_hint;
-
-  /// No description provided for @toast_password_set.
-  ///
-  /// In en, this message translates to:
-  /// **'Password updated'**
-  String get toast_password_set;
-
-  /// No description provided for @toast_password_too_short.
-  ///
-  /// In en, this message translates to:
-  /// **'Password must be at least 12 characters'**
-  String get toast_password_too_short;
 
   /// No description provided for @toast_password_save_failed.
   ///
@@ -1197,12 +1119,6 @@ abstract class AppLocalizations {
   /// **'ACC Surveillance'**
   String get daemon_name_acc;
 
-  /// No description provided for @daemon_name_tor.
-  ///
-  /// In en, this message translates to:
-  /// **'Tor Tunnel'**
-  String get daemon_name_tor;
-
   /// No description provided for @daemons_hero_title.
   ///
   /// In en, this message translates to:
@@ -1533,12 +1449,6 @@ abstract class AppLocalizations {
   /// **'Trip telemetry files'**
   String get reset_label_trip_files;
 
-  /// No description provided for @toast_access_code_copied.
-  ///
-  /// In en, this message translates to:
-  /// **'Access code copied'**
-  String get toast_access_code_copied;
-
   /// No description provided for @dialog_regenerate_token_title.
   ///
   /// In en, this message translates to:
@@ -1575,18 +1485,6 @@ abstract class AppLocalizations {
   /// **'Token regenerated'**
   String get toast_token_regenerated;
 
-  /// No description provided for @dashboard_no_tunnel.
-  ///
-  /// In en, this message translates to:
-  /// **'No tunnel running'**
-  String get dashboard_no_tunnel;
-
-  /// An action in progress. Impersonal, never 'I'.
-  ///
-  /// In en, this message translates to:
-  /// **'Starting Tor tunnel…'**
-  String get dashboard_starting_tor;
-
   /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
@@ -1598,12 +1496,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{arg1}/{arg2} Running'**
   String dashboard_daemons_running(Object arg1, Object arg2);
-
-  /// No description provided for @tunnel_label_tor.
-  ///
-  /// In en, this message translates to:
-  /// **'Tor'**
-  String get tunnel_label_tor;
 
   /// No description provided for @clip_label_access_code.
   ///
@@ -2408,12 +2300,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Online'**
   String get diagnostics_metric_online;
-
-  /// No description provided for @diagnostics_network_tunnel_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Tunnel · {arg1}'**
-  String diagnostics_network_tunnel_label(Object arg1);
 
   /// No description provided for @diagnostics_network_data_usage_line.
   ///
@@ -3252,7 +3138,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_section_daemons_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Tor tunnel and background services.'**
+  /// **'Remote access (Pear) and background services.'**
   String get settings_section_daemons_subtitle;
 
   /// No description provided for @settings_about_row_title.
@@ -5017,60 +4903,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save failed'**
   String get surveillance_apply_failed;
-
-  /// Shown while tor is running but has not finished bootstrapping.
-  ///
-  /// In en, this message translates to:
-  /// **'Connecting to Tor…'**
-  String get dashboard_tor_bootstrapping;
-
-  /// No description provided for @dashboard_tor_help_tooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'How to open this address'**
-  String get dashboard_tor_help_tooltip;
-
-  /// No description provided for @dashboard_tor_help_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Opening this address'**
-  String get dashboard_tor_help_title;
-
-  /// No description provided for @dashboard_tor_help_android.
-  ///
-  /// In en, this message translates to:
-  /// **'Android: install Tor Browser from Google Play or F-Droid, open it and paste the address.'**
-  String get dashboard_tor_help_android;
-
-  /// No description provided for @dashboard_tor_help_ios.
-  ///
-  /// In en, this message translates to:
-  /// **'iPhone and iPad: install Onion Browser from the App Store, open it and paste the address. Tor Browser itself is not available on iOS.'**
-  String get dashboard_tor_help_ios;
-
-  /// No description provided for @dashboard_tor_help_desktop.
-  ///
-  /// In en, this message translates to:
-  /// **'Windows, macOS and Linux: download Tor Browser from torproject.org, open it and paste the address.'**
-  String get dashboard_tor_help_desktop;
-
-  /// No description provided for @dashboard_tor_help_password_note.
-  ///
-  /// In en, this message translates to:
-  /// **'You will still need the password after the page loads.'**
-  String get dashboard_tor_help_password_note;
-
-  /// No description provided for @dashboard_tor_help_download_qr_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan for the Tor Browser download page'**
-  String get dashboard_tor_help_download_qr_label;
-
-  /// No description provided for @dashboard_tor_help_close.
-  ///
-  /// In en, this message translates to:
-  /// **'Got it'**
-  String get dashboard_tor_help_close;
 
   /// No description provided for @surveillance_general_battery_warning.
   ///

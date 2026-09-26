@@ -23,9 +23,9 @@ import org.junit.Test;
  *
  * <p>This also stops it coming BACK. A future agent reading an old doc, an old commit or
  * a stale memory could reintroduce the name in perfectly good faith; the build should say
- * no. The single allowed mention is the one in {@code AuthMiddleware}, which explains a
- * security decision that only makes sense if you know what the old tunnel did — the same
- * convention {@code AdbDaemonLauncher} uses to record the sing-box removal.
+ * no. There is no allowed mention: the one {@code AuthMiddleware} kept to explain its tunnel
+ * check went with that check when tor was removed (BladeWatch-rdtj.12), and the listener-trust
+ * comment that replaced it needs no history.
  *
  * <p><b>Gradle up-to-date blindness:</b> this test reads the tree as DATA, not through the
  * classpath, so Gradle cannot infer the dependency. {@code app/build.gradle.kts} declares
@@ -37,13 +37,6 @@ public class NoRemovedTunnelReferencesTest {
 
     /** Assembled at runtime so this file is not itself a match. */
     private static final String BANNED = "z" + "rok";
-
-    /**
-     * The one file allowed to say it, and why. Pinned to the exact path so a second
-     * occurrence anywhere — including elsewhere in this same file — still fails.
-     */
-    private static final String ALLOWED_FILE = "AuthMiddleware.kt";
-    private static final int ALLOWED_OCCURRENCES = 1;
 
     /** Everything a developer edits. Build output and dependencies are not ours to police. */
     private static final String[] SCANNED = {
@@ -81,7 +74,6 @@ public class NoRemovedTunnelReferencesTest {
     public void theRemovedTunnelIsNotMentionedAnywhereItStillMatters() throws IOException {
         Path root = repoRoot();
         List<String> offenders = new ArrayList<>();
-        int allowedSeen = 0;
 
         List<Path> targets = new ArrayList<>();
         for (String dir : SCANNED) {
@@ -107,22 +99,13 @@ public class NoRemovedTunnelReferencesTest {
             }
             int count = countOccurrences(body.toLowerCase(Locale.ROOT), BANNED);
             if (count == 0) continue;
-            if (f.getFileName().toString().equals(ALLOWED_FILE) && count <= ALLOWED_OCCURRENCES) {
-                allowedSeen += count;
-                continue;
-            }
             offenders.add(root.relativize(f) + " (" + count + ")");
         }
 
         Assert.assertTrue(
                 "The previous tunnel is gone — these still refer to it. Update them rather "
-                        + "than widening this allow-list: " + offenders,
+                        + "than adding an exception: " + offenders,
                 offenders.isEmpty());
-        Assert.assertEquals(
-                "The explanatory mention in " + ALLOWED_FILE + " has disappeared. If it was "
-                        + "deliberately removed, drop the allow-list entry too so the next "
-                        + "reference is caught.",
-                ALLOWED_OCCURRENCES, allowedSeen);
     }
 
     /** Cheap check: NUL in the first 8 KB means it is not source or prose. */

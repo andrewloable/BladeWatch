@@ -52,7 +52,10 @@ List<int> _hex(String s) => [for (var i = 0; i < s.length; i += 2) int.parse(s.s
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('pairs with the car over $_route and calls it', (tester) async {
+  // A plain test(), not testWidgets(): nothing here is a widget, and testWidgets' end-of-test
+  // checks failed a run whose every expectation had passed whenever a macOS accessibility client
+  // switched semantics on mid-run ("A SemanticsHandle was active") -- as pear_bench_test does.
+  test('pairs with the car over $_route and calls it', () async {
     final qr = PairingPayload.decode(_qr);
     final gateway = await LocalGateway.start();
     Pear? pear;

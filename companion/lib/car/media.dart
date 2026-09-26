@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -28,22 +29,49 @@ Future<MediaResponse> fetchMedia(CarSession session, String pathAndQuery, {Durat
   }
 }
 
+/// Waits until [session] has a route to the car again (LAN or Pear); false if it does not within
+/// [timeout]. True at once if it already has one.
+Future<bool> untilConnected(CarSession session, Duration timeout) async {
+  if (session.connected) return true;
+  final back = Completer<bool>();
+  void check() {
+    if (session.connected && !back.isCompleted) back.complete(true);
+  }
+
+  session.addListener(check);
+  try {
+    return await back.future.timeout(timeout, onTimeout: () => false);
+  } finally {
+    session.removeListener(check);
+  }
+}
+
 /// Streams a file from the car to [dest] without holding it in memory (clips run to hundreds of
 /// MB). A connection that drops mid-way -- routine over Pear from a phone -- resumes where it
-/// stopped, with a Range request for the rest (BladeWatch-tayl), up to [attempts] tries with a
-/// growing pause. Returns false on a refusal (never retried) or when every try fails, leaving no
-/// partial file behind.
+/// stopped, with a Range request for the rest (BladeWatch-tayl).
+///
+/// A drop while the session has no route costs no attempt: the download waits for the route to
+/// come back instead. Measured from mobile data, a reconnect took 5 s to 90+ s, and a budget of
+/// [attempts] quick tries lost 3 of 5 downloads to drops it could have ridden out. Only failures
+/// while the route is up count against [attempts], with a growing pause, and the whole download
+/// gives up after [patience]. Returns false on a refusal (never retried) or when it gives up,
+/// leaving no partial file behind.
 Future<bool> downloadMedia(
   CarSession session,
   String pathAndQuery,
   File dest, {
   int attempts = 5,
   Duration backoff = const Duration(seconds: 2),
+  Duration patience = const Duration(minutes: 10),
 }) async {
   final part = File('${dest.path}.part');
+  final deadline = DateTime.now().add(patience);
   // Sync metadata calls on purpose: cheap, and they keep a caller's fake-async test zone working.
   if (part.existsSync()) part.deleteSync(); // a new download never appends to an old part
-  for (var attempt = 1; attempt <= attempts; attempt++) {
+  var attempt = 1;
+  while (attempt <= attempts) {
+    final left = deadline.difference(DateTime.now());
+    if (left <= Duration.zero || !await untilConnected(session, left)) break;
     final client = HttpClient();
     var connected = false;
     try {
@@ -65,17 +93,20 @@ Future<bool> downloadMedia(
     } on FileSystemException catch (_) {
       break; // the phone's disk, not the network: retrying will not help
     } on SocketException catch (_) {
-      // Refused outright: the phone's own gateway is not there, so no retry will reach the car.
-      // A route that drops shows up differently -- the gateway accepts, then closes.
-      if (!connected) break;
-      if (attempt < attempts) await Future<void>.delayed(backoff * attempt);
+      // Refused outright while the route is up: the phone's own gateway is not there, so no retry
+      // reaches the car. With the route down the gateway refuses too -- that one is a drop.
+      if (!connected && session.connected) break;
     } on IOException catch (_) {
-      // Dropped mid-way (HttpException and the like): keep the part, resume after a pause.
-      if (attempt < attempts) await Future<void>.delayed(backoff * attempt);
+      // Dropped mid-way (HttpException and the like): keep the part and resume.
     } catch (_) {
       break; // anything else is not a transient network failure
     } finally {
       client.close(force: true);
+    }
+    // A drop the session already sees costs nothing: the loop top waits for the route.
+    if (session.connected) {
+      await Future<void>.delayed(backoff * attempt);
+      attempt++;
     }
   }
   if (part.existsSync()) part.deleteSync();

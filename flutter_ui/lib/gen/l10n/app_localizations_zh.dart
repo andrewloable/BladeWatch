@@ -55,15 +55,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cd_qr_code => '二维码';
 
   @override
-  String get cd_show_hide_token => '显示/隐藏标志';
-
-  @override
-  String get cd_copy_token => '复制令牌';
-
-  @override
-  String get cd_copy_url => '复制 URL';
-
-  @override
   String get cd_clear_logs => '清除日志';
 
   @override
@@ -179,46 +170,16 @@ class AppLocalizationsZh extends AppLocalizations {
       '每次启动时自动选择适合您车型的摄像头。摄像头1 = BYD Seal，摄像头0 = Atto车型。更改摄像头ID后，请重启摄像头服务使设置生效。';
 
   @override
-  String get dashboard_scan_to_connect => '扫码连接';
-
-  @override
   String get dashboard_qr_waiting => '等待道...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 运行中';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => '访问代码';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => '复兴标志';
 
   @override
-  String get dashboard_set_password => '设置密码';
-
-  @override
   String get cd_set_password => '设置自定义密码';
-
-  @override
-  String get dialog_set_password_title => '设置自定义密码';
-
-  @override
-  String get dialog_set_password_message => '请输入新的访问密码。此密码将替换自动生成的令牌。';
-
-  @override
-  String get dialog_set_password_hint => '新密码（至少12个字符）';
-
-  @override
-  String get toast_password_set => '密码已更新';
-
-  @override
-  String get toast_password_too_short => '密码至少需要12个字符';
 
   @override
   String get toast_password_save_failed => '保存密码失败——服务尚未就绪';
@@ -564,9 +525,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get daemon_name_acc => 'ACC 监控';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => '背景服务';
 
   @override
@@ -780,9 +738,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reset_label_trip_files => '旅行遥测文件';
 
   @override
-  String get toast_access_code_copied => '复制访问代码';
-
-  @override
   String get dialog_regenerate_token_title => '复兴标志';
 
   @override
@@ -801,21 +756,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get toast_token_regenerated => '令牌再生';
 
   @override
-  String get dashboard_no_tunnel => '没有道运行';
-
-  @override
-  String get dashboard_starting_tor => '正在启动 Tor 隧道…';
-
-  @override
   String get dashboard_waiting_url => '等待道URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 运行中';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '访问代码';
@@ -1270,11 +1216,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get diagnostics_metric_online => '在线';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return '道 · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -1750,7 +1691,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_section_surveillance_subtitle => '时间表,移动检测灵敏度,目标检测.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Tor 隧道和后台服务。';
+  String get settings_section_daemons_subtitle => '远程访问 (Pear)和后台服务。';
 
   @override
   String get settings_about_row_title => '关于BladeWatch';
@@ -2726,36 +2667,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => '保存失败';
-
-  @override
-  String get dashboard_tor_bootstrapping => '正在连接 Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => '如何打开此地址';
-
-  @override
-  String get dashboard_tor_help_title => '打开此地址';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android：从 Google Play 或 F-Droid 安装 Tor Browser，打开后粘贴地址。';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone 和 iPad：从 App Store 安装 Onion Browser，打开后粘贴地址。iOS 没有 Tor Browser。';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows、macOS 和 Linux：从 torproject.org 下载 Tor Browser，打开后粘贴地址。';
-
-  @override
-  String get dashboard_tor_help_password_note => '页面加载后仍需输入密码。';
-
-  @override
-  String get dashboard_tor_help_download_qr_label => '扫描前往 Tor Browser 下载页';
-
-  @override
-  String get dashboard_tor_help_close => '知道了';
 
   @override
   String get surveillance_general_battery_warning => '哨兵模式启用期间会额外消耗12V电瓶电量。';
@@ -2927,15 +2838,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get cd_qr_code => '二维码';
 
   @override
-  String get cd_show_hide_token => '显示/隐藏标志';
-
-  @override
-  String get cd_copy_token => '复制令牌';
-
-  @override
-  String get cd_copy_url => '复制 URL';
-
-  @override
   String get cd_clear_logs => '清除日志';
 
   @override
@@ -3051,46 +2953,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
       '每次启动时自动选择适合您车型的摄像头。摄像头1 = BYD Seal，摄像头0 = Atto车型。更改摄像头ID后，请重启摄像头服务使设置生效。';
 
   @override
-  String get dashboard_scan_to_connect => '扫码连接';
-
-  @override
   String get dashboard_qr_waiting => '等待道...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 运行中';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => '访问代码';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => '复兴标志';
 
   @override
-  String get dashboard_set_password => '设置密码';
-
-  @override
   String get cd_set_password => '设置自定义密码';
-
-  @override
-  String get dialog_set_password_title => '设置自定义密码';
-
-  @override
-  String get dialog_set_password_message => '请输入新的访问密码。此密码将替换自动生成的令牌。';
-
-  @override
-  String get dialog_set_password_hint => '新密码（至少12个字符）';
-
-  @override
-  String get toast_password_set => '密码已更新';
-
-  @override
-  String get toast_password_too_short => '密码至少需要12个字符';
 
   @override
   String get toast_password_save_failed => '保存密码失败——服务尚未就绪';
@@ -3436,9 +3308,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get daemon_name_acc => 'ACC 监控';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => '背景服务';
 
   @override
@@ -3652,9 +3521,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get reset_label_trip_files => '旅行遥测文件';
 
   @override
-  String get toast_access_code_copied => '复制访问代码';
-
-  @override
   String get dialog_regenerate_token_title => '复兴标志';
 
   @override
@@ -3673,21 +3539,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get toast_token_regenerated => '令牌再生';
 
   @override
-  String get dashboard_no_tunnel => '没有道运行';
-
-  @override
-  String get dashboard_starting_tor => '正在启动 Tor 隧道…';
-
-  @override
   String get dashboard_waiting_url => '等待道URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 运行中';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '访问代码';
@@ -4142,11 +3999,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get diagnostics_metric_online => '在线';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return '道 · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -4622,7 +4474,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_section_surveillance_subtitle => '时间表,移动检测灵敏度,目标检测.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Tor 隧道和后台服务。';
+  String get settings_section_daemons_subtitle => '远程访问 (Pear)和后台服务。';
 
   @override
   String get settings_about_row_title => '关于BladeWatch';
@@ -5600,36 +5452,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get surveillance_apply_failed => '保存失败';
 
   @override
-  String get dashboard_tor_bootstrapping => '正在连接 Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => '如何打开此地址';
-
-  @override
-  String get dashboard_tor_help_title => '打开此地址';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android：从 Google Play 或 F-Droid 安装 Tor Browser，打开后粘贴地址。';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone 和 iPad：从 App Store 安装 Onion Browser，打开后粘贴地址。iOS 没有 Tor Browser。';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows、macOS 和 Linux：从 torproject.org 下载 Tor Browser，打开后粘贴地址。';
-
-  @override
-  String get dashboard_tor_help_password_note => '页面加载后仍需输入密码。';
-
-  @override
-  String get dashboard_tor_help_download_qr_label => '扫描前往 Tor Browser 下载页';
-
-  @override
-  String get dashboard_tor_help_close => '知道了';
-
-  @override
   String get surveillance_general_battery_warning => '哨兵模式启用期间会额外消耗12V电瓶电量。';
 
   @override
@@ -5799,15 +5621,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get cd_qr_code => 'QR 碼';
 
   @override
-  String get cd_show_hide_token => '顯示/隱藏符號';
-
-  @override
-  String get cd_copy_token => '複製權杖';
-
-  @override
-  String get cd_copy_url => '複製 URL';
-
-  @override
   String get cd_clear_logs => '清除日誌';
 
   @override
@@ -5923,46 +5736,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
       '每次開機時自動選取適合您車款的攝影機。攝影機 1 = BYD Seal，攝影機 0 = Atto 車款。變更攝影機 ID 後，請重新啟動攝影機服務使設定生效。';
 
   @override
-  String get dashboard_scan_to_connect => '掃碼連線';
-
-  @override
   String get dashboard_qr_waiting => '在等待道...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 執行中';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => '存取碼';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => '恢復代號';
 
   @override
-  String get dashboard_set_password => '設定密碼';
-
-  @override
   String get cd_set_password => '設定自訂密碼';
-
-  @override
-  String get dialog_set_password_title => '設定自訂密碼';
-
-  @override
-  String get dialog_set_password_message => '輸入新的存取密碼。這將取代自動產生的權杖。';
-
-  @override
-  String get dialog_set_password_hint => '新密碼（至少 12 個字元）';
-
-  @override
-  String get toast_password_set => '密碼已更新';
-
-  @override
-  String get toast_password_too_short => '密碼至少需 12 個字元';
 
   @override
   String get toast_password_save_failed => '無法儲存密碼 — 服務尚未就緒';
@@ -6309,9 +6092,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get daemon_name_acc => 'ACC 監控';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => '背景服務';
 
   @override
@@ -6525,9 +6305,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get reset_label_trip_files => '旅行遠隔測量檔案';
 
   @override
-  String get toast_access_code_copied => '已複製的接入代碼';
-
-  @override
   String get dialog_regenerate_token_title => '恢復代號';
 
   @override
@@ -6547,21 +6324,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get toast_token_regenerated => '標誌再生';
 
   @override
-  String get dashboard_no_tunnel => '沒有道運行';
-
-  @override
-  String get dashboard_starting_tor => '正在啟動 Tor 通道…';
-
-  @override
   String get dashboard_waiting_url => '在等待道URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 執行中';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '存取碼';
@@ -7015,11 +6783,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get diagnostics_metric_online => '線上';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return '道 · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -7495,7 +7258,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_section_surveillance_subtitle => '時間表,移動偵測靈敏度,物件偵測.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Tor 通道與背景服務。';
+  String get settings_section_daemons_subtitle => '遠端存取 (Pear)與背景服務。';
 
   @override
   String get settings_about_row_title => '關於BladeWatch';
@@ -8471,36 +8234,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get surveillance_apply_failed => '儲存失敗';
-
-  @override
-  String get dashboard_tor_bootstrapping => '正在連線至 Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => '如何開啟此位址';
-
-  @override
-  String get dashboard_tor_help_title => '開啟此位址';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android：從 Google Play 或 F-Droid 安裝 Tor Browser，開啟後貼上位址。';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone 和 iPad：從 App Store 安裝 Onion Browser，開啟後貼上位址。iOS 沒有 Tor Browser。';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows、macOS 和 Linux：從 torproject.org 下載 Tor Browser，開啟後貼上位址。';
-
-  @override
-  String get dashboard_tor_help_password_note => '頁面載入後仍需要密碼。';
-
-  @override
-  String get dashboard_tor_help_download_qr_label => '掃描前往 Tor Browser 下載頁';
-
-  @override
-  String get dashboard_tor_help_close => '知道了';
 
   @override
   String get surveillance_general_battery_warning => '哨兵模式啟用期間會額外消耗12V電瓶電量。';

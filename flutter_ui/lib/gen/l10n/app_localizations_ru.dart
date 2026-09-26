@@ -55,15 +55,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cd_qr_code => 'QR-код';
 
   @override
-  String get cd_show_hide_token => 'Показать/скрыть токен';
-
-  @override
-  String get cd_copy_token => 'Копировать токен';
-
-  @override
-  String get cd_copy_url => 'Копировать URL';
-
-  @override
   String get cd_clear_logs => 'Очистить журналы';
 
   @override
@@ -179,48 +170,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Авто выбирает нужную камеру для вашей комплектации при каждом запуске. Камера 1 = BYD Seal, Камера 0 = комплектации Atto. После изменения идентификатора камеры перезапустите службу камеры, чтобы настройка вступила в силу.';
 
   @override
-  String get dashboard_scan_to_connect => 'Сканировать для подключения';
-
-  @override
   String get dashboard_qr_waiting => 'Ждём туннеля...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 работает';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'Код доступа';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'Создать новый токен';
 
   @override
-  String get dashboard_set_password => 'Задать пароль';
-
-  @override
   String get cd_set_password => 'Задать свой пароль';
-
-  @override
-  String get dialog_set_password_title => 'Задать свой пароль';
-
-  @override
-  String get dialog_set_password_message =>
-      'Введите новый пароль доступа. Он заменит автоматически созданный токен.';
-
-  @override
-  String get dialog_set_password_hint => 'Новый пароль (мин. 12 символов)';
-
-  @override
-  String get toast_password_set => 'Пароль обновлён';
-
-  @override
-  String get toast_password_too_short =>
-      'Пароль должен быть не короче 12 символов';
 
   @override
   String get toast_password_save_failed =>
@@ -581,9 +540,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get daemon_name_acc => 'Наблюдение ACC';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => 'Фоновые службы';
 
   @override
@@ -807,9 +763,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get reset_label_trip_files => 'Поездка телеметрические файлы';
 
   @override
-  String get toast_access_code_copied => 'Код доступа скопирован';
-
-  @override
   String get dialog_regenerate_token_title => 'Создать новый токен';
 
   @override
@@ -832,21 +785,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get toast_token_regenerated => 'Регенерированный токен';
 
   @override
-  String get dashboard_no_tunnel => 'Туннель не запущен';
-
-  @override
-  String get dashboard_starting_tor => 'Запуск туннеля Tor…';
-
-  @override
   String get dashboard_waiting_url => 'Ждём туннеля URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 работает';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Код доступа';
@@ -1328,11 +1272,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get diagnostics_metric_online => 'Онлайн';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'Тоннель · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -1846,7 +1785,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Туннель Tor и фоновые службы.';
+      'Удалённый доступ (Pear) и фоновые службы.';
 
   @override
   String get settings_about_row_title => 'О BladeWatch';
@@ -2851,38 +2790,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Не удалось сохранить';
-
-  @override
-  String get dashboard_tor_bootstrapping => 'Подключение к Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'Как открыть этот адрес';
-
-  @override
-  String get dashboard_tor_help_title => 'Как открыть этот адрес';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: установите Tor Browser из Google Play или F-Droid, откройте его и вставьте адрес.';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone и iPad: установите Onion Browser из App Store, откройте его и вставьте адрес. Tor Browser для iOS не существует.';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS и Linux: скачайте Tor Browser с torproject.org, откройте его и вставьте адрес.';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'Пароль всё равно понадобится после загрузки страницы.';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'Отсканируйте, чтобы открыть страницу загрузки Tor Browser';
-
-  @override
-  String get dashboard_tor_help_close => 'Понятно';
 
   @override
   String get surveillance_general_battery_warning =>

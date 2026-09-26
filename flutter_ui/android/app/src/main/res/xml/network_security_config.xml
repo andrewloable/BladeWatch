@@ -14,10 +14,9 @@
   cleartext-blocked error.
 
   Deliberately NOT `android:usesCleartextTraffic="true"` on <application>: that
-  re-permits cleartext to every host, including anything reachable over the Tor
-  tunnel or the car's own network. This allows exactly the loopback daemon and
-  leaves TLS enforced everywhere else, which matters because the tunnel URLs are
-  only safe when paired with JWT auth (see the Security Notes in CLAUDE.md).
+  re-permits cleartext to every host, including anything on the car's own
+  network. This allows exactly the loopback daemon and leaves TLS enforced
+  everywhere else (see the Security Notes in CLAUDE.md).
 -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">

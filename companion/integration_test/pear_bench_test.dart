@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:bladewatch_companion/inbox_sync.dart';
 import 'package:bladewatch_companion/transport/car_auth.dart';
 import 'package:bladewatch_companion/transport/local_gateway.dart';
 import 'package:bladewatch_companion/transport/pear_link.dart';
@@ -15,11 +16,14 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart';
 import 'package:bladewatch_rpc/pairing/pairing_payload.dart';
 import 'package:bladewatch_rpc/rpc/connect_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/notifications.pb.dart';
+import 'package:bladewatch_rpc/rpc/services/notifications_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
+import 'package:fixnum/fixnum.dart';
 import 'package:flutter_pear/flutter_pear.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -38,7 +42,14 @@ import 'package:integration_test/integration_test.dart';
 ///     flutter test integration_test/pear_bench_test.dart -d macos \
 ///       --dart-define=BW_DIR=<dir> [--dart-define=BW_PAIRING=<qr text>] \
 ///       [--dart-define='BW_RUN=video --seconds 600 --probe-every 2;rpc --count 200'] \
-///       [--dart-define=BW_QUALITY=MEDIUM] [--dart-define=BW_BURST=true] [--dart-define=BW_COLD_STARTS=20]
+///       [--dart-define=BW_QUALITY=MEDIUM] [--dart-define=BW_BURST=true] [--dart-define=BW_COLD_STARTS=20] \
+///       [--dart-define=BW_INBOX=true|mark|send|collect]
+///
+/// BW_INBOX (BladeWatch-rdtj.14): the car's alert inbox over Pear, with the saved credential -- no
+/// fresh QR needed. `true` raises a test alert and collects it, once, in one session. To prove
+/// store and forward -- an alert raised while this companion is away arrives on its next
+/// connection -- run three separate sessions: `mark` records where the inbox stands, `send`
+/// raises the alert and leaves without collecting, `collect` reads from the mark.
 ///
 /// BW_QUALITY sets the live-view preset BEFORE the harness starts (never during a run); the car's
 /// current preset and the ones it offers are logged either way.
@@ -54,6 +65,7 @@ const _run = String.fromEnvironment('BW_RUN');
 const _burst = bool.fromEnvironment('BW_BURST');
 const _coldStarts = int.fromEnvironment('BW_COLD_STARTS');
 const _quality = String.fromEnvironment('BW_QUALITY');
+const _inbox = String.fromEnvironment('BW_INBOX');
 
 class _Link {
   _Link(this.gateway, this.pear, this.selector);
@@ -274,6 +286,45 @@ void main() {
         await link.close();
         final jwtFile = File('$_dir/jwt');
         if (jwtFile.existsSync()) jwtFile.deleteSync();
+      }
+    }
+
+    if (_inbox.isNotEmpty) {
+      final mark = File('$_dir/inbox_cursor');
+      final link = await _connect(qr);
+      try {
+        final rpc = ConnectClient(jwtSource: CompanionJwtSource(CarAuth(link.gateway.baseUrl), credential), baseUrl: link.gateway.baseUrl);
+        final notifications = NotificationsServiceClient(rpc);
+        Future<void> send() => notifications.sendTest(SendTestRequest(category: 'surveillance.motion', severity: 'info'));
+        Future<void> collectFrom(Int64 cursor) async {
+          var after = const InboxBatch([], Int64.ZERO);
+          for (var i = 0; i < 20 && after.entries.isEmpty; i++) {
+            await Future<void>.delayed(const Duration(milliseconds: 250)); // the bus delivers async
+            after = await collectInbox(notifications, cursor);
+          }
+          final again = await collectInbox(notifications, after.cursor);
+          _emit({'inbox': after.entries.map((e) => e.title).toList(), 'then': again.entries.length});
+          expect(after.entries.map((e) => e.title), ['Test notification']);
+          expect(again.entries, isEmpty, reason: 'collected once');
+        }
+
+        switch (_inbox) {
+          case 'mark':
+            final cursor = (await collectInbox(notifications, Int64.ZERO)).cursor;
+            mark.writeAsStringSync('$cursor');
+            _emit({'inbox_mark': '$cursor'});
+          case 'send':
+            await send();
+            _emit({'inbox_sent': true});
+          case 'collect':
+            await collectFrom(Int64.parseInt(mark.readAsStringSync()));
+          default:
+            final before = await collectInbox(notifications, Int64.ZERO);
+            await send();
+            await collectFrom(before.cursor);
+        }
+      } finally {
+        await link.close();
       }
     }
 

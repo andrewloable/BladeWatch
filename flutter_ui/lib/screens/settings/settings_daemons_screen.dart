@@ -13,9 +13,8 @@ import 'settings_daemons_models.dart';
 /// Ground truth: `DaemonsFragment.kt` + `DaemonAdapter.kt`, reduced to what
 /// `daemon.processStatus` can report — see the controller's doc comment for
 /// why per-daemon start/stop and per-row uptime/subprocess detail aren't
-/// here. There is no per-daemon configure action any more: the tunnel's token
-/// dialog went with the previous tunnel, and a Tor onion service has nothing to
-/// configure.
+/// here. There is no per-daemon configure action: the Pear peer has nothing to
+/// configure (pairing lives in its own dialog).
 class SettingsDaemonsScreen extends StatefulWidget {
   final SettingsDaemonsController controller;
 
@@ -33,11 +32,11 @@ class SettingsDaemonsScreen extends StatefulWidget {
 class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
   /// BladeWatch-dh1r: how often the rows re-read daemon state while this screen is up.
   ///
-  /// The screen used to load once and never again, so a tunnel that started thirty
+  /// The screen used to load once and never again, so a daemon that started thirty
   /// seconds after the user flipped the switch stayed "Waiting" until they navigated
-  /// away and back. The daemon's own health check runs on a 30 s cycle and tor then
-  /// needs up to a minute to bootstrap, so polling faster than the thing being observed
-  /// only costs IPC round trips; 5 s is quick enough to feel live.
+  /// away and back. The daemon's own health check runs on a 30 s cycle, so polling
+  /// faster than the thing being observed only costs IPC round trips; 5 s is quick
+  /// enough to feel live.
   static const Duration _refreshInterval = Duration(seconds: 5);
 
   Timer? _refreshTimer;
@@ -73,13 +72,12 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
   /// let the two UIs drift apart; that task added the matching
   /// `daemon_name_*` string resources to native as well, so the English wording
   /// stays byte-identical while the other 16 locales finally translate.
-  /// "Tor Tunnel" is a product name and is deliberately untranslated. The Pear peer is
-  /// "Remote access (Pear)": what it does is translated, the product name is not.
+  /// The Pear peer is "Remote access (Pear)": what it does is translated, the product
+  /// name is not.
   String _daemonLabel(AppLocalizations l10n, DaemonKind kind) => switch (kind) {
         DaemonKind.camera => l10n.daemon_name_camera,
         DaemonKind.sentry => l10n.daemon_name_surveillance,
         DaemonKind.accSentry => l10n.daemon_name_acc,
-        DaemonKind.torTunnel => l10n.daemon_name_tor,
         DaemonKind.pearPeer => l10n.daemon_name_pear,
       };
 
@@ -88,7 +86,6 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         DaemonKind.camera => Icons.photo_camera_outlined,
         DaemonKind.sentry => Icons.shield_outlined,
         DaemonKind.accSentry => Icons.directions_car_outlined,
-        DaemonKind.torTunnel => Icons.link,
         DaemonKind.pearPeer => Icons.hub_outlined,
       };
 
@@ -102,7 +99,6 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         DaemonKind.camera => '/data/local/tmp/cam_daemon.log',
         DaemonKind.sentry => '/data/local/tmp/sentry_daemon.log',
         DaemonKind.accSentry => '/data/local/tmp/acc_sentry_daemon.log',
-        DaemonKind.torTunnel => '/data/local/tmp/tor.log',
         DaemonKind.pearPeer => '/data/local/tmp/pear_daemon.log',
       };
 
@@ -148,17 +144,13 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         const SizedBox(height: 12),
         for (final row in c.rows)
           Builder(builder: (context) {
-            // The "no token configured" warning state is gone with the previous
-            // tunnel — Tor needs no account. What replaced it is the STARTING state:
-            // enabled but not up yet, which for tor lasts up to a minute (61 s cold
-            // bootstrap measured on the head unit). Showing that as a plain "Waiting"
-            // is what made the row look like the toggle had failed.
+            // The STARTING state: enabled but not up yet, until the next health-check
+            // cycle launches it. Showing that as a plain "Waiting" is what made the row
+            // look like the toggle had failed.
             final statusText = row.running
                 ? l10n.surveillance_general_status_running
                 : row.pending
-                    ? row.kind == DaemonKind.pearPeer
-                        ? l10n.startup_status_starting
-                        : l10n.dashboard_starting_tor
+                    ? l10n.startup_status_starting
                     : l10n.startup_status_waiting;
             final statusColor = row.running
                 ? _successColor(theme)
@@ -198,7 +190,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
                       onPressed: () => _showLog(context, l10n, row.kind),
                     ),
                     // Every row keeps a switch so its state stays visible and the
-                    // rows stay aligned. Only the Tor tunnel can actually be
+                    // rows stay aligned. Only the Pear peer can actually be
                     // toggled (BladeWatch-abcx, see DaemonKind.canToggle); the rest
                     // answer immediately with the same message they always did,
                     // without a pointless IPC round trip.

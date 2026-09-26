@@ -55,15 +55,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cd_qr_code => 'Mã QR';
 
   @override
-  String get cd_show_hide_token => 'Hiện/ẩn mã thông báo';
-
-  @override
-  String get cd_copy_token => 'Sao chép token';
-
-  @override
-  String get cd_copy_url => 'Sao chép URL';
-
-  @override
   String get cd_clear_logs => 'Xóa nhật ký';
 
   @override
@@ -179,47 +170,16 @@ class AppLocalizationsVi extends AppLocalizations {
       'Tự động chọn camera phù hợp cho phiên bản xe của bạn khi mỗi lần khởi động. Camera 1 = BYD Seal, Camera 0 = các phiên bản Atto. Khởi động lại dịch vụ camera sau khi thay đổi ID camera để cài đặt có hiệu lực.';
 
   @override
-  String get dashboard_scan_to_connect => 'Quét để kết nối';
-
-  @override
   String get dashboard_qr_waiting => 'Chờ đường hầm...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 đang chạy';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'Mã truy cập';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'Tạo lại token';
 
   @override
-  String get dashboard_set_password => 'Đặt mật khẩu';
-
-  @override
   String get cd_set_password => 'Đặt mật khẩu tùy chỉnh';
-
-  @override
-  String get dialog_set_password_title => 'Đặt mật khẩu tùy chỉnh';
-
-  @override
-  String get dialog_set_password_message =>
-      'Nhập mật khẩu truy cập mới. Mật khẩu này thay thế token tự tạo.';
-
-  @override
-  String get dialog_set_password_hint => 'Mật khẩu mới (tối thiểu 12 ký tự)';
-
-  @override
-  String get toast_password_set => 'Đã cập nhật mật khẩu';
-
-  @override
-  String get toast_password_too_short => 'Mật khẩu phải có ít nhất 12 ký tự';
 
   @override
   String get toast_password_save_failed =>
@@ -575,9 +535,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get daemon_name_acc => 'Giám sát ACC';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => 'Dịch vụ nền';
 
   @override
@@ -799,9 +756,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get reset_label_trip_files => 'Dữ liệu telemetry chuyến đi';
 
   @override
-  String get toast_access_code_copied => 'Mã truy cập sao chép';
-
-  @override
   String get dialog_regenerate_token_title => 'Tạo lại token';
 
   @override
@@ -824,21 +778,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get toast_token_regenerated => 'Tín hiệu được tái tạo';
 
   @override
-  String get dashboard_no_tunnel => 'Không có đường hầm chạy';
-
-  @override
-  String get dashboard_starting_tor => 'Đang khởi động đường hầm Tor…';
-
-  @override
   String get dashboard_waiting_url => 'Chờ đường hầm URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 đang chạy';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Mã truy cập';
@@ -1316,11 +1261,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get diagnostics_metric_online => 'Trực tuyến';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'Đường hầm · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -1824,7 +1764,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Đường hầm Tor và dịch vụ nền.';
+      'Truy cập từ xa (Pear) và dịch vụ nền.';
 
   @override
   String get settings_about_row_title => 'Về BladeWatch';
@@ -2822,38 +2762,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Lưu không thành công';
-
-  @override
-  String get dashboard_tor_bootstrapping => 'Đang kết nối tới Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'Cách mở địa chỉ này';
-
-  @override
-  String get dashboard_tor_help_title => 'Mở địa chỉ này';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: cài Tor Browser từ Google Play hoặc F-Droid, mở ứng dụng và dán địa chỉ.';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone và iPad: cài Onion Browser từ App Store, mở ứng dụng và dán địa chỉ. Tor Browser không có trên iOS.';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS và Linux: tải Tor Browser tại torproject.org, mở lên và dán địa chỉ.';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'Bạn vẫn cần mật khẩu sau khi trang tải xong.';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'Quét để mở trang tải Tor Browser';
-
-  @override
-  String get dashboard_tor_help_close => 'Đã hiểu';
 
   @override
   String get surveillance_general_battery_warning =>

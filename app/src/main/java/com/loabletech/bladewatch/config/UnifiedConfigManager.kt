@@ -1021,9 +1021,8 @@ object UnifiedConfigManager {
     private fun sensitiveKeysFor(section: String): Set<String> {
         return when (section) {
             "auth" -> setOf("deviceSecret")
-            // The tunnel has no secrets any more: a Tor onion service needs no account,
-            // no token and no registration. Its only secret is the hidden-service key,
-            // which lives in tor's own directory at mode 600 and never enters this store.
+            // Remote access keeps no secrets in this section: the Pear peer's topic seed and the
+            // pairing records live in the secret store (SecretConfigStore), never here.
             else -> emptySet()
         }
     }

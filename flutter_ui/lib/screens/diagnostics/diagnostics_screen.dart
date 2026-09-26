@@ -191,7 +191,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           Row(children: [
             _dot(tunnelColor),
             const SizedBox(width: 6),
-            Flexible(child: Text(l10n.diagnostics_network_tunnel_label(tunnelLabel), style: theme.textTheme.labelSmall, overflow: TextOverflow.ellipsis)),
+            Flexible(child: Text('${l10n.dashboard_metric_tunnel} · $tunnelLabel', style: theme.textTheme.labelSmall, overflow: TextOverflow.ellipsis)),
           ]),
           if (c.thisMonthDataUsageFormatted.isNotEmpty) ...[
             const SizedBox(height: 4),

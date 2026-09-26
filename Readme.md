@@ -4,7 +4,7 @@
 
 <h1 align="center">BladeWatch</h1>
 
-Free, open-source dashcam and sentry mode app built specifically for BYD vehicles with DiLink v3. All recordings and data stay on your device — no cloud, no accounts, no subscriptions. Optional remote viewing is direct, peer-to-peer through your own tunnel.
+Free, open-source dashcam and sentry mode app built specifically for BYD vehicles with DiLink v3. All recordings and data stay on your device — no cloud, no accounts, no subscriptions. Optional remote viewing is direct and peer-to-peer, through the companion app.
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
@@ -115,8 +115,8 @@ Facts:
    car: tell me, and only with my OK run adb uninstall net.bladewatch.flutter and
    adb uninstall net.bladewatch.app, ask me to hard-reboot the head unit (hold Volume Down
    for 5 seconds) so its old background daemons die, reconnect, and install again. Never
-   uninstall anything without asking, and never touch /data/local/tmp/tor (it holds the
-   car's permanent Tor address).
+   uninstall anything without asking, and never touch /data/local/tmp/pear (it holds the
+   car's permanent remote-access identity; deleting it unpairs every phone).
 
 5. Verify. adb shell 'dumpsys package net.bladewatch.app | grep userId' and the same for
    net.bladewatch.flutter must print the same userId; if they differ the APKs were signed with
@@ -156,32 +156,30 @@ and ask me instead of guessing.
 - **Real-time Performance Monitor** — CPU, GPU, memory usage, and battery voltage dashboard.
 - **Diagnostics** — Network, storage, camera, and battery health checks.
 - **Live Streaming** — Low-latency H.264 streaming over WebSocket with multiple view modes (all cameras, front, rear, left, right).
-- **Remote Web App** — A full Angular web UI served by the on-device daemon, reachable from any browser through your tunnel. Token-protected.
+- **Remote Web App** — A full Angular web UI served by the on-device daemon, reachable from a browser on the car's network while LAN access is on. Token-protected.
 - **Web Push Notifications** — Get surveillance event alerts pushed to your phone or desktop.
 - **ADB Shell Runner** — Built-in terminal for running commands, checking processes, and viewing logs.
 - **17 Languages** — Fully localized UI.
 
-### Tor Onion Service
-_(Versions before 1.3.1 used a different tunnel that required an account and an invite token. It has been removed; no migration is needed beyond enabling the Tor tunnel.)_
+### Remote Access (Pear)
+_(v1.3.x reached the car through a Tor onion address. v1.4.0.0 removed it: saved onion URLs and QR codes no longer work, and nothing migrates them. Pair the companion app instead.)_
 
-Remote access runs over a Tor v3 onion service: no account, no token, no sign-up, and no
-device limit. The address is permanent — it survives restarts and reboots — so the QR code
-on the Dashboard keeps working once you have scanned it.
+Remote access goes through the **BladeWatch companion app** on your phone or computer
+(Android, iOS, macOS, Windows, Linux). It finds the car over Pear, a peer-to-peer network:
+no account, no server in the middle, and nothing to forward on your router.
 
-**Setup:** enable the Tor tunnel under Daemons in the app. That is the whole setup. The
-first start takes about 80 seconds while tor connects to the network (a few seconds
-afterwards), and the Dashboard shows the QR code once it is actually reachable.
+**Setup:** on the car's Dashboard, tap **Pair a device** and scan the code with the
+companion. The code works once and expires after five minutes. Pairing turns remote access
+on; the same dialog lists paired devices and removes any you no longer trust.
 
-**Opening the address:** a `.onion` address does not work in Chrome or Safari. Install
-[Tor Browser](https://www.torproject.org/download/) (Android, Windows, macOS, Linux) or
-Onion Browser on iPhone and iPad, then scan or paste the address. The Dashboard's info
-button shows the same instructions on the car's screen.
+**On the same Wi-Fi:** turn on **Direct connection on this Wi-Fi** in the pairing dialog and
+a paired phone on the car's network connects straight to it, encrypted, without going
+through the internet. It is off unless you turn it on.
 
-**The address is not a password.** Anyone who has it can reach your car's login page, so
-the app's password still protects everything behind it — keep both to yourself.
-
-Expect roughly 60–75 KB/s and a couple of seconds of latency per request: slower than a
-direct connection, comfortably enough for the web UI and for live video.
+**Limits:** the car and the phone must be able to reach each other through their networks.
+Some mobile carriers put phones behind a NAT that peer-to-peer connections cannot cross; from
+such a network the companion may not reach the car until you switch to another connection.
+Over a mobile connection, live video is smoothest at Medium quality or lower.
 
 > Should work on all BYD vehicles with DiLink v3 and the panoramic camera system.
 
@@ -191,7 +189,7 @@ BladeWatch is a hybrid project built from three codebases:
 
 - **`flutter_ui/`** — the in-car UI (Flutter/Dart), built as `net.bladewatch.flutter`.
 - **`app/`** — the service host (Android/Kotlin/Java + C++), built as `net.bladewatch.app`. Owns the daemons, the camera/GPU pipeline and the BYD integration.
-- **`web/`** — the Angular SPA the on-device daemon serves to remote browsers over your tunnel. Bundled into the service host APK.
+- **`web/`** — the Angular SPA the on-device daemon serves to browsers on the car's network (LAN access). Bundled into the service host APK.
 
 The in-car UI was native Android until it was rewritten in Flutter; the Angular app is not the in-car UI and is only used by remote clients.
 
@@ -244,7 +242,7 @@ In-depth documentation lives in [`docs/`](docs/) — architecture, daemons and p
 
 - 100% local storage — all recordings saved on device
 - No account required
-- No cloud upload — remote viewing is direct via tunnels you control
+- No cloud upload — remote viewing is peer-to-peer between your own devices and the car
 - Open source — audit the code yourself
 
 ## Acknowledgments

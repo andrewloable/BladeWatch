@@ -13,10 +13,9 @@ import org.junit.Test
  * will sit there forever unless something removes it.
  *
  * **Why these tests assert on a string.** The one thing that could go catastrophically wrong is
- * a delete that reaches `/data/local/tmp/tor`. That directory holds `hs/hs_ed25519_secret_key`,
- * which IS the car's permanent onion address: remove it and tor mints a new one on the next
- * start, silently breaking every QR code the owner has ever scanned, with no way back. So the
- * generated command is pinned here the same way `DaemonHardResetCommandTest` pins the sweep.
+ * a delete that reaches `/data/local/tmp/tor` (an older build's onion identity: removing it is an
+ * explicit owner decision, BladeWatch-rdtj.12) or any other data directory. So the generated
+ * command is pinned here the same way `DaemonHardResetCommandTest` pins the sweep.
  *
  * Translated from Java with its class (BladeWatch-dmrg) because `cleanupCommand` is `internal`
  * and Java cannot call a Kotlin internal member.
@@ -38,8 +37,7 @@ class LegacyTunnelCleanupTest {
     fun neverTouchesTheTorDirectory() {
         val cmd = LegacyTunnelCleanup.cleanupCommand()
         Assert.assertFalse(
-            "this must NEVER reach the tor tree — hs/hs_ed25519_secret_key is the car's "
-                + "permanent onion address and losing it breaks every QR code ever scanned: "
+            "this must NEVER reach the tor tree -- deleting it is the owner's explicit decision: "
                 + cmd,
             cmd.contains("/data/local/tmp/tor"))
     }
@@ -69,13 +67,34 @@ class LegacyTunnelCleanupTest {
             cmd.contains("2>/dev/null") || cmd.contains("|| true"))
     }
 
+    /** BladeWatch-rdtj.12: an upgraded car's config still names the removed tor daemon. */
     @Test
-    fun doesNotKillAnythingOrTouchTheConfigInTheShellCommand() {
+    fun dropsTheRemovedDaemonsConfigKeys() {
+        Assert.assertEquals(listOf("Z" + "ROK_TUNNEL", "TOR_TUNNEL"), LegacyTunnelCleanup.LEGACY_DAEMON_KEYS)
+    }
+
+    /**
+     * BladeWatch-rdtj.23: a v1.3.x tor survives the install (it is detached) and the post-install
+     * sweep only runs if BYD delivers the package-replaced broadcast, which it suppresses after an
+     * install. Still alive, it forwards the old onion port to a now-unbound 127.0.0.1:8081 that any
+     * app could take. Killed here on every launch -- and only it.
+     */
+    @Test
+    fun killsAStaleTorAndNothingElse() {
+        val cmd = LegacyTunnelCleanup.cleanupCommand()
+        Assert.assertTrue("must kill a stale tor: " + cmd, cmd.contains("killall -9 bladewatch_tor"))
+        Assert.assertFalse("pkill -f matches its own shell: " + cmd, cmd.contains("pkill"))
+        val kills = cmd.split(";").map { it.trim() }.filter { it.contains("kill") }
+        Assert.assertEquals("the stale tor is the only thing this may kill: " + cmd,
+            listOf("killall -9 bladewatch_tor 2>/dev/null"), kills)
+    }
+
+    @Test
+    fun doesNotTouchTheConfigInTheShellCommand() {
         val cmd = LegacyTunnelCleanup.cleanupCommand()
         // The config key is dropped through UnifiedConfigManager, not by editing JSON with a
         // shell one-liner — sed-ing a config file that another process may be writing is how you
         // corrupt it.
-        Assert.assertFalse("no kills belong in a cleanup: " + cmd, cmd.contains("kill"))
         Assert.assertFalse("do not edit the config from the shell: " + cmd,
             cmd.contains("bladewatch_config.json"))
     }

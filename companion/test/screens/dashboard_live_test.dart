@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:bladewatch_companion/car/media.dart';
@@ -199,6 +200,41 @@ void main() {
       expect(enabled, 1, reason: 'the first 503 turns streaming on');
       await tester.pump(const Duration(seconds: 3));
       expect(enabled, 1, reason: 'not again within 10 s');
+      await unmount(tester);
+    });
+
+    // BladeWatch-tayl: live again the moment the route is back. A fetch the drop left hanging
+    // must not block that (it would until fetchMedia's 20 s timeout), and the next tick's period
+    // must not be waited out either.
+    testWidgets('a reconnect fetches at once, past a fetch the drop left hanging', (tester) async {
+      final s = TestSession(phase: TransportPhase.pear);
+      final hung = Completer<MediaResponse>();
+      var calls = 0;
+      await pumpScreen(
+        tester,
+        s,
+        LiveScreen(
+          fetch: (_) {
+            calls++;
+            return calls == 2 ? hung.future : Future.value(MediaResponse(200, testPng));
+          },
+          enable: (_) async {},
+        ),
+      );
+      expect(calls, 1);
+      await tester.pump(const Duration(seconds: 2)); // the second fetch starts, and hangs
+      expect(calls, 2);
+      await s.go(tester, TransportPhase.discovering);
+      await tester.pump(const Duration(seconds: 6));
+      expect(calls, 2, reason: 'the hanging fetch holds the ticks while the route is down');
+      expect(find.byKey(const ValueKey('live.frame')), findsOneWidget, reason: 'the last frame stays');
+
+      await s.go(tester, TransportPhase.pear);
+      await tester.pump();
+      expect(calls, 3, reason: 'fetched the moment the route came back, not after a timeout');
+      hung.complete(MediaResponse(200, testPng)); // the stale answer is ignored
+      await tester.pump();
+      expect(find.byKey(const ValueKey('live.frame')), findsOneWidget);
       await unmount(tester);
     });
 

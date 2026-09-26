@@ -126,74 +126,6 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("ExternalNative")
     dependsOn("downloadOpenH264", "downloadOpenCV")
 }
 
-// ---------------------------------------------------------------------------------------------
-// Tor onion service binary (BladeWatch-3lbz.1)
-//
-// Replaces the previous tunnel. Briar publishes the stock tor executable to Maven Central,
-// already built for
-// Android and already named lib*.so, which is exactly the shape Android will extract to
-// nativeLibraryDir with the execute bit set — the only way to ship a runnable binary to a
-// non-rooted head unit.
-//
-// Unlike the previous tunnel's 19.2 MB binary this is NOT committed: it is a build artifact, fetched and
-// SHA-256-verified here like OpenH264 and OpenCV. TorBinaryPackagingTest is the guard that keeps
-// a build from silently producing an APK with no tunnel in it.
-val torVersion = "0.4.8.14"
-val torJarSha256 = "fc7c4f5007a98132ba84534a873f101951d2d554d5da5f2031b85c277f8617a6"
-val torLibrarySha256 = "9aa3a500bc3edd495cd33c61fd65d536f49b92692e16f6e23e3ada44e76a94a9"
-
-tasks.register("downloadTor") {
-    val torSo = file("src/main/jniLibs/arm64-v8a/libtor.so")
-    val proj = project
-    // Without these the task is UP-TO-DATE whenever the output file merely exists, so
-    // bumping the version or the pin would leave the OLD binary in place — and
-    // `./gradlew downloadTor`, which TorBinaryPackagingTest's failure message tells you to
-    // run, would print UP-TO-DATE and do nothing.
-    inputs.property("torVersion", torVersion)
-    inputs.property("torLibrarySha256", torLibrarySha256)
-    outputs.file(torSo)
-    doLast {
-        if (torSo.exists() && hasExpectedSha256(torSo, torLibrarySha256)) {
-            println("\u2713 Tor ${torVersion} verified")
-            return@doLast
-        }
-        if (torSo.exists()) {
-            println("Tor exists but checksum changed; redownloading")
-            torSo.delete()
-        }
-        println("Downloading Tor ${torVersion}...")
-        // arm64-v8a only. The head unit is arm64; each extra ABI is another ~5 MB of APK.
-        val jar = file("${layout.buildDirectory.get().asFile}/tor/tor-android-${torVersion}.jar")
-        proj.ensureDownloadedVerified(
-            "https://repo1.maven.org/maven2/org/briarproject/tor-android/" +
-                "${torVersion}/tor-android-${torVersion}.jar",
-            jar,
-            torJarSha256,
-            "Tor ${torVersion} archive"
-        )
-        val staging = file("${layout.buildDirectory.get().asFile}/tor/extracted")
-        proj.delete(staging)
-        proj.copy {
-            from(proj.zipTree(jar)) { include("arm64-v8a/libtor.so") }
-            into(staging)
-        }
-        val extracted = file("${staging}/arm64-v8a/libtor.so")
-        if (!extracted.exists()) {
-            throw org.gradle.api.GradleException(
-                "Tor archive did not contain arm64-v8a/libtor.so"
-            )
-        }
-        torSo.parentFile.mkdirs()
-        extracted.copyTo(torSo, overwrite = true)
-        verifySha256(torSo, torLibrarySha256, "Tor ${torVersion} binary")
-        println("\u2713 Tor ${torVersion} downloaded and verified")
-    }
-}
-
-// preBuild, not the CMake hook: tor is not a native BUILD dependency, it just has to be on disk
-// before any variant packages jniLibs.
-tasks.named("preBuild") { dependsOn("downloadTor") }
-
 // Bare Kit wiring (BladeWatch-rdtj.2 spike): fetch the pinned upstream holepunchto/bare-kit
 // prebuild release (checksum-verified) and extract classes.jar + arm64-v8a's .so files, the
 // same two-artifact shape flutter_pear_bare/android/build.gradle consumes it as -- a raw
@@ -206,8 +138,7 @@ tasks.named("preBuild") { dependsOn("downloadTor") }
 // above what this head unit (API 29 exactly, no upgrade path) can run at all.
 val bareKitVersion = "2.5.5"
 val bareKitSha256 = "fc68740347c8532ba49d45bf61fae9ca1f1040dc7d6c99f2f92dc30c40e84e46"
-// arm64-v8a only -- the real head unit, not an x86_64 desktop-class emulator. Mirrors the
-// downloadTor task's own single-ABI choice just above.
+// arm64-v8a only -- the real head unit, not an x86_64 desktop-class emulator.
 //
 // BOTH libraries the release ships for that ABI, not just libbare-kit.so: it NEEDS
 // libc++_shared.so (llvm-readelf -d), as do pear-end's udx/sodium/rocksdb/quickbit/simdle
@@ -621,8 +552,8 @@ dependencies {
     implementation(libs.material)
     
     // Lifecycle & LiveData. Phase 4 deleted the native UI, but these are NOT
-    // UI-only: TorController and DaemonsViewModel publish daemon state as
-    // LiveData and both still run in this (UI-less) service host.
+    // UI-only: DaemonsViewModel publishes daemon state as LiveData and still
+    // runs in this (UI-less) service host.
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     
@@ -1327,7 +1258,12 @@ kover {
             }
             verify {
                 rule {
-                    // Ratcheted 2026-09-16: 2007/36848 lines (~5.45%) after excluding
+                    // Ratcheted 2026-09-26 to 10: 4203/38416 lines (10.94%, 921 JVM tests) after
+                    // tor's removal (BladeWatch-rdtj.12). Most of the rise since 5 is tests added
+                    // over the v1.4.0.0 epic; tor's deletion took out a largely untested launcher,
+                    // which also lifts the ratio -- a floor to hold, not progress to celebrate.
+                    //
+                    // Earlier: ratcheted 2026-09-16: 2007/36848 lines (~5.45%) after excluding
                     // generated protobuf and the BYD stubs above. Floor of that real
                     // figure — raise this as tests are added; never lower it.
                     //
@@ -1350,7 +1286,7 @@ kover {
                     // margin is not a defect — deleting a test class is meant to be noticed —
                     // but do not read the current slack as permanent. If a legitimate
                     // refactor drops below the bound, add tests; never lower it.
-                    minBound(5)
+                    minBound(10)
                 }
             }
         }
@@ -1415,12 +1351,6 @@ tasks.withType<Test>().configureEach {
     // changes, which is precisely when it matters.
     inputs.dir("src/main/java")
         .withPropertyName("appSourcesForStaticChecks")
-        .withPathSensitivity(PathSensitivity.RELATIVE)
-    // TorBinaryPackagingTest reads the shipped tunnel binary off disk, not off the classpath,
-    // so the same blindness applies: without this the guard stops running exactly when the
-    // binary changes.
-    inputs.dir("src/main/jniLibs")
-        .withPropertyName("shippedNativeBinaries")
         .withPathSensitivity(PathSensitivity.RELATIVE)
     // NoRemovedTunnelReferencesTest scans the whole developer-edited tree as DATA —
     // including directories OUTSIDE this module, which is why these are resolved from the

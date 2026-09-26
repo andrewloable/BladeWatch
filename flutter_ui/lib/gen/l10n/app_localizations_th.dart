@@ -55,15 +55,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get cd_qr_code => 'คิวอาร์โค้ด';
 
   @override
-  String get cd_show_hide_token => 'แสดง/ซ่อน Token';
-
-  @override
-  String get cd_copy_token => 'คัดลอก Token';
-
-  @override
-  String get cd_copy_url => 'คัดลอก URL';
-
-  @override
   String get cd_clear_logs => 'ล้าง Log';
 
   @override
@@ -179,47 +170,16 @@ class AppLocalizationsTh extends AppLocalizations {
       'โหมดอัตโนมัติจะเลือกกล้องให้เหมาะกับรุ่นรถของคุณทุกครั้งที่เปิดเครื่อง กล้อง 1 = BYD Seal, กล้อง 0 = รุ่น Atto ต้องรีสตาร์ทบริการกล้องหลังเปลี่ยน ID กล้องเพื่อให้การตั้งค่ามีผล';
 
   @override
-  String get dashboard_scan_to_connect => 'สแกนเพื่อเชื่อมต่อ';
-
-  @override
   String get dashboard_qr_waiting => 'กำลังรอ Tunnel…';
 
   @override
   String get dashboard_daemons_running_default => 'ทำงาน 0/5';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'รหัสเข้าถึง';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'สร้าง Token ใหม่';
 
   @override
-  String get dashboard_set_password => 'ตั้งรหัสผ่าน';
-
-  @override
   String get cd_set_password => 'ตั้งรหัสผ่านเอง';
-
-  @override
-  String get dialog_set_password_title => 'ตั้งรหัสผ่านเอง';
-
-  @override
-  String get dialog_set_password_message =>
-      'ใส่รหัสผ่านใหม่สำหรับเข้าถึง รหัสนี้จะใช้แทน Token ที่ระบบสร้างให้อัตโนมัติ';
-
-  @override
-  String get dialog_set_password_hint => 'รหัสผ่านใหม่ (อย่างน้อย 12 ตัวอักษร)';
-
-  @override
-  String get toast_password_set => 'อัปเดตรหัสผ่านแล้ว';
-
-  @override
-  String get toast_password_too_short => 'รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร';
 
   @override
   String get toast_password_save_failed =>
@@ -575,9 +535,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get daemon_name_acc => 'การเฝ้าระวัง ACC';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => 'ระบบเบื้องหลัง';
 
   @override
@@ -799,9 +756,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get reset_label_trip_files => 'ไฟล์สถานะรถของแต่ละทริป';
 
   @override
-  String get toast_access_code_copied => 'คัดลอกรหัสเข้าถึงแล้ว';
-
-  @override
   String get dialog_regenerate_token_title => 'สร้าง Token ใหม่';
 
   @override
@@ -824,21 +778,12 @@ class AppLocalizationsTh extends AppLocalizations {
   String get toast_token_regenerated => 'สร้าง Token ใหม่แล้ว';
 
   @override
-  String get dashboard_no_tunnel => 'ยังไม่มี Tunnel ทำงานอยู่';
-
-  @override
-  String get dashboard_starting_tor => 'กำลังเริ่มอุโมงค์ Tor…';
-
-  @override
   String get dashboard_waiting_url => 'กำลังรอ Tunnel URL…';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return 'ทำงาน $arg1/$arg2';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'รหัสเข้าถึง';
@@ -1312,11 +1257,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get diagnostics_metric_online => 'ออนไลน์';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'อุโมงค์ · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -1817,7 +1757,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'อุโมงค์ Tor และบริการเบื้องหลัง';
+      'การเข้าถึงระยะไกล (Pear) และบริการเบื้องหลัง';
 
   @override
   String get settings_about_row_title => 'เกี่ยวกับ BladeWatch';
@@ -2810,38 +2750,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'บันทึกไม่สำเร็จ';
-
-  @override
-  String get dashboard_tor_bootstrapping => 'กำลังเชื่อมต่อกับ Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'วิธีเปิดที่อยู่นี้';
-
-  @override
-  String get dashboard_tor_help_title => 'การเปิดที่อยู่นี้';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: ติดตั้ง Tor Browser จาก Google Play หรือ F-Droid เปิดแล้ววางที่อยู่';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone และ iPad: ติดตั้ง Onion Browser จาก App Store เปิดแล้ววางที่อยู่ Tor Browser ไม่มีบน iOS';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS และ Linux: ดาวน์โหลด Tor Browser จาก torproject.org เปิดแล้ววางที่อยู่';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'ยังต้องใช้รหัสผ่านหลังจากหน้าเว็บโหลดเสร็จ';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'สแกนเพื่อไปยังหน้าดาวน์โหลด Tor Browser';
-
-  @override
-  String get dashboard_tor_help_close => 'เข้าใจแล้ว';
 
   @override
   String get surveillance_general_battery_warning =>

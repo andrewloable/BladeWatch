@@ -1,6 +1,6 @@
 # Data Flow and Storage
 
-BladeWatch coordinates data across the Android app process, shell-launched Java daemons, native camera code, web assets, the Tor tunnel binary, and BYD local sources. Most cross-process state is intentionally stored in files under `/data/local/tmp`.
+BladeWatch coordinates data across the Android app process, shell-launched Java daemons, native camera code, web assets, the Pear peer, and BYD local sources. Most cross-process state is intentionally stored in files under `/data/local/tmp`.
 
 ## Primary Data Flows
 
@@ -556,26 +556,30 @@ GPU kernel cache:
 
 `YoloDetector` enables TFLite GPU kernel serialization (`GpuDelegateFactory.Options.setSerializationParams`) into this directory. The Adreno OpenCL backend otherwise recompiles all GPU kernels on every daemon start (~3–5s); serialization persists the compiled kernels so only the first-ever boot pays that cost. The cache key (`modelToken`) is a SHA-256 content hash of `yolo11n.tflite` plus the TFLite version, so a re-exported model or a runtime bump invalidates stale kernels automatically. The cache is OpenCL-only and silently no-ops on the OpenGL ES backend; a failure to create or write the directory falls back to a bare delegate without disabling GPU.
 
-## Tunnel Runtime Files
+## Remote-Access Runtime Files
 
-Tor onion service:
+Pear peer (`pear_daemon`):
 
 ```text
-/data/local/tmp/bladewatch_tor    the binary, installed under its own process name
-/data/local/tmp/tor/torrc         generated config, rewritten on every launch
-/data/local/tmp/tor/data          consensus cache (safe to delete; costs a slow start)
-/data/local/tmp/tor/hs            hidden-service directory — see the warning below
-/data/local/tmp/tor/hs/hostname   the onion address, mode 600, shell-owned
-/data/local/tmp/tor.log           notice log
+/data/local/tmp/pear              pear-end's storage (Corestore), mode 0700 -- see the warning below
+/data/local/tmp/pear/swarm-identity.seed   the car's Pear identity seed, mode 0600, secret
+/data/local/tmp/pear_daemon.lock  singleton lock; safe to remove while the daemon is stopped
+/data/local/tmp/pear_daemon.log   daemon log
 ```
 
-**`hs/hs_ed25519_secret_key` is a SECRET and it is permanent.** It is the private key the
-car's onion address is derived from, so it belongs in the same category as the entries in
-`bladewatch_secrets.json`: never logged, never copied to shared storage, never returned
-over IPC, never committed. It differs from those in one important way — it cannot be
-rotated harmlessly. Deleting it mints a new address on the next start and silently breaks
-every QR code the owner has ever scanned, so the tunnel is stopped by killing the process,
-never by deleting its directory.
+The topic the car announces on is not a file of its own: it is derived from the `pear`
+section's `topicSeed` in `bladewatch_secrets.json` (`PearTopic`), and is secret like every
+other entry there.
+
+**`/data/local/tmp/pear` is permanent.** Its `swarm-identity.seed` is the car's Pear identity,
+kept across restarts (BladeWatch-rdtj.24); deleting it strands every paired companion, with no
+way back but pairing each one again. Keep it 0700: pear-end creates its corestore inside it as 0777, so the parent's mode is
+the only thing keeping it private. Never remove it to "reset" state.
+
+The Tor onion service's files (`/data/local/tmp/bladewatch_tor`, `/data/local/tmp/tor/`,
+`/data/local/tmp/tor.log`) belong to v1.3.x. Nothing reads or writes them since v1.4.0.0
+(BladeWatch-rdtj.12) — a stale tor process is killed on launch — and nothing deletes them either: `tor/hs` still holds the old onion
+key, so removing it is left to the owner.
 
 ## Auth Data Flow
 
@@ -698,5 +702,5 @@ Notification APIs expose categories, push subscription management, preferences, 
 - Format storage API: [FormatStorageApiHandler.java:27](../app/src/main/java/com/loabletech/bladewatch/server/FormatStorageApiHandler.java#L27), [storage.proto:20](../proto/bladewatch/v1/storage.proto#L20).
 - Media catalog and sync: [MediaCatalogManager.java:26](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L26), [MediaCatalogManager.java:81](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L81), [MediaCatalogManager.java:130](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L130), [RecordingsApiHandler.java:185](../app/src/main/java/com/loabletech/bladewatch/server/RecordingsApiHandler.java#L185).
 - Trip database and sync: [TripDatabase.java:19](../app/src/main/java/com/loabletech/bladewatch/trips/TripDatabase.java#L19), [TripDatabase.java:30](../app/src/main/java/com/loabletech/bladewatch/trips/TripDatabase.java#L30).
-- Runtime assets and tunnel files: [build.gradle.kts:226](../app/build.gradle.kts#L226), [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [TorLauncher.kt:92](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L92).
+- Runtime assets and remote-access files: [build.gradle.kts:226](../app/build.gradle.kts#L226), [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [PearDaemon.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearDaemon.kt) (`STORAGE_DIR`), [PearTopic.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearTopic.kt).
 - Trips and notifications: [TripDetector.java:27](../app/src/main/java/com/loabletech/bladewatch/trips/TripDetector.java#L27), [TripAnalyticsManager.java:23](../app/src/main/java/com/loabletech/bladewatch/trips/TripAnalyticsManager.java#L23), [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [NotificationApiHandler.java:31](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L31).

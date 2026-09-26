@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * BladeWatch-1xt9: the "daemonStatus" IPC command — process-liveness for
- * CAMERA_DAEMON/SENTRY_DAEMON/ACC_SENTRY_DAEMON/TOR_TUNNEL, computed locally (no ADB —
+ * CAMERA_DAEMON/SENTRY_DAEMON/ACC_SENTRY_DAEMON/PEAR_PEER, computed locally (no ADB —
  * the daemon process already runs as shell UID, the same UID the daemons run as).
  *
  * <p>BladeWatch-xzhv: liveness is now an argv[0] match read from procfs, not
@@ -72,11 +72,11 @@ public class DaemonStatusCommandTest {
 
     @Test
     public void aProcessThatMerelyMentionsADaemonNameIsNotThatDaemon() throws Exception {
-        // The exact on-device false positive: a shell whose command line contains the
-        // tunnel log path, with no tunnel process anywhere. `pgrep -f` matched this.
-        fakeProcess(101, "sh", "-c", "echo hi > /data/local/tmp/tor.log");
+        // The on-device false positive, in its current form: a shell whose command line contains a
+        // daemon's log path, with no such daemon anywhere. `pgrep -f` matched this.
+        fakeProcess(101, "sh", "-c", "echo hi > /data/local/tmp/pear_daemon.log");
 
-        Assert.assertFalse(server.isProcessRunning("bladewatch_tor"));
+        Assert.assertFalse(server.isProcessRunning("pear_daemon"));
     }
 
     @Test
@@ -107,12 +107,12 @@ public class DaemonStatusCommandTest {
     }
 
     @Test
-    public void findsTheTunnelWhichIsExecdByPathRatherThanRenamed() throws Exception {
-        // tor is not an app_process daemon: argv[0] is the binary path, so the match
-        // has to compare basenames, not raw argv[0].
-        fakeProcess(202, "/data/local/tmp/bladewatch_tor", "-f", "/data/local/tmp/tor/torrc");
+    public void findsABinaryExecdByPathRatherThanRenamed() throws Exception {
+        // A process that is not an app_process daemon has argv[0] = the binary's path, so the
+        // match compares basenames, not raw argv[0].
+        fakeProcess(202, "/data/local/tmp/some_helper", "--flag");
 
-        Assert.assertTrue(server.isProcessRunning("bladewatch_tor"));
+        Assert.assertTrue(server.isProcessRunning("some_helper"));
     }
 
     @Test
@@ -175,7 +175,8 @@ public class DaemonStatusCommandTest {
         Assert.assertTrue(daemons.has("CAMERA_DAEMON"));
         Assert.assertTrue(daemons.has("SENTRY_DAEMON"));
         Assert.assertTrue(daemons.has("ACC_SENTRY_DAEMON"));
-        Assert.assertTrue(daemons.has("TOR_TUNNEL"));
+        Assert.assertTrue(daemons.has("PEAR_PEER"));
+        Assert.assertFalse("tor was removed (BladeWatch-rdtj.12)", daemons.has("TOR_TUNNEL"));
     }
 
     @Test
@@ -189,18 +190,17 @@ public class DaemonStatusCommandTest {
         Assert.assertTrue(daemons.getBoolean("CAMERA_DAEMON"));
         Assert.assertTrue(daemons.getBoolean("ACC_SENTRY_DAEMON"));
         Assert.assertFalse(daemons.getBoolean("SENTRY_DAEMON"));
-        Assert.assertFalse(daemons.getBoolean("TOR_TUNNEL"));
+        Assert.assertFalse(daemons.getBoolean("PEAR_PEER"));
     }
 
     // --- BladeWatch-dh1r: the ENABLED map, alongside liveness ---
 
     /**
      * Liveness alone cannot drive a settings switch, and pretending it can produced a real
-     * bug on the head unit (BladeWatch-dh1r): the Tor row read "Waiting" with the switch OFF
-     * while tor was running, because enabling only RECORDS INTENT — the health check does the
-     * launch on its next cycle and tor then needs up to a minute to bootstrap. A switch bound
-     * to liveness therefore springs back to off, and the user's natural second tap DISABLES
-     * the tunnel they just enabled.
+     * bug on the head unit (BladeWatch-dh1r): a remote-access row read "Waiting" with the switch
+     * OFF while its daemon was starting, because enabling only RECORDS INTENT — the health check
+     * does the launch on its next cycle. A switch bound to liveness therefore springs back to
+     * off, and the user's natural second tap DISABLES the daemon they just enabled.
      *
      * <p>So the command also reports what the user asked for, separately from what is
      * currently true.
@@ -208,39 +208,39 @@ public class DaemonStatusCommandTest {
     @Test
     public void reportsTheEnabledIntentSeparatelyFromLiveness() throws Exception {
         TcpCommandServer.daemonEnabledReadsForTest = new java.util.HashMap<>();
-        TcpCommandServer.daemonEnabledReadsForTest.put("TOR_TUNNEL", true);
+        TcpCommandServer.daemonEnabledReadsForTest.put("PEAR_PEER", true);
         // Deliberately NOT running: this is the exact window the bug lived in.
 
         JSONObject resp = server.processCommand(new JSONObject().put("cmd", "daemonStatus"));
 
         Assert.assertEquals("ok", resp.getString("status"));
-        Assert.assertFalse("tor is not running in this scenario",
-                resp.getJSONObject("daemons").getBoolean("TOR_TUNNEL"));
+        Assert.assertFalse("the peer is not running in this scenario",
+                resp.getJSONObject("daemons").getBoolean("PEAR_PEER"));
         Assert.assertTrue("but the user HAS enabled it, and the switch must say so",
-                resp.getJSONObject("enabled").getBoolean("TOR_TUNNEL"));
+                resp.getJSONObject("enabled").getBoolean("PEAR_PEER"));
     }
 
     @Test
-    public void reportsDisabledWhenTheUserHasTurnedTheTunnelOff() throws Exception {
+    public void reportsDisabledWhenTheUserHasTurnedItOff() throws Exception {
         TcpCommandServer.daemonEnabledReadsForTest = new java.util.HashMap<>();
-        TcpCommandServer.daemonEnabledReadsForTest.put("TOR_TUNNEL", false);
+        TcpCommandServer.daemonEnabledReadsForTest.put("PEAR_PEER", false);
 
         JSONObject resp = server.processCommand(new JSONObject().put("cmd", "daemonStatus"));
 
-        Assert.assertFalse(resp.getJSONObject("enabled").getBoolean("TOR_TUNNEL"));
+        Assert.assertFalse(resp.getJSONObject("enabled").getBoolean("PEAR_PEER"));
     }
 
     /**
-     * Never recorded at all means never enabled. Reporting it as enabled would make the
-     * Dashboard render a connect card on a car whose owner has never touched the tunnel.
+     * Never recorded at all means never enabled: a car whose owner has never paired a companion
+     * must not be reported as having switched remote access on.
      */
     @Test
-    public void treatsAnUnrecordedTunnelAsDisabled() throws Exception {
+    public void treatsAnUnrecordedDaemonAsDisabled() throws Exception {
         TcpCommandServer.daemonEnabledReadsForTest = new java.util.HashMap<>();
 
         JSONObject resp = server.processCommand(new JSONObject().put("cmd", "daemonStatus"));
 
-        Assert.assertFalse(resp.getJSONObject("enabled").getBoolean("TOR_TUNNEL"));
+        Assert.assertFalse(resp.getJSONObject("enabled").getBoolean("PEAR_PEER"));
     }
 
     /**
@@ -256,8 +256,8 @@ public class DaemonStatusCommandTest {
         JSONObject enabled = server.processCommand(
                 new JSONObject().put("cmd", "daemonStatus")).getJSONObject("enabled");
 
-        Assert.assertTrue(enabled.has("TOR_TUNNEL"));
         Assert.assertTrue(enabled.has("PEAR_PEER"));
+        Assert.assertFalse("tor was removed (BladeWatch-rdtj.12)", enabled.has("TOR_TUNNEL"));
         for (String notToggleable : new String[] {
                 "CAMERA_DAEMON", "SENTRY_DAEMON", "ACC_SENTRY_DAEMON"}) {
             Assert.assertFalse(notToggleable + " is not toggleable and must not claim to be",
@@ -272,7 +272,7 @@ public class DaemonStatusCommandTest {
                 new JSONObject().put("cmd", "daemonStatus")).getJSONObject("daemons");
 
         for (String key : new String[] {
-                "CAMERA_DAEMON", "SENTRY_DAEMON", "ACC_SENTRY_DAEMON", "TOR_TUNNEL", "PEAR_PEER"}) {
+                "CAMERA_DAEMON", "SENTRY_DAEMON", "ACC_SENTRY_DAEMON", "PEAR_PEER"}) {
             Assert.assertTrue("liveness for " + key + " disappeared", daemons.has(key));
         }
     }

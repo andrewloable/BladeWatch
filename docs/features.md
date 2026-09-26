@@ -375,8 +375,10 @@ Tapping a push opens the Angular SPA at the route for that category — `/events
 Remote access options include:
 
 - Local loopback web server.
-- Opt-in LAN HTTP.
-- Tor onion service (permanent address, no account or token).
+- Opt-in LAN access: TLS on 8443 with a pinned self-signed certificate.
+- The companion app over Pear (below). The Tor onion service of v1.3.x was removed in
+  v1.4.0.0 (BladeWatch-rdtj.12), and with it the Dashboard's Connect card: the onion QR, the
+  device ID and the web access code.
 
 **Companion app pairing (v1.4.0.0).** "Pair a device" on the in-car dashboard shows a QR
 for the BladeWatch companion app (phones and desktops). The code works once and expires after
@@ -416,8 +418,11 @@ The web login is replaced by pairing: scan the in-car QR, or paste its text.
   the per-camera views, is a follow-up. A dropped connection only skips stills: the last one
   stays on screen with its time, and the next arrives once the route is back.
 - **A dropped connection does not end a clip or a download** (BladeWatch-tayl). A clip that
-  was playing reconnects and carries on from where it was (up to five tries); a download that
-  drops resumes from the byte it reached, with a Range request, instead of starting over.
+  was playing reconnects and carries on from where it was; a download that drops resumes from
+  the byte it reached, with a Range request, instead of starting over. While the companion has
+  no route to the car, both wait for it to come back (up to 10 minutes) rather than spending
+  retries: from mobile data a reconnect measured 5 s to 90+ s. Only failures while the route is
+  up count against the five tries.
 - **Window control asks first, every time.** From a phone, nobody can see whether a hand or
   a pet is in a window. Climate changes are reversible and don't ask. Every command
   carries the car's short-lived action token, and the car's own safety interlock still
@@ -433,7 +438,7 @@ its switch, and, while it runs, whether the car can be reached from anywhere rig
 when one last connected. The dashboard's Remote access tile shows the same while Pear is on:
 Online, Offline, Starting, or Running when reachability cannot be determined.
 
-LAN HTTP is disabled by default. The Tor onion service fronts the authenticated local web server directly with no intermediate proxy. The onion address is a capability URL, not authentication: the password/JWT layer stays mandatory.
+LAN access is disabled by default. Both remote paths reach the authenticated local web server on `REMOTE` listener trust with no intermediate proxy, so the JWT layer stays mandatory for every request.
 
 ## Updates
 
@@ -474,4 +479,4 @@ The daemon exposes a typed ConnectRPC API (also reachable over Connect/JSON HTTP
 - Location and GPS: [flutter_ui/lib/screens/location/](../flutter_ui/lib/screens/location/), [location.component.ts:1](../web/src/app/pages/location/location.component.ts#L1), [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51).
 - Trips, notifications, updates, and diagnostics: [TripAnalyticsManager.java:23](../app/src/main/java/com/loabletech/bladewatch/trips/TripAnalyticsManager.java#L23), [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [NotificationApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L30), [PerformanceApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/PerformanceApiHandler.java#L30), [adb_console_screen.dart](../flutter_ui/lib/screens/diagnostics/adb_console_screen.dart).
 - ConnectRPC API and web UI: [connect-clients.ts:19](../web/src/app/core/connect/connect-clients.ts#L19), [app.routes.ts:5](../web/src/app/app.routes.ts#L5).
-- Remote access: [TorLauncher.kt:44](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L44).
+- Remote access: [PearLauncher.kt](../app/src/main/java/com/loabletech/bladewatch/launcher/PearLauncher.kt), [PearDaemon.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearDaemon.kt), [companion/lib/car/](../companion/lib/car/).

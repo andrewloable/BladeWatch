@@ -1,6 +1,6 @@
 # Networking and Tunnels
 
-BladeWatch exposes a local authenticated web server and can optionally front it with LAN access or a Tor onion service. v1.4.0.0 is replacing the onion service with a Pear (Hyperswarm) peer — see [Pear Peer](#pear-peer-hyperswarm) below; until tor is removed both exist, each opt-in. No proxy layer sits between either one and the local server.
+BladeWatch exposes a local authenticated web server and can optionally front it with LAN access or a Pear (Hyperswarm) peer for the companion app — see [Pear Peer](#pear-peer-hyperswarm) below. Both are opt-in, and no proxy layer sits between either one and the local server. The Tor onion service of v1.3.x was removed in v1.4.0.0 — see [Tor Onion Service (removed)](#tor-onion-service-removed).
 
 ## Local Ports
 
@@ -9,7 +9,6 @@ BladeWatch exposes a local authenticated web server and can optionally front it 
 | `19876` | `127.0.0.1` | `TcpCommandServer` | JSON command IPC for camera daemon control and secret bridge |
 | `19877` | `127.0.0.1` | `SurveillanceIpcServer` | JSON IPC for surveillance, GPS, and update actions |
 | `8080` | `127.0.0.1` **always** | `HttpServer` | Web UI, REST APIs, ConnectRPC (`/bladewatch.v1.*`), video, thumbnails, WebSocket streaming. Listener trust `LOCAL_APPS` |
-| `8081` | `127.0.0.1` **always** | `HttpServer` | tor's way in: the onion service forwards here. Same routes as 8080, listener trust `REMOTE` |
 | `8444` | `127.0.0.1` **always** | `HttpServer` (TLS) | Pear's way in: the stream pump (`PearStreamPump`, in pear_daemon) connects here, and the companion's TLS runs end to end through the Pear stream to it. Same pinned certificate as 8443, independent of the LAN opt-in. Listener trust `REMOTE` |
 | `8443` | `0.0.0.0`, only while LAN access is on | `HttpServer` (TLS) | The same server over TLS for a companion on the same LAN; pinned self-signed certificate (`LanTls`). Listener trust `REMOTE` |
 | `18443/udp` | all interfaces, only while LAN access is on | `LanDiscoveryResponder` | Answers a paired companion's HMAC-signed discovery probe with the car's LAN IP, 8443 and the TLS pin; silent to everything else |
@@ -116,8 +115,8 @@ pin only, never a secret.
 ### Listener trust
 
 Every listener declares a `ListenerTrust` (`AuthMiddleware.kt`), and trust belongs
-to the listener, not to the peer address. A loopback address proves nothing: tor
-connects from `127.0.0.1`, and so does the Pear stream pump. Only `LOCAL_APPS`
+to the listener, not to the peer address. A loopback address proves nothing: the Pear
+stream pump connects from `127.0.0.1`, as tor did before it. Only `LOCAL_APPS`
 (8080) can reach the Tier 2 loopback safety net or skip the vehicle-action second
 factor; every other listener is `REMOTE`. `checkAuth` overloads that do not name a
 listener assume `REMOTE`, so a listener added later fails closed.
@@ -130,12 +129,14 @@ resolved -- is served as `REMOTE` (`AuthMiddleware.effectiveTrust`, BladeWatch-g
 Before that, a debug build handed any installed app the whole API, vehicle control
 included, with no credential.
 
-The tunnels therefore enter on their own loopback listeners, never on 8080: tor on
-**8081** (BladeWatch-ur11 -- tor used to land on 8080, so every remote request over it
-skipped the vehicle-control second factor) and the Pear pump on the TLS listener **8444**
-(BladeWatch-rdtj.6/.8). That keeps
-a remote peer out of the in-car UI's privileges by construction, not by remembering to
-mark a tunnel as active.
+Remote traffic therefore enters on its own listener, never on 8080: the Pear pump on the
+TLS listener **8444** (BladeWatch-rdtj.6/.8). tor once landed on 8080, so every remote
+request over it skipped the vehicle-control second factor; BladeWatch-ur11 moved it to a
+listener of its own (8081), which went with tor. That keeps a remote peer out of the in-car
+UI's privileges by construction, not by remembering to mark a tunnel as active — which is
+why the Tier 2 bypass no longer asks whether a tunnel is running (that check went with tor,
+BladeWatch-rdtj.12): nothing relays into 8080, and `RemoteLoopbackListenerTest` pins the pump
+to 8444.
 
 ## Authentication
 
@@ -223,7 +224,7 @@ The one WebView left is the Vehicle hero (`webview_flutter` on
 ## Pear Peer (Hyperswarm)
 
 `pear_daemon` (`PearDaemon`, see `docs/daemons-and-processes.md`) is the remote-access
-transport replacing tor. It hosts a bare-kit worklet running pear-end and joins this car's
+transport since v1.4.0.0, when it replaced tor. It hosts a bare-kit worklet running pear-end and joins this car's
 Hyperswarm topic as both server and client, so a paired companion finds the car through the
 public DHT with no account, relay or central server. Opt-in (`PEAR_PEER`, off by default).
 
@@ -337,6 +338,15 @@ and costs every later dialer a failing dial (BladeWatch-qryk). A companion that 
 works: the car accepts it either way. The car itself still leaves one dead record per
 `pear_daemon` restart: pear-end's key pair is random per start.
 
+### Known limitation: hard NATs (BladeWatch-idfn, accepted 2026-09-26)
+
+From a phone hotspot behind a randomizing NAT (HyperDHT `randomized=true`), hole punching to the
+car is probabilistic and slow: 7 of 20 cold starts never formed a Pear connection, and the 13
+that did took a median of 44 s. The companion reports this as "can't reach the car" and keeps
+retrying by itself. The fix would be a relay for when hole punching fails (hyperdht's
+`relayThrough`: a public blind relay, or an always-on peer the owner runs); the owner accepted
+the limitation for now, to be revisited if it bites in daily use.
+
 ### The companion's side (`companion/lib/transport/`)
 
 The companion's UI talks plain HTTP to `LocalGateway`, a listener on the phone's own loopback,
@@ -354,93 +364,35 @@ when the phone's addresses change (polled every 5 s: it joined or left a Wi-Fi) 
 Pear connection drops, and retries on its own 30 s after a failure. Either way the phone
 never accepts a certificate other than the pinned one.
 
-## Tor Onion Service
+**Every search for the car is a fresh join (BladeWatch-rdtj.24).** `CarSession` leaves the
+topic's old swarm and joins again each time the selector looks for the car -- at start, after a
+drop, on a retry, after a network change. A long-lived dial-only swarm did not find the car
+again after a car-side restart, and a new swarm also gets the replay of already-established
+connections, which `PearSwarm.connections` gives its FIRST listener only. Together with the car's
+persistent identity (`--persistent-identity`, see `docs/daemons-and-processes.md`), a car-side
+`pear_daemon` restart mid-download measured 3.2 s back to the Pear route, with the download
+resuming byte-exact (`companion/integration_test/pear_drop_test.dart`).
 
-`TorLauncher` installs and runs tor from the packaged `libtor.so`, and the onion service
-is the only remote tunnel. Cloudflared, Tailscale, sing-box and the previous tunnel are
-all absent from this codebase.
+## Tor Onion Service (removed)
 
-### How the binary gets here
+v1.3.x reached the car through a Tor v3 onion service. v1.4.0.0 removed it
+(BladeWatch-rdtj.12): `TorLauncher`, the `TOR_TUNNEL` daemon type, the `tunnelStatus` IPC
+command, the REMOTE loopback listener on 8081, the build-time `libtor.so` download, and the
+Dashboard's Connect card (onion QR, device ID, web access code). Saved onion URLs and QR codes
+stop working, and nothing migrates them: an owner pairs the companion instead.
 
-Unlike the tunnel it replaced, the binary is **not committed**. The `downloadTor` Gradle
-task fetches tor 0.4.8.14 from `org.briarproject:tor-android` on Maven Central, verifies
-its SHA-256 and writes it to `jniLibs/arm64-v8a/libtor.so` — the same verified-download
-pattern OpenH264 and OpenCV already use. Android extracts anything in `jniLibs` to the
-app's nativeLibraryDir with the execute bit set, which is the only way to ship a runnable
-binary to a non-rooted head unit. `TorBinaryPackagingTest` fails the build if it is
-missing or its checksum drifts.
+What stays, on purpose: `LegacyTunnelCleanup` kills a stale `bladewatch_tor` from a v1.3.x
+install on every app launch (with `killall`, never `pkill -f`, which matches its own shell) and
+drops the stale `TOR_TUNNEL` config key. A surviving tor would keep forwarding its onion port to
+a now-unbound 127.0.0.1:8081 that any app on the head unit could bind (BladeWatch-rdtj.23). Neither touches
+`/data/local/tmp/tor`, whose `hs/` still holds the old onion key; removing it is the owner's
+call.
 
-### Runtime paths
+For comparison with the Pear numbers, tor measured on the head unit (2026-09-14): 62–75 KB/s,
+2.1–6.5 s warm request TTFB, ~82 s cold bootstrap, and the address opened only in Tor Browser
+or Onion Browser.
 
-```text
-/data/local/tmp/bladewatch_tor    the binary, installed under its own process name
-/data/local/tmp/tor/torrc         generated config, rewritten on every launch
-/data/local/tmp/tor/data          consensus cache (safe to delete; costs a slow start)
-/data/local/tmp/tor/hs            hidden-service directory — see the warning below
-/data/local/tmp/tor.log           notice log; the bootstrap gate reads this
-```
-
-The process name is `bladewatch_tor` rather than `tor`: liveness is decided by
-`basename(argv[0])` and a bare `tor` is generic enough to collide, while 14 characters
-keeps it inside the kernel's 15-character cap on `/proc/<pid>/comm` so `killall` still
-matches it in full.
-
-### Configuration
-
-```text
-SocksPort 0
-DataDirectory /data/local/tmp/tor/data
-HiddenServiceDir /data/local/tmp/tor/hs
-HiddenServicePort 80 127.0.0.1:8081
-Log notice file /data/local/tmp/tor.log
-```
-
-`SocksPort 0` because BladeWatch runs tor purely as a *service*; a listener would be an
-open proxy on the head unit that nothing uses. `DataDirectory` and `HiddenServiceDir` are
-created mode 700 — tor refuses to start if either is group- or world-accessible, and says
-so only in a log nobody is watching yet. No bridges and no pluggable transports are
-configured: the head unit reached guards on 443/9001 with no interference.
-
-The service is plain HTTP on onion port 80, forwarding to `http://127.0.0.1:8081` -- the
-`REMOTE` loopback listener, not the in-car UI's 8080 (BladeWatch-ur11) -- with no
-intermediate proxy. That is correct rather than a downgrade: the onion protocol already
-encrypts end to end and authenticates the service by its key, so there is no TLS to add
-and no certificate to pin.
-
-### The address is permanent, and its key is a secret
-
-The onion address is derived from `hs/hs_ed25519_secret_key`, so it survives restarts and
-reboots unchanged. There is no account, no token, no per-device registration and no
-free-tier device limit — all four were requirements of the tunnel this replaced.
-
-**That key IS the car's remote-access identity.** Never log it, copy it to shared storage,
-return it over IPC, or commit it. Deleting it is not recoverable: tor mints a new address
-on the next start, silently invalidating every QR code the owner has ever scanned. Both
-`TorLauncher.stopCommand()` and `DaemonHardReset.hardResetCommand()` are deliberately
-written never to remove that directory, and both have tests asserting they do not.
-
-### Measured behaviour on the head unit (2026-09-14)
-
-| | |
-|---|---|
-| Cold bootstrap | ~82 s to `Bootstrapped 100%` |
-| Warm restart (populated DataDirectory) | ~6 s |
-| Throughput | 62–75 KB/s |
-| Warm request TTFB | 2.1–6.5 s |
-| First connect from a cold client | 49 s |
-| H.264 WebSocket on `/ws` | sustained 216 kbit/s for 20 s, no stall |
-| Cost on device | ~65 MB RSS, ~5% CPU |
-
-Two caveats worth knowing before diagnosing a "bug":
-
-- After the tunnel restarts, a client that was **already** connected can stay broken for
-  several minutes on stale introduction points, while a fresh client connects
-  immediately. That is ordinary Tor behaviour.
-- The address only opens in Tor Browser (or Onion Browser on iOS). Chrome and Safari fail
-  with an unhelpful DNS error, which is why the Dashboard ships a help dialog explaining
-  the per-platform install.
-
-### Still-frame fallback for decoder-less browsers (BladeWatch-y78o.1)
+## Still-frame fallback for decoder-less browsers (BladeWatch-y78o.1)
 
 `GET /api/stream/still` serves a periodically refreshed JPEG of the full 4-camera mosaic
 (640×480, quality 80) for browsers that can decode neither WebCodecs nor MSE H.264 — Tor
@@ -469,35 +421,14 @@ bytes with zero additional encoding.
 the issue's own close reason for the full methodology and caveats):** a synthetic
 detail-heavy 640×480 JPEG at quality 80 measured 122 KB, chosen as a conservative
 (worst-case-compression) proxy for a real camera frame in the absence of device access. At
-the documented **101 KB/s** sustained onion throughput
+the then-documented **101 KB/s** sustained onion throughput
 (`docs/evaluations/overdrive-remote-communication.md`), a 5-second refresh costs ~24 KB/s —
 about a quarter of the budget, leaving headroom for the rest of the page. A 2-second refresh
 would use ~60%, too tight; 5 seconds was chosen as the default for that reason.
 
-### Reading the current tunnel URL
-
-The Flutter UI is a different APK and cannot read the service host's in-memory state or
-its app-private `SharedPreferences` even under the shared UID, so it asks the daemon over
-IPC: `{"cmd":"tunnelStatus"}` on 19876. The daemon already runs as shell UID — the same
-UID tor runs under — so it reads tor's files directly, with no shell and no ADB.
-
-**The response is gated on two things, and both matter.** The process must be alive, and
-tor must have reached `Bootstrapped 100%` on its *current* run. The second gate is new
-with Tor: `hs/hostname` is written about a second after the very first launch and then
-persists forever, reboots included, so its presence says nothing about reachability.
-Publishing the address during the ~82 s cold-start window would put an "online" QR code on
-screen for a service nothing can reach. Until then the daemon answers `running: true` with
-`url: null`, which the Dashboard renders as connecting.
-
-Because tor appends to one log across launches, the gate tracks the *latest* of
-`Bootstrapped 0%` and `Bootstrapped 100%` rather than merely searching for 100% — an old
-success line sits above the new run's start. See
-[ipc-auth-and-secrets.md](ipc-auth-and-secrets.md) for the response shape.
-
 ## BladeWatch's Own Network Usage (BladeWatch-t1lg.1)
 
-On a metered head-unit SIM, streaming a live view or serving the web UI over the onion service
-costs real money, and nothing previously told the owner what it costs. `NetworkMonitor` now
+On a metered head-unit SIM, streaming a live view to a companion over Pear costs real money, and nothing previously told the owner what it costs. `NetworkMonitor` now
 tracks BladeWatch's own (own-UID) `TrafficStats.getUidRxBytes`/`getUidTxBytes` totals — **not**
 whole-device usage, and not per-app attribution (`NetworkStatsManager`/`PACKAGE_USAGE_STATS` are
 deliberately not used; own-UID totals need no permission).
@@ -522,15 +453,16 @@ network tile as "X this month."
 Recommended exposure order:
 
 1. Loopback only.
-2. Authenticated Tor onion service.
+2. The Pear peer, for paired companions: TLS end to end into 8444 with a pinned certificate,
+   JWT on every request.
 3. LAN mode only when needed and trusted.
 
 Risk notes:
 
 - LAN mode binds all interfaces and should remain disabled by default.
-- The onion address is a **capability URL, not authentication**. Password/JWT auth in
-  front of the web server stays mandatory: anyone who learns the address can reach the
-  car, and the address is all they need to get that far.
+- The Pear topic is a **rendezvous point, not authentication**. Anyone who learns it can
+  find the car on the DHT and attempt a connection; the pinned TLS and JWT auth behind it
+  stay mandatory (`PearTopic`).
 - Auth tokens must not be logged.
 - Release builds intentionally protect loopback.
 
@@ -543,5 +475,5 @@ Risk notes:
 - IPC token bootstrap: [IpcTokenManager.java:54](../app/src/main/java/com/loabletech/bladewatch/server/IpcTokenManager.java#L54).
 - WebSocket streaming path: [HttpServer.java:344](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L344), [HttpServer.java:1042](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L1042), [WebSocketStreamServer.java:19](../app/src/main/java/com/loabletech/bladewatch/streaming/WebSocketStreamServer.java#L19).
 - Android WebView proxy bypass and cookie injection: `WebViewFragment.kt`, deleted in `BladeWatch-81g9.2` — recover from git history if the behaviour is ever needed again.
-- Tor launch path and configuration (only `libtor.so` ships in `jniLibs/arm64-v8a/`, and it is downloaded at build time, not committed): [TorLauncher.kt:44](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L44), [TorLauncher.kt:92](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L92), [TorLauncher.kt:111](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L111).
-- Tunnel status and the bootstrap gate: [TcpCommandServer.java:569](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L569), [TcpCommandServer.java:842](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L842), [TcpCommandServer.java:878](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L878).
+- Pear launch path, stream pump and topic: [PearLauncher.kt](../app/src/main/java/com/loabletech/bladewatch/launcher/PearLauncher.kt), [PearDaemon.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearDaemon.kt), [PearStreamPump.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearStreamPump.kt), [PearTopic.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearTopic.kt).
+- Pear status over IPC: `pearStatus` in [TcpCommandServer.kt](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.kt), [PearStatus.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearStatus.kt).

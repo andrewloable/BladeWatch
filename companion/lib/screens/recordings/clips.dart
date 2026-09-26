@@ -127,7 +127,14 @@ Future<void> openClip(BuildContext context, String filename) {
 }
 
 class ClipPlayerScreen extends StatefulWidget {
-  const ClipPlayerScreen({super.key, required this.filename, this.canPlay, this.retryPause = const Duration(seconds: 2)});
+  const ClipPlayerScreen({
+    super.key,
+    required this.filename,
+    this.canPlay,
+    this.retryPause = const Duration(seconds: 2),
+    this.patience = const Duration(minutes: 10),
+    this.onPlayer,
+  });
 
   final String filename;
 
@@ -136,6 +143,13 @@ class ClipPlayerScreen extends StatefulWidget {
 
   /// The pause before the n-th attempt to recover a playing clip is n times this.
   final Duration retryPause;
+
+  /// How long a clip waits for the route to come back after a drop before giving up.
+  final Duration patience;
+
+  /// Test seam: every player this screen creates, so a device test can follow playback without
+  /// depending on rendered frames (integration_test/pear_drop_ui_test.dart).
+  final void Function(VideoPlayerController controller)? onPlayer;
 
   @override
   State<ClipPlayerScreen> createState() => _ClipPlayerScreenState();
@@ -147,7 +161,10 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
   String? _saved;
 
   // BladeWatch-tayl: a clip that was playing when the connection dropped carries on from where
-  // it was, once the route is back -- up to [_maxRecoveries] times -- instead of dying on an error.
+  // it was, once the route is back, instead of dying on an error. A drop the session sees waits
+  // for the route (up to [ClipPlayerScreen.patience]) without spending a try: from mobile data a
+  // reconnect took 5 s to 90+ s. Only errors while the route is up count against
+  // [_maxRecoveries].
   static const _maxRecoveries = 5;
   Duration _at = Duration.zero;
   bool _played = false;
@@ -161,13 +178,16 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_video == null && _canPlay && !_failed) unawaited(_start(context.session));
+    // Not while [_recover] waits for the route: the session reconnecting notifies this screen too,
+    // and starting here as well would race two players for the same clip.
+    if (_video == null && _canPlay && !_failed && !_recovering) unawaited(_start(context.session));
   }
 
   Future<void> _start(CarSession session) async {
     try {
       final video = VideoPlayerController.networkUrl(session.baseUrl.resolve(_path), httpHeaders: await session.authHeaders());
       _video = video;
+      widget.onPlayer?.call(video);
       video.addListener(() => _onValue(video));
       await video.initialize();
       if (_at > Duration.zero) await video.seekTo(_at);
@@ -197,9 +217,21 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
   Future<void> _recover() async {
     if (_recovering || !mounted) return;
     _recovering = true;
+    final session = context.session;
     final old = _video;
     setState(() => _video = null); // the spinner, while it reconnects
     unawaited(old?.dispose());
+    if (!session.connected) {
+      final back = await untilConnected(session, widget.patience);
+      _recovering = false;
+      if (!mounted) return;
+      if (back) {
+        await _start(session);
+      } else {
+        setState(() => _failed = true);
+      }
+      return;
+    }
     if (++_recoveries > _maxRecoveries) {
       _recovering = false;
       if (mounted) setState(() => _failed = true);

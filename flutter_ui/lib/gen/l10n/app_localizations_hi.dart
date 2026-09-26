@@ -55,15 +55,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get cd_qr_code => 'क्यूआर कोड';
 
   @override
-  String get cd_show_hide_token => 'दिखाएँ/छोड़ें टोकन';
-
-  @override
-  String get cd_copy_token => 'टोकन कॉपी करें';
-
-  @override
-  String get cd_copy_url => 'URL कॉपी करें';
-
-  @override
   String get cd_clear_logs => 'लॉग साफ़ करें';
 
   @override
@@ -179,48 +170,16 @@ class AppLocalizationsHi extends AppLocalizations {
       'ऑटो प्रत्येक बूट पर आपके ट्रिम के लिए सही कैमरा चुनता है। कैमरा 1 = BYD Seal, कैमरा 0 = Atto ट्रिम। सेटिंग को प्रभावी होने के लिए कैमरा आईडी बदलने के बाद कैमरा सेवा को पुनरारंभ करें।';
 
   @override
-  String get dashboard_scan_to_connect => 'कनेक्ट करने के लिए स्कैन करें';
-
-  @override
   String get dashboard_qr_waiting => 'सुरंग के लिए इंतजार...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 चल रहा है';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'एक्सेस कोड';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'पुनरुत्पादन टोकन';
 
   @override
-  String get dashboard_set_password => 'पासवर्ड सेट करें';
-
-  @override
   String get cd_set_password => 'कस्टम पासवर्ड सेट करें';
-
-  @override
-  String get dialog_set_password_title => 'कस्टम पासवर्ड सेट करें';
-
-  @override
-  String get dialog_set_password_message =>
-      'नया एक्सेस पासवर्ड दर्ज करें। यह स्वतः-जनित टोकन को बदल देगा।';
-
-  @override
-  String get dialog_set_password_hint => 'नया पासवर्ड (कम से कम 12 अक्षर)';
-
-  @override
-  String get toast_password_set => 'पासवर्ड अपडेट किया गया';
-
-  @override
-  String get toast_password_too_short =>
-      'पासवर्ड कम से कम 12 अक्षरों का होना चाहिए';
 
   @override
   String get toast_password_save_failed =>
@@ -577,9 +536,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get daemon_name_acc => 'ACC निगरानी';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => 'पृष्ठभूमि सेवाएं';
 
   @override
@@ -805,9 +761,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get reset_label_trip_files => 'यात्रा टेलीमेट्री फ़ाइलें';
 
   @override
-  String get toast_access_code_copied => 'एक्सेस कोड कॉपी किया गया';
-
-  @override
   String get dialog_regenerate_token_title => 'पुनरुत्पादन टोकन';
 
   @override
@@ -830,21 +783,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get toast_token_regenerated => 'टोकन पुनरुद्धार';
 
   @override
-  String get dashboard_no_tunnel => 'कोई सुरंग नहीं चल रही है';
-
-  @override
-  String get dashboard_starting_tor => 'Tor टनल शुरू हो रही है…';
-
-  @override
   String get dashboard_waiting_url => 'सुरंग URL के लिए इंतजार...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 चल रहे हैं';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'एक्सेस कोड';
@@ -1318,11 +1262,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get diagnostics_metric_online => 'ऑनलाइन';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'सुरंग · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -1824,7 +1763,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Tor टनल और बैकग्राउंड सेवाएँ.';
+      'रिमोट एक्सेस (Pear) और बैकग्राउंड सेवाएँ.';
 
   @override
   String get settings_about_row_title => 'BladeWatch के बारे में';
@@ -2820,38 +2759,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'सहेजना विफल रहा';
-
-  @override
-  String get dashboard_tor_bootstrapping => 'Tor से कनेक्ट हो रहा है…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'यह पता कैसे खोलें';
-
-  @override
-  String get dashboard_tor_help_title => 'यह पता खोलना';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: Google Play या F-Droid से Tor Browser इंस्टॉल करें, खोलें और पता पेस्ट करें।';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone और iPad: App Store से Onion Browser इंस्टॉल करें, खोलें और पता पेस्ट करें। iOS पर Tor Browser उपलब्ध नहीं है।';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS और Linux: torproject.org से Tor Browser डाउनलोड करें, खोलें और पता पेस्ट करें।';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'पेज लोड होने के बाद भी पासवर्ड ज़रूरी होगा।';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'Tor Browser डाउनलोड पेज के लिए स्कैन करें';
-
-  @override
-  String get dashboard_tor_help_close => 'समझ गया';
 
   @override
   String get surveillance_general_battery_warning =>

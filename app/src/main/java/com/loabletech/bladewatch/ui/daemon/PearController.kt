@@ -11,8 +11,7 @@ import net.bladewatch.app.ui.model.DaemonType
 /**
  * Controller for pear_daemon, the Pear peer.
  *
- * Unlike TorController.start, this does NOT kill a running instance first. Tor needed that because
- * two tor processes fight over one DataDirectory lock; here the launch command's `pidof` guard and
+ * This does NOT kill a running instance first: the launch command's `pidof` guard and
  * PearDaemon's singleton lock already refuse a second copy, and killing a healthy peer on every
  * start would drop every companion connected to it.
  */

@@ -21,15 +21,13 @@ class LocalAppPeerTrustTest {
 
     @Before
     fun setUp() {
-        // Every other Tier 2 condition forced open: debug bypass on, no tunnel running.
+        // Every other Tier 2 condition forced open: debug bypass on.
         AuthMiddleware.setLoopbackBypassOverride(true)
-        AuthMiddleware.setTunnelActiveOverride(false)
     }
 
     @After
     fun tearDown() {
         AuthMiddleware.setLoopbackBypassOverride(null)
-        AuthMiddleware.setTunnelActiveOverride(null)
     }
 
     private fun allowed(trust: ListenerTrust): Pair<Boolean, String> {

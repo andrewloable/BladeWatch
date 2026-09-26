@@ -10,7 +10,7 @@ import '../../shell/disposed_safe_notifier.dart';
 /// running camera daemon, not daemon *process* lifecycle (launching/killing
 /// the `app_process` daemons themselves is exactly the ADB-shell-execution
 /// class of operation Epic 1's IPC-only rule walls off). [setDaemonEnabled]
-/// is injected — same shape as `DashboardController.tunnelUrlSource` — so
+/// is injected so
 /// this screen is fully buildable/testable now; its default always reports
 /// "not supported" until a follow-up adds a narrow, enum-constrained
 /// `daemon.startType`/`stopType` IPC command mirroring BladeWatch-1xt9's
@@ -21,9 +21,6 @@ import '../../shell/disposed_safe_notifier.dart';
 /// `FileProvider`, a developer convenience gated to `BuildConfig.DEBUG`
 /// builds, not a release end-user feature.
 class SettingsDaemonsController extends ChangeNotifier with DisposedSafeNotifier {
-  /// No ConfigChannel any more: the only thing this screen ever read from the
-  /// secret store was the tunnel's enable token, and a Tor onion service has no
-  /// token. Other screens still use that channel; only this dependency is gone.
   SettingsDaemonsController({
     required DaemonChannel daemonChannel,
     Future<bool> Function(DaemonKind kind, bool enabled)? setDaemonEnabled,
@@ -70,7 +67,7 @@ class SettingsDaemonsController extends ChangeNotifier with DisposedSafeNotifier
 
   /// BladeWatch-dh1r: re-read while the screen is on screen.
   ///
-  /// The screen used to call [load] once from initState and never again, so a tunnel
+  /// The screen used to call [load] once from initState and never again, so a daemon
   /// that came up thirty seconds later was still shown as "Waiting" until the user
   /// navigated away and back. Unlike [load] this never flips [loading] back on, so a
   /// background refresh cannot flash a spinner over a screen the user is reading.
@@ -97,10 +94,9 @@ class SettingsDaemonsController extends ChangeNotifier with DisposedSafeNotifier
     // BladeWatch-dh1r: hold the new intent locally before re-reading.
     //
     // Enabling only RECORDS intent — the daemon's health check launches on its next
-    // cycle and tor then needs up to a minute to bootstrap. load() runs a fraction of a
-    // second later and correctly reports running=false, so binding the switch to
-    // liveness made it spring straight back to off. The user's natural second tap then
-    // DISABLED the tunnel they had just enabled, because the disable path also kills the
+    // cycle. load() runs a fraction of a second later and correctly reports
+    // running=false, so binding the switch to liveness made it spring straight back to off. The user's natural second tap then
+    // DISABLED the daemon they had just enabled, because the disable path also kills the
     // process. Carrying the intent forward is what stops that.
     _rows = _rows
         .map((r) => r.kind == kind

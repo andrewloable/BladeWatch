@@ -37,13 +37,28 @@ class _LiveScreenState extends State<LiveScreen> {
   bool _busy = false;
   DateTime _lastEnable = DateTime.fromMillisecondsSinceEpoch(0);
   CarSession? _session;
+  bool _wasConnected = false;
+  int _generation = 0;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final session = context.session;
-    if (identical(session, _session)) return;
+    if (identical(session, _session)) {
+      // BladeWatch-tayl: the moment the route is back, fetch. Waiting for the next tick costs up
+      // to its period, and a fetch the drop left hanging would block every tick until
+      // fetchMedia's 20 s timeout -- so it is disowned instead.
+      final connected = session.connected;
+      if (connected && !_wasConnected) {
+        _generation++;
+        _busy = false;
+        unawaited(_tick());
+      }
+      _wasConnected = connected;
+      return;
+    }
     _session = session;
+    _wasConnected = session.connected;
     _timer?.cancel();
     final every = session.phase == TransportPhase.lan ? const Duration(seconds: 1) : const Duration(seconds: 2);
     unawaited(_tick());
@@ -63,9 +78,10 @@ class _LiveScreenState extends State<LiveScreen> {
     final session = _session;
     if (session == null || _busy) return;
     _busy = true;
+    final generation = _generation;
     try {
       final r = await (widget.fetch ?? (s) => fetchMedia(s, '/api/stream/still'))(session);
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return; // from before a reconnect
       if (r.ok) {
         setState(() {
           _frame = r.bytes;
@@ -80,7 +96,7 @@ class _LiveScreenState extends State<LiveScreen> {
     } catch (_) {
       // A dropped fetch: the next tick retries. The frame shown keeps its timestamp.
     } finally {
-      _busy = false;
+      if (generation == _generation) _busy = false;
     }
   }
 

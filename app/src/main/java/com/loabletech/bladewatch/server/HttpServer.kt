@@ -57,8 +57,8 @@ import kotlin.math.roundToLong
  * SECOND listener -- TLS on 0.0.0.0:[LanTls.PORT] with a pinned self-signed certificate. Every
  * listener declares its [ListenerTrust]; only 8080 is [ListenerTrust.LOCAL_APPS].
  *
- * Single-port WebSocket: the /ws endpoint upgrades to WebSocket for H.264 streaming, so the tunnel
- * can expose both HTTP and WebSocket through one onion port.
+ * Single-port WebSocket: the /ws endpoint upgrades to WebSocket for H.264 streaming, so one
+ * listener carries both HTTP and WebSocket.
  *
  * The header blocks below are built from CONCATENATED string literals on purpose:
  * ResponseFramingTest reads them as source text and would not recognise an interpolated status
@@ -83,13 +83,13 @@ class HttpServer(private val port: Int) {
      * (BladeWatch-sxzg).
      *
      * The in-car Flutter UI speaks ConnectRPC to this very server on 127.0.0.1:8080, so it queues
-     * on the same pool as every remote client arriving through the onion service.
+     * on the same pool as every remote client.
      * [streamH264ToWebSocket] sets setSoTimeout(0) and then blocks for the whole viewing session —
      * so on the request pool, each viewer permanently removed a worker that the driver's own
      * screen needed. Ordinary requests are bounded by their timeout; a stream is bounded by
      * nothing.
      *
-     * Measured on the head unit 2026-09-15, with the tunnel up and a remote viewer: the Flutter
+     * Measured on the head unit 2026-09-15, with a remote viewer connected: the Flutter
      * app rendered ZERO frames in ten seconds while 44% of frames were janky at a 600 ms 99th
      * percentile, on a machine that was 497% of 800% idle. Not a render loop and not a CPU
      * shortage — a UI thread waiting on RPCs stuck behind remote traffic.
@@ -113,7 +113,6 @@ class HttpServer(private val port: Int) {
         CameraDaemon.log("Auth system initialized")
 
         Thread({ runLanTlsListener() }, "http-lan-tls").apply { isDaemon = true; start() }
-        Thread({ runRemoteLoopbackListener() }, "http-remote-loopback").apply { isDaemon = true; start() }
         Thread({ runPearTlsListener() }, "http-pear-tls").apply { isDaemon = true; start() }
 
         while (running && CameraDaemon.isRunning()) {
@@ -190,11 +189,6 @@ class HttpServer(private val port: Int) {
             CameraDaemon.log("WARN: HTTP stop() LAN TLS socket close() failed: " + e.message)
         }
         try {
-            remoteLoopbackSocket?.close()
-        } catch (e: Exception) {
-            CameraDaemon.log("WARN: HTTP stop() remote loopback socket close() failed: " + e.message)
-        }
-        try {
             pearTlsSocket?.close()
         } catch (e: Exception) {
             CameraDaemon.log("WARN: HTTP stop() Pear TLS socket close() failed: " + e.message)
@@ -205,9 +199,6 @@ class HttpServer(private val port: Int) {
 
     @Volatile
     private var lanTlsSocket: ServerSocket? = null
-
-    @Volatile
-    private var remoteLoopbackSocket: ServerSocket? = null
 
     @Volatile
     private var pearTlsSocket: ServerSocket? = null
@@ -226,7 +217,7 @@ class HttpServer(private val port: Int) {
      */
     /**
      * Who a login attempt counts against: the peer's IP alone. Remote transports all arrive from
-     * 127.0.0.1, so tor and Pear clients share one bucket -- accepted: every credential behind these
+     * 127.0.0.1, so every Pear client shares one bucket -- accepted: every credential behind these
      * endpoints is at least 128 bits, and the global lockout bounds guessing regardless.
      */
     private fun rateLimitIdentity(client: Socket): String = client.inetAddress?.hostAddress ?: "unknown"
@@ -252,40 +243,6 @@ class HttpServer(private val port: Int) {
             } catch (e: Exception) {
                 if (!running) return
                 CameraDaemon.log("ERROR: Pear TLS listener: ${e.message}")
-                try {
-                    Thread.sleep(3000)
-                } catch (ie: InterruptedException) {
-                    Thread.currentThread().interrupt()
-                    return
-                }
-            }
-        }
-    }
-
-    /**
-     * 127.0.0.1:[REMOTE_LOOPBACK_PORT] -- where the tor onion service hands its connections in
-     * (BladeWatch-ur11). pear_daemon's stream pump has its own TLS listener, [runPearTlsListener].
-     *
-     * Loopback like 8080, but every connection is [ListenerTrust.REMOTE]. A tunnel opens a plain
-     * TCP connection to loopback, which at the socket level is indistinguishable from an app on the
-     * head unit; landing it on its own listener is what denies the far end the loopback bypass and
-     * the vehicle second-factor exemption -- by construction, not by remembering to mark a tunnel
-     * as active. Always on: loopback-only, and REMOTE is the strictest trust there is.
-     */
-    private fun runRemoteLoopbackListener() {
-        while (running && CameraDaemon.isRunning()) {
-            try {
-                ServerSocket(REMOTE_LOOPBACK_PORT, 10, InetAddress.getByName("127.0.0.1")).use { socket ->
-                    remoteLoopbackSocket = socket
-                    CameraDaemon.log("Remote loopback listener on 127.0.0.1:$REMOTE_LOOPBACK_PORT")
-                    while (running && CameraDaemon.isRunning() && !socket.isClosed) {
-                        val client = socket.accept()
-                        threadPool.execute { handleClient(client, ListenerTrust.REMOTE) }
-                    }
-                }
-            } catch (e: Exception) {
-                if (!running) return
-                CameraDaemon.log("ERROR: remote loopback listener: ${e.message}")
                 try {
                     Thread.sleep(3000)
                 } catch (ie: InterruptedException) {
@@ -413,11 +370,9 @@ class HttpServer(private val port: Int) {
                 // uy93.5: the second factor for actuating vehicle calls from non-loopback.
                 var vehicleActionTokenHeader: String? = null
                 // Reverse-proxy fingerprints — used by AuthMiddleware to disable the loopback
-                // safety net when a tunnel relayed the request. A reverse proxy injects
-                // X-Forwarded-*. NOTE: the Tor onion service does NOT — it opens a plain TCP
-                // connection to 127.0.0.1:8080 — so these headers are no longer how remote traffic
-                // is recognised. AuthMiddleware also checks whether the tunnel process is up; see
-                // its Tier 2 comment.
+                // safety net when a proxy relayed the request (X-Forwarded-* and friends). Remote
+                // traffic is recognised by its LISTENER, not by these (see ListenerTrust); they
+                // remain a defence against header spoofing generally.
                 var hasTunnelHeaders = false
 
                 // BladeWatch-67h8: the client's own keep-alive intent.
@@ -528,7 +483,7 @@ class HttpServer(private val port: Int) {
                 // WebSocket upgrade on the /ws path (auth first for non-public paths). Match /ws
                 // and /ws?... — the query param allows a JWT as ?token= because browser WebSocket
                 // clients cannot set arbitrary headers, and cookies may be dropped through a
-                // tunnel's SameSite policy.
+                // proxy's SameSite policy.
                 val wsPathOnly =
                     if (path.contains("?")) path.substring(0, path.indexOf("?")) else path
                 if (wsPathOnly == "/ws" && websocketKey != null &&
@@ -621,7 +576,7 @@ class HttpServer(private val port: Int) {
                 //
                 // This gate used to be keyed on path.startsWith("/api/vehicle/"), which no real
                 // client ever matched after the Connect migration — so the second factor was inert
-                // and a session JWT alone actuated the car over the tunnel. It is keyed on the
+                // and a session JWT alone actuated the car remotely. It is keyed on the
                 // Connect path now. VehicleActionGate owns which methods actuate, and its test
                 // fails when a VehicleService RPC is registered without being classified, so this
                 // cannot decay by omission the way it did before.
@@ -858,7 +813,7 @@ class HttpServer(private val port: Int) {
         // vehicle…" state instead of silently leaving every field blank when the BYD binders
         // haven't bound yet (cold-boot race — HTTP comes up well before BydDataCollector finishes
         // ~15 binder lookups). On first hit, give the collector a short window to come online;
-        // this resolves the most common "tunnel loads, no data" report without forcing the client
+        // this resolves the most common "page loads, no data" report without forcing the client
         // to retry.
         status.put("vehicleDataReady", waitForVehicleDataReady(1500))
 
@@ -1540,7 +1495,7 @@ class HttpServer(private val port: Int) {
 
         /**
          * Read timeout, applied to the first request and to the idle wait between keep-alive
-         * requests (BladeWatch-67h8). Long enough not to punish a slow Tor round trip, short
+         * requests (BladeWatch-67h8). Long enough not to punish a slow remote round trip, short
          * enough that an abandoned socket is reclaimed rather than held by a daemon that runs for
          * weeks.
          */
@@ -1548,9 +1503,6 @@ class HttpServer(private val port: Int) {
 
         /** How often the LAN TLS listener re-reads the owner's opt-in (see runLanTlsListener). */
         private const val LAN_TLS_RECHECK_MS = 5000
-
-        /** See [runRemoteLoopbackListener]. TorLauncher points here, never at 8080. */
-        const val REMOTE_LOOPBACK_PORT = 8081
 
         /** See [runPearTlsListener]. PearStreamPump points here. */
         const val PEAR_TLS_PORT = 8444

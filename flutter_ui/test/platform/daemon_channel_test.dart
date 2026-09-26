@@ -40,7 +40,7 @@ void main() {
           'CAMERA_DAEMON': true,
           'SENTRY_DAEMON': false,
           'ACC_SENTRY_DAEMON': false,
-          'TOR_TUNNEL': false,
+          'PEAR_PEER': false,
         },
       };
       final fake = FakePlatformChannel()..stub('daemon', 'processStatus', raw);
@@ -52,7 +52,7 @@ void main() {
         'CAMERA_DAEMON': true,
         'SENTRY_DAEMON': false,
         'ACC_SENTRY_DAEMON': false,
-        'TOR_TUNNEL': false,
+        'PEAR_PEER': false,
       });
     });
 
@@ -78,10 +78,6 @@ void main() {
 
       await expectLater(() => DaemonChannel(fake).processStatus(), throwsA(isA<ChannelTimeoutException>()));
     });
-
-    // A v3 onion address: 56 base32 chars. Obviously fake — never put a real one in
-    // a fixture, it is a capability granting network access to a real car.
-    const onion = 'http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion';
 
     test('pearStatus reads reachability, connected devices and the last connection', () async {
       final fake = FakePlatformChannel()
@@ -114,69 +110,13 @@ void main() {
       expect(PearStatus.unknown.reachable, isNull);
     });
 
-    test('tunnelStatus reports the onion URL the daemon publishes', () async {
-      final fake = FakePlatformChannel()
-        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{
-          'status': 'ok',
-          'running': true,
-          'url': onion,
-        });
-
-      final status = await DaemonChannel(fake).tunnelStatus();
-
-      expect(status.running, isTrue);
-      expect(status.url, onion);
-      expect(fake.calls.single.method, 'tunnelStatus');
-    });
-
-    test('tunnelStatus keeps running=true with no URL distinct from offline', () async {
-      // THE state this type exists for. tor writes its hostname file a second after
-      // first launch but takes ~82 s to reach the network on a cold start, so the
-      // daemon withholds the URL until it has bootstrapped. Collapsing this into
-      // "offline" would show "no tunnel" for a minute and a half while one starts.
-      final fake = FakePlatformChannel()
-        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{'status': 'ok', 'running': true, 'url': null});
-
-      final status = await DaemonChannel(fake).tunnelStatus();
-
-      expect(status.running, isTrue);
-      expect(status.url, isNull);
-    });
-
-    test('tunnelStatus reports not running when no tunnel is up', () async {
-      final fake = FakePlatformChannel()
-        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{'status': 'ok', 'running': false, 'url': null});
-
-      final status = await DaemonChannel(fake).tunnelStatus();
-
-      expect(status.running, isFalse);
-      expect(status.url, isNull);
-    });
-
-    test('tunnelStatus treats an empty URL string as no URL', () async {
-      final fake = FakePlatformChannel()
-        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{'status': 'ok', 'running': true, 'url': ''});
-
-      expect((await DaemonChannel(fake).tunnelStatus()).url, isNull);
-    });
-
-    test('tunnelStatus defaults running to false when the daemon omits it', () async {
-      final fake = FakePlatformChannel()
-        ..stub('daemon', 'tunnelStatus', <Object?, Object?>{'status': 'ok'});
-
-      final status = await DaemonChannel(fake).tunnelStatus();
-
-      expect(status.running, isFalse);
-      expect(status.url, isNull);
-    });
-
     test('setDaemonEnabled sends the native key and the flag, and reports success', () async {
       final fake = FakePlatformChannel()
         ..stub('daemon', 'setEnabled', <Object?, Object?>{'status': 'ok', 'enabled': true, 'killed': 0});
 
-      expect(await DaemonChannel(fake).setDaemonEnabled('TOR_TUNNEL', true), isTrue);
+      expect(await DaemonChannel(fake).setDaemonEnabled('PEAR_PEER', true), isTrue);
       expect(fake.calls.single.method, 'setEnabled');
-      expect(fake.calls.single.args, {'type': 'TOR_TUNNEL', 'enabled': true});
+      expect(fake.calls.single.args, {'type': 'PEAR_PEER', 'enabled': true});
     });
 
     test('setDaemonEnabled reports false when the daemon refuses the type', () async {

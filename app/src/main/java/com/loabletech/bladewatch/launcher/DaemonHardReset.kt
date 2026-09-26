@@ -78,18 +78,18 @@ object DaemonHardReset {
      * window for a half-killed watchdog to re-spawn between commands.
      *
      * Process names come from launcher constants: `byd_cam_daemon`, `sentry_daemon`,
-     * `acc_sentry_daemon`, `bladewatch_tor`, `pear_daemon`.
+     * `acc_sentry_daemon`, `pear_daemon` -- plus `bladewatch_tor`, the onion service an older
+     * build may have left running. Tor itself was removed (BladeWatch-rdtj.12), but this sweep is
+     * what runs when the package is replaced, i.e. exactly when an upgraded car still has one.
      *
      * **The same goes for `/data/local/tmp/pear`** (BladeWatch-rdtj.3): pear_daemon's storage,
      * which holds the car's permanent Pear identity once a companion is paired. Only the lock file
      * `pear_daemon.lock` (matched by `*_daemon.lock`) may go; `rm -f` cannot remove a directory,
      * and no clause may ever be widened into one that can.
      *
-     * **NEVER add anything that deletes `/data/local/tmp/tor/hs`.** That directory holds
-     * `hs_ed25519_secret_key`, which IS the car's permanent onion address — lose it and tor mints
-     * a new one on the next start, silently breaking every QR code the owner ever scanned, with
-     * no way back. The `rm -f` clauses are deliberately narrow for that reason; do not widen one
-     * into a glob over the tor directory.
+     * **Nothing here may delete `/data/local/tmp/tor`** (an older build's onion identity). Removing
+     * it is an explicit owner decision (BladeWatch-rdtj.12), never a sweep's side effect; the
+     * `rm -f` clauses are deliberately narrow, and none may be widened into a glob over it.
      *
      * Two properties of this string are load-bearing and survive translation only by being left
      * exactly as they were:

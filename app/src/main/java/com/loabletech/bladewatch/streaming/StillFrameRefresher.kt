@@ -14,7 +14,7 @@ fun interface JpegEncoder {
 
 /**
  * BladeWatch-y78o.1: a still-frame fallback so the remote Live view degrades to a periodically
- * refreshed still image in browsers with no usable H.264 decoder (Tor Browser on Linux, the
+ * refreshed still image in browsers with no usable H.264 decoder (Tor Browser on Linux was the
  * documented case -- see BladeWatch-nobf), instead of the dead-end "cannot play" banner.
  *
  * The source frame is [mosaicSource] -- SurveillanceEngineGpu.getLatestMosaicFrame(), the same

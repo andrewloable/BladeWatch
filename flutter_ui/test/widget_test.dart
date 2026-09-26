@@ -1,5 +1,4 @@
 import 'package:bladewatch_ui/main.dart';
-import 'package:bladewatch_ui/platform/auth_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/platform/prefs_channel.dart';
 import 'package:bladewatch_ui/platform/setup_channel.dart';
@@ -65,7 +64,7 @@ void main() {
           'CAMERA_DAEMON': true,
           'SENTRY_DAEMON': true,
           'ACC_SENTRY_DAEMON': true,
-          'TOR_TUNNEL': true,
+          'PEAR_PEER': true,
         },
       });
     final startupController = StartupController(
@@ -84,7 +83,6 @@ void main() {
       recordingsService: RecordingsServiceClient(rpc),
       systemService: SystemServiceClient(rpc),
       daemonChannel: DaemonChannel(fakeChannel),
-      authChannel: AuthChannel(fakeChannel),
     );
     final shellController = ShellController();
     PackageInfo.setMockInitialValues(
@@ -407,7 +405,6 @@ void main() {
       recordingsService: RecordingsServiceClient(rpc),
       systemService: SystemServiceClient(rpc),
       daemonChannel: DaemonChannel(fakeChannel),
-      authChannel: AuthChannel(fakeChannel),
     );
     await tester.pumpWidget(BladeWatchApp(
       shellController: secondShellController,

@@ -2,11 +2,15 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:bladewatch_companion/car/car_session.dart';
+import 'package:bladewatch_companion/car/car_store.dart';
+import 'package:bladewatch_companion/transport/car_auth.dart';
 import 'package:bladewatch_companion/transport/lan_prober.dart';
 import 'package:bladewatch_companion/transport/local_gateway.dart';
 import 'package:bladewatch_companion/transport/mux_bridge.dart';
 import 'package:bladewatch_companion/transport/pear_link.dart';
 import 'package:bladewatch_companion/transport/pear_mux.dart';
+import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:flutter_pear/flutter_pear.dart';
 // ignore: implementation_imports
 import 'package:flutter_pear/src/rpc.dart';
@@ -229,6 +233,66 @@ void main() {
       expect(bridge.isClosed, isTrue);
       await companionRpc.dispose();
       await carRpc.dispose();
+    });
+
+    // BladeWatch-rdtj.24. On the head unit a car-side pear_daemon restart left the session in
+    // "discovering" for good: the session kept ONE dial-only swarm, which went on redialing
+    // (swarm state "connecting" every few seconds for minutes) and never reached the relaunched
+    // car, while a fresh join found it in about 2 s. Modelled here by taking the old swarm out of
+    // the topic's membership behind its back, so it can never be connected to the new car --
+    // only a session that joins afresh after a drop sees the car again.
+    test('after the car drops and comes back, the session finds it again (BladeWatch-rdtj.24)', () async {
+      final hub = FakeSwarmHub();
+      final topic = PearCrypto.unsafeTopicFromString('bladewatch-test-car');
+      final companionWorklet = FakeBareWorklet(hub: hub);
+      final companionRpc = PearRpc(companionWorklet);
+      await companionRpc.call(PearMethod.attachInfo);
+      Future<(PearRpc, FakeBareWorklet)> startCar() async {
+        final worklet = FakeBareWorklet(hub: hub);
+        final rpc = PearRpc(worklet);
+        await rpc.call(PearMethod.attachInfo);
+        final swarm = await PearSwarm.join(rpc, topic, acceptUnannounced: true);
+        swarm.connections.listen((c) => FakeCarPump(PearConnectionLink(c), car.port));
+        return (rpc, worklet);
+      }
+
+      Future<void> until(bool Function() done) async {
+        for (var i = 0; i < 500 && !done(); i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      }
+
+      final first = await startCar();
+      final session = await CarSession.open(
+        PairedCar(
+          deviceId: 'dev-1',
+          pearTopic: topic.hex,
+          tlsFingerprint: pin,
+          probeKey: 'c' * 64,
+          credential: const CompanionCredential('cid', 'tok'),
+        ),
+        findOnLan: () async => null,
+        networkChanges: const Stream.empty(),
+        joinTopic: (t) => PearSwarm.join(companionRpc, t, announce: false),
+      );
+      await until(() => session.phase == TransportPhase.pear);
+      expect(session.phase, TransportPhase.pear);
+
+      // The car's pear_daemon dies and a new one takes its place. The old swarm is stale: it will
+      // never discover the new car on its own.
+      hub.leave(topic.hex, companionWorklet);
+      companionWorklet.disconnectFrom(first.$2);
+      first.$2.disconnectFrom(companionWorklet);
+      await first.$1.dispose();
+      final second = await startCar();
+
+      await until(() => session.phase != TransportPhase.pear);
+      await until(() => session.phase == TransportPhase.pear);
+      expect(session.phase, TransportPhase.pear, reason: 'the session must reach the restarted car');
+
+      session.dispose();
+      await companionRpc.dispose();
+      await second.$1.dispose();
     });
   });
 }

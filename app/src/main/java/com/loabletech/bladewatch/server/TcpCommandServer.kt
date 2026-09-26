@@ -18,7 +18,6 @@ import java.io.FileReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.io.PrintWriter
-import java.io.RandomAccessFile
 import java.net.BindException
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -27,9 +26,6 @@ import java.net.SocketException
 import java.nio.charset.StandardCharsets
 import java.util.Collections
 import java.util.Locale
-import java.util.regex.Pattern
-import kotlin.math.max
-import kotlin.math.min
 
 /**
  * TCP command server — handles JSON commands from DaemonClient. Listens on localhost:19876 for
@@ -576,20 +572,6 @@ class TcpCommandServer(private val port: Int) {
                 }
             }
 
-            // BladeWatch-m1po / BladeWatch-3lbz.2: the current Tor onion URL, for the Dashboard's
-            // remote-access tile / QR code in the Flutter APK, which has no path to
-            // TorController's in-memory LiveData or to the app-private SharedPreferences copy.
-            //
-            // TWO gates, and both are load-bearing:
-            //
-            // 1. The process must be running. tor's hs/hostname file is written once and then
-            //    persists forever, reboots included, so on its own it says nothing about
-            //    liveness.
-            // 2. tor must have BOOTSTRAPPED. The tunnel this replaces only printed its URL once
-            //    the tunnel was live. tor writes hs/hostname about a second after first launch
-            //    and then takes ~82 s (cold) or ~6 s (warm) to reach the network — measured on
-            //    the head unit 2026-09-14. Publishing the address in that window puts an "online"
-            //    QR code on screen for a service nothing can reach yet.
             // BladeWatch-rdtj.4: what a companion needs to reach this car over the LAN -- the TLS
             // listener's port and the SHA-256 pin of its certificate, for the pairing QR
             // (BladeWatch-rdtj.7). A certificate fingerprint is not secret, but it is served over
@@ -676,23 +658,6 @@ class TcpCommandServer(private val port: Int) {
                 response.put("enabled", readLanEnabled())
             }
 
-            "tunnelStatus" -> {
-                val tunnelRunning = isProcessRunning(DAEMON_PROCESS_NAMES["TOR_TUNNEL"])
-                val tunnelUrl =
-                    if (tunnelRunning && isTorBootstrapped()) readTorOnionUrl() else null
-                response.put("status", "ok")
-                response.put("running", tunnelRunning)
-                // running && url == null is a real, distinct state — tor is up but not yet
-                // reachable. The client renders that as "connecting", not "offline".
-                response.put("url", tunnelUrl ?: JSONObject.NULL)
-                // BladeWatch-y7x2: the owner's INTENT, so the Dashboard can hide its connect card
-                // entirely when the tunnel is switched off. Distinct from running: an enabled
-                // tunnel is also not running for the first minute while tor bootstraps, and
-                // hiding the card during THAT window would make the Dashboard look broken exactly
-                // while the user is waiting for it.
-                response.put("enabled", readDaemonEnabled("TOR_TUNNEL"))
-            }
-
             // BladeWatch-rdtj.17: the Pear peer for the in-car UI -- running, the owner's switch, and
             // whether the car can actually be found (DHT online, from pear_daemon's status file),
             // plus connected companions and when one last connected. Never the topic or a peer key.
@@ -711,7 +676,8 @@ class TcpCommandServer(private val port: Int) {
             // against a fixed allow-list before anything happens, and no part of it ever reaches a
             // shell.
             //
-            // Scope is TOR_TUNNEL and PEAR_PEER only, on purpose:
+            // Scope is PEAR_PEER only, on purpose (tor, the other optional daemon, was removed in
+            // BladeWatch-rdtj.12):
             //
             //  - CAMERA_DAEMON hosts THIS server. Stopping it kills the socket answering the
             //    request, and the Flutter APK has no ADB, so nothing could start it again — a
@@ -721,9 +687,9 @@ class TcpCommandServer(private val port: Int) {
             //    in-memory, app-process-only `userStoppedDaemons` set that this process cannot
             //    reach, so a stop here would silently undo itself.
             //
-            // TOR_TUNNEL and PEAR_PEER have none of those problems: each is an OPTIONAL daemon
-            // whose enabled state already persists, and the health check both starts it (through
-            // TorLauncher / PearLauncher) and leaves it alone when disabled. So enabling is just recording the intent and letting
+            // PEAR_PEER has none of those problems: it is an OPTIONAL daemon whose enabled state
+            // already persists, and the health check both starts it (through PearLauncher) and
+            // leaves it alone when disabled. So enabling is just recording the intent and letting
             // the existing launcher do the work; only disabling additionally has to kill the
             // running process, because the health check never kills, it only relaunches.
             "daemon_set_enabled" -> {
@@ -736,7 +702,7 @@ class TcpCommandServer(private val port: Int) {
                     val recorded = recordDaemonEnabled(daemonType, enable)
                     var killed = 0
                     if (!enable) {
-                        // The health check only ever relaunches; without this the tunnel would
+                        // The health check only ever relaunches; without this the peer would
                         // keep serving until the next reboot despite the switch reading "off".
                         killed = killDaemonProcesses(DAEMON_PROCESS_NAMES[daemonType])
                     }
@@ -769,11 +735,10 @@ class TcpCommandServer(private val port: Int) {
                 // BladeWatch-dh1r: the user's INTENT, reported separately from liveness.
                 //
                 // Liveness alone cannot drive a settings switch. Enabling a daemon only records
-                // the intent — the health check launches it on its next cycle and tor then needs
-                // up to a minute to bootstrap (61 s measured on the head unit). A switch bound to
-                // liveness springs straight back to off, and the user's natural second tap
-                // DISABLES the tunnel they just enabled, because the disable path also kills the
-                // process.
+                // the intent — the health check launches it on its next cycle, up to 30 s later. A
+                // switch bound to liveness springs straight back to off, and the user's natural
+                // second tap DISABLES the daemon they just enabled, because the disable path also
+                // kills the process.
                 //
                 // Only toggleable daemons appear here. The other three are started by the service
                 // host and have no user-facing enabled state; inventing one would imply a switch
@@ -801,9 +766,8 @@ class TcpCommandServer(private val port: Int) {
      * of the whole command line. BladeWatch-xzhv: the previous implementation shelled out to
      * `pgrep -f`, and -f matches the FULL command line, so *any* process that merely mentioned a
      * daemon name reported that daemon as running. Observed on the head unit: an `adb shell`
-     * one-liner that only wrote to the tunnel's log made `tunnelStatus` answer running=true with
-     * no tunnel anywhere — which defeats the whole point of that command's liveness gate (it
-     * exists so a URL left in the log by a dead session is never republished as a live tunnel).
+     * one-liner that merely mentioned a daemon's log made it read as running with no daemon
+     * anywhere.
      *
      * argv[0] is the right discriminator because of how these processes are launched, verified by
      * reading `/proc/<pid>/cmdline` on the device:
@@ -811,8 +775,8 @@ class TcpCommandServer(private val port: Int) {
      *    live daemon's cmdline is literally "byd_cam_daemon" (NUL/space padded) — while the `sh
      *    -c` that launched it keeps its own argv[0] of "sh". Exactly the distinction the old
      *    pattern could not draw.
-     *  - tor is exec'd by path, so its argv[0] is /data/local/tmp/bladewatch_tor — hence the
-     *    basename comparison rather than raw equality.
+     *  - a binary exec'd by path has argv[0] = its full path -- hence the basename comparison
+     *    rather than raw equality.
      *
      * Exact equality also preserves the property the old leading-boundary group existed for:
      * sentry_daemon does not match acc_sentry_daemon.
@@ -851,10 +815,6 @@ class TcpCommandServer(private val port: Int) {
                 "CAMERA_DAEMON" to "byd_cam_daemon",
                 "SENTRY_DAEMON" to "sentry_daemon",
                 "ACC_SENTRY_DAEMON" to "acc_sentry_daemon",
-                // Renamed, not just re-pathed: argv[0] basename is the discriminator (see
-                // isProcessRunning), and a bare "tor" is generic enough to collide. 14 chars,
-                // under the kernel's 15-char cap on /proc/<pid>/comm so killall still matches.
-                "TOR_TUNNEL" to "bladewatch_tor",
                 // PearLauncher.PEAR_PROCESS -- the --nice-name, i.e. argv[0]; 11 chars.
                 "PEAR_PEER" to "pear_daemon"
             )
@@ -910,7 +870,7 @@ class TcpCommandServer(private val port: Int) {
          * other three are excluded; this is the enforcement, not the documentation.
          */
         private val TOGGLEABLE_DAEMONS: Set<String> =
-            Collections.unmodifiableSet(linkedSetOf("TOR_TUNNEL", "PEAR_PEER"))
+            Collections.unmodifiableSet(linkedSetOf("PEAR_PEER"))
 
         /**
          * ponytail: test seam — non-null stands in for the real `camera` config section.
@@ -952,7 +912,7 @@ class TcpCommandServer(private val port: Int) {
 
         /**
          * Whether the user has enabled an optional daemon. Absent means never enabled — a car
-         * whose owner has never touched the tunnel must not be reported as having asked for one.
+         * whose owner has never touched it must not be reported as having asked for it.
          */
         private fun readDaemonEnabled(daemonType: String): Boolean {
             daemonEnabledReadsForTest?.let { return it[daemonType] == true }
@@ -961,7 +921,7 @@ class TcpCommandServer(private val port: Int) {
             } catch (t: Throwable) {
                 // An unreadable config must not take down daemonStatus, which the Startup and
                 // Settings screens both poll. "Not enabled" is the safe answer: it understates
-                // rather than claiming the owner asked for a tunnel they never enabled. The
+                // rather than claiming the owner asked for a daemon they never enabled. The
                 // liveness map is unaffected and still reports the truth.
                 CameraDaemon.log(
                     "daemonStatus: could not read enabled state for " + daemonType + ": " +
@@ -996,7 +956,7 @@ class TcpCommandServer(private val port: Int) {
          *
          * `android.os.Process.killProcess` is a direct syscall wrapper, not a shell invocation —
          * signalling a same-UID process is permitted, and this daemon runs as the same shell UID
-         * the tunnel was launched under.
+         * the optional daemons are launched under.
          */
         private fun killDaemonProcesses(processName: String?): Int {
             if (processName == null) return 0
@@ -1017,115 +977,6 @@ class TcpCommandServer(private val port: Int) {
                 }
             }
             return killed
-        }
-
-        /**
-         * Where `TorLauncher` points tor's notice log — mirrors its TOR_LOG constant. Kept as a
-         * local copy rather than an import so this low-level server package takes no dependency on
-         * the launcher layer; update both if it ever moves.
-         */
-        @JvmField
-        var torLogPathForTest: String? = null
-
-        private fun torLogPath(): String = torLogPathForTest ?: "/data/local/tmp/tor.log"
-
-        /**
-         * Where tor writes the onion address, inside the hidden-service directory.
-         *
-         * Mode 600 and shell-owned, which is exactly why this command exists: the app UID cannot
-         * read it, but this process already runs as shell UID — the same UID tor is launched under
-         * — so it can, with no shell and no ADB.
-         *
-         * The sibling `hs_ed25519_secret_key` in that directory is the car's permanent
-         * remote-access identity. Nothing may ever read, log or return it.
-         */
-        @JvmField
-        var torHostnamePathForTest: String? = null
-
-        private fun torHostnamePath(): String =
-            torHostnamePathForTest ?: "/data/local/tmp/tor/hs/hostname"
-
-        /**
-         * A v3 onion address: 56 base32 characters (a-z and 2-7, so no 0/1/8/9) plus ".onion".
-         * Validated rather than trusted because the Dashboard turns whatever comes back into a QR
-         * code, and a half-written or truncated file would become a link that silently goes
-         * nowhere.
-         */
-        private val ONION_V3: Pattern = Pattern.compile("^[a-z2-7]{56}\\.onion$")
-
-        /** Only ever read this much of the tail of a large log — see [isTorBootstrapped]. */
-        private const val TOR_LOG_TAIL_BYTES = 256 * 1024
-
-        /**
-         * The onion service URL, or null if tor has not written a usable address.
-         *
-         * Plain `http://` on purpose. The onion protocol already encrypts end to end and
-         * authenticates the service by its key, so there is no TLS to add and no certificate to
-         * check — the address IS the public key. This is not a downgrade from an https tunnel URL.
-         *
-         * Says nothing about reachability: the file persists across reboots, so callers must gate
-         * on [isTorBootstrapped] as well. Public for TunnelStatusCommandTest, which is Java.
-         */
-        @JvmStatic
-        fun readTorOnionUrl(): String? {
-            val hostname = File(torHostnamePath())
-            if (!hostname.isFile || hostname.length() == 0L) return null
-            return try {
-                // One short line; no streaming needed, unlike the log below.
-                val raw = ByteArray(min(hostname.length(), 256L).toInt())
-                FileInputStream(hostname).use { input ->
-                    val read = input.read(raw)
-                    if (read <= 0) return null
-                    val addr = String(raw, 0, read, StandardCharsets.UTF_8).trim()
-                    if (!ONION_V3.matcher(addr).matches()) null else "http://$addr"
-                }
-            } catch (e: Exception) {
-                CameraDaemon.log("tunnelStatus: could not read tor hostname: " + e.message)
-                null
-            }
-        }
-
-        /**
-         * Whether tor's CURRENT run has reached "Bootstrapped 100%".
-         *
-         * tor appends to one log across launches, so a success line from an earlier run sits above
-         * the current run's "Bootstrapped 0% (starting)". Tracking the latest of the two rather
-         * than merely searching for 100% is what stops a restart republishing the address during
-         * the window when the service is not reachable.
-         *
-         * Never loads the whole log into memory: the previous implementation's comment records the
-         * 85 MB+ allocations that caused. On a log larger than [TOR_LOG_TAIL_BYTES] it reads only
-         * the tail, skipping the partial line the seek lands inside. tor logs at notice level and
-         * is quiet once up, so the tail is where the current run is.
-         *
-         * Public for TunnelStatusCommandTest, which is Java.
-         */
-        @JvmStatic
-        fun isTorBootstrapped(): Boolean {
-            val log = File(torLogPath())
-            if (!log.isFile || log.length() == 0L) return false
-            return try {
-                RandomAccessFile(log, "r").use { raf ->
-                    val start = max(0L, raf.length() - TOR_LOG_TAIL_BYTES)
-                    raf.seek(start)
-                    if (start > 0) raf.readLine() // drop the partial line the seek landed inside
-                    var bootstrapped = false
-                    while (true) {
-                        val line = raf.readLine() ?: break
-                        // Order matters: a run that restarts resets the verdict, and a run that
-                        // completes sets it. The last one wins.
-                        if (line.contains("Bootstrapped 0%")) {
-                            bootstrapped = false
-                        } else if (line.contains("Bootstrapped 100%")) {
-                            bootstrapped = true
-                        }
-                    }
-                    bootstrapped
-                }
-            } catch (e: Exception) {
-                CameraDaemon.log("tunnelStatus: could not read tor log: " + e.message)
-                false
-            }
         }
 
         /**

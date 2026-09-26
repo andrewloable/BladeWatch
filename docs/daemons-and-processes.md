@@ -167,7 +167,7 @@ Core daemons:
 
 Optional daemons:
 
-- `TOR_TUNNEL`.
+- `PEAR_PEER` (the Tor tunnel, `TOR_TUNNEL`, was removed in v1.4.0.0 — BladeWatch-rdtj.12).
 
 Startup timing (measured from app launch / boot):
 
@@ -232,8 +232,9 @@ It can start:
 - Camera daemon.
 - Sentry daemon.
 - ACC sentry daemon.
-- Tor tunnel.
 - Android sidecar services.
+
+The Pear peer is not among them: `PearLauncher` / `PearController` start it.
 
 It also applies selected power, location, ACC whitelist, and Wi-Fi settings.
 
@@ -323,15 +324,15 @@ It accepts JSON commands for local control. Known command areas include:
 - Secret get, put, delete, and section operations.
 - Public (non-secret) config read/write, allow-listed to the `statusOverlay` and
   `developerOptions` sections (`config_get_section`, `config_put`).
-- Daemon process liveness (`daemonStatus`) and the Tor onion URL (`tunnelStatus`, gated on tor having bootstrapped).
+- Daemon process liveness (`daemonStatus`) and the Pear peer's status (`pearStatus`, see "Pear Peer Process" below).
 - Enable/disable an optional daemon (`daemon_set_enabled`), allow-listed to
-  `TOR_TUNNEL`.
+  `PEAR_PEER`.
 
 The last four exist because the Flutter UI ships as a separate APK with no ADB; each is
 deliberately narrow rather than a general-purpose escape hatch. See
 `ipc-auth-and-secrets.md` for the allow-lists and why the other daemons are excluded.
 
-Liveness (`daemonStatus`, and the gate inside `tunnelStatus`) is an **argv[0]** match read
+Liveness (`daemonStatus`, and `pearStatus`'s `running`) is an **argv[0]** match read
 from procfs, not a `pgrep -f` over whole command lines — `-f` matched any process that
 merely mentioned a daemon name.
 
@@ -364,7 +365,6 @@ The server uses a fixed thread pool (8 threads) for concurrent local requests.
 
 ```text
 127.0.0.1:8080   the in-car UI and local apps     (listener trust LOCAL_APPS)
-127.0.0.1:8081   tor's way in                     (REMOTE)
 127.0.0.1:8444   TLS, the Pear pump's way in      (REMOTE)
 0.0.0.0:8443     TLS, only while LAN access is on (REMOTE)
 ```
@@ -392,48 +392,29 @@ Responsibilities:
 - Uses the `UPDATE_GPS` surveillance IPC command.
 - Sends updates roughly every two seconds while active.
 
-## Tor Tunnel Process
+## Tor Tunnel Process (removed)
 
-The Tor onion service is the sole remote-access tunnel. `TorLauncher` copies the binary out
-of the packaged `libtor.so` to `/data/local/tmp/bladewatch_tor` and runs it as a shell-UID
-subprocess, like every other daemon. The binary is downloaded and SHA-256-verified at build
-time by `downloadTor`, not committed.
+The Tor onion service was the remote-access tunnel until v1.4.0.0, which removed it along with
+the `TOR_TUNNEL` daemon type, the `tunnelStatus` IPC command, the REMOTE loopback listener on
+8081 and the build-time `libtor.so` download (BladeWatch-rdtj.12). Two traces remain on
+purpose:
 
-Runtime paths:
+- `LegacyTunnelCleanup`, on every app launch, runs `killall -9 bladewatch_tor` and drops the
+  stale `TOR_TUNNEL` key from the `daemons` config section (`DaemonHardReset` kills it too).
+  Every launch, not just the post-install sweep, because that sweep needs the package-replaced
+  broadcast BYD suppresses after an install: a v1.3.x tor that survives keeps forwarding its
+  onion port to a now-unbound 127.0.0.1:8081 that any app could take (BladeWatch-rdtj.23).
+  Use `killall`, never `pkill -9 -f`, by hand as well: toybox `pkill -f` matches the pattern
+  as a literal substring of every process's cmdline, including the ADB shell running your own
+  kill script, so it kills that shell mid-procedure.
 
-```text
-/data/local/tmp/bladewatch_tor    the binary, installed under its own process name
-/data/local/tmp/tor/torrc         generated config, rewritten on every launch
-/data/local/tmp/tor/data          consensus cache (safe to delete; costs a slow start)
-/data/local/tmp/tor/hs            hidden-service directory — NEVER delete, see below
-/data/local/tmp/tor.log           notice log; the tunnelStatus bootstrap gate reads this
-```
-
-It fronts the local HTTP server at `http://127.0.0.1:8081` (the REMOTE loopback listener, never 8080 -- BladeWatch-ur11) as a v3 onion service on port 80,
-with no intermediate proxy layer. There is no account, token or registration, and the
-address is permanent because it is derived from a key in the hidden-service directory.
-
-The process is named `bladewatch_tor`, not `tor`: liveness is decided by
-`basename(argv[0])`, a bare `tor` could collide, and 14 characters stays inside the
-kernel's 15-character cap on `/proc/<pid>/comm` so `killall` matches it in full. That cap
-matters in practice — when stopping the tunnel by hand use `killall -9 bladewatch_tor`, not
-`pkill -9 -f`: toybox `pkill -f` matches the pattern as a literal substring of every
-process's cmdline, including the ADB shell running your own kill script, so it kills that
-shell mid-procedure.
-
-**`/data/local/tmp/tor/hs` holds `hs_ed25519_secret_key`, which IS the car's permanent
-onion address.** Killing the process is fine and reversible; deleting that directory is
-not — tor mints a new address on the next start and every QR code ever scanned stops
-working.
-
-Startup timing measured on the head unit: ~82 s from a cold start to `Bootstrapped 100%`,
-~6 s on a restart with a populated `DataDirectory`. `tunnelStatus` reports
-`running: true, url: null` throughout that window.
+Neither touches `/data/local/tmp/tor`: its `hs/` directory still holds the old onion key, and
+deleting it is left to the owner.
 
 ## Pear Peer Process
 
-`PearDaemon` is the Pear peer that replaces the tor tunnel as the remote-access transport
-(epic BladeWatch-rdtj). It is an `app_process` daemon like `sentry_daemon`, launched by
+`PearDaemon` is the Pear peer, BladeWatch's remote-access transport since v1.4.0.0, when it
+replaced the Tor onion service (epic BladeWatch-rdtj). It is an `app_process` daemon like `sentry_daemon`, launched by
 `PearLauncher` as shell UID with `--nice-name=pear_daemon`, and it hosts a bare-kit worklet
 running pear-end — the stock flutter_pear worklet bundle, shipped as
 `assets/pear/pear-end.bundle`. On boot it joins this car's Hyperswarm topic so a paired
@@ -446,11 +427,11 @@ a real cross-process hop, so it retries while byd_cam_daemon is (re)starting and
 pumped streams cleanly when it goes away. Protocol and limits: `docs/networking-and-tunnels.md`
 "Stream multiplexing".
 
-It is **opt-in**: `DaemonType.PEAR_PEER` is an optional daemon, off by default like tor, and
+It is **opt-in**: `DaemonType.PEAR_PEER` is the one optional daemon, off by default, and
 starts on the optional tier (+60 s) only once enabled — pairing a companion is what enables
-it. Enabled state follows the same `daemons` config section as tor, so it can be toggled from
-the Flutter UI over `daemon_set_enabled`. Crash recovery is tor's too: a worklet that dies
-makes the process exit, and the 30 s health check relaunches it.
+it. Enabled state lives in the `daemons` config section, so it can be toggled from the Flutter
+UI over `daemon_set_enabled`. Crash recovery: a worklet that dies makes the process exit, and
+the 30 s health check relaunches it.
 
 **Status for the in-car UI (BladeWatch-rdtj.17).** Running and reachable are different
 questions: a live peer on a head unit with no network cannot be found. pear_daemon keeps
@@ -467,9 +448,21 @@ Runtime paths:
 
 ```text
 /data/local/tmp/pear               pear-end's storage (0700) — NEVER delete, see below
+/data/local/tmp/pear/swarm-identity.seed   the car's Pear identity (0600, secret) — see below
 /data/local/tmp/pear_daemon.log    stderr/stdout of the process (errors only, see DaemonLogConfig)
 /data/local/tmp/pear_daemon.lock   singleton lock; safe to remove when the daemon is stopped
 ```
+
+**The car keeps one Pear identity across restarts (BladeWatch-rdtj.24).** `PearDaemon` starts
+pear-end with `--persistent-identity`, so pear-end derives its Hyperswarm key pair from
+`swarm-identity.seed`, written once (0600, via a temp file and rename). Without it every
+`pear_daemon` start drew a random key: a companion's swarm went on redialing the dead key and
+never reached the car again, and each restart left a dead announcer on the DHT for 20 minutes
+that every companion cold start dialed and timed out on (measured: 5 announcers after 5
+restarts, 4 dead, ~9 s per failed dial). With it, a car-side restart mid-download was back on
+Pear in 3.2 s and the download resumed byte-exact. The seed is a secret: whoever holds it is the
+car's Pear peer. It cannot read companion traffic (the companions' TLS is pinned end to end),
+but it can stand in the car's place on the DHT.
 
 The topic is `PearTopic`: SHA-256 over a domain tag and a random 32-byte seed kept in the
 600 secret store (`pear.topicSeed`), created on first use. It is deliberately independent
@@ -494,9 +487,8 @@ site in `PearDaemon`, `PearLauncher` and `app/build.gradle.kts`:
 Measured on the head unit (2026-09-24): `attach.info` answered about 3 s after launch;
 112 MB PSS, 0.0 % CPU at idle, alongside the camera daemon recording normally.
 
-**`/data/local/tmp/pear` will hold the car's permanent Pear identity** once a companion is
-paired, the same hazard as tor's `hs/` directory: killing the process is fine, deleting the
-directory strands every paired companion. Keep it 0700 as well — pear-end creates its
+**`/data/local/tmp/pear` holds the car's permanent Pear identity** once a companion is
+paired: killing the process is fine, deleting the directory strands every paired companion. Keep it 0700 as well — pear-end creates its
 corestore inside it as 0777, so the parent's mode is the only thing keeping it private.
 
 ## Conditional Polling
@@ -579,7 +571,7 @@ BootReceiver / MainActivity (woken by the Flutter APK)
   -> DaemonKeepaliveService
   -> DaemonStartupManager
   -> AdbDaemonLauncher
-  -> app_process Java daemons and the extracted tor native binary
+  -> app_process Java daemons (PearLauncher starts pear_daemon)
 
 Flutter in-car UI (net.bladewatch.flutter, same UID)
   -> TCP 19876 (privileged ops, via its own Kotlin MethodChannels)
@@ -588,8 +580,11 @@ Flutter in-car UI (net.bladewatch.flutter, same UID)
 Location sidecar / app helpers
   -> TCP 19877 surveillance IPC
 
-Browser or tunnel client
-  -> HTTP/WebSocket 8080
+Companion over Pear
+  -> pear_daemon's stream pump -> TLS 8444
+
+Companion or browser on the car's network (LAN access on)
+  -> TLS 8443
 
 Camera daemon
   -> BYD local APIs, storage, Web Push notifications, trips
@@ -604,4 +599,4 @@ Camera daemon
 - Daemon readiness sentinel and probe: [CameraDaemon.kt:242](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L242), [CameraDaemon.kt:633](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L633), [DaemonReadinessChecker.kt:33](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.kt#L33), [DaemonReadinessChecker.kt:59](../app/src/main/java/com/loabletech/bladewatch/client/DaemonReadinessChecker.kt#L59).
 - TCP and surveillance IPC commands: [CameraDaemonClient.kt:61](../app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.kt#L61), [TcpCommandServer.kt:93](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.kt#L93), [TcpCommandServer.kt:108](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.kt#L108), [SurveillanceIpcServer.kt:75](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.kt#L75), [SurveillanceIpcServer.kt:107](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.kt#L107).
 - Location sidecar IPC: [LocationSidecarService.kt:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.kt#L32), [AccSentryDaemon.kt:2078](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.kt#L2078).
-- Tor tunnel process: [TorLauncher.kt:44](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L44), [TorLauncher.kt:92](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L92).
+- Pear peer process: [PearLauncher.kt](../app/src/main/java/com/loabletech/bladewatch/launcher/PearLauncher.kt), [PearDaemon.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearDaemon.kt), [PearStreamPump.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearStreamPump.kt).

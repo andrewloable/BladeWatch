@@ -55,15 +55,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cd_qr_code => 'QR kodu';
 
   @override
-  String get cd_show_hide_token => 'Token’ı göster/gizle';
-
-  @override
-  String get cd_copy_token => 'Token’ı kopyala';
-
-  @override
-  String get cd_copy_url => 'URL’yi kopyala';
-
-  @override
   String get cd_clear_logs => 'Günlükleri temizle';
 
   @override
@@ -179,47 +170,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'Otomatik, her açılışta trim\'iniz için doğru kamerayı seçer. Kamera 1 = BYD Seal, Kamera 0 = Atto trim\'leri. Ayarın geçerli olması için kamera kimliğini değiştirdikten sonra kamera servisini yeniden başlatın.';
 
   @override
-  String get dashboard_scan_to_connect => 'Bağlanmak için tarayın';
-
-  @override
   String get dashboard_qr_waiting => 'Tünel için bekliyordum...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 çalışıyor';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'Erişim Kodu';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'Token’ı yeniden oluştur';
 
   @override
-  String get dashboard_set_password => 'Şifre Belirle';
-
-  @override
   String get cd_set_password => 'Özel şifre belirle';
-
-  @override
-  String get dialog_set_password_title => 'Özel Şifre Belirle';
-
-  @override
-  String get dialog_set_password_message =>
-      'Yeni bir erişim şifresi girin. Bu, otomatik oluşturulan tokeni değiştirir.';
-
-  @override
-  String get dialog_set_password_hint => 'Yeni şifre (en az 12 karakter)';
-
-  @override
-  String get toast_password_set => 'Şifre güncellendi';
-
-  @override
-  String get toast_password_too_short => 'Şifre en az 12 karakter olmalı';
 
   @override
   String get toast_password_save_failed =>
@@ -577,9 +537,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get daemon_name_acc => 'ACC gözetim';
 
   @override
-  String get daemon_name_tor => 'Tor Tunnel';
-
-  @override
   String get daemons_hero_title => 'Arka plan hizmetleri';
 
   @override
@@ -802,9 +759,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get reset_label_trip_files => 'Yolculuk Telemetri Dosyaları';
 
   @override
-  String get toast_access_code_copied => 'Giriş kodu kopyalandı';
-
-  @override
   String get dialog_regenerate_token_title => 'Token’ı yeniden oluştur';
 
   @override
@@ -827,21 +781,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get toast_token_regenerated => 'Token Yenilenmiş';
 
   @override
-  String get dashboard_no_tunnel => 'Çalışan tünel yok';
-
-  @override
-  String get dashboard_starting_tor => 'Tor tüneli başlatılıyor…';
-
-  @override
   String get dashboard_waiting_url => 'URL tünelini bekliyoruz...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 çalışıyor';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Erişim Kodu';
@@ -1318,11 +1263,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get diagnostics_metric_online => 'Çevrimiçi';
-
-  @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'Tunel · $arg1';
-  }
 
   @override
   String diagnostics_network_data_usage_line(Object arg1) {
@@ -1826,7 +1766,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Tor tüneli ve arka plan hizmetleri.';
+      'Uzaktan erişim (Pear) ve arka plan hizmetleri.';
 
   @override
   String get settings_about_row_title => 'BladeWatch hakkında';
@@ -2825,38 +2765,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get surveillance_apply_failed => 'Kaydetme başarısız';
-
-  @override
-  String get dashboard_tor_bootstrapping => 'Tor\'a bağlanılıyor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'Bu adres nasıl açılır';
-
-  @override
-  String get dashboard_tor_help_title => 'Bu adresi açma';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: Tor Browser\'ı Google Play veya F-Droid\'den kurun, açın ve adresi yapıştırın.';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone ve iPad: Onion Browser\'ı App Store\'dan kurun, açın ve adresi yapıştırın. Tor Browser iOS\'ta yoktur.';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS ve Linux: Tor Browser\'ı torproject.org adresinden indirin, açın ve adresi yapıştırın.';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'Sayfa yüklendikten sonra parola yine gerekir.';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'Tor Browser indirme sayfası için tarayın';
-
-  @override
-  String get dashboard_tor_help_close => 'Anladım';
 
   @override
   String get surveillance_general_battery_warning =>

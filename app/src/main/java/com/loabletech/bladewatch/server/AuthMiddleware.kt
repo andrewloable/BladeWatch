@@ -3,7 +3,6 @@ package net.bladewatch.app.server
 import net.bladewatch.app.BuildConfig
 import net.bladewatch.app.auth.AuthManager
 import net.bladewatch.app.daemon.CameraDaemon
-import net.bladewatch.app.launcher.TorLauncher
 import java.io.OutputStream
 import java.net.SocketAddress
 import java.net.URLDecoder
@@ -31,22 +30,22 @@ import java.net.URLEncoder
  * Which HttpServer listener a request arrived on -- and therefore whether a loopback source address
  * means anything (BladeWatch-rdtj.4).
  *
- * Loopback is not a trustworthy signal on its own. tor already delivers remote traffic from
- * 127.0.0.1, and the Pear stream pump will too: at the socket level both are indistinguishable from
- * an app on the head unit. So trust is a property of the LISTENER, declared where it is created,
+ * Loopback is not a trustworthy signal on its own. The Pear stream pump delivers remote traffic from
+ * 127.0.0.1 (as the removed tor onion service did): at the socket level that is indistinguishable
+ * from an app on the head unit. So trust is a property of the LISTENER, declared where it is created,
  * rather than something inferred from the peer address -- and anything not explicitly declared
  * local is [REMOTE]. A new listener, or a new caller of [AuthMiddleware.checkAuth], fails closed.
  */
 enum class ListenerTrust {
     /**
      * `127.0.0.1:8080`, where the in-car UI and the service host connect. The only listener eligible
-     * for the Tier 2 loopback safety net or the vehicle-action second-factor exemption. (tor landed
-     * here until BladeWatch-ur11 gave it its own REMOTE listener; Tier 2 keeps its tunnel check as
-     * a second line.)
+     * for the Tier 2 loopback safety net or the vehicle-action second-factor exemption. Nothing that
+     * relays remote traffic may ever connect here; the Pear pump targets [HttpServer.PEAR_TLS_PORT]
+     * (pinned by RemoteLoopbackListenerTest).
      */
     LOCAL_APPS,
 
-    /** Every other listener -- LAN TLS on 8443, the Pear pump's TLS on 8444, tor's on 8081. Loopback proves nothing. */
+    /** Every other listener -- LAN TLS on 8443, the Pear pump's TLS on 8444. Loopback proves nothing. */
     REMOTE,
 }
 
@@ -87,24 +86,6 @@ object AuthMiddleware {
 
     @Volatile
     private var loopbackBypassOverride: Boolean? = null
-
-    /** Test seam; null = ask the real process table. */
-    @Volatile
-    private var tunnelActiveOverride: Boolean? = null
-
-    @Volatile
-    private var tunnelActiveCached = false
-
-    @Volatile
-    private var tunnelActiveCheckedAtMs = 0L
-
-    /**
-     * Cache window for the tunnel check. Scanning /proc on every single request would be absurd
-     * for a server that also streams video; ten seconds bounds the exposure to one short window
-     * right after the tunnel starts, during which tor is still bootstrapping and the service is
-     * not reachable from outside anyway.
-     */
-    private const val TUNNEL_CHECK_TTL_MS = 10_000L
 
     /** Check whether a request is authenticated. */
     @JvmStatic
@@ -215,23 +196,23 @@ object AuthMiddleware {
             log("JWT invalid for " + path + ": " + validation.error)
         }
 
-        // Tier 2 — loopback safety net. Trust 127.0.0.1 / ::1 ONLY when no tunnel-fingerprint
-        // headers are present AND no tunnel is running. In release builds this bypass is disabled
+        // Tier 2 — loopback safety net. Trust 127.0.0.1 / ::1 ONLY on the in-car listener and only
+        // when no proxy-fingerprint headers are present. In release builds this bypass is disabled
         // entirely because Android loopback is shared by every app on the device.
         //
-        // BladeWatch-3lbz.2 — why the tunnel check was added. zrok relayed remote traffic with
-        // X-Forwarded-* headers, so hasTunnelHeaders alone was enough to switch this off for
-        // anyone coming in from outside. A Tor onion service injects NOTHING: tor opens a plain
-        // TCP connection to 127.0.0.1:8080, which at the socket level looks exactly like an app
-        // on the head unit. Without the extra condition, a debug build with the tunnel up would
-        // hand full API access to anyone who knew the onion address — and debug is the build that
-        // actually goes on the car, because preserving the ADB key across a reinstall needs
-        // run-as. Header sniffing cannot close this; the tunnel being up is the signal.
-        //
-        // BladeWatch-rdtj.4: and ONLY on the in-car listener. The Pear pump reaches this server from
-        // 127.0.0.1 too, and so will anything added later; the listener decides, not the address.
+        // What keeps REMOTE traffic out of it is the listener, never the address (BladeWatch-rdtj.4):
+        // every way in from outside -- the Pear pump on 8444, LAN TLS on 8443 -- is a REMOTE
+        // listener, and 8080 is LOCAL_APPS only for a peer UID PeerCredentials trusts
+        // (effectiveTrust in HttpServer). BladeWatch-3lbz.2 once added a second condition here,
+        // "no tunnel process running", because the tor onion service connected to 127.0.0.1:8080
+        // as the shell UID, which that check trusts. Since BladeWatch-ur11 tor used its own REMOTE
+        // listener, and with tor removed (BladeWatch-rdtj.12) that process check could never be
+        // true again, so it was deleted rather than kept as protection that protects nothing. The
+        // rule that replaces it: nothing may relay remote traffic into 8080 -- RemoteLoopbackListenerTest
+        // pins the Pear pump to 8444, and AuthMiddlewareTest pins that a REMOTE request is refused
+        // with the bypass forced on.
         if (trust == ListenerTrust.LOCAL_APPS && isLoopbackBypassAllowed() && !hasTunnelHeaders &&
-            !isTunnelActive() && clientAddress != null
+            clientAddress != null
         ) {
             val addrStr = clientAddress.toString()
             if (addrStr.contains("127.0.0.1") || addrStr.contains("/0:0:0:0:0:0:0:1")) {
@@ -255,38 +236,6 @@ object AuthMiddleware {
     }
 
     private fun isLoopbackBypassAllowed(): Boolean = loopbackBypassOverride ?: BuildConfig.DEBUG
-
-    /** Test seam. Public for the same reason as [setLoopbackBypassOverride]. */
-    @JvmStatic
-    fun setTunnelActiveOverride(override: Boolean?) {
-        tunnelActiveOverride = override
-        tunnelActiveCheckedAtMs = 0L
-    }
-
-    /**
-     * Whether the Tor tunnel process is up, i.e. whether this head unit is currently reachable
-     * from outside. See the Tier 2 comment for why this gates the bypass.
-     */
-    private fun isTunnelActive(): Boolean {
-        tunnelActiveOverride?.let { return it }
-
-        val now = System.currentTimeMillis()
-        // Wall clock, so it can jump BACKWARDS — head units NTP-correct theirs shortly after
-        // boot, which is exactly when the tunnel is starting. A negative age would otherwise read
-        // as "fresh" and pin a stale `false` (bypass enabled) for the whole skew window.
-        val age = now - tunnelActiveCheckedAtMs
-        if (age in 0 until TUNNEL_CHECK_TTL_MS) return tunnelActiveCached
-        val active = try {
-            !TcpCommandServer.findPidsByProcessName(TorLauncher.TOR_PROCESS).isEmpty()
-        } catch (t: Throwable) {
-            // Fail CLOSED: if we cannot tell whether the car is exposed, do not hand out local
-            // trust.
-            true
-        }
-        tunnelActiveCached = active
-        tunnelActiveCheckedAtMs = now
-        return active
-    }
 
     /**
      * Whether a request comes from an app on the head unit itself, for the vehicle-action

@@ -11,8 +11,8 @@ import net.bladewatch.app.logging.DaemonLogConfig
 /**
  * BladeWatch-rdtj.3: the shell commands PearLauncher hands to ADB.
  *
- * Pure strings, like TorLauncherCommandTest, for the same reason: the decisions that fail silently
- * on a head unit are "what exactly reaches the shell". Every requirement pinned here was found on
+ * Pure strings, because the decisions that fail silently on a head unit are "what exactly reaches
+ * the shell". Every requirement pinned here was found on
  * the real head unit by the BladeWatch-rdtj.2 spike -- the launch shape crashed or failed to start
  * without each one.
  */

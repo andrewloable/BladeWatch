@@ -26,23 +26,12 @@ class DaemonControl(private val ipc: IpcCommandSender) {
 
     /**
      * BladeWatch-1xt9: real daemon-process liveness (CAMERA_DAEMON/SENTRY_DAEMON/
-     * ACC_SENTRY_DAEMON/TOR_TUNNEL), computed locally by the daemon via `pgrep` — not
+     * ACC_SENTRY_DAEMON/PEAR_PEER), computed locally by the daemon via `pgrep` — not
      * to be confused with [status] above, which reports camera *recording* state, not
      * process lifecycle. Response shape: `{"status":"ok","daemons":{"<DaemonType name>":
      * <bool>, ...}}`.
      */
     fun processStatus(): JSONObject = ipc.sendCommand(JSONObject().put("cmd", "daemonStatus"))
-
-    /**
-     * BladeWatch-m1po: the current Tor onion URL, for the Dashboard's remote-access
-     * tile. Response shape: `{"status":"ok","running":<bool>,"url":<string|null>}`.
-     *
-     * The daemon gates the URL on the tunnel process actually running, so
-     * `running=true, url=null` means "up, but it has not published its share URL yet"
-     * — a real state, distinct from offline, and the caller should render it as
-     * connecting rather than collapsing both to "no tunnel".
-     */
-    fun tunnelStatus(): JSONObject = ipc.sendCommand(JSONObject().put("cmd", "tunnelStatus"))
 
     /**
      * BladeWatch-rdtj.17: the Pear peer -- running, switched on, reachable (DHT online; null when
@@ -52,11 +41,11 @@ class DaemonControl(private val ipc: IpcCommandSender) {
 
     /**
      * BladeWatch-abcx: enable or disable an OPTIONAL daemon. The daemon refuses any type
-     * outside its own allow-list — currently TOR_TUNNEL alone — so passing anything else
+     * outside its own allow-list — currently PEAR_PEER alone — so passing anything else
      * comes back as an error rather than doing something partial.
      *
      * Enabling only RECORDS the intent: DaemonStartupManager's health check performs the
-     * actual launch through TorLauncher within ~30s. Disabling records the
+     * actual launch through PearLauncher within ~30s. Disabling records the
      * intent AND kills the running process, because that health check only ever relaunches.
      */
     fun setDaemonEnabled(type: String, enabled: Boolean): JSONObject = ipc.sendCommand(

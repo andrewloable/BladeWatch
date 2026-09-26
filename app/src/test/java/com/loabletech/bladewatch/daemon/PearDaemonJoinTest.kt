@@ -15,4 +15,15 @@ class PearDaemonJoinTest {
         // The car must keep announcing: it is what every companion looks up.
         assertTrue(!params.has("server") || params.getBoolean("server"))
     }
+
+    /**
+     * BladeWatch-rdtj.24: one identity across restarts. pear-end reads its storage root from argv[0]
+     * under BareKit, so the order matters as much as the flag.
+     */
+    @Test
+    fun `the worklet keeps its identity across restarts, storage root first`() {
+        val args = PearDaemon.workletArgs.toList()
+        assertEquals(PearDaemon.STORAGE_DIR, args.first())
+        assertEquals(listOf(PearDaemon.STORAGE_DIR, "--persistent-identity"), args)
+    }
 }

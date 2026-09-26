@@ -10,15 +10,14 @@ http://127.0.0.1:8080
 
 ## Listeners and what each one trusts
 
-The same routes are served on up to four listeners. The routes are identical on each; the
+The same routes are served on up to three listeners. The routes are identical on each; the
 difference is the auth posture. That posture comes from the listener a request arrived on,
-never from its source address. tor and the Pear pump both deliver remote traffic from
-127.0.0.1, so a loopback address proves nothing (`ListenerTrust`, BladeWatch-rdtj.4).
+never from its source address. The Pear pump delivers remote traffic from 127.0.0.1
+(as tor did before v1.4.0.0), so a loopback address proves nothing (`ListenerTrust`, BladeWatch-rdtj.4).
 
 | Listener | Who connects | Trust | Notes |
 |---|---|---|---|
 | `127.0.0.1:8080`, plain HTTP | the in-car UI and the service host | `LOCAL_APPS`, only when the peer UID is BladeWatch's own (or shell, system, root); otherwise `REMOTE` | The only listener that can get the debug-build loopback bypass or skip the vehicle-action second factor. Another app on the head unit is served like a remote caller (BladeWatch-g5u7). |
-| `127.0.0.1:8081`, plain HTTP | tor, for the onion service | `REMOTE` | Loopback only. Exists so tor never lands on 8080 (BladeWatch-ur11). Goes away with tor (rdtj.12). |
 | `127.0.0.1:8444`, TLS | `PearStreamPump`, carrying a companion's Pear stream | `REMOTE` | Serves the LAN listener's certificate. The companion runs TLS end to end over the Pear stream and pins that certificate, so pear_daemon never sees plaintext. |
 | `0.0.0.0:8443`, TLS | a companion or browser on the car's network | `REMOTE` | Only when the owner opts in (`network.lanHttpEnabled`, off by default). Self-signed certificate, pinned by fingerprint from the pairing QR. |
 
@@ -568,7 +567,7 @@ stubs (`cd proto && buf generate`). Tracked by BladeWatch-852m.
 ## Client Guidance
 
 - Always authenticate before calling protected APIs.
-- Use the local base URL from the Android app, or the onion address the Tor tunnel publishes (`tunnelStatus` over IPC).
+- Use the local base URL from the Android app, the LAN TLS listener (8443, pinned certificate) on the car's network, or the companion's Pear connection from anywhere.
 - Avoid assuming response schemas from this list alone — read the handler class
   (REST) or `proto/bladewatch/v1/*.proto` (Connect) for the authoritative shape.
 - New clients — Dart or Angular — should use the Connect API (`/bladewatch.v1.*`,

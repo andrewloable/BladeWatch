@@ -13,13 +13,11 @@ public class AuthMiddlewareTest {
     @Before
     public void setUp() {
         AuthMiddleware.setLoopbackBypassOverride(null);
-        AuthMiddleware.setTunnelActiveOverride(null);
     }
 
     @After
     public void tearDown() {
         AuthMiddleware.setLoopbackBypassOverride(null);
-        AuthMiddleware.setTunnelActiveOverride(null);
     }
 
     @Test
@@ -59,39 +57,11 @@ public class AuthMiddlewareTest {
         Assert.assertFalse(allowed);
     }
 
-    // --- BladeWatch-3lbz.2: the loopback bypass versus a Tor onion service ---
-
     @Test
-    public void loopbackBypassIsDisabledWhileTheTorTunnelIsUp() throws Exception {
-        // THE regression this whole group exists for.
-        //
-        // The previous tunnel relayed remote traffic with X-Forwarded-* headers, so
-        // hasTunnelHeaders was true for every remote request and Tier 2 switched itself off. Tor injects NOTHING:
-        // the onion service opens a plain TCP connection to 127.0.0.1:8080, which at the
-        // socket level is indistinguishable from an app on the head unit.
-        //
-        // So on a DEBUG build — the build CLAUDE.md's install procedure actually puts on the
-        // car, because preserving the ADB key needs run-as — a remote visitor who merely knew
-        // the onion address would have sailed straight past authentication. The tunnel being
-        // up is now itself a reason to distrust loopback.
+    public void loopbackBypassStillWorksForTheInCarListener() throws Exception {
+        // The safety net has a real purpose — a same-device caller with no cached JWT — and it
+        // survives tor's removal (BladeWatch-rdtj.12) on the in-car listener, where it belongs.
         AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
-        AuthMiddleware.setTunnelActiveOverride(Boolean.TRUE);
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, null, out,
-                new InetSocketAddress("127.0.0.1", 8080), false);
-
-        Assert.assertFalse("a remote Tor visitor must not inherit local trust", allowed);
-        Assert.assertTrue(out.toString("UTF-8").contains("401 Unauthorized"));
-    }
-
-    @Test
-    public void loopbackBypassStillWorksWhileNoTunnelIsRunning() throws Exception {
-        // The safety net has a real purpose — a same-device caller with no cached JWT — and
-        // it must survive when the car is not exposed to anyone.
-        AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
-        AuthMiddleware.setTunnelActiveOverride(Boolean.FALSE);
 
         boolean allowed = AuthMiddleware.checkAuth(
                 "/api/vehicle/trunk", null, null, new ByteArrayOutputStream(),
@@ -104,19 +74,33 @@ public class AuthMiddlewareTest {
 
     @Test
     public void aRemoteListenerNeverGetsTheLoopbackBypass() throws Exception {
-        // The LAN TLS listener, and the Pear pump's: the pump reaches this server from 127.0.0.1,
-        // exactly like tor, so a loopback address proves nothing there. With every other Tier 2
-        // condition forced OPEN -- debug bypass on, no tunnel -- a REMOTE listener must still deny.
+        // BladeWatch-rdtj.12's acceptance: a DEBUG build (bypass forced on, the worst case), tor
+        // gone so there is no tunnel process to notice, and a request arriving the way the Pear
+        // pump delivers it -- from 127.0.0.1 onto the REMOTE listener on 8444. It must still be
+        // refused without a JWT: the listener decides, never the address.
         AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
-        AuthMiddleware.setTunnelActiveOverride(Boolean.FALSE);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
                 "/api/vehicle/trunk", null, null, out,
-                new InetSocketAddress("127.0.0.1", 8081), false, ListenerTrust.REMOTE);
+                new InetSocketAddress("127.0.0.1", HttpServer.PEAR_TLS_PORT), false, ListenerTrust.REMOTE);
 
         Assert.assertFalse("a remote peer arriving via loopback must not inherit local trust", allowed);
         Assert.assertTrue(out.toString("UTF-8").contains("401 Unauthorized"));
+    }
+
+    /** BladeWatch-rdtj.12: the vehicle-control RPCs specifically, over the Pear pump, bypass forced on. */
+    @Test
+    public void vehicleControlOverThePearPumpWithoutAJwtIsA401() throws Exception {
+        AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
+        for (String method : new String[] {"MoveWindow", "SetClimate", "Trunk", "SetLights", "SetAdas", "SetChargeCap"}) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            boolean allowed = AuthMiddleware.checkAuth(
+                    "/bladewatch.v1.VehicleService/" + method, null, null, out,
+                    new InetSocketAddress("127.0.0.1", HttpServer.PEAR_TLS_PORT), false, ListenerTrust.REMOTE);
+            Assert.assertFalse(method + " must need a JWT over Pear", allowed);
+            Assert.assertTrue(method + ": " + out.toString("UTF-8"), out.toString("UTF-8").contains("401 Unauthorized"));
+        }
     }
 
     @Test
@@ -124,7 +108,6 @@ public class AuthMiddlewareTest {
         // Stands in for any listener or caller added later without thinking about trust: the
         // shorter overloads assume REMOTE, so forgetting is a denial, never an open door.
         AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
-        AuthMiddleware.setTunnelActiveOverride(Boolean.FALSE);
 
         boolean allowed = AuthMiddleware.checkAuth(
                 "/api/vehicle/trunk", null, null, new ByteArrayOutputStream(),
@@ -148,13 +131,14 @@ public class AuthMiddlewareTest {
     @Test
     public void forwardedHeadersStillDisableTheBypassOnTheirOwn() throws Exception {
         // Regression cover for the pre-existing rule: a relay that DOES add forwarding
-        // headers must still be distrusted even with no tunnel process detected.
+        // headers must still be distrusted, even on the in-car listener.
         AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
-        AuthMiddleware.setTunnelActiveOverride(Boolean.FALSE);
 
+        // LOCAL_APPS on purpose: with the listener eligible and the bypass forced on, the forwarding
+        // header is the ONLY reason left to refuse.
         boolean allowed = AuthMiddleware.checkAuth(
                 "/api/vehicle/trunk", null, null, new ByteArrayOutputStream(),
-                new InetSocketAddress("127.0.0.1", 8080), true);
+                new InetSocketAddress("127.0.0.1", 8080), true, ListenerTrust.LOCAL_APPS);
 
         Assert.assertFalse(allowed);
     }

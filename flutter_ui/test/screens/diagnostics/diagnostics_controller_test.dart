@@ -18,14 +18,14 @@ void main() {
   late FakeAdbConnection adbConnection;
   late DiagnosticsController controller;
 
-  void stubDaemons({bool camera = true, bool tor = false}) {
+  void stubDaemons({bool camera = true}) {
     platform.stub('daemon', 'processStatus', {
       'status': 'ok',
       'daemons': {
         'CAMERA_DAEMON': camera,
         'SENTRY_DAEMON': false,
         'ACC_SENTRY_DAEMON': false,
-        'TOR_TUNNEL': tor,
+        'PEAR_PEER': false,
       },
     });
   }
@@ -122,37 +122,65 @@ void main() {
       expect(controller.loading, isFalse); // one probe failing doesn't block the others
     });
 
-    test('tunnel state is online when a tunnel URL is present', () async {
-      controller = DiagnosticsController(
+    // Remote access is the Pear peer (BladeWatch-rdtj.12): online only once the car can be
+    // found, connecting while it is up but not yet reachable, offline when switched off.
+    DiagnosticsController withPear(PearStatus pear) => DiagnosticsController(
+          daemonChannel: DaemonChannel(platform),
+          storageService: StorageServiceClient(rpc),
+          systemService: SystemServiceClient(rpc),
+          networkChannel: NetworkChannel(platform),
+          surveillanceService: SurveillanceServiceClient(rpc),
+          adbConnectionFactory: () => adbConnection,
+          pearStatusSource: () async => pear,
+        );
+
+    test('tunnel state is online when the Pear peer is reachable', () async {
+      controller = withPear(const PearStatus(running: true, enabled: true, reachable: true));
+      await controller.refresh();
+      expect(controller.tunnelState, TunnelState.online);
+    });
+
+    test('tunnel state is connecting while the Pear peer runs but is not reachable yet', () async {
+      for (final reachable in [false, null]) {
+        controller = withPear(PearStatus(running: true, enabled: true, reachable: reachable));
+        await controller.refresh();
+        expect(controller.tunnelState, TunnelState.connecting, reason: 'reachable=$reachable');
+      }
+    });
+
+    test('tunnel state is offline when the Pear peer is off, down, or its status fails', () async {
+      for (final pear in [
+        const PearStatus(running: true, enabled: false, reachable: true),
+        const PearStatus(running: false, enabled: true),
+      ]) {
+        controller = withPear(pear);
+        await controller.refresh();
+        expect(controller.tunnelState, TunnelState.offline, reason: 'running=${pear.running} enabled=${pear.enabled}');
+      }
+
+      final failing = DiagnosticsController(
         daemonChannel: DaemonChannel(platform),
         storageService: StorageServiceClient(rpc),
         systemService: SystemServiceClient(rpc),
         networkChannel: NetworkChannel(platform),
         surveillanceService: SurveillanceServiceClient(rpc),
         adbConnectionFactory: () => adbConnection,
-        tunnelUrlSource: () async => 'https://example.tor.io',
+        pearStatusSource: () async => throw StateError('daemon down'),
       );
+      await failing.refresh();
+      expect(failing.tunnelState, TunnelState.offline);
 
-      await controller.refresh();
-
-      expect(controller.tunnelState, TunnelState.online);
-    });
-
-    test('tunnel state is connecting when no URL yet but the tunnel daemon is starting up', () async {
-      // processStatus() only reports running/not-running, not STARTING — so
-      // "connecting" here means the daemon is up (about to serve) but no URL
-      // has been minted yet; still distinct from fully offline.
-      stubDaemons(tor: true);
-
-      await controller.refresh();
-
-      expect(controller.tunnelState, TunnelState.connecting);
-    });
-
-    test('tunnel state is offline with no URL and the tunnel daemon not running', () async {
-      await controller.refresh();
-
-      expect(controller.tunnelState, TunnelState.offline);
+      // The default source (no Pear wiring at all) reads as offline too.
+      final plain = DiagnosticsController(
+        daemonChannel: DaemonChannel(platform),
+        storageService: StorageServiceClient(rpc),
+        systemService: SystemServiceClient(rpc),
+        networkChannel: NetworkChannel(platform),
+        surveillanceService: SurveillanceServiceClient(rpc),
+        adbConnectionFactory: () => adbConnection,
+      );
+      await plain.refresh();
+      expect(plain.tunnelState, TunnelState.offline);
     });
 
     test('BladeWatch-t1lg.1: formats this-month data usage from GetStatus', () async {
