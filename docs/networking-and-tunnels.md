@@ -326,9 +326,10 @@ after the 90 s search. Measured 2026-09-26 from a phone hotspot (HyperDHT random
 So the car joins its topic with `acceptUnannounced` (`PearDaemon.joinParams`): pear-end
 attributes an inbound connection to the car's topic the moment it arrives, because it is the
 worklet's only topic with that option. The car's `app/src/main/assets/pear/pear-end.bundle` is
-therefore the published flutter_pear 0.4.5 bundle, which has that option: byte-identical to the
-one inside the pub.dev package (sha256 `00f9adc4…`, checked 2026-09-26); the companion is pinned
-to 0.4.5 too. An older bundle ignores the flag. From the same hotspot afterwards, every attempt whose Pear
+the published flutter_pear bundle, byte-identical to the one inside the pub.dev package, and the
+companion is pinned to the same release: 0.4.5 added this option, and 0.4.6 added
+`--persistent-identity` (BladeWatch-rdtj.24; the 0.4.6 bundle is sha256 `4393af22…`, checked
+2026-09-27). An older bundle ignores either flag. From the same hotspot afterwards, every attempt whose Pear
 connection formed reached the car (13 of 13); the 7 of 20 that failed never formed a connection
 at all -- NAT traversal from a randomizing NAT, BladeWatch-idfn.
 

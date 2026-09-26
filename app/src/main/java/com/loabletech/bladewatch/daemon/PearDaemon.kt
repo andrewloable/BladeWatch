@@ -55,8 +55,8 @@ object PearDaemon {
      * key pair on every start, so a companion's swarm went on redialing the dead key after a
      * pear_daemon restart and never reached the car again, and each restart left a dead announcer
      * on the DHT for 20 minutes that every companion cold start dialed and timed out on (5
-     * announcers, 4 dead, after 5 restarts; about 9 s per failed dial). Needs pear-end from the
-     * flutter_pear release that added the flag; an older pear-end ignores it.
+     * announcers, 4 dead, after 5 restarts; about 9 s per failed dial). Needs pear-end from
+     * flutter_pear 0.4.6 or later; an older pear-end ignores it.
      */
     internal const val PERSISTENT_IDENTITY = "--persistent-identity"
 
