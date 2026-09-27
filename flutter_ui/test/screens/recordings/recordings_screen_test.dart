@@ -1,8 +1,8 @@
-import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/rpc/jwt_source.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_controller.dart';
-import 'package:bladewatch_ui/screens/recordings/recordings_models.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_player_screen.dart';
 import 'package:bladewatch_ui/screens/recordings/recordings_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
@@ -19,56 +19,38 @@ class _FakeJwtSource implements JwtSource {
   Future<int> stateVersion() async => 0;
 }
 
-Map<String, dynamic> _entry({
-  required String filename,
-  required String type,
-  int timestampMs = 1000,
-  int sizeBytes = 1500,
-  int durationSeconds = 60,
-  bool hasEvents = false,
-  List<String> detectedClasses = const [],
-  String severity = '',
-  String proximity = '',
-}) =>
-    {
+Map<String, dynamic> _entry(String filename, {String type = 'RECORDING_TYPE_NORMAL', int timestampMs = 0, List<String> seen = const []}) => {
       'filename': filename,
       'path': '/storage/emulated/0/BladeWatch/recordings/$filename',
       'type': type,
       'timestamp': timestampMs.toString(),
-      'size': sizeBytes.toString(),
-      'durationSeconds': durationSeconds.toString(),
-      'dateFormatted': 'May 23, 2026',
-      'timeFormatted': '12:00:00 PM',
-      'hasEvents': hasEvents,
-      'detectedClasses': detectedClasses,
-      'peakSeverity': severity,
-      'peakProximity': proximity,
+      'size': '1500',
+      'durationSeconds': '60',
+      'detectedClasses': seen,
     };
 
+/// BladeWatch-rdtj.70: the library as the companion presents it, a page at a time.
 void main() {
   late FakeRpcClient rpc;
   late RecordingsController controller;
   final now = DateTime(2026, 5, 23, 15, 0).millisecondsSinceEpoch;
 
-  void stubStats({int total = 0, int recordings = 0, int surveillance = 0, int proximity = 0, int totalBytes = 0}) {
-    rpc.stubJson('RecordingsService', 'GetStats', {
-      'stats': {
-        'recordingsSizeBytes': '0',
-        'surveillanceSizeBytes': '0',
-        'proximitySizeBytes': '0',
-        'recordingsCount': recordings,
-        'surveillanceCount': surveillance,
-        'proximityCount': proximity,
-        'totalSizeBytes': totalBytes.toString(),
-        'totalCount': total,
-      },
-    });
-  }
+  void page(List<Map<String, dynamic>> entries, {int? total}) =>
+      rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': entries, 'total': total ?? entries.length});
+
+  List<ListRecordingsRequest> listCalls() =>
+      [for (final call in rpc.calls.where((c) => c.method == 'ListRecordings')) call.request as ListRecordingsRequest];
 
   setUp(() {
     FakeVideoPlayerPlatform.install();
     rpc = FakeRpcClient();
-    controller = RecordingsController(recordingsService: RecordingsServiceClient(rpc), nowMs: () => now);
+    rpc.stubJson('RecordingsService', 'GetStats', {
+      'stats': {'totalCount': 1042, 'totalSizeBytes': '113100000000'},
+    });
+    rpc.stubJson('RecordingsService', 'GetDates', {
+      'dates': ['2026-05-20', '2026-05-23'],
+    });
+    controller = RecordingsController(recordingsService: RecordingsServiceClient(rpc), nowMs: () => now, pageSize: 3);
   });
 
   Widget wrap(Widget child) => MaterialApp(
@@ -91,8 +73,8 @@ void main() {
     }
   }
 
-  Future<void> pumpScreen(WidgetTester tester, {VoidCallback? onOpenSettings}) async {
-    tester.view.physicalSize = const Size(1400, 2200);
+  Future<void> pumpScreen(WidgetTester tester, {VoidCallback? onOpenSettings, Size size = const Size(1920, 1080)}) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -102,657 +84,217 @@ void main() {
     await settle(tester);
   }
 
+  testWidgets('rows as the companion shows them, with the totals and the Settings shortcut', (tester) async {
+    page([_entry('event_1.mp4', type: 'RECORDING_TYPE_SENTRY', timestampMs: now, seen: ['person', 'vehicle'])]);
+    var settings = 0;
+    await pumpScreen(tester, onOpenSettings: () => settings++);
 
-  // BladeWatch-era8: the source segments and the date navigator share one row, so the
-  // recordings grid and the player below get that vertical space back.
-  //
-  // Structure is what a widget test can honestly pin. Whether it FITS is a device check:
-  // flutter test uses a fixed-width placeholder font, so any overflow assertion here would
-  // be meaningless (see CLAUDE.md's Testing section).
-  // BladeWatch-era8, second pass: the TYPE filters joined the same row, so the header is
-  // one line instead of three. Only the set matching the current source is present — the
-  // dashcam type chips and the surveillance filters are alternatives, never both.
-  testWidgets('the type filters share the row with the segments and date', (tester) async {
-    await pumpScreen(tester);
-
-    final segments = tester.getTopLeft(find.byKey(const ValueKey('recordings.segments')));
-    final normal = tester.getTopLeft(find.text('Normal'));
-
-    expect(normal.dy, closeTo(segments.dy, 24),
-        reason: 'the type chips should sit on the header row, not below it');
+    expect(find.byKey(const ValueKey('recordings.row.event_1.mp4')), findsOneWidget);
+    expect(find.text('Surveillance · 1:00 · 1.5 KB · person, vehicle'), findsOneWidget);
+    expect(find.textContaining('May 23, 2026'), findsOneWidget);
+    expect(find.text('1042 clips · 113.1 GB'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('recordings.settings')));
+    expect(settings, 1);
   });
 
-  testWidgets('the source segments and the date navigator share one row', (tester) async {
+  testWidgets('the type chips ask the car, and sentry adds who and how bad', (tester) async {
+    page([_entry('a.mp4')]);
     await pumpScreen(tester);
+    expect(find.byKey(const ValueKey('recordings.filter.person')), findsNothing);
 
-    final segments = tester.getTopLeft(find.byKey(const ValueKey('recordings.segments')));
-    final datePick = tester.getTopLeft(find.byKey(const ValueKey('recordings.datePick')));
+    await tester.tap(find.byKey(const ValueKey('recordings.type.sentry')));
+    await settle(tester);
+    expect(listCalls().last.type, 'sentry');
+    await tester.tap(find.byKey(const ValueKey('recordings.filter.person')));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('recordings.filter.CRITICAL')));
+    await settle(tester);
+    final r = listCalls().last;
+    expect((r.classFilter, r.severityFilter, r.page), ('person', 'CRITICAL', 1));
 
-    expect(segments.dy, closeTo(datePick.dy, 24),
-        reason: 'they should sit on the same line, not stacked');
-    expect(segments.dx, lessThan(datePick.dx),
-        reason: 'the segments lead, the date navigator follows');
+    await tester.tap(find.byKey(const ValueKey('recordings.filter.reset')));
+    await settle(tester);
+    expect(listCalls().last.classFilter, '');
+    expect(find.byKey(const ValueKey('recordings.filter.reset')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('recordings.type.proximity')));
+    await settle(tester);
+    expect(listCalls().last.type, 'proximity');
+    expect(find.byKey(const ValueKey('recordings.filter.person')), findsNothing);
   });
 
-  testWidgets('shows an error state with a retry action', (tester) async {
-    rpc.stubError('RecordingsService', 'ListRecordings', const ConnectError('unavailable', 'no daemon'));
-    stubStats();
+  testWidgets('a day, its arrows over the days with clips, and every day again', (tester) async {
+    page([_entry('a.mp4')]);
     await pumpScreen(tester);
+    expect(find.byKey(const ValueKey('recordings.day.previous')), findsNothing, reason: 'every day by default');
 
-    expect(find.byKey(const ValueKey('recordings.error')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('recordings.day.today')));
+    await settle(tester);
+    expect(listCalls().last.date, '2026-05-23');
+    expect(find.text('May 23, 2026'), findsOneWidget);
+    expect(tester.widget<IconButton>(find.byKey(const ValueKey('recordings.day.next'))).onPressed, isNull, reason: 'never past today');
+
+    await tester.tap(find.byKey(const ValueKey('recordings.day.previous')));
+    await settle(tester);
+    expect(listCalls().last.date, '2026-05-20', reason: 'skips the days without clips');
+
+    await tester.tap(find.byKey(const ValueKey('recordings.day.yesterday')));
+    await settle(tester);
+    expect(listCalls().last.date, '2026-05-22');
+
+    await tester.tap(find.byKey(const ValueKey('recordings.day.all')));
+    await settle(tester);
+    expect(listCalls().last.date, '');
+    expect(find.byKey(const ValueKey('recordings.day.label')), findsNothing);
   });
 
-  testWidgets('shows an empty state with today\'s default filter (Dashcam, narrowed to today)', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': <dynamic>[]});
-    stubStats();
+  testWidgets('select, select all, and delete them together', (tester) async {
+    page([_entry('a.mp4'), _entry('b.mp4')]);
     await pumpScreen(tester);
 
+    await tester.tap(find.byKey(const ValueKey('recordings.select')));
+    await settle(tester);
+    expect(find.text('0 selected'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('recordings.select.delete'))).onPressed, isNull);
+    await tester.tap(find.byKey(const ValueKey('recordings.row.a.mp4')));
+    await settle(tester);
+    expect(find.text('1 selected'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('recordings.select.all')));
+    await settle(tester);
+    expect(find.text('2 selected'), findsOneWidget);
+    expect(find.text('Deselect all'), findsOneWidget);
+
+    rpc.stubJson('RecordingsService', 'BatchDelete', {'deleted': 2, 'failed': 0});
+    await tester.tap(find.byKey(const ValueKey('recordings.select.delete')));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('recordings.confirmBatchDelete')));
+    await settle(tester);
+    expect((rpc.calls.lastWhere((c) => c.method == 'BatchDelete').request as BatchDeleteRequest).filenames, ['a.mp4', 'b.mp4']);
+    expect(find.text('2 recordings deleted'), findsOneWidget);
     expect(find.byKey(const ValueKey('recordings.empty')), findsOneWidget);
   });
 
-  testWidgets('the empty state text is source/type specific', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': <dynamic>[]});
-    stubStats();
+  testWidgets('a partly failed batch delete says so; cancel leaves select mode', (tester) async {
+    page([_entry('a.mp4'), _entry('b.mp4')]);
     await pumpScreen(tester);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.chip.typeNormal')));
+    await tester.longPress(find.byKey(const ValueKey('recordings.row.a.mp4')));
     await settle(tester);
-    expect(find.text('No normal recordings'), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.chip.typeNormal')));
-    await tester.tap(find.byKey(const ValueKey('recordings.chip.typeProximity')));
+    expect(find.text('1 selected'), findsOneWidget, reason: 'a long press starts selecting with that clip');
+    await tester.tap(find.byKey(const ValueKey('recordings.check.b.mp4')));
     await settle(tester);
-    expect(find.text('No proximity events'), findsOneWidget);
 
-    controller.setSource(RecordingSource.surveillance);
+    rpc.stubJson('RecordingsService', 'BatchDelete', {'deleted': 1, 'failed': 1});
+    await tester.tap(find.byKey(const ValueKey('recordings.select.delete')));
     await settle(tester);
-    expect(find.text('No sentry events'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('recordings.confirmBatchDelete')));
+    await settle(tester);
+    expect(find.byType(SnackBar), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('recordings.select')));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('recordings.select.cancel')));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.select')), findsOneWidget);
   });
 
-  testWidgets('renders a grid card for each visible recording, grouped under a section header', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(filename: 'cam_20260523_083000.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-      ],
-    });
-    stubStats(total: 1, recordings: 1);
+  testWidgets('one clip deleted from its row, after confirming', (tester) async {
+    page([_entry('a.mp4'), _entry('b.mp4')]);
     await pumpScreen(tester);
-
-    expect(find.byKey(const ValueKey('recordings.grid')), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.card.cam_20260523_083000.mp4')), findsOneWidget);
-    expect(find.text('12:00:00 PM'), findsOneWidget);
-  });
-
-  testWidgets('switching to Surveillance shows sentry clips and hides normal ones', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(filename: 'cam_20260523_083000.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-        _entry(filename: 'event_20260523_090000.mp4', type: 'RECORDING_TYPE_SENTRY', timestampMs: now),
-      ],
-    });
-    stubStats(total: 2, recordings: 1, surveillance: 1);
-    await pumpScreen(tester);
-    expect(find.byKey(const ValueKey('recordings.card.cam_20260523_083000.mp4')), findsOneWidget);
-
-    await tester.tap(find.textContaining('Surveillance').first);
-    await settle(tester);
-
-    expect(find.byKey(const ValueKey('recordings.card.event_20260523_090000.mp4')), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.card.cam_20260523_083000.mp4')), findsNothing);
-  });
-
-  testWidgets('type chip narrows the Dashcam grid to Normal clips only', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(filename: 'cam_20260523_083000.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-        _entry(filename: 'proximity_20260523_090000.mp4', type: 'RECORDING_TYPE_PROXIMITY', timestampMs: now),
-      ],
-    });
-    stubStats(total: 2, recordings: 1, proximity: 1);
-    await pumpScreen(tester);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.chip.typeNormal')));
-    await settle(tester);
-
-    expect(find.byKey(const ValueKey('recordings.card.cam_20260523_083000.mp4')), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.card.proximity_20260523_090000.mp4')), findsNothing);
-  });
-
-  testWidgets('type chip narrows the Dashcam grid to Proximity clips only', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(filename: 'cam_20260523_083000.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-        _entry(filename: 'proximity_20260523_090000.mp4', type: 'RECORDING_TYPE_PROXIMITY', timestampMs: now),
-      ],
-    });
-    stubStats(total: 2, recordings: 1, proximity: 1);
-    await pumpScreen(tester);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.chip.typeProximity')));
-    await settle(tester);
-
-    expect(find.byKey(const ValueKey('recordings.card.proximity_20260523_090000.mp4')), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.card.cam_20260523_083000.mp4')), findsNothing);
-    expect(find.byKey(const ValueKey('recordings.resetChips')), findsOneWidget);
-  });
-
-  testWidgets('the reset chip button clears the active type filter', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(filename: 'cam_20260523_083000.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-        _entry(filename: 'proximity_20260523_090000.mp4', type: 'RECORDING_TYPE_PROXIMITY', timestampMs: now),
-      ],
-    });
-    stubStats(total: 2, recordings: 1, proximity: 1);
-    await pumpScreen(tester);
-    await tester.tap(find.byKey(const ValueKey('recordings.chip.typeProximity')));
-    await settle(tester);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.resetChips')));
-    await settle(tester);
-
-    expect(find.byKey(const ValueKey('recordings.card.cam_20260523_083000.mp4')), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.card.proximity_20260523_090000.mp4')), findsOneWidget);
-  });
-
-  testWidgets('the surveillance filter sheet toggles an actor chip and narrows the grid', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(
-          filename: 'event_a.mp4',
-          type: 'RECORDING_TYPE_SENTRY',
-          timestampMs: now,
-          detectedClasses: ['person'],
-          severity: 'ALERT',
-        ),
-        _entry(
-          filename: 'event_b.mp4',
-          type: 'RECORDING_TYPE_SENTRY',
-          timestampMs: now,
-          detectedClasses: ['vehicle'],
-          severity: 'ALERT',
-        ),
-      ],
-    });
-    stubStats(total: 2, surveillance: 2);
-    await pumpScreen(tester);
-    await tester.tap(find.textContaining('Surveillance').first);
-    await settle(tester);
-    expect(find.byKey(const ValueKey('recordings.card.event_a.mp4')), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.card.event_b.mp4')), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.openFilterSheet')));
-    // The modal bottom sheet slides in over a real animation duration --
-    // plain pump()s (no elapsed time) leave it mid-transition, positioned
-    // below its resting spot, so taps on it land past the viewport bounds.
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('recordings.sheet.actor.person')));
-    await settle(tester);
-    await tester.tap(find.byKey(const ValueKey('recordings.sheet.apply')));
-    await settle(tester);
-
-    expect(find.byKey(const ValueKey('recordings.card.event_a.mp4')), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.card.event_b.mp4')), findsNothing);
-  });
-
-  testWidgets('every active-filter chip kind renders and can be removed', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(
-          filename: 'event_all.mp4',
-          type: 'RECORDING_TYPE_SENTRY',
-          timestampMs: now,
-          detectedClasses: ['person', 'vehicle', 'bike', 'animal'],
-          severity: 'CRITICAL',
-        ),
-      ],
-    });
-    stubStats(total: 1, surveillance: 1);
-    await pumpScreen(tester);
-    await tester.tap(find.textContaining('Surveillance').first);
-    await settle(tester);
-    controller
-      ..toggleActorClass('person')
-      ..toggleActorClass('vehicle')
-      ..toggleActorClass('bike')
-      ..toggleActorClass('animal')
-      ..toggleSeverity('ALERT')
-      ..toggleSeverity('CRITICAL');
-    await settle(tester);
-
-    for (final id in ['person', 'vehicle', 'bike', 'animal', 'severity-alert', 'severity-critical']) {
-      expect(find.byKey(ValueKey('recordings.activeChip.$id')), findsOneWidget);
-    }
-
-    await tester.tap(find.descendant(
-      of: find.byKey(const ValueKey('recordings.activeChip.vehicle')),
-      matching: find.byType(Icon),
-    ));
-    await settle(tester);
-    expect(controller.filter.actorClasses, isNot(contains('vehicle')));
-  });
-
-  testWidgets('an inline active-filter chip removes that filter when deleted', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(
-          filename: 'event_a.mp4',
-          type: 'RECORDING_TYPE_SENTRY',
-          timestampMs: now,
-          detectedClasses: ['person'],
-        ),
-      ],
-    });
-    stubStats(total: 1, surveillance: 1);
-    await pumpScreen(tester);
-    await tester.tap(find.textContaining('Surveillance').first);
-    await settle(tester);
-    controller.toggleActorClass('person');
-    await settle(tester);
-    expect(find.byKey(const ValueKey('recordings.activeChip.person')), findsOneWidget);
-
-    await tester.tap(find.descendant(
-      of: find.byKey(const ValueKey('recordings.activeChip.person')),
-      matching: find.byType(Icon),
-    ));
-    await settle(tester);
-
-    expect(controller.filter.actorClasses, isEmpty);
-  });
-
-  testWidgets('the sheet\'s Any chips clear their own row, and severity chips toggle', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(
-          filename: 'event_a.mp4',
-          type: 'RECORDING_TYPE_SENTRY',
-          timestampMs: now,
-          detectedClasses: ['person'],
-          severity: 'CRITICAL',
-        ),
-      ],
-    });
-    stubStats(total: 1, surveillance: 1);
-    await pumpScreen(tester);
-    await tester.tap(find.textContaining('Surveillance').first);
-    await settle(tester);
-    controller.toggleActorClass('person');
-    await settle(tester);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.openFilterSheet')));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('recordings.sheet.sev.CRITICAL')));
-    await settle(tester);
-    expect(controller.filter.severities, {'CRITICAL'});
-
-    await tester.tap(find.byKey(const ValueKey('recordings.sheet.actorAny')));
-    await settle(tester);
-    expect(controller.filter.actorClasses, isEmpty);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.sheet.sevAny')));
-    await settle(tester);
-    expect(controller.filter.severities, isEmpty);
-  });
-
-  testWidgets('tapping the date field opens a date picker that narrows to the chosen day', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': <dynamic>[]});
-    stubStats();
-    await pumpScreen(tester);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.datePick')));
-    await tester.pumpAndSettle();
-    // Land on a definitely-in-range day cell inside the calendar grid.
-    await tester.tap(find.text('10').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('OK'));
-    await tester.pumpAndSettle();
-
-    expect(controller.filter.dateNarrowed, isTrue);
-  });
-
-  testWidgets('the date field shows "Yesterday" the day before today', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': <dynamic>[]});
-    stubStats();
-    await pumpScreen(tester);
-    controller.goYesterday();
-    await settle(tester);
-
-    expect(find.text('Yesterday'), findsOneWidget);
-  });
-
-  group('date navigation', () {
-    testWidgets('the clear-date button widens to all days', (tester) async {
-      rpc.stubJson('RecordingsService', 'ListRecordings', {
-        'recordings': [
-          _entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-          _entry(filename: 'cam_b.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now - 5 * 86400000),
-        ],
-      });
-      stubStats(total: 2, recordings: 2);
-      await pumpScreen(tester);
-      expect(find.byKey(const ValueKey('recordings.card.cam_b.mp4')), findsNothing);
-
-      await tester.tap(find.byKey(const ValueKey('recordings.clearDate')));
-      await settle(tester);
-
-      expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsOneWidget);
-      expect(find.byKey(const ValueKey('recordings.card.cam_b.mp4')), findsOneWidget);
-    });
-
-    testWidgets('prev/next day buttons shift the selected day', (tester) async {
-      rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': <dynamic>[]});
-      stubStats();
-      await pumpScreen(tester);
-      final todayMs = DateTime(2026, 5, 23).millisecondsSinceEpoch;
-      expect(controller.filter.selectedDayMs, todayMs);
-
-      await tester.tap(find.byKey(const ValueKey('recordings.prevDay')));
-      await settle(tester);
-      expect(controller.filter.selectedDayMs, DateTime(2026, 5, 22).millisecondsSinceEpoch);
-
-      await tester.tap(find.byKey(const ValueKey('recordings.nextDay')));
-      await settle(tester);
-      expect(controller.filter.selectedDayMs, todayMs);
-    });
-  });
-
-  group('multi-select', () {
-    testWidgets('long-pressing a card enters select mode and shows the toolbar', (tester) async {
-      rpc.stubJson('RecordingsService', 'ListRecordings', {
-        'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-      });
-      stubStats(total: 1, recordings: 1);
-      await pumpScreen(tester);
-
-      await tester.longPress(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
-      await settle(tester);
-
-      expect(controller.selectMode, isTrue);
-      expect(find.byKey(const ValueKey('recordings.select.cancel')), findsOneWidget);
-    });
-
-    testWidgets('cancel exits select mode', (tester) async {
-      rpc.stubJson('RecordingsService', 'ListRecordings', {
-        'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-      });
-      stubStats(total: 1, recordings: 1);
-      await pumpScreen(tester);
-      await tester.longPress(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
-      await settle(tester);
-
-      await tester.tap(find.byKey(const ValueKey('recordings.select.cancel')));
-      await settle(tester);
-
-      expect(controller.selectMode, isFalse);
-      expect(find.byKey(const ValueKey('recordings.select.cancel')), findsNothing);
-    });
-
-    testWidgets('select all then batch delete removes every selected card', (tester) async {
-      rpc.stubJson('RecordingsService', 'ListRecordings', {
-        'recordings': [
-          _entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-          _entry(filename: 'cam_b.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-        ],
-      });
-      stubStats(total: 2, recordings: 2);
-      await pumpScreen(tester);
-      await tester.longPress(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
-      await settle(tester);
-
-      await tester.tap(find.byKey(const ValueKey('recordings.select.all')));
-      await settle(tester);
-      expect(controller.selected, {'cam_a.mp4', 'cam_b.mp4'});
-
-      rpc.stubJson('RecordingsService', 'DeleteRecording', {'success': true});
-      await tester.tap(find.byKey(const ValueKey('recordings.select.delete')));
-      // The confirmation AlertDialog slides/fades in over a real animation
-      // duration -- same reason as the filter sheet's own pumpAndSettle().
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('recordings.confirmBatchDelete')));
-      await settle(tester);
-
-      expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsNothing);
-      expect(find.byKey(const ValueKey('recordings.card.cam_b.mp4')), findsNothing);
-      expect(controller.selectMode, isFalse);
-    });
-
-    testWidgets('a batch delete failure shows the partial-failure toast', (tester) async {
-      rpc.stubJson('RecordingsService', 'ListRecordings', {
-        'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-      });
-      stubStats(total: 1, recordings: 1);
-      await pumpScreen(tester);
-      // A long-press already selects the pressed item -- with only one item
-      // in the list, an additional "select all" tap would toggle it back
-      // off (selectAllVisible deselects when everything is already
-      // selected), so it is deliberately not tapped here.
-      await tester.longPress(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
-      await settle(tester);
-      expect(controller.selected, {'cam_a.mp4'});
-
-      rpc.stubJson('RecordingsService', 'DeleteRecording', {'success': false, 'error': 'locked'});
-      await tester.tap(find.byKey(const ValueKey('recordings.select.delete')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('recordings.confirmBatchDelete')));
-      await settle(tester);
-
-      expect(find.textContaining('failed'), findsOneWidget);
-      expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsOneWidget);
-    });
-
-    testWidgets('tapping a card\'s own checkbox toggles its selection', (tester) async {
-      rpc.stubJson('RecordingsService', 'ListRecordings', {
-        'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-      });
-      stubStats(total: 1, recordings: 1);
-      await pumpScreen(tester);
-      await tester.longPress(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
-      await settle(tester);
-      expect(controller.selected, {'cam_a.mp4'});
-
-      await tester.tap(find.byType(Checkbox));
-      await settle(tester);
-
-      expect(controller.selected, isEmpty);
-    });
-  });
-
-  testWidgets('deleting a single card via its delete button removes it after confirmation', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-    });
-    stubStats(total: 1, recordings: 1);
-    await pumpScreen(tester);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.delete.cam_a.mp4')));
-    await tester.pumpAndSettle();
     rpc.stubJson('RecordingsService', 'DeleteRecording', {'success': true});
+    await tester.tap(find.byKey(const ValueKey('recordings.delete.a.mp4')));
+    await settle(tester);
     await tester.tap(find.byKey(const ValueKey('recordings.confirmDelete')));
     await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.row.a.mp4')), findsNothing);
+    expect(find.byKey(const ValueKey('recordings.row.b.mp4')), findsOneWidget);
 
-    expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsNothing);
+    rpc.stubJson('RecordingsService', 'DeleteRecording', {'success': false, 'error': 'locked'});
+    await tester.tap(find.byKey(const ValueKey('recordings.delete.b.mp4')));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('recordings.confirmDelete')));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.row.b.mp4')), findsOneWidget);
   });
 
-  testWidgets('tapping a card plays it in the detail pane, keeping the list on screen', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-    });
-    stubStats(total: 1, recordings: 1);
-    // pumpScreen is 1400 wide, i.e. above the master-detail breakpoint.
+  testWidgets('the next page loads at the end of the list, with a retry when it fails', (tester) async {
+    page([_entry('a.mp4'), _entry('b.mp4'), _entry('c.mp4')], total: 5);
     await pumpScreen(tester);
+    expect(listCalls(), hasLength(2), reason: 'the end of a short list is on screen: page 2 at once');
+    expect(listCalls().last.page, 2);
+    expect(find.byKey(const ValueKey('recordings.more.loading')), findsNothing, reason: 'page 2 held nothing new: the end');
 
-    // Nothing selected yet: native's placeholder pane.
+    rpc.stubError('RecordingsService', 'ListRecordings', const ConnectError('unavailable', 'down'));
+    await controller.reset();
+    page([_entry('a.mp4'), _entry('b.mp4'), _entry('c.mp4')], total: 5);
+    await controller.reset();
+    rpc.stubError('RecordingsService', 'ListRecordings', const ConnectError('unavailable', 'down'));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.more.retry')), findsOneWidget);
+
+    page([_entry('d.mp4'), _entry('e.mp4')], total: 5);
+    await tester.tap(find.byKey(const ValueKey('recordings.more.retry')));
+    await settle(tester);
+    expect(listCalls().last.page, 2);
+    expect(find.byKey(const ValueKey('recordings.row.e.mp4')), findsOneWidget);
+    expect(find.byKey(const ValueKey('recordings.more.loading')), findsNothing, reason: 'all 5 here');
+  });
+
+  testWidgets('empty states say what is empty; a failed first page offers a retry', (tester) async {
+    page([]);
+    await pumpScreen(tester);
+    expect(find.text('No recordings'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('recordings.type.sentry')));
+    await settle(tester);
+    expect(find.text('No sentry events'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('recordings.type.normal')));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.empty')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('recordings.type.proximity')));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.empty')), findsOneWidget);
+    expect(find.byKey(const ValueKey('recordings.select')), findsNothing, reason: 'nothing to select');
+
+    rpc.stubError('RecordingsService', 'ListRecordings', const ConnectError('unavailable', 'down'));
+    await tester.tap(find.byKey(const ValueKey('recordings.type.')));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.error')), findsOneWidget);
+    page([_entry('a.mp4')]);
+    await tester.tap(find.text('Retry'));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.row.a.mp4')), findsOneWidget);
+  });
+
+  testWidgets('tapping a row plays it in the pane, keeping the list; closing restores the placeholder', (tester) async {
+    page([_entry('cam_a.mp4', timestampMs: now), _entry('cam_b.mp4', timestampMs: now)]);
+    await pumpScreen(tester);
     expect(find.byKey(const ValueKey('recordings.detail.empty')), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
-    await settle(tester);
-
-    expect(find.byType(RecordingsPlayerScreen), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.detail.empty')), findsNothing);
-    // The point of master-detail: the list did NOT go away. A pushed
-    // full-screen player would have covered the header.
-    expect(find.text('Recordings'), findsWidgets);
-    expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsOneWidget);
-  });
-
-  testWidgets('below the breakpoint tapping a card pushes the full-screen player instead', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-    });
-    stubStats(total: 1, recordings: 1);
-    tester.view.physicalSize = const Size(800, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    await tester.pumpWidget(wrap(buildScreen()));
-    await settle(tester);
-
-    // No pane exists at this width.
-    expect(find.byKey(const ValueKey('recordings.detail.empty')), findsNothing);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
-    // pumpAndSettle, not the local settle helper: this path pushes a route, and
-    // the transition needs to finish before the old screen is really gone.
-    await tester.pumpAndSettle();
-
-    // The pushed route covers the list entirely.
-    expect(find.byType(RecordingsPlayerScreen), findsOneWidget);
-    expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsNothing);
-  });
-
-  testWidgets('closing the detail pane returns it to the placeholder', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-    });
-    stubStats(total: 1, recordings: 1);
-    await pumpScreen(tester);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
+    await tester.tap(find.byKey(const ValueKey('recordings.row.cam_a.mp4')));
     await settle(tester);
     expect(find.byType(RecordingsPlayerScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('recordings.row.cam_a.mp4')), findsOneWidget, reason: 'the list stays');
+    ListTile tile(String name) => tester.widget<ListTile>(find.descendant(of: find.byKey(ValueKey('recordings.row.$name')), matching: find.byType(ListTile)));
+    expect(tile('cam_a.mp4').selected, isTrue);
+    expect(tile('cam_b.mp4').selected, isFalse);
 
-    // In the pane the player's back control clears the selection rather than
-    // popping a route — there is no route of its own to pop here.
+    await tester.tap(find.byKey(const ValueKey('recordings.row.cam_b.mp4')));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('recordings.detail.cam_b.mp4')), findsOneWidget);
+
     await tester.tap(find.byKey(const ValueKey('recordings.player.back')));
     await settle(tester);
-
     expect(find.byType(RecordingsPlayerScreen), findsNothing);
     expect(find.byKey(const ValueKey('recordings.detail.empty')), findsOneWidget);
-    // The list is untouched by closing the pane.
-    expect(find.byKey(const ValueKey('recordings.card.cam_a.mp4')), findsOneWidget);
   });
 
-  testWidgets('the card being played is outlined in the list', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-        _entry(filename: 'cam_b.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now),
-      ],
-    });
-    stubStats(total: 2, recordings: 2);
-    await pumpScreen(tester);
+  testWidgets('below the breakpoint tapping a row pushes the full-screen player', (tester) async {
+    page([_entry('cam_a.mp4', timestampMs: now)]);
+    await pumpScreen(tester, size: const Size(800, 2200));
+    expect(find.byKey(const ValueKey('recordings.detail.empty')), findsNothing);
 
-    await tester.tap(find.byKey(const ValueKey('recordings.card.cam_a.mp4')));
-    await settle(tester);
-
-    // The ValueKey is on the _RecordingCard widget; the Card it builds is a
-    // DESCENDANT of it, not an ancestor.
-    Card cardFor(String name) => tester.widget<Card>(
-          find.descendant(of: find.byKey(ValueKey('recordings.card.$name')), matching: find.byType(Card)).first,
-        );
-    // The selected card gets an outline; the other keeps the default shape, so
-    // the list and the pane stay visually connected.
-    expect(cardFor('cam_a.mp4').shape, isA<RoundedRectangleBorder>());
-    expect(cardFor('cam_b.mp4').shape, isNull);
-  });
-
-  testWidgets('section headers cover every time-of-day bucket', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(
-          filename: 'cam_evening.mp4',
-          type: 'RECORDING_TYPE_NORMAL',
-          timestampMs: DateTime(2026, 5, 23, 18).millisecondsSinceEpoch,
-        ),
-        _entry(
-          filename: 'cam_night.mp4',
-          type: 'RECORDING_TYPE_NORMAL',
-          timestampMs: DateTime(2026, 5, 23, 2).millisecondsSinceEpoch,
-        ),
-      ],
-    });
-    stubStats(total: 2, recordings: 2);
-    await pumpScreen(tester);
-
-    expect(find.text('EVENING'), findsOneWidget);
-    expect(find.text('NIGHT'), findsOneWidget);
-  });
-
-  testWidgets('every proximity band renders as label text on the card', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [
-        _entry(
-          filename: 'proximity_close.mp4',
-          type: 'RECORDING_TYPE_PROXIMITY',
-          timestampMs: now,
-          proximity: 'CLOSE',
-        ),
-        _entry(
-          filename: 'proximity_mid.mp4',
-          type: 'RECORDING_TYPE_PROXIMITY',
-          timestampMs: now,
-          proximity: 'MID',
-        ),
-        _entry(
-          filename: 'proximity_far.mp4',
-          type: 'RECORDING_TYPE_PROXIMITY',
-          timestampMs: now,
-          proximity: 'FAR',
-        ),
-      ],
-    });
-    stubStats(total: 3, proximity: 3);
-    await pumpScreen(tester);
-
-    expect(find.textContaining('close'), findsOneWidget);
-    expect(find.textContaining('mid'), findsOneWidget);
-    expect(find.textContaining('far'), findsOneWidget);
-  });
-
-  testWidgets('the settings button invokes onOpenSettings', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': <dynamic>[]});
-    stubStats();
-    var tapped = false;
-    await pumpScreen(tester, onOpenSettings: () => tapped = true);
-
-    await tester.tap(find.byKey(const ValueKey('recordings.settings')));
-    await settle(tester);
-
-    expect(tapped, isTrue);
-  });
-
-  testWidgets('renders in dark theme without crashing', (tester) async {
-    rpc.stubJson('RecordingsService', 'ListRecordings', {
-      'recordings': [_entry(filename: 'cam_a.mp4', type: 'RECORDING_TYPE_NORMAL', timestampMs: now)],
-    });
-    stubStats(total: 1, recordings: 1);
-    tester.view.physicalSize = const Size(1400, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    await tester.pumpWidget(MaterialApp(
-      theme: BladeWatchTheme.dark(),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: buildScreen(),
-    ));
-    await settle(tester);
-
-    expect(tester.takeException(), isNull);
+    await tester.tap(find.byKey(const ValueKey('recordings.row.cam_a.mp4')));
+    await tester.pumpAndSettle();
+    expect(find.byType(RecordingsPlayerScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('recordings.row.cam_a.mp4')), findsNothing);
   });
 }

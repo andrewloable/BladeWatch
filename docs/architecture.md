@@ -6,7 +6,7 @@ that share one UID**:
 | APK | Package | Role |
 |---|---|---|
 | Service host | `net.bladewatch.app` | Daemons, receivers, foreground services, BYD integration. **No user-visible UI and no launcher entry.** |
-| In-car UI | `net.bladewatch.flutter` | The Flutter app the driver opens. The only launcher icon. |
+| In-car UI | `net.bladewatch.incarapp` | The Flutter app the driver opens. The only launcher icon. |
 
 Both are signed with the same key and declare `android:sharedUserId="net.bladewatch.app"`,
 so they run as one UID (10073 on the test head unit). That is load-bearing, not a
@@ -21,7 +21,7 @@ surveillance, networking, telemetry, and web-server work.
 ## High-Level Shape
 
 ```text
-In-car UI APK (net.bladewatch.flutter)
+In-car UI APK (net.bladewatch.incarapp)
   -> Flutter/Dart: nav rail, screens, ChangeNotifier controllers
   -> Dart ConnectRPC client -> 127.0.0.1:8080 (JWT)
   -> MethodChannels -> Kotlin in the SAME APK -> loopback IPC 19876
@@ -111,7 +111,7 @@ The ordinary Android app process hosts:
 - The status overlay (`StatusOverlayService`) and `SetupGuideDialog` — the only
   two surfaces this APK still draws.
 
-### In-Car UI App Process (`net.bladewatch.flutter`)
+### In-Car UI App Process (`net.bladewatch.incarapp`)
 
 - The Flutter engine and all screens, in Dart.
 - A small Kotlin layer in the same APK for the privileged operations a

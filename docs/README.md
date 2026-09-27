@@ -3,7 +3,7 @@
 This directory is the project reference for the BladeWatch Android app, its native daemons, embedded web UI, BYD integrations, tunnels, APIs, and operational workflows.
 
 BladeWatch is an Android application for BYD DiLink vehicles, shipped as **two
-APKs that share one UID**: `net.bladewatch.flutter` (the Flutter in-car UI, the
+APKs that share one UID**: `net.bladewatch.incarapp` (the Flutter in-car UI, the
 only launcher icon) and `net.bladewatch.app` (the UI-less service host that runs
 the foreground services, receivers and privileged shell-launched daemons). It
 coordinates the in-car UI, camera and surveillance pipelines, local and remote

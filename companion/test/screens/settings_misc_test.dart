@@ -8,6 +8,7 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/storage.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -44,8 +45,9 @@ void main() {
     late List<String?> languages;
     late int unpaired;
 
-    Future<TestSession> pump(WidgetTester tester, {bool sd = true}) async {
+    Future<TestSession> pump(WidgetTester tester, {bool sd = true, void Function(TestSession s)? more}) async {
       final s = TestSession();
+      more?.call(s);
       stubStatus(s);
       stubStorage(s, sd: sd);
       s.rpc.stubJson('SettingsService', 'GetQuality', {
@@ -75,6 +77,69 @@ void main() {
       );
       return s;
     }
+
+    // BladeWatch-rdtj.67: what the in-car Settings has, here too.
+    testWidgets('trips and costs from Settings; overlay fields; library sync', (tester) async {
+      final s = await pump(tester, more: (s) {
+        s.rpc.stubJson('SettingsService', 'GetTelemetryOverlayFields', {
+          'success': true,
+          'availableFields': ['SPEED', 'GEAR', 'NEW_THING'],
+          'selections': {
+            'continuous': {'fields': ['SPEED']},
+          },
+        });
+        s.rpc.stubJson('SettingsService', 'SetTelemetryOverlayFields', {'success': true});
+        s.rpc.stubJson('TripsService', 'GetConfig', {'config': {'enabled': true, 'electricityRate': 11.5, 'currency': 'PHP', 'distanceUnit': 'km'}});
+        s.rpc.stubJson('TripsService', 'GetStorage', {'storage': {'storageType': 'INTERNAL', 'limitMb': '500'}});
+        s.rpc.stubJson('TripsService', 'SetConfig', {'success': true});
+        s.rpc.stubJson('TripsService', 'SetStorage', {'success': true});
+      });
+      bool on(String f) => tester.widget<FilterChip>(find.byKey(ValueKey('settings.overlayField.$f'))).selected;
+      expect((on('SPEED'), on('GEAR')), (true, false));
+      expect(find.text(t('companion.overlay_field_SPEED')), findsOneWidget);
+      expect(find.text('NEW_THING'), findsOneWidget, reason: 'a field this app does not know: its name');
+      await tester.tap(find.byKey(const ValueKey('settings.overlayField.GEAR')));
+      await tester.pumpAndSettle();
+      final set = s.rpc.calls.lastWhere((c) => c.method == 'SetTelemetryOverlayFields').request as SetTelemetryOverlayFieldsRequest;
+      expect(set.type, 'continuous');
+      expect(set.fields.toSet(), {'SPEED', 'GEAR'});
+
+      s.rpc.stubJson('RecordingsService', 'SyncCatalog', {'success': true, 'added': 2, 'removed': 1});
+      await tester.tap(find.byKey(const ValueKey('settings.syncLibrary')));
+      await tester.pumpAndSettle();
+      expect(find.text(t('companion.sync_result', {'added': 2, 'removed': 1})), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('settings.trips')));
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: find.byType(AppBar), matching: find.text(t('companion.trips_costs'))), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('trips.unit.mi')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const ValueKey('trips.apply')));
+      await tester.tap(find.byKey(const ValueKey('trips.apply')));
+      await tester.pumpAndSettle();
+      expect((s.rpc.calls.lastWhere((c) => c.method == 'SetConfig').request as SetConfigRequest).distanceUnit, 'mi');
+
+      await tester.tap(find.byKey(const ValueKey('trips.storage.SD_CARD')));
+      await tester.pumpAndSettle();
+      expect(find.text(t('companion.trip_storage_confirm', {'place': t('trips.sd_card')})), findsOneWidget);
+      await tester.tap(find.text(t('common.cancel')));
+      await tester.pumpAndSettle();
+      Iterable<SetStorageRequest> moves() =>
+          s.rpc.calls.where((c) => c.method == 'SetStorage').map((c) => c.request as SetStorageRequest).where((r) => r.storageType.isNotEmpty);
+      expect(moves(), isEmpty, reason: 'cancel moves nothing (Apply sends only the limit)');
+      await tester.tap(find.byKey(const ValueKey('trips.storage.SD_CARD')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('trips.storage.confirm')));
+      await tester.pumpAndSettle();
+      expect(moves().single.storageType, 'SD_CARD');
+      await unmount(tester);
+    });
+
+    testWidgets('a car that does not report overlay fields: no overlay section', (tester) async {
+      await pump(tester);
+      expect(find.text(t('recording.telemetry_overlay_title')), findsNothing);
+      await unmount(tester);
+    });
 
     Future<void> pick(WidgetTester tester, String key, String item) async {
       await tester.tap(find.byKey(ValueKey(key)));

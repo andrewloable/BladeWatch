@@ -12,7 +12,7 @@ It ships as **two APKs that must both be installed**:
 
 | APK | Package | Role |
 |---|---|---|
-| In-car UI | `net.bladewatch.flutter` | Everything you see and tap. The only launcher icon. |
+| In-car UI | `net.bladewatch.incarapp` | Everything you see and tap. The only launcher icon. |
 | Service host | `net.bladewatch.app` | Daemons, recording, surveillance, BYD integration. No UI, no launcher icon. |
 
 They share one Android UID, which is what lets the UI talk to the daemons over loopback IPC. That only works when **both are signed with the same key**, so install them as a pair and never mix builds from different sources.
@@ -62,7 +62,7 @@ says so.
 Facts:
 - BladeWatch is TWO APKs and both must be installed: the service host (package
   net.bladewatch.app, file bladewatch-service-host-*.apk) and the in-car UI (package
-  net.bladewatch.flutter, file bladewatch-ui-*.apk). They share one Android UID, so both MUST
+  net.bladewatch.incarapp, file bladewatch-ui-*.apk). They share one Android UID, so both MUST
   be signed with the same key.
 - The head unit is reached with ADB over Wi-Fi: adb connect <car-ip>:5555. It is arm64-v8a,
   Android 10 (API 29), reports manufacturer "BYD AUTO", and is not rooted (it does not need
@@ -112,16 +112,16 @@ Facts:
 4. Install. adb install -r the service host APK first, then the UI APK. If an install is
    rejected with INSTALL_FAILED_UPDATE_INCOMPATIBLE, INSTALL_FAILED_SHARED_USER_INCOMPATIBLE
    or INSTALL_FAILED_UID_CHANGED, an older BladeWatch signed with a different key is on the
-   car: tell me, and only with my OK run adb uninstall net.bladewatch.flutter and
+   car: tell me, and only with my OK run adb uninstall net.bladewatch.incarapp and
    adb uninstall net.bladewatch.app, ask me to hard-reboot the head unit (hold Volume Down
    for 5 seconds) so its old background daemons die, reconnect, and install again. Never
    uninstall anything without asking, and never touch /data/local/tmp/pear (it holds the
    car's permanent remote-access identity; deleting it unpairs every phone).
 
 5. Verify. adb shell 'dumpsys package net.bladewatch.app | grep userId' and the same for
-   net.bladewatch.flutter must print the same userId; if they differ the APKs were signed with
+   net.bladewatch.incarapp must print the same userId; if they differ the APKs were signed with
    different keys, go back to step 2. Then launch the UI:
-   adb shell am start -n net.bladewatch.flutter/net.bladewatch.bladewatch_ui.MainActivity
+   adb shell am start -n net.bladewatch.incarapp/net.bladewatch.bladewatch_ui.MainActivity
 
 6. Tell me what to do on the car's screen, in this order:
    - Accept the "Allow USB debugging?" prompt that appears on first launch. The app uses its
@@ -187,7 +187,7 @@ Over a mobile connection, live video is smoothest at Medium quality or lower.
 
 BladeWatch is a hybrid project built from three codebases:
 
-- **`flutter_ui/`** — the in-car UI (Flutter/Dart), built as `net.bladewatch.flutter`.
+- **`flutter_ui/`** — the in-car UI (Flutter/Dart), built as `net.bladewatch.incarapp`.
 - **`app/`** — the service host (Android/Kotlin/Java + C++), built as `net.bladewatch.app`. Owns the daemons, the camera/GPU pipeline and the BYD integration.
 - **`web/`** — the Angular SPA the on-device daemon serves to browsers on the car's network (LAN access). Bundled into the service host APK.
 
@@ -213,7 +213,7 @@ The two APKs build independently, from different toolchains:
 # Output: app/build/outputs/apk/debug/bladewatch-<branch>-arm64-v8a-debug.apk
 #         (the git branch is embedded so builds stay distinguishable)
 
-# In-car UI (net.bladewatch.flutter)
+# In-car UI (net.bladewatch.incarapp)
 cd flutter_ui && flutter build apk --target-platform android-arm64 --debug
 # Output: flutter_ui/build/app/outputs/flutter-apk/app-debug.apk
 ```
@@ -222,7 +222,7 @@ Both packages must report the **same UID** or the UI cannot reach the daemons:
 
 ```bash
 adb shell 'dumpsys package net.bladewatch.app | grep userId'
-adb shell 'dumpsys package net.bladewatch.flutter | grep userId'
+adb shell 'dumpsys package net.bladewatch.incarapp | grep userId'
 ```
 
 Release builds without a keystore come out **unsigned** by design (see Quick Start).

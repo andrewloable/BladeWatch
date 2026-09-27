@@ -1888,6 +1888,18 @@
     "perf_process": "Tiến trình BladeWatch",
     "perf_threads": "Luồng",
     "perf_fds": "Tệp đang mở",
-    "perf_gc": "Thu gom rác"
+    "perf_gc": "Thu gom rác",
+    "overlay_field_SPEED": "Tốc độ",
+    "overlay_field_GEAR": "Số (hộp số)",
+    "overlay_field_TURN_SIGNAL_LEFT": "Đèn báo rẽ trái",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Đèn báo rẽ phải",
+    "overlay_field_BRAKE_PEDAL": "Bàn đạp phanh",
+    "overlay_field_ACCEL_PEDAL": "Bàn đạp ga",
+    "overlay_field_SEATBELT_DRIVER": "Dây an toàn tài xế",
+    "overlay_field_SEATBELT_PASSENGER": "Dây an toàn hành khách",
+    "overlay_field_TIMESTAMP": "Ngày và giờ",
+    "trips_costs": "Chuyến đi và chi phí",
+    "trip_storage_confirm": "Chuyến đi mới sẽ được lưu vào {place}.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

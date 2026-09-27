@@ -129,7 +129,7 @@ embed them — it is a Flutter app talking to the same daemon over ConnectRPC.
 
 ## In-Car UI (Flutter)
 
-The in-car UI ships as its own APK, `net.bladewatch.flutter`, sharing a UID with
+The in-car UI ships as its own APK, `net.bladewatch.incarapp`, sharing a UID with
 the daemon host. It provides (Material 3 — see
 [UI/UX Design Language](ui-ux-design-language.md)):
 
@@ -393,7 +393,9 @@ for the BladeWatch companion app (phones and desktops). The code works once and 
 five minutes; pairing switches on remote access over Pear, and the same dialog explains and
 offers the opt-in direct connection on the car's Wi-Fi. Paired devices are listed there and
 can be removed one at a time, which cuts off that device immediately without affecting the
-others. Pairing and removing are only possible in the car.
+others. Pairing and removing are only possible in the car. The companion names itself in that
+list with the device's own name -- the computer name on macOS and Windows, the phone's name on
+Android and iOS (iOS 16+ gives only "iPhone") -- and the owner can edit it before pairing.
 
 **The companion app (v1.4.0.0, BladeWatch-rdtj.11).** The phone and desktop app that
 replaces the web UI. It reaches the car directly on its Wi-Fi when both are on one network,
@@ -431,6 +433,11 @@ The web login is replaced by pairing: scan the in-car QR, or paste its text.
   no route to the car, both wait for it to come back (up to 10 minutes) rather than spending
   retries: from mobile data a reconnect measured 5 s to 90+ s. Only failures while the route is
   up count against the five tries.
+- **Short Pear drops are invisible** (BladeWatch-bbvx). When the Pear connection drops and the
+  companion finds the car again within a minute, every request, clip and download that was in
+  flight carries on over the new connection from the byte it reached, with no error and no
+  retry: the car and the companion resume each stream underneath the encrypted session. Longer
+  gaps, or switching to the car's Wi-Fi, fall back to the retries above.
 - **Clips start playing while they download** (BladeWatch-rdtj.31). Over Pear on the car's LAN
   the first moving frame arrives in about 2 s; it used to wait for the whole file (30-50 s). The
   car serves every clip with its index first and cut into small chunks, without changing the

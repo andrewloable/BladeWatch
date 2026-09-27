@@ -1888,6 +1888,18 @@
     "perf_process": "โปรเซสของ BladeWatch",
     "perf_threads": "เธรด",
     "perf_fds": "ไฟล์ที่เปิดอยู่",
-    "perf_gc": "การเก็บกวาดหน่วยความจำ"
+    "perf_gc": "การเก็บกวาดหน่วยความจำ",
+    "overlay_field_SPEED": "ความเร็ว",
+    "overlay_field_GEAR": "เกียร์",
+    "overlay_field_TURN_SIGNAL_LEFT": "ไฟเลี้ยวซ้าย",
+    "overlay_field_TURN_SIGNAL_RIGHT": "ไฟเลี้ยวขวา",
+    "overlay_field_BRAKE_PEDAL": "แป้นเบรก",
+    "overlay_field_ACCEL_PEDAL": "คันเร่ง",
+    "overlay_field_SEATBELT_DRIVER": "เข็มขัดนิรภัยคนขับ",
+    "overlay_field_SEATBELT_PASSENGER": "เข็มขัดนิรภัยผู้โดยสาร",
+    "overlay_field_TIMESTAMP": "วันที่และเวลา",
+    "trips_costs": "การเดินทางและค่าใช้จ่าย",
+    "trip_storage_confirm": "การเดินทางใหม่จะถูกบันทึกไปที่ {place}",
+    "sync_result": "+{added} / −{removed}"
   }
 }

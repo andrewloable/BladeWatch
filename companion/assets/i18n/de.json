@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch-Prozess",
     "perf_threads": "Threads",
     "perf_fds": "Offene Dateien",
-    "perf_gc": "Speicherbereinigungen"
+    "perf_gc": "Speicherbereinigungen",
+    "overlay_field_SPEED": "Geschwindigkeit",
+    "overlay_field_GEAR": "Gang",
+    "overlay_field_TURN_SIGNAL_LEFT": "Blinker links",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Blinker rechts",
+    "overlay_field_BRAKE_PEDAL": "Bremspedal",
+    "overlay_field_ACCEL_PEDAL": "Gaspedal",
+    "overlay_field_SEATBELT_DRIVER": "Sicherheitsgurt Fahrer",
+    "overlay_field_SEATBELT_PASSENGER": "Sicherheitsgurt Beifahrer",
+    "overlay_field_TIMESTAMP": "Datum und Uhrzeit",
+    "trips_costs": "Fahrten & Kosten",
+    "trip_storage_confirm": "Neue Fahrten werden unter {place} gespeichert.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

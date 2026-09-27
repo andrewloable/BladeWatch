@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch 进程",
     "perf_threads": "线程",
     "perf_fds": "打开的文件",
-    "perf_gc": "垃圾回收次数"
+    "perf_gc": "垃圾回收次数",
+    "overlay_field_SPEED": "速度",
+    "overlay_field_GEAR": "挡位",
+    "overlay_field_TURN_SIGNAL_LEFT": "左转向灯",
+    "overlay_field_TURN_SIGNAL_RIGHT": "右转向灯",
+    "overlay_field_BRAKE_PEDAL": "刹车踏板",
+    "overlay_field_ACCEL_PEDAL": "油门踏板",
+    "overlay_field_SEATBELT_DRIVER": "驾驶员安全带",
+    "overlay_field_SEATBELT_PASSENGER": "乘客安全带",
+    "overlay_field_TIMESTAMP": "日期和时间",
+    "trips_costs": "行程与费用",
+    "trip_storage_confirm": "新的行程将保存到{place}。",
+    "sync_result": "+{added} / −{removed}"
   }
 }

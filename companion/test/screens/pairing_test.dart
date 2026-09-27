@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bladewatch_companion/car/car_store.dart';
+import 'package:bladewatch_companion/device_name.dart';
 import 'package:bladewatch_companion/i18n.dart';
 import 'package:bladewatch_companion/screens/pairing/pairing_controller.dart';
 import 'package:bladewatch_companion/screens/pairing/pairing_screen.dart';
@@ -112,6 +113,48 @@ void main() {
         redeem: (u, code, n) async => testCredential,
       );
       expect(await c.pair(qr(), 'x'), isNotNull);
+    });
+  });
+
+  // Owner request 2026-09-27: the car's list shows this device by its own name, not "Mac".
+  group('device name', () {
+    test('the platform\'s name, trimmed; the generic one when it says nothing or fails', () async {
+      expect(await deviceName('Mac', read: () async => "  Andrew's MacBook Pro "), "Andrew's MacBook Pro");
+      expect(await deviceName('Mac', read: () async => '  '), 'Mac');
+      expect(await deviceName('Mac', read: () async => null), 'Mac');
+      expect(await deviceName('Mac', read: () async => throw StateError('no plugin')), 'Mac');
+    });
+
+    Future<void> pumpDetecting(WidgetTester tester, Future<String> Function(String) detect) async {
+      final s = TestSession(phase: TransportPhase.lan);
+      final c = PairingController(openSession: (car) async => s.session, redeem: (u, code, n) async => testCredential);
+      await tester.pumpWidget(MaterialApp(
+        theme: BladeWatchTheme.dark(),
+        home: TrScope(tr: testTr, child: PairingScreen(controller: c, onPaired: (_) {}, detectName: detect)),
+      ));
+    }
+
+    String field(WidgetTester tester) =>
+        tester.widget<TextField>(find.byKey(const ValueKey('pair.name'))).controller!.text;
+
+    testWidgets('the screen pre-fills the detected name', (tester) async {
+      String? askedWith;
+      await pumpDetecting(tester, (generic) async {
+        askedWith = generic;
+        return 'Studio Mac';
+      });
+      await tester.pump();
+      expect(askedWith, isNotEmpty, reason: 'the generic name is the fallback');
+      expect(field(tester), 'Studio Mac');
+    });
+
+    testWidgets('a name typed before detection finishes is kept', (tester) async {
+      final detected = Completer<String>();
+      await pumpDetecting(tester, (_) => detected.future);
+      await tester.enterText(find.byKey(const ValueKey('pair.name')), 'My laptop');
+      detected.complete('Studio Mac');
+      await tester.pump();
+      expect(field(tester), 'My laptop');
     });
   });
 

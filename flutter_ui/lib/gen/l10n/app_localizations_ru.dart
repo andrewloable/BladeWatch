@@ -28,6 +28,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get action_select_all_short => 'Все';
 
   @override
+  String get action_select => 'Выбрать';
+
+  @override
+  String get action_deselect_all => 'Снять выбор';
+
+  @override
   String get action_delete => 'Удалить';
 
   @override
@@ -493,6 +499,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => 'Все дни';
+
+  @override
+  String get recording_lib_type_all => 'Все';
 
   @override
   String get cd_clear_date_filter => 'Показать все дни';

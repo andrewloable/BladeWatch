@@ -28,6 +28,12 @@ class AppLocalizationsNb extends AppLocalizations {
   String get action_select_all_short => 'Alle';
 
   @override
+  String get action_select => 'Velg';
+
+  @override
+  String get action_deselect_all => 'Fjern alle valg';
+
+  @override
   String get action_delete => 'Slett';
 
   @override
@@ -487,6 +493,9 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => 'Alle dager';
+
+  @override
+  String get recording_lib_type_all => 'Alle';
 
   @override
   String get cd_clear_date_filter => 'Vis alle dager';

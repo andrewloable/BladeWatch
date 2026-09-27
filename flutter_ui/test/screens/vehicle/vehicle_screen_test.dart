@@ -232,6 +232,23 @@ void main() {
       expect(find.text('AC On'), findsOneWidget);
     });
 
+    // Owner report 2026-09-27: an off toggle's label was dark on dark and unreadable on the head
+    // unit -- FilledButton kept onPrimary text on the neutral off fill.
+    testWidgets('an on/off button\'s label is readable in both states', (tester) async {
+      stubState(acOn: false);
+      stubAppearance();
+      rpc.stubJson('VehicleService', 'SetClimate', {'success': true});
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      final scheme = Theme.of(tester.element(find.byKey(const ValueKey('vehicle.climate.ac')))).colorScheme;
+      Color? labelColor(String text) => DefaultTextStyle.of(tester.element(find.text(text))).style.color;
+
+      expect(labelColor('AC Off'), scheme.onSurface);
+      await tester.tap(find.byKey(const ValueKey('vehicle.climate.ac')));
+      await tester.pumpAndSettle();
+      expect(labelColor('AC On'), scheme.onPrimary);
+    });
+
     testWidgets('a failed AC toggle shows a snackbar with the server message', (tester) async {
       stubState(acOn: false);
       stubAppearance();

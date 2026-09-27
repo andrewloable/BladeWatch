@@ -26,7 +26,7 @@ import java.nio.ByteBuffer
 object Mp4Faststart {
 
     /** Bytes [start, start + count) of the faststart layout, read from the original file. */
-    class View internal constructor(val length: Long, private val parts: List<Part>) {
+    class View internal constructor(val length: Long, private val parts: List<Part>, val tag: String = TAG) {
 
         /** A stretch of the view: [bytes] when set (the patched index), else the file at [fileOffset]. */
         internal class Part(val viewStart: Long, val length: Long, val fileOffset: Long, val bytes: ByteArray?)
@@ -56,6 +56,9 @@ object Mp4Faststart {
         }
     }
 
+    /** The ETag suffix of this layout ("fs2" since rdtj.31 cut the chunks): change it with the bytes. */
+    const val TAG = "fs2"
+
     private const val CACHE_SIZE = 32
 
     // Keyed by path, length and mtime: a replaced or rewritten file gets a fresh view. Each entry
@@ -65,8 +68,9 @@ object Mp4Faststart {
     }
 
     /**
-     * The faststart view of [file], or null when it is already faststart, cannot be parsed, or its
-     * 32-bit offsets would overflow -- serve the file as it is then. Never throws.
+     * The faststart view of [file] -- or for a fragmented clip, the defragmented one (rdtj.63) -- or
+     * null when it is already faststart, cannot be parsed, or its 32-bit offsets would overflow:
+     * serve the file as it is then. Never throws.
      */
     fun view(file: File): View? {
         val key = file.absolutePath + "|" + file.length() + "|" + file.lastModified()
@@ -82,6 +86,8 @@ object Mp4Faststart {
 
     internal fun build(raf: RandomAccessFile, length: Long): View? {
         val boxes = topLevelBoxes(raf, length) ?: return null
+        // BladeWatch-rdtj.63: a fragmented clip is served as an ordinary one, index first.
+        if (boxes.any { it.type == "moof" }) return Mp4Defragment.build(raf, boxes)
         val moovAt = boxes.indexOfFirst { it.type == "moov" }
         val mdatAt = boxes.indexOfFirst { it.type == "mdat" }
         if (moovAt < 0 || mdatAt < 0 || moovAt < mdatAt) return null

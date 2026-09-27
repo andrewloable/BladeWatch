@@ -1,6 +1,7 @@
 package net.bladewatch.app.server
 
 import org.json.JSONObject
+import net.bladewatch.app.daemon.OpenMediaFiles
 import net.bladewatch.app.recording.Mp4Faststart
 import java.io.File
 import java.io.FileInputStream
@@ -235,6 +236,19 @@ object HttpResponse {
      * behaviour, so a /video/ caller opting out of caching (e.g. a live stream) just calls the
      * no-ETag version.
      */
+    /**
+     * [block] with [file] registered in OpenMediaFiles, so an SD-card unmount can close it under a
+     * stalled stream (rdtj.66); closed and unregistered after, as `use` would.
+     */
+    private inline fun <T : java.io.Closeable, R> tracked(file: T, block: (T) -> R): R {
+        OpenMediaFiles.track(file)
+        try {
+            return file.use(block)
+        } finally {
+            OpenMediaFiles.untrack(file)
+        }
+    }
+
     @JvmStatic
     @JvmOverloads
     @Throws(Exception::class)
@@ -247,7 +261,7 @@ object HttpResponse {
         val headers = StringBuilder()
         headers.append("HTTP/1.1 200 OK\r\n")
             .append("Content-Type: video/mp4\r\n")
-            .append("Content-Length: ").append(file.length()).append("\r\n")
+            .append("Content-Length: ").append(view?.length ?: file.length()).append("\r\n")
             .append("Accept-Ranges: bytes\r\n")
         if (etag != null) {
             headers.append("Cache-Control: ").append(VIDEO_CACHE_CONTROL).append("\r\n")
@@ -258,15 +272,16 @@ object HttpResponse {
         headers.append(connectionHeader(out)).append("\r\n")
         out.write(headers.toString().toByteArray())
 
-        // BladeWatch-rdtj.28: the faststart layout when there is one (same length, index first).
+        // BladeWatch-rdtj.28: the faststart layout when there is one, index first (rdtj.63: or a
+        // fragmented clip rebuilt with a full index, which changes the length).
         if (view != null) {
-            RandomAccessFile(file, "r").use { view.write(it, 0, view.length, out) }
+            tracked(RandomAccessFile(file, "r")) { view.write(it, 0, view.length, out) }
             out.flush()
             return
         }
 
         // Stream the file in chunks
-        FileInputStream(file).use { fis ->
+        tracked(FileInputStream(file)) { fis ->
             val buffer = ByteArray(16384)
             while (true) {
                 val count = fis.read(buffer)
@@ -293,7 +308,8 @@ object HttpResponse {
             return
         }
 
-        val fileLength = file.length()
+        // A view's length is the one served: a defragmented clip (rdtj.63) is not the file's size.
+        val fileLength = view?.length ?: file.length()
         if (start < 0 || start >= fileLength) {
             sendError(out, 416, "Range Not Satisfiable")
             return
@@ -324,12 +340,12 @@ object HttpResponse {
         out.write(headers.toString().toByteArray())
 
         if (view != null) {
-            RandomAccessFile(file, "r").use { view.write(it, start, contentLength, out) }
+            tracked(RandomAccessFile(file, "r")) { view.write(it, start, contentLength, out) }
             out.flush()
             return
         }
 
-        RandomAccessFile(file, "r").use { raf ->
+        tracked(RandomAccessFile(file, "r")) { raf ->
             raf.seek(start)
             val buffer = ByteArray(16384)
             var remaining = contentLength

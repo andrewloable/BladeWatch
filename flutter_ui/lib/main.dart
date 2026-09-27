@@ -178,7 +178,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
   // — see LiveViewTextureChannel's doc comment for why a MediaCodec call
   // cannot share the same channel as everything else.
   late final LiveViewTextureChannel _liveViewTextureChannel = LiveViewTextureChannel(
-    MethodChannelBridge(const MethodChannel('net.bladewatch.flutter/live_view_texture')),
+    MethodChannelBridge(const MethodChannel('net.bladewatch.incarapp/live_view_texture')),
   );
 
   late final DashboardController _dashboardController =

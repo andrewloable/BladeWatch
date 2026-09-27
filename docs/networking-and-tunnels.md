@@ -260,37 +260,64 @@ first one's remainder (read off bare-kit 2.5.5's `IPC.class`), so `PearDaemon` q
 
 ### Stream multiplexing (`PearMux`, BladeWatch-rdtj.6)
 
-A companion needs several TCP connections to the car at once -- the live-view WebSocket,
-ConnectRPC calls, thumbnails -- over its ONE Pear connection. Each Pear message is one frame
-(Protomux keeps message boundaries, so there is no length prefix):
+A companion needs several TCP connections to the car at once -- ConnectRPC calls, stills,
+clip playback -- over its ONE Pear connection. Each Pear message is one frame (Protomux keeps
+message boundaries, so there is no length prefix). Protocol version 2 (BladeWatch-bbvx):
 
 | byte 0 | bytes 1-4 | rest |
 |---|---|---|
-| `1` OPEN | stream id, u32 BE | 1 byte: protocol version (`1`) |
+| `1` OPEN | stream id, u32 BE | 1 byte: protocol version (`2`) |
 | `2` DATA | stream id | 1..32768 payload bytes |
 | `3` CLOSE | stream id | nothing |
-| `4` WINDOW | stream id | u32 BE credit, > 0 |
+| `4` WINDOW | stream id | u32 BE credit, > 0; u64 BE bytes received so far |
+| `5` OPENED | stream id | 16-byte reattach token (car -> companion) |
+| `6` REATTACH | stream id | token; u64 BE bytes received; u64 BE receive limit (companion -> car) |
+| `7` REATTACHED | stream id | u64 BE bytes received; u64 BE receive limit (car -> companion) |
 
-Only the companion opens streams; the car answers OPEN by connecting to 127.0.0.1:8444
+Only the companion opens streams; the car answers OPEN with OPENED, connects to 127.0.0.1:8444
 (`PearStreamPump`, in pear_daemon) and copies bytes both ways, opaque. The bytes are TLS
-records -- see "Car authentication over Pear" below -- and inside the TLS, ConnectRPC and the
-WebSocket live view need no changes. CLOSE closes both directions. Each direction of each
-stream starts with 256 KiB of credit and the receiver sends WINDOW as it consumes; a sender
-never has more than that unacknowledged. This is the only backpressure there is: pear-end's
-`connection.write` ignores Protomux's, so without it a live stream on a slow link would pile
-up in the worklet. Limits, because anyone who knows the topic can connect: 16 streams per
-peer, 64 in total, a 15 s connect deadline (byd_cam_daemon may be restarting), 5 minutes
-idle, and a peer that sends past its credit loses the stream. The class docs of `PearMux`
-and `PearStreamPump` are the spec; the companion (BladeWatch-rdtj.8) implements the mirror.
+records -- see "Car authentication over Pear" below -- and inside the TLS, ConnectRPC needs no
+changes. Each direction of each stream starts with 256 KiB of credit and the receiver sends
+WINDOW as it consumes; a sender never has more than that unacknowledged. This is the only
+backpressure there is: pear-end's `connection.write` ignores Protomux's, so without it a stream
+on a slow link would pile up in the worklet. CLOSE is a handshake: the side that finishes first
+keeps its stream until the other answers with CLOSE, and a side receiving CLOSE delivers what it
+already received before closing its socket. Limits, because anyone who knows the topic can
+connect: 16 streams per peer, 64 in total, a 15 s connect deadline (byd_cam_daemon may be
+restarting), 5 minutes idle, and a peer that sends past its credit loses the stream. The class
+docs of `PearMux` and `PearStreamPump` are the spec; the companion's `pear_mux.dart` and
+`mux_bridge.dart` implement the mirror. Both ends must speak the same version: the car refuses
+an OPEN of any other.
+
+**Streams survive a reconnect (BladeWatch-bbvx).** A Pear connection is reliable while it lives,
+so bytes are only lost when it dies. Each side keeps what it sent until a WINDOW says the other
+received it. When the connection drops, neither side closes its streams: the car keeps its TCP
+connection to 8444, the companion keeps the app's local socket, and both wait up to 60 s
+(`PearStreamPump.Limits.graceMs`, `MuxBridge.defaultGrace`). When the companion finds the car
+again, the new connection's bridge adopts the old one's streams (`TransportSelector._route`)
+and sends REATTACH with each stream's token; the car rebinds the stream to the new connection
+and answers REATTACHED, and both resend from the other's received offset and take their credit
+from the other's limit. TLS, ConnectRPC and players on top never notice. The token is 128 random
+bits from the car, sent only inside the Noise-encrypted connection and compared in constant
+time, so another peer on the topic cannot take a stream; a companion only sends it to a peer
+that has already proved to be the car (the pinned TLS check). Until REATTACHED arrives the
+companion ignores DATA and WINDOW on that stream: after a reconnect the car usually sees the SAME
+peer key, pear-end then never reports the old connection closing, and the car may still be
+sending into the gap. Local connections the app opens during the gap wait and open once adopted.
+The car caps what it keeps for resending at 4 MiB per stream and 32 MiB in total, so a peer
+that grants credit and never acknowledges cannot grow its memory. After the grace period, or if
+the car is found on the LAN instead, the streams close as before and the app's own retries take
+over (`media.dart`). There is no live-video case to handle here: the companion's Live page polls
+stills over ordinary requests.
 
 **The companion grants the car a 2 MiB receive window (BladeWatch-rdtj.28).** One stream moves
 at most window / round-trip. With the protocol's 256 KiB that is ~50 Mbit/s on the car's LAN
 (~41 ms; 41 Mbit/s measured) but only ~2.4 Mbit/s over mobile data (~850 ms; 2.3-5 Mbit/s
 measured), below a 6 Mbit/s recording. So `MuxBridge` sends one extra WINDOW right after OPEN
-(`MuxBridge.remoteReceiveWindow` minus the initial window) and accepts that much in flight. No
-protocol change: the car's `grant()` is uncapped. The car's worst case is its per-peer stream cap
-x 2 MiB = 32 MiB queued in pear-end. The companion's own sends toward the car keep the 256 KiB
-window.
+(`MuxBridge.remoteReceiveWindow` minus the initial window) and accepts that much in flight. The
+car's `grant()` is uncapped; what bounds it is the resend cap above (4 MiB per stream, 32 MiB in
+total), and in pear-end the per-peer stream cap x 2 MiB = 32 MiB in flight. The companion's own
+sends toward the car keep the 256 KiB window.
 
 ### Car authentication over Pear (TLS inside Pear, BladeWatch-rdtj.8)
 
@@ -420,7 +447,9 @@ or Onion Browser.
 ## Still-frame fallback for decoder-less browsers (BladeWatch-y78o.1)
 
 `GET /api/stream/still` serves a periodically refreshed JPEG of the full 4-camera mosaic
-(640×480, quality 80) for browsers that can decode neither WebCodecs nor MSE H.264 — Tor
+(1280×960, quality 80; 640×480 before BladeWatch-rdtj.68), or with `?camera=0..3` (Front, Right,
+Rear, Left) ONE camera at its native 1280×960. The response header `X-Still-View: mosaic|0..3`
+says which it holds: the first second after a switch can still be the previous view for browsers that can decode neither WebCodecs nor MSE H.264 — Tor
 Browser on Linux is the documented case (see `docs/evaluations/overdrive-remote-communication.md`
 and friends for why: Firefox borrows the platform's H.264 decoder and Linux has none by
 default). The web client (`web/src/app/pages/live/still-frame-player.ts`) selects this tier
@@ -434,13 +463,27 @@ counts as viewer activity (`WebSocketStreamServer.noteStillViewer`), so streamin
 exactly as long as someone keeps looking. A 503 means it has not started yet: the companion
 calls `StreamService/Enable`, no more than once every 10 s.
 
-**No JPEG encode on the hot camera path.** The source is
-`SurveillanceEngineGpu.getLatestMosaicFrame()`, the same continuously-updated RGB buffer
-`SurveillanceApiHandler`'s quadrant-snapshot route already reads — it updates every camera
-frame regardless of whether this fallback exists. The only new work is the JPEG encode
-itself, and it runs on its own 5-second timer (`StillFrameRefresher`), fully decoupled from
-camera FPS. Two consecutive HTTP requests between refreshes are served the same retained
-bytes with zero additional encoding.
+**Source (BladeWatch-rdtj.68).** `GpuStillCapture` renders the camera's texture on the GL thread
+into a 1280×960 FBO twice a second (by the clock, not a frame count: sentry runs the camera slower) while streaming is enabled: the 2×2 mosaic,
+or the requested camera's slice of the 5120×960 strip. It reads back straight into a Bitmap.
+Before rdtj.68 the still was sentry's 640×480 AI frame, so a single camera was 320×240. The view
+is whatever the last still request asked for: one view for everyone, and two viewers of different
+views get alternating frames, each labelled.
+
+**No JPEG encode on the hot camera path.** Sentry's 640×480 buffer
+(`SurveillanceEngineGpu.getLatestMosaicFrame()`) still feeds `SurveillanceApiHandler`'s
+quadrant-snapshot route. With sentry on, the AI lane refreshes it. With sentry OFF (ACC on)
+nothing else reads the mosaic back, so while streaming is enabled the camera reads one frame back
+twice a second just for it (`PanoramicCameraGpu`, `STILL_READBACK_FRAME_MODULO`). Before
+BladeWatch-rdtj.61 there was no such readback: with ACC on, the still froze at the last sentry
+frame, and the companion showed it under a Live badge. The buffer is double-buffered, so the
+encoder never reads a half-overwritten frame.
+
+The JPEG encode runs on its own **1-second** timer (`StillFrameRefresher`, the owner's choice,
+rdtj.61; it was 5 s), fully decoupled from camera FPS. It encodes only when the buffer holds a new
+frame (`mosaicVersion`); otherwise the retained still is served again, byte for byte. Requests
+between refreshes cost no encoding. The companion polls once a second, and replaces the picture
+only when the bytes differ.
 
 **Step Zero viability (BladeWatch-y78o.1, no physical head unit available this session — see
 the issue's own close reason for the full methodology and caveats):** a synthetic
@@ -449,7 +492,9 @@ detail-heavy 640×480 JPEG at quality 80 measured 122 KB, chosen as a conservati
 the then-documented **101 KB/s** sustained onion throughput
 (`docs/evaluations/overdrive-remote-communication.md`), a 5-second refresh costs ~24 KB/s —
 about a quarter of the budget, leaving headroom for the rest of the page. A 2-second refresh
-would use ~60%, too tight; 5 seconds was chosen as the default for that reason.
+would use ~60%, too tight; 5 seconds was chosen as the default for that reason. That budget
+went with Tor (removed in v1.4.0.0): over Pear, a real 640×480 still is 40–70 KB, so one a second
+is 0.3–0.6 Mbit/s, well inside even the 2.3–5 Mbit/s measured on mobile data.
 
 ## BladeWatch's Own Network Usage (BladeWatch-t1lg.1)
 

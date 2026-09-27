@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch 程序",
     "perf_threads": "執行緒",
     "perf_fds": "開啟的檔案",
-    "perf_gc": "垃圾回收次數"
+    "perf_gc": "垃圾回收次數",
+    "overlay_field_SPEED": "速度",
+    "overlay_field_GEAR": "檔位",
+    "overlay_field_TURN_SIGNAL_LEFT": "左轉燈",
+    "overlay_field_TURN_SIGNAL_RIGHT": "右轉燈",
+    "overlay_field_BRAKE_PEDAL": "刹車踏板",
+    "overlay_field_ACCEL_PEDAL": "油門踏板",
+    "overlay_field_SEATBELT_DRIVER": "駕駛座安全帶",
+    "overlay_field_SEATBELT_PASSENGER": "乘客座安全帶",
+    "overlay_field_TIMESTAMP": "日期與時間",
+    "trips_costs": "行程與費用",
+    "trip_storage_confirm": "新的行程將儲存到{place}。",
+    "sync_result": "+{added} / −{removed}"
   }
 }

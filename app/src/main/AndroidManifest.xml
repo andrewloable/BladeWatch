@@ -205,7 +205,7 @@
     <!-- BladeWatch-8h7m: the application label is service_host_label, NOT app_name.
          This APK has no launcher icon, so its label only ever appears in system
          surfaces: BYD's app-start management dialog, Settings then Apps, permission
-         dialogs. Sharing "BladeWatch" with net.bladewatch.flutter put two identical
+         dialogs. Sharing "BladeWatch" with net.bladewatch.incarapp put two identical
          rows in the autostart dialog with no way to tell which one gates the daemons. -->
     <application
         android:name="net.bladewatch.app.BladeWatchApplication"
@@ -218,7 +218,7 @@
         android:usesCleartextTraffic="true">
 
         <!-- BladeWatch-81g9.1: NO LONGER A LAUNCHER ACTIVITY.
-             `net.bladewatch.flutter` is the only in-car UI the user sees and the only
+             `net.bladewatch.incarapp` is the only in-car UI the user sees and the only
              package with a launcher entry. This activity survives because it is not
              only UI: its onCreate runs the bootstrap nothing else runs — storage setup,
              DeviceIdGenerator.init/generateDeviceId (which MUST complete before any

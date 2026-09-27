@@ -35,6 +35,7 @@ import 'package:bladewatch_rpc/pairing/pairing_payload.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:video_player/video_player.dart';
 
@@ -61,6 +62,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized().framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
 
   testWidgets('live view and playback ride out a real Pear drop', (tester) async {
+    await initializeDateFormatting(); // as main() does: the Live page formats times by locale
     final saved = jsonDecode(File('$_dir/bench.json').readAsStringSync()) as Map<String, dynamic>;
     final car = PairedCar.fromPairing(
       PairingPayload.decode(saved['qr'] as String),
@@ -100,8 +102,8 @@ void main() {
 
       // Live view: every still it gets. The picture after a drop is the first 'still' after the
       // phase is back at pear.
-      await show(LiveScreen(fetch: (s) async {
-        final r = await fetchMedia(s, '/api/stream/still');
+      await show(LiveScreen(fetch: (s, path) async {
+        final r = await fetchMedia(s, path);
         if (r.ok) _emit({'still': r.bytes.length});
         return r;
       }));

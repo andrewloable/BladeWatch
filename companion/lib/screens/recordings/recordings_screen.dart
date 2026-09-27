@@ -23,7 +23,9 @@ class RecordingsScreen extends StatefulWidget {
   final DateTime Function()? today;
 
   /// ListRecordings' and GetDates' day format.
-  static String dayKey(DateTime d) => DateFormat('yyyyMMdd').format(d);
+  /// yyyy-MM-dd, as the car names days in GetDates and filters ListRecordings by. It refuses any
+  /// other form with an empty list, which is how yyyyMMdd left Today and Yesterday empty.
+  static String dayKey(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 
   @override
   State<RecordingsScreen> createState() => _RecordingsScreenState();
@@ -33,7 +35,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
   late final _client = RecordingsServiceClient(context.session.rpc);
   var _type = '';
 
-  /// The day shown, as the car names days (yyyyMMdd); null is every day.
+  /// The day shown, as the car names days (yyyy-MM-dd); null is every day.
   String? _day;
   late final _stats = loader(() => _client.getStats(GetStatsRequest()));
   // Days with at least one clip, so the arrows skip empty ones. Without them (an older car, or

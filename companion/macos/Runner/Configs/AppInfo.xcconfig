@@ -8,7 +8,18 @@
 PRODUCT_NAME = BladeWatch
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = net.bladewatch.companion
+PRODUCT_BUNDLE_IDENTIFIER = net.bladewatch.companionapp
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 net.bladewatch. All rights reserved.
+
+// A fresh executable UUID on every link (BladeWatch-rdtj.59). macOS's Local Network privacy
+// identifies a process's app by its executable's LC_UUID. The rename to net.bladewatch.companionapp
+// changed only Info.plist, so the byte-identical binary kept resolving to the old id
+// net.bladewatch.companion: the new app was never asked for Local Network access, and Pear could not
+// reach the car on the same LAN while the old id's switch applied instead (2026-09-27).
+OTHER_LDFLAGS = $(inherited) -Wl,-random_uuid
+// And no debug-dylib split: with it, a debug build's executable is Xcode's generic launcher stub,
+// whose UUID (18FD1EDC-...) is the same for every app built that way -- the flag above only reached
+// the .debug.dylib, so the process still resolved to whichever app macOS saw first.
+ENABLE_DEBUG_DYLIB = NO

@@ -28,7 +28,7 @@ versions pinned in `gradle/libs.versions.toml`.
 
 `flutter_ui/` is an **independent** standalone Flutter project with its own
 Gradle build under `flutter_ui/android/`, producing the **in-car UI** APK
-(`net.bladewatch.flutter`). It is not an add-to-app module and is not part of
+(`net.bladewatch.incarapp`). It is not an add-to-app module and is not part of
 `:app`'s build. Its dependency set is entirely separate — do not confuse the two
 when adding or removing a library.
 
@@ -89,12 +89,42 @@ The platform wiring they need is already in place:
   itself.
 - **macOS:** `com.apple.security.device.camera` in both entitlements files, for
   hardened-runtime builds.
+- **macOS Local Network access** (found 2026-09-27, rdtj.59). macOS decides whether an app may
+  reach the LAN per bundle id, but it identifies a running process's app by its executable's
+  UUID. Xcode's debug builds use a generic launcher stub as the executable (the code lives in a
+  `.debug.dylib`), and the stub's UUID is the same for every app built that way. After the rename
+  the companion therefore still resolved to `net.bladewatch.companion`: it was never asked for
+  Local Network access, and Pear could not reach a car on the same LAN, while a plain Hyperswarm
+  dial from the same Mac connected in 9 s. `macos/Runner/Configs/AppInfo.xcconfig` sets
+  `ENABLE_DEBUG_DYLIB = NO` and links with `-Wl,-random_uuid`, so the executable is the app's own
+  with a UUID of its own. The symptom to recognise: "Looking for your car" forever on macOS, the car's
+  `pear_status.json` never counting a companion, and `log show` lines from UserEventAgent reading
+  `LocalNetwork: found bundle id <some other id> by UUID`.
 - **Android:** `android:allowBackup="false"`, because the store file holds this device's
   credential for the car.
 
-The bundle id is `net.bladewatch.companion` on every platform. The app is named
+The bundle id is `net.bladewatch.companionapp` on every platform. The app is named
 "BladeWatch" (the macOS product is `BladeWatch.app`). Both were template defaults until
 they were aligned, before anything shipped.
+
+**App ID rename (BladeWatch-rdtj.59).** Before v1.4.0.0 the in-car UI was
+`net.bladewatch.flutter` and the companion `net.bladewatch.companion`; they are now
+`net.bladewatch.incarapp` and `net.bladewatch.companionapp`. Only the application and bundle
+ids changed: the Android `namespace`s (`net.bladewatch.bladewatch_ui`,
+`net.bladewatch.bladewatch_companion`), the Kotlin sources and the Dart package names did not,
+so the in-car component is `net.bladewatch.incarapp/net.bladewatch.bladewatch_ui.MainActivity`.
+`android:sharedUserId="net.bladewatch.app"` is unchanged. A new id is a new app to every OS, so
+an existing install does not update into it:
+
+- **Head unit:** install the new in-car APK, then
+  `adb -s $CAR_IP:5555 uninstall net.bladewatch.flutter` (otherwise two launcher icons). The UID
+  survives because the service host keeps it; check that both packages report the same `userId`.
+  Allow the new entry in BYD Auto-Start. The in-car UI's own SharedPreferences (`PrefsChannel`:
+  theme, navigation side and the like) start fresh.
+- **Companion:** the pairing lives in the app's support directory (`CarStore`, via
+  path_provider), which is per app id, so every companion must pair again after installing the
+  renamed app. Then uninstall the old app and revoke its stale entry in the in-car
+  "Pair a device" dialog.
 
 The repository also contains two non-Gradle build inputs that feed the Android build:
 
@@ -285,7 +315,7 @@ Also discovered and filed while building this screen, neither blocking it: **Bla
 
 **Landscape sub-rail only.** `SettingsFragment.kt` has two layouts: a landscape two-pane sub-rail (persistent Appearance/Recording/Surveillance/Overlay/Daemons/Privacy panes) and a portrait "SOTA hub" (quick tiles + rows that navigate away). This port builds only the sub-rail — BladeWatch targets fixed-landscape BYD head units, so the portrait branch is unreachable on the actual target hardware. Each sub-rail row's controller is created fresh when selected and disposed when the user switches away, mirroring native's own `childFragmentManager.commit { replace(...) }` (which recreates each section's Fragment, and therefore its state, on every switch rather than caching it).
 
-**New `prefs.*` platform-channel group** (`flutter_ui/android/.../MainActivity.kt`, `flutter_ui/lib/platform/prefs_channel.dart`) — plain SharedPreferences local to `net.bladewatch.flutter` for `themeMode`/`driveSide`, the two Appearance preferences. Not IPC, not shared with the main app: native's `PreferencesManager.kt` can't be read directly even though the two APKs share a UID, since SharedPreferences files live under each package's own app-private directory. Drive side is otherwise delegated straight to `ShellController` (Epic 1's existing rail-mirroring source of truth); this channel only adds persistence on top of it.
+**New `prefs.*` platform-channel group** (`flutter_ui/android/.../MainActivity.kt`, `flutter_ui/lib/platform/prefs_channel.dart`) — plain SharedPreferences local to `net.bladewatch.incarapp` for `themeMode`/`driveSide`, the two Appearance preferences. Not IPC, not shared with the main app: native's `PreferencesManager.kt` can't be read directly even though the two APKs share a UID, since SharedPreferences files live under each package's own app-private directory. Drive side is otherwise delegated straight to `ShellController` (Epic 1's existing rail-mirroring source of truth); this channel only adds persistence on top of it.
 
 **Two more architectural gaps discovered and filed while building this task, neither blocking it** (the same injectable-seam pattern the Dashboard's since-removed tunnel URL source used, BladeWatch-m1po):
 - **BladeWatch-hygs** (P2) — no IPC path reaches `UnifiedConfigManager`'s public (non-secret) config sections; only the daemon-owned *secret* store (`ConfigChannel`/`secret_*`) is reachable today. Blocks real persistence for Overlay's status-pill toggles and Privacy's two developer-logging toggles — both currently use an injected `loadSettings`/`persist` function pair that defaults to native's own fallback values and no-ops on write.
@@ -349,7 +379,7 @@ Also discovered and filed while building this screen, neither blocking it: **Bla
 
 **`LocationUiStateMapper`/`LocationPanelModel` were not ported as a class.** Native's `panelModel()` returns Kotlin strings directly ("Loading map", "Grant", …), which this port's ARB-only rule forbids baking into a pure-Dart model. Its decision logic (title/subtitle/action-label presence, `showMap`, `compact`) instead lives in a private `_bannerFor()` switch at the screen layer, each arm resolving through an ARB key — same state-to-presentation mapping, relocated to the layer where resolving localized text is actually legal. `LocationError`'s subtitle is the one exception: it is shown verbatim, not wrapped in an ARB template, matching `TripsController`'s `SyncOutcome.error` precedent — it is raw diagnostic text (an exception message), not English prose this port composed.
 
-**`LocationGpsCache` (write-only breadcrumb) was not ported.** It writes the latest fix as JSON to `externalCacheDir`/`bladewatch_gps_cache.json` on every sample — but grepping the *entire* app source turns up no reader anywhere (not a daemon, not another screen); native itself never consumes what it writes. The task's own "Behaviour to reproduce" list omits it too. Since the Flutter APK's `externalCacheDir` would resolve to a different path anyway (per-package, and `net.bladewatch.flutter` ≠ `net.bladewatch.app`), faithfully reproducing a write nothing reads would mean adding a new platform-channel method purely to move bytes into a void — skipped, not filed as a gap (there is no future consumer to build toward).
+**`LocationGpsCache` (write-only breadcrumb) was not ported.** It writes the latest fix as JSON to `externalCacheDir`/`bladewatch_gps_cache.json` on every sample — but grepping the *entire* app source turns up no reader anywhere (not a daemon, not another screen); native itself never consumes what it writes. The task's own "Behaviour to reproduce" list omits it too. Since the Flutter APK's `externalCacheDir` would resolve to a different path anyway (per-package, and `net.bladewatch.incarapp` ≠ `net.bladewatch.app`), faithfully reproducing a write nothing reads would mean adding a new platform-channel method purely to move bytes into a void — skipped, not filed as a gap (there is no future consumer to build toward).
 
 **`markerHotspot` (an invisible, positioned-but-inert `View`) was not ported.** Confirmed via exhaustive grep: `LocationMapController.kt` sets its bounds/visibility on every render but never attaches a click or touch listener to it anywhere — vestigial, matching this session's established "trust the filesystem over stale-looking code" pattern.
 
@@ -452,12 +482,12 @@ Separately, `docs/surveillance-implementation.md`'s own "ROI" section confirms t
 
 **Architecture: Dart owns the WebSocket connection and the 3 `StreamService` RPCs the screen actually uses; Kotlin owns only `MediaCodec` decode into a Flutter `Texture`.** This deliberately diverges from the task's own "port `LiveStreamClient` wholesale, just swap where the `Surface` comes from" framing, for two independent reasons:
 
-- **Some deviation was unavoidable regardless of preference.** `LiveStreamClient.kt` mints its JWT and issues its 3 RPCs (`Enable`, `SetViewMode`, `GetQuality` — of `StreamService`'s 7; `Disable`/`GetStatus`/`SetQuality`/`GetViewMode` have no call site in this screen either, native or here) via the **main app's** `ConnectClientProvider`/`AuthManager` singletons. The Flutter APK (`net.bladewatch.flutter`) and the main app (`net.bladewatch.app`) are separate codebases/classloaders sharing only a UID — those singletons are not reachable from new Flutter-APK Kotlin code at all. The RPCs are instead called through the already-generated `StreamServiceClient` Dart client and the existing `AuthChannel` JWT source, per this project's standing "call the same RPCs via the generated Dart client" rule.
+- **Some deviation was unavoidable regardless of preference.** `LiveStreamClient.kt` mints its JWT and issues its 3 RPCs (`Enable`, `SetViewMode`, `GetQuality` — of `StreamService`'s 7; `Disable`/`GetStatus`/`SetQuality`/`GetViewMode` have no call site in this screen either, native or here) via the **main app's** `ConnectClientProvider`/`AuthManager` singletons. The Flutter APK (`net.bladewatch.incarapp`) and the main app (`net.bladewatch.app`) are separate codebases/classloaders sharing only a UID — those singletons are not reachable from new Flutter-APK Kotlin code at all. The RPCs are instead called through the already-generated `StreamServiceClient` Dart client and the existing `AuthChannel` JWT source, per this project's standing "call the same RPCs via the generated Dart client" rule.
 - **The WebSocket connection itself was a genuine choice, not a forced one — and Dart was chosen deliberately.** It technically could have been ported into new native networking code instead. It was not: `dart:io`'s `WebSocket` is RFC 6455 compliant and already proven against this exact server by the Angular SPA's own standard browser WebSocket client (`web/src/app/pages/live/`, `SotaPlayer.js`) — using it keeps the new native surface to exactly the one thing Dart genuinely cannot do (hardware H.264 decode), which is also the smallest surface this task's own "a leaked `MediaCodec` is unrecoverable without restarting the daemon" warning could apply to. Fragment reassembly is not ported into Kotlin either — `WebSocket` always delivers one complete logical message per stream event regardless of how many wire frames it was split across, so `IoLiveSocket.messages` needs no framing logic of its own.
 
 **The Kotlin plugin (`flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/liveview/`) is split into a testable orchestrator and an excluded real-hardware leaf, mirroring the Dart-side `VehicleHero`-exclusion philosophy for the opposite (JVM-test-stub) boundary.** `android.*` framework classes (`MediaCodec`, `Surface`, `SurfaceTexture`) throw "not mocked" in a plain JVM unit test; Flutter's own `TextureRegistry`/`SurfaceProducer`/`TextureEntry` are plain JVM interfaces and are safely fakeable directly. `MediaCodecFrameDecoder` (behind an injectable `FrameDecoder` interface) is the one thin, excluded class that ever touches `MediaCodec`/`Surface` — it mirrors `LiveStreamClient.kt`'s own `feedToDecoder`/`drainDecoder` logic exactly. `LiveViewTexturePlugin` — texture lifecycle, frame-vs-codec-config bookkeeping, PTS calculation (`PTS_STEP_US = 66_667L`, matching native's `frameCounter++ * 66_667L`), argument validation — holds all the decision logic and never touches a stubbed type, only the injected `FrameDecoder` and Flutter's own fakeable interfaces; it is 100%-covered by `LiveViewTexturePluginTest.kt` (17 tests, hand-rolled fakes, no Mockito — matching this project's established JVM test-fake convention).
 
-**A new platform channel, on its own background `TaskQueue`, separate from the shared `"net.bladewatch.flutter/privileged"` one.** `MainActivity.kt` registers `"net.bladewatch.flutter/live_view_texture"` via `BinaryMessenger.makeBackgroundTaskQueue()` — `MediaCodec.dequeueInputBuffer`'s bounded-but-nonzero wait, called once per decoded frame, should not block the platform/UI thread the way the shared channel's synchronous handlers do for everything else. `LiveViewTextureChannel`'s own doc comment carries the same note for the Dart side; `main.dart` constructs a distinct `MethodChannelBridge(MethodChannel('net.bladewatch.flutter/live_view_texture'))` for it, not the default-channel one every other `platform/*.dart` wrapper shares.
+**A new platform channel, on its own background `TaskQueue`, separate from the shared `"net.bladewatch.incarapp/privileged"` one.** `MainActivity.kt` registers `"net.bladewatch.incarapp/live_view_texture"` via `BinaryMessenger.makeBackgroundTaskQueue()` — `MediaCodec.dequeueInputBuffer`'s bounded-but-nonzero wait, called once per decoded frame, should not block the platform/UI thread the way the shared channel's synchronous handlers do for everything else. `LiveViewTextureChannel`'s own doc comment carries the same note for the Dart side; `main.dart` constructs a distinct `MethodChannelBridge(MethodChannel('net.bladewatch.incarapp/live_view_texture'))` for it, not the default-channel one every other `platform/*.dart` wrapper shares.
 
 **A platform-channel `Int`/`Long` marshalling gotcha is defended against explicitly, not left to chance.** The standard method codec sends a Dart `int` as a 32-bit `Integer` when it fits in one, only as a `Long` otherwise — `textureId` (a Kotlin `Long` from `TextureEntry.id()`) can arrive as either. `MainActivity.kt`'s `Map<*,*>.long(key)` helper checks `is Long`/`is Int` explicitly rather than casting once and risking a `ClassCastException` on whichever shape shows up on a given call.
 
@@ -574,7 +604,7 @@ Both packages must report the same UID or privileged IPC is refused:
 
 ```bash
 adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.app | grep userId'
-adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.flutter | grep userId'
+adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.incarapp | grep userId'
 ```
 
 Web app (Angular) commands, run from `web/`:
@@ -655,8 +685,8 @@ The three Dart gates all live in `flutter_ui/android`'s Gradle build, because it
 
 Tag builds only, and **no secrets**: the keystore never touches GitHub. Pushing a
 tag matching `v*` builds **three** APKs, all **unsigned**, and attaches them to the
-GitHub Release: `net.bladewatch.app` (service host) and `net.bladewatch.flutter`
-(in-car UI) for the car, and `net.bladewatch.companion` for the owner's phone
+GitHub Release: `net.bladewatch.app` (service host) and `net.bladewatch.incarapp`
+(in-car UI) for the car, and `net.bladewatch.companionapp` for the owner's phone
 (BladeWatch-rdtj.15). Creating a release through the GitHub UI on a new tag creates that
 tag, which fires the same `push` event, so both routes are covered by one trigger.
 Ordinary pushes and pull requests build nothing. `workflow_dispatch` re-runs an

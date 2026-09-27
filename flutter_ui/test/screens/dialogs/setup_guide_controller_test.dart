@@ -10,7 +10,7 @@ void main() {
   late FakePlatformChannel channel;
   late SetupGuideController controller;
 
-  const info = AppVersionInfo(version: '1.2.0', buildNumber: '7', packageName: 'net.bladewatch.flutter');
+  const info = AppVersionInfo(version: '1.2.0', buildNumber: '7', packageName: 'net.bladewatch.incarapp');
 
   setUp(() {
     channel = FakePlatformChannel();

@@ -195,9 +195,10 @@ object VehicleControlApiHandler {
         val climate = JSONObject()
         val vehiclePoweredOn =
             data.powerLevel != BydVehicleData.UNAVAILABLE && data.powerLevel >= 2
-        if (data.acStartState != BydVehicleData.UNAVAILABLE) {
-            climate.put("acOn", vehiclePoweredOn && data.acStartState == 1)
-        }
+        // Read live, as fanLevel is below (BladeWatch-rdtj.64): the collector's snapshot lagged the
+        // car, so with the AC running (getAcStartState=1, fan at 1) acOn stayed false and both
+        // apps' AC switches snapped back. The snapshot is only the fallback when the read fails.
+        acOn(vehiclePoweredOn, collector.acStartState, data.acStartState)?.let { climate.put("acOn", it) }
         // The setpoint, and the OUTSIDE air -- the car exposes no cabin temperature
         // (BladeWatch-gkjl, BladeWatch-eh3u; see BydDataCollector.AC_TEMP_POS_SETPOINT).
         val temps = selectClimateTemps(
@@ -507,6 +508,18 @@ object VehicleControlApiHandler {
      * Public rather than module-internal because ClimateCommandParserTest reaches it from a
      * different package.
      */
+    /**
+     * GetState's climate.acOn (BladeWatch-rdtj.64): from the LIVE getAcStartState ([live], -1 when it
+     * cannot be read), the collector's snapshot only as the fallback -- the snapshot lagged the car, so
+     * with the AC running acOn stayed false and both apps' AC switches snapped back. Null (omitted)
+     * when neither is known; false whenever the car is not powered on.
+     */
+    @JvmStatic
+    fun acOn(vehiclePoweredOn: Boolean, live: Int, snapshot: Int): Boolean? {
+        val state = live.takeIf { it >= 0 } ?: snapshot
+        return if (state == BydVehicleData.UNAVAILABLE) null else vehiclePoweredOn && state == 1
+    }
+
     @JvmStatic
     fun buildClimateCommand(action: String, req: JSONObject): VehicleCommand? = when (action) {
         "power_on" -> {

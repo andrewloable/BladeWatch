@@ -2,11 +2,11 @@
 #
 # Two go on the head unit and share one UID:
 #   net.bladewatch.app     — service host: daemons, receivers, BYD integration, no UI
-#   net.bladewatch.flutter — the in-car UI the driver opens
+#   net.bladewatch.incarapp — the in-car UI the driver opens
 # They are NOT interchangeable and both must be installed.
 #
 # The third goes on the owner's phone (BladeWatch-rdtj.15):
-#   net.bladewatch.companion — reaches the car over Pear, or directly on its LAN
+#   net.bladewatch.companionapp — reaches the car over Pear, or directly on its LAN
 # Android only. The companion also targets iOS, macOS, Windows and Linux, but CI builds
 # none of them: each needs its own runner, and iOS/macOS need Apple signing this
 # workflow deliberately has no secrets for. Do not list a platform here until CI
@@ -237,7 +237,7 @@ jobs:
       - name: Build service host APK (net.bladewatch.app)
         run: ./gradlew --no-daemon assembleRelease
 
-      - name: Build in-car UI APK (net.bladewatch.flutter)
+      - name: Build in-car UI APK (net.bladewatch.incarapp)
         working-directory: flutter_ui
         run: flutter build apk --release --target-platform android-arm64
 
@@ -246,7 +246,7 @@ jobs:
       # Flutter plugin from adding armeabi-v7a, which would install on a 32-bit phone and
       # then fail at worklet start. --split-per-abi fails at configuration by design.
       # Unsigned for the same reason as the other two: no keystore in CI.
-      - name: Build companion APK (net.bladewatch.companion)
+      - name: Build companion APK (net.bladewatch.companionapp)
         working-directory: companion
         run: flutter build apk --release
 
@@ -348,16 +348,30 @@ jobs:
             | APK | Package | Role |
             |---|---|---|
             | `bladewatch-service-host-*` | `net.bladewatch.app` | Daemons, receivers, BYD integration. No launcher icon. |
-            | `bladewatch-ui-*` | `net.bladewatch.flutter` | The in-car UI. The only launcher icon. |
+            | `bladewatch-ui-*` | `net.bladewatch.incarapp` | The in-car UI. The only launcher icon. |
 
             ## One APK for your phone
 
             | APK | Package | Role |
             |---|---|---|
-            | `bladewatch-companion-*` | `net.bladewatch.companion` | Android phones (arm64 and x86_64). Reaches the car over Pear from anywhere, or directly on the car's Wi-Fi. Never install it on the car. |
+            | `bladewatch-companion-*` | `net.bladewatch.companionapp` | Android phones (arm64 and x86_64). Reaches the car over Pear from anywhere, or directly on the car's Wi-Fi. Never install it on the car. |
 
             Only the Android build is attached. The companion also runs on iOS, macOS, Windows
             and Linux, but those are built from source for now.
+
+            ### Upgrading from a build before v1.4.0.0: the app IDs changed
+
+            The in-car UI is now `net.bladewatch.incarapp` (was `net.bladewatch.flutter`) and the
+            companion `net.bladewatch.companionapp` (was `net.bladewatch.companion`). To Android
+            that is a new app, so neither updates in place:
+
+            - **Car:** install the new in-car UI, then uninstall `net.bladewatch.flutter`, or you
+              get two launcher icons. The shared UID and the car's data are kept (the service
+              host holds them), but the in-car UI's own preferences (theme, navigation side) start
+              fresh. Allow the new entry in BYD Auto-Start.
+            - **Phone:** install the new companion and pair it again; the old app's pairing does not
+              carry over. Then uninstall the old one, and remove its entry on the car under
+              "Pair a device".
 
             ### These are UNSIGNED and cannot be installed as-is
 

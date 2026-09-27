@@ -64,13 +64,22 @@ class PearStreamPumpTest {
         }
     }
 
+    /** What the fake companion has received per (peer, stream), for its WINDOW frames. */
+    private val received = HashMap<Pair<String, Int>, Long>()
+
+    /** The fake companion acknowledges [n] more bytes on [stream] and grants them back as credit. */
+    private fun ack(p: PearStreamPump, peer: String, stream: Int, n: Int) {
+        val total = received.merge(peer to stream, n.toLong(), Long::plus)!!
+        p.onMessage(peer, PearMux.window(stream, n, total))
+    }
+
     /** Collects [count] bytes of DATA the pump sends on [stream], granting credit as it goes. */
     private fun readData(p: PearStreamPump, peer: String, stream: Int, count: Int): ByteArray {
         val out = ByteArrayOutputStream()
         while (out.size() < count) {
             val f = next(PearMux.DATA, stream, peer) ?: error("only ${out.size()} of $count bytes arrived")
             out.write(f.payload)
-            p.onMessage(peer, PearMux.window(stream, f.payload.size))
+            ack(p, peer, stream, f.payload.size)
         }
         return out.toByteArray()
     }
@@ -100,7 +109,7 @@ class PearStreamPumpTest {
             val (_, f) = sent.poll(5, TimeUnit.SECONDS) ?: error("stalled at ${one.size()} / ${two.size()}")
             if (f.type != PearMux.DATA) continue
             (if (f.stream == 1) one else two).write(f.payload)
-            p.onMessage("peerA", PearMux.window(f.stream, f.payload.size))
+            ack(p, "peerA", f.stream, f.payload.size)
         }
         assertTrue(one.toByteArray().all { it == 'A'.code.toByte() })
         assertTrue(two.toByteArray().all { it == 'B'.code.toByte() })
@@ -116,8 +125,9 @@ class PearStreamPumpTest {
         p.onMessage("peerA", PearMux.data(1, byteArrayOf(1)))
         readData(p, "peerA", 1, 1)
         p.onMessage("peerA", PearMux.close(1))
+        assertNotNull("the pump answers the CLOSE", next(PearMux.CLOSE, 1))
         assertTrue("the server never saw EOF", echo.awaitEof(5_000))
-        assertEquals(0, p.openStreams)
+        waitFor { p.openStreams == 0 }
     }
 
     @Test(timeout = 20_000)
@@ -129,6 +139,9 @@ class PearStreamPumpTest {
         readData(p, "peerA", 1, 1)
         echo.dropAll()
         assertNotNull(next(PearMux.CLOSE, 1))
+        Thread.sleep(200)
+        assertEquals("kept until the companion answers, to resend it after a reconnect", 1, p.openStreams)
+        p.onMessage("peerA", PearMux.close(1))
         waitFor { p.openStreams == 0 }
     }
 
@@ -179,14 +192,14 @@ class PearStreamPumpTest {
         assertNull("sent past the window with no credit", next(PearMux.DATA, 1, timeoutMs = 700))
 
         // Each grant releases exactly that much.
-        p.onMessage("peerA", PearMux.window(1, 10_000))
+        ack(p, "peerA", 1, 10_000)
         val second = ByteArrayOutputStream()
         while (second.size() < 10_000) second.write(next(PearMux.DATA, 1)!!.payload)
         assertEquals(10_000, second.size())
         assertNull(next(PearMux.DATA, 1, timeoutMs = 500))
 
         // Then everything, in order, with nothing dropped.
-        p.onMessage("peerA", PearMux.window(1, window))
+        ack(p, "peerA", 1, window)
         val rest = readData(p, "peerA", 1, total - window - 10_000)
         assertArrayEquals(pattern, first.toByteArray() + second.toByteArray() + rest)
     }
@@ -244,6 +257,8 @@ class PearStreamPumpTest {
         server.stop() // byd_cam_daemon dies
         assertNotNull(next(PearMux.CLOSE, 1))
         assertNotNull(next(PearMux.CLOSE, 2))
+        p.onMessage("peerA", PearMux.close(1))
+        p.onMessage("peerA", PearMux.close(2))
         waitFor { p.openStreams == 0 }
 
         server = TestServer.echo().also(servers::add) // and comes back
@@ -253,14 +268,22 @@ class PearStreamPumpTest {
     }
 
     @Test(timeout = 20_000)
-    fun `a vanished peer takes only its own streams with it`() {
+    fun `a vanished peer's streams wait out the grace period, and only its own`() {
         val echo = TestServer.echo().also(servers::add)
-        val p = pump(connectTo(echo))
+        val clock = AtomicLong(1_000_000)
+        val p = pump(connectTo(echo), PearStreamPump.Limits(graceMs = 60_000), clock::get)
         p.onMessage("peerA", PearMux.open(1))
         p.onMessage("peerB", PearMux.open(1))
         waitFor { echo.accepted.get() == 2 }
         p.onPeerClosed("peerA")
+        clock.addAndGet(60_000)
+        p.sweepIdle()
+        assertEquals("detached, not closed, within the grace period", 2, p.openStreams)
+        clock.addAndGet(1)
+        p.sweepIdle()
         assertEquals(1, p.openStreams)
+        assertTrue("the detached stream's server side is closed", echo.awaitEof(5_000))
+        assertNull("nothing is sent into a dead connection", next(PearMux.CLOSE, 1, peer = "peerA", timeoutMs = 300))
         p.onMessage("peerB", PearMux.data(1, byteArrayOf(9)))
         assertArrayEquals(byteArrayOf(9), readData(p, "peerB", 1, 1))
     }
@@ -289,6 +312,164 @@ class PearStreamPumpTest {
         assertTrue(helper.contains("DaemonLogConfig.PEAR_PUMP"))
         assertEquals("a logger call outside the gated helper", helper.split("logger.").size, src.split("logger.").size)
         assertFalse("must ship false", DaemonLogConfig.PEAR_PUMP)
+    }
+
+    // --- BladeWatch-bbvx: streams survive a reconnect ---
+
+    /** Everything the pump has sent so far and not yet taken: lost with a dying connection. */
+    private fun dropInFlight() {
+        Thread.sleep(200)
+        sent.clear()
+        pending.clear()
+    }
+
+    @Test(timeout = 30_000)
+    fun `a download survives a dropped connection byte for byte, on a new connection`() {
+        val total = 600_000
+        val pattern = ByteArray(total) { (it % 251).toByte() }
+        val firehose = TestServer.firehose(pattern).also(servers::add)
+        val window = 64 * 1024
+        val p = pump(connectTo(firehose), PearStreamPump.Limits(window = window))
+        p.onMessage("peerA", PearMux.open(1))
+        val token = next(PearMux.OPENED, 1, "peerA")!!.token
+        val before = readData(p, "peerA", 1, 100_000)
+
+        dropInFlight() // up to a window was in flight, and is lost
+        p.onPeerClosed("peerA")
+        val got = received.getValue("peerA" to 1)
+        received["peerB" to 1] = got
+        p.onMessage("peerB", PearMux.reattach(1, token, got, window + got))
+
+        val ok = next(PearMux.REATTACHED, 1, "peerB")!!
+        assertEquals("the car had nothing from the companion", 0L, ok.received)
+        assertEquals(window.toLong(), ok.limit)
+        val after = readData(p, "peerB", 1, total - before.size)
+        assertArrayEquals(pattern, before + after)
+        assertEquals(1, p.openStreams)
+    }
+
+    @Test(timeout = 20_000)
+    fun `bytes the companion sent before a drop reach the server once`() {
+        val sink = TestServer.sink().also(servers::add)
+        val p = pump(connectTo(sink))
+        p.onMessage("peerA", PearMux.open(1))
+        val token = next(PearMux.OPENED, 1)!!.token
+        p.onMessage("peerA", PearMux.data(1, "abc".toByteArray()))
+        waitFor { sink.bytes().size == 3 }
+        p.onPeerClosed("peerA")
+        p.onMessage("peerA", PearMux.reattach(1, token, 0, PearMux.INITIAL_WINDOW.toLong()))
+        val ok = next(PearMux.REATTACHED, 1)!!
+        assertEquals("so the companion resends from byte 3, not 0", 3L, ok.received)
+        p.onMessage("peerA", PearMux.data(1, "def".toByteArray()))
+        waitFor { sink.bytes().size == 6 }
+        assertArrayEquals("abcdef".toByteArray(), sink.bytes())
+    }
+
+    @Test(timeout = 20_000)
+    fun `another peer cannot take a stream without its token`() {
+        val echo = TestServer.echo().also(servers::add)
+        val p = pump(connectTo(echo))
+        p.onMessage("peerA", PearMux.open(1))
+        val token = next(PearMux.OPENED, 1, "peerA")!!.token
+        val guess = token.copyOf().also { it[15] = (it[15] + 1).toByte() }
+        p.onMessage("peerB", PearMux.reattach(1, guess, 0, PearMux.INITIAL_WINDOW.toLong()))
+        assertNotNull(next(PearMux.CLOSE, 1, "peerB"))
+        assertNull(next(PearMux.REATTACHED, 1, timeoutMs = 300))
+
+        // Nor, with the token, onto an id that is some other stream's.
+        p.onMessage("peerB", PearMux.open(2))
+        next(PearMux.OPENED, 2, "peerB")!!
+        p.onMessage("peerB", PearMux.reattach(2, token, 0, PearMux.INITIAL_WINDOW.toLong()))
+        assertNotNull(next(PearMux.CLOSE, 2, "peerB"))
+
+        p.onMessage("peerA", PearMux.data(1, byteArrayOf(4)))
+        assertArrayEquals("the stream is still peerA's", byteArrayOf(4), readData(p, "peerA", 1, 1))
+    }
+
+    @Test(timeout = 20_000)
+    fun `a reattach with offsets the car never sent closes the stream`() {
+        val echo = TestServer.echo().also(servers::add)
+        val p = pump(connectTo(echo))
+        p.onMessage("peerA", PearMux.open(1))
+        val token = next(PearMux.OPENED, 1)!!.token
+        p.onMessage("peerA", PearMux.reattach(1, token, 1_000, PearMux.INITIAL_WINDOW.toLong()))
+        assertNotNull(next(PearMux.CLOSE, 1))
+        waitFor { p.openStreams == 0 }
+    }
+
+    @Test(timeout = 20_000)
+    fun `after the grace period a reattach is refused`() {
+        val echo = TestServer.echo().also(servers::add)
+        val clock = AtomicLong(1_000_000)
+        val p = pump(connectTo(echo), PearStreamPump.Limits(graceMs = 1_000), clock::get)
+        p.onMessage("peerA", PearMux.open(1))
+        val token = next(PearMux.OPENED, 1)!!.token
+        p.onPeerClosed("peerA")
+        clock.addAndGet(1_001)
+        p.sweepIdle()
+        p.onMessage("peerA", PearMux.reattach(1, token, 0, PearMux.INITIAL_WINDOW.toLong()))
+        assertNotNull(next(PearMux.CLOSE, 1))
+        assertEquals(0, p.openStreams)
+    }
+
+    @Test(timeout = 30_000)
+    fun `a CLOSE lost with the connection is resent after the reattach, with the bytes before it`() {
+        val payload = ByteArray(50_000) { (it % 7).toByte() }
+        val server = TestServer.firehose(payload, thenClose = true).also(servers::add)
+        val p = pump(connectTo(server))
+        p.onMessage("peerA", PearMux.open(1))
+        val token = next(PearMux.OPENED, 1)!!.token
+        assertNotNull("the server finished", next(PearMux.CLOSE, 1))
+        sent.clear()
+        pending.clear() // ...and every frame of it was lost
+        p.onPeerClosed("peerA")
+        p.onMessage("peerA", PearMux.reattach(1, token, 0, PearMux.INITIAL_WINDOW.toLong()))
+        next(PearMux.REATTACHED, 1)!!
+        received.remove("peerA" to 1)
+        assertArrayEquals(payload, readData(p, "peerA", 1, payload.size))
+        assertNotNull("the CLOSE comes again", next(PearMux.CLOSE, 1))
+        p.onMessage("peerA", PearMux.close(1))
+        waitFor { p.openStreams == 0 }
+        assertEquals(0L, p.unackedBytes)
+    }
+
+    @Test(timeout = 20_000)
+    fun `the companion's last bytes reach the server before its CLOSE closes it`() {
+        val sink = TestServer.sink().also(servers::add)
+        val slow: () -> Socket = { Thread.sleep(500); Socket(InetAddress.getLoopbackAddress(), sink.port) }
+        val p = pump(slow)
+        p.onMessage("peerA", PearMux.open(1))
+        p.onMessage("peerA", PearMux.data(1, "last words".toByteArray()))
+        p.onMessage("peerA", PearMux.close(1))
+        assertNotNull("answered at once", next(PearMux.CLOSE, 1))
+        assertTrue(sink.awaitEof(5_000))
+        assertArrayEquals("last words".toByteArray(), sink.bytes())
+        waitFor { p.openStreams == 0 }
+    }
+
+    @Test(timeout = 30_000)
+    fun `bytes kept for resending are capped per stream and in total`() {
+        val pattern = ByteArray(2_000_000) { it.toByte() }
+        val firehose = TestServer.firehose(pattern).also(servers::add)
+        val p = pump(
+            connectTo(firehose),
+            PearStreamPump.Limits(maxUnackedPerStream = 100_000, maxUnackedTotal = 150_000),
+        )
+        // A peer that grants plenty of credit and never says it received anything.
+        for (id in 1..2) {
+            p.onMessage("peerA", PearMux.open(id))
+            p.onMessage("peerA", PearMux.window(id, 10_000_000, 0))
+        }
+        Thread.sleep(1_000)
+        assertEquals("both streams together stop at the total", 150_000L, p.unackedBytes)
+
+        // Saying it received them lets more through, and frees what was kept.
+        var got1 = 0L
+        while (true) got1 += (next(PearMux.DATA, 1, timeoutMs = 200) ?: break).payload.size
+        assertTrue("one stream stops at its own cap: $got1", got1 in 1..100_000)
+        p.onMessage("peerA", PearMux.window(1, 1, got1))
+        waitFor { next(PearMux.DATA, 1, timeoutMs = 100) != null }
+        assertTrue(p.unackedBytes <= 150_000)
     }
 
     private fun waitFor(timeoutMs: Long = 5_000, condition: () -> Boolean) {
@@ -320,6 +501,10 @@ class PearStreamPumpTest {
 
         fun awaitEof(timeoutMs: Long) = eofs.poll(timeoutMs, TimeUnit.MILLISECONDS) != null
 
+        private val collected = ByteArrayOutputStream()
+
+        fun bytes(): ByteArray = synchronized(collected) { collected.toByteArray() }
+
         fun dropAll() = clients.forEach { runCatching { it.close() } }
 
         fun stop() {
@@ -348,8 +533,29 @@ class PearStreamPumpTest {
                 return self
             }
 
-            fun firehose(payload: ByteArray) = TestServer { s ->
+            fun firehose(payload: ByteArray, thenClose: Boolean = false) = TestServer { s ->
                 runCatching { s.getOutputStream().write(payload) }
+                if (thenClose) runCatching { s.close() }
+            }
+
+            /** Records everything it is sent, then signals EOF. */
+            fun sink(): TestServer {
+                lateinit var self: TestServer
+                self = TestServer { s ->
+                    try {
+                        val buf = ByteArray(8_192)
+                        val input = s.getInputStream()
+                        while (true) {
+                            val n = input.read(buf)
+                            if (n < 0) break
+                            synchronized(self.collected) { self.collected.write(buf, 0, n) }
+                        }
+                        self.eofs.put(Unit)
+                    } catch (e: Exception) {
+                        // dropped by the test
+                    }
+                }
+                return self
             }
         }
     }

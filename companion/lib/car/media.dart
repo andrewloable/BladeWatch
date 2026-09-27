@@ -7,10 +7,13 @@ import 'car_session.dart';
 /// A binary fetch from the car through the gateway, authenticated like an RPC -- for what the
 /// car serves as plain HTTP because a browser once fetched it directly (stills, thumbnails).
 class MediaResponse {
-  const MediaResponse(this.status, this.bytes);
+  const MediaResponse(this.status, this.bytes, {this.headers = const {}});
 
   final int status;
   final Uint8List bytes;
+
+  /// Response headers, names lower-case (e.g. the live still's `x-still-view`).
+  final Map<String, String> headers;
 
   bool get ok => status == 200 && bytes.isNotEmpty;
 }
@@ -23,7 +26,9 @@ Future<MediaResponse> fetchMedia(CarSession session, String pathAndQuery, {Durat
     final response = await request.close().timeout(timeout);
     final builder = BytesBuilder(copy: false);
     await response.timeout(timeout).forEach(builder.add);
-    return MediaResponse(response.statusCode, builder.takeBytes());
+    final headers = <String, String>{};
+    response.headers.forEach((name, values) => headers[name.toLowerCase()] = values.join(','));
+    return MediaResponse(response.statusCode, builder.takeBytes(), headers: headers);
   } finally {
     client.close(force: true);
   }

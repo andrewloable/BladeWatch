@@ -1888,6 +1888,18 @@
     "perf_process": "Процесс BladeWatch",
     "perf_threads": "Потоки",
     "perf_fds": "Открытые файлы",
-    "perf_gc": "Сборки мусора"
+    "perf_gc": "Сборки мусора",
+    "overlay_field_SPEED": "Скорость",
+    "overlay_field_GEAR": "Передача",
+    "overlay_field_TURN_SIGNAL_LEFT": "Левый поворотник",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Правый поворотник",
+    "overlay_field_BRAKE_PEDAL": "Педаль тормоза",
+    "overlay_field_ACCEL_PEDAL": "Педаль газа",
+    "overlay_field_SEATBELT_DRIVER": "Ремень водителя",
+    "overlay_field_SEATBELT_PASSENGER": "Ремень пассажира",
+    "overlay_field_TIMESTAMP": "Дата и время",
+    "trips_costs": "Поездки и расходы",
+    "trip_storage_confirm": "Новые поездки будут сохраняться: {place}.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

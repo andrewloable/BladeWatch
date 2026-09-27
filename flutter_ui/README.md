@@ -1,6 +1,6 @@
 # BladeWatch in-car UI (Flutter)
 
-The in-car UI for BladeWatch, shipped as its own APK — `net.bladewatch.flutter`
+The in-car UI for BladeWatch, shipped as its own APK — `net.bladewatch.incarapp`
 — alongside `net.bladewatch.app`, which hosts the daemons, camera/surveillance
 pipeline, HTTP + IPC servers and BYD integration.
 

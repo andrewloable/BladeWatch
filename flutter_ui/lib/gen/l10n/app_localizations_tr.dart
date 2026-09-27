@@ -28,6 +28,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get action_select_all_short => 'Hepsi';
 
   @override
+  String get action_select => 'Seç';
+
+  @override
+  String get action_deselect_all => 'Tüm seçimleri kaldır';
+
+  @override
   String get action_delete => 'Sil';
 
   @override
@@ -490,6 +496,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => 'Tüm Günler';
+
+  @override
+  String get recording_lib_type_all => 'Tümü';
 
   @override
   String get cd_clear_date_filter => 'Tüm günleri göster';

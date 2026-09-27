@@ -6,7 +6,7 @@ import 'package:bladewatch_ui/platform/platform_channel_error.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('net.bladewatch.flutter/privileged');
+  const channel = MethodChannel('net.bladewatch.incarapp/privileged');
   final bridge = MethodChannelBridge(channel);
   final log = <MethodCall>[];
   Object? Function(MethodCall) handler = (_) => null;
@@ -116,7 +116,7 @@ void main() {
   test('maps MissingPluginException (channel not registered) to a daemonNotUp PlatformChannelError', () async {
     // No handler at all — simulate by removing it and calling a fresh bridge
     // on a channel nothing has ever registered a handler for.
-    final unregistered = MethodChannelBridge(const MethodChannel('net.bladewatch.flutter/nobody-home'));
+    final unregistered = MethodChannelBridge(const MethodChannel('net.bladewatch.incarapp/nobody-home'));
 
     await expectLater(
       () => unregistered.invoke<void>('daemon', 'ping'),
@@ -130,7 +130,7 @@ void main() {
     );
   });
 
-  test('defaults to the standard "net.bladewatch.flutter/privileged" channel name', () async {
+  test('defaults to the standard "net.bladewatch.incarapp/privileged" channel name', () async {
     handler = (_) => 'ok';
     final defaultBridge = MethodChannelBridge();
 

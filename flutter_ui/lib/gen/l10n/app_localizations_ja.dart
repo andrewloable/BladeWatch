@@ -28,6 +28,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get action_select_all_short => 'すべて';
 
   @override
+  String get action_select => '選択';
+
+  @override
+  String get action_deselect_all => 'すべて選択解除';
+
+  @override
   String get action_delete => '削除';
 
   @override
@@ -479,6 +485,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => 'すべての日';
+
+  @override
+  String get recording_lib_type_all => 'すべて';
 
   @override
   String get cd_clear_date_filter => 'すべての日を表示';

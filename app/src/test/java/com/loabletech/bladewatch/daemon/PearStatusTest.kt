@@ -90,7 +90,7 @@ class PearStatusTest {
     fun `the file holds counts and times only, readable by its owner alone`() {
         healthy()
         assertEquals(
-            setOf("updatedAt", "joined", "online", "companions", "lastCompanionAt"),
+            setOf("updatedAt", "joined", "online", "companions", "lastCompanionAt", "recentCloses"),
             JSONObject(file.readText()).keys().asSequence().toSet(),
         )
         assertEquals(
@@ -98,6 +98,27 @@ class PearStatusTest {
             Files.getPosixFilePermissions(file.toPath()),
         )
         assertFalse(File(file.path + ".tmp").exists())
+    }
+
+    @Test
+    fun `a close keeps its stats, only the whitelisted fields, and only the last 20`() {
+        val stats = JSONObject()
+            .put("error", "ETIMEDOUT").put("ageMs", 125_000).put("bytesIn", 900).put("bytesOut", 7_340_032)
+            .put("rtt", 180).put("rtoCount", 3).put("retransmits", 41).put("ipv6", false)
+            .put("peer", "ab".repeat(32)).put("topic", "cd".repeat(32)) // never sent inside stats; never kept either
+        assertEquals(
+            "error=ETIMEDOUT ageMs=125000 bytesIn=900 bytesOut=7340032 rtt=180 rtoCount=3 retransmits=41 ipv6=false",
+            status.recordClose(stats),
+        )
+        assertEquals("an older pear-end sends no stats", null, status.recordClose(null))
+        repeat(PearStatus.MAX_CLOSES) { now += 1; status.recordClose(JSONObject().put("ageMs", it)) }
+        healthy()
+
+        val closes = JSONObject(file.readText()).getJSONArray("recentCloses")
+        assertEquals(PearStatus.MAX_CLOSES, closes.length())
+        assertEquals("the oldest fell off", 0, closes.getJSONObject(0).getInt("ageMs"))
+        assertEquals(now, closes.getJSONObject(PearStatus.MAX_CLOSES - 1).getLong("at"))
+        assertFalse(file.readText().contains("ab".repeat(32)) || file.readText().contains("cd".repeat(32)))
     }
 
     @Test

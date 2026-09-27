@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch-proces",
     "perf_threads": "Threads",
     "perf_fds": "Open bestanden",
-    "perf_gc": "Geheugenopruimingen"
+    "perf_gc": "Geheugenopruimingen",
+    "overlay_field_SPEED": "Snelheid",
+    "overlay_field_GEAR": "Versnelling",
+    "overlay_field_TURN_SIGNAL_LEFT": "Linker richtingaanwijzer",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Rechter richtingaanwijzer",
+    "overlay_field_BRAKE_PEDAL": "Rempedaal",
+    "overlay_field_ACCEL_PEDAL": "Gaspedaal",
+    "overlay_field_SEATBELT_DRIVER": "Veiligheidsgordel bestuurder",
+    "overlay_field_SEATBELT_PASSENGER": "Veiligheidsgordel passagier",
+    "overlay_field_TIMESTAMP": "Datum en tijd",
+    "trips_costs": "Ritten en kosten",
+    "trip_storage_confirm": "Nieuwe ritten worden opgeslagen op {place}.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

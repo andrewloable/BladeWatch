@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch のプロセス",
     "perf_threads": "スレッド",
     "perf_fds": "開いているファイル",
-    "perf_gc": "GC 回数"
+    "perf_gc": "GC 回数",
+    "overlay_field_SPEED": "速度",
+    "overlay_field_GEAR": "ギア",
+    "overlay_field_TURN_SIGNAL_LEFT": "左ウインカー",
+    "overlay_field_TURN_SIGNAL_RIGHT": "右ウインカー",
+    "overlay_field_BRAKE_PEDAL": "ブレーキペダル",
+    "overlay_field_ACCEL_PEDAL": "アクセルペダル",
+    "overlay_field_SEATBELT_DRIVER": "運転席シートベルト",
+    "overlay_field_SEATBELT_PASSENGER": "助手席シートベルト",
+    "overlay_field_TIMESTAMP": "日付と時刻",
+    "trips_costs": "走行とコスト",
+    "trip_storage_confirm": "新しい走行は{place}に保存されます。",
+    "sync_result": "+{added} / −{removed}"
   }
 }

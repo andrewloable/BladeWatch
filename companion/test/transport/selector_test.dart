@@ -21,6 +21,24 @@ class QuietLink implements PeerLink {
   Future<void> drop() => _in.close();
 }
 
+/// A car that answers every OPEN with OPENED, so its streams can be resumed; records what it got.
+class AnsweringLink implements PeerLink {
+  final _in = StreamController<Uint8List>.broadcast();
+  final List<MuxFrame> log = [];
+
+  @override
+  Stream<Uint8List> get messages => _in.stream;
+
+  @override
+  Future<void> send(Uint8List message) async {
+    final f = PearMux.decode(message)!;
+    log.add(f);
+    if (f.type == PearMux.open && !_in.isClosed) _in.add(PearMux.openedFrame(f.stream, List.filled(16, 7)));
+  }
+
+  Future<void> drop() => _in.close();
+}
+
 /// BladeWatch-rdtj.8: choosing between the LAN and Pear, and noticing when that choice goes stale.
 void main() {
   late LocalGateway gateway;
@@ -224,6 +242,116 @@ void main() {
     await sub.cancel().timeout(const Duration(seconds: 1));
     expect(events, hasLength(1));
     expect(errors, isEmpty);
+  });
+
+  // BladeWatch-bbvx: what a dropped Pear connection carried goes on over the next one.
+  group('streams across a Pear reconnect', () {
+    late ServerSocket local;
+    final sockets = <Socket>[];
+
+    setUp(() async => local = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0));
+    tearDown(() async {
+      for (final c in sockets) {
+        c.destroy();
+      }
+      sockets.clear();
+      await local.close();
+    });
+
+    /// One app connection carried by [bridge]; the completer completes when the app's socket closes.
+    Future<Completer<void>> carry(MuxBridge bridge) async {
+      final accepted = local.first;
+      final app = await Socket.connect(InternetAddress.loopbackIPv4, local.port);
+      sockets.add(app);
+      bridge.pipe(await accepted);
+      final done = Completer<void>();
+      app.listen((_) {}, onDone: done.complete, onError: (Object _) {});
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      return done;
+    }
+
+    test('the next Pear route adopts the dropped one\'s streams', () async {
+      final links = [AnsweringLink(), AnsweringLink()];
+      final bridges = <MuxBridge>[];
+      final s = selector(
+        findOnLan: () async => null,
+        connectPear: (onClosed) async => (bridges..add(MuxBridge(links[bridges.length], onClosed: onClosed))).last,
+      );
+      await s.evaluate();
+      final appDone = await carry(bridges[0]);
+      await links[0].drop();
+      await pumpUntil(() => bridges.length == 2 && s.phase == TransportPhase.pear);
+      expect(links[1].log.map((f) => f.type), contains(PearMux.reattach));
+      expect(bridges[0].isClosed, isTrue);
+      expect(bridges[1].openStreams, 1);
+      var closed = false;
+      unawaited(appDone.future.then((_) => closed = true));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(closed, isFalse, reason: 'the app never saw the drop');
+      await s.dispose();
+    });
+
+    test('while Pear keeps failing the dropped bridge is parked, and a later route adopts it', () async {
+      final first = AnsweringLink();
+      final later = AnsweringLink();
+      var calls = 0;
+      late MuxBridge b1;
+      final s = selector(
+        findOnLan: () async => null,
+        retryAfter: const Duration(milliseconds: 50),
+        connectPear: (onClosed) async => switch (++calls) {
+          1 => b1 = MuxBridge(first, onClosed: onClosed),
+          2 => null, // the car is not found at once
+          _ => MuxBridge(later, onClosed: onClosed),
+        },
+      );
+      await s.evaluate();
+      await carry(b1);
+      await first.drop();
+      await pumpUntil(() => calls >= 3 && s.phase == TransportPhase.pear);
+      expect(later.log.map((f) => f.type), contains(PearMux.reattach));
+      await s.dispose();
+    });
+
+    test('finding the car on the LAN instead closes the parked streams', () async {
+      final first = AnsweringLink();
+      var calls = 0;
+      late MuxBridge b1;
+      var onLan = false;
+      final s = selector(
+        findOnLan: () async => onLan ? lan : null,
+        retryAfter: const Duration(milliseconds: 50),
+        connectPear: (onClosed) async {
+          if (++calls == 1) return b1 = MuxBridge(first, onClosed: onClosed);
+          onLan = true; // the phone joins the car's Wi-Fi meanwhile
+          return null;
+        },
+      );
+      await s.evaluate();
+      final appDone = await carry(b1);
+      await first.drop();
+      await pumpUntil(() => s.phase == TransportPhase.lan);
+      await appDone.future.timeout(const Duration(seconds: 5));
+      expect(b1.isClosed, isTrue);
+      await s.dispose();
+    });
+
+    test('disposing closes a parked bridge too', () async {
+      final first = AnsweringLink();
+      late MuxBridge b1;
+      var calls = 0;
+      final s = selector(
+        findOnLan: () async => null,
+        connectPear: (onClosed) async => ++calls == 1 ? b1 = MuxBridge(first, onClosed: onClosed) : null,
+      );
+      await s.evaluate();
+      await carry(b1);
+      await first.drop();
+      await pumpUntil(() => s.phase == TransportPhase.failed);
+      expect(b1.isDetached, isTrue);
+      await s.dispose();
+      expect(b1.isClosed, isTrue);
+    });
   });
 
   test('addressChanges reads this device\'s real addresses by default', () async {

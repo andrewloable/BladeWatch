@@ -11,7 +11,7 @@ import 'package:flutter_map/flutter_map.dart';
 /// source appearing the next time a map is added.
 TileLayer bwOsmTileLayer() => TileLayer(
   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  userAgentPackageName: 'net.bladewatch.flutter',
+  userAgentPackageName: 'net.bladewatch.incarapp',
 );
 
 /// Ports native's `TilesOverlay.INVERT_COLORS`

@@ -30,7 +30,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "net.bladewatch.flutter"
+        applicationId = "net.bladewatch.incarapp"
         // Device floor is API 29 (measured on the BYD head unit) — Flutter's own
         // floor is 24, but 29 documents the real hardware target and lets the
         // Impeller Vulkan backend be relied on. targetSdk intentionally left at

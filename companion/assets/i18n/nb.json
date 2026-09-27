@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch-prosess",
     "perf_threads": "Tråder",
     "perf_fds": "Åpne filer",
-    "perf_gc": "Søppelinnsamlinger"
+    "perf_gc": "Søppelinnsamlinger",
+    "overlay_field_SPEED": "Hastighet",
+    "overlay_field_GEAR": "Gir",
+    "overlay_field_TURN_SIGNAL_LEFT": "Venstre blinklys",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Høyre blinklys",
+    "overlay_field_BRAKE_PEDAL": "Brempedal",
+    "overlay_field_ACCEL_PEDAL": "Gasspedal",
+    "overlay_field_SEATBELT_DRIVER": "Førerens sikkerhetsbelte",
+    "overlay_field_SEATBELT_PASSENGER": "Passasjerens sikkerhetsbelte",
+    "overlay_field_TIMESTAMP": "Dato og klokkeslett",
+    "trips_costs": "Turer og kostnader",
+    "trip_storage_confirm": "Nye turer lagres på {place}.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

@@ -87,7 +87,7 @@ void main() {
     final shellController = ShellController();
     PackageInfo.setMockInitialValues(
       appName: 'BladeWatch',
-      packageName: 'net.bladewatch.flutter',
+      packageName: 'net.bladewatch.incarapp',
       version: '9.9.9',
       buildNumber: '1',
       buildSignature: '',
@@ -105,7 +105,7 @@ void main() {
     final setupGuideController = SetupGuideController(
       prefs: PrefsChannel(fakeChannel),
       setup: SetupChannel(fakeChannel),
-      versionSource: () async => const AppVersionInfo(version: '9.9.9', buildNumber: '1', packageName: 'net.bladewatch.flutter'),
+      versionSource: () async => const AppVersionInfo(version: '9.9.9', buildNumber: '1', packageName: 'net.bladewatch.incarapp'),
     );
 
     await tester.pumpWidget(BladeWatchApp(

@@ -6,7 +6,7 @@ import '../../shell/disposed_safe_notifier.dart';
 /// mocking of its own to test. Ground truth for the *values shown*:
 /// `SettingsAboutFragment.kt`'s `tvAboutVersion`/`tvAboutBuild`
 /// (`BuildConfig.VERSION_NAME`/`BuildConfig.APPLICATION_ID`) — this reads
-/// the FLUTTER APK's own identity (`net.bladewatch.flutter`), a distinct
+/// the FLUTTER APK's own identity (`net.bladewatch.incarapp`), a distinct
 /// package from the main app.
 class AppVersionInfo {
   final String version;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  BladeWatch-81g9.2: the native in-car UI is gone. `net.bladewatch.flutter` owns every
+  BladeWatch-81g9.2: the native in-car UI is gone. `net.bladewatch.incarapp` owns every
   in-car string now, in `flutter_ui/lib/l10n/app_*.arb`.
 
   What remains is ONLY what the daemon APK itself still renders, and every key here has a

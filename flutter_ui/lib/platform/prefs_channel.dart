@@ -1,7 +1,7 @@
 import 'platform_channel.dart';
 
 /// Dart side of the `prefs.*` channel group (BladeWatch-yz1e.3) — plain
-/// SharedPreferences local to this APK (`net.bladewatch.flutter`), for
+/// SharedPreferences local to this APK (`net.bladewatch.incarapp`), for
 /// per-installation UI preferences that are neither secret nor shared with
 /// the native app. Ground truth: `PreferencesManager.kt`'s `getThemeMode`/
 /// `setThemeMode`/`getDriveSide`/`setDriveSide` — not directly reachable

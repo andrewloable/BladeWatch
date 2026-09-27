@@ -28,6 +28,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get action_select_all_short => '全部';
 
   @override
+  String get action_select => '选择';
+
+  @override
+  String get action_deselect_all => '取消全选';
+
+  @override
   String get action_delete => '删除';
 
   @override
@@ -478,6 +484,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => '所有日期';
+
+  @override
+  String get recording_lib_type_all => '全部';
 
   @override
   String get cd_clear_date_filter => '显示所有日子';
@@ -2823,6 +2832,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get action_select_all_short => '全部';
 
   @override
+  String get action_select => '选择';
+
+  @override
+  String get action_deselect_all => '取消全选';
+
+  @override
   String get action_delete => '删除';
 
   @override
@@ -3273,6 +3288,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get recording_lib_date_all_days => '所有日期';
+
+  @override
+  String get recording_lib_type_all => '全部';
 
   @override
   String get cd_clear_date_filter => '显示所有日子';
@@ -5618,6 +5636,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get action_select_all_short => '全部';
 
   @override
+  String get action_select => '選擇';
+
+  @override
+  String get action_deselect_all => '取消全選';
+
+  @override
   String get action_delete => '刪除';
 
   @override
@@ -6069,6 +6093,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get recording_lib_date_all_days => '所有日期';
+
+  @override
+  String get recording_lib_type_all => '全部';
 
   @override
   String get cd_clear_date_filter => '顯示所有日期';

@@ -28,6 +28,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get action_select_all_short => 'Tất cả';
 
   @override
+  String get action_select => 'Chọn';
+
+  @override
+  String get action_deselect_all => 'Bỏ chọn tất cả';
+
+  @override
   String get action_delete => 'Xoá';
 
   @override
@@ -488,6 +494,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => 'Tất cả các ngày';
+
+  @override
+  String get recording_lib_type_all => 'Tất cả';
 
   @override
   String get cd_clear_date_filter => 'Hiển thị tất cả các ngày';

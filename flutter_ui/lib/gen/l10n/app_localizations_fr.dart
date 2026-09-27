@@ -28,6 +28,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get action_select_all_short => 'Tout';
 
   @override
+  String get action_select => 'Sélectionner';
+
+  @override
+  String get action_deselect_all => 'Tout désélectionner';
+
+  @override
   String get action_delete => 'Supprimer';
 
   @override
@@ -496,6 +502,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => 'Tous les jours';
+
+  @override
+  String get recording_lib_type_all => 'Tous';
 
   @override
   String get cd_clear_date_filter => 'Afficher tous les jours';

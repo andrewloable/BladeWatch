@@ -3,12 +3,12 @@ package net.bladewatch.app.surveillance
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
-import android.media.MediaMuxer
 import android.os.Bundle
 import android.view.Surface
 
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.logging.DaemonLogger
+import net.bladewatch.app.recording.RecordingMuxer
 import net.bladewatch.app.recording.RecordingPriority
 import net.bladewatch.app.server.RecordingsApiHandler
 import net.bladewatch.app.storage.StorageManager
@@ -107,7 +107,11 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
     // moov atom and leaves a sized-but-unplayable .mp4 on disk — exactly the
     // failure mode that triggered this rewrite.
     private val muxerLock = Any()
-    @Volatile private var muxer: MediaMuxer? = null
+    @Volatile private var muxer: RecordingMuxer? = null
+
+    // BladeWatch-rdtj.29: write this recording as fragmented MP4 (recording.fragmentedMp4, off by
+    // default). Read once per recording, so every rotated segment of it is written the same way.
+    private var fragmentedMp4 = false
     @Volatile private var trackIndex = -1
     @Volatile private var muxerStarted = false
     // Set true by the disk writer when it gives up after repeated I/O failures
@@ -723,7 +727,7 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
         // Hold startStopLock across the entire start path so two concurrent
         // callers can't both observe isWritingToFile == false and race ahead
         // to build two muxers. The work inside is dominated by a few mkdirs
-        // and a MediaMuxer ctor (sub-100ms typically), so blocking another
+        // and a muxer ctor (sub-100ms typically), so blocking another
         // start request for that long is acceptable — the alternative is the
         // duplicate-files-on-disk bug.
         synchronized(startStopLock) {
@@ -780,9 +784,8 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
                 var muxerOk = false
                 synchronized(muxerLock) {
                     try {
-                        val newMuxer = MediaMuxer(
-                            newTempFile.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
-                        )
+                        fragmentedMp4 = loadFragmentedMp4()
+                        val newMuxer = RecordingMuxer.open(newTempFile.absolutePath, fragmentedMp4)
                         muxer = newMuxer
 
                         // If we have a saved format, use it immediately
@@ -795,7 +798,7 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
                         }
                         muxerOk = true
                     } catch (e: Exception) {
-                        logger.error("MediaMuxer setup failed", e)
+                        logger.error("Muxer setup failed", e)
                         muxer?.let {
                             try {
                                 it.release()
@@ -1163,6 +1166,15 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
      * @return true if recording, false otherwise
      */
     fun isRecording(): Boolean = recording
+
+    /**
+     * BladeWatch-rdtj.66: whether the file being written is on removable storage (an SD card or USB
+     * drive under /storage, not the internal /storage/emulated) -- what vold's unmount is about.
+     */
+    fun isWritingToRemovable(): Boolean {
+        val path = if (isWritingToFile) tempFile?.absolutePath else null
+        return path != null && path.startsWith("/storage/") && !path.startsWith("/storage/emulated/")
+    }
 
     /**
      * The base filename (no directory, no `.tmp` suffix) currently being written, or
@@ -1642,6 +1654,13 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
      * result to milliseconds. Falls back to the default (5 min) on any error or
      * an unexpected value, so a bad config can never disable rotation entirely.
      */
+    private fun loadFragmentedMp4(): Boolean = try {
+        UnifiedConfigManager.getRecording().optBoolean("fragmentedMp4", false)
+    } catch (e: Exception) {
+        logger.warn("Could not read recording.fragmentedMp4, writing MP4 as before: " + e.message)
+        false
+    }
+
     private fun loadSegmentDurationMs(): Long {
         try {
             val rec = UnifiedConfigManager.getRecording()
@@ -1836,7 +1855,7 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
             segmentStartTime = System.currentTimeMillis()
 
             synchronized(muxerLock) {
-                val newMuxer = MediaMuxer(newTemp.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+                val newMuxer = RecordingMuxer.open(newTemp.absolutePath, fragmentedMp4)
                 muxer = newMuxer
 
                 val format = savedFormat

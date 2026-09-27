@@ -11,7 +11,7 @@ It ships as **two APKs that share one UID**:
 | APK | Package | Built from | Role |
 |---|---|---|---|
 | Service host | `net.bladewatch.app` | `app/` (Gradle `:app`) | Daemons, receivers, foreground services, BYD integration. **No launcher entry, no UI.** |
-| In-car UI | `net.bladewatch.flutter` | `flutter_ui/` (its own Flutter project) | The Flutter app the driver opens. The only launcher icon. |
+| In-car UI | `net.bladewatch.incarapp` | `flutter_ui/` (its own Flutter project) | The Flutter app the driver opens. The only launcher icon. |
 
 Both are signed with the same key and declare `android:sharedUserId="net.bladewatch.app"`. That is **load-bearing**: the daemon's loopback IPC on 19876/19877 authorises by peer UID (`PeerCredentials.isTrusted`), and `CoResidentAttackerTest` pins that a separate app holding the world-readable IPC token is rejected. A shared UID lets the Flutter APK pass that gate unchanged — **never widen the gate instead.**
 
@@ -65,12 +65,12 @@ The two APKs build independently. `./gradlew` builds the **service host** only;
 the Flutter APK is built from `flutter_ui/` with the Flutter toolchain.
 
 ```bash
-# --- in-car UI (net.bladewatch.flutter), from flutter_ui/ ---
+# --- in-car UI (net.bladewatch.incarapp), from flutter_ui/ ---
 cd flutter_ui && flutter analyze && flutter test
 cd flutter_ui && flutter build apk --target-platform android-arm64 --debug
 cd flutter_ui && flutter run -d "$CAR_IP:5555"   # hot reload; no Gradle, no daemon restart
 
-# --- companion (net.bladewatch.companion, phones/desktops), from companion/ ---
+# --- companion (net.bladewatch.companionapp, phones/desktops), from companion/ ---
 # NOT a head-unit app: never install it on the car. See "Platform Scope".
 cd companion && flutter analyze && flutter test
 cd companion && flutter build apk --debug        # arm64-v8a + x86_64 only
@@ -240,7 +240,7 @@ adb -s $CAR_IP:5555 install flutter_ui/build/app/outputs/flutter-apk/app-debug.a
 
 # Both packages MUST report the same UID or privileged IPC is refused:
 adb -s $CAR_IP:5555 shell 'dumpsys package net.bladewatch.app | grep userId'
-adb -s $CAR_IP:5555 shell 'dumpsys package net.bladewatch.flutter | grep userId'
+adb -s $CAR_IP:5555 shell 'dumpsys package net.bladewatch.incarapp | grep userId'
 
 # Clear all logs (logcat buffer + daemon log files + debug app log)
 adb -s $CAR_IP:5555 logcat -c
@@ -282,7 +282,7 @@ See `docs/build-and-operations.md` for the toolchain pins and the signing recipe
 
 BladeWatch is a hybrid Android + shell-daemon + embedded web app. The critical design split:
 
-**Flutter UI process** (`net.bladewatch.flutter`) — every screen, in Dart under `flutter_ui/lib/`, with plain `ChangeNotifier` controllers (no Riverpod/BLoC). Talks to the daemon over ConnectRPC on 8080 with a JWT; privileged operations go through MethodChannels to a small Kotlin layer **in the same APK**, which uses loopback IPC on 19876. On first `onResume` it explicitly starts the service host's `MainActivity` (`wakeServiceHost()`) — an explicit component start, because BYD's `ssc_skip` suppresses broadcasts to the app package unless it is allowed in BYD Auto-Start, which every install/update resets (docs/daemons-and-processes.md, "After a reboot").
+**Flutter UI process** (`net.bladewatch.incarapp`) — every screen, in Dart under `flutter_ui/lib/`, with plain `ChangeNotifier` controllers (no Riverpod/BLoC). Talks to the daemon over ConnectRPC on 8080 with a JWT; privileged operations go through MethodChannels to a small Kotlin layer **in the same APK**, which uses loopback IPC on 19876. On first `onResume` it explicitly starts the service host's `MainActivity` (`wakeServiceHost()`) — an explicit component start, because BYD's `ssc_skip` suppresses broadcasts to the app package unless it is allowed in BYD Auto-Start, which every install/update resets (docs/daemons-and-processes.md, "After a reboot").
 
 **Service host process** (`net.bladewatch.app`) — no UI: `BladeWatchApplication`, `MainActivity` (startup bootstrap only — extends `Activity`, never calls `setContentView`, `moveTaskToBack(true)` immediately; kept `exported` as the ADB recovery path), boot/power receivers, `DaemonKeepaliveService`, `DaemonStartupManager`, `StatusOverlayService`.
 

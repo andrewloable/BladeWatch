@@ -31,6 +31,37 @@ cut abruptly, at most about a minute may be lost" (segment length capped to 1 mi
 regardless of `segmentMinutes`). New installs default to Reliability; an existing config
 migrates once to Performance, preserving its pre-existing (uncapped) behaviour.
 
+**Fragmented MP4, off by default (BladeWatch-rdtj.29).** With `recording.fragmentedMp4` on,
+`HardwareEventRecorderGpu` writes each segment through `FragmentedMp4Writer`
+(`app/src/main/java/com/loabletech/bladewatch/recording/`) instead of MediaMuxer: `ftyp` and
+a sample-less `moov` first, then one `moof`+`mdat` fragment per group of pictures (a keyframe
+and what follows, about 2 s). A clean stop adds the length (`mehd`), a segment index (`sidx`,
+in a 16 KB reserve after `moov`) and `mfra`. Consequences:
+- New clips stream from their first bytes without `Mp4Faststart.View` (older clips keep it).
+- A killed daemon or a power cut loses only the fragment in flight: the `.mp4.tmp` plays up to
+  its last whole fragment. At the next daemon start `FragmentedMp4Muxer.recoverLeftovers`
+  (in `CameraDaemon`, before the orphan sweep below, over the same directories) cuts off any
+  partial fragment, writes the length/index/`mfra` and renames it to `.mp4`, so it also
+  seeks; the clip is indexed into the media catalog as soon as that exists. There is no age
+  guard: the camera daemon, the only process that records, has its singleton lock by then,
+  and the keepalive restarts a killed daemon within ~6 s (measured on the head unit). MediaMuxer
+  leftovers cannot be saved and are still swept.
+- **Served defragmented (BladeWatch-rdtj.63).** AVFoundation (the companion on iOS and macOS)
+  reads a fragmented file by fetching every fragment's header before it plays, one Range request
+  each. Over Pear, at ~0.4 s a request, a 5-minute clip (160 fragments) had not started after 16 s.
+  `Mp4Defragment` (through `Mp4Faststart.view`) serves such a clip as an ordinary one:
+  - `ftyp`;
+  - a rebuilt `moov` with every sample in its tables (one sample per chunk; `mvex` dropped);
+  - `mdat`, then each fragment's sample data straight from the file.
+  The file never changes; the ETag suffix is `df1`, and the Content-Length is the view's. The same
+  clip then played 1.5 s after the player opened, on two requests.
+- Checked players (spike, 2026-09-27): ffmpeg frame-identical, AVPlayer, ExoPlayer
+  (video_player_android 2.12.2 as in both Flutter apps) and MediaMetadataRetriever on
+  Android 10, Chrome; H.264 and H.265. On the head unit (2026-09-27, H.264 only, since the
+  recorder accepts no other codec): finished and recovered clips list with the right length
+  and thumbnail, and play and seek in the in-car UI. The flag stays off until the on-car
+  checks pass.
+
 **Orphan sweeping at daemon startup (BladeWatch-k3b0, BladeWatch-g8ee).** Every `.jpg`,
 `.srt` and `.json` in `recordings/` and `surveillance/` is a sidecar keyed to an `.mp4`
 basename — hero JPEG `<base>.jpg`, per-actor thumbnails `thumb_<base>_a*.jpg`, subtitle

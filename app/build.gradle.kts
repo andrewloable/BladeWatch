@@ -1320,7 +1320,7 @@ tasks.register("validateFlutterAndroidOnly") {
                     present.forEach { append("  - found flutter_ui/$it\n") }
                     append("\nDelete the directory (rm -rf flutter_ui/<name>) and do NOT run\n")
                     append("`flutter create` inside flutter_ui/ — it re-scaffolds every platform.\n")
-                    append("The in-car UI ships only as the arm64 Android APK net.bladewatch.flutter.\n")
+                    append("The in-car UI ships only as the arm64 Android APK net.bladewatch.incarapp.\n")
                     append("Phone and desktop targets belong in companion/, the BladeWatch companion\n")
                     append("app — that is the one place in this repo where they are correct.\n")
                     append("Note: web/ at the REPO ROOT is the Angular SPA and is unrelated — this\n")

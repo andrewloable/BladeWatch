@@ -1888,6 +1888,18 @@
     "perf_process": "Processo BladeWatch",
     "perf_threads": "Thread",
     "perf_fds": "File aperti",
-    "perf_gc": "Garbage collection"
+    "perf_gc": "Garbage collection",
+    "overlay_field_SPEED": "Velocità",
+    "overlay_field_GEAR": "Marcia",
+    "overlay_field_TURN_SIGNAL_LEFT": "Freccia sinistra",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Freccia destra",
+    "overlay_field_BRAKE_PEDAL": "Pedale del freno",
+    "overlay_field_ACCEL_PEDAL": "Pedale dell'acceleratore",
+    "overlay_field_SEATBELT_DRIVER": "Cintura del conducente",
+    "overlay_field_SEATBELT_PASSENGER": "Cintura del passeggero",
+    "overlay_field_TIMESTAMP": "Data e ora",
+    "trips_costs": "Viaggi e costi",
+    "trip_storage_confirm": "I nuovi viaggi verranno salvati su {place}.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

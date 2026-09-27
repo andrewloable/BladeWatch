@@ -76,7 +76,7 @@ class TripsScreen extends StatelessWidget {
       length: 3,
       child: Column(children: [
         TabBar(tabs: [Tab(text: tr('trips.tab_trips')), Tab(text: tr('trips.tab_stats')), Tab(text: tr('trips.tab_storage'))]),
-        const Expanded(child: TabBarView(children: [_TripList(), _Stats(), _Storage()])),
+        const Expanded(child: TabBarView(children: [_TripList(), _Stats(), TripSettingsForm()])),
       ]),
     );
   }
@@ -291,14 +291,16 @@ class _StatsState extends State<_Stats> with LoadersState {
   }
 }
 
-class _Storage extends StatefulWidget {
-  const _Storage();
+/// Trip analytics, costs (rate, currency, fuel price, tank), distance unit and trip storage -- the
+/// in-car app's Settings > Trips. Shown on the Trips page and from Settings (BladeWatch-rdtj.67).
+class TripSettingsForm extends StatefulWidget {
+  const TripSettingsForm({super.key});
 
   @override
-  State<_Storage> createState() => _StorageState();
+  State<TripSettingsForm> createState() => _TripSettingsFormState();
 }
 
-class _StorageState extends State<_Storage> with LoadersState {
+class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
   late final _client = TripsServiceClient(context.session.rpc);
   late final _state = loader(() async => (
         config: (await _client.getConfig(GetConfigRequest())).config,
@@ -315,6 +317,7 @@ class _StorageState extends State<_Storage> with LoadersState {
   final _tank = TextEditingController();
   bool _filled = false;
   bool _fuelShown = false;
+  String _unit = 'km';
 
   static bool showFuel(TripConfig c) => c.isPhev || c.fuelPricePerL > 0 || c.fuelTankCapacityL > 0;
 
@@ -326,6 +329,25 @@ class _StorageState extends State<_Storage> with LoadersState {
     _fuelPrice.dispose();
     _tank.dispose();
     super.dispose();
+  }
+
+  /// Where new trips go, confirmed first as the in-car app does.
+  Future<void> _moveStorage(String type, String place) async {
+    final tr = context.tr;
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(tr('trips.storage_location')),
+        content: Text(tr('companion.trip_storage_confirm', {'place': place})),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('common.cancel'))),
+          FilledButton(key: const ValueKey('trips.storage.confirm'), onPressed: () => Navigator.pop(context, true), child: Text(tr('common.ok'))),
+        ],
+      ),
+    );
+    if (yes != true || !mounted) return;
+    await act(context, () => _client.setStorage(SetStorageRequest(storageType: type)), done: tr('toast.applied'), failed: tr('errors.save_failed'));
+    await _state.load();
   }
 
   Future<void> _apply() async {
@@ -340,6 +362,7 @@ class _StorageState extends State<_Storage> with LoadersState {
         electricityRate: rate ?? 0,
         hasElectricityRate_4: rate != null,
         currency: _currency.text.trim(),
+        distanceUnit: _unit,
         // Sent with presence, so 0 clears a value ("not configured") instead of reading as
         // "not sent" and leaving the old one in place.
         fuelPricePerL: price ?? 0,
@@ -365,6 +388,7 @@ class _StorageState extends State<_Storage> with LoadersState {
           _limit.text = '${v.storage.limitMb}';
           _fuelPrice.text = v.config.fuelPricePerL.toStringAsFixed(2);
           _tank.text = v.config.fuelTankCapacityL.toStringAsFixed(1);
+          _unit = v.config.distanceUnit == 'mi' ? 'mi' : 'km';
         }
         _fuelShown = showFuel(v.config);
         return PageList(children: [
@@ -386,6 +410,18 @@ class _StorageState extends State<_Storage> with LoadersState {
               decoration: InputDecoration(labelText: tr('trips.electricity_rate')),
             ),
             TextField(key: const ValueKey('trips.currency'), controller: _currency, decoration: InputDecoration(labelText: tr('trips.currency'))),
+            const SizedBox(height: 12),
+            Text(tr('trip.settings.distance_unit'), style: Theme.of(context).textTheme.titleSmall),
+            Wrap(spacing: 8, children: [
+              for (final (unit, key) in [('km', 'trip.settings.unit_km'), ('mi', 'trip.settings.unit_miles')])
+                ChoiceChip(
+                  key: ValueKey('trips.unit.$unit'),
+                  label: Text(tr(key)),
+                  selected: _unit == unit,
+                  // Saved with the rest by Apply, as the in-car app does.
+                  onSelected: (_) => setState(() => _unit = unit),
+                ),
+            ]),
             if (_fuelShown) ...[
               TextField(
                 key: const ValueKey('trips.fuel_price'),
@@ -402,7 +438,16 @@ class _StorageState extends State<_Storage> with LoadersState {
             ],
           ]),
           Section(title: tr('trips.trip_storage'), children: [
-            InfoRow(tr('trips.storage_location'), v.storage.storageType == 'SD_CARD' ? tr('trips.sd_card') : tr('trips.internal')),
+            Text(tr('trips.storage_location'), style: Theme.of(context).textTheme.titleSmall),
+            Wrap(spacing: 8, children: [
+              for (final (type, key) in [('INTERNAL', 'trips.internal'), ('SD_CARD', 'trips.sd_card')])
+                ChoiceChip(
+                  key: ValueKey('trips.storage.$type'),
+                  label: Text(tr(key)),
+                  selected: (v.storage.storageType.isEmpty ? 'INTERNAL' : v.storage.storageType) == type,
+                  onSelected: (_) => _moveStorage(type, tr(key)),
+                ),
+            ]),
             InfoRow(tr('trips.used'), '${v.storage.usedMb.toStringAsFixed(1)} MB · ${v.storage.tripsCount} ${tr('trips.trips_count')}'),
             TextField(
               key: const ValueKey('trips.limit'),

@@ -26,11 +26,16 @@ class LinkEnd implements PeerLink {
   final _in = StreamController<Uint8List>.broadcast();
   late LinkEnd other;
 
+  /// Messages sent while set vanish, as with a connection that is dying.
+  bool lose = false;
+
   @override
   Stream<Uint8List> get messages => _in.stream;
 
   @override
-  Future<void> send(Uint8List message) async => other._in.add(message);
+  Future<void> send(Uint8List message) async {
+    if (!lose && !other._in.isClosed) other._in.add(message);
+  }
 
   Future<void> drop() => _in.close();
 }
@@ -43,41 +48,119 @@ class LinkEnd implements PeerLink {
   return (a, b);
 }
 
-/// Just enough of the car's PearStreamPump: OPEN -> TCP to [port], bytes both ways, CLOSE.
+/// Just enough of the car's PearStreamPump (v2, BladeWatch-bbvx): OPEN -> OPENED and TCP to
+/// [port], bytes both ways within the companion's credit, the CLOSE handshake, and REATTACH from
+/// any connection it serves -- resending from what the companion received. ponytail: keeps every
+/// byte it sent for resending (the real pump trims on WINDOW); fine for test-sized streams.
 class FakeCarPump {
-  FakeCarPump(this.link, this.port) {
-    link.messages.listen(_onMessage);
+  factory FakeCarPump(PeerLink link, int port) => FakeCarPump.shared(port)..serve(link);
+
+  FakeCarPump.shared(this.port);
+
+  final int port;
+  final List<_FakeStream> _streams = [];
+  int reattaches = 0;
+
+  void serve(PeerLink link) => link.messages.listen((m) => _onMessage(link, m));
+
+  _FakeStream? _find(PeerLink link, int id) {
+    for (final s in _streams) {
+      if (identical(s.link, link) && s.id == id) return s;
+    }
+    return null;
   }
 
-  final PeerLink link;
-  final int port;
-  final Map<int, Socket> _sockets = {};
+  Future<void> _onMessage(PeerLink link, Uint8List message) async {
+    final f = PearMux.decode(message)!;
+    final s = _find(link, f.stream);
+    switch (f.type) {
+      case PearMux.open:
+        final token = Uint8List.fromList(List.generate(PearMux.tokenBytes, (i) => (f.stream * 31 + i * 7) & 0xff));
+        final stream = _FakeStream(link, f.stream, token);
+        _streams.add(stream);
+        stream.send(PearMux.openedFrame(f.stream, token));
+        final socket = await Socket.connect(InternetAddress.loopbackIPv4, port);
+        stream.socket = socket;
+        socket.listen(
+          (bytes) {
+            stream.out.addAll(bytes);
+            stream.pump();
+          },
+          onDone: () {
+            stream.serverDone = true;
+            stream.pump();
+          },
+          onError: (Object _) {},
+        );
+      case PearMux.data:
+        if (s == null) return;
+        s.socket?.add(f.payload);
+        s.received += f.payload.length;
+        s.recvLimit += f.payload.length;
+        s.send(PearMux.windowFrame(f.stream, f.payload.length, s.received));
+      case PearMux.window:
+        if (s == null) return;
+        s.limit += f.credit;
+        s.pump();
+      case PearMux.close:
+        if (s == null) return;
+        if (!s.closeSent) s.send(PearMux.closeFrame(f.stream));
+        s.socket?.destroy();
+        _streams.remove(s);
+      case PearMux.reattach:
+        final match = _streams.where((x) => _same(x.token, f.token)).firstOrNull;
+        if (match == null) {
+          unawaited(link.send(PearMux.closeFrame(f.stream)).catchError((Object _) {}));
+          return;
+        }
+        reattaches++;
+        match
+          ..link = link
+          ..id = f.stream
+          ..limit = f.limit
+          ..sent = f.received;
+        match.send(PearMux.reattachedFrame(f.stream, match.received, match.recvLimit));
+        match.pump();
+    }
+  }
+
+  static bool _same(List<int> a, List<int> b) {
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return a.length == b.length;
+  }
+}
+
+class _FakeStream {
+  _FakeStream(this.link, this.id, this.token);
+
+  PeerLink link;
+  int id;
+  final Uint8List token;
+  Socket? socket;
+  final List<int> out = []; // everything the server sent, for resending
+  int sent = 0; // bytes of [out] sent to the companion
+  int limit = PearMux.initialWindow;
+  int received = 0;
+  int recvLimit = PearMux.initialWindow;
+  bool serverDone = false;
+  bool closeSent = false;
 
   // A car whose pear_daemon has gone sends nothing more. The drop tests dispose the car's Pear
   // under traffic, and an uncaught WORKLET_DISPOSED from a send in flight then failed whichever
   // test was running (BladeWatch-rdtj.39).
-  void _send(Uint8List frame) => unawaited(link.send(frame).catchError((Object _) {}));
+  void send(Uint8List frame) => unawaited(link.send(frame).catchError((Object _) {}));
 
-  Future<void> _onMessage(Uint8List message) async {
-    final f = PearMux.decode(message)!;
-    switch (f.type) {
-      case PearMux.open:
-        final s = await Socket.connect(InternetAddress.loopbackIPv4, port);
-        _sockets[f.stream] = s;
-        s.listen(
-          (bytes) {
-            for (var i = 0; i < bytes.length; i += PearMux.maxData) {
-              _send(PearMux.dataFrame(f.stream, bytes.sublist(i, (i + PearMux.maxData).clamp(0, bytes.length))));
-            }
-          },
-          onDone: () => _send(PearMux.closeFrame(f.stream)),
-          onError: (Object _) {},
-        );
-      case PearMux.data:
-        _sockets[f.stream]?.add(f.payload);
-        _send(PearMux.windowFrame(f.stream, f.payload.length));
-      case PearMux.close:
-        _sockets.remove(f.stream)?.destroy();
+  void pump() {
+    while (sent < out.length && sent < limit) {
+      final end = [out.length, limit, sent + PearMux.maxData].reduce((a, b) => a < b ? a : b);
+      send(PearMux.dataFrame(id, out.sublist(sent, end)));
+      sent = end;
+    }
+    if (serverDone && sent == out.length && !closeSent) {
+      closeSent = true;
+      send(PearMux.closeFrame(id));
     }
   }
 }
@@ -162,6 +245,56 @@ void main() {
     expect(await isClosedWithoutData(), isTrue);
   });
 
+  // BladeWatch-bbvx: the acceptance case in miniature -- a pinned TLS session through the gateway,
+  // its Pear connection dying with frames in flight both ways, and the app never noticing.
+  test('a TLS session through the gateway survives a Pear reconnect, byte for byte', () async {
+    final pump = FakeCarPump.shared(car.port);
+    final ends = <(LinkEnd, LinkEnd)>[];
+    final selector = TransportSelector(
+      gateway: gateway,
+      pinnedFingerprint: pin,
+      findOnLan: () async => null,
+      connectPear: (onClosed) async {
+        final pair = linkPair();
+        ends.add(pair);
+        pump.serve(pair.$2);
+        return findCarOverPear(Stream.value(pair.$1), pin, onClosed: onClosed);
+      },
+    );
+    await selector.evaluate();
+    expect(selector.phase, TransportPhase.pear);
+
+    final app = await Socket.connect(InternetAddress.loopbackIPv4, gateway.port);
+    final pattern = List<int>.generate(200000, (i) => i % 251);
+    final got = <int>[];
+    var appClosed = false;
+    app.listen(got.addAll, onDone: () => appClosed = true, onError: (Object _) {});
+    Future<void> until(bool Function() done) async {
+      for (var i = 0; i < 1000 && !done(); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    }
+
+    app.add(pattern.sublist(0, 100000));
+    await until(() => got.length >= 50000);
+    final (companionEnd, carEnd) = ends.first;
+    companionEnd.lose = true; // the connection dies with frames in flight, both ways
+    carEnd.lose = true;
+    app.add(pattern.sublist(100000));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await companionEnd.drop();
+    await carEnd.drop();
+
+    await until(() => got.length >= pattern.length);
+    expect(got.length, pattern.length);
+    expect(got, pattern, reason: 'every byte, once, in order');
+    expect(pump.reattaches, greaterThanOrEqualTo(1));
+    expect(ends.length, 2, reason: 'found again on a new connection');
+    expect(appClosed, isFalse);
+    app.destroy();
+    await selector.dispose();
+  });
+
   group('findCarOverPear', () {
     test('picks the peer that proves to be the car, not another companion on the topic', () async {
       final (silentCompanion, silentOther) = linkPair();
@@ -235,7 +368,8 @@ void main() {
       companionWorklet.disconnectFrom(carWorklet);
       await Future<void>.delayed(const Duration(milliseconds: 50));
       expect(dropped, isTrue, reason: 'PearConnection.data closing is how the selector learns to re-route');
-      expect(bridge.isClosed, isTrue);
+      expect(bridge.isClosed || bridge.isDetached, isTrue, reason: 'detached streams wait for a reattach (bbvx)');
+      bridge.shutdown();
       await companionRpc.dispose();
       await carRpc.dispose();
     });

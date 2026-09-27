@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch प्रोसेस",
     "perf_threads": "थ्रेड",
     "perf_fds": "खुली फ़ाइलें",
-    "perf_gc": "मेमोरी सफ़ाई"
+    "perf_gc": "मेमोरी सफ़ाई",
+    "overlay_field_SPEED": "गति",
+    "overlay_field_GEAR": "गिअर",
+    "overlay_field_TURN_SIGNAL_LEFT": "बाईं टर्न सिग्नल",
+    "overlay_field_TURN_SIGNAL_RIGHT": "दाईं टर्न सिग्नल",
+    "overlay_field_BRAKE_PEDAL": "ब्रेक पैडल",
+    "overlay_field_ACCEL_PEDAL": "एक्सीलरेटर पैडल",
+    "overlay_field_SEATBELT_DRIVER": "चालक सीटबेल्ट",
+    "overlay_field_SEATBELT_PASSENGER": "यात्री सीटबेल्ट",
+    "overlay_field_TIMESTAMP": "दिनांक और समय",
+    "trips_costs": "यात्राएँ और लागत",
+    "trip_storage_confirm": "नई यात्राएँ {place} में सहेजी जाएँगी।",
+    "sync_result": "+{added} / −{removed}"
   }
 }

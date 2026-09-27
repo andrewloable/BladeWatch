@@ -22,10 +22,10 @@ android {
 
     defaultConfig {
         // Chosen before anything is installed: an application id cannot change once the app is
-        // on phones. Sits beside net.bladewatch.app (service host) and net.bladewatch.flutter
+        // on phones. Sits beside net.bladewatch.app (service host) and net.bladewatch.incarapp
         // (in-car UI), but shares neither their signing key's UID nor anything else -- this app
         // runs on the owner's phone, not the head unit.
-        applicationId = "net.bladewatch.companion"
+        applicationId = "net.bladewatch.companionapp"
         // flutter_pear_bare's real floor: libbare-kit.so is built against API 29, and below it
         // the Gradle manifest merger fails the build outright (flutter_pear README, Install).
         minSdk = 29

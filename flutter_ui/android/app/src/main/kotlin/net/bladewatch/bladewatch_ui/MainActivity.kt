@@ -33,7 +33,7 @@ import java.io.File
  * `app/build.gradle.kts` for why (Android-framework-bound, not unit-testable
  * without Robolectric). Every actual behaviour lives in the plain, fully
  * unit-tested Kotlin classes under ipc/, auth/, daemon/, config/, update/;
- * this class only registers the "net.bladewatch.flutter/privileged"
+ * this class only registers the "net.bladewatch.incarapp/privileged"
  * MethodChannel (BladeWatch-ncbb.2) and dispatches each `"<group>.<method>"`
  * call to the right one, translating [IpcException]s into the platform
  * channel error codes `MethodChannelBridge` (flutter_ui/lib/platform/) maps
@@ -71,7 +71,7 @@ class MainActivity : FlutterActivity() {
     private var pendingLocationPermissionResult: MethodChannel.Result? = null
 
     // BladeWatch-yz1e.3 (Settings → Appearance): themeMode/driveSide are pure
-    // per-installation UI preferences local to THIS APK (net.bladewatch.flutter),
+    // per-installation UI preferences local to THIS APK (net.bladewatch.incarapp),
     // not shared/secret state — plain SharedPreferences, no IPC, unlike every
     // other group above. Native's equivalent (PreferencesManager.kt) can't be
     // read directly even though the two APKs share a UID: SharedPreferences
@@ -165,7 +165,7 @@ class MainActivity : FlutterActivity() {
         val privilegedTaskQueue = flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "net.bladewatch.flutter/privileged",
+            "net.bladewatch.incarapp/privileged",
             StandardMethodCodec.INSTANCE,
             privilegedTaskQueue,
         ).setMethodCallHandler(::handleMethodCall)
@@ -181,7 +181,7 @@ class MainActivity : FlutterActivity() {
         val liveViewTaskQueue = flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "net.bladewatch.flutter/live_view_texture",
+            "net.bladewatch.incarapp/live_view_texture",
             StandardMethodCodec.INSTANCE,
             liveViewTaskQueue,
         ).setMethodCallHandler(::handleLiveViewMethodCall)

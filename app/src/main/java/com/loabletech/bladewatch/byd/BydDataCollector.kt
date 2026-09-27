@@ -3814,6 +3814,13 @@ class BydDataCollector private constructor() {
             return if (result is Number) result.toInt() else -1
         }
 
+    /** Live, like [acWindLevel]: 1 while the AC runs; -1 when it cannot be read (BladeWatch-rdtj.64). */
+    val acStartState: Int
+        get() {
+            val result = BydDeviceHelper.callGetter(acDevice, "getAcStartState")
+            return if (result is Number) result.toInt() else -1
+        }
+
     fun getAcTemperature(position: Int): Int {
         val result = BydDeviceHelper.callGetter(acDevice, "getTemprature", position)
         return if (result is Number) result.toInt() else Int.MIN_VALUE

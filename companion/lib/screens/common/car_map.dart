@@ -26,7 +26,7 @@ class CarMap extends StatelessWidget {
     final color = Theme.of(context).colorScheme.primary;
     final tiles = TileLayer(
       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      userAgentPackageName: 'net.bladewatch.companion',
+      userAgentPackageName: 'net.bladewatch.companionapp',
     );
     return FlutterMap(
       options: route.length > 1

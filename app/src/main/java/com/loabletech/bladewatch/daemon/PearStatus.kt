@@ -1,6 +1,7 @@
 package net.bladewatch.app.daemon
 
 import java.io.File
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -12,8 +13,8 @@ import org.json.JSONObject
  * be found sits in pear-end's `discovering` state either way, so reachability comes from HyperDHT
  * itself -- pear-end's `dht.status` (flutter_pear 0.4.4+), polled every sweep.
  *
- * Holds counts and times only -- never the topic, a peer key or anything a companion sent. Mode 600:
- * both daemons run as shell.
+ * Holds counts, times and close stats only -- never the topic, a peer key or anything a companion
+ * sent. Mode 600: both daemons run as shell.
  */
 class PearStatus(private val file: File, private val now: () -> Long = System::currentTimeMillis) {
 
@@ -27,6 +28,24 @@ class PearStatus(private val file: File, private val now: () -> Long = System::c
 
     @Volatile var lastCompanionAt: Long? = null
 
+    private val closes = ArrayDeque<JSONObject>()
+
+    /**
+     * BladeWatch-rdtj.34: records why a companion's connection closed (pear-end's `connection.close`
+     * stats), keeping the last [MAX_CLOSES]; returns the logcat line for it. Only [CLOSE_FIELDS] are
+     * copied, so nothing else pear-end sends -- a topic, a key -- can reach the file or the log.
+     * Null when this pear-end sends no stats (flutter_pear 0.4.6 and older).
+     */
+    @Synchronized
+    fun recordClose(stats: JSONObject?): String? {
+        if (stats == null) return null
+        val entry = JSONObject().put("at", now())
+        for (key in CLOSE_FIELDS) if (stats.has(key)) entry.put(key, stats.get(key))
+        closes.addLast(entry)
+        while (closes.size > MAX_CLOSES) closes.removeFirst()
+        return CLOSE_FIELDS.filter(entry::has).joinToString(" ") { "$it=${entry.get(it)}" }
+    }
+
     /** Atomically replaces the file. A failure is only a stale status, never a reason to stop. */
     @Synchronized
     fun write(): Boolean = try {
@@ -36,6 +55,7 @@ class PearStatus(private val file: File, private val now: () -> Long = System::c
             .put("online", online ?: JSONObject.NULL)
             .put("companions", companions)
             .put("lastCompanionAt", lastCompanionAt ?: JSONObject.NULL)
+            .put("recentCloses", JSONArray(closes.toList()))
         val tmp = File(file.path + ".tmp")
         tmp.writeText(json.toString())
         tmp.setReadable(false, false)
@@ -49,6 +69,11 @@ class PearStatus(private val file: File, private val now: () -> Long = System::c
 
     companion object {
         const val PATH = "/data/local/tmp/pear_status.json"
+
+        const val MAX_CLOSES = 20
+
+        /** pear-end's close stats: counts and codes only (see flutter_pear's CHANGELOG). */
+        val CLOSE_FIELDS = listOf("error", "ageMs", "bytesIn", "bytesOut", "rtt", "rtoCount", "retransmits", "ipv6")
 
         /** Older than three sweeps: pear_daemon has stopped updating it, whatever it last said. */
         const val STALE_MS = 90_000L

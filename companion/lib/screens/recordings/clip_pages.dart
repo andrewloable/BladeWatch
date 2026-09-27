@@ -58,12 +58,17 @@ class ClipPages extends ChangeNotifier {
       final r = await _fetch(_page + 1, pageSize);
       if (generation != _generation) return;
       _page++;
+      var added = 0;
       for (final c in r.recordings) {
-        if (_seen.add(c.filename)) clips.add(c);
+        if (_seen.add(c.filename)) {
+          clips.add(c);
+          added++;
+        }
       }
-      // An empty page ends the list whatever total says, so a total that runs ahead of the
-      // clips (deleted meanwhile) cannot ask for pages forever.
-      total = r.recordings.isEmpty ? clips.length : r.total;
+      // A page with nothing new -- empty, or only clips already here -- ends the list whatever
+      // total says, so a total that runs ahead of the clips (deleted meanwhile) cannot ask for
+      // pages forever (BladeWatch-rdtj.70 found the second case).
+      total = added == 0 ? clips.length : r.total;
       error = null;
     } catch (e) {
       if (generation != _generation) return;

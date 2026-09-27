@@ -14,6 +14,7 @@ import '../../car/car_store.dart';
 import '../../i18n.dart';
 import '../common/format.dart';
 import '../common/loader.dart';
+import '../trips/trips_screen.dart' show TripSettingsForm;
 
 /// Settings: this app's own (language, the paired car) and the car's (capture, quality,
 /// storage, language, overlay) -- the web settings page's counterpart. Sentry detection settings
@@ -45,7 +46,44 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
         locale: await _settings.getLocale(GetLocaleRequest()),
         overlay: await _settings.getStatusOverlay(GetStatusOverlayRequest()),
         storage: await _storage.getStorageSettings(GetStorageSettingsRequest()),
+        fields: await _overlayFields(),
       ));
+
+  /// The recording overlay's fields (BladeWatch-rdtj.67); null when the car does not say, so an
+  /// older car still gets the rest of Settings.
+  Future<GetTelemetryOverlayFieldsResponse?> _overlayFields() async {
+    try {
+      final r = await _settings.getTelemetryOverlayFields(GetTelemetryOverlayFieldsRequest());
+      return r.availableFields.isEmpty ? null : r;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The in-car app's Settings > Trips: costs, currency, distance unit and trip storage.
+  void _openTrips() {
+    final tr = context.tr;
+    final session = context.session;
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => TrScope(
+        tr: tr,
+        child: SessionScope(
+          session: session,
+          child: Scaffold(appBar: AppBar(title: Text(tr('companion.trips_costs'))), body: const TripSettingsForm()),
+        ),
+      ),
+    ));
+  }
+
+  Future<void> _syncLibrary() async {
+    final tr = context.tr;
+    SyncCatalogResponse? r;
+    final ok = await act(context, () async {
+      r = await RecordingsServiceClient(_rpc).syncCatalog(SyncCatalogRequest());
+      if (!r!.success) throw StateError(r!.error);
+    }, failed: tr('errors.save_failed'));
+    if (ok && mounted && r != null) say(ScaffoldMessenger.of(context), tr('companion.sync_result', {'added': r!.added, 'removed': r!.removed}));
+  }
   final _recLimit = TextEditingController();
   final _survLimit = TextEditingController();
   bool _filled = false;
@@ -259,6 +297,18 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
                 OutlinedButton(key: const ValueKey('settings.format'), onPressed: _format, child: Text(tr('settings.format_sd_usb'))),
             ]),
           ]),
+          // BladeWatch-rdtj.67: where the owner looks for costs and currency.
+          Section(title: tr('companion.trips_costs'), children: [
+            ListTile(
+              key: const ValueKey('settings.trips'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.route_outlined),
+              title: Text(tr('trip.settings.elec_rate_label')),
+              subtitle: Text('${tr('trips.currency')} · ${tr('trip.settings.distance_unit')} · ${tr('trips.storage_location')}'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _openTrips,
+            ),
+          ]),
           Section(title: tr('companion.car_language'), children: [
             DropdownButtonFormField<String>(
               isExpanded: true, // long names ellipsize at a large text size (BladeWatch-rdtj.55)
@@ -284,6 +334,29 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
               value: v.overlay.tripVisible,
               onChanged: (on) => _save(() => _settings.setStatusOverlay(SetStatusOverlayRequest(tripVisible: on, setTripVisible: true))),
             ),
+          ]),
+          // What the dashcam recording's overlay shows, as the in-car app edits it (continuous clips).
+          if (v.fields case final fields?)
+            Section(title: tr('recording.telemetry_overlay_title'), children: [
+              Wrap(spacing: 8, runSpacing: 4, children: [
+                for (final f in fields.availableFields)
+                  FilterChip(
+                    key: ValueKey('settings.overlayField.$f'),
+                    label: Text(switch (tr('companion.overlay_field_$f')) {
+                      final label when label != 'companion.overlay_field_$f' => label,
+                      _ => f, // a field this app does not know yet: its name
+                    }),
+                    selected: (fields.selections['continuous']?.fields ?? const <String>[]).contains(f),
+                    onSelected: (on) {
+                      final now = {...?fields.selections['continuous']?.fields};
+                      on ? now.add(f) : now.remove(f);
+                      _save(() => _settings.setTelemetryOverlayFields(SetTelemetryOverlayFieldsRequest(type: 'continuous', fields: now)));
+                    },
+                  ),
+              ]),
+            ]),
+          Section(title: tr('settings.sync_database'), children: [
+            OutlinedButton(key: const ValueKey('settings.syncLibrary'), onPressed: _syncLibrary, child: Text(tr('settings.sync_database'))),
           ]),
         ]);
       },

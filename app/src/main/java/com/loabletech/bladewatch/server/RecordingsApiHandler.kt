@@ -1392,7 +1392,7 @@ object RecordingsApiHandler {
         // Conditional GET: if the client's cached copy matches our ETag, skip re-streaming. The
         // tag is "<length>-<mtime>" so any append/replace invalidates without needing a content
         // hash.
-        val etag = if (view != null) buildVideoEtag(file).dropLast(1) + "-fs2\"" else buildVideoEtag(file)
+        val etag = if (view != null) buildVideoEtag(file).dropLast(1) + "-" + view.tag + "\"" else buildVideoEtag(file)
         if (ifNoneMatchHeader != null && etagMatches(ifNoneMatchHeader, etag)) {
             HttpResponse.sendNotModified(out, etag)
             return
@@ -1405,8 +1405,8 @@ object RecordingsApiHandler {
                 val start = if (parts[0].isEmpty()) 0L else parts[0].toLong()
                 val end = if (parts.size > 1 && parts[1].isNotEmpty()) parts[1].toLong() else -1L
 
-                // Validate the range
-                val fileLength = file.length()
+                // Validate the range (against the view's length: a defragmented clip differs, rdtj.63)
+                val fileLength = view?.length ?: file.length()
                 if (start < 0 || start >= fileLength) {
                     HttpResponse.sendError(
                         out, 416, Messages.get("errors.recordings_range_not_satisfiable")

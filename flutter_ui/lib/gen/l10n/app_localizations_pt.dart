@@ -28,6 +28,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get action_select_all_short => 'Todos';
 
   @override
+  String get action_select => 'Selecionar';
+
+  @override
+  String get action_deselect_all => 'Desmarcar todos';
+
+  @override
   String get action_delete => 'Excluir';
 
   @override
@@ -491,6 +497,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => 'Todos os dias';
+
+  @override
+  String get recording_lib_type_all => 'Todos';
 
   @override
   String get cd_clear_date_filter => 'Mostrar todos os dias';
@@ -2947,6 +2956,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get action_select_all_short => 'Todos';
 
   @override
+  String get action_select => 'Selecionar';
+
+  @override
+  String get action_deselect_all => 'Desmarcar todos';
+
+  @override
   String get action_delete => 'Excluir';
 
   @override
@@ -3410,6 +3425,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get recording_lib_date_all_days => 'Todos os dias';
+
+  @override
+  String get recording_lib_type_all => 'Todos';
 
   @override
   String get cd_clear_date_filter => 'Mostrar todos os dias';

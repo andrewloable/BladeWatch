@@ -28,6 +28,12 @@ class AppLocalizationsTh extends AppLocalizations {
   String get action_select_all_short => 'ทั้งหมด';
 
   @override
+  String get action_select => 'เลือก';
+
+  @override
+  String get action_deselect_all => 'ยกเลิกการเลือกทั้งหมด';
+
+  @override
   String get action_delete => 'ลบ';
 
   @override
@@ -488,6 +494,9 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => 'ทุกวัน';
+
+  @override
+  String get recording_lib_type_all => 'ทั้งหมด';
 
   @override
   String get cd_clear_date_filter => 'แสดงทุกวัน';

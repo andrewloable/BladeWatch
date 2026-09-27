@@ -28,6 +28,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get action_select_all_short => '모두';
 
   @override
+  String get action_select => '선택';
+
+  @override
+  String get action_deselect_all => '모두 선택 해제';
+
+  @override
   String get action_delete => '삭제';
 
   @override
@@ -481,6 +487,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get recording_lib_date_all_days => '모든 날짜';
+
+  @override
+  String get recording_lib_type_all => '전체';
 
   @override
   String get cd_clear_date_filter => '모든 요일 표시';

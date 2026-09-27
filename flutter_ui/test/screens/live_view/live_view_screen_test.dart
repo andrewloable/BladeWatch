@@ -145,8 +145,9 @@ void main() {
     // One extra pump: LiveViewScreen.initState fires an un-awaited start()+poll() on the
     // location controller (same fire-and-forget shape as LiveViewController.start() itself,
     // called the line above it) — this flushes that microtask chain so the preview reflects
-    // the stubbed fix before assertions run. No Timer is created (see LiveViewScreen's own
-    // doc comment on why), so this is a bounded pump, not a pumpAndSettle() hang risk.
+    // the stubbed fix before assertions run. After that the screen polls on a periodic Timer
+    // (LiveViewScreen.locationPollInterval, BladeWatch-rdtj.62), which repaints only on a real
+    // change, so pumpAndSettle() still settles.
     await tester.pump();
   }
 
@@ -314,6 +315,41 @@ void main() {
     // LocationScreen's own LocationFresh banner uses (BladeWatch-y78o.2 reuses it rather
     // than adding a new l10n key for a state this project already has a label for).
     expect(find.text('Car location'), findsOneWidget);
+  });
+
+  // BladeWatch-rdtj.62: the first poll runs before Android has delivered a fix. It used to be the
+  // only one, so on the head unit the chip said "Waiting for GPS fix" with a live fix.
+  testWidgets('a fix that arrives after the first poll replaces "Waiting for GPS fix"', (tester) async {
+    stubHappyRpcPath();
+    final controller = buildController(connect: (url) async => _FakeLiveSocket());
+    final ch = FakePlatformChannel();
+    ch.stub('location', 'hasPermission', true);
+    ch.stub('location', 'providerEnabled', {'gps': true, 'network': false});
+    ch.stub('location', 'startUpdates', {'ok': true});
+    ch.stub('location', 'stopUpdates', null);
+    ch.stub('location', 'currentSample', null);
+    ch.stub('prefs', 'getLocationUiMode', null);
+    ch.stub('prefs', 'getThemeMode', null);
+    ch.stub('network', 'current', {'type': 'wifi', 'ssid': 'car'});
+    final location = LocationController(
+      channel: LocationChannel(ch),
+      prefs: PrefsChannel(ch),
+      networkChannel: NetworkChannel(ch),
+    );
+    await pump(tester, controller, locationController: location);
+    await tester.pump();
+    expect(find.text('Waiting for GPS fix'), findsOneWidget);
+
+    ch.stub('location', 'currentSample', {
+      'latitude': 37.7749,
+      'longitude': -122.4194,
+      'provider': 'gps',
+      'timestampMs': DateTime.now().millisecondsSinceEpoch,
+    });
+    await tester.pump(LiveViewScreen.locationPollInterval);
+    await tester.pump();
+    expect(find.text('Car location'), findsOneWidget);
+    expect(find.text('Waiting for GPS fix'), findsNothing);
   });
 
   test(

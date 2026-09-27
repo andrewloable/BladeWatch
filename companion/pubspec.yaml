@@ -61,6 +61,7 @@ dependencies:
   package_info_plus: ^10.2.1
   path_provider: ^2.1.6
   mobile_scanner: ^7.4.2
+  device_info_plus: ^13.2.0
 
 dev_dependencies:
   flutter_test:
@@ -81,6 +82,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: 0.14.4 # rdtj.60: generates the app icons; nothing of it ships
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

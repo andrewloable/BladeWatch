@@ -10,7 +10,7 @@ import org.junit.Test;
 /**
  * BladeWatch-81g9.1: the main APK is a UI-LESS SERVICE HOST.
  *
- * <p>Phase 4 deletes the native in-car UI, leaving {@code net.bladewatch.flutter} as the only
+ * <p>Phase 4 deletes the native in-car UI, leaving {@code net.bladewatch.incarapp} as the only
  * thing the user opens. These pin the two manifest properties that make that true, because both
  * are one careless edit away from silently reverting and neither shows up in a build failure:
  *
@@ -39,7 +39,7 @@ public class ServiceHostManifestTest {
     @Test
     public void theServiceHostHasNoLauncherEntry() throws Exception {
         Assert.assertFalse(
-                "The daemon APK must not have a launcher entry — net.bladewatch.flutter is the "
+                "The daemon APK must not have a launcher entry — net.bladewatch.incarapp is the "
                         + "only in-car UI. Two icons, one of them empty, is the regression.",
                 manifest().contains("android.intent.category.LAUNCHER"));
     }
@@ -125,7 +125,7 @@ public class ServiceHostManifestTest {
      *
      * <pre>
      *   Window #9  net.bladewatch.app/.ui.MainActivity     (invisible, on top)
-     *   Window #10 net.bladewatch.flutter/...MainActivity  (the real UI, beneath)
+     *   Window #10 net.bladewatch.incarapp/...MainActivity  (the real UI, beneath)
      *   mResumedActivity: net.bladewatch.app/.ui.MainActivity
      * </pre>
      *

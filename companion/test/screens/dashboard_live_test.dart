@@ -4,8 +4,10 @@ import 'dart:typed_data';
 import 'package:bladewatch_companion/car/media.dart';
 import 'package:bladewatch_companion/screens/common/loader.dart';
 import 'package:bladewatch_companion/screens/dashboard/dashboard_screen.dart';
+import 'package:bladewatch_companion/screens/common/shell_nav.dart';
 import 'package:bladewatch_companion/screens/live/live_screen.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -211,11 +213,123 @@ void main() {
   });
 
   group('LiveScreen', () {
+    // BladeWatch-rdtj.68: a picked camera comes from the car whole, at its native resolution; the
+    // quarter is cut here only while the car still sends the four-camera still.
+    testWidgets('a picked camera is asked of the car and shown whole once it comes', (tester) async {
+      final s = TestSession(phase: TransportPhase.pear);
+      final paths = <String>[];
+      var view = 'mosaic';
+      var n = 0;
+      await pumpScreen(
+          tester,
+          s,
+          LiveScreen(
+            fetch: (_, path) async {
+              paths.add(path);
+              n++;
+              // A new picture every time, so each one is shown.
+              return MediaResponse(200, Uint8List.fromList([...testPng]..last ^= n & 1), headers: {'x-still-view': view});
+            },
+            enable: (_) async {},
+            gps: (_) async => GetGpsLocationResponse(),
+          ));
+      await tester.pump();
+      expect(paths.last, '/api/stream/still', reason: 'all four cameras by default');
+
+      await tester.tap(find.byKey(const ValueKey('live.camera.2')));
+      await tester.pump();
+      await tester.pump();
+      expect(paths.last, '/api/stream/still?camera=2', reason: 'asked at once, not at the next tick');
+      expect(find.byKey(const ValueKey('live.quarter')), findsOneWidget, reason: 'still the mosaic: cut the quarter');
+
+      view = '2';
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('live.quarter')), findsNothing, reason: 'the camera itself: shown whole');
+      expect(find.byKey(const ValueKey('live.frame')), findsOneWidget);
+      expect(s.rpc.calls.where((c) => c.method == 'SetViewMode'), isEmpty, reason: 'the car\'s shared stream is never switched');
+      await unmount(tester);
+    });
+
+    // As in the in-car Live View: where the car is, or that it has no fix yet; tapping opens Location.
+    testWidgets('shows the car\'s GPS fix in a chip that opens Location', (tester) async {
+      final s = TestSession(phase: TransportPhase.pear);
+      var json = '';
+      var gpsCalls = 0;
+      String? went;
+      await pumpScreen(
+          tester,
+          s,
+          ShellNav(
+            go: (id) => went = id,
+            child: LiveScreen(
+              fetch: (_, _) async => MediaResponse(200, testPng),
+              enable: (_) async {},
+              gps: (_) async {
+                gpsCalls++;
+                return GetGpsLocationResponse(locationJson: json);
+              },
+            ),
+          ));
+      await tester.pump();
+      expect(find.text(t('safe_loc.waiting_gps')), findsOneWidget, reason: 'no fix yet');
+
+      json = '{"lat": 37.77493, "lng": -122.41942, "isStale": false}';
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump();
+      expect(gpsCalls, 2, reason: 'asked again every 5 s');
+      expect(find.text(t('vehicle.gps_location')), findsOneWidget);
+      expect(find.text('37.7749, -122.4194'), findsOneWidget);
+
+      json = '{"lat": 37.77493, "lng": -122.41942, "isStale": true}';
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump();
+      expect(find.text('${t('vehicle.gps_location')} · ${t('status.stale')}'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('live.gps')));
+      expect(went, 'location');
+      await unmount(tester);
+    });
+
+    // BladeWatch-rdtj.61: one still a second; the picture changes only when a new frame comes,
+    // and a failed fetch leaves the last one up.
+    testWidgets('polls once a second, and replaces the still only with a different one', (tester) async {
+      final s = TestSession(phase: TransportPhase.pear);
+      var fetches = 0;
+      var answer = MediaResponse(200, Uint8List.fromList(testPng));
+      await pumpScreen(tester, s, LiveScreen(fetch: (_, _) async {
+        fetches++;
+        return answer;
+      }, enable: (_) async {}));
+      await tester.pump();
+      Uint8List shown() => ((tester.widget<Image>(find.byKey(const ValueKey('live.frame')))).image as MemoryImage).bytes;
+      final first = shown();
+      final afterOpen = fetches;
+
+      answer = MediaResponse(200, Uint8List.fromList(testPng)); // the same still, a new copy
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(fetches, afterOpen + 1, reason: 'one fetch a second, on Pear too');
+      expect(identical(shown(), first), isTrue, reason: 'the same bytes again: the picture is kept');
+
+      answer = MediaResponse(500, Uint8List(0)); // a failed fetch
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(identical(shown(), first), isTrue, reason: 'a failed fetch leaves the last still up');
+
+      final next = Uint8List.fromList([...testPng]..last ^= 1);
+      answer = MediaResponse(200, next);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(identical(shown(), next), isTrue, reason: 'a new frame replaces it');
+      await unmount(tester);
+    });
+
     testWidgets('turns streaming on when the car has no still yet, then shows it', (tester) async {
       final s = TestSession(phase: TransportPhase.pear);
       final answers = [MediaResponse(503, Uint8List(0)), MediaResponse(200, testPng)];
       var enabled = 0;
-      await pumpScreen(tester, s, LiveScreen(fetch: (_) async => answers.length > 1 ? answers.removeAt(0) : answers.first, enable: (_) async => enabled++));
+      await pumpScreen(tester, s, LiveScreen(fetch: (_, _) async => answers.length > 1 ? answers.removeAt(0) : answers.first, enable: (_) async => enabled++));
       expect(find.text(t('companion.live_starting')), findsOneWidget);
       expect(enabled, 1);
       await tester.pump(const Duration(seconds: 2));
@@ -230,7 +344,7 @@ void main() {
     testWidgets('a camera picker shows one quarter of the still, and asks the car for nothing', (tester) async {
       final s = TestSession(phase: TransportPhase.lan);
       var enabled = 0;
-      await pumpScreen(tester, s, LiveScreen(fetch: (_) async => MediaResponse(200, testPng), enable: (_) async => enabled++));
+      await pumpScreen(tester, s, LiveScreen(fetch: (_, _) async => MediaResponse(200, testPng), enable: (_) async => enabled++));
       await tester.pump();
       expect(find.byKey(const ValueKey('live.quarter')), findsNothing, reason: 'all four to start with');
       final names = ['companion.cam_front', 'companion.cam_right', 'companion.cam_rear', 'companion.cam_left'];
@@ -254,7 +368,7 @@ void main() {
     // own pixel size in the middle.
     testWidgets('the still fills a desktop window', (tester) async {
       final s = TestSession(phase: TransportPhase.lan);
-      await pumpScreen(tester, s, LiveScreen(fetch: (_) async => MediaResponse(200, testPng), enable: (_) async {}), size: const Size(1600, 1000));
+      await pumpScreen(tester, s, LiveScreen(fetch: (_, _) async => MediaResponse(200, testPng), enable: (_) async {}), size: const Size(1600, 1000));
       await tester.pump();
       final frame = tester.getSize(find.byKey(const ValueKey('live.frame')));
       expect(frame.width, 1600, reason: 'a 1x1 still stretched to the area, as a 640x480 one is');
@@ -270,7 +384,7 @@ void main() {
         tester,
         s,
         LiveScreen(
-          fetch: (_) async {
+          fetch: (_, _) async {
             calls++;
             if (calls == 1) return MediaResponse(200, testPng);
             if (calls == 2) throw StateError('dropped');
@@ -304,7 +418,7 @@ void main() {
         tester,
         s,
         LiveScreen(
-          fetch: (_) {
+          fetch: (_, _) {
             calls++;
             return calls == 2 ? hung.future : Future.value(MediaResponse(200, testPng));
           },

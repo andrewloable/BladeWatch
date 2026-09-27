@@ -637,6 +637,17 @@ class _ClimateTab extends StatelessWidget {
   Widget build(BuildContext context) =>
       LayoutBuilder(builder: (context, box) => _build(context, box.maxWidth >= _twoUpMinWidth));
 
+  /// An on/off button's colours: the filled colour when on, a neutral one when off -- each with its
+  /// OWN text colour. FilledButton's default text colour is onPrimary whatever the fill, which left
+  /// the off label dark on dark and unreadable on the head unit (owner report 2026-09-27).
+  ButtonStyle _toggle(bool on, {bool alert = false}) {
+    final s = theme.colorScheme;
+    return FilledButton.styleFrom(
+      backgroundColor: on ? (alert ? s.error : s.primary) : s.surfaceContainerHighest,
+      foregroundColor: on ? (alert ? s.onError : s.onPrimary) : s.onSurface,
+    );
+  }
+
   Widget _build(BuildContext context, bool twoUp) {
     final c = controller;
     final outsideTemp = c.state.climate.outsideTempC;
@@ -651,7 +662,7 @@ class _ClimateTab extends StatelessWidget {
           twoUp,
             FilledButton(
               key: const ValueKey('vehicle.climate.ac'),
-              style: FilledButton.styleFrom(backgroundColor: c.acOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              style: _toggle(c.acOn),
               onPressed: () async {
                 final error = await c.toggleAc();
                 if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -660,7 +671,7 @@ class _ClimateTab extends StatelessWidget {
             ),
             FilledButton(
               key: const ValueKey('vehicle.climate.maxCooling'),
-              style: FilledButton.styleFrom(backgroundColor: c.maxCooling ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
+              style: _toggle(c.maxCooling, alert: true),
               onPressed: () async {
                 final error = await c.toggleMaxCooling();
                 if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -677,7 +688,7 @@ class _ClimateTab extends StatelessWidget {
         const SizedBox(height: 8),
         FilledButton(
           key: const ValueKey('vehicle.screen.toggle'),
-          style: FilledButton.styleFrom(backgroundColor: c.screenOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+          style: _toggle(c.screenOn),
           onPressed: () async {
             final error = await c.toggleScreen();
             if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -691,8 +702,7 @@ class _ClimateTab extends StatelessWidget {
               'vehicle.media.volume', c.stepVolumeDown, c.stepVolumeUp),
           FilledButton(
             key: const ValueKey('vehicle.media.mute'),
-            style: FilledButton.styleFrom(
-                backgroundColor: c.mediaMuted ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
+            style: _toggle(c.mediaMuted, alert: true),
             onPressed: () async {
               final error = await c.toggleMute();
               if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -705,8 +715,7 @@ class _ClimateTab extends StatelessWidget {
           twoUp,
             FilledButton(
               key: const ValueKey('vehicle.climate.frontDefrost'),
-              style: FilledButton.styleFrom(
-                  backgroundColor: c.frontDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              style: _toggle(c.frontDefrostOn),
               onPressed: () async {
                 final error = await c.toggleFrontDefrost();
                 if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -715,8 +724,7 @@ class _ClimateTab extends StatelessWidget {
             ),
             FilledButton(
               key: const ValueKey('vehicle.climate.rearDefrost'),
-              style: FilledButton.styleFrom(
-                  backgroundColor: c.rearDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              style: _toggle(c.rearDefrostOn),
               onPressed: () async {
                 final error = await c.toggleRearDefrost();
                 if (context.mounted && error != null) showVehicleCommandError(context, error);

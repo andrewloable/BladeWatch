@@ -1,15 +1,18 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_store.dart';
+import '../../device_name.dart';
 import '../../i18n.dart';
 import 'pairing_controller.dart';
 
 /// Scans (or takes the pasted text of) the car's "Pair a device" QR and pairs with it.
 class PairingScreen extends StatefulWidget {
-  const PairingScreen({super.key, required this.controller, required this.onPaired, this.scan, this.defaultName});
+  const PairingScreen(
+      {super.key, required this.controller, required this.onPaired, this.scan, this.defaultName, this.detectName});
 
   final PairingController controller;
   final ValueChanged<PairedCar> onPaired;
@@ -18,8 +21,12 @@ class PairingScreen extends StatefulWidget {
   /// platform has no camera scanner (Windows, Linux): pasting still works everywhere.
   final Future<String?> Function(BuildContext context)? scan;
 
-  /// Pre-filled device name, as the car's "Paired devices" list will show it.
+  /// Pre-filled device name, as the car's "Paired devices" list will show it. Without one, the
+  /// screen asks [detectName] -- by default this device's own name ([deviceName]).
   final String? defaultName;
+
+  /// Resolves this device's name, given the generic one to fall back to. Replaceable in tests.
+  final Future<String> Function(String fallback)? detectName;
 
   @override
   State<PairingScreen> createState() => _PairingScreenState();
@@ -28,6 +35,17 @@ class PairingScreen extends StatefulWidget {
 class _PairingScreenState extends State<PairingScreen> {
   final _code = TextEditingController();
   late final _name = TextEditingController(text: widget.defaultName ?? _platformName());
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.defaultName != null) return;
+    // The generic name shows at once; the real one replaces it unless the owner has typed already.
+    final generic = _name.text;
+    unawaited((widget.detectName ?? deviceName)(generic).then((name) {
+      if (mounted && _name.text == generic) _name.text = name;
+    }));
+  }
 
   static String _platformName() => switch (Platform.operatingSystem) {
         'android' => 'Android',

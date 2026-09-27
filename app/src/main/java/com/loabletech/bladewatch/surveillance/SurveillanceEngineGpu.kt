@@ -442,6 +442,40 @@ class SurveillanceEngineGpu {
     val latestMosaicFrame: ByteArray?
         get() = latestMosaicFrameValue
 
+    // Two buffers, alternated: a reader keeps the array it was handed (the still encoder, a
+    // quadrant snapshot) while the next copy goes into the other one, so it never encodes a
+    // half-overwritten frame. One buffer tore stills on the head unit (BladeWatch-rdtj.61).
+    private val mosaicBuffers = arrayOfNulls<ByteArray>(2)
+    private var mosaicNext = 0
+    private val mosaicLock = Any()
+
+    /** Changes every time a new mosaic frame is cached, so the still encodes only new frames. */
+    @Volatile var mosaicVersion = 0L
+        private set
+
+    private fun storeMosaic(frame: ByteArray) = synchronized(mosaicLock) {
+        val buf = mosaicBuffers[mosaicNext]?.takeIf { it.size == frame.size }
+            ?: ByteArray(frame.size).also { mosaicBuffers[mosaicNext] = it }
+        System.arraycopy(frame, 0, buf, 0, frame.size)
+        latestMosaicFrameValue = buf
+        mosaicVersion++
+        mosaicNext = 1 - mosaicNext
+    }
+
+    /**
+     * BladeWatch-rdtj.61: caches a downscaled mosaic frame while surveillance is OFF, so the live
+     * view's still and the quadrant snapshots stay current with ACC on (the camera reads one back
+     * about a second, only while streaming is enabled). Takes ownership of [frame]: it goes back
+     * to the downscaler's pool.
+     */
+    fun storeMosaicFrame(frame: ByteArray) {
+        try {
+            if (frame.size == FRAME_SIZE) storeMosaic(frame)
+        } finally {
+            downscaler?.recycleBuffer(frame)
+        }
+    }
+
     /**
      * Initializes the surveillance engine with Context for Java TFLite.
      *
@@ -709,14 +743,7 @@ class SurveillanceEngineGpu {
             val now = System.currentTimeMillis()
 
             // Cache latest frame for snapshot API (every 10th frame to reduce copies)
-            if (frameCount % 10 == 0) {
-                var cache = latestMosaicFrameValue
-                if (cache == null || cache.size != smallRgbFrame.size) {
-                    cache = ByteArray(smallRgbFrame.size)
-                    latestMosaicFrameValue = cache
-                }
-                System.arraycopy(smallRgbFrame, 0, cache, 0, smallRgbFrame.size)
-            }
+            if (frameCount % 10 == 0) storeMosaic(smallRgbFrame)
 
             // Log frame count every 100 frames to confirm frames are arriving
             if (frameCount % 100 == 0) {

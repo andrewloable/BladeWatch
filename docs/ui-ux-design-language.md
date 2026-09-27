@@ -2,7 +2,7 @@
 
 BladeWatch's interface follows **Material 3** (Material You), as defined at
 <https://m3.material.io/>. The **Flutter in-car UI** (`flutter_ui/`,
-`net.bladewatch.flutter`) is the canonical M3 surface — color roles, type scale,
+`net.bladewatch.incarapp`) is the canonical M3 surface — color roles, type scale,
 shape scale, elevation model, and motion curves — and additionally adopts
 **Material 3 Expressive** refinements (tighter type tracking, tonal active
 indicators) tuned for a large in-car display.
@@ -33,7 +33,7 @@ be updated by hand when a role changes.
 
 | Layer | Renders | Role |
 |-------|---------|------|
-| **Flutter** (`flutter_ui/`, `net.bladewatch.flutter`, and the companion app) | the whole in-car UI: nav rail, every screen, every dialog; the companion's screens | **M3 source of truth**, shared by both apps through `packages/bladewatch_theme` (BladeWatch-rdtj.11) — [color_tokens.dart](../packages/bladewatch_theme/lib/color_tokens.dart), [type_tokens.dart](../packages/bladewatch_theme/lib/type_tokens.dart), [dimens_tokens.dart](../packages/bladewatch_theme/lib/dimens_tokens.dart), assembled in [bladewatch_theme.dart](../packages/bladewatch_theme/lib/bladewatch_theme.dart) |
+| **Flutter** (`flutter_ui/`, `net.bladewatch.incarapp`, and the companion app) | the whole in-car UI: nav rail, every screen, every dialog; the companion's screens | **M3 source of truth**, shared by both apps through `packages/bladewatch_theme` (BladeWatch-rdtj.11) — [color_tokens.dart](../packages/bladewatch_theme/lib/color_tokens.dart), [type_tokens.dart](../packages/bladewatch_theme/lib/type_tokens.dart), [dimens_tokens.dart](../packages/bladewatch_theme/lib/dimens_tokens.dart), assembled in [bladewatch_theme.dart](../packages/bladewatch_theme/lib/bladewatch_theme.dart) |
 | **Android XML** (`net.bladewatch.app`) | the status overlay and `SetupGuideDialog` **only** | **Derived.** [colors_m3.xml](../app/src/main/res/values/colors_m3.xml) (+ `values-night`), [themes_bladewatch.xml](../app/src/main/res/values/themes_bladewatch.xml), [dimens_bladewatch.xml](../app/src/main/res/values/dimens_bladewatch.xml). Kept in step by the parity tests in `flutter_ui/test/theme/` |
 | **Web SPA** (Angular 19, `web/`) | remote browser / tunnel client | **Derived, by hand.** Component-scoped SCSS under `web/src`, not wired to `design-tokens.css` |
 

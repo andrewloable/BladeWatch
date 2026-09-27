@@ -1888,6 +1888,18 @@
     "perf_process": "Proceso de BladeWatch",
     "perf_threads": "Hilos",
     "perf_fds": "Archivos abiertos",
-    "perf_gc": "Recolecciones de basura"
+    "perf_gc": "Recolecciones de basura",
+    "overlay_field_SPEED": "Velocidad",
+    "overlay_field_GEAR": "Marcha",
+    "overlay_field_TURN_SIGNAL_LEFT": "Intermitente izquierdo",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Intermitente derecho",
+    "overlay_field_BRAKE_PEDAL": "Pedal de freno",
+    "overlay_field_ACCEL_PEDAL": "Pedal del acelerador",
+    "overlay_field_SEATBELT_DRIVER": "Cinturón del conductor",
+    "overlay_field_SEATBELT_PASSENGER": "Cinturón del pasajero",
+    "overlay_field_TIMESTAMP": "Fecha y hora",
+    "trips_costs": "Viajes y costes",
+    "trip_storage_confirm": "Los nuevos viajes se guardarán en {place}.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  BladeWatch-81g9.2: the native in-car UI is gone. `net.bladewatch.flutter` owns every
+  BladeWatch-81g9.2: the native in-car UI is gone. `net.bladewatch.incarapp` owns every
   in-car string now, in `flutter_ui/lib/l10n/app_*.arb`.
 
   What remains is ONLY what the daemon APK itself still renders, and every key here has a
@@ -8,7 +8,7 @@
 
     * AndroidManifest             service_host_label (the <application> label). NOT app_name:
                                   this APK has no launcher icon and must not share a name with
-                                  net.bladewatch.flutter, or BYD's app-start dialog shows two
+                                  net.bladewatch.incarapp, or BYD's app-start dialog shows two
                                   identical rows. See BladeWatch-8h7m.
     * app_name                    kept as the product name; no code reads it today
     * res/xml accessibility cfg   accessibility_service_description

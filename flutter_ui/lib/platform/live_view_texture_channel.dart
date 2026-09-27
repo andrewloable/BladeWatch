@@ -12,8 +12,8 @@ import 'platform_channel.dart';
 ///
 /// Unlike every other `platform/*.dart` wrapper, the [PlatformChannel]
 /// passed in here must be backed by a *separate* underlying `MethodChannel`
-/// (`"net.bladewatch.flutter/live_view_texture"`, not the shared
-/// `"net.bladewatch.flutter/privileged"` one) — see `MainActivity.kt`'s
+/// (`"net.bladewatch.incarapp/live_view_texture"`, not the shared
+/// `"net.bladewatch.incarapp/privileged"` one) — see `MainActivity.kt`'s
 /// `configureFlutterEngine()` for why: this channel runs on its own
 /// background `TaskQueue` so a `MediaCodec` call never blocks the platform/
 /// UI thread, which the shared privileged channel's handlers are not set up

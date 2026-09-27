@@ -33,6 +33,10 @@ class FakeLibrary {
 }
 
 void main() {
+  test('days are keyed as the car names them, yyyy-MM-dd: anything else filters to nothing', () {
+    expect(RecordingsScreen.dayKey(DateTime(2026, 9, 7)), '2026-09-07');
+  });
+
   // BladeWatch-rdtj.42: the library used to be one request of 200.
   group('ClipPages', () {
     test('pages through every clip and stops at the total', () async {
@@ -63,6 +67,21 @@ void main() {
       expect(pages.clips.map((c) => c.filename), ['a', 'b', 'c']);
       await pages.more();
       expect(pages.done, isTrue, reason: 'an empty page ends the list whatever total says');
+    });
+
+    // BladeWatch-rdtj.70: a page of clips already here must end the list too, or the list asks for
+    // page after page for as long as it is on screen.
+    test('a page with nothing new ends the list', () async {
+      var asked = 0;
+      final pages = ClipPages((page, size) async {
+        asked++;
+        return ListRecordingsResponse(recordings: [entry('a'), entry('b')], total: 9);
+      }, pageSize: 2);
+      await pages.more();
+      await pages.more();
+      expect(pages.done, isTrue);
+      await pages.more();
+      expect(asked, 2);
     });
 
     test('a failed first page is an error; a failed later page keeps the clips and retries', () async {
@@ -147,35 +166,35 @@ void main() {
 
     testWidgets('today, yesterday and all; the arrows skip days with no clips and stop at today', (tester) async {
       final s = TestSession();
-      stub(s, dates: ['20260927', '20260920', '20260925']);
+      stub(s, dates: ['2026-09-27', '2026-09-20', '2026-09-25']);
       await pumpScreen(tester, s, RecordingsScreen(today: today));
       expect(dateAsked(s), '', reason: 'every day to start with');
       expect(find.byKey(const ValueKey('rec.day.previous')), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('rec.day.today')));
       await tester.pumpAndSettle();
-      expect(dateAsked(s), '20260927');
+      expect(dateAsked(s), '2026-09-27');
       IconButton arrow(String k) => tester.widget<IconButton>(find.byKey(ValueKey('rec.day.$k')));
       expect(arrow('next').onPressed, isNull, reason: 'nothing after today');
 
       await tester.tap(find.byKey(const ValueKey('rec.day.previous')));
       await tester.pumpAndSettle();
-      expect(dateAsked(s), '20260925', reason: 'the 26th has no clips');
+      expect(dateAsked(s), '2026-09-25', reason: 'the 26th has no clips');
       await tester.tap(find.byKey(const ValueKey('rec.day.previous')));
       await tester.pumpAndSettle();
-      expect(dateAsked(s), '20260920');
+      expect(dateAsked(s), '2026-09-20');
       expect(arrow('previous').onPressed, isNull, reason: 'no earlier day has clips');
       await tester.tap(find.byKey(const ValueKey('rec.day.next')));
       await tester.pumpAndSettle();
-      expect(dateAsked(s), '20260925');
+      expect(dateAsked(s), '2026-09-25');
 
       await tester.tap(find.byKey(const ValueKey('rec.day.yesterday')));
       await tester.pumpAndSettle();
-      expect(dateAsked(s), '20260926');
+      expect(dateAsked(s), '2026-09-26');
       await tester.tap(find.byKey(const ValueKey('rec.type.sentry')));
       await tester.pumpAndSettle();
       final r = s.rpc.calls.lastWhere((c) => c.method == 'ListRecordings').request as ListRecordingsRequest;
-      expect((r.type, r.date, r.page), ('sentry', '20260926', 1), reason: 'type and day together, from page 1');
+      expect((r.type, r.date, r.page), ('sentry', '2026-09-26', 1), reason: 'type and day together, from page 1');
       await tester.tap(find.byKey(const ValueKey('rec.day.all')));
       await tester.pumpAndSettle();
       expect(dateAsked(s), '');
@@ -190,12 +209,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('rec.day.previous')));
       await tester.pumpAndSettle();
-      expect(dateAsked(s), '20260925');
+      expect(dateAsked(s), '2026-09-25');
       await tester.tap(find.byKey(const ValueKey('rec.day.next')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('rec.day.next')));
       await tester.pumpAndSettle();
-      expect(dateAsked(s), '20260927');
+      expect(dateAsked(s), '2026-09-27');
       expect(tester.widget<IconButton>(find.byKey(const ValueKey('rec.day.next'))).onPressed, isNull);
       await unmount(tester);
     });

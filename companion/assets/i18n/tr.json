@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch işlemi",
     "perf_threads": "İş parçacıkları",
     "perf_fds": "Açık dosyalar",
-    "perf_gc": "Çöp toplama"
+    "perf_gc": "Çöp toplama",
+    "overlay_field_SPEED": "Hız",
+    "overlay_field_GEAR": "Vites",
+    "overlay_field_TURN_SIGNAL_LEFT": "Sol sinyal",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Sağ sinyal",
+    "overlay_field_BRAKE_PEDAL": "Fren pedalı",
+    "overlay_field_ACCEL_PEDAL": "Gaz pedalı",
+    "overlay_field_SEATBELT_DRIVER": "Sürücü emniyet kemeri",
+    "overlay_field_SEATBELT_PASSENGER": "Yolcu emniyet kemeri",
+    "overlay_field_TIMESTAMP": "Tarih ve saat",
+    "trips_costs": "Yolculuklar ve maliyetler",
+    "trip_storage_confirm": "Yeni yolculuklar {place} konumuna kaydedilecek.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

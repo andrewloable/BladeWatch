@@ -14,7 +14,7 @@ import 'platform_channel_error.dart';
 /// the Kotlin side dispatches on that single string rather than needing a
 /// separate `MethodChannel` per group.
 class MethodChannelBridge implements PlatformChannel {
-  static const _defaultChannelName = 'net.bladewatch.flutter/privileged';
+  static const _defaultChannelName = 'net.bladewatch.incarapp/privileged';
 
   final MethodChannel _channel;
 

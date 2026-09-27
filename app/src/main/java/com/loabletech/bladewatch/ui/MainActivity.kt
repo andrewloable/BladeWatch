@@ -12,7 +12,7 @@ import net.bladewatch.app.ui.daemon.DaemonStartupManager
 /**
  * The daemon APK's startup bootstrap. **This is not a UI.**
  *
- * BladeWatch-81g9.2 deleted the native in-car UI; `net.bladewatch.flutter` is the only
+ * BladeWatch-81g9.2 deleted the native in-car UI; `net.bladewatch.incarapp` is the only
  * in-car UI now. What survives here is the work nothing else does, in the order it has
  * to happen:
  *
@@ -73,7 +73,7 @@ class MainActivity : Activity() {
         // exposed a second, older problem: moveTaskToBack(true) at the end of onCreate does
         // NOT reliably background this task. Measured on the head unit 2026-09-15 —
         //   Window #9  net.bladewatch.app/.ui.MainActivity     (invisible, on top)
-        //   Window #10 net.bladewatch.flutter/...MainActivity  (the real UI, beneath)
+        //   Window #10 net.bladewatch.incarapp/...MainActivity  (the real UI, beneath)
         //   mResumedActivity: net.bladewatch.app/.ui.MainActivity
         // While the window was opaque this showed up as a white screen, so it read as
         // "something is broken". Once it went transparent the Flutter UI showed through it

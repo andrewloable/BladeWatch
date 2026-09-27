@@ -118,7 +118,7 @@ has its own command pair on 19876 (BladeWatch-hygs):
 | `config_get_section` `{section}` | returns `{section: {…}}` — the section's current values |
 | `config_put` `{section, key, value}` | merges one key into the section |
 
-These exist because the Flutter APK (`net.bladewatch.flutter`) has no path to
+These exist because the Flutter APK (`net.bladewatch.incarapp`) has no path to
 `/storage/emulated/0/BladeWatch/data/bladewatch_config.json`, which is where the
 Status-overlay and Privacy settings live. Reads go through the same typed
 accessors `StatusOverlayService` itself uses (`getStatusOverlay()`,

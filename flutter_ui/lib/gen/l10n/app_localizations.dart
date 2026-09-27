@@ -165,6 +165,18 @@ abstract class AppLocalizations {
   /// **'All'**
   String get action_select_all_short;
 
+  /// No description provided for @action_select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get action_select;
+
+  /// No description provided for @action_deselect_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get action_deselect_all;
+
   /// No description provided for @action_delete.
   ///
   /// In en, this message translates to:
@@ -1028,6 +1040,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All days'**
   String get recording_lib_date_all_days;
+
+  /// No description provided for @recording_lib_type_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get recording_lib_type_all;
 
   /// No description provided for @cd_clear_date_filter.
   ///

@@ -17,7 +17,7 @@ import org.junit.Test;
  * shortage:
  *
  * <pre>
- *   dumpsys gfxinfo net.bladewatch.flutter
+ *   dumpsys gfxinfo net.bladewatch.incarapp
  *     Total frames rendered: 257 ... 257 again 10 s later   -> nothing was repainting
  *     Janky frames: 114 (44%)   99th percentile: 600 ms
  *   head unit: 497% of 800% idle

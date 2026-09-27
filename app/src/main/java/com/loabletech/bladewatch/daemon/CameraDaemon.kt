@@ -61,6 +61,7 @@ import net.bladewatch.app.server.connect.impl.TripsServiceImpl
 import net.bladewatch.app.server.connect.impl.VehicleServiceImpl
 import net.bladewatch.app.storage.ExternalStorageCleaner
 import net.bladewatch.app.storage.InternalToSdMigrator
+import net.bladewatch.app.recording.FragmentedMp4Muxer
 import net.bladewatch.app.storage.StorageManager
 import net.bladewatch.app.surveillance.GpuPipelineConfig
 import net.bladewatch.app.surveillance.GpuSurveillancePipeline
@@ -381,6 +382,21 @@ object CameraDaemon {
         storageManager.applyAutoStoragePriority()
         logT("applyAutoStoragePriority done")
 
+        // BladeWatch-rdtj.29: a fragmented clip a crash left as <name>.mp4.tmp is finished and
+        // listed. Here, before the camera pipeline exists, so nothing is recording into these
+        // directories yet, and BEFORE the orphan sweep further down deletes every .tmp over
+        // 5 minutes old -- over the same directories that sweep covers. MediaMuxer leftovers
+        // cannot be saved this way; they are left for the sweep, as before. The media catalog
+        // does not exist yet, so the clips are indexed once it does (below).
+        var recoveredClips: List<File> = emptyList()
+        try {
+            val dirs = listOf("recordings", "surveillance", "proximity").flatMap { storageManager.sweepableDirs(it) }
+            recoveredClips = FragmentedMp4Muxer.recoverLeftovers(dirs) { storageManager.onFileSaved(it) }
+            if (recoveredClips.isNotEmpty()) log("Recovered ${recoveredClips.size} cut-off recording(s): " + recoveredClips.joinToString { it.name })
+        } catch (e: Exception) {
+            log("Leftover recording recovery failed: " + e.message)
+        }
+
         // Start the SD-card mount watchdog at daemon boot (instead of only on
         // ACC OFF). The watchdog no-ops when no storage type is set to SD, so
         // it's safe to start unconditionally — but it must run continuously
@@ -574,6 +590,15 @@ object CameraDaemon {
         initSurveillance()
         logT("initSurveillance done")
 
+        // BladeWatch-rdtj.66: let go of the SD card when vold unmounts it (its SIGINT), instead of
+        // dying. Served clips close; a recording on the card is finished. After initSurveillance:
+        // the handler lives in libsurveillance, which the pipeline loads.
+        SdCardSignal.start {
+            val closed = OpenMediaFiles.closeAll()
+            val finished = gpuPipeline?.releaseRemovableStorage() == true
+            log("SIGINT (SD unmount): closed $closed served file(s)" + if (finished) ", finished the recording on the card" else "")
+        }
+
         // Apply persisted settings to GPU pipeline (for runtime changes)
         // Note: Codec/bitrate are already applied during init, but this ensures
         // the config object is in sync and handles any settings that need runtime application
@@ -645,6 +670,7 @@ object CameraDaemon {
                 mediaCatalogManager = mcm
                 mcm.init()
                 log("Media catalog initialized (available=" + mcm.isAvailable + ")")
+                recoveredClips.forEach(mcm::indexRecording) // BladeWatch-rdtj.29, recovered above
                 logT("MediaCatalogManager.init done")
             } catch (e: Exception) {
                 log("Media catalog init failed: " + e.message)

@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch 프로세스",
     "perf_threads": "스레드",
     "perf_fds": "열린 파일",
-    "perf_gc": "가비지 컬렉션"
+    "perf_gc": "가비지 컬렉션",
+    "overlay_field_SPEED": "속도",
+    "overlay_field_GEAR": "기어",
+    "overlay_field_TURN_SIGNAL_LEFT": "좌측 방향지시등",
+    "overlay_field_TURN_SIGNAL_RIGHT": "우측 방향지시등",
+    "overlay_field_BRAKE_PEDAL": "브레이크 페달",
+    "overlay_field_ACCEL_PEDAL": "가속페달",
+    "overlay_field_SEATBELT_DRIVER": "운전자 안전벨트",
+    "overlay_field_SEATBELT_PASSENGER": "동승자 안전벨트",
+    "overlay_field_TIMESTAMP": "날짜와 시간",
+    "trips_costs": "주행 및 비용",
+    "trip_storage_confirm": "새 주행은 {place}에 저장됩니다.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

@@ -282,6 +282,47 @@ void main() {
       await unmount(tester);
     });
 
+    // BladeWatch-rdtj.69: the sunroof and sunshade, as the in-car app offers them.
+    testWidgets('sunroof and sunshade: only when the car has them, 0/50/100 only, confirmed first', (tester) async {
+      final s = TestSession();
+      s.rpc.stubJson('VehicleService', 'GetState', {
+        'success': true,
+        'windows': {'lf': 0, 'rf': 0, 'lr': 0, 'rr': 0, 'sunroof': 60, 'sunshade': -1},
+        'capabilities': {
+          'windows': {'sunroof': true},
+        },
+      });
+      s.rpc.stubJson('VehicleService', 'IssueActionToken', {'success': true, 'token': 'act', 'expiresInSeconds': 30});
+      s.rpc.stubJson('VehicleService', 'MoveWindow', {'success': true});
+      await pumpScreen(tester, s, const VehicleScreen(), size: const Size(420, 2600));
+
+      expect(find.text(t('vehicle.sunroof')), findsOneWidget);
+      expect(find.text(t('vehicle.sunshade')), findsNothing, reason: 'this car has no sunshade');
+      expect(find.byKey(const ValueKey('window.5.25')), findsNothing, reason: 'the panel has no 25% or 75%');
+      bool on(String k) => tester.widget<ChoiceChip>(find.byKey(ValueKey(k))).selected;
+      expect((on('window.5.0'), on('window.5.50'), on('window.5.100')), (false, true, false), reason: '60% is nearest 50%');
+
+      await tester.ensureVisible(find.byKey(const ValueKey('window.5.100')));
+      await tester.tap(find.byKey(const ValueKey('window.5.100')));
+      await tester.pumpAndSettle();
+      expect(find.text(t('companion.window_to', {'window': t('vehicle.sunroof'), 'percent': 100})), findsOneWidget);
+      await tester.tap(find.text(t('common.cancel')));
+      await tester.pumpAndSettle();
+      expect(s.rpc.calls.where((c) => c.method == 'MoveWindow'), isEmpty);
+
+      await tester.tap(find.byKey(const ValueKey('window.5.0')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('window.confirm')));
+      await tester.pumpAndSettle();
+      final move = s.rpc.calls.lastWhere((c) => c.method == 'MoveWindow').request as MoveWindowRequest;
+      expect((move.windowIndex, move.hasTargetPercent(), move.targetPercent), (5, true, 0));
+      await unmount(tester);
+    });
+
+    test('which sun-panel preset lights, as in the car', () {
+      expect([for (final p in [-1, 0, 2, 3, 49, 74, 75, 76, 100]) sunPanelPreset(p)], [null, 0, 0, 50, 50, 50, 100, 100, 100]);
+    });
+
     testWidgets('a refused command or token is shown, with the car\'s reason when it gives one', (tester) async {
       final s = TestSession();
       state(s);

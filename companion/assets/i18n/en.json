@@ -1888,6 +1888,18 @@
     "perf_process": "BladeWatch process",
     "perf_threads": "Threads",
     "perf_fds": "Open files",
-    "perf_gc": "Garbage collections"
+    "perf_gc": "Garbage collections",
+    "overlay_field_SPEED": "Speed",
+    "overlay_field_GEAR": "Gear",
+    "overlay_field_TURN_SIGNAL_LEFT": "Left turn signal",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Right turn signal",
+    "overlay_field_BRAKE_PEDAL": "Brake pedal",
+    "overlay_field_ACCEL_PEDAL": "Accelerator pedal",
+    "overlay_field_SEATBELT_DRIVER": "Driver seatbelt",
+    "overlay_field_SEATBELT_PASSENGER": "Passenger seatbelt",
+    "overlay_field_TIMESTAMP": "Date and time",
+    "trips_costs": "Trips & costs",
+    "trip_storage_confirm": "New trips will be saved to {place}.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

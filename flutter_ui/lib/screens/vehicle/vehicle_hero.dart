@@ -219,7 +219,7 @@ class _VehicleHeroState extends State<VehicleHero> {
     _disposed = true;
     // BladeWatch-w9vi: measured on the head unit, leaving the Vehicle screen left
     // roughly 24 MB of graphics memory allocated — `Graphics` in
-    // `dumpsys meminfo net.bladewatch.flutter` stayed at ~40 MB instead of falling
+    // `dumpsys meminfo net.bladewatch.incarapp` stayed at ~40 MB instead of falling
     // back to Live View's ~16 MB, and stayed there for minutes. Removing the widget
     // is supposed to tear the platform WebView down, but on this Adreno 610 driver
     // the three.js WebGL context outlived it after repeated navigation.

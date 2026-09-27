@@ -51,6 +51,15 @@ class VehicleRefused implements Exception {
 /// MoveWindow target openings offered per window: the web's presets.
 const windowPresets = [0, 25, 50, 75, 100];
 
+/// The sunroof and sunshade (BladeWatch-rdtj.69): BYD's one-touch close / half / open only, with no
+/// position feedback, so the car sends 25 as a full close and 75 as a full open. The in-car app's
+/// kSunPanelPresets (BladeWatch-b3n7).
+const sunPanelPresets = [0, 50, 100];
+
+/// Which of [sunPanelPresets] a panel at [pos]% lights, as the in-car app decides: closed (0-2%)
+/// lights 0, any opening the nearest of 50 and 100 with ties to the higher, unknown (negative) none.
+int? sunPanelPreset(int pos) => pos < 0 ? null : (pos <= 2 ? 0 : ((pos - 50).abs() < (pos - 100).abs() ? 50 : 100));
+
 class VehicleScreen extends StatefulWidget {
   const VehicleScreen({super.key});
 
@@ -171,6 +180,26 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
                   ),
               ]),
             ],
+            // The sunroof and sunshade, only when the car has them (window 5 and 6).
+            for (final (idx, key, pos, has) in [
+              (5, 'vehicle.sunroof', s.windows.sunroof, s.capabilities.windows.sunroof),
+              (6, 'vehicle.sunshade', s.windows.sunshade, s.capabilities.windows.sunshade),
+            ])
+              if (has) ...[
+                InfoRow(tr(key), pos < 0 ? '—' : '$pos%'),
+                Wrap(spacing: 6, runSpacing: 4, children: [
+                  for (final p in sunPanelPresets)
+                    ChoiceChip(
+                      key: ValueKey('window.$idx.$p'),
+                      label: Text('$p%'),
+                      selected: sunPanelPreset(pos) == p,
+                      onSelected: busy
+                          ? null
+                          : (_) => _windows('win-$idx-$p', MoveWindowRequest(windowIndex: idx, targetPercent: p),
+                              what: tr('companion.window_to', {'window': tr(key), 'percent': p})),
+                    ),
+                ]),
+              ],
             const SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
               OutlinedButton(

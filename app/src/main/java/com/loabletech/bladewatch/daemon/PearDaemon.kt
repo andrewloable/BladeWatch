@@ -275,7 +275,8 @@ object PearDaemon {
                 }
                 "connection.close" -> {
                     peers = (peers - 1).coerceAtLeast(0)
-                    log.info("companion disconnected (peers=$peers)")
+                    val why = status.recordClose(p?.optJSONObject("stats"))
+                    log.info("companion disconnected (peers=$peers)" + (why?.let { ": $it" } ?: ""))
                     status.companions = peers
                     status.write()
                     p?.optString("peer")?.takeIf { it.isNotEmpty() }?.let(pump::onPeerClosed)

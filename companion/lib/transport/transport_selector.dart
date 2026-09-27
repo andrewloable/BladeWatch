@@ -40,6 +40,10 @@ class TransportSelector {
   TransportPhase _phase = TransportPhase.discovering;
   StreamSubscription<void>? _changes;
   Timer? _retry;
+
+  /// A dropped Pear connection's bridge, still within its grace period while no route is set: the
+  /// next Pear route adopts its streams (BladeWatch-bbvx).
+  MuxBridge? _parked;
   int _generation = 0;
   bool _disposed = false;
 
@@ -97,10 +101,30 @@ class TransportSelector {
     _retry = Timer(retryAfter, () => unawaited(evaluate()));
   }
 
+  /// Switches the gateway to [next]. Streams on the previous Pear connection carry on over the next
+  /// one (BladeWatch-bbvx): a new Pear route adopts them, and with no route yet a detached bridge
+  /// is parked until one comes or its grace period ends. Only the LAN, or disposing, closes them.
   void _route(GatewayRoute? next) {
     final previous = gateway.route;
     gateway.route = next;
-    if (previous is PearRoute && !identical(previous, next)) previous.bridge.shutdown();
+    if (previous is PearRoute && !identical(previous, next)) {
+      if (next is PearRoute) {
+        next.bridge.adopt(previous.bridge);
+      } else if (next == null && previous.bridge.isDetached && !_disposed) {
+        _parked = previous.bridge;
+      } else {
+        previous.bridge.shutdown();
+      }
+    }
+    final parked = _parked;
+    if (next != null && parked != null) {
+      _parked = null;
+      if (next is PearRoute) {
+        next.bridge.adopt(parked);
+      } else {
+        parked.shutdown();
+      }
+    }
   }
 
   void _set(TransportPhase phase) {
@@ -114,6 +138,8 @@ class TransportSelector {
     _retry?.cancel();
     await _changes?.cancel();
     _route(null);
+    _parked?.shutdown();
+    _parked = null;
     await _phases.close();
   }
 }

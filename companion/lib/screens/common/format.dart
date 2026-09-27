@@ -28,6 +28,9 @@ abstract final class Fmt {
   static String time(Int64 epochMs, [String? locale]) =>
       epochMs <= 0 ? '—' : DateFormat.jm(locale).format(DateTime.fromMillisecondsSinceEpoch(epochMs.toInt()));
 
+  /// A clock time to the second, for things that change every second (the live still).
+  static String clock(DateTime at, [String? locale]) => DateFormat.jms(locale).format(at);
+
   static String bytes(num b) {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     var v = b.toDouble();

@@ -1888,6 +1888,18 @@
     "perf_process": "Processus BladeWatch",
     "perf_threads": "Threads",
     "perf_fds": "Fichiers ouverts",
-    "perf_gc": "Nettoyages mémoire"
+    "perf_gc": "Nettoyages mémoire",
+    "overlay_field_SPEED": "Vitesse",
+    "overlay_field_GEAR": "Vitesse engagée",
+    "overlay_field_TURN_SIGNAL_LEFT": "Clignotant gauche",
+    "overlay_field_TURN_SIGNAL_RIGHT": "Clignotant droit",
+    "overlay_field_BRAKE_PEDAL": "Pédale de frein",
+    "overlay_field_ACCEL_PEDAL": "Pédale d'accélérateur",
+    "overlay_field_SEATBELT_DRIVER": "Ceinture conducteur",
+    "overlay_field_SEATBELT_PASSENGER": "Ceinture passager",
+    "overlay_field_TIMESTAMP": "Date et heure",
+    "trips_costs": "Trajets et coûts",
+    "trip_storage_confirm": "Les nouveaux trajets seront enregistrés sur {place}.",
+    "sync_result": "+{added} / −{removed}"
   }
 }

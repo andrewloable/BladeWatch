@@ -18,7 +18,7 @@ BladeWatch is built around long-running processes that survive normal Android UI
 
 - `MainActivity`: the **startup bootstrap**, not UI. Since Phase 4 it extends
   `Activity`, never calls `setContentView`, and calls `moveTaskToBack(true)`
-  immediately. It has **no launcher `intent-filter`** — `net.bladewatch.flutter`
+  immediately. It has **no launcher `intent-filter`** — `net.bladewatch.incarapp`
   is the only launcher icon — but stays `exported="true"` so
   `am start -n net.bladewatch.app/.ui.MainActivity` remains the ADB recovery path.
   It is started in normal operation by the Flutter APK's `wakeServiceHost()` on
@@ -277,6 +277,27 @@ killed the healthy daemon the next `start()` had built. That was 7 of the starts
 2026-09-24 with ACC off, every post-install start among them. With the fix, 10 consecutive starts
 ran clean. The CRITICAL line now carries the GL thread's stack.
 
+### SD-card unmounts: vold's SIGINT and the watchdog (BladeWatch-rdtj.65, rdtj.66)
+
+At ACC OFF, BYD broadcasts `ACTION_SHUTDOWN`, and vold unmounts the SD card. Any process still
+holding a file on it gets SIGINT; vold waits 5 s, retries the unmount, then escalates to SIGTERM
+and SIGKILL. On 2026-09-27 that killed `byd_cam_daemon` while it served a clip to the companion,
+and the watchdog script left it dead ("exited with code 130, NOT restarting"): no dashcam, sentry
+or remote access.
+
+Two fixes, the second a backstop for the first:
+
+- **The daemon survives the signal.** `sd_signal.cpp` (in libsurveillance; ART here has no
+  `sun.misc.Signal`) catches SIGINT and wakes `SdCardSignal`'s thread. It closes every clip being
+  served (`OpenMediaFiles`, registered by `HttpResponse`'s video sends) and finishes a recording
+  being written to removable storage (`GpuSurveillancePipeline.releaseRemovableStorage`). The daemon
+  then holds nothing on the card and keeps running. Measured: a `kill -2` with a stalled stream
+  holding a clip left the same PID, with 0 files open on the card.
+- **The watchdog restarts on any death** (`DaemonLauncher.WATCHDOG_EXIT_LINES`). Every non-zero
+  exit is retried with backoff, and the lock file is removed after a death by signal (never after
+  exit 1, which is another live instance). Its 5-try limit counts a crash loop only: a run of 60 s
+  or more resets it. Measured: back 4 s after a fatal signal.
+
 ### Ready sentinel and readiness probe
 
 The daemon signals "startup complete" by writing its PID to a sentinel file:
@@ -424,8 +445,9 @@ It also carries the companion's traffic. `PearStreamPump`, inside this process, 
 stream a companion opens over its Pear connection (`PearMux` framing) into a TCP connection
 to byd_cam_daemon's Pear TLS listener, 127.0.0.1:8444, and copies bytes both ways —
 a real cross-process hop, so it retries while byd_cam_daemon is (re)starting and closes
-pumped streams cleanly when it goes away. Protocol and limits: `docs/networking-and-tunnels.md`
-"Stream multiplexing".
+pumped streams cleanly when it goes away. When a companion's Pear connection drops, its streams
+stay open for 60 s so the companion can resume them on its next connection (BladeWatch-bbvx).
+Protocol and limits: `docs/networking-and-tunnels.md` "Stream multiplexing".
 
 It is **opt-in**: `DaemonType.PEAR_PEER` is the one optional daemon, off by default, and
 starts on the optional tier (+60 s) only once enabled — pairing a companion is what enables
@@ -443,6 +465,14 @@ serves it with liveness and the owner's switch: `reachable` is true only when th
 the file is under 90 s old, the topic is joined and the DHT is online; null when the bundle
 cannot tell. Settings -> Services shows it under "Remote access (Pear)", and the dashboard's
 Remote access tile reports it while Pear is switched on.
+
+**Why a companion dropped (BladeWatch-rdtj.34).** From a pear-end that sends close stats
+(flutter_pear after 0.4.6), each companion disconnect logs one line under the `PearDaemon` tag,
+`companion disconnected (peers=N): error=... ageMs=... bytesIn=... bytesOut=... rtt=...
+rtoCount=... retransmits=... ipv6=...`, and `pear_status.json`'s `recentCloses` keeps the last
+20 with their times. `error` is null for a clean close, else a code such as `ETIMEDOUT`; a high
+`rtoCount` points at UDX timeouts under load, a quiet connection closing on a timeout at a NAT
+mapping expiring. Only those fields are copied: no topic, key or address.
 
 Runtime paths:
 
@@ -573,7 +603,7 @@ BootReceiver / MainActivity (woken by the Flutter APK)
   -> AdbDaemonLauncher
   -> app_process Java daemons (PearLauncher starts pear_daemon)
 
-Flutter in-car UI (net.bladewatch.flutter, same UID)
+Flutter in-car UI (net.bladewatch.incarapp, same UID)
   -> TCP 19876 (privileged ops, via its own Kotlin MethodChannels)
   -> HTTP 8080 (all 109 ConnectRPC methods, JWT-authenticated)
 
