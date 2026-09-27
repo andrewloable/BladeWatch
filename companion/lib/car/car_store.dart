@@ -16,6 +16,7 @@ class PairedCar {
     required this.probeKey,
     required this.credential,
     this.inboxCursor = Int64.ZERO,
+    this.lanHint,
   });
 
   factory PairedCar.fromPairing(PairingPayload qr, CompanionCredential credential) => PairedCar(
@@ -35,13 +36,22 @@ class PairedCar {
   /// The last alert id collected from the car's inbox (BladeWatch-rdtj.14).
   final Int64 inboxCursor;
 
-  PairedCar withCursor(Int64 cursor) => PairedCar(
+  /// The car's own Wi-Fi address, as it last reported it: probed alone before any sweep of the
+  /// LAN (BladeWatch-rdtj.38). Null until the car has been reached while on Wi-Fi.
+  final String? lanHint;
+
+  PairedCar withCursor(Int64 cursor) => _copy(cursor, lanHint);
+
+  PairedCar withLanHint(String? hint) => _copy(inboxCursor, hint);
+
+  PairedCar _copy(Int64 cursor, String? hint) => PairedCar(
         deviceId: deviceId,
         pearTopic: pearTopic,
         tlsFingerprint: tlsFingerprint,
         probeKey: probeKey,
         credential: credential,
         inboxCursor: cursor,
+        lanHint: hint,
       );
 
   Map<String, Object?> toJson() => {
@@ -52,6 +62,7 @@ class PairedCar {
         'companionId': credential.companionId,
         'token': credential.token,
         'inboxCursor': inboxCursor.toString(),
+        if (lanHint != null) 'lanHint': lanHint,
       };
 
   static PairedCar fromJson(Map<String, Object?> j) => PairedCar(
@@ -61,6 +72,7 @@ class PairedCar {
         probeKey: j['probeKey'] as String,
         credential: CompanionCredential(j['companionId'] as String, j['token'] as String),
         inboxCursor: Int64.parseInt(j['inboxCursor'] as String? ?? '0'),
+        lanHint: j['lanHint'] as String?,
       );
 }
 

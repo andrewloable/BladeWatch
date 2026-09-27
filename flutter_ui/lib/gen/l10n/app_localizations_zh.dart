@@ -1637,6 +1637,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_trips_label_time => '驾驶时长';
 
   @override
+  String get dashboard_week_battery => '电池';
+
+  @override
+  String get dashboard_week_elec_range => '纯电续航';
+
+  @override
+  String get dashboard_week_fuel => '燃油';
+
+  @override
+  String get dashboard_week_fuel_range => '燃油续航';
+
+  @override
   String get dashboard_trips_no_data => '本周暂无行程记录';
 
   @override
@@ -4418,6 +4430,18 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get dashboard_trips_label_time => '驾驶时长';
+
+  @override
+  String get dashboard_week_battery => '电池';
+
+  @override
+  String get dashboard_week_elec_range => '纯电续航';
+
+  @override
+  String get dashboard_week_fuel => '燃油';
+
+  @override
+  String get dashboard_week_fuel_range => '燃油续航';
 
   @override
   String get dashboard_trips_no_data => '本周暂无行程记录';
@@ -7202,6 +7226,18 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get dashboard_trips_label_time => '行駛時間';
+
+  @override
+  String get dashboard_week_battery => '電池';
+
+  @override
+  String get dashboard_week_elec_range => '純電續航';
+
+  @override
+  String get dashboard_week_fuel => '燃油';
+
+  @override
+  String get dashboard_week_fuel_range => '燃油續航';
 
   @override
   String get dashboard_trips_no_data => '本週尚無行程紀錄';

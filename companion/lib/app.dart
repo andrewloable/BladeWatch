@@ -8,6 +8,7 @@ import 'car/car_session.dart';
 import 'car/car_store.dart';
 import 'i18n.dart';
 import 'screens/alerts/alerts_controller.dart';
+import 'screens/common/shell_nav.dart';
 import 'screens/destinations.dart';
 import 'screens/pairing/pairing_controller.dart';
 import 'screens/pairing/pairing_screen.dart';
@@ -47,8 +48,9 @@ class CompanionAppState extends State<CompanionApp> {
   @override
   void initState() {
     super.initState();
-    // A phone that slept dropped its Pear connection; look again the moment it is back.
-    _lifecycle = AppLifecycleListener(onResume: () => _session?.retry());
+    // A phone that slept may have lost its Pear connection: check it the moment the app is back,
+    // and look again only if it is gone (CarSession.resumed, BladeWatch-rdtj.36).
+    _lifecycle = AppLifecycleListener(onResume: () => unawaited(_session?.resumed()), onPause: () => _session?.paused());
     unawaited(_start());
   }
 
@@ -70,6 +72,14 @@ class CompanionAppState extends State<CompanionApp> {
 
   Future<void> _open(PairedCar car) async {
     final session = await widget.openSession(car);
+    // BladeWatch-rdtj.38: remember where the car sits on its Wi-Fi, for the next search.
+    session.addListener(() {
+      final ip = session.carLanAddress;
+      final paired = store.car;
+      if (ip == null || paired == null || ip == paired.lanHint) return;
+      store.car = paired.withLanHint(ip);
+      unawaited(store.save());
+    });
     final alerts = AlertsController(session: session, store: store);
     if (!mounted) {
       session.dispose();
@@ -162,7 +172,13 @@ class _HomeShellState extends State<HomeShell> {
     final tr = context.tr;
     final all = destinations(alerts: widget.alerts, store: widget.store, onLanguage: widget.onLanguage, onUnpair: widget.onUnpair);
     final current = all[_index];
-    final page = CarPage(onPairAgain: widget.onUnpair, child: current.build(context));
+    final page = ShellNav(
+      go: (id) {
+        final i = all.indexWhere((d) => d.id == id);
+        if (i >= 0) _go(i);
+      },
+      child: CarPage(onPairAgain: widget.onUnpair, child: current.build(context)),
+    );
     final badge = ListenableBuilder(
       listenable: widget.alerts,
       builder: (context, _) => widget.alerts.unseen == 0
@@ -174,14 +190,22 @@ class _HomeShellState extends State<HomeShell> {
     if (MediaQuery.sizeOf(context).width >= HomeShell.wideMinWidth) {
       return Scaffold(
         body: Row(children: [
+          // The name is the drawer's HEADER, not its first list row (BladeWatch-rdtj.52): as a
+          // row it scrolled with the places and was cut off at the top on the Android tablet,
+          // whose 800 dp height is short of the thirteen rows. The header sits below the
+          // drawer's own SafeArea and never scrolls.
           NavigationDrawer(
             selectedIndex: _index,
             onDestinationSelected: _go,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+            header: Padding(
+              key: const ValueKey('drawer.header'),
+              padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
                 child: Text('BladeWatch', style: Theme.of(context).textTheme.titleSmall),
               ),
+            ),
+            children: [
               for (final d in all) NavigationDrawerDestination(icon: icon(d), label: Text(tr(d.label))),
             ],
           ),
@@ -212,6 +236,11 @@ class _HomeShellState extends State<HomeShell> {
     final picked = await showModalBottomSheet<int>(
       context: context,
       showDragHandle: true,
+      // Sized to its nine rows (BladeWatch-rdtj.51). The default caps a sheet at 9/16 of the
+      // screen, which hid two places on a real phone with nothing to say the list scrolls. It
+      // still scrolls where even the whole screen is too short, and stays under the status bar.
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) => SafeArea(
         child: ListView(shrinkWrap: true, children: [
           for (var i = from; i < all.length; i++)

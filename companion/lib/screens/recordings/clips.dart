@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_theme/color_tokens.dart';
+import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
@@ -89,10 +93,18 @@ String clipTypeLabel(Tr tr, RecordingType t) => switch (t) {
 
 /// One clip in a list: thumbnail, when, how long, what was seen.
 class ClipTile extends StatelessWidget {
-  const ClipTile({super.key, required this.clip, this.onDelete});
+  const ClipTile({super.key, required this.clip, this.onDelete, this.selected, this.onSelect, this.playlist = const []});
 
   final RecordingEntry clip;
   final VoidCallback? onDelete;
+
+  /// The list this clip sits in, for the player's previous and next.
+  final List<RecordingEntry> playlist;
+
+  /// Non-null while the list is picking clips (BladeWatch-rdtj.43): a tap then ticks the clip
+  /// instead of playing it, and there is no per-clip delete.
+  final bool? selected;
+  final ValueChanged<bool>? onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -104,32 +116,70 @@ class ClipTile extends StatelessWidget {
       leading: ClipThumb(c.filename),
       title: Text(Fmt.dateTime(c.timestampMs, tr.lang)),
       subtitle: Text('${clipTypeLabel(tr, c.type)} · ${Fmt.duration(c.durationSeconds.toInt())} · ${Fmt.bytes(c.sizeBytes.toInt())}$seen'),
-      trailing: onDelete == null
-          ? null
-          : IconButton(
-              key: ValueKey('clip.delete.${c.filename}'),
-              tooltip: tr('common.delete'),
-              icon: const Icon(Icons.delete_outline),
-              onPressed: onDelete,
-            ),
-      onTap: () => openClip(context, c.filename),
+      trailing: selected != null
+          ? Checkbox(key: ValueKey('clip.check.${c.filename}'), value: selected, onChanged: (v) => onSelect?.call(v ?? false))
+          : onDelete == null
+              ? null
+              : IconButton(
+                  key: ValueKey('clip.delete.${c.filename}'),
+                  tooltip: tr('common.delete'),
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: onDelete,
+                ),
+      onTap: selected != null ? () => onSelect?.call(!selected!) : () => openClip(context, c.filename, playlist: playlist),
     );
   }
 }
 
 /// Plays a clip (Android, iOS, macOS), or offers to save it where video_player has no player.
-Future<void> openClip(BuildContext context, String filename) {
+/// [playlist] is the list it was opened from, walked by previous and next.
+Future<void> openClip(BuildContext context, String filename, {List<RecordingEntry> playlist = const []}) {
   final session = context.session;
   final tr = context.tr;
   return Navigator.of(context).push(MaterialPageRoute<void>(
-    builder: (_) => TrScope(tr: tr, child: SessionScope(session: session, child: ClipPlayerScreen(filename: filename))),
+    builder: (_) => TrScope(
+      tr: tr,
+      child: SessionScope(session: session, child: ClipPlayerScreen(filename: filename, playlist: List.of(playlist))),
+    ),
   ));
+}
+
+/// Where in a clip something was detected, from the car's event-timeline sidecar.
+typedef DetectionSpan = ({int startMs, int endMs, String type});
+
+/// GetEventTimeline's timeline_json: the spans, the per-class counts, and the sidecar's own idea
+/// of the clip length. Null when there is no usable sidecar.
+({List<DetectionSpan> spans, Map<String, int> counts, int durationMs})? parseTimeline(String json) {
+  if (json.isEmpty) return null;
+  try {
+    final d = jsonDecode(json) as Map<String, dynamic>;
+    int n(Object? v) => (v as num?)?.toInt() ?? 0;
+    final spans = <DetectionSpan>[
+      for (final e in (d['events'] as List? ?? const []).whereType<Map<String, dynamic>>())
+        (startMs: n(e['start']), endMs: e['end'] == null ? n(e['start']) : n(e['end']), type: (e['type'] as String?) ?? 'motion'),
+    ];
+    final counts = <String, int>{
+      for (final MapEntry(:key, :value) in ((d['stats'] as Map<String, dynamic>?) ?? const {}).entries)
+        if (value is num && value > 0) key: value.toInt(),
+    };
+    return (spans: spans, counts: counts, durationMs: n(d['durationMs']));
+  } catch (_) {
+    return null;
+  }
+}
+
+/// When a clip was taken: the car's timestamp, else the one in its name (event_20260927_111206).
+DateTime? clipTime(String filename, [RecordingEntry? entry]) {
+  if (entry != null && entry.timestampMs > 0) return DateTime.fromMillisecondsSinceEpoch(entry.timestampMs.toInt());
+  final m = RegExp(r'(\d{8})_(\d{6})').firstMatch(filename);
+  return m == null ? null : DateTime.tryParse('${m[1]}T${m[2]}');
 }
 
 class ClipPlayerScreen extends StatefulWidget {
   const ClipPlayerScreen({
     super.key,
     required this.filename,
+    this.playlist = const [],
     this.canPlay,
     this.retryPause = const Duration(seconds: 2),
     this.patience = const Duration(minutes: 10),
@@ -137,6 +187,9 @@ class ClipPlayerScreen extends StatefulWidget {
   });
 
   final String filename;
+
+  /// The clips around this one, for previous and next (BladeWatch-rdtj.44); empty from an alert.
+  final List<RecordingEntry> playlist;
 
   /// Test seam; by default the platforms video_player implements.
   final bool? canPlay;
@@ -160,6 +213,19 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
   bool _failed = false;
   String? _saved;
 
+  // The clip on screen: previous and next change it in place, as the web player does.
+  // [_clip] counts the changes, so a recovery still waiting for the route when the owner moved on
+  // does not start a second player for the clip that was left.
+  int _clip = 0;
+  late String _filename = widget.filename;
+  late int _index = widget.playlist.indexWhere((c) => c.filename == widget.filename);
+  RecordingEntry? get _entry => _index < 0 ? null : widget.playlist[_index];
+
+  // BladeWatch-rdtj.44: where in the clip something was seen, from the car's sidecar.
+  List<DetectionSpan> _spans = const [];
+  Map<String, int> _counts = const {};
+  int _sidecarMs = 0;
+
   // BladeWatch-tayl: a clip that was playing when the connection dropped carries on from where
   // it was, once the route is back, instead of dying on an error. A drop the session sees waits
   // for the route (up to [ClipPlayerScreen.patience]) without spending a try: from mobile data a
@@ -171,16 +237,72 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
   bool _recovering = false;
   int _recoveries = 0;
 
+  // BladeWatch-rdtj.31: over a link slower than the clip (mobile data, 4-6 Mbit/s against a
+  // 6 Mbit/s clip) the player holds still until it has buffered enough -- 4 to 23 s measured. Show
+  // that it is loading, and after [_slowAfter] seconds say why and offer the download, rather than
+  // a frozen frame.
+  static const _slowAfter = 5;
+  Timer? _stallTimer;
+  Duration? _lastPosition;
+  int _stalled = 0;
+
   bool get _canPlay => widget.canPlay ?? (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
 
-  String get _path => '/video/${Uri.encodeComponent(widget.filename)}';
+  String get _path => '/video/${Uri.encodeComponent(_filename)}';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Not while [_recover] waits for the route: the session reconnecting notifies this screen too,
     // and starting here as well would race two players for the same clip.
-    if (_video == null && _canPlay && !_failed && !_recovering) unawaited(_start(context.session));
+    if (_video == null && _canPlay && !_failed && !_recovering) {
+      unawaited(_start(context.session));
+      unawaited(_loadTimeline(context.session));
+    }
+  }
+
+  Future<void> _loadTimeline(CarSession session) async {
+    final filename = _filename;
+    if (_entry != null && !_entry!.hasEvents) return; // no sidecar to ask for
+    try {
+      final r = await RecordingsServiceClient(session.rpc).getEventTimeline(GetEventTimelineRequest(filename: filename));
+      final t = parseTimeline(r.timelineJson);
+      if (t == null || !mounted || filename != _filename) return;
+      setState(() {
+        _spans = t.spans;
+        _counts = t.counts;
+        _sidecarMs = t.durationMs;
+      });
+    } catch (_) {
+      // No sidecar, or the car could not say: the plain progress bar stands. Nothing is invented.
+    }
+  }
+
+  /// Previous (-1) or next (+1) in the list the clip was opened from.
+  void _go(int delta) {
+    final i = _index + delta;
+    if (_index < 0 || i < 0 || i >= widget.playlist.length) return;
+    final session = context.session;
+    _stallTimer?.cancel();
+    unawaited(_video?.dispose());
+    setState(() {
+      _clip++;
+      _recovering = false;
+      _index = i;
+      _filename = widget.playlist[i].filename;
+      _video = null;
+      _failed = false;
+      _saved = null;
+      _at = Duration.zero;
+      _played = false;
+      _recoveries = 0;
+      _stalled = 0;
+      _spans = const [];
+      _counts = const {};
+      _sidecarMs = 0;
+    });
+    if (_canPlay) unawaited(_start(session));
+    unawaited(_loadTimeline(session));
   }
 
   Future<void> _start(CarSession session) async {
@@ -193,6 +315,7 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
       if (_at > Duration.zero) await video.seekTo(_at);
       await video.play();
       _played = true;
+      _watchStall(video);
       if (mounted) setState(() {});
     } catch (_) {
       // A clip that never played is simply unavailable; one that was playing gets another go.
@@ -209,20 +332,42 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
     final v = video.value;
     if (v.hasError) {
       if (_played) unawaited(_recover());
+    } else if (v.isCompleted && _index >= 0 && _index < widget.playlist.length - 1) {
+      _go(1); // on to the next clip, as the web player does
     } else if (v.isInitialized && v.position > Duration.zero) {
       _at = v.position;
     }
   }
 
+  /// Counts the seconds [video] has been meant to play without moving.
+  void _watchStall(VideoPlayerController video) {
+    _stallTimer?.cancel();
+    _lastPosition = null;
+    _stalled = 0;
+    _stallTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final v = video.value;
+      final still = v.isPlaying && v.position == _lastPosition && v.position < v.duration;
+      _lastPosition = v.position;
+      final stalled = still ? _stalled + 1 : 0;
+      if (stalled != _stalled && mounted) setState(() => _stalled = stalled);
+    });
+  }
+
   Future<void> _recover() async {
     if (_recovering || !mounted) return;
     _recovering = true;
+    final clip = _clip;
     final session = context.session;
     final old = _video;
-    setState(() => _video = null); // the spinner, while it reconnects
+    _stallTimer?.cancel();
+    setState(() {
+      _video = null; // the spinner, while it reconnects
+      _stalled = 0;
+    });
     unawaited(old?.dispose());
     if (!session.connected) {
       final back = await untilConnected(session, widget.patience);
+      if (clip != _clip) return; // moved to another clip meanwhile: that one has its own player
       _recovering = false;
       if (!mounted) return;
       if (back) {
@@ -238,21 +383,33 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
       return;
     }
     await Future<void>.delayed(widget.retryPause * _recoveries);
+    if (clip != _clip) return;
     _recovering = false;
     if (mounted) await _start(context.session);
   }
 
+  // One download at a time: a second would start by deleting the first one's .part file. There
+  // are two Download buttons while a clip is slow to start.
+  bool _saving = false;
+
   Future<void> _save() async {
+    if (_saving) return;
+    _saving = true;
     final session = context.session;
     final tr = context.tr;
-    final dir = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
-    final dest = File('${dir.path}/${widget.filename}');
-    final ok = await downloadMedia(session, _path, dest);
-    if (mounted) setState(() => _saved = ok ? tr('companion.saved_to', {'path': dest.path}) : tr('errors.generic'));
+    try {
+      final dir = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+      final dest = File('${dir.path}/$_filename');
+      final ok = await downloadMedia(session, _path, dest);
+      if (mounted) setState(() => _saved = ok ? tr('companion.saved_to', {'path': dest.path}) : tr('errors.generic'));
+    } finally {
+      _saving = false;
+    }
   }
 
   @override
   void dispose() {
+    _stallTimer?.cancel();
     unawaited(_video?.dispose());
     super.dispose();
   }
@@ -262,15 +419,35 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
     final tr = context.tr;
     final video = _video;
     final ready = video != null && video.value.isInitialized;
+    final when = clipTime(_filename, _entry);
+    final entry = _entry;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.filename, overflow: TextOverflow.ellipsis), actions: [
+      // When it was taken and what kind of clip, like the list row; the file name, which is what
+      // this used to show, is kept small underneath (BladeWatch-rdtj.44).
+      appBar: AppBar(
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text(
+            when == null ? _filename : Fmt.dateTime(Int64(when.millisecondsSinceEpoch), tr.lang),
+            key: const ValueKey('player.title'),
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            [if (entry != null) clipTypeLabel(tr, entry.type), if (when != null) _filename].join(' · '),
+            style: Theme.of(context).textTheme.bodySmall,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ]),
+        actions: [
         IconButton(key: const ValueKey('player.save'), tooltip: tr('common.download'), icon: const Icon(Icons.download), onPressed: _save),
       ]),
       body: Column(children: [
         Expanded(
           child: Center(
             child: ready
-                ? AspectRatio(aspectRatio: video.value.aspectRatio, child: VideoPlayer(video))
+                ? Stack(alignment: Alignment.center, children: [
+                    AspectRatio(aspectRatio: video.value.aspectRatio, child: VideoPlayer(video)),
+                    if (_stalled > 0) const CircularProgressIndicator(),
+                  ])
                 : !_canPlay || _failed
                     ? Padding(
                         padding: const EdgeInsets.all(24),
@@ -279,19 +456,123 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
                     : const CircularProgressIndicator(),
           ),
         ),
-        if (ready) ...[
-          VideoProgressIndicator(video, allowScrubbing: true, padding: const EdgeInsets.all(12)),
+        if (ready)
           ValueListenableBuilder(
             valueListenable: video,
-            builder: (context, v, _) => IconButton(
-              iconSize: 40,
-              icon: Icon(v.isPlaying ? Icons.pause_circle : Icons.play_circle),
-              onPressed: () => v.isPlaying ? video.pause() : video.play(),
-            ),
+            builder: (context, v, _) {
+              final total = v.duration > Duration.zero ? v.duration : Duration(milliseconds: _sidecarMs);
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(children: [
+                  Text(_clock(v.position), key: const ValueKey('player.position')),
+                  Expanded(
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      _DetectionStrip(spans: _spans, totalMs: total.inMilliseconds),
+                      VideoProgressIndicator(video, allowScrubbing: true, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10)),
+                    ]),
+                  ),
+                  Text(_clock(total), key: const ValueKey('player.duration')),
+                ]),
+              );
+            },
           ),
-        ],
+        if (ready)
+          Text(
+            _counts.isEmpty ? tr('companion.no_detections') : _legend(tr),
+            key: const ValueKey('player.legend'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        if (ready || widget.playlist.length > 1)
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            if (widget.playlist.length > 1)
+              IconButton(
+                key: const ValueKey('player.previous'),
+                tooltip: tr('companion.prev_clip'),
+                onPressed: _index > 0 ? () => _go(-1) : null,
+                icon: const Icon(Icons.skip_previous),
+              ),
+            if (ready)
+              ValueListenableBuilder(
+                valueListenable: video,
+                builder: (context, v, _) => IconButton(
+                  key: const ValueKey('player.play'),
+                  iconSize: 40,
+                  tooltip: tr(v.isPlaying ? 'companion.player_pause' : 'companion.player_play'),
+                  icon: Icon(v.isPlaying ? Icons.pause_circle : Icons.play_circle),
+                  onPressed: () => v.isPlaying ? video.pause() : video.play(),
+                ),
+              ),
+            if (widget.playlist.length > 1) ...[
+              IconButton(
+                key: const ValueKey('player.next'),
+                tooltip: tr('companion.next_clip'),
+                onPressed: _index >= 0 && _index < widget.playlist.length - 1 ? () => _go(1) : null,
+                icon: const Icon(Icons.skip_next),
+              ),
+              Text('${_index + 1} / ${widget.playlist.length}', key: const ValueKey('player.count')),
+            ],
+          ]),
+        if (ready && _stalled >= _slowAfter)
+          Padding(
+            key: const ValueKey('player.slow'),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(children: [
+              Expanded(child: Text(tr('companion.player_slow'))),
+              TextButton.icon(onPressed: _save, icon: const Icon(Icons.download), label: Text(tr('common.download'))),
+            ]),
+          ),
         if (_saved != null) Padding(padding: const EdgeInsets.all(12), child: Text(_saved!, key: const ValueKey('player.saved'))),
       ]),
+    );
+  }
+
+  static String _clock(Duration d) => '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+
+  String _legend(Tr tr) {
+    final names = {
+      'person': tr('surveillance.person'),
+      'car': tr('surveillance.car'),
+      'vehicle': tr('surveillance.car'),
+      'bike': tr('surveillance.bike'),
+      'motion': tr('companion.motion'),
+    };
+    return [for (final MapEntry(:key, :value) in _counts.entries) '${names[key] ?? key} $value'].join(' · ');
+  }
+}
+
+/// The detection spans laid along the clip: person red, vehicle blue, bike green, anything else
+/// grey -- the web player's colours, taken from the theme's status colours.
+class _DetectionStrip extends StatelessWidget {
+  const _DetectionStrip({required this.spans, required this.totalMs});
+
+  final List<DetectionSpan> spans;
+  final int totalMs;
+
+  @override
+  Widget build(BuildContext context) {
+    if (spans.isEmpty || totalMs <= 0) return const SizedBox(height: 6);
+    final colors = Theme.of(context).extension<BwStatusColors>()!;
+    Color color(String type) => switch (type) {
+          'person' => colors.danger,
+          'car' || 'vehicle' => colors.info,
+          'bike' => colors.success,
+          _ => Theme.of(context).colorScheme.outline,
+        };
+    return LayoutBuilder(
+      builder: (context, box) => SizedBox(
+        key: const ValueKey('player.spans'),
+        height: 6,
+        child: Stack(children: [
+          for (final s in spans)
+            Positioned(
+              left: 8 + (box.maxWidth - 16) * (s.startMs.clamp(0, totalMs) / totalMs),
+              width: ((box.maxWidth - 16) * ((s.endMs - s.startMs).clamp(0, totalMs) / totalMs)).clamp(2, box.maxWidth),
+              top: 0,
+              bottom: 0,
+              child: ColoredBox(color: color(s.type)),
+            ),
+        ]),
+      ),
     );
   }
 }

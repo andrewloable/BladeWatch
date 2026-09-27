@@ -11,11 +11,11 @@ void main() {
     expect(Fmt.duration(45), '45s');
     expect(Fmt.duration(125), '2m');
     expect(Fmt.duration(3725), '1h 2m');
-    expect(Fmt.distance(16.09344, unit: 'mi'), '10.0 mi');
-    expect(Fmt.distance(3), '3.0 km');
-    expect(Fmt.bytes(512), '512 B');
-    expect(Fmt.bytes(1536), '1.5 KB');
-    expect(Fmt.bytes(5 * 1024 * 1024 * 1024 * 1024 * 3), '15.0 TB');
+    expect(Fmt.distance(16.09344, unit: 'mi'), '10.0\u00A0mi');
+    expect(Fmt.distance(3), '3.0\u00A0km');
+    expect(Fmt.bytes(512), '512\u00A0B');
+    expect(Fmt.bytes(1536), '1.5\u00A0KB');
+    expect(Fmt.bytes(5 * 1024 * 1024 * 1024 * 1024 * 3), '15.0\u00A0TB');
     expect(Fmt.percent(81.4), '81%');
     expect(Fmt.dateTime(Int64.ZERO), '—');
     expect(Fmt.time(Int64.ZERO), '—');

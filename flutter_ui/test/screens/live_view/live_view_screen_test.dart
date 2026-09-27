@@ -326,7 +326,9 @@ void main() {
       // git worktree) and no new dependency (`crypto` is only a transitive one here) — see the
       // close reason for why this alternative was chosen over "not in this change's diff".
       final bytes = File('lib/shell/nav_rail.dart').readAsBytesSync();
-      expect(bytes.length, 5181, reason: 'nav_rail.dart byte length changed — it must not be modified');
+      // Re-pinned for BladeWatch-5l5o (2026-09-27), which changed the rail on purpose (the
+      // landscape rail had to fit the head unit). y78o.2's own proof stands in its close reason.
+      expect(bytes.length, 5933, reason: 'nav_rail.dart byte length changed — it must not be modified');
 
       var hash = 0x811c9dc5;
       for (final b in bytes) {
@@ -335,7 +337,7 @@ void main() {
       }
       expect(
         hash,
-        0x5f1891c7,
+        0x088ec996,
         reason: 'nav_rail.dart content changed — BladeWatch-y78o.2 must not modify this file',
       );
     },

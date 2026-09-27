@@ -150,4 +150,27 @@ public class ServiceHostManifestTest {
                 "...nor touchable, for the same reason.",
                 src.contains("FLAG_NOT_TOUCHABLE"));
     }
+
+    /**
+     * BladeWatch-rdtj.35: the bootstrap activity must send its task back on every resume, not
+     * only at the end of onCreate. The in-car UI wakes it each time it opens; a reused instance
+     * gets onNewIntent/onResume and no onCreate, and on the head unit 2026-09-27 it then stayed
+     * on top as a see-through app for 16 s until the driver pressed Home.
+     */
+    @Test
+    public void bootstrapActivityBacksOutOnEveryResume() throws Exception {
+        File f = new File("src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt");
+        if (!f.exists()) f = new File("app/src/main/java/com/loabletech/bladewatch/ui/MainActivity.kt");
+        String src = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+
+        int resume = src.indexOf("override fun onResume()");
+        Assert.assertTrue("could not find onResume", resume > 0);
+        // The body of onResume: up to the next member declaration at the same indent.
+        int end = src.indexOf("\n    }\n", resume);
+        Assert.assertTrue("could not find the end of onResume", end > resume);
+        Assert.assertTrue(
+                "onResume must call moveTaskToBack(true): a reused instance is resumed without "
+                        + "onCreate and otherwise stays on top, invisible.",
+                src.substring(resume, end).contains("moveTaskToBack(true)"));
+    }
 }

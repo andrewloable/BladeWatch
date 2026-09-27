@@ -1,3 +1,4 @@
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_rpc/trips/trip_costs.dart';
 
 /// Trip-stats hero state — ground truth: `DashboardFragment.refreshTripStats()`.
@@ -52,6 +53,61 @@ class TripStatsState {
     final m = (totalDurationSeconds % 3600) ~/ 60;
     return h > 0 ? '${h}h ${m}m' : '${m}m';
   }
+}
+
+/// The car's charge and fuel right now, which THIS WEEK shows under the week's trips
+/// (BladeWatch-4zr7). Read from the GetStatus the dashboard already makes for the recording flag
+/// and the drive chips -- no request of its own.
+class EnergyState {
+  /// False until a status has answered: the tiles show the pending placeholder.
+  final bool available;
+  final double socPercent;
+  final double elecRangeKm;
+  final double fuelPercent;
+  final double fuelRangeKm;
+
+  /// "km" or "mi", the car's own setting.
+  final String distanceUnit;
+
+  const EnergyState({
+    required this.available,
+    this.socPercent = 0,
+    this.elecRangeKm = 0,
+    this.fuelPercent = 0,
+    this.fuelRangeKm = 0,
+    this.distanceUnit = 'km',
+  });
+
+  const EnergyState.unavailable() : this(available: false);
+
+  factory EnergyState.of(GetStatusResponse s) => EnergyState(
+        available: s.hasSoc() || s.hasRange(),
+        socPercent: s.soc.percent,
+        elecRangeKm: s.range.elecRangeKm,
+        fuelPercent: s.range.fuelPercent,
+        fuelRangeKm: s.range.fuelRangeKm,
+        distanceUnit: s.distanceUnit.isEmpty ? 'km' : s.distanceUnit,
+      );
+
+  /// A car with a tank. The fuel fields are only filled on a PHEV, and proto3 cannot tell "0" from
+  /// "absent", so a BEV reads zero for both.
+  // ponytail: a PHEV that is both empty and at zero range reads as a BEV here and hides the fuel
+  // tiles; TripsService's config carries is_phev if that ever matters, at one more request per refresh.
+  bool get hasFuel => fuelPercent > 0 || fuelRangeKm > 0;
+
+  // Value equality: the 2 s drive poll notifies only when something on screen changed.
+  @override
+  bool operator ==(Object other) =>
+      other is EnergyState &&
+      other.available == available &&
+      other.socPercent == socPercent &&
+      other.elecRangeKm == elecRangeKm &&
+      other.fuelPercent == fuelPercent &&
+      other.fuelRangeKm == fuelRangeKm &&
+      other.distanceUnit == distanceUnit;
+
+  @override
+  int get hashCode => Object.hash(available, socPercent, elecRangeKm, fuelPercent, fuelRangeKm, distanceUnit);
 }
 
 /// Recordings metric tile — ground truth: `refreshMetricsTiles()`/

@@ -1655,6 +1655,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_trips_label_time => '주행 시간';
 
   @override
+  String get dashboard_week_battery => '배터리';
+
+  @override
+  String get dashboard_week_elec_range => 'EV 주행거리';
+
+  @override
+  String get dashboard_week_fuel => '연료';
+
+  @override
+  String get dashboard_week_fuel_range => '연료 주행거리';
+
+  @override
   String get dashboard_trips_no_data => '이번 주 기록된 주행이 없습니다';
 
   @override

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_page.dart';
@@ -91,7 +92,25 @@ mixin LoadersState<W extends StatefulWidget> on State<W> {
   }
 }
 
+/// How wide a page's content grows in a wide window: past this, lines and rows get too long to
+/// read (a 1600-wide window put a row's action a metre from its text). Not a BwDimens token --
+/// the car's screen never needed one.
+const contentMaxWidth = 960.0;
+
+/// Caps [child] at [contentMaxWidth], centred (BladeWatch-rdtj.56).
+class ContentWidth extends StatelessWidget {
+  const ContentWidth({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: contentMaxWidth), child: child),
+      );
+}
+
 /// A page's standard padding and width cap, scrolling. Works on a phone and in a wide window.
+/// Spacing is the design language's tokens (docs/ui-ux-design-language.md, BladeWatch-rdtj.56).
 class PageList extends StatelessWidget {
   const PageList({super.key, required this.children});
 
@@ -100,14 +119,14 @@ class PageList extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          BwDimens.pagePaddingHorizontal,
+          BwDimens.pagePaddingTop,
+          BwDimens.pagePaddingHorizontal,
+          BwDimens.pagePaddingBottom,
+        ),
         children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 960),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
-            ),
-          ),
+          ContentWidth(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children)),
         ],
       );
 }
@@ -122,14 +141,17 @@ class Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: BwDimens.cardGapVertical),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(BwDimens.cardPaddingStandard),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(children: [
-              Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
-              ?trailing,
-            ]),
+            // The action drops under the title when both do not fit on one line (a large text
+            // size, a long translation) instead of overflowing (BladeWatch-rdtj.55).
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [Text(title, style: Theme.of(context).textTheme.titleMedium), ?trailing],
+            ),
             const SizedBox(height: 8),
             ...children,
           ]),

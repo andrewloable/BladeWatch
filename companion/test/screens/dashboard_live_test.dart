@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:bladewatch_companion/car/media.dart';
+import 'package:bladewatch_companion/screens/common/loader.dart';
 import 'package:bladewatch_companion/screens/dashboard/dashboard_screen.dart';
 import 'package:bladewatch_companion/screens/live/live_screen.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
@@ -43,13 +44,62 @@ void main() {
       expect(find.text(t('dashboard.recording')), findsOneWidget);
       expect(find.text(t('dashboard.services_up')), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
-      expect(find.text('81%'), findsOneWidget);
-      expect(find.text('199.5 mi'), findsOneWidget, reason: '321 km in the owner\'s miles');
+      expect(find.text('81%'), findsNWidgets(2), reason: 'SOC under Vehicle, and Battery under This week (BladeWatch-4zr7)');
+      expect(find.text('199.5\u00A0mi'), findsOneWidget, reason: '321 km in the owner\'s miles');
       expect(find.text('12.6 V'), findsOneWidget);
       expect(find.text('2'), findsOneWidget);
       expect(find.text('1h 0m'), findsOneWidget);
       expect((s.rpc.calls.firstWhere((c) => c.method == 'ListTrips').request as dynamic).days, 7);
       expect(find.text(t('trip.cost_hint')), findsOneWidget, reason: 'no rate set: say so, no zeros');
+      await unmount(tester);
+    });
+
+    // The owner's cadence (2026-09-27): the week reloads once a minute while the page is up.
+    testWidgets('this week reloads once a minute', (tester) async {
+      final s = TestSession(phase: TransportPhase.pear);
+      status(s);
+      s.rpc.stubJson('TripsService', 'ListTrips', {'trips': []});
+      await pumpScreen(tester, s, const DashboardScreen());
+      await tester.pump();
+      int trips() => s.rpc.calls.where((c) => c.method == 'ListTrips').length;
+      final afterOpen = trips();
+      await tester.pump(const Duration(seconds: 59));
+      expect(trips(), afterOpen);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(trips(), greaterThan(afterOpen));
+      await unmount(tester);
+    });
+
+    // BladeWatch-4zr7: the car's charge and fuel now, in This week.
+    testWidgets('this week shows battery and electric range, and fuel and its range only with a tank', (tester) async {
+      Future<void> show(Map<String, Object?> range, String unit) async {
+        final s = TestSession(phase: TransportPhase.pear);
+        s.rpc.stubJson('SystemService', 'GetStatus', {
+          'vehicleDataReady': true,
+          'distanceUnit': unit,
+          'soc': {'percent': 77.0},
+          'range': range,
+          'recordingStatus': {'isRecording': false},
+        });
+        s.rpc.stubJson('TripsService', 'ListTrips', {'trips': []});
+        await pumpScreen(tester, s, const DashboardScreen(), size: const Size(420, 1600));
+        await tester.pump();
+      }
+
+      InfoRow row(String key) => tester.widget<InfoRow>(find.widgetWithText(InfoRow, t(key)));
+
+      await show({'elecRangeKm': 81.0, 'fuelRangeKm': 351.0, 'totalRangeKm': 432.0, 'fuelPercent': 30.0}, 'km');
+      expect(row('companion.week_battery').value, '77%');
+      expect(row('companion.week_elec_range').value, '81.0\u00A0km');
+      expect(row('companion.week_fuel').value, '30%');
+      expect(row('companion.week_fuel_range').value, '351.0\u00A0km');
+      await unmount(tester);
+
+      await show({'elecRangeKm': 300.0, 'totalRangeKm': 300.0}, 'mi');
+      expect(row('companion.week_elec_range').value, '186.4\u00A0mi');
+      expect(find.text(t('companion.week_fuel')), findsNothing, reason: 'a BEV: no fuel, not 0%');
+      expect(find.text(t('companion.week_fuel_range')), findsNothing);
       await unmount(tester);
     });
 
@@ -102,13 +152,16 @@ void main() {
       final s = TestSession();
       status(s);
       s.rpc.stubJson('TripsService', 'ListTrips', {'trips': []});
-      s.rpc.stubJson('SystemService', 'GetSohStatus', {'displaySoh': 96.0, 'nominalCapacityKwh': 82.5, 'nominalSource': 'model'});
+      s.rpc.stubJson('SystemService', 'GetSohStatus', {'displaySoh': 96.0, 'nominalCapacityKwh': 82.5, 'nominalSource': 'model', 'displaySource': 'bms'});
       s.rpc.stubJson('SystemService', 'SetSohNominal', {'success': true});
       await pumpScreen(tester, s, const DashboardScreen());
       await tester.tap(find.byKey(const ValueKey('dash.capacity')));
       await tester.pumpAndSettle();
       expect(find.text('82.5'), findsOneWidget, reason: 'editing starts from the current value');
       expect(find.text('96.0%'), findsOneWidget);
+      // BladeWatch-rdtj.57: the web dialog's capacity in use and where the health figure came from.
+      expect(find.text('82.5 kWh'), findsOneWidget);
+      expect(find.text('bms'), findsOneWidget);
 
       await tester.enterText(find.byKey(const ValueKey('capacity.input')), '500');
       await tester.tap(find.byKey(const ValueKey('capacity.save')));
@@ -152,7 +205,7 @@ void main() {
       await tester.tap(find.text(t('common.retry')));
       await tester.pump();
       await tester.pump();
-      expect(find.text('81%'), findsOneWidget);
+      expect(find.text('81%'), findsNWidgets(2), reason: 'SOC under Vehicle, and Battery under This week (BladeWatch-4zr7)');
       await unmount(tester);
     });
   });
@@ -169,6 +222,43 @@ void main() {
       await tester.pump();
       expect(find.byKey(const ValueKey('live.frame')), findsOneWidget);
       expect(find.textContaining(t('companion.live_note')), findsOneWidget);
+      await unmount(tester);
+    });
+
+    // BladeWatch-rdtj.45: one camera is that quarter of the four-camera still, cut here. Nothing
+    // is asked of the car: switching its shared stream would change the in-car screen too.
+    testWidgets('a camera picker shows one quarter of the still, and asks the car for nothing', (tester) async {
+      final s = TestSession(phase: TransportPhase.lan);
+      var enabled = 0;
+      await pumpScreen(tester, s, LiveScreen(fetch: (_) async => MediaResponse(200, testPng), enable: (_) async => enabled++));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('live.quarter')), findsNothing, reason: 'all four to start with');
+      final names = ['companion.cam_front', 'companion.cam_right', 'companion.cam_rear', 'companion.cam_left'];
+      final quarters = [Alignment.topLeft, Alignment.topRight, Alignment.bottomLeft, Alignment.bottomRight];
+      for (var q = 0; q < 4; q++) {
+        await tester.tap(find.byKey(ValueKey('live.camera.$q')));
+        await tester.pump();
+        expect(tester.widget<Align>(find.byKey(const ValueKey('live.quarter'))).alignment, quarters[q]);
+        expect(find.textContaining(t('companion.live_note_one', {'camera': t(names[q])})), findsOneWidget);
+      }
+      await tester.tap(find.byKey(const ValueKey('live.camera.all')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('live.quarter')), findsNothing);
+      expect(find.textContaining(t('companion.live_note')), findsOneWidget);
+      expect(s.rpc.calls.where((c) => c.method == 'SetViewMode'), isEmpty);
+      expect(enabled, 0);
+      await unmount(tester);
+    });
+
+    // BladeWatch-rdtj.45: on a big window the still fills the black area, it does not sit at its
+    // own pixel size in the middle.
+    testWidgets('the still fills a desktop window', (tester) async {
+      final s = TestSession(phase: TransportPhase.lan);
+      await pumpScreen(tester, s, LiveScreen(fetch: (_) async => MediaResponse(200, testPng), enable: (_) async {}), size: const Size(1600, 1000));
+      await tester.pump();
+      final frame = tester.getSize(find.byKey(const ValueKey('live.frame')));
+      expect(frame.width, 1600, reason: 'a 1x1 still stretched to the area, as a 640x480 one is');
+      expect(frame.height, greaterThan(800));
       await unmount(tester);
     });
 

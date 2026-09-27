@@ -79,7 +79,9 @@ class AlertsController extends ChangeNotifier {
 
   /// A real alert through the whole path, raised by the car itself.
   Future<void> sendTest() async {
-    await _client.sendTest(SendTestRequest(category: 'surveillance.motion', severity: 'info'));
+    // A live category: the legacy 'surveillance.motion' is no longer sent by anything and is
+    // hidden from the list (BladeWatch-rdtj.57), so a mute of it could not be undone.
+    await _client.sendTest(SendTestRequest(category: 'surveillance.motion.notice', severity: 'info'));
     await Future<void>.delayed(const Duration(milliseconds: 500)); // the car's bus is async
     await refresh();
   }

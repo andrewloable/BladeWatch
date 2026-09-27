@@ -28,6 +28,9 @@ class SettingsScreen extends StatefulWidget {
   static const recordingModes = ['NONE', 'CONTINUOUS', 'DRIVE_MODE', 'PROXIMITY_GUARD'];
   static const qualities = ['ECONOMY', 'STANDARD', 'HIGH', 'PREMIUM', 'MAX'];
 
+  /// The clip lengths the car accepts (it rejects anything else).
+  static const segmentMinutes = [1, 5, 10];
+
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -113,12 +116,13 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
     final store = widget.store;
     final app = Section(title: tr('companion.this_app'), children: [
       DropdownButtonFormField<String>(
+        isExpanded: true, // long names ellipsize at a large text size (BladeWatch-rdtj.55)
         key: const ValueKey('settings.appLanguage'),
         initialValue: store.language ?? '',
         decoration: InputDecoration(labelText: tr('settings.app_language')),
         items: [
           DropdownMenuItem(value: '', child: Text(tr('companion.follow_device'))),
-          for (final l in Tr.languages) DropdownMenuItem(value: l, child: Text(l)),
+          for (final l in Tr.languages) DropdownMenuItem(value: l, child: Text(Tr.nameOf(l))),
         ],
         onChanged: (l) => widget.onLanguage(l == null || l.isEmpty ? null : l),
       ),
@@ -162,6 +166,7 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
           ]),
           Section(title: tr('settings.recording_quality'), children: [
             DropdownButtonFormField<String>(
+              isExpanded: true, // long names ellipsize at a large text size (BladeWatch-rdtj.55)
               key: const ValueKey('settings.quality'),
               initialValue: qualities.contains(v.quality.recordingQuality) ? v.quality.recordingQuality : null,
               decoration: InputDecoration(labelText: tr('settings.quality_tier')),
@@ -169,18 +174,57 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
               onChanged: (q) => _save(() => _settings.setQuality(SetQualityRequest(recordingQuality: q, codec: v.quality.codec))),
             ),
             DropdownButtonFormField<String>(
+              isExpanded: true, // long names ellipsize at a large text size (BladeWatch-rdtj.55)
               key: const ValueKey('settings.codec'),
               initialValue: codecs.containsKey(v.quality.codec) ? v.quality.codec : null,
               decoration: InputDecoration(labelText: tr('settings.video_codec')),
               items: [for (final e in codecs.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
               onChanged: (c) => _save(() => _settings.setQuality(SetQualityRequest(recordingQuality: v.quality.recordingQuality, codec: c))),
             ),
+            // How long each file runs before the next starts, as the web offers (BladeWatch-rdtj.49).
+            // Sent alone: the car changes only the fields a SetQuality carries.
+            const SizedBox(height: 12),
+            Text(tr('companion.segment_length'), style: Theme.of(context).textTheme.titleSmall),
+            Text(tr('companion.segment_hint'), style: Theme.of(context).textTheme.bodySmall),
+            Wrap(spacing: 8, children: [
+              for (final m in SettingsScreen.segmentMinutes)
+                ChoiceChip(
+                  key: ValueKey('settings.segment.$m'),
+                  label: Text(tr('companion.minutes', {'count': m})),
+                  selected: v.quality.recordingSegmentMinutes == m,
+                  onSelected: (_) => _save(() => _settings.setQuality(SetQualityRequest(recordingSegmentMinutes: m))),
+                ),
+            ]),
           ]),
           Section(title: tr('settings.recording_storage'), children: [
             InfoRow(tr('settings.recordings'), '${st.recordingsCount} · ${Fmt.bytes(st.recordingsSizeBytes.toInt())}'),
             InfoRow(tr('companion.surveillance_clips'), '${st.surveillanceCount} · ${Fmt.bytes(st.surveillanceSizeBytes.toInt())}'),
             InfoRow(tr('settings.internal_free'), st.internalFreeFormatted),
             if (st.sdCardAvailable) InfoRow(tr('settings.sd_card_free'), st.sdCardFreeFormatted),
+            // Where new recordings go (BladeWatch-rdtj.49). Asked first; the limits go along
+            // unchanged, since the car takes them all in one request.
+            const SizedBox(height: 8),
+            Text(tr('companion.save_to'), style: Theme.of(context).textTheme.titleSmall),
+            Wrap(spacing: 8, children: [
+              for (final (place, key) in [('INTERNAL', 'companion.place_internal'), ('SD_CARD', 'companion.place_sd')])
+                ChoiceChip(
+                  key: ValueKey('settings.saveTo.$place'),
+                  label: Text(tr(key)),
+                  selected: st.recordingsStorageType == place,
+                  onSelected: st.recordingsStorageType == place || (place == 'SD_CARD' && !st.sdCardAvailable)
+                      ? null
+                      : (_) async {
+                          if (!await _confirm(tr('companion.save_to'), tr('companion.save_to_confirm', {'place': tr(key)}))) return;
+                          await _save(() => _storage.setStorageSettings(SetStorageSettingsRequest(
+                                recordingsLimitMb: st.recordingsLimitMb,
+                                surveillanceLimitMb: st.surveillanceLimitMb,
+                                recordingsStorageType: place,
+                                surveillanceStorageType: st.surveillanceStorageType,
+                              )));
+                        },
+                ),
+            ]),
+            if (!st.sdCardAvailable) Text(tr('recording.sd_card_not_detected'), style: Theme.of(context).textTheme.bodySmall),
             TextField(
               key: const ValueKey('settings.recLimit'),
               controller: _recLimit,
@@ -217,10 +261,11 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
           ]),
           Section(title: tr('companion.car_language'), children: [
             DropdownButtonFormField<String>(
+              isExpanded: true, // long names ellipsize at a large text size (BladeWatch-rdtj.55)
               key: const ValueKey('settings.carLanguage'),
               initialValue: langs.contains(v.locale.lang) ? v.locale.lang : null,
               decoration: InputDecoration(labelText: tr('settings.language')),
-              items: [for (final l in langs) DropdownMenuItem(value: l, child: Text(l))],
+              items: [for (final l in langs) DropdownMenuItem(value: l, child: Text(Tr.nameOf(l)))],
               onChanged: (l) => _save(() => _settings.setLocale(SetLocaleRequest(lang: l))),
             ),
           ]),

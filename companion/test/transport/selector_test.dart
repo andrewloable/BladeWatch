@@ -213,7 +213,14 @@ void main() {
         return [for (final a in answer) InternetAddress(a)];
       },
     ).listen(events.add, onError: errors.add);
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+    // Until the change arrives, not a fixed 100 ms: under coverage a 5 ms poll can run far fewer
+    // times than that allows, and the test failed with no event at all (BladeWatch-rdtj.39). Then
+    // a few more polls, which must stay quiet: the last answer repeats.
+    final sw = Stopwatch()..start();
+    while (events.isEmpty && sw.elapsed < const Duration(seconds: 5)) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     await sub.cancel().timeout(const Duration(seconds: 1));
     expect(events, hasLength(1));
     expect(errors, isEmpty);

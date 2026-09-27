@@ -13,6 +13,150 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support.dart';
 
 void main() {
+  // BladeWatch-rdtj.36: resuming the app used to restart a healthy link every time.
+  group('resumed', () {
+    var retries = 0;
+    CarSession make(RpcTransport rpc, {TransportPhase phase = TransportPhase.pear}) => CarSession(
+          rpc: rpc,
+          baseUrl: Uri.parse('http://127.0.0.1:9'),
+          jwt: () async => 'jwt',
+          initialPhase: phase,
+          retry: () => retries++,
+        );
+    setUp(() => retries = 0);
+
+    test('a link that answers is left alone', () async {
+      final rpc = _Scripted(() async => <String, Object?>{});
+      await make(rpc).resumed();
+      expect(rpc.calls, 1);
+      expect(retries, 0);
+    });
+
+    test('a car that answers with an error is still reachable', () async {
+      await make(_Scripted(() async => throw const ConnectError(httpStatus: 401, code: 'unauthenticated', message: ''))).resumed();
+      expect(retries, 0);
+    });
+
+    test('no answer through the link looks for the car again', () async {
+      await make(_Scripted(() async => throw const ConnectError(httpStatus: 0, code: 'unavailable', message: 'reset'))).resumed();
+      expect(retries, 1);
+    });
+
+    test('a link that never answers looks again once the check times out', () async {
+      await make(_Scripted(() => Completer<Object?>().future)).resumed(timeout: const Duration(milliseconds: 20));
+      expect(retries, 1);
+    });
+
+    test('a route that is down is looked for at once, without asking the car', () async {
+      final rpc = _Scripted(() async => <String, Object?>{});
+      await make(rpc, phase: TransportPhase.discovering).resumed();
+      expect(retries, 1);
+      expect(rpc.calls, 0);
+    });
+  });
+
+  // BladeWatch-rdtj.53: a stopped pear_daemon went unnoticed for 14-18 s. Silence is now asked
+  // about after 2 s, and two unanswered questions in a row mean the car is not answering.
+  group('a car that goes quiet', () {
+    CarSession watched(RpcTransport rpc, {TransportPhase phase = TransportPhase.pear}) => CarSession(
+          rpc: rpc,
+          baseUrl: Uri.parse('http://127.0.0.1:9'),
+          jwt: () async => 'jwt',
+          initialPhase: phase,
+          quietAfter: const Duration(seconds: 2),
+          probeTimeout: const Duration(seconds: 2),
+        );
+
+    testWidgets('is noticed in about 6 s, and back as soon as it answers', (tester) async {
+      final car = _Quiet();
+      final s = watched(car);
+      await tester.pump(const Duration(seconds: 5));
+      expect(s.answering, isTrue);
+      expect(car.asked, greaterThan(0), reason: 'a quiet healthy car is asked, and answers');
+      car.silent = true;
+      final silentAt = car.asked;
+      await tester.pump(const Duration(milliseconds: 4500));
+      expect(s.answering, isTrue, reason: 'one unanswered question is not enough');
+      await tester.pump(const Duration(seconds: 2));
+      expect(s.answering, isFalse, reason: 'two in a row, about 6 s after the last answer');
+      expect(car.asked - silentAt, 2);
+      car.silent = false;
+      await tester.pump(const Duration(seconds: 4)); // the not-answering probe (probeEvery 3 s)
+      expect(s.answering, isTrue);
+      s.dispose();
+    });
+
+    testWidgets('one slow answer does not flip it; an HTTP error is an answer', (tester) async {
+      final car = _Quiet()..hangNext = 1;
+      final s = watched(car);
+      final seen = <bool>[];
+      s.addListener(() => seen.add(s.answering));
+      await tester.pump(const Duration(seconds: 10));
+      expect(car.asked, greaterThan(2));
+      expect(seen, isNot(contains(false)), reason: 'the second question was answered: never shown as silent, not even briefly');
+      s.dispose();
+
+      final refusing = _ScriptedCar()
+        ..answer = false
+        ..status = 401;
+      final r = watched(refusing);
+      await tester.pump(const Duration(seconds: 10));
+      expect(r.answering, isTrue);
+      r.dispose();
+    });
+
+    testWidgets('nothing is asked while the route is down or the app is in the background', (tester) async {
+      final car = _Quiet();
+      final down = watched(car, phase: TransportPhase.discovering);
+      await tester.pump(const Duration(seconds: 10));
+      expect(car.asked, 0);
+      down.dispose();
+
+      final s = watched(car);
+      await tester.pump(const Duration(seconds: 3));
+      final before = car.asked;
+      s.paused();
+      await tester.pump(const Duration(seconds: 10));
+      expect(car.asked, before);
+      await s.resumed(); // the resume check itself asks once
+      await tester.pump(const Duration(seconds: 3));
+      expect(car.asked, greaterThan(before + 1), reason: 'watching again');
+      s.dispose();
+    });
+  });
+
+  // BladeWatch-rdtj.38: the car's own Wi-Fi address, learned when the route comes up.
+  group('carLanAddress', () {
+    Future<CarSession> reach(Map<String, Object?> network) async {
+      final s = TestSession(phase: TransportPhase.discovering);
+      s.rpc.stubJson('SystemService', 'GetStatus', {'network': network});
+      s.phases.add(TransportPhase.pear);
+      for (var i = 0; i < 5; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      return s.session;
+    }
+
+    test('is learned from the car when it is on Wi-Fi', () async {
+      final session = await reach({'type': 'wifi', 'ip': '192.0.2.7'});
+      expect(session.carLanAddress, '192.0.2.7');
+    });
+
+    test('is not a cellular address, which is private too but on no LAN', () async {
+      final session = await reach({'type': 'cellular', 'ip': '10.1.2.3'});
+      expect(session.carLanAddress, isNull);
+    });
+
+    test('a status that fails leaves it unknown', () async {
+      final s = TestSession(phase: TransportPhase.discovering);
+      s.phases.add(TransportPhase.pear);
+      for (var i = 0; i < 5; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(s.session.carLanAddress, isNull);
+    });
+  });
+
   group('CarSession', () {
     test('tracks the phase, remembers having connected, and reports a refusal once', () async {
       final s = TestSession(phase: TransportPhase.discovering);
@@ -220,5 +364,35 @@ class _ScriptedCar implements RpcTransport {
     asked.add(method);
     if (!answer) throw ConnectError(httpStatus: status, code: status == 0 ? 'unavailable' : 'unauthenticated', message: 'x');
     return decode(<String, dynamic>{});
+  }
+}
+
+
+/// Answers every call with [answer] (BladeWatch-rdtj.36's resume check).
+class _Scripted implements RpcTransport {
+  _Scripted(this.answer);
+
+  final Future<Object?> Function() answer;
+  var calls = 0;
+
+  @override
+  Future<T> call<T>(String service, String method, Object? request, T Function(Object? json) decode) async {
+    calls++;
+    return decode(await answer());
+  }
+}
+
+/// A car that answers until [silent], and then never does -- a dead Pear link hangs, it does not
+/// fail. [hangNext] makes that many calls hang even while it is not silent.
+class _Quiet implements RpcTransport {
+  bool silent = false;
+  int hangNext = 0;
+  int asked = 0;
+
+  @override
+  Future<T> call<T>(String service, String method, Object? request, T Function(Object? json) decode) {
+    asked++;
+    if (silent || hangNext-- > 0) return Completer<T>().future;
+    return Future.value(decode(<String, dynamic>{}));
   }
 }

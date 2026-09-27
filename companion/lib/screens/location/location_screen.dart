@@ -36,6 +36,10 @@ class LocationScreen extends StatefulWidget {
 }
 
 class _LocationScreenState extends State<LocationScreen> with LoadersState {
+  // Bumped by "Back to the car" (BladeWatch-rdtj.57): a new map starts centred on the car again,
+  // wherever the owner had panned the old one. The web's Recenter.
+  int _recentred = 0;
+
   late final _gps = loader(() => VehicleServiceClient(context.session.rpc).getGpsLocation(GetGpsLocationRequest()),
       poll: const Duration(seconds: 10));
 
@@ -52,7 +56,22 @@ class _LocationScreenState extends State<LocationScreen> with LoadersState {
           ]);
         }
         return Column(children: [
-          Expanded(child: CarMap(key: ValueKey(fix.at), center: fix.at, markers: [fix.at])),
+          Expanded(
+            child: Stack(children: [
+              CarMap(key: ValueKey((fix.at, _recentred)), center: fix.at, markers: [fix.at]),
+              PositionedDirectional(
+                top: 12,
+                end: 12,
+                child: FloatingActionButton.small(
+                  key: const ValueKey('location.recenter'),
+                  heroTag: null,
+                  tooltip: tr('companion.recenter'),
+                  onPressed: () => setState(() => _recentred++),
+                  child: const Icon(Icons.my_location),
+                ),
+              ),
+            ]),
+          ),
           ListTile(
             title: Text('${fix.at.latitude.toStringAsFixed(5)}, ${fix.at.longitude.toStringAsFixed(5)}'),
             subtitle: Text([
@@ -63,7 +82,8 @@ class _LocationScreenState extends State<LocationScreen> with LoadersState {
                 ? null
                 : IconButton(
                     key: const ValueKey('location.copy'),
-                    tooltip: tr('vehicle.open_in_google_maps'),
+                    // It copies the link; the label used to say it opened Google Maps (rdtj.54).
+                    tooltip: tr('companion.copy_map_link'),
                     icon: const Icon(Icons.copy),
                     onPressed: () async {
                       await Clipboard.setData(ClipboardData(text: r.googleMapsUrl));

@@ -1726,6 +1726,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dashboard_trips_label_time => 'Tiempo de conducción';
 
   @override
+  String get dashboard_week_battery => 'Batería';
+
+  @override
+  String get dashboard_week_elec_range => 'Autonomía eléctrica';
+
+  @override
+  String get dashboard_week_fuel => 'Combustible';
+
+  @override
+  String get dashboard_week_fuel_range => 'Autonomía combustible';
+
+  @override
   String get dashboard_trips_no_data => 'No hay viajes registrados esta semana';
 
   @override

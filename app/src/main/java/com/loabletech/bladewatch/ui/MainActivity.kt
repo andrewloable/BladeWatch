@@ -227,6 +227,14 @@ class MainActivity : Activity() {
             val sm = net.bladewatch.app.storage.StorageManager.getInstance()
             if (!sm.isSdCardAvailable) sm.refreshSdCard()
         } catch (_: Throwable) {}
+
+        // BladeWatch-rdtj.35: back out of the way on EVERY resume, not only after onCreate.
+        // The in-car UI wakes this activity each time it opens (wakeServiceHost). When an
+        // earlier instance is still alive in its background task, Android reuses it: no
+        // onCreate, so nothing sent the task back, and this invisible window sat on top as a
+        // see-through "app" until the driver pressed Home. Seen on the head unit 2026-09-27:
+        // resumed at 10:28:13 from uid 10073, left on top until Home at 10:28:29.
+        moveTaskToBack(true)
     }
 
     /**

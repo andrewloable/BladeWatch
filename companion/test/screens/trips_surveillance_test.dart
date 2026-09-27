@@ -14,12 +14,16 @@ void main() {
   group('trips', () {
     test('PeriodSummary sums the rollups and skips unreadable ones', () {
       expect(PeriodSummary.of([]), isNull);
+      expect(PeriodSummary.of([WeeklyRollupEntry(rollupJson: 'nope')]), isNull);
+      // BladeWatch-rdtj.41: the score, not the legacy avgEfficiency (1 here, as on the car), and
+      // divided by every entry like the in-car page: (81 + 60) / 3.
       final s = PeriodSummary.of([
-        WeeklyRollupEntry(rollupJson: '{"tripCount":2,"totalDistanceKm":10.5,"totalDurationSeconds":600,"totalEnergyKwh":2,"avgEfficiency":80}'),
+        WeeklyRollupEntry(
+            rollupJson: '{"tripCount":2,"totalDistanceKm":10.5,"totalDurationSeconds":600,"totalEnergyKwh":2,"avgEfficiency":1,"avgEfficiencyScore":81}'),
         WeeklyRollupEntry(rollupJson: 'nope'),
-        WeeklyRollupEntry(rollupJson: '{"tripCount":1,"avgEfficiency":60}'),
+        WeeklyRollupEntry(rollupJson: '{"tripCount":1,"avgEfficiency":1,"avgEfficiencyScore":60}'),
       ])!;
-      expect((s.trips, s.km, s.seconds, s.kwh, s.efficiency), (3, 10.5, 600, 2.0, 70.0));
+      expect((s.trips, s.km, s.seconds, s.kwh, s.efficiency), (3, 10.5, 600, 2.0, 47.0));
     });
 
     test('parseRange takes the learned, built-in and fuel range, nested or flat', () {
@@ -128,6 +132,70 @@ void main() {
       await unmount(tester);
     });
 
+    // BladeWatch-rdtj.48: PHEV pricing, as the web offers it, and the trip's cost halves.
+    testWidgets('fuel price and tank: shown on a PHEV or when set, saved with presence', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      s.rpc.stubJson('TripsService', 'GetConfig', {'config': {'enabled': true, 'electricityRate': 11.5, 'currency': 'PHP', 'isPhev': true}});
+      await pumpScreen(tester, s, const TripsScreen(), size: const Size(1200, 1600));
+      await tester.tap(find.text(t('trips.tab_storage')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const ValueKey('trips.fuel_price')), '68.5');
+      await tester.enterText(find.byKey(const ValueKey('trips.tank')), '52');
+      await tester.tap(find.byKey(const ValueKey('trips.apply')));
+      await tester.pumpAndSettle();
+      var r = s.rpc.calls.lastWhere((c) => c.method == 'SetConfig').request as SetConfigRequest;
+      expect((r.fuelPricePerL, r.hasFuelPricePerL_8, r.fuelTankCapacityL, r.hasFuelTankCapacityL_10), (68.5, true, 52.0, true));
+      await unmount(tester);
+
+      // A BEV with nothing set: no tank to ask about, and nothing sent for one.
+      final bev = TestSession();
+      stubAll(bev);
+      await pumpScreen(tester, bev, const TripsScreen(), size: const Size(1200, 1600));
+      await tester.tap(find.text(t('trips.tab_storage')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('trips.fuel_price')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('trips.apply')));
+      await tester.pumpAndSettle();
+      r = bev.rpc.calls.lastWhere((c) => c.method == 'SetConfig').request as SetConfigRequest;
+      expect((r.hasFuelPricePerL_8, r.hasFuelTankCapacityL_10), (false, false));
+      await unmount(tester);
+
+      // Set once, the probe reading "no tank" (warming up): still there, and 0 clears it.
+      final warming = TestSession();
+      stubAll(warming);
+      warming.rpc.stubJson('TripsService', 'GetConfig', {'config': {'currency': 'PHP', 'fuelPricePerL': 70.0}});
+      await pumpScreen(tester, warming, const TripsScreen(), size: const Size(1200, 1600));
+      await tester.tap(find.text(t('trips.tab_storage')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('trips.fuel_price')), findsOneWidget);
+      await tester.enterText(find.byKey(const ValueKey('trips.fuel_price')), '0');
+      await tester.tap(find.byKey(const ValueKey('trips.apply')));
+      await tester.pumpAndSettle();
+      r = warming.rpc.calls.lastWhere((c) => c.method == 'SetConfig').request as SetConfigRequest;
+      expect((r.fuelPricePerL, r.hasFuelPricePerL_8), (0.0, true));
+      await unmount(tester);
+    });
+
+    testWidgets('a trip shows its fuel and electric halves and the outside temperature', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      s.rpc.stubJson('TripsService', 'GetTrip', {
+        'trip': {
+          'summary': {
+            'id': '7', 'startTime': '1700000000000', 'tripCost': 9.75, 'currency': 'PHP',
+            'hasFuelData': true, 'litresUsed': 0.5, 'fuelCost': 7.25, 'electricCost': 2.5, 'extTempC': 31,
+          },
+        },
+      });
+      await pumpScreen(tester, s, TripDetailScreen(id: Int64(7)), size: const Size(1200, 1600));
+      expect(find.text('9.75 PHP'), findsOneWidget);
+      expect(find.text('7.25 PHP'), findsOneWidget);
+      expect(find.text('2.50 PHP'), findsOneWidget);
+      expect(find.text('31 °C'), findsOneWidget);
+      await unmount(tester);
+    });
+
     testWidgets('storage: analytics toggle, rate, currency, limit, and sync', (tester) async {
       final s = TestSession();
       stubAll(s);
@@ -186,6 +254,49 @@ void main() {
       s.rpc.stubJson('SafeLocationsService', 'DeleteZone', {'success': true});
       s.rpc.stubJson('SurveillanceService', 'GetSnapshot', {'imageJpeg': base64Png});
     }
+
+    // BladeWatch-rdtj.50: the web's AI confidence and event seconds; untouched fields ride along.
+    testWidgets('AI confidence and event seconds are saved; what was not touched is kept', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      s.rpc.stubJson('SurveillanceService', 'GetConfig', {
+        'config': {
+          'sensitivity': 3, 'aiEnabled': true, 'aiConfidence': 0.5, 'preRecordSeconds': 5, 'postRecordSeconds': 10,
+          'minObjectSize': 0.02, 'deterrentCooldownSeconds': 60, 'shadowThreshold': 0.7, 'cameraFront': true,
+        },
+      });
+      await pumpScreen(tester, s, const SurveillanceScreen(), size: const Size(1200, 3400));
+      expect(find.textContaining('(0.50)'), findsOneWidget);
+      await tester.drag(find.byKey(const ValueKey('surv.aiConfidence')), const Offset(1000, 0));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('surv.pre.10')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('surv.post.30')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('surv.save')));
+      await tester.pumpAndSettle();
+      final sent = (s.rpc.calls.lastWhere((c) => c.method == 'SetConfig').request as SetSurveillanceConfigRequest).config;
+      expect((sent.aiConfidence, sent.preRecordSeconds, sent.postRecordSeconds), (1.0, 10, 30));
+      expect((sent.minObjectSize, sent.deterrentCooldownSeconds, sent.shadowThreshold, sent.cameraFront), (0.02, 60, 0.7, true),
+          reason: 'fields this page does not show are sent back as they were');
+
+      await tester.tap(find.byKey(const ValueKey('surv.ai')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('surv.aiConfidence')), findsNothing, reason: 'only while AI detection is on');
+      await unmount(tester);
+    });
+
+    testWidgets('refresh all loads the four snapshots, one after another', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      await pumpScreen(tester, s, const SurveillanceScreen(), size: const Size(1200, 3400));
+      await tester.tap(find.byKey(const ValueKey('surv.refreshAll')));
+      await tester.pumpAndSettle();
+      final asked = s.rpc.calls.where((c) => c.method == 'GetSnapshot').map((c) => (c.request as GetSnapshotRequest).quadrant).toList();
+      expect(asked, [0, 1, 2, 3]);
+      expect(find.textContaining(t('surveillance.tap_to_load')), findsNothing, reason: 'all four loaded');
+      await unmount(tester);
+    });
 
     testWidgets('saves the WHOLE config with the edits, cameras included (q0p4)', (tester) async {
       final s = TestSession();

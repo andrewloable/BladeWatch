@@ -108,6 +108,27 @@ void main() {
     expect(find.byKey(const ValueKey('pairing.qr')), findsOneWidget);
   });
 
+  // Design review 2026-09-27 (BladeWatch-5l5o): the action ends the chip row instead of taking a
+  // row of its own, and a long model name is shrunk to fit rather than cut.
+  testWidgets('Pair a device sits at the end of the chip row', (tester) async {
+    final pairing = FakePlatformChannel()..stub('pairing', 'list', {'companions': []});
+    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
+    await tester.pump();
+    final row = find.ancestor(of: find.byKey(const ValueKey('dashboard.pair')), matching: find.byType(Wrap));
+    expect(find.descendant(of: row, matching: find.byKey(const ValueKey('chip.gear'))), findsOneWidget);
+  });
+
+  testWidgets('a metric tile value is shrunk to fit, never cut with an ellipsis', (tester) async {
+    stubHappyPath();
+    await pumpDashboard(tester, buildController());
+    await tester.pumpAndSettle();
+    final values = find.descendant(of: find.byType(FittedBox), matching: find.byType(Text));
+    expect(values, findsWidgets);
+    for (final t in tester.widgetList<Text>(values)) {
+      expect(t.overflow, isNot(TextOverflow.ellipsis), reason: '"${t.data}"');
+    }
+  });
+
   testWidgets('without a pairing channel there is no pairing action', (tester) async {
     await pumpDashboard(tester, buildController());
     await tester.pump();
@@ -204,6 +225,31 @@ void main() {
       expect(chip('chip.gear', 'Gear D'), findsOneWidget);
     });
 
+    // The owner: charge and fuel live, trip summaries once a minute (2026-09-27).
+    testWidgets('battery and fuel follow the car within 2 s; the week\'s trips reload once a minute', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 73}, 'range': {'elecRangeKm': 74, 'fuelRangeKm': 351, 'fuelPercent': 30}});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      final energy = find.byKey(const ValueKey('tripStats.energy'));
+      expect(find.descendant(of: energy, matching: find.text('73%')), findsOneWidget);
+      int trips() => rpc.calls.where((c) => c.method == 'ListTrips').length;
+      final afterOpen = trips();
+
+      rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 74}, 'range': {'elecRangeKm': 76, 'fuelRangeKm': 351, 'fuelPercent': 30}});
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(find.descendant(of: energy, matching: find.text('74%')), findsOneWidget, reason: 'the 2 s drive poll carries it');
+      expect(find.descendant(of: energy, matching: find.text('76 km')), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 45));
+      await tester.pump();
+      expect(trips(), afterOpen, reason: 'the 15 s ticks leave the week\'s trips alone');
+      await tester.pump(const Duration(seconds: 15));
+      await tester.pump();
+      expect(trips(), greaterThan(afterOpen), reason: 'once a minute they reload');
+    });
+
     testWidgets('a failed drive tick keeps the chips as they were', (tester) async {
       stubHappyPath();
       rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'P', 'energyMode': 'EV'}});
@@ -215,6 +261,82 @@ void main() {
       await tester.pump();
       expect(chip('chip.energyMode', 'EV'), findsOneWidget);
       expect(chip('chip.gear', 'Gear P'), findsOneWidget);
+    });
+  });
+
+  // BladeWatch-4zr7: the car's charge and fuel now, in THIS WEEK.
+  group('this week\'s charge and fuel', () {
+    Future<Finder> pumpWith(WidgetTester tester, Map<String, Object?>? status) async {
+      stubHappyPath();
+      if (status != null) rpc.stubJson('SystemService', 'GetStatus', status);
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      return find.byKey(const ValueKey('tripStats.energy'));
+    }
+
+    Finder inRow(Finder row, String text) => find.descendant(of: row, matching: find.text(text));
+
+    testWidgets('a PHEV shows battery, electric range, fuel and fuel range in the car\'s unit', (tester) async {
+      final row = await pumpWith(tester, {
+        'recording': [1],
+        'soc': {'percent': 77},
+        'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'fuelPercent': 30},
+        'distanceUnit': 'mi',
+      });
+      for (final (label, value) in [('Battery', '77%'), ('EV Range', '50 mi'), ('Fuel', '30%'), ('Fuel Range', '218 mi')]) {
+        expect(inRow(row, label), findsOneWidget, reason: label);
+        expect(inRow(row, value), findsOneWidget, reason: '$label = $value');
+      }
+    });
+
+    testWidgets('a BEV shows no fuel at all', (tester) async {
+      final row = await pumpWith(tester, {'soc': {'percent': 60}, 'range': {'elecRangeKm': 300}, 'distanceUnit': 'km'});
+      expect(inRow(row, '60%'), findsOneWidget);
+      expect(inRow(row, '300 km'), findsOneWidget);
+      expect(inRow(row, 'Fuel'), findsNothing);
+      expect(inRow(row, 'Fuel Range'), findsNothing);
+    });
+
+    // The owner saw the rows drift once the charge row brought a fourth tile under three.
+    testWidgets('every row of the card sits on the same columns', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {
+        'soc': {'percent': 77},
+        'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'fuelPercent': 30},
+        'distanceUnit': 'km',
+      });
+      rpc.stubJson('TripsService', 'ListTrips', {
+        'success': true,
+        'trips': [
+          {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780, 'tripCost': 150.0, 'fuelCost': 100.0, 'currency': 'PHP', 'hasFuelData': true},
+        ],
+      });
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(Card));
+      double left(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dx;
+      for (final column in [
+        ['Trips', 'Battery', 'Fuel Cost'],
+        ['Distance', 'EV Range', 'Electric Cost'],
+        ['Drive Time', 'Fuel', 'Total Cost'],
+      ]) {
+        expect(column.map(left).toSet(), hasLength(1), reason: '$column should share one left edge');
+      }
+
+      // Design review 2026-09-27: the week's figures stay together, the car's state comes last,
+      // and the header's label and button share one line.
+      double top(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dy;
+      expect(top('Battery'), greaterThan(top('Total Cost')), reason: 'charge and fuel after the week\'s costs');
+      final labelY = tester.getCenter(find.descendant(of: card, matching: find.text('THIS WEEK'))).dy;
+      final buttonY = tester.getCenter(find.byKey(const ValueKey('tripStats.viewAll'))).dy;
+      expect((labelY - buttonY).abs(), lessThan(1), reason: 'label and button on one line');
+    });
+
+    testWidgets('before the car has reported, the tiles wait with the pending mark', (tester) async {
+      final row = await pumpWith(tester, null); // the happy path's status has no charge or range
+      expect(inRow(row, 'Battery'), findsOneWidget);
+      final pending = AppLocalizations.of(tester.element(row))!.dashboard_metric_value_pending;
+      expect(inRow(row, pending), findsNWidgets(2));
     });
   });
 
@@ -325,9 +447,9 @@ void main() {
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
 
-    // Shown twice by design — the hero chip mirrors the metric tile value,
-    // same as native's refreshHeroChips() ("heroChipServices?.text = tvDaemonsStatus.text").
-    expect(find.text('0/0 Running'), findsNWidgets(2));
+    // Once: the Background services tile. The hero chip that repeated it was dropped (design
+    // review 2026-09-27, BladeWatch-5l5o).
+    expect(find.text('0/0 Running'), findsOneWidget);
     expect(find.text('2'), findsOneWidget); // trip stats tile still rendered fine
   });
 

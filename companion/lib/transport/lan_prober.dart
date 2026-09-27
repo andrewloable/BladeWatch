@@ -83,6 +83,20 @@ class LanProber {
     }
   }
 
+  /// [hint] -- the car's own Wi-Fi address, as it last reported it -- probed ALONE first, then
+  /// the candidates [sweep] returns (BladeWatch-rdtj.38). Measured on the head unit's LAN: a lone
+  /// probe answered 30 times in 30, the /24 sweep 12 in 30. The sweep sends an ARP request for
+  /// every empty address, and that storm starved the car's own ARP resolution -- even with the
+  /// car's address first in the burst (7 in 30), and worse when paced or repeated.
+  Future<LanEndpoint?> findCar(InternetAddress? hint, Future<List<InternetAddress>> Function() sweep,
+      {required String pinnedFingerprint, Duration timeout = const Duration(milliseconds: 800)}) async {
+    if (hint != null) {
+      final found = await find([hint], pinnedFingerprint: pinnedFingerprint, timeout: timeout);
+      if (found != null) return found;
+    }
+    return find(await sweep(), pinnedFingerprint: pinnedFingerprint, timeout: timeout);
+  }
+
   LanEndpoint? _verifyReply(Datagram d, Uint8List nonce, String pinnedFingerprint) {
     final b = d.data;
     if (b.length <= 56 || ascii.decode(b.sublist(0, 8), allowInvalid: true) != _replyMagic) return null;

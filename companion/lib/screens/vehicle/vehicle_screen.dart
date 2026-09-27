@@ -48,6 +48,9 @@ class VehicleRefused implements Exception {
 /// Remote-use safety: moving a window from a phone means nobody can see whether a hand or a pet
 /// is in the way, so every window command asks first. Climate is reversible and harmless, so it
 /// does not.
+/// MoveWindow target openings offered per window: the web's presets.
+const windowPresets = [0, 25, 50, 75, 100];
+
 class VehicleScreen extends StatefulWidget {
   const VehicleScreen({super.key});
 
@@ -75,12 +78,14 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
     }
   }
 
-  Future<void> _windows(String key, MoveWindowRequest request) async {
+  /// Every window command asks first: remote use means no one may be watching the glass. The
+  /// car's own interlock still decides. [what] names the window and the target for a single one.
+  Future<void> _windows(String key, MoveWindowRequest request, {String? what}) async {
     final tr = context.tr;
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(tr('vehicle.windows')),
+        title: Text(what ?? tr('vehicle.windows'), key: const ValueKey('window.what')),
         content: Text(tr('companion.window_confirm')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('common.cancel'))),
@@ -99,12 +104,18 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
       builder: (context, s) {
         final busy = _busy != null;
         final c = s.climate;
+        final b = s.battery;
+        // range_km is the ELECTRIC range. The dashboard's "Range" is the total, so on a car with
+        // a tank this one says so (BladeWatch-rdtj.47): 86 km here beside 442 km there read as
+        // two answers to one question. The fuel fields are absent on a BEV.
+        final fuel = b.fuelPercent > 0 || b.fuelRangeKm > 0;
         return PageList(children: [
           Section(title: tr('vehicle.title'), children: [
             InfoRow(tr('vehicle.lock'), s.doors.overall == 0 ? tr('vehicle.unlocked') : tr('companion.locked')),
-            InfoRow(tr('vehicle.charge'), '${s.battery.soc.toStringAsFixed(0)}%'),
-            InfoRow(tr('vehicle.range'), '${s.battery.rangeKm} km'),
-            if (s.battery.fuelPercent > 0) InfoRow(tr('vehicle.fuel'), '${s.battery.fuelPercent.toStringAsFixed(0)}%'),
+            InfoRow(tr('vehicle.charge'), '${b.soc.toStringAsFixed(0)}%'),
+            InfoRow(tr(fuel ? 'companion.week_elec_range' : 'vehicle.range'), '${b.rangeKm} km'),
+            if (b.fuelPercent > 0) InfoRow(tr('vehicle.fuel'), '${b.fuelPercent.toStringAsFixed(0)}%'),
+            if (b.fuelRangeKm > 0) InfoRow(tr('companion.week_fuel_range'), '${b.fuelRangeKm} km'),
           ]),
           Section(title: tr('vehicle.climate'), children: [
             if (!s.hasClimate()) Text(tr('vehicle.climate_unavailable')),
@@ -142,8 +153,24 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
             ],
           ]),
           Section(title: tr('vehicle.windows'), children: [
-            for (final (idx, pos) in [(1, s.windows.lf), (2, s.windows.rf), (3, s.windows.lr), (4, s.windows.rr)])
+            // One window to a set opening, as the web offers (BladeWatch-rdtj.46). Presets only,
+            // each confirmed: nothing moves while a finger drags.
+            for (final (idx, pos) in [(1, s.windows.lf), (2, s.windows.rf), (3, s.windows.lr), (4, s.windows.rr)]) ...[
               InfoRow(tr('companion.window_$idx'), '$pos%'),
+              Wrap(spacing: 6, runSpacing: 4, children: [
+                for (final p in windowPresets)
+                  ChoiceChip(
+                    key: ValueKey('window.$idx.$p'),
+                    label: Text('$p%'),
+                    // Within 5 points counts as there: the car reports the glass a little off its target.
+                    selected: (pos - p).abs() <= 5,
+                    onSelected: busy
+                        ? null
+                        : (_) => _windows('win-$idx-$p', MoveWindowRequest(windowIndex: idx, targetPercent: p),
+                            what: tr('companion.window_to', {'window': tr('companion.window_$idx'), 'percent': p})),
+                  ),
+              ]),
+            ],
             const SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
               OutlinedButton(
@@ -183,13 +210,25 @@ class _Stepper extends StatelessWidget {
   final String keyName;
   final ValueChanged<int> onStep;
 
+  // Tooltips name the action and the setting (BladeWatch-rdtj.54): a screen reader otherwise
+  // announced a bare "button" for a control that changes the real car.
   @override
   Widget build(BuildContext context) => ListTile(
         title: Text(label),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-          IconButton(key: ValueKey('$keyName.down'), onPressed: enabled ? () => onStep(-1) : null, icon: const Icon(Icons.remove)),
+          IconButton(
+            key: ValueKey('$keyName.down'),
+            tooltip: context.tr('companion.step_down', {'name': label}),
+            onPressed: enabled ? () => onStep(-1) : null,
+            icon: const Icon(Icons.remove),
+          ),
           Text(value),
-          IconButton(key: ValueKey('$keyName.up'), onPressed: enabled ? () => onStep(1) : null, icon: const Icon(Icons.add)),
+          IconButton(
+            key: ValueKey('$keyName.up'),
+            tooltip: context.tr('companion.step_up', {'name': label}),
+            onPressed: enabled ? () => onStep(1) : null,
+            icon: const Icon(Icons.add),
+          ),
         ]),
       );
 }

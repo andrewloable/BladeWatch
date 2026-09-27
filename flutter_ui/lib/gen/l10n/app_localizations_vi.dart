@@ -1706,6 +1706,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboard_trips_label_time => 'Thời gian lái';
 
   @override
+  String get dashboard_week_battery => 'Pin';
+
+  @override
+  String get dashboard_week_elec_range => 'Quãng đường điện';
+
+  @override
+  String get dashboard_week_fuel => 'Nhiên liệu';
+
+  @override
+  String get dashboard_week_fuel_range => 'Quãng đường nhiên liệu';
+
+  @override
   String get dashboard_trips_no_data => 'Không có chuyến đi nào tuần này';
 
   @override

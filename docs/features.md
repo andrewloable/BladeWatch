@@ -251,6 +251,14 @@ Trip functionality includes:
   fuel leg count fully as electric. Every trip of the period is summed (paging past ListTrips'
   100 per call). Fuel is left out on a car that recorded none; with no rate set the card says so
   instead of showing zeros; amounts in different currencies are never added.
+- Charge and fuel now (BladeWatch-4zr7): the same THIS WEEK card, in-car and companion, also
+  shows the battery percent and electric range and, on a car with a tank, the fuel percent and
+  fuel range, in the car's distance unit. These are current values from the GetStatus the
+  dashboard already makes; the fuel pair is left out when the car reports neither (a BEV).
+  They sit last in the card, under a rule, so the week's trips and costs stay together, and
+  every row shares one column grid. Refresh: charge and fuel every 2 s in the car (on the drive
+  chips' status read) and every 5 s in the companion; the week's trips and costs once a minute
+  in both.
 
 ### Fixed: blank Energy tile and 0% "Today" efficiency (Flutter)
 
@@ -423,6 +431,12 @@ The web login is replaced by pairing: scan the in-car QR, or paste its text.
   no route to the car, both wait for it to come back (up to 10 minutes) rather than spending
   retries: from mobile data a reconnect measured 5 s to 90+ s. Only failures while the route is
   up count against the five tries.
+- **Clips start playing while they download** (BladeWatch-rdtj.31). Over Pear on the car's LAN
+  the first moving frame arrives in about 2 s; it used to wait for the whole file (30-50 s). The
+  car serves every clip with its index first and cut into small chunks, without changing the
+  file. From mobile data the link is often slower than the clip (4-6 Mbit/s against 6), so the
+  player first builds a buffer: measured 4 to 23 s, or longer on a weaker signal. After 5 s
+  without moving, the player says the connection is slower than the clip and offers Download.
 - **Window control asks first, every time.** From a phone, nobody can see whether a hand or
   a pet is in a window. Climate changes are reversible and don't ask. Every command
   carries the car's short-lived action token, and the car's own safety interlock still

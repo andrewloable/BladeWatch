@@ -46,7 +46,7 @@ Future<MuxBridge?> findCarOverPear(
     var chosen = false;
     late final MuxBridge bridge;
     // Only the peer that proved to be the car reports its connection dropping.
-    bridge = MuxBridge(link, onClosed: () => chosen ? onClosed?.call() : null);
+    bridge = MuxBridge(link, receiveWindow: MuxBridge.remoteReceiveWindow, onClosed: () => chosen ? onClosed?.call() : null);
     if (await check(bridge, fingerprint) && !found.isCompleted) {
       chosen = true;
       found.complete(bridge);

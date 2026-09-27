@@ -78,6 +78,13 @@ class _PerformanceScreenState extends State<PerformanceScreen> with LoadersState
             InfoRow(tr('companion.perf_freq'), n('gpu', 'freqMhz', unit: ' MHz')),
             InfoRow(tr('companion.perf_temp'), n('gpu', 'tempC', digits: 1, unit: ' °C')),
           ]),
+          // The web's app-process card (BladeWatch-rdtj.57): the camera daemon's own counts.
+          if (d['app'] is Map)
+            Section(title: tr('companion.perf_process'), children: [
+              InfoRow(tr('companion.perf_threads'), n('app', 'threads')),
+              InfoRow(tr('companion.perf_fds'), n('app', 'openFds')),
+              InfoRow(tr('companion.perf_gc'), n('app', 'gcCount')),
+            ]),
           OutlinedButton(
             key: const ValueKey('perf.audio'),
             onPressed: () => act(context, () => _system.playAudioTest(PlayAudioTestRequest(durationMs: 3000)),

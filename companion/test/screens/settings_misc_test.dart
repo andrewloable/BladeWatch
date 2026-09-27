@@ -1,6 +1,7 @@
 import 'package:bladewatch_companion/screens/about/about_screen.dart';
 import 'package:bladewatch_companion/screens/diagnostics/diagnostics_screen.dart';
 import 'package:bladewatch_companion/screens/performance/performance_screen.dart';
+import 'package:bladewatch_companion/i18n.dart';
 import 'package:bladewatch_companion/screens/settings/settings_screen.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/settings.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/storage.pb.dart';
@@ -85,7 +86,7 @@ void main() {
     testWidgets('this app: language and unpairing (after confirming)', (tester) async {
       await pump(tester);
       expect(find.text('dev-1'), findsOneWidget);
-      await pick(tester, 'settings.appLanguage', 'de');
+      await pick(tester, 'settings.appLanguage', 'Deutsch'); // by name, not code (BladeWatch-rdtj.49)
       await pick(tester, 'settings.appLanguage', t('companion.follow_device'));
       expect(languages, ['de', null]);
 
@@ -102,6 +103,39 @@ void main() {
       await unmount(tester);
     });
 
+    // BladeWatch-rdtj.49: the web's clip length and where recordings are saved.
+    testWidgets('clip length alone; saving to the SD card after asking, limits kept', (tester) async {
+      final s = await pump(tester);
+      await tester.tap(find.byKey(const ValueKey('settings.segment.10')));
+      await tester.pumpAndSettle();
+      final q = s.rpc.calls.lastWhere((c) => c.method == 'SetQuality').request as SetQualityRequest;
+      expect((q.recordingSegmentMinutes, q.recordingQuality, q.codec), (10, '', ''), reason: 'quality and codec kept by leaving them out');
+
+      await tester.tap(find.byKey(const ValueKey('settings.saveTo.SD_CARD')));
+      await tester.pumpAndSettle();
+      expect(find.text(t('companion.save_to_confirm', {'place': t('companion.place_sd')})), findsOneWidget);
+      await tester.tap(find.text(t('common.cancel')));
+      await tester.pumpAndSettle();
+      expect(s.rpc.calls.where((c) => c.method == 'SetStorageSettings'), isEmpty);
+      await tester.tap(find.byKey(const ValueKey('settings.saveTo.SD_CARD')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('settings.confirm')));
+      await tester.pumpAndSettle();
+      final r = s.rpc.calls.lastWhere((c) => c.method == 'SetStorageSettings').request as SetStorageSettingsRequest;
+      expect((r.recordingsStorageType, r.recordingsLimitMb.toInt(), r.surveillanceLimitMb.toInt(), r.surveillanceStorageType), ('SD_CARD', 1000, 500, 'INTERNAL'));
+      await unmount(tester);
+
+      await pump(tester, sd: false);
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('settings.saveTo.SD_CARD'))).onSelected, isNull);
+      expect(find.text(t('recording.sd_card_not_detected')), findsOneWidget);
+      await unmount(tester);
+    });
+
+    test('language names: each in its own language; unknown tags as they are', () {
+      expect([Tr.nameOf('de'), Tr.nameOf('ja'), Tr.nameOf('zh_TW'), Tr.nameOf('xx')], ['Deutsch', '日本語', '繁體中文', 'xx']);
+      expect(Tr.languages.every(Tr.names.containsKey), isTrue);
+    });
+
     testWidgets('the car: mode, quality, codec, language, overlay, storage limits and sync', (tester) async {
       final s = await pump(tester);
       await tester.tap(find.byKey(const ValueKey('settings.mode.CONTINUOUS')));
@@ -115,7 +149,7 @@ void main() {
       expect((s.rpc.calls.lastWhere((c) => c.method == 'SetQuality').request as SetQualityRequest).recordingQuality, 'STANDARD');
       await pick(tester, 'settings.codec', 'H.265');
       expect((s.rpc.calls.lastWhere((c) => c.method == 'SetQuality').request as SetQualityRequest).codec, 'H265');
-      await pick(tester, 'settings.carLanguage', 'de');
+      await pick(tester, 'settings.carLanguage', 'Deutsch');
       expect((s.rpc.calls.lastWhere((c) => c.method == 'SetLocale').request as SetLocaleRequest).lang, 'de');
 
       await tester.tap(find.byKey(const ValueKey('settings.overlayTrip')));
@@ -161,7 +195,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('settings.confirm')));
       await tester.pumpAndSettle();
-      expect(find.text(t('recording.cdr_freed', {'size': '4.0 MB', 'files': 4})), findsOneWidget);
+      expect(find.text(t('recording.cdr_freed', {'size': '4.0\u00A0MB', 'files': 4})), findsOneWidget);
 
       s.rpc.stubJson('StorageService', 'TriggerCleanup', {'success': false});
       await tester.tap(find.byKey(const ValueKey('settings.cleanup')));
@@ -221,11 +255,16 @@ void main() {
       s.rpc.stubJson('SystemService', 'PerformanceDisconnect', {'success': true});
       s.rpc.stubJson('SystemService', 'PlayAudioTest', {'success': true});
       s.rpc.stubJson('SystemService', 'GetPerformance', {
-        'performanceJson': '{"cpu":{"system":42.5,"tempC":55},"memory":{"usedMb":900,"totalMb":2000},"gpu":{"usage":10}}',
+        'performanceJson': '{"cpu":{"system":42.5,"tempC":55},"memory":{"usedMb":900,"totalMb":2000},"gpu":{"usage":10},'
+            '"app":{"threads":141,"openFds":388,"gcCount":27}}',
       });
       await pumpScreen(tester, s, const PerformanceScreen(), size: const Size(420, 1400));
       expect(find.text('42.5%'), findsOneWidget);
       expect(find.text('900 / 2000 MB'), findsOneWidget);
+      // BladeWatch-rdtj.57: the web's app-process card.
+      for (final v in ['141', '388', '27']) {
+        expect(find.text(v), findsOneWidget);
+      }
       expect(find.text('—'), findsWidgets, reason: 'what the car did not report');
 
       await tester.pump(const Duration(seconds: 5));
@@ -315,9 +354,14 @@ void main() {
   testWidgets('About shows both versions and the licences', (tester) async {
     final s = TestSession();
     stubStatus(s);
-    await pumpScreen(tester, s, AboutScreen(appVersion: () async => '1.4.0'));
+    await pumpScreen(tester, s, AboutScreen(appVersion: () async => '1.4.0', buildNumber: () async => '17'));
     expect(find.text('1.4.0'), findsOneWidget);
     expect(find.text('1.4.0.0'), findsOneWidget);
+    // BladeWatch-rdtj.57: the web About's build, platform and privacy note.
+    expect(find.text('17'), findsOneWidget);
+    expect(find.text(t('companion.platform')), findsOneWidget);
+    expect(find.byKey(const ValueKey('about.privacy')), findsOneWidget);
+    expect([AboutScreen.platformName('ios'), AboutScreen.platformName('macos'), AboutScreen.platformName('fuchsia')], ['iOS', 'macOS', 'fuchsia']);
     await tester.tap(find.byKey(const ValueKey('about.licenses')));
     await tester.pumpAndSettle();
     expect(find.byType(LicensePage), findsOneWidget);

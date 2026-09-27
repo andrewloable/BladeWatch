@@ -15,13 +15,28 @@ import 'pear_mux.dart';
 /// local client, bytes are handed to the socket one frame at a time with a flush in between --
 /// Dart's socket buffers without limit otherwise, and add() during a flush throws -- and credit
 /// goes back to the car only once they have left. A car that overruns its credit loses the stream.
+///
+/// [receiveWindow] (BladeWatch-rdtj.28): how far the car may run ahead toward this side. Every
+/// stream starts at the protocol's [window]; a larger [receiveWindow] is granted as extra WINDOW
+/// credit right after OPEN, which the car accepts (its grant() is uncapped), so no protocol change.
+/// It matters because one stream moves at most window / round-trip: 256 KB over mobile data's
+/// ~850 ms round trip is ~2.4 Mbit/s -- measured 2.3-5 Mbit/s -- below a 6 Mbit/s clip, so remote
+/// playback could never keep up. [remoteReceiveWindow] lifts that to ~19 Mbit/s at the same RTT.
 class MuxBridge {
-  MuxBridge(this._link, {this.window = PearMux.initialWindow, this.onClosed}) {
+  MuxBridge(this._link, {this.window = PearMux.initialWindow, int? receiveWindow, this.onClosed})
+      : receiveWindow = receiveWindow ?? window {
+    assert(this.receiveWindow >= window, 'the receive window can only grow past the protocol window');
     _sub = _link.messages.listen(_onMessage, onDone: shutdown, onError: (Object _) => shutdown());
   }
 
+  /// The car-bound bridge's receive window. ponytail: fixed; make it adaptive (measured RTT x
+  /// wanted rate) if memory on the car or the phone ever becomes the limit. Worst case on the car
+  /// is its per-peer stream cap (16) x this = 32 MB queued in pear-end.
+  static const remoteReceiveWindow = 2 * 1024 * 1024;
+
   final PeerLink _link;
   final int window;
+  final int receiveWindow;
 
   /// Called once, when the Pear connection goes away (or [shutdown] is called).
   final void Function()? onClosed;
@@ -45,6 +60,7 @@ class MuxBridge {
     final stream = _Stream(this, id, local);
     _streams[id] = stream;
     _send(PearMux.openFrame(id));
+    if (receiveWindow > window) _send(PearMux.windowFrame(id, receiveWindow - window));
     stream.start();
   }
 
@@ -84,7 +100,7 @@ class MuxBridge {
 class _Stream {
   _Stream(this._bridge, this.id, this._local)
       : _sendCredit = _bridge.window,
-        _recvAllowance = _bridge.window;
+        _recvAllowance = _bridge.receiveWindow;
 
   final MuxBridge _bridge;
   final int id;
@@ -147,7 +163,7 @@ class _Stream {
         _local.add(chunk);
         await _local.flush();
         _consumed += chunk.length;
-        if (_consumed >= _bridge.window ~/ 4 || _toLocal.isEmpty) {
+        if (_consumed >= _bridge.receiveWindow ~/ 4 || _toLocal.isEmpty) {
           _recvAllowance += _consumed;
           _bridge._send(PearMux.windowFrame(id, _consumed));
           _consumed = 0;

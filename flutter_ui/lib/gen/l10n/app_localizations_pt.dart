@@ -1720,6 +1720,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get dashboard_trips_label_time => 'Tempo ao volante';
 
   @override
+  String get dashboard_week_battery => 'Bateria';
+
+  @override
+  String get dashboard_week_elec_range => 'Autonomia elétrica';
+
+  @override
+  String get dashboard_week_fuel => 'Combustível';
+
+  @override
+  String get dashboard_week_fuel_range => 'Autonomia combustível';
+
+  @override
   String get dashboard_trips_no_data => 'Nenhuma viagem registrada esta semana';
 
   @override
@@ -4625,6 +4637,18 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dashboard_trips_label_time => 'Tempo ao volante';
+
+  @override
+  String get dashboard_week_battery => 'Bateria';
+
+  @override
+  String get dashboard_week_elec_range => 'Autonomia elétrica';
+
+  @override
+  String get dashboard_week_fuel => 'Combustível';
+
+  @override
+  String get dashboard_week_fuel_range => 'Autonomia do combustível';
 
   @override
   String get dashboard_trips_no_data => 'Nenhuma viagem registrada esta semana';

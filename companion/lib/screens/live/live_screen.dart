@@ -30,6 +30,14 @@ class LiveScreen extends StatefulWidget {
 }
 
 class _LiveScreenState extends State<LiveScreen> {
+  // One camera, cut from the four-camera still HERE (BladeWatch-rdtj.45, the owner's choice).
+  // The web switched the car's one shared stream, and the in-car Live View watches that same
+  // stream: a remote pick would have changed the driver's screen. Quarter order is the car's
+  // (MotionPipelineV2.QUADRANT_NAMES): front, right, rear, left; null is all four.
+  int? _camera;
+  static const _cameraKeys = ['companion.cam_front', 'companion.cam_right', 'companion.cam_rear', 'companion.cam_left'];
+  static const _quarters = [Alignment.topLeft, Alignment.topRight, Alignment.bottomLeft, Alignment.bottomRight];
+
   Timer? _timer;
   Uint8List? _frame;
   DateTime? _frameAt;
@@ -112,6 +120,18 @@ class _LiveScreenState extends State<LiveScreen> {
     final frame = _frame;
     final at = _frameAt;
     return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        child: Wrap(spacing: 8, runSpacing: 4, alignment: WrapAlignment.center, children: [
+          for (final (i, key) in [(null, 'events.all'), for (var q = 0; q < 4; q++) (q, _cameraKeys[q])])
+            ChoiceChip(
+              key: ValueKey('live.camera.${i ?? 'all'}'),
+              label: Text(tr(key)),
+              selected: _camera == i,
+              onSelected: (_) => setState(() => _camera = i),
+            ),
+        ]),
+      ),
       Expanded(
         child: Container(
           color: Colors.black,
@@ -122,16 +142,36 @@ class _LiveScreenState extends State<LiveScreen> {
                   const SizedBox(height: 12),
                   Text(tr(_starting ? 'companion.live_starting' : 'common.loading'), style: const TextStyle(color: Colors.white70)),
                 ])
-              : InteractiveViewer(
-                  maxScale: 4,
-                  child: Image.memory(frame, key: const ValueKey('live.frame'), gaplessPlayback: true, fit: BoxFit.contain),
+              // Tight constraints, so BoxFit.contain scales the still UP to the area: with the loose
+              // ones Container(alignment) hands down, a 640x480 still sat at its own size in the
+              // middle of a desktop window (BladeWatch-rdtj.45).
+              : SizedBox.expand(
+                  child: InteractiveViewer(
+                    maxScale: 4,
+                    child: _camera == null
+                        ? Image.memory(frame, key: const ValueKey('live.frame'), gaplessPlayback: true, fit: BoxFit.contain)
+                        : FittedBox(
+                            child: ClipRect(
+                              child: Align(
+                                key: const ValueKey('live.quarter'),
+                                alignment: _quarters[_camera!],
+                                widthFactor: 0.5,
+                                heightFactor: 0.5,
+                                child: Image.memory(frame, key: const ValueKey('live.frame'), gaplessPlayback: true),
+                              ),
+                            ),
+                          ),
+                  ),
                 ),
         ),
       ),
       Padding(
         padding: const EdgeInsets.all(12),
         child: Text(
-          at == null ? tr('companion.live_note') : '${tr('companion.live_note')} · ${TimeOfDay.fromDateTime(at).format(context)}',
+          [
+            _camera == null ? tr('companion.live_note') : tr('companion.live_note_one', {'camera': tr(_cameraKeys[_camera!])}),
+            if (at != null) TimeOfDay.fromDateTime(at).format(context),
+          ].join(' · '),
           key: const ValueKey('live.note'),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall,

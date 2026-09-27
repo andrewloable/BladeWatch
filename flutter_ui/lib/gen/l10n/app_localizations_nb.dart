@@ -1699,6 +1699,18 @@ class AppLocalizationsNb extends AppLocalizations {
   String get dashboard_trips_label_time => 'Kjøretid';
 
   @override
+  String get dashboard_week_battery => 'Batteri';
+
+  @override
+  String get dashboard_week_elec_range => 'Elektrisk rekkevidde';
+
+  @override
+  String get dashboard_week_fuel => 'Drivstoff';
+
+  @override
+  String get dashboard_week_fuel_range => 'Drivstoffrekkevidde';
+
+  @override
   String get dashboard_trips_no_data => 'Ingen turer registrert denne uken';
 
   @override

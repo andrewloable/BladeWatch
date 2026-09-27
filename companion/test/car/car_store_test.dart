@@ -9,7 +9,7 @@ import '../support.dart';
 
 void main() {
   test('round-trips the car, the cursor, the language and the mutes', () async {
-    final store = testStore(car: testCar().withCursor(Int64(41)))
+    final store = testStore(car: testCar().withLanHint('192.0.2.7').withCursor(Int64(41)))
       ..language = 'de'
       ..mutedCategories = {'b', 'a'};
     await store.save();
@@ -19,6 +19,7 @@ void main() {
     expect(again.car!.deviceId, 'dev-1');
     expect(again.car!.credential.token, 'tok');
     expect(again.car!.inboxCursor, Int64(41));
+    expect(again.car!.lanHint, '192.0.2.7', reason: 'kept, and not lost by withCursor (BladeWatch-rdtj.38)');
     expect(again.language, 'de');
     expect(again.mutedCategories, {'a', 'b'});
     expect(File('${store.file.path}.tmp').existsSync(), isFalse);
@@ -68,5 +69,7 @@ void main() {
     expect(car.credential.companionId, 'cid');
     expect(car.inboxCursor, Int64.ZERO);
     expect(PairedCar.fromJson({...car.toJson()..remove('inboxCursor')}).inboxCursor, Int64.ZERO);
+    expect(car.toJson().containsKey('lanHint'), isFalse, reason: 'no hint until the car has been reached on Wi-Fi');
+    expect(PairedCar.fromJson(car.toJson()).lanHint, isNull);
   });
 }

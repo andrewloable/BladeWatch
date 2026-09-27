@@ -1705,6 +1705,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dashboard_trips_label_time => 'ड्राइव समय';
 
   @override
+  String get dashboard_week_battery => 'बैटरी';
+
+  @override
+  String get dashboard_week_elec_range => 'ईवी रेंज';
+
+  @override
+  String get dashboard_week_fuel => 'ईंधन';
+
+  @override
+  String get dashboard_week_fuel_range => 'ईंधन रेंज';
+
+  @override
   String get dashboard_trips_no_data => 'इस सप्ताह कोई यात्रा दर्ज नहीं';
 
   @override

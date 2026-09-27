@@ -52,8 +52,8 @@ void main() {
       for (final m in SettingsScreen.recordingModes) 'companion.mode_${m.toLowerCase()}',
       for (final p in SurveillanceScreen.presets) 'surveillance.preset_${p.toLowerCase()}',
     ]);
-    // Not catalog keys: the category id a test alert is raised with.
-    used.remove('surveillance.motion');
+    // Not catalog keys: category ids (the test alert's, and the hidden legacy one).
+    used.removeAll(['surveillance.motion', 'surveillance.motion.notice']);
     expect(used.where((k) => !en.has(k)).toList(), isEmpty);
     expect(used.length, greaterThan(200), reason: 'the scan must actually find the screens\' keys');
   });

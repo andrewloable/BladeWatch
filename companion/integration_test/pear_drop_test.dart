@@ -13,6 +13,11 @@
 ///       --dart-define=BW_SIZE=<bytes> --dart-define=BW_SHA256=<hex> [--dart-define=BW_WINDOW_S=600]
 ///
 /// BW_DIR is pear_bench_test's directory: its bench.json holds the pairing and the credential.
+///
+/// BW_SIZE and BW_SHA256 describe what /video/ SERVES, which is not the file on disk: the car serves
+/// clips in faststart order (Mp4Faststart.View, BladeWatch-rdtj.28), same length, different bytes.
+/// Take them on the car from the served bytes, e.g.
+///   `curl -s http://127.0.0.1:8080/video/CLIP | sha256sum`
 /// Run it from a network that is NOT the car's (a phone hotspot).
 library;
 
@@ -107,7 +112,7 @@ void main() {
         final sha = sha256.convert(dest.readAsBytesSync()).toString();
         final intact = bytes == _size && sha == _sha256;
         intact ? ok++ : corrupt++;
-        _emit({'download': intact ? 'ok' : 'CORRUPT', 'ms': ms, 'bytes': bytes, 'mbit_s': bytes * 8 / ms / 1000});
+        _emit({'download': intact ? 'ok' : 'CORRUPT', 'ms': ms, 'bytes': bytes, 'mbit_s': bytes * 8 / ms / 1000, 'sha256': sha});
         dest.deleteSync();
       }
     } finally {

@@ -43,12 +43,22 @@ const _file = String.fromEnvironment('BW_FILE');
 const _liveS = int.fromEnvironment('BW_LIVE_S', defaultValue: 240);
 const _playS = int.fromEnvironment('BW_PLAY_S', defaultValue: 240);
 
+/// BW_TRACE: put a logging proxy between the player and the gateway -- every request line and
+/// Range header, and each connection's response bytes over time (BladeWatch-rdtj.28).
+const _trace = bool.fromEnvironment('BW_TRACE');
+
+/// BW_BASE: play from this base URL instead of the car (e.g. a local throttled server), to tell the
+/// player's own start rules apart from the Pear path (BladeWatch-rdtj.28).
+const _base = String.fromEnvironment('BW_BASE');
+
 final _t0 = DateTime.now();
 double _t() => DateTime.now().difference(_t0).inMilliseconds / 1000;
 void _emit(Map<String, Object?> line) => print(jsonEncode({'t_s': _t(), ...line}));
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // Frames as a real app renders them: the default policy draws only when the test pumps, and the
+  // player's video output is consumed by rendered frames (BladeWatch-rdtj.28).
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized().framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
 
   testWidgets('live view and playback ride out a real Pear drop', (tester) async {
     final saved = jsonDecode(File('$_dir/bench.json').readAsStringSync()) as Map<String, dynamic>;
@@ -99,7 +109,16 @@ void main() {
 
       // Playback: the position every second, read off the player itself (the onPlayer seam).
       VideoPlayerController? player;
-      await show(ClipPlayerScreen(
+      final playSession = _base.isNotEmpty
+          ? CarSession(rpc: session.rpc, baseUrl: Uri.parse(_base), jwt: () async => null, initialPhase: TransportPhase.pear)
+          : _trace
+              ? await _tracingSession(session)
+              : session;
+      Future<void> showPlayer(Widget child) => tester.pumpWidget(MaterialApp(
+            builder: (context, nav) => TrScope(tr: tr, child: nav!),
+            home: SessionScope(session: playSession, child: Scaffold(body: child)),
+          ));
+      await showPlayer(ClipPlayerScreen(
         filename: _file,
         canPlay: true,
         onPlayer: (c) {
@@ -121,6 +140,9 @@ void main() {
             'play_pos_s': v.position.inMilliseconds / 1000,
             'playing': v.isPlaying,
             'buffering': v.isBuffering,
+            'buffered_s': v.buffered.isEmpty ? 0 : v.buffered.last.end.inMilliseconds / 1000,
+            // BladeWatch-rdtj.31: the "slower than this clip" line, shown after 5 s without moving.
+            'slow_hint': find.byKey(const ValueKey('player.slow')).evaluate().isNotEmpty,
             if (v.hasError) 'error': v.errorDescription,
           });
         }
@@ -131,4 +153,71 @@ void main() {
       session.dispose();
     }
   }, skip: _dir.isEmpty || _file.isEmpty, semanticsEnabled: false, timeout: const Timeout(Duration(minutes: 20)));
+}
+
+/// A session whose base URL is a logging proxy in front of [real]'s gateway (BW_TRACE only).
+Future<CarSession> _tracingSession(CarSession real) async {
+  final proxy = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+  var connections = 0;
+  proxy.listen((client) async {
+    final n = ++connections;
+    final opened = _t();
+    final upstream = await Socket.connect(real.baseUrl.host, real.baseUrl.port);
+    var head = <int>[];
+    client.listen((bytes) {
+      head.addAll(bytes);
+      var end = _indexOf(head, const [13, 10, 13, 10]);
+      while (end >= 0) {
+        final lines = String.fromCharCodes(head.sublist(0, end)).split('\r\n');
+        final range = lines.firstWhere((l) => l.toLowerCase().startsWith('range:'), orElse: () => '');
+        _emit({'conn': n, 'request': lines.first, if (range.isNotEmpty) 'range': range.substring(6).trim()});
+        head = head.sublist(end + 4);
+        end = _indexOf(head, const [13, 10, 13, 10]);
+      }
+      upstream.add(bytes);
+    }, onDone: () => upstream.destroy(), onError: (Object _) => upstream.destroy());
+    var received = 0;
+    var nextMark = 0;
+    var statusLogged = false;
+    upstream.listen((bytes) {
+      if (!statusLogged) {
+        statusLogged = true;
+        final text = String.fromCharCodes(bytes.take(200));
+        _emit({'conn': n, 'status': text.split('\r\n').first, 'first_byte_after_s': _t() - opened});
+      }
+      if (received < 131072) {
+        File('$_dir/trace_conn$n.bin').writeAsBytesSync(bytes, mode: FileMode.append);
+      }
+      received += bytes.length;
+      if (received >= nextMark) {
+        _emit({'conn': n, 'received_mb': received / 1048576});
+        nextMark += 8 * 1048576;
+      }
+      client.add(bytes);
+    }, onDone: () {
+      _emit({'conn': n, 'closed_after_mb': received / 1048576});
+      client.destroy();
+    }, onError: (Object _) => client.destroy());
+  });
+  final header = (await real.authHeaders())['Authorization'];
+  return CarSession(
+    rpc: real.rpc,
+    baseUrl: Uri.parse('http://127.0.0.1:${proxy.port}'),
+    jwt: () async => header?.substring('Bearer '.length),
+    initialPhase: TransportPhase.pear,
+  );
+}
+
+int _indexOf(List<int> hay, List<int> needle) {
+  for (var i = 0; i + needle.length <= hay.length; i++) {
+    var ok = true;
+    for (var j = 0; j < needle.length; j++) {
+      if (hay[i + j] != needle[j]) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return i;
+  }
+  return -1;
 }

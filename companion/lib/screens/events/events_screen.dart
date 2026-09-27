@@ -11,6 +11,7 @@ import '../../i18n.dart';
 import '../alerts/alerts_controller.dart';
 import '../common/format.dart';
 import '../common/loader.dart';
+import '../recordings/clip_pages.dart';
 import '../recordings/clips.dart';
 
 /// What happened to the car: the alerts it kept for this companion (store and forward), and the
@@ -26,7 +27,8 @@ class EventsScreen extends StatelessWidget {
     final tr = context.tr;
     return DefaultTabController(
       length: 3,
-      child: Column(children: [
+      // As wide as a page's content, not the window (BladeWatch-rdtj.56).
+      child: ContentWidth(child: Column(children: [
         TabBar(tabs: [
           Tab(text: tr('companion.alerts')),
           Tab(text: tr('events.badge_sentry')),
@@ -39,7 +41,7 @@ class EventsScreen extends StatelessWidget {
             const _Clips(type: 'proximity', key: ValueKey('events.proximity')),
           ]),
         ),
-      ]),
+      ])),
     );
   }
 }
@@ -131,18 +133,19 @@ class _Clips extends StatefulWidget {
   State<_Clips> createState() => _ClipsState();
 }
 
-class _ClipsState extends State<_Clips> with LoadersState {
-  late final _list = loader(
-    () => RecordingsServiceClient(context.session.rpc).listRecordings(ListRecordingsRequest(type: widget.type, pageSize: 200)),
-  );
+class _ClipsState extends State<_Clips> {
+  // A page at a time, like the Recordings page (BladeWatch-rdtj.42): 200 in one request left the
+  // rest out of reach.
+  late final _pages = ClipPages((page, size) => RecordingsServiceClient(context.session.rpc)
+      .listRecordings(ListRecordingsRequest(type: widget.type, page: page, pageSize: size)))
+    ..more();
 
   @override
-  Widget build(BuildContext context) => LoaderView(
-        loader: _list,
-        builder: (context, r) => r.recordings.isEmpty
-            ? ListView(children: [
-                Padding(padding: const EdgeInsets.all(32), child: Text(context.tr('events.empty_none_title'), textAlign: TextAlign.center)),
-              ])
-            : ListView(children: [for (final c in r.recordings) ClipTile(clip: c)]),
-      );
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ClipPageList(pages: _pages);
 }

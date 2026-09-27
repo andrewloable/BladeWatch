@@ -1699,6 +1699,18 @@ class AppLocalizationsTh extends AppLocalizations {
   String get dashboard_trips_label_time => 'เวลาขับ';
 
   @override
+  String get dashboard_week_battery => 'แบตเตอรี่';
+
+  @override
+  String get dashboard_week_elec_range => 'ระยะทาง EV';
+
+  @override
+  String get dashboard_week_fuel => 'น้ำมัน';
+
+  @override
+  String get dashboard_week_fuel_range => 'ระยะทางน้ำมัน';
+
+  @override
   String get dashboard_trips_no_data => 'ยังไม่มีทริปในสัปดาห์นี้';
 
   @override

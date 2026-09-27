@@ -1,3 +1,4 @@
+import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:flutter/material.dart';
 
 import '../i18n.dart';
@@ -81,7 +82,7 @@ class _State extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(BwDimens.cardPaddingHero),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

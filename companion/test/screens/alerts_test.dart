@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:bladewatch_companion/i18n.dart';
 import 'package:bladewatch_companion/screens/alerts/alert_settings_screen.dart';
 import 'package:bladewatch_companion/screens/alerts/alerts_controller.dart';
 import 'package:bladewatch_companion/screens/events/events_screen.dart';
@@ -69,7 +73,7 @@ void main() {
       await c.sendTest();
       expect(s.rpc.calls.map((x) => x.method), containsAllInOrder(['SendTest', 'ListInbox']));
       final sent = s.rpc.calls.firstWhere((x) => x.method == 'SendTest').request as SendTestRequest;
-      expect(sent.category, 'surveillance.motion');
+      expect(sent.category, 'surveillance.motion.notice', reason: 'a live category, not the hidden legacy one');
       c.dispose();
     });
   });
@@ -138,7 +142,9 @@ void main() {
       final s = TestSession();
       final store = testStore(car: testCar());
       s.rpc.stubJson('NotificationsService', 'GetCategories', {
-        'categoriesJson': '{"categories":[{"id":"trips.ended","label":"Trip ended","group":"Trips"},{"id":"x.y"}]}',
+        'categoriesJson': '{"categories":[{"id":"trips.ended","label":"Trip ended","group":"Trips"},{"id":"x.y"},'
+            '{"id":"surveillance.motion","label":"Motion detected (legacy)","group":"Surveillance"},'
+            '{"id":"vehicle.new.thing","label":"Something new","group":"Garage"}]}',
       });
       s.rpc.stubJson('NotificationsService', 'SendTest', {'success': true});
       inbox(s, [entry(1, category: 'trips.ended')]);
@@ -146,6 +152,11 @@ void main() {
       await pumpScreen(tester, s, AlertSettingsScreen(alerts: alerts, store: store));
       expect(find.text('Trip ended'), findsOneWidget);
       expect(find.text('x.y'), findsOneWidget, reason: 'a category without a label shows its id');
+      // BladeWatch-rdtj.57: nothing sends the legacy one; a category this app does not know yet
+      // shows as the car names it.
+      expect(find.byKey(const ValueKey('alerts.cat.surveillance.motion')), findsNothing);
+      expect(find.text('Something new'), findsOneWidget);
+      expect(find.text('Garage'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('alerts.cat.trips.ended')));
       await tester.pumpAndSettle();
@@ -157,6 +168,15 @@ void main() {
       expect(find.text(t('companion.alerts_test_sent')), findsOneWidget);
       await unmount(tester);
       alerts.dispose();
+    });
+
+    test('category and group names come from the catalog in the app\'s language', () {
+      Map<String, Object?> read(String l) => jsonDecode(File('assets/i18n/$l.json').readAsStringSync()) as Map<String, Object?>;
+      final de = Tr('de', read('de'), read('en'));
+      expect(AlertSettingsScreen.categoryLabel(de, 'trips.ended', 'Trip ended'), 'Fahrt beendet');
+      expect(AlertSettingsScreen.categoryLabel(de, 'vehicle.new.thing', 'Something new'), 'Something new');
+      expect(AlertSettingsScreen.groupLabel(de, 'Charging'), 'Laden');
+      expect(AlertSettingsScreen.groupLabel(de, 'Garage'), 'Garage');
     });
 
     test('parseCategories tolerates a registry it cannot read', () {

@@ -168,7 +168,14 @@ i18n:
 Handled by `RecordingsApiHandler`:
 
 - `/api/recordings`.
-- `/video/*`.
+- `/video/*`. A clip whose index (`moov`) is at the end -- every MediaMuxer recording -- is
+  served in faststart order (`Mp4Faststart.View`, BladeWatch-rdtj.28): the same length, with the
+  index first and its chunk offsets moved. The index is also re-cut into small chunks
+  (BladeWatch-rdtj.31): MediaMuxer stores a video-only clip as ONE chunk, and AVFoundation (the
+  companion on iOS and macOS) plays nothing from a chunk until all of it has arrived. The bigger
+  index is paid for out of MediaMuxer's `free` box, so the frames stay where they were. The file
+  on disk is never changed. Its ETag carries a `-fs2` suffix so a client never mixes cached
+  ranges of two layouts.
 - `/thumb/*`.
 - `/api/events/*`.
 - `POST /api/recordings/sync` — reconcile the media catalog DB against the filesystem.

@@ -7,6 +7,7 @@ import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_rpc/trips/trip_costs.dart';
+import '../../util/recording_state.dart';
 import 'dashboard_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 
@@ -52,6 +53,10 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   DriveInfo _drive = const DriveInfo();
   DriveInfo get drive => _drive;
 
+  /// Charge and fuel now, for THIS WEEK (BladeWatch-4zr7).
+  EnergyState _energy = const EnergyState.unavailable();
+  EnergyState get energy => _energy;
+
   RecordingsMetricState _recordingsMetric = const RecordingsMetricState.loading();
   RecordingsMetricState get recordingsMetric => _recordingsMetric;
 
@@ -69,9 +74,12 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   /// one RPC/channel failure never blocks the others from updating — mirrors
   /// the native fragment's per-tile `catch (_: Throwable) {}` pattern.
   /// Notifies listeners exactly once after everything settles.
-  Future<void> refresh() async {
+  ///
+  /// [includeTrips] false leaves the week's trips out: the screen reloads those once a minute
+  /// through [refreshTrips], not on every 15 s tick.
+  Future<void> refresh({bool includeTrips = true}) async {
     await Future.wait([
-      _refreshTripStats(),
+      if (includeTrips) _refreshTripStats(),
       _refreshRecordingsAndDaemonState(),
       _refreshDaemonsSummary(),
       _refreshVehicleTile(),
@@ -80,14 +88,24 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
     notifyListeners();
   }
 
+  /// The week's trips and costs alone (the screen calls this once a minute).
+  Future<void> refreshTrips() async {
+    await _refreshTripStats();
+    notifyListeners();
+  }
+
   /// Gear, drive mode, Auto Hold and EV/HEV change under the driver's hand, so the screen reads
   /// them on their own short cycle: through [refresh] a change waited for the slowest tile of the
-  /// 15 s reload, and the owner saw EV/HEV and Auto Hold never move (BladeWatch-7zp9).
+  /// 15 s reload, and the owner saw EV/HEV and Auto Hold never move (BladeWatch-7zp9). The same
+  /// status carries THIS WEEK's charge and fuel, so they move on this cycle too, for free.
   Future<void> refreshDrive() async {
     try {
-      final drive = _driveOf(await _systemService.getStatus(GetStatusRequest()));
-      if (drive == _drive) return;
+      final status = await _systemService.getStatus(GetStatusRequest());
+      final drive = _driveOf(status);
+      final energy = EnergyState.of(status);
+      if (drive == _drive && energy == _energy) return;
       _drive = drive;
+      _energy = energy;
       notifyListeners();
     } catch (_) {
       // Keep what is shown; the next tick or the full refresh tries again.
@@ -128,14 +146,15 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
     }
   }
 
-  // GetStatus feeds both the recordings tile's isRecording flag and the drive chips, so it's
-  // fetched once and shared.
+  // GetStatus feeds the recordings tile's isRecording flag, the drive chips and THIS WEEK's charge
+  // and fuel, so it's fetched once and shared.
   Future<void> _refreshRecordingsAndDaemonState() async {
     bool isRecording = false;
     try {
       final status = await _systemService.getStatus(GetStatusRequest());
-      isRecording = status.recording.isNotEmpty;
+      isRecording = status.isRecordingNow;
       _drive = _driveOf(status);
+      _energy = EnergyState.of(status);
     } catch (_) {
       // Leave isRecording at its default; the count fetch below is independent.
     }

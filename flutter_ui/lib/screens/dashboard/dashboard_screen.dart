@@ -1,7 +1,9 @@
 import 'dart:async' show Timer, unawaited;
+import 'dart:math' as math;
 import '../../platform/pairing_channel.dart';
 import '../pairing/pairing_dialog.dart';
 
+import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
@@ -10,6 +12,7 @@ import '../../shell/route_stubs.dart' show BwRoutes;
 import 'dashboard_controller.dart';
 import 'dashboard_models.dart';
 import '../trips/trip_costs_view.dart';
+import '../trips/trips_models.dart' show formatDistance;
 import 'vehicle_dialog_controller.dart';
 import '../../widgets/bw_choice_chip.dart';
 
@@ -53,19 +56,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// lost its network. 15 s: the Pear status it shows is itself refreshed every 30 s.
   static const Duration _refreshInterval = Duration(seconds: 15);
 
-  /// The drive chips on their own short cycle (see DashboardController.refreshDrive).
+  /// The drive chips, and THIS WEEK's charge and fuel, on their own short cycle (see
+  /// DashboardController.refreshDrive).
   static const Duration _driveInterval = Duration(seconds: 2);
+
+  /// The week's trips and costs: they change when a trip ends, and each reload pages through a
+  /// week of ListTrips, so once a minute is enough (the owner's call, 2026-09-27).
+  static const Duration _tripsInterval = Duration(minutes: 1);
 
   Timer? _refreshTimer;
   Timer? _driveTimer;
+  Timer? _tripsTimer;
 
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
     widget.controller.refresh();
-    _refreshTimer = Timer.periodic(_refreshInterval, (_) => widget.controller.refresh());
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) => widget.controller.refresh(includeTrips: false));
     _driveTimer = Timer.periodic(_driveInterval, (_) => widget.controller.refreshDrive());
+    _tripsTimer = Timer.periodic(_tripsInterval, (_) => widget.controller.refreshTrips());
   }
 
   void _onChanged() {
@@ -76,6 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _refreshTimer?.cancel();
     _driveTimer?.cancel();
+    _tripsTimer?.cancel();
     widget.controller.removeListener(_onChanged);
     super.dispose();
   }
@@ -88,6 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final hero = _TripStatsCard(
       state: c.tripStats,
+      energy: c.energy,
       l10n: l10n,
       theme: theme,
       onViewAllTrips: () => widget.onNavigate(BwRoutes.trips),
@@ -106,28 +118,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            BwDimens.pagePaddingHorizontal,
+            BwDimens.pagePaddingTop,
+            BwDimens.pagePaddingHorizontal,
+            BwDimens.pagePaddingBottom,
+          ),
           children: [
             // The trip hero takes the full width: the connect card that sat beside it (tunnel
             // QR, device id, access code) went with tor (BladeWatch-rdtj.12).
             hero,
-            const SizedBox(height: 12),
-            _HeroChips(controller: c, l10n: l10n, theme: theme),
-            // An explicit action, never a QR on the dashboard: a permanently visible pairing
-            // code would be a permanently visible way in (BladeWatch-rdtj.7).
-            if (widget.pairingChannel != null) ...[
-              const SizedBox(height: 12),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: FilledButton.tonalIcon(
-                  key: const ValueKey('dashboard.pair'),
-                  onPressed: () => showPairingDialog(context, widget.pairingChannel!),
-                  icon: const Icon(Icons.qr_code_2),
-                  label: Text(l10n.pairing_title),
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
+            const SizedBox(height: BwDimens.cardGapVertical),
+            _HeroChips(
+              controller: c,
+              l10n: l10n,
+              theme: theme,
+              // An explicit action, never a QR on the dashboard: a permanently visible pairing
+              // code would be a permanently visible way in (BladeWatch-rdtj.7).
+              trailing: widget.pairingChannel == null
+                  ? null
+                  : FilledButton.tonalIcon(
+                      key: const ValueKey('dashboard.pair'),
+                      onPressed: () => showPairingDialog(context, widget.pairingChannel!),
+                      icon: const Icon(Icons.qr_code_2),
+                      label: Text(l10n.pairing_title),
+                    ),
+            ),
+            const SizedBox(height: BwDimens.cardGapVertical),
             metrics,
           ],
         ),
@@ -150,11 +167,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class _TripStatsCard extends StatelessWidget {
   final TripStatsState state;
+  final EnergyState energy;
   final AppLocalizations l10n;
   final ThemeData theme;
   final VoidCallback onViewAllTrips;
 
-  const _TripStatsCard({required this.state, required this.l10n, required this.theme, required this.onViewAllTrips});
+  const _TripStatsCard({
+    required this.state,
+    required this.energy,
+    required this.l10n,
+    required this.theme,
+    required this.onViewAllTrips,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -174,17 +198,53 @@ class _TripStatsCard extends StatelessWidget {
     // read against onPrimaryContainer, not onSurface.
     final onHero = theme.colorScheme.onPrimaryContainer;
 
+    final e = energy;
+    String dist(double km) => e.available ? formatDistance(km, e.distanceUnit, decimals: 0) : pending;
+    final trips = [
+      (l10n.dashboard_trips_label_trips, state.available ? state.tripCount.toString() : pending),
+      (l10n.dashboard_trips_label_distance, state.available ? state.distanceLabel : pending),
+      (l10n.dashboard_trips_label_time, state.available ? state.driveTimeLabel : pending),
+    ];
+    // BladeWatch-4zr7: the car's charge and fuel now (current values, where the row above is the
+    // week's): battery and electric range, and fuel and fuel range on a car with a tank.
+    final charge = [
+      (l10n.dashboard_week_battery, e.available ? '${e.socPercent.round()}%' : pending),
+      (l10n.dashboard_week_elec_range, dist(e.elecRangeKm)),
+      if (e.hasFuel) ...[
+        (l10n.dashboard_week_fuel, '${e.fuelPercent.round()}%'),
+        (l10n.dashboard_week_fuel_range, dist(e.fuelRangeKm)),
+      ],
+    ];
+    // BladeWatch-39d2: what the week cost, or the line that says why there are no figures.
+    final costs = state.available && state.tripCount > 0 ? tripCostDisplay(state.costs, l10n) : null;
+    final costFigures = [for (final (value, label) in costs?.figures ?? const <(String, String)>[]) (label, value)];
+    // One grid for every row, as many columns as the widest row, so the columns line up. The owner
+    // saw them drift once the charge row brought a fourth tile under three.
+    final columns = [trips.length, charge.length, costFigures.length].reduce(math.max);
+    Widget row(List<(String, String)> stats, {Key? key}) =>
+        _StatRow(key: key, stats: stats, columns: columns, theme: theme, color: onHero);
+
     return Card(
       color: theme.colorScheme.primaryContainer,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwDimens.cardRadiusHero)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        // Half the top padding: the View all trips button's 48 px touch target already adds that
+        // space above the header, and the full value pushed the metric tiles below the fold on the
+        // head unit (design review 2026-09-27).
+        padding: const EdgeInsets.fromLTRB(
+          BwDimens.cardPaddingHero,
+          BwDimens.cardPaddingHero / 2,
+          BwDimens.cardPaddingHero,
+          BwDimens.cardPaddingHero,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // Centered: the button's 48 px touch target otherwise sat its text ~20 px below the
+              // label it pairs with (design review 2026-09-27).
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: Text(
@@ -192,7 +252,7 @@ class _TripStatsCard extends StatelessWidget {
                     style: theme.textTheme.labelLarge?.copyWith(color: onHero),
                   ),
                 ),
-                // Top-right, on the label's baseline, as native has it.
+                // Top-right, level with the label, as native has it.
                 TextButton(
                   key: const ValueKey('tripStats.viewAll'),
                   onPressed: onViewAllTrips,
@@ -204,46 +264,23 @@ class _TripStatsCard extends StatelessWidget {
             if (headline != null) ...[
               Text(headline, style: theme.textTheme.headlineMedium?.copyWith(color: onHero)),
               const SizedBox(height: 16),
-            ] else
-              const SizedBox(height: 8),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: _Stat(
-                      label: l10n.dashboard_trips_label_trips,
-                      value: state.available ? state.tripCount.toString() : pending,
-                      theme: theme,
-                      color: onHero,
-                    ),
-                  ),
-                  _StatDivider(color: onHero),
-                  Expanded(
-                    child: _Stat(
-                      label: l10n.dashboard_trips_label_distance,
-                      value: state.available ? state.distanceLabel : pending,
-                      theme: theme,
-                      color: onHero,
-                    ),
-                  ),
-                  _StatDivider(color: onHero),
-                  Expanded(
-                    child: _Stat(
-                      label: l10n.dashboard_trips_label_time,
-                      value: state.available ? state.driveTimeLabel : pending,
-                      theme: theme,
-                      color: onHero,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // BladeWatch-39d2: what the week cost, under the three it always showed.
-            if (state.available && state.tripCount > 0) ...[
-              const SizedBox(height: 16),
-              _TripCostsRow(costs: tripCostDisplay(state.costs, l10n), theme: theme, color: onHero),
             ],
+            row(trips),
+            if (costs != null) ...[
+              const SizedBox(height: 16),
+              if (costs.message case final message?)
+                Text(
+                  message,
+                  key: const ValueKey('tripStats.costs.message'),
+                  style: theme.textTheme.bodySmall?.copyWith(color: onHero.withValues(alpha: 0.8)),
+                )
+              else
+                row(costFigures, key: const ValueKey('tripStats.costs')),
+            ],
+            // The week's figures stay together; the car's charge and fuel NOW come last, under a
+            // rule, instead of splitting the trips from their costs (design review 2026-09-27).
+            Divider(height: 20, thickness: 1, color: onHero.withValues(alpha: 0.3)),
+            row(charge, key: const ValueKey('tripStats.energy')),
           ],
         ),
       ),
@@ -251,40 +288,35 @@ class _TripStatsCard extends StatelessWidget {
   }
 }
 
-/// The week's fuel, electric and total cost in the hero's stat style, or the line that says
-/// why there are none (no rate set; more than one currency).
-class _TripCostsRow extends StatelessWidget {
-  final ({List<(String, String)> figures, String? message}) costs;
+/// One row of the hero's stats (label, value) on the card's shared grid of [columns], so every
+/// row's columns line up; a row with fewer stats leaves its last columns empty rather than
+/// stretching (BladeWatch-4zr7).
+class _StatRow extends StatelessWidget {
+  final List<(String, String)> stats;
+  final int columns;
   final ThemeData theme;
   final Color color;
 
-  const _TripCostsRow({required this.costs, required this.theme, required this.color});
+  const _StatRow({super.key, required this.stats, required this.columns, required this.theme, required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    final message = costs.message;
-    if (message != null) {
-      return Text(
-        message,
-        key: const ValueKey('tripStats.costs.message'),
-        style: theme.textTheme.bodySmall?.copyWith(color: color.withValues(alpha: 0.8)),
-      );
-    }
-    return IntrinsicHeight(
-      key: const ValueKey('tripStats.costs'),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final (i, (value, label)) in costs.figures.indexed) ...[
-            if (i > 0) _StatDivider(color: color),
-            Expanded(
-              child: _Stat(label: label, value: value, theme: theme, color: color),
-            ),
-          ],
+  Widget build(BuildContext context) => IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < columns; i++) ...[
+          // Every slot keeps its divider's width, so an empty column is exactly as wide as a full one;
+          // an empty column's divider is hidden, not recoloured (transparent at 30% alpha is grey).
+          if (i > 0) Opacity(opacity: i < stats.length ? 1 : 0, child: _StatDivider(color: color)),
+          Expanded(
+            child: i < stats.length
+                ? _Stat(label: stats[i].$1, value: stats[i].$2, theme: theme, color: color)
+                : const SizedBox.shrink(),
+          ),
         ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }
 
 /// The vertical rule native draws between the three hero stats.
@@ -327,13 +359,17 @@ class _HeroChips extends StatelessWidget {
   final AppLocalizations l10n;
   final ThemeData theme;
 
-  const _HeroChips({required this.controller, required this.l10n, required this.theme});
+  /// Ends the row: the Pair a device action, which used to take a row of its own and push the
+  /// tiles toward the fold (design review 2026-09-27).
+  final Widget? trailing;
+
+  const _HeroChips({required this.controller, required this.l10n, required this.theme, this.trailing});
 
   @override
   Widget build(BuildContext context) {
-    final daemons = controller.daemonsSummary;
+    // No "4/4 Running" chip: the Background services tile below says exactly that (design review
+    // 2026-09-27, the owner's call).
     final chips = <Widget>[
-      Chip(label: Text(l10n.dashboard_daemons_running(daemons.running, daemons.total))),
       Chip(
         label: Text(
           controller.recordingsMetric.isRecording
@@ -345,7 +381,12 @@ class _HeroChips extends StatelessWidget {
       // measured to) name -- never a guessed P / NORMAL / off.
       ..._driveChips(controller.drive),
     ];
-    return Wrap(spacing: 8, runSpacing: 4, children: chips);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [...chips, ?trailing],
+    );
   }
 
   List<Widget> _driveChips(DriveInfo d) {
@@ -543,12 +584,12 @@ class _MetricTile extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     color: theme.colorScheme.surfaceContainer,
     elevation: 0,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwDimens.cardRadiusStandard)),
     child: InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(BwDimens.cardRadiusStandard),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(BwDimens.cardPaddingStandard),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
@@ -567,11 +608,16 @@ class _MetricTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              value,
-              style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            // Shrunk to fit, not cut: "BYD Seal 5 DM-i" lost its end to an ellipsis on the head
+            // unit (design review 2026-09-27).
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                value,
+                style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
+                maxLines: 1,
+              ),
             ),
             Text(
               title,

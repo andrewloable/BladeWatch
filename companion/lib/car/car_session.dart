@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/stream.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_rpc/rpc/connect_client.dart';
 import 'package:bladewatch_rpc/rpc/connect_error.dart';
 import 'package:bladewatch_rpc/rpc/jwt_source.dart';
 import 'package:bladewatch_rpc/rpc/raw_http_sender.dart';
 import 'package:bladewatch_rpc/rpc/rpc_transport.dart';
 import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pear/flutter_pear.dart';
 
@@ -35,6 +38,8 @@ class CarSession extends ChangeNotifier {
     Future<void> Function()? close,
     RpcTransport Function(Map<String, String> headers)? headerTransport,
     this.probeEvery = const Duration(seconds: 3),
+    this.quietAfter,
+    this.probeTimeout = const Duration(seconds: 2),
   })  : _inner = rpc,
         _withHeaders = headerTransport,
         _mintJwt = jwt,
@@ -46,8 +51,10 @@ class CarSession extends ChangeNotifier {
       _phase = p;
       _everConnected |= connected;
       if (!connected) _heard(true); // the route's own state says it now; stop probing
+      if (connected) unawaited(_learnLan());
       notifyListeners();
     });
+    if (quietAfter != null) _watch();
   }
 
   final RpcTransport _inner;
@@ -57,6 +64,23 @@ class CarSession extends ChangeNotifier {
 
   /// How often a car that stopped answering is asked again.
   final Duration probeEvery;
+
+  /// A car that has said nothing for this long is asked something cheap (BladeWatch-rdtj.53);
+  /// null turns the watch off, as most tests want.
+  ///
+  /// Why: over Pear a dead car is silence, not an error. Its connection is dropped only once
+  /// Hyperswarm times it out, and an RPC meanwhile waits out the HTTP client's 10 s read timeout;
+  /// with the screens polling every 5 s, a stopped pear_daemon went unnoticed for 14-18 s while
+  /// the last data sat on screen as if live. Now: quiet for [quietAfter], then two [probeTimeout]
+  /// questions in a row without an answer -- about 6 s -- and the car shows as not answering.
+  /// Two, so that one slow answer on a busy mobile link does not flip the page.
+  ///
+  /// ponytail: fixed 2 s + 2 x 2 s; tune here if a real link proves slower or faster.
+  final Duration? quietAfter;
+  final Duration probeTimeout;
+  Timer? _watchTimer;
+  int _quietTicks = 0;
+  bool _asking = false;
 
   /// `http://127.0.0.1:<port>`, the gateway: media (stills, clips, thumbnails) is fetched here.
   final Uri baseUrl;
@@ -86,6 +110,7 @@ class CarSession extends ChangeNotifier {
   bool get answering => _answering;
 
   void _heard(bool answered) {
+    if (answered) _quietTicks = 0;
     if (answered == _answering) return;
     _answering = answered;
     _probe?.cancel();
@@ -96,6 +121,71 @@ class CarSession extends ChangeNotifier {
       });
     }
     notifyListeners();
+  }
+
+  // Counted in timer ticks, not wall-clock time, so a test's fake clock drives it too.
+  void _watch() {
+    _watchTimer?.cancel();
+    _quietTicks = 0;
+    _watchTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      _quietTicks++;
+      if (_quietTicks * 500 >= quietAfter!.inMilliseconds) unawaited(_askQuietCar());
+    });
+  }
+
+  Future<void> _askQuietCar() async {
+    // Not while the route is down (the selector says so) or the car is already known silent
+    // (the [probeEvery] probe asks then).
+    if (_asking || !connected || !_answering) return;
+    _asking = true;
+    try {
+      for (var miss = 0; miss < 2; miss++) {
+        if (await _ask()) {
+          _heard(true);
+          return;
+        }
+      }
+      if (connected) _heard(false);
+    } finally {
+      _asking = false;
+    }
+  }
+
+  /// Any HTTP answer counts, an error status included: the car is there. Asked of the inner
+  /// transport, so one miss is not yet reported as silence.
+  Future<bool> _ask() async {
+    try {
+      await StreamServiceClient(_inner).getQuality(GetStreamQualityRequest()).timeout(probeTimeout);
+      return true;
+    } on ConnectError catch (e) {
+      return e.httpStatus != 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// The app went to the background: no questions while nobody is looking.
+  void paused() {
+    _watchTimer?.cancel();
+    _watchTimer = null;
+  }
+
+  /// The car's own Wi-Fi address, read once each time the route comes up (BladeWatch-rdtj.38).
+  /// The app keeps it as [PairedCar.lanHint] for the next search. Null while the car is on
+  /// cellular: that address is private too (carrier NAT), and no LAN reaches it.
+  String? get carLanAddress => _carLan;
+  String? _carLan;
+
+  Future<void> _learnLan() async {
+    try {
+      final network = (await SystemServiceClient(rpc).getStatus(GetStatusRequest())).network;
+      final ip = network.type == 'wifi' ? network.ip : '';
+      if (ip.isEmpty || ip == _carLan) return;
+      _carLan = ip;
+      notifyListeners();
+    } catch (_) {
+      // Learned on the next connection instead.
+    }
   }
 
   /// The car answered, and refused this device's credential: it was removed in the car.
@@ -112,8 +202,29 @@ class CarSession extends ChangeNotifier {
   /// the car's login limit.
   RpcTransport withHeaders(Map<String, String> headers) => _withHeaders?.call(headers) ?? rpc;
 
-  /// Look for the car again now -- after the app resumes, or when the owner asks.
+  /// Look for the car again now -- when the owner asks, or when [resumed] finds the link down.
   void retry() => _onRetry?.call();
+
+  /// The app is back in the foreground (BladeWatch-rdtj.36). A route that is down is looked for
+  /// again at once, rather than on the selector's retry timer. A route that is up is asked one
+  /// cheap question first, and torn down only if the car cannot be reached through it: after a
+  /// phone sleeps, its Pear connection can be dead with nothing having said so yet.
+  ///
+  /// This used to call [retry] every time, which restarted a HEALTHY link on every app switch
+  /// (a macOS window regaining focus is a resume too): 3 to 15 s of "Reconnecting" each time,
+  /// and a desktop window refocused often enough never showed the car at all.
+  Future<void> resumed({Duration timeout = const Duration(seconds: 8)}) async {
+    if (quietAfter != null) _watch();
+    if (!connected) return retry();
+    try {
+      await StreamServiceClient(rpc).getQuality(GetStreamQualityRequest()).timeout(timeout);
+    } on ConnectError catch (e) {
+      // Any HTTP status is the car answering, so the link is up; 0 is no answer at all.
+      if (e.httpStatus == 0 && connected) retry();
+    } catch (_) {
+      if (connected) retry(); // timed out: nothing came back through this link
+    }
+  }
 
   /// The Authorization header for a plain HTTP fetch through the gateway (images, video).
   Future<Map<String, String>> authHeaders() async {
@@ -124,6 +235,7 @@ class CarSession extends ChangeNotifier {
   @override
   void dispose() {
     _probe?.cancel();
+    _watchTimer?.cancel();
     unawaited(_phases.cancel());
     unawaited(_onClose?.call());
     super.dispose();
@@ -148,8 +260,11 @@ class CarSession extends ChangeNotifier {
       gateway: gateway,
       pinnedFingerprint: car.tlsFingerprint,
       findOnLan: findOnLan ??
-          () async => LanProber(_hex(car.probeKey))
-              .find(await LanProber.candidates(), pinnedFingerprint: car.tlsFingerprint),
+          () => LanProber(_hex(car.probeKey)).findCar(
+                car.lanHint == null ? null : InternetAddress.tryParse(car.lanHint!),
+                LanProber.candidates,
+                pinnedFingerprint: car.tlsFingerprint,
+              ),
       connectPear: (onClosed) async {
         try {
           // A fresh join every time the car is looked for (BladeWatch-rdtj.24). The selector only
@@ -184,6 +299,7 @@ class CarSession extends ChangeNotifier {
         baseUrl: gateway.baseUrl,
         send: withExtraHeaders(createIoHttpSender(), headers),
       ),
+      quietAfter: const Duration(seconds: 2),
       close: () async {
         await selector.dispose();
         await gateway.close();

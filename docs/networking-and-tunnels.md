@@ -95,6 +95,16 @@ last-known address first, then sweeps its own /24 with the same probe — 254 pa
 of 256 bytes, answered only by the car holding the key. Nothing on the car changes:
 the responder has always answered unicast.
 
+**The last-known address is probed ALONE, before any sweep (BladeWatch-rdtj.38).**
+Measured from a Mac on the car's LAN, 30 tries each: a lone probe to the car was
+answered 30 times; the /24 sweep only 12. Every probe to an empty address costs an ARP
+request, and that storm (233 incomplete ARP entries after a few sweeps) starved the
+car's own resolution — the car's address first in the burst still got 7 of 30, and
+pacing or repeating the sweep made it worse. The companion learns the address from the
+car itself: each time the route comes up it reads `GetStatus.network` and, when the
+type is `wifi` (a cellular address is private too, but on no LAN), keeps the `ip` as
+`PairedCar.lanHint`. Only when that address is silent does the sweep run.
+
 The exact wire format is in `LanDiscoveryResponder`'s class doc. In short: a probe
 is exactly 256 bytes — magic, 16-byte nonce, timestamp, HMAC-SHA256 under the
 per-car probe key (`lanDiscovery.probeKey`, carried by the pairing payload), zero
@@ -273,6 +283,15 @@ peer, 64 in total, a 15 s connect deadline (byd_cam_daemon may be restarting), 5
 idle, and a peer that sends past its credit loses the stream. The class docs of `PearMux`
 and `PearStreamPump` are the spec; the companion (BladeWatch-rdtj.8) implements the mirror.
 
+**The companion grants the car a 2 MiB receive window (BladeWatch-rdtj.28).** One stream moves
+at most window / round-trip. With the protocol's 256 KiB that is ~50 Mbit/s on the car's LAN
+(~41 ms; 41 Mbit/s measured) but only ~2.4 Mbit/s over mobile data (~850 ms; 2.3-5 Mbit/s
+measured), below a 6 Mbit/s recording. So `MuxBridge` sends one extra WINDOW right after OPEN
+(`MuxBridge.remoteReceiveWindow` minus the initial window) and accepts that much in flight. No
+protocol change: the car's `grant()` is uncapped. The car's worst case is its per-peer stream cap
+x 2 MiB = 32 MiB queued in pear-end. The companion's own sends toward the car keep the 256 KiB
+window.
+
 ### Car authentication over Pear (TLS inside Pear, BladeWatch-rdtj.8)
 
 Hyperswarm encrypts every connection, but that says nothing about WHO is at the other end.
@@ -358,6 +377,11 @@ which forwards each connection to the car over whichever route `TransportSelecto
    and car share a NAT.
 2. **Pear** otherwise: each connection becomes one `PearMux` stream (`MuxBridge`) with TLS
    through it to 8444, pinned the same way.
+
+Plain HTTP on the loopback needs an explicit allowance on each platform, and it is granted for
+the loopback address only: Android's `res/xml/network_security_config.xml` permits cleartext to
+`127.0.0.1` and nothing else (without it ExoPlayer refuses every clip, BladeWatch-rdtj.32), and
+the iOS and macOS Info.plists set `NSAllowsLocalNetworking`.
 
 The selector reports `discovering` and `failed` as different phases (a DHT lookup can take
 30 s or more, and "still looking" must not read as "can't reach the car"). It re-evaluates

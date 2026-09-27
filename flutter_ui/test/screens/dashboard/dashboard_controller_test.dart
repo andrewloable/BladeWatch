@@ -44,6 +44,55 @@ void main() {
     channel = FakePlatformChannel();
   });
 
+  // BladeWatch-4zr7: the charge and fuel ride on the GetStatus the dashboard already makes.
+  test('THIS WEEK\'s charge and fuel come from the one GetStatus per refresh', () async {
+    stubHappyPath();
+    rpc.stubJson('SystemService', 'GetStatus', {
+      'recording': [1],
+      'soc': {'percent': 77},
+      'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'fuelPercent': 30},
+      'distanceUnit': 'mi',
+    });
+    final c = buildController();
+    expect(c.energy.available, isFalse);
+    await c.refresh();
+    expect(c.energy.socPercent, 77);
+    expect(c.energy.fuelRangeKm, 351);
+    expect(c.energy.distanceUnit, 'mi');
+    expect(rpc.calls.where((call) => call.method == 'GetStatus'), hasLength(1), reason: 'no request of its own');
+  });
+
+  test('refresh can leave the week\'s trips out; refreshTrips reloads only them', () async {
+    stubHappyPath();
+    final c = buildController();
+    var notified = 0;
+    c.addListener(() => notified++);
+    await c.refresh(includeTrips: false);
+    expect(rpc.calls.where((call) => call.method == 'ListTrips'), isEmpty);
+    expect(c.tripStats.loading, isTrue, reason: 'untouched');
+    await c.refreshTrips();
+    expect(rpc.calls.where((call) => call.method == 'ListTrips'), isNotEmpty);
+    expect(c.tripStats.tripCount, 2);
+    expect(notified, 2);
+  });
+
+  test('the drive poll moves the charge and fuel, and says nothing when nothing changed', () async {
+    stubHappyPath();
+    rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 73}, 'range': {'elecRangeKm': 74}});
+    final c = buildController();
+    var notified = 0;
+    c.addListener(() => notified++);
+    await c.refreshDrive();
+    expect(c.energy.socPercent, 73);
+    expect(notified, 1);
+    await c.refreshDrive();
+    expect(notified, 1, reason: 'same status, no rebuild');
+    rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 74}, 'range': {'elecRangeKm': 74}});
+    await c.refreshDrive();
+    expect(c.energy.socPercent, 74);
+    expect(notified, 2);
+  });
+
   group('initial state', () {
     test('everything starts in a loading state', () {
       final c = buildController();
@@ -136,6 +185,15 @@ void main() {
       // length 8 and so pinned the bug: on device the Dashboard read
       // "Today's recordings 0" while the Recordings screen said "37 today".
       expect(req.date, matches(RegExp(r'^\d{4}-\d{2}-\d{2}$')));
+    });
+
+    // BladeWatch-uymd: recording a continuous clip, the car sends an empty camera list.
+    test('isRecording follows recordingStatus when the camera list is empty', () async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'recordingStatus': {'isRecording': true, 'pipelineRunning': true}, 'recording': []});
+      final c = buildController();
+      await c.refresh();
+      expect(c.recordingsMetric.isRecording, isTrue);
     });
 
     test('isRecording reflects GetStatus().recording being non-empty', () async {

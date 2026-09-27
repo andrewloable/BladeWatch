@@ -1,6 +1,7 @@
 package net.bladewatch.app.server
 
 import org.json.JSONObject
+import net.bladewatch.app.recording.Mp4Faststart
 import java.io.File
 import java.io.FileInputStream
 import java.io.OutputStream
@@ -237,7 +238,7 @@ object HttpResponse {
     @JvmStatic
     @JvmOverloads
     @Throws(Exception::class)
-    fun sendVideo(out: OutputStream, file: File, etag: String? = null) {
+    fun sendVideo(out: OutputStream, file: File, etag: String? = null, view: Mp4Faststart.View? = null) {
         if (!file.exists()) {
             sendError(out, 404, "File not found")
             return
@@ -256,6 +257,13 @@ object HttpResponse {
         }
         headers.append(connectionHeader(out)).append("\r\n")
         out.write(headers.toString().toByteArray())
+
+        // BladeWatch-rdtj.28: the faststart layout when there is one (same length, index first).
+        if (view != null) {
+            RandomAccessFile(file, "r").use { view.write(it, 0, view.length, out) }
+            out.flush()
+            return
+        }
 
         // Stream the file in chunks
         FileInputStream(file).use { fis ->
@@ -277,7 +285,8 @@ object HttpResponse {
         file: File,
         start: Long,
         endRequested: Long,
-        etag: String? = null
+        etag: String? = null,
+        view: Mp4Faststart.View? = null
     ) {
         if (!file.exists()) {
             sendError(out, 404, "File not found")
@@ -313,6 +322,12 @@ object HttpResponse {
         }
         headers.append(connectionHeader(out)).append("\r\n")
         out.write(headers.toString().toByteArray())
+
+        if (view != null) {
+            RandomAccessFile(file, "r").use { view.write(it, start, contentLength, out) }
+            out.flush()
+            return
+        }
 
         RandomAccessFile(file, "r").use { raf ->
             raf.seek(start)

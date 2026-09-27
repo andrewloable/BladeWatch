@@ -456,6 +456,18 @@ void main() {
       expect(c.state.isRecording, isTrue);
     });
 
+    // BladeWatch-uymd: the mark button stayed off while a continuous clip was recording.
+    test('start() follows recordingStatus when the camera list is empty', () async {
+      stubHappyRpcPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'recordingStatus': {'isRecording': true}, 'recording': []});
+      final c = build(sockets: () => [FakeLiveSocket()]);
+
+      await c.start();
+      await flush();
+
+      expect(c.state.isRecording, isTrue);
+    });
+
     test('GetStatus reporting nothing recording leaves isRecording false', () async {
       stubHappyRpcPath();
       rpc.stubJson('SystemService', 'GetStatus', {'recording': []});

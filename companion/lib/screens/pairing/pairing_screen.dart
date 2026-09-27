@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_store.dart';
@@ -65,7 +66,7 @@ class _PairingScreenState extends State<PairingScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(BwDimens.pagePaddingHorizontal),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: ListenableBuilder(

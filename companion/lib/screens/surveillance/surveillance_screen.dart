@@ -17,6 +17,10 @@ import '../common/loader.dart';
 /// `false`, so the car resets every omitted flag to false -- a partial save switched all four
 /// cameras off on the web (BladeWatch-q0p4).
 class SurveillanceScreen extends StatefulWidget {
+  /// Seconds kept before and after an event: the web's choices.
+  static const preRecordSeconds = [2, 5, 10, 15];
+  static const postRecordSeconds = [5, 10, 15, 20, 30];
+
   const SurveillanceScreen({super.key});
 
   static const presets = ['NEAR', 'SHORT', 'MEDIUM', 'BALANCED', 'LONG', 'FAR'];
@@ -42,6 +46,13 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
     await act(context, action, done: done, failed: context.tr('errors.save_failed'));
     await _data.load();
     if (mounted) setState(() => _busy = false);
+  }
+
+  /// All four, one after another: four parallel image fetches over Pear only slow each other.
+  Future<void> _snapshots4() async {
+    for (var q = 0; q < 4; q++) {
+      await _snapshot(q);
+    }
   }
 
   Future<void> _snapshot(int quadrant) async {
@@ -110,6 +121,18 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
               onChanged: (p) => _change((c) => c.distancePreset = p!),
             ),
             flag(tr('surveillance.ai_detection'), 'ai', c.aiEnabled, (c, on) => c.aiEnabled = on),
+            // BladeWatch-rdtj.50: the web's AI confidence, 0-1 in steps of 0.05, while AI is on.
+            if (c.aiEnabled) ...[
+              Text('${tr('companion.ai_confidence')} (${c.aiConfidence.toStringAsFixed(2)})'),
+              Slider(
+                key: const ValueKey('surv.aiConfidence'),
+                min: 0,
+                max: 1,
+                divisions: 20,
+                value: c.aiConfidence.clamp(0, 1).toDouble(),
+                onChanged: (x) => _change((c) => c.aiConfidence = (x * 20).round() / 20),
+              ),
+            ],
             flag(tr('surveillance.person'), 'person', c.detectPerson, (c, on) => c.detectPerson = on),
             flag(tr('surveillance.car'), 'car', c.detectCar, (c, on) => c.detectCar = on),
             flag(tr('surveillance.bike'), 'bike', c.detectBike, (c, on) => c.detectBike = on),
@@ -118,6 +141,24 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
             flag(cameras[1], 'right', c.cameraRight, (c, on) => c.cameraRight = on),
             flag(cameras[2], 'rear', c.cameraRear, (c, on) => c.cameraRear = on),
             flag(cameras[3], 'left', c.cameraLeft, (c, on) => c.cameraLeft = on),
+            // How much of an event is kept either side of it (rdtj.50): the web's choices. The
+            // car reads both when it saves an event clip.
+            const SizedBox(height: 8),
+            Text(tr('companion.event_recording'), style: Theme.of(context).textTheme.titleSmall),
+            for (final (label, key, options, value, set) in [
+              (tr('companion.pre_record'), 'pre', SurveillanceScreen.preRecordSeconds, c.preRecordSeconds, (SurveillanceConfig c, int s) => c.preRecordSeconds = s),
+              (tr('companion.post_record'), 'post', SurveillanceScreen.postRecordSeconds, c.postRecordSeconds, (SurveillanceConfig c, int s) => c.postRecordSeconds = s),
+            ])
+              Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                Text(label),
+                for (final sec in options)
+                  ChoiceChip(
+                    key: ValueKey('surv.$key.$sec'),
+                    label: Text(tr('companion.seconds', {'count': sec})),
+                    selected: value == sec,
+                    onSelected: (_) => _change((c) => set(c, sec)),
+                  ),
+              ]),
             const SizedBox(height: 8),
             FilledButton(
               key: const ValueKey('surv.save'),
@@ -132,6 +173,15 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
             ),
           ]),
           Section(title: tr('surveillance.live_snapshots'), children: [
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton.icon(
+                key: const ValueKey('surv.refreshAll'),
+                onPressed: _snapshots4,
+                icon: const Icon(Icons.refresh),
+                label: Text(tr('companion.refresh_all')),
+              ),
+            ),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,

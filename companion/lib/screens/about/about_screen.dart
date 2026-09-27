@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:flutter/material.dart';
@@ -9,10 +11,15 @@ import '../common/loader.dart';
 
 /// Versions on both ends, and the licences of what this app is built from.
 class AboutScreen extends StatefulWidget {
-  const AboutScreen({super.key, this.appVersion});
+  const AboutScreen({super.key, this.appVersion, this.buildNumber});
 
-  /// Test seam; by default read from the platform.
+  /// Test seams; by default read from the platform.
   final Future<String> Function()? appVersion;
+  final Future<String> Function()? buildNumber;
+
+  /// This device's OS, as its owner knows it.
+  static String platformName(String os) =>
+      const {'android': 'Android', 'ios': 'iOS', 'macos': 'macOS', 'windows': 'Windows', 'linux': 'Linux'}[os] ?? os;
 
   @override
   State<AboutScreen> createState() => _AboutScreenState();
@@ -22,6 +29,8 @@ class _AboutScreenState extends State<AboutScreen> with LoadersState {
   late final _system = SystemServiceClient(context.session.rpc);
   late final _data = loader(() async => (
         app: await (widget.appVersion ?? () async => (await PackageInfo.fromPlatform()).version)(),
+        // Extra, not essential: a platform that cannot say leaves the row out, not the page.
+        build: await (widget.buildNumber ?? () async => (await PackageInfo.fromPlatform()).buildNumber)().catchError((Object _) => ''),
         car: await _system.getStatus(GetStatusRequest()),
       ));
 
@@ -33,6 +42,9 @@ class _AboutScreenState extends State<AboutScreen> with LoadersState {
       builder: (context, v) => PageList(children: [
         Section(title: 'BladeWatch', children: [
           InfoRow(tr('companion.app_version'), v.app),
+          // The web About's platform and build (BladeWatch-rdtj.57), for a bug report.
+          if (v.build.isNotEmpty) InfoRow(tr('companion.build'), v.build),
+          InfoRow(tr('companion.platform'), AboutScreen.platformName(Platform.operatingSystem)),
           InfoRow(tr('companion.car_version'), v.car.appVersion.isEmpty ? '—' : v.car.appVersion),
           InfoRow(tr('dashboard.device_id'), v.car.deviceId),
           const SizedBox(height: 8),
@@ -42,6 +54,7 @@ class _AboutScreenState extends State<AboutScreen> with LoadersState {
             child: Text(tr('companion.licenses')),
           ),
         ]),
+        Section(title: tr('companion.privacy'), children: [Text(tr('companion.privacy_note'), key: const ValueKey('about.privacy'))]),
       ]),
     );
   }

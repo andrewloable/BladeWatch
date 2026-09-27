@@ -312,7 +312,11 @@ the same component vocabulary in its own SCSS
   `colorOutline` stroke.
 - **Navigation rail** (primary navigation, M3 Expressive) — `colorSurface`
   background, `colorOnSurfaceVariant` items, a `colorSecondaryContainer`
-  `56×32dp` pill **active indicator**, labels always visible.
+  `56×32dp` pill **active indicator**, labels always visible. In landscape (the head
+  unit: ~604 logical px between the car's own bars at 1.5x) the rail is dense (2dp item
+  padding, 2dp icon-to-label gap, compact language button) so the language button and every
+  destination fit without scrolling; each item stays over 48dp tall, and the rail's panel
+  always runs the full height (BladeWatch-5l5o).
 - **Segmented buttons** — single-selection `MaterialButtonGroup`
   (e.g. the Dashcam / Surveillance mode toggle).
 - **Slider** — `colorPrimary` track / thumb / halo; inactive track

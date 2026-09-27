@@ -1726,6 +1726,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dashboard_trips_label_time => 'Время в пути';
 
   @override
+  String get dashboard_week_battery => 'Батарея';
+
+  @override
+  String get dashboard_week_elec_range => 'Запас хода EV';
+
+  @override
+  String get dashboard_week_fuel => 'Топливо';
+
+  @override
+  String get dashboard_week_fuel_range => 'Запас хода на топливе';
+
+  @override
   String get dashboard_trips_no_data => 'За эту неделю поездок нет';
 
   @override

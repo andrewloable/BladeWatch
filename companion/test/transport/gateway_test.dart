@@ -53,6 +53,11 @@ class FakeCarPump {
   final int port;
   final Map<int, Socket> _sockets = {};
 
+  // A car whose pear_daemon has gone sends nothing more. The drop tests dispose the car's Pear
+  // under traffic, and an uncaught WORKLET_DISPOSED from a send in flight then failed whichever
+  // test was running (BladeWatch-rdtj.39).
+  void _send(Uint8List frame) => unawaited(link.send(frame).catchError((Object _) {}));
+
   Future<void> _onMessage(Uint8List message) async {
     final f = PearMux.decode(message)!;
     switch (f.type) {
@@ -62,15 +67,15 @@ class FakeCarPump {
         s.listen(
           (bytes) {
             for (var i = 0; i < bytes.length; i += PearMux.maxData) {
-              link.send(PearMux.dataFrame(f.stream, bytes.sublist(i, (i + PearMux.maxData).clamp(0, bytes.length))));
+              _send(PearMux.dataFrame(f.stream, bytes.sublist(i, (i + PearMux.maxData).clamp(0, bytes.length))));
             }
           },
-          onDone: () => link.send(PearMux.closeFrame(f.stream)),
+          onDone: () => _send(PearMux.closeFrame(f.stream)),
           onError: (Object _) {},
         );
       case PearMux.data:
         _sockets[f.stream]?.add(f.payload);
-        await link.send(PearMux.windowFrame(f.stream, f.payload.length));
+        _send(PearMux.windowFrame(f.stream, f.payload.length));
       case PearMux.close:
         _sockets.remove(f.stream)?.destroy();
     }

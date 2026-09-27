@@ -18,6 +18,17 @@ class Tr {
     'en', 'de', 'es', 'fr', 'hi', 'it', 'ja', 'ko', 'nb', 'nl', 'pt-BR', 'ru', 'th', 'tr', 'vi', 'zh-CN', 'zh-TW', //
   ];
 
+  /// Each language by its own name, for the pickers (BladeWatch-rdtj.49): the owner reads
+  /// "Deutsch", not "de". Car locale tags outside this list show as the tag.
+  static const names = {
+    'en': 'English', 'de': 'Deutsch', 'es': 'Español', 'fr': 'Français', 'hi': 'हिन्दी', 'it': 'Italiano', //
+    'ja': '日本語', 'ko': '한국어', 'nb': 'Norsk bokmål', 'nl': 'Nederlands', 'pt-BR': 'Português (Brasil)', //
+    'pt': 'Português', 'ru': 'Русский', 'th': 'ไทย', 'tr': 'Türkçe', 'vi': 'Tiếng Việt', //
+    'zh': '中文', 'zh-CN': '简体中文', 'zh-TW': '繁體中文',
+  };
+
+  static String nameOf(String tag) => names[tag] ?? names[tag.replaceAll('_', '-')] ?? tag;
+
   final String lang;
   final Map<String, Object?> _strings;
   final Map<String, Object?> _fallback;

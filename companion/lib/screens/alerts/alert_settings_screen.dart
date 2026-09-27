@@ -15,6 +15,22 @@ import 'alerts_controller.dart';
 /// BladeWatch-rdtj.14) -- so what is left is choosing which categories this device shows, and a
 /// test alert that travels the whole path from the car's own notification bus.
 class AlertSettingsScreen extends StatefulWidget {
+  /// Nothing on the car sends this any more (every motion alert has a severity now); its switch
+  /// only confused the list (BladeWatch-rdtj.57).
+  static const legacyCategory = 'surveillance.motion';
+
+  /// The car names its categories in English; the known ones are shown in the app's language,
+  /// anything newer as the car names it.
+  static String categoryLabel(Tr tr, String id, String fallback) {
+    final key = 'companion.cat_${id.replaceAll('.', '_')}';
+    return tr.has(key) ? tr(key) : fallback;
+  }
+
+  static String groupLabel(Tr tr, String group) {
+    final key = 'companion.group_${group.toLowerCase()}';
+    return tr.has(key) ? tr(key) : group;
+  }
+
   const AlertSettingsScreen({super.key, required this.alerts, required this.store});
 
   final AlertsController alerts;
@@ -65,12 +81,12 @@ class _AlertSettingsScreenState extends State<AlertSettingsScreen> with LoadersS
           ]),
           Section(title: tr('notif.categories'), children: [
             Text(tr('companion.alerts_categories')),
-            for (final c in cats)
+            for (final c in cats.where((c) => c.id != AlertSettingsScreen.legacyCategory))
               SwitchListTile(
                 key: ValueKey('alerts.cat.${c.id}'),
                 contentPadding: EdgeInsets.zero,
-                title: Text(c.label),
-                subtitle: c.group.isEmpty ? null : Text(c.group),
+                title: Text(AlertSettingsScreen.categoryLabel(tr, c.id, c.label)),
+                subtitle: c.group.isEmpty ? null : Text(AlertSettingsScreen.groupLabel(tr, c.group)),
                 value: !widget.store.mutedCategories.contains(c.id),
                 onChanged: (shown) => _mute(c.id, shown),
               ),

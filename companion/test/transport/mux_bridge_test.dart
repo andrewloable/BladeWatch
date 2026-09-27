@@ -190,4 +190,57 @@ void main() {
     expect(bridge.isClosed, isFalse);
     expect(link.log, isEmpty);
   });
+
+  // BladeWatch-rdtj.28: one stream moves at most window / round-trip, so the companion lets the car
+  // run further ahead than the protocol's initial window -- as extra credit, with no protocol change.
+  group('a receive window larger than the protocol window', () {
+    late ServerSocket bigServer;
+    late FakeLink bigLink;
+    late MuxBridge big;
+
+    setUp(() async {
+      bigServer = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      bigLink = FakeLink();
+      big = MuxBridge(bigLink, window: 64 * 1024, receiveWindow: 256 * 1024);
+      bigServer.listen(big.pipe);
+    });
+
+    tearDown(() async {
+      big.shutdown();
+      await bigServer.close();
+    });
+
+    test('is granted to the car as extra credit right after OPEN', () async {
+      final opened = bigLink.sent.stream.firstWhere((f) => f.type == PearMux.open);
+      final extra = bigLink.sent.stream.firstWhere((f) => f.type == PearMux.window);
+      final c = await Socket.connect(InternetAddress.loopbackIPv4, bigServer.port);
+      clients.add(c);
+      final id = (await opened).stream;
+      final w = await extra.timeout(const Duration(seconds: 5));
+      expect(w.stream, id);
+      expect(w.credit, 192 * 1024, reason: 'receive window minus the protocol window');
+      expect(bigLink.log.take(2).map((f) => f.type), [PearMux.open, PearMux.window], reason: 'before any data');
+    });
+
+    test('lets the car send the whole receive window, and still cuts it off beyond that', () async {
+      final opened = bigLink.sent.stream.firstWhere((f) => f.type == PearMux.open);
+      final c = await Socket.connect(InternetAddress.loopbackIPv4, bigServer.port);
+      clients.add(c); // never read: no credit goes back while the car sends
+      final id = (await opened).stream;
+      var closed = false;
+      final cut = bigLink.sent.stream.firstWhere((f) => f.type == PearMux.close && f.stream == id);
+      unawaited(cut.then((_) => closed = true));
+      // 4 x 32 KB = 128 KB: past the 64 KB protocol window, inside the 256 KB receive window.
+      for (var i = 0; i < 4; i++) {
+        bigLink.fromCar(PearMux.dataFrame(id, Uint8List(PearMux.maxData)));
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(closed, isFalse, reason: 'within the receive window');
+      // Far past it (plus whatever the local socket's kernel buffer absorbs).
+      for (var i = 0; i < 64; i++) {
+        bigLink.fromCar(PearMux.dataFrame(id, Uint8List(PearMux.maxData)));
+      }
+      await cut.timeout(const Duration(seconds: 5));
+    });
+  });
 }

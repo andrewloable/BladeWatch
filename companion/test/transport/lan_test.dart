@@ -93,6 +93,30 @@ void main() {
       expect(await prober().find(const [], pinnedFingerprint: 'aa' * 32), isNull);
     });
 
+    // BladeWatch-rdtj.38: the car's last Wi-Fi address alone first; the /24 only if that is silent.
+    test('findCar asks the remembered address alone, and sweeps only when it is silent', () async {
+      var sweeps = 0;
+      Future<List<InternetAddress>> sweep() async {
+        sweeps++;
+        return here;
+      }
+
+      final hinted = await prober().findCar(InternetAddress.loopbackIPv4, sweep, pinnedFingerprint: 'aa' * 32);
+      expect(hinted, isNotNull);
+      expect(sweeps, 0, reason: 'the hint answered: no sweep, no ARP storm');
+
+      // A hint that no longer answers (the car moved): the sweep still finds it.
+      final stale = InternetAddress('192.0.2.1'); // TEST-NET-1, never answers
+      final p = LanProber(key, port: car.socket.port, send: (socket, data, address, port) {
+        if (address != stale) socket.send(data, address, port);
+      });
+      final found = await p.findCar(stale, sweep, pinnedFingerprint: 'aa' * 32, timeout: const Duration(milliseconds: 300));
+      expect(found, isNotNull);
+      expect(sweeps, 1);
+      expect(await prober().findCar(null, sweep, pinnedFingerprint: 'aa' * 32), isNotNull, reason: 'no hint: straight to the sweep');
+      expect(sweeps, 2);
+    });
+
     test('a probe has exactly the layout the car verifies', () {
       final nonce = Uint8List.fromList(List.generate(16, (i) => 100 + i));
       final probe = LanProber.buildProbe(key, nonce, 1700000000000);

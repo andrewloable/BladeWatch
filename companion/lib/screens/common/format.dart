@@ -6,8 +6,12 @@ import 'package:intl/intl.dart';
 abstract final class Fmt {
   static const _kmPerMile = 1.609344;
 
+  /// Between a number and its unit: a no-break space, so "202.1 MB" never splits over two lines
+  /// in a narrow subtitle (BladeWatch-rdtj.57; seen on the Android phone's recordings list).
+  static const nbsp = '\u00A0';
+
   static String distance(double km, {String unit = 'km'}) =>
-      unit == 'mi' ? '${(km / _kmPerMile).toStringAsFixed(1)} mi' : '${km.toStringAsFixed(1)} km';
+      unit == 'mi' ? '${(km / _kmPerMile).toStringAsFixed(1)}${nbsp}mi' : '${km.toStringAsFixed(1)}${nbsp}km';
 
   static String duration(int seconds) {
     final h = seconds ~/ 3600;
@@ -32,7 +36,7 @@ abstract final class Fmt {
       v /= 1024;
       i++;
     }
-    return '${v.toStringAsFixed(i == 0 ? 0 : 1)} ${units[i]}';
+    return '${v.toStringAsFixed(i == 0 ? 0 : 1)}$nbsp${units[i]}';
   }
 
   static String percent(double p) => '${p.toStringAsFixed(0)}%';

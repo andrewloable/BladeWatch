@@ -12,7 +12,8 @@ import '../common/car_map.dart';
 import '../common/format.dart';
 import '../common/loader.dart';
 
-/// Totals over the car's weekly rollups (GetSummary.rollup_json), as the web page sums them.
+/// Totals over the car's weekly rollups (GetSummary.rollup_json), as the in-car Trips page sums
+/// them (flutter_ui trips_controller.dart _toSummary).
 class PeriodSummary {
   const PeriodSummary(this.trips, this.km, this.seconds, this.kwh, this.efficiency);
 
@@ -38,9 +39,14 @@ class PeriodSummary {
       km += v(r, 'totalDistanceKm');
       seconds += v(r, 'totalDurationSeconds').toInt();
       kwh += v(r, 'totalEnergyKwh');
-      eff += v(r, 'avgEfficiency');
+      // The 0-100 score, NOT avgEfficiency: that is the car's legacy SoC-delta-per-km figure,
+      // which reads 0 whenever a trip's integer SoC% did not visibly drop, and showed a week
+      // of driving as "1%" (BladeWatch-rdtj.41).
+      eff += v(r, 'avgEfficiencyScore');
     }
-    return n == 0 ? null : PeriodSummary(trips, km, seconds, kwh, eff / n);
+    // Divided by every entry, unreadable ones too, as the in-car page does, so both show the
+    // same number for the same week.
+    return n == 0 ? null : PeriodSummary(trips, km, seconds, kwh, eff / entries.length);
   }
 }
 
@@ -213,7 +219,14 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
               InfoRow(tr('trips.max_speed'), '${s.maxSpeedKmh} km/h'),
               InfoRow(tr('trips.soc'), '${s.socStart.toStringAsFixed(0)}% → ${s.socEnd.toStringAsFixed(0)}%'),
               if (s.tripCost > 0) InfoRow(tr('trips.cost'), '${s.tripCost.toStringAsFixed(2)} ${s.currency}'),
-              if (s.hasFuelData) InfoRow(tr('trips.fuel_used'), '${s.litresUsed.toStringAsFixed(2)} ${tr('trips.litres_short')}'),
+              // Which tank the money came out of (BladeWatch-rdtj.48): the two halves of the cost
+              // above, on a trip that recorded the fuel counter.
+              if (s.hasFuelData) ...[
+                InfoRow(tr('trips.fuel_cost'), '${s.fuelCost.toStringAsFixed(2)} ${s.currency}'),
+                InfoRow(tr('trips.electric_cost'), '${s.electricCost.toStringAsFixed(2)} ${s.currency}'),
+                InfoRow(tr('trips.fuel_used'), '${s.litresUsed.toStringAsFixed(2)} ${tr('trips.litres_short')}'),
+              ],
+              if (s.extTempC != 0) InfoRow(tr('trips.ext_temp'), '${s.extTempC} °C'),
               if (d.elevationGainM > 0) InfoRow(tr('trips.elev_gain'), '+${d.elevationGainM.toStringAsFixed(0)} m'),
             ]),
             if (s.overallScore > 0)
@@ -294,13 +307,24 @@ class _StorageState extends State<_Storage> with LoadersState {
   final _rate = TextEditingController();
   final _currency = TextEditingController();
   final _limit = TextEditingController();
+  // PHEV pricing (BladeWatch-rdtj.48): the price the fuel costs are worked out with, and the tank
+  // the fuel range is predicted from. Shown as the web shows them: on a PHEV, or whenever a value
+  // is already set -- the drivetrain probe reads false while the car warms up, and a set value
+  // must stay reachable to be cleared (web/src/app/util/drivetrain.ts).
+  final _fuelPrice = TextEditingController();
+  final _tank = TextEditingController();
   bool _filled = false;
+  bool _fuelShown = false;
+
+  static bool showFuel(TripConfig c) => c.isPhev || c.fuelPricePerL > 0 || c.fuelTankCapacityL > 0;
 
   @override
   void dispose() {
     _rate.dispose();
     _currency.dispose();
     _limit.dispose();
+    _fuelPrice.dispose();
+    _tank.dispose();
     super.dispose();
   }
 
@@ -308,11 +332,20 @@ class _StorageState extends State<_Storage> with LoadersState {
     final tr = context.tr;
     final rate = double.tryParse(_rate.text.trim());
     final limit = int.tryParse(_limit.text.trim());
+    final fuel = _fuelShown;
+    final price = fuel ? double.tryParse(_fuelPrice.text.trim()) : null;
+    final tank = fuel ? double.tryParse(_tank.text.trim()) : null;
     await act(context, () async {
       await _client.setConfig(SetConfigRequest(
         electricityRate: rate ?? 0,
         hasElectricityRate_4: rate != null,
         currency: _currency.text.trim(),
+        // Sent with presence, so 0 clears a value ("not configured") instead of reading as
+        // "not sent" and leaving the old one in place.
+        fuelPricePerL: price ?? 0,
+        hasFuelPricePerL_8: price != null && price >= 0,
+        fuelTankCapacityL: tank ?? 0,
+        hasFuelTankCapacityL_10: tank != null && tank >= 0,
       ));
       if (limit != null) await _client.setStorage(SetStorageRequest(storageLimitMb: Int64(limit), hasStorageLimitMb_3: true));
     }, done: tr('toast.applied'), failed: tr('errors.save_failed'));
@@ -330,7 +363,10 @@ class _StorageState extends State<_Storage> with LoadersState {
           _rate.text = v.config.electricityRate.toStringAsFixed(4);
           _currency.text = v.config.currency;
           _limit.text = '${v.storage.limitMb}';
+          _fuelPrice.text = v.config.fuelPricePerL.toStringAsFixed(2);
+          _tank.text = v.config.fuelTankCapacityL.toStringAsFixed(1);
         }
+        _fuelShown = showFuel(v.config);
         return PageList(children: [
           Section(title: tr('trips.trip_analytics'), children: [
             SwitchListTile(
@@ -350,6 +386,20 @@ class _StorageState extends State<_Storage> with LoadersState {
               decoration: InputDecoration(labelText: tr('trips.electricity_rate')),
             ),
             TextField(key: const ValueKey('trips.currency'), controller: _currency, decoration: InputDecoration(labelText: tr('trips.currency'))),
+            if (_fuelShown) ...[
+              TextField(
+                key: const ValueKey('trips.fuel_price'),
+                controller: _fuelPrice,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(labelText: tr('trips.fuel_price'), helperText: tr('trips.fuel_price_sub'), helperMaxLines: 3),
+              ),
+              TextField(
+                key: const ValueKey('trips.tank'),
+                controller: _tank,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(labelText: tr('trips.tank_capacity'), helperText: tr('trips.tank_capacity_sub'), helperMaxLines: 3),
+              ),
+            ],
           ]),
           Section(title: tr('trips.trip_storage'), children: [
             InfoRow(tr('trips.storage_location'), v.storage.storageType == 'SD_CARD' ? tr('trips.sd_card') : tr('trips.internal')),

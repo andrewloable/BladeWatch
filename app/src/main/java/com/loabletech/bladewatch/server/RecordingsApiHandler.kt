@@ -3,6 +3,7 @@ package net.bladewatch.app.server
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import net.bladewatch.app.recording.Mp4Faststart
 import net.bladewatch.app.daemon.CameraDaemon
 import net.bladewatch.app.media.RecordingsDatabase
 import net.bladewatch.app.server.connect.ConnectException
@@ -1382,10 +1383,16 @@ object RecordingsApiHandler {
             return
         }
 
+        // BladeWatch-rdtj.28: serve the clip with its index first when it is not already, so a
+        // remote player starts at once. Its own ETag suffix: a client holding ranges of the plain
+        // layout (24 h cache) must never mix them with ranges of this one. "fs2" since the view
+        // also cuts the clip's single chunk (BladeWatch-rdtj.31): change it whenever the bytes do.
+        val view = Mp4Faststart.view(file)
+
         // Conditional GET: if the client's cached copy matches our ETag, skip re-streaming. The
         // tag is "<length>-<mtime>" so any append/replace invalidates without needing a content
         // hash.
-        val etag = buildVideoEtag(file)
+        val etag = if (view != null) buildVideoEtag(file).dropLast(1) + "-fs2\"" else buildVideoEtag(file)
         if (ifNoneMatchHeader != null && etagMatches(ifNoneMatchHeader, etag)) {
             HttpResponse.sendNotModified(out, etag)
             return
@@ -1407,9 +1414,9 @@ object RecordingsApiHandler {
                     return
                 }
 
-                HttpResponse.sendVideoRange(out, file, start, end, etag)
+                HttpResponse.sendVideoRange(out, file, start, end, etag, view)
             } else {
-                HttpResponse.sendVideo(out, file, etag)
+                HttpResponse.sendVideo(out, file, etag, view)
             }
         } catch (e: NumberFormatException) {
             HttpResponse.sendError(

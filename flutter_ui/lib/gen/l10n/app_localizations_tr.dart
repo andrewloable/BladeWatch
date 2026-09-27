@@ -1707,6 +1707,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dashboard_trips_label_time => 'Sürüş Süresi';
 
   @override
+  String get dashboard_week_battery => 'Batarya';
+
+  @override
+  String get dashboard_week_elec_range => 'Elektrikli menzil';
+
+  @override
+  String get dashboard_week_fuel => 'Yakıt';
+
+  @override
+  String get dashboard_week_fuel_range => 'Yakıt menzili';
+
+  @override
   String get dashboard_trips_no_data => 'Bu hafta kaydedilmiş yolculuk yok';
 
   @override

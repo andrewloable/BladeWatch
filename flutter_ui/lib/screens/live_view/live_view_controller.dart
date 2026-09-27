@@ -12,6 +12,7 @@ import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'live_view_models.dart';
+import '../../util/recording_state.dart';
 
 /// Narrow abstraction over `dart:io`'s `WebSocket` — the plugin's only test
 /// seam for networking. `WebSocket` delivers each logical message as one
@@ -150,7 +151,7 @@ class LiveViewController extends ChangeNotifier {
   }
 
   /// One-shot check, mirroring `DashboardController`'s own `GetStatus`-derived
-  /// `isRecording` (`status.recording.isNotEmpty`) -- this screen does not poll, so a
+  /// `isRecording` (`isRecordingNow`, BladeWatch-uymd) -- this screen does not poll, so a
   /// recording that starts/stops while the screen is already open is picked up the
   /// next time it is opened, not live. Left at the default (not recording) on
   /// failure: the safe failure mode is a hidden/disabled mark button, not one that
@@ -159,7 +160,7 @@ class LiveViewController extends ChangeNotifier {
     try {
       final status = await _systemService.getStatus(GetStatusRequest());
       if (_disposed) return;
-      _state = _state.copyWith(isRecording: status.recording.isNotEmpty);
+      _state = _state.copyWith(isRecording: status.isRecordingNow);
       notifyListeners();
     } catch (_) {
       // Leave isRecording at its default.

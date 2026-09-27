@@ -3027,6 +3027,30 @@ abstract class AppLocalizations {
   /// **'Drive Time'**
   String get dashboard_trips_label_time;
 
+  /// No description provided for @dashboard_week_battery.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery'**
+  String get dashboard_week_battery;
+
+  /// No description provided for @dashboard_week_elec_range.
+  ///
+  /// In en, this message translates to:
+  /// **'EV Range'**
+  String get dashboard_week_elec_range;
+
+  /// No description provided for @dashboard_week_fuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel'**
+  String get dashboard_week_fuel;
+
+  /// No description provided for @dashboard_week_fuel_range.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel Range'**
+  String get dashboard_week_fuel_range;
+
   /// No description provided for @dashboard_trips_no_data.
   ///
   /// In en, this message translates to:
