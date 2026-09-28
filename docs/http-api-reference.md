@@ -176,6 +176,22 @@ Handled by `RecordingsApiHandler`:
   index is paid for out of MediaMuxer's `free` box, so the frames stay where they were. The file
   on disk is never changed. Its ETag carries a `-fs2` suffix so a client never mixes cached
   ranges of two layouts.
+  - `/video/<clip>?maxW=<px>&maxH=<px>` (BladeWatch-rdtj.73): a capability hint for saved-clip
+    playback only -- never Live view, which has no video codec in its path at all (refreshed
+    JPEG stills over `/api/stream/still`). Both params are required together; either malformed
+    or missing means "no hint", identical to the plain `/video/<clip>` behaviour before this
+    existed (`ClipCapability.parseHint`). If the clip's native resolution already fits the hint,
+    or the hint is too small for even the one fallback tier this server offers (1920x1080), the
+    native file is served unchanged. Otherwise: a cached transcode at 1920x1080 is served if one
+    already exists (`transcoded/<clip>_1920x1080.mp4`, a sibling of `thumbs/` next to the
+    recordings dir); if not, a background transcode is started (one at a time; see
+    `ClipTranscoder`, `net.bladewatch.app.recording.transcode`) and the response is `202
+    Accepted` with `Retry-After` and a `{"status":"transcoding"}` body, mirroring `/thumb/*`'s
+    own pending-generation response below. A ~5-minute clip measured roughly 100s to decode
+    alone on the car's own hardware -- callers should poll, not treat 202 as a failure. The
+    companion's Android build supplies this hint from a `MediaCodecList` probe of the device's
+    own hardware decoder (`net.bladewatch.companionapp/video_capability` platform channel); every
+    other companion platform, and the in-car UI and web app, send no hint and always get native.
 - `/thumb/*`.
 - `/api/events/*`.
 - `POST /api/recordings/sync` — reconcile the media catalog DB against the filesystem.

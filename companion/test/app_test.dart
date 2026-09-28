@@ -144,6 +144,18 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  // BladeWatch: on a real Android phone, "Dashboard" and "Recordings" wrapped mid-word
+  // ("Dashboar"/"d") in the bar with all five labels shown -- NavigationDestination.label is a
+  // String with no maxLines/overflow control, so Flutter hard-wraps rather than clipping. The
+  // fixed test font would not reproduce this (docs: "a fixed-width placeholder font"), so this
+  // pins the fix at the property level instead of the unreliable rendered-size one above.
+  testWidgets('phone: only the selected bottom-bar label shows, so it never competes for width', (tester) async {
+    await pumpApp(tester, MemoryStore(car: testCar()));
+    final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(bar.labelBehavior, NavigationDestinationLabelBehavior.onlyShowSelected);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('phone: the More sheet shows every place at once; a short screen scrolls to the last', (tester) async {
     // BladeWatch-rdtj.51: 412x780 is the Android phone emulator's logical size, where the old
     // 9/16 cap showed seven of nine.

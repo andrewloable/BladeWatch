@@ -124,7 +124,11 @@ void main() {
         await tester.ensureVisible(find.byKey(ValueKey('more.$key')));
         await tester.tap(find.byKey(ValueKey('more.$key')));
       } else {
-        await tester.tap(find.text(t('nav.$key')).last);
+        // BladeWatch: labelBehavior is onlyShowSelected (found 2026-09-28: "Dashboard" and
+        // "Recordings" wrapped mid-word on a real phone with all 5 labels shown), so an
+        // unselected item's label is not on screen to tap by text. Its tooltip -- the label,
+        // by default -- still is.
+        await tester.tap(find.byTooltip(t('nav.$key')).last);
       }
       await settle(tester);
       expect(find.descendant(of: find.byType(AppBar), matching: find.text(t('nav.$key'))), findsOneWidget, reason: '$key is on screen');

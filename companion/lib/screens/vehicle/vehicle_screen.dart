@@ -241,15 +241,26 @@ class _Stepper extends StatelessWidget {
 
   // Tooltips name the action and the setting (BladeWatch-rdtj.54): a screen reader otherwise
   // announced a bare "button" for a control that changes the real car.
+  //
+  // maxLines/overflow (BladeWatch-rdtj.72.1, found on a real phone): ListTile shrinks its title
+  // column to fit whatever trailing needs, and two IconButtons plus the value text left too
+  // little room for "Temperature" -- Text has no overflow handling by default, so Flutter hard-
+  // wrapped it mid-word ("Tempera"/"ture") instead of clipping. This is the guaranteed fix:
+  // verified on the real phone this was found on, "Temperature" now ellipsizes cleanly
+  // ("Tempera…") instead of breaking. visualDensity narrows the IconButtons' own 48dp default
+  // tap targets, which helps but is not by itself enough to fit "Temperature" whole on that
+  // device -- an ellipsis is the correct, expected outcome for the longest of this label's 17
+  // translations (checked; none of the others is longer) on a narrow phone, not a residual bug.
   @override
   Widget build(BuildContext context) => ListTile(
-        title: Text(label),
+        title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           IconButton(
             key: ValueKey('$keyName.down'),
             tooltip: context.tr('companion.step_down', {'name': label}),
             onPressed: enabled ? () => onStep(-1) : null,
             icon: const Icon(Icons.remove),
+            visualDensity: VisualDensity.compact,
           ),
           Text(value),
           IconButton(
@@ -257,6 +268,7 @@ class _Stepper extends StatelessWidget {
             tooltip: context.tr('companion.step_up', {'name': label}),
             onPressed: enabled ? () => onStep(1) : null,
             icon: const Icon(Icons.add),
+            visualDensity: VisualDensity.compact,
           ),
         ]),
       );

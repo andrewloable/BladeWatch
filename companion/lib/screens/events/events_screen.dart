@@ -29,10 +29,17 @@ class EventsScreen extends StatelessWidget {
       length: 3,
       // As wide as a page's content, not the window (BladeWatch-rdtj.56).
       child: ContentWidth(child: Column(children: [
+        // BladeWatch-rdtj.72.2, found on a real phone: TabBar splits its width equally across
+        // the 3 tabs regardless of label length, and `Tab(text: ...)`'s label has no
+        // overflow/maxLines control -- "Surveillance" (12 characters, the longest of these
+        // three labels in every one of the 17 languages checked) was hard-clipped mid-word to
+        // "Surveillanc", no ellipsis, on a 412dp-wide phone. `Tab(child:)` takes an arbitrary
+        // widget in place of the bare string, so a Text with overflow handling degrades to an
+        // ellipsis on a device too narrow for the label whole, instead of a broken clip.
         TabBar(tabs: [
-          Tab(text: tr('companion.alerts')),
-          Tab(text: tr('events.badge_sentry')),
-          Tab(text: tr('events.badge_proximity')),
+          Tab(child: Text(tr('companion.alerts'), maxLines: 1, overflow: TextOverflow.ellipsis)),
+          Tab(child: Text(tr('events.badge_sentry'), maxLines: 1, overflow: TextOverflow.ellipsis)),
+          Tab(child: Text(tr('events.badge_proximity'), maxLines: 1, overflow: TextOverflow.ellipsis)),
         ]),
         Expanded(
           child: TabBarView(children: [

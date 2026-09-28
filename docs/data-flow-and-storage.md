@@ -450,6 +450,16 @@ Common subdirectories:
 
 `StorageSetup` prepares the app-owned external storage directory and requests or grants storage permissions. `StorageManager` also detects external SD-card-style paths and can manage separate storage choices for recordings, surveillance, and trips.
 
+Two more subdirectories, siblings of `recordings` (both under `recordingsDir.parentFile` in
+`RecordingsApiHandler`), hold server-generated caches rather than recorded media -- neither is
+counted against a storage limit or swept by the retention cleanup above, and both are safe to
+delete entirely (everything in them regenerates on the next request):
+
+- `thumbs` — `/thumb/*`'s generated frame JPEGs and scaled hero thumbnails.
+- `transcoded` — `/video/*?maxW=&maxH=`'s cached re-encodes for a client whose decoder can't play
+  a clip's native resolution (BladeWatch-rdtj.73), named `<clip>_1920x1080.mp4`. Regenerated (via
+  `ClipTranscoder`) whenever missing or older than the source clip.
+
 ### Storage Priority (Auto-Select on Startup)
 
 On daemon startup, `StorageManager.applyAutoStoragePriority()` resolves which physical drive to use:

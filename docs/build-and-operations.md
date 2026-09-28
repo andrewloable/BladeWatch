@@ -683,28 +683,50 @@ The three Dart gates all live in `flutter_ui/android`'s Gradle build, because it
 
 ### Release builds in CI (`.github/workflows/release.yml`)
 
-Tag builds only, and **no secrets**: the keystore never touches GitHub. Pushing a
-tag matching `v*` builds **three** APKs, all **unsigned**, and attaches them to the
-GitHub Release: `net.bladewatch.app` (service host) and `net.bladewatch.incarapp`
-(in-car UI) for the car, and `net.bladewatch.companionapp` for the owner's phone
-(BladeWatch-rdtj.15). Creating a release through the GitHub UI on a new tag creates that
-tag, which fires the same `push` event, so both routes are covered by one trigger.
-Ordinary pushes and pull requests build nothing. `workflow_dispatch` re-runs an
-existing tag.
+Tag builds only, and **no secrets**: no keystore or signing identity ever touches
+GitHub. Pushing a tag matching `v*` runs four jobs and attaches every one of their
+outputs, all **unsigned**, to the GitHub Release:
+
+- `build` (ubuntu-latest): the three Android APKs -- `net.bladewatch.app` (service
+  host) and `net.bladewatch.incarapp` (in-car UI) for the car, and
+  `net.bladewatch.companionapp` for the owner's phone. Runs the full quality gate
+  suite (Kotlin + Dart tests, both Kover bounds, all three Dart coverage gates).
+- `build-macos` (macos-15), `build-windows` (windows-latest), `build-linux`
+  (ubuntu-latest): the companion for each desktop platform, zipped/tar'd with its
+  runtime bundle (`BladeWatch.app`, `bladewatch_companion.exe` + its `Release/`
+  folder, `bladewatch_companion` + its `bundle/` folder respectively). Each `needs:
+  build` -- they only run once the Android quality gates pass, and do not repeat
+  `flutter analyze` themselves (host-OS-independent static analysis; re-running it
+  three more times would only cost minutes). None of the three needs a bare-kit
+  prebuilds seeding step the way the service host and Android companion build do:
+  flutter_pear resolves from pub.dev (`companion/pubspec.lock`, not a local path),
+  and flutter_pear_bare ships every desktop platform's native addons as committed
+  package assets that an ordinary `flutter pub get` fetches on its own.
+
+Creating a release through the GitHub UI on a new tag creates that tag, which fires
+the same `push` event, so both routes are covered by one trigger. Ordinary pushes and
+pull requests build nothing. `workflow_dispatch` re-runs an existing tag (all four
+jobs still build, verify and upload as workflow artifacts even without a tag ref --
+see each job's release-attach step, guarded by `startsWith(github.ref, 'refs/tags/')`
+-- so it is a useful dry run of all seven artifacts at once).
 
 **Both car APKs are required.** They are not variants of each other: the service host
 has no launcher icon and runs the daemons; the Flutter APK is the only thing the
 driver opens. Installing one without the other gives either a UI with no daemon or
 daemons with no UI.
 
-**The companion ships for Android only.** It is one APK with `arm64-v8a` and `x86_64`
-(`--split-per-abi` fails by design, see the Project Layout notes), about 200 MB. Most
-of that is bare-kit: `libbare-kit.so` is about 65 MB per ABI. A further 50 MB is
+**The companion ships for Android, macOS, Windows and Linux.** The Android APK
+(`arm64-v8a` and `x86_64`, `--split-per-abi` fails by design, see the Project Layout
+notes) is about 200 MB -- most of it bare-kit (`libbare-kit.so`, ~65 MB per ABI) plus
 flutter_pear's desktop prebuilds, which flutter_pear declares as universal Flutter
-assets, so they ship in the Android APK too (upstream flutter_pear-9ng). iOS, macOS,
-Windows and Linux builds exist but CI builds none of them: each needs its own runner,
-and iOS and macOS need Apple signing, which a secret-free workflow cannot do. The
-release notes say so. Do not claim a platform there until CI attaches it.
+assets and so ship in the Android APK too (upstream flutter_pear-9ng). None of the
+three desktop builds is code-signed: macOS needs a right-click-Open or `xattr -cr` to
+bypass Gatekeeper, Windows needs "Run anyway" past SmartScreen, and Linux needs
+`chmod +x` if the archive did not preserve the executable bit -- the release notes
+body spells out all three. iOS is NOT built by CI: it needs Apple signing a
+secret-free workflow cannot do, and unlike the other four an unsigned `.ipa` cannot
+be installed at all, so there is no unsigned-artifact fallback the way there is for
+the rest. Do not claim iOS in the release notes until that changes.
 
 **bare-kit is cached.** Its `prebuilds.zip` is 418 MB, and two builds unpack it:
 `fetchBareKit` (the service host, for `pear_daemon`) and flutter_pear_bare (the

@@ -16,6 +16,7 @@ import '../../car/car_session.dart';
 import '../../car/media.dart';
 import '../../i18n.dart';
 import '../common/format.dart';
+import 'video_capability.dart';
 
 /// A clip's `/thumb/` image, fetched through the gateway once and kept for the session.
 class ClipThumb extends StatefulWidget {
@@ -248,13 +249,25 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
 
   bool get _canPlay => widget.canPlay ?? (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
 
-  String get _path => '/video/${Uri.encodeComponent(_filename)}';
+  // BladeWatch-rdtj.73: once VideoCapability answers (Android only), every /video/ request for
+  // the rest of this screen's life carries this device's decode ceiling, so the car can decide
+  // whether to serve the native file or a transcoded one. Empty (never set) on every other
+  // platform, and before the first answer -- both mean "no hint", which is exactly the request
+  // this screen always sent before this feature existed.
+  String _hintQuery = '';
+
+  String get _path => '/video/${Uri.encodeComponent(_filename)}$_hintQuery';
+
+  // A save is an archival copy, not a "can this screen's player show it" question -- always the
+  // untranscoded original, regardless of what _path is currently serving for playback.
+  String get _nativePath => '/video/${Uri.encodeComponent(_filename)}';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Not while [_recover] waits for the route: the session reconnecting notifies this screen too,
     // and starting here as well would race two players for the same clip.
+    VideoCapability.ensureStarted();
     if (_video == null && _canPlay && !_failed && !_recovering) {
       unawaited(_start(context.session));
       unawaited(_loadTimeline(context.session));
@@ -307,6 +320,12 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
 
   Future<void> _start(CarSession session) async {
     try {
+      final hint = VideoCapability.known;
+      _hintQuery = hint == null ? '' : '?maxW=${hint.$1}&maxH=${hint.$2}';
+      if (_hintQuery.isNotEmpty && !await _awaitTranscode(session)) {
+        if (mounted) setState(() => _failed = true);
+        return;
+      }
       final video = VideoPlayerController.networkUrl(session.baseUrl.resolve(_path), httpHeaders: await session.authHeaders());
       _video = video;
       widget.onPlayer?.call(video);
@@ -325,6 +344,24 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
         setState(() => _failed = true);
       }
     }
+  }
+
+  /// Polls [_path] with a 1-byte Range probe until the car stops answering 202 (BladeWatch-rdtj.73:
+  /// this clip doesn't fit the device's decode ceiling and is being transcoded in the background).
+  /// A 5-minute clip measured ~107s to decode alone on the car's own hardware, so this budgets
+  /// generously rather than giving up early on a clip that is genuinely still on its way. False
+  /// only on a real timeout or if the clip changed while this was waiting.
+  Future<bool> _awaitTranscode(CarSession session) async {
+    final clip = _clip;
+    final deadline = DateTime.now().add(const Duration(minutes: 5));
+    while (DateTime.now().isBefore(deadline)) {
+      if (!mounted || clip != _clip) return false;
+      final r = await fetchMedia(session, _path, extraHeaders: const {'Range': 'bytes=0-0'});
+      if (r.status != 202) return true;
+      final retryAfter = int.tryParse(r.headers['retry-after'] ?? '') ?? 3;
+      await Future<void>.delayed(Duration(seconds: retryAfter));
+    }
+    return false;
   }
 
   void _onValue(VideoPlayerController video) {
@@ -400,7 +437,7 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
     try {
       final dir = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
       final dest = File('${dir.path}/$_filename');
-      final ok = await downloadMedia(session, _path, dest);
+      final ok = await downloadMedia(session, _nativePath, dest);
       if (mounted) setState(() => _saved = ok ? tr('companion.saved_to', {'path': dest.path}) : tr('errors.generic'));
     } finally {
       _saving = false;

@@ -444,6 +444,16 @@ The web login is replaced by pairing: scan the in-car QR, or paste its text.
   file. From mobile data the link is often slower than the clip (4-6 Mbit/s against 6), so the
   player first builds a buffer: measured 4 to 23 s, or longer on a weaker signal. After 5 s
   without moving, the player says the connection is slower than the clip and offers Download.
+- **A clip too sharp for the phone plays anyway** (BladeWatch-rdtj.73). The car's own mosaic
+  (2560x1920) is above what some Android phones' hardware decoders support -- one tested device
+  capped at 1920px on either dimension and failed outright rather than playing slowly. On
+  Android, the companion asks the OS what its decoder can handle and tells the car; a clip that
+  doesn't fit is transcoded down to 1920x1080 on the car before being served, cached so later
+  plays of the same clip are instant. A clip already within the phone's own decode ceiling is
+  served untouched, and every other platform (iOS, macOS, Windows, Linux), which already plays
+  the native file fine, is unaffected. Downloading a clip always saves the original, full-quality
+  file, regardless of what played on screen. Live view is unaffected -- it has no video codec in
+  its path to begin with (refreshed stills, see above).
 - **Window control asks first, every time.** From a phone, nobody can see whether a hand or
   a pet is in a window. Climate changes are reversible and don't ask. Every command
   carries the car's short-lived action token, and the car's own safety interlock still

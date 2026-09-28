@@ -223,6 +223,29 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: inMore ? primary.length : _index,
         onDestinationSelected: (i) => i < primary.length ? _go(i) : _more(context, all, primary.length),
+        // Five items at a phone's width has no room for "Dashboard" or "Recordings" on one
+        // line -- NavigationDestination.label is a String with no maxLines/overflow control, so
+        // Flutter hard-wraps it mid-word ("Dashboar"/"d") rather than clipping (found 2026-09-28
+        // on a real Android phone). Two changes, together: onlyShowSelected removes 4 of the 5
+        // labels from the width contest entirely (an unselected icon alone is still unambiguous),
+        // but NavigationBar gives every destination an EQUAL Expanded share regardless of
+        // labelBehavior, so the one REMAINING label -- the selected item's own -- still has to
+        // fit in that same one-fifth column. labelTextStyle shrinks it enough to (10sp fits both
+        // "Dashboard" and "Recordings", the two English labels that wrapped at the M3 default).
+        // Colors match NavigationDestination's own documented default (onSurface selected,
+        // onSurfaceVariant not) so this changes only the size.
+        //
+        // ponytail: a fixed 10sp is tuned to English; a translated label longer than
+        // "Recordings" in another of the 17 languages could still wrap. Upgrade to per-language
+        // measurement (or an ellipsis, once NavigationDestination's label takes more than a
+        // String) if the UI/UX phone review finds one.
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final scheme = Theme.of(context).colorScheme;
+          final selected = states.contains(WidgetState.selected);
+          return (Theme.of(context).textTheme.labelMedium ?? const TextStyle())
+              .copyWith(fontSize: 10, color: selected ? scheme.onSurface : scheme.onSurfaceVariant);
+        }),
         destinations: [
           for (final d in primary) NavigationDestination(icon: icon(d), label: tr(d.label)),
           NavigationDestination(icon: const Icon(Icons.more_horiz), label: tr('nav.more')),

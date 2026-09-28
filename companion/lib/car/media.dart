@@ -18,11 +18,17 @@ class MediaResponse {
   bool get ok => status == 200 && bytes.isNotEmpty;
 }
 
-Future<MediaResponse> fetchMedia(CarSession session, String pathAndQuery, {Duration timeout = const Duration(seconds: 20)}) async {
+Future<MediaResponse> fetchMedia(
+  CarSession session,
+  String pathAndQuery, {
+  Duration timeout = const Duration(seconds: 20),
+  Map<String, String> extraHeaders = const {},
+}) async {
   final client = HttpClient()..connectionTimeout = timeout;
   try {
     final request = await client.getUrl(session.baseUrl.resolve(pathAndQuery)).timeout(timeout);
     (await session.authHeaders()).forEach(request.headers.set);
+    extraHeaders.forEach(request.headers.set);
     final response = await request.close().timeout(timeout);
     final builder = BytesBuilder(copy: false);
     await response.timeout(timeout).forEach(builder.add);
