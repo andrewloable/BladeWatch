@@ -646,7 +646,8 @@ outputs, all **unsigned**, to the GitHub Release:
 - `build` (ubuntu-latest): the three Android APKs -- `net.bladewatch.app` (service
   host) and `net.bladewatch.incarapp` (in-car UI) for the car, and
   `net.bladewatch.companionapp` for the owner's phone. Runs the full quality gate
-  suite (Kotlin + Dart tests, both Kover bounds, all three Dart coverage gates).
+  suite (Kotlin and `flutter_ui` tests and both Kover bounds; the Dart coverage gates
+  are not run in CI, see "Gates the workflow runs" below).
 - `build-macos` (macos-15), `build-windows` (windows-latest), `build-linux`
   (ubuntu-latest): the companion for each desktop platform, zipped/tar'd with its
   runtime bundle (`BladeWatch.app`, `bladewatch_companion.exe` + its `Release/`
@@ -739,9 +740,17 @@ pin (`sdk: ^3.12.2` today): a higher floor fails the workflow at `pub get`.
 
 **Gates the workflow runs before releasing:** the service host's JVM tests and Kover gate,
 `flutter analyze` for all three Dart packages, `flutter_ui`'s tests, and — after the UI
-build, which injects `flutter_ui/android/gradlew` — the Flutter APK's Kover gate together
-with the three Dart coverage gates (which also run the `bladewatch_rpc` and `companion`
-tests).
+build, which injects `flutter_ui/android/gradlew` — the Flutter APK's Kover gate.
+
+**Gates it does NOT run:** the three Dart coverage gates (`checkFlutterCoverage`,
+`checkRpcCoverage`, `checkCompanionCoverage`) and the `bladewatch_rpc` and `companion`
+tests. They were added to the release job for v1.4.0.0, whose run then hung in
+`flutter test --coverage` for 30+ minutes with no output, while the same tests pass locally
+in under a minute and plain `flutter test` passes on the runner. They were taken back out
+rather than left to hang releases, so they are a **local** ratchet: run the command under
+"Recommended checks after code changes" before committing. The cause is not found; look at
+it (a per-test `--timeout` and `-r expanded` will name the stuck test) before putting them
+back.
 
 ### Recommended checks after code changes
 
