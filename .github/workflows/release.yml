@@ -583,17 +583,20 @@ jobs:
         run: |
           set -euo pipefail
           test -x bladewatch_companion || { echo "::error::bladewatch_companion not found or not executable"; exit 1; }
-          tar -czf "bladewatch-companion-${GITHUB_REF_NAME}-linux-unsigned.tar.gz" .
+          # Written one level UP, outside the folder being archived: writing it into `.`
+          # makes tar read its own growing output and fail with "file changed as we read it"
+          # (v1.4.0.0's first Linux build).
+          tar -czf "../bladewatch-companion-${GITHUB_REF_NAME}-linux-unsigned.tar.gz" .
 
       - uses: actions/upload-artifact@v6
         with:
           name: companion-linux-${{ github.ref_name }}
-          path: companion/build/linux/x64/release/bundle/*.tar.gz
+          path: companion/build/linux/x64/release/*.tar.gz
           retention-days: 30
 
       - name: Attach to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
-          files: companion/build/linux/x64/release/bundle/*.tar.gz
+          files: companion/build/linux/x64/release/*.tar.gz
           fail_on_unmatched_files: true
