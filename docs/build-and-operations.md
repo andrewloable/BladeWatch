@@ -748,9 +748,17 @@ tests. They were added to the release job for v1.4.0.0, whose run then hung in
 `flutter test --coverage` for 30+ minutes with no output, while the same tests pass locally
 in under a minute and plain `flutter test` passes on the runner. They were taken back out
 rather than left to hang releases, so they are a **local** ratchet: run the command under
-"Recommended checks after code changes" before committing. The cause is not found; look at
-it (a per-test `--timeout` and `-r expanded` will name the stuck test) before putting them
-back.
+"Recommended checks after code changes" before committing. Coverage was not the whole
+story: the next run hung in the Kover gate too, its last log line the task
+`:app:compileFlutterBuildRelease` (a Flutter tool subprocess; 24 s on the first run). The
+first run's hang was also a Flutter tool process. The suspected cause, not confirmed, is
+state left behind by the earlier builds: `flutter build apk` leaves its Gradle daemon
+running, `flutter_ui/android` and `companion/android` each set `-Xmx8G`, and the release
+job now builds three APKs. The job therefore stops the idle Gradle, Kotlin and Flutter
+helper processes before the gate, prints `free -m` and the process table, and runs the
+gate under a 10-minute timeout with one retry. If a run still hangs, that output shows
+what was holding the runner. Before putting the Dart gates back, find the stuck test (a
+per-test `--timeout` and `-r expanded` will name it).
 
 ### Recommended checks after code changes
 

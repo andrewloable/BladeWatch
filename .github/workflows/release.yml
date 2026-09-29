@@ -235,8 +235,33 @@ jobs:
       # minutes with no output (the same tests pass locally in under a minute, and
       # `flutter test` WITHOUT --coverage passes in the "Quality gates" step above). They
       # are a local ratchet: run them before committing (docs/build-and-operations.md,
-      # "Coverage gates"). Do not add them back without finding the hang first.
+      # "Coverage gates").
+      #
+      # The second run hung in THIS step too: its last log line was the task
+      # :app:compileFlutterBuildRelease, which shells out to the Flutter tool for an AOT
+      # build (24 s on the first run), then nothing until cancelled. The first run's hang was
+      # also a Flutter tool process (`flutter test`). Both are Flutter subprocesses started
+      # after several earlier Flutter builds, and coverage was not the cause of the second.
+      #
+      # Suspected cause, NOT confirmed: state left behind by those builds. `flutter build apk`
+      # leaves its Gradle daemon running, flutter_ui/android and companion/android both set
+      # -Xmx8G, and v1.3.2.0, with one fewer build (no companion), passed. So: stop the idle
+      # daemons and stray Flutter/Dart helpers first, print the process table so a repeat
+      # can be diagnosed, and run the gate under a 10-minute timeout with one retry, because
+      # the first run of this step took 5 minutes and a hang never ends by itself.
+      - name: Stop idle Gradle, Kotlin and Flutter helper processes
+        run: |
+          ./gradlew --stop || true
+          (cd flutter_ui/android && ./gradlew --stop) || true
+          (cd companion/android && ./gradlew --stop) || true
+          pkill -f '[K]otlinCompileDaemon' || true
+          pkill -f '[f]rontend_server' || true
+          sleep 3
+          free -m
+          ps -eo pid,rss,etime,args --sort=-rss | cut -c1-160 | head -15
+
       - name: Quality gate — in-car UI Kotlin layer
+        timeout-minutes: 25
         working-directory: flutter_ui/android
         run: |
           set -euo pipefail
@@ -245,7 +270,16 @@ jobs:
             echo "the preceding 'flutter build apk' step — that step must run before this one."
             exit 1
           fi
-          ./gradlew --no-daemon koverVerify
+          for attempt in 1 2; do
+            if timeout 600 ./gradlew --no-daemon koverVerify; then exit 0; fi
+            echo "::warning::koverVerify attempt $attempt failed or hung; cleaning up"
+            ./gradlew --stop || true
+            pkill -f '[G]radleDaemon' || true
+            pkill -f '[f]rontend_server' || true
+            free -m
+            ps -eo pid,rss,etime,args --sort=-rss | cut -c1-160 | head -15
+          done
+          exit 1
 
       # Collect all three APKs under tag-stamped, self-describing names.
       #
