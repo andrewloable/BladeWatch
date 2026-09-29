@@ -165,7 +165,7 @@ class OverlayBitmapRenderer {
                 var milesMode = false
                 try {
                     val collector = net.bladewatch.app.byd.BydDataCollector.getInstance()
-                    milesMode = collector != null && collector.isMilesMode
+                    milesMode = collector.isMilesMode
                 } catch (ignored: Throwable) {
                     logger.debug("BydDataCollector.isMilesMode unavailable, using km/h")
                 }

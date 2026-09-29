@@ -49,10 +49,11 @@ object SecretRedactor {
         val matcher: Matcher = pattern.matcher(input)
         val out = StringBuffer()
         while (matcher.find()) {
-            val token = matcher.group(groupToRedact)
+            // Both patterns' redacted group is mandatory, so after find() neither group is null.
+            val token = matcher.group(groupToRedact)!!
             matcher.appendReplacement(
                 out,
-                Matcher.quoteReplacement(matcher.group(0).replace(token, redact(token)!!))
+                Matcher.quoteReplacement(matcher.group(0)!!.replace(token, redact(token)!!))
             )
         }
         matcher.appendTail(out)

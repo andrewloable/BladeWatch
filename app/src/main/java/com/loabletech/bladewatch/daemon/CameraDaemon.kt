@@ -845,37 +845,31 @@ object CameraDaemon {
         val pipeline = gpuPipeline ?: return
 
         try {
-            // Apply bitrate setting to config and encoder
+            // Apply bitrate setting to config and encoder. The legacy bitrate knob still runs
+            // first; the recording quality applied below overrides it.
             val bitrate = HttpServer.getRecordingBitrate()
-            if (bitrate != null) {
-                setRecordingBitrate(bitrate)
-                log("Applied persisted bitrate: $bitrate")
-            }
+            @Suppress("DEPRECATION")
+            setRecordingBitrate(bitrate)
+            log("Applied persisted bitrate: $bitrate")
 
             // Apply codec setting to config (encoder already created with this codec)
             val codec = HttpServer.getRecordingCodec()
-            if (codec != null) {
-                // Just update the config, don't reinitialize encoder
-                val videoCodec = when (codec.uppercase()) {
-                    "H265", "HEVC" -> GpuPipelineConfig.VideoCodec.H265
-                    else -> GpuPipelineConfig.VideoCodec.H264
-                }
-                pipeline.config.setVideoCodec(videoCodec)
-                log("Applied persisted codec: $codec")
+            // Just update the config, don't reinitialize encoder
+            val videoCodec = when (codec.uppercase()) {
+                "H265", "HEVC" -> GpuPipelineConfig.VideoCodec.H265
+                else -> GpuPipelineConfig.VideoCodec.H264
             }
+            pipeline.config.setVideoCodec(videoCodec)
+            log("Applied persisted codec: $codec")
 
             // Apply quality settings
             val recQuality = HttpServer.getRecordingQuality()
-            if (recQuality != null) {
-                setRecordingQuality(recQuality)
-                log("Applied persisted recording quality: $recQuality")
-            }
+            setRecordingQuality(recQuality)
+            log("Applied persisted recording quality: $recQuality")
 
             val streamQuality = HttpServer.getStreamingQuality()
-            if (streamQuality != null) {
-                setStreamingQuality(streamQuality)
-                log("Applied persisted streaming quality: $streamQuality")
-            }
+            setStreamingQuality(streamQuality)
+            log("Applied persisted streaming quality: $streamQuality")
         } catch (e: Exception) {
             log("Error applying persisted settings: " + e.message)
         }
@@ -1486,28 +1480,24 @@ object CameraDaemon {
             // Apply persisted settings to config BEFORE init
             // IMPORTANT: Set codec FIRST, then bitrate (so bitrate is calculated for correct codec)
             val persistedCodec = HttpServer.getRecordingCodec()
-            if (persistedCodec != null) {
-                val videoCodec = when (persistedCodec.uppercase()) {
-                    "H265", "HEVC" -> GpuPipelineConfig.VideoCodec.H265
-                    else -> GpuPipelineConfig.VideoCodec.H264
-                }
-                pipeline.config.setVideoCodec(videoCodec)
-                log("Pre-init: Set codec to $persistedCodec")
+            val videoCodec = when (persistedCodec.uppercase()) {
+                "H265", "HEVC" -> GpuPipelineConfig.VideoCodec.H265
+                else -> GpuPipelineConfig.VideoCodec.H264
             }
+            pipeline.config.setVideoCodec(videoCodec)
+            log("Pre-init: Set codec to $persistedCodec")
 
             val persistedQuality = HttpServer.getRecordingQuality()
-            if (persistedQuality != null) {
-                // RecordingQuality is the canonical quality knob. It replaces
-                // the old LOW/MEDIUM/HIGH BitratePreset alias and lets newer
-                // tiers share one path during pre-init and runtime changes.
-                val quality = GpuPipelineConfig.RecordingQuality.fromString(persistedQuality)
-                pipeline.config.setRecordingQuality(quality)
-                val effectiveBitrate = pipeline.config.getEffectiveBitrate()
-                log(
-                    "Pre-init: Set recording quality to $quality (" + effectiveBitrate / 1_000_000 +
-                        " Mbps for " + pipeline.config.getVideoCodec() + ")"
-                )
-            }
+            // RecordingQuality is the canonical quality knob. It replaces
+            // the old LOW/MEDIUM/HIGH BitratePreset alias and lets newer
+            // tiers share one path during pre-init and runtime changes.
+            val quality = GpuPipelineConfig.RecordingQuality.fromString(persistedQuality)
+            pipeline.config.setRecordingQuality(quality)
+            val effectiveBitrate = pipeline.config.getEffectiveBitrate()
+            log(
+                "Pre-init: Set recording quality to $quality (" + effectiveBitrate / 1_000_000 +
+                    " Mbps for " + pipeline.config.getVideoCodec() + ")"
+            )
 
             pipeline.init(assetManager, DaemonBootstrap.context)
 

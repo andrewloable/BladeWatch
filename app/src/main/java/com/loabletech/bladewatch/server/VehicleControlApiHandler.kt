@@ -11,6 +11,7 @@ import net.bladewatch.app.logging.DaemonLogger
 import org.json.JSONObject
 import java.util.Locale
 import kotlin.math.roundToLong
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * The Vehicle Control page's operations. Every write routes through [VehicleCommandRouter].
@@ -383,7 +384,7 @@ object VehicleControlApiHandler {
     fun handleWindow(body: String?): JSONObject {
         val response = JSONObject()
         try {
-            val req = JSONObject(body)
+            val req = JSONObject(body.orEmpty())
             // Connect/proto clients send windowIndex (the same 0=all/1=LF.. scheme the handler
             // uses for area) and a direction string ("open"/"close"). windowIndex==0 ("all") is a
             // proto default scalar and omitted on the wire, so its absence correctly maps to area
@@ -470,7 +471,7 @@ object VehicleControlApiHandler {
     fun handleClimate(body: String?): JSONObject {
         val response = JSONObject()
         try {
-            val req = JSONObject(body)
+            val req = JSONObject(body.orEmpty())
             val action = req.optString("action", "")
             val cmd = buildClimateCommand(action, req)
             if (cmd == null) {
@@ -615,9 +616,9 @@ object VehicleControlApiHandler {
     fun parseLightsRequest(req: JSONObject): ToggleRequestParse {
         // Accept proto "action" first, fall back to legacy "target"
         val target = if (req.has("action")) {
-            req.optString("action", null)
+            req.optStringOrNull("action")
         } else {
-            req.optString("target", null)
+            req.optStringOrNull("target")
         }
         if ("dayTimeLight" != target) {
             return ToggleRequestParse.err(
@@ -641,9 +642,9 @@ object VehicleControlApiHandler {
     fun parseAdasRequest(req: JSONObject): ToggleRequestParse {
         // Accept proto "action" first, fall back to legacy "target"
         val target = if (req.has("action")) {
-            req.optString("action", null)
+            req.optStringOrNull("action")
         } else {
-            req.optString("target", null)
+            req.optStringOrNull("target")
         }
         if ("speedLimitWarning" != target) {
             return ToggleRequestParse.err(
@@ -670,7 +671,7 @@ object VehicleControlApiHandler {
     fun handleLights(body: String?): JSONObject {
         val response = JSONObject()
         try {
-            val parsed = parseLightsRequest(JSONObject(body))
+            val parsed = parseLightsRequest(JSONObject(body.orEmpty()))
             if (parsed.error != null) {
                 response.put("success", false)
                 response.put("error", parsed.error)
@@ -706,7 +707,7 @@ object VehicleControlApiHandler {
     fun handleScreen(body: String?): JSONObject {
         val response = JSONObject()
         try {
-            val req = JSONObject(body)
+            val req = JSONObject(body.orEmpty())
             if (!req.has("on")) {
                 response.put("success", false)
                 response.put("error", "screen requires 'on'")
@@ -743,7 +744,7 @@ object VehicleControlApiHandler {
     fun handleMediaVolume(body: String?): JSONObject {
         val response = JSONObject()
         try {
-            val req = JSONObject(body)
+            val req = JSONObject(body.orEmpty())
             val action = req.optString("action", "")
             val volume = MediaVolumeController.getInstance()
             when (action) {
@@ -797,7 +798,7 @@ object VehicleControlApiHandler {
     fun handleAdas(body: String?): JSONObject {
         val response = JSONObject()
         try {
-            val parsed = parseAdasRequest(JSONObject(body))
+            val parsed = parseAdasRequest(JSONObject(body.orEmpty()))
             if (parsed.error != null) {
                 response.put("success", false)
                 response.put("error", parsed.error)

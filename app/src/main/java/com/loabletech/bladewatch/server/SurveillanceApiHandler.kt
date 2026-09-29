@@ -22,6 +22,7 @@ import java.util.Collections
 import java.util.Locale
 import kotlin.math.min
 import kotlin.math.roundToLong
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * Surveillance configuration and status, behind `SurveillanceService`.
@@ -302,7 +303,7 @@ object SurveillanceApiHandler {
         val gpuPipeline = CameraDaemon.getGpuPipeline()
 
         try {
-            val configJson = JSONObject(body)
+            val configJson = JSONObject(body.orEmpty())
 
             val sentry: SurveillanceEngineGpu? = gpuPipeline?.sentry
 
@@ -635,7 +636,7 @@ object SurveillanceApiHandler {
                         )
                         sentryConfig.setQuadrantDetectionZoneOverride(
                             q,
-                            if (perQ.has("detectionZone")) perQ.optString("detectionZone", null)
+                            if (perQ.has("detectionZone")) perQ.optStringOrNull("detectionZone")
                             else null
                         )
                     }
@@ -1045,7 +1046,7 @@ object SurveillanceApiHandler {
 
         if (sentry != null) {
             for (entry in sentry.filterLogEntries) {
-                if (entry != null) entries.put(entry)
+                entries.put(entry)
             }
         }
 
@@ -1156,7 +1157,7 @@ object SurveillanceApiHandler {
     private fun getFrameFromLatestEvent(): Bitmap? {
         try {
             val survDir = StorageManager.getInstance().surveillanceDir
-            if (survDir == null || !survDir.exists()) return null
+            if (!survDir.exists()) return null
 
             val events = survDir.listFiles { _, name ->
                 name.startsWith("event_") && name.endsWith(".mp4")

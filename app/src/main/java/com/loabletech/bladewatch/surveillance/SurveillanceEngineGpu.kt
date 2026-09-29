@@ -2149,15 +2149,7 @@ class SurveillanceEngineGpu {
             val maxRow = MotionPipelineV2.Config.maxDistanceRowForZone(effZone)
 
             // Recount confirmed blocks at this quadrant's stricter confidence threshold.
-            var confirmedAtThreshold = if (r.blockConfidence != null) {
-                var count = 0
-                for (i in r.blockConfidence.indices) {
-                    if (r.blockConfidence[i] >= gates.confidenceThreshold) count++
-                }
-                count
-            } else {
-                r.confirmedBlocks
-            }
+            var confirmedAtThreshold = r.blockConfidence.count { it >= gates.confidenceThreshold }
 
             val failsAlarm = confirmedAtThreshold < gates.alarmBlockThreshold
             val failsComponent = r.componentSize < gates.minComponentSize
@@ -2384,7 +2376,7 @@ class SurveillanceEngineGpu {
         if (actors == null) return max
         for (a in actors) {
             val peak = a.peakSeverity
-            if (peak != null && peak.ordinal > max.ordinal) max = peak
+            if (peak.ordinal > max.ordinal) max = peak
         }
         return max
     }

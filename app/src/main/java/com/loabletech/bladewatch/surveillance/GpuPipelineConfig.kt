@@ -170,15 +170,6 @@ class GpuPipelineConfig {
         fun getBitrateForCodec(codec: VideoCodec): Int = quality.getBitrateForCodec(codec)
 
         fun getDisplayString(codec: VideoCodec): String = quality.getDisplayString(codec)
-
-        companion object {
-            @JvmStatic
-            fun fromBitrate(bitrate: Int): BitratePreset = when {
-                bitrate <= 2_500_000 -> LOW
-                bitrate <= 4_500_000 -> MEDIUM
-                else -> HIGH
-            }
-        }
     }
 
     /**

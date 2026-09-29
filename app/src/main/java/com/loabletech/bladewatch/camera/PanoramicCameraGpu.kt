@@ -259,7 +259,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
         if (this.aiLaneWorker == null) {
             this.aiLaneWorker = AiLaneWorker(AiLaneWorker.FrameRecycler { frame ->
                 val ds = this.downscaler
-                if (ds != null && frame != null) {
+                if (ds != null) {
                     try {
                         ds.recycleBuffer(frame)
                     } catch (t: Throwable) {

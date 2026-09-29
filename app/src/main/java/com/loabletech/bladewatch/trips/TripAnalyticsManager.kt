@@ -61,7 +61,7 @@ class TripAnalyticsManager {
 
         // 4. Ensure the trips directory exists
         val tripsDir = StorageManager.getInstance().tripsDir
-        if (tripsDir != null && !tripsDir.exists()) {
+        if (!tripsDir.exists()) {
             val created = tripsDir.mkdirs()
             logger.info(
                 "Trips directory created: ${tripsDir.absolutePath} (success=$created)"
@@ -234,7 +234,7 @@ class TripAnalyticsManager {
             val known = HashSet(db.getAllTelemetryPaths())
             var added = 0
             for (dir in StorageManager.getInstance().allTripsDirs) {
-                if (dir == null || !dir.exists() || !dir.canRead()) continue
+                if (!dir.exists() || !dir.canRead()) continue
                 val files = dir.listFiles { _, name -> name.endsWith(".jsonl.gz") } ?: continue
                 for (f in files) {
                     if (!f.canRead() || f.length() <= 0) continue

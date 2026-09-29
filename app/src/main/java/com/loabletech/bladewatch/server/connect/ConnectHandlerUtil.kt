@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * Captures an existing REST handler's output and forwards it as a Connect response.
@@ -133,7 +134,7 @@ object ConnectHandlerUtil {
     @JvmStatic
     @Throws(ConnectException::class)
     fun requireLong(requestJson: String?, field: String): Long = try {
-        JSONObject(requestJson).getLong(field)
+        JSONObject(requestJson.orEmpty()).getLong(field)
     } catch (e: Exception) {
         throw ConnectException("invalid_argument", "Missing or invalid field: $field")
     }
@@ -147,7 +148,7 @@ object ConnectHandlerUtil {
     @Throws(ConnectException::class)
     fun requireString(requestJson: String?, field: String): String {
         val v = try {
-            JSONObject(requestJson).getString(field)
+            JSONObject(requestJson.orEmpty()).getString(field)
         } catch (e: Exception) {
             throw ConnectException("invalid_argument", "Missing or invalid field: $field")
         }
@@ -178,8 +179,8 @@ object ConnectHandlerUtil {
         if (failedBody.isNullOrEmpty()) return "Request failed"
         try {
             val obj = JSONObject(failedBody)
-            var msg = obj.optString("error", null)
-            if (msg == null) msg = obj.optString("message", null)
+            var msg = obj.optStringOrNull("error")
+            if (msg == null) msg = obj.optStringOrNull("message")
             if (!msg.isNullOrEmpty()) return msg
         } catch (ignored: Exception) {
             CameraDaemon.log("extractErrorMessage: failed to parse body: " + ignored.message)

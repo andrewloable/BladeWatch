@@ -49,7 +49,7 @@ class StreamServiceImpl {
     @Throws(ConnectException::class)
     private fun handleSetQuality(req: String?, clientIdentity: String?): ConnectResponse {
         val tier = try {
-            org.json.JSONObject(req).optString("quality", "STANDARD").uppercase(Locale.ROOT)
+            org.json.JSONObject(req.orEmpty()).optString("quality", "STANDARD").uppercase(Locale.ROOT)
         } catch (ignored: Exception) {
             "STANDARD"
         }
@@ -61,7 +61,7 @@ class StreamServiceImpl {
         val viewMode = try {
             // Proto SetViewModeRequest.view_mode has no json_name, so the Connect client
             // serializes it to camelCase "viewMode". Accept "view_mode" as a legacy fallback.
-            val j = org.json.JSONObject(req)
+            val j = org.json.JSONObject(req.orEmpty())
             if (j.has("viewMode")) j.optInt("viewMode", 0) else j.optInt("view_mode", 0)
         } catch (ignored: Exception) {
             0

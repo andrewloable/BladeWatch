@@ -11,6 +11,7 @@ import net.bladewatch.app.server.connect.ConnectDispatcher
 import net.bladewatch.app.server.connect.ConnectException
 import net.bladewatch.app.server.connect.ConnectResponse
 import org.json.JSONObject
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * Connect protocol handler for bladewatch.v1.SystemService.
@@ -108,7 +109,7 @@ class SystemServiceImpl(private val httpServer: HttpServer) {
     @Throws(ConnectException::class)
     private fun handlePerformanceConnect(req: String?, clientIdentity: String?): ConnectResponse =
         try {
-            val requested = if (req.isNullOrEmpty()) null else JSONObject(req).optString("clientId", null)
+            val requested = if (req.isNullOrEmpty()) null else JSONObject(req).optStringOrNull("clientId")
             val clientId = PerformanceClientId.resolve(requested)
             PerformanceMonitor.getInstance().clientConnected(clientId)
             ConnectResponse.of(
@@ -140,7 +141,7 @@ class SystemServiceImpl(private val httpServer: HttpServer) {
      */
     @Throws(ConnectException::class)
     private fun performanceSession(req: String?, keepAlive: Boolean): ConnectResponse = try {
-        val clientId = if (req.isNullOrEmpty()) null else JSONObject(req).optString("clientId", null)
+        val clientId = if (req.isNullOrEmpty()) null else JSONObject(req).optStringOrNull("clientId")
         var handled = false
         if (!clientId.isNullOrBlank()) {
             val monitor = PerformanceMonitor.getInstance()

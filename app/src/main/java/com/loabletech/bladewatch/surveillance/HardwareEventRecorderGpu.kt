@@ -21,6 +21,7 @@ import java.util.Locale
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.atomic.AtomicLong
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * HardwareEventRecorderGpu - MediaCodec encoder with Surface input for GPU pipeline.
@@ -1671,7 +1672,7 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
                 // PERFORMANCE for any config predating it, both persisted. A missing value
                 // here therefore means a hand-edited config, where RELIABILITY (the cap) is
                 // the right thing to fall back to.
-                val priority = RecordingPriority.fromConfigValue(rec.optString("priority", null))
+                val priority = RecordingPriority.fromConfigValue(rec.optStringOrNull("priority"))
                 return priority.effectiveSegmentMinutes(mins) * 60_000L
             }
         } catch (e: Exception) {

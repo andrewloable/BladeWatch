@@ -382,7 +382,7 @@ desktop client is the companion above.
 
 ## Testing
 
-**Service host (Kotlin/Java)** — 138 JVM test files (989 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
+**Service host (Kotlin/Java)** — 138 JVM test files (982 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
 
 ```bash
 # NOTE: `:app:test` is an aggregate lifecycle task and does NOT accept --tests

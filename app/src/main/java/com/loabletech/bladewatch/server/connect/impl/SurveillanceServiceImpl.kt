@@ -64,7 +64,7 @@ class SurveillanceServiceImpl {
         // (manualCameraId, clearManualCameraId) from the top-level request before forwarding.
         val flatBody: String
         try {
-            val r = JSONObject(req)
+            val r = JSONObject(req.orEmpty())
             val config = r.optJSONObject("config")
             if (config == null) {
                 flatBody = req!! // already flat (defensive) — forward unchanged
@@ -122,7 +122,7 @@ class SurveillanceServiceImpl {
     @Throws(ConnectException::class)
     private fun handleGetSnapshot(req: String?, clientIdentity: String?): ConnectResponse {
         val quadrant = try {
-            JSONObject(req).optInt("quadrant", 0)
+            JSONObject(req.orEmpty()).optInt("quadrant", 0)
         } catch (ignored: Exception) {
             0
         }

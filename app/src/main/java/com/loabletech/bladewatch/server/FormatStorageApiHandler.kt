@@ -69,7 +69,7 @@ object FormatStorageApiHandler {
 
         // Block if recording or surveillance is active
         val storage = StorageManager.getInstance()
-        if (storage != null && storage.isRecordingActive) {
+        if (storage.isRecordingActive) {
             throw ConnectException(
                 "failed_precondition",
                 "Cannot format drive while recording is active — stop recording first"

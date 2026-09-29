@@ -197,7 +197,7 @@ class SettingsServiceImpl {
     private fun handleSetLocale(req: String?, clientIdentity: String?): ConnectResponse = try {
         var want = ""
         try {
-            want = JSONObject(req).optString("lang", "")
+            want = JSONObject(req.orEmpty()).optString("lang", "")
         } catch (ignored: Exception) {
             logger.warn("Failed to parse locale request body: " + ignored.message)
         }
@@ -216,7 +216,7 @@ class SettingsServiceImpl {
     private fun handleSetRecordingMode(req: String?, clientIdentity: String?): ConnectResponse {
         var mode = ""
         try {
-            mode = JSONObject(req).optString("mode", "")
+            mode = JSONObject(req.orEmpty()).optString("mode", "")
         } catch (ignored: Exception) {
             logger.warn("Failed to parse recording mode request body: " + ignored.message)
         }

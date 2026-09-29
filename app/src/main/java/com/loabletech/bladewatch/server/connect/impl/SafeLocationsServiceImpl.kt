@@ -5,6 +5,7 @@ import net.bladewatch.app.server.connect.ConnectDispatcher
 import net.bladewatch.app.server.connect.ConnectException
 import net.bladewatch.app.server.connect.ConnectResponse
 import org.json.JSONObject
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * Connect protocol handler for bladewatch.v1.SafeLocationsService.
@@ -55,12 +56,12 @@ class SafeLocationsServiceImpl {
     private fun handleUpdateZone(req: String?, clientIdentity: String?): ConnectResponse =
         respond {
             val input = parse(req)
-            SafeLocationApiHandler.updateZone(input.optString("id", null), input)
+            SafeLocationApiHandler.updateZone(input.optStringOrNull("id"), input)
         }
 
     @Throws(ConnectException::class)
     private fun handleDeleteZone(req: String?, clientIdentity: String?): ConnectResponse =
-        respond { SafeLocationApiHandler.deleteZone(parse(req).optString("id", null)) }
+        respond { SafeLocationApiHandler.deleteZone(parse(req).optStringOrNull("id")) }
 
     @Throws(ConnectException::class)
     private fun handleToggle(req: String?, clientIdentity: String?): ConnectResponse =

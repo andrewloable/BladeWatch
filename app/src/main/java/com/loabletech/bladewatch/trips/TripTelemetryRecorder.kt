@@ -379,7 +379,7 @@ class TripTelemetryRecorder(@Volatile var telemetryDataCollector: TelemetryDataC
             return current
         }
         val liveDir = StorageManager.getInstance().tripsDir
-        if (liveDir == null || liveDir == parent) {
+        if (liveDir == parent) {
             return current
         }
         val newPath = File(liveDir, current.name)

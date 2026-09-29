@@ -53,6 +53,7 @@ class LocationServiceChannel(private val context: Context) {
 
         override fun onProviderDisabled(provider: String) = Unit
 
+        @Suppress("OVERRIDE_DEPRECATION") // still abstract on API 29, the head unit's level
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
     }
 

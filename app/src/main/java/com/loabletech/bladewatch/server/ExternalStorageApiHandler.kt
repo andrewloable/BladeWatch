@@ -115,7 +115,7 @@ object ExternalStorageApiHandler {
         val cleaner = ExternalStorageCleaner.getInstance()
 
         try {
-            val config = JSONObject(requestBody)
+            val config = JSONObject(requestBody.orEmpty())
 
             if (config.has("enabled")) {
                 cleaner.isEnabled = config.getBoolean("enabled")

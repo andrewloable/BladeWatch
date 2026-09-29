@@ -1370,7 +1370,7 @@ class StorageManager private constructor() {
         var size = 0L
         val seen = HashSet<String>()
         for (dir in dirs) {
-            if (dir == null || !dir.exists() || !dir.isDirectory) continue
+            if (!dir.exists() || !dir.isDirectory) continue
             var files = dir.listFiles()
             if (files == null) {
                 files = listFilesViaShell(dir)
@@ -1546,7 +1546,7 @@ class StorageManager private constructor() {
         var total = 0
         val seen = HashSet<String>()
         for (dir in dirs) {
-            if (dir == null || !dir.exists() || !dir.isDirectory) continue
+            if (!dir.exists() || !dir.isDirectory) continue
             var files = dir.listFiles { _, name -> name.endsWith(".mp4") }
             if (files == null) {
                 files = listFilesViaShell(dir)
@@ -2410,7 +2410,7 @@ class StorageManager private constructor() {
         var deleted = 0L
         synchronized(cleanupLock) {
             for (dir in dirs) {
-                if (dir == null || !dir.exists() || !dir.isDirectory) continue
+                if (!dir.exists() || !dir.isDirectory) continue
                 val files = dir.listFiles() ?: continue
                 for (f in files) {
                     if (f.isFile && f.delete()) deleted++
@@ -2718,7 +2718,7 @@ class StorageManager private constructor() {
             val seenNames = HashSet<String>()
             var currentSize = 0L
             for (dir in dirs) {
-                if (dir == null || !dir.exists() || !dir.isDirectory) continue
+                if (!dir.exists() || !dir.isDirectory) continue
                 val files = lister.apply(dir) ?: continue
                 for (f in files) {
                     if (!f.isFile) continue
@@ -2798,7 +2798,7 @@ private fun addDirIfMissing(dirs: MutableList<File>, candidate: File?) {
     if (candidate == null || !candidate.exists() || !candidate.isDirectory) return
     val path = candidate.absolutePath
     for (d in dirs) {
-        if (d != null && d.absolutePath == path) return
+        if (d.absolutePath == path) return
     }
     dirs.add(candidate)
 }

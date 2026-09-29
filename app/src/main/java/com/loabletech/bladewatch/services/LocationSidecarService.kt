@@ -444,7 +444,7 @@ class LocationSidecarService : Service(), LocationListener {
         }, "GPS-IPC").start()
     }
 
-    @Suppress("DEPRECATION") // Kept for legacy providers on older Android Auto builds.
+    @Suppress("OVERRIDE_DEPRECATION") // Kept for legacy providers on older Android Auto builds.
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
         Log.d(TAG, "Provider $provider status: $status")
     }

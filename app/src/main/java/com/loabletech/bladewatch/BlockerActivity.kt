@@ -146,6 +146,7 @@ class BlockerActivity : Activity() {
         killBacklight()
     }
 
+    @Suppress("OVERRIDE_DEPRECATION") // its replacement needs API 33; the head unit is API 29
     override fun onBackPressed() {
         // Block back button - do nothing
     }

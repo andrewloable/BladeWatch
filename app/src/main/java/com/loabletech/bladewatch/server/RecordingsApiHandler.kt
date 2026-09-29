@@ -198,6 +198,8 @@ object RecordingsApiHandler {
         val (w, h) = scaledTo(decoded.width, decoded.height, HERO_THUMB_EDGE)
         val scaled = if (w == decoded.width && h == decoded.height) decoded else Bitmap.createScaledBitmap(decoded, w, h, true)
         // Atomic: two requests for the same clip may both get here; each renames a whole file.
+        // Thread.getId is deprecated for threadId(), which needs API 36; the head unit is API 29.
+        @Suppress("DEPRECATION")
         val tmp = File(cached.parentFile, cached.name + "." + Thread.currentThread().id + ".tmp")
         FileOutputStream(tmp).use { scaled.compress(Bitmap.CompressFormat.JPEG, 75, it) }
         if (scaled !== decoded) scaled.recycle()
@@ -500,7 +502,6 @@ object RecordingsApiHandler {
      *   streaming — a .tmp lacks the moov atom and the `<video>` element will fail to load it, so
      *   streaming MUST use the default false.
      */
-    @JvmOverloads
     private fun findVideoFile(filename: String, allowInFlightTmp: Boolean = false): File? {
         val dirs = allMediaDirs() + File(LEGACY_RECORDINGS_DIR) + File(LEGACY_SENTRY_DIR)
         firstReadableIn(dirs, filename)?.let { return it }
@@ -872,18 +873,18 @@ object RecordingsApiHandler {
                 "sentry" -> {
                     val m = EVENT_PATTERN.matcher(name)
                     if (!m.matches()) return null
-                    timestamp = DATE_FORMAT.parse(m.group(1) + "_" + m.group(2))!!.time
+                    timestamp = DATE_FORMAT.parse("${m.group(1)}_${m.group(2)}")!!.time
                 }
                 "proximity" -> {
                     val m = PROXIMITY_PATTERN.matcher(name)
                     if (!m.matches()) return null
-                    timestamp = DATE_FORMAT.parse(m.group(1) + "_" + m.group(2))!!.time
+                    timestamp = DATE_FORMAT.parse("${m.group(1)}_${m.group(2)}")!!.time
                 }
                 else -> {
                     val m = CAM_PATTERN.matcher(name)
                     if (!m.matches()) return null
                     cameraId = m.group(1)?.toInt() ?: 0
-                    timestamp = DATE_FORMAT.parse(m.group(2) + "_" + m.group(3))!!.time
+                    timestamp = DATE_FORMAT.parse("${m.group(2)}_${m.group(3)}")!!.time
                 }
             }
 

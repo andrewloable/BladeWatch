@@ -107,6 +107,8 @@ object PearDaemon {
         // Handler, which needs a Looper on this thread. And bare-kit's IPC captures THIS thread's
         // ALooper -- IPC_init calls ALooper_forThread() then ALooper_acquire() with no null check,
         // and registers the pipe fd on it, so the Looper must also be pumped (Looper.loop below).
+        // Deprecated because apps get their main Looper from the framework; an app_process has none.
+        @Suppress("DEPRECATION")
         if (Looper.myLooper() == null) Looper.prepareMainLooper()
         val handler = Handler(Looper.myLooper()!!)
 

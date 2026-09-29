@@ -18,6 +18,7 @@ import java.io.FileReader
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * Recording and streaming quality settings, plus the storage limits, behind `SettingsService` and
@@ -84,7 +85,7 @@ object QualitySettingsApiHandler {
         try {
             val req = JSONObject(body ?: "{}")
             val app = JSONObject()
-            val theme = req.optString("theme", null)
+            val theme = req.optStringOrNull("theme")
             if (theme != null) {
                 if ("dark" != theme && "light" != theme && "auto" != theme) {
                     response.put("success", false)
@@ -93,7 +94,7 @@ object QualitySettingsApiHandler {
                 }
                 app.put("theme", theme)
             }
-            val locale = req.optString("locale", null)
+            val locale = req.optStringOrNull("locale")
             if (locale != null) {
                 if ("auto" != locale && !LocaleManager.isSupported(locale)) {
                     response.put("success", false)
@@ -178,7 +179,7 @@ object QualitySettingsApiHandler {
     @Throws(Exception::class)
     fun setStorageSettings(body: String?): JSONObject {
         try {
-            val settings = JSONObject(body)
+            val settings = JSONObject(body.orEmpty())
             val storage = StorageManager.getInstance()
 
             // Handle storage type changes first (before limit changes)
@@ -309,7 +310,7 @@ object QualitySettingsApiHandler {
     @Throws(Exception::class)
     fun previewStorageLimitChange(body: String?): JSONObject {
         try {
-            val settings = JSONObject(body)
+            val settings = JSONObject(body.orEmpty())
             val storage = StorageManager.getInstance()
 
             val response = JSONObject()
@@ -429,7 +430,7 @@ object QualitySettingsApiHandler {
         // to STANDARD.
         val tierFromConfig = try {
             UnifiedConfigManager.loadConfig().optJSONObject("recording")
-                ?.optString("recordingQuality", null)
+                ?.optStringOrNull("recordingQuality")
         } catch (e: Exception) {
             null
         }
@@ -470,7 +471,7 @@ object QualitySettingsApiHandler {
             // The same read as HardwareEventRecorderGpu.loadSegmentDurationMs, so the reported
             // value and the enforced one cannot disagree.
             recPriority = RecordingPriority.fromConfigValue(
-                UnifiedConfigManager.getRecording().optString("priority", null)
+                UnifiedConfigManager.getRecording().optStringOrNull("priority")
             ).name
         } catch (e: Exception) {
             logger.warn("Failed to read recordingPriority: " + e.message)
@@ -575,7 +576,7 @@ object QualitySettingsApiHandler {
     @Throws(Exception::class)
     fun setQuality(body: String?): JSONObject {
         try {
-            val settings = JSONObject(body)
+            val settings = JSONObject(body.orEmpty())
 
             if (settings.has("recordingQuality")) {
                 val tier = settings.getString("recordingQuality").uppercase(Locale.ROOT)
@@ -938,7 +939,7 @@ object QualitySettingsApiHandler {
     @Throws(Exception::class)
     fun setTelemetryOverlayFields(body: String?): JSONObject {
         try {
-            val req = JSONObject(body)
+            val req = JSONObject(body.orEmpty())
             val typeKey = req.optString("type", "")
             val type = RecordingOverlayType.values().firstOrNull { it.configKey == typeKey }
                 ?: throw ConnectException(

@@ -22,6 +22,7 @@ import java.net.Socket
 import java.net.SocketTimeoutException
 import java.util.Locale
 import java.util.concurrent.Executors
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * IPC server for surveillance configuration. Listens on port 19877 for surveillance config
@@ -232,7 +233,7 @@ class SurveillanceIpcServer(private val port: Int) : Runnable {
                 }
 
                 "UPDATE_SAFE_LOCATION" -> {
-                    val zoneId = request.optString("id", null)
+                    val zoneId = request.optStringOrNull("id")
                     val updates = request.optJSONObject("updates")
                     if (zoneId != null && updates != null) {
                         response.put(
@@ -246,7 +247,7 @@ class SurveillanceIpcServer(private val port: Int) : Runnable {
                 }
 
                 "DELETE_SAFE_LOCATION" -> {
-                    val zoneId = request.optString("id", null)
+                    val zoneId = request.optStringOrNull("id")
                     if (zoneId != null) {
                         response.put(
                             "success", SafeLocationManager.getInstance().removeZone(zoneId)

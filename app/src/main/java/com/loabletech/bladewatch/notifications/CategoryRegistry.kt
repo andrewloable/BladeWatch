@@ -5,6 +5,7 @@ import android.util.Log
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.util.Collections
+import net.bladewatch.app.util.optStringOrNull
 
 /**
  * Loads `notifications-categories.json` from the APK assets.
@@ -76,7 +77,7 @@ class CategoryRegistry private constructor(
                     c.optBoolean("defaultEnabled", true),
                     c.optString("severity", "info"),
                     c.optString("defaultClickUrl", "/"),
-                    c.optString("note", null),
+                    c.optStringOrNull("note"),
                     c.optBoolean("bypassQuietHours", false)
                 )
                 // Duplicate IDs would silently overwrite (LinkedHashMap.put returns the previous

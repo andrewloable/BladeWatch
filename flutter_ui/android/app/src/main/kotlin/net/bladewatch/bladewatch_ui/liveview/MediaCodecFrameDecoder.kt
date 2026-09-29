@@ -53,6 +53,9 @@ internal class MediaCodecFrameDecoder : FrameDecoder {
         drain(c)
     }
 
+    // INFO_OUTPUT_BUFFERS_CHANGED is deprecated, but some codecs still return it; skipping it
+    // keeps the drain going instead of stopping early.
+    @Suppress("DEPRECATION")
     private fun drain(c: MediaCodec) {
         while (true) {
             val idx = c.dequeueOutputBuffer(bufferInfo, 0L)

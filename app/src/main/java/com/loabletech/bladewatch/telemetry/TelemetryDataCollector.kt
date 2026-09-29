@@ -376,7 +376,7 @@ class TelemetryDataCollector {
         var gpsLon = 0.0
         try {
             val gps = net.bladewatch.app.monitor.GpsMonitor.getInstance()
-            if (gps != null && gps.hasLocation()) {
+            if (gps.hasLocation()) {
                 hasGps = true
                 gpsLat = gps.latitude
                 gpsLon = gps.longitude
