@@ -1,20 +1,20 @@
 # BladeWatch Documentation
 
-This directory is the project reference for the BladeWatch Android app, its native daemons, embedded web UI, BYD integrations, tunnels, APIs, and operational workflows.
+This directory is the project reference for the BladeWatch Android app, its native daemons, BYD integrations, tunnels, APIs, and operational workflows.
 
 BladeWatch is an Android application for BYD DiLink vehicles, shipped as **two
 APKs that share one UID**: `net.bladewatch.incarapp` (the Flutter in-car UI, the
 only launcher icon) and `net.bladewatch.app` (the UI-less service host that runs
 the foreground services, receivers and privileged shell-launched daemons). It
 coordinates the in-car UI, camera and surveillance pipelines, local and remote
-web access, BYD vehicle telemetry, trip analytics, Web Push notifications, and
+remote access, BYD vehicle telemetry, trip analytics, notifications, and
 the Pear peer that remote access runs over.
 
 ## Document Map
 
 - [Architecture](architecture.md) describes the major modules, runtime boundaries, startup lifecycle, and component relationships.
 - [Features](features.md) catalogs the user-facing and system-facing features implemented by the app.
-- [UI/UX Design Language](ui-ux-design-language.md) documents the Material 3 design system shared by the Flutter in-car UI (the source of truth), the Android status overlay, and the embedded web UI — color roles, typography, shape, elevation, motion, components, and the cross-layer token pipeline.
+- [UI/UX Design Language](ui-ux-design-language.md) documents the Material 3 design system shared by the Flutter in-car UI (the source of truth), and the Android status overlay — color roles, typography, shape, elevation, motion, components, and the cross-layer token pipeline.
 - [Data Flow and Storage](data-flow-and-storage.md) explains where data comes from, how it moves between components, and where it is persisted.
 - [Daemons and Processes](daemons-and-processes.md) documents Android components, app-process daemons, watchdogs, foreground services, and local IPC ports.
 - [IPC, Authentication & Secrets](ipc-auth-and-secrets.md) explains the app/daemon UID split, the IPC token bootstrap, the secret-fetch and JWT flows, the **required `/data/local/tmp` file permissions**, and the failure modes that surface as "Camera unavailable".
@@ -37,7 +37,7 @@ the Pear peer that remote access runs over.
 - `app/src/main/java/com/loabletech/bladewatch/` contains the service host:
   daemons, local servers, BYD integrations, telemetry, storage, and the startup
   bootstrap.
-- `app/src/main/assets/web/` contains the local web app and PWA assets served by the camera daemon.
+- `app/src/main/assets/web/shared/models/` contains the 3D model manifest and models the camera daemon reads.
 - `app/src/main/assets/models/` contains AI model assets used by surveillance.
 - `app/src/main/cpp/` contains native camera, surveillance, and OpenCV/OpenH264 build integration.
 - `app/build.gradle.kts` defines Android, Kotlin, CMake, embedded native
@@ -59,7 +59,7 @@ Each detailed document includes a `Source References` section. References use `f
 
 ## Security Notes
 
-The embedded web UI is token-protected in release builds, including loopback access. LAN HTTP is disabled by default. Tunnel URLs and auth tokens should be treated as secrets. Secret values embedded in local config, tunnel tokens, and device auth secrets must not be copied into documentation or logs.
+The HTTP API is token-protected in release builds, including loopback access. LAN HTTP is disabled by default. Tunnel URLs and auth tokens should be treated as secrets. Secret values embedded in local config, tunnel tokens, and device auth secrets must not be copied into documentation or logs.
 
 ## Source References
 

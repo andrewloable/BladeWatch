@@ -286,37 +286,6 @@ tasks.register("downloadOpenCV") {
     }
 }
 
-// Task to extract web assets to /data/local/tmp/web on device
-// Run: ./gradlew :app:extractWebAssets
-tasks.register("extractWebAssets") {
-    description = "Extracts web assets from APK to /data/local/tmp/web on connected device"
-    group = "deployment"
-    doLast {
-        fun run(vararg cmd: String) {
-            ProcessBuilder(*cmd).inheritIO().start().waitFor()
-        }
-        val webSrcDir = file("src/main/assets/web")
-        if (!webSrcDir.exists()) {
-            println("⚠ No web assets found at ${webSrcDir}")
-            return@doLast
-        }
-
-        println("Extracting web assets to device...")
-
-        run("adb", "shell", "mkdir", "-p", "/data/local/tmp/web/shared")
-        run("adb", "shell", "mkdir", "-p", "/data/local/tmp/web/local")
-
-        webSrcDir.walkTopDown().filter { it.isFile }.forEach { file ->
-            val relativePath = file.relativeTo(webSrcDir).path
-            val targetPath = "/data/local/tmp/web/${relativePath}"
-            println("  → ${relativePath}")
-            run("adb", "push", file.absolutePath, targetPath)
-        }
-
-        println("✓ Web assets extracted to /data/local/tmp/web/")
-    }
-}
-
 // Embed the current git branch in the APK filename so builds from different
 // branches are always distinguishable (e.g. bladewatch-flutter-refactor-arm64-v8a-debug.apk).
 val gitBranch: String = try {
@@ -579,7 +548,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     
     // NOTE: the Vehicle hero renders via three.js in an embedded WebView
-    // (web/hero/hero.html). Filament was tried for a native port but the BYD
+    // (flutter_ui/assets/web/hero/hero.html). Filament was tried for a native port but the BYD
     // head unit's Adreno 610 GL driver (V@415.0) crashes after minutes of
     // continuous gltfio rendering — do not reintroduce it for the hero.
 
@@ -622,185 +591,48 @@ dependencies {
 // so this task is optional — run manually when .proto files change.
 // Usage: ./gradlew generateConnectProtos
 tasks.register<Exec>("generateConnectProtos") {
-    description = "Regenerate Java + TypeScript stubs from proto/ using buf generate"
+    description = "Regenerate the Java, Kotlin and Dart stubs from proto/ using buf generate"
     group = "codegen"
     workingDir = rootProject.file("proto")
     commandLine("buf", "generate")
 }
 
-// Build the Angular web UI and copy the output into app assets.
+// Fail the build if the committed ISO 4217 currency catalog is malformed.
 //
-// NOTE: `web/dist` is NOT checked in — both it and the packaged copy at
-// app/src/main/assets/web/angular/ are gitignored (.gitignore:44,46). An earlier
-// comment here claimed the dist was committed and served as a fallback; it never
-// was. So on a fresh clone or a CI runner without Node this task is the ONLY
-// thing that produces the web assets, and skipping it silently shipped an APK
-// with no web UI at all while the build still reported success. The remote
-// browser/tunnel client simply would not be there.
-tasks.register<Exec>("buildAngularWebUI") {
-    description = "Build the Angular web UI and copy dist to app/src/main/assets/web/angular/"
-    group = "build"
-    workingDir = rootProject.file("web")
-    commandLine("npm", "run", "build")
-    doLast {
-        // Clear stale hashed chunks from previous builds so old assets (and any
-        // pre-rebrand colors baked into them) never ship in the APK.
-        delete(file("src/main/assets/web/angular"))
-        copy {
-            from(rootProject.file("web/dist"))
-            into(file("src/main/assets/web/angular"))
-        }
-    }
-    isIgnoreExitValue = false
-    // Pure predicate, no side effects: Gradle SWALLOWS the message of an exception
-    // thrown from onlyIf, reporting only "Could not evaluate spec for 'Task
-    // satisfies onlyIf spec'". The real check lives in verifyWebAssetsPresent
-    // below, where a thrown message is actually shown to whoever ran the build.
-    onlyIf { npmIsAvailable() }
-}
-
-/** Whether `npm` can be executed — the Angular build's only external requirement. */
-fun npmIsAvailable(): Boolean = try {
-    ProcessBuilder("npm", "--version").start().waitFor() == 0
-} catch (e: Exception) {
-    false
-}
-
-// Fail the build when the web assets cannot be produced AND none are lying around
-// from an earlier run, rather than packaging an empty web/angular/ and reporting
-// success. This is the state a fresh clone or a CI runner without Node is in.
-tasks.register("verifyWebAssetsPresent") {
-    description = "Fail early if the Angular web assets can neither be built nor reused"
-    group = "verification"
-    val packaged = file("src/main/assets/web/angular")
-    doLast {
-        if (npmIsAvailable()) return@doLast
-        if (packaged.isDirectory && !packaged.list().isNullOrEmpty()) {
-            logger.warn(
-                "verifyWebAssetsPresent: npm/Node not on PATH — packaging the EXISTING " +
-                    "app/src/main/assets/web/angular/, which may be stale."
-            )
-            return@doLast
-        }
-        throw GradleException(
-            "npm/Node is not on PATH and there are no previously-built assets at " +
-                "app/src/main/assets/web/angular/. Both that directory and web/dist are " +
-                "gitignored, so nothing can be packaged: the APK would ship with no web UI " +
-                "(the remote browser/tunnel client) while the build still reported success. " +
-                "Install Node — in GitHub Actions add actions/setup-node before ./gradlew — " +
-                "or run `npm run build` in web/ once on this machine."
-        )
-    }
-}
-// Hook into preBuild so Angular is compiled before any variant's assets are packaged.
-tasks.named("preBuild") { dependsOn("verifyWebAssetsPresent", "buildAngularWebUI") }
-
-// Fail the build if any web i18n catalog is invalid JSON or is missing keys that
-// en.json has. The catalog URLs are served unhashed and a corrupt/partial catalog
-// renders the whole SPA as raw keys ("dashboard.this_week"), so this MUST be caught
-// before packaging rather than at runtime on the head unit. Catches the exact class
-// of bug that smart-quote delimiters / unescaped quotes introduce.
-tasks.register("validateI18nCatalogs") {
-    description = "Validate web i18n catalogs: valid JSON + full key parity with en.json"
-    group = "verification"
-    val i18nDir = file("src/main/assets/web/i18n")
-    doLast {
-        val slurper = groovy.json.JsonSlurper()
-        fun flatten(prefix: String, obj: Any?, out: MutableSet<String>) {
-            if (obj is Map<*, *>) {
-                for ((k, v) in obj) {
-                    val kp = if (prefix.isEmpty()) k.toString() else "$prefix.$k"
-                    if (v is Map<*, *>) flatten(kp, v, out) else out.add(kp)
-                }
-            }
-        }
-        val enFile = i18nDir.resolve("en.json")
-        if (!enFile.exists()) throw GradleException("i18n: en.json missing at ${enFile.path}")
-        val enKeys = sortedSetOf<String>()
-        try {
-            flatten("", slurper.parse(enFile), enKeys)
-        } catch (e: Exception) {
-            throw GradleException("i18n: en.json is not valid JSON — ${e.message}")
-        }
-        val catalogs = i18nDir.listFiles { f -> f.name.endsWith(".json") }?.sortedBy { it.name } ?: emptyList()
-        val problems = mutableListOf<String>()
-        for (f in catalogs) {
-            val parsed = try {
-                slurper.parse(f)
-            } catch (e: Exception) {
-                problems.add("${f.name}: INVALID JSON — ${e.message}"); continue
-            }
-            if (f.name == "en.json") continue
-            val keys = sortedSetOf<String>()
-            flatten("", parsed, keys)
-            val missing = enKeys - keys
-            if (missing.isNotEmpty()) {
-                problems.add("${f.name}: ${missing.size} key(s) missing vs en.json (e.g. ${missing.take(5).joinToString(", ")})")
-            }
-        }
-        if (problems.isNotEmpty()) {
-            throw GradleException("i18n catalog validation FAILED:\n" + problems.joinToString("\n") { "  - $it" })
-        }
-        logger.lifecycle("i18n: ${catalogs.size} web catalogs valid, full key parity with en.json ✓")
-    }
-}
-// Validate before any variant's assets are packaged.
-tasks.named("preBuild") { dependsOn("validateI18nCatalogs") }
-
-// Fail the build if the two committed ISO 4217 currency catalogs drift apart.
-//
-// The list is GENERATED from ICU by tools/gen-currencies.mjs, which writes a
-// byte-identical copy for each front-end. Two copies exist only because the web
-// and Flutter builds are separate projects with separate asset pipelines — the
-// list itself has exactly one source. This check is what keeps the copies honest,
-// and follows the same precedent as validateI18nCatalogs above.
-//
-// It deliberately does NOT shell out to node: the check must work on a machine
-// with no node (and node's ICU could legitimately differ by version). It verifies
-// the copies agree with EACH OTHER and are structurally sane; regenerating is an
-// explicit author action.
+// The list is GENERATED from ICU by tools/gen-currencies.mjs and the RESULT is committed. This
+// check verifies the copy is structurally sane (valid JSON, sorted, not truncated); it
+// deliberately does NOT shell out to node, so it works on a machine with no node. Regenerating is
+// an explicit author action.
 tasks.register("validateCurrencyCatalog") {
-    description = "Validate the ISO 4217 catalogs: identical copies, sorted, plausible"
+    description = "Validate the ISO 4217 catalog: valid, sorted, plausible"
     group = "verification"
-    val webCatalog = rootProject.file("web/src/assets/iso4217.json")
     val flutterCatalog = rootProject.file("flutter_ui/assets/iso4217.json")
-    inputs.files(webCatalog, flutterCatalog)
+    inputs.files(flutterCatalog)
     doLast {
         val problems = mutableListOf<String>()
         val slurper = groovy.json.JsonSlurper()
 
-        fun codesOf(f: java.io.File): List<String>? {
-            if (!f.isFile) { problems.add("${f.name}: missing at ${f.path}"); return null }
-            val parsed = try {
+        val codes: List<String>? = if (!flutterCatalog.isFile) {
+            problems.add("${flutterCatalog.name}: missing at ${flutterCatalog.path}"); null
+        } else {
+            try {
                 @Suppress("UNCHECKED_CAST")
-                slurper.parse(f) as Map<String, Any?>
+                val parsed = slurper.parse(flutterCatalog) as Map<String, Any?>
+                @Suppress("UNCHECKED_CAST")
+                val c = parsed["codes"] as? List<String>
+                if (c == null) problems.add("${flutterCatalog.name}: no 'codes' array")
+                c
             } catch (e: Exception) {
-                problems.add("${f.name}: not valid JSON (${e.message})"); return null
+                problems.add("${flutterCatalog.name}: not valid JSON (${e.message})"); null
             }
-            @Suppress("UNCHECKED_CAST")
-            val codes = parsed["codes"] as? List<String>
-            if (codes == null) { problems.add("${f.name}: no 'codes' array"); return null }
-            return codes
         }
 
-        val web = codesOf(webCatalog)
-        val flutter = codesOf(flutterCatalog)
-
-        if (web != null && flutter != null) {
-            if (web != flutter) {
-                val onlyWeb = web - flutter.toSet()
-                val onlyFlutter = flutter - web.toSet()
-                problems.add(
-                    "catalogs differ — regenerate with: node tools/gen-currencies.mjs" +
-                        (if (onlyWeb.isNotEmpty()) " (web-only: $onlyWeb)" else "") +
-                        (if (onlyFlutter.isNotEmpty()) " (flutter-only: $onlyFlutter)" else "")
-                )
-            }
+        if (codes != null) {
             // A truncated list means someone ran the generator on a small-ICU node.
-            if (web.size < 100) problems.add("only ${web.size} codes — looks truncated")
-            if (web != web.sorted()) problems.add("codes are not sorted")
+            if (codes.size < 100) problems.add("only ${codes.size} codes — looks truncated")
+            if (codes != codes.sorted()) problems.add("codes are not sorted")
             for (required in listOf("USD", "EUR", "GBP", "JPY", "PHP")) {
-                if (required !in web) problems.add("missing common currency $required")
+                if (required !in codes) problems.add("missing common currency $required")
             }
         }
 
@@ -815,59 +647,9 @@ tasks.register("validateCurrencyCatalog") {
 
 tasks.named("preBuild") { dependsOn("validateCurrencyCatalog") }
 
-// Web UI unit tests (BladeWatch-9uu6). The Angular app previously had NO unit tests at all —
-// only Playwright e2e under web/e2e — so framework-free logic such as currency formatting
-// shipped unexercised. vitest covers that gap; component and flow behaviour stays with
-// Playwright, which runs a real browser.
-//
-// NOT wired into preBuild: it needs node_modules, and buildAngularWebUI already owns the
-// "is the web toolchain present" question. Run it explicitly: ./gradlew :app:webUnitTests
-tasks.register<Exec>("webUnitTests") {
-    description = "Run the Angular app's vitest unit tests"
-    group = "verification"
-    workingDir = rootProject.file("web")
-    commandLine("npx", "vitest", "run", "--config", "vitest.config.ts")
-}
-
-// Typecheck the web UI (BladeWatch-gmmd). `vite build` bundles with esbuild, which STRIPS
-// types without checking them, so nothing verified web/ against tsc and type errors shipped
-// silently — a deliberately planted one compiled clean. That is not theoretical: four files
-// imported generated protobuf types through a path one level too deep (web/gen/ instead of
-// web/src/gen/). They are `import type`, so esbuild erased them before ever resolving the
-// path and the build stayed green while those pages lost all compile-time protection. Fixing
-// the paths then exposed a genuine type error that had been hidden behind them.
-//
-// NOT wired into preBuild, for the same reason as webUnitTests above: it needs node_modules,
-// and buildAngularWebUI already owns the "is the web toolchain present" question.
-// Run it explicitly: ./gradlew :app:webTypecheck
-tasks.register<Exec>("webTypecheck") {
-    description = "Typecheck the Angular web UI with tsc (vite build does not)"
-    group = "verification"
-    workingDir = rootProject.file("web")
-    commandLine("npx", "tsc", "--noEmit", "-p", "tsconfig.app.json")
-}
-
-// Angular TEMPLATE type-checking. Separate from webTypecheck because it is a different blind
-// spot with a different tool: `tsc` never opens a component template, and `vite build` bundles
-// templates through esbuild without checking them either.
-//
-// Measured 2026-09-16: a template calling a method that does not exist on its component
-// compiled clean and exited 0 under BOTH. Nothing then fails at runtime either — `@if
-// (typoName())` is undefined, which is falsy, so the guarded block silently never renders. On
-// this UI that means a settings section or a whole stats card quietly going missing.
-//
-// NOT wired into preBuild, for the same reason as the two tasks above: it needs node_modules.
-// Run it explicitly: ./gradlew :app:webTemplateCheck
-tasks.register<Exec>("webTemplateCheck") {
-    description = "Type-check Angular component TEMPLATES with ngc --strictTemplates"
-    group = "verification"
-    workingDir = rootProject.file("web")
-    commandLine("npx", "ngc", "-p", "tsconfig.templates.json")
-}
-
 // Fail the build if the Android string catalogs (res/values*/strings.xml, 624 keys
 // across 17 locales) are malformed, have an unescaped apostrophe (the Android-XML
-// equivalent of the smart-quote footgun that hit the web i18n catalogs above), or a
+// equivalent of the smart-quote footgun that hit the old web i18n catalogs), or a
 // locale is missing a key that values/strings.xml has. Every string key added by
 // hand across 17 files invites exactly this class of silent gap.
 tasks.register("validateAndroidStrings") {
@@ -1258,7 +1040,11 @@ kover {
             }
             verify {
                 rule {
-                    // Ratcheted 2026-09-26 to 10: 4203/38416 lines (10.94%, 921 JVM tests) after
+                    // Ratcheted 2026-09-29 to 13: 13.47% (989 JVM tests) after the web app, its
+                    // login and Web Push were deleted (BladeWatch-rdtj.22). That deleted mostly
+                    // untested code, so the rise is a new floor to hold, not progress.
+                    //
+                    // Earlier: ratcheted 2026-09-26 to 10: 4203/38416 lines (10.94%, 921 JVM tests) after
                     // tor's removal (BladeWatch-rdtj.12). Most of the rise since 5 is tests added
                     // over the v1.4.0.0 epic; tor's deletion took out a largely untested launcher,
                     // which also lifts the ratio -- a floor to hold, not progress to celebrate.
@@ -1286,7 +1072,7 @@ kover {
                     // margin is not a defect — deleting a test class is meant to be noticed —
                     // but do not read the current slack as permanent. If a legitimate
                     // refactor drops below the bound, add tests; never lower it.
-                    minBound(10)
+                    minBound(13)
                 }
             }
         }
@@ -1323,8 +1109,7 @@ tasks.register("validateFlutterAndroidOnly") {
                     append("The in-car UI ships only as the arm64 Android APK net.bladewatch.incarapp.\n")
                     append("Phone and desktop targets belong in companion/, the BladeWatch companion\n")
                     append("app — that is the one place in this repo where they are correct.\n")
-                    append("Note: web/ at the REPO ROOT is the Angular SPA and is unrelated — this\n")
-                    append("check only looks inside flutter_ui/.")
+                    append("This check only looks inside flutter_ui/.")
                 }
             )
         }
@@ -1365,7 +1150,7 @@ tasks.withType<Test>().configureEach {
         "flutter_ui/lib", "flutter_ui/test", "flutter_ui/android/app/src",
         "packages/bladewatch_rpc/lib", "packages/bladewatch_rpc/test",
         "companion/lib", "companion/test", "companion/integration_test",
-        "web/src", "web/e2e", "docs",
+        "docs",
     ).forEach { rel ->
         val dir = rootProject.file(rel)
         if (dir.isDirectory) {

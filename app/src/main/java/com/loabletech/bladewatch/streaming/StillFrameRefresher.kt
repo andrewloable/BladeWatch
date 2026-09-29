@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit
  * BladeWatch-rdtj.11 it is also the companion's live view.
  *
  * The source is whatever [source] returns: since BladeWatch-rdtj.68, GpuStillCapture's shot of all
- * four cameras at 1280x960 or one camera at its native 1280x960, captured once a second on the
- * camera's GL thread while someone watches. [encoder] turns it into a JPEG.
+ * four cameras at 1280x960 or one camera at its native 1280x960, captured every 100ms (10fps,
+ * BladeWatch-hmk0) on the camera's GL thread while someone watches. [encoder] turns it into a JPEG.
  *
  * What this class adds is the JPEG encode -- but only inside [tick], run on its own
  * [refreshIntervalMs] schedule, fully decoupled from camera FPS. [current] never encodes; it only

@@ -1577,8 +1577,11 @@ class GpuSurveillancePipeline(
         //
         // BladeWatch-rdtj.68: the source is the camera's own full-resolution shot (GpuStillCapture,
         // 1280x960: all four cameras, or the one the viewer picked), not sentry's 640x480 frame.
-        // ponytail: the GL thread reuses a shot's Bitmap two captures (~1 s) later; the encode
-        // takes well under that. Copy the Bitmap here if the encode ever gets that slow.
+        // ponytail: the GL thread reuses a shot's Bitmap two captures later; the encode takes well
+        // under that gap. BladeWatch-hmk0 shrank the gap from ~1s to ~200ms (STILL_CAPTURE_INTERVAL_MS
+        // 500ms -> 100ms) -- far less headroom than before, but verified clean on a real device at
+        // the new rate (sustained ~1.2 MB/s over several seconds, no tearing or corruption). Copy
+        // the Bitmap here if the encode ever gets that slow in practice.
         val refresher = StillFrameRefresher<StillShot>(
             { latestShot },
             { shot -> encodeStillJpeg(shot.bitmap) },
@@ -1748,7 +1751,7 @@ class GpuSurveillancePipeline(
 
         // One still a second, the owner's choice (BladeWatch-rdtj.61). It was 5 s, sized for Tor's
         // ~101 KB/s; Pear carries 40-70 KB a second with room to spare even on mobile data.
-        private const val STILL_FRAME_REFRESH_INTERVAL_MS = 1000L
+        private const val STILL_FRAME_REFRESH_INTERVAL_MS = 100L
 
         private fun loadCameraConfigSection(): JSONObject? {
             return try {

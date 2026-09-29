@@ -56,6 +56,6 @@ class RemoteLoopbackListenerTest {
         // a no-op (BladeWatch-rdtj.16).
         assertFalse(src.contains("remoteSocketAddress.toString()"))
         assertTrue(src.contains("private fun rateLimitIdentity(client: Socket): String = client.inetAddress?.hostAddress"))
-        assertEquals(2, Regex("""rateLimitIdentity\(client\)""").findAll(src).count())
+        assertEquals(1, Regex("""rateLimitIdentity\(client\)""").findAll(src).count())
     }
 }

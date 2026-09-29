@@ -13,7 +13,7 @@ import java.util.Locale
  * Manages WebSocket streaming configuration and control, behind `StreamService`.
  *
  * PARTIALLY exempt from the REST inversion (BladeWatch-6mnq): the only HTTP route left is
- * `GET /api/stream/still`, a JPEG the Angular live view consumes as an image URL, so it cannot
+ * `GET /api/stream/still`, a JPEG the companion's live view consumes as an image URL, so it cannot
  * speak ConnectRPC. Every other stream operation is JSON, is reached through `StreamService`, and
  * returns its value rather than writing it into a stream.
  *

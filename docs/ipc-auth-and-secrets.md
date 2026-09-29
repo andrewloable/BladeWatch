@@ -257,7 +257,7 @@ accept() → PeerCredentials.resolvePeerUid(socket)   // map (clientPort, server
 
 Commands that actuate the physical car need a short-lived **vehicle action token** in addition
 to the session JWT, presented as `X-Vehicle-Action-Token`. The in-car Flutter UI is exempt and
-never needs one; the threat model is a browser or companion reaching the daemon from outside.
+never needs one; the threat model is a companion (or anything else) reaching the daemon from outside.
 
 **Exempt means the `LOCAL_APPS` listener (127.0.0.1:8080) AND a loopback peer** —
 `AuthMiddleware.isLocalAppCaller` (BladeWatch-rdtj.4). It used to be the loopback address
@@ -265,8 +265,8 @@ alone, which the Pear stream pump would have satisfied: it reaches the server fr
 127.0.0.1, so a remote peer would have actuated the car on a session JWT alone. The LAN TLS
 listener and the Pear pump's listener (127.0.0.1:8444) are `REMOTE` and always need the
 token. (tor, removed in v1.4.0.0, first landed on 8080 from loopback and was therefore exempt;
-BladeWatch-ur11 moved it to its own REMOTE listener on 8081, which went with it.) The web app
-already sends the token (`vehicle-action.interceptor.ts`).
+BladeWatch-ur11 moved it to its own REMOTE listener on 8081, which went with it.) The companion
+fetches and sends the token itself.
 
 | | |
 |---|---|
@@ -287,10 +287,9 @@ scans the registered `VehicleService` RPCs and fails on any that is neither gate
 declared read-only. A new command cannot be added without someone deciding which it is, which is
 precisely the omission that made this inert the first time.
 
-The web client attaches the token in `vehicle-action.interceptor.ts`, caching it until a second
-before expiry and collapsing concurrent commands onto one issue call. If issuing fails it sends
-the command WITHOUT a token and lets the server refuse — failing open in the client would defeat
-the control.
+The companion attaches the token: it caches it until a second before expiry and collapses
+concurrent commands onto one issue call. If issuing fails it sends the command WITHOUT a token and
+lets the server refuse — failing open in the client would defeat the control.
 
 ## Pear and LAN TLS secrets (v1.4.0.0)
 
@@ -343,7 +342,8 @@ once. The companion trades `{companionId, token}` for a session JWT at `POST /au
 that JWT carries the id as `cid`. The device secret never leaves the car on this path: it is not
 in the QR, and no pairing code in Dart (flutter_ui or the companion) handles it. (The in-car UI's
 older "show access code" feature, which fetched the device secret for display as the web login's
-access code, went with the Dashboard's Connect card in v1.4.0.0, BladeWatch-rdtj.12.)
+access code, went with the Dashboard's Connect card in v1.4.0.0, BladeWatch-rdtj.12; the web
+login itself, `POST /auth/token` and its cookie session, went with the web app, BladeWatch-rdtj.22.)
 
 **Revocation touches exactly one companion.** `pairingRevoke` deletes the id: its token stops
 verifying AND every JWT already minted for it stops validating immediately (`validateJwt`
@@ -369,9 +369,8 @@ id is 128 random bits and its token an HMAC-SHA256 -- so a limit added nothing a
 and only handed anyone who can reach them a way to lock every companion out: 30 bad tries set
 off a global 5-minute lockout, and Pear traffic (tor's too, while it existed) arrives from 127.0.0.1, so remote
 clients shared one per-caller bucket. Their failures no longer count toward the global cap
-either. `/auth/token` keeps both limits (an owner-set access code can be short) until it goes
-with the web app (BladeWatch-rdtj.13); a lockout there does not touch companions
-(`CompanionLoginLockoutTest`).
+either. The web login's limits (`/auth/token`) went with it (BladeWatch-rdtj.22); the companion
+endpoints stay unlimited (`CompanionLoginLockoutTest`).
 
 **A pairing lasts until someone removes it (BladeWatch-w7by).** The only ways a companion stops
 working are `pairingRevoke` in the car and Unpair in the companion. Everything else keeps it

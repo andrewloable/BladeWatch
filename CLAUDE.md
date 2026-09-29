@@ -93,9 +93,6 @@ melos bootstrap && melos run analyze && melos run test
 # Run unit tests
 ./gradlew test
 
-# Push web assets to connected device for development iteration
-./gradlew :app:extractWebAssets
-
 # APK filename convention — the git branch is always embedded:
 #   app/build/outputs/apk/debug/bladewatch-<branch>-arm64-v8a-debug.apk
 # e.g. on branch flutter-refactor:
@@ -248,19 +245,9 @@ adb -s $CAR_IP:5555 shell 'rm -f /data/local/tmp/*.log /data/local/tmp/*.log.*; 
 
 # View live logcat (filter to BladeWatch tags)
 adb -s $CAR_IP:5555 logcat -s BladeWatch:V CameraDaemon:V SentryDaemon:V AccSentryDaemon:V
-
-# Push and extract web assets directly to device
-adb -s $CAR_IP:5555 shell mkdir -p /data/local/tmp/web
-adb -s $CAR_IP:5555 push app/src/main/assets/web/. /data/local/tmp/web/
 ```
 
 Native dependencies (OpenH264, opencv-mobile) are auto-downloaded by Gradle before any CMake/ExternalNative task. No manual download step needed.
-
-**Node/npm is required to build, not optional.** `buildAngularWebUI` runs during
-`preBuild`, and neither `web/dist` nor its packaged copy at
-`app/src/main/assets/web/angular/` is committed (both gitignored). A build without
-npm used to skip it with a warning and produce a *successful* APK containing no web
-UI at all; `verifyWebAssetsPresent` now fails the build in that state instead.
 
 ### Release builds in CI
 
@@ -280,7 +267,7 @@ See `docs/build-and-operations.md` for the toolchain pins and the signing recipe
 
 ## Architecture
 
-BladeWatch is a hybrid Android + shell-daemon + embedded web app. The critical design split:
+BladeWatch is a hybrid Android + shell-daemon app. The critical design split:
 
 **Flutter UI process** (`net.bladewatch.incarapp`) — every screen, in Dart under `flutter_ui/lib/`, with plain `ChangeNotifier` controllers (no Riverpod/BLoC). Talks to the daemon over ConnectRPC on 8080 with a JWT; privileged operations go through MethodChannels to a small Kotlin layer **in the same APK**, which uses loopback IPC on 19876. On first `onResume` it explicitly starts the service host's `MainActivity` (`wakeServiceHost()`) — an explicit component start, because BYD's `ssc_skip` suppresses broadcasts to the app package unless it is allowed in BYD Auto-Start, which every install/update resets (docs/daemons-and-processes.md, "After a reboot").
 
@@ -292,7 +279,7 @@ BladeWatch is a hybrid Android + shell-daemon + embedded web app. The critical d
 - `PearDaemon` (`pear_daemon`, launched by `PearLauncher`) — the Pear peer, BladeWatch's only remote-access path since v1.4.0.0 (epic BladeWatch-rdtj). Hosts a bare-kit worklet running pear-end and joins this car's Hyperswarm topic (`PearTopic`, seeded from the secret store). **Opt-in** (`PEAR_PEER`, off by default; pairing switches it on). Runs only with six verified runtime requirements — see its class doc; the two that bite first are a stand-in Application (bare-kit's worker-thread hook aborts on a null `currentApplication()`) and `-Djava.library.path` with the APK's lib dir FIRST. **`/data/local/tmp/pear` holds the car's permanent Pear identity — never delete it.**
 - **No tunnel daemons.** The Tor onion service was removed in v1.4.0.0 (BladeWatch-rdtj.12), after cloudflared, Tailscale, sing-box and the Telegram daemon; do not re-add generic kills for any of them. `LegacyTunnelCleanup` kills a stale `bladewatch_tor` left by a v1.3.x install on every launch (BladeWatch-rdtj.23) and drops the stale `TOR_TUNNEL` config key; neither it nor `DaemonHardReset` touches `/data/local/tmp/tor`. With tor went the REMOTE loopback listener on 8081 — nothing relays into 8080, which is why the Tier 2 loopback bypass no longer needs a tunnel-active check. See `docs/networking-and-tunnels.md`.
 
-**Embedded web UI** — the Angular 19 SPA under `web/`, built into `app/src/main/assets/web/angular/` and extracted to `/data/local/tmp/web` at runtime. Talks to CameraDaemon over ConnectRPC. It serves **browsers on the car's network (LAN access, 8443) only** — the in-car UI is Flutter and does not embed it, and remote access is the companion.
+**No web app.** The Angular SPA under `web/`, its static serving in `HttpServer`, its `/auth/token` login and cookie session, and Web Push were removed in BladeWatch-rdtj.22: the in-car UI is Flutter and remote access is the companion (which collects alerts from the car's store-and-forward inbox). The car serves only Connect RPC, `/ws`, `/video/*`, `/thumb/*` and the companion's `/auth/pair` + `/auth/companion`; every other path is a 404 or 401. `/data/local/tmp/web` still exists on the car, but holds only `server-i18n` (the car's own localized error texts) and `shared/models` (the 3D model manifest `ModelsApiHandler` reads).
 
 **BYD integrations** — local firmware APIs accessed via reflection (stubs in `android.hardware.*` and `android.os.*` compile against stubs; real classes loaded at runtime from boot classloader). **Local SDK only — there is no BYD cloud path.** The whole `byd/cloud/` package (client, MQTT subscriber, Bangcle white-box crypto) was deleted in `61b4d7f`; `VehicleCommandRouter.Path` is now `{SDK, NONE}`, and commands that only ever had a cloud implementation (Lock, Unlock, Flash, FindCar, SetBatteryHeat, charging schedule) resolve to `NOT_SUPPORTED`. See `docs/byd-integrations.md`.
 
@@ -321,7 +308,7 @@ C++17 sources in `app/src/main/cpp/`:
 ```
 Camera frame → GPU downscale → native motion pipeline → per-quadrant state
   → optional TFLite YOLO11n gate → event decision
-  → event recording + Web Push notification
+  → event recording + notification (the companion collects it from the car's inbox)
 ```
 
 ## Key Source Locations
@@ -338,7 +325,6 @@ Camera frame → GPU downscale → native motion pipeline → per-quadrant state
 - GPU pipeline: [GpuSurveillancePipeline.kt](app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.kt), [PanoramicCameraGpu.kt](app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.kt)
 - BYD local: [BydDataCollector.kt](app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt)
 - Config: [UnifiedConfigManager.kt](app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt), [SecretConfigStore.kt](app/src/main/java/com/loabletech/bladewatch/config/SecretConfigStore.kt)
-- Web UI (remote clients): [web/](web/), built into [app/src/main/assets/web/](app/src/main/assets/web/)
 
 ## BYD SDK Stub Pattern
 
@@ -378,7 +364,7 @@ car's `pear_daemon` runs), or directly when on the car's LAN (epic BladeWatch-rd
 **one** place in this repo where iOS/macOS/Windows/Linux targets are correct — a platform
 directory belongs here, never under `flutter_ui/`. It never runs on the head unit.
 
-- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.6`) — never a caret; before 1.0 its
+- flutter_pear is pinned **exactly** (`flutter_pear: 0.4.7`) — never a caret; before 1.0 its
   minor versions may break the API.
 - Android ships arm64-v8a + x86_64 only, and that holds **only** because
   `companion/android/gradle.properties` sets `disable-abi-filtering=true`: without it the Flutter
@@ -390,44 +376,13 @@ directory belongs here, never under `flutter_ui/`. It never runs on the head uni
   API 29+ arm64 emulator. Never treat two peers on one machine or behind one NAT as a real P2P
   test — router hairpinning fails it with no flutter_pear code involved.
 
-**Web app (`web/`) — browsers, including phones.**
-This one IS reached from a phone's browser, over the car's LAN (TLS on 8443 while LAN access is
-on). Away from the car the owner uses the companion; the web app itself is due for deletion
-(BladeWatch-rdtj.22). Until then mobile browsers — iOS Safari included — are in scope here, and that is not a
-contradiction of the rule above. A mobile *browser* is a supported client of the web app; a
-native *iOS build* of the in-car Flutter app is not a thing that exists (the native phone app
-is the companion).
-
-```bash
-cd web && npm run typecheck           # tsc --noEmit — `vite build` does NOT typecheck
-cd web && npm run typecheck:templates # ngc --strictTemplates — nothing else checks templates
-cd web && npm run test:unit           # vitest — framework-free logic
-cd web && npm run test:mobile   # Playwright, Pixel 7 + iPhone 13, against a local build
-cd web && npm run test:e2e      # Playwright against a LIVE head unit (needs e2e/.env)
-```
-
-`test:mobile` serves the built app itself and needs no daemon, so mobile layout regressions are
-catchable without powering up a car. `test:e2e` does need a live device.
-
-**Component TEMPLATES are checked by neither of the above — run `npm run typecheck:templates`.**
-`tsc` only parses `.ts`, and `vite build` hands templates to esbuild without checking them.
-Measured 2026-09-16: a template calling a method that does not exist on its component compiled
-clean and exited 0 under BOTH. Nothing fails at runtime either — `@if (typoName())` is
-`undefined`, which is falsy, so the guarded block silently never renders and the page just looks
-empty. `./gradlew :app:webTemplateCheck` runs the same check.
-
-**`npm run build` does not typecheck — run `npm run typecheck` separately.** `vite build` bundles
-with esbuild, which strips types without checking them, so a type error produces a perfectly
-successful build. This is not theoretical: four files imported generated protobuf types through a
-path one level too deep, and because they were `import type` declarations esbuild erased them
-before ever resolving the path. The build stayed green for months while those pages had no
-compile-time protection at all. `./gradlew :app:webTypecheck` runs the same check; like
-`:app:webUnitTests` it is deliberately NOT wired into `preBuild`, because it needs `node_modules`
-and `buildAngularWebUI` already owns the "is the web toolchain present" question.
+**Web app — removed (BladeWatch-rdtj.22).** There is no browser client any more, so there is no
+web toolchain: no Node/npm requirement to build, no `web/` project, no Playwright. The only phone and
+desktop client is the companion above.
 
 ## Testing
 
-**Service host (Kotlin/Java)** — 110 JVM test files (860 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
+**Service host (Kotlin/Java)** — 138 JVM test files (989 tests) under `app/src/test/java/com/loabletech/bladewatch/`, covering auth (`AuthMiddlewareTest`, `AuthManagerTest`), secrets (`SecretConfigStoreTest`, `SecretRedactorTest`), the Connect wire contract, server handlers, vehicle formatting/i18n, and the Phase 4 structural guards (`ServiceHostManifestTest`, `NoSelfLaunchIntentTest`). Run with `./gradlew test`; coverage gate is `./gradlew koverVerify`.
 
 ```bash
 # NOTE: `:app:test` is an aggregate lifecycle task and does NOT accept --tests
@@ -435,7 +390,7 @@ and `buildAngularWebUI` already owns the "is the web toolchain present" question
 ./gradlew :app:testDebugUnitTest --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
 ```
 
-**In-car UI (Dart)** — 98 test files under `flutter_ui/test/`, 1443 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
+**In-car UI (Dart)** — 100 test files under `flutter_ui/test/`, 1381 tests. **Android head unit only — see "Platform Scope" above; never test this app for iOS or any other platform.** There are deliberately **no golden tests** — visual parity is verified on the head unit. Note that `flutter test` uses a fixed-width placeholder font, so any text-fit or overflow assertion in a widget test is meaningless; measure on the device.
 
 ```bash
 cd flutter_ui && flutter analyze && flutter test
@@ -444,7 +399,7 @@ cd flutter_ui && flutter test --coverage --coverage-package '^(bladewatch_ui|bla
 
 **Shared RPC package (Dart)** — `packages/bladewatch_rpc/` is the Connect client, the generated
 messages and `FakeRpcClient`, moved out of `flutter_ui/lib` in BladeWatch-rdtj.10 so the
-companion shares one copy: 18 test files, 157 tests, gated at **100%**. Its tests left
+companion shares one copy: 20 test files, 165 tests, gated at **100%**. Its tests left
 `flutter_ui/test` with it, so `cd flutter_ui && flutter test` no longer runs them:
 
 ```bash

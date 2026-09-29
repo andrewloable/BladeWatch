@@ -2783,7 +2783,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
         // The live view's full-resolution still (rdtj.68): by the clock, not a frame count -- sentry
         // runs the camera slower, and every 26 frames became one still per ~2 s. Twice the encode
         // rate, so each once-a-second encode finds a new shot.
-        private const val STILL_CAPTURE_INTERVAL_MS = 500L
+        private const val STILL_CAPTURE_INTERVAL_MS = 100L
 
         private fun isHardwareBufferBridgeReady(report: String?): Boolean {
             if (report.isNullOrEmpty()) {

@@ -10,34 +10,13 @@ import org.json.JSONObject
 /**
  * Connect protocol handler for bladewatch.v1.NotificationsService.
  *
- * Routes:
- *   /bladewatch.v1.NotificationsService/GetCategories      → GET  /api/notifications/categories
- *   /bladewatch.v1.NotificationsService/Subscribe          → POST /api/push/subscribe
- *   /bladewatch.v1.NotificationsService/Unsubscribe        → POST /api/push/unsubscribe
- *   /bladewatch.v1.NotificationsService/ListSubscriptions  → GET  /api/push/subscriptions
- *   /bladewatch.v1.NotificationsService/UpdatePreferences  → POST /api/push/preferences
- *   /bladewatch.v1.NotificationsService/SendTest           → POST /api/push/test
- *   /bladewatch.v1.NotificationsService/ListInbox          → (Connect only) [CompanionInbox]
+ * Routes: GetCategories, SendTest ([NotificationApiHandler]) and ListInbox ([CompanionInbox]).
  */
 class NotificationsServiceImpl(private val inbox: CompanionInbox) {
 
     fun register(dispatcher: ConnectDispatcher) {
         dispatcher.register(
             "bladewatch.v1.NotificationsService", "GetCategories", this::handleGetCategories
-        )
-        dispatcher.register(
-            "bladewatch.v1.NotificationsService", "Subscribe", this::handleSubscribe
-        )
-        dispatcher.register(
-            "bladewatch.v1.NotificationsService", "Unsubscribe", this::handleUnsubscribe
-        )
-        dispatcher.register(
-            "bladewatch.v1.NotificationsService", "ListSubscriptions",
-            this::handleListSubscriptions
-        )
-        dispatcher.register(
-            "bladewatch.v1.NotificationsService", "UpdatePreferences",
-            this::handleUpdatePreferences
         )
         dispatcher.register(
             "bladewatch.v1.NotificationsService", "SendTest", this::handleSendTest
@@ -49,33 +28,8 @@ class NotificationsServiceImpl(private val inbox: CompanionInbox) {
 
     @Throws(ConnectException::class)
     private fun handleGetCategories(req: String?, clientIdentity: String?): ConnectResponse =
-        // getCategories() merges the registry blob with vapidPublicKey at the root. The proto
-        // expects GetCategoriesResponse{categories_json:"<registry blob>", vapid_public_key}, so
-        // the blob is stringified back out of the merge here.
-        json {
-            val merged = NotificationApiHandler.getCategories()
-            val vapid = merged.optString("vapidPublicKey", "")
-            merged.remove("vapidPublicKey")
-            JSONObject()
-                .put("categoriesJson", merged.toString())
-                .put("vapidPublicKey", vapid)
-        }
-
-    @Throws(ConnectException::class)
-    private fun handleSubscribe(req: String?, clientIdentity: String?): ConnectResponse =
-        json { NotificationApiHandler.subscribe(req) }
-
-    @Throws(ConnectException::class)
-    private fun handleUnsubscribe(req: String?, clientIdentity: String?): ConnectResponse =
-        json { NotificationApiHandler.unsubscribe(req) }
-
-    @Throws(ConnectException::class)
-    private fun handleListSubscriptions(req: String?, clientIdentity: String?): ConnectResponse =
-        json { NotificationApiHandler.listSubscriptions() }
-
-    @Throws(ConnectException::class)
-    private fun handleUpdatePreferences(req: String?, clientIdentity: String?): ConnectResponse =
-        json { NotificationApiHandler.updatePreferences(req) }
+        // GetCategoriesResponse{categories_json:"<registry blob>"}: the registry blob, stringified.
+        json { JSONObject().put("categoriesJson", NotificationApiHandler.getCategories().toString()) }
 
     @Throws(ConnectException::class)
     private fun handleSendTest(req: String?, clientIdentity: String?): ConnectResponse =

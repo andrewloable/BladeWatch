@@ -6,25 +6,20 @@ import net.bladewatch.app.daemon.CameraDaemon
 import java.io.OutputStream
 import java.net.SocketAddress
 import java.net.URLDecoder
-import java.net.URLEncoder
 
 /**
  * Authentication middleware for HttpServer.
  *
  * Two-tier authentication:
- *  - Tier 1 — JWT (cookie or `Authorization: Bearer`): primary, all callers should use this.
+ *  - Tier 1 — JWT (`Authorization: Bearer`): primary, all callers should use this.
  *  - Tier 2 — loopback safety net: requests originating from 127.0.0.1 are trusted only in debug
  *    builds, and only when the request carries no tunnel-fingerprint headers (X-Forwarded-*, Cf-*,
  *    X-Real-Ip, Forwarded). Release builds require a JWT for every protected route because Android
  *    loopback is shared by all apps.
  *
- * Public paths (no auth required at all): /auth/token, /auth/logout, /login.html, /login,
- * /shared/ assets, /favicon.ico.
+ * Public paths (no auth required at all): the companion's /auth/pair and /auth/companion.
  *
  * Notably NOT public: /status, which leaks ACC/charging/recording state.
- *
- * /auth/status is still public but only returns deviceId for loopback callers. Tunnel/LAN callers
- * receive status:ok with no deviceId, to prevent brute-force aid.
  */
 /**
  * Which HttpServer listener a request arrived on -- and therefore whether a loopback source address
@@ -53,36 +48,9 @@ object AuthMiddleware {
 
     // Paths that don't require authentication
     private val PUBLIC_PATHS: Set<String> = hashSetOf(
-        "/auth/status", // Login page polls this; deviceId returned only to loopback callers
-        "/auth/token",
-        "/auth/logout",
         AuthApiHandler.PAIR_PATH, // companion pairing (rdtj.7): a single-use code is the credential
-        AuthApiHandler.COMPANION_LOGIN_PATH, // companion token -> JWT; rate-limited like /auth/token
-        "/login.html",
-        "/login",
-        "/favicon.ico",
-        // Favicon variants — browsers and iOS fetch these without auth cookies.
-        "/favicon.png",
-        "/favicon-32x32.png",
-        "/favicon-16x16.png",
-        "/apple-touch-icon.png",
-        // PWA install assets — the browser fetches these as part of service-worker registration
-        // and manifest discovery, with no Bearer header (browser-internal fetch, not
-        // auth.js-wrapped).
-        "/manifest.json",
-        "/sw.js",
-        // Connect protocol: the login endpoint must be reachable before a session exists.
-        "/bladewatch.v1.AuthService/Login"
+        AuthApiHandler.COMPANION_LOGIN_PATH // companion token -> JWT
     )
-
-    // Path prefixes that don't require authentication
-    private val PUBLIC_PREFIXES = arrayOf(
-        "/shared/", // Static assets (CSS, JS, fonts, models)
-        "/i18n/" // Language files
-    )
-
-    // Cookie name for JWT
-    private const val JWT_COOKIE_NAME = "byd_session"
 
     @Volatile
     private var loopbackBypassOverride: Boolean? = null
@@ -92,10 +60,9 @@ object AuthMiddleware {
     @Throws(Exception::class)
     fun checkAuth(
         path: String,
-        cookieHeader: String?,
         authHeader: String?,
         out: OutputStream
-    ): Boolean = checkAuth(path, cookieHeader, authHeader, out, null, false)
+    ): Boolean = checkAuth(path, authHeader, out, null, false)
 
     /**
      * Check whether a request is authenticated, with the client address only. Backwards-compat
@@ -105,17 +72,15 @@ object AuthMiddleware {
     @Throws(Exception::class)
     fun checkAuth(
         path: String,
-        cookieHeader: String?,
         authHeader: String?,
         out: OutputStream,
         clientAddress: SocketAddress?
-    ): Boolean = checkAuth(path, cookieHeader, authHeader, out, clientAddress, false)
+    ): Boolean = checkAuth(path, authHeader, out, clientAddress, false)
 
     /**
      * Full check, with tunnel-header awareness.
      *
      * @param path request path.
-     * @param cookieHeader Cookie header value.
      * @param authHeader Authorization header value.
      * @param out output stream, for sending 401/redirect.
      * @param clientAddress client socket address, for the loopback Tier-2 net.
@@ -128,13 +93,12 @@ object AuthMiddleware {
     @Throws(Exception::class)
     fun checkAuth(
         path: String,
-        cookieHeader: String?,
         authHeader: String?,
         out: OutputStream,
         clientAddress: SocketAddress?,
         hasTunnelHeaders: Boolean
     ): Boolean = checkAuth(
-        path, cookieHeader, authHeader, out, clientAddress, hasTunnelHeaders, ListenerTrust.REMOTE
+        path, authHeader, out, clientAddress, hasTunnelHeaders, ListenerTrust.REMOTE
     )
 
     /**
@@ -146,23 +110,20 @@ object AuthMiddleware {
     @Throws(Exception::class)
     fun checkAuth(
         path: String,
-        cookieHeader: String?,
         authHeader: String?,
         out: OutputStream,
         clientAddress: SocketAddress?,
         hasTunnelHeaders: Boolean,
         trust: ListenerTrust
     ): Boolean {
-        // Tier 0 — public paths (login UI, static assets, login submission)
+        // Tier 0 — public paths (the companion's pairing and login)
         if (isPublicPath(path)) {
             return true
         }
 
-        // Tier 0.5 — signed thumb token. Browsers and Web Push service workers fetch
-        // /thumb/<file>?t=<jws> as a plain HTTPS GET (no Authorization header is available,
-        // because the fetch happens inside the OS notification banner, the FCM image fetch, or
-        // the iOS notification service). Accept the request iff the token's `sub` claim matches
-        // the requested filename and it is not expired.
+        // Tier 0.5 — signed thumb token: /thumb/<file>?t=<jws> as a plain GET, for a fetch that
+        // cannot carry an Authorization header. Accept the request iff the token's `sub` claim
+        // matches the requested filename and it is not expired.
         if (path.startsWith("/thumb/")) {
             val split = splitPathAndQuery(path)
             val token = queryParam(split[1], "t")
@@ -177,14 +138,10 @@ object AuthMiddleware {
             }
         }
 
-        // Tier 1 — JWT validation. This is the primary path: WebView (cookie), frontend pages
-        // (Authorization header via auth.js), native callers (cookie via DaemonHttpClient).
+        // Tier 1 — JWT validation (Authorization: Bearer). The primary path.
         var jwt: String? = null
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7)
-        }
-        if (jwt == null && cookieHeader != null) {
-            jwt = extractJwtFromCookie(cookieHeader)
         }
         if (!jwt.isNullOrEmpty()) {
             val validation = AuthManager.validateJwt(jwt)
@@ -275,62 +232,15 @@ object AuthMiddleware {
             return true
         }
 
-        // Prefix match
-        for (prefix in PUBLIC_PREFIXES) {
-            if (path.startsWith(prefix)) {
-                return true
-            }
-        }
-
         return false
     }
 
-    /** Extract the JWT from a cookie header. */
-    private fun extractJwtFromCookie(cookieHeader: String?): String? {
-        if (cookieHeader == null) return null
-
-        // Parse cookies: "name1=value1; name2=value2"
-        for (cookie in cookieHeader.split(";")) {
-            val parts = cookie.trim().split("=", limit = 2)
-            if (parts.size == 2 && parts[0].trim() == JWT_COOKIE_NAME) {
-                return parts[1].trim()
-            }
-        }
-
-        return null
-    }
-
-    /**
-     * Handle an unauthorized request: API requests get 401 JSON, page requests get redirected to
-     * the login page.
-     */
+    /** Handle an unauthorized request: 401 JSON. */
     @Throws(Exception::class)
     private fun handleUnauthorized(path: String, out: OutputStream, reason: String): Boolean {
         log("Unauthorized: " + path + " - " + reason)
-
-        // API requests get 401 JSON
-        if (path.startsWith("/api/") || path.startsWith("/ws") ||
-            path.startsWith("/video/") ||
-            path.startsWith("/thumb/") || path.startsWith("/h264/") ||
-            path == "/status" || path.startsWith("/bladewatch.v1.")
-        ) {
-            val json = "{\"error\":\"Unauthorized\",\"reason\":\"" + reason +
-                "\",\"login\":\"/login.html\"}"
-            HttpResponse.sendUnauthorized(out, json)
-            return false
-        }
-
-        // Page requests get redirected to login
-        HttpResponse.sendRedirect(out, "/login.html?redirect=" + urlEncode(path))
+        HttpResponse.sendUnauthorized(out, "{\"error\":\"Unauthorized\",\"reason\":\"" + reason + "\"}")
         return false
-    }
-
-    /** Simple URL encoding for the redirect parameter. */
-    private fun urlEncode(s: String): String = try {
-        URLEncoder.encode(s, "UTF-8")
-    } catch (e: Exception) {
-        log("urlEncode failed: " + e.message)
-        s
     }
 
     private fun urlDecode(s: String): String = try {

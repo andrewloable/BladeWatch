@@ -325,7 +325,7 @@ void main() {
       });
       await pumpScreen(tester, s, const PerformanceScreen(), size: const Size(420, 1400));
       expect(find.text('42.5%'), findsOneWidget);
-      expect(find.text('900 / 2000 MB'), findsOneWidget);
+      expect(find.text('900\n/ 2000 MB'), findsOneWidget);
       // BladeWatch-rdtj.57: the web's app-process card.
       for (final v in ['141', '388', '27']) {
         expect(find.text(v), findsOneWidget);

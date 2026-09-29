@@ -33,7 +33,7 @@ class LocalAppPeerTrustTest {
     private fun allowed(trust: ListenerTrust): Pair<Boolean, String> {
         val out = ByteArrayOutputStream()
         val ok = AuthMiddleware.checkAuth(
-            "/bladewatch.v1.VehicleService/SetChargeCap", null, null, out,
+            "/bladewatch.v1.VehicleService/SetChargeCap", null, out,
             InetSocketAddress("127.0.0.1", 40123), false, trust,
         )
         return ok to out.toString("UTF-8")

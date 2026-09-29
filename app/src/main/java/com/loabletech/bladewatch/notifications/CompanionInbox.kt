@@ -12,14 +12,13 @@ import org.json.JSONObject
  * when the companion next connects, not in real time while the phone is pocketed; that is the
  * trade the owner chose over a central push dependency.
  *
- * A sink beside PushSink, so it holds exactly what browsers are pushed (the gate is applied by
- * publishers, before the bus). Bounded by count and age. Every entry gets a strictly increasing id
+ * A sink on the notification bus (the gate is applied by publishers, before the bus). Bounded by count and age. Every entry gets a strictly increasing id
  * that is never reused, across restarts too: the next id is persisted with the entries. An event
  * whose tag matches a held entry replaces it -- "recording in progress" becomes the final alert.
  *
  * The file describes when the car was disturbed, so it lives in the shell-only /data/local/tmp,
  * mode 600, and holds no category extras (`data`) -- only what the notification itself showed,
- * click URL included (for a clip that names the clip, as the push payload does).
+ * click URL included (for a clip that names the clip).
  */
 class CompanionInbox(
     private val file: File,

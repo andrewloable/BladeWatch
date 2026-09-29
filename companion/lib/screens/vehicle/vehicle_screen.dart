@@ -221,8 +221,11 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
           ]),
           if (s.hasTyres())
             Section(title: tr('companion.tyres'), children: [
+              // Forced break before the temperature, same pattern as BladeWatch-rdtj.72.3's
+              // Diagnostics fix -- confirmed at 2x text scale it wrapped with "°C" left alone
+              // on its own line.
               for (final (name, t) in [('FL', s.tyres.fl), ('FR', s.tyres.fr), ('RL', s.tyres.rl), ('RR', s.tyres.rr)])
-                InfoRow(name, '${t.psi.toStringAsFixed(1)} psi · ${t.tempC} °C${t.leakState > 0 ? ' · ${tr('vehicle.leak')}' : ''}'),
+                InfoRow(name, '${t.psi.toStringAsFixed(1)} psi ·\n${t.tempC} °C${t.leakState > 0 ? ' · ${tr('vehicle.leak')}' : ''}'),
             ]),
         ]);
       },

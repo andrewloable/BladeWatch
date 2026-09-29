@@ -13,7 +13,6 @@ app/src/main/java/com/loabletech/bladewatch/
 app/src/main/assets/
 app/src/main/cpp/
 proto/                       # buf workspace (.proto contracts + buf.gen.yaml)
-web/                         # Angular 19 + Vite web UI (ConnectRPC client)
 flutter_ui/                  # Flutter in-car UI -- its OWN standalone project
 packages/bladewatch_rpc/     # Dart Connect client + generated messages, shared by both Flutter apps
 companion/                   # Flutter companion app (phones + desktops) -- its OWN standalone project
@@ -58,7 +57,7 @@ melos run test
 `melos bootstrap` writes a `pubspec_overrides.yaml` into each app; it is gitignored and
 regenerated every time. IDE-file generation is off in `melos.yaml`.
 
-**flutter_pear is pinned exactly** (`flutter_pear: 0.4.6`, `flutter_pear_test: 0.4.6`), never
+**flutter_pear is pinned exactly** (`flutter_pear: 0.4.7`, `flutter_pear_test: 0.4.7`), never
 with a caret: before 1.0 its minor versions may break the API. Its per-platform wiring is in
 place and is not optional — `minSdk = 29` and `arm64-v8a`/`x86_64` only on Android (the
 manifest merger fails below 29, and an `armeabi-v7a` build has none of its native libraries,
@@ -128,8 +127,9 @@ an existing install does not update into it:
 
 The repository also contains two non-Gradle build inputs that feed the Android build:
 
-- `proto/` — a buf v2 workspace holding the `bladewatch.v1` API contracts. `buf generate` produces Java protobuf message classes and Kotlin ConnectRPC service stubs into `app/src/main/java`, and TypeScript message classes into `web/src/gen`.
-- `web/` — an Angular 19 single-page app built with Vite (`@analogjs/vite-plugin-angular`). Its build output is copied into the APK under `app/src/main/assets/web/angular/`.
+- `proto/` — a buf v2 workspace holding the `bladewatch.v1` API contracts. `buf generate` produces Java protobuf message classes and Kotlin ConnectRPC service stubs into `app/src/main/java`, and Dart message classes into `packages/bladewatch_rpc/lib/gen`.
+
+There is no web build: the Angular web app and its Node/npm toolchain were removed in v1.4.0.0 (BladeWatch-rdtj.22).
 
 ## Toolchain
 
@@ -170,9 +170,7 @@ reads, `SetupGuideDialog` builds a Material `AlertDialog` from
 `dialog_setup_guide.xml`, and `DaemonsViewModel` publishes daemon state as
 `LiveData`.
 
-The Vehicle hero renders via Three.js inside an embedded WebView (`app/src/main/assets/web/hero/hero.html`). A native Filament port was tried and removed — the BYD head unit's Adreno 610 GL driver crashes under continuous gltfio rendering, so Filament must not be reintroduced for the hero.
-
-The web app (`web/`) pins Angular 19, Vite 6, ConnectRPC (`@connectrpc/connect` / `connect-web`), `@bufbuild/protobuf`, Leaflet (Location + Trips maps), `@ngx-translate` (i18n), and `qrcode`. Playwright is the e2e harness.
+The Vehicle hero renders via Three.js inside an embedded WebView (`flutter_ui/assets/web/hero/hero.html`). A native Filament port was tried and removed — the BYD head unit's Adreno 610 GL driver crashes under continuous gltfio rendering, so Filament must not be reintroduced for the hero.
 
 ## Native Dependencies
 
@@ -205,44 +203,33 @@ gitignored, but nothing builds or packages it.
 
 Important asset groups:
 
-- Web UI under `app/src/main/assets/web/`. This contains:
-  - `angular/` — the built Angular SPA (output of the `buildAngularWebUI` task).
-  - `hero/hero.html` — the Three.js Vehicle hero loaded in an embedded WebView.
-  - `i18n/` — the Angular client translation bundles (17 locales).
-  - `shared/`, `local/`, `web/` — the legacy hand-written web UI assets.
-- Server-side i18n under `app/src/main/assets/server-i18n/` (17 locales, used by the daemon for push/notification text).
+- `app/src/main/assets/web/shared/models/` — the 3D vehicle models and the `manifest.json` `ModelsApiHandler` reads (the only web asset left; the in-car UI's hero page and vendor scripts live in `flutter_ui/assets/web/`).
+- Server-side i18n under `app/src/main/assets/server-i18n/` (17 locales, used by the daemon for its localized error and notification text).
 - AI models under `app/src/main/assets/models/` (e.g. `yolo11n.tflite`).
 - The Pear worklet under `app/src/main/assets/pear/pear-end.bundle` — flutter_pear's pear-end bundle, committed byte-identical to the pinned flutter_pear release.
 
 Runtime extraction paths:
 
-- `/data/local/tmp/web`.
+- `/data/local/tmp/web` — only `server-i18n/` and `shared/models/`.
 - `/data/local/tmp/overlay`.
 
-The Gradle task `extractWebAssets` walks `app/src/main/assets/web/` and pushes every file to `/data/local/tmp/web` on the connected device for development iteration.
+## Proto Build Pipeline
 
-## Web UI and Proto Build Pipeline
+`generateConnectProtos` runs `buf generate` in `proto/`. This regenerates Java protobuf classes + Kotlin ConnectRPC stubs into `app/src/main/java` and (since BladeWatch-ncbb.1) Dart protobuf message classes into `packages/bladewatch_rpc/lib/gen` (`flutter_ui/lib/gen` before BladeWatch-rdtj.10; messages only — no RPC client generation; the Flutter APK's transport is hand-written, see below). Generated files are committed, so this task is optional and only needs to be run when a `.proto` changes. `buf generate` does not delete the files of a message or service you removed: delete the orphaned Java files by hand (BladeWatch-rdtj.22 removed 34).
 
-The APK embeds an Angular 19 web app whose build is wired into the Gradle build:
+The proto contracts live in `proto/bladewatch/v1/` and define 12 ConnectRPC services: Auth, Notifications, Recordings, SafeLocations, Settings, Storage, Stream, Surveillance, System, Trips, Update, and Vehicle — 102 RPCs total, all unary (no streaming anywhere in this API).
 
-- `buildAngularWebUI` — runs `npm run build` (Vite) in `web/`, then copies `web/dist` into `app/src/main/assets/web/angular/`. It is hooked into `preBuild`, so the Angular UI is compiled before any variant packages its assets. The task is gated by `onlyIf { npm --version succeeds }`: if Node/npm is not on `PATH`, the Angular build is skipped and whatever assets already sit in `app/src/main/assets/web/angular/` are packaged instead.
-- `generateConnectProtos` — runs `buf generate` in `proto/`. This regenerates Java protobuf classes + Kotlin ConnectRPC stubs into `app/src/main/java`, TypeScript message classes into `web/src/gen`, and (since BladeWatch-ncbb.1) Dart protobuf message classes into `packages/bladewatch_rpc/lib/gen` (`flutter_ui/lib/gen` before BladeWatch-rdtj.10; messages only — no RPC client generation; the Flutter APK's transport is hand-written, see below). Generated files are committed, so this task is optional and only needs to be run when a `.proto` changes. The web app exposes the same step as `npm run generate`.
-
-The proto contracts live in `proto/bladewatch/v1/` and define 12 ConnectRPC services: Auth, Notifications, Recordings, SafeLocations, Settings, Storage, Stream, Surveillance, System, Trips, Update, and Vehicle — 109 RPCs total, all unary (no streaming anywhere in this API).
-
-**Regenerating only one plugin's output.** Two of the four `proto/buf.gen.yaml` plugins (`bufbuild/es` for TypeScript, `connectrpc/kotlin`) are intentionally left unpinned and can silently drift to a newer version between runs — a plain `buf generate` regenerates *all four* plugins, so a change aimed at only one language can pick up unrelated version-stamp noise (or, worse, surface a genuinely stale generated file elsewhere that nobody had regenerated since a `.proto` comment changed). If you only need to regenerate one plugin, target it directly instead of the shared `buf.gen.yaml`, e.g. for Dart:
+**Regenerating only one plugin's output.** One of the three `proto/buf.gen.yaml` plugins (`connectrpc/kotlin`) is intentionally left unpinned and can silently drift to a newer version between runs — a plain `buf generate` regenerates *all three* plugins, so a change aimed at only one language can pick up unrelated version-stamp noise (or, worse, surface a genuinely stale generated file elsewhere that nobody had regenerated since a `.proto` comment changed). If you only need to regenerate one plugin, target it directly instead of the shared `buf.gen.yaml`, e.g. for Dart:
 ```bash
 cd proto && buf generate --template '{"version":"v2","plugins":[{"remote":"buf.build/protocolbuffers/dart:v25.1.0","out":"../packages/bladewatch_rpc/lib/gen"}]}'
 ```
-After any full `buf generate`, always check `git status` on `web/src/gen` and `app/src/main/java/net/bladewatch/app/grpc/` — a diff limited to a `// @generated by protoc-gen-es vX.Y.Z` comment line is safe to revert (`git checkout --`); a diff with real content changes means the checked-in gencode was already stale relative to the current `.proto` files and is a separate, pre-existing issue to fix deliberately, not a side effect of whatever you were actually trying to regenerate.
+After any full `buf generate`, always check `git status` on `packages/bladewatch_rpc/lib/gen` and `app/src/main/java/net/bladewatch/app/grpc/` — the Dart plugin rewrites the checked-in `package:bladewatch_rpc/gen/...` imports as relative ones, so a diff limited to import lines is safe to revert (`git checkout --`); a diff with real content changes means the checked-in gencode was already stale relative to the current `.proto` files and is a separate, pre-existing issue to fix deliberately, not a side effect of whatever you were actually trying to regenerate.
 
 ### Flutter RPC transport (BladeWatch-ncbb.1)
 
 `packages/bladewatch_rpc/lib/rpc/` (`flutter_ui/lib/rpc/` until BladeWatch-rdtj.10 moved it into the shared package) is a small hand-written Connect protocol client mirroring `app/src/main/java/com/loabletech/bladewatch/client/ConnectClientProvider.kt`: POST to `http://127.0.0.1:8080/bladewatch.v1.<Service>/<Method>` with `Content-Type: application/json`, `Connect-Protocol-Version: 1`, and `Authorization: Bearer <jwt>` (4-minute cache keyed to a `JwtSource.stateVersion()`, mirroring `AuthManager.getStateVersion()`); body/response are protobuf-JSON via each generated message's `toProto3Json()`/`mergeFromProto3Json()`. `ConnectClient` never uses a system/VPN proxy for this loopback call (`findProxy` forced to `DIRECT` in `raw_http_sender.dart`), same reasoning as the Kotlin client's `Proxy.NO_PROXY`. `lib/rpc/services/` holds one thin wrapper class per service (`AuthServiceClient`, `SystemServiceClient`, …), one method per RPC — mechanically generated from the `.proto` `rpc` declarations, not hand-typed one at a time. `JwtSource` is an interface; the real implementation (`flutter_ui/lib/platform/auth_channel.dart`'s `AuthChannel`, backed by loopback IPC `secret_get` via the Flutter APK's own Kotlin `MethodChannel` layer — see `flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/auth/JwtMinter.kt` — never reading `bladewatch_secrets.json` directly) shipped in BladeWatch-ncbb.2.
 
 **`daemon.status` vs. `daemon.processStatus` — do not confuse these.** `TcpCommandServer.java`'s `start`/`stop`/`status` IPC commands (wrapped by `DaemonChannel.start()`/`.stop()`/`.status()`) control **camera recording** on an already-running CameraDaemon — which cameras are recording/viewing/active/available — not daemon process lifecycle. There is a separate `daemonStatus` IPC command (BladeWatch-1xt9, wrapped by `DaemonChannel.processStatus()`) that reports whether the CAMERA_DAEMON/SENTRY_DAEMON/ACC_SENTRY_DAEMON/PEAR_PEER **processes** are actually running, computed locally by reading `/proc/<pid>/cmdline` and comparing `basename(argv[0])` (`TcpCommandServer.findPidsByProcessName`), not by shelling out — no ADB needed, since the daemon already runs as shell UID, the same UID as the processes it's checking. This exists because the native `DaemonsViewModel`'s equivalent check (`AdbDaemonLauncher`) is 100% ADB-based and has no IPC equivalent otherwise, which the Flutter APK cannot use per Epic 1's IPC-only rule. A process check can only ever report `RUNNING`/`STOPPED`, never the transitional `DaemonStatus.STARTING`/`STOPPING`/`ERROR` states — those are tracked client-side during an in-flight start/stop call on the native side too.
-
-Local web development can run the Vite dev server (`cd web && npm run dev`), which proxies `/bladewatch.v1`, `/api`, `/status`, and `/auth` to the daemon at `http://127.0.0.1:8080`.
 
 ### Flutter i18n / ARB catalogs (BladeWatch-ncbb.3)
 
@@ -532,38 +519,22 @@ The task's own 8-dialog list turned out to be 4 already built plus 4 genuinely n
 
 ## Build
 
-### Web app test suites
-
-The Angular app has three, with different requirements:
-
-| Command | Needs a car? | Covers |
-|---|---|---|
-| `npm run test:unit` | no | Framework-free logic (vitest) |
-| `npm run test:mobile` | no | Mobile layout on Pixel 7 + iPhone 13, against a locally served build |
-| `npm run test:e2e` | **yes** | Real flows against a live head unit; needs `e2e/.env` |
-
-`test:mobile` stubs the i18n catalogue, which is normally served by the DAEMON rather than the
-static bundle. Without that stub every label renders empty and controls collapse to their
-padding — measured: the login button reports 28px unlabelled against ~46px labelled, which
-looks exactly like a touch-target defect that does not exist.
- Commands
+### Commands
 
 Common local commands:
 
 ```bash
-./gradlew assembleDebug            # debug APK (runs preBuild → buildAngularWebUI first)
+./gradlew assembleDebug            # debug APK
 ./gradlew assembleRelease          # release APK (needs signing env vars)
 ./gradlew test                     # Android JVM unit tests
-./gradlew :app:extractWebAssets    # push web assets to /data/local/tmp/web
-./gradlew generateConnectProtos    # regenerate Java/Kotlin/TS stubs from proto/
-./gradlew buildAngularWebUI        # build the Angular SPA and copy it into assets
+./gradlew generateConnectProtos    # regenerate Java/Kotlin/Dart stubs from proto/
 ```
 
 Flutter in-car UI commands, run from `flutter_ui/`:
 
 ```bash
 flutter analyze
-flutter test                                         # 1443 tests, zero skipped
+flutter test                                         # 1381 tests, zero skipped
 flutter test --coverage --coverage-package '^(bladewatch_ui|bladewatch_theme)$'   # then: tools/check_flutter_coverage.sh
 flutter build apk --target-platform android-arm64 --debug
 flutter run -d "$CAR_IP:5555"                        # hot reload, no Gradle, no daemon restart
@@ -572,7 +543,7 @@ flutter run -d "$CAR_IP:5555"                        # hot reload, no Gradle, no
 The shared RPC package and the companion app, each from its own directory:
 
 ```bash
-cd packages/bladewatch_rpc && flutter analyze && flutter test   # 157 tests
+cd packages/bladewatch_rpc && flutter analyze && flutter test   # 165 tests
 cd companion && flutter analyze && flutter test
 cd companion && flutter test integration_test -d macos          # boots the REAL Pear worklet
 cd companion && flutter build apk --debug                       # arm64-v8a + x86_64 only
@@ -605,16 +576,6 @@ Both packages must report the same UID or privileged IPC is refused:
 ```bash
 adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.app | grep userId'
 adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.incarapp | grep userId'
-```
-
-Web app (Angular) commands, run from `web/`:
-
-```bash
-npm install
-npm run dev            # Vite dev server (proxies API to 127.0.0.1:8080)
-npm run build          # production build into web/dist
-npm run generate       # buf generate (same as ./gradlew generateConnectProtos)
-npm run test:e2e       # Playwright e2e against a live device
 ```
 
 On this repository, shell commands should be prefixed with `rtk` according to the local agent instructions:
@@ -660,10 +621,6 @@ Run a single class, e.g.:
 ```bash
 ./gradlew test --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
 ```
-
-### Web e2e tests
-
-The Angular app has a Playwright suite under `web/e2e/` (`login.spec.ts`, `navigation.spec.ts`, `regression.spec.ts`, plus an `auth.setup.ts` that logs in once and persists the session). The suite targets a single live device over a tunnel: it runs serially (one worker) with retries, and reads its base URL + access code from a gitignored `web/e2e/.env` (see `e2e/.env.example`). Run with `cd web && npm run test:e2e`.
 
 ### Coverage gates (BladeWatch-ncbb.5)
 
@@ -775,14 +732,8 @@ back to the **debug** signing config while its comment said "unsigned", so a
 keystore-less release build produced one unsigned APK and one debug-signed APK —
 a pair that could never share a UID.
 
-**Node is required, not optional.** `buildAngularWebUI` runs during `preBuild`, and
-neither `web/dist` nor `app/src/main/assets/web/angular/` is committed (both
-gitignored). Before this was understood, a runner without Node skipped the Angular
-build with a warning and produced a *successful* APK containing no web UI at all.
-`verifyWebAssetsPresent` now fails the build in that state.
-
 Pinned toolchain: JDK 17 (AGP for `compileSdk 36`; the modules themselves target
-Java 11 bytecode), Node 24, Flutter 3.44.4, NDK `26.1.10909125` and CMake 3.22.1.
+Java 11 bytecode), Flutter 3.44.4, NDK `26.1.10909125` and CMake 3.22.1.
 OpenH264 and opencv-mobile need no CI step — Gradle downloads and checksum-verifies
 them. Every Dart package's `pubspec.yaml` floor must stay satisfiable by that Flutter
 pin (`sdk: ^3.12.2` today): a higher floor fails the workflow at `pub get`.
@@ -897,7 +848,7 @@ Suggested mapping:
 - Gradle namespace, SDK, version, ABI split, and signing: [build.gradle.kts:264](../app/build.gradle.kts#L264), [build.gradle.kts:268](../app/build.gradle.kts#L268), [build.gradle.kts:345](../app/build.gradle.kts#L345), [build.gradle.kts:256](../app/build.gradle.kts#L256).
 - Dependencies (TFLite, ConnectRPC, H2, RTMP) and Filament-removed note: [build.gradle.kts:412](../app/build.gradle.kts#L412), [build.gradle.kts:444](../app/build.gradle.kts#L444), [build.gradle.kts:465](../app/build.gradle.kts#L465).
 - Verified native downloads and asset extraction tasks: [build.gradle.kts:72](../app/build.gradle.kts#L72), [build.gradle.kts:124](../app/build.gradle.kts#L124), [build.gradle.kts:138](../app/build.gradle.kts#L138), [build.gradle.kts:226](../app/build.gradle.kts#L226).
-- Angular web build and proto codegen tasks: [build.gradle.kts:487](../app/build.gradle.kts#L487), [build.gradle.kts:497](../app/build.gradle.kts#L497), [build.gradle.kts:520](../app/build.gradle.kts#L520), [buf.gen.yaml:1](../proto/buf.gen.yaml#L1), [package.json:5](../web/package.json#L5), [playwright.config.ts:17](../web/playwright.config.ts#L17).
+- Proto codegen: [buf.gen.yaml:1](../proto/buf.gen.yaml#L1).
 - Plugin and library versions: [libs.versions.toml:1](../gradle/libs.versions.toml#L1).
 - BYD stub compile/runtime behavior: [build.gradle.kts:413](../app/build.gradle.kts#L413), [BYDAutoManager.java:1](../app/src/main/java/android/hardware/BYDAutoManager.java#L1).
 - Native build and hardening: [CMakeLists.txt:50](../app/src/main/cpp/CMakeLists.txt#L50), [CMakeLists.txt:98](../app/src/main/cpp/CMakeLists.txt#L98).

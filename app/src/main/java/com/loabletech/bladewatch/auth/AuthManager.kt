@@ -91,7 +91,7 @@ object AuthManager {
     private var testStateOverride: AuthState? = null
 
     // Monotonic counter incremented every time cachedState is replaced.
-    // Lets downstream JWT consumers (DaemonHttpClient, WebViewFragment cookie)
+    // Lets downstream JWT consumers (ConnectClientProvider)
     // detect a swap and invalidate their own per-secret caches without
     // having to compare opaque secret material.
     @Volatile
@@ -348,8 +348,8 @@ object AuthManager {
         // threshold and ANR. Lock-free keeps onResume() instant. The
         // volatile cachedState=null write is the real cache invalidation
         // (getState() re-checks it); the stateVersion bump is an advisory
-        // "changed" hint for JWT-caching consumers (DaemonHttpClient's /status
-        // poller, WebView cookie) so they re-mint instead of reusing a JWT
+        // "changed" hint for JWT-caching consumers (ConnectClientProvider)
+        // so they re-mint instead of reusing a JWT
         // signed with the now-discarded secret. A rare lost increment from
         // racing a monitored writer is harmless because cachedState=null already
         // forces a reload.
@@ -359,49 +359,7 @@ object AuthManager {
         stateVersion++
     }
 
-    // ==================== TOKEN VALIDATION ====================
-
-    /**
-     * Validate device token.
-     * Token format: {deviceId}-{secret}
-     */
-    @JvmStatic
-    fun validateDeviceToken(token: String?): Boolean {
-        if (token.isNullOrEmpty()) {
-            return false
-        }
-        val state = getState() ?: return false
-        // Guard the SECRET, not the composed token. getDeviceToken() is deviceId + "-" +
-        // deviceSecret, so a blank secret yields "byd-xxxx-" — non-empty, and guessable by
-        // anyone who has seen the device id, which the login page displays.
-        //
-        // getState() will not hand out a blank-secret state today (it re-initialises instead),
-        // so this is defence in depth rather than a live hole. It is worth stating here anyway
-        // because AuthState.fromJson deliberately sets deviceSecret = "" — the secret lives in
-        // the secret store, not the config — so blank-secret states are constructed by design
-        // and only one caller stands between them and this check.
-        if (state.getSecret().isNullOrEmpty()) {
-            return false
-        }
-        val expected = state.getDeviceToken()
-        if (expected.isEmpty()) {
-            return false
-        }
-        // Constant-time, like every other secret comparison in this class (see the JWT
-        // signature checks below) and in IpcTokenManager / VehicleActionToken. This one was
-        // the outlier, and it is the most exposed of the set: it backs POST /auth/token, the
-        // UNAUTHENTICATED login endpoint, so the compared value is supplied by whoever can
-        // reach the tunnel. String.equals returns at the first differing byte, which leaks how
-        // much of the secret a guess got right.
-        //
-        // The attempt limiter in AuthApiHandler already caps guesses, so this is defence in
-        // depth rather than a fix for a demonstrated break — but it costs one line and removes
-        // an inconsistency that reads like an oversight.
-        return MessageDigest.isEqual(
-            token.toByteArray(StandardCharsets.UTF_8),
-            expected.toByteArray(StandardCharsets.UTF_8)
-        )
-    }
+    // ==================== TOKEN ROTATION ====================
 
     /**
      * Regenerate device token (invalidates all sessions).

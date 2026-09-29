@@ -80,7 +80,7 @@ When the car is parked, BladeWatch can record clips triggered by the BYD parking
 
 ## Location and GPS
 
-A dedicated Location experience exists in both the in-car UI and the web app:
+A dedicated Location experience exists in both the in-car UI and the companion app:
 
 - GPS position is sourced from the daemon (`VehicleService.GetGpsLocation`, backed by `GpsMonitor`), which returns latitude, longitude, heading, accuracy, staleness, and a Google Maps URL.
 - In-car Location screen (Flutter): `flutter_map` on the same MAPNIK tiles, with a heading-rotated car marker, follow mode with a Recenter button after the user pans, and Auto/Light/Dark map appearance (dark inverts tiles), persisted.
@@ -97,35 +97,14 @@ A dedicated Location experience exists in both the in-car UI and the web app:
 - Fragmentation support for large frames.
 - Separate streaming encoder path from recording.
 - Streaming quality configuration.
-- Still-frame fallback for browsers with no usable H.264 decoder (WebCodecs or MSE) — a
-  periodically refreshed JPEG, clearly labelled "still image, not live video", so the remote
-  web view degrades instead of failing outright. See `docs/networking-and-tunnels.md`.
+- Still-frame live view for the companion — a JPEG refreshed 10 times a second
+  (`/api/stream/still`), clearly labelled as a still, not live video. See `docs/networking-and-tunnels.md`.
 
-## Embedded Web UI and PWA
+## No web app
 
-The primary web UI is an Angular 19 single-page app (source in `web/`, built with Vite, talking to the daemon over ConnectRPC). Its build output is bundled under `app/src/main/assets/web/angular/`, extracted by the daemon to `/data/local/tmp/web`, and served locally. The retained hand-written assets (the login page, PWA manifest/service worker and credits under `local/`, plus the shared 3D/vendor assets under `shared/`) and the Three.js Vehicle hero (`hero/hero.html`) also ship under `app/src/main/assets/web/`. The old static HTML pages and their `/legacy/` route were retired once the SPA was confirmed stable.
-
-Angular pages (routes), each built for 1:1 parity with its in-car counterpart:
-
-- Dashboard — stats / connect hub (week trip stats, status chips, metric tiles, device-ID + tunnel-URL QR connect card). In-car status chips also show the gear, drive mode (ECO/NORMAL or SPORT -- the car reports one value for ECO and NORMAL), Auto Hold (on / off) and, on a DM-i, EV / HEV (BladeWatch-7zp9, -os88; a dash for anything unmeasured -- see byd-integrations.md). The THIS WEEK card shows its trip count and distance once, in its tiles (BladeWatch-by8d).
-- Live — full-bleed camera view with All/Front/Right/Rear/Left selector over the WebSocket stream.
-- Recording — dashcam vs surveillance library with day calendar navigation, actor/severity/type filter chips, multi-select delete, and an in-page video player.
-- Surveillance — sensitivity, distance preset, AI gate + confidence, per-class detection, pre/post windows, quadrant snapshots, heatmap, and safe-location zones.
-- Events — surveillance (sentry) event clips with the shared player.
-- Trips — Trips / Stats / Storage tabs, Leaflet route map, driving DNA, personalized range, electricity-rate config.
-- Vehicle — Climate / Windows control tabs, read-only lock + charge/range pills, TPMS cards, and a GPS card.
-- Location — full-screen Leaflet map with a heading-rotated car marker, follow/recenter, and Auto/Light/Dark map themes.
-- Diagnostics — Network / Storage / Camera / Battery health tiles, a Camera Probe dialog, and a Battery Health (SOH) dialog. (No ADB console — ADB is excluded from the web build.)
-- Notifications — Web Push subscribe/unsubscribe, VAPID key, and test push.
-- Performance — CPU / Memory / GPU / app-process metric cards and an audio test.
-- Settings — Appearance, Recording, Surveillance, Status overlay, Daemons, Privacy & data sub-sections.
-- About — identity (name/version/build), MIT license, and setup guide.
-- Login — access-code authentication.
-
-The web app supports 17 UI languages via `@ngx-translate`, loaded from `/i18n/<locale>.json`.
-
-These pages are for remote browser / tunnel clients. The in-car app does **not**
-embed them — it is a Flutter app talking to the same daemon over ConnectRPC.
+The Angular web app (`web/`), its login, its PWA assets and Web Push were removed in v1.4.0.0
+(BladeWatch-rdtj.22). The in-car UI is Flutter and the phone and desktop client is the companion
+app (below); a browser is not a client of the car any more, and the daemon serves no static files.
 
 ## In-Car UI (Flutter)
 
@@ -161,7 +140,7 @@ the daemon host. It provides (Material 3 — see
 - Diagnostics, Performance monitor (CPU/memory/GPU/app metrics), and an ADB
   console / shell runner with preset commands (in-car only; not exposed in the
   web build).
-- Notifications and Web Push management.
+- Notification category choices and a test alert.
 - Daemon status and control.
 - Settings (Appearance, Recording, Surveillance, Status overlay, Daemons,
   Privacy, About) and the language picker.
@@ -207,11 +186,9 @@ The in-car app includes a Vehicle screen under `flutter_ui/lib/screens/vehicle/`
 
 There is no seat control anywhere in BladeWatch: seat heating, ventilation and memory recall were removed end to end on the owner's decision (BladeWatch-7bx4, 2026-09-25).
 
-The Angular web `Vehicle` page mirrors the same two tabs (Climate / Windows), plus read-only lock and charge/range pills, TPMS cards, and a GPS card.
+The hero region above the tabs shows a Three.js-rendered car with a tyre-pressure overlay: per-corner cards (FL/FR/RL/RR) colour-coded by pressure tier (NORMAL/CAUTION/WARN/ALERT/MUTED), with alert cards distinguishing fast vs slow air-leak states. The hero renders in a `webview_flutter` WebView pointed at `flutter_ui/assets/web/hero/hero.html`; **the previously attempted native Filament port was removed because the BYD Adreno 610 GL driver crashes under continuous gltfio rendering — do not reintroduce it.**
 
-The hero region above the tabs shows a Three.js-rendered car with a tyre-pressure overlay: per-corner cards (FL/FR/RL/RR) colour-coded by pressure tier (NORMAL/CAUTION/WARN/ALERT/MUTED), with alert cards distinguishing fast vs slow air-leak states. The hero renders in a `webview_flutter` WebView pointed at `app/src/main/assets/web/hero/hero.html`; **the previously attempted native Filament port was removed because the BYD Adreno 610 GL driver crashes under continuous gltfio rendering — do not reintroduce it.**
-
-The vehicle UI supports 17 languages (Flutter ARB catalogs under `flutter_ui/lib/l10n/`, and the web app via `@ngx-translate`).
+The vehicle UI supports 17 languages (Flutter ARB catalogs under `flutter_ui/lib/l10n/`; the companion carries its own catalogs).
 
 Nearly every write action routes through `VehicleCommandRouter`, which gates BYD SDK
 actuations behind the motion interlock; media volume (below) is the one deliberate exception.
@@ -355,17 +332,17 @@ Performance features include:
 
 Battery state-of-health estimation is not available. The nominal battery capacity value from BYD local telemetry is accessible through the SOC nominal endpoint, but no SoH estimator runs.
 
-## Notifications and Push
+## Notifications
 
 Notification features include:
 
 - Notification category APIs.
-- Web Push subscription management (PWA push).
-- Push preference updates.
-- Test push endpoint.
+- A test alert endpoint.
 - Android notification channels and foreground service notifications.
 
-Surveillance and proximity events deliver notifications through Web Push. There is no Telegram notification path.
+Surveillance and proximity events raise notifications on the car's notification bus; the companion
+collects them from the car's store-and-forward inbox (below). Web Push (browser push) was removed
+with the web app, and there is no Telegram notification path.
 
 **Companion app: store and forward (BladeWatch-rdtj.14).** The car keeps every notification
 it raised: the last 200, for up to 14 days. A newer event with the same tag replaces the
@@ -374,7 +351,7 @@ it has not seen yet (`NotificationsService.ListInbox`). No push service is invol
 alert reaches the phone the next time the companion connects, not the moment it happens.
 The owner chose that trade over depending on a central push relay.
 
-Tapping a push opens the Angular SPA at the route for that category — `/events?filter=sentry` or `/events?filter=proximity` for surveillance and proximity clips, `/vehicle` for TPMS, door, and charging alerts, `/trips` for trip lifecycle alerts. Event pushes also carry the clip name as `file=`, which opens that recording directly, and a pre-signed snapshot URL as `hero=`, which the events page renders as an inline banner. The banner exists because iOS Safari ignores `options.image` on Web Push, so the snapshot never reaches the OS notification banner; only a same-origin `/thumb/` path is accepted for `hero=`. Category click targets live in [notifications-categories.json](../app/src/main/assets/notifications-categories.json) as `defaultClickUrl`, used when an event carries no URL of its own.
+A notification carries an optional click URL naming where it points: `/events?filter=sentry` or `/events?filter=proximity` for surveillance and proximity clips (with the clip name as `file=`), `/vehicle` for TPMS, door and charging alerts, `/trips` for trip lifecycle alerts. The companion reads the clip name from it to open the recording. Category click targets live in [notifications-categories.json](../app/src/main/assets/notifications-categories.json) as `defaultClickUrl`, used when an event carries no URL of its own.
 
 `trips.started` and `trips.ended` (`TripEventNotifier`, BladeWatch-nmao.3) notify on trip boundaries detected by the gear-based `TripDetector` state machine. Both are **off by default** — a trip ends every time the owner parks, and a notification on every park is how people turn all notifications off. `trips.ended`'s payload carries the trip's distance and duration; discarded trips (below the minimum duration/distance thresholds) never publish anything.
 
@@ -386,7 +363,7 @@ Remote access options include:
 - Opt-in LAN access: TLS on 8443 with a pinned self-signed certificate.
 - The companion app over Pear (below). The Tor onion service of v1.3.x was removed in
   v1.4.0.0 (BladeWatch-rdtj.12), and with it the Dashboard's Connect card: the onion QR, the
-  device ID and the web access code.
+  device ID and the web access code. The web app and its login were removed too (BladeWatch-rdtj.22).
 
 **Companion app pairing (v1.4.0.0).** "Pair a device" on the in-car dashboard shows a QR
 for the BladeWatch companion app (phones and desktops). The code works once and expires after
@@ -398,8 +375,8 @@ list with the device's own name -- the computer name on macOS and Windows, the p
 Android and iOS (iOS 16+ gives only "iPhone") -- and the owner can edit it before pairing.
 
 **The companion app (v1.4.0.0, BladeWatch-rdtj.11).** The phone and desktop app that
-replaces the web UI. It reaches the car directly on its Wi-Fi when both are on one network,
-otherwise over Pear. It has every page the web app had:
+replaced the web UI. It reaches the car directly on its Wi-Fi when both are on one network,
+otherwise over Pear. It has every page the web app had (the web app itself is gone):
 
 - Dashboard.
 - Live view.
@@ -423,10 +400,11 @@ The web login is replaced by pairing: scan the in-car QR, or paste its text.
 - **Connection state is explicit on every page.** It is one of three: still looking for the
   car (a Pear lookup can take a minute), can't reach it (it keeps retrying), or the car
   removed this device (pair again). None of these is ever a spinner that never resolves.
-- **Live view is refreshed stills for now.** It shows the four-camera mosaic, updated every
-  few seconds, and works on every platform without a video decoder. H.264 video, and with it
-  the per-camera views, is a follow-up. A dropped connection only skips stills: the last one
-  stays on screen with its time, and the next arrives once the route is back.
+- **Live view is refreshed stills for now.** It shows the four-camera mosaic, updated 10 times a
+  second (BladeWatch-hmk0; a JPEG still, not H.264 video), and works on every platform without a
+  video decoder. Smooth H.264, and with it the per-camera views, is a follow-up. A dropped
+  connection only skips stills: the last one stays on screen with its time, and the next arrives
+  once the route is back.
 - **A dropped connection does not end a clip or a download** (BladeWatch-tayl). A clip that
   was playing reconnects and carries on from where it was; a download that drops resumes from
   the byte it reached, with a Range request, instead of starting over. While the companion has
@@ -458,7 +436,7 @@ The web login is replaced by pairing: scan the in-car QR, or paste its text.
   a pet is in a window. Climate changes are reversible and don't ask. Every command
   carries the car's short-lived action token, and the car's own safety interlock still
   decides.
-- **The app is in all 17 of the web app's languages.**
+- **The app is in 17 languages** (the catalogs the web app used, now kept in `companion/assets/i18n`).
 - **Platforms.** It runs on Android, iOS, macOS, Windows and Linux. Clips play in the app on
   Android, iOS and macOS; elsewhere they download. The QR scanner uses the camera on Android,
   iOS and macOS; elsewhere, paste the code's text.
@@ -496,7 +474,7 @@ subtracted, so the running month total never goes backward or silently loses dat
 
 ## ConnectRPC API
 
-The daemon exposes a typed ConnectRPC API (also reachable over Connect/JSON HTTP) defined by the `bladewatch.v1` proto contracts in `proto/`. It comprises 12 services — Auth, Notifications, Recordings, SafeLocations, Settings, Storage, Stream, Surveillance, System, Trips, Update, and Vehicle — consumed by the Angular web client (TypeScript stubs), the Flutter in-car UI (Dart stubs under `flutter_ui/lib/gen/`), and the daemon host (Kotlin stubs). The web client wraps all 12 services in a single `ConnectClients` injectable.
+The daemon exposes a typed ConnectRPC API (also reachable over Connect/JSON HTTP) defined by the `bladewatch.v1` proto contracts in `proto/`. It comprises 12 services — Auth, Notifications, Recordings, SafeLocations, Settings, Storage, Stream, Surveillance, System, Trips, Update, and Vehicle — consumed by the Flutter in-car UI and the companion (Dart stubs under `packages/bladewatch_rpc/lib/gen/`) and the daemon host (Kotlin stubs).
 
 ## Source References
 
@@ -504,10 +482,8 @@ The daemon exposes a typed ConnectRPC API (also reachable over Connect/JSON HTTP
 - ACC-on recording modes: [RecordingModeManager.java:31](../app/src/main/java/com/loabletech/bladewatch/recording/RecordingModeManager.java#L31), [RecordingModeManager.java:533](../app/src/main/java/com/loabletech/bladewatch/recording/RecordingModeManager.java#L533), [ProximityRecordingHandler.java:49](../app/src/main/java/com/loabletech/bladewatch/proximity/ProximityRecordingHandler.java#L49).
 - Surveillance and AI: [SurveillanceEngineGpu.java:22](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java#L22), [MotionPipelineV2.java:14](../app/src/main/java/com/loabletech/bladewatch/surveillance/MotionPipelineV2.java#L14), [YoloDetector.kt:43](../app/src/main/java/com/loabletech/bladewatch/ai/YoloDetector.kt#L43), [SurveillanceConfig.java:9](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceConfig.java#L9).
 - Live streaming: [GpuSurveillancePipeline.java:30](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.java#L30), [WebSocketStreamServer.java:19](../app/src/main/java/com/loabletech/bladewatch/streaming/WebSocketStreamServer.java#L19), [HttpServer.java:538](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L538).
-- Embedded web UI: [HttpServer.java:49](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L49), [app/src/main/assets/web/shared/core.js:537](../app/src/main/assets/web/shared/core.js#L537).
 - BYD telemetry and vehicle control: [BydDataCollector.java:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L20), [VehicleControlApiHandler.java:43](../app/src/main/java/com/loabletech/bladewatch/server/VehicleControlApiHandler.java#L43), [VehicleCommandRouter.java:37](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.java#L37), [flutter_ui/lib/screens/vehicle/](../flutter_ui/lib/screens/vehicle/).
 - Proximity radar recording: [ProximityRadarMonitor.java:16](../app/src/main/java/com/loabletech/bladewatch/proximity/ProximityRadarMonitor.java#L16), [RadarConstants.java:27](../app/src/main/java/com/loabletech/bladewatch/byd/radar/RadarConstants.java#L27), [ProximityRecordingHandler.java:49](../app/src/main/java/com/loabletech/bladewatch/proximity/ProximityRecordingHandler.java#L49).
-- Location and GPS: [flutter_ui/lib/screens/location/](../flutter_ui/lib/screens/location/), [location.component.ts:1](../web/src/app/pages/location/location.component.ts#L1), [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51).
+- Location and GPS: [flutter_ui/lib/screens/location/](../flutter_ui/lib/screens/location/), [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51).
 - Trips, notifications, updates, and diagnostics: [TripAnalyticsManager.java:23](../app/src/main/java/com/loabletech/bladewatch/trips/TripAnalyticsManager.java#L23), [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [NotificationApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L30), [PerformanceApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/PerformanceApiHandler.java#L30), [adb_console_screen.dart](../flutter_ui/lib/screens/diagnostics/adb_console_screen.dart).
-- ConnectRPC API and web UI: [connect-clients.ts:19](../web/src/app/core/connect/connect-clients.ts#L19), [app.routes.ts:5](../web/src/app/app.routes.ts#L5).
 - Remote access: [PearLauncher.kt](../app/src/main/java/com/loabletech/bladewatch/launcher/PearLauncher.kt), [PearDaemon.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearDaemon.kt), [companion/lib/car/](../companion/lib/car/).

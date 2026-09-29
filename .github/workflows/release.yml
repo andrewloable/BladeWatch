@@ -50,7 +50,7 @@ concurrency:
 # default still running on Node.js 20"), so v6 is the first that clears the warning. Do not
 # "tidy" these to a single number without re-checking each action.yml's `runs.using`.
 #
-# Newer majors exist (checkout v7, setup-node v7, upload-artifact v7, setup-java v6,
+# Newer majors exist (checkout v7, upload-artifact v7, setup-java v6,
 # gradle/actions v6). They are deliberately NOT taken here: the goal was to clear a runtime
 # deprecation, and each extra major crosses changes nobody has read.
 #
@@ -108,40 +108,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-
-      # REQUIRED, not optional. The Angular SPA in web/ is built by Gradle's
-      # buildAngularWebUI during preBuild, and neither web/dist nor the packaged
-      # copy at app/src/main/assets/web/angular/ is committed (both gitignored).
-      # Without Node the build fails loudly (verifyWebAssetsPresent) rather than
-      # shipping an APK with no web UI at all.
-      # Node 24 (npm 11), matching the toolchain web/package-lock.json was generated
-      # with. Node 20 ships npm 10, which resolves a DIFFERENT dependency tree and
-      # makes `npm ci` fail with "Missing: chokidar@4.0.3, readdirp@4.1.2 from lock
-      # file" even though the lockfile is perfectly valid. web/ also pulls
-      # rollup-plugin-visualizer, which declares `node >= 22`, so 20 was wrong twice
-      # over. Keep this in step with the Node you develop on.
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: npm ci
-        working-directory: web
-
-      # `vite build` does NOT typecheck — esbuild strips types without checking them, so a
-      # type error produces a perfectly successful build. Neither does anything check Angular
-      # TEMPLATES. Both are documented traps in CLAUDE.md, and the second one shipped: four
-      # files imported generated protobuf types through a path one level too deep and the
-      # build stayed green for months because `import type` declarations are erased before
-      # the path is ever resolved. Gradle's buildAngularWebUI runs `vite build` and would
-      # have caught neither.
-      - name: Web gates
-        working-directory: web
-        run: |
-          set -euo pipefail
-          npm run typecheck
-          npm run typecheck:templates
-          npm run test:unit
 
       # Pinned to the version this project is developed against, so a Flutter
       # release cannot silently change the shipped binary.

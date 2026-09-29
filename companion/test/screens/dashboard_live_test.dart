@@ -291,9 +291,9 @@ void main() {
       await unmount(tester);
     });
 
-    // BladeWatch-rdtj.61: one still a second; the picture changes only when a new frame comes,
+    // BladeWatch-hmk0: ten stills a second; the picture changes only when a new frame comes,
     // and a failed fetch leaves the last one up.
-    testWidgets('polls once a second, and replaces the still only with a different one', (tester) async {
+    testWidgets('polls 10 times a second, and replaces the still only with a different one', (tester) async {
       final s = TestSession(phase: TransportPhase.pear);
       var fetches = 0;
       var answer = MediaResponse(200, Uint8List.fromList(testPng));
@@ -307,19 +307,19 @@ void main() {
       final afterOpen = fetches;
 
       answer = MediaResponse(200, Uint8List.fromList(testPng)); // the same still, a new copy
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 100));
       await tester.pump();
-      expect(fetches, afterOpen + 1, reason: 'one fetch a second, on Pear too');
+      expect(fetches, afterOpen + 1, reason: 'one fetch per 100ms, on Pear too');
       expect(identical(shown(), first), isTrue, reason: 'the same bytes again: the picture is kept');
 
       answer = MediaResponse(500, Uint8List(0)); // a failed fetch
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 100));
       await tester.pump();
       expect(identical(shown(), first), isTrue, reason: 'a failed fetch leaves the last still up');
 
       final next = Uint8List.fromList([...testPng]..last ^= 1);
       answer = MediaResponse(200, next);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 100));
       await tester.pump();
       expect(identical(shown(), next), isTrue, reason: 'a new frame replaces it');
       await unmount(tester);

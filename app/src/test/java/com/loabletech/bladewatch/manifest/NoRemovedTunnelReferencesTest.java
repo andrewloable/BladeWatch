@@ -46,7 +46,6 @@ public class NoRemovedTunnelReferencesTest {
         // BladeWatch-rdtj.10 moved flutter_ui/lib/rpc here; it must not drop out of the scan.
         "packages/bladewatch_rpc/lib", "packages/bladewatch_rpc/test",
         "companion/lib", "companion/test", "companion/integration_test",
-        "web/src", "web/e2e",
         "docs",
     };
 

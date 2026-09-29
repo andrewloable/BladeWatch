@@ -9,18 +9,6 @@ plugins:
   - remote: buf.build/protocolbuffers/java:v35.0
     out: ../app/src/main/java
 
-  # TypeScript protobuf message classes for Angular web UI.
-  # Pinned for the same reason as the Java plugin above: the unpinned plugin
-  # drifts (observed v2.12.0 -> v2.15.0), and since the generator stamps its own
-  # version into every file's header banner, an unrelated `buf generate` rewrites
-  # all 12 files under web/src/gen with a one-line diff each. That churn lands in
-  # web/, which is a separate project and out of scope for the Flutter refactor.
-  - remote: buf.build/bufbuild/es:v2.12.0
-    out: ../web/src/gen
-    opt:
-      - target=ts
-      - import_extension=none
-
   # Kotlin ConnectRPC service client stubs for Android app
   - remote: buf.build/connectrpc/kotlin
     out: ../app/src/main/java

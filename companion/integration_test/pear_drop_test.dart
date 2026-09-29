@@ -47,6 +47,20 @@ final _t0 = DateTime.now();
 void _emit(Map<String, Object?> line) =>
     print(jsonEncode({'t_s': DateTime.now().difference(_t0).inMilliseconds / 1000, ...line}));
 
+/// [PearCloseStats] as a JSON-safe map. [PearCloseStats.error] is already scrubbed of
+/// addresses/keys by pear-end (BladeWatch-rdtj.34); nothing here adds an identifier back --
+/// no public key, no address, just counts, codes and an address FAMILY bool.
+Map<String, Object?> _closeStatsJson(PearCloseStats s) => {
+      'error': s.error,
+      'ageMs': s.ageMs,
+      'bytesIn': s.bytesIn,
+      'bytesOut': s.bytesOut,
+      'rtt': s.rtt,
+      'rtoCount': s.rtoCount,
+      'retransmits': s.retransmits,
+      'ipv6': s.ipv6,
+    };
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -76,9 +90,20 @@ void main() {
         final s = await (pear ??= await Pear.start()).join(topic, announce: false);
         s.state.listen((st) => _emit({'swarm': st.state.name, if (st.error != null) 'error': st.error!.code}));
         var seen = 0;
+        final closedReported = <PearConnection>{};
         probe = Timer.periodic(const Duration(seconds: 1), (_) {
-          final n = s.establishedConnections.length;
+          final conns = s.establishedConnections;
+          final n = conns.length;
           if (n != seen) _emit({'swarm_connections_seen': seen = n});
+          // BladeWatch-rdtj.34: a close reason for every drop, on this end. establishedConnections
+          // keeps closed connections (see its own doc comment), so a plain poll catches each one
+          // exactly once via closedReported -- no need to also listen to `connections` itself.
+          for (final (i, c) in conns.indexed) {
+            final stats = c.closeStats;
+            if (stats != null && closedReported.add(c)) {
+              _emit({'close': i, 'stats': _closeStatsJson(stats)});
+            }
+          }
         });
         return s;
       },

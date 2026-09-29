@@ -12,18 +12,17 @@
  *
  * WHY THE APP DOES NOT CALL ICU ITSELF. `Intl.supportedValuesOf` is ES2022. The
  * head unit runs an Android 10 WebView that does not reliably auto-update on a
- * BYD unit, so relying on it in shipped web code would fail on the one device
+ * BYD unit, so relying on it in shipped code would fail on the one device
  * that matters. Generation happens here, on a dev machine, at author time.
  *
  * WHY NO SYMBOLS. The list is CODES ONLY. Each platform formats currency from
- * its own ICU data at render time — `Intl.NumberFormat` on the web,
- * `NumberFormat.simpleCurrency` via the `intl` package in Flutter. Shipping a
+ * its own ICU data at render time — `NumberFormat.simpleCurrency` via the `intl`
+ * package in Flutter. Shipping a
  * symbol table would mean maintaining placement, spacing and decimal-digit
  * rules per currency per locale, which is precisely what ICU already does.
  *
- * Both consumer copies are written from this one run and are byte-identical.
- * `validateCurrencyCatalog` (wired into preBuild) fails the build if they drift,
- * following the same precedent as `validateI18nCatalogs`.
+ * `validateCurrencyCatalog` (wired into preBuild) fails the build if the committed
+ * copy is malformed, unsorted or truncated.
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -59,13 +58,7 @@ const payload = {
   codes,
 };
 
-// Both consumers get a byte-identical copy. Two copies exist because the web and
-// Flutter builds are separate projects with separate asset pipelines; the drift
-// check is what keeps them honest.
-const targets = [
-  join(repoRoot, 'web', 'src', 'assets', 'iso4217.json'),
-  join(repoRoot, 'flutter_ui', 'assets', 'iso4217.json'),
-];
+const targets = [join(repoRoot, 'flutter_ui', 'assets', 'iso4217.json')];
 
 const json = JSON.stringify(payload, null, 2) + '\n';
 for (const t of targets) {

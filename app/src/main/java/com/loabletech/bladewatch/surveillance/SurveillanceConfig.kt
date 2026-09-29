@@ -195,7 +195,7 @@ class SurveillanceConfig {
     // ========================================================================
     // Notification severity gating (item 8)
     //
-    // Per-tier mute is enforced device-side via PushSubscription.mutedCategories
+    // Per-tier mute is enforced device-side by the companion
     // against the new "surveillance.motion.{notice,alert,critical}" subcategories
     // (see notifications-categories.json). These config fields exist purely so
     // the legacy NotificationGate static helpers compile and so existing callers

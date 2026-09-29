@@ -8,7 +8,7 @@ BladeWatch exposes a local authenticated web server and can optionally front it 
 | --- | --- | --- | --- |
 | `19876` | `127.0.0.1` | `TcpCommandServer` | JSON command IPC for camera daemon control and secret bridge |
 | `19877` | `127.0.0.1` | `SurveillanceIpcServer` | JSON IPC for surveillance, GPS, and update actions |
-| `8080` | `127.0.0.1` **always** | `HttpServer` | Web UI, REST APIs, ConnectRPC (`/bladewatch.v1.*`), video, thumbnails, WebSocket streaming. Listener trust `LOCAL_APPS` |
+| `8080` | `127.0.0.1` **always** | `HttpServer` | ConnectRPC (`/bladewatch.v1.*`), video, thumbnails, WebSocket streaming, the companion's pairing. Listener trust `LOCAL_APPS` |
 | `8444` | `127.0.0.1` **always** | `HttpServer` (TLS) | Pear's way in: the stream pump (`PearStreamPump`, in pear_daemon) connects here, and the companion's TLS runs end to end through the Pear stream to it. Same pinned certificate as 8443, independent of the LAN opt-in. Listener trust `REMOTE` |
 | `8443` | `0.0.0.0`, only while LAN access is on | `HttpServer` (TLS) | The same server over TLS for a companion on the same LAN; pinned self-signed certificate (`LanTls`). Listener trust `REMOTE` |
 | `18443/udp` | all interfaces, only while LAN access is on | `LanDiscoveryResponder` | Answers a paired companion's HMAC-signed discovery probe with the car's LAN IP, 8443 and the TLS pin; silent to everything else |
@@ -24,12 +24,10 @@ exposed over HTTP — see `docs/ipc-auth-and-secrets.md`.
 The HTTP server serves (all on a single port so the tunnel can expose both
 HTTP and WebSocket):
 
-- The Angular SPA build (`/`, `/assets/*`, `/vendor/*`).
-- Shared JavaScript, CSS, and i18n resources.
-- Auth endpoints (`/auth/*`).
+- The companion's auth endpoints (`/auth/pair`, `/auth/companion`).
 - The REST API (`/api/*`, `/status`, `/video/*`, `/thumb/*`).
 - The ConnectRPC / gRPC-style API under the `/bladewatch.v1.*` route prefix,
-  consumed by the Angular SPA. Unary calls use `application/json`, streaming
+  consumed by the in-car UI and the companion. Unary calls use `application/json`, streaming
   uses `application/connect+json`; both require `Connect-Protocol-Version: 1`.
   The Connect handlers wrap the REST handlers, so they share the same auth and
   the same bind. See `docs/http-api-reference.md` for the full surface.
@@ -55,19 +53,17 @@ and pinning never evaluates validity anyway. It is replaced only if missing or
 unreadable, which is logged as an error.
 
 A browser pointed at `https://<car>:8443` gets a certificate warning: there is no
-CA to vouch for the car. The web app over the LAN therefore now needs that warning
-accepted; the companion app does not, because it pins.
+CA to vouch for the car, and nothing is served to a browser any more (the web app was removed,
+BladeWatch-rdtj.22). The companion app does not need the warning, because it pins.
 
 What turning LAN access on exposes to the rest of the LAN (BladeWatch-cjhz), before any
 credential:
 
-- **Any client is served, pinned or not.** Only the companion pins. A browser user who
-  clicks through the warning can be man-in-the-middled on a shared network and would hand
-  over their login. This ends with the web app (rdtj.13).
+- **Any client is served, pinned or not.** Only the companion pins, and every route but
+  `/auth/pair` and `/auth/companion` needs a JWT.
 - **That a car is there.** Port 8443 answers. The certificate subject used to say
   `CN=BladeWatch`; identities created now say `CN=localhost`. An existing certificate keeps
-  its subject, because re-minting it would unpair every companion. Until web/ retires, the
-  login page it serves carries the product name anyway. The discovery responder (udp/18443)
+  its subject, because re-minting it would unpair every companion. The discovery responder (udp/18443)
   stays silent to anything that is not signed with the pairing key.
 
 `SystemService/GetStatus` reports `network.httpBind` (always `127.0.0.1`) and
@@ -152,31 +148,20 @@ to 8444.
 
 `AuthMiddleware` protects the HTTP server.
 
-Public paths (no auth at all):
-
-- `/auth/status`, `/auth/token`, `/auth/logout`.
-- `/login`, `/login.html`.
-- `/manifest.json`, `/sw.js`, `/favicon.ico`.
-- `/shared/*`, `/i18n/*` (prefixes).
-- `/bladewatch.v1.AuthService/Login` — the Connect login RPC must be reachable
-  before a session exists. All other `/bladewatch.v1.*` Connect calls are
-  protected by the same middleware that guards REST.
+Public paths (no auth at all): the companion's `/auth/pair` and `/auth/companion`. Every
+`/bladewatch.v1.*` Connect call is protected by the same middleware. The web login
+(`/auth/token`, `/auth/logout`, `/auth/status`), the login page, the PWA assets and the static
+prefixes were removed with the web app (BladeWatch-rdtj.22).
 
 Note: `/auth/*` paths are routed in `HttpServer.handleClient` before the auth
-middleware runs, so they are always reachable regardless of the list above.
+middleware runs, so they are always reachable; an unknown `/auth/*` path is a 404.
 
 Protected requests require:
 
 - Bearer JWT (`Authorization: Bearer <jwt>`), or
-- `byd_session` cookie (HttpOnly JWT), or
 - signed thumbnail token for specific `/thumb/*?t=<jws>` access.
 
-Cookies set on successful `/auth/token`:
-
-- `byd_session` — the JWT itself, **HttpOnly** (not readable by JS), used by the
-  WebView and browser for authenticated requests.
-- `byd_auth=1` — a non-HttpOnly hint cookie so client JS can tell it is logged
-  in without exposing the JWT. Both expire together; logout clears both.
+There is no cookie session any more.
 
 Release builds require JWT auth even from loopback clients because Android loopback is shared across apps. Debug builds can bypass loopback auth only when tunnel-forwarding headers are absent.
 
@@ -213,9 +198,8 @@ Streaming behavior includes:
 ## Android WebView Networking (REMOVED — historical)
 
 `WebViewFragment` was deleted in Phase 4 (`BladeWatch-81g9.2`) along with the rest
-of the native UI. **Nothing in the app loads the SPA in a WebView any more** — the
-in-car UI is Flutter and calls the daemon over ConnectRPC directly, and the SPA is
-served only to remote browser / tunnel clients.
+of the native UI. The in-car UI is Flutter and calls the daemon over ConnectRPC directly; the
+SPA itself is gone (BladeWatch-rdtj.22).
 
 What it used to do is recorded here because the underlying head-unit quirks have
 not gone away and will bite anything that puts a WebView on `127.0.0.1:8080`
@@ -444,17 +428,15 @@ For comparison with the Pear numbers, tor measured on the head unit (2026-09-14)
 2.1–6.5 s warm request TTFB, ~82 s cold bootstrap, and the address opened only in Tor Browser
 or Onion Browser.
 
-## Still-frame fallback for decoder-less browsers (BladeWatch-y78o.1)
+## Still-frame live view (BladeWatch-y78o.1)
 
 `GET /api/stream/still` serves a periodically refreshed JPEG of the full 4-camera mosaic
 (1280×960, quality 80; 640×480 before BladeWatch-rdtj.68), or with `?camera=0..3` (Front, Right,
 Rear, Left) ONE camera at its native 1280×960. The response header `X-Still-View: mosaic|0..3`
-says which it holds: the first second after a switch can still be the previous view for browsers that can decode neither WebCodecs nor MSE H.264 — Tor
-Browser on Linux is the documented case (see `docs/evaluations/overdrive-remote-communication.md`
-and friends for why: Firefox borrows the platform's H.264 decoder and Linux has none by
-default). The web client (`web/src/app/pages/live/still-frame-player.ts`) selects this tier
-automatically — see `stream-tier.ts` — and shows a persistent "still image, not live video"
-banner so the owner never mistakes a stale frame for a live one.
+says which it holds: the first second after a switch can still be the previous view. It was built
+for browsers with no usable H.264 decoder (Tor Browser on Linux); the web client that selected it is
+gone, and the companion labels it "still image, not live video" so the owner never mistakes a stale
+frame for a live one.
 
 The companion's live view uses this tier on every platform (BladeWatch-rdtj.11). Stills flow
 only while streaming is enabled, and streaming idles out 30 s after the last WebSocket viewer

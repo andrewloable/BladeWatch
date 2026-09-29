@@ -261,7 +261,7 @@ Responsibilities:
    - TCP command server on `127.0.0.1:19876`.
    - HTTP server on `127.0.0.1:8080` by default.
    - Surveillance IPC server on `127.0.0.1:19877`.
-5. Initializes ACC monitor, GPU camera and surveillance pipeline, recording/streaming state, unified config, auth state, storage manager, web asset extraction, native libraries, BYD data collector, trip analytics, telemetry collector, and Web Push notifications.
+5. Initializes ACC monitor, GPU camera and surveillance pipeline, recording/streaming state, unified config, auth state, storage manager, asset extraction, native libraries, BYD data collector, trip analytics, telemetry collector, and notifications.
 6. Confirms `TCP_PORT` is actually accepting connections (polls up to 5s), then writes the ready sentinel.
 
 The daemon uses an Android Looper and defensive retry handling around BYD listener paths because some firmware listeners can fail or crash unexpectedly.
@@ -394,7 +394,6 @@ Plain HTTP never binds anything but loopback; LAN access is the TLS listener's j
 
 Responsibilities:
 
-- Serve extracted web app assets.
 - Serve static local and shared assets.
 - Serve recording videos and thumbnails.
 - Enforce auth middleware.
@@ -467,12 +466,21 @@ cannot tell. Settings -> Services shows it under "Remote access (Pear)", and the
 Remote access tile reports it while Pear is switched on.
 
 **Why a companion dropped (BladeWatch-rdtj.34).** From a pear-end that sends close stats
-(flutter_pear after 0.4.6), each companion disconnect logs one line under the `PearDaemon` tag,
-`companion disconnected (peers=N): error=... ageMs=... bytesIn=... bytesOut=... rtt=...
-rtoCount=... retransmits=... ipv6=...`, and `pear_status.json`'s `recentCloses` keeps the last
-20 with their times. `error` is null for a clean close, else a code such as `ETIMEDOUT`; a high
-`rtoCount` points at UDX timeouts under load, a quiet connection closing on a timeout at a NAT
-mapping expiring. Only those fields are copied: no topic, key or address.
+(flutter_pear 0.4.7+), `pear_status.json`'s `recentCloses` keeps the last 20, with their times,
+unconditionally -- this is what a diagnostics screen should read, and it needs no debug flag.
+`error` is null for a clean close, else a code such as `ETIMEDOUT`; a high `rtoCount` points at
+UDX timeouts under load, a quiet connection closing on a timeout at a NAT mapping expiring. Only
+those fields are copied: no topic, key or address.
+
+PearDaemon.kt *also* logs the same line under the `PearDaemon` tag (`companion disconnected
+(peers=N): error=... ageMs=... bytesIn=... bytesOut=... rtt=... rtoCount=... retransmits=...
+ipv6=...`) -- but, like every daemon's own text logging in this project, only when its
+`DaemonLogConfig.kt` flag (`PEAR_DAEMON`) is set `true`; it is `false` by default so R8 can strip
+debug logging from release builds (see `DaemonLogConfig.kt`'s own class doc, "Compile-time
+logging configuration for release builds"). Do not expect this line to appear on a normal debug
+or release build without flipping that flag first -- verified 2026-09-29: a real 15-minute drop
+test produced 6 real closes, all captured correctly in `recentCloses`, none in the text log,
+exactly as this flag predicts.
 
 Runtime paths:
 
@@ -613,11 +621,11 @@ Location sidecar / app helpers
 Companion over Pear
   -> pear_daemon's stream pump -> TLS 8444
 
-Companion or browser on the car's network (LAN access on)
+Companion on the car's network (LAN access on)
   -> TLS 8443
 
 Camera daemon
-  -> BYD local APIs, storage, Web Push notifications, trips
+  -> BYD local APIs, storage, notifications, trips
 ```
 
 ## Source References

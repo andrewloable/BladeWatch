@@ -8,20 +8,12 @@ import com.connectrpc.Headers
 import com.connectrpc.ResponseMessage
 
 /**
- *  AuthService exposes login, logout, and status endpoints.
+ *  AuthService: cache invalidation only. The web login (Login, Logout, GetAuthStatus over
+ *  /auth/token, /auth/logout, /auth/status) was removed with the web app (BladeWatch-rdtj.22);
+ *  a companion pairs and logs in over /auth/pair and /auth/companion.
  *
- *  HTTP mapping:
- *    Login                POST /auth/token
- *    Logout               POST /auth/logout
- *    GetAuthStatus        GET  /auth/status
  *    InvalidateAuthCache  TCP  auth_invalidate (calls AuthManager.invalidateCache() directly)
  */
 public interface AuthServiceClientInterface {
-  public suspend fun login(request: LoginRequest, headers: Headers = emptyMap()): ResponseMessage<LoginResponse>
-
-  public suspend fun logout(request: LogoutRequest, headers: Headers = emptyMap()): ResponseMessage<LogoutResponse>
-
-  public suspend fun getAuthStatus(request: GetAuthStatusRequest, headers: Headers = emptyMap()): ResponseMessage<GetAuthStatusResponse>
-
   public suspend fun invalidateAuthCache(request: InvalidateAuthCacheRequest, headers: Headers = emptyMap()): ResponseMessage<InvalidateAuthCacheResponse>
 }

@@ -70,7 +70,10 @@ class _PerformanceScreenState extends State<PerformanceScreen> with LoadersState
             InfoRow(tr('companion.perf_temp'), n('cpu', 'tempC', digits: 1, unit: ' °C')),
           ]),
           Section(title: tr('companion.perf_memory'), children: [
-            InfoRow(tr('companion.perf_used'), '${n('memory', 'usedMb')} / ${n('memory', 'totalMb', unit: ' MB')}'),
+            // A forced break before "/ total", not the greedy wrap InfoRow's own Text would
+            // otherwise pick at larger text sizes -- confirmed at 2x scale it wrapped with "MB"
+            // left alone on its own line, the same shape as BladeWatch-rdtj.72.3's Diagnostics fix.
+            InfoRow(tr('companion.perf_used'), '${n('memory', 'usedMb')}\n/ ${n('memory', 'totalMb', unit: ' MB')}'),
             InfoRow(tr('companion.perf_app'), n('memory', 'appTotalMb', unit: ' MB')),
           ]),
           Section(title: 'GPU', children: [

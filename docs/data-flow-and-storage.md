@@ -148,7 +148,7 @@ Camera frame
   -> GpuSurveillancePipeline
   -> stream scaler and encoder
   -> WebSocketStreamServer / HttpServer WebSocket upgrade
-  -> browser client
+  -> in-car UI (and the companion, through the Pear stream)
 ```
 
 Live streaming is separate from recording. The server handles H.264 headers, cached SPS/PPS, IDR requests, and frame fragmentation.
@@ -162,22 +162,19 @@ Camera frame
   -> per-quadrant motion state
   -> optional TFLite YOLO gate
   -> surveillance decision
-  -> event recording and Web Push notification
+  -> event recording and notification
 ```
 
 Surveillance uses motion detection first and AI as a gated assist. Event windows include pre-event and post-event recording.
 
-### Web UI to Daemon
+### Client to Daemon
 
 ```text
-Browser or Android WebView
-  -> http://127.0.0.1:8080
-  -> AuthMiddleware
-  -> HttpServer route handlers
+In-car UI (127.0.0.1:8080) or companion (LAN TLS 8443 / Pear stream into 8444)
+  -> AuthMiddleware (JWT)
+  -> HttpServer route handlers / ConnectRPC
   -> daemon managers, config, storage, camera, trips
 ```
-
-The Android WebView injects auth cookies and JavaScript bridge behavior so mutating API calls can bypass local proxy interference.
 
 ### Android App to Daemon
 
@@ -308,8 +305,8 @@ no exchange-rate source and none is wanted — converting historical costs at to
 would misreport what the owner actually spent.
 
 **The code list is generated, not hand-maintained.** `tools/gen-currencies.mjs` derives it
-from ICU via `Intl.supportedValuesOf('currency')` and writes a byte-identical copy to
-`web/src/assets/iso4217.json` and `flutter_ui/assets/iso4217.json`. Regenerate with:
+from ICU via `Intl.supportedValuesOf('currency')` and writes
+`flutter_ui/assets/iso4217.json`. Regenerate with:
 
 ```bash
 node tools/gen-currencies.mjs
@@ -577,7 +574,8 @@ The proto contract is `StorageService.ListFormatVolumes` / `FormatVolume` in `pr
 Source assets:
 
 ```text
-app/src/main/assets/web/
+app/src/main/assets/web/shared/models/   (the 3D model manifest and models)
+app/src/main/assets/server-i18n/
 ```
 
 Runtime extracted assets:
@@ -587,7 +585,7 @@ Runtime extracted assets:
 /data/local/tmp/overlay
 ```
 
-`HttpServer` extracts web and overlay assets when the daemon starts. Gradle also defines an `extractWebAssets` helper task that can push web assets to `/data/local/tmp/web` during development.
+`HttpServer` extracts the model manifest, the server i18n catalogs and the overlay assets when the daemon starts.
 
 GPU kernel cache:
 
@@ -625,17 +623,17 @@ key, so removing it is left to the owner.
 ## Auth Data Flow
 
 ```text
-Client requests /auth/token
+Companion posts /auth/companion {companionId, token}
   -> AuthApiHandler
-  -> AuthManager validates device token
-  -> JWT issued with token epoch
-  -> client stores Bearer token or byd_session cookie
+  -> CompanionPairing checks the HMAC token
+  -> JWT issued (carries cid), returned in the body
+  -> client sends it as Authorization: Bearer
   -> AuthMiddleware validates future requests
 ```
 
 Release builds require JWT auth even for loopback requests because Android loopback is shared. Debug loopback bypass exists only when tunnel-forwarding headers are absent.
 
-Public paths are limited to auth bootstrap, login/static shell assets, manifest/service worker, shared assets, and i18n assets.
+Public paths are limited to the companion's `/auth/pair` and `/auth/companion`.
 
 ## Trip Data Flow
 
@@ -713,9 +711,9 @@ returns `{success:false, error:"sync_in_progress"}` without blocking.
 
 ```text
 Daemon or surveillance event
-  -> notification manager/API
-  -> Web Push subscription target
-  -> web notification state APIs
+  -> notification bus
+  -> companion inbox (store and forward) and the log sink
+  -> the companion collects it with NotificationsService.ListInbox
 ```
 
 Notification APIs expose categories, push subscription management, preferences, and test delivery.
@@ -734,7 +732,6 @@ Notification APIs expose categories, push subscription management, preferences, 
 - Camera-to-recording path: [PanoramicCameraGpu.java:39](../app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.java#L39), [GpuMosaicRecorder.java:31](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuMosaicRecorder.java#L31), [HardwareEventRecorderGpu.java:56](../app/src/main/java/com/loabletech/bladewatch/surveillance/HardwareEventRecorderGpu.java#L56), [StorageManager.java:2234](../app/src/main/java/com/loabletech/bladewatch/storage/StorageManager.java#L2234).
 - Live-stream path: [GpuSurveillancePipeline.java:30](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.java#L30), [WebSocketStreamServer.java:19](../app/src/main/java/com/loabletech/bladewatch/streaming/WebSocketStreamServer.java#L19), [HttpServer.java:538](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L538).
 - Surveillance-event path: [GpuDownscaler.java:51](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuDownscaler.java#L51), [SurveillanceEngineGpu.java:635](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java#L635), [SurveillanceEngineGpu.java:3095](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java#L3095).
-- Web UI to daemon: [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [AuthMiddleware.java:135](../app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java#L135). (The in-car `WebViewFragment` client was deleted in Phase 4; the SPA now serves remote browsers only, and the in-car UI is the Flutter app's Dart ConnectRPC client, [packages/bladewatch_rpc/lib/rpc/](../packages/bladewatch_rpc/lib/rpc/), shared with the companion app.)
 - App TCP client to daemon: [CameraDaemonClient.java:24](../app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.java#L24), [TcpCommandServer.java:22](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L22), [CameraDaemon.java:53](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L53).
 - Location IPC: [LocationSidecarService.java:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.java#L32), [SurveillanceIpcServer.java:23](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L23), [CameraDaemon.java:383](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L383).
 - BYD local data flow: [BydDataCollector.java:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L20).

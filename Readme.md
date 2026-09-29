@@ -156,8 +156,7 @@ and ask me instead of guessing.
 - **Real-time Performance Monitor** — CPU, GPU, memory usage, and battery voltage dashboard.
 - **Diagnostics** — Network, storage, camera, and battery health checks.
 - **Live Streaming** — Low-latency H.264 streaming over WebSocket with multiple view modes (all cameras, front, rear, left, right).
-- **Remote Web App** — A full Angular web UI served by the on-device daemon, reachable from a browser on the car's network while LAN access is on. Token-protected.
-- **Web Push Notifications** — Get surveillance event alerts pushed to your phone or desktop.
+- **Companion app** — Phone and desktop app (`companion/`) that reaches the car directly on its Wi-Fi or from anywhere over Pear, with the car's alerts collected from its store-and-forward inbox.
 - **ADB Shell Runner** — Built-in terminal for running commands, checking processes, and viewing logs.
 - **17 Languages** — Fully localized UI.
 
@@ -185,21 +184,18 @@ Over a mobile connection, live video is smoothest at Medium quality or lower.
 
 ## Building from Source
 
-BladeWatch is a hybrid project built from three codebases:
+BladeWatch is a hybrid project built from these codebases:
 
 - **`flutter_ui/`** — the in-car UI (Flutter/Dart), built as `net.bladewatch.incarapp`.
 - **`app/`** — the service host (Android/Kotlin/Java + C++), built as `net.bladewatch.app`. Owns the daemons, the camera/GPU pipeline and the BYD integration.
-- **`web/`** — the Angular SPA the on-device daemon serves to browsers on the car's network (LAN access). Bundled into the service host APK.
+- **`companion/`** — the phone and desktop app (Flutter), built as `net.bladewatch.companionapp`. Never installed on the car.
 
-The in-car UI was native Android until it was rewritten in Flutter; the Angular app is not the in-car UI and is only used by remote clients.
+The in-car UI was native Android until it was rewritten in Flutter. The Angular web app that once served browsers was removed in v1.4.0.0; the companion replaces it.
 
 ### Requirements
 - Android SDK (`compileSdk 36`) and NDK `26.1.10909125`
 - JDK 17 (the modules themselves target Java 11 bytecode)
 - [Flutter](https://docs.flutter.dev/get-started/install) 3.44+ — for the in-car UI APK
-- Node.js + npm — **required**, not optional. The Angular SPA is built during `preBuild` and
-  neither `web/dist` nor its packaged copy is committed, so without Node the build fails rather
-  than quietly producing an APK with no web UI.
 - [`buf`](https://buf.build) — optional, only needed to regenerate the protobuf / ConnectRPC stubs
 
 ### Build
@@ -207,8 +203,8 @@ The in-car UI was native Android until it was rewritten in Flutter; the Angular 
 The two APKs build independently, from different toolchains:
 
 ```bash
-# Service host (net.bladewatch.app) — also builds the Angular web UI and the
-# native libraries, then bundles them into an arm64-v8a APK.
+# Service host (net.bladewatch.app) — builds the native libraries and bundles them
+# into an arm64-v8a APK.
 ./gradlew assembleDebug
 # Output: app/build/outputs/apk/debug/bladewatch-<branch>-arm64-v8a-debug.apk
 #         (the git branch is embedded so builds stay distinguishable)
@@ -229,9 +225,8 @@ Release builds without a keystore come out **unsigned** by design (see Quick Sta
 Tagged releases are built by GitHub Actions — see `.github/workflows/release.yml`.
 
 The Gradle build orchestrates everything:
-- `buildAngularWebUI` builds the Angular app under `web/` and copies the output into the APK assets (hooked into `preBuild`; requires npm).
 - Native dependencies (OpenH264, opencv-mobile, TensorFlow Lite) are auto-downloaded and checksum-verified — no manual download step.
-- `generateConnectProtos` regenerates Java + TypeScript stubs from `proto/bladewatch/v1/*.proto` (only needed when the API schemas change).
+- `generateConnectProtos` regenerates the Java, Kotlin and Dart stubs from `proto/bladewatch/v1/*.proto` (only needed when the API schemas change).
 
 The UI communicates with the daemon over a REST API and a 1:1 ConnectRPC layer on `127.0.0.1:8080`, with privileged operations going through loopback IPC on `127.0.0.1:19876`. For device install, daemon cleanup, and the full development workflow, see [`CLAUDE.md`](CLAUDE.md) and the [`docs/`](docs/) directory.
 

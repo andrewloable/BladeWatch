@@ -14,9 +14,10 @@ import java.nio.FloatBuffer
  * 1280x960 mosaic, or ONE camera at its native 1280x960, cut from the 5120x960 strip on the GPU.
  * The motion detector's 640x480 frame, which the still used before, gave a picked camera 320x240.
  *
- * Runs on the camera's GL thread (it samples the camera's external texture), twice a second while
- * someone watches. The frame is drawn upside down on purpose, so glReadPixels, which reads bottom
- * row first, returns it top-down and it goes into a Bitmap with no per-pixel copy.
+ * Runs on the camera's GL thread (it samples the camera's external texture), 10 times a second
+ * (BladeWatch-hmk0) while someone watches. The frame is drawn upside down on purpose, so
+ * glReadPixels, which reads bottom row first, returns it top-down and it goes into a Bitmap with
+ * no per-pixel copy.
  */
 class GpuStillCapture {
     private var program = 0

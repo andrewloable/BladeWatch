@@ -1,7 +1,7 @@
 // Deep, real-field-type tests for the request/response round trip, going
 // through the REAL ConnectClient (not FakeRpcClient) with only its network
 // boundary (RawHttpSender) faked. The per-service wrapper tests under
-// test/rpc/services/ prove every one of the 109 RPCs is wired to the right
+// test/rpc/services/ prove every RPC is wired to the right
 // service/method name and that its decode closure runs; this file proves the
 // actual protobuf-JSON *content* is correct for a representative spread of
 // field types: string, bool, int32, int64, double, repeated, nested message,
@@ -9,13 +9,13 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bladewatch_rpc/gen/bladewatch/v1/auth.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/notifications.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/safe_locations.pb.dart';
 import 'package:bladewatch_rpc/rpc/connect_client.dart';
 import 'package:bladewatch_rpc/rpc/jwt_source.dart';
 import 'package:bladewatch_rpc/rpc/raw_http_sender.dart';
-import 'package:bladewatch_rpc/rpc/services/auth_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/notifications_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
 
@@ -44,26 +44,28 @@ void main() {
       );
     });
 
-    test('a plain string field (LoginRequest.token)', () async {
-      final client = AuthServiceClient(connectClient);
+    test('a plain string field (SendTestRequest.category)', () async {
+      final client = NotificationsServiceClient(connectClient);
 
-      await client.login(LoginRequest(token: 'byd-ea4c047d-1234'));
+      await client.sendTest(SendTestRequest(category: 'surveillance.motion.alert'));
 
-      expect(jsonDecode(capturedBody!), {'token': 'byd-ea4c047d-1234'});
+      expect(jsonDecode(capturedBody!), {'category': 'surveillance.motion.alert'});
     });
 
-    test('bool + string + int64 fields on the response side (LoginResponse)', () async {
+    test('string + int64 fields on the response side (ListInboxResponse)', () async {
       respond = (uri, body) => const RawHttpResponse(
             200,
-            '{"success":true,"deviceId":"byd-9","expiresIn":"240"}',
+            '{"entries":[{"id":"7","category":"surveillance.motion","title":"Person at front"}],"latestId":"7","oldestId":"3"}',
           );
-      final client = AuthServiceClient(connectClient);
+      final client = NotificationsServiceClient(connectClient);
 
-      final response = await client.login(LoginRequest());
+      final response = await client.listInbox(ListInboxRequest());
 
-      expect(response.success, isTrue);
-      expect(response.deviceId, 'byd-9');
-      expect(response.expiresIn.toInt(), 240);
+      expect(response.entries.single.category, 'surveillance.motion');
+      expect(response.entries.single.title, 'Person at front');
+      expect(response.entries.single.id.toInt(), 7);
+      expect(response.latestId.toInt(), 7);
+      expect(response.oldestId.toInt(), 3);
     });
 
     test('a repeated string field (BatchDeleteRequest.filenames)', () async {

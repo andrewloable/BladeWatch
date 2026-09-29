@@ -34,7 +34,8 @@ class PearStatus(private val file: File, private val now: () -> Long = System::c
      * BladeWatch-rdtj.34: records why a companion's connection closed (pear-end's `connection.close`
      * stats), keeping the last [MAX_CLOSES]; returns the logcat line for it. Only [CLOSE_FIELDS] are
      * copied, so nothing else pear-end sends -- a topic, a key -- can reach the file or the log.
-     * Null when this pear-end sends no stats (flutter_pear 0.4.6 and older).
+     * Null when this pear-end sends no stats (flutter_pear 0.4.6 and older -- the field was added
+     * in 0.4.7).
      */
     @Synchronized
     fun recordClose(stats: JSONObject?): String? {

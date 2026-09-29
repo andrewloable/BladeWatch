@@ -78,8 +78,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> with LoadersState
             InfoRow(tr('companion.lan_access'), tr(n.lanHttpEnabled ? 'status.on' : 'status.off')),
           ]),
           Section(title: tr('diagnostics.storage'), children: [
-            InfoRow(tr('settings.internal_free'), '${st.internalFreeFormatted} / ${st.internalTotalFormatted}'),
-            if (st.sdCardAvailable) InfoRow(tr('settings.sd_card_free'), '${st.sdCardFreeFormatted} / ${st.sdCardTotalFormatted}'),
+            // A forced break before the "/ total" half, not the greedy wrap InfoRow's own Text
+            // would otherwise pick on a narrow phone -- that left "GB" alone on its own line
+            // (BladeWatch-rdtj.72.3). Both formatted strings already carry their own unit.
+            InfoRow(tr('settings.internal_free'), '${st.internalFreeFormatted}\n/ ${st.internalTotalFormatted}'),
+            if (st.sdCardAvailable) InfoRow(tr('settings.sd_card_free'), '${st.sdCardFreeFormatted}\n/ ${st.sdCardTotalFormatted}'),
             if (st.sdCardMountFailed) InfoRow(tr('settings.sd_card'), st.sdCardMountError),
             InfoRow(tr('settings.recordings'), Fmt.bytes((st.recordingsSizeBytes + st.surveillanceSizeBytes).toInt())),
           ]),

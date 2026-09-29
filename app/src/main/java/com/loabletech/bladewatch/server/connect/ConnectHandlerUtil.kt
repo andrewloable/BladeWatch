@@ -96,36 +96,6 @@ object ConnectHandlerUtil {
     }
 
     /**
-     * Capture a REST handler and return its JSON body as a String, along with any Set-Cookie
-     * headers from the wrapped response (for auth flows). Throws [ConnectException] if the wrapped
-     * handler returns HTTP 4xx/5xx.
-     */
-    @JvmStatic
-    @Throws(ConnectException::class)
-    fun captureWithCookies(invoker: HandlerInvoker): ConnectResponse {
-        val raw = captureRaw(invoker)
-        if (raw.httpStatus >= 400) {
-            val failed = String(raw.bodyBytes, StandardCharsets.UTF_8).trim()
-            throw ConnectException(
-                httpStatusToConnectCode(raw.httpStatus), extractErrorMessage(failed)
-            )
-        }
-        return try {
-            var payload = String(raw.bodyBytes, StandardCharsets.UTF_8).trim()
-            if (payload.isEmpty()) payload = "{}"
-            val cookies = raw.setCookies()
-            if (cookies.isEmpty()) {
-                ConnectResponse.of(payload)
-            } else {
-                ConnectResponse.withCookies(payload, cookies)
-            }
-        } catch (e: Exception) {
-            CameraDaemon.log("ConnectHandlerUtil: cookie capture error: $e")
-            throw ConnectException("internal", "An internal error occurred")
-        }
-    }
-
-    /**
      * Capture a REST handler that returns binary data (e.g. image/jpeg) and encode the bytes as a
      * Base64 string in the given JSON field name.
      *

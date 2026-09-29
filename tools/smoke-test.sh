@@ -68,7 +68,7 @@ fi
 echo ""
 echo "=== 2. CameraDaemon HTTP server (127.0.0.1:8080) ==="
 
-# /status endpoint (not /api/status — the Angular SPA catches the latter)
+# /status endpoint
 STATUS_RESP=$($ADB shell 'curl -sf --max-time 5 http://127.0.0.1:8080/status 2>/dev/null' 2>/dev/null || true)
 
 if [ -n "$STATUS_RESP" ]; then
@@ -82,30 +82,26 @@ else
     fail "HTTP /status no response (daemon not serving HTTP)"
 fi
 
-# Auth endpoint (public — no token needed)
-AUTH_RESP=$($ADB shell 'curl -sf --max-time 5 http://127.0.0.1:8080/auth/status 2>/dev/null' 2>/dev/null || true)
-if echo "$AUTH_RESP" | grep -q '"status":"ok"'; then
-    pass "HTTP /auth/status returns ok"
+# The companion's login endpoint is public: a bad credential must be refused, not crash or 404.
+AUTH_RESP=$($ADB shell 'curl -s --max-time 5 -X POST -H "Content-Type: application/json" -d "{\"companionId\":\"0\",\"token\":\"x\"}" http://127.0.0.1:8080/auth/companion 2>/dev/null' 2>/dev/null || true)
+if echo "$AUTH_RESP" | grep -q 'companion_refused'; then
+    pass "HTTP /auth/companion refuses a bad credential"
 else
-    fail "HTTP /auth/status unexpected response: ${AUTH_RESP:0:100}"
+    fail "HTTP /auth/companion unexpected response: ${AUTH_RESP:0:100}"
 fi
 
 echo ""
-echo "=== 3. Web UI assets ==="
+echo "=== 3. The removed web app is gone ==="
 
-WEB_RESP=$($ADB shell 'curl -sf --max-time 5 -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/ 2>/dev/null' 2>/dev/null || true)
-if [ "$WEB_RESP" = "200" ] || [ "$WEB_RESP" = "301" ] || [ "$WEB_RESP" = "302" ]; then
-    pass "Web UI root / responds ($WEB_RESP)"
-else
-    fail "Web UI root / unexpected status: $WEB_RESP"
-fi
-
-LOGIN_RESP=$($ADB shell 'curl -sf --max-time 5 -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/login.html 2>/dev/null' 2>/dev/null || true)
-if [ "$LOGIN_RESP" = "200" ]; then
-    pass "login.html serves (200)"
-else
-    fail "login.html unexpected status: $LOGIN_RESP"
-fi
+# The web app, its login page and /auth/token were removed (BladeWatch-rdtj.22): none may answer 200.
+for P in / /login.html /auth/token /auth/status; do
+    CODE=$($ADB shell "curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080$P 2>/dev/null" 2>/dev/null || true)
+    if [ "$CODE" = "404" ] || [ "$CODE" = "401" ]; then
+        pass "$P is not served ($CODE)"
+    else
+        fail "$P unexpected status: $CODE (expected 404 or 401)"
+    fi
+done
 
 echo ""
 echo "=== 4. IPC token file permissions ==="

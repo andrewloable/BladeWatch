@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_pear/flutter_pear.dart';
 
 import 'local_gateway.dart';
@@ -13,7 +13,15 @@ import 'pear_mux.dart';
 /// `data` is a broadcast stream, so anything that arrives before a listener is lost. That is safe
 /// only because the car never speaks first: every stream starts with the companion's OPEN.
 class PearConnectionLink implements PeerLink {
-  PearConnectionLink(this._connection);
+  PearConnectionLink(this._connection) {
+    // BladeWatch-rdtj.34: a close reason for every drop, on this end too, for a developer
+    // watching `flutter run`'s own console -- debug builds only, never in a release. A passive
+    // extra listener on a broadcast stream: it only reacts to onDone, never onData, so it cannot
+    // steal or duplicate a message `messages`' own listener(s) would otherwise receive.
+    if (kDebugMode) {
+      _connection.data.listen(null, onDone: () => debugPrint('Pear connection closed: ${_connection.closeStats}'), cancelOnError: false);
+    }
+  }
 
   final PearConnection _connection;
 

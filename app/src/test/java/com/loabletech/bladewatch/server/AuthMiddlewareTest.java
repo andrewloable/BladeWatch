@@ -21,19 +21,26 @@ public class AuthMiddlewareTest {
     }
 
     @Test
-    public void publicPathsRemainPublicWithoutAuth() throws Exception {
-        Assert.assertTrue(checkPublic("/auth/token"));
-        Assert.assertTrue(checkPublic("/auth/status"));
-        Assert.assertTrue(checkPublic("/login.html"));
-        Assert.assertTrue(checkPublic("/shared/app.js"));
-        Assert.assertTrue(checkPublic("/i18n/en.json"));
+    public void onlyTheCompanionsPairingAndLoginArePublic() throws Exception {
+        Assert.assertTrue(checkPublic(AuthApiHandler.PAIR_PATH));
+        Assert.assertTrue(checkPublic(AuthApiHandler.COMPANION_LOGIN_PATH));
+    }
+
+    @Test
+    public void theRemovedWebLoginAndStaticPathsAreNotPublic() throws Exception {
+        // The web app and its login were removed (BladeWatch-rdtj.22): nothing of it may be
+        // reachable without a JWT.
+        for (String path : new String[] {"/auth/token", "/auth/status", "/auth/logout", "/login.html",
+                "/login", "/shared/app.js", "/i18n/en.json", "/manifest.json", "/sw.js", "/favicon.ico"}) {
+            Assert.assertFalse(path + " must not be public", AuthMiddleware.isPublicPath(path));
+        }
     }
 
     @Test
     public void protectedApiWithoutJwtIsRejected() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, null, out, null, false);
+                "/api/vehicle/trunk", null, out, null, false);
         Assert.assertFalse(allowed);
         Assert.assertTrue(out.toString("UTF-8").contains("401 Unauthorized"));
     }
@@ -43,7 +50,7 @@ public class AuthMiddlewareTest {
         AuthMiddleware.setLoopbackBypassOverride(Boolean.FALSE);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, null, out,
+                "/api/vehicle/trunk", null, out,
                 new InetSocketAddress("127.0.0.1", 8080), false);
         Assert.assertFalse(allowed);
         Assert.assertTrue(out.toString("UTF-8").contains("401 Unauthorized"));
@@ -53,7 +60,7 @@ public class AuthMiddlewareTest {
     public void signedThumbPathStillAllowsTokenBasedAccess() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/thumb/event.jpg?t=invalid", null, null, out, null, false);
+                "/thumb/event.jpg?t=invalid", null, out, null, false);
         Assert.assertFalse(allowed);
     }
 
@@ -64,7 +71,7 @@ public class AuthMiddlewareTest {
         AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
 
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, null, new ByteArrayOutputStream(),
+                "/api/vehicle/trunk", null, new ByteArrayOutputStream(),
                 new InetSocketAddress("127.0.0.1", 8080), false, ListenerTrust.LOCAL_APPS);
 
         Assert.assertTrue("local callers still need the safety net", allowed);
@@ -82,7 +89,7 @@ public class AuthMiddlewareTest {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, null, out,
+                "/api/vehicle/trunk", null, out,
                 new InetSocketAddress("127.0.0.1", HttpServer.PEAR_TLS_PORT), false, ListenerTrust.REMOTE);
 
         Assert.assertFalse("a remote peer arriving via loopback must not inherit local trust", allowed);
@@ -96,7 +103,7 @@ public class AuthMiddlewareTest {
         for (String method : new String[] {"MoveWindow", "SetClimate", "Trunk", "SetLights", "SetAdas", "SetChargeCap"}) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             boolean allowed = AuthMiddleware.checkAuth(
-                    "/bladewatch.v1.VehicleService/" + method, null, null, out,
+                    "/bladewatch.v1.VehicleService/" + method, null, out,
                     new InetSocketAddress("127.0.0.1", HttpServer.PEAR_TLS_PORT), false, ListenerTrust.REMOTE);
             Assert.assertFalse(method + " must need a JWT over Pear", allowed);
             Assert.assertTrue(method + ": " + out.toString("UTF-8"), out.toString("UTF-8").contains("401 Unauthorized"));
@@ -110,7 +117,7 @@ public class AuthMiddlewareTest {
         AuthMiddleware.setLoopbackBypassOverride(Boolean.TRUE);
 
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, null, new ByteArrayOutputStream(),
+                "/api/vehicle/trunk", null, new ByteArrayOutputStream(),
                 new InetSocketAddress("127.0.0.1", 8080), false);
 
         Assert.assertFalse("an undeclared listener must default to REMOTE", allowed);
@@ -137,13 +144,13 @@ public class AuthMiddlewareTest {
         // LOCAL_APPS on purpose: with the listener eligible and the bypass forced on, the forwarding
         // header is the ONLY reason left to refuse.
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, null, new ByteArrayOutputStream(),
+                "/api/vehicle/trunk", null, new ByteArrayOutputStream(),
                 new InetSocketAddress("127.0.0.1", 8080), true, ListenerTrust.LOCAL_APPS);
 
         Assert.assertFalse(allowed);
     }
 
     private boolean checkPublic(String path) throws Exception {
-        return AuthMiddleware.checkAuth(path, null, null, new ByteArrayOutputStream(), null, false);
+        return AuthMiddleware.checkAuth(path, null, new ByteArrayOutputStream(), null, false);
     }
 }

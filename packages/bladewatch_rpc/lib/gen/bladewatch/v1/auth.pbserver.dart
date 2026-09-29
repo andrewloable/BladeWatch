@@ -21,23 +21,11 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/auth.pbjson.dart';
 export 'package:bladewatch_rpc/gen/bladewatch/v1/auth.pb.dart';
 
 abstract class AuthServiceBase extends $pb.GeneratedService {
-  $async.Future<$0.LoginResponse> login(
-      $pb.ServerContext ctx, $0.LoginRequest request);
-  $async.Future<$0.LogoutResponse> logout(
-      $pb.ServerContext ctx, $0.LogoutRequest request);
-  $async.Future<$0.GetAuthStatusResponse> getAuthStatus(
-      $pb.ServerContext ctx, $0.GetAuthStatusRequest request);
   $async.Future<$0.InvalidateAuthCacheResponse> invalidateAuthCache(
       $pb.ServerContext ctx, $0.InvalidateAuthCacheRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
-      case 'Login':
-        return $0.LoginRequest();
-      case 'Logout':
-        return $0.LogoutRequest();
-      case 'GetAuthStatus':
-        return $0.GetAuthStatusRequest();
       case 'InvalidateAuthCache':
         return $0.InvalidateAuthCacheRequest();
       default:
@@ -48,12 +36,6 @@ abstract class AuthServiceBase extends $pb.GeneratedService {
   $async.Future<$pb.GeneratedMessage> handleCall($pb.ServerContext ctx,
       $core.String methodName, $pb.GeneratedMessage request) {
     switch (methodName) {
-      case 'Login':
-        return login(ctx, request as $0.LoginRequest);
-      case 'Logout':
-        return logout(ctx, request as $0.LogoutRequest);
-      case 'GetAuthStatus':
-        return getAuthStatus(ctx, request as $0.GetAuthStatusRequest);
       case 'InvalidateAuthCache':
         return invalidateAuthCache(
             ctx, request as $0.InvalidateAuthCacheRequest);

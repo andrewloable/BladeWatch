@@ -252,10 +252,9 @@ REST routes and the Connect registrations:
 
 The `.proto` still declares these RPCs, so the wire contract is unchanged for any
 existing client, but the daemon no longer registers handlers for them. No first-party
-client calls them: `web/` removed the Lock/Unlock/Flash controls by decision (see
-`web/src/app/pages/vehicle/vehicle.component.ts`) and the Flutter in-car UI never had
-them. `web/`'s remaining `lock` references are a **read-only lock status pill**, not a
-command.
+client calls them: the web app (since removed, BladeWatch-rdtj.22) dropped the Lock/Unlock/Flash
+controls by decision and the Flutter in-car UI never had them. The lock status the apps show is a
+**read-only pill**, not a command.
 
 ### Trunk open: removed, not merely unsupported
 
@@ -294,7 +293,7 @@ writing this, found nothing. Shipping a labelled control ("Face", "Feet", "Recir
 would be a guess actuating the physical car, which this issue's own constraints explicitly
 forbid.
 
-**No Flutter/web UI exposes either as a labelled picker.** Establishing the real mapping
+**No Flutter UI exposes either as a labelled picker.** Establishing the real mapping
 needs a device: cycle through each integer BYD's own AC panel accepts, and read what the
 factory UI or physical vents show for each — the same shape of investigation
 `BladeWatch-2pnn.3`'s ADAS field inventory probe already did for declared-but-unverified
@@ -524,4 +523,4 @@ History note: an earlier change integrated a native **Filament** 3D engine for t
 - Vehicle control contract and routing: [vehicle.proto:32](../proto/bladewatch/v1/vehicle.proto#L32), [VehicleControlApiHandler.kt:43](../app/src/main/java/com/loabletech/bladewatch/server/VehicleControlApiHandler.kt#L43), [VehicleCommandRouter.kt:17](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.kt#L17), [VehicleCommandRouter.kt:315](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.kt#L315).
 - Local SDK control primitives: [BydDataCollector.kt:3839](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L3839), [BydDataCollector.kt:4803](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L4803), [BydDataCollector.kt:5064](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L5064).
 - GPS / location: [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51), [GpsApiHandler.kt:18](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.kt#L18), [GpsApiHandler.kt:24](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.kt#L24), [GpsMonitor.kt:23](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L23), [GpsMonitor.kt:84](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L84), [GpsMonitor.kt:253](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L253).
-- 3D vehicle hero (Three.js in a WebView — **not** Filament, see the Adreno 610 note in [build-and-operations.md](build-and-operations.md)): [hero.html:15](../app/src/main/assets/web/hero/hero.html#L15), [hero.html:20](../app/src/main/assets/web/hero/hero.html#L20), [flutter_ui/lib/screens/vehicle/vehicle_hero.dart](../flutter_ui/lib/screens/vehicle/vehicle_hero.dart).
+- 3D vehicle hero (Three.js in a WebView — **not** Filament, see the Adreno 610 note in [build-and-operations.md](build-and-operations.md)): [hero.html:15](../flutter_ui/assets/web/hero/hero.html#L15), [hero.html:20](../app/src/main/assets/web/hero/hero.html#L20), [flutter_ui/lib/screens/vehicle/vehicle_hero.dart](../flutter_ui/lib/screens/vehicle/vehicle_hero.dart).

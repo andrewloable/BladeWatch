@@ -19,7 +19,7 @@ Vehicle ACC state changes
   -> optional YOLO confirms objects and tracks actors
   -> event recording starts from the circular pre-record buffer
   -> post-record timer, tracker state, and residual motion decide when to stop
-  -> sidecar metadata, thumbnails, and Web Push notifications are emitted
+  -> sidecar metadata, thumbnails, and notifications are emitted
 ```
 
 Core source files:
@@ -94,7 +94,7 @@ Responsibilities:
 - Run optional YOLO detection on active quadrants.
 - Maintain cross-quadrant and texture trackers.
 - Start and stop event recording.
-- Emit Web Push notifications.
+- Emit notifications.
 - Write event metadata and thumbnails.
 
 ### Native Motion Pipeline
@@ -426,7 +426,7 @@ Stop flow:
 6. Write timeline sidecar.
 7. Write hero and actor thumbnails.
 8. Fall back to extracting a hero frame from MP4 when no YOLO hero exists.
-9. Publish finalized Web Push notifications.
+9. Publish finalized notifications.
 10. Reset actor and thumbnail state.
 
 Long events can rotate into multiple MP4 segments. A segment listener flushes metadata for each closed segment so later segments keep thumbnails, actor counts, and sidecar data.
@@ -454,7 +454,7 @@ Surveillance has two notification phases:
 - Start phase: low-latency "recording in progress" style signal.
 - Final phase: rich notification with threat summary and hero image.
 
-Notifications are delivered through Web Push. Notification severity is derived from actor state when available.
+Notifications are delivered to the companion through the car's store-and-forward inbox. Notification severity is derived from actor state when available.
 
 If no actor data exists, notifications fall back to generic motion wording.
 

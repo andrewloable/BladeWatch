@@ -126,8 +126,15 @@ class ClipTranscoder {
         val aPosition = GLES20.glGetAttribLocation(program, "aPosition")
         val aTexCoord = GLES20.glGetAttribLocation(program, "aTexCoord")
         val uTex = GLES20.glGetUniformLocation(program, "uTex")
+        val uTexMatrix = GLES20.glGetUniformLocation(program, "uTexMatrix")
         val vertexBuf = GlUtil.createFloatBuffer(FULLSCREEN_QUAD)
         val texCoordBuf = GlUtil.createFloatBuffer(FULLSCREEN_TEXCOORD)
+        // SurfaceTexture's own buffer orientation is not guaranteed identity -- Android's docs are
+        // explicit that a decoder's output must be sampled through this matrix, not raw (s, t).
+        // Skipping it played every transcoded clip upside down (found on a real device, 2026-09-28)
+        // rather than merely mis-scaled, which is what makes this an easy trap: it looks like ANY
+        // GL setup mistake would produce a black frame, not a correctly-decoded-but-flipped one.
+        val texMatrix = FloatArray(16)
 
         // --- decoder: the source's own compressed samples, output straight to the SurfaceTexture ---
         val decoder = withTimeout("create decoder") { MediaCodec.createDecoderByType(mime) } ?: run {
@@ -177,6 +184,7 @@ class ClipTranscoder {
                             frameAvailable = false
                         }
                         surfaceTexture.updateTexImage()
+                        surfaceTexture.getTransformMatrix(texMatrix)
                         egl.makeCurrent(eglSurface)
                         GLES20.glViewport(0, 0, width, height)
                         GLES20.glClearColor(0f, 0f, 0f, 1f)
@@ -185,6 +193,7 @@ class ClipTranscoder {
                         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
                         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTexture)
                         GLES20.glUniform1i(uTex, 0)
+                        GLES20.glUniformMatrix4fv(uTexMatrix, 1, false, texMatrix, 0)
                         GLES20.glEnableVertexAttribArray(aPosition)
                         GLES20.glVertexAttribPointer(aPosition, 2, GLES20.GL_FLOAT, false, 0, vertexBuf)
                         GLES20.glEnableVertexAttribArray(aTexCoord)
@@ -308,12 +317,13 @@ class ClipTranscoder {
         private const val TAG = "ClipTranscoder"
 
         private const val VERTEX_SHADER = """
+            uniform mat4 uTexMatrix;
             attribute vec4 aPosition;
             attribute vec2 aTexCoord;
             varying vec2 vTexCoord;
             void main() {
                 gl_Position = aPosition;
-                vTexCoord = aTexCoord;
+                vTexCoord = (uTexMatrix * vec4(aTexCoord, 0.0, 1.0)).xy;
             }
         """
 

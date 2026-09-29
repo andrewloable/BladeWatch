@@ -41,7 +41,7 @@ public class VehicleApiAuthTest {
         String jwt = AuthManager.generateJwt();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, "Bearer " + jwt, out, null, false);
+                "/api/vehicle/trunk", "Bearer " + jwt, out, null, false);
         Assert.assertTrue(allowed);
     }
 
@@ -50,7 +50,7 @@ public class VehicleApiAuthTest {
         String jwt = AuthManager.generateJwt();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/window", null, "Bearer " + jwt, out, null, false);
+                "/api/vehicle/window", "Bearer " + jwt, out, null, false);
         Assert.assertTrue(allowed);
     }
 
@@ -59,7 +59,7 @@ public class VehicleApiAuthTest {
         String jwt = AuthManager.generateJwt();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/lights", null, "Bearer " + jwt, out, null, false);
+                "/api/vehicle/lights", "Bearer " + jwt, out, null, false);
         Assert.assertTrue(allowed);
     }
 
@@ -68,7 +68,7 @@ public class VehicleApiAuthTest {
         String jwt = AuthManager.generateJwt();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/adas", null, "Bearer " + jwt, out, null, false);
+                "/api/vehicle/adas", "Bearer " + jwt, out, null, false);
         Assert.assertTrue(allowed);
     }
 
@@ -77,25 +77,8 @@ public class VehicleApiAuthTest {
         String jwt = AuthManager.generateJwt();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/state", null, "Bearer " + jwt, out, null, false);
+                "/api/vehicle/state", "Bearer " + jwt, out, null, false);
         Assert.assertTrue(allowed);
-    }
-
-    // --- JWT in cookie also passes (remote browser / tunnel path) ---
-    //
-    // BladeWatch-c2h1: these three used /api/vehicle/unlock as their fixture path.
-    // That route was removed with the rest of the cloud-only surface, and
-    // AuthMiddleware matches by path PATTERN, so they would have kept passing while
-    // exercising a route that no longer exists. Repointed at /api/vehicle/trunk,
-    // which is still live.
-
-    @Test
-    public void vehicleControlWithJwtInCookiePassesAuth() throws Exception {
-        String jwt = AuthManager.generateJwt();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", "byd_session=" + jwt, null, out, null, false);
-        Assert.assertTrue("JWT in cookie must pass auth", allowed);
     }
 
     // --- Reject cases still hold ---
@@ -104,7 +87,7 @@ public class VehicleApiAuthTest {
     public void vehicleControlWithoutJwtIsRejected() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, null, out, null, false);
+                "/api/vehicle/trunk", null, out, null, false);
         Assert.assertFalse(allowed);
         Assert.assertTrue(out.toString("UTF-8").contains("401"));
     }
@@ -115,7 +98,7 @@ public class VehicleApiAuthTest {
         String tampered = jwt.substring(0, jwt.length() - 1) + "X";
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/api/vehicle/trunk", null, "Bearer " + tampered, out, null, false);
+                "/api/vehicle/trunk", "Bearer " + tampered, out, null, false);
         Assert.assertFalse(allowed);
     }
 

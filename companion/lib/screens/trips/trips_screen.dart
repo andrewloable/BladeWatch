@@ -448,7 +448,9 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
                   onSelected: (_) => _moveStorage(type, tr(key)),
                 ),
             ]),
-            InfoRow(tr('trips.used'), '${v.storage.usedMb.toStringAsFixed(1)} MB · ${v.storage.tripsCount} ${tr('trips.trips_count')}'),
+            // Forced break before "trips", same pattern as BladeWatch-rdtj.72.3's Diagnostics fix --
+            // confirmed at 2x text scale it wrapped with "trips" left alone on its own line.
+            InfoRow(tr('trips.used'), '${v.storage.usedMb.toStringAsFixed(1)} MB ·\n${v.storage.tripsCount} ${tr('trips.trips_count')}'),
             TextField(
               key: const ValueKey('trips.limit'),
               controller: _limit,

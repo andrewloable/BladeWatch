@@ -22,10 +22,10 @@ import '../location/location_screen.dart' show parseFix;
 /// and degrades at low bandwidth instead of stalling. Smooth H.264 -- and with it the per-camera
 /// view, since SetViewMode only switches the H.264 stream -- is a follow-up.
 ///
-/// The car renders a new still every second (BladeWatch-rdtj.61), and this polls at the same rate
-/// on every transport. A frame replaces the one shown only when its bytes differ, and it keeps the
-/// time it first arrived; a failed or empty fetch leaves the last frame up. Each request also
-/// keeps the car's streaming from idling out (WebSocketStreamServer.noteStillViewer).
+/// The car renders a new still every 100ms, 10fps (BladeWatch-hmk0), and this polls at the same
+/// rate on every transport. A frame replaces the one shown only when its bytes differ, and it
+/// keeps the time it first arrived; a failed or empty fetch leaves the last frame up. Each request
+/// also keeps the car's streaming from idling out (WebSocketStreamServer.noteStillViewer).
 class LiveScreen extends StatefulWidget {
   const LiveScreen({super.key, this.fetch, this.enable, this.gps});
 
@@ -84,7 +84,7 @@ class _LiveScreenState extends State<LiveScreen> {
     _wasConnected = session.connected;
     _timer?.cancel();
     unawaited(_tick());
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => unawaited(_tick()));
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (_) => unawaited(_tick()));
     _gpsTimer?.cancel();
     unawaited(_gpsTick());
     _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) => unawaited(_gpsTick()));

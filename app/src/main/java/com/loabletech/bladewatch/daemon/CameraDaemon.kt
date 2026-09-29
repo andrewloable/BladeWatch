@@ -35,11 +35,7 @@ import net.bladewatch.app.monitor.VehicleDataMonitor
 import net.bladewatch.app.notifications.CategoryRegistry
 import net.bladewatch.app.notifications.CompanionInbox
 import net.bladewatch.app.notifications.NotificationBus
-import net.bladewatch.app.notifications.push.SubscriptionStore
-import net.bladewatch.app.notifications.push.VapidKeyStore
-import net.bladewatch.app.notifications.push.VapidSigner
 import net.bladewatch.app.notifications.sinks.LogSink
-import net.bladewatch.app.notifications.sinks.PushSink
 import net.bladewatch.app.recording.RecordingModeManager
 import net.bladewatch.app.server.HttpServer
 import net.bladewatch.app.server.IpcTokenManager
@@ -536,7 +532,7 @@ object CameraDaemon {
         }
         logT("createAppContext done")
 
-        // Notifications subsystem — registry, push subscriptions, sinks.
+        // Notifications subsystem — registry, sinks.
         // Lives in this process because HttpServer (where the API routes bind)
         // runs here, and every v1 emit source (surveillance, proximity, tyre)
         // lives here too. Init on a background thread because reading APK
@@ -3140,11 +3136,9 @@ object CameraDaemon {
     @Volatile private var notificationsInitialized = false
 
     /**
-     * Initialize the Web Push notification subsystem. Loads the category
-     * registry from APK assets, opens persistent stores under
-     * `/data/local/tmp/.push/`, registers PushSink + LogSink with
-     * NotificationBus, and wires NotificationApiHandler so HTTP routes can
-     * resolve.
+     * Initialize the notification subsystem. Loads the category registry from
+     * APK assets, registers LogSink with NotificationBus, and wires
+     * NotificationApiHandler so the Connect routes can resolve.
      */
     @Synchronized
     @JvmStatic
@@ -3169,25 +3163,20 @@ object CameraDaemon {
             return
         }
 
-        val pushDir = File("/data/local/tmp/.push")
-        if (!pushDir.exists()) pushDir.mkdirs()
-
-        val keyStore = VapidKeyStore(File(pushDir, "vapid.json"))
-        // Touch the keystore so we generate / cache the keypair eagerly.
-        keyStore.publicKeyB64Url()
-
-        val subStore = SubscriptionStore(File(pushDir, "subscriptions.json"))
-        subStore.load()
-
-        val signer = VapidSigner(keyStore, "")
-
         NotificationBus.get().subscribe(LogSink())
-        NotificationBus.get().subscribe(PushSink(subStore, registry, keyStore, signer))
 
-        NotificationApiHandler.init(registry, subStore, keyStore)
+        NotificationApiHandler.init(registry)
+
+        // Web Push was removed (BladeWatch-rdtj.22): drop the VAPID private key and browser
+        // subscriptions a previous version left behind.
+        try {
+            File("/data/local/tmp/.push").deleteRecursively()
+        } catch (e: Exception) {
+            log("WARN: could not remove legacy /data/local/tmp/.push: " + e.message)
+        }
 
         notificationsInitialized = true
-        log("Notifications initialized: " + registry.all().size + " categories, " + subStore.size() + " subscriptions")
+        log("Notifications initialized: " + registry.all().size + " categories")
     }
 
     // ==================== GPS MONITOR ====================

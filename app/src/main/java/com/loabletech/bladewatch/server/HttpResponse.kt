@@ -51,19 +51,6 @@ object HttpResponse {
 
     @JvmStatic
     @Throws(Exception::class)
-    fun sendHtml(out: OutputStream, html: String) {
-        val body = html.toByteArray(StandardCharsets.UTF_8)
-        val headers = "HTTP/1.1 200 OK\r\n" +
-            "Content-Type: text/html; charset=utf-8\r\n" +
-            "Content-Length: " + body.size + "\r\n" +
-            connectionHeader(out) + "\r\n"
-        out.write(headers.toByteArray())
-        out.write(body)
-        out.flush()
-    }
-
-    @JvmStatic
-    @Throws(Exception::class)
     fun sendJson(out: OutputStream, json: String) {
         val body = json.toByteArray(StandardCharsets.UTF_8)
         val headers = "HTTP/1.1 200 OK\r\n" +
@@ -80,17 +67,6 @@ object HttpResponse {
     @Throws(Exception::class)
     fun sendJsonSuccess(out: OutputStream) {
         sendJson(out, "{\"success\":true}")
-    }
-
-    /**
-     * CORS preflight response for OPTIONS requests. Browsers send OPTIONS before a cross-origin
-     * POST/PUT/DELETE with a JSON content-type.
-     */
-    @JvmStatic
-    @Throws(Exception::class)
-    fun sendCorsPreflightResponse(out: OutputStream) {
-        sendError(out, 403, "CORS preflight denied")
-        out.flush()
     }
 
     @JvmStatic
@@ -151,76 +127,6 @@ object HttpResponse {
         out.write(headers.toByteArray())
         out.write(body)
         out.flush()
-    }
-
-    /** 302 redirect. */
-    @JvmStatic
-    @Throws(Exception::class)
-    fun sendRedirect(out: OutputStream, location: String) {
-        val response = "HTTP/1.1 302 Found\r\n" +
-            "Location: " + location + "\r\n" +
-            "Content-Length: 0\r\n" +
-            connectionHeader(out) + "\r\n"
-        out.write(response.toByteArray())
-        out.flush()
-    }
-
-    /** JSON response with a single Set-Cookie header for the JWT. */
-    @JvmStatic
-    @JvmOverloads
-    @Throws(Exception::class)
-    fun sendJsonWithCookie(
-        out: OutputStream,
-        json: String,
-        cookieName: String,
-        cookieValue: String,
-        maxAgeSeconds: Int,
-        secure: Boolean = false
-    ) {
-        sendJsonWithCookies(
-            out, json,
-            arrayOf(buildCookie(cookieName, cookieValue, maxAgeSeconds, true, secure))
-        )
-    }
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun sendJsonWithCookies(out: OutputStream, json: String, cookies: Array<String?>?) {
-        val body = json.toByteArray(StandardCharsets.UTF_8)
-        val headers = "HTTP/1.1 200 OK\r\n" +
-            "Content-Type: application/json\r\n" +
-            buildSetCookieHeaders(cookies) +
-            "Content-Length: " + body.size + "\r\n" +
-            connectionHeader(out) + "\r\n"
-        out.write(headers.toByteArray())
-        out.write(body)
-        out.flush()
-    }
-
-    private fun buildCookie(
-        cookieName: String,
-        cookieValue: String,
-        maxAgeSeconds: Int,
-        httpOnly: Boolean,
-        secure: Boolean
-    ): String {
-        val cookie = StringBuilder()
-        cookie.append(cookieName).append("=").append(cookieValue)
-            .append("; Path=/; Max-Age=").append(maxAgeSeconds)
-            .append("; SameSite=Lax")
-        if (httpOnly) cookie.append("; HttpOnly")
-        if (secure) cookie.append("; Secure")
-        return cookie.toString()
-    }
-
-    private fun buildSetCookieHeaders(cookies: Array<String?>?): String {
-        if (cookies == null || cookies.isEmpty()) return ""
-        val sb = StringBuilder()
-        for (cookie in cookies) {
-            if (cookie.isNullOrEmpty()) continue
-            sb.append("Set-Cookie: ").append(cookie).append("\r\n")
-        }
-        return sb.toString()
     }
 
     /**

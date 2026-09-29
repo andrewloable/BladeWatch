@@ -33,61 +33,49 @@ The server exposes two parallel API surfaces over the same port:
 
    | Route | Why it cannot be an RPC |
    |---|---|
-   | `/`, `angular/*`, `/assets/*` | the SPA bundle itself |
-   | `/login`, `/login.html` | pre-auth page; no Connect client exists yet when it loads |
-   | `/auth/status`, `/auth/token`, `/auth/logout` | the login bootstrap those pages call |
-   | `/manifest.json`, `/sw.js`, `/favicon.ico`, `/credits.json` | static assets |
-   | `/i18n/*`, `/shared/*` | catalogs and legacy assets |
+   | `/auth/pair`, `/auth/companion` | the companion's pairing and login; public, plain JSON |
    | `/video/*` | player byte-range requests (Range, 206, ETag) |
    | `/thumb/*` | `<img src>`, additionally auth'd by a signed `?t=` token |
    | `/api/stream/still` | a JPEG the live view consumes as an image URL |
-   | `/hero/*` | the three.js vehicle page |
 
    Everything else — every JSON endpoint that used to live under `/api/*`, and `/status` — is a
    ConnectRPC method. `AuthApiHandler` is the one handler that still has an HTTP entry point
-   for JSON, because the login bootstrap needs it; `RecordingsApiHandler` and
-   `StreamingApiHandler` keep one for their binary routes only.
+   for JSON, because pairing and login happen before any session exists; `RecordingsApiHandler` and
+   `StreamingApiHandler` keep one for their binary routes only. There is no static serving: the
+   web app was removed (BladeWatch-rdtj.22), and any other path is a 404 (or a 401 without a JWT).
 
-2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by both the Flutter in-car UI (Dart client, `packages/bladewatch_rpc/lib/rpc/`, shared with the companion app) and the Angular SPA. See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers to keep the two surfaces in 1:1 parity, so the REST families below are the source of truth for behaviour.
+2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by both the Flutter in-car UI (Dart client, `packages/bladewatch_rpc/lib/rpc/`, shared with the companion app). See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers, so the REST families below describe behaviour.
 
 ## Auth
 
-Handled by `AuthApiHandler` (all `/auth/*` paths are routed before the auth
-middleware runs, so they are reachable without a session):
+Handled by `AuthApiHandler`. Only the companion's two calls exist (all `/auth/*` paths are routed
+before the auth middleware runs, so they are reachable without a session); the web app's login
+(`/auth/token`, `/auth/logout`, `/auth/status`) and its cookie session were removed with it
+(BladeWatch-rdtj.22), and any other `/auth/*` path answers 404:
 
-- `GET /auth/status` — returns the device id hint for the login page. Public.
-- `POST /auth/token` — body `{token}`; validates the device token and, on
-  success, issues a JWT and sets the `byd_session` (HttpOnly) + `byd_auth=1`
-  (hint) cookies. Rate-limited to 10 attempts/min per client identity,
-  which is the socket's peer IP (X-Forwarded-For is ignored), then a 30 s lockout. Any 30
-  failures across all callers within 2 minutes trigger a 5-minute global lockout (BladeWatch-rlgv).
-- `POST /auth/logout` — clears the session cookies. Idempotent.
 - `POST /auth/pair` — body `{code, name}`; redeems a single-use pairing code from the in-car QR
   (BladeWatch-rdtj.7) and answers `{success, companionId, token}` exactly once, or
-  `{success:false, error:"pairing_code_refused"}`. Public; same rate limits as `/auth/token`.
+  `{success:false, error:"pairing_code_refused"}`. Public.
 - `POST /auth/companion` — body `{companionId, token}`; a paired companion's token for a session
-  JWT, returned in the body (`{success, jwt, expiresIn}`), not a cookie. The JWT carries `cid`
-  and stops validating the moment that companion is un-paired. Public; same rate limits.
+  JWT, returned in the body (`{success, jwt, expiresIn}`). The JWT carries `cid` and stops
+  validating the moment that companion is un-paired. Public.
 
-The login page is served as a static file:
+Neither is rate limited, deliberately (BladeWatch-rlgv): what they check is 128 random bits or an
+HMAC, so a limit adds nothing against guessing and only lets anyone who can reach them lock every
+companion out (every remote peer shares one `127.0.0.1` address).
 
-- `GET /login` / `GET /login.html` → `local/login.html`.
-
-Most other routes require a JWT Bearer token or `byd_session` cookie (see
-`AuthMiddleware`). `/auth/status`, `/auth/pair`, `/auth/companion`, `/login`, `/login.html`, `/manifest.json`,
-`/sw.js`, `/favicon.ico`, `/shared/*`, `/i18n/*`, and the Connect login RPC
-`/bladewatch.v1.AuthService/Login` are the only paths that bypass auth.
-`/thumb/*` additionally accepts a signed `?t=` thumbnail token. `/thumb/<clip>.mp4` answers a small JPEG: the clip's hero frame when one exists (scaled to a 480 px long edge and cached as `thumbs/hero_<name>.jpg` when larger -- some heroes are 2560x1920, BladeWatch-820b), else a generated 320x180 frame (202 while it is being made). `/thumb/<name>.jpg` returns that file as stored.
+Every other route requires a `Authorization: Bearer` JWT (see `AuthMiddleware`); `/auth/pair` and
+`/auth/companion` are the only paths that bypass auth. `/thumb/*` additionally accepts a signed `?t=` thumbnail token. `/thumb/<clip>.mp4` answers a small JPEG: the clip's hero frame when one exists (scaled to a 480 px long edge and cached as `thumbs/hero_<name>.jpg` when larger -- some heroes are 2560x1920, BladeWatch-820b), else a generated 320x180 frame (202 while it is being made). `/thumb/<name>.jpg` returns that file as stored.
 
 ## Connect / gRPC Layer
 
-A ConnectRPC (gRPC-style) API mirrors the REST surface 1:1 for the Angular SPA.
+A ConnectRPC (gRPC-style) API is the surface both apps use.
 `ConnectDispatcher` routes any request whose path starts with `/bladewatch.v1.`
 to a registered service handler; everything else falls through to the REST
 routing in `routeToHandlers`.
 
 - **Route prefix / path format:** `POST /bladewatch.v1.{ServiceName}/{MethodName}`,
-  e.g. `POST /bladewatch.v1.AuthService/Login`. Only `POST` is accepted; other
+  e.g. `POST /bladewatch.v1.AuthService/InvalidateAuthCache`. Only `POST` is accepted; other
   methods return Connect `unimplemented` (HTTP 405).
 - **Required headers:** `Connect-Protocol-Version: 1` (else `invalid_argument` /
   HTTP 400) and a JSON content-type (else `invalid_argument` / HTTP 415).
@@ -97,8 +85,7 @@ routing in `routeToHandlers`.
   (including early errors) returns `application/json`. The UI uses unary calls
   only.
 - **Auth:** the server's `AuthMiddleware` runs before Connect dispatch, so
-  handlers do no extra JWT check. `/bladewatch.v1.AuthService/Login` is the only
-  Connect path on the public allowlist.
+  handlers do no extra JWT check. No Connect path is on the public allowlist.
 - **Errors:** failures are returned as `{code, message}` JSON; Connect codes map
   to HTTP status (`invalid_argument`→400, `unauthenticated`→401,
   `permission_denied`→403, `not_found`→404, `already_exists`→409,
@@ -107,9 +94,8 @@ routing in `routeToHandlers`.
 - **1:1 parity mechanism:** each Connect impl wraps the corresponding REST
   handler via `ConnectHandlerUtil.capture*` (it invokes the REST handler against
   an in-memory buffer, strips the HTTP framing, and re-emits the JSON body). REST
-  4xx/5xx responses are translated into Connect errors, and `Set-Cookie` headers
-  (auth flows) are forwarded. The REST families below are therefore the source of
-  truth; the Connect method just renames/repackages them.
+  4xx/5xx responses are translated into Connect errors. The REST families below are
+  therefore the source of truth; the Connect method just renames/repackages them.
 
 ### Registered services and RPCs
 
@@ -118,7 +104,7 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 
 | Service (`bladewatch.v1.*`) | RPC methods | Mirrors REST |
 | --- | --- | --- |
-| `AuthService` | `Login`, `Logout`, `GetAuthStatus`, `InvalidateAuthCache` | `/auth/token`, `/auth/logout`, `/auth/status` |
+| `AuthService` | `InvalidateAuthCache` | (TCP `auth_invalidate`) |
 | `SystemService` | `GetStatus`, `GetPerformance`, `PlayAudioTest`, `ListModels`, `DownloadModel`, `GetSelectedModel`, `SetSelectedModel`, `GetModelsManifest`, `GetSohNominal`/`SetSohNominal`, `GetSohStatus`, `ResetSoh`, `ResetPerformance`, `GetParkingDelta`, `GetLastCharge`, `PerformanceConnect`, `PerformanceHeartbeat`, `PerformanceDisconnect` | `/status`, `/api/performance*`, `/api/audio/test-avas`, `/api/models/*` |
 | `RecordingsService` | `ListRecordings`, `GetDates`, `GetStats`, `DeleteRecording`, `BatchDelete`, `SyncCatalog`, `GetInflightStatus`, `GetEventTimeline`, `MarkRecording` | `/api/recordings*`, `/api/events/*` |
 | `TripsService` | `ListTrips`, `GetTrip`, `DeleteTrip`, `GetSummary`, `GetDna`, `GetRange`, `GetConfig`/`SetConfig`, `GetStorage`/`SetStorage`, `SyncTrips`, `GetTelemetry`, `GetSimilarTrips`, `GetGpsTrace` | `/api/trips*` |
@@ -129,36 +115,17 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 | `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode`, `GetStatusOverlay`/`SetStatusOverlay`, `GetTelemetryOverlayFields`/`SetTelemetryOverlayFields` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` |
 | `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `PreviewStorageLimitChange`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
 | `VehicleService` | `GetState`, `GetAcDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported), `IssueActionToken`, `GetAdasInventory` | `/api/vehicle/*`, `/api/gps/*` |
-| `NotificationsService` | `GetCategories`, `Subscribe`, `Unsubscribe`, `ListSubscriptions`, `UpdatePreferences`, `SendTest`, `ListInbox` | `/api/notifications/*`, `/api/push/*` (`ListInbox`: Connect only) |
+| `NotificationsService` | `GetCategories`, `SendTest`, `ListInbox` | (`ListInbox`: Connect only) |
 
 The full request/response message shapes are in `proto/bladewatch/v1/*.proto`
 (one file per service, plus `common.proto`). Regenerate stubs with
 `cd proto && buf generate`.
 
-## Static Web Routes
+## Locale
 
-The web UI is an Angular SPA. `GET /` and any unrecognised path fall through to
-`angular/index.html` so the Angular router resolves the route client-side — the
-old per-page routes (`/recording`, `/surveillance`, `/trips`, …) are no longer
-distinct server routes.
-
-Angular build output and asset areas:
-
-- `GET /assets/*`, `GET /vendor/*` → Angular SPA chunks (`angular/...`).
-- `GET /shared/*`, `GET /local/*` → bundled static assets. `?v=` cache-busting
-  and `#` fragments are stripped before disk lookup.
-- `GET /i18n/{tag}.json` → locale catalogs (404 on unsupported tags so the
-  runtime falls back to `en`). Served with `Cache-Control: no-store, no-cache,
-  must-revalidate, max-age=0` — the catalog URLs are unhashed (unlike the
-  content-hashed Angular bundle), so they must revalidate on every load or a
-  stale cached catalog would render the SPA as raw keys after an app update.
-  `?query`/`#fragment` are stripped before disk lookup (future `?v=` busting).
-  Catalogs are validated at build time by the `validateI18nCatalogs` Gradle
-  task (fails the build on invalid JSON or missing keys vs `en.json`).
-- `GET /manifest.json`, `GET /sw.js`, `GET /credits.json` → PWA assets
-  (served from `local/`).
-
-i18n:
+There are no static web routes (BladeWatch-rdtj.22): nothing is served from `/data/local/tmp/web`
+over HTTP. That directory holds only `server-i18n` (the car's own localized error texts) and
+`shared/models` (the manifest `ModelsApiHandler` reads).
 
 - `GET /api/i18n/lang` — current locale + supported list.
 - `POST /api/i18n/lang` — body `{lang}`; persists and echoes the resolved locale.
@@ -191,7 +158,7 @@ Handled by `RecordingsApiHandler`:
     alone on the car's own hardware -- callers should poll, not treat 202 as a failure. The
     companion's Android build supplies this hint from a `MediaCodecList` probe of the device's
     own hardware decoder (`net.bladewatch.companionapp/video_capability` platform channel); every
-    other companion platform, and the in-car UI and web app, send no hint and always get native.
+    other companion platform, and the in-car UI, send no hint and always get native.
 - `/thumb/*`.
 - `/api/events/*`.
 - `POST /api/recordings/sync` — reconcile the media catalog DB against the filesystem.
@@ -252,9 +219,8 @@ Handled by `StreamingApiHandler` and WebSocket upgrade paths:
 
 - `/api/stream/*` — stream enable/disable, quality, and view-mode control.
 - `GET /ws` (WebSocket upgrade) — live H.264 stream used by the live stream
-  client. Browser WebSocket clients can pass the JWT as `?token=` (promoted to a
-  synthetic `Authorization: Bearer` header) since cookies may be dropped through
-  a tunnel's SameSite policy.
+  client. A client that cannot set headers can pass the JWT as `?token=` (promoted to a
+  synthetic `Authorization: Bearer` header).
 
 Connect mirror: `StreamService.{Enable,Disable,GetStatus,GetQuality,SetQuality,
 GetViewMode,SetViewMode}`. The binary stream itself stays on the `/ws` WebSocket;
@@ -531,19 +497,12 @@ Connect mirror (via `SystemService`): `ListModels`, `DownloadModel`,
 routes are mirrored by `SystemService.{GetPerformance,ResetPerformance,
 GetParkingDelta,GetLastCharge,GetSohNominal,SetSohNominal,GetSohStatus,ResetSoh}`.
 
-## Notifications and Push
+## Notifications
 
-Handled by `NotificationApiHandler`:
+Handled by `NotificationApiHandler` (Web Push was removed with the web app, BladeWatch-rdtj.22):
 
-- `GET /api/notifications/categories`.
-- `POST /api/push/subscribe`.
-- `POST /api/push/unsubscribe`.
-- `GET /api/push/subscriptions`.
-- `POST /api/push/preferences`.
-- `POST /api/push/test`.
-
-Connect mirror: `NotificationsService.{GetCategories,Subscribe,Unsubscribe,
-ListSubscriptions,UpdatePreferences,SendTest}`.
+- `NotificationsService.GetCategories` — the notification category registry.
+- `NotificationsService.SendTest` — raise a test alert.
 
 `NotificationsService.ListInbox` is Connect only, with no REST twin. It serves the
 companion's store-and-forward alerts (BladeWatch-rdtj.14, `CompanionInbox`). Request
@@ -572,7 +531,7 @@ Additional command behavior may be implemented by the TCP command server
 ### System status field parity (by design)
 
 `GET /status` (Connect: `SystemService.GetStatus`) intentionally drops several
-REST-emitted fields because no Connect/Angular consumer reads them, so they are
+REST-emitted fields because no client reads them, so they are
 not modelled in the proto (`proto/bladewatch/v1/system.proto`):
 
 - `BatteryMonitor.getBatteryInfo()` emits `voltage`, `soc`, `lastUpdate`, but
@@ -593,7 +552,7 @@ stubs (`cd proto && buf generate`). Tracked by BladeWatch-852m.
 - Use the local base URL from the Android app, the LAN TLS listener (8443, pinned certificate) on the car's network, or the companion's Pear connection from anywhere.
 - Avoid assuming response schemas from this list alone — read the handler class
   (REST) or `proto/bladewatch/v1/*.proto` (Connect) for the authoritative shape.
-- New clients — Dart or Angular — should use the Connect API (`/bladewatch.v1.*`,
+- New clients should use the Connect API (`/bladewatch.v1.*`,
   with `Connect-Protocol-Version: 1` and a JSON content-type). REST remains the
   behavioural source of truth because the Connect handlers wrap it, but it has no
   first-party client any more.
