@@ -8,7 +8,6 @@ import net.bladewatch.app.byd.routing.VehicleCommandRouter
 import net.bladewatch.app.byd.routing.VehicleCommandRouter.CommandResult
 import net.bladewatch.app.byd.routing.VehicleCommandRouter.VehicleCommand
 import net.bladewatch.app.logging.DaemonLogger
-import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
 import kotlin.math.roundToLong
@@ -26,6 +25,30 @@ import kotlin.math.roundToLong
  * the first place.
  */
 object VehicleControlApiHandler {
+
+    private const val SUNROOF_AREA = 5
+
+    /**
+     * Where the last successful sunroof command left it, reported in place of the car's reading:
+     * this car never reports a resting position (getSunroofPosition is 0 throughout, and
+     * getSunroofState is 1 at rest whether closed or half open -- measured 2026-09-25,
+     * BladeWatch-b3n7), so without this a 50% sunroof showed as 0%.
+     * ponytail: the physical roof switch goes unseen until the app's next sunroof command, and a
+     * daemon restart forgets it; watch getSunroofState's 3/4 (opening/closing) if that matters.
+     */
+    @Volatile
+    internal var lastSunroofStop: Int? = null
+
+    /** Set once this car's sunroof has read anything but closed: then its reading is real. */
+    @Volatile
+    private var sunroofReportsPosition = false
+
+    /**
+     * `windows.sunroof`: the car's [reading] if it has ever [reportsPosition], else where the
+     * last command sent it -- a car that only ever reads 0 would otherwise show a 50% roof as 0%.
+     */
+    internal fun sunroofPercent(reading: Int, commandedStop: Int?, reportsPosition: Boolean): Int =
+        if (reportsPosition || commandedStop == null) reading else commandedStop
 
     private val logger: DaemonLogger = DaemonLogger.getInstance("VehicleControlApi")
 
@@ -86,7 +109,9 @@ object VehicleControlApiHandler {
             windows.put("lr", sanitizePercent(openPercent[2]))
             windows.put("rr", sanitizePercent(openPercent[3]))
             if (openPercent.size >= 5) {
-                windows.put("sunroof", preferredPercent(data.sunroofPosition, openPercent[4]))
+                val reading = preferredPercent(data.sunroofPosition, openPercent[4])
+                if (reading in 1..100) sunroofReportsPosition = true
+                windows.put("sunroof", sunroofPercent(reading, lastSunroofStop, sunroofReportsPosition))
             }
             if (openPercent.size >= 6) {
                 windows.put("sunshade", preferredPercent(data.sunshadePercent, openPercent[5]))
@@ -112,13 +137,6 @@ object VehicleControlApiHandler {
         windowCaps.put("sunroof", sunroofSupported)
         windowCaps.put("sunshade", sunshadeSupported)
         capabilities.put("windows", windowCaps)
-        val seatCaps = JSONObject()
-        seatCaps.put("driverHeat", collector.isSeatHeatingSupported(1))
-        seatCaps.put("passengerHeat", collector.isSeatHeatingSupported(2))
-        seatCaps.put("driverCool", collector.isSeatVentilationSupported)
-        seatCaps.put("passengerCool", collector.isSeatVentilationSupported)
-        seatCaps.put("driverMemoryRecall", collector.isDriverSeatMemoryRecallSupported)
-        capabilities.put("seats", seatCaps)
         response.put("capabilities", capabilities)
 
         // Trunk/tailgate status from extended bodywork. doorLockStatus[4] is the trunk lock.
@@ -172,46 +190,23 @@ object VehicleControlApiHandler {
         adas.put("speedLimitWarning", data.speedLimitWarning)
         response.put("adas", adas)
 
-        // Seats — heating/cooling levels for driver/passenger ([0-2], 0=off)
-        val seats = JSONObject()
-        val seatHeat = data.seatHeat
-        if (seatHeat != null && seatHeat.isNotEmpty()) {
-            val heat = JSONArray()
-            for (v in seatHeat) heat.put(v)
-            seats.put("heat", heat)
-        }
-        val seatCool = data.seatCool
-        if (seatCool != null && seatCool.isNotEmpty()) {
-            val cool = JSONArray()
-            for (v in seatCool) cool.put(v)
-            seats.put("cool", cool)
-        }
-        // ventilatedSupported: hardware capability. Cars without ventilated seats (Atto 3 base,
-        // certain Seal trims) report hasFeature("SEAT_VENTILATING")=0; the UI greys out the cool
-        // buttons on that.
-        seats.put("ventilatedSupported", collector.isSeatVentilationSupported)
-        response.put("seats", seats)
-
         // Climate — only report AC state if vehicle power is on (powerLevel >= 2), otherwise
         // stale cached data shows AC on when the car is actually off.
         val climate = JSONObject()
         val vehiclePoweredOn =
             data.powerLevel != BydVehicleData.UNAVAILABLE && data.powerLevel >= 2
-        if (data.acStartState != BydVehicleData.UNAVAILABLE) {
-            climate.put("acOn", vehiclePoweredOn && data.acStartState == 1)
-        }
-        // Setpoint and cabin temperature come from DIFFERENT positions of the same getter.
-        // Both used to read position 1, so "inside temperature" was the driver's chosen
-        // setpoint: it tracked the stepper exactly and never rose on a hot day. Measured on
-        // the head unit with the cabin at 36C, position 1 read 24 — the setpoint —
-        // and position 4 read 36. See BydDataCollector.AC_TEMP_POS_CABIN (BladeWatch-gkjl).
+        // Read live, as fanLevel is below (BladeWatch-rdtj.64): the collector's snapshot lagged the
+        // car, so with the AC running (getAcStartState=1, fan at 1) acOn stayed false and both
+        // apps' AC switches snapped back. The snapshot is only the fallback when the read fails.
+        acOn(vehiclePoweredOn, collector.acStartState, data.acStartState)?.let { climate.put("acOn", it) }
+        // The setpoint, and the OUTSIDE air -- the car exposes no cabin temperature
+        // (BladeWatch-gkjl, BladeWatch-eh3u; see BydDataCollector.AC_TEMP_POS_SETPOINT).
         val temps = selectClimateTemps(
             setpointRaw = collector.getAcTemperature(BydDataCollector.AC_TEMP_POS_SETPOINT),
-            cabinRaw = collector.getAcTemperature(BydDataCollector.AC_TEMP_POS_CABIN),
-            cachedInsideC = data.insideTempC,
+            outsideC = data.outsideTempC,
         )
         temps.setpointC?.let { climate.put("setpointC", it) }
-        temps.insideTempC?.let { climate.put("insideTempC", it) }
+        temps.outsideTempC?.let { climate.put("outsideTempC", it) }
         if (data.acWindMode != BydVehicleData.UNAVAILABLE) {
             climate.put("windMode", data.acWindMode)
         }
@@ -227,7 +222,7 @@ object VehicleControlApiHandler {
 
         // Tyres — per-corner pressure (kPa + PSI), temperature, and the three independent state
         // enums (pressure under/over, slow/fast leak, signal lost). Indexed [FL, FR, RL, RR]. The
-        // web UI's tyre callouts read this block directly; if any required source is missing the
+        // the tyre callouts read this block directly; if any required source is missing the
         // corner falls back to {available:false} so the UI shows a grey "no signal" state.
         val tyres = JSONObject()
         val anyTyreData = data.tyrePressure != null ||
@@ -296,15 +291,6 @@ object VehicleControlApiHandler {
         // without verifying each field against the cluster's own readout first.
 
         response.put("timestamp", data.timestamp)
-        return response
-    }
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun handleSeatDiagnostics(): JSONObject {
-        val response = JSONObject()
-        response.put("success", true)
-        response.put("seats", BydDataCollector.getInstance().diagnoseSeatCapabilities())
         return response
     }
 
@@ -401,7 +387,7 @@ object VehicleControlApiHandler {
             // Connect/proto clients send windowIndex (the same 0=all/1=LF.. scheme the handler
             // uses for area) and a direction string ("open"/"close"). windowIndex==0 ("all") is a
             // proto default scalar and omitted on the wire, so its absence correctly maps to area
-            // 0. The legacy web UI sends area + command (1=open, 2=close, 3=stop).
+            // 0. The older area + command form (1=open, 2=close, 3=stop) is still accepted.
             val area = if (req.has("windowIndex")) {
                 req.optInt("windowIndex", 0)
             } else {
@@ -420,6 +406,9 @@ object VehicleControlApiHandler {
                 val target = req.getInt("targetPercent")
                 val r = VehicleCommandRouter.getInstance()
                     .execute(VehicleCommandRouter.WindowMoveCommand(area, 0, target))
+                if (area == SUNROOF_AREA && r.outcome == VehicleCommandRouter.Outcome.SUCCESS) {
+                    lastSunroofStop = BydDataCollector.sunPanelStop(target)
+                }
                 logger.info(
                     "Window: area=" + areaName(area) + " target=" + target + "% " + r.outcome
                 )
@@ -448,6 +437,13 @@ object VehicleControlApiHandler {
                 VehicleCommandRouter.WindowMoveCommand(area, command, null)
             }
             val r = VehicleCommandRouter.getInstance().execute(cmd)
+            if (area == SUNROOF_AREA && r.outcome == VehicleCommandRouter.Outcome.SUCCESS) {
+                lastSunroofStop = when (command) {
+                    1 -> 100
+                    2 -> 0
+                    else -> null // stopped somewhere unknown
+                }
+            }
             logger.info(
                 "Window: area=" + areaName(area) + " cmd=" + windowCmdName(command) + " " +
                     r.outcome
@@ -505,13 +501,25 @@ object VehicleControlApiHandler {
      * an HTTP round trip — mirrors [parseLightsRequest]'s shape.
      *
      * Connect/proto clients send camelCase json-names and OMIT default scalars (false/0); the
-     * legacy web UI sends its own names and always sends booleans explicitly. Read the proto key
+     * older clients sent their own names and always sent booleans explicitly. Read the proto key
      * when present, else fall back to the legacy key — see the pre-existing cases below for the
      * established convention this follows.
      *
      * Public rather than module-internal because ClimateCommandParserTest reaches it from a
      * different package.
      */
+    /**
+     * GetState's climate.acOn (BladeWatch-rdtj.64): from the LIVE getAcStartState ([live], -1 when it
+     * cannot be read), the collector's snapshot only as the fallback -- the snapshot lagged the car, so
+     * with the AC running acOn stayed false and both apps' AC switches snapped back. Null (omitted)
+     * when neither is known; false whenever the car is not powered on.
+     */
+    @JvmStatic
+    fun acOn(vehiclePoweredOn: Boolean, live: Int, snapshot: Int): Boolean? {
+        val state = live.takeIf { it >= 0 } ?: snapshot
+        return if (state == BydVehicleData.UNAVAILABLE) null else vehiclePoweredOn && state == 1
+    }
+
     @JvmStatic
     fun buildClimateCommand(action: String, req: JSONObject): VehicleCommand? = when (action) {
         "power_on" -> {
@@ -575,55 +583,6 @@ object VehicleControlApiHandler {
             req.optInt("cycleMode", req.optInt("cycle_mode", 0))
         )
         else -> null
-    }
-
-    /**
-     * Seat heating / ventilation / memory-recall — local SDK. This was cloud-first
-     * (VENTILATIONHEATING) with an SDK fallback until 61b4d7f removed the cloud leg.
-     *
-     * The full-state payload is a leftover of that: the cloud command was stateful, so heat+vent
-     * commands carried the FULL state of driver+passenger seats, and the client still sends it on
-     * every seat command. Harmless, but do not mistake it for something the SDK path needs.
-     */
-    @JvmStatic
-    @Throws(Exception::class)
-    fun handleSeat(body: String?): JSONObject {
-        val response = JSONObject()
-        try {
-            val req = JSONObject(body)
-            val action = req.optString("action", "heating")
-            // Connect/proto clients send seatIndex (1=driver, 2=passenger); the legacy web UI
-            // sends position. Read the proto key when present.
-            val position = if (req.has("seatIndex")) {
-                req.optInt("seatIndex", 1)
-            } else {
-                req.optInt("position", 1)
-            }
-            val level = req.optInt("level", 0)
-            val dh = req.optInt("driverHeat", 0)
-            val dv = req.optInt("driverVent", 0)
-            val ph = req.optInt("passengerHeat", 0)
-            val pv = req.optInt("passengerVent", 0)
-            val cmd: VehicleCommand = when (action) {
-                "ventilation" -> VehicleCommandRouter.SeatVentCommand(position, level, dh, dv, ph, pv)
-                "position" -> VehicleCommandRouter.SeatMemoryCommand(position)
-                else -> VehicleCommandRouter.SeatHeatCommand(position, level, dh, dv, ph, pv)
-            }
-            val r = VehicleCommandRouter.getInstance().execute(cmd)
-            logger.info(
-                "Seat: action=" + action + " pos=" + seatPosName(position) +
-                    " level=" + level + " " + r.outcome
-            )
-            val resp = routedResponse(r, action)
-            resp.put("position", position)
-            resp.put("level", level)
-            return resp
-        } catch (e: Exception) {
-            logger.warn("Seat command failed: " + e.message)
-            response.put("success", false)
-            response.put("error", e.message)
-            return response
-        }
     }
 
     /**
@@ -990,14 +949,6 @@ object VehicleControlApiHandler {
         else -> "?($cmd)"
     }
 
-    private fun seatPosName(pos: Int): String = when (pos) {
-        1 -> "driver"
-        2 -> "passenger"
-        3 -> "rear-left"
-        4 -> "rear-right"
-        else -> "?($pos)"
-    }
-
     // ==================== HELPERS ====================
 
     private fun isValidPercent(value: Int): Boolean = value in 0..100
@@ -1044,35 +995,17 @@ object VehicleControlApiHandler {
     }
 
     /** What [handleVehicleStatus] should report for the two climate temperatures. */
-    data class ClimateTemps(val setpointC: Int?, val insideTempC: Double?)
+    data class ClimateTemps(val setpointC: Int?, val outsideTempC: Double?)
 
     /**
-     * Picks the climate setpoint and the cabin temperature from the two raw
-     * `getTemprature(position)` readings, plus the collector's cached cabin value as a
-     * fallback. A null field means OMIT it from the response.
-     *
-     * Extracted as a pure `@JvmStatic` so the decision is testable without a live
-     * [BydDataCollector], which needs a real BYD head unit — the same reason
-     * `StorageManager.selectFilesToDelete` was extracted.
-     *
-     * The bug this encodes against (BladeWatch-gkjl): both values used to be read from
-     * position 1, so the Vehicle screen showed the driver's chosen setpoint as the cabin
-     * reading. It tracked the temperature stepper exactly and never rose on a hot day.
-     * Measured on the head unit with the cabin at 36C, position 1 read 24 and position 4
-     * read 36.
-     *
-     * When no reading passes its range check the field is omitted rather than defaulted: the
-     * Flutter side maps absent/0.0 to null and hides the row, which is the honest degraded
-     * state. Showing a plausible-but-wrong number is precisely what went wrong here.
+     * The climate setpoint from its raw `getTemprature` reading, and the outside air from the
+     * collector. A null field means OMIT it: the UIs hide an absent row, and a plausible but
+     * wrong number is exactly what went wrong twice here -- the setpoint shown as the cabin
+     * (BladeWatch-gkjl), then the outside air shown as the cabin (BladeWatch-eh3u).
      */
     @JvmStatic
-    internal fun selectClimateTemps(setpointRaw: Int, cabinRaw: Int, cachedInsideC: Double): ClimateTemps {
-        val setpoint = setpointRaw.takeIf { it in BydDataCollector.AC_SETPOINT_RANGE_C }
-        val inside = when {
-            cabinRaw in BydDataCollector.CABIN_TEMP_RANGE_C -> cabinRaw.toDouble()
-            !cachedInsideC.isNaN() -> cachedInsideC
-            else -> null
-        }
-        return ClimateTemps(setpoint, inside)
-    }
+    internal fun selectClimateTemps(setpointRaw: Int, outsideC: Double): ClimateTemps = ClimateTemps(
+        setpointC = setpointRaw.takeIf { it in BydDataCollector.AC_SETPOINT_RANGE_C },
+        outsideTempC = outsideC.takeUnless { it.isNaN() },
+    )
 }

@@ -12,12 +12,12 @@ import org.junit.Test;
  * BladeWatch-sxzg: a remote viewer must not be able to starve the in-car UI.
  *
  * <p><b>The observed failure.</b> The owner reported that the in-car Flutter UI became
- * unresponsive whenever the Tor tunnel was on, and recovered the instant it was switched
+ * unresponsive whenever remote access was on, and recovered the instant it was switched
  * off. Measured on the head unit 2026-09-15, it was neither a render loop nor a CPU
  * shortage:
  *
  * <pre>
- *   dumpsys gfxinfo net.bladewatch.flutter
+ *   dumpsys gfxinfo net.bladewatch.incarapp
  *     Total frames rendered: 257 ... 257 again 10 s later   -> nothing was repainting
  *     Janky frames: 114 (44%)   99th percentile: 600 ms
  *   head unit: 497% of 800% idle
@@ -25,7 +25,7 @@ import org.junit.Test;
  *
  * <p>Zero frames over ten seconds rules out an animation; frames arriving 600 ms late on an
  * idle machine is the signature of a thread BLOCKED WAITING. The in-car UI speaks ConnectRPC
- * to {@code 127.0.0.1:8080} — the very server the onion service fronts — so it shares one
+ * to {@code 127.0.0.1:8080} — the very server remote clients reach — so it shares one
  * fixed pool with every remote client.
  *
  * <p><b>The specific hazard this test pins.</b> {@code streamH264ToWebSocket} sets

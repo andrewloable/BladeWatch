@@ -19,6 +19,7 @@ import net.bladewatch.app.surveillance.FoveatedCropper
 import net.bladewatch.app.surveillance.GpuDownscaler
 import net.bladewatch.app.surveillance.GpuMosaicRecorder
 import net.bladewatch.app.surveillance.HardwareEventRecorderGpu
+import net.bladewatch.app.surveillance.GpuStillCapture
 import net.bladewatch.app.surveillance.SurveillanceEngineGpu
 import net.bladewatch.app.surveillance.isLibraryLoaded
 
@@ -160,6 +161,19 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
     private var sentry: SurveillanceEngineGpu? = null
     private var foveatedCropper: FoveatedCropper? = null  // High-res AI crop from raw strip
 
+    // BladeWatch-rdtj.61: whether something wants the sentry's cached mosaic frame kept current
+    // while sentry is OFF -- the remote live view's still, and the quadrant snapshots. Without
+    // it nothing reads the mosaic back with ACC on, and those froze at the last sentry frame.
+    // Set by GpuSurveillancePipeline.
+    @Volatile var stillFramesWanted: () -> Boolean = { false }
+
+    // BladeWatch-rdtj.68: the live view's still at camera resolution, captured twice a second while
+    // [stillFramesWanted]; [stillSink] takes each shot and the view it shows. Set by the pipeline.
+    @Volatile var stillSink: ((android.graphics.Bitmap, Int) -> Unit)? = null
+    @Volatile var stillView: () -> Int = { GpuStillCapture.MOSAIC }
+    private var stillCapture: GpuStillCapture? = null
+    private var lastStillCaptureMs = 0L
+
     // Frame timing
     private var frameCounter = 0
     // AI lane is fully decoupled from the GL thread (AiLaneWorker). GL thread
@@ -272,6 +286,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
     @Throws(Exception::class)
     fun start() {
         logger.info("Starting GPU camera pipeline...")
+        val gen = generation.incrementAndGet()
         startTime = System.currentTimeMillis()
 
         // SOTA: Initialize BYD camera coordinator for cooperative sharing
@@ -361,8 +376,22 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
         // Initialize on GL thread
         newGlHandler.post {
             try {
+                // BladeWatch-honj: stop() can land before or during this post -- the daemon's startup
+                // ACC event does exactly that. quitSafely() still runs it, and it used to set running
+                // and start a watchdog for a GL thread that was already quitting: no heartbeat ever
+                // came, and 10 s later that orphan killed the healthy daemon the next start() built.
+                if (generation.get() != gen) return@post
                 initializeGl()
                 startCamera()
+                if (generation.get() != gen) {
+                    logger.warn("Stopped while starting — not starting the render loop or watchdog")
+                    cameraObj?.let {
+                        BydCameraCoordinator.closeCamera(it, cameraSurfaceMode)
+                        cameraObj = null
+                        cameraCoordinator?.notifyPosCloseCamera()
+                    }
+                    return@post
+                }
 
                 // SOTA: Setup event callback for HAL error detection (-10086, 8)
                 val coord = cameraCoordinator
@@ -376,7 +405,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
                 newGlHandler.post(this::renderLoop)
 
                 // Start watchdog
-                startWatchdog()
+                startWatchdog(gen)
 
                 logger.info("GPU camera pipeline started")
             } catch (e: Exception) {
@@ -1351,6 +1380,29 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
                     }
                 }
             }
+            val sink = stillSink
+            val nowMs = android.os.SystemClock.uptimeMillis()
+            if (sink != null && nowMs - lastStillCaptureMs >= STILL_CAPTURE_INTERVAL_MS && stillFramesWanted()) {
+                lastStillCaptureMs = nowMs
+                try {
+                    val view = stillView()
+                    val capture = stillCapture ?: GpuStillCapture().also { stillCapture = it }
+                    capture.capture(cameraTextureId, view)?.let { sink(it, view) }
+                } catch (e: Exception) {
+                    logger.warn("Still capture error: " + (e.message ?: e.javaClass.simpleName))
+                }
+            }
+            if (sentryLocal != null && !sentryLocal.isActive && downscaler != null &&
+                frameCounter % STILL_READBACK_FRAME_MODULO == 0 && stillFramesWanted()
+            ) {
+                // Sentry off (ACC on): keep sentry's 640x480 cache current for the quadrant
+                // snapshots (rdtj.61) -- no AI lane, no motion. The live still has its own capture.
+                try {
+                    downscaler!!.readPixelsDirect(cameraTextureId)?.let { sentryLocal.storeMosaicFrame(it) }
+                } catch (e: Exception) {
+                    logger.warn("Still readback error: " + (e.message ?: e.javaClass.simpleName))
+                }
+            }
 
             // Per-stage timing roll-up: accumulate into rolling window, emit
             // p50/p95/max every STAGE_TIMING_WINDOW frames when the runtime
@@ -1800,7 +1852,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
      * will call System.exit(0) to force a process restart, since EGL
      * contexts cannot be recovered from a blocked thread.
      */
-    private fun startWatchdog() {
+    private fun startWatchdog(gen: Int) {
         lastGlThreadHeartbeat = System.currentTimeMillis()
         firstFrameReceived = false
 
@@ -1828,12 +1880,15 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
                     else
                         GL_THREAD_WARMUP_TIMEOUT_MS
 
-                    if (timeSinceHeartbeat > effectiveTimeout) {
+                    val verdict = watchdogVerdict(gen, generation.get(), timeSinceHeartbeat, effectiveTimeout)
+                    if (verdict == WatchdogVerdict.SUPERSEDED) break
+                    if (verdict == WatchdogVerdict.HUNG) {
                         logger.error(
                             "CRITICAL: GL thread blocked for " + timeSinceHeartbeat +
                                 "ms - forcing process restart" +
                                 (if (firstFrameReceived) "" else " (during camera warmup)")
                         )
+                        glThread?.let { gl -> logger.error("GL thread stack: " + gl.stackTrace.take(25).joinToString(" <- ")) }
 
                         // Try to flush logs before exit
                         try {
@@ -1916,6 +1971,9 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
     // GL-hang timeout that can force a process restart. Must stay @Volatile (it was `volatile`
     // in the Java original) or the watchdog can read a stale value indefinitely.
     @Volatile private var firstFrameReceived = false
+
+    /** Bumped by every start() and stop(); a start whose number is stale was stopped (BladeWatch-honj). */
+    private val generation = java.util.concurrent.atomic.AtomicInteger()
 
     /**
      * SOTA: Yields the camera to the native BYD AVM app.
@@ -2105,6 +2163,7 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
      */
     fun stop() {
         logger.info("Stopping GPU camera pipeline...")
+        generation.incrementAndGet()
         running = false
 
         // Stop watchdog
@@ -2297,6 +2356,9 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
             }
             aiLaneWorker = null
         }
+
+        stillCapture?.release()
+        stillCapture = null
 
         // Release foveated cropper before GL context is destroyed
         foveatedCropper?.let {
@@ -2664,9 +2726,21 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
      */
     fun isProbeComplete(): Boolean = probeComplete
 
+    internal enum class WatchdogVerdict { HEALTHY, SUPERSEDED, HUNG }
+
     companion object {
         private const val TAG = "PanoramicCameraGpu"
         private val logger = DaemonLogger.getInstance(TAG)
+
+        /**
+         * What the GL watchdog of start number [gen] does. Only the CURRENT start's watchdog may
+         * restart the process; one whose start was stopped exits instead (BladeWatch-honj).
+         */
+        internal fun watchdogVerdict(gen: Int, currentGen: Int, sinceHeartbeatMs: Long, timeoutMs: Long) = when {
+            gen != currentGen -> WatchdogVerdict.SUPERSEDED
+            sinceHeartbeatMs > timeoutMs -> WatchdogVerdict.HUNG
+            else -> WatchdogVerdict.HEALTHY
+        }
         private const val PHYSICAL_CAMERA_ID = 1
         private const val MAX_CAMERA_ID = 5     // Probe camera IDs 0-5
 
@@ -2701,6 +2775,15 @@ class PanoramicCameraGpu(val width: Int, val height: Int) {
         // matching V2 motion's 10 fps internal cadence. If HAL rate changes, AI
         // rate scales proportionally and the GL thread budget stays balanced.
         private const val AI_READBACK_FRAME_MODULO = 3
+
+        // With sentry off, the 640x480 cache's only reader is the quadrant snapshots: about one
+        // readback a second at the HAL's ~26 fps (BladeWatch-rdtj.61).
+        private const val STILL_READBACK_FRAME_MODULO = 26
+
+        // The live view's full-resolution still (rdtj.68): by the clock, not a frame count -- sentry
+        // runs the camera slower, and every 26 frames became one still per ~2 s. Twice the encode
+        // rate, so each once-a-second encode finds a new shot.
+        private const val STILL_CAPTURE_INTERVAL_MS = 100L
 
         private fun isHardwareBufferBridgeReady(report: String?): Boolean {
             if (report.isNullOrEmpty()) {

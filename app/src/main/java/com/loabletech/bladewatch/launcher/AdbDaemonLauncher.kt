@@ -13,10 +13,7 @@ import net.bladewatch.app.logging.LogManager
  *
  * Maintains backward compatibility with the original AdbDaemonLauncher API.
  *
- * Note: Cloudflared/Tailscale tunnels, the sing-box proxy, the proxy daemon,
- * and the Telegram daemon have been removed. The corresponding methods are
- * retained as no-op stubs so existing callers keep compiling; the supported
- * tunnel (Tor) is managed separately via TorLauncher/TorController.
+ * Remote access is the Pear peer, managed separately via PearLauncher/PearController.
  */
 class AdbDaemonLauncher(private val context: Context) {
 
@@ -150,8 +147,7 @@ class AdbDaemonLauncher(private val context: Context) {
     
     // ==================== SERVICE LAUNCHING ====================
     //
-    // The supported tunnel (Tor) is managed separately via
-    // TorLauncher/TorController.
+    // Remote access (the Pear peer) is managed separately via PearLauncher/PearController.
     
     /**
      * Start daemons via ADB shell.

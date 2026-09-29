@@ -613,7 +613,7 @@ object QualitySettingsApiHandler {
                 CameraDaemon.setRecordingQuality(tier)
             }
 
-            // Connect/proto clients send the proto json-name "codec"; the legacy web UI sends
+            // Connect/proto clients send the proto json-name "codec"; older clients send
             // "recordingCodec". Read whichever is present.
             if (settings.has("codec") || settings.has("recordingCodec")) {
                 val codecKey = if (settings.has("codec")) "codec" else "recordingCodec"
@@ -668,7 +668,7 @@ object QualitySettingsApiHandler {
                 }
             }
 
-            // Connect/proto clients send the proto json-name "fps"; the legacy web UI sends
+            // Connect/proto clients send the proto json-name "fps"; older clients send
             // "cameraFps". Read whichever is present.
             if (settings.has("fps") || settings.has("cameraFps")) {
                 val fps = settings.getInt(if (settings.has("fps")) "fps" else "cameraFps")

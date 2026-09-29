@@ -228,7 +228,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
               initialZoom: 15,
             ),
             children: [
-              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'net.bladewatch.flutter'),
+              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'net.bladewatch.incarapp'),
               MarkerLayer(markers: [
                 for (final zone in c.safeZones)
                   Marker(point: LatLng(zone.lat, zone.lng), child: const Icon(Icons.shield, color: Colors.teal)),

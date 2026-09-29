@@ -1,9 +1,9 @@
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/trips/trips_controller.dart';
 import 'package:bladewatch_ui/screens/trips/trips_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
   late FakeRpcClient rpc;
@@ -47,6 +47,26 @@ void main() {
     expect(controller.state, isA<TripsLoading>());
     expect(controller.activeTab, TripsTab.trips);
     expect(controller.activeFilter, TripsDaysFilter.seven);
+  });
+
+  // BladeWatch-mgi9 / -c149: costs are a sum over the WHOLE period, not the first page.
+  group('period costs', () {
+    test('are summed from the trips when the first page is not full', () async {
+      stubAllLoads(trips: [aTrip(id: 1), aTrip(id: 2)]);
+      await controller.load();
+      final costs = (controller.state as TripsLoaded).costs;
+      expect((costs.total, costs.currency), (5.0, 'USD'));
+      expect(rpc.calls.where((c) => c.method == 'ListTrips'), hasLength(1), reason: 'one page was enough');
+    });
+
+    test('page on past a full first page', () async {
+      stubAllLoads(trips: [for (var i = 0; i < 100; i++) aTrip(id: i)]);
+      await controller.load();
+      final lists = rpc.calls.where((c) => c.method == 'ListTrips').toList();
+      expect(lists.length, greaterThan(2));
+      expect((lists.last.request as dynamic).offset, greaterThan(0));
+      expect((controller.state as TripsLoaded).trips, hasLength(100), reason: 'the list itself is unchanged');
+    });
   });
 
   group('load', () {

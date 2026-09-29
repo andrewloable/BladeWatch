@@ -8,6 +8,7 @@ import 'platform/adb_key_channel.dart';
 import 'platform/auth_channel.dart';
 import 'platform/config_channel.dart';
 import 'platform/daemon_channel.dart';
+import 'platform/pairing_channel.dart';
 import 'platform/live_view_texture_channel.dart';
 import 'platform/location_channel.dart';
 import 'platform/method_channel_bridge.dart';
@@ -15,17 +16,17 @@ import 'platform/network_channel.dart';
 import 'platform/prefs_channel.dart';
 import 'platform/public_config_channel.dart';
 import 'platform/setup_channel.dart';
-import 'rpc/connect_client.dart';
-import 'rpc/raw_http_sender.dart';
-import 'rpc/services/recordings_service_client.dart';
-import 'rpc/services/safe_locations_service_client.dart';
-import 'rpc/services/settings_service_client.dart';
-import 'rpc/services/storage_service_client.dart';
-import 'rpc/services/stream_service_client.dart';
-import 'rpc/services/surveillance_service_client.dart';
-import 'rpc/services/system_service_client.dart';
-import 'rpc/services/trips_service_client.dart';
-import 'rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_rpc/rpc/connect_client.dart';
+import 'package:bladewatch_rpc/rpc/raw_http_sender.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
 import 'screens/dashboard/dashboard_controller.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/diagnostics/adb_console_controller.dart';
@@ -166,6 +167,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
   // transport, mirroring ConnectClientProvider.longSurveillanceService().
   late final SurveillanceServiceClient _longSurveillanceService = SurveillanceServiceClient(_longRpcTransport);
   late final DaemonChannel _daemonChannel = DaemonChannel(MethodChannelBridge());
+  late final PairingChannel _pairingChannel = PairingChannel(MethodChannelBridge());
   late final ConfigChannel _configChannel = ConfigChannel(MethodChannelBridge());
   late final PublicConfigChannel _publicConfigChannel = PublicConfigChannel(MethodChannelBridge());
   late final PrefsChannel _prefsChannel = PrefsChannel(MethodChannelBridge());
@@ -176,7 +178,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
   // — see LiveViewTextureChannel's doc comment for why a MediaCodec call
   // cannot share the same channel as everything else.
   late final LiveViewTextureChannel _liveViewTextureChannel = LiveViewTextureChannel(
-    MethodChannelBridge(const MethodChannel('net.bladewatch.flutter/live_view_texture')),
+    MethodChannelBridge(const MethodChannel('net.bladewatch.incarapp/live_view_texture')),
   );
 
   late final DashboardController _dashboardController =
@@ -186,8 +188,6 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
         recordingsService: _recordingsService,
         systemService: _systemService,
         daemonChannel: _daemonChannel,
-        authChannel: _authChannel,
-        tunnelStatusSource: _daemonChannel.tunnelStatus,
       );
 
   late final SettingsAboutController _settingsAboutController =
@@ -222,11 +222,9 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
     networkChannel: _networkChannel,
     surveillanceService: _surveillanceService,
     adbConnectionFactory: () => AdbClient(keys: _adbKeyChannel),
-    // BladeWatch-i2wv: the real tunnel source, the same one DashboardController
-    // uses. It was left on the always-null default here long after
-    // BladeWatch-m1po built it, so the Diagnostics Network card reported the
-    // tunnel offline unconditionally.
-    tunnelUrlSource: _daemonChannel.tunnelUrl,
+    // Remote access is the Pear peer (BladeWatch-rdtj.12); without the real source the Network
+    // card would report it offline unconditionally (the BladeWatch-i2wv lesson).
+    pearStatusSource: _daemonChannel.pearStatus,
     // BladeWatch-i2wv: the real probed-camera read. `camera` was added to the
     // daemon's READABLE config allowlist only — it stays unwritable over IPC,
     // because this tile needs to read it and nothing more.
@@ -333,13 +331,11 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                 ? AppShell(
                     controller: _shellController,
                     onLanguageTap: () => _showLanguagePicker(context),
-                    // BladeWatch-0kru: real tunnel URL, so the pill shows the
-                    // actual address or nothing at all.
-                    tunnelUrlSource: _daemonChannel.tunnelUrl,
                     dashboardScreen: DashboardScreen(
                       controller: _dashboardController,
                       systemService: _systemService,
                       onNavigate: _shellController.selectRoute,
+                      pairingChannel: _pairingChannel,
                     ),
                     settingsScreen: SettingsScreen(
                       deps: SettingsHubDependencies(

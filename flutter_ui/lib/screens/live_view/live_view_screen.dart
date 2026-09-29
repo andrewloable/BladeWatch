@@ -25,6 +25,9 @@ import 'live_view_models.dart';
 /// navigation — so both screens independently start/stop/poll it exactly as
 /// `LocationScreen` already did, with no lifecycle conflict).
 class LiveViewScreen extends StatefulWidget {
+  /// How often the location preview asks for a newer fix (BladeWatch-rdtj.62).
+  static const locationPollInterval = Duration(seconds: 2);
+
   final LiveViewController controller;
   final LocationController locationController;
   final VoidCallback onOpenLocation;
@@ -53,19 +56,24 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
     widget.controller.addListener(_onChanged);
     widget.controller.start();
     widget.locationController.addListener(_onLocationChanged);
-    // One start + one poll, NOT a periodic Timer like LocationScreen's own 1s refresh: this is
-    // a preview, not the full map, and a Timer here would make every existing widget test in
-    // this file that calls pumpAndSettle() (which never returns while a periodic Timer is
-    // pending) hang. The preview still shows a genuinely current fix as of when the screen
-    // opened -- the same snapshot LocationScreen itself shows on its own very first frame,
-    // before its periodic timer has ever fired.
     unawaited(_startLocationPreview());
   }
 
+  /// Polled every [LiveViewScreen.locationPollInterval] while the screen is up. It used to be one start and ONE
+  /// poll: that poll runs right after the updates are requested, before Android has delivered a
+  /// first fix, so the chip said "Waiting for GPS fix" for as long as the screen stayed open --
+  /// seen on the head unit with a live 34-satellite fix (BladeWatch-rdtj.62). A periodic timer
+  /// does not hang pumpAndSettle(): only a frame on every tick would, and [_onLocationChanged]
+  /// repaints only when the state really changes.
   Future<void> _startLocationPreview() async {
     await widget.locationController.start();
     await widget.locationController.poll();
+    if (!mounted) return;
+    _locationTimer = Timer.periodic(LiveViewScreen.locationPollInterval, (_) => unawaited(widget.locationController.poll()));
   }
+
+  Timer? _locationTimer;
+  LocationUiState? _shownLocationState;
 
   void _onChanged() {
     if (!mounted) return;
@@ -79,11 +87,15 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
 
   void _onLocationChanged() {
     if (!mounted) return;
+    final state = widget.locationController.effectiveState;
+    if (state == _shownLocationState) return; // a poll that found nothing new
+    _shownLocationState = state;
     setState(() {});
   }
 
   @override
   void dispose() {
+    _locationTimer?.cancel();
     widget.controller.removeListener(_onChanged);
     widget.controller.stop();
     widget.locationController.removeListener(_onLocationChanged);

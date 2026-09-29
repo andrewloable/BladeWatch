@@ -32,7 +32,11 @@ import java.util.concurrent.Executors
  */
 class SurveillanceIpcServer(private val port: Int) : Runnable {
 
+    @Volatile
     private var serverSocket: ServerSocket? = null
+
+    /** The port actually bound, -1 until then -- see TcpCommandServer.boundPort. */
+    val boundPort: Int get() = serverSocket?.takeUnless { it.isClosed }?.localPort ?: -1
 
     @Volatile
     private var running = true
@@ -546,13 +550,13 @@ class SurveillanceIpcServer(private val port: Int) : Runnable {
                 val codec = config.optString("codec", "H264").uppercase(Locale.ROOT)
                 if (codec == "H264") {
                     CameraDaemon.setRecordingCodec(codec)
-                    // Also update HttpServer's static setting for web UI sync
+                    // Keep the settings handler's static codec in step
                     HttpServer.setRecordingCodecStatic(codec)
                     logger.info("Recording codec set to: $codec")
                 }
             }
 
-            // Persist recording settings to file so the web UI can read them
+            // Persist the recording settings
             if (config.has("recordingQuality") || config.has("bitrate") || config.has("codec")) {
                 HttpServer.persistSettingsStatic()
             }
@@ -852,7 +856,7 @@ class SurveillanceIpcServer(private val port: Int) : Runnable {
             config.put("requiredActiveBlocks", 2)
         }
 
-        // lastModified timestamp for web UI sync detection
+        // lastModified timestamp, so a client can tell the config changed
         config.put("lastModified", UnifiedConfigManager.getLastModified())
 
         return config

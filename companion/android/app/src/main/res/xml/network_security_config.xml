@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BladeWatch-rdtj.32: the clip player reaches the car through this app's own loopback gateway
+     (LocalGateway, plain HTTP on 127.0.0.1), and ExoPlayer refuses cleartext unless it is allowed
+     here. Only the loopback address: nothing else this app talks to is plain HTTP (the car's
+     LAN is TLS on 8443, everything else goes over Pear). -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

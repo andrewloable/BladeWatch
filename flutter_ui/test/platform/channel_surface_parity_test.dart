@@ -16,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// compile. This guard exists so the channel layer cannot repeat it.
 ///
 /// Unlike the RPC surface, this one is checked in BOTH directions. An RPC the
-/// Flutter app never calls is legitimate — the Angular SPA in `web/` is a second
+/// Flutter app never calls is legitimate — the companion is a second
 /// client of the same daemon. A channel method has exactly one caller, the Dart
 /// in this same APK, so an unreferenced handler is genuinely dead code.
 void main() {
@@ -116,7 +116,7 @@ void main() {
         reason: 'could not locate the Kotlin root and TcpCommandServer');
 
     // [A-Za-z_]+, not [a-z_]+: the daemon mixes snake_case ("secret_get") and
-    // camelCase ("daemonStatus", "tunnelStatus") command names. A lowercase-only
+    // camelCase ("daemonStatus", "pearStatus") command names. A lowercase-only
     // pattern silently skipped 2 of the 15 commands on BOTH sides, so a rename of
     // either would have been reported as "all clear" -- a guard that cannot fail.
     // Both dispatch shapes: Java's `case "start":` and Kotlin's `"start" -> {`. Matching only

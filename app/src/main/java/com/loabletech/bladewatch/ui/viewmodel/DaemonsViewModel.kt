@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import net.bladewatch.app.launcher.AdbDaemonLauncher
-import net.bladewatch.app.launcher.TorLauncher
+import net.bladewatch.app.launcher.PearLauncher
 import net.bladewatch.app.logging.LogManager
 import net.bladewatch.app.ui.daemon.*
 import net.bladewatch.app.ui.model.DaemonState
@@ -28,8 +28,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
     private val daemonStatesLock = Any()
     private var daemonStatesSnapshot: Map<DaemonType, DaemonState> = emptyMap()
     
-    // Expose the tunnel controller for tunnel URL access
-    val torController: TorController
+    val pearController: PearController
 
     // Expose camera daemon controller for startup manager
     val cameraDaemonController: CameraDaemonController
@@ -46,14 +45,14 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
     }
     
     init {
-        torController = TorController(app, adbLauncher)
+        pearController = PearController(app, adbLauncher)
         cameraDaemonController = CameraDaemonController(app, adbLauncher)
 
         controllers = mapOf(
             DaemonType.CAMERA_DAEMON to cameraDaemonController,
             DaemonType.SENTRY_DAEMON to SentryDaemonController(adbLauncher),
             DaemonType.ACC_SENTRY_DAEMON to AccSentryDaemonController(adbLauncher),
-            DaemonType.TOR_TUNNEL to torController
+            DaemonType.PEAR_PEER to pearController
         )
         
         // Initialize all states as stopped
@@ -67,24 +66,29 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
             refreshAllStatuses(logResults = true)
         }, 1500)
         
-        // Periodic refresh for tunnel daemons (every 30 seconds)
+        // Periodic refresh of the remote-access daemon (every 30 seconds)
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(object : Runnable {
             override fun run() {
-                // Only refresh tunnel statuses periodically
-                refreshDaemonStatus(DaemonType.TOR_TUNNEL)
+                // Only refresh the remote-access daemons periodically
+                refreshDaemonStatus(DaemonType.PEAR_PEER)
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this, 30000)
             }
         }, 30000)
     }
     
-    fun startDaemon(type: DaemonType) {
+    /**
+     * @param persistEnabled record an optional daemon as enabled. True only when a person asked
+     *   for the start; automatic starts pass false (BladeWatch-17l7) -- saving "enabled" from a
+     *   health-check relaunch wrote a stale value back over an owner's switch-off.
+     */
+    fun startDaemon(type: DaemonType, persistEnabled: Boolean = true) {
         val controller = controllers[type] ?: return
         
         // Clear user-stopped flag so health check can manage this daemon
         DaemonStartupManager.clearUserStopped(type)
 
         // For optional daemons, save the enabled state so they auto-start on app restart
-        if (type in DaemonStartupManager.OPTIONAL_DAEMONS) {
+        if (persistEnabled && type in DaemonStartupManager.OPTIONAL_DAEMONS) {
             startupManager?.onDaemonToggled(type, true)
         }
         
@@ -132,8 +136,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
     fun refreshDaemonStatus(type: DaemonType, logResult: Boolean = false) {
         val controller = controllers[type] ?: return
         
-        // No special case for the tunnel any more: the previous one needed an enable
-        // token checked before every status read, Tor needs no account at all.
+        // No per-daemon special case: none of them needs a token checked before a status read.
         doRefreshDaemonStatus(type, controller, logResult)
     }
     
@@ -156,27 +159,12 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
                             SubprocessInfo(p.name, p.pid, p.uptime)
                         }
                         
-                        // For the tunnel, also fetch its URL
-                        if (type == DaemonType.TOR_TUNNEL) {
-                            torController.refreshTunnelUrl { url ->
-                                val statusText = url ?: "Running"
-                                updateStateWithSubprocesses(type, DaemonStatus.RUNNING, statusText, uptime, subprocesses)
-                                if (logResult) {
-                                    val uptimeStr = uptime?.let { " (uptime: $it)" } ?: ""
-                                    LogManager.getInstance().info("Daemons", "${type.name}: Running$uptimeStr" + (url?.let { " - $it" } ?: ""))
-                                    subprocesses.forEach { sp ->
-                                        LogManager.getInstance().debug("Daemons", "  └─ ${sp.name} (PID: ${sp.pid}, uptime: ${sp.uptime})")
-                                    }
-                                }
-                            }
-                        } else {
-                            updateStateWithSubprocesses(type, DaemonStatus.RUNNING, "Running", uptime, subprocesses)
-                            if (logResult) {
-                                val uptimeStr = uptime?.let { " (uptime: $it)" } ?: ""
-                                LogManager.getInstance().info("Daemons", "${type.name}: Running$uptimeStr")
-                                subprocesses.forEach { sp ->
-                                    LogManager.getInstance().debug("Daemons", "  └─ ${sp.name} (PID: ${sp.pid}, uptime: ${sp.uptime})")
-                                }
+                        updateStateWithSubprocesses(type, DaemonStatus.RUNNING, "Running", uptime, subprocesses)
+                        if (logResult) {
+                            val uptimeStr = uptime?.let { " (uptime: $it)" } ?: ""
+                            LogManager.getInstance().info("Daemons", "${type.name}: Running$uptimeStr")
+                            subprocesses.forEach { sp ->
+                                LogManager.getInstance().debug("Daemons", "  └─ ${sp.name} (PID: ${sp.pid}, uptime: ${sp.uptime})")
                             }
                         }
                     }
@@ -195,7 +183,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
             DaemonType.CAMERA_DAEMON -> "byd_cam_daemon"
             DaemonType.SENTRY_DAEMON -> "sentry_daemon"
             DaemonType.ACC_SENTRY_DAEMON -> "acc_sentry_daemon"
-            DaemonType.TOR_TUNNEL -> TorLauncher.TOR_PROCESS
+            DaemonType.PEAR_PEER -> PearLauncher.PEAR_PROCESS
         }
     }
     
@@ -204,7 +192,7 @@ class DaemonsViewModel(app: Application) : AndroidViewModel(app) {
             DaemonType.CAMERA_DAEMON -> listOf("byd_cam_daemon", "ffmpeg", "mediamtx")
             DaemonType.SENTRY_DAEMON -> listOf("sentry_daemon")
             DaemonType.ACC_SENTRY_DAEMON -> listOf("acc_sentry_daemon")
-            DaemonType.TOR_TUNNEL -> listOf(TorLauncher.TOR_PROCESS)
+            DaemonType.PEAR_PEER -> listOf(PearLauncher.PEAR_PROCESS)
         }
     }
     

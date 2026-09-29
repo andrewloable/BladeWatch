@@ -5,7 +5,7 @@ void main() {
   SettingsAboutController build({Future<AppVersionInfo> Function()? versionSource}) => SettingsAboutController(
     versionSource:
         versionSource ??
-        () async => const AppVersionInfo(version: '1.2.3', buildNumber: '4', packageName: 'net.bladewatch.flutter'),
+        () async => const AppVersionInfo(version: '1.2.3', buildNumber: '4', packageName: 'net.bladewatch.incarapp'),
   );
 
   group('load()', () {
@@ -16,7 +16,7 @@ void main() {
 
       expect(c.versionInfo?.version, '1.2.3');
       expect(c.versionInfo?.buildNumber, '4');
-      expect(c.versionInfo?.packageName, 'net.bladewatch.flutter');
+      expect(c.versionInfo?.packageName, 'net.bladewatch.incarapp');
     });
 
     test('a version source that throws leaves versionInfo null rather than crashing', () async {

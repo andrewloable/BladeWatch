@@ -81,6 +81,17 @@ class WebSocketStreamServer @JvmOverloads constructor(
         }
     }
 
+    /**
+     * A still-frame viewer is watching (`GET /api/stream/still`): the companion's live view
+     * (BladeWatch-rdtj.11) and the web's still tier. It holds no WebSocket, so without this it
+     * would count as nobody watching and streaming would idle out under it after
+     * [IDLE_TIMEOUT_MS] -- the still would go 503 every half minute. Each request pushes the idle
+     * deadline forward instead, so streaming lasts exactly as long as someone keeps looking.
+     */
+    fun noteStillViewer() {
+        lastClientDisconnectTime = System.currentTimeMillis()
+    }
+
     /** Check if there are any active clients (internal or external). */
     fun hasActiveClients(): Boolean = clients.isNotEmpty() || externalClientCount > 0
 

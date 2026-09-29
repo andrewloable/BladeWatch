@@ -18,7 +18,9 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.Inet4Address
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
@@ -55,6 +57,26 @@ object NetworkMonitor {
 
     @Volatile
     private var shellFallbackLogged = false
+
+    private const val REFRESH_MS = 10_000L
+
+    /** When a refresh was last started, successful or not -- so a failing one is not retried per call. */
+    @Volatile
+    private var lastAttempt = 0L
+    private val refreshing = AtomicBoolean(false)
+    private val refresher: ExecutorService =
+        Executors.newSingleThreadExecutor { r -> Thread(r, "NetworkRefresh").apply { isDaemon = true } }
+
+    // Test seams.
+    internal var clock: () -> Long = System::currentTimeMillis
+    internal var refreshAction: () -> Unit = ::refresh
+
+    internal fun resetForTest() {
+        lastAttempt = 0L
+        refreshing.set(false)
+        clock = System::currentTimeMillis
+        refreshAction = ::refresh
+    }
 
     // ==================== DATA USAGE (BladeWatch-t1lg.1) ====================
 
@@ -404,13 +426,28 @@ object NetworkMonitor {
     // ==================== STATUS API ====================
 
     /**
-     * Get network info as JSON for the /status endpoint.
-     * Auto-refreshes if data is older than 10 seconds.
+     * Network info for SystemService.GetStatus, refreshed when older than 10 s. The refresh can
+     * run `dumpsys wifi` (the shell fallback, which the daemon takes), and it used to run on the
+     * request: GetStatus stalled 600-850 ms every ~11 s, measured on the head unit after the
+     * battery half of BladeWatch-1996 was fixed. Only the very first call refreshes inline, so
+     * GetStatus reports the same values it always has; later ones refresh in the background, one
+     * at a time.
      */
     @JvmStatic
     fun getNetworkInfo(): JSONObject {
-        if (System.currentTimeMillis() - lastUpdate > 10000) {
-            refresh()
+        val now = clock()
+        if (lastAttempt == 0L) {
+            lastAttempt = now
+            refreshAction()
+        } else if (now - lastAttempt > REFRESH_MS && refreshing.compareAndSet(false, true)) {
+            lastAttempt = now
+            refresher.execute {
+                try {
+                    refreshAction()
+                } finally {
+                    refreshing.set(false)
+                }
+            }
         }
         val net = JSONObject()
         try {

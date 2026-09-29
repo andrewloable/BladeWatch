@@ -44,13 +44,16 @@ class NavRail extends StatelessWidget {
 
     return Container(
       width: 80,
+      // The full height, whatever the items need: once they fitted the landscape screen
+      // (BladeWatch-5l5o), a rail sized to its content floated with bare strips above and below.
+      height: double.infinity,
       color: theme.colorScheme.surfaceContainerLow,
       child: SingleChildScrollView(
         child: Column(
           key: const ValueKey('navRailColumn'),
           children: [
             if (showLanguageHeader)
-              _LanguageHeader(onTap: onLanguageTap!)
+              _LanguageHeader(onTap: onLanguageTap!, dense: compact)
             else
               const SizedBox.shrink(),
             for (var i = 0; i < railDestinations.length; i++) ...[
@@ -68,9 +71,10 @@ class NavRail extends StatelessWidget {
                 label: railDestinations[i].label(l10n),
                 selected: railDestinations[i].routeName == selectedRoute,
                 onTap: () => onSelect(railDestinations[i].routeName),
+                dense: compact,
               ),
             ],
-            SizedBox(height: compact ? 12 : 16),
+            SizedBox(height: compact ? 4 : 16),
           ],
         ),
       ),
@@ -87,12 +91,19 @@ class NavRailItem extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  /// Landscape on the head unit: the globe plus ten items must fit ~604 logical px between the
+  /// car's own bars (1080 px at 1.5x, minus 84 + 90). At the portrait spacing About sat below the
+  /// fold, reachable only by scrolling the rail (design review 2026-09-27). Each item stays over
+  /// 48 px tall.
+  final bool dense;
+
   const NavRailItem({
     super.key,
     required this.icon,
     required this.label,
     required this.selected,
     required this.onTap,
+    this.dense = false,
   });
 
   @override
@@ -108,7 +119,7 @@ class NavRailItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: EdgeInsets.symmetric(vertical: dense ? 2 : 6),
           child: Column(
             children: [
               Container(
@@ -120,7 +131,7 @@ class NavRailItem extends StatelessWidget {
                 ),
                 child: Icon(icon, size: 24, color: iconColor),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: dense ? 2 : 4),
               Text(
                 label,
                 maxLines: 1,
@@ -137,14 +148,16 @@ class NavRailItem extends StatelessWidget {
 
 class _LanguageHeader extends StatelessWidget {
   final VoidCallback onTap;
+  final bool dense;
 
-  const _LanguageHeader({required this.onTap});
+  const _LanguageHeader({required this.onTap, this.dense = false});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      padding: EdgeInsets.only(top: dense ? 4 : 8, bottom: dense ? 0 : 4),
       child: IconButton(
+        visualDensity: dense ? VisualDensity.compact : null,
         tooltip: AppLocalizations.of(context)!.language_picker_title,
         icon: const Icon(Icons.language),
         color: Theme.of(context).colorScheme.onSurfaceVariant,

@@ -2,16 +2,16 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:bladewatch_ui/gen/bladewatch/v1/stream.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/stream.pb.dart';
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
 import 'package:bladewatch_ui/platform/live_view_texture_channel.dart';
 import 'package:bladewatch_ui/platform/location_channel.dart';
 import 'package:bladewatch_ui/platform/network_channel.dart';
 import 'package:bladewatch_ui/platform/prefs_channel.dart';
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/stream_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/live_view/live_view_controller.dart';
 import 'package:bladewatch_ui/screens/live_view/live_view_models.dart';
 import 'package:bladewatch_ui/screens/live_view/live_view_screen.dart';
@@ -21,7 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_platform_channel.dart';
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 class _FakeJwtSource implements JwtSource {
   String? next = 'fake.jwt.token';
@@ -145,8 +145,9 @@ void main() {
     // One extra pump: LiveViewScreen.initState fires an un-awaited start()+poll() on the
     // location controller (same fire-and-forget shape as LiveViewController.start() itself,
     // called the line above it) — this flushes that microtask chain so the preview reflects
-    // the stubbed fix before assertions run. No Timer is created (see LiveViewScreen's own
-    // doc comment on why), so this is a bounded pump, not a pumpAndSettle() hang risk.
+    // the stubbed fix before assertions run. After that the screen polls on a periodic Timer
+    // (LiveViewScreen.locationPollInterval, BladeWatch-rdtj.62), which repaints only on a real
+    // change, so pumpAndSettle() still settles.
     await tester.pump();
   }
 
@@ -316,6 +317,41 @@ void main() {
     expect(find.text('Car location'), findsOneWidget);
   });
 
+  // BladeWatch-rdtj.62: the first poll runs before Android has delivered a fix. It used to be the
+  // only one, so on the head unit the chip said "Waiting for GPS fix" with a live fix.
+  testWidgets('a fix that arrives after the first poll replaces "Waiting for GPS fix"', (tester) async {
+    stubHappyRpcPath();
+    final controller = buildController(connect: (url) async => _FakeLiveSocket());
+    final ch = FakePlatformChannel();
+    ch.stub('location', 'hasPermission', true);
+    ch.stub('location', 'providerEnabled', {'gps': true, 'network': false});
+    ch.stub('location', 'startUpdates', {'ok': true});
+    ch.stub('location', 'stopUpdates', null);
+    ch.stub('location', 'currentSample', null);
+    ch.stub('prefs', 'getLocationUiMode', null);
+    ch.stub('prefs', 'getThemeMode', null);
+    ch.stub('network', 'current', {'type': 'wifi', 'ssid': 'car'});
+    final location = LocationController(
+      channel: LocationChannel(ch),
+      prefs: PrefsChannel(ch),
+      networkChannel: NetworkChannel(ch),
+    );
+    await pump(tester, controller, locationController: location);
+    await tester.pump();
+    expect(find.text('Waiting for GPS fix'), findsOneWidget);
+
+    ch.stub('location', 'currentSample', {
+      'latitude': 37.7749,
+      'longitude': -122.4194,
+      'provider': 'gps',
+      'timestampMs': DateTime.now().millisecondsSinceEpoch,
+    });
+    await tester.pump(LiveViewScreen.locationPollInterval);
+    await tester.pump();
+    expect(find.text('Car location'), findsOneWidget);
+    expect(find.text('Waiting for GPS fix'), findsNothing);
+  });
+
   test(
     'BladeWatch-y78o.2 does not modify nav_rail.dart — a source-level pin, '
     'since the issue forbids touching it and requires proof',
@@ -326,7 +362,9 @@ void main() {
       // git worktree) and no new dependency (`crypto` is only a transitive one here) — see the
       // close reason for why this alternative was chosen over "not in this change's diff".
       final bytes = File('lib/shell/nav_rail.dart').readAsBytesSync();
-      expect(bytes.length, 5181, reason: 'nav_rail.dart byte length changed — it must not be modified');
+      // Re-pinned for BladeWatch-5l5o (2026-09-27), which changed the rail on purpose (the
+      // landscape rail had to fit the head unit). y78o.2's own proof stands in its close reason.
+      expect(bytes.length, 5933, reason: 'nav_rail.dart byte length changed — it must not be modified');
 
       var hash = 0x811c9dc5;
       for (final b in bytes) {
@@ -335,7 +373,7 @@ void main() {
       }
       expect(
         hash,
-        0x5f1891c7,
+        0x088ec996,
         reason: 'nav_rail.dart content changed — BladeWatch-y78o.2 must not modify this file',
       );
     },

@@ -165,6 +165,18 @@ abstract class AppLocalizations {
   /// **'All'**
   String get action_select_all_short;
 
+  /// No description provided for @action_select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get action_select;
+
+  /// No description provided for @action_deselect_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get action_deselect_all;
+
   /// No description provided for @action_delete.
   ///
   /// In en, this message translates to:
@@ -218,24 +230,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'QR Code'**
   String get cd_qr_code;
-
-  /// No description provided for @cd_show_hide_token.
-  ///
-  /// In en, this message translates to:
-  /// **'Show/Hide Token'**
-  String get cd_show_hide_token;
-
-  /// No description provided for @cd_copy_token.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy Token'**
-  String get cd_copy_token;
-
-  /// No description provided for @cd_copy_url.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy URL'**
-  String get cd_copy_url;
 
   /// No description provided for @cd_clear_logs.
   ///
@@ -465,12 +459,6 @@ abstract class AppLocalizations {
   /// **'Auto picks the right camera for your trim on every boot. Camera 1 = BYD Seal, Camera 0 = Atto trims. Restart the camera service after changing camera ID for the setting to take effect.'**
   String get camera_selection_hint;
 
-  /// No description provided for @dashboard_scan_to_connect.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan to Connect'**
-  String get dashboard_scan_to_connect;
-
   /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
@@ -483,71 +471,17 @@ abstract class AppLocalizations {
   /// **'0/5 Running'**
   String get dashboard_daemons_running_default;
 
-  /// No description provided for @dashboard_device_id_loading.
-  ///
-  /// In en, this message translates to:
-  /// **'…'**
-  String get dashboard_device_id_loading;
-
-  /// No description provided for @dashboard_access_code.
-  ///
-  /// In en, this message translates to:
-  /// **'Access Code'**
-  String get dashboard_access_code;
-
-  /// No description provided for @dashboard_token_masked.
-  ///
-  /// In en, this message translates to:
-  /// **'••••••••'**
-  String get dashboard_token_masked;
-
   /// No description provided for @dashboard_regenerate_token.
   ///
   /// In en, this message translates to:
   /// **'Regenerate Token'**
   String get dashboard_regenerate_token;
 
-  /// No description provided for @dashboard_set_password.
-  ///
-  /// In en, this message translates to:
-  /// **'Set Password'**
-  String get dashboard_set_password;
-
   /// No description provided for @cd_set_password.
   ///
   /// In en, this message translates to:
   /// **'Set custom password'**
   String get cd_set_password;
-
-  /// No description provided for @dialog_set_password_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Set Custom Password'**
-  String get dialog_set_password_title;
-
-  /// No description provided for @dialog_set_password_message.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a new access password. This replaces the auto-generated token.'**
-  String get dialog_set_password_message;
-
-  /// No description provided for @dialog_set_password_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'New password (min 12 characters)'**
-  String get dialog_set_password_hint;
-
-  /// No description provided for @toast_password_set.
-  ///
-  /// In en, this message translates to:
-  /// **'Password updated'**
-  String get toast_password_set;
-
-  /// No description provided for @toast_password_too_short.
-  ///
-  /// In en, this message translates to:
-  /// **'Password must be at least 12 characters'**
-  String get toast_password_too_short;
 
   /// No description provided for @toast_password_save_failed.
   ///
@@ -1107,6 +1041,12 @@ abstract class AppLocalizations {
   /// **'All days'**
   String get recording_lib_date_all_days;
 
+  /// No description provided for @recording_lib_type_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get recording_lib_type_all;
+
   /// No description provided for @cd_clear_date_filter.
   ///
   /// In en, this message translates to:
@@ -1196,12 +1136,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ACC Surveillance'**
   String get daemon_name_acc;
-
-  /// No description provided for @daemon_name_tor.
-  ///
-  /// In en, this message translates to:
-  /// **'Tor Tunnel'**
-  String get daemon_name_tor;
 
   /// No description provided for @daemons_hero_title.
   ///
@@ -1533,12 +1467,6 @@ abstract class AppLocalizations {
   /// **'Trip telemetry files'**
   String get reset_label_trip_files;
 
-  /// No description provided for @toast_access_code_copied.
-  ///
-  /// In en, this message translates to:
-  /// **'Access code copied'**
-  String get toast_access_code_copied;
-
   /// No description provided for @dialog_regenerate_token_title.
   ///
   /// In en, this message translates to:
@@ -1575,18 +1503,6 @@ abstract class AppLocalizations {
   /// **'Token regenerated'**
   String get toast_token_regenerated;
 
-  /// No description provided for @dashboard_no_tunnel.
-  ///
-  /// In en, this message translates to:
-  /// **'No tunnel running'**
-  String get dashboard_no_tunnel;
-
-  /// An action in progress. Impersonal, never 'I'.
-  ///
-  /// In en, this message translates to:
-  /// **'Starting Tor tunnel…'**
-  String get dashboard_starting_tor;
-
   /// An action in progress. Impersonal, never 'I'.
   ///
   /// In en, this message translates to:
@@ -1598,12 +1514,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{arg1}/{arg2} Running'**
   String dashboard_daemons_running(Object arg1, Object arg2);
-
-  /// No description provided for @tunnel_label_tor.
-  ///
-  /// In en, this message translates to:
-  /// **'Tor'**
-  String get tunnel_label_tor;
 
   /// No description provided for @clip_label_access_code.
   ///
@@ -2409,12 +2319,6 @@ abstract class AppLocalizations {
   /// **'Online'**
   String get diagnostics_metric_online;
 
-  /// No description provided for @diagnostics_network_tunnel_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Tunnel · {arg1}'**
-  String diagnostics_network_tunnel_label(Object arg1);
-
   /// No description provided for @diagnostics_network_data_usage_line.
   ///
   /// In en, this message translates to:
@@ -3105,12 +3009,6 @@ abstract class AppLocalizations {
   /// **'This Week'**
   String get dashboard_trips_this_week;
 
-  /// No description provided for @dashboard_trips_count.
-  ///
-  /// In en, this message translates to:
-  /// **'{arg1, plural, one{{arg1} trip} other{{arg1} trips}}'**
-  String dashboard_trips_count(num arg1);
-
   /// No description provided for @dashboard_trips_distance_km.
   ///
   /// In en, this message translates to:
@@ -3146,6 +3044,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drive Time'**
   String get dashboard_trips_label_time;
+
+  /// No description provided for @dashboard_week_battery.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery'**
+  String get dashboard_week_battery;
+
+  /// No description provided for @dashboard_week_elec_range.
+  ///
+  /// In en, this message translates to:
+  /// **'EV Range'**
+  String get dashboard_week_elec_range;
+
+  /// No description provided for @dashboard_week_fuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel'**
+  String get dashboard_week_fuel;
+
+  /// No description provided for @dashboard_week_fuel_range.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel Range'**
+  String get dashboard_week_fuel_range;
 
   /// No description provided for @dashboard_trips_no_data.
   ///
@@ -3258,7 +3180,7 @@ abstract class AppLocalizations {
   /// No description provided for @settings_section_daemons_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Tor tunnel and background services.'**
+  /// **'Remote access (Pear) and background services.'**
   String get settings_section_daemons_subtitle;
 
   /// No description provided for @settings_about_row_title.
@@ -3471,12 +3393,6 @@ abstract class AppLocalizations {
   /// **'Climate'**
   String get vehicle_tab_climate;
 
-  /// No description provided for @vehicle_tab_seats.
-  ///
-  /// In en, this message translates to:
-  /// **'Seats'**
-  String get vehicle_tab_seats;
-
   /// No description provided for @vehicle_tab_windows.
   ///
   /// In en, this message translates to:
@@ -3633,71 +3549,11 @@ abstract class AppLocalizations {
   /// **'Level {arg1}'**
   String vehicle_fan_level(Object arg1);
 
-  /// No description provided for @vehicle_inside_temp_fmt.
+  /// No description provided for @vehicle_outside_temp_fmt.
   ///
   /// In en, this message translates to:
-  /// **'Inside: {arg1}°C'**
-  String vehicle_inside_temp_fmt(Object arg1);
-
-  /// No description provided for @vehicle_seat_driver.
-  ///
-  /// In en, this message translates to:
-  /// **'Driver'**
-  String get vehicle_seat_driver;
-
-  /// No description provided for @vehicle_seat_passenger.
-  ///
-  /// In en, this message translates to:
-  /// **'Passenger'**
-  String get vehicle_seat_passenger;
-
-  /// No description provided for @vehicle_seat_no_controls.
-  ///
-  /// In en, this message translates to:
-  /// **'No seat controls available for this vehicle.'**
-  String get vehicle_seat_no_controls;
-
-  /// No description provided for @vehicle_seat_heat_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Heat {arg1}'**
-  String vehicle_seat_heat_label(Object arg1);
-
-  /// No description provided for @vehicle_seat_cool_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Cool {arg1}'**
-  String vehicle_seat_cool_label(Object arg1);
-
-  /// No description provided for @vehicle_heat_off.
-  ///
-  /// In en, this message translates to:
-  /// **'(Off)'**
-  String get vehicle_heat_off;
-
-  /// No description provided for @vehicle_heat_low.
-  ///
-  /// In en, this message translates to:
-  /// **'(Low)'**
-  String get vehicle_heat_low;
-
-  /// No description provided for @vehicle_heat_high.
-  ///
-  /// In en, this message translates to:
-  /// **'(High)'**
-  String get vehicle_heat_high;
-
-  /// No description provided for @vehicle_seat_pos_1.
-  ///
-  /// In en, this message translates to:
-  /// **'Pos 1'**
-  String get vehicle_seat_pos_1;
-
-  /// No description provided for @vehicle_seat_pos_2.
-  ///
-  /// In en, this message translates to:
-  /// **'Pos 2'**
-  String get vehicle_seat_pos_2;
+  /// **'Outside: {arg1}°C'**
+  String vehicle_outside_temp_fmt(Object arg1);
 
   /// No description provided for @vehicle_all_windows.
   ///
@@ -5090,60 +4946,6 @@ abstract class AppLocalizations {
   /// **'Save failed'**
   String get surveillance_apply_failed;
 
-  /// Shown while tor is running but has not finished bootstrapping.
-  ///
-  /// In en, this message translates to:
-  /// **'Connecting to Tor…'**
-  String get dashboard_tor_bootstrapping;
-
-  /// No description provided for @dashboard_tor_help_tooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'How to open this address'**
-  String get dashboard_tor_help_tooltip;
-
-  /// No description provided for @dashboard_tor_help_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Opening this address'**
-  String get dashboard_tor_help_title;
-
-  /// No description provided for @dashboard_tor_help_android.
-  ///
-  /// In en, this message translates to:
-  /// **'Android: install Tor Browser from Google Play or F-Droid, open it and paste the address.'**
-  String get dashboard_tor_help_android;
-
-  /// No description provided for @dashboard_tor_help_ios.
-  ///
-  /// In en, this message translates to:
-  /// **'iPhone and iPad: install Onion Browser from the App Store, open it and paste the address. Tor Browser itself is not available on iOS.'**
-  String get dashboard_tor_help_ios;
-
-  /// No description provided for @dashboard_tor_help_desktop.
-  ///
-  /// In en, this message translates to:
-  /// **'Windows, macOS and Linux: download Tor Browser from torproject.org, open it and paste the address.'**
-  String get dashboard_tor_help_desktop;
-
-  /// No description provided for @dashboard_tor_help_password_note.
-  ///
-  /// In en, this message translates to:
-  /// **'You will still need the password after the page loads.'**
-  String get dashboard_tor_help_password_note;
-
-  /// No description provided for @dashboard_tor_help_download_qr_label.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan for the Tor Browser download page'**
-  String get dashboard_tor_help_download_qr_label;
-
-  /// No description provided for @dashboard_tor_help_close.
-  ///
-  /// In en, this message translates to:
-  /// **'Got it'**
-  String get dashboard_tor_help_close;
-
   /// No description provided for @surveillance_general_battery_warning.
   ///
   /// In en, this message translates to:
@@ -5155,6 +4957,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Another app is using the camera right now.'**
   String get surveillance_general_camera_contention_warning;
+
+  /// No description provided for @pairing_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a device'**
+  String get pairing_title;
+
+  /// No description provided for @pairing_scan_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan with the BladeWatch app on your phone or computer. The code works once.'**
+  String get pairing_scan_hint;
+
+  /// No description provided for @pairing_expires_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {time}'**
+  String pairing_expires_in(String time);
+
+  /// No description provided for @pairing_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired.'**
+  String get pairing_expired;
+
+  /// No description provided for @pairing_new_code.
+  ///
+  /// In en, this message translates to:
+  /// **'New code'**
+  String get pairing_new_code;
+
+  /// No description provided for @pairing_remote_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing turns on remote access for this car.'**
+  String get pairing_remote_note;
+
+  /// No description provided for @pairing_lan_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct connection on this Wi-Fi'**
+  String get pairing_lan_title;
+
+  /// No description provided for @pairing_lan_body.
+  ///
+  /// In en, this message translates to:
+  /// **'A paired device on the same Wi-Fi as the car connects to it directly and encrypted, without going through the internet. Off unless you turn it on.'**
+  String get pairing_lan_body;
+
+  /// No description provided for @pairing_devices_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired devices'**
+  String get pairing_devices_title;
+
+  /// No description provided for @pairing_devices_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No devices paired yet.'**
+  String get pairing_devices_empty;
+
+  /// No description provided for @pairing_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get pairing_remove;
+
+  /// No description provided for @pairing_remove_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String pairing_remove_confirm_title(String name);
+
+  /// No description provided for @pairing_remove_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It loses access right away. Your other devices keep working.'**
+  String get pairing_remove_confirm_body;
+
+  /// No description provided for @pairing_error.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera service did not respond. Try again.'**
+  String get pairing_error;
+
+  /// No description provided for @daemon_name_pear.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote access (Pear)'**
+  String get daemon_name_pear;
+
+  /// No description provided for @pear_status_reachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reachable from anywhere'**
+  String get pear_status_reachable;
+
+  /// No description provided for @pear_status_unreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable: no connection to the Pear network'**
+  String get pear_status_unreachable;
+
+  /// No description provided for @pear_status_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Reachability unknown'**
+  String get pear_status_unknown;
+
+  /// No description provided for @pear_devices_connected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No devices connected} one{{count} device connected} other{{count} devices connected}}'**
+  String pear_devices_connected(int count);
+
+  /// No description provided for @pear_last_connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Last connection: {time}'**
+  String pear_last_connection(String time);
+
+  /// No description provided for @pear_tile_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get pear_tile_off;
+
+  /// No description provided for @trips_cost_total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Cost'**
+  String get trips_cost_total;
+
+  /// No description provided for @trips_cost_no_rate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set an electricity rate in Trip settings to see costs.'**
+  String get trips_cost_no_rate;
+
+  /// No description provided for @trips_cost_mixed_currency.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips are costed in more than one currency, so no total is shown.'**
+  String get trips_cost_mixed_currency;
+
+  /// No description provided for @dashboard_chip_gear.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear {gear}'**
+  String dashboard_chip_gear(String gear);
+
+  /// No description provided for @dashboard_chip_drive_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode: {mode}'**
+  String dashboard_chip_drive_mode(String mode);
+
+  /// No description provided for @dashboard_chip_auto_hold.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Hold: {state}'**
+  String dashboard_chip_auto_hold(String state);
+
+  /// No description provided for @auto_hold_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get auto_hold_disabled;
+
+  /// No description provided for @auto_hold_enabled.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get auto_hold_enabled;
+
+  /// No description provided for @auto_hold_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Holding'**
+  String get auto_hold_active;
 }
 
 class _AppLocalizationsDelegate

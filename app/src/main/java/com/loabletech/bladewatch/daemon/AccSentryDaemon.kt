@@ -11,9 +11,7 @@ import android.hardware.bydauto.bodywork.AbsBYDAutoBodyworkListener
 import android.hardware.bydauto.power.BYDAutoPowerDevice
 import android.os.Build
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
-import android.os.Parcel
 import android.os.PowerManager
 import android.os.Process
 import android.os.SystemClock
@@ -61,12 +59,6 @@ object AccSentryDaemon {
     // Decrypted at runtime via Safe.s() - AES-256-CBC with stack-based key reconstruction
     /** net.bladewatch.app */
     private fun APP_PACKAGE_NAME(): String = Safe.s("b+URlanuKqV+a8w43uR6VwE1hpEbteNkkdukhTGHkdY=")
-    /** accmodemanager */
-    private fun SERVICE_ACCMODEMANAGER(): String = Safe.s("tr877WU3+MV4zFtCjanWUw==")
-    /** byd_datacached */
-    private fun SERVICE_BYD_DATACACHE(): String = Safe.s("JQiIxMJxYlF8spk2fIi8Sg==")
-    /** bg_datacache */
-    private fun SERVICE_BG_DATACACHE(): String = Safe.s("m84QJmAGTQpH+XP36MaDpA==")
     /** svc wifi enable */
     private fun CMD_WIFI_ENABLE(): String = Safe.s("GzzLDvODRsKARkPOXEZeIA==")
     /** /data/local/tmp */
@@ -429,15 +421,17 @@ object AccSentryDaemon {
                 acquireWakeLock()
                 logT("acquireWakeLock done")
 
-                // CRITICAL: Whitelist our app from ACC power management killing
-                whitelistAppPackageOld()
-                logT("whitelistAppPackageOld done")
+                // No BYD ACC whitelist (BladeWatch-u43d). setPkg2AccWhiteList needs the signature
+                // permission DEVICE_ACC, which shell lacks, so it always failed; the fallback that
+                // replaced it transacted code 2, which on this head unit is rmPkg2AccWhiteList (the
+                // real codes: 1 set, 2 rm, 3 getAccModeStatus, 4 requestSuspending, 5 acquireAccLock
+                // -- measured 2026-09-24), and a failure there scanned codes 1-5, request-to-suspend
+                // included.
 
-                // CRITICAL: Whitelist app UID with BYD background data-cache services.
-                // BgDataCacheService accepts shell UID (2000), so this only succeeds
-                // when called from the daemon — not from MainActivity (UID 10xxx).
-                applyDataCacheWhitelist()
-                logT("applyDataCacheWhitelist done")
+                // No BYD data-cache "whitelisting" here: bg_datacache requires the signature
+                // permission ACCESS_APPOPSDATA, which shell (2000) does not hold either -- every
+                // call was refused (BladeWatch-mgvv). Auto-start is the owner's BYD Auto-Start
+                // setting; see docs/daemons-and-processes.md "After a reboot".
 
                 // Install shutdown hook for debugging process termination
                 installShutdownHook()
@@ -570,178 +564,6 @@ object AccSentryDaemon {
         }
     }
 
-    // ==================== ACC WHITELIST ====================
-    /**
-     * Whitelist app package from ACC power management killing.
-     *
-     * Loads the real system IAccModeManager$Stub via Class.forName from the boot
-     * classloader, guaranteeing the correct transaction code is used.
-     *
-     * Fallback: direct binder transact with TX code 2 (confirmed working).
-     */
-    private fun whitelistAppPackageOld() {
-        val pkg = APP_PACKAGE_NAME()
-        log("Whitelisting package $pkg via accmodemanager...")
-
-        var success = false
-
-        try {
-            val serviceManager = Class.forName("android.os.ServiceManager")
-            val getService = serviceManager.getMethod("getService", String::class.java)
-            val binder = getService.invoke(null, SERVICE_ACCMODEMANAGER()) as IBinder?
-
-            if (binder != null) {
-                log("Got accmodemanager binder: $binder")
-
-                // === STRATEGY 1: Load real system stub via Class.forName ===
-                try {
-                    val stubClass = Class.forName("android.os.IAccModeManager\$Stub")
-                    val asInterface = stubClass.getMethod("asInterface", IBinder::class.java)
-                    val manager = asInterface.invoke(null, binder)
-
-                    if (manager != null) {
-                        val setPkg = manager.javaClass.getMethod("setPkg2AccWhiteList", String::class.java)
-                        setPkg.invoke(manager, pkg)
-                        log("Whitelisted successfully via system stub!")
-                        success = true
-                    } else {
-                        log("System stub asInterface returned null")
-                    }
-                } catch (e: Exception) {
-                    val msg = e.cause?.message ?: e.message
-                    log("System stub method failed: $msg")
-                }
-
-                // === STRATEGY 2: Direct binder transact with known TX code 2 ===
-                if (!success) {
-                    log("System stub failed, trying direct transact (TX code 2)...")
-                    success = whitelistViaDirectTransact(binder, pkg)
-                }
-            } else {
-                log("accmodemanager service not found")
-            }
-        } catch (e: Exception) {
-            log("Binder Access Error: " + e.message)
-            e.printStackTrace()
-        }
-
-        if (!success) {
-            log("WARNING: All whitelist strategies failed - app may be killed during ACC OFF")
-        }
-    }
-
-    /**
-     * Direct binder transact fallback using TX code 2 (confirmed working).
-     * If TX code 2 fails, scans codes 1-5 for firmware variations.
-     */
-    private fun whitelistViaDirectTransact(binder: IBinder, packageName: String): Boolean {
-        if (tryTransactCode(binder, packageName, 2)) {
-            return true
-        }
-
-        log("TX code 2 failed, scanning codes 1-5...")
-        for (code in 1..5) {
-            if (code == 2) continue
-            if (tryTransactCode(binder, packageName, code)) {
-                return true
-            }
-        }
-
-        log("Direct transact: no working transaction code found")
-        return false
-    }
-
-    private fun tryTransactCode(binder: IBinder, packageName: String, code: Int): Boolean {
-        try {
-            val data = Parcel.obtain()
-            val reply = Parcel.obtain()
-            try {
-                data.writeInterfaceToken("android.os.IAccModeManager")
-                data.writeString(packageName)
-
-                val transactSuccess = binder.transact(code, data, reply, 0)
-                if (transactSuccess) {
-                    reply.readException()
-                    log("Whitelist SUCCESS with transaction code $code")
-                    return true
-                }
-            } catch (e: Exception) {
-                log("TX code $code: " + e.message)
-            } finally {
-                data.recycle()
-                reply.recycle()
-            }
-        } catch (e: Exception) {
-            // Parcel obtain failed
-        }
-        return false
-    }
-
-    // ==================== DATA-CACHE WHITELIST ====================
-    /**
-     * Whitelist app UID with BYD background data-cache services.
-     *
-     * BYD's BgDataCacheService accepts the shell UID (2000), so calls from this
-     * daemon succeed where the same call from MainActivity (UID 10xxx) hits the
-     * AppOps gate. Mirrors DiPlus's vanss daemon, which arrives at shell UID via
-     * an ADB-localhost tunnel and then makes this exact call.
-     *
-     * SDK ≥ 32 → byd_datacached.setAppStartupData(uid, 0)
-     * SDK < 32 → bg_datacache.setAppOpsData(uid, 0)
-     */
-    private fun applyDataCacheWhitelist() {
-        val ctx = appContext
-        if (ctx == null) {
-            log("applyDataCacheWhitelist: no context")
-            return
-        }
-
-        val pkg = APP_PACKAGE_NAME()
-        val appUid: Int
-        try {
-            appUid = ctx.packageManager.getApplicationInfo(pkg, 0).uid
-        } catch (e: Exception) {
-            log("applyDataCacheWhitelist: failed to resolve UID: " + e.message)
-            return
-        }
-        val uidStr = appUid.toString()
-        log("Applying data-cache whitelist for $pkg (uid=$appUid)")
-
-        val permissiveContext = PermissionBypassContext(ctx)
-        val useNewService = Build.VERSION.SDK_INT >= 32
-
-        if (useNewService) {
-            try {
-                val service = permissiveContext.getSystemService(SERVICE_BYD_DATACACHE())
-                if (service != null) {
-                    val m = service.javaClass.getMethod("setAppStartupData", String::class.java, Int::class.javaPrimitiveType)
-                    m.invoke(service, uidStr, 0)
-                    log("setAppStartupData OK (uid=$appUid)")
-                    return
-                }
-                log("byd_datacached service unavailable")
-            } catch (ite: java.lang.reflect.InvocationTargetException) {
-                log("setAppStartupData rejected: " + ite.cause)
-            } catch (e: Exception) {
-                log("setAppStartupData failed: " + e.message)
-            }
-        }
-
-        try {
-            val service = permissiveContext.getSystemService(SERVICE_BG_DATACACHE())
-            if (service != null) {
-                val m = service.javaClass.getMethod("setAppOpsData", String::class.java, Int::class.javaPrimitiveType)
-                m.invoke(service, uidStr, 0)
-                log("setAppOpsData OK (uid=$appUid)")
-                return
-            }
-            log("bg_datacache service unavailable")
-        } catch (ite: java.lang.reflect.InvocationTargetException) {
-            log("setAppOpsData rejected: " + ite.cause)
-        } catch (e: Exception) {
-            log("setAppOpsData failed: " + e.message)
-        }
-    }
 
     // ==================== ACC STATE DETECTION ====================
 

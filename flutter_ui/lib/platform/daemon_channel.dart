@@ -18,7 +18,7 @@ class DaemonChannel {
   Future<Map<String, dynamic>> status() => _asStringMap(_channel.invoke('daemon', 'status'));
 
   /// BladeWatch-1xt9: real daemon-*process* liveness (CAMERA_DAEMON/SENTRY_DAEMON/
-  /// ACC_SENTRY_DAEMON/TOR_TUNNEL) — not to be confused with [status] above, which
+  /// ACC_SENTRY_DAEMON/PEAR_PEER) — not to be confused with [status] above, which
   /// reports camera *recording* state. Unlike the other three methods, this one
   /// unwraps the response's nested `daemons` object into a flat, typed map, since
   /// every caller wants exactly that shape (see the Startup screen).
@@ -28,9 +28,9 @@ class DaemonChannel {
   /// questions and were conflated until a bug on the head unit made that obvious.
   ///
   /// Enabling a daemon only RECORDS INTENT — the daemon's health check performs the
-  /// launch on its next cycle, and tor then needs up to a minute to bootstrap. A UI
+  /// launch on its next cycle, so the process appears some seconds later. A UI
   /// bound to liveness therefore shows a switch springing back to off, and the user's
-  /// natural second tap disables the tunnel they just enabled, because the disable path
+  /// natural second tap disables the daemon they just enabled, because the disable path
   /// also kills the process.
   ///
   /// [DaemonStatus.enabled] carries entries only for daemons that can actually be
@@ -52,39 +52,23 @@ class DaemonChannel {
     return DaemonStatus(running: running, enabled: enabled);
   }
 
-  /// BladeWatch-m1po / BladeWatch-3lbz.3: the tunnel's liveness AND its address.
-  ///
-  /// Both halves matter, which is why this returns a pair rather than a URL. The
-  /// daemon gates the address on tor having BOOTSTRAPPED, not merely on its hostname
-  /// file existing — that file is written about a second after tor's first launch and
-  /// then persists across reboots forever. A cold start takes ~82 s to reach the
-  /// network (~6 s warm), and throughout that window the honest answer is "running,
-  /// no address yet", which the Dashboard renders as connecting.
-  ///
-  /// This used to return just `String?` with a comment saying to widen it if a caller
-  /// ever needed the flag. With the previous tunnel the gap was a second or two; with
-  /// Tor it is long enough to matter, so the caller now needs it.
-  Future<TunnelStatus> tunnelStatus() async {
-    final response = await _asStringMap(_channel.invoke('daemon', 'tunnelStatus'));
-    final url = response['url'] as String?;
-    return TunnelStatus(
-      running: response['running'] as bool? ?? false,
-      url: (url == null || url.isEmpty) ? null : url,
-      // Absent on a daemon predating BladeWatch-y7x2. Default TRUE, not false: a false
-      // default would hide the Dashboard's connect card on a car whose tunnel is fine,
-      // which is a far worse failure than showing a card that could have been hidden.
-      enabled: response['enabled'] as bool? ?? true,
+  /// BladeWatch-rdtj.17: the Pear peer -- whether it runs, whether the owner switched it on,
+  /// and whether the car can actually be found right now ([PearStatus.reachable]). Never a
+  /// topic or key: the daemon does not send any.
+  Future<PearStatus> pearStatus() async {
+    final r = await _asStringMap(_channel.invoke('daemon', 'pearStatus'));
+    final last = r['lastCompanionAt'];
+    return PearStatus(
+      running: r['running'] as bool? ?? false,
+      enabled: r['enabled'] as bool? ?? false,
+      reachable: r['reachable'] as bool?,
+      devicesConnected: (r['companions'] as num?)?.toInt() ?? 0,
+      lastConnection: last is num ? DateTime.fromMillisecondsSinceEpoch(last.toInt()) : null,
     );
   }
 
-  /// Just the address, for callers that only render a link — the Diagnostics network
-  /// card (which derives "connecting" from the daemon list it already has) and the
-  /// toolbar status pill. Null while tor is still bootstrapping, which is correct for
-  /// both: there is no address to show yet.
-  Future<String?> tunnelUrl() async => (await tunnelStatus()).url;
-
   /// BladeWatch-abcx: enable or disable an optional daemon, returning true only if
-  /// the daemon accepted it. Anything outside its allow-list (currently TOR_TUNNEL
+  /// the daemon accepted it. Anything outside its allow-list (currently PEAR_PEER
   /// alone) comes back false rather than silently doing nothing — see
   /// [SettingsDaemonsController] for why the other three are not toggleable.
   Future<bool> setDaemonEnabled(String nativeKey, bool enabled) async {
@@ -103,23 +87,6 @@ class DaemonChannel {
   }
 }
 
-/// What the daemon reports about the Tor tunnel: whether the process is up, and the
-/// onion address once it is reachable.
-class TunnelStatus {
-  /// The tor process is alive. Says nothing about reachability on its own.
-  final bool running;
-
-  /// The onion address, present only once tor has bootstrapped.
-  final String? url;
-
-  /// Whether the owner has switched the tunnel ON. Deliberately separate from
-  /// [running]: an enabled tunnel is also not running for the first minute while tor
-  /// bootstraps, and the Dashboard must tell "switched off" apart from "starting".
-  final bool enabled;
-
-  const TunnelStatus({required this.running, this.url, this.enabled = true});
-}
-
 /// What the daemon reports about every background service: whether each process is
 /// alive, and — for the toggleable ones only — whether the user has asked for it.
 class DaemonStatus {
@@ -131,4 +98,34 @@ class DaemonStatus {
   final Map<String, bool> enabled;
 
   const DaemonStatus({required this.running, required this.enabled});
+}
+
+/// What the daemon reports about the Pear peer (BladeWatch-rdtj.17).
+class PearStatus {
+  /// The pear_daemon process is alive. Says nothing about reachability on its own.
+  final bool running;
+
+  /// The owner has switched remote access on (pairing does it too).
+  final bool enabled;
+
+  /// Whether the car can be found right now: running, joined to its topic, and HyperDHT
+  /// online. Null when the car's pear-end cannot tell (older than flutter_pear 0.4.4).
+  final bool? reachable;
+
+  /// Paired devices connected over Pear at the moment.
+  final int devicesConnected;
+
+  /// When a paired device last connected over Pear; null if none has since pear_daemon started.
+  final DateTime? lastConnection;
+
+  const PearStatus({
+    required this.running,
+    required this.enabled,
+    this.reachable,
+    this.devicesConnected = 0,
+    this.lastConnection,
+  });
+
+  /// Nothing known yet: before the first read, or when the daemon cannot be reached.
+  static const unknown = PearStatus(running: false, enabled: false);
 }

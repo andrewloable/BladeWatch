@@ -36,13 +36,12 @@ public class NoRestHandlerEntryPointsTest {
      * are not JSON APIs, so ConnectRPC is not an option for them:
      *
      * <ul>
-     *   <li>{@code AuthApiHandler} — {@code /auth/status} and {@code /auth/token} are the
-     *       PRE-AUTH bootstrap. {@code login.html} is plain HTML served before any Connect
-     *       client exists, and it is the one page that has to work when everything else is
-     *       broken. {@code AuthService.Login} exists for the SPA; the bootstrap stays HTTP.
+     *   <li>{@code AuthApiHandler} — {@code /auth/pair} and {@code /auth/companion} are the
+     *       companion's PRE-AUTH bootstrap: pairing and login happen before any session or
+     *       Connect client exists, so they stay plain HTTP.
      *   <li>{@code StreamingApiHandler} — PARTIALLY exempt, like Recordings. Its seven JSON
      *       operations ARE inverted; the only HTTP route left is
-     *       {@code GET /api/stream/still}, a JPEG the Angular live view consumes as an image
+     *       {@code GET /api/stream/still}, a JPEG the companion's live view consumes as an image
      *       URL.
      *   <li>{@code RecordingsApiHandler} — PARTIALLY exempt. Its JSON operations ARE inverted
      *       (BladeWatch-6mnq); only {@code handleWithRange} remains, serving {@code /video/*}

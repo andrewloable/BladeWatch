@@ -4,14 +4,14 @@ import 'package:flutter/foundation.dart';
 
 import '../../widgets/storage_limit.dart';
 
-import '../../gen/bladewatch/v1/recordings.pb.dart' show GetStatsRequest;
-import '../../gen/bladewatch/v1/safe_locations.pb.dart' as sl;
-import '../../gen/bladewatch/v1/storage.pb.dart' as storage_pb;
-import '../../gen/bladewatch/v1/surveillance.pb.dart' as pb;
-import '../../rpc/services/recordings_service_client.dart';
-import '../../rpc/services/safe_locations_service_client.dart';
-import '../../rpc/services/storage_service_client.dart';
-import '../../rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart' show GetStatsRequest;
+import 'package:bladewatch_rpc/gen/bladewatch/v1/safe_locations.pb.dart' as sl;
+import 'package:bladewatch_rpc/gen/bladewatch/v1/storage.pb.dart' as storage_pb;
+import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart' as pb;
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
 import 'surveillance_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 import '../settings/settings_recording_models.dart' show StorageLimitImpact;

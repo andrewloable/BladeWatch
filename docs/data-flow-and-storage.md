@@ -1,6 +1,6 @@
 # Data Flow and Storage
 
-BladeWatch coordinates data across the Android app process, shell-launched Java daemons, native camera code, web assets, the Tor tunnel binary, and BYD local sources. Most cross-process state is intentionally stored in files under `/data/local/tmp`.
+BladeWatch coordinates data across the Android app process, shell-launched Java daemons, native camera code, web assets, the Pear peer, and BYD local sources. Most cross-process state is intentionally stored in files under `/data/local/tmp`.
 
 ## Primary Data Flows
 
@@ -30,6 +30,37 @@ Limit) may be lost." Reliability — "uses a bit more CPU to save more often. If
 cut abruptly, at most about a minute may be lost" (segment length capped to 1 minute
 regardless of `segmentMinutes`). New installs default to Reliability; an existing config
 migrates once to Performance, preserving its pre-existing (uncapped) behaviour.
+
+**Fragmented MP4, off by default (BladeWatch-rdtj.29).** With `recording.fragmentedMp4` on,
+`HardwareEventRecorderGpu` writes each segment through `FragmentedMp4Writer`
+(`app/src/main/java/com/loabletech/bladewatch/recording/`) instead of MediaMuxer: `ftyp` and
+a sample-less `moov` first, then one `moof`+`mdat` fragment per group of pictures (a keyframe
+and what follows, about 2 s). A clean stop adds the length (`mehd`), a segment index (`sidx`,
+in a 16 KB reserve after `moov`) and `mfra`. Consequences:
+- New clips stream from their first bytes without `Mp4Faststart.View` (older clips keep it).
+- A killed daemon or a power cut loses only the fragment in flight: the `.mp4.tmp` plays up to
+  its last whole fragment. At the next daemon start `FragmentedMp4Muxer.recoverLeftovers`
+  (in `CameraDaemon`, before the orphan sweep below, over the same directories) cuts off any
+  partial fragment, writes the length/index/`mfra` and renames it to `.mp4`, so it also
+  seeks; the clip is indexed into the media catalog as soon as that exists. There is no age
+  guard: the camera daemon, the only process that records, has its singleton lock by then,
+  and the keepalive restarts a killed daemon within ~6 s (measured on the head unit). MediaMuxer
+  leftovers cannot be saved and are still swept.
+- **Served defragmented (BladeWatch-rdtj.63).** AVFoundation (the companion on iOS and macOS)
+  reads a fragmented file by fetching every fragment's header before it plays, one Range request
+  each. Over Pear, at ~0.4 s a request, a 5-minute clip (160 fragments) had not started after 16 s.
+  `Mp4Defragment` (through `Mp4Faststart.view`) serves such a clip as an ordinary one:
+  - `ftyp`;
+  - a rebuilt `moov` with every sample in its tables (one sample per chunk; `mvex` dropped);
+  - `mdat`, then each fragment's sample data straight from the file.
+  The file never changes; the ETag suffix is `df1`, and the Content-Length is the view's. The same
+  clip then played 1.5 s after the player opened, on two requests.
+- Checked players (spike, 2026-09-27): ffmpeg frame-identical, AVPlayer, ExoPlayer
+  (video_player_android 2.12.2 as in both Flutter apps) and MediaMetadataRetriever on
+  Android 10, Chrome; H.264 and H.265. On the head unit (2026-09-27, H.264 only, since the
+  recorder accepts no other codec): finished and recovered clips list with the right length
+  and thumbnail, and play and seek in the in-car UI. The flag stays off until the on-car
+  checks pass.
 
 **Orphan sweeping at daemon startup (BladeWatch-k3b0, BladeWatch-g8ee).** Every `.jpg`,
 `.srt` and `.json` in `recordings/` and `surveillance/` is a sidecar keyed to an `.mp4`
@@ -117,7 +148,7 @@ Camera frame
   -> GpuSurveillancePipeline
   -> stream scaler and encoder
   -> WebSocketStreamServer / HttpServer WebSocket upgrade
-  -> browser client
+  -> in-car UI (and the companion, through the Pear stream)
 ```
 
 Live streaming is separate from recording. The server handles H.264 headers, cached SPS/PPS, IDR requests, and frame fragmentation.
@@ -131,22 +162,19 @@ Camera frame
   -> per-quadrant motion state
   -> optional TFLite YOLO gate
   -> surveillance decision
-  -> event recording and Web Push notification
+  -> event recording and notification
 ```
 
 Surveillance uses motion detection first and AI as a gated assist. Event windows include pre-event and post-event recording.
 
-### Web UI to Daemon
+### Client to Daemon
 
 ```text
-Browser or Android WebView
-  -> http://127.0.0.1:8080
-  -> AuthMiddleware
-  -> HttpServer route handlers
+In-car UI (127.0.0.1:8080) or companion (LAN TLS 8443 / Pear stream into 8444)
+  -> AuthMiddleware (JWT)
+  -> HttpServer route handlers / ConnectRPC
   -> daemon managers, config, storage, camera, trips
 ```
-
-The Android WebView injects auth cookies and JavaScript bridge behavior so mutating API calls can bypass local proxy interference.
 
 ### Android App to Daemon
 
@@ -199,6 +227,18 @@ mirror is still written for older hardcoded readers (`StorageManager`,
 `SurveillanceConfigManager`). On first run after the relocation, a prior
 unified config at `/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_config.json`
 or the `/data/local/tmp` mirror is promoted to the new path rather than rebuilt.
+
+**Every write re-reads the file under a cross-process lock (BladeWatch-17l7).**
+The service host and CameraDaemon (including the Flutter UI's IPC writes) all
+write this file, and each used to start from its own mtime-keyed cache -- on the
+head unit an owner's `PEAR_PEER=false` was read back as `true` 18 s later and
+saved over. `UnifiedConfigManager` now takes an fcntl lock on
+`/data/local/tmp/bladewatch_config.json.lock` (on the real filesystem, so both
+uids lock the same inode) and starts every change from the file as it is on disk.
+The lock file is world-writable because the app uid must open it too, so the wait
+is bounded (2 s) and a write proceeds unlocked rather than hang. The daemon
+switches that drive health-check relaunches (`isDaemonEnabled`) are read from
+disk, never the cache.
 
 `UnifiedConfigManager` is the main config source. It stores app and daemon settings for:
 
@@ -265,8 +305,8 @@ no exchange-rate source and none is wanted — converting historical costs at to
 would misreport what the owner actually spent.
 
 **The code list is generated, not hand-maintained.** `tools/gen-currencies.mjs` derives it
-from ICU via `Intl.supportedValuesOf('currency')` and writes a byte-identical copy to
-`web/src/assets/iso4217.json` and `flutter_ui/assets/iso4217.json`. Regenerate with:
+from ICU via `Intl.supportedValuesOf('currency')` and writes
+`flutter_ui/assets/iso4217.json`. Regenerate with:
 
 ```bash
 node tools/gen-currencies.mjs
@@ -331,23 +371,25 @@ stored efficiency figure would change meaning and historical comparison would br
 Main secret path:
 
 ```text
-/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json
+/data/local/tmp/bladewatch_secrets.json
 ```
 
-The secret store lives under the user-visible BladeWatch app-files tree so
-secrets survive uninstall/reinstall. On upgrade the store falls back to reading
-from the legacy `/data/local/tmp/bladewatch_secrets.json` path if the primary
-file is absent; once a write succeeds to the primary, the legacy file is
-deleted so plaintext secrets are never left in `/data/local/tmp`.
+`shell` `rw-------`, and on this real filesystem the mode is actually enforced:
+only the shell-UID daemons can read it, and the app fetches values over the
+token-gated IPC. It briefly lived on sdcardfs
+(`/storage/emulated/0/Android/data/net.bladewatch.app/files/`), where `600` was
+silently ignored; BladeWatch-078u moved it back. A copy found at that old path is
+read once when the primary is absent and deleted on the first successful write.
+It lives outside the app's data, so it survives an uninstall/reinstall.
 
-**At-rest permission enforcement note (BYD DiLink v3):** the primary path is on
-sdcardfs (`/storage/emulated/0`). POSIX mode bits are set to `rw-------` via
-`Files.setPosixFilePermissions`, but sdcardfs enforces permissions primarily via
-Android permission grants rather than traditional Unix mode bits — `mode 600` is
-best-effort on this filesystem. The long-term fix is moving secrets to a
-daemon-held native key store (Track1 `uy93.12`). Until then, the primary
-protection is restricting writes to the shell-UID daemon and requiring the IPC
-token for all app→daemon secret reads.
+**Writes take a cross-process lock (BladeWatch-rdtj.3).** CameraDaemon and
+pear_daemon both write this file, each by read-modify-write, so
+`SecretConfigStore` holds an exclusive fcntl lock on
+`/data/local/tmp/bladewatch_secrets.json.lock` for the whole cycle. Without it
+two first-run writes could silently drop each other's section -- a lost TLS
+identity, probe key or Pear topic seed unpairs every companion. The lock file is
+created `600` in the same call: world-readable, any app could take a shared lock
+and block every secret write.
 
 `SecretConfigStore` stores secret sections such as auth device secret and tunnel tokens. The file is created with owner-only (`rw-------`) permissions. Direct writes are restricted to shell UID where practical; the Android app uses the TCP bridge when it cannot access the file directly.
 
@@ -363,6 +405,30 @@ The auth manager uses a device id and secret to derive local access tokens. Lega
 ```
 
 The current release auth model uses a JWT HMAC secret stored through the secret/config bridge.
+
+### On the companion device
+
+The companion app keeps one file, `companion.json`, in its private application-support
+directory. It holds the paired car (device id, Pear topic, TLS pin, probe key, and this
+device's companion id and token), the alert cursor, the chosen language and the muted alert
+categories. It is replaced atomically, and on macOS and Linux it is mode 600, set before the
+token is written. The token logs in as this device until the car un-pairs it, so Android
+backup is off for the app (`allowBackup="false"`).
+
+### Companion Alert Inbox
+
+```text
+/data/local/tmp/bladewatch_inbox.json
+```
+
+`CompanionInbox` (BladeWatch-rdtj.14) is a `NotificationBus` sink in `byd_cam_daemon`. It
+keeps the car's notifications until a companion collects them. The file is mode 600,
+shell-owned, and replaced atomically. It holds `nextId` plus up to 200 entries from the
+last 14 days. Each entry has an id, time, category, severity, title, body, click URL and
+tag. The event's `data` extras are never stored. The click URL is stored, though, and for a
+clip alert it names the clip (`file=`) and the snapshot link (`hero=`), just as the push
+payload does. The file records when the car was disturbed, so treat it as personal data. Deleting it only resets the
+ids, and companions recover from that on their own.
 
 ## Media Storage
 
@@ -380,6 +446,16 @@ Common subdirectories:
 - `trips`.
 
 `StorageSetup` prepares the app-owned external storage directory and requests or grants storage permissions. `StorageManager` also detects external SD-card-style paths and can manage separate storage choices for recordings, surveillance, and trips.
+
+Two more subdirectories, siblings of `recordings` (both under `recordingsDir.parentFile` in
+`RecordingsApiHandler`), hold server-generated caches rather than recorded media -- neither is
+counted against a storage limit or swept by the retention cleanup above, and both are safe to
+delete entirely (everything in them regenerates on the next request):
+
+- `thumbs` — `/thumb/*`'s generated frame JPEGs and scaled hero thumbnails.
+- `transcoded` — `/video/*?maxW=&maxH=`'s cached re-encodes for a client whose decoder can't play
+  a clip's native resolution (BladeWatch-rdtj.73), named `<clip>_1920x1080.mp4`. Regenerated (via
+  `ClipTranscoder`) whenever missing or older than the source clip.
 
 ### Storage Priority (Auto-Select on Startup)
 
@@ -498,7 +574,8 @@ The proto contract is `StorageService.ListFormatVolumes` / `FormatVolume` in `pr
 Source assets:
 
 ```text
-app/src/main/assets/web/
+app/src/main/assets/web/shared/models/   (the 3D model manifest and models)
+app/src/main/assets/server-i18n/
 ```
 
 Runtime extracted assets:
@@ -508,7 +585,7 @@ Runtime extracted assets:
 /data/local/tmp/overlay
 ```
 
-`HttpServer` extracts web and overlay assets when the daemon starts. Gradle also defines an `extractWebAssets` helper task that can push web assets to `/data/local/tmp/web` during development.
+`HttpServer` extracts the model manifest, the server i18n catalogs and the overlay assets when the daemon starts.
 
 GPU kernel cache:
 
@@ -518,41 +595,45 @@ GPU kernel cache:
 
 `YoloDetector` enables TFLite GPU kernel serialization (`GpuDelegateFactory.Options.setSerializationParams`) into this directory. The Adreno OpenCL backend otherwise recompiles all GPU kernels on every daemon start (~3–5s); serialization persists the compiled kernels so only the first-ever boot pays that cost. The cache key (`modelToken`) is a SHA-256 content hash of `yolo11n.tflite` plus the TFLite version, so a re-exported model or a runtime bump invalidates stale kernels automatically. The cache is OpenCL-only and silently no-ops on the OpenGL ES backend; a failure to create or write the directory falls back to a bare delegate without disabling GPU.
 
-## Tunnel Runtime Files
+## Remote-Access Runtime Files
 
-Tor onion service:
+Pear peer (`pear_daemon`):
 
 ```text
-/data/local/tmp/bladewatch_tor    the binary, installed under its own process name
-/data/local/tmp/tor/torrc         generated config, rewritten on every launch
-/data/local/tmp/tor/data          consensus cache (safe to delete; costs a slow start)
-/data/local/tmp/tor/hs            hidden-service directory — see the warning below
-/data/local/tmp/tor/hs/hostname   the onion address, mode 600, shell-owned
-/data/local/tmp/tor.log           notice log
+/data/local/tmp/pear              pear-end's storage (Corestore), mode 0700 -- see the warning below
+/data/local/tmp/pear/swarm-identity.seed   the car's Pear identity seed, mode 0600, secret
+/data/local/tmp/pear_daemon.lock  singleton lock; safe to remove while the daemon is stopped
+/data/local/tmp/pear_daemon.log   daemon log
 ```
 
-**`hs/hs_ed25519_secret_key` is a SECRET and it is permanent.** It is the private key the
-car's onion address is derived from, so it belongs in the same category as the entries in
-`bladewatch_secrets.json`: never logged, never copied to shared storage, never returned
-over IPC, never committed. It differs from those in one important way — it cannot be
-rotated harmlessly. Deleting it mints a new address on the next start and silently breaks
-every QR code the owner has ever scanned, so the tunnel is stopped by killing the process,
-never by deleting its directory.
+The topic the car announces on is not a file of its own: it is derived from the `pear`
+section's `topicSeed` in `bladewatch_secrets.json` (`PearTopic`), and is secret like every
+other entry there.
+
+**`/data/local/tmp/pear` is permanent.** Its `swarm-identity.seed` is the car's Pear identity,
+kept across restarts (BladeWatch-rdtj.24); deleting it strands every paired companion, with no
+way back but pairing each one again. Keep it 0700: pear-end creates its corestore inside it as 0777, so the parent's mode is
+the only thing keeping it private. Never remove it to "reset" state.
+
+The Tor onion service's files (`/data/local/tmp/bladewatch_tor`, `/data/local/tmp/tor/`,
+`/data/local/tmp/tor.log`) belong to v1.3.x. Nothing reads or writes them since v1.4.0.0
+(BladeWatch-rdtj.12), and nothing deletes them: `tor/hs` holds the old onion key, and they can be
+removed by hand.
 
 ## Auth Data Flow
 
 ```text
-Client requests /auth/token
+Companion posts /auth/companion {companionId, token}
   -> AuthApiHandler
-  -> AuthManager validates device token
-  -> JWT issued with token epoch
-  -> client stores Bearer token or byd_session cookie
+  -> CompanionPairing checks the HMAC token
+  -> JWT issued (carries cid), returned in the body
+  -> client sends it as Authorization: Bearer
   -> AuthMiddleware validates future requests
 ```
 
 Release builds require JWT auth even for loopback requests because Android loopback is shared. Debug loopback bypass exists only when tunnel-forwarding headers are absent.
 
-Public paths are limited to auth bootstrap, login/static shell assets, manifest/service worker, shared assets, and i18n assets.
+Public paths are limited to the companion's `/auth/pair` and `/auth/companion`.
 
 ## Trip Data Flow
 
@@ -630,9 +711,9 @@ returns `{success:false, error:"sync_in_progress"}` without blocking.
 
 ```text
 Daemon or surveillance event
-  -> notification manager/API
-  -> Web Push subscription target
-  -> web notification state APIs
+  -> notification bus
+  -> companion inbox (store and forward) and the log sink
+  -> the companion collects it with NotificationsService.ListInbox
 ```
 
 Notification APIs expose categories, push subscription management, preferences, and test delivery.
@@ -651,7 +732,6 @@ Notification APIs expose categories, push subscription management, preferences, 
 - Camera-to-recording path: [PanoramicCameraGpu.java:39](../app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.java#L39), [GpuMosaicRecorder.java:31](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuMosaicRecorder.java#L31), [HardwareEventRecorderGpu.java:56](../app/src/main/java/com/loabletech/bladewatch/surveillance/HardwareEventRecorderGpu.java#L56), [StorageManager.java:2234](../app/src/main/java/com/loabletech/bladewatch/storage/StorageManager.java#L2234).
 - Live-stream path: [GpuSurveillancePipeline.java:30](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.java#L30), [WebSocketStreamServer.java:19](../app/src/main/java/com/loabletech/bladewatch/streaming/WebSocketStreamServer.java#L19), [HttpServer.java:538](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L538).
 - Surveillance-event path: [GpuDownscaler.java:51](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuDownscaler.java#L51), [SurveillanceEngineGpu.java:635](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java#L635), [SurveillanceEngineGpu.java:3095](../app/src/main/java/com/loabletech/bladewatch/surveillance/SurveillanceEngineGpu.java#L3095).
-- Web UI to daemon: [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [AuthMiddleware.java:135](../app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java#L135). (The in-car `WebViewFragment` client was deleted in Phase 4; the SPA now serves remote browsers only, and the in-car UI is the Flutter app's Dart ConnectRPC client, [flutter_ui/lib/rpc/](../flutter_ui/lib/rpc/).)
 - App TCP client to daemon: [CameraDaemonClient.java:24](../app/src/main/java/com/loabletech/bladewatch/client/CameraDaemonClient.java#L24), [TcpCommandServer.java:22](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L22), [CameraDaemon.java:53](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L53).
 - Location IPC: [LocationSidecarService.java:32](../app/src/main/java/com/loabletech/bladewatch/services/LocationSidecarService.java#L32), [SurveillanceIpcServer.java:23](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L23), [CameraDaemon.java:383](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L383).
 - BYD local data flow: [BydDataCollector.java:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L20).
@@ -660,5 +740,5 @@ Notification APIs expose categories, push subscription management, preferences, 
 - Format storage API: [FormatStorageApiHandler.java:27](../app/src/main/java/com/loabletech/bladewatch/server/FormatStorageApiHandler.java#L27), [storage.proto:20](../proto/bladewatch/v1/storage.proto#L20).
 - Media catalog and sync: [MediaCatalogManager.java:26](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L26), [MediaCatalogManager.java:81](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L81), [MediaCatalogManager.java:130](../app/src/main/java/com/loabletech/bladewatch/media/MediaCatalogManager.java#L130), [RecordingsApiHandler.java:185](../app/src/main/java/com/loabletech/bladewatch/server/RecordingsApiHandler.java#L185).
 - Trip database and sync: [TripDatabase.java:19](../app/src/main/java/com/loabletech/bladewatch/trips/TripDatabase.java#L19), [TripDatabase.java:30](../app/src/main/java/com/loabletech/bladewatch/trips/TripDatabase.java#L30).
-- Runtime assets and tunnel files: [build.gradle.kts:226](../app/build.gradle.kts#L226), [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [TorLauncher.kt:92](../app/src/main/java/com/loabletech/bladewatch/launcher/TorLauncher.kt#L92).
+- Runtime assets and remote-access files: [build.gradle.kts:226](../app/build.gradle.kts#L226), [HttpServer.java:50](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L50), [PearDaemon.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearDaemon.kt) (`STORAGE_DIR`), [PearTopic.kt](../app/src/main/java/com/loabletech/bladewatch/daemon/PearTopic.kt).
 - Trips and notifications: [TripDetector.java:27](../app/src/main/java/com/loabletech/bladewatch/trips/TripDetector.java#L27), [TripAnalyticsManager.java:23](../app/src/main/java/com/loabletech/bladewatch/trips/TripAnalyticsManager.java#L23), [TripApiHandler.java:35](../app/src/main/java/com/loabletech/bladewatch/trips/TripApiHandler.java#L35), [NotificationApiHandler.java:31](../app/src/main/java/com/loabletech/bladewatch/server/NotificationApiHandler.java#L31).

@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.net.ServerSocket;
 
 /**
  * Verification test for uy93.16: simulates a co-resident attacker app with its
@@ -56,19 +55,20 @@ public class CoResidentAttackerTest {
         tempStoreFile.deleteOnExit();
         TcpCommandServer.secretStoreForTest = new SecretConfigStore(tempStoreFile);
 
-        tcpPort = findFreePort();
-        tcpServer = new TcpCommandServer(tcpPort);
+        tcpServer = new TcpCommandServer(0);
         tcpThread = new Thread(tcpServer::start, "attacker-test-tcp-server");
         tcpThread.setDaemon(true);
         tcpThread.start();
 
-        survPort = findFreePort();
-        survServer = new SurveillanceIpcServer(survPort);
+        survServer = new SurveillanceIpcServer(0);
         survThread = new Thread(survServer, "attacker-test-surv-server");
         survThread.setDaemon(true);
         survThread.start();
 
-        Thread.sleep(300);
+        // Port 0 and the port actually bound: a port picked free and bound later can be taken in
+        // between -- the debug and release test JVMs run this class at the same time.
+        tcpPort = awaitBound(tcpServer::getBoundPort);
+        survPort = awaitBound(survServer::getBoundPort);
     }
 
     @After
@@ -279,10 +279,12 @@ public class CoResidentAttackerTest {
         }
     }
 
-    private static int findFreePort() throws Exception {
-        try (ServerSocket s = new ServerSocket(0)) {
-            s.setReuseAddress(true);
-            return s.getLocalPort();
+    private static int awaitBound(java.util.function.IntSupplier boundPort) throws Exception {
+        for (int i = 0; i < 100; i++) {
+            int port = boundPort.getAsInt();
+            if (port > 0) return port;
+            Thread.sleep(30);
         }
+        throw new AssertionError("server never bound");
     }
 }

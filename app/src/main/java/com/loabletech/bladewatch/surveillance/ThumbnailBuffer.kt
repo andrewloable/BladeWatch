@@ -312,9 +312,8 @@ class ThumbnailBuffer {
 
             // Atomic write: compress to <name>.tmp, fsync, rename to <name>.
             // A process kill mid-compress would otherwise leave a truncated
-            // .jpg at the final filename — and the hero JPEG is now
-            // load-bearing for PWA push, with no regeneration path once
-            // the sidecar names it as heroThumbnail.
+            // .jpg at the final filename — and the hero JPEG has no regeneration
+            // path once the sidecar names it as heroThumbnail.
             // Same discipline EventTimelineCollector uses for the JSON sidecar.
             val tmpFile = File(outFile.absolutePath + ".tmp")
             FileOutputStream(tmpFile).use { fos ->
@@ -326,16 +325,6 @@ class ThumbnailBuffer {
                         "JPEG fsync failed for " + outFile.name + ": " + ignored.message
                     )
                 }
-            }
-            // World-readable so the PWA push sender (separate process, shell UID)
-            // can read the JPEG. Set on tmp BEFORE rename so the readable bit
-            // lands atomically with the file move.
-            try {
-                tmpFile.setReadable(true, /* ownerOnly = */ false)
-            } catch (ignored: Throwable) {
-                logger.warn(
-                    "setReadable failed for thumbnail " + outFile.name + ": " + ignored.message
-                )
             }
             if (!tmpFile.renameTo(outFile)) {
                 // Rename failed (e.g. cross-volume on weird mounts). Best-effort

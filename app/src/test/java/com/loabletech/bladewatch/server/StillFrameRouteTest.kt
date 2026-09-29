@@ -1,5 +1,6 @@
 package net.bladewatch.app.server
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -70,5 +71,31 @@ class StillFrameRouteTest {
             return i + marker.size
         }
         throw AssertionError("no header/body separator found in response")
+    }
+
+    // BladeWatch-rdtj.68: which view the JPEG holds, so the companion knows whether to show it whole
+    // or cut a quarter out of the mosaic.
+    @Test
+    fun theResponseSaysWhichViewItHolds() {
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 1)
+        fun header(view: Int): String {
+            val out = ByteArrayOutputStream()
+            StreamingApiHandler.sendStillFrame(out, jpeg, view)
+            val bytes = out.toByteArray()
+            return String(bytes, 0, indexOfHeaderEnd(bytes), StandardCharsets.UTF_8)
+        }
+        assertTrue(header(net.bladewatch.app.surveillance.GpuStillCapture.MOSAIC).contains("X-Still-View: mosaic\r\n"))
+        assertTrue(header(2).contains("X-Still-View: 2\r\n"))
+    }
+
+    @Test
+    fun theCameraParameterPicksOneCameraAndAnythingElseIsTheMosaic() {
+        val mosaic = net.bladewatch.app.surveillance.GpuStillCapture.MOSAIC
+        assertEquals(mosaic, StreamingApiHandler.stillView("/api/stream/still"))
+        assertEquals(0, StreamingApiHandler.stillView("/api/stream/still?camera=0"))
+        assertEquals(3, StreamingApiHandler.stillView("/api/stream/still?x=1&camera=3"))
+        for (bad in listOf("?camera=4", "?camera=-1", "?camera=", "?camera=front", "?cameras=1")) {
+            assertEquals(bad, mosaic, StreamingApiHandler.stillView("/api/stream/still$bad"))
+        }
     }
 }

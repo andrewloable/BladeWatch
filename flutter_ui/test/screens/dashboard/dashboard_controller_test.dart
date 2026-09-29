@@ -1,31 +1,23 @@
-import 'package:bladewatch_ui/platform/auth_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_controller.dart';
-import 'package:bladewatch_ui/screens/dashboard/dashboard_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_platform_channel.dart';
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
-  // Obviously fake. Never put a real onion address in a fixture: it is a capability
-  // granting network access to a real car.
-  const onion = 'http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion';
-
   late FakeRpcClient rpc;
   late FakePlatformChannel channel;
 
-  DashboardController buildController({Future<TunnelStatus> Function()? tunnelStatusSource}) {
+  DashboardController buildController() {
     return DashboardController(
       tripsService: TripsServiceClient(rpc),
       recordingsService: RecordingsServiceClient(rpc),
       systemService: SystemServiceClient(rpc),
       daemonChannel: DaemonChannel(channel),
-      authChannel: AuthChannel(channel),
-      tunnelStatusSource: tunnelStatusSource ?? () async => const TunnelStatus(running: false),
     );
   }
 
@@ -43,14 +35,62 @@ void main() {
     rpc.stubJson('SystemService', 'GetSelectedModel', {'modelId': 'seal'});
     channel.stub('daemon', 'processStatus', {
       'status': 'ok',
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
     });
-    channel.stub('auth', 'getAccessCode', 'shh-fake-secret');
   }
 
   setUp(() {
     rpc = FakeRpcClient();
     channel = FakePlatformChannel();
+  });
+
+  // BladeWatch-4zr7: the charge and fuel ride on the GetStatus the dashboard already makes.
+  test('THIS WEEK\'s charge and fuel come from the one GetStatus per refresh', () async {
+    stubHappyPath();
+    rpc.stubJson('SystemService', 'GetStatus', {
+      'recording': [1],
+      'soc': {'percent': 77},
+      'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'fuelPercent': 30},
+      'distanceUnit': 'mi',
+    });
+    final c = buildController();
+    expect(c.energy.available, isFalse);
+    await c.refresh();
+    expect(c.energy.socPercent, 77);
+    expect(c.energy.fuelRangeKm, 351);
+    expect(c.energy.distanceUnit, 'mi');
+    expect(rpc.calls.where((call) => call.method == 'GetStatus'), hasLength(1), reason: 'no request of its own');
+  });
+
+  test('refresh can leave the week\'s trips out; refreshTrips reloads only them', () async {
+    stubHappyPath();
+    final c = buildController();
+    var notified = 0;
+    c.addListener(() => notified++);
+    await c.refresh(includeTrips: false);
+    expect(rpc.calls.where((call) => call.method == 'ListTrips'), isEmpty);
+    expect(c.tripStats.loading, isTrue, reason: 'untouched');
+    await c.refreshTrips();
+    expect(rpc.calls.where((call) => call.method == 'ListTrips'), isNotEmpty);
+    expect(c.tripStats.tripCount, 2);
+    expect(notified, 2);
+  });
+
+  test('the drive poll moves the charge and fuel, and says nothing when nothing changed', () async {
+    stubHappyPath();
+    rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 73}, 'range': {'elecRangeKm': 74}});
+    final c = buildController();
+    var notified = 0;
+    c.addListener(() => notified++);
+    await c.refreshDrive();
+    expect(c.energy.socPercent, 73);
+    expect(notified, 1);
+    await c.refreshDrive();
+    expect(notified, 1, reason: 'same status, no rebuild');
+    rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 74}, 'range': {'elecRangeKm': 74}});
+    await c.refreshDrive();
+    expect(c.energy.socPercent, 74);
+    expect(notified, 2);
   });
 
   group('initial state', () {
@@ -60,8 +100,7 @@ void main() {
       expect(c.recordingsMetric.loading, isTrue);
       expect(c.daemonsSummary.loading, isTrue);
       expect(c.vehicleTile.loading, isTrue);
-      expect(c.accessCode.loading, isTrue);
-      expect(c.tunnel.phase, TunnelPhase.offline);
+      expect(c.pear.running, isFalse);
     });
   });
 
@@ -98,9 +137,8 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
       });
-      channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
 
       await c.refresh();
@@ -117,9 +155,8 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
       });
-      channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
 
       await c.refresh();
@@ -127,21 +164,6 @@ void main() {
       expect(c.tripStats.available, isFalse);
       expect(c.tripStats.loading, isFalse);
     });
-  });
-
-  test('the true default tunnel source (no constructor argument) reports no tunnel', () async {
-    stubHappyPath();
-    final c = DashboardController(
-      tripsService: TripsServiceClient(rpc),
-      recordingsService: RecordingsServiceClient(rpc),
-      systemService: SystemServiceClient(rpc),
-      daemonChannel: DaemonChannel(channel),
-      authChannel: AuthChannel(channel),
-    );
-
-    await c.refresh();
-
-    expect(c.tunnel.phase, TunnelPhase.offline);
   });
 
   group('refresh() — recordings metric', () {
@@ -165,6 +187,15 @@ void main() {
       expect(req.date, matches(RegExp(r'^\d{4}-\d{2}-\d{2}$')));
     });
 
+    // BladeWatch-uymd: recording a continuous clip, the car sends an empty camera list.
+    test('isRecording follows recordingStatus when the camera list is empty', () async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'recordingStatus': {'isRecording': true, 'pipelineRunning': true}, 'recording': []});
+      final c = buildController();
+      await c.refresh();
+      expect(c.recordingsMetric.isRecording, isTrue);
+    });
+
     test('isRecording reflects GetStatus().recording being non-empty', () async {
       stubHappyPath(); // recording: [1]
       final c = buildController();
@@ -180,9 +211,8 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
       });
-      channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
 
       await c.refresh();
@@ -200,59 +230,11 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
       });
-      channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
       await c.refresh();
       expect(c.recordingsMetric.isRecording, isFalse);
-    });
-  });
-
-  group('refresh() — device id', () {
-    test('populates from GetStatus().deviceId, for the Connect card', () async {
-      stubHappyPath(); // deviceId: 'byd-test'
-      final c = buildController();
-
-      await c.refresh();
-
-      expect(c.deviceId, 'byd-test');
-    });
-
-    test('stays null when GetStatus omits deviceId', () async {
-      rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': []});
-      rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': [], 'total': 0});
-      rpc.stubJson('SystemService', 'GetStatus', {'recording': []});
-      rpc.stubJson('SystemService', 'GetSohNominal', {});
-      rpc.stubJson('SystemService', 'GetSelectedModel', {});
-      channel.stub('daemon', 'processStatus', {
-        'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
-      });
-      channel.stub('auth', 'getAccessCode', null);
-      final c = buildController();
-
-      await c.refresh();
-
-      expect(c.deviceId, isNull);
-    });
-
-    test('stays null when GetStatus fails entirely', () async {
-      rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': []});
-      rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': [], 'total': 0});
-      rpc.stubError('SystemService', 'GetStatus', const ConnectError('unavailable', 'down'));
-      rpc.stubJson('SystemService', 'GetSohNominal', {});
-      rpc.stubJson('SystemService', 'GetSelectedModel', {});
-      channel.stub('daemon', 'processStatus', {
-        'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
-      });
-      channel.stub('auth', 'getAccessCode', null);
-      final c = buildController();
-
-      await c.refresh();
-
-      expect(c.deviceId, isNull);
     });
   });
 
@@ -278,7 +260,6 @@ void main() {
         'processStatus',
         const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'),
       );
-      channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
 
       await c.refresh();
@@ -310,9 +291,8 @@ void main() {
       rpc.stubJson('SystemService', 'GetSelectedModel', {});
       channel.stub('daemon', 'processStatus', {
         'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
       });
-      channel.stub('auth', 'getAccessCode', null);
       final c = buildController();
 
       await c.refresh();
@@ -330,162 +310,26 @@ void main() {
     });
   });
 
-  group('refresh() — tunnel', () {
-    test('defaults to offline (no IPC source exists yet — BladeWatch-m1po)', () async {
+  // BladeWatch-rdtj.17: the Remote access tile reads the Pear peer, read separately so a
+  // failure there never blanks the rest of the Dashboard.
+  group('refresh() — Pear peer', () {
+    test('reads the Pear status', () async {
       stubHappyPath();
+      channel.stub('daemon', 'pearStatus', {'running': true, 'enabled': true, 'reachable': true});
       final c = buildController();
       await c.refresh();
-      expect(c.tunnel.phase, TunnelPhase.offline);
-      expect(c.tunnel.url, isNull);
+      expect(c.pear.running, isTrue);
+      expect(c.pear.reachable, isTrue);
     });
 
-    test('reports online when the tunnel is running and has published an address', () async {
+    test('a pearStatus failure resolves to unknown rather than crashing refresh()', () async {
       stubHappyPath();
-      final c = buildController(
-          tunnelStatusSource: () async => const TunnelStatus(running: true, url: onion));
-      await c.refresh();
-      expect(c.tunnel.phase, TunnelPhase.online);
-      expect(c.tunnel.url, onion);
-    });
-
-    test('reports CONNECTING while tor is up but has not bootstrapped', () async {
-      // The ~82 s cold-start window. Rendering this as "offline" would tell the user
-      // there is no tunnel while one is actively coming up; rendering it as "online"
-      // would show a QR code for a service nothing can reach yet.
-      stubHappyPath();
-      final c = buildController(
-          tunnelStatusSource: () async => const TunnelStatus(running: true));
-      await c.refresh();
-      expect(c.tunnel.phase, TunnelPhase.connecting);
-      expect(c.tunnel.url, isNull);
-    });
-
-    test('a tunnel source that throws resolves to offline rather than crashing refresh()', () async {
-      stubHappyPath();
-      final c = buildController(tunnelStatusSource: () async => throw Exception('boom'));
-      await c.refresh();
-      expect(c.tunnel.phase, TunnelPhase.offline);
-      expect(c.tunnel.url, isNull);
-    });
-  });
-
-  group('access code', () {
-    test('refresh() loads the access code, masked by default', () async {
-      stubHappyPath();
+      channel.stubError('daemon', 'pearStatus', const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'));
       final c = buildController();
       await c.refresh();
-
-      expect(c.accessCode.loading, isFalse);
-      expect(c.accessCode.secret, 'shh-fake-secret');
-      expect(c.accessCode.visible, isFalse);
-      expect(c.accessCode.displayValue, isNull);
-    });
-
-    test('toggleAccessCodeVisibility() flips visible and notifies', () async {
-      stubHappyPath();
-      final c = buildController();
-      await c.refresh();
-      var notified = 0;
-      c.addListener(() => notified++);
-
-      c.toggleAccessCodeVisibility();
-
-      expect(c.accessCode.visible, isTrue);
-      expect(c.accessCode.displayValue, 'shh-fake-secret');
-      expect(notified, 1);
-    });
-
-    test('toggleAccessCodeVisibility() twice returns to masked', () async {
-      stubHappyPath();
-      final c = buildController();
-      await c.refresh();
-
-      c.toggleAccessCodeVisibility();
-      c.toggleAccessCodeVisibility();
-
-      expect(c.accessCode.visible, isFalse);
-    });
-
-    test('regenerateAccessCode() replaces the stored secret on success', () async {
-      stubHappyPath();
-      channel.stub('auth', 'regenerateAccessCode', 'new-code-value');
-      final c = buildController();
-      await c.refresh();
-
-      final ok = await c.regenerateAccessCode();
-
-      expect(ok, isTrue);
-      expect(c.accessCode.secret, 'new-code-value');
-    });
-
-    test('regenerateAccessCode() returns false and keeps the old secret when the daemon rejects it', () async {
-      stubHappyPath();
-      channel.stub('auth', 'regenerateAccessCode', null);
-      final c = buildController();
-      await c.refresh();
-
-      final ok = await c.regenerateAccessCode();
-
-      expect(ok, isFalse);
-      expect(c.accessCode.secret, 'shh-fake-secret');
-    });
-
-    test('setCustomAccessCode() rejects a password shorter than 12 chars without an IPC call', () async {
-      stubHappyPath();
-      final c = buildController();
-      await c.refresh();
-
-      final ok = await c.setCustomAccessCode('short');
-
-      expect(ok, isFalse);
-      expect(channel.calls.where((call) => call.method == 'setCustomAccessCode'), isEmpty);
-    });
-
-    test('setCustomAccessCode() persists a valid password and updates state on success', () async {
-      stubHappyPath();
-      channel.stub('auth', 'setCustomAccessCode', true);
-      final c = buildController();
-      await c.refresh();
-
-      final ok = await c.setCustomAccessCode('my-custom-password-1');
-
-      expect(ok, isTrue);
-      expect(c.accessCode.secret, 'my-custom-password-1');
-    });
-
-    test('setCustomAccessCode() returns false and keeps the old secret when the daemon rejects it', () async {
-      stubHappyPath();
-      channel.stub('auth', 'setCustomAccessCode', false);
-      final c = buildController();
-      await c.refresh();
-
-      final ok = await c.setCustomAccessCode('my-custom-password-1');
-
-      expect(ok, isFalse);
-      expect(c.accessCode.secret, 'shh-fake-secret');
-    });
-
-    test('a channel error while loading the access code leaves it unavailable, not crashed', () async {
-      rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': []});
-      rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': [], 'total': 0});
-      rpc.stubJson('SystemService', 'GetStatus', {'deviceId': 'd', 'recording': []});
-      rpc.stubJson('SystemService', 'GetSohNominal', {});
-      rpc.stubJson('SystemService', 'GetSelectedModel', {});
-      channel.stub('daemon', 'processStatus', {
-        'status': 'ok',
-        'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
-      });
-      channel.stubError(
-        'auth',
-        'getAccessCode',
-        const PlatformChannelError(PlatformChannelErrorReason.daemonNotUp, 'down'),
-      );
-      final c = buildController();
-
-      await c.refresh();
-
-      expect(c.accessCode.loading, isFalse);
-      expect(c.accessCode.secret, isNull);
+      expect(c.pear.running, isFalse);
+      expect(c.pear.reachable, isNull);
+      expect(c.tripStats.available, isTrue);
     });
   });
 

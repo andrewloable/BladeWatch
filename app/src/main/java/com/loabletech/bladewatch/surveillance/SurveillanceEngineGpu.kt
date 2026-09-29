@@ -4,13 +4,11 @@ import net.bladewatch.app.BuildConfig
 import net.bladewatch.app.ai.AssetContext
 import net.bladewatch.app.ai.Detection
 import net.bladewatch.app.ai.YoloDetector
-import net.bladewatch.app.auth.AuthManager
 import net.bladewatch.app.byd.BydDataCollector
 import net.bladewatch.app.logging.DaemonLogger
 import net.bladewatch.app.monitor.AccMonitor
 import net.bladewatch.app.notifications.NotificationBus
 import net.bladewatch.app.notifications.NotificationEvent
-import net.bladewatch.app.notifications.NotificationGate
 import net.bladewatch.app.storage.StorageManager
 
 import android.content.Context
@@ -442,6 +440,40 @@ class SurveillanceEngineGpu {
     val latestMosaicFrame: ByteArray?
         get() = latestMosaicFrameValue
 
+    // Two buffers, alternated: a reader keeps the array it was handed (the still encoder, a
+    // quadrant snapshot) while the next copy goes into the other one, so it never encodes a
+    // half-overwritten frame. One buffer tore stills on the head unit (BladeWatch-rdtj.61).
+    private val mosaicBuffers = arrayOfNulls<ByteArray>(2)
+    private var mosaicNext = 0
+    private val mosaicLock = Any()
+
+    /** Changes every time a new mosaic frame is cached, so the still encodes only new frames. */
+    @Volatile var mosaicVersion = 0L
+        private set
+
+    private fun storeMosaic(frame: ByteArray) = synchronized(mosaicLock) {
+        val buf = mosaicBuffers[mosaicNext]?.takeIf { it.size == frame.size }
+            ?: ByteArray(frame.size).also { mosaicBuffers[mosaicNext] = it }
+        System.arraycopy(frame, 0, buf, 0, frame.size)
+        latestMosaicFrameValue = buf
+        mosaicVersion++
+        mosaicNext = 1 - mosaicNext
+    }
+
+    /**
+     * BladeWatch-rdtj.61: caches a downscaled mosaic frame while surveillance is OFF, so the live
+     * view's still and the quadrant snapshots stay current with ACC on (the camera reads one back
+     * about a second, only while streaming is enabled). Takes ownership of [frame]: it goes back
+     * to the downscaler's pool.
+     */
+    fun storeMosaicFrame(frame: ByteArray) {
+        try {
+            if (frame.size == FRAME_SIZE) storeMosaic(frame)
+        } finally {
+            downscaler?.recycleBuffer(frame)
+        }
+    }
+
     /**
      * Initializes the surveillance engine with Context for Java TFLite.
      *
@@ -709,14 +741,7 @@ class SurveillanceEngineGpu {
             val now = System.currentTimeMillis()
 
             // Cache latest frame for snapshot API (every 10th frame to reduce copies)
-            if (frameCount % 10 == 0) {
-                var cache = latestMosaicFrameValue
-                if (cache == null || cache.size != smallRgbFrame.size) {
-                    cache = ByteArray(smallRgbFrame.size)
-                    latestMosaicFrameValue = cache
-                }
-                System.arraycopy(smallRgbFrame, 0, cache, 0, smallRgbFrame.size)
-            }
+            if (frameCount % 10 == 0) storeMosaic(smallRgbFrame)
 
             // Log frame count every 100 frames to confirm frames are arriving
             if (frameCount % 100 == 0) {
@@ -1338,13 +1363,6 @@ class SurveillanceEngineGpu {
 
             recordingStopTime = now + postRecordMsValue
             startRecording()
-
-            try {
-                val videoFilename = currentEventFile?.name
-                publishMotionNotification(videoFilename)
-            } catch (e: Exception) {
-                logger.warn("Failed to send motion notification: " + e.message)
-            }
         }
     }
 
@@ -1388,12 +1406,6 @@ class SurveillanceEngineGpu {
                     motionDetections++
                     recordingStopTime = now + postRecordMsValue
                     startRecording()
-                    try {
-                        val videoFilename = currentEventFile?.name
-                        publishMotionNotification(videoFilename)
-                    } catch (e: Exception) {
-                        logger.warn("Failed to send motion notification: " + e.message)
-                    }
                 }
             }
 
@@ -2366,50 +2378,15 @@ class SurveillanceEngineGpu {
         }
     }
 
-    /**
-     * Initial low-priority notification at the moment recording starts.
-     */
-    private fun publishMotionNotification(videoFilename: String?) {
-        try {
-            // Honour the user's per-tier toggle.
-            if (!config.isPushNotices) {
-                return
-            }
-            val data = JSONObject()
-            val url: String
-            if (videoFilename != null && videoFilename.isNotEmpty()) {
-                val enc = URLEncoder.encode(videoFilename, "UTF-8")
-                data.put("filename", videoFilename)
-                data.put("stage", "start")
-                url = "/events?filter=sentry&file=$enc"
-            } else {
-                url = "/events?filter=sentry"
-            }
-
-            var camHint: String? = null
-            for (a in lastActors) {
-                if (a.peakCamera >= 0 && a.peakCamera < MotionPipelineV2.QUADRANT_NAMES.size) {
-                    camHint = MotionPipelineV2.QUADRANT_NAMES[a.peakCamera]
-                    break
-                }
-            }
-            val title = if (camHint != null) "Motion at $camHint" else "Motion detected"
-            val body = "Recording in progress"
-
-            NotificationBus.get().publish(
-                NotificationEvent(
-                    "surveillance.motion.notice",
-                    NotificationEvent.Severity.INFO,
-                    title,
-                    body,
-                    notificationTagFor(videoFilename),
-                    url,
-                    data
-                )
-            )
-        } catch (t: Throwable) {
-            logger.debug("publishMotionNotification (start) failed: " + t.message)
+    /** The highest severity any of [actors] reached; NOTICE when there are none. */
+    private fun peakSeverity(actors: List<Actor>?): Actor.Severity {
+        var max = Actor.Severity.NOTICE
+        if (actors == null) return max
+        for (a in actors) {
+            val peak = a.peakSeverity
+            if (peak != null && peak.ordinal > max.ordinal) max = peak
         }
+        return max
     }
 
     /**
@@ -2420,9 +2397,10 @@ class SurveillanceEngineGpu {
         try {
             // Snapshot the current Actor view
             val snap = lastActors
-            val peakSev = NotificationGate.maxSeverity(snap)
-            if (!NotificationGate.shouldPush(peakSev, config)) {
-                logger.debug("publishMotionFinal suppressed by per-tier toggle (sev=$peakSev)")
+            val peakSev = peakSeverity(snap)
+            // A background/passing NOTICE is not worth an alert.
+            if (peakSev == Actor.Severity.NOTICE) {
+                logger.debug("publishMotionFinal suppressed: only a NOTICE")
                 return
             }
 
@@ -2495,18 +2473,12 @@ class SurveillanceEngineGpu {
             if (videoFilename != null) {
                 val enc = URLEncoder.encode(videoFilename, "UTF-8")
                 data.put("filename", videoFilename)
-                val snapshotName = if (!heroJpegName.isNullOrEmpty()) heroJpegName else videoFilename
-                val encSnap = URLEncoder.encode(snapshotName, "UTF-8")
-                val thumbTok = AuthManager.signThumbToken(snapshotName, 600L)
-                var snapUrl = "/thumb/$encSnap"
-                if (thumbTok != null) snapUrl += "?t=$thumbTok"
-                data.put("snapshot", snapUrl)
                 data.put("stage", "final")
                 url = "/events?filter=sentry&file=$enc"
             } else {
                 url = "/events?filter=sentry"
             }
-            // Surface the new metadata so the notification UI / SW can render it
+            // Surface the new metadata for the inbox entry
             data.put("severity", peakSev.name)
             data.put("personCount", persons)
             data.put("vehicleCount", vehicles)

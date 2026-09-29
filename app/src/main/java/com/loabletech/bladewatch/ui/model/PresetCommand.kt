@@ -22,11 +22,10 @@ val PRESET_COMMANDS = PresetCommands.ALL
 object PresetCommands {
     val ALL = listOf(
         // Status commands
-        PresetCommand("Process Status", "ps -ef | grep -E 'daemon|bladewatch_tor'", "Status"),
+        PresetCommand("Process Status", "ps -ef | grep -E 'daemon'", "Status"),
         PresetCommand("Port Status", "netstat -tlnp | grep -E '8080|8554'", "Status"),
 
         // Log commands
-        PresetCommand("Tor Logs", "cat /data/local/tmp/tor.log | tail -50", "Logs"),
         PresetCommand("Camera Logs", "cat /data/local/tmp/byd_cam_daemon.log | tail -50", "Logs"),
         PresetCommand("Sentry Logs", "cat /data/local/tmp/sentry_daemon.log | tail -50", "Logs"),
 

@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit
  * Singleton ConnectRPC client provider for the Android app.
  *
  * Lazily initialises a single OkHttpClient + ProtocolClient. All service
- * accessors share the same transport. JWT caching mirrors DaemonHttpClient:
+ * accessors share the same transport. JWT caching: a
  * 4-minute window keyed to AuthManager.getStateVersion() so a rotated secret
  * triggers an immediate re-mint without waiting out the TTL.
  */

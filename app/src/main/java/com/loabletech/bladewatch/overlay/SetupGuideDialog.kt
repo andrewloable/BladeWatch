@@ -151,7 +151,7 @@ object SetupGuideDialog {
      */
     private fun openFlutterUi(context: Context) {
         try {
-            val i = context.packageManager.getLaunchIntentForPackage("net.bladewatch.flutter")
+            val i = context.packageManager.getLaunchIntentForPackage("net.bladewatch.incarapp")
             if (i != null) context.startActivity(i)
         } catch (e: Exception) {
             Log.w(TAG, "Could not open the Flutter UI: " + e.message)

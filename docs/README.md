@@ -1,29 +1,33 @@
 # BladeWatch Documentation
 
-This directory is the project reference for the BladeWatch Android app, its native daemons, embedded web UI, BYD integrations, tunnels, APIs, and operational workflows.
+This directory is the project reference for the BladeWatch Android app, its native daemons, BYD integrations, remote access, APIs, and operational workflows.
 
 BladeWatch is an Android application for BYD DiLink vehicles, shipped as **two
-APKs that share one UID**: `net.bladewatch.flutter` (the Flutter in-car UI, the
+APKs that share one UID**: `net.bladewatch.incarapp` (the Flutter in-car UI, the
 only launcher icon) and `net.bladewatch.app` (the UI-less service host that runs
 the foreground services, receivers and privileged shell-launched daemons). It
-coordinates the in-car UI, camera and surveillance pipelines, local and remote
-web access, BYD vehicle telemetry, trip analytics, Web Push notifications, and
-the Tor tunnel process.
+coordinates the in-car UI, camera and surveillance pipelines, BYD vehicle
+telemetry, trip analytics, notifications, and the Pear peer that remote access
+runs over. A third app, the **companion** (`net.bladewatch.companionapp`, for
+phones and desktops, never installed on the car), is the only remote client:
+v1.4.0.0 replaced the Tor onion service and the browser web app with it.
 
 ## Document Map
 
 - [Architecture](architecture.md) describes the major modules, runtime boundaries, startup lifecycle, and component relationships.
 - [Features](features.md) catalogs the user-facing and system-facing features implemented by the app.
-- [UI/UX Design Language](ui-ux-design-language.md) documents the Material 3 design system shared by the Flutter in-car UI (the source of truth), the Android status overlay, and the embedded web UI — color roles, typography, shape, elevation, motion, components, and the cross-layer token pipeline.
+- [UI/UX Design Language](ui-ux-design-language.md) documents the Material 3 design system shared by the Flutter in-car UI (the source of truth), and the Android status overlay — color roles, typography, shape, elevation, motion, components, and the cross-layer token pipeline.
 - [Data Flow and Storage](data-flow-and-storage.md) explains where data comes from, how it moves between components, and where it is persisted.
 - [Daemons and Processes](daemons-and-processes.md) documents Android components, app-process daemons, watchdogs, foreground services, and local IPC ports.
 - [IPC, Authentication & Secrets](ipc-auth-and-secrets.md) explains the app/daemon UID split, the IPC token bootstrap, the secret-fetch and JWT flows, the **required `/data/local/tmp` file permissions**, and the failure modes that surface as "Camera unavailable".
-- [Networking and Tunnels](networking-and-tunnels.md) covers HTTP, WebSocket streaming, auth, LAN mode, the Tor onion service, and remote access behavior.
-- [HTTP API Reference](http-api-reference.md) lists the embedded web API route families and known endpoints.
+- [Networking and Tunnels](networking-and-tunnels.md) covers the HTTP server and its listeners, WebSocket streaming, auth, LAN mode, the Pear peer, and remote access behavior (plus what the Tor onion service was, for history).
+- [HTTP API Reference](http-api-reference.md) lists the HTTP routes and the ConnectRPC services the two apps call.
 - [BYD Integrations](byd-integrations.md) explains local BYD hardware APIs, compile-time stubs, telemetry collection, and local vehicle controls.
+- [BYD Head Unit → CAN Bus Access](byd-can.md) documents whether the head unit can reach the vehicle CAN bus directly: the SPI/MCU bridge, BYD's closed HAL, and the signature-permission gate that confines BladeWatch to decoded signals only.
 - [Surveillance Implementation](surveillance-implementation.md) documents sentry-mode activation, the GPU/native motion pipeline, AI confirmation, recording lifecycle, safe locations, schedules, APIs, and guardrails.
 - [360 Camera Recording](360-camera-recording.md) explains how the shared 360 camera GPU/encoder stack records surveillance events and ACC-on driving clips.
 - [Build and Operations](build-and-operations.md) covers build inputs, native dependencies, assets, tests, updates, issue tracking, and release/session procedures.
+- [Throughput Harness](throughput-harness.md) defines how every remote-access path (loopback, LAN TLS, Pear) is measured, so the numbers compare.
 - [Log Files](log-files.md) documents where each daemon and the app process write logs on the device, the UID split, rotation/retention, and quick tail/clear commands.
 
 ## Source Areas
@@ -35,7 +39,10 @@ the Tor tunnel process.
 - `app/src/main/java/com/loabletech/bladewatch/` contains the service host:
   daemons, local servers, BYD integrations, telemetry, storage, and the startup
   bootstrap.
-- `app/src/main/assets/web/` contains the local web app and PWA assets served by the camera daemon.
+- `companion/` contains the phone and desktop app (Dart): screens, the Pear/LAN transport, and its own 17 translation catalogs.
+- `packages/bladewatch_rpc/` and `packages/bladewatch_theme/` contain the API client, generated messages and design tokens both Flutter apps share.
+- `proto/` contains the `bladewatch.v1` API contracts; `buf generate` emits the Java, Kotlin and Dart code.
+- `app/src/main/assets/web/shared/models/` contains the 3D model manifest and models the camera daemon reads (the browser web app that once lived under `web/` was removed in v1.4.0.0).
 - `app/src/main/assets/models/` contains AI model assets used by surveillance.
 - `app/src/main/cpp/` contains native camera, surveillance, and OpenCV/OpenH264 build integration.
 - `app/build.gradle.kts` defines Android, Kotlin, CMake, embedded native
@@ -50,14 +57,14 @@ Each detailed document includes a `Source References` section. References use `f
 
 - Local daemon command TCP: `127.0.0.1:19876`.
 - Surveillance IPC TCP: `127.0.0.1:19877`.
-- Embedded web server: `127.0.0.1:8080` by default, or `0.0.0.0:8080` only when LAN HTTP is explicitly enabled.
+- HTTP server: `127.0.0.1:8080` for the in-car UI (plain HTTP, loopback only, never beyond it); `127.0.0.1:8444` (TLS) is where the Pear peer delivers the companion's stream; `0.0.0.0:8443` (TLS, pinned self-signed certificate) only when the owner turns on LAN access.
 - Main shared config: `/storage/emulated/0/BladeWatch/data/bladewatch_config.json` (mirrored to `/data/local/tmp/bladewatch_config.json` for legacy readers).
-- Shared daemon secret store: `/storage/emulated/0/Android/data/net.bladewatch.app/files/bladewatch_secrets.json` (owner-only `rw-------`; `/data/local/tmp/bladewatch_secrets.json` is the legacy mirror).
+- Shared daemon secret store: `/data/local/tmp/bladewatch_secrets.json` (`shell` `rw-------`, enforced on that filesystem; the app reads it only over IPC). It left sdcardfs in BladeWatch-078u -- see `ipc-auth-and-secrets.md`.
 - Media base directory: `/storage/emulated/0/BladeWatch`.
 
 ## Security Notes
 
-The embedded web UI is token-protected in release builds, including loopback access. LAN HTTP is disabled by default. Tunnel URLs and auth tokens should be treated as secrets. Secret values embedded in local config, tunnel tokens, and device auth secrets must not be copied into documentation or logs.
+The API is token-protected in release builds, including loopback access; only the companion's pairing and login endpoints are public. LAN access is off by default. Pairing codes, companion tokens and auth tokens should be treated as secrets. Secret values embedded in local config, companion tokens, and device auth secrets must not be copied into documentation or logs.
 
 ## Source References
 

@@ -11,7 +11,7 @@ These are the primary logs. Each daemon's stdout/stderr is redirected to a fixed
 | `/data/local/tmp/cam_daemon.log` | `CameraDaemon` (`byd_cam_daemon`) | Busiest log — camera/GPU pipeline, H.264/H.265 recording, HTTP/TCP/IPC servers, BYD telemetry, `PerformanceMonitor`. Grows fastest (hundreds of KB). |
 | `/data/local/tmp/sentry_daemon.log` | `SentryDaemon` (`sentry_daemon`) | Surveillance orchestration, location monitor, control socket (port 19879). |
 | `/data/local/tmp/acc_sentry_daemon.log` | `AccSentryDaemon` (`acc_sentry_daemon`) | ACC power-state watcher, bodywork listener, 60s status checks. |
-| `/data/local/tmp/tor.log` | Tor tunnel (`TorLauncher`) | tor's notice log. `tunnelStatus` reads it to decide when the onion address may be published — see `docs/networking-and-tunnels.md`. |
+| `/data/local/tmp/pear_daemon.log` | Pear peer (`pear_daemon`, launched by `PearLauncher`) | Worklet start, swarm join, companion connections and the stream pump. Only while `PEAR_PEER` is on — see `docs/networking-and-tunnels.md`. (A `tor.log` here is left over from a v1.3.x install; nothing writes it since v1.4.0.0.) |
 | `/data/local/tmp/bladewatch_install.log` | Install/bootstrap scripts | Daemon install/startup bootstrap trace. |
 | `/data/local/tmp/sentry_network_diag.log` | Sentry network diagnostics | Network reachability diagnostics (when enabled). |
 

@@ -31,6 +31,27 @@ void main() {
     expect(find.text('About'), findsOneWidget);
   });
 
+  // BladeWatch-5l5o: on the head unit (landscape, ~604 logical px between the car's bars) About sat
+  // below the fold of a rail that had to be scrolled.
+  testWidgets('the landscape rail, globe and all, fits the head unit without scrolling', (tester) async {
+    await tester.pumpWidget(_wrap(NavRail(
+      selectedRoute: BwRoutes.dashboard,
+      onSelect: (_) {},
+      showLanguageHeader: true,
+      onLanguageTap: () {},
+      compact: true,
+    )));
+    expect(tester.getSize(find.byKey(const ValueKey('navRailColumn'))).height, lessThanOrEqualTo(604));
+    // ...and the rail's panel still runs the full height, items at the top.
+    final screen = tester.getSize(find.byType(Scaffold));
+    expect(tester.getSize(find.byType(NavRail)).height, screen.height);
+    expect(tester.getTopLeft(find.byKey(const ValueKey('navRailColumn'))).dy, tester.getTopLeft(find.byType(NavRail)).dy);
+    for (var i = 0; i < railDestinations.length; i++) {
+      expect(tester.getSize(find.byKey(ValueKey('navRailItem_$i'))).height, greaterThanOrEqualTo(48),
+          reason: 'still a full touch target');
+    }
+  });
+
   testWidgets('renders every destination icon', (tester) async {
     await tester.pumpWidget(_wrap(NavRail(selectedRoute: BwRoutes.dashboard, onSelect: (_) {})));
 

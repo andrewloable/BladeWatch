@@ -53,7 +53,33 @@ class WeeklyRollup {
         return json
     }
 
-    private companion object {
-        val logger: DaemonLogger = DaemonLogger.getInstance("WeeklyRollup")
+    companion object {
+        private val logger: DaemonLogger = DaemonLogger.getInstance("WeeklyRollup")
+
+        /**
+         * One rollup over exactly [trips] (BladeWatch-jkuz): the sums add up, the averages are
+         * plain per-trip means -- the same weighting updateWeeklyRollup's running average uses.
+         * Year and week are left 0: this covers a window of days, not a calendar week.
+         */
+        @JvmStatic
+        fun ofTrips(trips: List<TripRecord>): WeeklyRollup {
+            val r = WeeklyRollup()
+            if (trips.isEmpty()) return r
+            val n = trips.size
+            fun mean(f: (TripRecord) -> Double) = trips.sumOf(f) / n
+            r.tripCount = n
+            r.totalDistanceKm = trips.sumOf { it.distanceKm }
+            r.totalDurationSeconds = trips.sumOf { it.durationSeconds }
+            r.totalEnergyKwh = trips.sumOf { it.getEnergyUsedKwh() }
+            r.totalCost = trips.sumOf { it.tripCost }
+            r.avgEfficiency = mean { it.efficiencySocPerKm }
+            r.avgEnergyPerKm = mean { it.energyPerKm }
+            r.avgAnticipation = mean { it.anticipationScore.toDouble() }.toInt()
+            r.avgSmoothness = mean { it.smoothnessScore.toDouble() }.toInt()
+            r.avgSpeedDiscipline = mean { it.speedDisciplineScore.toDouble() }.toInt()
+            r.avgEfficiencyScore = mean { it.efficiencyScore.toDouble() }.toInt()
+            r.avgConsistency = mean { it.consistencyScore.toDouble() }.toInt()
+            return r
+        }
     }
 }

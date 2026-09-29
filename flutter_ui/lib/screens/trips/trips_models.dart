@@ -1,3 +1,4 @@
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
 import 'package:intl/intl.dart';
 
 enum TripsTab { trips, stats }
@@ -328,6 +329,9 @@ class TripsLoaded extends TripsLoadState {
   final TripsConfig? config;
   final TripsStorage? storage;
 
+  /// What the active period's trips cost, over the WHOLE period (BladeWatch-mgi9, -c149).
+  final TripCosts costs;
+
   const TripsLoaded({
     required this.trips,
     required this.summary,
@@ -335,6 +339,7 @@ class TripsLoaded extends TripsLoadState {
     required this.range,
     required this.config,
     required this.storage,
+    this.costs = const TripCosts(),
   });
 }
 

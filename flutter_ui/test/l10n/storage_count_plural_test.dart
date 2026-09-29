@@ -7,9 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// rendered "1 clips" / "1 recordings" / "1 events" on a device holding exactly one,
 /// and Russian could only ever carry a single one of its three forms.
 ///
-/// A sibling of `trips_count_plural_test.dart`, which covers `dashboard_trips_count`
-/// from BladeWatch-i4ap. These assert grammar, not wording: the singular case comes
-/// first because "1 clips" is the bug a reader actually notices.
+/// These assert grammar, not wording: the singular case comes first because
+/// "1 clips" is the bug a reader actually notices.
 void main() {
   group('the storage count keys are real ICU plurals', () {
     test('English uses the singular noun for exactly one', () async {

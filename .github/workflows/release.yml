@@ -1,9 +1,17 @@
-# Build BOTH release APKs, unsigned, and attach them to the GitHub Release.
+# Build all THREE release APKs, unsigned, and attach them to the GitHub Release.
 #
-# BladeWatch ships as two APKs that share one UID:
+# Two go on the head unit and share one UID:
 #   net.bladewatch.app     — service host: daemons, receivers, BYD integration, no UI
-#   net.bladewatch.flutter — the in-car UI the driver opens
-# Both are produced here. They are NOT interchangeable and both must be installed.
+#   net.bladewatch.incarapp — the in-car UI the driver opens
+# They are NOT interchangeable and both must be installed.
+#
+# The rest go on the owner's phone or desktop (BladeWatch-rdtj.15):
+#   net.bladewatch.companionapp — reaches the car over Pear, or directly on its LAN
+# Android, macOS, Windows and Linux, each unsigned, each from its own runner (a GitHub
+# Actions job runs on one OS; there is no way to cross-build a real macOS or Windows
+# desktop artifact from ubuntu-latest). iOS is NOT built here: it needs Apple signing
+# this workflow deliberately has no secrets for, and an unsigned .ipa cannot be
+# installed at all (unlike an unsigned .app/.exe/.tar.gz, which can still run).
 #
 # Runs ONLY for a tag, and ONLY when that tag is on main. Creating a release through
 # the GitHub UI on a new tag also creates that tag, which fires this same `push` event,
@@ -42,7 +50,7 @@ concurrency:
 # default still running on Node.js 20"), so v6 is the first that clears the warning. Do not
 # "tidy" these to a single number without re-checking each action.yml's `runs.using`.
 #
-# Newer majors exist (checkout v7, setup-node v7, upload-artifact v7, setup-java v6,
+# Newer majors exist (checkout v7, upload-artifact v7, setup-java v6,
 # gradle/actions v6). They are deliberately NOT taken here: the goal was to clear a runtime
 # deprecation, and each extra major crosses changes nobody has read.
 #
@@ -101,40 +109,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # REQUIRED, not optional. The Angular SPA in web/ is built by Gradle's
-      # buildAngularWebUI during preBuild, and neither web/dist nor the packaged
-      # copy at app/src/main/assets/web/angular/ is committed (both gitignored).
-      # Without Node the build fails loudly (verifyWebAssetsPresent) rather than
-      # shipping an APK with no web UI at all.
-      # Node 24 (npm 11), matching the toolchain web/package-lock.json was generated
-      # with. Node 20 ships npm 10, which resolves a DIFFERENT dependency tree and
-      # makes `npm ci` fail with "Missing: chokidar@4.0.3, readdirp@4.1.2 from lock
-      # file" even though the lockfile is perfectly valid. web/ also pulls
-      # rollup-plugin-visualizer, which declares `node >= 22`, so 20 was wrong twice
-      # over. Keep this in step with the Node you develop on.
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: npm ci
-        working-directory: web
-
-      # `vite build` does NOT typecheck — esbuild strips types without checking them, so a
-      # type error produces a perfectly successful build. Neither does anything check Angular
-      # TEMPLATES. Both are documented traps in CLAUDE.md, and the second one shipped: four
-      # files imported generated protobuf types through a path one level too deep and the
-      # build stayed green for months because `import type` declarations are erased before
-      # the path is ever resolved. Gradle's buildAngularWebUI runs `vite build` and would
-      # have caught neither.
-      - name: Web gates
-        working-directory: web
-        run: |
-          set -euo pipefail
-          npm run typecheck
-          npm run typecheck:templates
-          npm run test:unit
-
       # Pinned to the version this project is developed against, so a Flutter
       # release cannot silently change the shipped binary.
       - uses: subosito/flutter-action@v2
@@ -143,6 +117,48 @@ jobs:
           channel: stable
 
       - uses: gradle/actions/setup-gradle@v5
+
+      # bare-kit's prebuilds.zip is 418 MB, and TWO builds unpack it: the service host
+      # (fetchBareKit, for pear_daemon) and the companion (flutter_pear_bare). Each looks
+      # for it in its own build/ dir and downloads it when absent, so one cached copy is
+      # seeded into both. Both builds still verify its SHA-256 before using it, so a bad
+      # cache entry fails the build, never ships. The version and checksum are read from
+      # app/build.gradle.kts, and flutter_pear_bare pins the same pair (re-check both when
+      # either bumps). A mismatch only costs a download: the seeded copy lands in a
+      # version directory nobody looks in.
+      - name: Resolve the bare-kit pin
+        id: barekit
+        run: |
+          set -euo pipefail
+          ver=$(sed -n 's/^val bareKitVersion = "\(.*\)"$/\1/p' app/build.gradle.kts)
+          sha=$(sed -n 's/^val bareKitSha256 = "\(.*\)"$/\1/p' app/build.gradle.kts)
+          test -n "$ver" && test -n "$sha" || { echo "::error::bare-kit pin not found in app/build.gradle.kts"; exit 1; }
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/bare-kit/prebuilds.zip
+          key: bare-kit-${{ steps.barekit.outputs.version }}-${{ steps.barekit.outputs.sha256 }}
+
+      - name: Seed bare-kit prebuilds for both builds
+        env:
+          VER: ${{ steps.barekit.outputs.version }}
+          SHA: ${{ steps.barekit.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          zip=~/bare-kit/prebuilds.zip
+          mkdir -p ~/bare-kit
+          # Missing and corrupt are the same case: fetch, verify, THEN move into place.
+          if ! echo "$SHA  $zip" | sha256sum -c --status - 2>/dev/null; then
+            curl -fsSL --retry 3 -o "$zip.part" "https://github.com/holepunchto/bare-kit/releases/download/v$VER/prebuilds.zip"
+            echo "$SHA  $zip.part" | sha256sum -c -
+            mv -f "$zip.part" "$zip"
+          fi
+          for d in "app/build/bare-kit/$VER" "companion/build/flutter_pear_bare/bare-kit/$VER"; do
+            mkdir -p "$d"
+            cp -f "$zip" "$d/prebuilds.zip"
+          done
 
       # app/build.gradle.kts pins ndkVersion = "26.1.10909125"; the native C++
       # (OpenH264 / opencv-mobile / TFLite) will not configure without it.
@@ -169,11 +185,18 @@ jobs:
 
       # A release built from unverified source is worse than a slow release.
       # Delete this step if you want tag builds to be build-only.
+      #
+      # bladewatch_rpc is flutter_ui's Connect client, moved into a shared package
+      # (BladeWatch-rdtj.10); its tests left flutter_ui/test with it, so it needs its own
+      # line or they stop running. companion/ is the phone/desktop app. The tests of both
+      # run under their coverage gates in the in-car UI Kotlin step below.
       - name: Quality gates
         run: |
           set -euo pipefail
           ./gradlew --no-daemon test koverVerify
-          cd flutter_ui && flutter analyze && flutter test
+          (cd flutter_ui && flutter analyze && flutter test)
+          (cd packages/bladewatch_rpc && flutter analyze)
+          (cd companion && flutter analyze)
 
       # No KEYSTORE_FILE in the environment, so both projects fall through to their
       # unsigned release path: app/ sets signingConfig = null, and
@@ -181,9 +204,18 @@ jobs:
       - name: Build service host APK (net.bladewatch.app)
         run: ./gradlew --no-daemon assembleRelease
 
-      - name: Build in-car UI APK (net.bladewatch.flutter)
+      - name: Build in-car UI APK (net.bladewatch.incarapp)
         working-directory: flutter_ui
         run: flutter build apk --release --target-platform android-arm64
+
+      # One APK with arm64-v8a and x86_64 only: flutter_pear ships native code for those
+      # two, and companion/android/gradle.properties (disable-abi-filtering) keeps the
+      # Flutter plugin from adding armeabi-v7a, which would install on a 32-bit phone and
+      # then fail at worklet start. --split-per-abi fails at configuration by design.
+      # Unsigned for the same reason as the other two: no keystore in CI.
+      - name: Build companion APK (net.bladewatch.companionapp)
+        working-directory: companion
+        run: flutter build apk --release
 
       # The Flutter APK's privileged Kotlin layer — IPC client, JWT minting, daemon control,
       # secret/public config, the Live View texture plugin, the LocationListener — is a
@@ -196,7 +228,11 @@ jobs:
       # AFTER the UI build, not with the other gates: flutter_ui/android/.gitignore ignores
       # `/gradlew`, so the wrapper does not exist in a fresh checkout. Flutter injects it
       # during `flutter build`, which is the step above.
-      - name: Quality gate — in-car UI Kotlin layer
+      #
+      # The three Dart coverage gates live in the same Gradle build, each with its bound:
+      # flutter_ui, packages/bladewatch_rpc and companion (see "Coverage gates" in
+      # docs/build-and-operations.md). They run here for the same reason koverVerify does.
+      - name: Quality gates — in-car UI Kotlin layer and Dart coverage
         working-directory: flutter_ui/android
         run: |
           set -euo pipefail
@@ -205,41 +241,46 @@ jobs:
             echo "the preceding 'flutter build apk' step — that step must run before this one."
             exit 1
           fi
-          ./gradlew --no-daemon koverVerify
+          ./gradlew --no-daemon koverVerify checkFlutterCoverage checkRpcCoverage checkCompanionCoverage
 
-      # Collect BOTH APKs under tag-stamped, self-describing names.
+      # Collect all three APKs under tag-stamped, self-describing names.
       #
       # The service host APK is named bladewatch-<git branch>-arm64-v8a-release.apk
       # by applicationVariants in app/build.gradle.kts. A tag build is a DETACHED
       # HEAD, so `git rev-parse --abbrev-ref HEAD` returns the literal "HEAD" and the
       # file lands as bladewatch-HEAD-...; glob for it rather than guessing, and
       # stamp the tag on the uploaded name instead.
-      - name: Stage both APKs
+      - name: Stage all three APKs
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           mkdir -p dist
           host=$(ls app/build/outputs/apk/release/*.apk | head -1)
           ui=flutter_ui/build/app/outputs/flutter-apk/app-release.apk
-          test -f "$host" || { echo "::error::service host APK not found"; exit 1; }
-          test -f "$ui"   || { echo "::error::in-car UI APK not found"; exit 1; }
-          cp -f "$host" "dist/bladewatch-service-host-${TAG}-arm64-v8a-unsigned.apk"
-          cp -f "$ui"   "dist/bladewatch-ui-${TAG}-arm64-v8a-unsigned.apk"
+          companion=companion/build/app/outputs/flutter-apk/app-release.apk
+          test -f "$host"      || { echo "::error::service host APK not found"; exit 1; }
+          test -f "$ui"        || { echo "::error::in-car UI APK not found"; exit 1; }
+          test -f "$companion" || { echo "::error::companion APK not found"; exit 1; }
+          cp -f "$host"      "dist/bladewatch-service-host-${TAG}-arm64-v8a-unsigned.apk"
+          cp -f "$ui"        "dist/bladewatch-ui-${TAG}-arm64-v8a-unsigned.apk"
+          cp -f "$companion" "dist/bladewatch-companion-${TAG}-android-unsigned.apk"
           ls -la dist
 
-      # Both must be UNSIGNED and both must be present. A half-signed pair is the
+      # All three must be UNSIGNED and present. A half-signed head-unit pair is the
       # dangerous outcome: android:sharedUserId collapses the two packages into one
       # UID only when their certificates are IDENTICAL, and the daemon's loopback
       # IPC on 19876/19877 authorises by peer UID. If one APK arrived carrying a
       # stray (e.g. debug) certificate, signing the other with your real key would
-      # produce a pair that installs but cannot talk to itself.
-      - name: Verify both APKs are present and unsigned
+      # produce a pair that installs but cannot talk to itself. The companion shares no UID,
+      # but a CI-signed copy could only have come from a debug key, and a phone that installed
+      # that could never take the real release as an update.
+      - name: Verify all three APKs are present and unsigned
         run: |
           set -euo pipefail
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           count=$(ls dist/*.apk | wc -l)
-          if [ "$count" -ne 2 ]; then
-            echo "::error::expected 2 APKs (service host + in-car UI), found $count"
+          if [ "$count" -ne 3 ]; then
+            echo "::error::expected 3 APKs (service host + in-car UI + companion), found $count"
             exit 1
           fi
           for apk in dist/*.apk; do
@@ -259,9 +300,16 @@ jobs:
       # Tags only. On a workflow_dispatch run the ref is a BRANCH, and
       # action-gh-release requires a tag — without this guard a manual run would do
       # the entire build and then fail on the very last step. Skipping it turns
-      # workflow_dispatch into a useful dry run: both APKs still get built, verified
+      # workflow_dispatch into a useful dry run: all three APKs still get built, verified
       # and uploaded as a workflow artifact, just not published as a release.
-      - name: Attach both APKs to the release
+      #
+      # This job attaches only the three Android APKs. build-macos/-windows/-linux each
+      # attach their own file to the SAME release afterwards (action-gh-release is additive
+      # across jobs/calls targeting one tag, each job's `files:` glob only matches what that
+      # job staged) — softprops/action-gh-release's own docs cover multi-job attachment to one
+      # release; nothing here needs to wait for them, or they for this, beyond the shared
+      # `needs: build` gate below.
+      - name: Attach the APKs to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
@@ -269,12 +317,54 @@ jobs:
           fail_on_unmatched_files: true
           generate_release_notes: true
           body: |
-            ## Two APKs — install BOTH
+            ## Two APKs for the car — install BOTH
 
             | APK | Package | Role |
             |---|---|---|
             | `bladewatch-service-host-*` | `net.bladewatch.app` | Daemons, receivers, BYD integration. No launcher icon. |
-            | `bladewatch-ui-*` | `net.bladewatch.flutter` | The in-car UI. The only launcher icon. |
+            | `bladewatch-ui-*` | `net.bladewatch.incarapp` | The in-car UI. The only launcher icon. |
+
+            ## Companion, for your phone or desktop
+
+            | File | Package / bundle id | Role |
+            |---|---|---|
+            | `bladewatch-companion-*-android-unsigned.apk` | `net.bladewatch.companionapp` | Android phones (arm64 and x86_64). |
+            | `bladewatch-companion-*-macos-unsigned.zip` | `net.bladewatch.companionapp` | macOS (Apple Silicon). Unsigned: see below before opening it. |
+            | `bladewatch-companion-*-windows-unsigned.zip` | `net.bladewatch.companionapp` | Windows (x64). |
+            | `bladewatch-companion-*-linux-unsigned.tar.gz` | `net.bladewatch.companionapp` | Linux (x64). |
+
+            Reaches the car over Pear from anywhere, or directly on the car's Wi-Fi. Never
+            install it on the car. iOS is not built by CI (it needs Apple signing this
+            workflow deliberately has no secrets for); build it from source if you need it.
+
+            ### Opening the unsigned desktop builds
+
+            None of the three desktop archives are code-signed (no secrets in this workflow --
+            same reason the APKs are unsigned). Unzip/untar first, then:
+
+            - **macOS** refuses to open an unsigned `.app` from Finder ("cannot be opened
+              because the developer cannot be verified"). Either right-click it and choose
+              **Open** once (offers an "Open Anyway" button Finder's double-click path never
+              shows), or clear the quarantine flag yourself: `xattr -cr BladeWatch.app`.
+            - **Windows** SmartScreen will warn about an unrecognized publisher. Click
+              **More info -> Run anyway**.
+            - **Linux**: `chmod +x bladewatch_companion` inside the extracted folder if the
+              archive did not preserve the executable bit, then run it from that folder (it
+              needs its bundled `lib/` and `data/` next to it).
+
+            ### Upgrading from a build before v1.4.0.0: the app IDs changed
+
+            The in-car UI is now `net.bladewatch.incarapp` (was `net.bladewatch.flutter`) and the
+            companion `net.bladewatch.companionapp` (was `net.bladewatch.companion`). To Android
+            that is a new app, so neither updates in place:
+
+            - **Car:** install the new in-car UI, then uninstall `net.bladewatch.flutter`, or you
+              get two launcher icons. The shared UID and the car's data are kept (the service
+              host holds them), but the in-car UI's own preferences (theme, navigation side) start
+              fresh. Allow the new entry in BYD Auto-Start.
+            - **Phone:** install the new companion and pair it again; the old app's pairing does not
+              carry over. Then uninstall the old one, and remove its entry on the car under
+              "Pair a device".
 
             ### These are UNSIGNED and cannot be installed as-is
 
@@ -292,6 +382,180 @@ jobs:
             apksigner verify --print-certs bladewatch-*-arm64-v8a.apk | grep 'SHA-256 digest'
             ```
 
+            The loop above signs the companion too. Its key does not have to match the car's,
+            but pick one and keep it: Android refuses an update signed with a different key,
+            so a phone would have to uninstall the companion and pair again.
+
             Adding `sharedUserId` changes the UID, so the first install after switching
             keys needs an uninstall of both packages, not an upgrade. See CLAUDE.md for
             the daemon-stop procedure and the ADB-key preservation recipe.
+
+            ### After installing or updating on the car
+
+            BYD's firmware re-restricts BladeWatch every time either car APK is installed or
+            updated. Open **BYD Auto-Start** and allow BladeWatch again (uncheck both entries),
+            or dashcam and sentry will not start after the next reboot.
+
+            ### Upgrading from v1.3.x: Tor is replaced by Pear
+
+            Remote access now goes through the companion app over Pear, not a Tor onion
+            address. **Onion URLs and QR codes saved from v1.3.x stop working**, and nothing
+            migrates them. To reach the car again:
+
+            1. Install the companion APK on your phone.
+            2. On the car's dashboard, tap **Pair a device** and scan the code with the
+               companion. The code works once and expires after five minutes. Pairing turns
+               remote access on.
+            3. Optional: in the same dialog, turn on **Direct connection on this Wi-Fi** to let
+               the phone connect straight to the car when both are on the same network. It is
+               off unless you turn it on.
+
+  # macOS, Windows and Linux desktop builds of the companion (BladeWatch: "add the binaries for
+  # windows/macos/linux desktops... in the github releases", 2026-09-28). Each needs its own OS
+  # runner -- a GitHub Actions job runs on one machine, and there is no cross-compiling a real
+  # macOS .app or Windows .exe from Linux. All three gate on the Android build's quality gates
+  # (`needs: build`) rather than repeating them: `flutter analyze` is host-OS-independent static
+  # analysis, so re-running it per desktop runner would only cost minutes, not catch anything new.
+  #
+  # flutter_pear resolves from pub.dev here (companion/pubspec.lock pins it there, not a local
+  # path), so unlike the service host's pear_daemon, these desktop builds need no bare-kit
+  # prebuilds seeding step: flutter_pear_bare ships each platform's addon binaries as committed
+  # package assets, fetched by the ordinary `flutter pub get` a `flutter build` runs on its own.
+  #
+  # No code signing on any of the three (same "no secrets in this workflow" reason the APKs are
+  # unsigned): the release body tells the owner how to open each anyway.
+  build-macos:
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+
+      - name: Build companion.app (net.bladewatch.companionapp)
+        working-directory: companion
+        run: flutter build macos --release
+
+      # A bare directory bundle isn't a valid release asset; zip it. `ditto` (not `zip -r`)
+      # preserves the .app's resource forks and code-signing-adjacent extended attributes the
+      # way Finder/Archive Utility do -- `zip` alone is a known source of a corrupted .app on
+      # unzip for exactly this reason.
+      - name: Package
+        working-directory: companion/build/macos/Build/Products/Release
+        run: |
+          set -euo pipefail
+          test -d BladeWatch.app || { echo "::error::BladeWatch.app not found"; exit 1; }
+          ditto -c -k --sequesterRsrc --keepParent BladeWatch.app "bladewatch-companion-${GITHUB_REF_NAME}-macos-unsigned.zip"
+
+      # Not "is it signed" (it never is here) but "did the build accidentally embed a signing
+      # identity from this runner's default keychain" -- codesign reports adhoc/no-signature
+      # differently from a real identity, and only the latter would be a mistake to ship.
+      - name: Verify unsigned
+        working-directory: companion/build/macos/Build/Products/Release
+        run: |
+          set -euo pipefail
+          if codesign -dv --verbose=2 BladeWatch.app 2>&1 | grep -q '^Authority='; then
+            echo "::error::BladeWatch.app is signed with a real identity; this workflow must ship unsigned builds"
+            exit 1
+          fi
+          echo "unsigned OK (adhoc/none)"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: companion-macos-${{ github.ref_name }}
+          path: companion/build/macos/Build/Products/Release/*.zip
+          retention-days: 30
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: companion/build/macos/Build/Products/Release/*.zip
+          fail_on_unmatched_files: true
+
+  build-windows:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+
+      - name: Build bladewatch_companion.exe (net.bladewatch.companionapp)
+        working-directory: companion
+        run: flutter build windows --release
+
+      # The whole Release/ bundle -- exe, flutter_windows.dll, the plugin DLLs and data/ -- has
+      # to travel together; the exe alone will not run.
+      - name: Package
+        shell: pwsh
+        working-directory: companion/build/windows/x64/runner/Release
+        run: |
+          if (-not (Test-Path bladewatch_companion.exe)) { Write-Error "bladewatch_companion.exe not found"; exit 1 }
+          Compress-Archive -Path * -DestinationPath "bladewatch-companion-$env:GITHUB_REF_NAME-windows-unsigned.zip"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: companion-windows-${{ github.ref_name }}
+          path: companion/build/windows/x64/runner/Release/*.zip
+          retention-days: 30
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: companion/build/windows/x64/runner/Release/*.zip
+          fail_on_unmatched_files: true
+
+  build-linux:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+
+      # Flutter's Linux desktop target needs a GTK3 dev toolchain that ubuntu-latest does not
+      # ship by default; `flutter doctor` names exactly this list.
+      - name: Install the Linux desktop toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: Build bladewatch_companion (net.bladewatch.companionapp)
+        working-directory: companion
+        run: flutter build linux --release
+
+      # Same reason as the Windows bundle: the binary needs its lib/ and data/ alongside it.
+      # tar, not zip, to keep the executable bit on bladewatch_companion through the archive --
+      # zip does not portably preserve Unix permissions, so an unzip elsewhere can hand back a
+      # non-executable file (see the release notes' `chmod +x` line, which exists because of
+      # exactly that failure mode when this was tried the other way around).
+      - name: Package
+        working-directory: companion/build/linux/x64/release/bundle
+        run: |
+          set -euo pipefail
+          test -x bladewatch_companion || { echo "::error::bladewatch_companion not found or not executable"; exit 1; }
+          tar -czf "bladewatch-companion-${GITHUB_REF_NAME}-linux-unsigned.tar.gz" .
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: companion-linux-${{ github.ref_name }}
+          path: companion/build/linux/x64/release/bundle/*.tar.gz
+          retention-days: 30
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: companion/build/linux/x64/release/bundle/*.tar.gz
+          fail_on_unmatched_files: true

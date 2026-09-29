@@ -81,7 +81,7 @@ object SafeLocationApiHandler {
     /**
      * Sanitize a zone name: strip angle brackets, cap the length, fall back to a default.
      *
-     * The zone name is rendered into the legacy web UI's innerHTML and into a Leaflet popup,
+     * The zone name is rendered into client UIs and map popups,
      * neither of which escapes — see the stored-XSS note in this project's memory. Stripping the
      * brackets here is what makes that safe at the source.
      *

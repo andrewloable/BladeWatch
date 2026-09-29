@@ -74,7 +74,7 @@ not as primary security measures.
 | Item | Status | Notes |
 |---|---|---|
 | BYD cloud TLS pinning | ❌ Not implemented | BYD MQTT + HTTPS endpoints — currently no pinning |
-| Tunnel endpoints | ✅ N/A | There is no TLS endpoint to pin. A v3 onion address IS the service's public key, so tor authenticates the service cryptographically on every connection — stronger than pinning a rotating certificate, and nothing to configure |
+| Remote endpoints (Pear, LAN) | ✅ Pinned | The companion pins the car's self-signed certificate by the fingerprint in the pairing QR, on the LAN listener (8443) and on the Pear stream alike (TLS end to end into 8444). The Tor onion service this row used to describe was removed in v1.4.0.0 |
 | Local HTTP (127.0.0.1:8080) | N/A | Loopback only, no TLS needed |
 
 **Classification:** BYD cloud pinning = **real** (prevents MITM on vehicle control commands). Track1 uy93.11.
@@ -148,7 +148,7 @@ not as primary security measures.
 |---|---|---|
 | BYD cloud HTTPS | ✅ TLS | Standard HTTPS |
 | BYD cloud MQTT | ✅ TLS | Port 8883 |
-| Tor onion service | ✅ End-to-end encrypted and service-authenticated | Not TLS, and no certificate is involved: the onion protocol encrypts end to end and authenticates the service by the key its address is derived from. Traffic inside the tunnel is plain HTTP to `127.0.0.1:8080` by design. **The address is a capability URL, not authentication — password/JWT auth stays mandatory** |
+| Pear stream (companion ↔ car) | ✅ TLS end to end, pinned | The Hyperswarm stream is itself encrypted, and carries the companion's own TLS, which terminates on `127.0.0.1:8444` with the pinned certificate — pear_daemon relays ciphertext only. **JWT auth stays mandatory**: 8444 is `REMOTE` listener trust and never gets the loopback bypass |
 | Local HTTP (127.0.0.1:8080) | ✅ Loopback-only | TLS unnecessary on loopback |
 | IPC (19876/19877) | ✅ Loopback-only | |
 

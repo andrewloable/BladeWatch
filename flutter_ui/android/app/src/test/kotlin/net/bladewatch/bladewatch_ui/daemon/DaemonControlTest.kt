@@ -52,7 +52,7 @@ class DaemonControlTest {
                     .put("CAMERA_DAEMON", true)
                     .put("SENTRY_DAEMON", false)
                     .put("ACC_SENTRY_DAEMON", false)
-                    .put("TOR_TUNNEL", false),
+                    .put("PEAR_PEER", false),
             )
         }
         val response = DaemonControl(ipc).processStatus()
@@ -63,40 +63,28 @@ class DaemonControlTest {
     }
 
     @Test
-    fun `tunnelStatus sends the tunnelStatus command and returns the url`() {
+    fun `pearStatus sends the pearStatus command and passes the report through`() {
         val ipc = FakeIpc {
-            JSONObject().put("status", "ok").put("running", true)
-                .put("url", "http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion")
+            JSONObject().put("status", "ok").put("running", true).put("enabled", true)
+                .put("reachable", JSONObject.NULL).put("companions", 1).put("lastCompanionAt", 1_700_000_000_000L)
         }
-        val response = DaemonControl(ipc).tunnelStatus()
+        val response = DaemonControl(ipc).pearStatus()
 
-        assertEquals("tunnelStatus", ipc.sentCommands.single().optString("cmd"))
+        assertEquals("pearStatus", ipc.sentCommands.single().optString("cmd"))
         assertEquals(true, response.getBoolean("running"))
-        assertEquals("http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion", response.getString("url"))
-    }
-
-    @Test
-    fun `tunnelStatus passes through the running-but-no-url state`() {
-        // The daemon reports this while the tunnel is coming up; collapsing it to
-        // "offline" here would lose the distinction the Dashboard renders.
-        val ipc = FakeIpc {
-            JSONObject().put("status", "ok").put("running", true).put("url", JSONObject.NULL)
-        }
-        val response = DaemonControl(ipc).tunnelStatus()
-
-        assertEquals(true, response.getBoolean("running"))
-        assertEquals(true, response.isNull("url"))
+        assertEquals(true, response.isNull("reachable"))
+        assertEquals(1, response.getInt("companions"))
     }
 
     @Test
     fun `setDaemonEnabled sends the type and the flag`() {
         val ipc = FakeIpc { JSONObject().put("status", "ok").put("enabled", false).put("killed", 1) }
 
-        val response = DaemonControl(ipc).setDaemonEnabled("TOR_TUNNEL", false)
+        val response = DaemonControl(ipc).setDaemonEnabled("PEAR_PEER", false)
 
         val sent = ipc.sentCommands.single()
         assertEquals("daemon_set_enabled", sent.optString("cmd"))
-        assertEquals("TOR_TUNNEL", sent.optString("type"))
+        assertEquals("PEAR_PEER", sent.optString("type"))
         assertEquals(false, sent.getBoolean("enabled"))
         assertEquals("ok", response.optString("status"))
     }

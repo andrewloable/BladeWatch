@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '../../gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import '../../gen/l10n/app_localizations.dart';
-import '../../rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'settings_privacy_controller.dart';
 
 /// One reset category: its API id (must match the server exactly — ground

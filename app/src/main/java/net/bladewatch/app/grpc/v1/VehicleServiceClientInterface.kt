@@ -13,7 +13,6 @@ import com.connectrpc.ResponseMessage
  *  HTTP mapping:
  *    GetState             GET  /api/vehicle/state
  *    GetAcDiagnostics     GET  /api/vehicle/ac-diagnostics
- *    GetSeatDiagnostics   GET  /api/vehicle/seat-diagnostics
  *    Lock                 POST /api/vehicle/lock
  *    Unlock               POST /api/vehicle/unlock
  *    Trunk                POST /api/vehicle/trunk
@@ -21,7 +20,6 @@ import com.connectrpc.ResponseMessage
  *    Flash                POST /api/vehicle/flash
  *    FindCar              POST /api/vehicle/find-car
  *    SetClimate           POST /api/vehicle/climate
- *    SetSeat              POST /api/vehicle/seat
  *    SetLights            POST /api/vehicle/lights
  *    SetScreen            POST /api/vehicle/screen
  *    SetMediaVolume       POST /api/vehicle/media-volume
@@ -40,8 +38,6 @@ public interface VehicleServiceClientInterface {
 
   public suspend fun getAcDiagnostics(request: GetAcDiagnosticsRequest, headers: Headers = emptyMap()): ResponseMessage<GetAcDiagnosticsResponse>
 
-  public suspend fun getSeatDiagnostics(request: GetSeatDiagnosticsRequest, headers: Headers = emptyMap()): ResponseMessage<GetSeatDiagnosticsResponse>
-
   public suspend fun lock(request: LockRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
 
   public suspend fun unlock(request: UnlockRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
@@ -55,8 +51,6 @@ public interface VehicleServiceClientInterface {
   public suspend fun findCar(request: FindCarRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
 
   public suspend fun setClimate(request: SetClimateRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
-
-  public suspend fun setSeat(request: SetSeatRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
 
   public suspend fun setLights(request: SetLightsRequest, headers: Headers = emptyMap()): ResponseMessage<VehicleCommandResponse>
 

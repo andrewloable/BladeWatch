@@ -1,11 +1,10 @@
 import 'package:bladewatch_ui/main.dart';
-import 'package:bladewatch_ui/platform/auth_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/platform/prefs_channel.dart';
 import 'package:bladewatch_ui/platform/setup_channel.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_controller.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_screen.dart';
 import 'package:bladewatch_ui/screens/diagnostics/adb_console_screen.dart';
@@ -36,7 +35,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'fakes/fake_platform_channel.dart';
-import 'fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
   testWidgets('BladeWatchApp boots into the Startup screen, not straight to the shell', (tester) async {
@@ -65,7 +64,7 @@ void main() {
           'CAMERA_DAEMON': true,
           'SENTRY_DAEMON': true,
           'ACC_SENTRY_DAEMON': true,
-          'TOR_TUNNEL': true,
+          'PEAR_PEER': true,
         },
       });
     final startupController = StartupController(
@@ -84,12 +83,11 @@ void main() {
       recordingsService: RecordingsServiceClient(rpc),
       systemService: SystemServiceClient(rpc),
       daemonChannel: DaemonChannel(fakeChannel),
-      authChannel: AuthChannel(fakeChannel),
     );
     final shellController = ShellController();
     PackageInfo.setMockInitialValues(
       appName: 'BladeWatch',
-      packageName: 'net.bladewatch.flutter',
+      packageName: 'net.bladewatch.incarapp',
       version: '9.9.9',
       buildNumber: '1',
       buildSignature: '',
@@ -107,7 +105,7 @@ void main() {
     final setupGuideController = SetupGuideController(
       prefs: PrefsChannel(fakeChannel),
       setup: SetupChannel(fakeChannel),
-      versionSource: () async => const AppVersionInfo(version: '9.9.9', buildNumber: '1', packageName: 'net.bladewatch.flutter'),
+      versionSource: () async => const AppVersionInfo(version: '9.9.9', buildNumber: '1', packageName: 'net.bladewatch.incarapp'),
     );
 
     await tester.pumpWidget(BladeWatchApp(
@@ -407,7 +405,6 @@ void main() {
       recordingsService: RecordingsServiceClient(rpc),
       systemService: SystemServiceClient(rpc),
       daemonChannel: DaemonChannel(fakeChannel),
-      authChannel: AuthChannel(fakeChannel),
     );
     await tester.pumpWidget(BladeWatchApp(
       shellController: secondShellController,

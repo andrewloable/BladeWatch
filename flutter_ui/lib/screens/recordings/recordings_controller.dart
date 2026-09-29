@@ -1,111 +1,121 @@
+import 'dart:async';
+
+import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../gen/bladewatch/v1/recordings.pb.dart';
-import '../../rpc/services/recordings_service_client.dart';
-import 'recordings_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
+import 'recordings_models.dart';
 
 int _defaultNowMs() => DateTime.now().millisecondsSinceEpoch;
 
-int _localMidnight(int ms) {
-  final d = DateTime.fromMillisecondsSinceEpoch(ms);
-  return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
-}
-
-/// Aggregate counts/bytes for the header summary line and the segmented
-/// control's per-segment counts. Ground truth: `RecordingsFragment.aggregate()`
-/// + `RecordingStats` (the RPC's `GetStats`) -- `dashcamCount` is
-/// `recordingsCount + proximityCount`, matching native's own
-/// `dashcamStats.total` combining NORMAL + PROXIMITY. [todayCount] has no
-/// RPC equivalent (`RecordingStats` carries no "today" count) so it is
-/// computed client-side from the same `ListRecordings` payload already
-/// fetched for the grid, mirroring `aggregate()`'s `today++` exactly, just
-/// sourced from the RPC list instead of a filesystem scan.
+/// The library's header line: every clip on the car and their size, from GetStats.
 class RecordingsStats {
-  final int totalBytes;
   final int totalCount;
-  final int dashcamCount;
-  final int surveillanceCount;
-  final int todayCount;
+  final int totalBytes;
 
-  const RecordingsStats({
-    required this.totalBytes,
-    required this.totalCount,
-    required this.dashcamCount,
-    required this.surveillanceCount,
-    required this.todayCount,
-  });
+  const RecordingsStats({required this.totalCount, required this.totalBytes});
 }
 
-sealed class RecordingsLoadState {
-  const RecordingsLoadState();
-}
-
-class RecordingsLoading extends RecordingsLoadState {
-  const RecordingsLoading();
-}
-
-class RecordingsError extends RecordingsLoadState {
-  const RecordingsError();
-}
-
-class RecordingsLoaded extends RecordingsLoadState {
-  final List<RecordingItem> all;
-  final RecordingsStats stats;
-  const RecordingsLoaded(this.all, this.stats);
-}
-
-/// Outcome of [RecordingsController.deleteSelected] -- structured, not a
-/// composed English sentence (same reasoning as `TripsController`'s
-/// `SyncOutcome`): the screen renders it through ARB placeholders.
 class BatchDeleteOutcome {
   final int deleted;
   final int failed;
+
   const BatchDeleteOutcome({required this.deleted, required this.failed});
 }
 
-/// Ground truth: `RecordingsFragment.kt` (segment/date/chip filter state +
-/// header counts) + `RecordingLibraryFragment.kt` (the list itself,
-/// multi-select, delete). This port collapses native's parent-fragment +
-/// embedded-child-fragment split into one controller -- see
-/// `recordings_screen.dart`'s doc comment for why.
+/// The recording library as the companion presents it (BladeWatch-rdtj.70, the owner's choice):
+/// every clip on the car, filtered BY THE CAR -- type, day, and for sentry clips who was seen and
+/// how bad -- and fetched a page at a time as the list scrolls.
 ///
-/// Fetches the whole catalog once via `ListRecordings(pageSize: 1000)` and
-/// filters segment/date/chips entirely client-side, exactly matching
-/// `recording.component.ts` (the already-shipped Angular translation of this
-/// same screen) -- `RecordingsApiHandler` clamps `pageSize` to 50 server-side
-/// regardless of what is requested, a real, already-accepted limit neither
-/// reference client works around.
+/// It used to make one ListRecordings(pageSize: 1000) call and filter client-side, but the car
+/// clamps pageSize to 50: the library only ever held the 50 newest clips, so older days came up
+/// empty. The paging is companion/lib/screens/recordings/clip_pages.dart's, ported.
+/// ponytail: a second copy of that paging; share it through packages/ if a third client needs it.
+///
+/// ponytail: pages are offsets, and the car keeps recording while you scroll, so a new clip
+/// shifts the next page down by one; a filename seen twice is skipped. A clip can be missed the
+/// same way until the list is refreshed. Move to a cursor (older than X) if that ever matters.
 class RecordingsController extends ChangeNotifier with DisposedSafeNotifier {
   RecordingsController({
     required RecordingsServiceClient recordingsService,
     int Function() nowMs = _defaultNowMs,
+    this.pageSize = 50,
   })  : _service = recordingsService, // ignore: prefer_initializing_formals
-        _nowMs = nowMs { // ignore: prefer_initializing_formals
-    _filter = RecordingsFilterState(
-      source: RecordingSource.dashcam,
-      dateNarrowed: true,
-      selectedDayMs: _localMidnight(_nowMs()),
-    );
-  }
+        _nowMs = nowMs; // ignore: prefer_initializing_formals
+
+  /// ListRecordings' `type` values, as the car names them ('' is everything).
+  static const types = ['', 'normal', 'sentry', 'proximity'];
+
+  /// ListRecordings' class_filter and severity_filter values, sentry clips only.
+  static const actorClasses = ['person', 'vehicle', 'bike', 'animal'];
+  static const severityLevels = ['ALERT', 'CRITICAL'];
 
   final RecordingsServiceClient _service;
   final int Function() _nowMs;
+  final int pageSize;
 
-  RecordingsLoadState _state = const RecordingsLoading();
-  RecordingsLoadState get state => _state;
-
-  late RecordingsFilterState _filter;
-  RecordingsFilterState get filter => _filter;
-
-  /// The controller's own notion of "now" -- widgets computing today/
-  /// yesterday/section-relative-day text must read this instead of calling
-  /// `DateTime.now()` directly, or their classification silently diverges
-  /// from the controller's (harmless with the real-clock default, but it
-  /// breaks the injected fake clock this controller otherwise supports
-  /// throughout, and a screen that can't be driven by a fake clock can't be
-  /// deterministically tested).
+  /// The controller's own notion of "now" (today, yesterday): read this, never DateTime.now(),
+  /// so a fake clock drives the screen too.
   int get nowMs => _nowMs();
+
+  // -------- Filters --------
+
+  String _type = '';
+  String get type => _type;
+
+  /// The day shown, as the car names days (yyyy-MM-dd); null is every day.
+  String? _day;
+  String? get day => _day;
+
+  final Set<String> _actors = {};
+  Set<String> get actors => Set.unmodifiable(_actors);
+
+  final Set<String> _severities = {};
+  Set<String> get severities => Set.unmodifiable(_severities);
+
+  /// yyyy-MM-dd, as the car names days in GetDates and filters ListRecordings by. It refuses any
+  /// other form with an empty list, which is how yyyyMMdd left Today and Yesterday empty.
+  static String dayKey(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  DateTime get _today => DateTime.fromMillisecondsSinceEpoch(_nowMs());
+  String get todayKey => dayKey(_today);
+  String get yesterdayKey => dayKey(DateTime(_today.year, _today.month, _today.day - 1));
+
+  // -------- Header --------
+
+  RecordingsStats? _stats;
+  RecordingsStats? get stats => _stats;
+
+  // Days with at least one clip, so the arrows skip empty ones. Without them (an older car, or
+  // the call failed) the arrows step a day at a time.
+  List<String> _dates = const [];
+
+  // -------- Pages --------
+
+  final List<RecordingItem> _clips = [];
+  List<RecordingItem> get clips => List.unmodifiable(_clips);
+  final Set<String> _seen = {};
+  int _total = 0;
+  int _page = 0;
+  int _generation = 0;
+
+  bool _loading = false;
+  bool get loading => _loading;
+
+  /// The first page failed: there is nothing to show.
+  bool _failed = false;
+  bool get failed => _failed;
+
+  /// A later page failed: the clips already here stay, with a retry at the end.
+  bool _pageFailed = false;
+  bool get pageFailed => _pageFailed;
+
+  bool get loaded => _page > 0;
+  bool get done => loaded && _clips.length >= _total;
+
+  // -------- Select --------
 
   bool _selectMode = false;
   bool get selectMode => _selectMode;
@@ -113,145 +123,138 @@ class RecordingsController extends ChangeNotifier with DisposedSafeNotifier {
   final Set<String> _selected = {};
   Set<String> get selected => Set.unmodifiable(_selected);
 
-  /// The post-filter list the grid renders. Empty (not an error) before the
-  /// first successful [load].
-  List<RecordingItem> get visible {
-    final s = _state;
-    if (s is! RecordingsLoaded) return const [];
-    return visibleRecordings(s.all, _filter);
+  bool get allSelected => _clips.isNotEmpty && _selected.length == _clips.length;
+
+  /// Everything the screen shows: the header's totals, the days for the arrows, the first page.
+  Future<void> load() => Future.wait([_loadStats(), _loadDates(), reset()]);
+
+  Future<void> _loadStats() async {
+    try {
+      final s = (await _service.getStats(GetStatsRequest())).stats;
+      _stats = RecordingsStats(totalCount: s.totalCount, totalBytes: s.totalSizeBytes.toInt());
+      notifyListeners();
+    } catch (_) {
+      // The header says "…" until a later load.
+    }
   }
 
-  Future<void> load() async {
-    _state = const RecordingsLoading();
+  Future<void> _loadDates() async {
+    try {
+      _dates = List.of((await _service.getDates(GetDatesRequest())).dates)..sort();
+      notifyListeners();
+    } catch (_) {
+      // The arrows step a day at a time instead.
+    }
+  }
+
+  /// From the first page again: a filter changed, or the owner retried.
+  Future<void> reset() {
+    _generation++;
+    _clips.clear();
+    _seen.clear();
+    _total = 0;
+    _page = 0;
+    _failed = false;
+    _pageFailed = false;
+    _loading = false;
+    return more();
+  }
+
+  /// The next page, if there is one and none is on its way.
+  Future<void> more() async {
+    if (_loading || done) return;
+    final generation = _generation;
+    _loading = true;
+    _pageFailed = false;
     notifyListeners();
     try {
-      final results = await Future.wait([
-        _service.listRecordings(ListRecordingsRequest(type: '', pageSize: 1000)),
-        _service.getStats(GetStatsRequest()),
-      ]);
-      final listResp = results[0] as ListRecordingsResponse;
-      final statsResp = results[1] as GetStatsResponse;
-
-      final all = listResp.recordings.map(_toItem).toList()
-        ..sort((a, b) => b.timestampMs.compareTo(a.timestampMs));
-
-      final todayStart = _localMidnight(_nowMs());
-      final todayCount = all.where((r) => r.timestampMs >= todayStart).length;
-      final stats = statsResp.stats;
-
-      _state = RecordingsLoaded(
-        all,
-        RecordingsStats(
-          totalBytes: stats.totalSizeBytes.toInt(),
-          totalCount: stats.totalCount,
-          dashcamCount: stats.recordingsCount + stats.proximityCount,
-          surveillanceCount: stats.surveillanceCount,
-          todayCount: todayCount,
-        ),
-      );
+      final r = await _service.listRecordings(ListRecordingsRequest(
+        type: _type,
+        date: _day ?? '',
+        page: _page + 1,
+        pageSize: pageSize,
+        classFilter: _type == 'sentry' ? _actors.join(',') : '',
+        severityFilter: _type == 'sentry' ? _severities.join(',') : '',
+      ));
+      if (generation != _generation) return;
+      _page++;
+      var added = 0;
+      for (final e in r.recordings) {
+        if (_seen.add(e.filename)) {
+          _clips.add(RecordingItem.fromEntry(e));
+          added++;
+        }
+      }
+      // A page with nothing new -- empty, or only clips already here -- ends the list whatever
+      // total says, so a total that runs ahead of the clips (deleted meanwhile) cannot ask for
+      // pages forever.
+      _total = added == 0 ? _clips.length : r.total;
+      _failed = false;
     } catch (_) {
-      _state = const RecordingsError();
+      if (generation != _generation) return;
+      if (_page == 0) {
+        _failed = true;
+      } else {
+        _pageFailed = true;
+      }
+    } finally {
+      if (generation == _generation) {
+        _loading = false;
+        notifyListeners();
+      }
     }
-    notifyListeners();
   }
 
-  RecordingItem _toItem(RecordingEntry e) => RecordingItem(
-        filename: e.filename,
-        path: e.path,
-        kind: switch (e.type) {
-          RecordingType.RECORDING_TYPE_SENTRY => RecordingKind.sentry,
-          RecordingType.RECORDING_TYPE_PROXIMITY => RecordingKind.proximity,
-          _ => RecordingKind.normal,
-        },
-        timestampMs: e.timestampMs.toInt(),
-        sizeBytes: e.sizeBytes.toInt(),
-        durationSeconds: e.durationSeconds.toInt(),
-        dateLabel: e.dateLabel,
-        timeLabel: e.timeLabel,
-        hasEvents: e.hasEvents,
-        detectedClasses: List.unmodifiable(e.detectedClasses),
-        severity: e.severity.isEmpty ? null : e.severity,
-        proximity: e.proximity.isEmpty ? null : e.proximity,
-      );
-
-  // -------- Segment + date (all client-side, no reload) --------
-
-  void setSource(RecordingSource source) {
-    _filter = _filter.copyWith(source: source);
-    _selectMode = false;
+  void _filtersChanged() {
+    if (_type != 'sentry') {
+      _actors.clear();
+      _severities.clear();
+    }
     _selected.clear();
-    notifyListeners();
+    unawaited(reset());
   }
 
-  /// The date card's clear-X -- widens to every day without touching chips.
-  void setDateNarrowed(bool narrowed) {
-    _filter = _filter.copyWith(dateNarrowed: narrowed);
-    notifyListeners();
+  void setType(String type) {
+    _type = type;
+    _filtersChanged();
   }
 
-  void goToday() {
-    _filter = _filter.copyWith(dateNarrowed: true, selectedDayMs: _localMidnight(_nowMs()));
-    notifyListeners();
+  /// [day] as yyyy-MM-dd, or null for every day.
+  void setDay(String? day) {
+    _day = day;
+    _filtersChanged();
   }
 
-  void goYesterday() {
-    _filter = _filter.copyWith(dateNarrowed: true, selectedDayMs: _localMidnight(_nowMs()) - 86400000);
-    notifyListeners();
-  }
-
-  /// One-day jump. Clamped at today, mirroring native's `shiftSelectedDay`.
-  void shiftDay(int delta) {
-    final next = _filter.selectedDayMs + delta * 86400000;
-    if (next > _localMidnight(_nowMs())) return;
-    _filter = _filter.copyWith(dateNarrowed: true, selectedDayMs: next);
-    notifyListeners();
-  }
-
-  void pickDate(int dayMs) {
-    _filter = _filter.copyWith(dateNarrowed: true, selectedDayMs: _localMidnight(dayMs));
-    notifyListeners();
-  }
-
-  // -------- Chip filters --------
-
-  void toggleActorClass(String name) {
-    _filter = _filter.copyWith(actorClasses: _toggled(_filter.actorClasses, name));
-    notifyListeners();
-  }
-
-  /// The filter sheet's "Any" chip -- clears the actor-class row only,
-  /// leaving severity untouched. Mirrors `chipActorAny`'s click handler
-  /// (distinct from [resetChips], which clears every dimension).
-  void resetActorClasses() {
-    _filter = _filter.copyWith(actorClasses: const {});
-    notifyListeners();
+  void toggleActor(String name) {
+    if (!_actors.remove(name)) _actors.add(name);
+    _filtersChanged();
   }
 
   void toggleSeverity(String name) {
-    _filter = _filter.copyWith(severities: _toggled(_filter.severities, name));
-    notifyListeners();
+    if (!_severities.remove(name)) _severities.add(name);
+    _filtersChanged();
   }
 
-  /// The filter sheet's "Any" chip for severity -- mirrors `chipSevAny`.
-  void resetSeverities() {
-    _filter = _filter.copyWith(severities: const {});
-    notifyListeners();
+  void resetWhoAndSeverity() {
+    _actors.clear();
+    _severities.clear();
+    _filtersChanged();
   }
 
-  void toggleDashcamType(String name) {
-    _filter = _filter.copyWith(dashcamTypes: _toggled(_filter.dashcamTypes, name));
-    notifyListeners();
-  }
-
-  void resetChips() {
-    _filter = _filter.copyWith(actorClasses: const {}, severities: const {}, dashcamTypes: const {});
-    notifyListeners();
-  }
-
-  static Set<String> _toggled(Set<String> set, String value) {
-    final next = Set<String>.of(set);
-    if (!next.remove(value)) next.add(value);
-    return next;
+  /// The next day before (-1) or after (+1) the one shown that has clips; one calendar day when
+  /// the car's list of days is not known. Never past today; null when there is none.
+  String? step(int direction) {
+    final day = _day;
+    if (day == null) return null;
+    if (_dates.isNotEmpty) {
+      final candidates = direction < 0 ? _dates.where((d) => d.compareTo(day) < 0) : _dates.where((d) => d.compareTo(day) > 0);
+      if (candidates.isEmpty) return null;
+      final next = direction < 0 ? candidates.last : candidates.first;
+      return next.compareTo(todayKey) > 0 ? null : next;
+    }
+    final d = DateTime.parse(day);
+    final next = dayKey(DateTime(d.year, d.month, d.day + direction));
+    return next.compareTo(todayKey) > 0 ? null : next;
   }
 
   // -------- Multi-select --------
@@ -272,68 +275,61 @@ class RecordingsController extends ChangeNotifier with DisposedSafeNotifier {
     notifyListeners();
   }
 
-  /// Selects every currently-visible item, or deselects all if they are
-  /// already all selected -- mirrors `recording.component.ts`'s
-  /// `selectAllVisible` toggle (native's own `btnSelectAll` only ever
-  /// selects, never toggles off; the toggle is a small, well-justified
-  /// usability improvement this port follows the web reference for).
-  void selectAllVisible() {
-    final v = visible;
-    final allSelected = v.isNotEmpty && v.every((r) => _selected.contains(r.filename));
+  /// Every loaded clip, or none if they already all are.
+  void toggleSelectAll() {
     if (allSelected) {
       _selected.clear();
     } else {
       _selected
         ..clear()
-        ..addAll(v.map((r) => r.filename));
+        ..addAll(_clips.map((c) => c.filename));
     }
     notifyListeners();
   }
 
   // -------- Delete --------
 
-  /// Deletes one recording. Removes it from [state] on success; leaves
-  /// [state] untouched (including on a thrown exception) on failure.
+  /// Deletes one clip; drops it from the list on success.
   Future<bool> deleteRecording(String filename) async {
     try {
-      final resp = await _service.deleteRecording(DeleteRecordingRequest(filename: filename));
-      if (resp.success) _removeFromState(filename);
-      return resp.success;
+      final r = await _service.deleteRecording(DeleteRecordingRequest(filename: filename));
+      if (!r.success) return false;
+      _drop([filename]);
+      unawaited(_loadStats());
+      return true;
     } catch (_) {
       return false;
     }
   }
 
-  /// Deletes every selected recording one at a time -- mirrors both
-  /// native's `batchDeleteRecordings()` and the web reference's
-  /// `deleteSelected()`, neither of which calls the dedicated `BatchDelete`
-  /// RPC despite it existing; matching that precedent keeps delete/partial-
-  /// failure behaviour identical across all three clients rather than
-  /// introducing new, unverified atomicity semantics.
+  /// Deletes the selected clips in one BatchDelete, as the companion does. The car does not say
+  /// which ones failed: drop them all when none did, else reload from the first page.
   Future<BatchDeleteOutcome> deleteSelected() async {
     final names = List<String>.of(_selected);
-    var deleted = 0;
-    var failed = 0;
-    for (final name in names) {
-      if (await deleteRecording(name)) {
-        deleted++;
-      } else {
-        failed++;
-      }
+    BatchDeleteOutcome outcome;
+    try {
+      final r = await _service.batchDelete(BatchDeleteRequest(filenames: names));
+      outcome = BatchDeleteOutcome(deleted: r.deleted, failed: r.failed);
+    } catch (_) {
+      outcome = BatchDeleteOutcome(deleted: 0, failed: names.length);
     }
-    exitSelectMode();
-    return BatchDeleteOutcome(deleted: deleted, failed: failed);
+    _selectMode = false;
+    _selected.clear();
+    if (outcome.failed == 0) {
+      _drop(names);
+    } else {
+      unawaited(reset());
+    }
+    unawaited(_loadStats());
+    return outcome;
   }
 
-  /// Removes a deleted clip from the cached list without a full reload --
-  /// mirrors the web reference's optimistic `all.update(...)`. [RecordingsStats]
-  /// is intentionally left as-is (stale by one clip) until the next [load],
-  /// matching the web reference exactly: neither re-fetches `GetStats` after
-  /// a delete.
-  void _removeFromState(String filename) {
-    final s = _state;
-    if (s is! RecordingsLoaded) return;
-    _state = RecordingsLoaded(s.all.where((r) => r.filename != filename).toList(), s.stats);
+  void _drop(List<String> names) {
+    final gone = names.toSet();
+    final before = _clips.length;
+    _clips.removeWhere((c) => gone.contains(c.filename));
+    _seen.removeAll(gone);
+    _total -= before - _clips.length;
     notifyListeners();
   }
 }

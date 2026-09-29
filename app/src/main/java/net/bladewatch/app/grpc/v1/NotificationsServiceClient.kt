@@ -11,15 +11,9 @@ import com.connectrpc.ResponseMessage
 import com.connectrpc.StreamType
 
 /**
- *  NotificationsService manages Web Push subscriptions and notification preferences.
- *
- *  HTTP mapping:
- *    GetCategories        GET  /api/notifications/categories
- *    Subscribe            POST /api/push/subscribe
- *    Unsubscribe          POST /api/push/unsubscribe
- *    ListSubscriptions    GET  /api/push/subscriptions
- *    UpdatePreferences    POST /api/push/preferences
- *    SendTest             POST /api/push/test
+ *  NotificationsService: the notification categories, a test alert, and the store-and-forward inbox.
+ *  Web Push (Subscribe / Unsubscribe / ListSubscriptions / UpdatePreferences) was removed with the
+ *  web app (BladeWatch-rdtj.22); the companion collects alerts from the inbox instead.
  */
 public class NotificationsServiceClient(
   private val client: ProtocolClientInterface,
@@ -36,54 +30,6 @@ public class NotificationsServiceClient(
   )
 
 
-  override suspend fun subscribe(request: SubscribeRequest, headers: Headers): ResponseMessage<SubscribeResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.NotificationsService/Subscribe",
-      net.bladewatch.app.grpc.v1.SubscribeRequest::class,
-      net.bladewatch.app.grpc.v1.SubscribeResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
-  override suspend fun unsubscribe(request: UnsubscribeRequest, headers: Headers): ResponseMessage<UnsubscribeResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.NotificationsService/Unsubscribe",
-      net.bladewatch.app.grpc.v1.UnsubscribeRequest::class,
-      net.bladewatch.app.grpc.v1.UnsubscribeResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
-  override suspend fun listSubscriptions(request: ListSubscriptionsRequest, headers: Headers): ResponseMessage<ListSubscriptionsResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.NotificationsService/ListSubscriptions",
-      net.bladewatch.app.grpc.v1.ListSubscriptionsRequest::class,
-      net.bladewatch.app.grpc.v1.ListSubscriptionsResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
-  override suspend fun updatePreferences(request: UpdatePreferencesRequest, headers: Headers): ResponseMessage<UpdatePreferencesResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.NotificationsService/UpdatePreferences",
-      net.bladewatch.app.grpc.v1.UpdatePreferencesRequest::class,
-      net.bladewatch.app.grpc.v1.UpdatePreferencesResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
   override suspend fun sendTest(request: SendTestRequest, headers: Headers): ResponseMessage<SendTestResponse> = client.unary(
     request,
     headers,
@@ -91,6 +37,23 @@ public class NotificationsServiceClient(
     "bladewatch.v1.NotificationsService/SendTest",
       net.bladewatch.app.grpc.v1.SendTestRequest::class,
       net.bladewatch.app.grpc.v1.SendTestResponse::class,
+      StreamType.UNARY,
+    ),
+  )
+
+
+  /**
+   *  Store and forward (BladeWatch-rdtj.14): the car keeps the notifications it raised, and a
+   *  companion fetches the ones it has not seen whenever it connects -- over the LAN or Pear, with
+   *  no push service in between. Oldest first.
+   */
+  override suspend fun listInbox(request: ListInboxRequest, headers: Headers): ResponseMessage<ListInboxResponse> = client.unary(
+    request,
+    headers,
+    MethodSpec(
+    "bladewatch.v1.NotificationsService/ListInbox",
+      net.bladewatch.app.grpc.v1.ListInboxRequest::class,
+      net.bladewatch.app.grpc.v1.ListInboxResponse::class,
       StreamType.UNARY,
     ),
   )

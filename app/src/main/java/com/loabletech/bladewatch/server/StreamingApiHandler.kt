@@ -3,6 +3,7 @@ package net.bladewatch.app.server
 import net.bladewatch.app.daemon.CameraDaemon
 import net.bladewatch.app.server.connect.ConnectException
 import net.bladewatch.app.surveillance.GpuPipelineConfig
+import net.bladewatch.app.surveillance.GpuStillCapture
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.OutputStream
@@ -12,7 +13,7 @@ import java.util.Locale
  * Manages WebSocket streaming configuration and control, behind `StreamService`.
  *
  * PARTIALLY exempt from the REST inversion (BladeWatch-6mnq): the only HTTP route left is
- * `GET /api/stream/still`, a JPEG the Angular live view consumes as an image URL, so it cannot
+ * `GET /api/stream/still`, a JPEG the companion's live view consumes as an image URL, so it cannot
  * speak ConnectRPC. Every other stream operation is JSON, is reached through `StreamService`, and
  * returns its value rather than writing it into a stream.
  *
@@ -29,8 +30,9 @@ object StreamingApiHandler {
     @JvmStatic
     @Throws(Exception::class)
     fun handle(method: String, path: String, body: String?, out: OutputStream): Boolean {
-        if (path == "/api/stream/still" && method == "GET") {
-            handleStillFrame(out)
+        // The path arrives with its query string: `?camera=N` picks one camera (rdtj.68).
+        if (path.substringBefore('?') == "/api/stream/still" && method == "GET") {
+            handleStillFrame(stillView(path), out)
             return true
         }
         return false
@@ -43,10 +45,24 @@ object StreamingApiHandler {
      * exercised on-device rather than in a JVM unit test).
      */
     @Throws(Exception::class)
-    private fun handleStillFrame(out: OutputStream) {
+    private fun handleStillFrame(view: Int, out: OutputStream) {
         val pipeline = CameraDaemon.getGpuPipeline()
-        sendStillFrame(out, pipeline?.latestStillFrame)
+        pipeline?.noteStillViewer(view) // keeps streaming from idling out (rdtj.11); picks the view
+        val still = pipeline?.latestStill
+        sendStillFrame(out, still?.jpeg, still?.source?.view ?: GpuStillCapture.MOSAIC)
     }
+
+    /**
+     * The view `?camera=N` asks for: a camera 0..3 in the live view's order (Front, Right, Rear,
+     * Left), or [GpuStillCapture.MOSAIC] for all four -- also for anything else.
+     */
+    @JvmStatic
+    internal fun stillView(path: String): Int =
+        path.substringAfter('?', "").split('&')
+            .firstOrNull { it.startsWith("camera=") }
+            ?.substringAfter('=')?.toIntOrNull()
+            ?.takeIf { it in 0..3 }
+            ?: GpuStillCapture.MOSAIC
 
     /**
      * Writes the still-frame HTTP response. A present, non-empty frame is 200 image/jpeg; an
@@ -55,7 +71,7 @@ object StreamingApiHandler {
      */
     @JvmStatic
     @Throws(Exception::class)
-    internal fun sendStillFrame(out: OutputStream, jpeg: ByteArray?) {
+    internal fun sendStillFrame(out: OutputStream, jpeg: ByteArray?, view: Int = GpuStillCapture.MOSAIC) {
         if (jpeg == null || jpeg.isEmpty()) {
             HttpResponse.sendError(out, 503, "No still frame available yet")
             return
@@ -64,6 +80,7 @@ object StreamingApiHandler {
             "Content-Type: image/jpeg\r\n" +
             "Content-Length: " + jpeg.size + "\r\n" +
             "Cache-Control: no-cache\r\n" +
+            "X-Still-View: " + (if (view == GpuStillCapture.MOSAIC) "mosaic" else view.toString()) + "\r\n" +
             "\r\n"
         out.write(header.toByteArray())
         out.write(jpeg)

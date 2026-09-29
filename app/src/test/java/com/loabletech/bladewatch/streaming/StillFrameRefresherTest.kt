@@ -3,6 +3,7 @@ package net.bladewatch.app.streaming
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Test
 import java.util.concurrent.Executors
 
@@ -16,18 +17,16 @@ import java.util.concurrent.Executors
  */
 class StillFrameRefresherTest {
 
-    private fun refresher(mosaicSource: () -> ByteArray?, encoder: JpegEncoder) =
-        StillFrameRefresher(mosaicSource, 640, 480, encoder, 5000L, Executors.newSingleThreadScheduledExecutor())
+    private fun refresher(mosaicSource: () -> ByteArray?, encoder: (ByteArray) -> ByteArray?) =
+        StillFrameRefresher(mosaicSource, encoder, 5000L, Executors.newSingleThreadScheduledExecutor())
 
     @Test
     fun tick_withMosaicFramePresent_encodesAndRetainsIt() {
         var encodeCalls = 0
         val r = refresher(
             mosaicSource = { byteArrayOf(1, 2, 3) },
-            encoder = JpegEncoder { rgb, w, h ->
+            encoder = { rgb ->
                 encodeCalls++
-                assertEquals(640, w)
-                assertEquals(480, h)
                 byteArrayOf(0xFF.toByte(), 0xD8.toByte(), rgb[0])
             },
         )
@@ -43,7 +42,7 @@ class StillFrameRefresherTest {
         var encodeCalls = 0
         val r = refresher(
             mosaicSource = { null },
-            encoder = JpegEncoder { _, _, _ -> encodeCalls++; byteArrayOf(1) },
+            encoder = { _ -> encodeCalls++; byteArrayOf(1) },
         )
 
         r.tick()
@@ -57,7 +56,7 @@ class StillFrameRefresherTest {
         var encodeCalls = 0
         val r = refresher(
             mosaicSource = { byteArrayOf(9) },
-            encoder = JpegEncoder { _, _, _ -> encodeCalls++; byteArrayOf(9) },
+            encoder = { _ -> encodeCalls++; byteArrayOf(9) },
         )
 
         r.tick()
@@ -76,7 +75,7 @@ class StillFrameRefresherTest {
         var lastEncoded = 0
         val r = refresher(
             mosaicSource = { byteArrayOf(1) },
-            encoder = JpegEncoder { _, _, _ -> lastEncoded++; byteArrayOf(lastEncoded.toByte()) },
+            encoder = { _ -> lastEncoded++; byteArrayOf(lastEncoded.toByte()) },
         )
 
         repeat(100) { r.tick() }
@@ -90,7 +89,7 @@ class StillFrameRefresherTest {
     fun stop_clearsTheRetainedFrame() {
         val r = refresher(
             mosaicSource = { byteArrayOf(1) },
-            encoder = JpegEncoder { _, _, _ -> byteArrayOf(1) },
+            encoder = { _ -> byteArrayOf(1) },
         )
         r.tick()
         assertArrayEquals(byteArrayOf(1), r.current())
@@ -105,7 +104,7 @@ class StillFrameRefresherTest {
         var shouldFail = false
         val r = refresher(
             mosaicSource = { byteArrayOf(1) },
-            encoder = JpegEncoder { _, _, _ -> if (shouldFail) null else byteArrayOf(7) },
+            encoder = { _ -> if (shouldFail) null else byteArrayOf(7) },
         )
         r.tick()
         assertArrayEquals(byteArrayOf(7), r.current())
@@ -115,5 +114,52 @@ class StillFrameRefresherTest {
 
         // A transient encode failure must not blank out a still-good previous frame.
         assertArrayEquals(byteArrayOf(7), r.current())
+    }
+
+    // BladeWatch-rdtj.61: "update only when a frame is available".
+    @Test
+    fun tick_withNoNewSourceFrame_keepsTheStillAndEncodesNothing() {
+        var version = 1L
+        var encodeCalls = 0
+        val r = StillFrameRefresher(
+            { byteArrayOf(version.toByte()) },
+            { rgb: ByteArray -> encodeCalls++; rgb.copyOf() },
+            1000L, Executors.newSingleThreadScheduledExecutor(), { version },
+        )
+        r.tick()
+        val first = r.current()
+        r.tick()
+        r.tick()
+        assertEquals("no new frame: no encode", 1, encodeCalls)
+        assertSame("the very same still is served", first, r.current())
+        version = 2L
+        r.tick()
+        assertEquals(2, encodeCalls)
+        assertArrayEquals(byteArrayOf(2), r.current())
+    }
+
+    @Test
+    fun tick_withoutAVersionSource_encodesEveryTick() {
+        var encodeCalls = 0
+        val r = refresher(mosaicSource = { byteArrayOf(1) }, encoder = { _ -> encodeCalls++; byteArrayOf(1) })
+        r.tick()
+        r.tick()
+        assertEquals(2, encodeCalls)
+    }
+
+    // BladeWatch-rdtj.68: the JPEG and the shot it was made from travel together, so a response
+    // never labels one view's picture with another's.
+    @Test
+    fun latest_holdsTheJpegWithItsSource() {
+        class Shot(val view: Int)
+        var shot = Shot(2)
+        val r = StillFrameRefresher<Shot>({ shot }, { s -> byteArrayOf(s.view.toByte()) }, 1000L, Executors.newSingleThreadScheduledExecutor())
+        r.tick()
+        assertEquals(2, r.latest()!!.source.view)
+        assertArrayEquals(byteArrayOf(2), r.latest()!!.jpeg)
+        shot = Shot(-1)
+        r.tick()
+        assertEquals(-1, r.latest()!!.source.view)
+        assertArrayEquals(byteArrayOf(-1), r.current())
     }
 }

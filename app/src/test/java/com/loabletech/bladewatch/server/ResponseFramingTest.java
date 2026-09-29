@@ -221,7 +221,7 @@ public class ResponseFramingTest {
      *
      * <p>This is the bug that actually shipped and had to be caught on the car. Three paths
      * wrote a normal 200 and then closed, so the server sent {@code Connection: keep-alive}
-     * and hung up; over Tor the client's next request got an empty status line. Loopback
+     * and hung up; over the remote transport the client's next request got an empty status line. Loopback
      * never saw it, because {@code /status} loops correctly and {@code /login.html} did not.
      *
      * <p>A later review found two more of the same shape — the 400 for a malformed request

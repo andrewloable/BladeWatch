@@ -1,6 +1,5 @@
 package net.bladewatch.app.proximity
 
-import net.bladewatch.app.auth.AuthManager
 import net.bladewatch.app.logging.DaemonLogger
 import net.bladewatch.app.notifications.NotificationBus
 import net.bladewatch.app.notifications.NotificationEvent
@@ -36,10 +35,9 @@ class ProximityRecordingHandler(private val pipeline: GpuSurveillancePipeline?) 
     var isRecording: Boolean = false
         private set
 
-    // Filename captured when the start-stage push was published. Reused on
-    // stop so the matching final-stage push uses the same tag (Web Push
-    // tag-replace semantics: a later push with the same tag swaps the
-    // banner) and points at the now-finalised .mp4 + sibling hero JPEG.
+    // Filename captured when the start-stage notification was published. Reused on
+    // stop so the matching final-stage notification uses the same tag (a later event with
+    // the same tag replaces the earlier one in the inbox) and names the finalised .mp4.
     private var activeRecordingFile: String? = null
 
     /**
@@ -152,12 +150,8 @@ class ProximityRecordingHandler(private val pipeline: GpuSurveillancePipeline?) 
             // Trigger cleanup
             storageManager.onProximityFileSaved()
 
-            // Final-stage push with the now-finalised hero JPEG. The start
-            // push deliberately skipped the snapshot URL because the hero
-            // JPEG is only written when stopRecording finalises the segment.
-            // Reusing the same notification tag ("proximity-<level>") so
-            // Web Push tag-replace semantics swap the banner image in
-            // place rather than stacking a second card.
+            // Final-stage notification. Reusing the same tag ("proximity-<level>") so the
+            // inbox replaces the "recording in progress" entry rather than stacking a second.
             publishProximityFinal(triggerLevelAtStop, videoFile)
         } catch (e: Exception) {
             logger.error("Failed to stop proximity recording: " + e.message)
@@ -168,11 +162,7 @@ class ProximityRecordingHandler(private val pipeline: GpuSurveillancePipeline?) 
     }
 
     /**
-     * Publish the final-stage push for a proximity recording. Carries a
-     * signed snapshot URL pointing at the sibling hero JPEG (`base.jpg`
-     * written by HardwareEventRecorderGpu on segment finalisation). When
-     * the JPEG is missing (rare — encoder error), falls back to the .mp4
-     * which the server resolves via MMR.
+     * Publish the final-stage notification for a proximity recording, naming the clip.
      */
     private fun publishProximityFinal(triggerLevel: String?, videoFile: String?) {
         if (videoFile.isNullOrEmpty()) return
@@ -181,17 +171,6 @@ class ProximityRecordingHandler(private val pipeline: GpuSurveillancePipeline?) 
             data.put("triggerLevel", triggerLevel)
             data.put("filename", videoFile)
             data.put("stage", "final")
-
-            val heroName = if (videoFile.endsWith(".mp4")) {
-                videoFile.substring(0, videoFile.length - 4) + ".jpg"
-            } else {
-                "$videoFile.jpg"
-            }
-            val snapshotName = if (File(outputDir, heroName).exists()) heroName else videoFile
-            val thumbTok = AuthManager.signThumbToken(snapshotName, 600L)
-            var snapUrl = "/thumb/" + URLEncoder.encode(snapshotName, "UTF-8")
-            if (thumbTok != null) snapUrl += "?t=$thumbTok"
-            data.put("snapshot", snapUrl)
 
             val url = "/events?filter=proximity&file=" + URLEncoder.encode(videoFile, "UTF-8")
 

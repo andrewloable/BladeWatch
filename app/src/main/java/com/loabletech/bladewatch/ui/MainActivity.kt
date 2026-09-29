@@ -8,12 +8,11 @@ import net.bladewatch.app.R
 import net.bladewatch.app.launcher.AdbDaemonLauncher
 import net.bladewatch.app.storage.StorageSetup
 import net.bladewatch.app.ui.daemon.DaemonStartupManager
-import net.bladewatch.app.util.BydDataCacheWhitelist
 
 /**
  * The daemon APK's startup bootstrap. **This is not a UI.**
  *
- * BladeWatch-81g9.2 deleted the native in-car UI; `net.bladewatch.flutter` is the only
+ * BladeWatch-81g9.2 deleted the native in-car UI; `net.bladewatch.incarapp` is the only
  * in-car UI now. What survives here is the work nothing else does, in the order it has
  * to happen:
  *
@@ -22,11 +21,13 @@ import net.bladewatch.app.util.BydDataCacheWhitelist
  *     launch.
  *  2. `DeviceIdGenerator.init` then `generateDeviceId`, **before any daemon starts**,
  *     because the daemon reads the synced device-id file.
- *  3. `BydDataCacheWhitelist.applyAll` on a background thread — `ActivityThread.systemMain()`
- *     can block for over a minute waiting for system services.
- *  4. `DaemonStartupManager` with its staggered timing (core ~45s, optional ~60s, health
+ *  3. `DaemonStartupManager` with its staggered timing (core ~45s, optional ~60s, health
  *     checks from ~90s every 30s).
- *  5. The one-shot cleanup of the APK the removed in-app updater used to stage.
+ *  4. The one-shot cleanup of the APK the removed in-app updater used to stage.
+ *
+ * There is no BYD ACC whitelisting: `accmodemanager.setPkg2AccWhiteList` needs the signature
+ * permission DEVICE_ACC, which neither the app nor shell holds, so it failed on every launch
+ * (BladeWatch-ese8, measured on the head unit).
  *
  * It has NO launcher entry (BladeWatch-81g9.1). It is started explicitly: by the Flutter
  * UI when the user opens it, by `BootReceiver`, by `DaemonKeepaliveService`, and by a
@@ -72,7 +73,7 @@ class MainActivity : Activity() {
         // exposed a second, older problem: moveTaskToBack(true) at the end of onCreate does
         // NOT reliably background this task. Measured on the head unit 2026-09-15 —
         //   Window #9  net.bladewatch.app/.ui.MainActivity     (invisible, on top)
-        //   Window #10 net.bladewatch.flutter/...MainActivity  (the real UI, beneath)
+        //   Window #10 net.bladewatch.incarapp/...MainActivity  (the real UI, beneath)
         //   mResumedActivity: net.bladewatch.app/.ui.MainActivity
         // While the window was opaque this showed up as a white screen, so it read as
         // "something is broken". Once it went transparent the Flutter UI showed through it
@@ -107,17 +108,6 @@ class MainActivity : Activity() {
         // Must happen BEFORE any daemon starts
         val deviceId = net.bladewatch.app.util.DeviceIdGenerator.generateDeviceId(this)
         android.util.Log.i("MainActivity", "Device ID initialized: $deviceId")
-
-        // Apply BYD whitelist (ACC + data cache) to prevent background killing
-        // CRITICAL: Run on background thread to avoid blocking UI on boot
-        // ActivityThread.systemMain() can block for 1+ minute waiting for system services
-        Thread {
-            try {
-                BydDataCacheWhitelist.applyAll(this)
-            } catch (e: Exception) {
-                android.util.Log.e("MainActivity", "BYD whitelist error: ${e.message}")
-            }
-        }.start()
 
         // Initialize daemon startup manager (no ViewModel — see the class comment)
         daemonStartupManager = DaemonStartupManager(this)
@@ -237,6 +227,14 @@ class MainActivity : Activity() {
             val sm = net.bladewatch.app.storage.StorageManager.getInstance()
             if (!sm.isSdCardAvailable) sm.refreshSdCard()
         } catch (_: Throwable) {}
+
+        // BladeWatch-rdtj.35: back out of the way on EVERY resume, not only after onCreate.
+        // The in-car UI wakes this activity each time it opens (wakeServiceHost). When an
+        // earlier instance is still alive in its background task, Android reuses it: no
+        // onCreate, so nothing sent the task back, and this invisible window sat on top as a
+        // see-through "app" until the driver pressed Home. Seen on the head unit 2026-09-27:
+        // resumed at 10:28:13 from uid 10073, left on top until Home at 10:28:29.
+        moveTaskToBack(true)
     }
 
     /**

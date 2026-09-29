@@ -28,6 +28,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get action_select_all_short => 'Hepsi';
 
   @override
+  String get action_select => 'Seç';
+
+  @override
+  String get action_deselect_all => 'Tüm seçimleri kaldır';
+
+  @override
   String get action_delete => 'Sil';
 
   @override
@@ -53,15 +59,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cd_qr_code => 'QR kodu';
-
-  @override
-  String get cd_show_hide_token => 'Token’ı göster/gizle';
-
-  @override
-  String get cd_copy_token => 'Token’ı kopyala';
-
-  @override
-  String get cd_copy_url => 'URL’yi kopyala';
 
   @override
   String get cd_clear_logs => 'Günlükleri temizle';
@@ -179,47 +176,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'Otomatik, her açılışta trim\'iniz için doğru kamerayı seçer. Kamera 1 = BYD Seal, Kamera 0 = Atto trim\'leri. Ayarın geçerli olması için kamera kimliğini değiştirdikten sonra kamera servisini yeniden başlatın.';
 
   @override
-  String get dashboard_scan_to_connect => 'Bağlanmak için tarayın';
-
-  @override
   String get dashboard_qr_waiting => 'Tünel için bekliyordum...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 çalışıyor';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'Erişim Kodu';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'Token’ı yeniden oluştur';
 
   @override
-  String get dashboard_set_password => 'Şifre Belirle';
-
-  @override
   String get cd_set_password => 'Özel şifre belirle';
-
-  @override
-  String get dialog_set_password_title => 'Özel Şifre Belirle';
-
-  @override
-  String get dialog_set_password_message =>
-      'Yeni bir erişim şifresi girin. Bu, otomatik oluşturulan tokeni değiştirir.';
-
-  @override
-  String get dialog_set_password_hint => 'Yeni şifre (en az 12 karakter)';
-
-  @override
-  String get toast_password_set => 'Şifre güncellendi';
-
-  @override
-  String get toast_password_too_short => 'Şifre en az 12 karakter olmalı';
 
   @override
   String get toast_password_save_failed =>
@@ -532,6 +498,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get recording_lib_date_all_days => 'Tüm Günler';
 
   @override
+  String get recording_lib_type_all => 'Tümü';
+
+  @override
   String get cd_clear_date_filter => 'Tüm günleri göster';
 
   @override
@@ -575,9 +544,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get daemon_name_acc => 'ACC gözetim';
-
-  @override
-  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Arka plan hizmetleri';
@@ -802,9 +768,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get reset_label_trip_files => 'Yolculuk Telemetri Dosyaları';
 
   @override
-  String get toast_access_code_copied => 'Giriş kodu kopyalandı';
-
-  @override
   String get dialog_regenerate_token_title => 'Token’ı yeniden oluştur';
 
   @override
@@ -827,21 +790,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get toast_token_regenerated => 'Token Yenilenmiş';
 
   @override
-  String get dashboard_no_tunnel => 'Çalışan tünel yok';
-
-  @override
-  String get dashboard_starting_tor => 'Tor tüneli başlatılıyor…';
-
-  @override
   String get dashboard_waiting_url => 'URL tünelini bekliyoruz...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 çalışıyor';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Erişim Kodu';
@@ -1320,11 +1274,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get diagnostics_metric_online => 'Çevrimiçi';
 
   @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'Tunel · $arg1';
-  }
-
-  @override
   String diagnostics_network_data_usage_line(Object arg1) {
     return 'Bu ay $arg1';
   }
@@ -1743,17 +1692,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dashboard_trips_this_week => 'Bu Hafta';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 yolculuk',
-      one: '$arg1 yolculuk',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1776,6 +1714,18 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dashboard_trips_label_time => 'Sürüş Süresi';
+
+  @override
+  String get dashboard_week_battery => 'Batarya';
+
+  @override
+  String get dashboard_week_elec_range => 'Elektrikli menzil';
+
+  @override
+  String get dashboard_week_fuel => 'Yakıt';
+
+  @override
+  String get dashboard_week_fuel_range => 'Yakıt menzili';
 
   @override
   String get dashboard_trips_no_data => 'Bu hafta kaydedilmiş yolculuk yok';
@@ -1837,7 +1787,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Tor tüneli ve arka plan hizmetleri.';
+      'Uzaktan erişim (Pear) ve arka plan hizmetleri.';
 
   @override
   String get settings_about_row_title => 'BladeWatch hakkında';
@@ -1986,9 +1936,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vehicle_tab_climate => 'Klima';
 
   @override
-  String get vehicle_tab_seats => 'Koltuklar';
-
-  @override
   String get vehicle_tab_windows => 'Camlar';
 
   @override
@@ -2071,43 +2018,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'İçeride: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'Dışarıda: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'Sürücü';
-
-  @override
-  String get vehicle_seat_passenger => 'Yolcu';
-
-  @override
-  String get vehicle_seat_no_controls => 'Bu araç için koltuk kontrolü yok.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'Isıtma $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'Soğutma $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(Kapalı)';
-
-  @override
-  String get vehicle_heat_low => '(Düşük)';
-
-  @override
-  String get vehicle_heat_high => '(Yüksek)';
-
-  @override
-  String get vehicle_seat_pos_1 => '1. pozisyon';
-
-  @override
-  String get vehicle_seat_pos_2 => '2. pozisyon';
 
   @override
   String get vehicle_all_windows => 'Tüm Pencereler';
@@ -2875,42 +2788,127 @@ class AppLocalizationsTr extends AppLocalizations {
   String get surveillance_apply_failed => 'Kaydetme başarısız';
 
   @override
-  String get dashboard_tor_bootstrapping => 'Tor\'a bağlanılıyor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'Bu adres nasıl açılır';
-
-  @override
-  String get dashboard_tor_help_title => 'Bu adresi açma';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: Tor Browser\'ı Google Play veya F-Droid\'den kurun, açın ve adresi yapıştırın.';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone ve iPad: Onion Browser\'ı App Store\'dan kurun, açın ve adresi yapıştırın. Tor Browser iOS\'ta yoktur.';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS ve Linux: Tor Browser\'ı torproject.org adresinden indirin, açın ve adresi yapıştırın.';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'Sayfa yüklendikten sonra parola yine gerekir.';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'Tor Browser indirme sayfası için tarayın';
-
-  @override
-  String get dashboard_tor_help_close => 'Anladım';
-
-  @override
   String get surveillance_general_battery_warning =>
       'Nöbetçi modu etkinken 12V akünün fazladan gücünü kullanır.';
 
   @override
   String get surveillance_general_camera_contention_warning =>
       'Şu anda kamerayı başka bir uygulama kullanıyor.';
+
+  @override
+  String get pairing_title => 'Cihaz eşleştir';
+
+  @override
+  String get pairing_scan_hint =>
+      'Telefonunuzdaki veya bilgisayarınızdaki BladeWatch uygulamasıyla tarayın. Kod yalnızca bir kez çalışır.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time içinde sona erer';
+  }
+
+  @override
+  String get pairing_expired => 'Bu kodun süresi doldu.';
+
+  @override
+  String get pairing_new_code => 'Yeni kod';
+
+  @override
+  String get pairing_remote_note =>
+      'Eşleştirme, bu araç için uzaktan erişimi açar.';
+
+  @override
+  String get pairing_lan_title => 'Bu Wi-Fi üzerinden doğrudan bağlantı';
+
+  @override
+  String get pairing_lan_body =>
+      'Araçla aynı Wi-Fi ağındaki eşleştirilmiş bir cihaz, internete çıkmadan doğrudan ve şifreli olarak bağlanır. Siz açana kadar kapalıdır.';
+
+  @override
+  String get pairing_devices_title => 'Eşleştirilmiş cihazlar';
+
+  @override
+  String get pairing_devices_empty => 'Henüz eşleştirilmiş cihaz yok.';
+
+  @override
+  String get pairing_remove => 'Kaldır';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '$name kaldırılsın mı?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Erişimini hemen kaybeder. Diğer cihazlarınız çalışmaya devam eder.';
+
+  @override
+  String get pairing_error => 'Kamera hizmeti yanıt vermedi. Tekrar deneyin.';
+
+  @override
+  String get daemon_name_pear => 'Uzaktan erişim (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Her yerden erişilebilir';
+
+  @override
+  String get pear_status_unreachable => 'Erişilemiyor: Pear ağına bağlantı yok';
+
+  @override
+  String get pear_status_unknown => 'Erişilebilirlik bilinmiyor';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cihaz bağlı',
+      one: '$count cihaz bağlı',
+      zero: 'Bağlı cihaz yok',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Son bağlantı: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Kapalı';
+
+  @override
+  String get trips_cost_total => 'Toplam maliyet';
+
+  @override
+  String get trips_cost_no_rate =>
+      'Maliyetleri görmek için yolculuk ayarlarında bir elektrik tarifesi belirleyin.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'Yolculuklar birden fazla para biriminde hesaplandığı için toplam gösterilmiyor.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'Vites $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'Mod: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'Kapalı';
+
+  @override
+  String get auto_hold_enabled => 'Açık';
+
+  @override
+  String get auto_hold_active => 'Tutuyor';
 }

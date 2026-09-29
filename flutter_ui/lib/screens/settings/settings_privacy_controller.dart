@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../../gen/bladewatch/v1/storage.pb.dart';
-import '../../rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/storage.pb.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
 import '../../shell/disposed_safe_notifier.dart';
 
 /// Ground truth: `SettingsPrivacyFragment.kt`. The reset-data action opens a

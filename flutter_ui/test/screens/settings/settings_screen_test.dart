@@ -3,15 +3,15 @@ import 'package:bladewatch_ui/platform/config_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/platform/prefs_channel.dart';
 import 'package:bladewatch_ui/platform/public_config_channel.dart';
-import 'package:bladewatch_ui/rpc/jwt_source.dart';
-import 'package:bladewatch_ui/rpc/raw_http_sender.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/safe_locations_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/settings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/storage_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/surveillance_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/jwt_source.dart';
+import 'package:bladewatch_rpc/rpc/raw_http_sender.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/settings/settings_appearance_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_daemons_screen.dart';
 import 'package:bladewatch_ui/screens/settings/settings_overlay_screen.dart';
@@ -28,7 +28,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_platform_channel.dart';
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 class _MemLocaleStore implements LocaleStore {
   String? _tag;
@@ -63,7 +63,7 @@ void main() {
     channel.stub('publicConfig', 'getSection', <Object?, Object?>{});
     channel.stub('publicConfig', 'putBoolean', true);
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'PEAR_PEER': false},
     });
     rpc.stubJson('SystemService', 'GetStatus', {'recordingStatus': {}});
     rpc.stubJson('RecordingsService', 'GetStats', {'stats': {}});

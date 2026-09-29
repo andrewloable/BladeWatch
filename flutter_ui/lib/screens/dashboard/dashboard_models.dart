@@ -1,3 +1,6 @@
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
+
 /// Trip-stats hero state — ground truth: `DashboardFragment.refreshTripStats()`.
 class TripStatsState {
   final bool loading;
@@ -10,12 +13,16 @@ class TripStatsState {
   final double totalDistanceKm;
   final int totalDurationSeconds;
 
+  /// What the week's trips cost (BladeWatch-39d2).
+  final TripCosts costs;
+
   const TripStatsState({
     required this.loading,
     required this.available,
     required this.tripCount,
     required this.totalDistanceKm,
     required this.totalDurationSeconds,
+    this.costs = const TripCosts(),
   });
 
   const TripStatsState.loading()
@@ -23,14 +30,16 @@ class TripStatsState {
         available = false,
         tripCount = 0,
         totalDistanceKm = 0,
-        totalDurationSeconds = 0;
+        totalDurationSeconds = 0,
+        costs = const TripCosts();
 
   const TripStatsState.unavailable()
       : loading = false,
         available = false,
         tripCount = 0,
         totalDistanceKm = 0,
-        totalDurationSeconds = 0;
+        totalDurationSeconds = 0,
+        costs = const TripCosts();
 
   /// "0 km" / "1.2 km" below 1000km, "N km" (no decimal) at/above —
   /// `DashboardFragment.refreshTripStats()`'s `distanceStr` formatting.
@@ -44,6 +53,61 @@ class TripStatsState {
     final m = (totalDurationSeconds % 3600) ~/ 60;
     return h > 0 ? '${h}h ${m}m' : '${m}m';
   }
+}
+
+/// The car's charge and fuel right now, which THIS WEEK shows under the week's trips
+/// (BladeWatch-4zr7). Read from the GetStatus the dashboard already makes for the recording flag
+/// and the drive chips -- no request of its own.
+class EnergyState {
+  /// False until a status has answered: the tiles show the pending placeholder.
+  final bool available;
+  final double socPercent;
+  final double elecRangeKm;
+  final double fuelPercent;
+  final double fuelRangeKm;
+
+  /// "km" or "mi", the car's own setting.
+  final String distanceUnit;
+
+  const EnergyState({
+    required this.available,
+    this.socPercent = 0,
+    this.elecRangeKm = 0,
+    this.fuelPercent = 0,
+    this.fuelRangeKm = 0,
+    this.distanceUnit = 'km',
+  });
+
+  const EnergyState.unavailable() : this(available: false);
+
+  factory EnergyState.of(GetStatusResponse s) => EnergyState(
+        available: s.hasSoc() || s.hasRange(),
+        socPercent: s.soc.percent,
+        elecRangeKm: s.range.elecRangeKm,
+        fuelPercent: s.range.fuelPercent,
+        fuelRangeKm: s.range.fuelRangeKm,
+        distanceUnit: s.distanceUnit.isEmpty ? 'km' : s.distanceUnit,
+      );
+
+  /// A car with a tank. The fuel fields are only filled on a PHEV, and proto3 cannot tell "0" from
+  /// "absent", so a BEV reads zero for both.
+  // ponytail: a PHEV that is both empty and at zero range reads as a BEV here and hides the fuel
+  // tiles; TripsService's config carries is_phev if that ever matters, at one more request per refresh.
+  bool get hasFuel => fuelPercent > 0 || fuelRangeKm > 0;
+
+  // Value equality: the 2 s drive poll notifies only when something on screen changed.
+  @override
+  bool operator ==(Object other) =>
+      other is EnergyState &&
+      other.available == available &&
+      other.socPercent == socPercent &&
+      other.elecRangeKm == elecRangeKm &&
+      other.fuelPercent == fuelPercent &&
+      other.fuelRangeKm == fuelRangeKm &&
+      other.distanceUnit == distanceUnit;
+
+  @override
+  int get hashCode => Object.hash(available, socPercent, elecRangeKm, fuelPercent, fuelRangeKm, distanceUnit);
 }
 
 /// Recordings metric tile — ground truth: `refreshMetricsTiles()`/
@@ -86,27 +150,6 @@ class DaemonsSummaryState {
         total = 0;
 }
 
-/// Tunnel tile + hero chip + QR/placeholder state — ground truth:
-/// `updateTunnelTile()`/`rebuildTunnelChips()`/`showPlaceholder()`. The tunnel is
-/// the only tunnel type this app has ever shipped (`collectAvailableTunnels()`
-/// only ever adds `TOR_TUNNEL`), so unlike the native code's
-/// generic-looking `List<Pair<DaemonType, String>>` machinery, this models
-/// the tunnel directly rather than a list of one.
-/// BladeWatch-y7x2: [disabled] is the owner having switched the tunnel OFF, which is
-/// not the same as [offline] (enabled, but nothing running). The Dashboard hides its
-/// connect card entirely for [disabled] and shows "no tunnel" for [offline]; collapsing
-/// the two would hide the card during the minute an enabled tunnel takes to bootstrap.
-enum TunnelPhase { disabled, offline, connecting, online }
-
-class TunnelState {
-  final TunnelPhase phase;
-  final String? url;
-
-  const TunnelState({required this.phase, this.url});
-
-  const TunnelState.loading() : phase = TunnelPhase.offline, url = null;
-}
-
 /// Vehicle metric tile — ground truth: `refreshVehicleTile()`.
 /// BladeWatch-p7vi: the tile used to show the nominal capacity, which the
 /// daemon can no longer supply (the SoH endpoints are removed-feature stubs
@@ -121,26 +164,6 @@ class VehicleTileState {
   const VehicleTileState.loading() : loading = true, modelId = null;
 
   bool get hasModel => modelId != null && modelId!.isNotEmpty;
-}
-
-/// Access-code (auth) tile — ground truth: `loadAuthState()`/
-/// `toggleTokenVisibility()`. `deviceId` is a **separate, purely local**
-/// concern from the access code (native: `DeviceIdGenerator`, not
-/// `AuthManager`) — see `DashboardController`'s doc comment for why the
-/// Flutter port derives it differently.
-class AccessCodeState {
-  final bool loading;
-  final String? secret;
-  final bool visible;
-
-  const AccessCodeState({required this.loading, this.secret, required this.visible});
-
-  const AccessCodeState.loading() : loading = true, secret = null, visible = false;
-
-  /// The masked display value — `dashboard_token_masked`'s dot pattern is
-  /// applied by the widget layer (a pure string constant); this getter only
-  /// decides *which* value (masked vs real) should be shown.
-  String? get displayValue => visible ? secret : null;
 }
 
 /// One entry in the vehicle model manifest dropdown — ground truth: the
@@ -220,4 +243,29 @@ String modelDisplayName(String? modelId) {
   if (names.containsKey(lower)) return names[lower]!;
   if (modelId.isEmpty) return modelId;
   return modelId[0].toUpperCase() + modelId.substring(1);
+}
+
+/// Gear, drive mode and Auto Hold as the car labels them (BladeWatch-7zp9). The car sends
+/// "UNKNOWN" for anything it has not measured, and that is shown as a dash, never a guess.
+class DriveInfo {
+  static const unknown = 'UNKNOWN';
+
+  final String gear;
+  final String driveMode;
+  final String autoHold;
+  /// "EV" / "HEV" on a DM-i (BladeWatch-os88).
+  final String energyMode;
+
+  const DriveInfo({this.gear = unknown, this.driveMode = unknown, this.autoHold = unknown, this.energyMode = unknown});
+
+  @override
+  bool operator ==(Object other) =>
+      other is DriveInfo &&
+      other.gear == gear &&
+      other.driveMode == driveMode &&
+      other.autoHold == autoHold &&
+      other.energyMode == energyMode;
+
+  @override
+  int get hashCode => Object.hash(gear, driveMode, autoHold, energyMode);
 }

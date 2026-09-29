@@ -1,7 +1,11 @@
 package net.bladewatch.app.server
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import net.bladewatch.app.recording.Mp4Faststart
+import net.bladewatch.app.recording.transcode.ClipCapability
+import net.bladewatch.app.recording.transcode.ClipTranscoder
 import net.bladewatch.app.daemon.CameraDaemon
 import net.bladewatch.app.media.RecordingsDatabase
 import net.bladewatch.app.server.connect.ConnectException
@@ -144,7 +148,11 @@ object RecordingsApiHandler {
         out: OutputStream
     ): Boolean {
         if (path.startsWith("/video/")) {
-            streamVideo(out, path.substring(7), rangeHeader, ifNoneMatchHeader)
+            val rest = path.substring(7)
+            val q = rest.indexOf('?')
+            val filename = if (q >= 0) rest.substring(0, q) else rest
+            val query = if (q >= 0) rest.substring(q + 1) else null
+            streamVideo(out, filename, rangeHeader, ifNoneMatchHeader, query)
             return true
         }
         if (path.startsWith("/thumb/")) {
@@ -154,6 +162,62 @@ object RecordingsApiHandler {
         // Only /video/ and /thumb/ reach here — HttpServer routes nothing else to this method
         // since the JSON dispatch was removed (BladeWatch-6mnq).
         return false
+    }
+
+    /** Long edge of a hero served as a clip's grid thumbnail. */
+    internal const val HERO_THUMB_EDGE = 480
+
+    /**
+     * A clip's hero JPEG as a grid thumbnail -- never the hero at full resolution (BladeWatch-820b).
+     * Some heroes are 2560x1920 (~900 KB): over Pear from a phone that cost 1.5-3 s per image and
+     * ~20 MB for a 24-clip grid, against ~17 KB for a generated thumbnail. A hero already within
+     * [HERO_THUMB_EDGE] is served as is; a larger one from a scaled copy cached as hero_<name>,
+     * rebuilt when the hero is newer. Null on any failure: the caller then serves the hero itself,
+     * as before. Direct /thumb/<name>.jpg requests are not routed here -- they get the file.
+     */
+    private fun heroThumbnail(hero: File, cacheDir: File, thumbName: String): File? = try {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(hero.path, bounds)
+        val cached = File(cacheDir, "hero_$thumbName")
+        when {
+            bounds.outWidth <= 0 || bounds.outHeight <= 0 -> null
+            maxOf(bounds.outWidth, bounds.outHeight) <= HERO_THUMB_EDGE -> hero
+            cached.length() > 0 && cached.lastModified() >= hero.lastModified() -> cached
+            else -> writeScaledHero(hero, bounds.outWidth, bounds.outHeight, cached)
+        }
+    } catch (e: Exception) {
+        CameraDaemon.log("Hero thumbnail failed: " + e.message)
+        null
+    }
+
+    private fun writeScaledHero(hero: File, width: Int, height: Int, cached: File): File? {
+        val decoded = BitmapFactory.decodeFile(
+            hero.path,
+            BitmapFactory.Options().apply { inSampleSize = sampleSizeFor(width, height, HERO_THUMB_EDGE) }
+        ) ?: return null
+        val (w, h) = scaledTo(decoded.width, decoded.height, HERO_THUMB_EDGE)
+        val scaled = if (w == decoded.width && h == decoded.height) decoded else Bitmap.createScaledBitmap(decoded, w, h, true)
+        // Atomic: two requests for the same clip may both get here; each renames a whole file.
+        val tmp = File(cached.parentFile, cached.name + "." + Thread.currentThread().id + ".tmp")
+        FileOutputStream(tmp).use { scaled.compress(Bitmap.CompressFormat.JPEG, 75, it) }
+        if (scaled !== decoded) scaled.recycle()
+        decoded.recycle()
+        return if (tmp.renameTo(cached)) cached else null.also { tmp.delete() }
+    }
+
+    /** BitmapFactory inSampleSize: the largest power of two that keeps the long edge >= [edge]. */
+    internal fun sampleSizeFor(width: Int, height: Int, edge: Int): Int {
+        var sample = 1
+        while (maxOf(width, height) / (sample * 2) >= edge) sample *= 2
+        return sample
+    }
+
+    /** [width]x[height] with its long edge brought down to [edge], aspect kept; never enlarged. */
+    internal fun scaledTo(width: Int, height: Int, edge: Int): Pair<Int, Int> {
+        val long = maxOf(width, height)
+        if (long <= edge) return width to height
+        return (width.toLong() * edge / long).toInt().coerceAtLeast(1) to
+            (height.toLong() * edge / long).toInt().coerceAtLeast(1)
     }
 
     // Background thumbnail generator
@@ -207,7 +271,7 @@ object RecordingsApiHandler {
         // legacy clips without a hero file fall through to the cache + MediaMetadataRetriever path.
         val heroSibling = findSiblingJpeg(thumbName)
         if (heroSibling != null && heroSibling.exists() && heroSibling.length() > 0) {
-            HttpResponse.sendImage(out, heroSibling, "image/jpeg")
+            HttpResponse.sendImage(out, heroThumbnail(heroSibling, cacheDir, thumbName) ?: heroSibling, "image/jpeg")
             return
         }
 
@@ -1307,7 +1371,8 @@ object RecordingsApiHandler {
         out: OutputStream,
         filename: String,
         rangeHeader: String?,
-        ifNoneMatchHeader: String?
+        ifNoneMatchHeader: String?,
+        query: String? = null
     ) {
         // Security: prevent path traversal
         if (filename.contains("..") || filename.contains("/")) {
@@ -1316,19 +1381,35 @@ object RecordingsApiHandler {
         }
 
         // findVideoFile checks ALL storage locations
-        val file = findVideoFile(filename)
+        val nativeFile = findVideoFile(filename)
 
-        if (file == null) {
+        if (nativeFile == null) {
             HttpResponse.sendError(
                 out, 404, Messages.get("errors.recordings_not_found_with_filename", filename)
             )
             return
         }
 
+        // BladeWatch-rdtj.73: a client that cannot decode the native resolution sends ?maxW=&maxH=
+        // (ClipCapability.parseHint). Saved recordings ONLY -- this never runs for Live view. A
+        // null resolution here (no hint, or the source already fits it) means: serve native,
+        // unchanged from before this feature existed.
+        val file = resolveServedFile(nativeFile, ClipCapability.parseHint(query))
+        if (file == null) {
+            sendTranscoding(out)
+            return
+        }
+
+        // BladeWatch-rdtj.28: serve the clip with its index first when it is not already, so a
+        // remote player starts at once. Its own ETag suffix: a client holding ranges of the plain
+        // layout (24 h cache) must never mix them with ranges of this one. "fs2" since the view
+        // also cuts the clip's single chunk (BladeWatch-rdtj.31): change it whenever the bytes do.
+        val view = Mp4Faststart.view(file)
+
         // Conditional GET: if the client's cached copy matches our ETag, skip re-streaming. The
         // tag is "<length>-<mtime>" so any append/replace invalidates without needing a content
         // hash.
-        val etag = buildVideoEtag(file)
+        val etag = if (view != null) buildVideoEtag(file).dropLast(1) + "-" + view.tag + "\"" else buildVideoEtag(file)
         if (ifNoneMatchHeader != null && etagMatches(ifNoneMatchHeader, etag)) {
             HttpResponse.sendNotModified(out, etag)
             return
@@ -1341,8 +1422,8 @@ object RecordingsApiHandler {
                 val start = if (parts[0].isEmpty()) 0L else parts[0].toLong()
                 val end = if (parts.size > 1 && parts[1].isNotEmpty()) parts[1].toLong() else -1L
 
-                // Validate the range
-                val fileLength = file.length()
+                // Validate the range (against the view's length: a defragmented clip differs, rdtj.63)
+                val fileLength = view?.length ?: file.length()
                 if (start < 0 || start >= fileLength) {
                     HttpResponse.sendError(
                         out, 416, Messages.get("errors.recordings_range_not_satisfiable")
@@ -1350,9 +1431,9 @@ object RecordingsApiHandler {
                     return
                 }
 
-                HttpResponse.sendVideoRange(out, file, start, end, etag)
+                HttpResponse.sendVideoRange(out, file, start, end, etag, view)
             } else {
-                HttpResponse.sendVideo(out, file, etag)
+                HttpResponse.sendVideo(out, file, etag, view)
             }
         } catch (e: NumberFormatException) {
             HttpResponse.sendError(
@@ -1364,6 +1445,93 @@ object RecordingsApiHandler {
                 out, 410, Messages.get("errors.recordings_file_no_longer_accessible")
             )
         }
+    }
+
+    // Transcode cache directory — a sibling of the thumbnail cache, next to the recordings dir.
+    private fun getTranscodeCacheDir(): String {
+        val recordingsDir = File(StorageManager.getInstance().recordingsPath)
+        return File(recordingsDir.parentFile, "transcoded").absolutePath
+    }
+
+    // One background transcode at a time, deliberately: rdtj.73's own on-car measurements showed
+    // concurrent codec sessions are fine, but a clip transcode is a ~100s CPU/GPU job with nothing
+    // else this daemon does that heavy, and there is no reason to run two at once for one viewer.
+    // A single-thread executor gives the concurrency guard for free -- extra requests just queue.
+    private val transcodeExecutor = Executors.newSingleThreadExecutor()
+    private val pendingTranscodes: MutableSet<String> = Collections.synchronizedSet(HashSet<String>())
+
+    /** v1 has exactly one fallback tier, so the cache name doesn't need to encode arbitrary dims. */
+    private fun transcodeCacheName(source: File): String =
+        source.name.substringBeforeLast('.') + "_${ClipCapability.FALLBACK_WIDTH}x${ClipCapability.FALLBACK_HEIGHT}.mp4"
+
+    /**
+     * The file to serve for [source] given a capability [hint] (BladeWatch-rdtj.73), or null if a
+     * transcode was just started (or is already running) and the caller should reply 202.
+     *
+     * No hint means no client-declared limit -- always [source], exactly as before this feature
+     * existed. A hint the source already fits, or a hint too small for even the one fallback tier
+     * this server offers, also serve [source]: there's nothing better to do in either case, and
+     * serving native is at least free of wasted transcode work.
+     */
+    private fun resolveServedFile(source: File, hint: Pair<Int, Int>?): File? {
+        if (hint == null) return source
+        val native = nativeSize(source) ?: return source
+        if (ClipCapability.nativeFits(hint, native.first, native.second)) return source
+        if (!ClipCapability.fallbackFits(hint)) return source
+
+        val cacheDir = File(getTranscodeCacheDir())
+        if (!cacheDir.exists()) cacheDir.mkdirs()
+        val cached = File(cacheDir, transcodeCacheName(source))
+        if (cached.length() > 0 && cached.lastModified() >= source.lastModified()) return cached
+
+        val key = source.absolutePath
+        if (pendingTranscodes.add(key)) {
+            transcodeExecutor.submit {
+                try {
+                    if (!ClipTranscoder().transcode(source, cached, ClipCapability.FALLBACK_WIDTH, ClipCapability.FALLBACK_HEIGHT)) {
+                        CameraDaemon.log("Transcode produced no output for " + source.name)
+                    }
+                } catch (e: Exception) {
+                    CameraDaemon.log("Background transcode failed for " + source.name + ": " + e.message)
+                } finally {
+                    pendingTranscodes.remove(key)
+                }
+            }
+        }
+        return null
+    }
+
+    /** Probes a video file's native dimensions. Same FileDescriptor-source reasoning as [generateThumbnail]. */
+    private fun nativeSize(file: File): Pair<Int, Int>? {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            FileInputStream(file).use { fis -> retriever.setDataSource(fis.fd) }
+            val w = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull()
+            val h = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull()
+            if (w != null && h != null) w to h else null
+        } catch (e: Exception) {
+            CameraDaemon.log("nativeSize probe failed for " + file.name + ": " + e.message)
+            null
+        } finally {
+            try {
+                retriever.release()
+            } catch (e: Exception) {
+                CameraDaemon.log("retriever.release() failed: " + e.message)
+            }
+        }
+    }
+
+    /** Mirrors [serveThumbnail]'s 202 block: a background transcode was started or is in flight. */
+    private fun sendTranscoding(out: OutputStream) {
+        val body = "{\"status\":\"transcoding\"}".toByteArray(StandardCharsets.UTF_8)
+        val headers = "HTTP/1.1 202 Accepted\r\n" +
+            "Content-Type: application/json\r\n" +
+            "Retry-After: 3\r\n" +
+            "Content-Length: " + body.size + "\r\n" +
+            HttpResponse.connectionHeader(out) + "\r\n"
+        out.write(headers.toByteArray(StandardCharsets.UTF_8))
+        out.write(body)
+        out.flush()
     }
 
     /**

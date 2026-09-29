@@ -1,7 +1,41 @@
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // BladeWatch-4zr7: THIS WEEK's charge and fuel, from GetStatus.
+  group('EnergyState', () {
+    GetStatusResponse status(Map<String, Object?> json) => GetStatusResponse()..mergeFromProto3Json(json);
+
+    test('a PHEV status carries the charge, both ranges and the fuel', () {
+      final e = EnergyState.of(status({
+        'soc': {'percent': 77},
+        'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'totalRangeKm': 432, 'fuelPercent': 30},
+        'distanceUnit': 'km',
+      }));
+      expect(e.available, isTrue);
+      expect(e.socPercent, 77);
+      expect(e.elecRangeKm, 81);
+      expect(e.fuelPercent, 30);
+      expect(e.fuelRangeKm, 351);
+      expect(e.hasFuel, isTrue);
+      expect(e.distanceUnit, 'km');
+    });
+
+    test('a BEV has no fuel, and either fuel figure alone means a tank', () {
+      expect(EnergyState.of(status({'soc': {'percent': 60}, 'range': {'elecRangeKm': 300}})).hasFuel, isFalse);
+      expect(EnergyState.of(status({'range': {'fuelRangeKm': 12}})).hasFuel, isTrue);
+      expect(EnergyState.of(status({'range': {'fuelPercent': 1}})).hasFuel, isTrue);
+    });
+
+    test('a status with neither charge nor range is not shown; the unit defaults to km', () {
+      final e = EnergyState.of(GetStatusResponse());
+      expect(e.available, isFalse);
+      expect(e.distanceUnit, 'km');
+      expect(const EnergyState.unavailable().available, isFalse);
+    });
+  });
+
   group('TripStatsState.distanceLabel', () {
     test('one decimal place below 1000km', () {
       const s = TripStatsState(loading: false, available: true, tripCount: 1, totalDistanceKm: 9.0, totalDurationSeconds: 0);
@@ -62,12 +96,6 @@ void main() {
     expect(s.total, 0);
   });
 
-  test('TunnelState.loading() sentinel', () {
-    const s = TunnelState.loading();
-    expect(s.phase, TunnelPhase.offline);
-    expect(s.url, isNull);
-  });
-
   group('VehicleDialogState', () {
     test('loading() sentinel', () {
       // Deliberately NOT `const`: a const invocation is folded at compile time
@@ -119,24 +147,6 @@ void main() {
       expect(withModel.hasModel, isTrue);
       expect(noModel.hasModel, isFalse);
       expect(emptyModel.hasModel, isFalse, reason: 'an empty id is not a selection');
-    });
-  });
-
-  group('AccessCodeState', () {
-    test('loading() sentinel', () {
-      const s = AccessCodeState.loading();
-      expect(s.loading, isTrue);
-      expect(s.displayValue, isNull);
-    });
-
-    test('displayValue is null when not visible, even with a secret', () {
-      const s = AccessCodeState(loading: false, secret: 'shh-fake-secret', visible: false);
-      expect(s.displayValue, isNull);
-    });
-
-    test('displayValue is the secret when visible', () {
-      const s = AccessCodeState(loading: false, secret: 'shh-fake-secret', visible: true);
-      expect(s.displayValue, 'shh-fake-secret');
     });
   });
 

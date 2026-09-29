@@ -1,0 +1,31 @@
+# BladeWatch-rdtj.60: the companion's app icon on Android, iOS and macOS (Windows and Linux: see
+# below). Regenerate with: dart run flutter_launcher_icons
+#
+# !! After a run, check ios/Runner.xcodeproj/project.pbxproj: 0.14.4 rewrote
+# !! ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES to '= AppIcon'. Put YES back.
+#
+# Sources in assets/icon/, made from app/src/main/assets/web/shared/app-icon.webp (the in-car
+# app's and the web's icon), whose rounded square sits on BLACK corners:
+#   icon_fullbleed.png  1024, opaque, corners filled with the square's own colour (#1A1E23):
+#                       iOS (no alpha allowed) and Android's pre-8 icons
+#   icon_adaptive.png   the icon inside the 66/108 safe zone on #1A1E23, so a circle or squircle
+#                       mask never clips the ring (it spans 89% of the square)
+#   icon_macos.png      Apple's template: the rounded square at 824/1024, transparent margins
+#   icon_rounded.png    the rounded square filling the canvas, transparent corners: Windows, Linux
+flutter_launcher_icons:
+  image_path: "assets/icon/icon_fullbleed.png"
+  android: "ic_launcher"
+  min_sdk_android: 21
+  adaptive_icon_background: "#1A1E23"
+  adaptive_icon_foreground: "assets/icon/icon_adaptive.png"
+  # The foreground already holds its safe-zone padding.
+  adaptive_icon_foreground_inset: 0
+  ios: true
+  remove_alpha_ios: true
+  macos:
+    generate: true
+    image_path: "assets/icon/icon_macos.png"
+  # Windows: off here -- this tool writes a single 256 px .ico. windows/runner/resources/app_icon.ico
+  # holds 16-256 px, made from icon_rounded.png (Pillow: Image.save(..., sizes=[16..256])).
+  windows:
+    generate: false

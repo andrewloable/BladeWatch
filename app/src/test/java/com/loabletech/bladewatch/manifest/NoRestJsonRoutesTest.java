@@ -22,14 +22,13 @@ import org.junit.Test;
  * demonstrably known, and {@code ServiceLauncher} kept a hand-rolled failure check that
  * BladeWatch-boat had already replaced elsewhere. Only one surface is served now.
  *
- * <p>These routes stay plain HTTP and are NOT a JSON API — a browser must fetch them directly
- * and cannot speak Connect:
+ * <p>These routes stay plain HTTP and are NOT a JSON API — a player or an image tag must fetch them
+ * directly and cannot speak Connect, or they happen before any Connect client has a session:
  *
  * <ul>
  *   <li>{@code /video/*} and {@code /thumb/*} — player byte-range requests and {@code <img src>}
  *   <li>{@code /api/stream/*} — MJPEG and still frames, consumed as image URLs
- *   <li>the Angular bundle, {@code /login}, {@code /manifest.json}, {@code /sw.js},
- *       {@code /i18n/*}, {@code /shared/*}
+ *   <li>{@code /auth/pair} and {@code /auth/companion} — the companion's pre-auth pairing and login
  * </ul>
  *
  * <p>Read as source TEXT: {@code HttpServer} needs a bound socket and the daemon's singletons,

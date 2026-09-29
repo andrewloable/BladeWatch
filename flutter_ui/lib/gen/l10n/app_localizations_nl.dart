@@ -28,6 +28,12 @@ class AppLocalizationsNl extends AppLocalizations {
   String get action_select_all_short => 'Alles';
 
   @override
+  String get action_select => 'Selecteren';
+
+  @override
+  String get action_deselect_all => 'Alles deselecteren';
+
+  @override
   String get action_delete => 'Verwijderen';
 
   @override
@@ -53,15 +59,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get cd_qr_code => 'QR-code';
-
-  @override
-  String get cd_show_hide_token => 'Token tonen/verbergen';
-
-  @override
-  String get cd_copy_token => 'Token kopiëren';
-
-  @override
-  String get cd_copy_url => 'URL kopiëren';
 
   @override
   String get cd_clear_logs => 'Logboek wissen';
@@ -180,48 +177,16 @@ class AppLocalizationsNl extends AppLocalizations {
       'Auto kiest bij elke opstart de juiste camera voor jouw uitvoering. Camera 1 = BYD Seal, Camera 0 = Atto-uitvoeringen. Start de cameraservice opnieuw na het wijzigen van de camera-ID om de instelling te activeren.';
 
   @override
-  String get dashboard_scan_to_connect => 'Scan om te verbinden';
-
-  @override
   String get dashboard_qr_waiting => 'Wachtend op de tunnel...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 actief';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'Toegangscode';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'Token opnieuw genereren';
 
   @override
-  String get dashboard_set_password => 'Wachtwoord instellen';
-
-  @override
   String get cd_set_password => 'Eigen wachtwoord instellen';
-
-  @override
-  String get dialog_set_password_title => 'Eigen wachtwoord instellen';
-
-  @override
-  String get dialog_set_password_message =>
-      'Voer een nieuw toegangswachtwoord in. Dit vervangt het automatisch gegenereerde token.';
-
-  @override
-  String get dialog_set_password_hint => 'Nieuw wachtwoord (min. 12 tekens)';
-
-  @override
-  String get toast_password_set => 'Wachtwoord bijgewerkt';
-
-  @override
-  String get toast_password_too_short =>
-      'Wachtwoord moet minstens 12 tekens zijn';
 
   @override
   String get toast_password_save_failed =>
@@ -532,6 +497,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get recording_lib_date_all_days => 'Alle dagen';
 
   @override
+  String get recording_lib_type_all => 'Alle';
+
+  @override
   String get cd_clear_date_filter => 'Toon alle dagen';
 
   @override
@@ -575,9 +543,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get daemon_name_acc => 'ACC-bewaking';
-
-  @override
-  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Achtergronddiensten';
@@ -805,9 +770,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get reset_label_trip_files => 'Telemetriebestanden van de reis';
 
   @override
-  String get toast_access_code_copied => 'Toegangscode gekopieerd';
-
-  @override
   String get dialog_regenerate_token_title => 'Token opnieuw genereren';
 
   @override
@@ -830,21 +792,12 @@ class AppLocalizationsNl extends AppLocalizations {
   String get toast_token_regenerated => 'Teken geregenereerd';
 
   @override
-  String get dashboard_no_tunnel => 'Geen tunnel loopt.';
-
-  @override
-  String get dashboard_starting_tor => 'Tor-tunnel starten…';
-
-  @override
   String get dashboard_waiting_url => 'Wachtend op tunnel URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 actief';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Toegangscode';
@@ -1325,11 +1278,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get diagnostics_metric_online => 'Online';
 
   @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'Tunnel · $arg1';
-  }
-
-  @override
   String diagnostics_network_data_usage_line(Object arg1) {
     return '$arg1 deze maand';
   }
@@ -1748,17 +1696,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get dashboard_trips_this_week => 'Deze week';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 ritten',
-      one: '$arg1 rit',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1781,6 +1718,18 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get dashboard_trips_label_time => 'Rijtijd';
+
+  @override
+  String get dashboard_week_battery => 'Accu';
+
+  @override
+  String get dashboard_week_elec_range => 'EV-bereik';
+
+  @override
+  String get dashboard_week_fuel => 'Brandstof';
+
+  @override
+  String get dashboard_week_fuel_range => 'Brandstofbereik';
 
   @override
   String get dashboard_trips_no_data => 'Deze week geen ritten geregistreerd';
@@ -1841,7 +1790,7 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Tor-tunnel en achtergrondservices.';
+      'Toegang op afstand (Pear) en achtergrondservices.';
 
   @override
   String get settings_about_row_title => 'Over BladeWatch';
@@ -1989,9 +1938,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get vehicle_tab_climate => 'Klimaat';
 
   @override
-  String get vehicle_tab_seats => 'Zitplaatsen';
-
-  @override
   String get vehicle_tab_windows => 'Ramen';
 
   @override
@@ -2074,44 +2020,9 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'Binnen: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'Buiten: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'Bestuurder';
-
-  @override
-  String get vehicle_seat_passenger => 'Passagier';
-
-  @override
-  String get vehicle_seat_no_controls =>
-      'Geen stoelbediening beschikbaar voor dit voertuig.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'Verwarmen $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'Koelen $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(Uit)';
-
-  @override
-  String get vehicle_heat_low => '(Laag)';
-
-  @override
-  String get vehicle_heat_high => '(Hoog)';
-
-  @override
-  String get vehicle_seat_pos_1 => 'Positie 1';
-
-  @override
-  String get vehicle_seat_pos_2 => 'Positie 2';
 
   @override
   String get vehicle_all_windows => 'Alle ramen';
@@ -2881,42 +2792,129 @@ class AppLocalizationsNl extends AppLocalizations {
   String get surveillance_apply_failed => 'Opslaan mislukt';
 
   @override
-  String get dashboard_tor_bootstrapping => 'Verbinden met Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'Dit adres openen';
-
-  @override
-  String get dashboard_tor_help_title => 'Dit adres openen';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: installeer Tor Browser via Google Play of F-Droid, open het en plak het adres.';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone en iPad: installeer Onion Browser uit de App Store, open het en plak het adres. Tor Browser bestaat niet voor iOS.';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS en Linux: download Tor Browser via torproject.org, open het en plak het adres.';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'Het wachtwoord blijft nodig zodra de pagina is geladen.';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'Scan voor de downloadpagina van Tor Browser';
-
-  @override
-  String get dashboard_tor_help_close => 'Duidelijk';
-
-  @override
   String get surveillance_general_battery_warning =>
       'Bewakingsmodus gebruikt extra stroom uit de 12V-accu zolang deze actief is.';
 
   @override
   String get surveillance_general_camera_contention_warning =>
       'Een andere app gebruikt op dit moment de camera.';
+
+  @override
+  String get pairing_title => 'Apparaat koppelen';
+
+  @override
+  String get pairing_scan_hint =>
+      'Scan met de BladeWatch-app op je telefoon of computer. De code werkt maar één keer.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'Verloopt over $time';
+  }
+
+  @override
+  String get pairing_expired => 'Deze code is verlopen.';
+
+  @override
+  String get pairing_new_code => 'Nieuwe code';
+
+  @override
+  String get pairing_remote_note =>
+      'Koppelen zet externe toegang voor deze auto aan.';
+
+  @override
+  String get pairing_lan_title => 'Directe verbinding via deze wifi';
+
+  @override
+  String get pairing_lan_body =>
+      'Een gekoppeld apparaat op dezelfde wifi als de auto maakt rechtstreeks en versleuteld verbinding, zonder via internet. Uit tot je het aanzet.';
+
+  @override
+  String get pairing_devices_title => 'Gekoppelde apparaten';
+
+  @override
+  String get pairing_devices_empty => 'Nog geen apparaten gekoppeld.';
+
+  @override
+  String get pairing_remove => 'Verwijderen';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '$name verwijderen?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Het verliest direct de toegang. Je andere apparaten blijven werken.';
+
+  @override
+  String get pairing_error =>
+      'De cameraservice reageerde niet. Probeer het opnieuw.';
+
+  @override
+  String get daemon_name_pear => 'Toegang op afstand (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Overal bereikbaar';
+
+  @override
+  String get pear_status_unreachable =>
+      'Niet bereikbaar: geen verbinding met het Pear-netwerk';
+
+  @override
+  String get pear_status_unknown => 'Bereikbaarheid onbekend';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count apparaten verbonden',
+      one: '$count apparaat verbonden',
+      zero: 'Geen apparaten verbonden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Laatste verbinding: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Uit';
+
+  @override
+  String get trips_cost_total => 'Totale kosten';
+
+  @override
+  String get trips_cost_no_rate =>
+      'Stel een elektriciteitstarief in bij de ritinstellingen om kosten te zien.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'Ritten zijn in meer dan één valuta berekend, dus er wordt geen totaal getoond.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'Versnelling $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'Modus: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'Uit';
+
+  @override
+  String get auto_hold_enabled => 'Aan';
+
+  @override
+  String get auto_hold_active => 'Houdt vast';
 }

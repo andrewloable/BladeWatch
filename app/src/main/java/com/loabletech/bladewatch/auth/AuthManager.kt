@@ -22,7 +22,7 @@ import javax.crypto.spec.SecretKeySpec
  * Authentication Manager for BYD Champ.
  *
  * Simple device token authentication - no external OAuth needed.
- * Works with any tunnel (the Tor onion service, or a LAN address) since no origin
+ * Works over any transport (Pear, or a LAN address) since no origin
  * validation is required.
  *
  * Auth Flow:
@@ -91,7 +91,7 @@ object AuthManager {
     private var testStateOverride: AuthState? = null
 
     // Monotonic counter incremented every time cachedState is replaced.
-    // Lets downstream JWT consumers (DaemonHttpClient, WebViewFragment cookie)
+    // Lets downstream JWT consumers (ConnectClientProvider)
     // detect a swap and invalidate their own per-secret caches without
     // having to compare opaque secret material.
     @Volatile
@@ -240,6 +240,17 @@ object AuthManager {
         // so callers (e.g. WebViewFragment) retry once the daemon has
         // booted and getState() can pull the canonical value.
         if (state == null || state.deviceSecret.isNullOrEmpty()) {
+            // BladeWatch-w7by: "not found" is only true when the daemon itself read the store and it
+            // was not there. From the app process it can just mean the daemon has not answered yet
+            // (an install restarts the app before the daemons): minting here then persisted a NEW
+            // secret once the daemon came up, and every companion token died with the old one.
+            if (!SecretConfigBridge.canMintSecrets()) {
+                log("Auth secret not readable from this process yet -- leaving it to the daemon")
+                cachedState = null
+                cachedConfigMtime = 0
+                lastInitAttemptMs = System.currentTimeMillis()
+                return null
+            }
             if (state == null) state = AuthState()
             if (state.deviceId.isNullOrEmpty()) {
                 state.deviceId = loadDeviceId()
@@ -337,8 +348,8 @@ object AuthManager {
         // threshold and ANR. Lock-free keeps onResume() instant. The
         // volatile cachedState=null write is the real cache invalidation
         // (getState() re-checks it); the stateVersion bump is an advisory
-        // "changed" hint for JWT-caching consumers (DaemonHttpClient's /status
-        // poller, WebView cookie) so they re-mint instead of reusing a JWT
+        // "changed" hint for JWT-caching consumers (ConnectClientProvider)
+        // so they re-mint instead of reusing a JWT
         // signed with the now-discarded secret. A rare lost increment from
         // racing a monitored writer is harmless because cachedState=null already
         // forces a reload.
@@ -348,49 +359,7 @@ object AuthManager {
         stateVersion++
     }
 
-    // ==================== TOKEN VALIDATION ====================
-
-    /**
-     * Validate device token.
-     * Token format: {deviceId}-{secret}
-     */
-    @JvmStatic
-    fun validateDeviceToken(token: String?): Boolean {
-        if (token.isNullOrEmpty()) {
-            return false
-        }
-        val state = getState() ?: return false
-        // Guard the SECRET, not the composed token. getDeviceToken() is deviceId + "-" +
-        // deviceSecret, so a blank secret yields "byd-xxxx-" — non-empty, and guessable by
-        // anyone who has seen the device id, which the login page displays.
-        //
-        // getState() will not hand out a blank-secret state today (it re-initialises instead),
-        // so this is defence in depth rather than a live hole. It is worth stating here anyway
-        // because AuthState.fromJson deliberately sets deviceSecret = "" — the secret lives in
-        // the secret store, not the config — so blank-secret states are constructed by design
-        // and only one caller stands between them and this check.
-        if (state.getSecret().isNullOrEmpty()) {
-            return false
-        }
-        val expected = state.getDeviceToken()
-        if (expected.isEmpty()) {
-            return false
-        }
-        // Constant-time, like every other secret comparison in this class (see the JWT
-        // signature checks below) and in IpcTokenManager / VehicleActionToken. This one was
-        // the outlier, and it is the most exposed of the set: it backs POST /auth/token, the
-        // UNAUTHENTICATED login endpoint, so the compared value is supplied by whoever can
-        // reach the tunnel. String.equals returns at the first differing byte, which leaks how
-        // much of the secret a guess got right.
-        //
-        // The attempt limiter in AuthApiHandler already caps guesses, so this is defence in
-        // depth rather than a fix for a demonstrated break — but it costs one line and removes
-        // an inconsistency that reads like an oversight.
-        return MessageDigest.isEqual(
-            token.toByteArray(StandardCharsets.UTF_8),
-            expected.toByteArray(StandardCharsets.UTF_8)
-        )
-    }
+    // ==================== TOKEN ROTATION ====================
 
     /**
      * Regenerate device token (invalidates all sessions).
@@ -471,7 +440,15 @@ object AuthManager {
 
     /** Generate a JWT session token. */
     @JvmStatic
-    fun generateJwt(): String? {
+    fun generateJwt(): String? = generateJwt(null)
+
+    /**
+     * A JWT session token; [companionId] non-null mints one for a paired companion app
+     * (BladeWatch-rdtj.7), carrying it as `cid` so [validateJwt] can refuse it the moment that
+     * companion is un-paired, without disturbing any other session.
+     */
+    @JvmStatic
+    fun generateJwt(companionId: String?): String? {
         val state = getState() ?: return null
 
         return try {
@@ -481,6 +458,7 @@ object AuthManager {
             val payloadJson = "{\"sub\":\"" + escapeJson(state.deviceId) + "\"," +
                 "\"iat\":" + now + "," +
                 "\"exp\":" + exp + "," +
+                (if (companionId != null) "\"cid\":\"" + escapeJson(companionId) + "\"," else "") +
                 "\"ver\":" + state.tokenEpoch + "}"
 
             val content = base64UrlEncode(headerJson.toByteArray(StandardCharsets.UTF_8)) +
@@ -495,67 +473,6 @@ object AuthManager {
         } catch (e: Exception) {
             log("JWT generation error: " + e.message)
             null
-        }
-    }
-
-    /**
-     * Mint a single-purpose thumb token for a given filename. Compact HS256
-     * over the existing device secret with claims `sub=filename` and
-     * `exp=now+ttlSec`. The token can be carried as a `?t=`
-     * query param so browsers fetching the thumbnail (Web Push notification
-     * service worker, FCM image fetch, iOS WebKit notification body) don't
-     * need to send Authorization headers — useful when the URL ends up in
-     * the OS-level notification banner where headers are not configurable.
-     */
-    @JvmStatic
-    fun signThumbToken(filename: String?, ttlSec: Long): String? {
-        val state = getState()
-        if (state == null || filename == null) return null
-        return try {
-            val now = System.currentTimeMillis() / 1000
-            val headerJson = "{\"alg\":\"" + JWT_ALGORITHM + "\",\"typ\":\"THM\"}"
-            val payloadJson = "{\"sub\":\"" + escapeJson(filename) + "\"," +
-                "\"iat\":" + now + "," +
-                "\"exp\":" + (now + ttlSec) + "}"
-            val content = base64UrlEncode(headerJson.toByteArray(StandardCharsets.UTF_8)) +
-                "." + base64UrlEncode(payloadJson.toByteArray(StandardCharsets.UTF_8))
-            content + "." + hmacSha256(content, state.deviceSecret)
-        } catch (e: Exception) {
-            log("Thumb token sign error: " + e.message)
-            null
-        }
-    }
-
-    /**
-     * Validate a thumb token against an expected filename. Returns true iff
-     * signature matches the device secret, `typ=="THM"`,
-     * `sub==filename`, and `exp` is in the future.
-     */
-    @JvmStatic
-    fun validateThumbToken(filename: String?, token: String?): Boolean {
-        if (filename == null || token.isNullOrEmpty()) return false
-        val state = getState() ?: return false
-        val parts = token.split(".")
-        if (parts.size != 3) return false
-        return try {
-            val content = parts[0] + "." + parts[1]
-            val expectedSig = hmacSha256(content, state.deviceSecret)
-            if (!MessageDigest.isEqual(
-                    expectedSig.toByteArray(StandardCharsets.UTF_8),
-                    parts[2].toByteArray(StandardCharsets.UTF_8)
-                )
-            ) {
-                return false
-            }
-            val headerJson = String(base64UrlDecode(parts[0]), StandardCharsets.UTF_8)
-            if ("THM" != extractJsonString(headerJson, "typ")) return false
-            val payloadJson = String(base64UrlDecode(parts[1]), StandardCharsets.UTF_8)
-            if (filename != extractJsonString(payloadJson, "sub")) return false
-            val exp = extractJsonLong(payloadJson, "exp", 0)
-            System.currentTimeMillis() / 1000 <= exp
-        } catch (e: Exception) {
-            log("validateThumbToken failed: " + e.message)
-            false
         }
     }
 
@@ -631,6 +548,12 @@ object AuthManager {
             }
             if (tokenDeviceId != state.deviceId) {
                 return JwtValidation.failure("Device mismatch")
+            }
+
+            // A companion's session dies with its pairing (BladeWatch-rdtj.7).
+            val companionId = extractJsonString(payloadJson, "cid")
+            if (companionId != null && !CompanionPairing.shared.isPaired(companionId)) {
+                return JwtValidation.failure("Companion un-paired")
             }
 
             JwtValidation.success(tokenDeviceId)
@@ -986,6 +909,9 @@ object AuthManager {
     @JvmStatic
     fun clearTestState() {
         testStateOverride = null
+        cachedState = null
+        cachedConfigMtime = 0
+        lastInitAttemptMs = 0
     }
 
     @JvmStatic

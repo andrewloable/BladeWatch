@@ -113,7 +113,7 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
     _analyticsEnabled = cfg?.enabled ?? false;
     _currency = (cfg?.currency.isNotEmpty ?? false) ? cfg!.currency : Currency.defaultCode;
     _rateController = TextEditingController(text: (cfg?.electricityRate ?? 0.0).toStringAsFixed(4));
-    // Both default to 0 meaning NOT CONFIGURED, matching the daemon and the web UI.
+    // Both default to 0 meaning NOT CONFIGURED, matching the daemon.
     _fuelPriceController =
         TextEditingController(text: (cfg?.fuelPricePerL ?? 0.0).toStringAsFixed(2));
     _tankCapacityController =

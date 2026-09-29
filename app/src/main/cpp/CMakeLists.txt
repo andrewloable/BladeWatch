@@ -55,6 +55,8 @@ set(SURVEILLANCE_SOURCES
     # Camera/EGL: AHardwareBuffer → EGLImage → GL_TEXTURE_EXTERNAL_OES
     # binding for the ImageReader-based zero-copy camera path.
     camera/HardwareBufferTextureBinder.cpp
+    # BladeWatch-rdtj.66: survive vold's SIGINT at an SD-card unmount.
+    camera/sd_signal.cpp
 )
 
 add_library(surveillance SHARED ${SURVEILLANCE_SOURCES})

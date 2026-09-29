@@ -18,6 +18,7 @@ import net.bladewatch.app.byd.BydDeviceHelper
 import net.bladewatch.app.camera.AvcHalWarmup
 import net.bladewatch.app.camera.BydCameraCoordinator
 import net.bladewatch.app.camera.PanoramicCameraGpu
+import net.bladewatch.app.auth.AuthManager
 import net.bladewatch.app.config.SecretConfigStore
 import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.daemon.proxy.Safe
@@ -32,15 +33,14 @@ import net.bladewatch.app.monitor.PerformanceMonitor
 import net.bladewatch.app.monitor.SocHistoryDatabase
 import net.bladewatch.app.monitor.VehicleDataMonitor
 import net.bladewatch.app.notifications.CategoryRegistry
+import net.bladewatch.app.notifications.CompanionInbox
 import net.bladewatch.app.notifications.NotificationBus
-import net.bladewatch.app.notifications.push.SubscriptionStore
-import net.bladewatch.app.notifications.push.VapidKeyStore
-import net.bladewatch.app.notifications.push.VapidSigner
 import net.bladewatch.app.notifications.sinks.LogSink
-import net.bladewatch.app.notifications.sinks.PushSink
 import net.bladewatch.app.recording.RecordingModeManager
 import net.bladewatch.app.server.HttpServer
 import net.bladewatch.app.server.IpcTokenManager
+import net.bladewatch.app.server.LanDiscoveryResponder
+import net.bladewatch.app.server.LanTls
 import net.bladewatch.app.server.NotificationApiHandler
 import net.bladewatch.app.server.SurveillanceIpcServer
 import net.bladewatch.app.server.TcpCommandServer
@@ -57,6 +57,7 @@ import net.bladewatch.app.server.connect.impl.TripsServiceImpl
 import net.bladewatch.app.server.connect.impl.VehicleServiceImpl
 import net.bladewatch.app.storage.ExternalStorageCleaner
 import net.bladewatch.app.storage.InternalToSdMigrator
+import net.bladewatch.app.recording.FragmentedMp4Muxer
 import net.bladewatch.app.storage.StorageManager
 import net.bladewatch.app.surveillance.GpuPipelineConfig
 import net.bladewatch.app.surveillance.GpuSurveillancePipeline
@@ -159,6 +160,7 @@ object CameraDaemon {
     private var tcpServer: TcpCommandServer? = null
     private var httpServer: HttpServer? = null
     private var ipcServer: SurveillanceIpcServer? = null
+    private var lanDiscovery: LanDiscoveryResponder? = null
     private var accMonitor: AccMonitor? = null
 
     // ==================== SURVEILLANCE ====================
@@ -376,6 +378,21 @@ object CameraDaemon {
         storageManager.applyAutoStoragePriority()
         logT("applyAutoStoragePriority done")
 
+        // BladeWatch-rdtj.29: a fragmented clip a crash left as <name>.mp4.tmp is finished and
+        // listed. Here, before the camera pipeline exists, so nothing is recording into these
+        // directories yet, and BEFORE the orphan sweep further down deletes every .tmp over
+        // 5 minutes old -- over the same directories that sweep covers. MediaMuxer leftovers
+        // cannot be saved this way; they are left for the sweep, as before. The media catalog
+        // does not exist yet, so the clips are indexed once it does (below).
+        var recoveredClips: List<File> = emptyList()
+        try {
+            val dirs = listOf("recordings", "surveillance", "proximity").flatMap { storageManager.sweepableDirs(it) }
+            recoveredClips = FragmentedMp4Muxer.recoverLeftovers(dirs) { storageManager.onFileSaved(it) }
+            if (recoveredClips.isNotEmpty()) log("Recovered ${recoveredClips.size} cut-off recording(s): " + recoveredClips.joinToString { it.name })
+        } catch (e: Exception) {
+            log("Leftover recording recovery failed: " + e.message)
+        }
+
         // Start the SD-card mount watchdog at daemon boot (instead of only on
         // ACC OFF). The watchdog no-ops when no storage type is set to SD, so
         // it's safe to start unconditionally — but it must run continuously
@@ -490,7 +507,10 @@ object CameraDaemon {
         // Register Connect protocol service implementations
         val cd = http.connectDispatcher
         AuthServiceImpl().register(cd)
-        NotificationsServiceImpl().register(cd)
+        // BladeWatch-rdtj.14: held for the companion from boot, registry or not.
+        val inbox = CompanionInbox(File(CompanionInbox.PATH))
+        NotificationBus.get().subscribe(inbox)
+        NotificationsServiceImpl(inbox).register(cd)
         SettingsServiceImpl().register(cd)
         StreamServiceImpl().register(cd)
         StorageServiceImpl().register(cd)
@@ -512,7 +532,7 @@ object CameraDaemon {
         }
         logT("createAppContext done")
 
-        // Notifications subsystem — registry, push subscriptions, sinks.
+        // Notifications subsystem — registry, sinks.
         // Lives in this process because HttpServer (where the API routes bind)
         // runs here, and every v1 emit source (surveillance, proximity, tyre)
         // lives here too. Init on a background thread because reading APK
@@ -566,6 +586,15 @@ object CameraDaemon {
         initSurveillance()
         logT("initSurveillance done")
 
+        // BladeWatch-rdtj.66: let go of the SD card when vold unmounts it (its SIGINT), instead of
+        // dying. Served clips close; a recording on the card is finished. After initSurveillance:
+        // the handler lives in libsurveillance, which the pipeline loads.
+        SdCardSignal.start {
+            val closed = OpenMediaFiles.closeAll()
+            val finished = gpuPipeline?.releaseRemovableStorage() == true
+            log("SIGINT (SD unmount): closed $closed served file(s)" + if (finished) ", finished the recording on the card" else "")
+        }
+
         // Apply persisted settings to GPU pipeline (for runtime changes)
         // Note: Codec/bitrate are already applied during init, but this ensures
         // the config object is in sync and handles any settings that need runtime application
@@ -589,6 +618,20 @@ object CameraDaemon {
         Thread(tcp::start, "TcpServer").start()
         Thread(http::start, "HttpServer").start()
         Thread(ipc, "SurveillanceIPC").start()
+        // BladeWatch-rdtj.5: answers signed LAN probes; idles unbound until LAN access is on.
+        val discovery = LanDiscoveryResponder(
+            probeKey = { LanDiscoveryResponder.probeKey(SecretConfigStore()) },
+            replyInfo = {
+                AuthManager.getState()?.deviceId?.let { id ->
+                    LanDiscoveryResponder.ReplyInfo(
+                        LanTls.loadOrCreate(SecretConfigStore()).fingerprintSha256, id
+                    )
+                }
+            },
+            enabled = { UnifiedConfigManager.isLanHttpEnabled() },
+        )
+        lanDiscovery = discovery
+        Thread(discovery::run, "LanDiscovery").start()
         Thread(acc::start, "AccMonitor").start()
         logT("server threads started (TcpServer, HttpServer, SurveillanceIPC, AccMonitor)")
 
@@ -623,6 +666,7 @@ object CameraDaemon {
                 mediaCatalogManager = mcm
                 mcm.init()
                 log("Media catalog initialized (available=" + mcm.isAvailable + ")")
+                recoveredClips.forEach(mcm::indexRecording) // BladeWatch-rdtj.29, recovered above
                 logT("MediaCatalogManager.init done")
             } catch (e: Exception) {
                 log("Media catalog init failed: " + e.message)
@@ -1113,6 +1157,7 @@ object CameraDaemon {
         tcpServer?.stop()
         httpServer?.stop()
         ipcServer?.stop()
+        lanDiscovery?.stop()
 
         // Shutdown StorageManager (schedulers, executors)
         try {
@@ -3091,11 +3136,9 @@ object CameraDaemon {
     @Volatile private var notificationsInitialized = false
 
     /**
-     * Initialize the Web Push notification subsystem. Loads the category
-     * registry from APK assets, opens persistent stores under
-     * `/data/local/tmp/.push/`, registers PushSink + LogSink with
-     * NotificationBus, and wires NotificationApiHandler so HTTP routes can
-     * resolve.
+     * Initialize the notification subsystem. Loads the category registry from
+     * APK assets, registers LogSink with NotificationBus, and wires
+     * NotificationApiHandler so the Connect routes can resolve.
      */
     @Synchronized
     @JvmStatic
@@ -3120,25 +3163,20 @@ object CameraDaemon {
             return
         }
 
-        val pushDir = File("/data/local/tmp/.push")
-        if (!pushDir.exists()) pushDir.mkdirs()
-
-        val keyStore = VapidKeyStore(File(pushDir, "vapid.json"))
-        // Touch the keystore so we generate / cache the keypair eagerly.
-        keyStore.publicKeyB64Url()
-
-        val subStore = SubscriptionStore(File(pushDir, "subscriptions.json"))
-        subStore.load()
-
-        val signer = VapidSigner(keyStore, "")
-
         NotificationBus.get().subscribe(LogSink())
-        NotificationBus.get().subscribe(PushSink(subStore, registry, keyStore, signer))
 
-        NotificationApiHandler.init(registry, subStore, keyStore)
+        NotificationApiHandler.init(registry)
+
+        // Web Push was removed (BladeWatch-rdtj.22): drop the VAPID private key and browser
+        // subscriptions a previous version left behind.
+        try {
+            File("/data/local/tmp/.push").deleteRecursively()
+        } catch (e: Exception) {
+            log("WARN: could not remove legacy /data/local/tmp/.push: " + e.message)
+        }
 
         notificationsInitialized = true
-        log("Notifications initialized: " + registry.all().size + " categories, " + subStore.size() + " subscriptions")
+        log("Notifications initialized: " + registry.all().size + " categories")
     }
 
     // ==================== GPS MONITOR ====================

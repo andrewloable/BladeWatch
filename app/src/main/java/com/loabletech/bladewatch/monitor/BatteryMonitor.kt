@@ -7,6 +7,9 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.Socket
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Fetches battery info from SurveillanceIpcServer (port 19877) for the status API's display.
@@ -26,6 +29,27 @@ object BatteryMonitor {
 
     @Volatile
     private var lastBatteryUpdate = 0L
+
+    private const val REFRESH_MS = 30_000L
+
+    /** When a refresh was last started, successful or not -- so a failing one is not retried per call. */
+    @Volatile
+    private var lastAttempt = 0L
+    private val refreshing = AtomicBoolean(false)
+    private val refresher: ExecutorService =
+        Executors.newSingleThreadExecutor { r -> Thread(r, "BatteryRefresh").apply { isDaemon = true } }
+
+    // Test seams.
+    internal var clock: () -> Long = System::currentTimeMillis
+    internal var fetcher: () -> Unit = ::fetchBatteryInfo
+
+    internal fun resetForTest() {
+        lastAttempt = 0L
+        lastBatteryUpdate = 0L
+        refreshing.set(false)
+        clock = System::currentTimeMillis
+        fetcher = ::fetchBatteryInfo
+    }
 
     /**
      * Derive the battery level from the actual voltage when the BYD API returns INVALID.
@@ -100,11 +124,29 @@ object BatteryMonitor {
         }
     }
 
-    /** Battery info as JSON. Fetches fresh data if the cache is stale (> 30 seconds). */
+    /**
+     * Battery info as JSON, refreshed at most every 30 s -- but never on the caller's thread after
+     * the first call. A refresh is an IPC round trip to the surveillance daemon (measured ~700 ms),
+     * and SystemService.GetStatus, which the dashboard polls, used to wait for it every 30 s; a
+     * failing refresh never advanced the timestamp, so then it waited on EVERY call
+     * (BladeWatch-1996). Only the very first call fetches inline, so GetStatus reports the same
+     * values it always has.
+     */
     @JvmStatic
     fun getBatteryInfo(): JSONObject {
-        if (System.currentTimeMillis() - lastBatteryUpdate > 30000) {
-            fetchBatteryInfo()
+        val now = clock()
+        if (lastAttempt == 0L) {
+            lastAttempt = now
+            fetcher()
+        } else if (now - lastAttempt > REFRESH_MS && refreshing.compareAndSet(false, true)) {
+            lastAttempt = now
+            refresher.execute {
+                try {
+                    fetcher()
+                } finally {
+                    refreshing.set(false)
+                }
+            }
         }
 
         val battery = JSONObject()

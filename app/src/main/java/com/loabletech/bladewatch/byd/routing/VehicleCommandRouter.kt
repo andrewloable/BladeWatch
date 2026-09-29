@@ -227,43 +227,6 @@ class VehicleCommandRouter private constructor() {
             )
     }
 
-    /** Seat heat — local SDK primitive (position + level). */
-    class SeatHeatCommand(
-        @JvmField val position: Int,
-        @JvmField val level: Int,
-        @JvmField val driverHeat: Int,
-        @JvmField val driverVent: Int,
-        @JvmField val passengerHeat: Int,
-        @JvmField val passengerVent: Int
-    ) : VehicleCommand() {
-        override fun name(): String = "seat-heat"
-        override fun hasSdkPath(): Boolean = true
-        override fun executeViaSdk(collector: BydDataCollector): Boolean =
-            collector.setSeatHeating(position, level)
-    }
-
-    /** Seat ventilation — local SDK primitive (position + level). */
-    class SeatVentCommand(
-        @JvmField val position: Int,
-        @JvmField val level: Int,
-        @JvmField val driverHeat: Int,
-        @JvmField val driverVent: Int,
-        @JvmField val passengerHeat: Int,
-        @JvmField val passengerVent: Int
-    ) : VehicleCommand() {
-        override fun name(): String = "seat-vent"
-        override fun hasSdkPath(): Boolean = true
-        override fun executeViaSdk(collector: BydDataCollector): Boolean =
-            collector.setSeatVentilation(position, level)
-    }
-
-    class SeatMemoryCommand(@JvmField val position: Int) : VehicleCommand() {
-        override fun name(): String = "seat-memory"
-        override fun hasSdkPath(): Boolean = true
-        override fun executeViaSdk(collector: BydDataCollector): Boolean =
-            collector.setSeatMemoryPosition(position)
-    }
-
     class LightsCommand(@JvmField val drlOn: Boolean) : VehicleCommand() {
         override fun name(): String = "lights"
         override fun hasSdkPath(): Boolean = true

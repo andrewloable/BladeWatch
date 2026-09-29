@@ -832,7 +832,7 @@ class StatusOverlayService : Service() {
 
     companion object {
         /** The Flutter UI APK — the only package with a launcher entry after Phase 4. */
-        private const val FLUTTER_UI_PACKAGE = "net.bladewatch.flutter"
+        private const val FLUTTER_UI_PACKAGE = "net.bladewatch.incarapp"
 
         private const val TAG = "StatusOverlay"
         private const val CHANNEL_ID = "status_overlay"

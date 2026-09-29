@@ -56,7 +56,7 @@ object LocaleManager {
     private const val STATE_FILE = "$STATE_DIR/locale"
 
     /**
-     * The pre-BladeWatch-vcur location, still READ so a device whose web UI already persisted a
+     * The pre-BladeWatch-vcur location, still READ so a device whose older UI already persisted a
      * language keeps it. The web picker goes through the daemon, which runs as shell and so could
      * always write here.
      */

@@ -1,3 +1,4 @@
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -5,9 +6,9 @@ import 'package:flutter/foundation.dart';
 // DnaScores/TripsConfig/TripsStorage collide with this file's own hand-written
 // model classes of the same name — same shape as yz1e.3's RecordingStatus
 // collision.
-import 'package:bladewatch_ui/gen/bladewatch/v1/trips.pb.dart' hide DnaScores;
-import 'package:bladewatch_ui/gen/bladewatch/v1/trips.pb.dart' as pb show DnaScores;
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart' hide DnaScores;
+import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart' as pb show DnaScores;
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:fixnum/fixnum.dart';
 
 import 'trips_models.dart';
@@ -86,6 +87,12 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
       final configResp = results[4] as GetConfigResponse;
       final storageResp = results[5] as GetStorageResponse;
 
+      // Costs are a sum over the whole period (BladeWatch-mgi9, -c149), and the list above is its
+      // first page: page on only when that page came back full.
+      final firstPage = listResp.trips;
+      final periodTrips =
+          firstPage.length < 100 ? firstPage : await listTripsInPeriod(_tripsService.listTrips, _activeFilter.days);
+
       _state = TripsLoaded(
         trips: listResp.trips.map(_toTripItem).toList(),
         summary: _toSummary(summaryResp),
@@ -93,6 +100,7 @@ class TripsController extends ChangeNotifier with DisposedSafeNotifier {
         range: _toRange(rangeResp.rangeJson),
         config: configResp.hasConfig() ? _toConfig(configResp.config) : null,
         storage: storageResp.hasStorage() ? _toStorage(storageResp.storage) : null,
+        costs: TripCosts.of(periodTrips),
       );
     } catch (e) {
       _state = TripsError('$e');

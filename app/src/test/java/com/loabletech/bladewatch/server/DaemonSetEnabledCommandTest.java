@@ -89,7 +89,8 @@ public class DaemonSetEnabledCommandTest {
 
     @Test
     public void refusesAnUnknownOrEmptyType() throws Exception {
-        for (String type : new String[] {"", "NOT_A_DAEMON", "tor", "tor_tunnel"}) {
+        // TOR_TUNNEL included: tor was removed (BladeWatch-rdtj.12), so it is no longer toggleable.
+        for (String type : new String[] {"", "NOT_A_DAEMON", "TOR_TUNNEL", "tor", "pear", "pear_peer"}) {
             Assert.assertEquals("type must match the enum exactly: " + type,
                     "error", setEnabled(type, false).getString("status"));
         }
@@ -99,56 +100,46 @@ public class DaemonSetEnabledCommandTest {
     @Test
     public void refusesATypeWithShellMetacharacters() throws Exception {
         // Nothing from the wire reaches a shell, and the allow-list is why.
-        JSONObject resp = setEnabled("TOR_TUNNEL; rm -rf /data", false);
+        JSONObject resp = setEnabled("PEAR_PEER; rm -rf /data", false);
 
         Assert.assertEquals("error", resp.getString("status"));
         Assert.assertTrue(TcpCommandServer.killedPidsForTest.isEmpty());
     }
 
-    // --- the kill decision ---
+    // --- the kill decision (BladeWatch-rdtj.3: the Pear peer, the one toggleable daemon) ---
 
     @Test
-    public void disablingTheTunnelKillsTheRunningProcess() throws Exception {
-        // The health check only ever RELAUNCHES, never kills, so without this the tunnel
-        // keeps serving until the next reboot while the switch reads "off".
-        fakeProcess(202, "/data/local/tmp/bladewatch_tor", "-f", "/data/local/tmp/tor/torrc");
+    public void disablingThePearPeerKillsOnlyPearDaemon() throws Exception {
+        fakeProcess(401, "pear_daemon");
+        // The nohup wrapper PearLauncher starts it through. Its command line CONTAINS
+        // "pear_daemon", so a substring match would kill it too -- which is the pkill -f bug
+        // that kills the ADB shell. Only argv[0] may match.
+        fakeProcess(402, "sh", "-c", "CLASSPATH=/data/app/x/base.apk app_process /system/bin "
+                + "--nice-name=pear_daemon net.bladewatch.app.daemon.PearDaemon");
+        fakeProcess(403, "sh", "-c", "echo hi > /data/local/tmp/pear_daemon.log");
+        fakeProcess(404, "byd_cam_daemon");
 
-        JSONObject resp = setEnabled("TOR_TUNNEL", false);
+        JSONObject resp = setEnabled("PEAR_PEER", false);
 
         Assert.assertEquals("ok", resp.getString("status"));
-        Assert.assertEquals(java.util.Collections.singletonList(202), TcpCommandServer.killedPidsForTest);
-        Assert.assertEquals(Boolean.FALSE, TcpCommandServer.daemonEnabledWritesForTest.get("TOR_TUNNEL"));
+        Assert.assertEquals(java.util.Collections.singletonList(401), TcpCommandServer.killedPidsForTest);
+        Assert.assertEquals(Boolean.FALSE, TcpCommandServer.daemonEnabledWritesForTest.get("PEAR_PEER"));
     }
 
     @Test
-    public void enablingTheTunnelKillsNothing() throws Exception {
-        // Enabling is "record the intent"; DaemonStartupManager's health check does the
-        // actual launch through TorLauncher.
-        fakeProcess(203, "/data/local/tmp/bladewatch_tor", "-f", "/data/local/tmp/tor/torrc");
+    public void enablingThePearPeerRecordsIntentAndKillsNothing() throws Exception {
+        fakeProcess(405, "pear_daemon");
 
-        JSONObject resp = setEnabled("TOR_TUNNEL", true);
+        JSONObject resp = setEnabled("PEAR_PEER", true);
 
         Assert.assertEquals("ok", resp.getString("status"));
         Assert.assertTrue(TcpCommandServer.killedPidsForTest.isEmpty());
-        // Recording the intent IS the whole of "start": the health check does the launch.
-        Assert.assertEquals(Boolean.TRUE, TcpCommandServer.daemonEnabledWritesForTest.get("TOR_TUNNEL"));
-    }
-
-    @Test
-    public void disablingKillsOnlyTheTunnelAndNotOtherDaemons() throws Exception {
-        fakeProcess(301, "/data/local/tmp/bladewatch_tor", "-f", "/data/local/tmp/tor/torrc");
-        fakeProcess(302, "byd_cam_daemon");
-        fakeProcess(303, "sentry_daemon");
-        fakeProcess(304, "sh", "-c", "echo /data/local/tmp/tor.log");
-
-        setEnabled("TOR_TUNNEL", false);
-
-        Assert.assertEquals(java.util.Collections.singletonList(301), TcpCommandServer.killedPidsForTest);
+        Assert.assertEquals(Boolean.TRUE, TcpCommandServer.daemonEnabledWritesForTest.get("PEAR_PEER"));
     }
 
     @Test
     public void disablingWhenNothingIsRunningKillsNothingAndDoesNotFail() throws Exception {
-        JSONObject resp = setEnabled("TOR_TUNNEL", false);
+        JSONObject resp = setEnabled("PEAR_PEER", false);
 
         Assert.assertTrue(TcpCommandServer.killedPidsForTest.isEmpty());
         Assert.assertEquals(0, resp.getInt("killed"));

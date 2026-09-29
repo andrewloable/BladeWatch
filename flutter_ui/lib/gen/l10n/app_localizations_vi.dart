@@ -28,6 +28,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get action_select_all_short => 'Tất cả';
 
   @override
+  String get action_select => 'Chọn';
+
+  @override
+  String get action_deselect_all => 'Bỏ chọn tất cả';
+
+  @override
   String get action_delete => 'Xoá';
 
   @override
@@ -53,15 +59,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get cd_qr_code => 'Mã QR';
-
-  @override
-  String get cd_show_hide_token => 'Hiện/ẩn mã thông báo';
-
-  @override
-  String get cd_copy_token => 'Sao chép token';
-
-  @override
-  String get cd_copy_url => 'Sao chép URL';
 
   @override
   String get cd_clear_logs => 'Xóa nhật ký';
@@ -179,47 +176,16 @@ class AppLocalizationsVi extends AppLocalizations {
       'Tự động chọn camera phù hợp cho phiên bản xe của bạn khi mỗi lần khởi động. Camera 1 = BYD Seal, Camera 0 = các phiên bản Atto. Khởi động lại dịch vụ camera sau khi thay đổi ID camera để cài đặt có hiệu lực.';
 
   @override
-  String get dashboard_scan_to_connect => 'Quét để kết nối';
-
-  @override
   String get dashboard_qr_waiting => 'Chờ đường hầm...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 đang chạy';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => 'Mã truy cập';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => 'Tạo lại token';
 
   @override
-  String get dashboard_set_password => 'Đặt mật khẩu';
-
-  @override
   String get cd_set_password => 'Đặt mật khẩu tùy chỉnh';
-
-  @override
-  String get dialog_set_password_title => 'Đặt mật khẩu tùy chỉnh';
-
-  @override
-  String get dialog_set_password_message =>
-      'Nhập mật khẩu truy cập mới. Mật khẩu này thay thế token tự tạo.';
-
-  @override
-  String get dialog_set_password_hint => 'Mật khẩu mới (tối thiểu 12 ký tự)';
-
-  @override
-  String get toast_password_set => 'Đã cập nhật mật khẩu';
-
-  @override
-  String get toast_password_too_short => 'Mật khẩu phải có ít nhất 12 ký tự';
 
   @override
   String get toast_password_save_failed =>
@@ -530,6 +496,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get recording_lib_date_all_days => 'Tất cả các ngày';
 
   @override
+  String get recording_lib_type_all => 'Tất cả';
+
+  @override
   String get cd_clear_date_filter => 'Hiển thị tất cả các ngày';
 
   @override
@@ -573,9 +542,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get daemon_name_acc => 'Giám sát ACC';
-
-  @override
-  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => 'Dịch vụ nền';
@@ -799,9 +765,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get reset_label_trip_files => 'Dữ liệu telemetry chuyến đi';
 
   @override
-  String get toast_access_code_copied => 'Mã truy cập sao chép';
-
-  @override
   String get dialog_regenerate_token_title => 'Tạo lại token';
 
   @override
@@ -824,21 +787,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get toast_token_regenerated => 'Tín hiệu được tái tạo';
 
   @override
-  String get dashboard_no_tunnel => 'Không có đường hầm chạy';
-
-  @override
-  String get dashboard_starting_tor => 'Đang khởi động đường hầm Tor…';
-
-  @override
   String get dashboard_waiting_url => 'Chờ đường hầm URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 đang chạy';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => 'Mã truy cập';
@@ -1318,11 +1272,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get diagnostics_metric_online => 'Trực tuyến';
 
   @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return 'Đường hầm · $arg1';
-  }
-
-  @override
   String diagnostics_network_data_usage_line(Object arg1) {
     return '$arg1 tháng này';
   }
@@ -1742,17 +1691,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboard_trips_this_week => 'Tuần này';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 chuyến',
-      one: '$arg1 chuyến',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1775,6 +1713,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get dashboard_trips_label_time => 'Thời gian lái';
+
+  @override
+  String get dashboard_week_battery => 'Pin';
+
+  @override
+  String get dashboard_week_elec_range => 'Quãng đường điện';
+
+  @override
+  String get dashboard_week_fuel => 'Nhiên liệu';
+
+  @override
+  String get dashboard_week_fuel_range => 'Quãng đường nhiên liệu';
 
   @override
   String get dashboard_trips_no_data => 'Không có chuyến đi nào tuần này';
@@ -1835,7 +1785,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settings_section_daemons_subtitle =>
-      'Đường hầm Tor và dịch vụ nền.';
+      'Truy cập từ xa (Pear) và dịch vụ nền.';
 
   @override
   String get settings_about_row_title => 'Về BladeWatch';
@@ -1984,9 +1934,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get vehicle_tab_climate => 'Điều hòa';
 
   @override
-  String get vehicle_tab_seats => 'Ghế';
-
-  @override
   String get vehicle_tab_windows => 'Cửa kính';
 
   @override
@@ -2068,43 +2015,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return 'Trong xe: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return 'Bên ngoài: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => 'Người lái';
-
-  @override
-  String get vehicle_seat_passenger => 'Hành khách';
-
-  @override
-  String get vehicle_seat_no_controls => 'Xe này không có điều khiển ghế.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return 'Sưởi $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return 'Mát $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(Tắt)';
-
-  @override
-  String get vehicle_heat_low => '(Thấp)';
-
-  @override
-  String get vehicle_heat_high => '(Cao)';
-
-  @override
-  String get vehicle_seat_pos_1 => 'Vị trí 1';
-
-  @override
-  String get vehicle_seat_pos_2 => 'Vị trí 2';
 
   @override
   String get vehicle_all_windows => 'Tất cả cửa kính';
@@ -2872,42 +2785,127 @@ class AppLocalizationsVi extends AppLocalizations {
   String get surveillance_apply_failed => 'Lưu không thành công';
 
   @override
-  String get dashboard_tor_bootstrapping => 'Đang kết nối tới Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => 'Cách mở địa chỉ này';
-
-  @override
-  String get dashboard_tor_help_title => 'Mở địa chỉ này';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: cài Tor Browser từ Google Play hoặc F-Droid, mở ứng dụng và dán địa chỉ.';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone và iPad: cài Onion Browser từ App Store, mở ứng dụng và dán địa chỉ. Tor Browser không có trên iOS.';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS và Linux: tải Tor Browser tại torproject.org, mở lên và dán địa chỉ.';
-
-  @override
-  String get dashboard_tor_help_password_note =>
-      'Bạn vẫn cần mật khẩu sau khi trang tải xong.';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      'Quét để mở trang tải Tor Browser';
-
-  @override
-  String get dashboard_tor_help_close => 'Đã hiểu';
-
-  @override
   String get surveillance_general_battery_warning =>
       'Chế độ canh gác sử dụng thêm điện năng từ ắc quy 12V khi đang bật.';
 
   @override
   String get surveillance_general_camera_contention_warning =>
       'Một ứng dụng khác đang sử dụng camera ngay bây giờ.';
+
+  @override
+  String get pairing_title => 'Ghép nối thiết bị';
+
+  @override
+  String get pairing_scan_hint =>
+      'Quét bằng ứng dụng BladeWatch trên điện thoại hoặc máy tính. Mã chỉ dùng được một lần.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return 'Hết hạn sau $time';
+  }
+
+  @override
+  String get pairing_expired => 'Mã này đã hết hạn.';
+
+  @override
+  String get pairing_new_code => 'Mã mới';
+
+  @override
+  String get pairing_remote_note =>
+      'Ghép nối sẽ bật quyền truy cập từ xa cho xe này.';
+
+  @override
+  String get pairing_lan_title => 'Kết nối trực tiếp qua Wi-Fi này';
+
+  @override
+  String get pairing_lan_body =>
+      'Thiết bị đã ghép nối trong cùng mạng Wi-Fi với xe sẽ kết nối trực tiếp và được mã hóa, không đi qua internet. Tắt cho đến khi bạn bật.';
+
+  @override
+  String get pairing_devices_title => 'Thiết bị đã ghép nối';
+
+  @override
+  String get pairing_devices_empty => 'Chưa có thiết bị nào được ghép nối.';
+
+  @override
+  String get pairing_remove => 'Xóa';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body =>
+      'Thiết bị sẽ mất quyền truy cập ngay. Các thiết bị khác của bạn vẫn hoạt động bình thường.';
+
+  @override
+  String get pairing_error => 'Dịch vụ camera không phản hồi. Hãy thử lại.';
+
+  @override
+  String get daemon_name_pear => 'Truy cập từ xa (Pear)';
+
+  @override
+  String get pear_status_reachable => 'Có thể truy cập từ mọi nơi';
+
+  @override
+  String get pear_status_unreachable =>
+      'Không thể truy cập: không có kết nối với mạng Pear';
+
+  @override
+  String get pear_status_unknown => 'Không rõ khả năng truy cập';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thiết bị đã kết nối',
+      zero: 'Không có thiết bị nào kết nối',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return 'Kết nối gần nhất: $time';
+  }
+
+  @override
+  String get pear_tile_off => 'Tắt';
+
+  @override
+  String get trips_cost_total => 'Tổng chi phí';
+
+  @override
+  String get trips_cost_no_rate =>
+      'Đặt giá điện trong cài đặt chuyến đi để xem chi phí.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      'Các chuyến đi được tính chi phí bằng nhiều loại tiền tệ nên không hiển thị tổng.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return 'Số $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return 'Chế độ: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return 'Auto Hold: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => 'Tắt';
+
+  @override
+  String get auto_hold_enabled => 'Bật';
+
+  @override
+  String get auto_hold_active => 'Đang giữ';
 }

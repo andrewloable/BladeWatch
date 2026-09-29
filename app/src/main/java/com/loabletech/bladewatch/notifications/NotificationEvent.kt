@@ -6,7 +6,7 @@ import java.util.Locale
 
 /**
  * Canonical notification event. Emitted by sources (surveillance, tyre, proximity, etc.) and
- * consumed by sinks (PushSink, LogSink).
+ * consumed by sinks (CompanionInbox, LogSink).
  *
  * Category is a dotted string ("surveillance.motion", "vehicle.health.tyre.leak"), not an enum, so
  * future categories can be added by registry config without code changes here.

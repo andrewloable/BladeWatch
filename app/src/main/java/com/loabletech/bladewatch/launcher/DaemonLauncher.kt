@@ -22,6 +22,40 @@ class DaemonLauncher(
     private val logManager: LogManager
 ) {
     companion object {
+        /**
+         * What the camera daemon's watchdog does when the daemon exits. Any exit but a clean one is
+         * retried with backoff: 1 is a singleton-lock conflict, 128+N a kill by signal N -- 130 is
+         * SIGINT from vold, which signals every process holding a file on the SD card when BYD's ACC
+         * OFF shutdown unmounts it (seen 2026-09-27: a clip open for playback), 137 SIGKILL, 134 SIGABRT,
+         * 139 SIGSEGV. It used to stop for good on anything but 0, 1, 134 and 137, so an ACC OFF left
+         * the car with no dashcam, sentry or remote access (BladeWatch-rdtj.65).
+         *
+         * MAX_RETRIES counts a crash loop, not a lifetime: a run of a minute or more starts it over.
+         * Needs STARTED, EXIT_CODE, RETRY_COUNT, MAX_RETRIES, LOG_FILE and LOCK_FILE; runs inside the
+         * `while true` loop (`break` gives up).
+         */
+        internal val WATCHDOG_EXIT_LINES = listOf(
+            "  if [ \$((\$(date +%s) - STARTED)) -ge 60 ]; then RETRY_COUNT=0; fi",
+            "  if [ \$EXIT_CODE -eq 0 ]; then",
+            "    echo \"[\$(date)] Daemon exited cleanly (code 0), restarting in 10s...\" >> \"\$LOG_FILE\"",
+            "    RETRY_COUNT=0",
+            "    sleep 10",
+            "  else",
+            "    RETRY_COUNT=\$((RETRY_COUNT + 1))",
+            "    if [ \$RETRY_COUNT -ge \$MAX_RETRIES ]; then",
+            "      echo \"[\$(date)] Daemon exited with code \$EXIT_CODE, max retries (\$MAX_RETRIES) reached. Giving up.\" >> \"\$LOG_FILE\"",
+            "      break",
+            "    fi",
+            "    DELAY=\$((RETRY_COUNT * 3))",
+            "    echo \"[\$(date)] Daemon exited with code \$EXIT_CODE (attempt \$RETRY_COUNT/\$MAX_RETRIES), retrying in \${DELAY}s...\" >> \"\$LOG_FILE\"",
+            "    # Killed by a signal: its lock file is stale.",
+            "    if [ \$EXIT_CODE -gt 128 ]; then",
+            "      rm -f \"\$LOCK_FILE\" 2>/dev/null",
+            "    fi",
+            "    sleep \$DELAY",
+            "  fi",
+        )
+
         private const val TAG = "DaemonLauncher"
         
         // Log file paths for daemons
@@ -316,6 +350,7 @@ class DaemonLauncher(
             "    echo \"[\$(date)] Stale lock file (PID \$LOCKED_PID not alive), continuing...\" >> \"\$LOG_FILE\"",
             "  fi",
             "  echo \"[\$(date)] Starting CameraDaemon...\" >> \"\$LOG_FILE\"",
+            "  STARTED=\$(date +%s)",
             "",
             "  CLASSPATH=/system/framework/bmmcamera.jar:\"\$APK_PATH\" app_process " +
                 "-Djava.library.path=\"\$NATIVE_LIB_DIR\":/system/lib64:/vendor/lib64:/product/lib64:/odm/lib64 " +
@@ -330,29 +365,7 @@ class DaemonLauncher(
             "    echo \"[\$(date)] Daemon disabled by user (sentinel written during shutdown). Exiting watchdog.\" >> \"\$LOG_FILE\"",
             "    exit 0",
             "  fi",
-            "  if [ \$EXIT_CODE -eq 0 ]; then",
-            "    echo \"[\$(date)] Daemon exited cleanly (code 0), restarting in 10s...\" >> \"\$LOG_FILE\"",
-            "    RETRY_COUNT=0",
-            "    sleep 10",
-            "  elif [ \$EXIT_CODE -eq 1 ] || [ \$EXIT_CODE -eq 137 ] || [ \$EXIT_CODE -eq 134 ]; then",
-            "    # Exit 1 = singleton lock conflict, 137 = SIGKILL (OOM), 134 = SIGABRT (native crash/font init)",
-            "    # All are transient — retry with backoff",
-            "    RETRY_COUNT=\$((RETRY_COUNT + 1))",
-            "    if [ \$RETRY_COUNT -ge \$MAX_RETRIES ]; then",
-            "      echo \"[\$(date)] Daemon exited with code \$EXIT_CODE, max retries (\$MAX_RETRIES) reached. Giving up.\" >> \"\$LOG_FILE\"",
-            "      break",
-            "    fi",
-            "    DELAY=\$((RETRY_COUNT * 3))",
-            "    echo \"[\$(date)] Daemon exited with code \$EXIT_CODE (attempt \$RETRY_COUNT/\$MAX_RETRIES), retrying in \${DELAY}s...\" >> \"\$LOG_FILE\"",
-            "    # Clean stale lock file if process was killed or aborted",
-            "    if [ \$EXIT_CODE -eq 137 ] || [ \$EXIT_CODE -eq 134 ]; then",
-            "      rm -f \"\$LOCK_FILE\" 2>/dev/null",
-            "    fi",
-            "    sleep \$DELAY",
-            "  else",
-            "    echo \"[\$(date)] Daemon exited with code \$EXIT_CODE, NOT restarting.\" >> \"\$LOG_FILE\"",
-            "    break",
-            "  fi",
+            *WATCHDOG_EXIT_LINES.toTypedArray(),
             "done"
         )
         

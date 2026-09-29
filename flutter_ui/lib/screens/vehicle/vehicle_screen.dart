@@ -14,7 +14,7 @@ import '../../widgets/bw_choice_chip.dart';
 /// an empty message. Three call sites handled that three different ways. The
 /// appearance writes returned null and showed NOTHING — the colour swatch simply
 /// snapped back with no explanation, which reads as a broken tap. The
-/// climate/seat/window ones showed a snackbar with empty text. And the same
+/// climate/window ones showed a snackbar with empty text. And the same
 /// two-line snackbar was hand-copied eight times.
 ///
 /// `vehicle_action_failed` was ported from Android for precisely this case and
@@ -28,7 +28,7 @@ void showVehicleCommandError(BuildContext context, String message) {
 
 
 /// Ground truth: `VehicleController.kt` (root layout/status/appearance/
-/// polling), `VehiclePanels.kt` (Climate/Seats/Windows), `TyreOverlay.kt`
+/// polling), `VehiclePanels.kt` (Climate/Windows; seats removed, BladeWatch-7bx4), `TyreOverlay.kt`
 /// (the tyre cards — plain styled widgets in native too, not a Canvas
 /// painter; see `VehicleHeroView.kt` for the 3D hero, wrapped here by
 /// [VehicleHero]).
@@ -402,7 +402,6 @@ class _ControlsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final availableTabs = [
       VehicleTab.climate,
-      if (controller.state.capabilities.seats.anyAvailable) VehicleTab.seats,
       VehicleTab.windows,
     ];
     final effectiveTab = availableTabs.contains(tab) ? tab : VehicleTab.climate;
@@ -451,7 +450,6 @@ class _ControlsPanel extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: switch (effectiveTab) {
                 VehicleTab.climate => _ClimateTab(l10n: l10n, theme: theme, controller: controller),
-                VehicleTab.seats => _SeatsTab(l10n: l10n, theme: theme, controller: controller),
                 VehicleTab.windows => _WindowsTab(l10n: l10n, theme: theme, controller: controller),
               },
             ),
@@ -463,7 +461,6 @@ class _ControlsPanel extends StatelessWidget {
 
   String _tabLabel(AppLocalizations l10n, VehicleTab t) => switch (t) {
         VehicleTab.climate => l10n.vehicle_tab_climate,
-        VehicleTab.seats => l10n.vehicle_tab_seats,
         VehicleTab.windows => l10n.vehicle_tab_windows,
       };
 }
@@ -640,21 +637,32 @@ class _ClimateTab extends StatelessWidget {
   Widget build(BuildContext context) =>
       LayoutBuilder(builder: (context, box) => _build(context, box.maxWidth >= _twoUpMinWidth));
 
+  /// An on/off button's colours: the filled colour when on, a neutral one when off -- each with its
+  /// OWN text colour. FilledButton's default text colour is onPrimary whatever the fill, which left
+  /// the off label dark on dark and unreadable on the head unit (owner report 2026-09-27).
+  ButtonStyle _toggle(bool on, {bool alert = false}) {
+    final s = theme.colorScheme;
+    return FilledButton.styleFrom(
+      backgroundColor: on ? (alert ? s.error : s.primary) : s.surfaceContainerHighest,
+      foregroundColor: on ? (alert ? s.onError : s.onPrimary) : s.onSurface,
+    );
+  }
+
   Widget _build(BuildContext context, bool twoUp) {
     final c = controller;
-    final insideTemp = c.state.climate.insideTempC;
+    final outsideTemp = c.state.climate.outsideTempC;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (insideTemp != null) ...[
-          Text(l10n.vehicle_inside_temp_fmt(insideTemp.toStringAsFixed(1)), style: theme.textTheme.bodySmall),
+        if (outsideTemp != null) ...[
+          Text(l10n.vehicle_outside_temp_fmt(outsideTemp.toStringAsFixed(1)), style: theme.textTheme.bodySmall),
           const SizedBox(height: 6),
         ],
         _pair(
           twoUp,
             FilledButton(
               key: const ValueKey('vehicle.climate.ac'),
-              style: FilledButton.styleFrom(backgroundColor: c.acOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              style: _toggle(c.acOn),
               onPressed: () async {
                 final error = await c.toggleAc();
                 if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -663,7 +671,7 @@ class _ClimateTab extends StatelessWidget {
             ),
             FilledButton(
               key: const ValueKey('vehicle.climate.maxCooling'),
-              style: FilledButton.styleFrom(backgroundColor: c.maxCooling ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
+              style: _toggle(c.maxCooling, alert: true),
               onPressed: () async {
                 final error = await c.toggleMaxCooling();
                 if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -680,7 +688,7 @@ class _ClimateTab extends StatelessWidget {
         const SizedBox(height: 8),
         FilledButton(
           key: const ValueKey('vehicle.screen.toggle'),
-          style: FilledButton.styleFrom(backgroundColor: c.screenOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+          style: _toggle(c.screenOn),
           onPressed: () async {
             final error = await c.toggleScreen();
             if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -694,8 +702,7 @@ class _ClimateTab extends StatelessWidget {
               'vehicle.media.volume', c.stepVolumeDown, c.stepVolumeUp),
           FilledButton(
             key: const ValueKey('vehicle.media.mute'),
-            style: FilledButton.styleFrom(
-                backgroundColor: c.mediaMuted ? theme.colorScheme.error : theme.colorScheme.surfaceContainerHighest),
+            style: _toggle(c.mediaMuted, alert: true),
             onPressed: () async {
               final error = await c.toggleMute();
               if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -708,8 +715,7 @@ class _ClimateTab extends StatelessWidget {
           twoUp,
             FilledButton(
               key: const ValueKey('vehicle.climate.frontDefrost'),
-              style: FilledButton.styleFrom(
-                  backgroundColor: c.frontDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              style: _toggle(c.frontDefrostOn),
               onPressed: () async {
                 final error = await c.toggleFrontDefrost();
                 if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -718,8 +724,7 @@ class _ClimateTab extends StatelessWidget {
             ),
             FilledButton(
               key: const ValueKey('vehicle.climate.rearDefrost'),
-              style: FilledButton.styleFrom(
-                  backgroundColor: c.rearDefrostOn ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest),
+              style: _toggle(c.rearDefrostOn),
               onPressed: () async {
                 final error = await c.toggleRearDefrost();
                 if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -780,105 +785,6 @@ class _ClimateTab extends StatelessWidget {
           ],
         ),
       );
-}
-
-// ─────────────────────────── Seats tab ────────────────────────────────────
-
-class _SeatsTab extends StatelessWidget {
-  final AppLocalizations l10n;
-  final ThemeData theme;
-  final VehicleController controller;
-
-  const _SeatsTab({required this.l10n, required this.theme, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    // No "nothing available" fallback: this widget is only ever built for
-    // VehicleTab.seats, which _BottomPanel only offers when
-    // capabilities.seats.anyAvailable is already true (mirrors native's
-    // rebuildTabBar() gate) -- showDriver/showPassenger together are exactly
-    // that same condition, so at least one row always renders. Native's
-    // buildSeatsTab() keeps an equivalent defensive fallback anyway, but it
-    // is equally unreachable there (same gate in rebuildTabBar()); trusting
-    // the precondition here instead of guarding against a state that cannot
-    // occur.
-    final c = controller;
-    final caps = c.state.capabilities.seats;
-    final showDriver = caps.driverHeat || caps.driverCool || caps.driverMemoryRecall;
-    final showPassenger = caps.passengerHeat || caps.passengerCool;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (showDriver) _seatRow(context, l10n.vehicle_seat_driver, 1, caps.driverHeat, caps.driverCool, caps.driverMemoryRecall, c.driverHeat, c.driverVent),
-        if (showDriver) const SizedBox(height: 12),
-        if (showPassenger) _seatRow(context, l10n.vehicle_seat_passenger, 2, caps.passengerHeat, caps.passengerCool, false, c.passengerHeat, c.passengerVent),
-      ],
-    );
-  }
-
-  Widget _seatRow(BuildContext context, String title, int position, bool hasHeat, bool hasCool, bool hasMemory, int heat, int cool) {
-    final c = controller;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: theme.textTheme.labelMedium),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            if (hasHeat)
-              FilledButton(
-                key: ValueKey('vehicle.seat.heat.$position'),
-                onPressed: () async {
-                  final error = await c.cycleSeatHeat(position);
-                  if (context.mounted && error != null) {
-                    showVehicleCommandError(context, error);
-                  }
-                },
-                child: Text(l10n.vehicle_seat_heat_label(_heatLabel(heat))),
-              ),
-            if (hasHeat) const SizedBox(width: 8),
-            if (hasCool)
-              FilledButton(
-                key: ValueKey('vehicle.seat.cool.$position'),
-                onPressed: () async {
-                  final error = await c.cycleSeatCool(position);
-                  if (context.mounted && error != null) {
-                    showVehicleCommandError(context, error);
-                  }
-                },
-                child: Text(l10n.vehicle_seat_cool_label(_heatLabel(cool))),
-              ),
-            if (hasMemory && position == 1) ...[
-              const SizedBox(width: 8),
-              FilledButton(
-                key: const ValueKey('vehicle.seat.recall.1'),
-                onPressed: () async {
-                  final error = await c.recallSeatPosition(1);
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                },
-                child: Text(l10n.vehicle_seat_pos_1),
-              ),
-              const SizedBox(width: 4),
-              FilledButton(
-                key: const ValueKey('vehicle.seat.recall.2'),
-                onPressed: () async {
-                  final error = await c.recallSeatPosition(2);
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                },
-                child: Text(l10n.vehicle_seat_pos_2),
-              ),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
-
-  String _heatLabel(int level) => switch (level) {
-        1 => l10n.vehicle_heat_low,
-        2 => l10n.vehicle_heat_high,
-        _ => l10n.vehicle_heat_off,
-      };
 }
 
 // ─────────────────────────── Windows tab ──────────────────────────────────
@@ -963,7 +869,8 @@ class _WindowsTab extends StatelessWidget {
       );
 
   Widget _windowCell(BuildContext context, String name, int area, int current) {
-    final snap = presetFor(current);
+    final presets = presetsForArea(area);
+    final snap = presetFor(current, presets);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
@@ -975,7 +882,7 @@ class _WindowsTab extends StatelessWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              for (final pct in const [0, 25, 50, 75, 100])
+              for (final pct in presets)
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(right: 4),

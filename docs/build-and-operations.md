@@ -13,8 +13,10 @@ app/src/main/java/com/loabletech/bladewatch/
 app/src/main/assets/
 app/src/main/cpp/
 proto/                       # buf workspace (.proto contracts + buf.gen.yaml)
-web/                         # Angular 19 + Vite web UI (ConnectRPC client)
 flutter_ui/                  # Flutter in-car UI -- its OWN standalone project
+packages/bladewatch_rpc/     # Dart Connect client + generated messages, shared by both Flutter apps
+companion/                   # Flutter companion app (phones + desktops) -- its OWN standalone project
+melos.yaml, pubspec.yaml     # melos workspace over flutter_ui, packages/*, companion
 docs/
 ```
 
@@ -25,14 +27,109 @@ versions pinned in `gradle/libs.versions.toml`.
 
 `flutter_ui/` is an **independent** standalone Flutter project with its own
 Gradle build under `flutter_ui/android/`, producing the **in-car UI** APK
-(`net.bladewatch.flutter`). It is not an add-to-app module and is not part of
+(`net.bladewatch.incarapp`). It is not an add-to-app module and is not part of
 `:app`'s build. Its dependency set is entirely separate — do not confuse the two
 when adding or removing a library.
 
+**The Dart workspace (BladeWatch-rdtj.10).** `flutter_ui/`, `packages/bladewatch_rpc/`
+and `companion/` are three Flutter projects tied together by a [melos](https://melos.invertase.dev)
+workspace at the repo root (`melos.yaml`, plus the root `pubspec.yaml` melos requires):
+
+- `packages/bladewatch_rpc/` — the Connect client (`lib/rpc/`), the generated
+  `bladewatch.v1` messages (`lib/gen/`) and `FakeRpcClient` (`lib/testing/`). It was
+  `flutter_ui/lib/rpc` + `flutter_ui/lib/gen/bladewatch`, moved so the companion can
+  share one copy instead of forking it. Both apps depend on it by path.
+- `companion/` — the phone and desktop app, built on flutter_pear (the same Pear stack the
+  car runs via bare-kit). It is the **one** place in this repo where iOS, macOS, Windows
+  and Linux targets are correct; `validateFlutterAndroidOnly` still fails the build if any
+  of them appears under `flutter_ui/`.
+
+Each project still builds, tests and resolves on its own (`cd <dir> && flutter pub get`
+works); melos only runs things across all three:
+
+```bash
+dart pub global activate melos   # once
+melos bootstrap                  # pub get everywhere
+melos run analyze
+melos run test
+```
+
+`melos bootstrap` writes a `pubspec_overrides.yaml` into each app; it is gitignored and
+regenerated every time. IDE-file generation is off in `melos.yaml`.
+
+**flutter_pear is pinned exactly** (`flutter_pear: 0.4.7`, `flutter_pear_test: 0.4.7`), never
+with a caret: before 1.0 its minor versions may break the API. Its per-platform wiring is in
+place and is not optional — `minSdk = 29` and `arm64-v8a`/`x86_64` only on Android (the
+manifest merger fails below 29, and an `armeabi-v7a` build has none of its native libraries,
+so it would install on a 32-bit phone and fail at worklet start). The ABI list holds only
+because `companion/android/gradle.properties` sets `disable-abi-filtering=true`; without it
+the Flutter Gradle plugin silently replaces the app's `abiFilters` with its own list,
+`armeabi-v7a` included. A consequence: `--split-per-abi` fails at configuration (AGP refuses
+`abiFilters` alongside ABI splits), which is the intended outcome, not a bug to work around.
+It also needs
+`NSLocalNetworkUsageDescription` in both `ios/Runner/Info.plist` and `macos/Runner/Info.plist`,
+and the App Sandbox off in both macOS entitlements files (it blocks the `bare` subprocess).
+`dart run flutter_pear:doctor` from `companion/` checks the host. Note that its `--fix` writes
+a placeholder usage description, which must be replaced with the app's real use.
+
+**The companion's screens (BladeWatch-rdtj.11)** add a few dependencies, each with a reason:
+- `mobile_scanner` scans the pairing QR (Android, iOS, macOS; elsewhere the code's text is pasted).
+- `video_player` plays clips (Android, iOS, macOS; elsewhere they download).
+- `flutter_map` and `latlong2` draw the location and trip maps, the same as the in-car UI.
+- `path_provider` finds the private store file.
+- `package_info_plus` shows the app version.
+- `intl` formats dates.
+- `bladewatch_theme` supplies the shared M3 tokens.
+
+The platform wiring they need is already in place:
+- **Both Apple platforms:** `NSCameraUsageDescription` and
+  `NSAppTransportSecurity/NSAllowsLocalNetworking` in `Info.plist`. The native player fetches
+  clips over plain HTTP from the app's own gateway on 127.0.0.1, which pins the car's TLS
+  itself.
+- **macOS:** `com.apple.security.device.camera` in both entitlements files, for
+  hardened-runtime builds.
+- **macOS Local Network access** (found 2026-09-27, rdtj.59). macOS decides whether an app may
+  reach the LAN per bundle id, but it identifies a running process's app by its executable's
+  UUID. Xcode's debug builds use a generic launcher stub as the executable (the code lives in a
+  `.debug.dylib`), and the stub's UUID is the same for every app built that way. After the rename
+  the companion therefore still resolved to `net.bladewatch.companion`: it was never asked for
+  Local Network access, and Pear could not reach a car on the same LAN, while a plain Hyperswarm
+  dial from the same Mac connected in 9 s. `macos/Runner/Configs/AppInfo.xcconfig` sets
+  `ENABLE_DEBUG_DYLIB = NO` and links with `-Wl,-random_uuid`, so the executable is the app's own
+  with a UUID of its own. The symptom to recognise: "Looking for your car" forever on macOS, the car's
+  `pear_status.json` never counting a companion, and `log show` lines from UserEventAgent reading
+  `LocalNetwork: found bundle id <some other id> by UUID`.
+- **Android:** `android:allowBackup="false"`, because the store file holds this device's
+  credential for the car.
+
+The bundle id is `net.bladewatch.companionapp` on every platform. The app is named
+"BladeWatch" (the macOS product is `BladeWatch.app`). Both were template defaults until
+they were aligned, before anything shipped.
+
+**App ID rename (BladeWatch-rdtj.59).** Before v1.4.0.0 the in-car UI was
+`net.bladewatch.flutter` and the companion `net.bladewatch.companion`; they are now
+`net.bladewatch.incarapp` and `net.bladewatch.companionapp`. Only the application and bundle
+ids changed: the Android `namespace`s (`net.bladewatch.bladewatch_ui`,
+`net.bladewatch.bladewatch_companion`), the Kotlin sources and the Dart package names did not,
+so the in-car component is `net.bladewatch.incarapp/net.bladewatch.bladewatch_ui.MainActivity`.
+`android:sharedUserId="net.bladewatch.app"` is unchanged. A new id is a new app to every OS, so
+an existing install does not update into it:
+
+- **Head unit:** install the new in-car APK, then
+  `adb -s $CAR_IP:5555 uninstall net.bladewatch.flutter` (otherwise two launcher icons). The UID
+  survives because the service host keeps it; check that both packages report the same `userId`.
+  Allow the new entry in BYD Auto-Start. The in-car UI's own SharedPreferences (`PrefsChannel`:
+  theme, navigation side and the like) start fresh.
+- **Companion:** the pairing lives in the app's support directory (`CarStore`, via
+  path_provider), which is per app id, so every companion must pair again after installing the
+  renamed app. Then uninstall the old app and revoke its stale entry in the in-car
+  "Pair a device" dialog.
+
 The repository also contains two non-Gradle build inputs that feed the Android build:
 
-- `proto/` — a buf v2 workspace holding the `bladewatch.v1` API contracts. `buf generate` produces Java protobuf message classes and Kotlin ConnectRPC service stubs into `app/src/main/java`, and TypeScript message classes into `web/src/gen`.
-- `web/` — an Angular 19 single-page app built with Vite (`@analogjs/vite-plugin-angular`). Its build output is copied into the APK under `app/src/main/assets/web/angular/`.
+- `proto/` — a buf v2 workspace holding the `bladewatch.v1` API contracts. `buf generate` produces Java protobuf message classes and Kotlin ConnectRPC service stubs into `app/src/main/java`, and Dart message classes into `packages/bladewatch_rpc/lib/gen`.
+
+There is no web build: the Angular web app and its Node/npm toolchain were removed in v1.4.0.0 (BladeWatch-rdtj.22).
 
 ## Toolchain
 
@@ -41,13 +138,15 @@ Important build settings:
 - Android Gradle Plugin: `8.13.2`.
 - Kotlin: `2.0.21`.
 - Compile SDK: `36`.
-- Minimum SDK: `25`.
+- Minimum SDK: `29` — bare-kit's floor (the Pear peer, BladeWatch-rdtj.2), and exactly the
+  head unit's API level, so there is no headroom: a bare-kit upgrade that raises its floor
+  cannot ship. Previously `25`.
 - Target SDK: `25`.
 - NDK: `26.1.10909125`.
 - Java and Kotlin target: `11`.
 - `applicationId` / `namespace`: `net.bladewatch.app` (the source package is `com.loabletech.bladewatch`).
-- Version: `versionName = "1.0.0.0"`, `versionCode = 10000`.
-- ABI split: `arm64-v8a` only, no universal APK. The debug output is `app/build/outputs/apk/debug/app-arm64-v8a-debug.apk`.
+- Version: `versionName = "1.4.0.0"`, `versionCode = 14000`.
+- ABI split: `arm64-v8a` only, no universal APK. The debug output is `app/build/outputs/apk/debug/bladewatch-<branch>-arm64-v8a-debug.apk`, with any `/` in the branch name turned into `-`.
 - Native build: CMake `3.22.1`, `-std=c++17`.
 
 Key dependency families:
@@ -68,12 +167,10 @@ Dropped in Phase 4 (`BladeWatch-81g9.3`), with the native UI that needed them:
 (the map is `flutter_map`). appcompat, Material and lifecycle stayed and are not
 droppable: `AppCompatDelegate` drives the night mode `StatusOverlayService`
 reads, `SetupGuideDialog` builds a Material `AlertDialog` from
-`dialog_setup_guide.xml`, and `TorController` / `DaemonsViewModel` publish
-daemon state as `LiveData`.
+`dialog_setup_guide.xml`, and `DaemonsViewModel` publishes daemon state as
+`LiveData`.
 
-The Vehicle hero renders via Three.js inside an embedded WebView (`app/src/main/assets/web/hero/hero.html`). A native Filament port was tried and removed — the BYD head unit's Adreno 610 GL driver crashes under continuous gltfio rendering, so Filament must not be reintroduced for the hero.
-
-The web app (`web/`) pins Angular 19, Vite 6, ConnectRPC (`@connectrpc/connect` / `connect-web`), `@bufbuild/protobuf`, Leaflet (Location + Trips maps), `@ngx-translate` (i18n), and `qrcode`. Playwright is the e2e harness.
+The Vehicle hero renders via Three.js inside an embedded WebView (`flutter_ui/assets/web/hero/hero.html`). A native Filament port was tried and removed — the BYD head unit's Adreno 610 GL driver crashes under continuous gltfio rendering, so Filament must not be reintroduced for the hero.
 
 ## Native Dependencies
 
@@ -81,6 +178,12 @@ Two Gradle tasks auto-download and verify native dependencies, and every `*CMake
 
 - `downloadOpenH264` — fetches Cisco's official OpenH264 `2.6.0` arm64 binary and the matching API headers.
 - `downloadOpenCV` — fetches opencv-mobile `4.10.0` (tag `v31`) and copies the arm64-v8a static libs + headers.
+
+`fetchBareKit` (a `preBuild` dependency, BladeWatch-rdtj.2) does the same for bare-kit
+`2.5.5`, the runtime the Pear peer hosts: it SHA-256-verifies the release's
+`prebuilds.zip`, compiles against its `classes.jar`, and copies `libbare-kit.so` and
+`libc++_shared.so` into `jniLibs/arm64-v8a/` (both gitignored). Pin it exactly — see the
+Minimum SDK note above.
 
 Artifacts are verified with SHA-256 before use; a mismatch fails the build, and a changed checksum triggers a redownload. Native outputs are integrated through CMake. The OpenH264 `.so` directory is added to `jniLibs.srcDirs`.
 
@@ -92,52 +195,40 @@ Native source areas:
 - `app/src/main/cpp/surveillance/`.
 - `app/src/main/cpp/CMakeLists.txt`.
 
-The Tor binary is packaged as `libtor.so` in `jniLibs/` and extracted at runtime. It is NOT
-committed: the `downloadTor` task fetches it from Maven Central and verifies its SHA-256 at
-build time, the same pattern OpenH264 and OpenCV use.
+There is no tor binary any more. `libtor.so` and its `downloadTor` task went with the Tor
+onion service in v1.4.0.0 (BladeWatch-rdtj.12); nothing builds or packages it.
 
 ## Embedded Assets
 
 Important asset groups:
 
-- Web UI under `app/src/main/assets/web/`. This contains:
-  - `angular/` — the built Angular SPA (output of the `buildAngularWebUI` task).
-  - `hero/hero.html` — the Three.js Vehicle hero loaded in an embedded WebView.
-  - `i18n/` — the Angular client translation bundles (17 locales).
-  - `shared/`, `local/`, `web/` — the legacy hand-written web UI assets.
-- Server-side i18n under `app/src/main/assets/server-i18n/` (17 locales, used by the daemon for push/notification text).
+- `app/src/main/assets/web/shared/models/` — the 3D vehicle models and the `manifest.json` `ModelsApiHandler` reads (the only web asset left; the in-car UI's hero page and vendor scripts live in `flutter_ui/assets/web/`).
+- Server-side i18n under `app/src/main/assets/server-i18n/` (17 locales, used by the daemon for its localized error and notification text).
 - AI models under `app/src/main/assets/models/` (e.g. `yolo11n.tflite`).
-- tor native binary packaged as a library in `jniLibs/` (downloaded and checksum-verified at build time, not committed).
+- The Pear worklet under `app/src/main/assets/pear/pear-end.bundle` — flutter_pear's pear-end bundle, committed byte-identical to the pinned flutter_pear release.
 
 Runtime extraction paths:
 
-- `/data/local/tmp/web`.
+- `/data/local/tmp/web` — only `server-i18n/` and `shared/models/`.
 - `/data/local/tmp/overlay`.
 
-The Gradle task `extractWebAssets` walks `app/src/main/assets/web/` and pushes every file to `/data/local/tmp/web` on the connected device for development iteration.
+## Proto Build Pipeline
 
-## Web UI and Proto Build Pipeline
+`generateConnectProtos` runs `buf generate` in `proto/`. This regenerates Java protobuf classes + Kotlin ConnectRPC stubs into `app/src/main/java` and (since BladeWatch-ncbb.1) Dart protobuf message classes into `packages/bladewatch_rpc/lib/gen` (`flutter_ui/lib/gen` before BladeWatch-rdtj.10; messages only — no RPC client generation; the Flutter APK's transport is hand-written, see below). Generated files are committed, so this task is optional and only needs to be run when a `.proto` changes. `buf generate` does not delete the files of a message or service you removed: delete the orphaned Java files by hand (BladeWatch-rdtj.22 removed 34).
 
-The APK embeds an Angular 19 web app whose build is wired into the Gradle build:
+The proto contracts live in `proto/bladewatch/v1/` and define 12 ConnectRPC services: Auth, Notifications, Recordings, SafeLocations, Settings, Storage, Stream, Surveillance, System, Trips, Update, and Vehicle — 102 RPCs total, all unary (no streaming anywhere in this API).
 
-- `buildAngularWebUI` — runs `npm run build` (Vite) in `web/`, then copies `web/dist` into `app/src/main/assets/web/angular/`. It is hooked into `preBuild`, so the Angular UI is compiled before any variant packages its assets. The task is gated by `onlyIf { npm --version succeeds }`: if Node/npm is not on `PATH`, the Angular build is skipped and whatever assets already sit in `app/src/main/assets/web/angular/` are packaged instead.
-- `generateConnectProtos` — runs `buf generate` in `proto/`. This regenerates Java protobuf classes + Kotlin ConnectRPC stubs into `app/src/main/java`, TypeScript message classes into `web/src/gen`, and (since BladeWatch-ncbb.1) Dart protobuf message classes into `flutter_ui/lib/gen` (messages only — no RPC client generation; the Flutter APK's transport is hand-written, see below). Generated files are committed, so this task is optional and only needs to be run when a `.proto` changes. The web app exposes the same step as `npm run generate`.
-
-The proto contracts live in `proto/bladewatch/v1/` and define 12 ConnectRPC services: Auth, Notifications, Recordings, SafeLocations, Settings, Storage, Stream, Surveillance, System, Trips, Update, and Vehicle — 109 RPCs total, all unary (no streaming anywhere in this API).
-
-**Regenerating only one plugin's output.** Two of the four `proto/buf.gen.yaml` plugins (`bufbuild/es` for TypeScript, `connectrpc/kotlin`) are intentionally left unpinned and can silently drift to a newer version between runs — a plain `buf generate` regenerates *all four* plugins, so a change aimed at only one language can pick up unrelated version-stamp noise (or, worse, surface a genuinely stale generated file elsewhere that nobody had regenerated since a `.proto` comment changed). If you only need to regenerate one plugin, target it directly instead of the shared `buf.gen.yaml`, e.g. for Dart:
+**Regenerating only one plugin's output.** One of the three `proto/buf.gen.yaml` plugins (`connectrpc/kotlin`) is intentionally left unpinned and can silently drift to a newer version between runs — a plain `buf generate` regenerates *all three* plugins, so a change aimed at only one language can pick up unrelated version-stamp noise (or, worse, surface a genuinely stale generated file elsewhere that nobody had regenerated since a `.proto` comment changed). If you only need to regenerate one plugin, target it directly instead of the shared `buf.gen.yaml`, e.g. for Dart:
 ```bash
-cd proto && buf generate --template '{"version":"v2","plugins":[{"remote":"buf.build/protocolbuffers/dart:v25.1.0","out":"../flutter_ui/lib/gen"}]}'
+cd proto && buf generate --template '{"version":"v2","plugins":[{"remote":"buf.build/protocolbuffers/dart:v25.1.0","out":"../packages/bladewatch_rpc/lib/gen"}]}'
 ```
-After any full `buf generate`, always check `git status` on `web/src/gen` and `app/src/main/java/net/bladewatch/app/grpc/` — a diff limited to a `// @generated by protoc-gen-es vX.Y.Z` comment line is safe to revert (`git checkout --`); a diff with real content changes means the checked-in gencode was already stale relative to the current `.proto` files and is a separate, pre-existing issue to fix deliberately, not a side effect of whatever you were actually trying to regenerate.
+After any full `buf generate`, always check `git status` on `packages/bladewatch_rpc/lib/gen` and `app/src/main/java/net/bladewatch/app/grpc/` — the Dart plugin rewrites the checked-in `package:bladewatch_rpc/gen/...` imports as relative ones, so a diff limited to import lines is safe to revert (`git checkout --`); a diff with real content changes means the checked-in gencode was already stale relative to the current `.proto` files and is a separate, pre-existing issue to fix deliberately, not a side effect of whatever you were actually trying to regenerate.
 
 ### Flutter RPC transport (BladeWatch-ncbb.1)
 
-`flutter_ui/lib/rpc/` is a small hand-written Connect protocol client mirroring `app/src/main/java/com/loabletech/bladewatch/client/ConnectClientProvider.kt`: POST to `http://127.0.0.1:8080/bladewatch.v1.<Service>/<Method>` with `Content-Type: application/json`, `Connect-Protocol-Version: 1`, and `Authorization: Bearer <jwt>` (4-minute cache keyed to a `JwtSource.stateVersion()`, mirroring `AuthManager.getStateVersion()`); body/response are protobuf-JSON via each generated message's `toProto3Json()`/`mergeFromProto3Json()`. `ConnectClient` never uses a system/VPN proxy for this loopback call (`findProxy` forced to `DIRECT` in `raw_http_sender.dart`), same reasoning as the Kotlin client's `Proxy.NO_PROXY`. `lib/rpc/services/` holds one thin wrapper class per service (`AuthServiceClient`, `SystemServiceClient`, …), one method per RPC — mechanically generated from the `.proto` `rpc` declarations, not hand-typed one at a time. `JwtSource` is an interface; the real implementation (`flutter_ui/lib/platform/auth_channel.dart`'s `AuthChannel`, backed by loopback IPC `secret_get` via the Flutter APK's own Kotlin `MethodChannel` layer — see `flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/auth/JwtMinter.kt` — never reading `bladewatch_secrets.json` directly) shipped in BladeWatch-ncbb.2.
+`packages/bladewatch_rpc/lib/rpc/` (`flutter_ui/lib/rpc/` until BladeWatch-rdtj.10 moved it into the shared package) is a small hand-written Connect protocol client mirroring `app/src/main/java/com/loabletech/bladewatch/client/ConnectClientProvider.kt`: POST to `http://127.0.0.1:8080/bladewatch.v1.<Service>/<Method>` with `Content-Type: application/json`, `Connect-Protocol-Version: 1`, and `Authorization: Bearer <jwt>` (4-minute cache keyed to a `JwtSource.stateVersion()`, mirroring `AuthManager.getStateVersion()`); body/response are protobuf-JSON via each generated message's `toProto3Json()`/`mergeFromProto3Json()`. `ConnectClient` never uses a system/VPN proxy for this loopback call (`findProxy` forced to `DIRECT` in `raw_http_sender.dart`), same reasoning as the Kotlin client's `Proxy.NO_PROXY`. `lib/rpc/services/` holds one thin wrapper class per service (`AuthServiceClient`, `SystemServiceClient`, …), one method per RPC — mechanically generated from the `.proto` `rpc` declarations, not hand-typed one at a time. `JwtSource` is an interface; the real implementation (`flutter_ui/lib/platform/auth_channel.dart`'s `AuthChannel`, backed by loopback IPC `secret_get` via the Flutter APK's own Kotlin `MethodChannel` layer — see `flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/auth/JwtMinter.kt` — never reading `bladewatch_secrets.json` directly) shipped in BladeWatch-ncbb.2.
 
-**`daemon.status` vs. `daemon.processStatus` — do not confuse these.** `TcpCommandServer.java`'s `start`/`stop`/`status` IPC commands (wrapped by `DaemonChannel.start()`/`.stop()`/`.status()`) control **camera recording** on an already-running CameraDaemon — which cameras are recording/viewing/active/available — not daemon process lifecycle. There is a separate `daemonStatus` IPC command (BladeWatch-1xt9, wrapped by `DaemonChannel.processStatus()`) that reports whether the CAMERA_DAEMON/SENTRY_DAEMON/ACC_SENTRY_DAEMON/TOR_TUNNEL **processes** are actually running, computed locally by reading `/proc/<pid>/cmdline` and comparing `basename(argv[0])` (`TcpCommandServer.findPidsByProcessName`), not by shelling out — no ADB needed, since the daemon already runs as shell UID, the same UID as the processes it's checking. This exists because the native `DaemonsViewModel`'s equivalent check (`AdbDaemonLauncher`) is 100% ADB-based and has no IPC equivalent otherwise, which the Flutter APK cannot use per Epic 1's IPC-only rule. A process check can only ever report `RUNNING`/`STOPPED`, never the transitional `DaemonStatus.STARTING`/`STOPPING`/`ERROR` states — those are tracked client-side during an in-flight start/stop call on the native side too.
-
-Local web development can run the Vite dev server (`cd web && npm run dev`), which proxies `/bladewatch.v1`, `/api`, `/status`, and `/auth` to the daemon at `http://127.0.0.1:8080`.
+**`daemon.status` vs. `daemon.processStatus` — do not confuse these.** `TcpCommandServer.java`'s `start`/`stop`/`status` IPC commands (wrapped by `DaemonChannel.start()`/`.stop()`/`.status()`) control **camera recording** on an already-running CameraDaemon — which cameras are recording/viewing/active/available — not daemon process lifecycle. There is a separate `daemonStatus` IPC command (BladeWatch-1xt9, wrapped by `DaemonChannel.processStatus()`) that reports whether the CAMERA_DAEMON/SENTRY_DAEMON/ACC_SENTRY_DAEMON/PEAR_PEER **processes** are actually running, computed locally by reading `/proc/<pid>/cmdline` and comparing `basename(argv[0])` (`TcpCommandServer.findPidsByProcessName`), not by shelling out — no ADB needed, since the daemon already runs as shell UID, the same UID as the processes it's checking. This exists because the native `DaemonsViewModel`'s equivalent check (`AdbDaemonLauncher`) is 100% ADB-based and has no IPC equivalent otherwise, which the Flutter APK cannot use per Epic 1's IPC-only rule. A process check can only ever report `RUNNING`/`STOPPED`, never the transitional `DaemonStatus.STARTING`/`STOPPING`/`ERROR` states — those are tracked client-side during an in-flight start/stop call on the native side too.
 
 ### Flutter i18n / ARB catalogs (BladeWatch-ncbb.3)
 
@@ -169,7 +260,7 @@ Separately, every translated locale's `strings.xml` carries 7 keys (`rail_integr
 
 ### Flutter theme and navigation shell (BladeWatch-ncbb.4)
 
-`flutter_ui/lib/theme/` builds the light/dark `ThemeData` from the Android M3 tokens (`color_tokens.dart`, `dimens_tokens.dart`, `type_tokens.dart` — every value is asserted in a test against the real `colors_m3.xml` / `dimens_bladewatch.xml` / `themes_bladewatch.xml` XML, not hand-copied and trusted); `bladewatch_theme.dart` assembles them into `BladeWatchTheme.light()`/`.dark()`. See `docs/ui-ux-design-language.md` for the design rationale.
+`packages/bladewatch_theme/` (moved from `flutter_ui/lib/theme/` by BladeWatch-rdtj.11 so the companion shares it; `flutter_ui/lib/theme/*.dart` are now one-line re-exports) builds the light/dark `ThemeData` from the Android M3 tokens (`color_tokens.dart`, `dimens_tokens.dart`, `type_tokens.dart` — every value is asserted in a test against the real `colors_m3.xml` / `dimens_bladewatch.xml` / `themes_bladewatch.xml` XML, not hand-copied and trusted); `bladewatch_theme.dart` assembles them into `BladeWatchTheme.light()`/`.dark()`. See `docs/ui-ux-design-language.md` for the design rationale.
 
 `flutter_ui/lib/shell/` is the nav shell: `app_shell.dart` (`AppShell`, the toolbar + accent stripe + rail + content composition — built from **both** `activity_main_new.xml` and `layout-land/activity_main_new.xml`, switching on `MediaQuery` orientation the same way Android's `-land` resource qualifier does, since the two differ in more than layout direction — see the widget's doc comment), `nav_rail.dart` (the 9-destination rail + About divider), `shell_controller.dart` (`ShellController`, a plain `ChangeNotifier` — drive-side resolution and the selected route, no Flutter imports), `rail_destination.dart` (the 9-item ground truth, ported from `MainActivity.kt`'s `RailItem(...)` list), `route_stubs.dart` (the 11 `BwRoutes` Epic 2 fills in one at a time, plus the extra `settingsAbout` route — see its doc comment for why that one isn't in the 11), `drive_side.dart` (the `DriveSide` enum).
 
@@ -210,9 +301,9 @@ Also discovered and filed while building this screen, neither blocking it: **Bla
 
 **Landscape sub-rail only.** `SettingsFragment.kt` has two layouts: a landscape two-pane sub-rail (persistent Appearance/Recording/Surveillance/Overlay/Daemons/Privacy panes) and a portrait "SOTA hub" (quick tiles + rows that navigate away). This port builds only the sub-rail — BladeWatch targets fixed-landscape BYD head units, so the portrait branch is unreachable on the actual target hardware. Each sub-rail row's controller is created fresh when selected and disposed when the user switches away, mirroring native's own `childFragmentManager.commit { replace(...) }` (which recreates each section's Fragment, and therefore its state, on every switch rather than caching it).
 
-**New `prefs.*` platform-channel group** (`flutter_ui/android/.../MainActivity.kt`, `flutter_ui/lib/platform/prefs_channel.dart`) — plain SharedPreferences local to `net.bladewatch.flutter` for `themeMode`/`driveSide`, the two Appearance preferences. Not IPC, not shared with the main app: native's `PreferencesManager.kt` can't be read directly even though the two APKs share a UID, since SharedPreferences files live under each package's own app-private directory. Drive side is otherwise delegated straight to `ShellController` (Epic 1's existing rail-mirroring source of truth); this channel only adds persistence on top of it.
+**New `prefs.*` platform-channel group** (`flutter_ui/android/.../MainActivity.kt`, `flutter_ui/lib/platform/prefs_channel.dart`) — plain SharedPreferences local to `net.bladewatch.incarapp` for `themeMode`/`driveSide`, the two Appearance preferences. Not IPC, not shared with the main app: native's `PreferencesManager.kt` can't be read directly even though the two APKs share a UID, since SharedPreferences files live under each package's own app-private directory. Drive side is otherwise delegated straight to `ShellController` (Epic 1's existing rail-mirroring source of truth); this channel only adds persistence on top of it.
 
-**Two more architectural gaps discovered and filed while building this task, neither blocking it** (same injectable-seam pattern as `DashboardController.tunnelUrlSource`/BladeWatch-m1po):
+**Two more architectural gaps discovered and filed while building this task, neither blocking it** (the same injectable-seam pattern the Dashboard's since-removed tunnel URL source used, BladeWatch-m1po):
 - **BladeWatch-hygs** (P2) — no IPC path reaches `UnifiedConfigManager`'s public (non-secret) config sections; only the daemon-owned *secret* store (`ConfigChannel`/`secret_*`) is reachable today. Blocks real persistence for Overlay's status-pill toggles and Privacy's two developer-logging toggles — both currently use an injected `loadSettings`/`persist` function pair that defaults to native's own fallback values and no-ops on write.
 - **BladeWatch-abcx** (P2) — no IPC path starts/stops an individual daemon *process* (only camera-recording on/off within the already-running camera daemon exists, via `daemon.start`/`daemon.stop`). Blocks the Daemons screen's per-service switches; `SettingsDaemonsController`'s injected `setDaemonEnabled` defaults to always reporting "not supported" (an honest, visible message, not a silent failure). The tunnel's own configure/reset flow was unaffected — it already went through the fully-capable `config.*` (secret-store) channel.
 
@@ -274,7 +365,7 @@ Also discovered and filed while building this screen, neither blocking it: **Bla
 
 **`LocationUiStateMapper`/`LocationPanelModel` were not ported as a class.** Native's `panelModel()` returns Kotlin strings directly ("Loading map", "Grant", …), which this port's ARB-only rule forbids baking into a pure-Dart model. Its decision logic (title/subtitle/action-label presence, `showMap`, `compact`) instead lives in a private `_bannerFor()` switch at the screen layer, each arm resolving through an ARB key — same state-to-presentation mapping, relocated to the layer where resolving localized text is actually legal. `LocationError`'s subtitle is the one exception: it is shown verbatim, not wrapped in an ARB template, matching `TripsController`'s `SyncOutcome.error` precedent — it is raw diagnostic text (an exception message), not English prose this port composed.
 
-**`LocationGpsCache` (write-only breadcrumb) was not ported.** It writes the latest fix as JSON to `externalCacheDir`/`bladewatch_gps_cache.json` on every sample — but grepping the *entire* app source turns up no reader anywhere (not a daemon, not another screen); native itself never consumes what it writes. The task's own "Behaviour to reproduce" list omits it too. Since the Flutter APK's `externalCacheDir` would resolve to a different path anyway (per-package, and `net.bladewatch.flutter` ≠ `net.bladewatch.app`), faithfully reproducing a write nothing reads would mean adding a new platform-channel method purely to move bytes into a void — skipped, not filed as a gap (there is no future consumer to build toward).
+**`LocationGpsCache` (write-only breadcrumb) was not ported.** It writes the latest fix as JSON to `externalCacheDir`/`bladewatch_gps_cache.json` on every sample — but grepping the *entire* app source turns up no reader anywhere (not a daemon, not another screen); native itself never consumes what it writes. The task's own "Behaviour to reproduce" list omits it too. Since the Flutter APK's `externalCacheDir` would resolve to a different path anyway (per-package, and `net.bladewatch.incarapp` ≠ `net.bladewatch.app`), faithfully reproducing a write nothing reads would mean adding a new platform-channel method purely to move bytes into a void — skipped, not filed as a gap (there is no future consumer to build toward).
 
 **`markerHotspot` (an invisible, positioned-but-inert `View`) was not ported.** Confirmed via exhaustive grep: `LocationMapController.kt` sets its bounds/visibility on every render but never attaches a click or touch listener to it anywhere — vestigial, matching this session's established "trust the filesystem over stale-looking code" pattern.
 
@@ -294,7 +385,7 @@ Also discovered and filed while building this screen, neither blocking it: **Bla
 
 `flutter_ui/lib/screens/recordings/` — the two-pane-in-native, one-screen-here Recordings library grid plus a full-screen video player with a detection-event timeline. Ground truth: `RecordingsFragment.kt` (895 LOC, header/segment/date/chip chrome), `RecordingLibraryFragment.kt` (926, the grid/multi-select/delete/its own filter bottom sheet), `VideoPlayerFragment.kt` (478) + `EventTimelineView.kt` (the custom canvas view, ported to a `CustomPainter`). No new Kotlin or platform channel was needed — everything routes through the existing `RecordingsServiceClient` (RPC) and `AuthChannel`/`JwtSource` (for the raw HTTP `/video/`/`/thumb/` endpoints' Bearer auth), both already wired for other screens.
 
-**Native reads the filesystem directly; this port cannot, so it uses the RPC surface the daemon already exposes for the Angular web UI instead.** `RecordingsFragment`/`RecordingLibraryFragment` both call `RecordingScanner`/`java.io.File` directly (the native app has filesystem access the co-located daemon process also has) — there is no RPC call anywhere in either fragment. Rather than invent a new IPC surface, this port mirrors `recording.component.ts` (`web/src/app/pages/recording/`), the **already-shipped, sanctioned** Angular translation of this exact screen: fetch the whole catalog once via `ListRecordings({type: '', pageSize: 1000})`, then filter segment/date/chips entirely client-side. `RecordingsApiHandler.java` clamps `pageSize` to 50 server-side regardless of what is requested — a real, already-accepted limit neither reference client (native's own unlimited scan aside) works around; this port doesn't either.
+**Native reads the filesystem directly; this port cannot, so it uses the RPC surface the daemon already exposes for the (since removed) Angular web UI instead.** `RecordingsFragment`/`RecordingLibraryFragment` both call `RecordingScanner`/`java.io.File` directly (the native app has filesystem access the co-located daemon process also has) — there is no RPC call anywhere in either fragment. Rather than invent a new IPC surface, this port mirrors `recording.component.ts` (`web/src/app/pages/recording/`), the **already-shipped, sanctioned** Angular translation of this exact screen: fetch the whole catalog once via `ListRecordings({type: '', pageSize: 1000})`, then filter segment/date/chips entirely client-side. `RecordingsApiHandler.java` clamps `pageSize` to 50 server-side regardless of what is requested — a real, already-accepted limit neither reference client (native's own unlimited scan aside) works around; this port doesn't either.
 
 **Header aggregate counts come from `GetStats`, not client math — except "today," which has no RPC field.** `RecordingStats` (`recordings_count`/`surveillance_count`/`proximity_count`/`total_count`/`*_size_bytes`) is server-computed over the *full* catalog, unlike the `ListRecordings` page (capped at 50) — using the page for totals would silently undercount past 50 clips. `dashcamCount = recordingsCount + proximityCount`, matching native's own `dashcamStats.total` combining NORMAL + PROXIMITY. The "X today" count native gets from its own `aggregate()` walk has no `RecordingStats` equivalent, so it's computed client-side from the same `ListRecordings` payload already fetched for the grid (same 50-item-page caveat applies).
 
@@ -343,7 +434,7 @@ Separately, `docs/surveillance-implementation.md`'s own "ROI" section confirms t
 
 ### Flutter Vehicle screen (BladeWatch-yz1e.9)
 
-`flutter_ui/lib/screens/vehicle/` — status card, appearance bar (color presets + custom RGB picker + model picker), Climate/Seats/Windows tabs, tyre-pressure cards, and the 3D hero. Ground truth: `VehicleController.kt` (745 LOC), `VehiclePanels.kt` (549), `VehicleClient.kt` (349), `VehicleViewFactory.kt` (317), `VehicleStateCache.kt` (192), `VehicleModels.kt` (106), `VehicleFormatters.kt`, `TyreOverlay.kt` (270), `VehicleHeroView.kt` (214) — all 9 files read in full before writing any Dart. No new platform channel; the screen is entirely RPC-driven (`VehicleServiceClient`, already-generated; `SystemServiceClient` for appearance).
+`flutter_ui/lib/screens/vehicle/` — status card, appearance bar (color presets + custom RGB picker + model picker), Climate/Windows tabs (the Seats tab this port had was removed with all seat control, BladeWatch-7bx4), tyre-pressure cards, and the 3D hero. Ground truth: `VehicleController.kt` (745 LOC), `VehiclePanels.kt` (549), `VehicleClient.kt` (349), `VehicleViewFactory.kt` (317), `VehicleStateCache.kt` (192), `VehicleModels.kt` (106), `VehicleFormatters.kt`, `TyreOverlay.kt` (270), `VehicleHeroView.kt` (214) — all 9 files read in full before writing any Dart. No new platform channel; the screen is entirely RPC-driven (`VehicleServiceClient`, already-generated; `SystemServiceClient` for appearance).
 
 **Only Climate/Seats/Windows are ported — the task's own "8 tabs" description is stale, confirmed by a git diff, not inferred.** The task describes Security/Trunk/Climate/Seats/Windows/Lights/ADAS/Charging. `VehicleModels.kt`'s `VehicleTab` enum has only 3 values today. `git log` on it shows why: commit `59c3b91` ("update vehicle UI to enhance climate control and window management features", 2026-06-12, three months before this task) removed `TRUNK`/`LIGHTS`/`ADAS`/`CHARGING` from the enum with a clean, matched diff (4 enum entries removed, the matching 4 `when`-arms removed from `renderTabContent()`, `currentTab`'s default changed from `TRUNK` to `CLIMATE`) — not leftover cruft. The baseline reference screenshots (`screenshots/native/05_vehicle.png`, `05b_vehicle_windows.png` — captured at the time; screenshots are no longer versioned, see `.gitignore`) visually confirmed the app showed only Climate and Windows (Seats hidden — that test vehicle reports no seat capability), matching the trimmed enum exactly. `VehiclePanels.kt` still has complete, RPC-backed `buildTrunkTab()`/`buildLightsTab()`/`buildAdasTab()`/`buildChargingTab()` functions — real, working code, just orphaned by the enum trim — but porting them would mean building UI for something the app's own maintainer deliberately removed 3 months ago, not filling a gap. "Security" was never a real tab in any version of `VehicleTab`; it maps to the persistent lock-status display in the status card, which this port keeps.
 
@@ -377,12 +468,12 @@ Separately, `docs/surveillance-implementation.md`'s own "ROI" section confirms t
 
 **Architecture: Dart owns the WebSocket connection and the 3 `StreamService` RPCs the screen actually uses; Kotlin owns only `MediaCodec` decode into a Flutter `Texture`.** This deliberately diverges from the task's own "port `LiveStreamClient` wholesale, just swap where the `Surface` comes from" framing, for two independent reasons:
 
-- **Some deviation was unavoidable regardless of preference.** `LiveStreamClient.kt` mints its JWT and issues its 3 RPCs (`Enable`, `SetViewMode`, `GetQuality` — of `StreamService`'s 7; `Disable`/`GetStatus`/`SetQuality`/`GetViewMode` have no call site in this screen either, native or here) via the **main app's** `ConnectClientProvider`/`AuthManager` singletons. The Flutter APK (`net.bladewatch.flutter`) and the main app (`net.bladewatch.app`) are separate codebases/classloaders sharing only a UID — those singletons are not reachable from new Flutter-APK Kotlin code at all. The RPCs are instead called through the already-generated `StreamServiceClient` Dart client and the existing `AuthChannel` JWT source, per this project's standing "call the same RPCs via the generated Dart client" rule.
-- **The WebSocket connection itself was a genuine choice, not a forced one — and Dart was chosen deliberately.** It technically could have been ported into new native networking code instead. It was not: `dart:io`'s `WebSocket` is RFC 6455 compliant and already proven against this exact server by the Angular SPA's own standard browser WebSocket client (`web/src/app/pages/live/`, `SotaPlayer.js`) — using it keeps the new native surface to exactly the one thing Dart genuinely cannot do (hardware H.264 decode), which is also the smallest surface this task's own "a leaked `MediaCodec` is unrecoverable without restarting the daemon" warning could apply to. Fragment reassembly is not ported into Kotlin either — `WebSocket` always delivers one complete logical message per stream event regardless of how many wire frames it was split across, so `IoLiveSocket.messages` needs no framing logic of its own.
+- **Some deviation was unavoidable regardless of preference.** `LiveStreamClient.kt` mints its JWT and issues its 3 RPCs (`Enable`, `SetViewMode`, `GetQuality` — of `StreamService`'s 7; `Disable`/`GetStatus`/`SetQuality`/`GetViewMode` have no call site in this screen either, native or here) via the **main app's** `ConnectClientProvider`/`AuthManager` singletons. The Flutter APK (`net.bladewatch.incarapp`) and the main app (`net.bladewatch.app`) are separate codebases/classloaders sharing only a UID — those singletons are not reachable from new Flutter-APK Kotlin code at all. The RPCs are instead called through the already-generated `StreamServiceClient` Dart client and the existing `AuthChannel` JWT source, per this project's standing "call the same RPCs via the generated Dart client" rule.
+- **The WebSocket connection itself was a genuine choice, not a forced one — and Dart was chosen deliberately.** It technically could have been ported into new native networking code instead. It was not: `dart:io`'s `WebSocket` is RFC 6455 compliant and already proven against this exact server by the (since removed) Angular SPA's own standard browser WebSocket client (`web/src/app/pages/live/`, `SotaPlayer.js`) — using it keeps the new native surface to exactly the one thing Dart genuinely cannot do (hardware H.264 decode), which is also the smallest surface this task's own "a leaked `MediaCodec` is unrecoverable without restarting the daemon" warning could apply to. Fragment reassembly is not ported into Kotlin either — `WebSocket` always delivers one complete logical message per stream event regardless of how many wire frames it was split across, so `IoLiveSocket.messages` needs no framing logic of its own.
 
 **The Kotlin plugin (`flutter_ui/android/app/src/main/kotlin/net/bladewatch/bladewatch_ui/liveview/`) is split into a testable orchestrator and an excluded real-hardware leaf, mirroring the Dart-side `VehicleHero`-exclusion philosophy for the opposite (JVM-test-stub) boundary.** `android.*` framework classes (`MediaCodec`, `Surface`, `SurfaceTexture`) throw "not mocked" in a plain JVM unit test; Flutter's own `TextureRegistry`/`SurfaceProducer`/`TextureEntry` are plain JVM interfaces and are safely fakeable directly. `MediaCodecFrameDecoder` (behind an injectable `FrameDecoder` interface) is the one thin, excluded class that ever touches `MediaCodec`/`Surface` — it mirrors `LiveStreamClient.kt`'s own `feedToDecoder`/`drainDecoder` logic exactly. `LiveViewTexturePlugin` — texture lifecycle, frame-vs-codec-config bookkeeping, PTS calculation (`PTS_STEP_US = 66_667L`, matching native's `frameCounter++ * 66_667L`), argument validation — holds all the decision logic and never touches a stubbed type, only the injected `FrameDecoder` and Flutter's own fakeable interfaces; it is 100%-covered by `LiveViewTexturePluginTest.kt` (17 tests, hand-rolled fakes, no Mockito — matching this project's established JVM test-fake convention).
 
-**A new platform channel, on its own background `TaskQueue`, separate from the shared `"net.bladewatch.flutter/privileged"` one.** `MainActivity.kt` registers `"net.bladewatch.flutter/live_view_texture"` via `BinaryMessenger.makeBackgroundTaskQueue()` — `MediaCodec.dequeueInputBuffer`'s bounded-but-nonzero wait, called once per decoded frame, should not block the platform/UI thread the way the shared channel's synchronous handlers do for everything else. `LiveViewTextureChannel`'s own doc comment carries the same note for the Dart side; `main.dart` constructs a distinct `MethodChannelBridge(MethodChannel('net.bladewatch.flutter/live_view_texture'))` for it, not the default-channel one every other `platform/*.dart` wrapper shares.
+**A new platform channel, on its own background `TaskQueue`, separate from the shared `"net.bladewatch.incarapp/privileged"` one.** `MainActivity.kt` registers `"net.bladewatch.incarapp/live_view_texture"` via `BinaryMessenger.makeBackgroundTaskQueue()` — `MediaCodec.dequeueInputBuffer`'s bounded-but-nonzero wait, called once per decoded frame, should not block the platform/UI thread the way the shared channel's synchronous handlers do for everything else. `LiveViewTextureChannel`'s own doc comment carries the same note for the Dart side; `main.dart` constructs a distinct `MethodChannelBridge(MethodChannel('net.bladewatch.incarapp/live_view_texture'))` for it, not the default-channel one every other `platform/*.dart` wrapper shares.
 
 **A platform-channel `Int`/`Long` marshalling gotcha is defended against explicitly, not left to chance.** The standard method codec sends a Dart `int` as a 32-bit `Integer` when it fits in one, only as a `Long` otherwise — `textureId` (a Kotlin `Long` from `TextureEntry.id()`) can arrive as either. `MainActivity.kt`'s `Map<*,*>.long(key)` helper checks `is Long`/`is Int` explicitly rather than casting once and risking a `ClassCastException` on whichever shape shows up on a given call.
 
@@ -427,42 +518,41 @@ The task's own 8-dialog list turned out to be 4 already built plus 4 genuinely n
 
 ## Build
 
-### Web app test suites
-
-The Angular app has three, with different requirements:
-
-| Command | Needs a car? | Covers |
-|---|---|---|
-| `npm run test:unit` | no | Framework-free logic (vitest) |
-| `npm run test:mobile` | no | Mobile layout on Pixel 7 + iPhone 13, against a locally served build |
-| `npm run test:e2e` | **yes** | Real flows against a live head unit; needs `e2e/.env` |
-
-`test:mobile` stubs the i18n catalogue, which is normally served by the DAEMON rather than the
-static bundle. Without that stub every label renders empty and controls collapse to their
-padding — measured: the login button reports 28px unlabelled against ~46px labelled, which
-looks exactly like a touch-target defect that does not exist.
- Commands
+### Commands
 
 Common local commands:
 
 ```bash
-./gradlew assembleDebug            # debug APK (runs preBuild → buildAngularWebUI first)
+./gradlew assembleDebug            # debug APK
 ./gradlew assembleRelease          # release APK (needs signing env vars)
 ./gradlew test                     # Android JVM unit tests
-./gradlew :app:extractWebAssets    # push web assets to /data/local/tmp/web
-./gradlew generateConnectProtos    # regenerate Java/Kotlin/TS stubs from proto/
-./gradlew buildAngularWebUI        # build the Angular SPA and copy it into assets
+./gradlew generateConnectProtos    # regenerate Java/Kotlin/Dart stubs from proto/
 ```
 
 Flutter in-car UI commands, run from `flutter_ui/`:
 
 ```bash
 flutter analyze
-flutter test                                         # 1403 tests, zero skipped
-flutter test --coverage                              # then: tools/check_flutter_coverage.sh
+flutter test                                         # 1381 tests, zero skipped
+flutter test --coverage --coverage-package '^(bladewatch_ui|bladewatch_theme)$'   # then: tools/check_flutter_coverage.sh
 flutter build apk --target-platform android-arm64 --debug
 flutter run -d "$CAR_IP:5555"                        # hot reload, no Gradle, no daemon restart
 ```
+
+The shared RPC package and the companion app, each from its own directory:
+
+```bash
+cd packages/bladewatch_rpc && flutter analyze && flutter test   # 165 tests
+cd companion && flutter analyze && flutter test
+cd companion && flutter test integration_test -d macos          # boots the REAL Pear worklet
+cd companion && flutter build apk --debug                       # arm64-v8a + x86_64 only
+cd companion && flutter build macos --debug
+```
+
+The companion's `integration_test/pear_smoke_test.dart` runs `Pear.start()` against the
+genuine Bare worklet, so it needs a real target: it has passed on macOS and on an API 29
+arm64 emulator (`-d emulator-<port>`). The first Android build downloads bare-kit's native
+binaries and takes several minutes; that is expected, not a hang.
 
 **Deploying the two APKs is asymmetric.** The Flutter APK installs over itself
 with nothing else required:
@@ -484,17 +574,7 @@ Both packages must report the same UID or privileged IPC is refused:
 
 ```bash
 adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.app | grep userId'
-adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.flutter | grep userId'
-```
-
-Web app (Angular) commands, run from `web/`:
-
-```bash
-npm install
-npm run dev            # Vite dev server (proxies API to 127.0.0.1:8080)
-npm run build          # production build into web/dist
-npm run generate       # buf generate (same as ./gradlew generateConnectProtos)
-npm run test:e2e       # Playwright e2e against a live device
+adb -s "$CAR_IP:5555" shell 'dumpsys package net.bladewatch.incarapp | grep userId'
 ```
 
 On this repository, shell commands should be prefixed with `rtk` according to the local agent instructions:
@@ -541,36 +621,78 @@ Run a single class, e.g.:
 ./gradlew test --tests "com.loabletech.bladewatch.auth.AuthManagerTest"
 ```
 
-### Web e2e tests
-
-The Angular app has a Playwright suite under `web/e2e/` (`login.spec.ts`, `navigation.spec.ts`, `regression.spec.ts`, plus an `auth.setup.ts` that logs in once and persists the session). The suite targets a single live device over a tunnel: it runs serially (one worker) with retries, and reads its base URL + access code from a gitignored `web/e2e/.env` (see `e2e/.env.example`). Run with `cd web && npm run test:e2e`.
-
 ### Coverage gates (BladeWatch-ncbb.5)
 
-Three independent, build-failing coverage gates — each may only ever be **raised**, never lowered:
+Five independent, build-failing coverage gates — each may only ever be **raised**, never lowered:
 
 | | Gate | Current threshold | Measured | Excludes |
 |---|---|---|---|---|
-| Kotlin (main app) | `./gradlew koverVerify` | `minBound(3)` in `app/build.gradle.kts` | 3.10% (1144/36930 lines), 2026-09-14 — ratcheted from 2.10% (1020/48610), 2026-09-12. **Both halves moved:** Phase 4 deleted the native in-car UI, removing ~11,700 almost entirely UNTESTED lines, and this session's guards added covered ones. Deleting untested code raises the percentage without improving anything, so this is a new floor to hold, not progress | `net.bladewatch.app.grpc.v1` (generated ConnectRPC/protobuf, ~1,100 files), `android.hardware.*` / `android.os.*` (BYD SDK compile-time stubs — see "BYD SDK Stub Pattern" above) |
+| Kotlin (main app) | `./gradlew koverVerify` | `minBound(10)` in `app/build.gradle.kts` | 10.94% (4203/38416 lines, 921 JVM tests), 2026-09-26, after tor's removal (BladeWatch-rdtj.12) -- bound raised from 5. Earlier: 9.03% (3497/38730 lines, 860 JVM tests), 2026-09-24, BladeWatch-rdtj.10. Earlier: 3.10% (1144/36930 lines), 2026-09-14 — ratcheted from 2.10% (1020/48610), 2026-09-12. **Both halves moved:** Phase 4 deleted the native in-car UI, removing ~11,700 almost entirely UNTESTED lines, and this session's guards added covered ones. Deleting untested code raises the percentage without improving anything, so this is a new floor to hold, not progress | `net.bladewatch.app.grpc.v1` (generated ConnectRPC/protobuf, ~1,100 files), `android.hardware.*` / `android.os.*` (BYD SDK compile-time stubs — see "BYD SDK Stub Pattern" above) |
 | Kotlin (Flutter APK, `flutter_ui/android/app/`) | `./gradlew koverVerify` (separate Gradle project, own Kover application) | `minBound(100)` in `flutter_ui/android/app/build.gradle.kts` | 100%, 2026-09-13, BladeWatch-yz1e.11 — unchanged from yz1e.10: the 2 new `setup.*` intent-launching functions live in `MainActivity.kt`, already wholesale-excluded below, so they add no new exclusion entries and no new testable surface | `io.flutter.plugins.GeneratedPluginRegistrant` (Flutter's own generated glue), `net.bladewatch.bladewatch_ui.MainActivity`, `...update.PackageInstallerBridge`, `...network.NetworkInfoChannel`, `...location.LocationServiceChannel*` (Android-framework-bound, not unit-testable without Robolectric — verified on-device in BladeWatch-imh6.6), `...update.HttpConnectionsKt` (real network I/O boundary, no branching logic), and (BladeWatch-yz1e.10) `...liveview.MediaCodecFrameDecoder` (real `MediaCodec`/`Surface` calls — throws "not mocked" in a plain JVM unit test; its own decision logic lives in the separately-tested `LiveViewTexturePlugin` instead) |
-| Dart (`flutter_ui/`) | `tools/check_flutter_coverage.sh` (wired into `flutter_ui/android/app/build.gradle.kts`'s `check` task as `checkFlutterCoverage`) | `99` (`THRESHOLD` default in the script) | 99.87% (7128/7137 lines), 2026-09-14 — the remaining 9 are all unreachable at runtime: `main.dart`'s literal `void main()` (2) and seven const-constructor bodies in `dashboard_models.dart` that every call site constructs as `const`, so they are folded at compile time and never execute. Previously 99.97% (6547/6549), 2026-09-13, BladeWatch-yz1e.11 — up from 99.9679% at BladeWatch-yz1e.10 (6226/6228) after enriching Battery Health and adding `lib/shell/locale_controller.dart`, `lib/screens/dialogs/**`, and `lib/platform/setup_channel.dart` (all at 100%). `FileLocaleStore` needed no gate exclusion — covered by a real-file integration test (`file_locale_store_test.dart`), the same approach already used for `IoLiveSocket`/`raw_http_sender.dart`. The only 2 permanently-uncovered *counted* lines remain `main.dart`'s literal `void main()` | `lib/gen/**` (generated protobuf and l10n), plus one named file: `lib/screens/vehicle/vehicle_hero.dart` (the 3D hero's `webview_flutter` wrapper — constructing a real `WebViewController` throws `WebViewPlatform.instance != null` in any plain `flutter test` run, confirmed empirically; mirrors the Kotlin gate's own `LocationServiceChannel*`/`HttpConnectionsKt` exclusions for the identical reason) |
+| Dart (`flutter_ui/`) | `tools/check_flutter_coverage.sh` (wired into `flutter_ui/android/app/build.gradle.kts`'s `check` task as `checkFlutterCoverage`) | `99` (`THRESHOLD` default in the script) | 99.57% (7357/7389 lines, 1443 tests), 2026-09-24, after BladeWatch-rdtj.10 moved the fully covered RPC layer out to `packages/bladewatch_rpc` (next row). Before that, 99.87% (7128/7137 lines), 2026-09-14 — the remaining 9 are all unreachable at runtime: `main.dart`'s literal `void main()` (2) and seven const-constructor bodies in `dashboard_models.dart` that every call site constructs as `const`, so they are folded at compile time and never execute. Previously 99.97% (6547/6549), 2026-09-13, BladeWatch-yz1e.11 — up from 99.9679% at BladeWatch-yz1e.10 (6226/6228) after enriching Battery Health and adding `lib/shell/locale_controller.dart`, `lib/screens/dialogs/**`, and `lib/platform/setup_channel.dart` (all at 100%). `FileLocaleStore` needed no gate exclusion — covered by a real-file integration test (`file_locale_store_test.dart`), the same approach already used for `IoLiveSocket`/`raw_http_sender.dart`. The only 2 permanently-uncovered *counted* lines remain `main.dart`'s literal `void main()` | `lib/gen/**` (generated protobuf and l10n), plus one named file: `lib/screens/vehicle/vehicle_hero.dart` (the 3D hero's `webview_flutter` wrapper — constructing a real `WebViewController` throws `WebViewPlatform.instance != null` in any plain `flutter test` run, confirmed empirically; mirrors the Kotlin gate's own `LocationServiceChannel*`/`HttpConnectionsKt` exclusions for the identical reason) |
+| Dart (`packages/bladewatch_rpc/`) | `tools/check_flutter_coverage.sh 100 packages/bladewatch_rpc` (wired into `flutter_ui/android/app/build.gradle.kts`'s `check` task as `checkRpcCoverage`) | `100` (the argument in `checkRpcCoverage`) | 100% (381/381 lines, 157 tests), 2026-09-24, BladeWatch-rdtj.10 — the RPC layer that left `flutter_ui/` (140 of those tests moved with it, 17 are new). Without its own gate the move would have dropped it out of every gate: lcov only reports the package under test | `lib/gen/**` (generated protobuf) |
+| Dart (`companion/`) | `tools/check_flutter_coverage.sh 98 companion` (wired into the same `check` task as `checkCompanionCoverage`) | `98` (the argument in `checkCompanionCoverage`) | 98.03% (299/305 lines), 2026-09-24, BladeWatch-rdtj.8 — the LAN/Pear transport and pairing/login client (`lib/transport/`). Uncovered: `main()`'s `runApp` and five defensive error paths (a socket dying mid-write or mid-handshake). Started at 83 (the scaffold's 5/6, BladeWatch-rdtj.10) | `lib/gen/**` (none yet) |
 
-All three are driven by the actual measured JVM/Dart suite at the time each gate was added — not chosen numbers — and are proved to actually fail (by temporarily raising the threshold, observing the failure, then restoring) rather than trusted blindly; see the git history / task notes on BladeWatch-ncbb.5 for that proof. Raise a threshold only after adding tests that justify it, in the same commit.
+All five are driven by the actual measured JVM/Dart suite at the time each gate was added — not chosen numbers — and are proved to actually fail rather than trusted blindly: the first three by temporarily raising the threshold (see the task notes on BladeWatch-ncbb.5), the two newest by temporarily adding uncovered lines (companion 5/9 = 55.56%, bladewatch_rpc 381/383 = 99.48%; both failed the build, then passed again once restored). Raise a threshold only after adding tests that justify it, in the same commit.
+
+The three Dart gates all live in `flutter_ui/android`'s Gradle build, because it is the only one that already requires the Flutter toolchain; run them together with `cd flutter_ui/android && ./gradlew checkFlutterCoverage checkRpcCoverage checkCompanionCoverage` (or `./gradlew check`).
 
 ### Release builds in CI (`.github/workflows/release.yml`)
 
-Tag builds only, and **no secrets**: the keystore never touches GitHub. Pushing a
-tag matching `v*` builds **both** APKs — `net.bladewatch.app` (service host) and
-`net.bladewatch.flutter` (in-car UI) — **unsigned**, and attaches both to the
-GitHub Release. Creating a release through the GitHub UI on a new tag creates that
-tag, which fires the same `push` event, so both routes are covered by one trigger.
-Ordinary pushes and pull requests build nothing. `workflow_dispatch` re-runs an
-existing tag.
+Tag builds only, and **no secrets**: no keystore or signing identity ever touches
+GitHub. Pushing a tag matching `v*` runs four jobs and attaches every one of their
+outputs, all **unsigned**, to the GitHub Release:
 
-**Both APKs are required.** They are not variants of each other: the service host
+- `build` (ubuntu-latest): the three Android APKs -- `net.bladewatch.app` (service
+  host) and `net.bladewatch.incarapp` (in-car UI) for the car, and
+  `net.bladewatch.companionapp` for the owner's phone. Runs the full quality gate
+  suite (Kotlin + Dart tests, both Kover bounds, all three Dart coverage gates).
+- `build-macos` (macos-15), `build-windows` (windows-latest), `build-linux`
+  (ubuntu-latest): the companion for each desktop platform, zipped/tar'd with its
+  runtime bundle (`BladeWatch.app`, `bladewatch_companion.exe` + its `Release/`
+  folder, `bladewatch_companion` + its `bundle/` folder respectively). Each `needs:
+  build` -- they only run once the Android quality gates pass, and do not repeat
+  `flutter analyze` themselves (host-OS-independent static analysis; re-running it
+  three more times would only cost minutes). None of the three needs a bare-kit
+  prebuilds seeding step the way the service host and Android companion build do:
+  flutter_pear resolves from pub.dev (`companion/pubspec.lock`, not a local path),
+  and flutter_pear_bare ships every desktop platform's native addons as committed
+  package assets that an ordinary `flutter pub get` fetches on its own.
+
+Creating a release through the GitHub UI on a new tag creates that tag, which fires
+the same `push` event, so both routes are covered by one trigger. Ordinary pushes and
+pull requests build nothing. `workflow_dispatch` re-runs an existing tag (all four
+jobs still build, verify and upload as workflow artifacts even without a tag ref --
+see each job's release-attach step, guarded by `startsWith(github.ref, 'refs/tags/')`
+-- so it is a useful dry run of all seven artifacts at once).
+
+**Both car APKs are required.** They are not variants of each other: the service host
 has no launcher icon and runs the daemons; the Flutter APK is the only thing the
 driver opens. Installing one without the other gives either a UI with no daemon or
 daemons with no UI.
+
+**The companion ships for Android, macOS, Windows and Linux.** The Android APK
+(`arm64-v8a` and `x86_64`, `--split-per-abi` fails by design, see the Project Layout
+notes) is about 200 MB -- most of it bare-kit (`libbare-kit.so`, ~65 MB per ABI) plus
+flutter_pear's desktop prebuilds, which flutter_pear declares as universal Flutter
+assets and so ship in the Android APK too (upstream flutter_pear-9ng). None of the
+three desktop builds is code-signed: macOS needs a right-click-Open or `xattr -cr` to
+bypass Gatekeeper, Windows needs "Run anyway" past SmartScreen, and Linux needs
+`chmod +x` if the archive did not preserve the executable bit -- the release notes
+body spells out all three. iOS is NOT built by CI: it needs Apple signing a
+secret-free workflow cannot do, and unlike the other four an unsigned `.ipa` cannot
+be installed at all, so there is no unsigned-artifact fallback the way there is for
+the rest. Do not claim iOS in the release notes until that changes.
+
+**bare-kit is cached.** Its `prebuilds.zip` is 418 MB, and two builds unpack it:
+`fetchBareKit` (the service host, for `pear_daemon`) and flutter_pear_bare (the
+companion). Each looks in its own `build/` directory and downloads it when absent. The
+workflow reads the pin from `app/build.gradle.kts`, restores one copy from
+`actions/cache` (or downloads and verifies it), and places it in both directories. Both
+builds re-verify the SHA-256, so a bad cache entry fails the build instead of shipping.
+flutter_pear_bare pins the same version and checksum. When either pin moves, move the
+other too: a mismatch only costs a download, but the car and the companion must run the
+same bare-kit.
 
 #### Signing the CI APKs
 
@@ -584,13 +706,22 @@ done
 apksigner verify --print-certs bladewatch-*-arm64-v8a.apk | grep 'SHA-256 digest'
 ```
 
-Both digests must match. `android:sharedUserId` collapses the two packages into one
+The two car digests must match. `android:sharedUserId` collapses the two packages into one
 UID *only* when their certificates are identical, and the daemon's loopback IPC on
 19876/19877 authorises by peer UID — a mismatched pair installs cleanly and then
 fails at runtime with the UI unable to reach the daemon.
 
-The workflow enforces that both APKs come out unsigned, and fails if either is
-signed or if fewer than two are produced. A half-signed pair is the dangerous
+The loop signs the companion too, which is the simplest choice. The companion shares no
+UID, so its key does not *have* to match the car's. What matters is that **every companion
+release is signed with the same key**: Android refuses an update signed with a different
+one, so a phone would have to uninstall the companion, which loses its pairing. Locally,
+`companion/android/app/build.gradle.kts` signs a release with `KEYSTORE_FILE` (default
+`app/release.jks`) when it exists, and otherwise leaves it unsigned. It used to fall back
+to the debug key, Flutter's template default, and a debug-signed release on a phone can
+never take the real one as an update.
+
+The workflow enforces that all three APKs come out unsigned, and fails if any is
+signed or if the count is not exactly three. A half-signed pair is the dangerous
 outcome: signing the other half later with a real key can never match a debug
 certificate baked in during the build.
 
@@ -600,16 +731,17 @@ back to the **debug** signing config while its comment said "unsigned", so a
 keystore-less release build produced one unsigned APK and one debug-signed APK —
 a pair that could never share a UID.
 
-**Node is required, not optional.** `buildAngularWebUI` runs during `preBuild`, and
-neither `web/dist` nor `app/src/main/assets/web/angular/` is committed (both
-gitignored). Before this was understood, a runner without Node skipped the Angular
-build with a warning and produced a *successful* APK containing no web UI at all.
-`verifyWebAssetsPresent` now fails the build in that state.
-
 Pinned toolchain: JDK 17 (AGP for `compileSdk 36`; the modules themselves target
-Java 11 bytecode), Node 20, Flutter 3.44.4, NDK `26.1.10909125` and CMake 3.22.1.
+Java 11 bytecode), Flutter 3.44.4, NDK `26.1.10909125` and CMake 3.22.1.
 OpenH264 and opencv-mobile need no CI step — Gradle downloads and checksum-verifies
-them.
+them. Every Dart package's `pubspec.yaml` floor must stay satisfiable by that Flutter
+pin (`sdk: ^3.12.2` today): a higher floor fails the workflow at `pub get`.
+
+**Gates the workflow runs before releasing:** the service host's JVM tests and Kover gate,
+`flutter analyze` for all three Dart packages, `flutter_ui`'s tests, and — after the UI
+build, which injects `flutter_ui/android/gradlew` — the Flutter APK's Kover gate together
+with the three Dart coverage gates (which also run the `bladewatch_rpc` and `companion`
+tests).
 
 ### Recommended checks after code changes
 
@@ -617,6 +749,7 @@ them.
 ./gradlew test
 ./gradlew assembleDebug
 ./gradlew koverVerify
+cd flutter_ui/android && ./gradlew koverVerify checkFlutterCoverage checkRpcCoverage checkCompanionCoverage
 ```
 
 For documentation-only changes, a full build may still be useful if build scripts or generated docs depend on source paths, but it is not strictly required to validate Markdown content.
@@ -675,7 +808,7 @@ Important runtime files:
 - `/storage/emulated/0/BladeWatch/data/bladewatch_config.json` (persistent config; mirrored to `/data/local/tmp/bladewatch_config.json`).
 - `/storage/emulated/0/BladeWatch/data/bladewatch_trips_h2.mv.db` (persistent trip database).
 - `/data/local/tmp/bladewatch_secrets.json`.
-- `/data/local/tmp/tor.log`.
+- `/data/local/tmp/pear_daemon.log`.
 - `/storage/emulated/0/BladeWatch`.
 
 Runtime files can contain secrets, tokens, tunnel URLs, or vehicle data. Treat pulled logs and configs as sensitive.
@@ -714,9 +847,9 @@ Suggested mapping:
 - Gradle namespace, SDK, version, ABI split, and signing: [build.gradle.kts:264](../app/build.gradle.kts#L264), [build.gradle.kts:268](../app/build.gradle.kts#L268), [build.gradle.kts:345](../app/build.gradle.kts#L345), [build.gradle.kts:256](../app/build.gradle.kts#L256).
 - Dependencies (TFLite, ConnectRPC, H2, RTMP) and Filament-removed note: [build.gradle.kts:412](../app/build.gradle.kts#L412), [build.gradle.kts:444](../app/build.gradle.kts#L444), [build.gradle.kts:465](../app/build.gradle.kts#L465).
 - Verified native downloads and asset extraction tasks: [build.gradle.kts:72](../app/build.gradle.kts#L72), [build.gradle.kts:124](../app/build.gradle.kts#L124), [build.gradle.kts:138](../app/build.gradle.kts#L138), [build.gradle.kts:226](../app/build.gradle.kts#L226).
-- Angular web build and proto codegen tasks: [build.gradle.kts:487](../app/build.gradle.kts#L487), [build.gradle.kts:497](../app/build.gradle.kts#L497), [build.gradle.kts:520](../app/build.gradle.kts#L520), [buf.gen.yaml:1](../proto/buf.gen.yaml#L1), [package.json:5](../web/package.json#L5), [playwright.config.ts:17](../web/playwright.config.ts#L17).
+- Proto codegen: [buf.gen.yaml:1](../proto/buf.gen.yaml#L1).
 - Plugin and library versions: [libs.versions.toml:1](../gradle/libs.versions.toml#L1).
-- BYD stub compile/runtime behavior: [build.gradle.kts:413](../app/build.gradle.kts#L413), [IAccModeManager.java:5](../app/src/main/java/android/os/IAccModeManager.java#L5).
+- BYD stub compile/runtime behavior: [build.gradle.kts:413](../app/build.gradle.kts#L413), [BYDAutoManager.java:1](../app/src/main/java/android/hardware/BYDAutoManager.java#L1).
 - Native build and hardening: [CMakeLists.txt:50](../app/src/main/cpp/CMakeLists.txt#L50), [CMakeLists.txt:98](../app/src/main/cpp/CMakeLists.txt#L98).
 - Post-update daemon reset: [BootReceiver.kt:24](../app/src/main/java/com/loabletech/bladewatch/receiver/BootReceiver.kt#L24), [DaemonStartupManager.kt:15](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L15).
 - Operational files, logs, config, and storage: [UnifiedConfigManager.kt:30](../app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt#L30), [SecretConfigStore.kt:22](../app/src/main/java/com/loabletech/bladewatch/config/SecretConfigStore.kt#L22), [StorageManager.java:100](../app/src/main/java/com/loabletech/bladewatch/storage/StorageManager.java#L100), [DaemonLogger.java:382](../app/src/main/java/com/loabletech/bladewatch/logging/DaemonLogger.java#L382).

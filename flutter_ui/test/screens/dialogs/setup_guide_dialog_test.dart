@@ -24,7 +24,7 @@ void main() {
   late SetupGuideController controller;
   late LocaleController localeController;
 
-  const info = AppVersionInfo(version: '1.2.0', buildNumber: '7', packageName: 'net.bladewatch.flutter');
+  const info = AppVersionInfo(version: '1.2.0', buildNumber: '7', packageName: 'net.bladewatch.incarapp');
 
   setUp(() {
     channel = FakePlatformChannel();

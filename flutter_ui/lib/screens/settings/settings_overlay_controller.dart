@@ -10,8 +10,7 @@ import '../../shell/disposed_safe_notifier.dart';
 /// as a follow-up (see this screen's task notes). [loadSettings]/[persist]
 /// are injected so this controller (and its tests) don't depend on that
 /// follow-up landing; the defaults mirror native's own fallback values
-/// (`optBoolean(key, true)`) and quietly no-op on write, exactly the same
-/// shape as `DashboardController.tunnelUrlSource`.
+/// (`optBoolean(key, true)`) and quietly no-op on write.
 class SettingsOverlayController extends ChangeNotifier with DisposedSafeNotifier {
   SettingsOverlayController({
     Future<({bool cameraVisible, bool tripVisible})> Function()? loadSettings,

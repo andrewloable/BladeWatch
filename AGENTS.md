@@ -16,7 +16,7 @@ Required, in this order:
 2. **Exact locations** — file paths, class and function names, line numbers.
 3. **Step-by-step instructions.**
 4. **Constraints** — what must NOT change, and why. Name the invariant, e.g. "do not
-   widen `PeerCredentials`", "do not touch `web/`".
+   widen `PeerCredentials`", "do not touch `companion/`".
 5. **Acceptance criteria** — a verifiable checklist, not prose.
 6. **Closing warning**, verbatim:
 

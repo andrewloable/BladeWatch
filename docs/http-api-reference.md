@@ -8,6 +8,24 @@ Base URL by default:
 http://127.0.0.1:8080
 ```
 
+## Listeners and what each one trusts
+
+The same routes are served on up to three listeners. The routes are identical on each; the
+difference is the auth posture. That posture comes from the listener a request arrived on,
+never from its source address. The Pear pump delivers remote traffic from 127.0.0.1
+(as tor did before v1.4.0.0), so a loopback address proves nothing (`ListenerTrust`, BladeWatch-rdtj.4).
+
+| Listener | Who connects | Trust | Notes |
+|---|---|---|---|
+| `127.0.0.1:8080`, plain HTTP | the in-car UI and the service host | `LOCAL_APPS`, only when the peer UID is BladeWatch's own (or shell, system, root); otherwise `REMOTE` | The only listener that can get the debug-build loopback bypass or skip the vehicle-action second factor. Another app on the head unit is served like a remote caller (BladeWatch-g5u7). |
+| `127.0.0.1:8444`, TLS | `PearStreamPump`, carrying a companion's Pear stream | `REMOTE` | Serves the LAN listener's certificate. The companion runs TLS end to end over the Pear stream and pins that certificate, so pear_daemon never sees plaintext. |
+| `0.0.0.0:8443`, TLS | a companion or browser on the car's network | `REMOTE` | Only when the owner opts in (`network.lanHttpEnabled`, off by default). Self-signed certificate, pinned by fingerprint from the pairing QR. |
+
+`REMOTE` means every protected route needs a JWT, and every vehicle action also needs an
+`X-Vehicle-Action-Token` from `VehicleService/IssueActionToken`. Plain HTTP never binds beyond loopback. `SystemService/GetStatus` reports
+`network.lanHttpEnabled` and `network.httpBind` (always `127.0.0.1`). The LAN listener's port
+and fingerprint reach the in-car UI over IPC (`lanTlsInfo`), not through status.
+
 The server exposes two parallel API surfaces over the same port:
 
 1. **HTTP, for things a browser must fetch directly.** There is **no REST JSON API any more**
@@ -15,54 +33,49 @@ The server exposes two parallel API surfaces over the same port:
 
    | Route | Why it cannot be an RPC |
    |---|---|
-   | `/`, `angular/*`, `/assets/*` | the SPA bundle itself |
-   | `/login`, `/login.html` | pre-auth page; no Connect client exists yet when it loads |
-   | `/auth/status`, `/auth/token`, `/auth/logout` | the login bootstrap those pages call |
-   | `/manifest.json`, `/sw.js`, `/favicon.ico`, `/credits.json` | static assets |
-   | `/i18n/*`, `/shared/*` | catalogs and legacy assets |
+   | `/auth/pair`, `/auth/companion` | the companion's pairing and login; public, plain JSON |
    | `/video/*` | player byte-range requests (Range, 206, ETag) |
-   | `/thumb/*` | `<img src>`, additionally auth'd by a signed `?t=` token |
+   | `/thumb/*` | `<img src>` |
    | `/api/stream/still` | a JPEG the live view consumes as an image URL |
-   | `/hero/*` | the three.js vehicle page |
 
    Everything else — every JSON endpoint that used to live under `/api/*`, and `/status` — is a
    ConnectRPC method. `AuthApiHandler` is the one handler that still has an HTTP entry point
-   for JSON, because the login bootstrap needs it; `RecordingsApiHandler` and
-   `StreamingApiHandler` keep one for their binary routes only.
+   for JSON, because pairing and login happen before any session exists; `RecordingsApiHandler` and
+   `StreamingApiHandler` keep one for their binary routes only. There is no static serving: the
+   web app was removed (BladeWatch-rdtj.22), and any other path is a 404 (or a 401 without a JWT).
 
-2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by both the Flutter in-car UI (Dart client, `flutter_ui/lib/rpc/`) and the Angular SPA. See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers to keep the two surfaces in 1:1 parity, so the REST families below are the source of truth for behaviour.
+2. **Connect/gRPC** — ConnectRPC unary calls under the `/bladewatch.v1.*` route prefix, consumed by both the Flutter in-car UI (Dart client, `packages/bladewatch_rpc/lib/rpc/`, shared with the companion app). See [Connect / gRPC Layer](#connect--grpc-layer). The Connect handlers wrap the same REST handlers, so the REST families below describe behaviour.
 
 ## Auth
 
-Handled by `AuthApiHandler` (all `/auth/*` paths are routed before the auth
-middleware runs, so they are reachable without a session):
+Handled by `AuthApiHandler`. Only the companion's two calls exist (all `/auth/*` paths are routed
+before the auth middleware runs, so they are reachable without a session); the web app's login
+(`/auth/token`, `/auth/logout`, `/auth/status`) and its cookie session were removed with it
+(BladeWatch-rdtj.22), and any other `/auth/*` path answers 404:
 
-- `GET /auth/status` — returns the device id hint for the login page. Public.
-- `POST /auth/token` — body `{token}`; validates the device token and, on
-  success, issues a JWT and sets the `byd_session` (HttpOnly) + `byd_auth=1`
-  (hint) cookies. Rate-limited to 10 attempts/min per client identity
-  (X-Forwarded-For when present, else socket), then a 30s lockout.
-- `POST /auth/logout` — clears the session cookies. Idempotent.
+- `POST /auth/pair` — body `{code, name}`; redeems a single-use pairing code from the in-car QR
+  (BladeWatch-rdtj.7) and answers `{success, companionId, token}` exactly once, or
+  `{success:false, error:"pairing_code_refused"}`. Public.
+- `POST /auth/companion` — body `{companionId, token}`; a paired companion's token for a session
+  JWT, returned in the body (`{success, jwt, expiresIn}`). The JWT carries `cid` and stops
+  validating the moment that companion is un-paired. Public.
 
-The login page is served as a static file:
+Neither is rate limited, deliberately (BladeWatch-rlgv): what they check is 128 random bits or an
+HMAC, so a limit adds nothing against guessing and only lets anyone who can reach them lock every
+companion out (every remote peer shares one `127.0.0.1` address).
 
-- `GET /login` / `GET /login.html` → `local/login.html`.
-
-Most other routes require a JWT Bearer token or `byd_session` cookie (see
-`AuthMiddleware`). `/auth/status`, `/login`, `/login.html`, `/manifest.json`,
-`/sw.js`, `/favicon.ico`, `/shared/*`, `/i18n/*`, and the Connect login RPC
-`/bladewatch.v1.AuthService/Login` are the only paths that bypass auth.
-`/thumb/*` additionally accepts a signed `?t=` thumbnail token.
+Every other route requires a `Authorization: Bearer` JWT (see `AuthMiddleware`); `/auth/pair` and
+`/auth/companion` are the only paths that bypass auth. `/thumb/<clip>.mp4` answers a small JPEG: the clip's hero frame when one exists (scaled to a 480 px long edge and cached as `thumbs/hero_<name>.jpg` when larger -- some heroes are 2560x1920, BladeWatch-820b), else a generated 320x180 frame (202 while it is being made). `/thumb/<name>.jpg` returns that file as stored.
 
 ## Connect / gRPC Layer
 
-A ConnectRPC (gRPC-style) API mirrors the REST surface 1:1 for the Angular SPA.
+A ConnectRPC (gRPC-style) API is the surface both apps use.
 `ConnectDispatcher` routes any request whose path starts with `/bladewatch.v1.`
 to a registered service handler; everything else falls through to the REST
 routing in `routeToHandlers`.
 
 - **Route prefix / path format:** `POST /bladewatch.v1.{ServiceName}/{MethodName}`,
-  e.g. `POST /bladewatch.v1.AuthService/Login`. Only `POST` is accepted; other
+  e.g. `POST /bladewatch.v1.AuthService/InvalidateAuthCache`. Only `POST` is accepted; other
   methods return Connect `unimplemented` (HTTP 405).
 - **Required headers:** `Connect-Protocol-Version: 1` (else `invalid_argument` /
   HTTP 400) and a JSON content-type (else `invalid_argument` / HTTP 415).
@@ -72,8 +85,7 @@ routing in `routeToHandlers`.
   (including early errors) returns `application/json`. The UI uses unary calls
   only.
 - **Auth:** the server's `AuthMiddleware` runs before Connect dispatch, so
-  handlers do no extra JWT check. `/bladewatch.v1.AuthService/Login` is the only
-  Connect path on the public allowlist.
+  handlers do no extra JWT check. No Connect path is on the public allowlist.
 - **Errors:** failures are returned as `{code, message}` JSON; Connect codes map
   to HTTP status (`invalid_argument`→400, `unauthenticated`→401,
   `permission_denied`→403, `not_found`→404, `already_exists`→409,
@@ -82,9 +94,8 @@ routing in `routeToHandlers`.
 - **1:1 parity mechanism:** each Connect impl wraps the corresponding REST
   handler via `ConnectHandlerUtil.capture*` (it invokes the REST handler against
   an in-memory buffer, strips the HTTP framing, and re-emits the JSON body). REST
-  4xx/5xx responses are translated into Connect errors, and `Set-Cookie` headers
-  (auth flows) are forwarded. The REST families below are therefore the source of
-  truth; the Connect method just renames/repackages them.
+  4xx/5xx responses are translated into Connect errors. The REST families below are
+  therefore the source of truth; the Connect method just renames/repackages them.
 
 ### Registered services and RPCs
 
@@ -93,47 +104,28 @@ All 12 services are registered at daemon startup (`CameraDaemon.startDaemon`,
 
 | Service (`bladewatch.v1.*`) | RPC methods | Mirrors REST |
 | --- | --- | --- |
-| `AuthService` | `Login`, `Logout`, `GetAuthStatus`, `InvalidateAuthCache` | `/auth/token`, `/auth/logout`, `/auth/status` |
+| `AuthService` | `InvalidateAuthCache` | (TCP `auth_invalidate`) |
 | `SystemService` | `GetStatus`, `GetPerformance`, `PlayAudioTest`, `ListModels`, `DownloadModel`, `GetSelectedModel`, `SetSelectedModel`, `GetModelsManifest`, `GetSohNominal`/`SetSohNominal`, `GetSohStatus`, `ResetSoh`, `ResetPerformance`, `GetParkingDelta`, `GetLastCharge`, `PerformanceConnect`, `PerformanceHeartbeat`, `PerformanceDisconnect` | `/status`, `/api/performance*`, `/api/audio/test-avas`, `/api/models/*` |
 | `RecordingsService` | `ListRecordings`, `GetDates`, `GetStats`, `DeleteRecording`, `BatchDelete`, `SyncCatalog`, `GetInflightStatus`, `GetEventTimeline`, `MarkRecording` | `/api/recordings*`, `/api/events/*` |
 | `TripsService` | `ListTrips`, `GetTrip`, `DeleteTrip`, `GetSummary`, `GetDna`, `GetRange`, `GetConfig`/`SetConfig`, `GetStorage`/`SetStorage`, `SyncTrips`, `GetTelemetry`, `GetSimilarTrips`, `GetGpsTrace` | `/api/trips*` |
 | `SurveillanceService` | `GetConfig`/`SetConfig`, `GetStatus`, `Enable`, `Disable`, `GetHeatmap`, `GetSnapshot`, `GetFilterLog`, `SyncCatalog` | `/api/surveillance/*` |
 | `SafeLocationsService` | `ListZones`, `AddZone`, `UpdateZone`, `DeleteZone`, `Toggle` | `/api/surveillance/safe-locations*` |
 | `StreamService` | `Enable`, `Disable`, `GetStatus`, `GetQuality`/`SetQuality`, `GetViewMode`/`SetViewMode` | `/api/stream/*` |
-| — | `GET /api/stream/still` (REST-only, no Connect RPC): the still-frame fallback JPEG for browsers with no usable H.264 decoder (BladeWatch-y78o.1) | `/api/stream/still` |
+| — | `GET /api/stream/still[?camera=0..3]` (REST-only, no Connect RPC): the live still JPEG, all four cameras at 1280×960 or one camera at its native 1280×960; header `X-Still-View: mosaic\|0..3` (BladeWatch-y78o.1, rdtj.68) | `/api/stream/still` |
 | `SettingsService` | `GetQuality`/`SetQuality`, `GetAppearance`/`SetAppearance`, `GetLocale`/`SetLocale`, `SetRecordingMode`, `GetStatusOverlay`/`SetStatusOverlay`, `GetTelemetryOverlayFields`/`SetTelemetryOverlayFields` | `/api/settings/*`, `/api/recording/mode`, `/api/i18n/lang` |
 | `StorageService` | `GetStorageSettings`/`SetStorageSettings`, `PreviewStorageLimitChange`, `GetExternalStorage`, `SetExternalConfig`, `TriggerCleanup`, `PreviewCleanup`, `RefreshExternalStorage`, `ListFormatVolumes`, `FormatVolume` | `/api/settings/storage`, `/api/storage/external/*`, `/api/storage/format` |
-| `VehicleService` | `GetState`, `GetAcDiagnostics`, `GetSeatDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported), `IssueActionToken`, `GetAdasInventory` | `/api/vehicle/*`, `/api/gps/*` |
-| `NotificationsService` | `GetCategories`, `Subscribe`, `Unsubscribe`, `ListSubscriptions`, `UpdatePreferences`, `SendTest` | `/api/notifications/*`, `/api/push/*` |
+| `VehicleService` | `GetState`, `GetAcDiagnostics`, `Trunk`, `MoveWindow`, `SetClimate`, `SetLights`, `SetAdas`, `SetScreen`, `SetMediaVolume`, `GetChargeCap`/`SetChargeCap`, `GetGpsLocation`, `StartGps`, `StopGps`, plus cloud-only `Lock`/`Unlock`/`Flash`/`FindCar`/`SetBatteryHeat`/`Get-`/`SetChargingSchedule` (return not-supported), `IssueActionToken`, `GetAdasInventory` | `/api/vehicle/*`, `/api/gps/*` |
+| `NotificationsService` | `GetCategories`, `SendTest`, `ListInbox` | (`ListInbox`: Connect only) |
 
 The full request/response message shapes are in `proto/bladewatch/v1/*.proto`
 (one file per service, plus `common.proto`). Regenerate stubs with
 `cd proto && buf generate`.
 
-## Static Web Routes
+## Locale
 
-The web UI is an Angular SPA. `GET /` and any unrecognised path fall through to
-`angular/index.html` so the Angular router resolves the route client-side — the
-old per-page routes (`/recording`, `/surveillance`, `/trips`, …) are no longer
-distinct server routes.
-
-Angular build output and asset areas:
-
-- `GET /assets/*`, `GET /vendor/*` → Angular SPA chunks (`angular/...`).
-- `GET /shared/*`, `GET /local/*` → bundled static assets. `?v=` cache-busting
-  and `#` fragments are stripped before disk lookup.
-- `GET /i18n/{tag}.json` → locale catalogs (404 on unsupported tags so the
-  runtime falls back to `en`). Served with `Cache-Control: no-store, no-cache,
-  must-revalidate, max-age=0` — the catalog URLs are unhashed (unlike the
-  content-hashed Angular bundle), so they must revalidate on every load or a
-  stale cached catalog would render the SPA as raw keys after an app update.
-  `?query`/`#fragment` are stripped before disk lookup (future `?v=` busting).
-  Catalogs are validated at build time by the `validateI18nCatalogs` Gradle
-  task (fails the build on invalid JSON or missing keys vs `en.json`).
-- `GET /manifest.json`, `GET /sw.js`, `GET /credits.json` → PWA assets
-  (served from `local/`).
-
-i18n:
+There are no static web routes (BladeWatch-rdtj.22): nothing is served from `/data/local/tmp/web`
+over HTTP. That directory holds only `server-i18n` (the car's own localized error texts) and
+`shared/models` (the manifest `ModelsApiHandler` reads).
 
 - `GET /api/i18n/lang` — current locale + supported list.
 - `POST /api/i18n/lang` — body `{lang}`; persists and echoes the resolved locale.
@@ -143,7 +135,30 @@ i18n:
 Handled by `RecordingsApiHandler`:
 
 - `/api/recordings`.
-- `/video/*`.
+- `/video/*`. A clip whose index (`moov`) is at the end -- every MediaMuxer recording -- is
+  served in faststart order (`Mp4Faststart.View`, BladeWatch-rdtj.28): the same length, with the
+  index first and its chunk offsets moved. The index is also re-cut into small chunks
+  (BladeWatch-rdtj.31): MediaMuxer stores a video-only clip as ONE chunk, and AVFoundation (the
+  companion on iOS and macOS) plays nothing from a chunk until all of it has arrived. The bigger
+  index is paid for out of MediaMuxer's `free` box, so the frames stay where they were. The file
+  on disk is never changed. Its ETag carries a `-fs2` suffix so a client never mixes cached
+  ranges of two layouts.
+  - `/video/<clip>?maxW=<px>&maxH=<px>` (BladeWatch-rdtj.73): a capability hint for saved-clip
+    playback only -- never Live view, which has no video codec in its path at all (refreshed
+    JPEG stills over `/api/stream/still`). Both params are required together; either malformed
+    or missing means "no hint", identical to the plain `/video/<clip>` behaviour before this
+    existed (`ClipCapability.parseHint`). If the clip's native resolution already fits the hint,
+    or the hint is too small for even the one fallback tier this server offers (1920x1080), the
+    native file is served unchanged. Otherwise: a cached transcode at 1920x1080 is served if one
+    already exists (`transcoded/<clip>_1920x1080.mp4`, a sibling of `thumbs/` next to the
+    recordings dir); if not, a background transcode is started (one at a time; see
+    `ClipTranscoder`, `net.bladewatch.app.recording.transcode`) and the response is `202
+    Accepted` with `Retry-After` and a `{"status":"transcoding"}` body, mirroring `/thumb/*`'s
+    own pending-generation response below. A ~5-minute clip measured roughly 100s to decode
+    alone on the car's own hardware -- callers should poll, not treat 202 as a failure. The
+    companion's Android build supplies this hint from a `MediaCodecList` probe of the device's
+    own hardware decoder (`net.bladewatch.companionapp/video_capability` platform channel); every
+    other companion platform, and the in-car UI, send no hint and always get native.
 - `/thumb/*`.
 - `/api/events/*`.
 - `POST /api/recordings/sync` — reconcile the media catalog DB against the filesystem.
@@ -204,9 +219,8 @@ Handled by `StreamingApiHandler` and WebSocket upgrade paths:
 
 - `/api/stream/*` — stream enable/disable, quality, and view-mode control.
 - `GET /ws` (WebSocket upgrade) — live H.264 stream used by the live stream
-  client. Browser WebSocket clients can pass the JWT as `?token=` (promoted to a
-  synthetic `Authorization: Bearer` header) since cookies may be dropped through
-  a tunnel's SameSite policy.
+  client. A client that cannot set headers can pass the JWT as `?token=` (promoted to a
+  synthetic `Authorization: Bearer` header).
 
 Connect mirror: `StreamService.{Enable,Disable,GetStatus,GetQuality,SetQuality,
 GetViewMode,SetViewMode}`. The binary stream itself stays on the `/ws` WebSocket;
@@ -286,7 +300,7 @@ Handled by `TripApiHandler`:
 - `GET /api/trips/{id}/telemetry`.
 - `GET /api/trips/{id}/similar`.
 - `GET /api/trips/{id}/gps`.
-- `GET /api/trips/summary`.
+- `GET /api/trips/summary` — `?days=N` (default 7): ONE rollup aggregated over exactly the trips of the last N days, the same trips `GET /api/trips` lists (BladeWatch-jkuz); an empty list when there are none. It used to return the last (N+6)/7 calendar-week rollups, so "7 Days" meant "this week so far".
 - `GET /api/trips/dna`.
 - `GET /api/trips/range`.
 - `GET /api/trips/config` — also returns `isPhev`, a LIVE drivetrain read rather than a
@@ -349,23 +363,22 @@ Handled by `AudioTestApiHandler`:
 ## Vehicle Control
 
 Handled by `VehicleControlApiHandler`. Connect mirror: `VehicleService` (e.g.
-`GetState`, `Trunk`, `MoveWindow`, `SetClimate`, `SetSeat`, `SetLights`,
-`SetAdas`, `GetChargeCap`/`SetChargeCap`, `GetAcDiagnostics`,
-`GetSeatDiagnostics`). The cloud-only RPCs (`Lock`, `Unlock`, `Flash`, `FindCar`,
+`GetState`, `Trunk`, `MoveWindow`, `SetClimate`, `SetLights`,
+`SetAdas`, `GetChargeCap`/`SetChargeCap`, `GetAcDiagnostics`). Seat control (`SetSeat`,
+`GetSeatDiagnostics`, the seat state and capabilities) was removed end to end in
+BladeWatch-7bx4; the proto reserves its field numbers. The cloud-only RPCs (`Lock`, `Unlock`, `Flash`, `FindCar`,
 `SetBatteryHeat`, `Get`/`SetChargingSchedule`) exist in the proto for parity but
 return the not-supported responses described under
 [Removed or unsupported endpoints](#removed-or-unsupported-endpoints).
 
 ### Endpoints
 
-- `GET /api/vehicle/state` — returns current door/window/trunk/lock/battery/climate/tyre/seats/lights/ADAS state.
+- `GET /api/vehicle/state` — returns current door/window/trunk/lock/battery/climate/tyre/lights/ADAS state. `climate` carries `setpointC` and `outsideTempC` (absent when unavailable; there is no cabin temperature — `insideTempC` was the outside air and is gone, BladeWatch-eh3u). `windows.sunroof` is the stop of the last successful sunroof command (BladeWatch-b3n7).
 - `GET /api/vehicle/ac-diagnostics` — read-only AC SDK method probe.
-- `GET /api/vehicle/seat-diagnostics` — read-only seat hardware capability probe.
 - `VehicleService.GetAdasInventory` — read-only ADAS field inventory (BladeWatch-2pnn.3). It WAS REST-only, with a note to add an RPC "if a client needs it"; removing the REST surface was that moment (BladeWatch-6mnq), and without the RPC the diagnostic would simply have vanished. Returns `{ success, adas: { sdkClassPresent, declared: [...], sdkOnly: [...] } }` — see [byd-integrations.md](byd-integrations.md#adas-field-inventory-bladewatch-2pnn3) for the shape and the (important) caveat that `sdkClassPresent` alone does not mean "this car has ADAS".
 - `POST /api/vehicle/trunk` — body `{ "action": "open" | "close" | "stop" }`.
 - `POST /api/vehicle/window` — see window variants below.
 - `POST /api/vehicle/climate` — body `{ "action": "power_on"|"power_off"|"set_temp"|"set_fan"|"max_cooling", ... }`.
-- `POST /api/vehicle/seat` — body `{ "action": "heating"|"ventilation"|"position", "position": 1–4, "level": 0–3, ... }`.
 - `POST /api/vehicle/lights` — body `{ "action": "dayTimeLight", "on": bool }` (ConnectRPC) or `{ "target": "dayTimeLight", "enable": bool }` (legacy REST). The boolean key is required; omitting both `on` and `enable` returns an error.
 - `POST /api/vehicle/adas` — body `{ "action": "speedLimitWarning", "on": bool }` (ConnectRPC) or `{ "target": "speedLimitWarning", "enable": bool }` (legacy REST). The boolean key is required; omitting both `on` and `enable` returns an error.
 - `GET /api/vehicle/charge-cap` — returns `{ success, percent, enabled, supported }`. `supported` is `null` until the first write-read-back probe; the UI shows optimistically until then.
@@ -484,19 +497,20 @@ Connect mirror (via `SystemService`): `ListModels`, `DownloadModel`,
 routes are mirrored by `SystemService.{GetPerformance,ResetPerformance,
 GetParkingDelta,GetLastCharge,GetSohNominal,SetSohNominal,GetSohStatus,ResetSoh}`.
 
-## Notifications and Push
+## Notifications
 
-Handled by `NotificationApiHandler`:
+Handled by `NotificationApiHandler` (Web Push was removed with the web app, BladeWatch-rdtj.22):
 
-- `GET /api/notifications/categories`.
-- `POST /api/push/subscribe`.
-- `POST /api/push/unsubscribe`.
-- `GET /api/push/subscriptions`.
-- `POST /api/push/preferences`.
-- `POST /api/push/test`.
+- `NotificationsService.GetCategories` — the notification category registry.
+- `NotificationsService.SendTest` — raise a test alert.
 
-Connect mirror: `NotificationsService.{GetCategories,Subscribe,Unsubscribe,
-ListSubscriptions,UpdatePreferences,SendTest}`.
+`NotificationsService.ListInbox` is Connect only, with no REST twin. It serves the
+companion's store-and-forward alerts (BladeWatch-rdtj.14, `CompanionInbox`). Request
+`{afterId, limit}`: `limit` 0 means 100 and is capped at 500. The response is
+`{entries, latestId, oldestId}`, oldest first, containing only entries with an id
+above `afterId`. Ids strictly increase and are never reused, so a companion that sends
+back the last id it saw can neither skip nor repeat an alert. If `latestId` is below
+the companion's cursor, the car's inbox was wiped, and the companion starts over from 0.
 
 ## Status and Control
 
@@ -517,7 +531,7 @@ Additional command behavior may be implemented by the TCP command server
 ### System status field parity (by design)
 
 `GET /status` (Connect: `SystemService.GetStatus`) intentionally drops several
-REST-emitted fields because no Connect/Angular consumer reads them, so they are
+REST-emitted fields because no client reads them, so they are
 not modelled in the proto (`proto/bladewatch/v1/system.proto`):
 
 - `BatteryMonitor.getBatteryInfo()` emits `voltage`, `soc`, `lastUpdate`, but
@@ -535,10 +549,10 @@ stubs (`cd proto && buf generate`). Tracked by BladeWatch-852m.
 ## Client Guidance
 
 - Always authenticate before calling protected APIs.
-- Use the local base URL from the Android app, or the onion address the Tor tunnel publishes (`tunnelStatus` over IPC).
+- Use the local base URL from the Android app, the LAN TLS listener (8443, pinned certificate) on the car's network, or the companion's Pear connection from anywhere.
 - Avoid assuming response schemas from this list alone — read the handler class
   (REST) or `proto/bladewatch/v1/*.proto` (Connect) for the authoritative shape.
-- New clients — Dart or Angular — should use the Connect API (`/bladewatch.v1.*`,
+- New clients should use the Connect API (`/bladewatch.v1.*`,
   with `Connect-Protocol-Version: 1` and a JSON content-type). REST remains the
   behavioural source of truth because the Connect handlers wrap it, but it has no
   first-party client any more.

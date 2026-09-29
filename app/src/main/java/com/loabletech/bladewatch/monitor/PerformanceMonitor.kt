@@ -296,16 +296,8 @@ class PerformanceMonitor private constructor() {
                         val cpuDelta = lastCpuTime - lastCpuTimeForApp
 
                         if (cpuDelta > 0) {
-                            // Calculate app CPU as percentage of total CPU time
-                            // This ensures app CPU <= system CPU (logically correct)
-                            // Multiply by number of cores since /proc/stat is aggregate
-                            val numCores = Runtime.getRuntime().availableProcessors()
-                            snapshot.appCpuUsagePercent = 100.0 * appDelta / cpuDelta * numCores
-                            // Clamp: app CPU should never exceed system CPU usage
-                            snapshot.appCpuUsagePercent = minOf(
-                                snapshot.cpuUsagePercent,
-                                maxOf(0.0, snapshot.appCpuUsagePercent)
-                            )
+                            snapshot.appCpuUsagePercent =
+                                appCpuSharePercent(appDelta, cpuDelta, snapshot.cpuUsagePercent)
                         }
                     }
                     lastAppCpuTime = appCpuTime
@@ -970,3 +962,14 @@ class PerformanceMonitor private constructor() {
         )
     }
 }
+
+/**
+ * This process's share of the whole machine, in percent: the same unit as the system figure it
+ * sits beside. [cpuDelta] comes from the AGGREGATE "cpu" line of /proc/stat, which already sums
+ * every core, so [appDelta] / [cpuDelta] is the share as it stands. It used to be multiplied by
+ * the core count as well (a per-core, top-style figure, several times too big) and then clamped
+ * to the system figure, so the app always read the same as the whole system (BladeWatch-rdtj.58).
+ * Still capped at [systemPercent]: the process is part of that load.
+ */
+internal fun appCpuSharePercent(appDelta: Long, cpuDelta: Long, systemPercent: Double): Double =
+    if (cpuDelta <= 0) 0.0 else (100.0 * appDelta / cpuDelta).coerceIn(0.0, systemPercent.coerceAtLeast(0.0))

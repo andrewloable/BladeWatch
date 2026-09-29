@@ -15,7 +15,7 @@ void main() {
 
   SettingsAboutController buildController() => SettingsAboutController(
     versionSource: () async =>
-        const AppVersionInfo(version: '1.2.3', buildNumber: '7', packageName: 'net.bladewatch.flutter'),
+        const AppVersionInfo(version: '1.2.3', buildNumber: '7', packageName: 'net.bladewatch.incarapp'),
   );
 
   Future<void> pumpTall(WidgetTester tester, Widget widget) async {
@@ -42,7 +42,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1.2.3'), findsOneWidget);
-    expect(find.text('net.bladewatch.flutter'), findsOneWidget);
+    expect(find.text('net.bladewatch.incarapp'), findsOneWidget);
   });
 
   testWidgets('tapping the license row shows the license dialog text', (tester) async {

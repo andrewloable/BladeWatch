@@ -65,7 +65,7 @@ void main() {
     const store = FileLocaleStore();
     expect(store.path, '/storage/emulated/0/BladeWatch/data/locale');
     expect(store.legacyPath, '/data/local/tmp/.bladewatch/locale',
-        reason: 'a device whose web UI already persisted a language reads from here');
+        reason: 'a device whose older UI already persisted a language reads from here');
   });
 
   test('readRaw falls back to the legacy file when the current one is absent', () async {

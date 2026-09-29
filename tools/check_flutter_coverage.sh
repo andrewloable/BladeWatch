@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
 # BladeWatch-ncbb.5: Dart coverage gate for flutter_ui.
 #
-# Reads flutter_ui/coverage/lcov.info (produced by `flutter test --coverage`),
+# Reads <package>/coverage/lcov.info (produced by `flutter test --coverage`),
 # excludes lib/gen/** (generated protobuf — never hand-written, so it would
 # inflate the denominator with untested boilerplate) and the narrow named
 # exclusions in EXCLUDED_FILES below, prints the resulting line-coverage
 # percentage, and exits non-zero if it is below THRESHOLD.
 #
 # Usage:
-#   flutter test --coverage   # from flutter_ui/
-#   tools/check_flutter_coverage.sh [threshold]   # from the repo root
+#   flutter test --coverage   # from the package directory
+#   tools/check_flutter_coverage.sh [threshold] [package-dir]   # from the repo root
+#
+# package-dir defaults to flutter_ui. Each Dart package in this repo is gated
+# separately with its own threshold (BladeWatch-rdtj.10), so moving code between
+# packages can never quietly drop it out of measurement:
+#   tools/check_flutter_coverage.sh 99 flutter_ui
+#   tools/check_flutter_coverage.sh <n> packages/bladewatch_rpc
+#   tools/check_flutter_coverage.sh <n> companion
 #
 # THRESHOLD defaults to the baseline below and may only ever be raised, never
 # lowered — see docs/build-and-operations.md for the ratchet policy.
@@ -17,7 +24,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LCOV_FILE="$REPO_ROOT/flutter_ui/coverage/lcov.info"
+PACKAGE_DIR="${2:-flutter_ui}"
+LCOV_FILE="$REPO_ROOT/$PACKAGE_DIR/coverage/lcov.info"
 
 # Baseline measured 2026-09-12 (BladeWatch-ncbb.1) after adding lib/rpc/**
 # (the Connect transport + all 12 typed service clients): 323/325 lines.
@@ -26,7 +34,7 @@ LCOV_FILE="$REPO_ROOT/flutter_ui/coverage/lcov.info"
 THRESHOLD="${1:-99}"
 
 if [ ! -f "$LCOV_FILE" ]; then
-  echo "check_flutter_coverage: $LCOV_FILE not found — run 'flutter test --coverage' from flutter_ui/ first" >&2
+  echo "check_flutter_coverage: $LCOV_FILE not found — run 'flutter test --coverage' from $PACKAGE_DIR/ first" >&2
   exit 1
 fi
 
@@ -64,7 +72,7 @@ fi
 pct=$(awk -v lh="$lh" -v lf="$lf" 'BEGIN { printf "%.2f", (lh / lf) * 100 }')
 pct_floor=$(awk -v lh="$lh" -v lf="$lf" 'BEGIN { printf "%d", (lh / lf) * 100 }')
 
-echo "Dart coverage (lib/gen/** + ${#EXCLUDED_FILES[@]} named file(s) excluded): $lh/$lf lines = ${pct}%"
+echo "Dart coverage [$PACKAGE_DIR] (lib/gen/** + ${#EXCLUDED_FILES[@]} named file(s) excluded): $lh/$lf lines = ${pct}%"
 
 if [ "$pct_floor" -lt "$THRESHOLD" ]; then
   echo "check_flutter_coverage: ${pct}% is below the required ${THRESHOLD}%" >&2

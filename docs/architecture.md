@@ -1,12 +1,12 @@
 # Architecture
 
-BladeWatch is a hybrid Android, native, and web application shipped as **two APKs
+BladeWatch is a hybrid Android and native application shipped as **two APKs
 that share one UID**:
 
 | APK | Package | Role |
 |---|---|---|
 | Service host | `net.bladewatch.app` | Daemons, receivers, foreground services, BYD integration. **No user-visible UI and no launcher entry.** |
-| In-car UI | `net.bladewatch.flutter` | The Flutter app the driver opens. The only launcher icon. |
+| In-car UI | `net.bladewatch.incarapp` | The Flutter app the driver opens. The only launcher icon. |
 
 Both are signed with the same key and declare `android:sharedUserId="net.bladewatch.app"`,
 so they run as one UID (10073 on the test head unit). That is load-bearing, not a
@@ -21,7 +21,7 @@ surveillance, networking, telemetry, and web-server work.
 ## High-Level Shape
 
 ```text
-In-car UI APK (net.bladewatch.flutter)
+In-car UI APK (net.bladewatch.incarapp)
   -> Flutter/Dart: nav rail, screens, ChangeNotifier controllers
   -> Dart ConnectRPC client -> 127.0.0.1:8080 (JWT)
   -> MethodChannels -> Kotlin in the SAME APK -> loopback IPC 19876
@@ -34,7 +34,7 @@ Service host APK (net.bladewatch.app) -- no launcher entry
   -> foreground services and boot receivers
   -> DaemonStartupManager
   -> ADB shell / app_process launchers
-  -> CameraDaemon, SentryDaemon, AccSentryDaemon, Tor onion service
+  -> CameraDaemon, SentryDaemon, AccSentryDaemon, PearDaemon (opt-in)
 
 CameraDaemon
   -> local TCP command server on 127.0.0.1:19876
@@ -42,15 +42,7 @@ CameraDaemon
   -> surveillance IPC server on 127.0.0.1:19877
   -> Connect protocol RPC dispatch at /bladewatch.v1.<Service>/<Method>
   -> GPU camera and surveillance pipeline
-  -> recording, streaming, telemetry, trips, Web Push notifications
-
-Embedded web UI (Angular 19 SPA)
-  -> built with Vite + @analogjs/vite-plugin-angular (no angular.json)
-  -> built into web/dist, copied into assets/web/angular, extracted to
-     /data/local/tmp/web/angular and served by the daemon at /
-  -> talks to CameraDaemon over ConnectRPC (@connectrpc/connect-web)
-  -> uses WebSocket streaming for live H.264 frames
-  -> used for remote browser / tunnel access ONLY (the in-car UI is Flutter)
+  -> recording, streaming, telemetry, trips, store-and-forward alerts (the companion inbox)
 
 BYD integrations
   -> local BYD framework reflection and listeners
@@ -80,18 +72,13 @@ WorkManager, Dadb, OkHttp, ConnectRPC-Kotlin, protobuf-java, TensorFlow Lite, H2
 WebSocket support, and native CMake builds. Navigation, osmdroid and ZXing were
 dropped with the native UI (`BladeWatch-81g9.3`). appcompat, Material and
 lifecycle stayed: `AppCompatDelegate` drives the night mode the status overlay
-reads, `SetupGuideDialog` builds a Material AlertDialog, and `TorController` /
-`DaemonsViewModel` publish daemon state as `LiveData`.
+reads, `SetupGuideDialog` builds a Material AlertDialog, and `DaemonsViewModel`
+publishes daemon state as `LiveData`.
 
-The embedded web UI is a separate Angular 19 project under `web/` (Vite +
-`@analogjs/vite-plugin-angular`, ConnectRPC, Leaflet, `@ngx-translate`, qrcode).
-The Gradle task `buildAngularWebUI` runs `npm run build` in `web/`, copies
-`web/dist` into `app/src/main/assets/web/angular/`, and is hooked into `preBuild`
-so the SPA is compiled before assets are packaged (skipped if `npm` is absent —
-the committed `web/dist` is used instead). Protobuf service contracts live in
-`proto/bladewatch/v1/*.proto`; `buf generate` emits TypeScript message classes
-into `web/src/gen` and Java messages + Kotlin Connect stubs into the app source
-tree.
+There is no web app any more (removed in BladeWatch-rdtj.22): no `web/` project, no Node/npm
+build step. Protobuf service contracts live in `proto/bladewatch/v1/*.proto`; `buf generate` emits
+the Java messages and Kotlin Connect stubs into the app source tree and the Dart messages into
+`packages/bladewatch_rpc/lib/gen`.
 
 ## Runtime Boundaries
 
@@ -111,7 +98,7 @@ The ordinary Android app process hosts:
 - The status overlay (`StatusOverlayService`) and `SetupGuideDialog` — the only
   two surfaces this APK still draws.
 
-### In-Car UI App Process (`net.bladewatch.flutter`)
+### In-Car UI App Process (`net.bladewatch.incarapp`)
 
 - The Flutter engine and all screens, in Dart.
 - A small Kotlin layer in the same APK for the privileged operations a
@@ -128,10 +115,10 @@ The daemon processes are launched with Android `app_process` or extracted native
 
 Core daemon roles:
 
-- Camera daemon: camera, recording, streaming, HTTP API, WebSocket, telemetry, storage, Web Push notifications, trips.
+- Camera daemon: camera, recording, streaming, HTTP API, WebSocket, telemetry, storage, notifications, trips.
 - Sentry daemon: surveillance mode orchestration.
 - ACC sentry daemon: ACC-aware sentry behavior.
-- Tor onion service (`bladewatch_tor`): optional remote access tunnel.
+- Pear peer (`pear_daemon`): remote access for the companion app. Opt-in; pairing switches it on. It replaced the Tor onion service in v1.4.0.0 (BladeWatch-rdtj.12).
 
 ### Native Libraries
 
@@ -143,21 +130,20 @@ Important native areas:
 - `app/src/main/cpp/surveillance/`.
 - `app/src/main/cpp/CMakeLists.txt`.
 - Downloaded OpenH264 and opencv-mobile artifacts handled by Gradle tasks.
-- `libtor.so` in `jniLibs/` for the Tor tunnel — downloaded and SHA-256-verified at build
-  time by `downloadTor`, not committed.
+- bare-kit's `libbare-kit.so` in `jniLibs/` for the Pear peer — fetched and SHA-256-verified
+  at build time by `fetchBareKit`, not committed.
 
 ## Startup Lifecycle
 
 1. Android starts `BladeWatchApplication`.
 2. The application initializes logging, preferences, locale/theme, and starts `DaemonKeepaliveService`.
 3. The service host's `MainActivity` initializes storage, device identity
-   (`DeviceIdGenerator` **before any daemon starts**), the BYD data-cache /
-   ACC whitelist on a background thread, daemon startup management, the location
+   (`DeviceIdGenerator` **before any daemon starts**), daemon startup management, the location
    sidecar, and the status overlay — then immediately backgrounds itself.
 4. `BootReceiver` handles boot, package replacement, screen, power, network, and BYD ACC events.
 5. `DaemonKeepaliveService` runs as a sticky foreground service, holds a partial wake lock, and schedules process revival.
-6. `DaemonStartupManager` delays launch to let the vehicle head unit settle, then starts core daemons and the optional Tor tunnel.
-7. `AdbDaemonLauncher` and lower launchers execute shell commands that start Java daemons or the native tor binary.
+6. `DaemonStartupManager` delays launch to let the vehicle head unit settle, then starts core daemons and the optional Pear peer.
+7. `AdbDaemonLauncher` and lower launchers execute shell commands that start the Java daemons; `PearLauncher` starts pear_daemon.
 
 Core daemon timing is intentionally staggered:
 
@@ -193,11 +179,11 @@ Owns the startup bootstrap. It draws nothing — the in-car UI is Flutter, see
 
 ### `DaemonStartupManager`
 
-Coordinates daemon launch, optional Tor tunnel launch, health checks, and user-stopped daemon state. It treats camera, sentry, and ACC sentry as core daemons and treats the Tor tunnel as the optional tunnel daemon.
+Coordinates daemon launch, the optional Pear peer's launch, health checks, and user-stopped daemon state. It treats camera, sentry, and ACC sentry as core daemons and the Pear peer (`PEAR_PEER`) as the one optional daemon.
 
 ### `AdbDaemonLauncher`
 
-Facade over daemon and tunnel launchers. It starts camera, sentry, ACC sentry, and the Tor tunnel through shell execution.
+Facade over the daemon launchers. It starts camera, sentry and ACC sentry through shell execution; the Pear peer goes through `PearLauncher` / `PearController` instead.
 
 ### `DaemonBootstrap`
 
@@ -205,19 +191,15 @@ The bootstrap entrypoint used by shell-launched Java daemons. It creates an Andr
 
 ### `CameraDaemon`
 
-The central long-running daemon. It starts local command and web servers, initializes the camera/GPU pipeline, config, auth, storage, telemetry, trip analytics, BYD collection, Web Push notifications, and surveillance IPC.
+The central long-running daemon. It starts local command and web servers, initializes the camera/GPU pipeline, config, auth, storage, telemetry, trip analytics, BYD collection, notifications, and surveillance IPC.
 
 ### `HttpServer`
 
-Embedded HTTP server. It extracts and serves the Angular SPA from
-`/data/local/tmp/web/angular` (`index.html` at `/`, hashed chunks under
-`/assets/` and `/vendor/`, with an SPA fallback that serves `index.html` for
-unrecognised paths so the Angular router resolves them client-side), dispatches
-ConnectRPC calls under `/bladewatch.v1.<Service>/<Method>` via `ConnectDispatcher`,
-and still exposes the inline REST/camera APIs, auth endpoints, thumbnail/video
-serving, i18n catalogs, update APIs, and WebSocket live streaming. The legacy
-static pages and their `/legacy/` route were retired once the Angular SPA was
-confirmed stable — the SPA is now the only web UI the daemon serves.
+Embedded HTTP server. It dispatches ConnectRPC calls under `/bladewatch.v1.<Service>/<Method>`
+via `ConnectDispatcher` and exposes the companion's `/auth/pair` and `/auth/companion`, thumbnail and
+video serving, and WebSocket live streaming. It serves no static files: the web app was removed
+(BladeWatch-rdtj.22), so any other path is a 404 (or a 401 without a JWT). At startup it extracts only
+the model manifest and the server-side i18n catalogs to `/data/local/tmp/web`.
 
 ### `GpuSurveillancePipeline`
 
@@ -236,11 +218,10 @@ The main local BYD telemetry collector. It discovers BYD framework devices throu
 - Reflection is used heavily for BYD local APIs so the app can compile with stubs but run against the vehicle firmware classes.
 - Shared JSON files under `/data/local/tmp` are used for cross-process config and secrets.
 - Daemons expose local TCP/HTTP IPC rather than relying on Activity-bound Android services.
-- The embedded web UI is an Angular 19 SPA that talks to the daemon over ConnectRPC; the in-car UI is Flutter, so the SPA serves remote browser / tunnel clients only.
-- Two UIs track the same 12 ConnectRPC services by convention: Flutter in the car, Angular in the browser. There is no shared UI code between them — only the protos.
-- Optional remote access is layered over the local web server through the Tor onion service instead of exposing internet-facing server code directly. The onion address is a capability URL, not authentication: the password/JWT layer in front of the web server stays mandatory.
+- The in-car UI is Flutter and the companion is Flutter too; both talk to the daemon over ConnectRPC and share the RPC package `packages/bladewatch_rpc`.
+- Optional remote access is layered over the local web server through the Pear peer instead of exposing internet-facing server code directly: the companion's TLS runs end to end over the Pear stream into `127.0.0.1:8444`, which is `REMOTE` listener trust, so the JWT layer stays mandatory.
 - Surveillance and camera paths prioritize long-running stability over tight coupling with Android UI lifecycle.
-- **BladeWatch is server-free by design, permanently** (decided BladeWatch-tren.3). The project operates no backend of its own; nothing leaves the car unless the owner points it somewhere (e.g. the Tor onion service, which needs no account, token, or registration). This is a permanent product decision, not a temporary resource constraint, and the following stay permanently out of scope as a result: push notifications while the car is offline, multi-user access to one car, an account/pairing flow, community-authored automations, hazard-sharing between cars, diagnostic log upload with a short code, and car APK distribution from a server.
+- **BladeWatch is server-free by design, permanently** (decided BladeWatch-tren.3). The project operates no backend of its own; nothing leaves the car unless the owner points it somewhere (e.g. the Pear peer, which finds the car on the public Hyperswarm DHT and needs no account, token, or registration). This is a permanent product decision, not a temporary resource constraint, and the following stay permanently out of scope as a result: push notifications while the car is offline, multi-user access to one car, an account flow (the companion pairs device-to-device by QR, with no server), community-authored automations, hazard-sharing between cars, diagnostic log upload with a short code, and car APK distribution from a server.
 
 ## Major Risk Areas
 
@@ -257,8 +238,6 @@ The main local BYD telemetry collector. It discovers BYD framework devices throu
 - Boot and foreground survival: [BootReceiver.kt:24](../app/src/main/java/com/loabletech/bladewatch/receiver/BootReceiver.kt#L24), [DaemonKeepaliveService.kt:30](../app/src/main/java/com/loabletech/bladewatch/services/DaemonKeepaliveService.kt#L30).
 - Daemon orchestration and shell launch: [DaemonStartupManager.kt:15](../app/src/main/java/com/loabletech/bladewatch/ui/daemon/DaemonStartupManager.kt#L15), [AdbDaemonLauncher.kt:17](../app/src/main/java/com/loabletech/bladewatch/launcher/AdbDaemonLauncher.kt#L17), [DaemonBootstrap.java:22](../app/src/main/java/com/loabletech/bladewatch/daemon/DaemonBootstrap.java#L22).
 - Camera daemon and local servers: [CameraDaemon.java:35](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L35), [TcpCommandServer.java:22](../app/src/main/java/com/loabletech/bladewatch/server/TcpCommandServer.java#L22), [HttpServer.java:49](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L49), [SurveillanceIpcServer.java:22](../app/src/main/java/com/loabletech/bladewatch/server/SurveillanceIpcServer.java#L22).
-- Angular SPA serving and Connect dispatch: [HttpServer.java:426](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L426) (SPA static assets), [HttpServer.java:547](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L547) (SPA fallback), [HttpServer.java:568](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L568) (Connect route), [ConnectDispatcher.java:36](../app/src/main/java/com/loabletech/bladewatch/server/connect/ConnectDispatcher.java#L36).
-- Angular web UI build/copy: [build.gradle.kts:497](../app/build.gradle.kts#L497) (`buildAngularWebUI`), [web/package.json](../web/package.json), [web/vite.config.ts](../web/vite.config.ts), [web/src/app/app.config.ts](../web/src/app/app.config.ts), [web/src/app/core/connect/connect-clients.ts](../web/src/app/core/connect/connect-clients.ts).
 - GPU surveillance and recording stack: [GpuSurveillancePipeline.java:24](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuSurveillancePipeline.java#L24), [PanoramicCameraGpu.java:39](../app/src/main/java/com/loabletech/bladewatch/camera/PanoramicCameraGpu.java#L39), [GpuMosaicRecorder.java:31](../app/src/main/java/com/loabletech/bladewatch/surveillance/GpuMosaicRecorder.java#L31), [HardwareEventRecorderGpu.java:58](../app/src/main/java/com/loabletech/bladewatch/surveillance/HardwareEventRecorderGpu.java#L58).
 - BYD local integration: [BydDataCollector.java:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.java#L20).
 - Build and native boundaries: [build.gradle.kts:276](../app/build.gradle.kts#L276), [build.gradle.kts:413](../app/build.gradle.kts#L413), [CMakeLists.txt:50](../app/src/main/cpp/CMakeLists.txt#L50).

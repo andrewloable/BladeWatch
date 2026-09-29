@@ -1,12 +1,12 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/trips/trip_detail_controller.dart';
 import 'package:bladewatch_ui/screens/trips/trips_controller.dart';
 import 'package:bladewatch_ui/screens/trips/trips_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 /// BladeWatch-3zno: the PHEV fuel range on the Trips range card.
 ///

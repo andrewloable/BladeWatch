@@ -114,7 +114,7 @@ class ConnectDispatcher {
             val requestJson = if (body.isNullOrEmpty()) "{}" else body
             val response = handler.handle(requestJson, clientIdentity ?: "")
 
-            sendConnectSuccess(out, respCt, response.body, response.extraHeaders)
+            sendConnectSuccess(out, respCt, response.body)
         } catch (e: ConnectException) {
             try {
                 sendConnectError(
@@ -143,8 +143,7 @@ class ConnectDispatcher {
     private fun sendConnectSuccess(
         out: OutputStream,
         contentType: String,
-        jsonBody: String,
-        extraHeaders: List<String>
+        jsonBody: String
     ) {
         val body = jsonBody.toByteArray(StandardCharsets.UTF_8)
         val sb = StringBuilder()
@@ -152,7 +151,6 @@ class ConnectDispatcher {
             .append("Content-Type: ").append(contentType).append("\r\n")
             .append("Content-Length: ").append(body.size).append("\r\n")
             .append(HttpResponse.connectionHeader(out))
-        for (h in extraHeaders) sb.append(h).append("\r\n")
         sb.append("\r\n")
         out.write(sb.toString().toByteArray(StandardCharsets.UTF_8))
         out.write(body)

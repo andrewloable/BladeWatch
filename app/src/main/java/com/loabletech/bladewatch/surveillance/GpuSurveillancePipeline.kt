@@ -12,7 +12,6 @@ import net.bladewatch.app.config.UnifiedConfigManager
 import net.bladewatch.app.logging.DaemonLogger
 import net.bladewatch.app.storage.StorageManager
 import net.bladewatch.app.streaming.GpuStreamScaler
-import net.bladewatch.app.streaming.JpegEncoder
 import net.bladewatch.app.streaming.StillFrameRefresher
 import net.bladewatch.app.streaming.WebSocketStreamServer
 import net.bladewatch.app.telemetry.TelemetryDataCollector
@@ -77,7 +76,17 @@ class GpuSurveillancePipeline(
     // same mosaic RGB buffer `sentry` already produces every frame; only the periodic JPEG
     // encode (see StillFrameRefresher's own doc comment) is new work, and it is on its own
     // timer, not the camera's.
-    private var stillFrameRefresher: StillFrameRefresher? = null
+    private var stillFrameRefresher: StillFrameRefresher<StillShot>? = null
+
+    /** One full-resolution still from the camera, and which view it shows (rdtj.68). */
+    class StillShot(val bitmap: Bitmap, val view: Int)
+
+    // Written by the camera's GL thread, read by the refresher's.
+    @Volatile private var latestShot: StillShot? = null
+    @Volatile private var shotVersion = 0L
+
+    // The view the still's viewer last asked for: GpuStillCapture.MOSAIC or a camera 0..3.
+    @Volatile private var stillView = GpuStillCapture.MOSAIC
 
     // Telemetry overlay
     private var telemetryCollector: TelemetryDataCollector? = null
@@ -894,6 +903,13 @@ class GpuSurveillancePipeline(
         val newCamera = PanoramicCameraGpu(cameraWidth, cameraHeight)
         camera = newCamera
         newCamera.setConsumers(newRecorder, newDownscaler, newSentry)
+        // Live view's still (and the quadrant snapshots) must stay current with ACC on too.
+        newCamera.stillFramesWanted = { streamingEnabled }
+        newCamera.stillView = { stillView }
+        newCamera.stillSink = { bitmap, view ->
+            latestShot = StillShot(bitmap, view)
+            shotVersion++
+        }
 
         // Camera FPS config — must match the encoder FPS used above (loadTargetFps())
         // so that camera frame delivery rate matches the encoder's KEY_FRAME_RATE.
@@ -1558,17 +1574,20 @@ class GpuSurveillancePipeline(
         // browser with no decoder has something to fall back to for as long as live view is
         // open. Bitmap.compress needs android.graphics, so the encoder is a lambda here rather
         // than living in StillFrameRefresher.kt, which stays free of android.* imports.
-        val refresher = StillFrameRefresher(
-            { sentry?.latestMosaicFrame },
-            // Fixed 640x480 — NOT streamScaler's configurable width/height. This is
-            // SurveillanceEngineGpu.getLatestMosaicFrame()'s own dimension, unrelated to the
-            // live H.264 stream's resolution (see that method's doc comment). Same literal
-            // SurveillanceApiHandler#sendQuadrantSnapshot already hardcodes for the same
-            // buffer.
-            640, 480,
-            JpegEncoder { rgb, width, height -> encodeMosaicJpeg(rgb, width, height) },
+        //
+        // BladeWatch-rdtj.68: the source is the camera's own full-resolution shot (GpuStillCapture,
+        // 1280x960: all four cameras, or the one the viewer picked), not sentry's 640x480 frame.
+        // ponytail: the GL thread reuses a shot's Bitmap two captures later; the encode takes well
+        // under that gap. BladeWatch-hmk0 shrank the gap from ~1s to ~200ms (STILL_CAPTURE_INTERVAL_MS
+        // 500ms -> 100ms) -- far less headroom than before, but verified clean on a real device at
+        // the new rate (sustained ~1.2 MB/s over several seconds, no tearing or corruption). Copy
+        // the Bitmap here if the encode ever gets that slow in practice.
+        val refresher = StillFrameRefresher<StillShot>(
+            { latestShot },
+            { shot -> encodeStillJpeg(shot.bitmap) },
             STILL_FRAME_REFRESH_INTERVAL_MS,
-            Executors.newSingleThreadScheduledExecutor()
+            Executors.newSingleThreadScheduledExecutor(),
+            { shotVersion },
         )
         stillFrameRefresher = refresher
         refresher.start()
@@ -1591,6 +1610,7 @@ class GpuSurveillancePipeline(
         stillFrameRefresher?.let {
             it.stop()
             stillFrameRefresher = null
+            latestShot = null
         }
 
         // CRITICAL: Clear streaming components from camera FIRST
@@ -1632,6 +1652,21 @@ class GpuSurveillancePipeline(
     val latestStillFrame: ByteArray?
         get() = stillFrameRefresher?.current()
 
+    /** The retained still with the view it shows (rdtj.68), or null. */
+    val latestStill: StillFrameRefresher.Still<StillShot>?
+        get() = stillFrameRefresher?.latest()
+
+    /**
+     * A still viewer asked for [view] ([GpuStillCapture.MOSAIC] or a camera 0..3). It keeps
+     * streaming from idling out -- see [WebSocketStreamServer.noteStillViewer] -- and picks what the
+     * camera captures next. ponytail: one view for everyone; two viewers of different views get
+     * alternating frames (each response says which it holds).
+     */
+    fun noteStillViewer(view: Int = GpuStillCapture.MOSAIC) {
+        stillView = view
+        webSocketServer?.noteStillViewer()
+    }
+
     /**
      * The stream view mode (which camera to show): 0=Mosaic (2x2 grid), 1=Front, 2=Right,
      * 3=Rear, 4=Left. Reads -1 when streaming is not enabled.
@@ -1647,6 +1682,18 @@ class GpuSurveillancePipeline(
                 logger.warn("Cannot set stream view mode - streaming not enabled")
             }
         }
+
+    /**
+     * BladeWatch-rdtj.66: vold is unmounting a card (SdCardSignal). Finishes a recording being
+     * written to removable storage, so the daemon holds nothing there; the next segment or event
+     * opens a new file wherever storage then allows. Returns whether one was finished.
+     */
+    fun releaseRemovableStorage(): Boolean {
+        val enc = mainEncoder ?: return false
+        if (!enc.isWritingToRemovable()) return false
+        enc.stopRecording()
+        return true
+    }
 
     /** Whether recording is currently in progress. */
     val isRecording: Boolean
@@ -1702,7 +1749,9 @@ class GpuSurveillancePipeline(
         private const val TAG = "GpuPipeline"
         private val logger = DaemonLogger.getInstance(TAG)
 
-        private const val STILL_FRAME_REFRESH_INTERVAL_MS = 5000L
+        // Ten stills a second (BladeWatch-rdtj.61, -hmk0); Pear carries it with room to spare even
+        // on mobile data.
+        private const val STILL_FRAME_REFRESH_INTERVAL_MS = 100L
 
         private fun loadCameraConfigSection(): JSONObject? {
             return try {
@@ -1742,33 +1791,12 @@ class GpuSurveillancePipeline(
             }
         }
 
-        /**
-         * Encodes a 3-byte-per-pixel RGB buffer as a JPEG. The [JpegEncoder]
-         * implementation used by the still-frame refresher — kept as a plain static method (not
-         * a lambda capturing pipeline state) so it has no dependency on pipeline internals,
-         * matching SurveillanceApiHandler#sendQuadrantFromMosaic's existing RGB→ARGB→JPEG
-         * conversion.
-         */
-        private fun encodeMosaicJpeg(rgb: ByteArray, width: Int, height: Int): ByteArray {
-            val pixels = IntArray(width * height)
-            var i = 0
-            var p = 0
-            while (p < pixels.size && i + 2 < rgb.size) {
-                val r = rgb[i].toInt() and 0xFF
-                val g = rgb[i + 1].toInt() and 0xFF
-                val b = rgb[i + 2].toInt() and 0xFF
-                pixels[p] = (0xFF000000.toInt()) or (r shl 16) or (g shl 8) or b
-                i += 3
-                p++
-            }
-            val bitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
-            try {
-                val jpegOut = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, jpegOut)
-                return jpegOut.toByteArray()
-            } finally {
-                bitmap.recycle()
-            }
+        /** The still-frame refresher's encoder: a capture's Bitmap as a quality-80 JPEG (rdtj.68). */
+        private fun encodeStillJpeg(bitmap: Bitmap): ByteArray? {
+            if (bitmap.isRecycled) return null
+            val jpegOut = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, jpegOut)
+            return jpegOut.toByteArray()
         }
     }
 }

@@ -1,36 +1,32 @@
 import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
-import 'package:bladewatch_ui/platform/auth_channel.dart';
+import 'package:bladewatch_ui/screens/pairing/pairing_dialog.dart';
+import 'package:bladewatch_ui/platform/pairing_channel.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
-import 'package:bladewatch_ui/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
-import 'package:bladewatch_ui/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_controller.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/util/currency.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../fakes/fake_platform_channel.dart';
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 void main() {
-  // Obviously fake. Never put a real onion address in a fixture: it is a capability
-  // granting network access to a real car.
-  const onion = 'http://abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx.onion';
-
   late FakeRpcClient rpc;
   late FakePlatformChannel channel;
   late List<String> navigated;
 
-  DashboardController buildController({Future<TunnelStatus> Function()? tunnelStatusSource}) {
+  DashboardController buildController() {
     return DashboardController(
       tripsService: TripsServiceClient(rpc),
       recordingsService: RecordingsServiceClient(rpc),
       systemService: SystemServiceClient(rpc),
       daemonChannel: DaemonChannel(channel),
-      authChannel: AuthChannel(channel),
-      tunnelStatusSource: tunnelStatusSource ?? () async => const TunnelStatus(running: false),
     );
   }
 
@@ -48,9 +44,8 @@ void main() {
     rpc.stubJson('SystemService', 'GetSelectedModel', {'modelId': 'seal'});
     channel.stub('daemon', 'processStatus', {
       'status': 'ok',
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
     });
-    channel.stub('auth', 'getAccessCode', 'shh-fake-secret');
   }
 
   // BladeWatch-p7vi: the dialog no longer reads GetSohStatus — SoH was removed
@@ -67,7 +62,7 @@ void main() {
     navigated = [];
   });
 
-  Widget wrap(DashboardController controller, {Locale? locale, ThemeData? theme}) => MaterialApp(
+  Widget wrap(DashboardController controller, {Locale? locale, ThemeData? theme, PairingChannel? pairing}) => MaterialApp(
         theme: theme ?? BladeWatchTheme.light(),
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -76,6 +71,7 @@ void main() {
           controller: controller,
           systemService: SystemServiceClient(rpc),
           onNavigate: (route) => navigated.add(route),
+          pairingChannel: pairing,
         ),
       );
 
@@ -84,15 +80,60 @@ void main() {
   // virtual surface means every tile — including ones below the fold on a
   // real device — is actually built and tappable without each test having
   // to fight ListView scroll-position/cache-extent timing individually.
-  Future<void> pumpDashboard(WidgetTester tester, DashboardController controller, {Locale? locale, ThemeData? theme}) async {
+  Future<void> pumpDashboard(WidgetTester tester, DashboardController controller, {Locale? locale, ThemeData? theme, PairingChannel? pairing}) async {
     tester.view.physicalSize = const Size(1400, 3200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    await tester.pumpWidget(wrap(controller, locale: locale, theme: theme));
+    await tester.pumpWidget(wrap(controller, locale: locale, theme: theme, pairing: pairing));
   }
+
+  // BladeWatch-rdtj.7: pairing is an explicit action, never a QR sitting on the dashboard.
+  testWidgets('Pair a device opens the pairing dialog, which mints its QR only then', (tester) async {
+    final pairing = FakePlatformChannel()
+      ..stub('pairing', 'mint', {'payload': 'qr-text', 'expiresAt': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch})
+      ..stub('pairing', 'list', {'companions': []});
+    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
+    await tester.pump();
+    expect(pairing.calls, isEmpty, reason: 'nothing is minted until the owner asks');
+    expect(find.byKey(const ValueKey('pairing.qr')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('dashboard.pair')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(PairingDialog), findsOneWidget);
+    expect(pairing.calls.map((c) => c.method), containsAll(['mint', 'list']));
+    expect(find.byKey(const ValueKey('pairing.qr')), findsOneWidget);
+  });
+
+  // Design review 2026-09-27 (BladeWatch-5l5o): the action ends the chip row instead of taking a
+  // row of its own, and a long model name is shrunk to fit rather than cut.
+  testWidgets('Pair a device sits at the end of the chip row', (tester) async {
+    final pairing = FakePlatformChannel()..stub('pairing', 'list', {'companions': []});
+    await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
+    await tester.pump();
+    final row = find.ancestor(of: find.byKey(const ValueKey('dashboard.pair')), matching: find.byType(Wrap));
+    expect(find.descendant(of: row, matching: find.byKey(const ValueKey('chip.gear'))), findsOneWidget);
+  });
+
+  testWidgets('a metric tile value is shrunk to fit, never cut with an ellipsis', (tester) async {
+    stubHappyPath();
+    await pumpDashboard(tester, buildController());
+    await tester.pumpAndSettle();
+    final values = find.descendant(of: find.byType(FittedBox), matching: find.byType(Text));
+    expect(values, findsWidgets);
+    for (final t in tester.widgetList<Text>(values)) {
+      expect(t.overflow, isNot(TextOverflow.ellipsis), reason: '"${t.data}"');
+    }
+  });
+
+  testWidgets('without a pairing channel there is no pairing action', (tester) async {
+    await pumpDashboard(tester, buildController());
+    await tester.pump();
+    expect(find.byKey(const ValueKey('dashboard.pair')), findsNothing);
+  });
 
   testWidgets('loading state shows pending placeholders, not a crash', (tester) async {
     final controller = buildController();
@@ -102,7 +143,7 @@ void main() {
     expect(find.text('—', skipOffstage: false), findsWidgets);
   });
 
-  testWidgets('happy path renders trip stats, recordings, daemons, vehicle and access code', (tester) async {
+  testWidgets('happy path renders trip stats, recordings, daemons and vehicle', (tester) async {
     stubHappyPath();
     final controller = buildController();
     await pumpDashboard(tester, controller);
@@ -111,6 +152,234 @@ void main() {
     expect(find.text('2'), findsOneWidget); // trip count
     expect(find.text('12.2 km'), findsOneWidget);
     expect(find.text('18m'), findsOneWidget); // 780+300=1080s -> 18m
+    // BladeWatch-by8d: count and distance once each -- no headline repeating the tiles.
+    expect(find.textContaining('12.2 km'), findsOneWidget);
+    expect(find.textContaining('2 trips'), findsNothing);
+  });
+
+  // BladeWatch-7zp9: gear, drive mode and Auto Hold -- a dash for anything the car could not name.
+  group('drive state chips', () {
+    Finder chip(String key, String text) => find.descendant(of: find.byKey(ValueKey(key)), matching: find.text(text));
+
+    testWidgets('shows what the car names, and a dash for what it does not', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {
+        'deviceId': 'byd-test',
+        'recording': [1],
+        'driveStatus': {
+          'gear': 'D',
+          'driveMode': 'UNKNOWN',
+          'driveModeRaw': 1,
+          'autoHold': 'ACTIVE',
+          'autoHoldRaw': 2,
+          'energyMode': 'HEV',
+          'energyModeRaw': 3,
+        },
+      });
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      expect(chip('chip.gear', 'Gear D'), findsOneWidget);
+      expect(chip('chip.driveMode', 'Mode: –'), findsOneWidget);
+      expect(chip('chip.autoHold', 'Auto Hold: Holding'), findsOneWidget);
+      expect(chip('chip.energyMode', 'HEV'), findsOneWidget); // BladeWatch-os88
+    });
+
+    testWidgets('a car that sends none shows dashes, never a guessed P / off', (tester) async {
+      stubHappyPath();
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      expect(chip('chip.gear', 'Gear –'), findsOneWidget);
+      expect(chip('chip.autoHold', 'Auto Hold: –'), findsOneWidget);
+      // BladeWatch-os88: no EV / HEV to name is no chip at all, not a dash.
+      expect(find.byKey(const ValueKey('chip.energyMode')), findsNothing);
+    });
+
+    testWidgets('Auto Hold on and off read as such', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'P', 'autoHold': 'ENABLED'}});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      expect(chip('chip.autoHold', 'Auto Hold: On'), findsOneWidget);
+      expect(chip('chip.gear', 'Gear P'), findsOneWidget);
+
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'autoHold': 'DISABLED'}});
+      await tester.pump(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+      expect(chip('chip.autoHold', 'Auto Hold: Off'), findsOneWidget);
+    });
+
+    // The owner switched EV/HEV and Auto Hold and the chips never moved: they waited on the
+    // full 15 s reload. They now follow within one 2 s drive tick, whatever the other tiles do.
+    testWidgets('the drive chips follow the car within 2 s, without the full reload', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'P', 'autoHold': 'ENABLED', 'energyMode': 'EV'}});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      expect(chip('chip.energyMode', 'EV'), findsOneWidget);
+
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'D', 'autoHold': 'DISABLED', 'energyMode': 'HEV'}});
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(chip('chip.energyMode', 'HEV'), findsOneWidget);
+      expect(chip('chip.autoHold', 'Auto Hold: Off'), findsOneWidget);
+      expect(chip('chip.gear', 'Gear D'), findsOneWidget);
+    });
+
+    // The owner: charge and fuel live, trip summaries once a minute (2026-09-27).
+    testWidgets('battery and fuel follow the car within 2 s; the week\'s trips reload once a minute', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 73}, 'range': {'elecRangeKm': 74, 'fuelRangeKm': 351, 'fuelPercent': 30}});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      final energy = find.byKey(const ValueKey('tripStats.energy'));
+      expect(find.descendant(of: energy, matching: find.text('73%')), findsOneWidget);
+      int trips() => rpc.calls.where((c) => c.method == 'ListTrips').length;
+      final afterOpen = trips();
+
+      rpc.stubJson('SystemService', 'GetStatus', {'soc': {'percent': 74}, 'range': {'elecRangeKm': 76, 'fuelRangeKm': 351, 'fuelPercent': 30}});
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(find.descendant(of: energy, matching: find.text('74%')), findsOneWidget, reason: 'the 2 s drive poll carries it');
+      expect(find.descendant(of: energy, matching: find.text('76 km')), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 45));
+      await tester.pump();
+      expect(trips(), afterOpen, reason: 'the 15 s ticks leave the week\'s trips alone');
+      await tester.pump(const Duration(seconds: 15));
+      await tester.pump();
+      expect(trips(), greaterThan(afterOpen), reason: 'once a minute they reload');
+    });
+
+    testWidgets('a failed drive tick keeps the chips as they were', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'P', 'energyMode': 'EV'}});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+
+      rpc.stubError('SystemService', 'GetStatus', const ConnectError('unavailable', 'down'));
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(chip('chip.energyMode', 'EV'), findsOneWidget);
+      expect(chip('chip.gear', 'Gear P'), findsOneWidget);
+    });
+  });
+
+  // BladeWatch-4zr7: the car's charge and fuel now, in THIS WEEK.
+  group('this week\'s charge and fuel', () {
+    Future<Finder> pumpWith(WidgetTester tester, Map<String, Object?>? status) async {
+      stubHappyPath();
+      if (status != null) rpc.stubJson('SystemService', 'GetStatus', status);
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      return find.byKey(const ValueKey('tripStats.energy'));
+    }
+
+    Finder inRow(Finder row, String text) => find.descendant(of: row, matching: find.text(text));
+
+    testWidgets('a PHEV shows battery, electric range, fuel and fuel range in the car\'s unit', (tester) async {
+      final row = await pumpWith(tester, {
+        'recording': [1],
+        'soc': {'percent': 77},
+        'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'fuelPercent': 30},
+        'distanceUnit': 'mi',
+      });
+      for (final (label, value) in [('Battery', '77%'), ('EV Range', '50 mi'), ('Fuel', '30%'), ('Fuel Range', '218 mi')]) {
+        expect(inRow(row, label), findsOneWidget, reason: label);
+        expect(inRow(row, value), findsOneWidget, reason: '$label = $value');
+      }
+    });
+
+    testWidgets('a BEV shows no fuel at all', (tester) async {
+      final row = await pumpWith(tester, {'soc': {'percent': 60}, 'range': {'elecRangeKm': 300}, 'distanceUnit': 'km'});
+      expect(inRow(row, '60%'), findsOneWidget);
+      expect(inRow(row, '300 km'), findsOneWidget);
+      expect(inRow(row, 'Fuel'), findsNothing);
+      expect(inRow(row, 'Fuel Range'), findsNothing);
+    });
+
+    // The owner saw the rows drift once the charge row brought a fourth tile under three.
+    testWidgets('every row of the card sits on the same columns', (tester) async {
+      stubHappyPath();
+      rpc.stubJson('SystemService', 'GetStatus', {
+        'soc': {'percent': 77},
+        'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'fuelPercent': 30},
+        'distanceUnit': 'km',
+      });
+      rpc.stubJson('TripsService', 'ListTrips', {
+        'success': true,
+        'trips': [
+          {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780, 'tripCost': 150.0, 'fuelCost': 100.0, 'currency': 'PHP', 'hasFuelData': true},
+        ],
+      });
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+      final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(Card));
+      double left(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dx;
+      for (final column in [
+        ['Trips', 'Battery', 'Fuel Cost'],
+        ['Distance', 'EV Range', 'Electric Cost'],
+        ['Drive Time', 'Fuel', 'Total Cost'],
+      ]) {
+        expect(column.map(left).toSet(), hasLength(1), reason: '$column should share one left edge');
+      }
+
+      // Design review 2026-09-27: the week's figures stay together, the car's state comes last,
+      // and the header's label and button share one line.
+      double top(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dy;
+      expect(top('Battery'), greaterThan(top('Total Cost')), reason: 'charge and fuel after the week\'s costs');
+      final labelY = tester.getCenter(find.descendant(of: card, matching: find.text('THIS WEEK'))).dy;
+      final buttonY = tester.getCenter(find.byKey(const ValueKey('tripStats.viewAll'))).dy;
+      expect((labelY - buttonY).abs(), lessThan(1), reason: 'label and button on one line');
+    });
+
+    testWidgets('before the car has reported, the tiles wait with the pending mark', (tester) async {
+      final row = await pumpWith(tester, null); // the happy path's status has no charge or range
+      expect(inRow(row, 'Battery'), findsOneWidget);
+      final pending = AppLocalizations.of(tester.element(row))!.dashboard_metric_value_pending;
+      expect(inRow(row, pending), findsNWidgets(2));
+    });
+  });
+
+  // BladeWatch-39d2: the week's fuel, electric and total cost, under the three stats it kept.
+  group('this week\'s costs', () {
+    Future<void> pumpWith(WidgetTester tester, List<Map<String, Object?>> trips) async {
+      stubHappyPath();
+      rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': trips});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a PHEV week shows fuel, electric and total', (tester) async {
+      await pumpWith(tester, [
+        {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780, 'tripCost': 150.0, 'fuelCost': 100.0, 'currency': 'PHP', 'hasFuelData': true},
+        {'id': '2', 'distanceKm': 3.2, 'durationSeconds': 300, 'tripCost': 30.0, 'currency': 'PHP'},
+      ]);
+      final costs = find.byKey(const ValueKey('tripStats.costs'));
+      String? money(double v) => Currency.format(v, 'PHP');
+      for (final (label, value) in [('Fuel Cost', 100.0), ('Electric Cost', 80.0), ('Total Cost', 180.0)]) {
+        expect(find.descendant(of: costs, matching: find.text(label)), findsOneWidget);
+        expect(find.descendant(of: costs, matching: find.text(money(value)!)), findsOneWidget, reason: label);
+      }
+      expect(find.text('2'), findsWidgets, reason: 'trip count kept');
+      expect(find.text('12.2 km'), findsWidgets, reason: 'distance kept');
+    });
+
+    testWidgets('a BEV week leaves fuel out rather than showing 0', (tester) async {
+      await pumpWith(tester, [
+        {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780, 'tripCost': 40.0, 'currency': 'PHP'},
+      ]);
+      expect(find.text('Fuel Cost'), findsNothing);
+      expect(find.text('Electric Cost'), findsOneWidget);
+      expect(find.text('Total Cost'), findsOneWidget);
+    });
+
+    testWidgets('with no rate set it says so instead of showing zeros', (tester) async {
+      await pumpWith(tester, [
+        {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780},
+      ]);
+      expect(find.byKey(const ValueKey('tripStats.costs')), findsNothing);
+      expect(find.text('Set an electricity rate in Trip settings to see costs.'), findsOneWidget);
+    });
   });
 
   testWidgets('recordings tile shows the live dot prefix while recording', (tester) async {
@@ -130,9 +399,8 @@ void main() {
     rpc.stubJson('SystemService', 'GetSohNominal', {});
     rpc.stubJson('SystemService', 'GetSelectedModel', {});
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'TOR_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': false, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
     });
-    channel.stub('auth', 'getAccessCode', null);
     final controller = buildController();
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
@@ -147,9 +415,8 @@ void main() {
     rpc.stubJson('SystemService', 'GetSohNominal', {});
     rpc.stubJson('SystemService', 'GetSelectedModel', {});
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'PEAR_PEER': false},
     });
-    channel.stub('auth', 'getAccessCode', null);
     final controller = buildController();
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
@@ -164,9 +431,8 @@ void main() {
     rpc.stubJson('SystemService', 'GetSohNominal', {});
     rpc.stubJson('SystemService', 'GetSelectedModel', {});
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'PEAR_PEER': false},
     });
-    channel.stub('auth', 'getAccessCode', null);
     final controller = buildController();
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
@@ -181,140 +447,37 @@ void main() {
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
 
-    // Shown twice by design — the hero chip mirrors the metric tile value,
-    // same as native's refreshHeroChips() ("heroChipServices?.text = tvDaemonsStatus.text").
-    expect(find.text('0/0 Running'), findsNWidgets(2));
+    // Once: the Background services tile. The hero chip that repeated it was dropped (design
+    // review 2026-09-27, BladeWatch-5l5o).
+    expect(find.text('0/0 Running'), findsOneWidget);
     expect(find.text('2'), findsOneWidget); // trip stats tile still rendered fine
   });
 
-  testWidgets('no tunnel shows the "no tunnel running" placeholder and no QR image', (tester) async {
+  // BladeWatch-rdtj.12: the Connect card (onion QR, device id, web access code, Tor help)
+  // went with tor. A companion pairs through the pairing dialog instead, so nothing that
+  // grants access to the car sits on the Dashboard unasked.
+  testWidgets('there is no Connect card: no QR, no access code, no Tor help', (tester) async {
     stubHappyPath();
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    expect(find.text('No tunnel running'), findsOneWidget);
-    expect(find.byType(QrImageView), findsNothing);
-  });
-
-  testWidgets('an online tunnel renders the QR code and the URL text', (tester) async {
-    stubHappyPath();
-    final controller = buildController(tunnelStatusSource: () async => const TunnelStatus(running: true, url: onion));
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    expect(find.text(onion), findsOneWidget);
-    expect(find.text('No tunnel running'), findsNothing);
-    expect(find.byType(QrImageView), findsOneWidget);
-    // qr_flutter keeps its payload in a private field, so the encoded value cannot be
-    // read back here. The label above is the guard instead: the screen feeds the QR and
-    // that Text from the same `tunnel.url!`, so if one is wrong both are.
-  });
-
-  group('Tor access help (BladeWatch-3lbz.4)', () {
-    // A .onion address does not open in Chrome or Safari — they fail with an
-    // unhelpful DNS error. Without this dialog a user scans the QR with their phone
-    // camera, lands on that error, and concludes the app is broken.
-
-    testWidgets('the help button is on the card when the tunnel is online', (tester) async {
-      stubHappyPath();
-      final controller = buildController(
-          tunnelStatusSource: () async => const TunnelStatus(running: true, url: onion));
-      await pumpDashboard(tester, controller);
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const ValueKey('connect.torHelp')), findsOneWidget);
-    });
-
-    testWidgets('the help button is there with no tunnel too', (tester) async {
-      // Deliberate: the help is MORE useful before the tunnel is up, because that is
-      // when someone is still working out what they need to install. Hiding it until
-      // online would withhold it exactly when it is wanted.
-      stubHappyPath();
-      final controller = buildController();
-      await pumpDashboard(tester, controller);
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const ValueKey('connect.torHelp')), findsOneWidget);
-    });
-
-    testWidgets('tapping it opens the dialog with all three platforms', (tester) async {
-      stubHappyPath();
-      final controller = buildController(
-          tunnelStatusSource: () async => const TunnelStatus(running: true, url: onion));
-      await pumpDashboard(tester, controller);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const ValueKey('connect.torHelp')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Opening this address'), findsOneWidget);
-      expect(find.textContaining('Tor Browser from Google Play'), findsOneWidget);
-      expect(find.textContaining('Onion Browser'), findsOneWidget);
-      expect(find.textContaining('torproject.org'), findsOneWidget);
-      // The address is not authentication — say so, or people will assume it is.
-      expect(find.textContaining('still need the password'), findsOneWidget);
-    });
-
-    testWidgets('the dialog carries a second QR for the download page', (tester) async {
-      stubHappyPath();
-      final controller = buildController(
-          tunnelStatusSource: () async => const TunnelStatus(running: true, url: onion));
-      await pumpDashboard(tester, controller);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const ValueKey('connect.torHelp')));
-      await tester.pumpAndSettle();
-
-      // Two QR codes on screen: the card's connection QR behind the dialog, and the
-      // download QR inside it. The download one is an ordinary https URL, so it opens
-      // in any phone camera — which is the whole point, since the connection QR
-      // cannot.
-      expect(find.byType(QrImageView), findsNWidgets(2));
-      expect(find.byKey(const ValueKey('connect.torHelp.downloadQr')), findsOneWidget);
-    });
-
-    testWidgets('dismissing it leaves the card intact', (tester) async {
-      stubHappyPath();
-      final controller = buildController(
-          tunnelStatusSource: () async => const TunnelStatus(running: true, url: onion));
-      await pumpDashboard(tester, controller);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const ValueKey('connect.torHelp')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('connect.torHelp.close')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Opening this address'), findsNothing);
-      expect(find.text(onion), findsOneWidget);
-    });
-  });
-
-  testWidgets('a bootstrapping tunnel shows progress, not a QR code', (tester) async {
-    // tor is up but has not reached the network — up to ~82 s on a cold start.
-    // Showing the QR here would hand the user a code for an unreachable service.
-    stubHappyPath();
-    final controller = buildController(tunnelStatusSource: () async => const TunnelStatus(running: true));
-    await pumpDashboard(tester, controller);
-    // pump(), not pumpAndSettle(): the progress indicator animates forever, so
-    // "settled" never arrives.
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(find.byType(QrImageView), findsNothing);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('Connecting to Tor…'), findsOneWidget);
-    expect(find.text('No tunnel running'), findsNothing);
-  });
-
-  testWidgets('no tunnel at all still says so', (tester) async {
-    stubHappyPath();
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
+    await pumpDashboard(tester, buildController());
     await tester.pumpAndSettle();
 
     expect(find.byType(QrImageView), findsNothing);
-    expect(find.text('No tunnel running'), findsOneWidget);
+    expect(find.text('Scan to Connect'), findsNothing);
+    expect(find.byKey(const ValueKey('accessCode.toggle')), findsNothing);
+    expect(find.byKey(const ValueKey('accessCode.setPassword')), findsNothing);
+    expect(find.byKey(const ValueKey('connect.torHelp')), findsNothing);
+    expect(find.textContaining('Tor'), findsNothing);
+    expect(channel.calls.where((c) => c.group == 'auth'), isEmpty,
+        reason: 'the Dashboard no longer reads the device secret at all');
+  });
+
+  testWidgets('with the Pear peer switched off the Remote access tile reads Offline', (tester) async {
+    stubHappyPath();
+    channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': false, 'running': false});
+    await pumpDashboard(tester, buildController());
+    await tester.pumpAndSettle();
+
+    expect(find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.text('Offline')), findsOneWidget);
   });
 
   testWidgets('vehicle tile shows "Tap to set" with no nominal capacity', (tester) async {
@@ -324,9 +487,8 @@ void main() {
     rpc.stubJson('SystemService', 'GetSohNominal', {});
     rpc.stubJson('SystemService', 'GetSelectedModel', {});
     channel.stub('daemon', 'processStatus', {
-      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'TOR_TUNNEL': false},
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': true, 'ACC_SENTRY_DAEMON': true, 'PEAR_PEER': false},
     });
-    channel.stub('auth', 'getAccessCode', null);
     final controller = buildController();
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
@@ -344,174 +506,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('BYD Seal'), findsOneWidget);
-  });
-
-  testWidgets('access code starts masked; toggling reveals then re-masks it', (tester) async {
-    stubHappyPath();
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    expect(find.text('shh-fake-secret'), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('accessCode.toggle')));
-    await tester.pump();
-    expect(find.text('shh-fake-secret'), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('accessCode.toggle')));
-    await tester.pump();
-    expect(find.text('shh-fake-secret'), findsNothing);
-  });
-
-  testWidgets('copying the access code shows a confirmation snack bar', (tester) async {
-    stubHappyPath();
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('accessCode.copy')));
-    await tester.pump();
-
-    expect(find.text('Access code copied'), findsOneWidget);
-  });
-  // BladeWatch-y7x2: Regenerate Token was REMOVED from this card at the owner's request.
-  //
-  // Three tests lived here: one pinning that Set Password led and Regenerate followed
-  // (BladeWatch-8sig argued that ordering precisely because regenerating is destructive
-  // and sits one mis-tap away on a touchscreen in a moving car), and two driving the
-  // confirm/cancel flow. Removing the button settles the mis-tap argument outright, so
-  // what remains to pin is that it stays gone.
-  //
-  // The CAPABILITY is untouched: DashboardController.regenerateAccessCode() and the
-  // daemon behind it still work and are still covered by the controller tests. Only this
-  // entry point went.
-  // BladeWatch-y7x2: with the tunnel switched OFF the whole card goes, because with no
-  // tunnel and LAN HTTP off by default the web app is unreachable — so the QR, the
-  // address and the access code alike have nothing to connect to.
-  testWidgets('the connect card disappears when the owner disables the tunnel', (tester) async {
-    stubHappyPath();
-    final controller = buildController(
-        tunnelStatusSource: () async => const TunnelStatus(running: false, enabled: false));
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Scan to Connect'), findsNothing);
-    expect(find.byKey(const ValueKey('accessCode.setPassword')), findsNothing);
-    expect(find.byKey(const ValueKey('connect.torHelp')), findsNothing);
-  });
-
-  // The distinction that matters, and the reason "disabled" is its own phase: an ENABLED
-  // tunnel is also not running for the first minute while tor bootstraps (61 s cold,
-  // measured on the head unit). Hiding the card then would make the Dashboard look broken
-  // exactly while the user waits for it.
-  testWidgets('the connect card STAYS while an enabled tunnel is still starting', (tester) async {
-    stubHappyPath();
-    final controller = buildController(
-        tunnelStatusSource: () async => const TunnelStatus(running: true, enabled: true));
-    await pumpDashboard(tester, controller);
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(find.text('Scan to Connect'), findsOneWidget);
-    expect(find.text('Connecting to Tor…'), findsOneWidget);
-  });
-
-  testWidgets('an enabled tunnel that is simply down still shows the card', (tester) async {
-    stubHappyPath();
-    final controller = buildController(
-        tunnelStatusSource: () async => const TunnelStatus(running: false, enabled: true));
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Scan to Connect'), findsOneWidget);
-  });
-
-  // BladeWatch-4s7w: on the real panel the password note fell entirely below the fold,
-  // in English, with the QR caption clipped mid-line above it. Ordering is the part a
-  // widget test CAN pin — whether it fits is a device check, because flutter test uses a
-  // fixed-width placeholder font that makes any fit assertion meaningless.
-  testWidgets('the help dialog puts the password note above the download QR', (tester) async {
-    stubHappyPath();
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('connect.torHelp')));
-    await tester.pumpAndSettle();
-
-    final note = tester.getTopLeft(
-        find.text('You will still need the password after the page loads.'));
-    final qr = tester.getTopLeft(find.byKey(const ValueKey('connect.torHelp.downloadQr')));
-
-    expect(note.dy, lessThan(qr.dy),
-        reason: 'the one line that says the address is not a login must not be the one '
-            'that scrolls off the panel');
-  });
-
-  testWidgets('the connect card offers no Regenerate Token action', (tester) async {
-    stubHappyPath();
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const ValueKey('accessCode.setPassword')), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('accessCode.regenerate')),
-      findsNothing,
-      reason: 'a destructive action next to Set Password is one mis-tap from logging '
-          'every paired client out',
-    );
-    expect(find.text('Regenerate Token'), findsNothing);
-  });
-
-
-  testWidgets('setting a too-short custom password shows a validation message without calling the channel', (tester) async {
-    stubHappyPath();
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('accessCode.setPassword')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'short');
-    await tester.tap(find.widgetWithText(TextButton, 'DONE'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Password must be at least 12 characters'), findsOneWidget);
-    expect(channel.calls.where((c) => c.method == 'setCustomAccessCode'), isEmpty);
-  });
-
-  testWidgets('setting a valid custom password calls the channel and confirms', (tester) async {
-    stubHappyPath();
-    channel.stub('auth', 'setCustomAccessCode', true);
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('accessCode.setPassword')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'a-long-enough-password');
-    await tester.tap(find.widgetWithText(TextButton, 'DONE'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Password updated'), findsOneWidget);
-    final call = channel.calls.firstWhere((c) => c.method == 'setCustomAccessCode');
-    expect((call.args as Map)['password'], 'a-long-enough-password');
-  });
-
-  testWidgets('a valid-length password the daemon rejects shows a failure message and stays open', (tester) async {
-    stubHappyPath();
-    channel.stub('auth', 'setCustomAccessCode', false);
-    final controller = buildController();
-    await pumpDashboard(tester, controller);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('accessCode.setPassword')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'a-long-enough-password');
-    await tester.tap(find.widgetWithText(TextButton, 'DONE'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Failed to save password — service not ready'), findsOneWidget);
-    expect(find.text('Set Custom Password'), findsOneWidget); // dialog stayed open
   });
 
   testWidgets('tapping Live calls onNavigate with the liveView route', (tester) async {
@@ -534,6 +528,61 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('tile.recordings')));
 
     expect(navigated, ['recordings']);
+  });
+
+  // BladeWatch-rdtj.17: while the Pear peer is on, the Remote access tile reports whether the car
+  // can actually be found -- not just whether a process runs.
+  group('Remote access tile with the Pear peer on', () {
+    Future<void> pumpWithPear(WidgetTester tester, Map<String, Object?> pear) async {
+      stubHappyPath();
+      channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, ...pear});
+      await pumpDashboard(tester, buildController());
+      await tester.pumpAndSettle();
+    }
+
+    Finder inTile(String text) =>
+        find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.text(text));
+    final dot = find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.byKey(const ValueKey('tile.statusDot')));
+
+    testWidgets('reachable reads Online, with the status dot', (tester) async {
+      await pumpWithPear(tester, {'running': true, 'reachable': true});
+      expect(inTile('Online'), findsOneWidget);
+      expect(dot, findsOneWidget);
+    });
+
+    testWidgets('running but unreachable reads Offline, no dot', (tester) async {
+      await pumpWithPear(tester, {'running': true, 'reachable': false});
+      expect(inTile('Offline'), findsOneWidget);
+      expect(dot, findsNothing);
+    });
+
+    testWidgets('unknown reachability reads Running, no dot', (tester) async {
+      await pumpWithPear(tester, {'running': true, 'reachable': null});
+      expect(inTile('Running'), findsOneWidget);
+      expect(dot, findsNothing);
+    });
+
+    testWidgets('switched on but not up yet reads Starting', (tester) async {
+      await pumpWithPear(tester, {'running': false, 'reachable': false});
+      expect(inTile('Starting'), findsOneWidget);
+      expect(dot, findsNothing);
+    });
+
+    // BladeWatch-rdtj.21: on the head unit the tile said Online long after the car lost its network.
+    testWidgets('the tile follows the car while the page stays open', (tester) async {
+      await pumpWithPear(tester, {'running': true, 'reachable': true});
+      expect(inTile('Online'), findsOneWidget);
+
+      channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, 'running': true, 'reachable': false});
+      await tester.pump(const Duration(seconds: 14));
+      await tester.pumpAndSettle();
+      expect(inTile('Online'), findsOneWidget, reason: 'not yet: the page re-reads every 15 s');
+
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(inTile('Offline'), findsOneWidget);
+      expect(dot, findsNothing);
+    });
   });
 
   testWidgets('tapping the tunnel tile navigates to diagnostics', (tester) async {
@@ -683,7 +732,7 @@ void main() {
 
   testWidgets('renders without error in dark theme', (tester) async {
     stubHappyPath();
-    final controller = buildController(tunnelStatusSource: () async => const TunnelStatus(running: true, url: onion));
+    final controller = buildController();
     await pumpDashboard(tester, controller, theme: BladeWatchTheme.dark());
     await tester.pumpAndSettle();
 
@@ -734,13 +783,14 @@ void main() {
       expect(heroCard.color, BladeWatchTheme.light().colorScheme.primaryContainer);
     });
 
-    testWidgets('the hero headline combines trip count and distance on one line', (tester) async {
+    testWidgets('the hero has no headline repeating its trip count and distance', (tester) async {
       stubHappyPath();
       await pumpHeadUnit(tester, buildController());
 
-      // Native reads "2 trips · 12.2 km"; the port showed only "2 trips" and
-      // dropped the distance from the headline.
-      expect(find.text('2 trips · 12.2 km'), findsOneWidget);
+      // Native's "2 trips · 12.2 km" headline sat right above the Trips and
+      // Distance tiles, so the owner read both twice (BladeWatch-by8d).
+      expect(find.text('2 trips · 12.2 km'), findsNothing);
+      expect(find.text('12.2 km'), findsOneWidget);
     });
 
     testWidgets('View all trips sits above the hero stats, not below them', (tester) async {
@@ -787,19 +837,6 @@ void main() {
       }
     });
 
-    testWidgets('Scan to Connect sits beside the hero and is visible without scrolling', (tester) async {
-      stubHappyPath();
-      await pumpHeadUnit(tester, buildController());
-
-      // The access code was two swipes down; on a head unit that is the whole
-      // point of the card.
-      final heroTop = tester.getTopLeft(find.byKey(const ValueKey('tripStats.viewAll'))).dy;
-      final codeRect = tester.getRect(find.byKey(const ValueKey('accessCode.toggle')));
-
-      expect(codeRect.top, lessThan(heroTop + 400), reason: 'Scan to Connect should be level with the hero');
-      expect(codeRect.bottom, lessThanOrEqualTo(1080), reason: 'it must be on screen at 1080 tall');
-    });
-
     testWidgets('the whole dashboard fits on one screen at head-unit size', (tester) async {
       stubHappyPath();
       await pumpHeadUnit(tester, buildController());
@@ -810,22 +847,14 @@ void main() {
       expect(lastTile.bottom, lessThanOrEqualTo(1080));
     });
 
-    testWidgets('a narrow window stacks instead of forcing two columns', (tester) async {
+    testWidgets('the hero spans the full width now that the Connect card is gone', (tester) async {
       stubHappyPath();
-      tester.view.physicalSize = const Size(800, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-      await tester.pumpWidget(wrap(buildController()));
-      await tester.pumpAndSettle();
+      await pumpHeadUnit(tester, buildController());
 
-      // Below the breakpoint the Connect card drops BELOW the hero rather than
-      // being squeezed into an unreadable column.
-      final heroLeft = tester.getTopLeft(find.byKey(const ValueKey('tripStats.viewAll')));
-      final codeTop = tester.getTopLeft(find.byKey(const ValueKey('accessCode.toggle')));
-      expect(codeTop.dy, greaterThan(heroLeft.dy));
+      final hero = tester.getRect(
+        find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(Card)).first,
+      );
+      expect(hero.width, greaterThan(1920 * 0.8), reason: 'no empty column where the card used to be');
     });
   });
 }

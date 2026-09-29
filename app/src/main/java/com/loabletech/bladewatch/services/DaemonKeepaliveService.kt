@@ -31,7 +31,7 @@ class DaemonKeepaliveService : Service() {
     
     companion object {
         private const val TAG = "DaemonKeepalive"
-        private const val FLUTTER_UI_PACKAGE = "net.bladewatch.flutter"
+        private const val FLUTTER_UI_PACKAGE = "net.bladewatch.incarapp"
         private const val NOTIFICATION_ID = 19876
         private const val CHANNEL_ID = "daemon_keepalive_channel"
         

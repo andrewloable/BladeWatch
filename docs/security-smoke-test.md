@@ -36,18 +36,21 @@ The loopback request must return `401` or `403` when unauthenticated. The LAN re
 Failure interpretation:
 Any `200 OK`, any vehicle data in the body, or any response that exposes diagnostics without auth means the auth boundary is broken.
 
-## 3. Verify login, JWT issuance, expiry, and logout
+## 3. Verify the removed web login is gone and the companion login refuses a bad credential
+
+The web login (`/auth/token`, `/auth/logout`, `/auth/status`) and its cookie session were removed
+with the web app (BladeWatch-rdtj.22).
 
 Command:
 ```bash
-curl -i -c /tmp/bladewatch.cookies -H 'Content-Type: application/json' -d '{"token":"<FULL_DEVICE_TOKEN>"}' http://127.0.0.1:8080/auth/token
-curl -i -b /tmp/bladewatch.cookies http://127.0.0.1:8080/auth/status
-curl -i -X POST -b /tmp/bladewatch.cookies -c /tmp/bladewatch.cookies http://127.0.0.1:8080/auth/logout
-curl -i -b /tmp/bladewatch.cookies http://127.0.0.1:8080/auth/status
+curl -i -X POST -H 'Content-Type: application/json' -d '{"token":"<FULL_DEVICE_TOKEN>"}' http://127.0.0.1:8080/auth/token
+curl -i http://127.0.0.1:8080/auth/status
+curl -i -X POST -H 'Content-Type: application/json' -d '{"companionId":"00000000000000000000000000000000","token":"x"}' http://127.0.0.1:8080/auth/companion
+curl -i -H 'Cookie: byd_session=anything' http://127.0.0.1:8080/status
 ```
 
 Expected:
-The token exchange returns `200 OK`, `success:true`, `expiresIn:86400`, and a `Set-Cookie: byd_session=...; HttpOnly` header. `GET /auth/status` should succeed while the cookie is valid. After logout, the same cookie must no longer authenticate and `GET /auth/status` should return `401` or `403`.
+The first two return `404`: the paths no longer exist, and the device token is not accepted anywhere. The third returns `200` with `{"success":false,"error":"companion_refused"}` and no JWT. The fourth returns `401`: a cookie is not a credential.
 
 Failure interpretation:
 If login succeeds without a cookie, if the cookie is not `HttpOnly`, if logout does not invalidate the session, or if the session remains valid after logout, the JWT/session model is broken.
@@ -72,7 +75,7 @@ Command:
 adb shell ls -l /data/local/tmp/bladewatch_secrets.json
 adb shell cat /data/local/tmp/bladewatch_config.json
 adb shell "cat /data/local/tmp/bladewatch_config.json | grep -E 'deviceSecret|loginKey|signPassword|commandPwd|rawPassword|user_token|api_key|enableToken|reservedToken|password' || true"
-adb logcat -d | grep -E 'New token|Using reserved token|byd_jwt|byd_session'
+adb logcat -d | grep -E 'New token|Using reserved token|byd_jwt'
 ```
 
 Expected:
@@ -153,7 +156,7 @@ If the update state files are missing when the updater says an install happened,
 ## Source References
 
 - Manifest security posture and exported components: [AndroidManifest.xml:207](../app/src/main/AndroidManifest.xml#L207), [AndroidManifest.xml:209](../app/src/main/AndroidManifest.xml#L209), [AndroidManifest.xml:244](../app/src/main/AndroidManifest.xml#L244), [AndroidManifest.xml:306](../app/src/main/AndroidManifest.xml#L306), [AndroidManifest.xml:312](../app/src/main/AndroidManifest.xml#L312).
-- Auth token issuance, JWT validation, and thumb tokens: [AuthManager.java:50](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L50), [AuthManager.java:349](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L349), [AuthManager.java:392](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L392), [AuthManager.java:463](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L463).
+- Auth token issuance, and JWT validation: [AuthManager.java:50](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L50), [AuthManager.java:349](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L349), [AuthManager.java:392](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L392), [AuthManager.java:463](../app/src/main/java/com/loabletech/bladewatch/auth/AuthManager.java#L463).
 - Login and auth API rate limiting: [AuthApiHandler.java:26](../app/src/main/java/com/loabletech/bladewatch/server/AuthApiHandler.java#L26), [AuthApiHandler.java:30](../app/src/main/java/com/loabletech/bladewatch/server/AuthApiHandler.java#L30), [AuthApiHandler.java:155](../app/src/main/java/com/loabletech/bladewatch/server/AuthApiHandler.java#L155).
 - HTTP auth enforcement and protected routes: [AuthMiddleware.java:133](../app/src/main/java/com/loabletech/bladewatch/server/AuthMiddleware.java#L133), [HttpServer.java:49](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L49), [HttpServer.java:650](../app/src/main/java/com/loabletech/bladewatch/server/HttpServer.java#L650).
 - LAN binding and loopback defaults: [CameraDaemon.java:53](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.java#L53), [UnifiedConfigManager.kt:559](../app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt#L559), [UnifiedConfigManager.kt:567](../app/src/main/java/com/loabletech/bladewatch/config/UnifiedConfigManager.kt#L567).

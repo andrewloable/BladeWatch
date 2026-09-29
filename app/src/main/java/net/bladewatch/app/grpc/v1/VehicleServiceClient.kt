@@ -16,7 +16,6 @@ import com.connectrpc.StreamType
  *  HTTP mapping:
  *    GetState             GET  /api/vehicle/state
  *    GetAcDiagnostics     GET  /api/vehicle/ac-diagnostics
- *    GetSeatDiagnostics   GET  /api/vehicle/seat-diagnostics
  *    Lock                 POST /api/vehicle/lock
  *    Unlock               POST /api/vehicle/unlock
  *    Trunk                POST /api/vehicle/trunk
@@ -24,7 +23,6 @@ import com.connectrpc.StreamType
  *    Flash                POST /api/vehicle/flash
  *    FindCar              POST /api/vehicle/find-car
  *    SetClimate           POST /api/vehicle/climate
- *    SetSeat              POST /api/vehicle/seat
  *    SetLights            POST /api/vehicle/lights
  *    SetScreen            POST /api/vehicle/screen
  *    SetMediaVolume       POST /api/vehicle/media-volume
@@ -60,18 +58,6 @@ public class VehicleServiceClient(
     "bladewatch.v1.VehicleService/GetAcDiagnostics",
       net.bladewatch.app.grpc.v1.GetAcDiagnosticsRequest::class,
       net.bladewatch.app.grpc.v1.GetAcDiagnosticsResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
-  override suspend fun getSeatDiagnostics(request: GetSeatDiagnosticsRequest, headers: Headers): ResponseMessage<GetSeatDiagnosticsResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.VehicleService/GetSeatDiagnostics",
-      net.bladewatch.app.grpc.v1.GetSeatDiagnosticsRequest::class,
-      net.bladewatch.app.grpc.v1.GetSeatDiagnosticsResponse::class,
       StreamType.UNARY,
     ),
   )
@@ -155,18 +141,6 @@ public class VehicleServiceClient(
     MethodSpec(
     "bladewatch.v1.VehicleService/SetClimate",
       net.bladewatch.app.grpc.v1.SetClimateRequest::class,
-      net.bladewatch.app.grpc.v1.VehicleCommandResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
-  override suspend fun setSeat(request: SetSeatRequest, headers: Headers): ResponseMessage<VehicleCommandResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.VehicleService/SetSeat",
-      net.bladewatch.app.grpc.v1.SetSeatRequest::class,
       net.bladewatch.app.grpc.v1.VehicleCommandResponse::class,
       StreamType.UNARY,
     ),

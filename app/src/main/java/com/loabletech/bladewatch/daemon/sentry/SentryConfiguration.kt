@@ -20,24 +20,6 @@ object SentryConfiguration {
     // Package name
     const val PACKAGE_NAME = "net.bladewatch.app"
     
-    // BYD permissions
-    val BYD_PERMISSIONS = listOf(
-        "android.permission.BYDAUTO_BODYWORK_COMMON",
-        "android.permission.BYDAUTO_BODYWORK_GET",
-        "android.permission.BYDAUTO_BODYWORK_SET",
-        "android.permission.ACCESS_APPOPSDATA"
-    )
-    
-    // System apps that might have ACCESS_APPOPSDATA
-    val SYSTEM_APPS = listOf(
-        "com.android.systemui",
-        "com.android.settings",
-        "com.android.phone",
-        "com.byd.launcher",
-        "com.byd.settings",
-        "com.byd.systemui"
-    )
-    
     /**
      * Get log file path based on UID.
      */

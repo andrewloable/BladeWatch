@@ -1,6 +1,7 @@
 /// Ground truth: `VehicleModels.kt` + `VehicleFormatters.kt`.
 ///
-/// Only CLIMATE/SEATS/WINDOWS are ported — `VehicleTab` originally also had
+/// Only CLIMATE/WINDOWS are ported (seat control was removed end to end,
+/// BladeWatch-7bx4) — `VehicleTab` originally also had
 /// TRUNK/LIGHTS/ADAS/CHARGING (and `VehiclePanels.kt` still has complete,
 /// RPC-backed `build*Tab()` functions for all four), but commit `59c3b91`
 /// ("update vehicle UI to enhance climate control and window management
@@ -20,9 +21,9 @@
 /// Vehicle screen's own RPC mapping) never calls at all — those belong to
 /// other screens or nothing at all, not this one. Only the RPCs
 /// `VehicleClient.kt` actually calls are ported: GetState, MoveWindow,
-/// SetClimate, SetSeat, plus SystemService's GetSelectedModel/
+/// SetClimate, plus SystemService's GetSelectedModel/
 /// SetSelectedModel/GetModelsManifest for appearance.
-enum VehicleTab { climate, seats, windows }
+enum VehicleTab { climate, windows }
 
 enum TyreTier { muted, alert, warn, caution, normal }
 
@@ -68,29 +69,10 @@ class WindowCapabilities {
   const WindowCapabilities({this.sunroof = false, this.sunshade = false});
 }
 
-class SeatCapabilities {
-  final bool driverHeat;
-  final bool passengerHeat;
-  final bool driverCool;
-  final bool passengerCool;
-  final bool driverMemoryRecall;
-
-  const SeatCapabilities({
-    this.driverHeat = false,
-    this.passengerHeat = false,
-    this.driverCool = false,
-    this.passengerCool = false,
-    this.driverMemoryRecall = false,
-  });
-
-  bool get anyAvailable => driverHeat || passengerHeat || driverCool || passengerCool || driverMemoryRecall;
-}
-
 class VehicleCapabilities {
   final WindowCapabilities windows;
-  final SeatCapabilities seats;
 
-  const VehicleCapabilities({this.windows = const WindowCapabilities(), this.seats = const SeatCapabilities()});
+  const VehicleCapabilities({this.windows = const WindowCapabilities()});
 }
 
 class BatteryInfo {
@@ -114,22 +96,15 @@ class BatteryInfo {
   const BatteryInfo({this.soc = 0, this.rangeKm = 0, this.fuelPercent = 0, this.fuelRangeKm = 0});
 }
 
-class SeatsInfo {
-  // [driver, passenger], each 0-2.
-  final List<int> heat;
-  final List<int> cool;
-
-  const SeatsInfo({this.heat = const [0, 0], this.cool = const [0, 0]});
-}
-
 class ClimateInfo {
   final bool acOn;
   final int setpointC;
-  final double? insideTempC;
+  /// Outside air. The car exposes no cabin temperature (BladeWatch-eh3u).
+  final double? outsideTempC;
   final int fanLevel;
   final bool maxCooling;
 
-  const ClimateInfo({this.acOn = false, this.setpointC = 22, this.insideTempC, this.fanLevel = 3, this.maxCooling = false});
+  const ClimateInfo({this.acOn = false, this.setpointC = 22, this.outsideTempC, this.fanLevel = 3, this.maxCooling = false});
 }
 
 class TyreInfo {
@@ -165,7 +140,7 @@ class VehicleCommandResult {
   /// empty message to null. So `return result.message` handed the caller null,
   /// and every call site reads null as success: the command had already been
   /// reverted, so the control visibly snapped back with NO explanation. That
-  /// applied to the AC toggle, temperature, fan, and both seat commands.
+  /// applied to the AC toggle, temperature and fan.
   ///
   /// Falls back to `outcome`, then to the empty string, which
   /// `showVehicleCommandError` renders as the localised
@@ -195,7 +170,6 @@ class VehicleState {
   final WindowState windows;
   final VehicleCapabilities capabilities;
   final BatteryInfo battery;
-  final SeatsInfo seats;
   final ClimateInfo climate;
   final TyreSetInfo tyres;
   final bool loaded;
@@ -205,21 +179,33 @@ class VehicleState {
     this.windows = const WindowState(),
     this.capabilities = const VehicleCapabilities(),
     this.battery = const BatteryInfo(),
-    this.seats = const SeatsInfo(),
     this.climate = const ClimateInfo(),
     this.tyres = const TyreSetInfo(),
     this.loaded = false,
   });
 }
 
-const List<int> _kWindowPresets = [0, 25, 50, 75, 100];
+const List<int> kWindowPresets = [0, 25, 50, 75, 100];
 
-/// Returns the nearest window preset if `current` is within +/-10 of it,
-/// else null. Returns null for unknown (-1) or any negative value.
-int? presetFor(int current) {
+/// The sunroof and sunshade have only BYD's one-touch close / half / open: there is no
+/// position feedback to stop at 25 or 75, so moveWindowToPercent sends 25 as a full CLOSE and
+/// 75 as a full OPEN. Offer only what the panel does (BladeWatch-b3n7).
+const List<int> kSunPanelPresets = [0, 50, 100];
+
+/// The presets a window area offers: 1-4 are the side windows, 5 the sunroof, 6 the sunshade.
+List<int> presetsForArea(int area) => area >= 5 ? kSunPanelPresets : kWindowPresets;
+
+/// Which of [presets] a window at [current]% highlights. Closed (0-2%) lights the first
+/// (0%); any open window lights the NEAREST opening preset, ties to the higher one; unknown
+/// (negative) lights nothing.
+///
+/// It used to light a preset only within +/-10 of it, so a vented window (Vent 12% lands at
+/// 14-16%) lit 25% at 15% and nothing at 14%: four windows after one command showed two
+/// states (BladeWatch-rm6p). An open window must never read as closed either.
+int? presetFor(int current, [List<int> presets = kWindowPresets]) {
   if (current < 0) return null;
-  final nearest = _kWindowPresets.reduce((a, b) => (current - a).abs() <= (current - b).abs() ? a : b);
-  return (nearest - current).abs() <= 10 ? nearest : null;
+  if (current <= 2) return presets.first;
+  return presets.skip(1).reduce((a, b) => (current - a).abs() < (current - b).abs() ? a : b);
 }
 
 /// Maps a [TyreInfo] to a visual tier. Priority order:

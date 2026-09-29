@@ -28,6 +28,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get action_select_all_short => '全部';
 
   @override
+  String get action_select => '选择';
+
+  @override
+  String get action_deselect_all => '取消全选';
+
+  @override
   String get action_delete => '删除';
 
   @override
@@ -53,15 +59,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cd_qr_code => '二维码';
-
-  @override
-  String get cd_show_hide_token => '显示/隐藏标志';
-
-  @override
-  String get cd_copy_token => '复制令牌';
-
-  @override
-  String get cd_copy_url => '复制 URL';
 
   @override
   String get cd_clear_logs => '清除日志';
@@ -179,46 +176,16 @@ class AppLocalizationsZh extends AppLocalizations {
       '每次启动时自动选择适合您车型的摄像头。摄像头1 = BYD Seal，摄像头0 = Atto车型。更改摄像头ID后，请重启摄像头服务使设置生效。';
 
   @override
-  String get dashboard_scan_to_connect => '扫码连接';
-
-  @override
   String get dashboard_qr_waiting => '等待道...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 运行中';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => '访问代码';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => '复兴标志';
 
   @override
-  String get dashboard_set_password => '设置密码';
-
-  @override
   String get cd_set_password => '设置自定义密码';
-
-  @override
-  String get dialog_set_password_title => '设置自定义密码';
-
-  @override
-  String get dialog_set_password_message => '请输入新的访问密码。此密码将替换自动生成的令牌。';
-
-  @override
-  String get dialog_set_password_hint => '新密码（至少12个字符）';
-
-  @override
-  String get toast_password_set => '密码已更新';
-
-  @override
-  String get toast_password_too_short => '密码至少需要12个字符';
 
   @override
   String get toast_password_save_failed => '保存密码失败——服务尚未就绪';
@@ -519,6 +486,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recording_lib_date_all_days => '所有日期';
 
   @override
+  String get recording_lib_type_all => '全部';
+
+  @override
   String get cd_clear_date_filter => '显示所有日子';
 
   @override
@@ -562,9 +532,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get daemon_name_acc => 'ACC 监控';
-
-  @override
-  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '背景服务';
@@ -780,9 +747,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reset_label_trip_files => '旅行遥测文件';
 
   @override
-  String get toast_access_code_copied => '复制访问代码';
-
-  @override
   String get dialog_regenerate_token_title => '复兴标志';
 
   @override
@@ -801,21 +765,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get toast_token_regenerated => '令牌再生';
 
   @override
-  String get dashboard_no_tunnel => '没有道运行';
-
-  @override
-  String get dashboard_starting_tor => '正在启动 Tor 隧道…';
-
-  @override
   String get dashboard_waiting_url => '等待道URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 运行中';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '访问代码';
@@ -1272,11 +1227,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get diagnostics_metric_online => '在线';
 
   @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return '道 · $arg1';
-  }
-
-  @override
   String diagnostics_network_data_usage_line(Object arg1) {
     return '本月 $arg1';
   }
@@ -1672,17 +1622,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dashboard_trips_this_week => '本周';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1次行程',
-      one: '$arg1次行程',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1705,6 +1644,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dashboard_trips_label_time => '驾驶时长';
+
+  @override
+  String get dashboard_week_battery => '电池';
+
+  @override
+  String get dashboard_week_elec_range => '纯电续航';
+
+  @override
+  String get dashboard_week_fuel => '燃油';
+
+  @override
+  String get dashboard_week_fuel_range => '燃油续航';
 
   @override
   String get dashboard_trips_no_data => '本周暂无行程记录';
@@ -1761,7 +1712,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings_section_surveillance_subtitle => '时间表,移动检测灵敏度,目标检测.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Tor 隧道和后台服务。';
+  String get settings_section_daemons_subtitle => '远程访问 (Pear)和后台服务。';
 
   @override
   String get settings_about_row_title => '关于BladeWatch';
@@ -1902,9 +1853,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vehicle_tab_climate => '空调';
 
   @override
-  String get vehicle_tab_seats => '座椅';
-
-  @override
   String get vehicle_tab_windows => '车窗';
 
   @override
@@ -1985,43 +1933,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '车内：$arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '车外：$arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '主驾';
-
-  @override
-  String get vehicle_seat_passenger => '副驾';
-
-  @override
-  String get vehicle_seat_no_controls => '此车辆无可用的座椅控制。';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '加热 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '通风 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '（关）';
-
-  @override
-  String get vehicle_heat_low => '（低）';
-
-  @override
-  String get vehicle_heat_high => '（高）';
-
-  @override
-  String get vehicle_seat_pos_1 => '位置1';
-
-  @override
-  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
   String get vehicle_all_windows => '所有车窗';
@@ -2776,41 +2690,122 @@ class AppLocalizationsZh extends AppLocalizations {
   String get surveillance_apply_failed => '保存失败';
 
   @override
-  String get dashboard_tor_bootstrapping => '正在连接 Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => '如何打开此地址';
-
-  @override
-  String get dashboard_tor_help_title => '打开此地址';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android：从 Google Play 或 F-Droid 安装 Tor Browser，打开后粘贴地址。';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone 和 iPad：从 App Store 安装 Onion Browser，打开后粘贴地址。iOS 没有 Tor Browser。';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows、macOS 和 Linux：从 torproject.org 下载 Tor Browser，打开后粘贴地址。';
-
-  @override
-  String get dashboard_tor_help_password_note => '页面加载后仍需输入密码。';
-
-  @override
-  String get dashboard_tor_help_download_qr_label => '扫描前往 Tor Browser 下载页';
-
-  @override
-  String get dashboard_tor_help_close => '知道了';
-
-  @override
   String get surveillance_general_battery_warning => '哨兵模式启用期间会额外消耗12V电瓶电量。';
 
   @override
   String get surveillance_general_camera_contention_warning =>
       '目前有其他应用正在使用摄像头。';
+
+  @override
+  String get pairing_title => '配对设备';
+
+  @override
+  String get pairing_scan_hint => '用手机或电脑上的 BladeWatch 应用扫描。此代码仅可使用一次。';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time 后过期';
+  }
+
+  @override
+  String get pairing_expired => '此代码已过期。';
+
+  @override
+  String get pairing_new_code => '新代码';
+
+  @override
+  String get pairing_remote_note => '配对会开启此车辆的远程访问。';
+
+  @override
+  String get pairing_lan_title => '通过此 Wi-Fi 直接连接';
+
+  @override
+  String get pairing_lan_body =>
+      '与车辆处于同一 Wi-Fi 的已配对设备会直接进行加密连接，无需经过互联网。在您开启前保持关闭。';
+
+  @override
+  String get pairing_devices_title => '已配对的设备';
+
+  @override
+  String get pairing_devices_empty => '尚未配对任何设备。';
+
+  @override
+  String get pairing_remove => '移除';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '移除 $name？';
+  }
+
+  @override
+  String get pairing_remove_confirm_body => '它会立即失去访问权限。您的其他设备不受影响。';
+
+  @override
+  String get pairing_error => '摄像头服务没有响应。请重试。';
+
+  @override
+  String get daemon_name_pear => '远程访问 (Pear)';
+
+  @override
+  String get pear_status_reachable => '可从任何地方访问';
+
+  @override
+  String get pear_status_unreachable => '无法访问：未连接到 Pear 网络';
+
+  @override
+  String get pear_status_unknown => '访问状态未知';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已连接 $count 台设备',
+      zero: '没有已连接的设备',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '上次连接：$time';
+  }
+
+  @override
+  String get pear_tile_off => '关闭';
+
+  @override
+  String get trips_cost_total => '总费用';
+
+  @override
+  String get trips_cost_no_rate => '请在行程设置中设置电价以查看费用。';
+
+  @override
+  String get trips_cost_mixed_currency => '行程费用使用了多种货币，因此不显示总计。';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return '挡位 $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return '模式：$mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return '自动驻车：$state';
+  }
+
+  @override
+  String get auto_hold_disabled => '关';
+
+  @override
+  String get auto_hold_enabled => '开';
+
+  @override
+  String get auto_hold_active => '驻车中';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -2837,6 +2832,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get action_select_all_short => '全部';
 
   @override
+  String get action_select => '选择';
+
+  @override
+  String get action_deselect_all => '取消全选';
+
+  @override
   String get action_delete => '删除';
 
   @override
@@ -2862,15 +2863,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get cd_qr_code => '二维码';
-
-  @override
-  String get cd_show_hide_token => '显示/隐藏标志';
-
-  @override
-  String get cd_copy_token => '复制令牌';
-
-  @override
-  String get cd_copy_url => '复制 URL';
 
   @override
   String get cd_clear_logs => '清除日志';
@@ -2988,46 +2980,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
       '每次启动时自动选择适合您车型的摄像头。摄像头1 = BYD Seal，摄像头0 = Atto车型。更改摄像头ID后，请重启摄像头服务使设置生效。';
 
   @override
-  String get dashboard_scan_to_connect => '扫码连接';
-
-  @override
   String get dashboard_qr_waiting => '等待道...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 运行中';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => '访问代码';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => '复兴标志';
 
   @override
-  String get dashboard_set_password => '设置密码';
-
-  @override
   String get cd_set_password => '设置自定义密码';
-
-  @override
-  String get dialog_set_password_title => '设置自定义密码';
-
-  @override
-  String get dialog_set_password_message => '请输入新的访问密码。此密码将替换自动生成的令牌。';
-
-  @override
-  String get dialog_set_password_hint => '新密码（至少12个字符）';
-
-  @override
-  String get toast_password_set => '密码已更新';
-
-  @override
-  String get toast_password_too_short => '密码至少需要12个字符';
 
   @override
   String get toast_password_save_failed => '保存密码失败——服务尚未就绪';
@@ -3328,6 +3290,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get recording_lib_date_all_days => '所有日期';
 
   @override
+  String get recording_lib_type_all => '全部';
+
+  @override
   String get cd_clear_date_filter => '显示所有日子';
 
   @override
@@ -3371,9 +3336,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get daemon_name_acc => 'ACC 监控';
-
-  @override
-  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '背景服务';
@@ -3589,9 +3551,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get reset_label_trip_files => '旅行遥测文件';
 
   @override
-  String get toast_access_code_copied => '复制访问代码';
-
-  @override
   String get dialog_regenerate_token_title => '复兴标志';
 
   @override
@@ -3610,21 +3569,12 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get toast_token_regenerated => '令牌再生';
 
   @override
-  String get dashboard_no_tunnel => '没有道运行';
-
-  @override
-  String get dashboard_starting_tor => '正在启动 Tor 隧道…';
-
-  @override
   String get dashboard_waiting_url => '等待道URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 运行中';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '访问代码';
@@ -4081,11 +4031,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get diagnostics_metric_online => '在线';
 
   @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return '道 · $arg1';
-  }
-
-  @override
   String diagnostics_network_data_usage_line(Object arg1) {
     return '本月 $arg1';
   }
@@ -4481,17 +4426,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get dashboard_trips_this_week => '本周';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1次行程',
-      one: '$arg1次行程',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -4514,6 +4448,18 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get dashboard_trips_label_time => '驾驶时长';
+
+  @override
+  String get dashboard_week_battery => '电池';
+
+  @override
+  String get dashboard_week_elec_range => '纯电续航';
+
+  @override
+  String get dashboard_week_fuel => '燃油';
+
+  @override
+  String get dashboard_week_fuel_range => '燃油续航';
 
   @override
   String get dashboard_trips_no_data => '本周暂无行程记录';
@@ -4570,7 +4516,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get settings_section_surveillance_subtitle => '时间表,移动检测灵敏度,目标检测.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Tor 隧道和后台服务。';
+  String get settings_section_daemons_subtitle => '远程访问 (Pear)和后台服务。';
 
   @override
   String get settings_about_row_title => '关于BladeWatch';
@@ -4711,9 +4657,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get vehicle_tab_climate => '空调';
 
   @override
-  String get vehicle_tab_seats => '座椅';
-
-  @override
   String get vehicle_tab_windows => '车窗';
 
   @override
@@ -4794,43 +4737,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '车内：$arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '车外：$arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '主驾';
-
-  @override
-  String get vehicle_seat_passenger => '副驾';
-
-  @override
-  String get vehicle_seat_no_controls => '此车辆无可用的座椅控制。';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '加热 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '通风 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '（关）';
-
-  @override
-  String get vehicle_heat_low => '（低）';
-
-  @override
-  String get vehicle_heat_high => '（高）';
-
-  @override
-  String get vehicle_seat_pos_1 => '位置1';
-
-  @override
-  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
   String get vehicle_all_windows => '所有车窗';
@@ -5585,41 +5494,122 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get surveillance_apply_failed => '保存失败';
 
   @override
-  String get dashboard_tor_bootstrapping => '正在连接 Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => '如何打开此地址';
-
-  @override
-  String get dashboard_tor_help_title => '打开此地址';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android：从 Google Play 或 F-Droid 安装 Tor Browser，打开后粘贴地址。';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone 和 iPad：从 App Store 安装 Onion Browser，打开后粘贴地址。iOS 没有 Tor Browser。';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows、macOS 和 Linux：从 torproject.org 下载 Tor Browser，打开后粘贴地址。';
-
-  @override
-  String get dashboard_tor_help_password_note => '页面加载后仍需输入密码。';
-
-  @override
-  String get dashboard_tor_help_download_qr_label => '扫描前往 Tor Browser 下载页';
-
-  @override
-  String get dashboard_tor_help_close => '知道了';
-
-  @override
   String get surveillance_general_battery_warning => '哨兵模式启用期间会额外消耗12V电瓶电量。';
 
   @override
   String get surveillance_general_camera_contention_warning =>
       '目前有其他应用正在使用摄像头。';
+
+  @override
+  String get pairing_title => '配对设备';
+
+  @override
+  String get pairing_scan_hint => '用手机或电脑上的 BladeWatch 应用扫描。此代码仅可使用一次。';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time 后过期';
+  }
+
+  @override
+  String get pairing_expired => '此代码已过期。';
+
+  @override
+  String get pairing_new_code => '新代码';
+
+  @override
+  String get pairing_remote_note => '配对会开启此车辆的远程访问。';
+
+  @override
+  String get pairing_lan_title => '通过此 Wi-Fi 直接连接';
+
+  @override
+  String get pairing_lan_body =>
+      '与车辆处于同一 Wi-Fi 的已配对设备会直接进行加密连接，无需经过互联网。在您开启前保持关闭。';
+
+  @override
+  String get pairing_devices_title => '已配对的设备';
+
+  @override
+  String get pairing_devices_empty => '尚未配对任何设备。';
+
+  @override
+  String get pairing_remove => '移除';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '移除 $name？';
+  }
+
+  @override
+  String get pairing_remove_confirm_body => '它会立即失去访问权限。您的其他设备不受影响。';
+
+  @override
+  String get pairing_error => '摄像头服务没有响应。请重试。';
+
+  @override
+  String get daemon_name_pear => '远程访问 (Pear)';
+
+  @override
+  String get pear_status_reachable => '可从任何地方访问';
+
+  @override
+  String get pear_status_unreachable => '无法访问：未连接到 Pear 网络';
+
+  @override
+  String get pear_status_unknown => '访问状态未知';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已连接 $count 台设备',
+      zero: '没有已连接的设备',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '上次连接：$time';
+  }
+
+  @override
+  String get pear_tile_off => '关闭';
+
+  @override
+  String get trips_cost_total => '总费用';
+
+  @override
+  String get trips_cost_no_rate => '请在行程设置中设置电价以查看费用。';
+
+  @override
+  String get trips_cost_mixed_currency => '行程费用使用了多种货币，因此不显示总计。';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return '挡位 $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return '模式：$mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return '自动驻车：$state';
+  }
+
+  @override
+  String get auto_hold_disabled => '关';
+
+  @override
+  String get auto_hold_enabled => '开';
+
+  @override
+  String get auto_hold_active => '驻车中';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -5644,6 +5634,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get action_select_all_short => '全部';
+
+  @override
+  String get action_select => '選擇';
+
+  @override
+  String get action_deselect_all => '取消全選';
 
   @override
   String get action_delete => '刪除';
@@ -5671,15 +5667,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get cd_qr_code => 'QR 碼';
-
-  @override
-  String get cd_show_hide_token => '顯示/隱藏符號';
-
-  @override
-  String get cd_copy_token => '複製權杖';
-
-  @override
-  String get cd_copy_url => '複製 URL';
 
   @override
   String get cd_clear_logs => '清除日誌';
@@ -5797,46 +5784,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
       '每次開機時自動選取適合您車款的攝影機。攝影機 1 = BYD Seal，攝影機 0 = Atto 車款。變更攝影機 ID 後，請重新啟動攝影機服務使設定生效。';
 
   @override
-  String get dashboard_scan_to_connect => '掃碼連線';
-
-  @override
   String get dashboard_qr_waiting => '在等待道...';
 
   @override
   String get dashboard_daemons_running_default => '0/5 執行中';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => '存取碼';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => '恢復代號';
 
   @override
-  String get dashboard_set_password => '設定密碼';
-
-  @override
   String get cd_set_password => '設定自訂密碼';
-
-  @override
-  String get dialog_set_password_title => '設定自訂密碼';
-
-  @override
-  String get dialog_set_password_message => '輸入新的存取密碼。這將取代自動產生的權杖。';
-
-  @override
-  String get dialog_set_password_hint => '新密碼（至少 12 個字元）';
-
-  @override
-  String get toast_password_set => '密碼已更新';
-
-  @override
-  String get toast_password_too_short => '密碼至少需 12 個字元';
 
   @override
   String get toast_password_save_failed => '無法儲存密碼 — 服務尚未就緒';
@@ -6138,6 +6095,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get recording_lib_date_all_days => '所有日期';
 
   @override
+  String get recording_lib_type_all => '全部';
+
+  @override
   String get cd_clear_date_filter => '顯示所有日期';
 
   @override
@@ -6181,9 +6141,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get daemon_name_acc => 'ACC 監控';
-
-  @override
-  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '背景服務';
@@ -6399,9 +6356,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get reset_label_trip_files => '旅行遠隔測量檔案';
 
   @override
-  String get toast_access_code_copied => '已複製的接入代碼';
-
-  @override
   String get dialog_regenerate_token_title => '恢復代號';
 
   @override
@@ -6421,21 +6375,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get toast_token_regenerated => '標誌再生';
 
   @override
-  String get dashboard_no_tunnel => '沒有道運行';
-
-  @override
-  String get dashboard_starting_tor => '正在啟動 Tor 通道…';
-
-  @override
   String get dashboard_waiting_url => '在等待道URL...';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 執行中';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '存取碼';
@@ -6891,11 +6836,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get diagnostics_metric_online => '線上';
 
   @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return '道 · $arg1';
-  }
-
-  @override
   String diagnostics_network_data_usage_line(Object arg1) {
     return '本月 $arg1';
   }
@@ -7291,17 +7231,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dashboard_trips_this_week => '本週';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1 趟行程',
-      one: '$arg1 趟行程',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -7324,6 +7253,18 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get dashboard_trips_label_time => '行駛時間';
+
+  @override
+  String get dashboard_week_battery => '電池';
+
+  @override
+  String get dashboard_week_elec_range => '純電續航';
+
+  @override
+  String get dashboard_week_fuel => '燃油';
+
+  @override
+  String get dashboard_week_fuel_range => '燃油續航';
 
   @override
   String get dashboard_trips_no_data => '本週尚無行程紀錄';
@@ -7380,7 +7321,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settings_section_surveillance_subtitle => '時間表,移動偵測靈敏度,物件偵測.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Tor 通道與背景服務。';
+  String get settings_section_daemons_subtitle => '遠端存取 (Pear)與背景服務。';
 
   @override
   String get settings_about_row_title => '關於BladeWatch';
@@ -7521,9 +7462,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get vehicle_tab_climate => '空調';
 
   @override
-  String get vehicle_tab_seats => '座位';
-
-  @override
   String get vehicle_tab_windows => '車窗';
 
   @override
@@ -7604,43 +7542,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '車內：$arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '車外：$arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '駕駛座';
-
-  @override
-  String get vehicle_seat_passenger => '副駕駛座';
-
-  @override
-  String get vehicle_seat_no_controls => '此車輛無可用的座椅控制。';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '加熱 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '通風 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '（關）';
-
-  @override
-  String get vehicle_heat_low => '（低）';
-
-  @override
-  String get vehicle_heat_high => '（高）';
-
-  @override
-  String get vehicle_seat_pos_1 => '位置 1';
-
-  @override
-  String get vehicle_seat_pos_2 => '位置 2';
 
   @override
   String get vehicle_all_windows => '所有車窗';
@@ -8395,39 +8299,120 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get surveillance_apply_failed => '儲存失敗';
 
   @override
-  String get dashboard_tor_bootstrapping => '正在連線至 Tor…';
-
-  @override
-  String get dashboard_tor_help_tooltip => '如何開啟此位址';
-
-  @override
-  String get dashboard_tor_help_title => '開啟此位址';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android：從 Google Play 或 F-Droid 安裝 Tor Browser，開啟後貼上位址。';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone 和 iPad：從 App Store 安裝 Onion Browser，開啟後貼上位址。iOS 沒有 Tor Browser。';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows、macOS 和 Linux：從 torproject.org 下載 Tor Browser，開啟後貼上位址。';
-
-  @override
-  String get dashboard_tor_help_password_note => '頁面載入後仍需要密碼。';
-
-  @override
-  String get dashboard_tor_help_download_qr_label => '掃描前往 Tor Browser 下載頁';
-
-  @override
-  String get dashboard_tor_help_close => '知道了';
-
-  @override
   String get surveillance_general_battery_warning => '哨兵模式啟用期間會額外消耗12V電瓶電量。';
 
   @override
   String get surveillance_general_camera_contention_warning =>
       '目前有其他應用程式正在使用攝影機。';
+
+  @override
+  String get pairing_title => '配對裝置';
+
+  @override
+  String get pairing_scan_hint => '使用手機或電腦上的 BladeWatch 應用程式掃描。此代碼僅能使用一次。';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time 後到期';
+  }
+
+  @override
+  String get pairing_expired => '此代碼已過期。';
+
+  @override
+  String get pairing_new_code => '新代碼';
+
+  @override
+  String get pairing_remote_note => '配對會開啟這輛車的遠端存取。';
+
+  @override
+  String get pairing_lan_title => '透過此 Wi-Fi 直接連線';
+
+  @override
+  String get pairing_lan_body =>
+      '與車輛在同一個 Wi-Fi 的已配對裝置會直接以加密方式連線，不經過網際網路。在您開啟前保持關閉。';
+
+  @override
+  String get pairing_devices_title => '已配對的裝置';
+
+  @override
+  String get pairing_devices_empty => '尚未配對任何裝置。';
+
+  @override
+  String get pairing_remove => '移除';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '要移除 $name 嗎？';
+  }
+
+  @override
+  String get pairing_remove_confirm_body => '它會立即失去存取權限。您的其他裝置不受影響。';
+
+  @override
+  String get pairing_error => '攝影機服務沒有回應。請再試一次。';
+
+  @override
+  String get daemon_name_pear => '遠端存取 (Pear)';
+
+  @override
+  String get pear_status_reachable => '可從任何地方存取';
+
+  @override
+  String get pear_status_unreachable => '無法存取：未連線至 Pear 網路';
+
+  @override
+  String get pear_status_unknown => '存取狀態不明';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已連線 $count 台裝置',
+      zero: '沒有已連線的裝置',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '上次連線：$time';
+  }
+
+  @override
+  String get pear_tile_off => '關閉';
+
+  @override
+  String get trips_cost_total => '總費用';
+
+  @override
+  String get trips_cost_no_rate => '請在行程設定中設定電價以查看費用。';
+
+  @override
+  String get trips_cost_mixed_currency => '行程費用使用了多種貨幣，因此不顯示總計。';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return '檔位 $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return '模式：$mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return '自動駐車：$state';
+  }
+
+  @override
+  String get auto_hold_disabled => '關';
+
+  @override
+  String get auto_hold_enabled => '開';
+
+  @override
+  String get auto_hold_active => '駐車中';
 }

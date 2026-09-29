@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 
-import '../../gen/bladewatch/v1/recordings.pb.dart';
-import '../../gen/bladewatch/v1/system.pb.dart';
-import '../../gen/bladewatch/v1/trips.pb.dart';
-import '../../platform/auth_channel.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
+import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import '../../platform/daemon_channel.dart';
-import '../../rpc/services/recordings_service_client.dart';
-import '../../rpc/services/system_service_client.dart';
-import '../../rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
+import '../../util/recording_state.dart';
 import 'dashboard_models.dart';
 import '../../shell/disposed_safe_notifier.dart';
 
@@ -25,50 +25,37 @@ import '../../shell/disposed_safe_notifier.dart';
 /// - **Today's recording count** comes from `RecordingsService.ListRecordings`
 ///   (`date: <today>`)'s `total` field over RPC, not a local directory walk
 ///   (`RecordingScanner`) — the daemon already exposes exactly this count.
-/// - **Recording-in-progress** and **device id** come from
-///   `SystemService.GetStatus()`'s `recording`/`deviceId` fields — the native
-///   fragment gets these from `RecordingViewModel`/`DeviceIdGenerator`
-///   instead (ADB- and SharedPreferences-based), which have no IPC
-///   equivalent; `GetStatus` already exposes both as a byproduct of the same
-///   call, and is the daemon's own canonical device id (the one
-///   `AuthManager`'s JWT `sub` claim uses), not a UI-only label like
-///   `DeviceIdGenerator`'s.
-/// - **The Tor onion URL** reaches this controller through [tunnelStatusSource],
-///   wired in `main.dart` to `DaemonChannel.tunnelStatus` (the daemon's
-///   `tunnelStatus` IPC command, BladeWatch-m1po). Native reads it from an
-///   ADB-launched process's stdout and caches it in app-private
-///   `SharedPreferences`, neither of which this APK can reach; the daemon reads
-///   tor's own files instead, and only reports a URL while the tunnel process is
-///   actually alive. The injected default still reports "no tunnel", which keeps
-///   every test free of a platform channel.
+/// - **Recording-in-progress** comes from `SystemService.GetStatus()`'s
+///   `recording` field — the native fragment got it from `RecordingViewModel`
+///   instead (ADB-based), which has no IPC equivalent.
+///
+/// The native connect card (the tunnel's QR code, device id and the web app's access code) is
+/// gone with tor (BladeWatch-rdtj.12): a companion pairs through the pairing dialog instead.
 class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   DashboardController({
     required TripsServiceClient tripsService,
     required RecordingsServiceClient recordingsService,
     required SystemServiceClient systemService,
     required DaemonChannel daemonChannel,
-    required AuthChannel authChannel,
-    Future<TunnelStatus> Function() tunnelStatusSource = _noTunnel,
-  })  : _tunnelStatusSource = tunnelStatusSource, // ignore: prefer_initializing_formals
-        _tripsService = tripsService, // ignore: prefer_initializing_formals
+  })  : _tripsService = tripsService, // ignore: prefer_initializing_formals
         _recordingsService = recordingsService, // ignore: prefer_initializing_formals
         _systemService = systemService, // ignore: prefer_initializing_formals
-        _daemonChannel = daemonChannel, // ignore: prefer_initializing_formals
-        _authChannel = authChannel; // ignore: prefer_initializing_formals
-
-  static Future<TunnelStatus> _noTunnel() async => const TunnelStatus(running: false);
-
-  static const int minAccessCodeLength = 12;
+        _daemonChannel = daemonChannel; // ignore: prefer_initializing_formals
 
   final TripsServiceClient _tripsService;
   final RecordingsServiceClient _recordingsService;
   final SystemServiceClient _systemService;
   final DaemonChannel _daemonChannel;
-  final AuthChannel _authChannel;
-  final Future<TunnelStatus> Function() _tunnelStatusSource;
 
   TripStatsState _tripStats = const TripStatsState.loading();
   TripStatsState get tripStats => _tripStats;
+
+  DriveInfo _drive = const DriveInfo();
+  DriveInfo get drive => _drive;
+
+  /// Charge and fuel now, for THIS WEEK (BladeWatch-4zr7).
+  EnergyState _energy = const EnergyState.unavailable();
+  EnergyState get energy => _energy;
 
   RecordingsMetricState _recordingsMetric = const RecordingsMetricState.loading();
   RecordingsMetricState get recordingsMetric => _recordingsMetric;
@@ -79,66 +66,97 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
   VehicleTileState _vehicleTile = const VehicleTileState.loading();
   VehicleTileState get vehicleTile => _vehicleTile;
 
-  AccessCodeState _accessCode = const AccessCodeState.loading();
-  AccessCodeState get accessCode => _accessCode;
-
-  TunnelState _tunnel = const TunnelState.loading();
-  TunnelState get tunnel => _tunnel;
-
-  /// The daemon's canonical device id (same identity `AuthManager`'s JWT
-  /// `sub` claim uses) — see this class's doc comment for why the Flutter
-  /// port sources it from `GetStatus` rather than native's ADB-based
-  /// `DeviceIdGenerator`. Null until the first successful `GetStatus` call.
-  String? _deviceId;
-  String? get deviceId => _deviceId;
+  /// BladeWatch-rdtj.17: the Pear peer, which the Remote access tile reports while it is on.
+  PearStatus _pear = PearStatus.unknown;
+  PearStatus get pear => _pear;
 
   /// Refreshes every tile. Each data source is independently try/caught so
   /// one RPC/channel failure never blocks the others from updating — mirrors
   /// the native fragment's per-tile `catch (_: Throwable) {}` pattern.
   /// Notifies listeners exactly once after everything settles.
-  Future<void> refresh() async {
+  ///
+  /// [includeTrips] false leaves the week's trips out: the screen reloads those once a minute
+  /// through [refreshTrips], not on every 15 s tick.
+  Future<void> refresh({bool includeTrips = true}) async {
     await Future.wait([
-      _refreshTripStats(),
+      if (includeTrips) _refreshTripStats(),
       _refreshRecordingsAndDaemonState(),
       _refreshDaemonsSummary(),
       _refreshVehicleTile(),
-      _refreshAccessCode(),
-      _refreshTunnel(),
+      _refreshPear(),
     ]);
     notifyListeners();
   }
 
+  /// The week's trips and costs alone (the screen calls this once a minute).
+  Future<void> refreshTrips() async {
+    await _refreshTripStats();
+    notifyListeners();
+  }
+
+  /// Gear, drive mode, Auto Hold and EV/HEV change under the driver's hand, so the screen reads
+  /// them on their own short cycle: through [refresh] a change waited for the slowest tile of the
+  /// 15 s reload, and the owner saw EV/HEV and Auto Hold never move (BladeWatch-7zp9). The same
+  /// status carries THIS WEEK's charge and fuel, so they move on this cycle too, for free.
+  Future<void> refreshDrive() async {
+    try {
+      final status = await _systemService.getStatus(GetStatusRequest());
+      final drive = _driveOf(status);
+      final energy = EnergyState.of(status);
+      if (drive == _drive && energy == _energy) return;
+      _drive = drive;
+      _energy = energy;
+      notifyListeners();
+    } catch (_) {
+      // Keep what is shown; the next tick or the full refresh tries again.
+    }
+  }
+
+  static DriveInfo _driveOf(GetStatusResponse status) {
+    String label(String v) => v.isEmpty ? DriveInfo.unknown : v;
+    final d = status.driveStatus;
+    return DriveInfo(
+      gear: label(d.gear),
+      driveMode: label(d.driveMode),
+      autoHold: label(d.autoHold),
+      energyMode: label(d.energyMode),
+    );
+  }
+
   Future<void> _refreshTripStats() async {
     try {
-      final response = await _tripsService.listTrips(ListTripsRequest(days: 7, limit: 100));
+      // Every trip of the week, not the first page: the costs are a sum (BladeWatch-39d2).
+      final trips = await listTripsInPeriod(_tripsService.listTrips, 7);
       var distanceKm = 0.0;
       var durationSeconds = 0;
-      for (final trip in response.trips) {
+      for (final trip in trips) {
         distanceKm += trip.distanceKm;
         durationSeconds += trip.durationSeconds;
       }
       _tripStats = TripStatsState(
         loading: false,
         available: true,
-        tripCount: response.trips.length,
+        tripCount: trips.length,
         totalDistanceKm: distanceKm,
         totalDurationSeconds: durationSeconds,
+        costs: TripCosts.of(trips),
       );
     } catch (_) {
       _tripStats = const TripStatsState.unavailable();
     }
   }
 
-  // GetStatus feeds both the recordings tile's isRecording flag and the
-  // Connect card's device-id label, so it's fetched once and shared.
+  // GetStatus feeds the recordings tile's isRecording flag, the drive chips and THIS WEEK's charge
+  // and fuel, so it's fetched once and shared.
   Future<void> _refreshRecordingsAndDaemonState() async {
     bool isRecording = false;
     try {
       final status = await _systemService.getStatus(GetStatusRequest());
-      isRecording = status.recording.isNotEmpty;
-      if (status.deviceId.isNotEmpty) _deviceId = status.deviceId;
+      isRecording = status.isRecordingNow;
+      _drive = _driveOf(status);
+      _energy = EnergyState.of(status);
     } catch (_) {
-      // Leave isRecording/deviceId at their defaults; the count fetch below is independent.
+      // Leave isRecording at its default; the count fetch below is independent.
     }
 
     try {
@@ -172,63 +190,12 @@ class DashboardController extends ChangeNotifier with DisposedSafeNotifier {
     _vehicleTile = VehicleTileState(loading: false, modelId: modelId);
   }
 
-  Future<void> _refreshAccessCode() async {
+  Future<void> _refreshPear() async {
     try {
-      final secret = await _authChannel.getAccessCode();
-      _accessCode = AccessCodeState(loading: false, secret: secret, visible: _accessCode.visible);
+      _pear = await _daemonChannel.pearStatus();
     } catch (_) {
-      _accessCode = AccessCodeState(loading: false, secret: null, visible: _accessCode.visible);
+      _pear = PearStatus.unknown;
     }
-  }
-
-  Future<void> _refreshTunnel() async {
-    try {
-      final status = await _tunnelStatusSource();
-      final url = status.url;
-      _tunnel = !status.enabled
-          // The owner switched it off. With no tunnel and LAN HTTP off by default the
-          // web app is unreachable, so the whole connect card — QR, address and access
-          // code alike — has nothing to connect to and is hidden.
-          ? const TunnelState(phase: TunnelPhase.disabled)
-          : !status.running
-          ? const TunnelState(phase: TunnelPhase.offline)
-          // Running with no address is tor still bootstrapping — up to ~82 s on a
-          // cold start. Distinct from offline, and distinct from online: there is
-          // nothing to show a QR code for yet.
-          : (url == null || url.isEmpty)
-              ? const TunnelState(phase: TunnelPhase.connecting)
-              : TunnelState(phase: TunnelPhase.online, url: url);
-    } catch (_) {
-      _tunnel = const TunnelState(phase: TunnelPhase.offline);
-    }
-  }
-
-  void toggleAccessCodeVisibility() {
-    _accessCode = AccessCodeState(loading: _accessCode.loading, secret: _accessCode.secret, visible: !_accessCode.visible);
-    notifyListeners();
-  }
-
-  /// Returns true on success (and updates [accessCode] with the new value);
-  /// false if the daemon rejected the write — mirrors
-  /// `JwtMinter.regenerateAccessCode()`'s null-on-failure contract.
-  Future<bool> regenerateAccessCode() async {
-    final newCode = await _authChannel.regenerateAccessCode();
-    if (newCode == null) return false;
-    _accessCode = AccessCodeState(loading: false, secret: newCode, visible: _accessCode.visible);
-    notifyListeners();
-    return true;
-  }
-
-  /// Validates length locally first (same bound as
-  /// `JwtMinter.CUSTOM_SECRET_MIN_LENGTH`) so an obviously-too-short password
-  /// never reaches the channel at all.
-  Future<bool> setCustomAccessCode(String password) async {
-    if (password.length < minAccessCodeLength) return false;
-    final ok = await _authChannel.setCustomAccessCode(password);
-    if (!ok) return false;
-    _accessCode = AccessCodeState(loading: false, secret: password, visible: _accessCode.visible);
-    notifyListeners();
-    return true;
   }
 
   /// `YYYY-MM-DD` — the format the daemon's date filter requires.

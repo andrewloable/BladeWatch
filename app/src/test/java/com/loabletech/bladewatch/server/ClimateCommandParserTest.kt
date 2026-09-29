@@ -93,4 +93,17 @@ class ClimateCommandParserTest {
         val cmd = VehicleControlApiHandler.buildClimateCommand("not_a_real_action", JSONObject("{}"))
         assertNull(cmd)
     }
+
+    // BladeWatch-rdtj.64, measured 2026-09-27: with the AC running the SDK read getAcStartState=1, but
+    // the collector's snapshot still said off, so acOn stayed false and both apps' switches snapped back.
+    @Test
+    fun `acOn follows the live AC state over a stale snapshot`() {
+        val off = 0
+        val unavailable = net.bladewatch.app.byd.BydVehicleData.UNAVAILABLE
+        assertEquals("live on beats a stale off", true, VehicleControlApiHandler.acOn(true, 1, off))
+        assertEquals("live off beats a stale on", false, VehicleControlApiHandler.acOn(true, 0, 1))
+        assertEquals("unreadable live falls back to the snapshot", true, VehicleControlApiHandler.acOn(true, -1, 1))
+        assertEquals("never on while the car is not powered", false, VehicleControlApiHandler.acOn(false, 1, 1))
+        assertNull("omitted when neither is known", VehicleControlApiHandler.acOn(true, -1, unavailable))
+    }
 }

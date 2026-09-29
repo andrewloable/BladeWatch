@@ -48,6 +48,7 @@ private static final long serialVersionUID = 0L;
             net.bladewatch.app.grpc.v1.ClimateStatus.class, net.bladewatch.app.grpc.v1.ClimateStatus.Builder.class);
   }
 
+  private int bitField0_;
   public static final int AC_ON_FIELD_NUMBER = 1;
   private boolean acOn_ = false;
   /**
@@ -68,17 +69,6 @@ private static final long serialVersionUID = 0L;
   @java.lang.Override
   public double getSetpointC() {
     return setpointC_;
-  }
-
-  public static final int INSIDE_TEMP_C_FIELD_NUMBER = 3;
-  private double insideTempC_ = 0D;
-  /**
-   * <code>double inside_temp_c = 3 [json_name = "insideTempC"];</code>
-   * @return The insideTempC.
-   */
-  @java.lang.Override
-  public double getInsideTempC() {
-    return insideTempC_;
   }
 
   public static final int WIND_MODE_FIELD_NUMBER = 4;
@@ -114,6 +104,35 @@ private static final long serialVersionUID = 0L;
     return maxCooling_;
   }
 
+  public static final int OUTSIDE_TEMP_C_FIELD_NUMBER = 7;
+  private double outsideTempC_ = 0D;
+  /**
+   * <pre>
+   * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+   * optional, because 0 C is a real outside temperature.
+   * </pre>
+   *
+   * <code>optional double outside_temp_c = 7 [json_name = "outsideTempC"];</code>
+   * @return Whether the outsideTempC field is set.
+   */
+  @java.lang.Override
+  public boolean hasOutsideTempC() {
+    return ((bitField0_ & 0x00000001) != 0);
+  }
+  /**
+   * <pre>
+   * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+   * optional, because 0 C is a real outside temperature.
+   * </pre>
+   *
+   * <code>optional double outside_temp_c = 7 [json_name = "outsideTempC"];</code>
+   * @return The outsideTempC.
+   */
+  @java.lang.Override
+  public double getOutsideTempC() {
+    return outsideTempC_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -134,9 +153,6 @@ private static final long serialVersionUID = 0L;
     if (java.lang.Double.doubleToRawLongBits(setpointC_) != 0) {
       output.writeDouble(2, setpointC_);
     }
-    if (java.lang.Double.doubleToRawLongBits(insideTempC_) != 0) {
-      output.writeDouble(3, insideTempC_);
-    }
     if (windMode_ != 0) {
       output.writeInt32(4, windMode_);
     }
@@ -145,6 +161,9 @@ private static final long serialVersionUID = 0L;
     }
     if (maxCooling_ != false) {
       output.writeBool(6, maxCooling_);
+    }
+    if (((bitField0_ & 0x00000001) != 0)) {
+      output.writeDouble(7, outsideTempC_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -158,10 +177,6 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.CodedOutputStream
         .computeDoubleSize(2, setpointC_);
     }
-    if (java.lang.Double.doubleToRawLongBits(insideTempC_) != 0) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeDoubleSize(3, insideTempC_);
-    }
     if (windMode_ != 0) {
       size += com.google.protobuf.CodedOutputStream
         .computeInt32Size(4, windMode_);
@@ -173,6 +188,10 @@ private static final long serialVersionUID = 0L;
     if (maxCooling_ != false) {
       size += com.google.protobuf.CodedOutputStream
         .computeBoolSize(6, maxCooling_);
+    }
+    if (((bitField0_ & 0x00000001) != 0)) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeDoubleSize(7, outsideTempC_);
     }
     return size;
   }
@@ -203,15 +222,18 @@ private static final long serialVersionUID = 0L;
     if (java.lang.Double.doubleToLongBits(getSetpointC())
         != java.lang.Double.doubleToLongBits(
             other.getSetpointC())) return false;
-    if (java.lang.Double.doubleToLongBits(getInsideTempC())
-        != java.lang.Double.doubleToLongBits(
-            other.getInsideTempC())) return false;
     if (getWindMode()
         != other.getWindMode()) return false;
     if (getFanLevel()
         != other.getFanLevel()) return false;
     if (getMaxCooling()
         != other.getMaxCooling()) return false;
+    if (hasOutsideTempC() != other.hasOutsideTempC()) return false;
+    if (hasOutsideTempC()) {
+      if (java.lang.Double.doubleToLongBits(getOutsideTempC())
+          != java.lang.Double.doubleToLongBits(
+              other.getOutsideTempC())) return false;
+    }
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -229,9 +251,6 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + SETPOINT_C_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
         java.lang.Double.doubleToLongBits(getSetpointC()));
-    hash = (37 * hash) + INSIDE_TEMP_C_FIELD_NUMBER;
-    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-        java.lang.Double.doubleToLongBits(getInsideTempC()));
     hash = (37 * hash) + WIND_MODE_FIELD_NUMBER;
     hash = (53 * hash) + getWindMode();
     hash = (37 * hash) + FAN_LEVEL_FIELD_NUMBER;
@@ -239,6 +258,11 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + MAX_COOLING_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
         getMaxCooling());
+    if (hasOutsideTempC()) {
+      hash = (37 * hash) + OUTSIDE_TEMP_C_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          java.lang.Double.doubleToLongBits(getOutsideTempC()));
+    }
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -372,10 +396,10 @@ private static final long serialVersionUID = 0L;
       bitField0_ = 0;
       acOn_ = false;
       setpointC_ = 0D;
-      insideTempC_ = 0D;
       windMode_ = 0;
       fanLevel_ = 0;
       maxCooling_ = false;
+      outsideTempC_ = 0D;
       return this;
     }
 
@@ -416,17 +440,20 @@ private static final long serialVersionUID = 0L;
         result.setpointC_ = setpointC_;
       }
       if (((from_bitField0_ & 0x00000004) != 0)) {
-        result.insideTempC_ = insideTempC_;
-      }
-      if (((from_bitField0_ & 0x00000008) != 0)) {
         result.windMode_ = windMode_;
       }
-      if (((from_bitField0_ & 0x00000010) != 0)) {
+      if (((from_bitField0_ & 0x00000008) != 0)) {
         result.fanLevel_ = fanLevel_;
       }
-      if (((from_bitField0_ & 0x00000020) != 0)) {
+      if (((from_bitField0_ & 0x00000010) != 0)) {
         result.maxCooling_ = maxCooling_;
       }
+      int to_bitField0_ = 0;
+      if (((from_bitField0_ & 0x00000020) != 0)) {
+        result.outsideTempC_ = outsideTempC_;
+        to_bitField0_ |= 0x00000001;
+      }
+      result.bitField0_ |= to_bitField0_;
     }
 
     @java.lang.Override
@@ -447,9 +474,6 @@ private static final long serialVersionUID = 0L;
       if (java.lang.Double.doubleToRawLongBits(other.getSetpointC()) != 0) {
         setSetpointC(other.getSetpointC());
       }
-      if (java.lang.Double.doubleToRawLongBits(other.getInsideTempC()) != 0) {
-        setInsideTempC(other.getInsideTempC());
-      }
       if (other.getWindMode() != 0) {
         setWindMode(other.getWindMode());
       }
@@ -458,6 +482,9 @@ private static final long serialVersionUID = 0L;
       }
       if (other.getMaxCooling() != false) {
         setMaxCooling(other.getMaxCooling());
+      }
+      if (other.hasOutsideTempC()) {
+        setOutsideTempC(other.getOutsideTempC());
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -495,26 +522,26 @@ private static final long serialVersionUID = 0L;
               bitField0_ |= 0x00000002;
               break;
             } // case 17
-            case 25: {
-              insideTempC_ = input.readDouble();
-              bitField0_ |= 0x00000004;
-              break;
-            } // case 25
             case 32: {
               windMode_ = input.readInt32();
-              bitField0_ |= 0x00000008;
+              bitField0_ |= 0x00000004;
               break;
             } // case 32
             case 40: {
               fanLevel_ = input.readInt32();
-              bitField0_ |= 0x00000010;
+              bitField0_ |= 0x00000008;
               break;
             } // case 40
             case 48: {
               maxCooling_ = input.readBool();
-              bitField0_ |= 0x00000020;
+              bitField0_ |= 0x00000010;
               break;
             } // case 48
+            case 57: {
+              outsideTempC_ = input.readDouble();
+              bitField0_ |= 0x00000020;
+              break;
+            } // case 57
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -596,38 +623,6 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
-    private double insideTempC_ ;
-    /**
-     * <code>double inside_temp_c = 3 [json_name = "insideTempC"];</code>
-     * @return The insideTempC.
-     */
-    @java.lang.Override
-    public double getInsideTempC() {
-      return insideTempC_;
-    }
-    /**
-     * <code>double inside_temp_c = 3 [json_name = "insideTempC"];</code>
-     * @param value The insideTempC to set.
-     * @return This builder for chaining.
-     */
-    public Builder setInsideTempC(double value) {
-
-      insideTempC_ = value;
-      bitField0_ |= 0x00000004;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>double inside_temp_c = 3 [json_name = "insideTempC"];</code>
-     * @return This builder for chaining.
-     */
-    public Builder clearInsideTempC() {
-      bitField0_ = (bitField0_ & ~0x00000004);
-      insideTempC_ = 0D;
-      onChanged();
-      return this;
-    }
-
     private int windMode_ ;
     /**
      * <code>int32 wind_mode = 4 [json_name = "windMode"];</code>
@@ -645,7 +640,7 @@ private static final long serialVersionUID = 0L;
     public Builder setWindMode(int value) {
 
       windMode_ = value;
-      bitField0_ |= 0x00000008;
+      bitField0_ |= 0x00000004;
       onChanged();
       return this;
     }
@@ -654,7 +649,7 @@ private static final long serialVersionUID = 0L;
      * @return This builder for chaining.
      */
     public Builder clearWindMode() {
-      bitField0_ = (bitField0_ & ~0x00000008);
+      bitField0_ = (bitField0_ & ~0x00000004);
       windMode_ = 0;
       onChanged();
       return this;
@@ -677,7 +672,7 @@ private static final long serialVersionUID = 0L;
     public Builder setFanLevel(int value) {
 
       fanLevel_ = value;
-      bitField0_ |= 0x00000010;
+      bitField0_ |= 0x00000008;
       onChanged();
       return this;
     }
@@ -686,7 +681,7 @@ private static final long serialVersionUID = 0L;
      * @return This builder for chaining.
      */
     public Builder clearFanLevel() {
-      bitField0_ = (bitField0_ & ~0x00000010);
+      bitField0_ = (bitField0_ & ~0x00000008);
       fanLevel_ = 0;
       onChanged();
       return this;
@@ -709,7 +704,7 @@ private static final long serialVersionUID = 0L;
     public Builder setMaxCooling(boolean value) {
 
       maxCooling_ = value;
-      bitField0_ |= 0x00000020;
+      bitField0_ |= 0x00000010;
       onChanged();
       return this;
     }
@@ -718,8 +713,68 @@ private static final long serialVersionUID = 0L;
      * @return This builder for chaining.
      */
     public Builder clearMaxCooling() {
-      bitField0_ = (bitField0_ & ~0x00000020);
+      bitField0_ = (bitField0_ & ~0x00000010);
       maxCooling_ = false;
+      onChanged();
+      return this;
+    }
+
+    private double outsideTempC_ ;
+    /**
+     * <pre>
+     * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+     * optional, because 0 C is a real outside temperature.
+     * </pre>
+     *
+     * <code>optional double outside_temp_c = 7 [json_name = "outsideTempC"];</code>
+     * @return Whether the outsideTempC field is set.
+     */
+    @java.lang.Override
+    public boolean hasOutsideTempC() {
+      return ((bitField0_ & 0x00000020) != 0);
+    }
+    /**
+     * <pre>
+     * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+     * optional, because 0 C is a real outside temperature.
+     * </pre>
+     *
+     * <code>optional double outside_temp_c = 7 [json_name = "outsideTempC"];</code>
+     * @return The outsideTempC.
+     */
+    @java.lang.Override
+    public double getOutsideTempC() {
+      return outsideTempC_;
+    }
+    /**
+     * <pre>
+     * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+     * optional, because 0 C is a real outside temperature.
+     * </pre>
+     *
+     * <code>optional double outside_temp_c = 7 [json_name = "outsideTempC"];</code>
+     * @param value The outsideTempC to set.
+     * @return This builder for chaining.
+     */
+    public Builder setOutsideTempC(double value) {
+
+      outsideTempC_ = value;
+      bitField0_ |= 0x00000020;
+      onChanged();
+      return this;
+    }
+    /**
+     * <pre>
+     * Outside air, BYDAutoInstrumentDevice.getOutCarTemperature(). Absent when unavailable --
+     * optional, because 0 C is a real outside temperature.
+     * </pre>
+     *
+     * <code>optional double outside_temp_c = 7 [json_name = "outsideTempC"];</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearOutsideTempC() {
+      bitField0_ = (bitField0_ & ~0x00000020);
+      outsideTempC_ = 0D;
       onChanged();
       return this;
     }

@@ -1,6 +1,6 @@
 # BladeWatch in-car UI (Flutter)
 
-The in-car UI for BladeWatch, shipped as its own APK — `net.bladewatch.flutter`
+The in-car UI for BladeWatch, shipped as its own APK — `net.bladewatch.incarapp`
 — alongside `net.bladewatch.app`, which hosts the daemons, camera/surveillance
 pipeline, HTTP + IPC servers and BYD integration.
 
@@ -32,9 +32,7 @@ for *plugins* only; on an application Flutter rejects it outright and
 `flutter pub get` fails with `Unexpected child "platforms" found under
 "flutter"`. Hence the Gradle task.
 
-Note that `web/` at the **repository root** is the Angular SPA — a separate,
-browser-targeted project that is tracked and unrelated to Flutter's `web`
-platform directory. The guard only looks inside `flutter_ui/`.
+The guard only looks inside `flutter_ui/`.
 
 ## Day-to-day
 

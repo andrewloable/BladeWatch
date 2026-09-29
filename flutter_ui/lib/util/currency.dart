@@ -14,7 +14,7 @@ import 'package:intl/intl.dart';
 class Currency {
   Currency._();
 
-  /// Fallback when nothing is configured. Matches the web UI and the daemon.
+  /// Fallback when nothing is configured. Matches the daemon.
   static const String defaultCode = 'USD';
 
   static const String _assetPath = 'assets/iso4217.json';

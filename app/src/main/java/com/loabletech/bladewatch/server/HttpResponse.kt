@@ -1,6 +1,8 @@
 package net.bladewatch.app.server
 
 import org.json.JSONObject
+import net.bladewatch.app.daemon.OpenMediaFiles
+import net.bladewatch.app.recording.Mp4Faststart
 import java.io.File
 import java.io.FileInputStream
 import java.io.OutputStream
@@ -49,19 +51,6 @@ object HttpResponse {
 
     @JvmStatic
     @Throws(Exception::class)
-    fun sendHtml(out: OutputStream, html: String) {
-        val body = html.toByteArray(StandardCharsets.UTF_8)
-        val headers = "HTTP/1.1 200 OK\r\n" +
-            "Content-Type: text/html; charset=utf-8\r\n" +
-            "Content-Length: " + body.size + "\r\n" +
-            connectionHeader(out) + "\r\n"
-        out.write(headers.toByteArray())
-        out.write(body)
-        out.flush()
-    }
-
-    @JvmStatic
-    @Throws(Exception::class)
     fun sendJson(out: OutputStream, json: String) {
         val body = json.toByteArray(StandardCharsets.UTF_8)
         val headers = "HTTP/1.1 200 OK\r\n" +
@@ -78,17 +67,6 @@ object HttpResponse {
     @Throws(Exception::class)
     fun sendJsonSuccess(out: OutputStream) {
         sendJson(out, "{\"success\":true}")
-    }
-
-    /**
-     * CORS preflight response for OPTIONS requests. Browsers send OPTIONS before a cross-origin
-     * POST/PUT/DELETE with a JSON content-type.
-     */
-    @JvmStatic
-    @Throws(Exception::class)
-    fun sendCorsPreflightResponse(out: OutputStream) {
-        sendError(out, 403, "CORS preflight denied")
-        out.flush()
     }
 
     @JvmStatic
@@ -151,76 +129,6 @@ object HttpResponse {
         out.flush()
     }
 
-    /** 302 redirect. */
-    @JvmStatic
-    @Throws(Exception::class)
-    fun sendRedirect(out: OutputStream, location: String) {
-        val response = "HTTP/1.1 302 Found\r\n" +
-            "Location: " + location + "\r\n" +
-            "Content-Length: 0\r\n" +
-            connectionHeader(out) + "\r\n"
-        out.write(response.toByteArray())
-        out.flush()
-    }
-
-    /** JSON response with a single Set-Cookie header for the JWT. */
-    @JvmStatic
-    @JvmOverloads
-    @Throws(Exception::class)
-    fun sendJsonWithCookie(
-        out: OutputStream,
-        json: String,
-        cookieName: String,
-        cookieValue: String,
-        maxAgeSeconds: Int,
-        secure: Boolean = false
-    ) {
-        sendJsonWithCookies(
-            out, json,
-            arrayOf(buildCookie(cookieName, cookieValue, maxAgeSeconds, true, secure))
-        )
-    }
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun sendJsonWithCookies(out: OutputStream, json: String, cookies: Array<String?>?) {
-        val body = json.toByteArray(StandardCharsets.UTF_8)
-        val headers = "HTTP/1.1 200 OK\r\n" +
-            "Content-Type: application/json\r\n" +
-            buildSetCookieHeaders(cookies) +
-            "Content-Length: " + body.size + "\r\n" +
-            connectionHeader(out) + "\r\n"
-        out.write(headers.toByteArray())
-        out.write(body)
-        out.flush()
-    }
-
-    private fun buildCookie(
-        cookieName: String,
-        cookieValue: String,
-        maxAgeSeconds: Int,
-        httpOnly: Boolean,
-        secure: Boolean
-    ): String {
-        val cookie = StringBuilder()
-        cookie.append(cookieName).append("=").append(cookieValue)
-            .append("; Path=/; Max-Age=").append(maxAgeSeconds)
-            .append("; SameSite=Lax")
-        if (httpOnly) cookie.append("; HttpOnly")
-        if (secure) cookie.append("; Secure")
-        return cookie.toString()
-    }
-
-    private fun buildSetCookieHeaders(cookies: Array<String?>?): String {
-        if (cookies == null || cookies.isEmpty()) return ""
-        val sb = StringBuilder()
-        for (cookie in cookies) {
-            if (cookie.isNullOrEmpty()) continue
-            sb.append("Set-Cookie: ").append(cookie).append("\r\n")
-        }
-        return sb.toString()
-    }
-
     /**
      * Cache directive used for finalized event recordings. Filenames are unique-per-event and the
      * file is immutable once renamed from .mp4.tmp, so a long max-age plus immutable lets the
@@ -234,10 +142,23 @@ object HttpResponse {
      * behaviour, so a /video/ caller opting out of caching (e.g. a live stream) just calls the
      * no-ETag version.
      */
+    /**
+     * [block] with [file] registered in OpenMediaFiles, so an SD-card unmount can close it under a
+     * stalled stream (rdtj.66); closed and unregistered after, as `use` would.
+     */
+    private inline fun <T : java.io.Closeable, R> tracked(file: T, block: (T) -> R): R {
+        OpenMediaFiles.track(file)
+        try {
+            return file.use(block)
+        } finally {
+            OpenMediaFiles.untrack(file)
+        }
+    }
+
     @JvmStatic
     @JvmOverloads
     @Throws(Exception::class)
-    fun sendVideo(out: OutputStream, file: File, etag: String? = null) {
+    fun sendVideo(out: OutputStream, file: File, etag: String? = null, view: Mp4Faststart.View? = null) {
         if (!file.exists()) {
             sendError(out, 404, "File not found")
             return
@@ -246,7 +167,7 @@ object HttpResponse {
         val headers = StringBuilder()
         headers.append("HTTP/1.1 200 OK\r\n")
             .append("Content-Type: video/mp4\r\n")
-            .append("Content-Length: ").append(file.length()).append("\r\n")
+            .append("Content-Length: ").append(view?.length ?: file.length()).append("\r\n")
             .append("Accept-Ranges: bytes\r\n")
         if (etag != null) {
             headers.append("Cache-Control: ").append(VIDEO_CACHE_CONTROL).append("\r\n")
@@ -257,8 +178,16 @@ object HttpResponse {
         headers.append(connectionHeader(out)).append("\r\n")
         out.write(headers.toString().toByteArray())
 
+        // BladeWatch-rdtj.28: the faststart layout when there is one, index first (rdtj.63: or a
+        // fragmented clip rebuilt with a full index, which changes the length).
+        if (view != null) {
+            tracked(RandomAccessFile(file, "r")) { view.write(it, 0, view.length, out) }
+            out.flush()
+            return
+        }
+
         // Stream the file in chunks
-        FileInputStream(file).use { fis ->
+        tracked(FileInputStream(file)) { fis ->
             val buffer = ByteArray(16384)
             while (true) {
                 val count = fis.read(buffer)
@@ -277,14 +206,16 @@ object HttpResponse {
         file: File,
         start: Long,
         endRequested: Long,
-        etag: String? = null
+        etag: String? = null,
+        view: Mp4Faststart.View? = null
     ) {
         if (!file.exists()) {
             sendError(out, 404, "File not found")
             return
         }
 
-        val fileLength = file.length()
+        // A view's length is the one served: a defragmented clip (rdtj.63) is not the file's size.
+        val fileLength = view?.length ?: file.length()
         if (start < 0 || start >= fileLength) {
             sendError(out, 416, "Range Not Satisfiable")
             return
@@ -314,7 +245,13 @@ object HttpResponse {
         headers.append(connectionHeader(out)).append("\r\n")
         out.write(headers.toString().toByteArray())
 
-        RandomAccessFile(file, "r").use { raf ->
+        if (view != null) {
+            tracked(RandomAccessFile(file, "r")) { view.write(it, start, contentLength, out) }
+            out.flush()
+            return
+        }
+
+        tracked(RandomAccessFile(file, "r")) { raf ->
             raf.seek(start)
             val buffer = ByteArray(16384)
             var remaining = contentLength

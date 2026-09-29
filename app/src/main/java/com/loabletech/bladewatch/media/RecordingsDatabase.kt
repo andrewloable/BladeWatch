@@ -7,7 +7,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 
 /**
- * H2 embedded database that indexes recordings / surveillance / proximity clips so the web UI can
+ * H2 embedded database that indexes recordings / surveillance / proximity clips so the apps can
  * list them without re-scanning the filesystem and re-parsing every JSON sidecar on each poll.
  *
  * Mirrors `TripDatabase`'s connection handling (FILE_LOCK=SOCKET, DB_CLOSE_ON_EXIT=FALSE,

@@ -48,7 +48,6 @@ object PermissionGranter {
         "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.DEVICE_ACC",
         "android.permission.DEVICE_POWER",
         "android.permission.VIBRATE",
 

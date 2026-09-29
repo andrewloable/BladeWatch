@@ -11,53 +11,15 @@ import com.connectrpc.ResponseMessage
 import com.connectrpc.StreamType
 
 /**
- *  AuthService exposes login, logout, and status endpoints.
+ *  AuthService: cache invalidation only. The web login (Login, Logout, GetAuthStatus over
+ *  /auth/token, /auth/logout, /auth/status) was removed with the web app (BladeWatch-rdtj.22);
+ *  a companion pairs and logs in over /auth/pair and /auth/companion.
  *
- *  HTTP mapping:
- *    Login                POST /auth/token
- *    Logout               POST /auth/logout
- *    GetAuthStatus        GET  /auth/status
  *    InvalidateAuthCache  TCP  auth_invalidate (calls AuthManager.invalidateCache() directly)
  */
 public class AuthServiceClient(
   private val client: ProtocolClientInterface,
 ) : AuthServiceClientInterface {
-  override suspend fun login(request: LoginRequest, headers: Headers): ResponseMessage<LoginResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.AuthService/Login",
-      net.bladewatch.app.grpc.v1.LoginRequest::class,
-      net.bladewatch.app.grpc.v1.LoginResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
-  override suspend fun logout(request: LogoutRequest, headers: Headers): ResponseMessage<LogoutResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.AuthService/Logout",
-      net.bladewatch.app.grpc.v1.LogoutRequest::class,
-      net.bladewatch.app.grpc.v1.LogoutResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
-  override suspend fun getAuthStatus(request: GetAuthStatusRequest, headers: Headers): ResponseMessage<GetAuthStatusResponse> = client.unary(
-    request,
-    headers,
-    MethodSpec(
-    "bladewatch.v1.AuthService/GetAuthStatus",
-      net.bladewatch.app.grpc.v1.GetAuthStatusRequest::class,
-      net.bladewatch.app.grpc.v1.GetAuthStatusResponse::class,
-      StreamType.UNARY,
-    ),
-  )
-
-
   override suspend fun invalidateAuthCache(request: InvalidateAuthCacheRequest, headers: Headers): ResponseMessage<InvalidateAuthCacheResponse> = client.unary(
     request,
     headers,

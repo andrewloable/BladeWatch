@@ -28,6 +28,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get action_select_all_short => '모두';
 
   @override
+  String get action_select => '선택';
+
+  @override
+  String get action_deselect_all => '모두 선택 해제';
+
+  @override
   String get action_delete => '삭제';
 
   @override
@@ -53,15 +59,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get cd_qr_code => 'QR 코드';
-
-  @override
-  String get cd_show_hide_token => '표시/숨기 표기';
-
-  @override
-  String get cd_copy_token => '토큰 복사';
-
-  @override
-  String get cd_copy_url => 'URL 복사';
 
   @override
   String get cd_clear_logs => '로그 지우기';
@@ -179,47 +176,16 @@ class AppLocalizationsKo extends AppLocalizations {
       '자동으로 부팅 시마다 차량 트림에 맞는 카메라를 선택합니다. 카메라 1 = BYD Seal, 카메라 0 = Atto 트림. 카메라 ID를 변경한 후 설정을 적용하려면 카메라 서비스를 재시작하세요.';
 
   @override
-  String get dashboard_scan_to_connect => '연결하기 위해 스캔';
-
-  @override
   String get dashboard_qr_waiting => '터널을 기다렸어';
 
   @override
   String get dashboard_daemons_running_default => '0/5 실행 중';
 
   @override
-  String get dashboard_device_id_loading => '…';
-
-  @override
-  String get dashboard_access_code => '액세스 코드';
-
-  @override
-  String get dashboard_token_masked => '••••••••';
-
-  @override
   String get dashboard_regenerate_token => '재생식 표본';
 
   @override
-  String get dashboard_set_password => '비밀번호 설정';
-
-  @override
   String get cd_set_password => '사용자 지정 비밀번호 설정';
-
-  @override
-  String get dialog_set_password_title => '사용자 지정 비밀번호 설정';
-
-  @override
-  String get dialog_set_password_message =>
-      '새 접근 비밀번호를 입력하세요. 자동 생성된 토큰을 대체합니다.';
-
-  @override
-  String get dialog_set_password_hint => '새 비밀번호 (최소 12자)';
-
-  @override
-  String get toast_password_set => '비밀번호가 변경되었습니다';
-
-  @override
-  String get toast_password_too_short => '비밀번호는 최소 12자 이상이어야 합니다';
 
   @override
   String get toast_password_save_failed => '비밀번호 저장 실패 — 서비스가 준비되지 않았습니다';
@@ -523,6 +489,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get recording_lib_date_all_days => '모든 날짜';
 
   @override
+  String get recording_lib_type_all => '전체';
+
+  @override
   String get cd_clear_date_filter => '모든 요일 표시';
 
   @override
@@ -566,9 +535,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get daemon_name_acc => 'ACC 감시';
-
-  @override
-  String get daemon_name_tor => 'Tor Tunnel';
 
   @override
   String get daemons_hero_title => '배경 서비스';
@@ -785,9 +751,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get reset_label_trip_files => '여행 텔레메트리 파일';
 
   @override
-  String get toast_access_code_copied => '액세스 코드를 복사';
-
-  @override
   String get dialog_regenerate_token_title => '재생식 표본';
 
   @override
@@ -810,21 +773,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get toast_token_regenerated => '토큰 재생';
 
   @override
-  String get dashboard_no_tunnel => '터널이 통하지 않습니다.';
-
-  @override
-  String get dashboard_starting_tor => 'Tor 터널 시작 중…';
-
-  @override
   String get dashboard_waiting_url => '터널 URL 대기 중…';
 
   @override
   String dashboard_daemons_running(Object arg1, Object arg2) {
     return '$arg1/$arg2 실행 중';
   }
-
-  @override
-  String get tunnel_label_tor => 'Tor';
 
   @override
   String get clip_label_access_code => '액세스 코드';
@@ -1286,11 +1240,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get diagnostics_metric_online => '온라인';
 
   @override
-  String diagnostics_network_tunnel_label(Object arg1) {
-    return '터널 · $arg1';
-  }
-
-  @override
   String diagnostics_network_data_usage_line(Object arg1) {
     return '이번 달 $arg1';
   }
@@ -1691,17 +1640,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dashboard_trips_this_week => '이번 주';
 
   @override
-  String dashboard_trips_count(num arg1) {
-    String _temp0 = intl.Intl.pluralLogic(
-      arg1,
-      locale: localeName,
-      other: '$arg1회 주행',
-      one: '$arg1회 주행',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String dashboard_trips_distance_km(Object arg1) {
     return '$arg1 km';
   }
@@ -1724,6 +1662,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get dashboard_trips_label_time => '주행 시간';
+
+  @override
+  String get dashboard_week_battery => '배터리';
+
+  @override
+  String get dashboard_week_elec_range => 'EV 주행거리';
+
+  @override
+  String get dashboard_week_fuel => '연료';
+
+  @override
+  String get dashboard_week_fuel_range => '연료 주행거리';
 
   @override
   String get dashboard_trips_no_data => '이번 주 기록된 주행이 없습니다';
@@ -1780,7 +1730,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings_section_surveillance_subtitle => '일정, 동작 감도, 객체 감지.';
 
   @override
-  String get settings_section_daemons_subtitle => 'Tor 터널 및 백그라운드 서비스.';
+  String get settings_section_daemons_subtitle => '원격 액세스 (Pear) 및 백그라운드 서비스.';
 
   @override
   String get settings_about_row_title => 'BladeWatch에 대해';
@@ -1922,9 +1872,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get vehicle_tab_climate => '공조';
 
   @override
-  String get vehicle_tab_seats => '좌석';
-
-  @override
   String get vehicle_tab_windows => '창문';
 
   @override
@@ -2005,43 +1952,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String vehicle_inside_temp_fmt(Object arg1) {
-    return '실내: $arg1°C';
+  String vehicle_outside_temp_fmt(Object arg1) {
+    return '외부: $arg1°C';
   }
-
-  @override
-  String get vehicle_seat_driver => '운전석';
-
-  @override
-  String get vehicle_seat_passenger => '조수석';
-
-  @override
-  String get vehicle_seat_no_controls => '이 차량에는 사용 가능한 좌석 제어 기능이 없습니다.';
-
-  @override
-  String vehicle_seat_heat_label(Object arg1) {
-    return '열선 $arg1';
-  }
-
-  @override
-  String vehicle_seat_cool_label(Object arg1) {
-    return '통풍 $arg1';
-  }
-
-  @override
-  String get vehicle_heat_off => '(꺼짐)';
-
-  @override
-  String get vehicle_heat_low => '(약)';
-
-  @override
-  String get vehicle_heat_high => '(강)';
-
-  @override
-  String get vehicle_seat_pos_1 => '위치 1';
-
-  @override
-  String get vehicle_seat_pos_2 => '위치 2';
 
   @override
   String get vehicle_all_windows => '전체 창문';
@@ -2798,41 +2711,123 @@ class AppLocalizationsKo extends AppLocalizations {
   String get surveillance_apply_failed => '저장 실패';
 
   @override
-  String get dashboard_tor_bootstrapping => 'Tor에 연결 중…';
-
-  @override
-  String get dashboard_tor_help_tooltip => '이 주소를 여는 방법';
-
-  @override
-  String get dashboard_tor_help_title => '이 주소 열기';
-
-  @override
-  String get dashboard_tor_help_android =>
-      'Android: Google Play 또는 F-Droid에서 Tor Browser를 설치하고 실행한 뒤 주소를 붙여넣으세요.';
-
-  @override
-  String get dashboard_tor_help_ios =>
-      'iPhone 및 iPad: App Store에서 Onion Browser를 설치하고 실행한 뒤 주소를 붙여넣으세요. iOS용 Tor Browser는 없습니다.';
-
-  @override
-  String get dashboard_tor_help_desktop =>
-      'Windows, macOS, Linux: torproject.org에서 Tor Browser를 내려받아 실행한 뒤 주소를 붙여넣으세요.';
-
-  @override
-  String get dashboard_tor_help_password_note => '페이지가 열린 뒤에도 비밀번호가 필요합니다.';
-
-  @override
-  String get dashboard_tor_help_download_qr_label =>
-      '스캔하여 Tor Browser 다운로드 페이지로 이동';
-
-  @override
-  String get dashboard_tor_help_close => '확인';
-
-  @override
   String get surveillance_general_battery_warning =>
       '센트리 모드가 작동 중일 때는 12V 배터리 전력을 추가로 사용합니다.';
 
   @override
   String get surveillance_general_camera_contention_warning =>
       '지금 다른 앱이 카메라를 사용하고 있습니다.';
+
+  @override
+  String get pairing_title => '기기 페어링';
+
+  @override
+  String get pairing_scan_hint =>
+      '휴대폰이나 컴퓨터의 BladeWatch 앱으로 스캔하세요. 코드는 한 번만 사용할 수 있습니다.';
+
+  @override
+  String pairing_expires_in(String time) {
+    return '$time 후 만료';
+  }
+
+  @override
+  String get pairing_expired => '이 코드는 만료되었습니다.';
+
+  @override
+  String get pairing_new_code => '새 코드';
+
+  @override
+  String get pairing_remote_note => '페어링하면 이 차량의 원격 액세스가 켜집니다.';
+
+  @override
+  String get pairing_lan_title => '이 Wi-Fi에서 직접 연결';
+
+  @override
+  String get pairing_lan_body =>
+      '차량과 같은 Wi-Fi에 있는 페어링된 기기가 인터넷을 거치지 않고 암호화된 상태로 직접 연결합니다. 켜기 전까지는 꺼져 있습니다.';
+
+  @override
+  String get pairing_devices_title => '페어링된 기기';
+
+  @override
+  String get pairing_devices_empty => '아직 페어링된 기기가 없습니다.';
+
+  @override
+  String get pairing_remove => '삭제';
+
+  @override
+  String pairing_remove_confirm_title(String name) {
+    return '$name을(를) 삭제할까요?';
+  }
+
+  @override
+  String get pairing_remove_confirm_body => '즉시 액세스 권한을 잃습니다. 다른 기기는 계속 작동합니다.';
+
+  @override
+  String get pairing_error => '카메라 서비스가 응답하지 않았습니다. 다시 시도하세요.';
+
+  @override
+  String get daemon_name_pear => '원격 액세스 (Pear)';
+
+  @override
+  String get pear_status_reachable => '어디서나 연결 가능';
+
+  @override
+  String get pear_status_unreachable => '연결 불가: Pear 네트워크에 연결되지 않음';
+
+  @override
+  String get pear_status_unknown => '연결 가능 여부 알 수 없음';
+
+  @override
+  String pear_devices_connected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '기기 $count대 연결됨',
+      zero: '연결된 기기 없음',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pear_last_connection(String time) {
+    return '마지막 연결: $time';
+  }
+
+  @override
+  String get pear_tile_off => '꺼짐';
+
+  @override
+  String get trips_cost_total => '총 비용';
+
+  @override
+  String get trips_cost_no_rate => '비용을 보려면 주행 설정에서 전기 요금을 설정하세요.';
+
+  @override
+  String get trips_cost_mixed_currency =>
+      '주행 비용이 여러 통화로 기록되어 있어 합계를 표시하지 않습니다.';
+
+  @override
+  String dashboard_chip_gear(String gear) {
+    return '기어 $gear';
+  }
+
+  @override
+  String dashboard_chip_drive_mode(String mode) {
+    return '모드: $mode';
+  }
+
+  @override
+  String dashboard_chip_auto_hold(String state) {
+    return '오토 홀드: $state';
+  }
+
+  @override
+  String get auto_hold_disabled => '끔';
+
+  @override
+  String get auto_hold_enabled => '켬';
+
+  @override
+  String get auto_hold_active => '유지 중';
 }

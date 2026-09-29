@@ -1,8 +1,8 @@
-import 'package:bladewatch_ui/rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/vehicle_dialog_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../fakes/fake_rpc_client.dart';
+import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 /// BladeWatch-p7vi: this controller lost its whole battery-capacity half.
 ///

@@ -29,16 +29,4 @@ public interface GetCategoriesResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getCategoriesJsonBytes();
-
-  /**
-   * <code>string vapid_public_key = 2 [json_name = "vapidPublicKey"];</code>
-   * @return The vapidPublicKey.
-   */
-  java.lang.String getVapidPublicKey();
-  /**
-   * <code>string vapid_public_key = 2 [json_name = "vapidPublicKey"];</code>
-   * @return The bytes for vapidPublicKey.
-   */
-  com.google.protobuf.ByteString
-      getVapidPublicKeyBytes();
 }

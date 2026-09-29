@@ -1,14 +1,18 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
+import 'dart:math' as math;
+import '../../platform/pairing_channel.dart';
+import '../pairing/pairing_dialog.dart';
 
+import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../gen/l10n/app_localizations.dart';
-import '../../rpc/services/system_service_client.dart';
+import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import '../../shell/route_stubs.dart' show BwRoutes;
 import 'dashboard_controller.dart';
 import 'dashboard_models.dart';
+import '../trips/trip_costs_view.dart';
+import '../trips/trips_models.dart' show formatDistance;
 import 'vehicle_dialog_controller.dart';
 import '../../widgets/bw_choice_chip.dart';
 
@@ -31,18 +35,47 @@ class DashboardScreen extends StatefulWidget {
   final SystemServiceClient systemService;
   final void Function(String route) onNavigate;
 
-  const DashboardScreen({super.key, required this.controller, required this.systemService, required this.onNavigate});
+  /// BladeWatch-rdtj.7: the "Pair a device" action. Null hides it (tests that do not exercise it).
+  final PairingChannel? pairingChannel;
+
+  const DashboardScreen({
+    super.key,
+    required this.controller,
+    required this.systemService,
+    required this.onNavigate,
+    this.pairingChannel,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  /// BladeWatch-rdtj.21: the tiles are status, so they re-read while the page is up. It used to
+  /// load once, and on the head unit "Remote access: Online" stayed on screen after the car had
+  /// lost its network. 15 s: the Pear status it shows is itself refreshed every 30 s.
+  static const Duration _refreshInterval = Duration(seconds: 15);
+
+  /// The drive chips, and THIS WEEK's charge and fuel, on their own short cycle (see
+  /// DashboardController.refreshDrive).
+  static const Duration _driveInterval = Duration(seconds: 2);
+
+  /// The week's trips and costs: they change when a trip ends, and each reload pages through a
+  /// week of ListTrips, so once a minute is enough (the owner's call, 2026-09-27).
+  static const Duration _tripsInterval = Duration(minutes: 1);
+
+  Timer? _refreshTimer;
+  Timer? _driveTimer;
+  Timer? _tripsTimer;
+
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
     widget.controller.refresh();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) => widget.controller.refresh(includeTrips: false));
+    _driveTimer = Timer.periodic(_driveInterval, (_) => widget.controller.refreshDrive());
+    _tripsTimer = Timer.periodic(_tripsInterval, (_) => widget.controller.refreshTrips());
   }
 
   void _onChanged() {
@@ -51,6 +84,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
+    _driveTimer?.cancel();
+    _tripsTimer?.cancel();
     widget.controller.removeListener(_onChanged);
     super.dispose();
   }
@@ -63,29 +99,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final hero = _TripStatsCard(
       state: c.tripStats,
+      energy: c.energy,
       l10n: l10n,
       theme: theme,
       onViewAllTrips: () => widget.onNavigate(BwRoutes.trips),
     );
-    // BladeWatch-y7x2: no card at all when the owner has switched the tunnel OFF.
-    //
-    // Only for the DISABLED phase, never for offline/connecting — an enabled tunnel is
-    // also not up for the first minute while tor bootstraps, and hiding the card then
-    // would make the Dashboard look broken exactly while the user waits for it.
-    //
-    // The access code goes with the card deliberately: it only ever authenticates the
-    // web app, and with no tunnel and LAN HTTP off by default the web app is not
-    // reachable at all, so there is nothing for the code to unlock.
-    final tunnelDisabled = c.tunnel.phase == TunnelPhase.disabled;
-    final connect = tunnelDisabled
-        ? null
-        : _ConnectCard(controller: c, l10n: l10n, theme: theme);
     final metrics = _MetricRow(
       controller: c,
       l10n: l10n,
       theme: theme,
       onRecordingsTap: () => widget.onNavigate(BwRoutes.recordings),
-      onTunnelTap: () => widget.onNavigate(BwRoutes.diagnostics),
       onDaemonsTap: () => widget.onNavigate(BwRoutes.diagnostics),
       onVehicleTap: _openVehicleDialog,
       onLiveTap: () => widget.onNavigate(BwRoutes.liveView),
@@ -94,48 +117,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
-        // LayoutBuilder rather than a hardcoded two-column layout: the head
-        // unit is 1920x1080, but the same screen has to degrade sensibly if the
-        // window is ever narrower.
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= _twoColumnBreakpoint;
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Native puts the hero and Scan-to-Connect side by side so the
-                // whole dashboard fits above the fold; stacking them pushed the
-                // access code two swipes down (BladeWatch-ya6f).
-                // With the tunnel switched off there is no connect card, so the hero
-                // takes the full width rather than leaving a gap where it used to be.
-                if (connect == null)
-                  hero
-                else if (wide)
-                  // Deliberately NOT wrapped in IntrinsicHeight to equalise the
-                  // two columns: the Connect card sizes its QR with a
-                  // LayoutBuilder, and IntrinsicHeight cannot measure through
-                  // one ("LayoutBuilder does not support returning intrinsic
-                  // dimensions"). Each column sizes to its own content instead.
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 3, child: hero),
-                      const SizedBox(width: 16),
-                      Expanded(flex: 2, child: connect),
-                    ],
-                  )
-                else ...[
-                  hero,
-                  const SizedBox(height: 16),
-                  connect,
-                ],
-                const SizedBox(height: 12),
-                _HeroChips(controller: c, l10n: l10n, theme: theme),
-                const SizedBox(height: 16),
-                metrics,
-              ],
-            );
-          },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            BwDimens.pagePaddingHorizontal,
+            BwDimens.pagePaddingTop,
+            BwDimens.pagePaddingHorizontal,
+            BwDimens.pagePaddingBottom,
+          ),
+          children: [
+            // The trip hero takes the full width: the connect card that sat beside it (tunnel
+            // QR, device id, access code) went with tor (BladeWatch-rdtj.12).
+            hero,
+            const SizedBox(height: BwDimens.cardGapVertical),
+            _HeroChips(
+              controller: c,
+              l10n: l10n,
+              theme: theme,
+              // An explicit action, never a QR on the dashboard: a permanently visible pairing
+              // code would be a permanently visible way in (BladeWatch-rdtj.7).
+              trailing: widget.pairingChannel == null
+                  ? null
+                  : FilledButton.tonalIcon(
+                      key: const ValueKey('dashboard.pair'),
+                      onPressed: () => showPairingDialog(context, widget.pairingChannel!),
+                      icon: const Icon(Icons.qr_code_2),
+                      label: Text(l10n.pairing_title),
+                    ),
+            ),
+            const SizedBox(height: BwDimens.cardGapVertical),
+            metrics,
+          ],
         ),
       ),
     );
@@ -156,42 +167,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class _TripStatsCard extends StatelessWidget {
   final TripStatsState state;
+  final EnergyState energy;
   final AppLocalizations l10n;
   final ThemeData theme;
   final VoidCallback onViewAllTrips;
 
-  const _TripStatsCard({required this.state, required this.l10n, required this.theme, required this.onViewAllTrips});
+  const _TripStatsCard({
+    required this.state,
+    required this.energy,
+    required this.l10n,
+    required this.theme,
+    required this.onViewAllTrips,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Native's headline combines count and distance on one line
-    // ("3 trips · 21.0 km"). DashboardFragment builds it by hand with English
-    // "trip"/"trips" hardcoded; composing it from the localised plural here
-    // gives the same result without inheriting that bug.
+    // A headline only when the tiles below have nothing to say. Native's
+    // "3 trips · 21.0 km" headline repeated the Trips and Distance tiles right
+    // under it, so the owner saw both twice (BladeWatch-by8d).
     final headline = state.loading
         ? l10n.dashboard_trips_loading
         : !state.available
-            ? l10n.dashboard_trips_unavailable
-            : state.tripCount == 0
-                ? l10n.dashboard_trips_no_data
-                : '${l10n.dashboard_trips_count(state.tripCount)} · ${state.distanceLabel}';
+        ? l10n.dashboard_trips_unavailable
+        : state.tripCount == 0
+        ? l10n.dashboard_trips_no_data
+        : null;
     final pending = l10n.dashboard_metric_value_pending;
     // The hero is the focal point of the screen, so it takes the filled
     // primaryContainer role as native does. Everything inside it must therefore
     // read against onPrimaryContainer, not onSurface.
     final onHero = theme.colorScheme.onPrimaryContainer;
 
+    final e = energy;
+    String dist(double km) => e.available ? formatDistance(km, e.distanceUnit, decimals: 0) : pending;
+    final trips = [
+      (l10n.dashboard_trips_label_trips, state.available ? state.tripCount.toString() : pending),
+      (l10n.dashboard_trips_label_distance, state.available ? state.distanceLabel : pending),
+      (l10n.dashboard_trips_label_time, state.available ? state.driveTimeLabel : pending),
+    ];
+    // BladeWatch-4zr7: the car's charge and fuel now (current values, where the row above is the
+    // week's): battery and electric range, and fuel and fuel range on a car with a tank.
+    final charge = [
+      (l10n.dashboard_week_battery, e.available ? '${e.socPercent.round()}%' : pending),
+      (l10n.dashboard_week_elec_range, dist(e.elecRangeKm)),
+      if (e.hasFuel) ...[
+        (l10n.dashboard_week_fuel, '${e.fuelPercent.round()}%'),
+        (l10n.dashboard_week_fuel_range, dist(e.fuelRangeKm)),
+      ],
+    ];
+    // BladeWatch-39d2: what the week cost, or the line that says why there are no figures.
+    final costs = state.available && state.tripCount > 0 ? tripCostDisplay(state.costs, l10n) : null;
+    final costFigures = [for (final (value, label) in costs?.figures ?? const <(String, String)>[]) (label, value)];
+    // One grid for every row, as many columns as the widest row, so the columns line up. The owner
+    // saw them drift once the charge row brought a fourth tile under three.
+    final columns = [trips.length, charge.length, costFigures.length].reduce(math.max);
+    Widget row(List<(String, String)> stats, {Key? key}) =>
+        _StatRow(key: key, stats: stats, columns: columns, theme: theme, color: onHero);
+
     return Card(
       color: theme.colorScheme.primaryContainer,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwDimens.cardRadiusHero)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        // Half the top padding: the View all trips button's 48 px touch target already adds that
+        // space above the header, and the full value pushed the metric tiles below the fold on the
+        // head unit (design review 2026-09-27).
+        padding: const EdgeInsets.fromLTRB(
+          BwDimens.cardPaddingHero,
+          BwDimens.cardPaddingHero / 2,
+          BwDimens.cardPaddingHero,
+          BwDimens.cardPaddingHero,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // Centered: the button's 48 px touch target otherwise sat its text ~20 px below the
+              // label it pairs with (design review 2026-09-27).
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: Text(
@@ -199,7 +252,7 @@ class _TripStatsCard extends StatelessWidget {
                     style: theme.textTheme.labelLarge?.copyWith(color: onHero),
                   ),
                 ),
-                // Top-right, on the label's baseline, as native has it.
+                // Top-right, level with the label, as native has it.
                 TextButton(
                   key: const ValueKey('tripStats.viewAll'),
                   onPressed: onViewAllTrips,
@@ -208,46 +261,62 @@ class _TripStatsCard extends StatelessWidget {
                 ),
               ],
             ),
-            Text(headline, style: theme.textTheme.headlineMedium?.copyWith(color: onHero)),
-            const SizedBox(height: 16),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: _Stat(
-                      label: l10n.dashboard_trips_label_trips,
-                      value: state.available ? state.tripCount.toString() : pending,
-                      theme: theme,
-                      color: onHero,
-                    ),
-                  ),
-                  _StatDivider(color: onHero),
-                  Expanded(
-                    child: _Stat(
-                      label: l10n.dashboard_trips_label_distance,
-                      value: state.available ? state.distanceLabel : pending,
-                      theme: theme,
-                      color: onHero,
-                    ),
-                  ),
-                  _StatDivider(color: onHero),
-                  Expanded(
-                    child: _Stat(
-                      label: l10n.dashboard_trips_label_time,
-                      value: state.available ? state.driveTimeLabel : pending,
-                      theme: theme,
-                      color: onHero,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            if (headline != null) ...[
+              Text(headline, style: theme.textTheme.headlineMedium?.copyWith(color: onHero)),
+              const SizedBox(height: 16),
+            ],
+            row(trips),
+            if (costs != null) ...[
+              const SizedBox(height: 16),
+              if (costs.message case final message?)
+                Text(
+                  message,
+                  key: const ValueKey('tripStats.costs.message'),
+                  style: theme.textTheme.bodySmall?.copyWith(color: onHero.withValues(alpha: 0.8)),
+                )
+              else
+                row(costFigures, key: const ValueKey('tripStats.costs')),
+            ],
+            // The week's figures stay together; the car's charge and fuel NOW come last, under a
+            // rule, instead of splitting the trips from their costs (design review 2026-09-27).
+            Divider(height: 20, thickness: 1, color: onHero.withValues(alpha: 0.3)),
+            row(charge, key: const ValueKey('tripStats.energy')),
           ],
         ),
       ),
     );
   }
+}
+
+/// One row of the hero's stats (label, value) on the card's shared grid of [columns], so every
+/// row's columns line up; a row with fewer stats leaves its last columns empty rather than
+/// stretching (BladeWatch-4zr7).
+class _StatRow extends StatelessWidget {
+  final List<(String, String)> stats;
+  final int columns;
+  final ThemeData theme;
+  final Color color;
+
+  const _StatRow({super.key, required this.stats, required this.columns, required this.theme, required this.color});
+
+  @override
+  Widget build(BuildContext context) => IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < columns; i++) ...[
+          // Every slot keeps its divider's width, so an empty column is exactly as wide as a full one;
+          // an empty column's divider is hidden, not recoloured (transparent at 30% alpha is grey).
+          if (i > 0) Opacity(opacity: i < stats.length ? 1 : 0, child: _StatDivider(color: color)),
+          Expanded(
+            child: i < stats.length
+                ? _Stat(label: stats[i].$1, value: stats[i].$2, theme: theme, color: color)
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ],
+    ),
+  );
 }
 
 /// The vertical rule native draws between the three hero stats.
@@ -257,11 +326,8 @@ class _StatDivider extends StatelessWidget {
   const _StatDivider({required this.color});
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: 1,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        color: color.withValues(alpha: 0.3),
-      );
+  Widget build(BuildContext context) =>
+      Container(width: 1, margin: const EdgeInsets.symmetric(horizontal: 12), color: color.withValues(alpha: 0.3));
 }
 
 class _Stat extends StatelessWidget {
@@ -277,38 +343,80 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(value, style: theme.textTheme.headlineSmall?.copyWith(color: color)),
-          Text(label, style: theme.textTheme.labelSmall?.copyWith(color: color.withValues(alpha: 0.8))),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text(value, style: theme.textTheme.headlineSmall?.copyWith(color: color)),
+      Text(label, style: theme.textTheme.labelSmall?.copyWith(color: color.withValues(alpha: 0.8))),
+    ],
+  );
 }
 
 /// Mirrors `refreshHeroChips()` — each chip repeats a metric-tile value at
-/// the top of the screen for at-a-glance status; the tunnel chip is the only
-/// one that hides itself (only shown when actually online).
+/// the top of the screen for at-a-glance status.
 class _HeroChips extends StatelessWidget {
   final DashboardController controller;
   final AppLocalizations l10n;
   final ThemeData theme;
 
-  const _HeroChips({required this.controller, required this.l10n, required this.theme});
+  /// Ends the row: the Pair a device action, which used to take a row of its own and push the
+  /// tiles toward the fold (design review 2026-09-27).
+  final Widget? trailing;
+
+  const _HeroChips({required this.controller, required this.l10n, required this.theme, this.trailing});
 
   @override
   Widget build(BuildContext context) {
-    final daemons = controller.daemonsSummary;
+    // No "4/4 Running" chip: the Background services tile below says exactly that (design review
+    // 2026-09-27, the owner's call).
     final chips = <Widget>[
-      if (controller.tunnel.phase == TunnelPhase.online) Chip(label: Text(l10n.dashboard_tunnel_online)),
-      Chip(label: Text(l10n.dashboard_daemons_running(daemons.running, daemons.total))),
       Chip(
         label: Text(
-          controller.recordingsMetric.isRecording ? l10n.dashboard_chip_recording_active : l10n.dashboard_chip_recording_idle,
+          controller.recordingsMetric.isRecording
+              ? l10n.dashboard_chip_recording_active
+              : l10n.dashboard_chip_recording_idle,
         ),
       ),
+      // BladeWatch-7zp9: the car's state. A dash for anything the car could not (or has not been
+      // measured to) name -- never a guessed P / NORMAL / off.
+      ..._driveChips(controller.drive),
     ];
-    return Wrap(spacing: 8, runSpacing: 4, children: chips);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [...chips, ?trailing],
+    );
+  }
+
+  List<Widget> _driveChips(DriveInfo d) {
+    String known(String v, String Function(String) show) => v == DriveInfo.unknown ? '–' : show(v);
+    return [
+      Chip(key: const ValueKey('chip.gear'), label: Text(l10n.dashboard_chip_gear(known(d.gear, (g) => g)))),
+      Chip(
+        key: const ValueKey('chip.driveMode'),
+        label: Text(l10n.dashboard_chip_drive_mode(known(d.driveMode, (m) => m))),
+      ),
+      Chip(
+        key: const ValueKey('chip.autoHold'),
+        label: Text(
+          l10n.dashboard_chip_auto_hold(
+            known(
+              d.autoHold,
+              (a) => switch (a) {
+                'ACTIVE' => l10n.auto_hold_active,
+                'ENABLED' => l10n.auto_hold_enabled,
+                'DISABLED' => l10n.auto_hold_disabled,
+                _ => '–',
+              },
+            ),
+          ),
+        ),
+      ),
+      // BladeWatch-os88: EV / HEV, as the car itself labels them in every language. Hidden, not a
+      // dash, when unknown: a car with no HEV mode has nothing to show.
+      if (d.energyMode != DriveInfo.unknown) Chip(key: const ValueKey('chip.energyMode'), label: Text(d.energyMode)),
+    ];
   }
 }
 
@@ -323,7 +431,6 @@ class _MetricRow extends StatelessWidget {
   final AppLocalizations l10n;
   final ThemeData theme;
   final VoidCallback onRecordingsTap;
-  final VoidCallback onTunnelTap;
   final VoidCallback onDaemonsTap;
   final VoidCallback onVehicleTap;
   final VoidCallback onLiveTap;
@@ -333,7 +440,6 @@ class _MetricRow extends StatelessWidget {
     required this.l10n,
     required this.theme,
     required this.onRecordingsTap,
-    required this.onTunnelTap,
     required this.onDaemonsTap,
     required this.onVehicleTap,
     required this.onLiveTap,
@@ -345,11 +451,22 @@ class _MetricRow extends StatelessWidget {
     final recordingsValue = rec.loading
         ? l10n.dashboard_metric_value_pending
         : rec.isRecording
-            ? l10n.dashboard_recordings_value_live(rec.todayCount)
-            : rec.todayCount.toString();
+        ? l10n.dashboard_recordings_value_live(rec.todayCount)
+        : rec.todayCount.toString();
 
-    final tunnelValue =
-        controller.tunnel.phase == TunnelPhase.online ? l10n.dashboard_tunnel_online : l10n.dashboard_tunnel_offline;
+    // BladeWatch-rdtj.17/.12: the Pear peer, remote access's only transport -- whether the car can
+    // be found right now, not merely whether a process runs. Off until a companion is paired.
+    final pear = controller.pear;
+    final String remoteValue = !pear.enabled
+        ? l10n.dashboard_tunnel_offline
+        : !pear.running
+        ? l10n.startup_status_starting
+        : switch (pear.reachable) {
+            true => l10n.dashboard_tunnel_online,
+            false => l10n.dashboard_tunnel_offline,
+            null => l10n.surveillance_general_status_running,
+          };
+    final remoteOnline = pear.enabled && pear.running && pear.reachable == true;
 
     final daemons = controller.daemonsSummary;
     final daemonsValue = l10n.dashboard_daemons_running(daemons.running, daemons.total);
@@ -380,11 +497,12 @@ class _MetricRow extends StatelessWidget {
         key: const ValueKey('tile.tunnel'),
         icon: Icons.dashboard_outlined,
         title: l10n.dashboard_metric_tunnel,
-        value: tunnelValue,
+        value: remoteValue,
         theme: theme,
-        onTap: onTunnelTap,
+        // Pear's details -- reachability, connected devices, its switch -- live on the Services screen.
+        onTap: onDaemonsTap,
         // Native's remote-access card is the only one with a status dot.
-        showStatusDot: controller.tunnel.phase == TunnelPhase.online,
+        showStatusDot: remoteOnline,
       ),
       _MetricTile(
         key: const ValueKey('tile.daemons'),
@@ -434,10 +552,7 @@ class _MetricRow extends StatelessWidget {
         return Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: [
-            for (final tile in tiles)
-              SizedBox(width: (constraints.maxWidth - 12) / 2, child: tile),
-          ],
+          children: [for (final tile in tiles) SizedBox(width: (constraints.maxWidth - 12) / 2, child: tile)],
         );
       },
     );
@@ -467,330 +582,54 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        color: theme.colorScheme.surfaceContainer,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(icon, size: 22, color: theme.colorScheme.onSurfaceVariant),
-                    const Spacer(),
-                    if (showStatusDot)
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  value,
-                  style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  title,
-                  style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-}
-
-/// Connect card: QR / placeholder, device id, and the access-code section —
-/// ground truth: `rebuildTunnelChips()`/`renderQr()`/`showPlaceholder()` +
-/// `loadAuthState()`/`toggleTokenVisibility()`/`copyTokenToClipboard()`/
-/// `showRegenerateConfirmation()`/`showSetPasswordDialog()`. Only one tunnel has
-/// ever populated native's tunnel-chip list (checked: `collectAvailableTunnels()`),
-/// so there is no tunnel-type selector here — just the one tunnel's state.
-class _ConnectCard extends StatefulWidget {
-  final DashboardController controller;
-  final AppLocalizations l10n;
-  final ThemeData theme;
-
-  const _ConnectCard({required this.controller, required this.l10n, required this.theme});
-
-  @override
-  State<_ConnectCard> createState() => _ConnectCardState();
-}
-
-class _ConnectCardState extends State<_ConnectCard> {
-  @override
-  Widget build(BuildContext context) {
-    final l10n = widget.l10n;
-    final theme = widget.theme;
-    final c = widget.controller;
-    final tunnel = c.tunnel;
-    final online = tunnel.phase == TunnelPhase.online && tunnel.url != null && tunnel.url!.isNotEmpty;
-    // tor is up but not yet reachable — up to ~82 s on a cold start, ~6 s warm. Its own
-    // state, because both alternatives are wrong: "no tunnel" is a lie while one is
-    // starting, and a QR code here points at a service nothing can reach yet.
-    final connecting = !online && tunnel.phase == TunnelPhase.connecting;
-
-    return Card(
-      color: theme.colorScheme.surfaceContainer,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    color: theme.colorScheme.surfaceContainer,
+    elevation: 0,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwDimens.cardRadiusStandard)),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(BwDimens.cardRadiusStandard),
+      onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(BwDimens.cardPaddingStandard),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    l10n.dashboard_scan_to_connect,
-                    style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface),
+                Icon(icon, size: 22, color: theme.colorScheme.onSurfaceVariant),
+                const Spacer(),
+                if (showStatusDot)
+                  Container(
+                    key: const ValueKey('tile.statusDot'),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
                   ),
-                ),
-                // Always present, including with no tunnel: this is MORE useful before
-                // one is up, because that is when someone is still working out what to
-                // install. A .onion address does not open in Chrome or Safari — they
-                // fail with an unhelpful DNS error — so without this a user scans the
-                // QR, hits that error and concludes the app is broken.
-                IconButton(
-                  key: const ValueKey('connect.torHelp'),
-                  icon: const Icon(Icons.info_outline),
-                  tooltip: l10n.dashboard_tor_help_tooltip,
-                  onPressed: () => showDialog<void>(
-                    context: context,
-                    builder: (_) => _TorHelpDialog(l10n: l10n, theme: theme),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 12),
-            Center(
-              child: online
-                  ? Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          color: Colors.white,
-                          child: QrImageView(data: tunnel.url!, size: 160),
-                        ),
-                        const SizedBox(height: 8),
-                        // A v3 onion URL is 62 characters, half again as long as the
-                        // tunnel URL this replaced. Centre it and let it wrap rather
-                        // than overflowing the card on the head unit's panel.
-                        Text(
-                          tunnel.url!,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ],
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (connecting) ...[
-                            const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          Text(
-                            connecting ? l10n.dashboard_tor_bootstrapping : l10n.dashboard_no_tunnel,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ),
+            // Shrunk to fit, not cut: "BYD Seal 5 DM-i" lost its end to an ellipsis on the head
+            // unit (design review 2026-09-27).
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                value,
+                style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
+                maxLines: 1,
+              ),
             ),
-            const SizedBox(height: 12),
             Text(
-              c.deviceId ?? l10n.dashboard_device_id_loading,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline, fontFamily: 'monospace'),
+              title,
+              style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            const Divider(height: 24),
-            Text(l10n.dashboard_access_code, style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurface)),
-            const SizedBox(height: 8),
-            _AccessCodeRow(controller: c, l10n: l10n, theme: theme),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _AccessCodeRow extends StatelessWidget {
-  final DashboardController controller;
-  final AppLocalizations l10n;
-  final ThemeData theme;
-
-  const _AccessCodeRow({required this.controller, required this.l10n, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    final state = controller.accessCode;
-    final text = state.loading
-        ? l10n.dashboard_metric_value_pending
-        : state.visible
-            ? (state.displayValue ?? l10n.dashboard_metric_value_pending)
-            : l10n.dashboard_token_masked;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(text, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface, fontFamily: 'monospace')),
-            ),
-            IconButton(
-              key: const ValueKey('accessCode.toggle'),
-              tooltip: l10n.cd_show_hide_token,
-              icon: Icon(state.visible ? Icons.visibility_off : Icons.visibility),
-              onPressed: controller.toggleAccessCodeVisibility,
-            ),
-            IconButton(
-              key: const ValueKey('accessCode.copy'),
-              tooltip: l10n.cd_copy_token,
-              icon: const Icon(Icons.copy),
-              // Fire-and-forget the clipboard write (Android's ClipboardManager
-              // is sync; Flutter's Clipboard.setData is Future-based only
-              // because of the platform-channel round trip) so the
-              // confirmation shows immediately, matching native's
-              // effectively-synchronous copyTokenToClipboard().
-              onPressed: state.secret == null
-                  ? null
-                  : () {
-                      Clipboard.setData(ClipboardData(text: state.secret!));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.toast_access_code_copied)));
-                    },
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // BladeWatch-y7x2: Regenerate Token was removed from this card at the owner's
-        // request. It rotated the access code, invalidating every paired client — a
-        // destructive action sitting one mis-tap away from Set Password on a touchscreen
-        // in a moving car. Set Password covers the ordinary case of changing the
-        // credential. The underlying regenerate capability is untouched in the daemon;
-        // only this entry point is gone.
-        //
-        // BladeWatch-8sig previously argued the ORDER of the two buttons on exactly that
-        // mis-tap risk; removing the destructive one settles it.
-        Wrap(
-          spacing: 8,
-          children: [
-            OutlinedButton(
-              key: const ValueKey('accessCode.setPassword'),
-              onPressed: () => _showSetPasswordDialog(context),
-              child: Text(l10n.dashboard_set_password),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // _confirmRegenerate() went with the Regenerate Token button (BladeWatch-y7x2). The
-  // capability itself is NOT gone — DashboardController.regenerateAccessCode() and the
-  // daemon behind it are untouched, and the l10n keys survive — so restoring the entry
-  // point is a small change if the owner wants it back somewhere less mis-tappable.
-
-  Future<void> _showSetPasswordDialog(BuildContext context) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => _SetPasswordDialog(controller: controller, l10n: l10n),
-    );
-    if (result != true || !context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.toast_password_set)));
-  }
-}
-
-class _SetPasswordDialog extends StatefulWidget {
-  final DashboardController controller;
-  final AppLocalizations l10n;
-
-  const _SetPasswordDialog({required this.controller, required this.l10n});
-
-  @override
-  State<_SetPasswordDialog> createState() => _SetPasswordDialogState();
-}
-
-class _SetPasswordDialogState extends State<_SetPasswordDialog> {
-  final _textController = TextEditingController();
-  String? _error;
-  bool _busy = false;
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final l10n = widget.l10n;
-    final password = _textController.text.trim();
-    if (password.length < DashboardController.minAccessCodeLength) {
-      setState(() => _error = l10n.toast_password_too_short);
-      return;
-    }
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    final ok = await widget.controller.setCustomAccessCode(password);
-    if (!mounted) return;
-    if (ok) {
-      Navigator.of(context).pop(true);
-    } else {
-      setState(() {
-        _busy = false;
-        _error = l10n.toast_password_save_failed;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = widget.l10n;
-    return AlertDialog(
-      title: Text(l10n.dialog_set_password_title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.dialog_set_password_message),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _textController,
-            obscureText: true,
-            decoration: InputDecoration(hintText: l10n.dialog_set_password_hint, errorText: _error),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.action_cancel)),
-        TextButton(onPressed: _busy ? null : _submit, child: Text(l10n.action_done)),
-      ],
-    );
-  }
+    ),
+  );
 }
 
 /// Ground truth: `showVehicleCapacityDialog()`. The model picker is a row of
@@ -887,99 +726,6 @@ class _VehicleCapacityDialogState extends State<_VehicleCapacityDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.action_cancel)),
         TextButton(onPressed: () => _save(l10n), child: Text(l10n.vehicle_dialog_save)),
-      ],
-    );
-  }
-
-}
-
-/// How to actually open the onion address, per platform.
-///
-/// The second QR is the reason this is a dialog rather than a line of text: it encodes
-/// an ordinary https URL, so it DOES open in any phone camera and stock browser, which
-/// gets the user from the car's screen to the Tor Browser download without typing.
-/// The connection QR on the card behind it cannot do that.
-class _TorHelpDialog extends StatelessWidget {
-  /// Only torproject.org, Google Play, F-Droid and the App Store are ever named here —
-  /// never a mirror or a third-party re-host.
-  static const String downloadUrl = 'https://www.torproject.org/download/';
-
-  final AppLocalizations l10n;
-  final ThemeData theme;
-
-  const _TorHelpDialog({required this.l10n, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      icon: const Icon(Icons.info_outline),
-      title: Text(l10n.dashboard_tor_help_title),
-      // The explicit width is load-bearing, not styling: QrImageView builds a
-      // LayoutBuilder, and AlertDialog sizes its content by asking for intrinsic
-      // width, which a LayoutBuilder cannot answer. Without a fixed width the dialog
-      // throws "LayoutBuilder does not support returning intrinsic dimensions".
-      //
-      // Scrollable because this is text-heavy and German, Russian and Vietnamese run
-      // long — on the head unit's panel the dismiss button must stay reachable.
-      content: SizedBox(
-        width: 320,
-        child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.dashboard_tor_help_android, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 12),
-            Text(l10n.dashboard_tor_help_ios, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 12),
-            Text(l10n.dashboard_tor_help_desktop, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 16),
-            // BladeWatch-4s7w: this sits ABOVE the QR deliberately.
-            //
-            // It used to be the last thing in the dialog, and on the head unit's 1080 px
-            // panel it fell entirely below the fold — in ENGLISH, the shortest locale,
-            // with the QR caption clipped mid-line just above it. Nothing indicated there
-            // was more to scroll to. It is the one line that stops a user assuming the
-            // onion address alone grants access, so it cannot be the line nobody sees.
-            Text(
-              l10n.dashboard_tor_help_password_note,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.white,
-                    child: QrImageView(
-                      key: const ValueKey('connect.torHelp.downloadQr'),
-                      data: downloadUrl,
-                      // 96 rather than 120: the dialog is height-capped by the panel and
-                      // this is the cheapest 24 px to give back. A torproject.org URL is
-                      // short, so the QR stays low-density and scannable at this size.
-                      size: 96,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.dashboard_tor_help_download_qr_label,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          key: const ValueKey('connect.torHelp.close'),
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.dashboard_tor_help_close),
-        ),
       ],
     );
   }

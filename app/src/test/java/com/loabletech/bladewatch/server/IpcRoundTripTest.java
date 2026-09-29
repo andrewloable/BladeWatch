@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
@@ -57,21 +56,21 @@ public class IpcRoundTripTest {
         TcpCommandServer.secretStoreForTest = new SecretConfigStore(tempStoreFile);
 
         // 4. Start TcpCommandServer on an ephemeral port
-        tcpPort = findFreePort();
-        tcpServer = new TcpCommandServer(tcpPort);
+        tcpServer = new TcpCommandServer(0);
         tcpThread = new Thread(tcpServer::start, "test-tcp-server");
         tcpThread.setDaemon(true);
         tcpThread.start();
 
         // 5. Start SurveillanceIpcServer on an ephemeral port
-        survPort = findFreePort();
-        survServer = new SurveillanceIpcServer(survPort);
+        survServer = new SurveillanceIpcServer(0);
         survThread = new Thread(survServer, "test-surv-server");
         survThread.setDaemon(true);
         survThread.start();
 
-        // Let servers bind
-        Thread.sleep(300);
+        // Port 0 and the port actually bound: a port picked free and bound later can be taken in
+        // between -- the debug and release test JVMs run this class at the same time.
+        tcpPort = awaitBound(tcpServer::getBoundPort);
+        survPort = awaitBound(survServer::getBoundPort);
     }
 
     @After
@@ -214,11 +213,13 @@ public class IpcRoundTripTest {
         }
     }
 
-    private static int findFreePort() throws Exception {
-        try (ServerSocket s = new ServerSocket(0)) {
-            s.setReuseAddress(true);
-            return s.getLocalPort();
+    private static int awaitBound(java.util.function.IntSupplier boundPort) throws Exception {
+        for (int i = 0; i < 100; i++) {
+            int port = boundPort.getAsInt();
+            if (port > 0) return port;
+            Thread.sleep(30);
         }
+        throw new AssertionError("server never bound");
     }
 
     /** Minimal raw socket client mimicking CameraDaemonClient's wire protocol. */

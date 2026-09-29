@@ -4,16 +4,16 @@ import org.junit.Assert
 import org.junit.Test
 
 /**
- * BladeWatch-3lbz.2: the hard-reset sweep must kill tor WITHOUT destroying the onion identity.
+ * BladeWatch-3lbz.2 / -rdtj.12: the hard-reset sweep kills daemons WITHOUT deleting an identity.
  *
- * `/data/local/tmp/tor/hs/hs_ed25519_secret_key` is the permanent remote-access identity of this
- * car. Delete it and tor generates a brand-new onion address on the next start: every QR code the
- * owner ever scanned, every bookmark, every saved link stops working, silently and irreversibly.
- * There is no recovery — the key IS the address.
+ * `/data/local/tmp/pear` holds the car's permanent Pear identity (delete it and every paired
+ * companion loses the car), and `/data/local/tmp/tor` an older build's onion identity, whose
+ * removal is an explicit owner decision -- never a sweep's side effect. The sweep still kills a
+ * tor process an older build left running, since it runs exactly when the package is replaced.
  *
  * That makes this a guard against a plausible FUTURE edit, not against today's code. The sweep
  * already wipes locks and sentinels with an `rm -f` over the daemon lock files, so
- * widening one of those globs to "tidy up" the tor directory is an easy and fatal mistake. The
+ * widening one of those globs to "tidy up" a data directory is an easy and fatal mistake. The
  * test asserts on the generated command string, which is why [DaemonHardReset.hardResetCommand]
  * exists as a separate method at all.
  *
@@ -36,33 +36,31 @@ class DaemonHardResetCommandTest {
         Assert.assertEquals(
             "the Kotlin translation changed the sweep. Kotlin interpolates \$ in a string "
                 + "literal; every \$ in this command must be escaped.",
-            "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done",
+            "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon pear_daemon 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done",
             DaemonHardReset.hardResetCommand()
         )
     }
 
     @Test
-    fun killsTor() {
+    fun killsThePearPeer() {
+        // BladeWatch-rdtj.3. Without this a "hard reset" leaves the Pear peer running.
         val cmd = DaemonHardReset.hardResetCommand()
-        Assert.assertTrue("hard reset must kill the tor tunnel process: " + cmd,
-            cmd.contains("bladewatch_tor"))
+        Assert.assertTrue("hard reset must kill pear_daemon, spelled in full: " + cmd,
+            cmd.contains("killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon pear_daemon "))
     }
 
     @Test
-    fun neverRemovesTheHiddenServiceDirectory() {
+    fun neverRemovesThePearStorageDirectory() {
+        // /data/local/tmp/pear will hold the car's permanent Pear identity -- the same hazard as
+        // tor's hs/ above. Removing pear_daemon.lock is fine; touching the directory is not.
         val cmd = DaemonHardReset.hardResetCommand()
         for (line in cmd.split(";")) {
             val t = line.trim()
             if (!t.startsWith("rm")) continue
-            Assert.assertFalse(
-                "hard reset must never delete the hidden-service directory — that is the car's "
-                    + "permanent onion address, and losing it breaks every QR code ever scanned. "
-                    + "Offending clause: " + t,
-                t.contains("/data/local/tmp/tor/hs") || t.contains("/data/local/tmp/tor "))
-            // A bare glob over the tor directory would sweep hs/ up with everything else.
-            Assert.assertFalse(
-                "a glob over the tor directory would take hs/ with it: " + t,
-                t.contains("/data/local/tmp/tor/*") || t.contains("-rf /data/local/tmp/tor"))
+            Assert.assertFalse("recursive rm could take the pear directory: " + t, t.contains("-r"))
+            Assert.assertFalse("must not name the pear directory: " + t,
+                t.contains("/data/local/tmp/pear ") || t.contains("/data/local/tmp/pear/") ||
+                    t.contains("/data/local/tmp/pear*") || t.endsWith("/data/local/tmp/pear"))
         }
     }
 

@@ -2,6 +2,8 @@
 
 BladeWatch integrates with BYD vehicles through local BYD Android framework APIs available on the head unit. There is no BYD cloud integration path in this codebase; all vehicle data and controls use the local SDK only. (A previous generation used BYD cloud over HTTPS + MQTT v5 with Bangcle white-box crypto; that code has been removed. Commands that only had a cloud implementation now resolve to `NOT_SUPPORTED` — see Vehicle Control below.)
 
+**This local SDK surface is the only vehicle-data path that exists, not a self-imposed limit.** [byd-can.md](byd-can.md) maps why: the head unit's SoC is not itself on the CAN bus, the real bridge (a private SPI link to an MCU) is owned exclusively by BYD's closed HAL, and every Android-level API on top of it — including everything below — is gated by permissions signed to BYD's own certificate that no third-party-signed app can be granted.
+
 ## Android Manifest Permissions
 
 The manifest declares a broad set of BYD and Android permissions. Major categories include:
@@ -222,16 +224,16 @@ Do not change door lock mapping without checking both local SDK behavior and web
 
 `VehicleService` RPCs and their `/api/vehicle/*` mappings:
 
-- State reads: `GetState` (`GET /api/vehicle/state`), `GetAcDiagnostics`, `GetSeatDiagnostics`.
+- State reads: `GetState` (`GET /api/vehicle/state`), `GetAcDiagnostics`.
 - Climate: `SetClimate` (`POST /api/vehicle/climate`) — power on/off, set temperature, fan level, wind mode, max-cooling, front/rear defrost, and air-cycle mode (BladeWatch-2000.1). Max-cooling carries restore parameters so prior AC power/temp/fan state can be re-applied when it is turned off. Wind mode and cycle mode are exposed as raw SDK integers with **no UI picker** — see "Wind mode and cycle mode: values not established" below.
 - Windows: `MoveWindow` (`POST /api/vehicle/window`) — per-window open/close by direction, or closed-loop positioning to a target percent. Window index `0` means all side windows; `1`–`4` are the four doors; `5`/`6` are sunroof/sunshade.
-- Seats: `SetSeat` (`POST /api/vehicle/seat`) — per-seat heating and ventilation levels, and seat-memory position recall. The request also carries the full current seat state (driver/passenger heat and vent) so the SDK call is applied against a consistent snapshot.
+- Seats: none. Seat heating, ventilation and memory recall were removed end to end (BladeWatch-7bx4, owner decision 2026-09-25); the head unit this was built on reports no seat heat.
 - Lights/appearance: `SetLights` (`POST /api/vehicle/lights`) — daytime running light (DRL) on/off.
 - ADAS: `SetAdas` (`POST /api/vehicle/adas`) — speed-limit-warning on/off.
 - Trunk/tailgate: `Trunk` (`POST /api/vehicle/trunk`) — open, close, or stop the tailgate motor. Trunk open invokes the local tailgate motor directly with no remote-unlock pre-step, so a locked vehicle may decline the motor or trip the alarm.
 - Charge cap (BEV): `GetChargeCap`/`SetChargeCap` (`/api/vehicle/charge-cap`) — `BYDAutoChargingDevice` stop-capacity percent (50–100%) and on/off switch. The collector probes the framework on first write and reports failure if the value does not stick.
 
-The bodywork range and battery SOC, door/window/trunk/sunroof status, light/ADAS state, seat heat/cool levels, climate setpoint, and tyre pressures are all returned by `GetState` for the UI to render.
+The bodywork range and battery SOC, door/window/trunk/sunroof status, light/ADAS state, climate setpoint, and tyre pressures are all returned by `GetState` for the UI to render.
 
 ### Commands removed with the BYD cloud
 
@@ -250,10 +252,9 @@ REST routes and the Connect registrations:
 
 The `.proto` still declares these RPCs, so the wire contract is unchanged for any
 existing client, but the daemon no longer registers handlers for them. No first-party
-client calls them: `web/` removed the Lock/Unlock/Flash controls by decision (see
-`web/src/app/pages/vehicle/vehicle.component.ts`) and the Flutter in-car UI never had
-them. `web/`'s remaining `lock` references are a **read-only lock status pill**, not a
-command.
+client calls them: the web app (since removed, BladeWatch-rdtj.22) dropped the Lock/Unlock/Flash
+controls by decision and the Flutter in-car UI never had them. The lock status the apps show is a
+**read-only pill**, not a command.
 
 ### Trunk open: removed, not merely unsupported
 
@@ -292,7 +293,7 @@ writing this, found nothing. Shipping a labelled control ("Face", "Feet", "Recir
 would be a guess actuating the physical car, which this issue's own constraints explicitly
 forbid.
 
-**No Flutter/web UI exposes either as a labelled picker.** Establishing the real mapping
+**No Flutter UI exposes either as a labelled picker.** Establishing the real mapping
 needs a device: cycle through each integer BYD's own AC panel accepts, and read what the
 factory UI or physical vents show for each — the same shape of investigation
 `BladeWatch-2pnn.3`'s ADAS field inventory probe already did for declared-but-unverified
@@ -383,6 +384,57 @@ and tailgate actuation. `TripDetector` also deliberately keeps reading the raw, 
 gear from `CameraDaemon` — trips are driven by gear edges, and a synthesised P edge during
 charging would fabricate trip boundaries.
 
+### Gear, drive mode, EV/HEV and Auto Hold on the dashboard (BladeWatch-7zp9, -os88)
+
+`SystemService.GetStatus` carries `driveStatus`: `gear` (GearMonitor, `getGearboxAutoModeType`:
+P=1 R=2 N=3 D=4 M=5 S=6), `driveMode` + `driveModeRaw` (`BYDAutoEnergyDevice.getOperationMode()`,
+collected as `BydVehicleData.operationMode`) and `autoHold` + `autoHoldRaw`
+(`BYDAutoADASDevice.getAVHState()`, collected read-only in `collectAdas` -- `setAVHState` exists and
+is never called). Found in the head unit's `framework.jar` on 2026-09-25.
+
+The raw-to-label mapping is **not settled by the SDK**: `BYDAutoEnergyDevice` carries two constant
+families for the operation mode -- `ENERGY_OPERATION_MODE_NORMAL=1 / _ECO=2 / _SPORT=3` and
+`ENERGY_OPERATION_ECONOMY=1 / _SPORT=2 / _NORMAL=3` (plus `_SNOW=4 / _MUDDY=5 / _SAND=6`) -- and
+`getAVHState`'s `AUTO_HOLD_STATE1..4` (0..3) are unnamed. `DriveState` (byd/DriveState.kt) therefore
+maps only MEASURED values and sends `UNKNOWN` (a dash on the dashboard) for the rest; the raw values
+are always on the wire so the measurement is a status query while the owner switches modes and
+toggles Auto Hold.
+
+Measured on the owner's DM-i 2026-09-25 with a read-only reflection probe while the owner switched
+each control:
+
+| Getter | Measured | Label |
+|---|---|---|
+| `getOperationMode` | 1 in ECO **and** in NORMAL, 2 in SPORT | ECO/NORMAL / SPORT. Neither SDK constant family fits (both predict distinct values for ECO and NORMAL), and a full dump of every no-arg int getter in ECO and in NORMAL differed only in the mode-change buzzer (2026-09-26) |
+| `getAVHState` | 0 with Auto Hold off, 1 with it on | DISABLED / ENABLED; the value while actually holding is not yet measured |
+| `getEnergyMode` | 1 in EV, 3 in HEV (`energyMode` + `energyModeRaw`) | EV / HEV |
+
+These only refresh while ACC is on: `collectEnergy` and `collectAdas` run in the periodic
+`collectAll` since this change. Before it they ran only in `collectAllFull`, so `driveStatus`
+kept its boot-time values -- the daemon reported `operationMode=1` while the car was in SPORT.
+
+### Sunroof position (BladeWatch-b3n7)
+
+The sunroof has only three hardware stops -- one-touch open, half and close -- so a target percent
+snaps to 0 / 50 / 100 (`BydDataCollector.sunPanelStop`). The car never reports where it rests:
+`getSunroofPosition()` reads 0 throughout, and `getSunroofState()` reads 3 while opening, 4 while
+closing and 1 at rest whether closed or half open (measured 2026-09-25). `GetState`'s
+`windows.sunroof` is therefore the stop the app's last successful sunroof command went to, and
+falls back to the car's reading until the first command. On such a car the physical roof switch
+goes unseen. A car whose sunroof has ever read anything but 0 does report its position, so there
+the reading is believed instead (`VehicleControlApiHandler.sunroofPercent`).
+
+### Climate temperatures (BladeWatch-gkjl, -eh3u)
+
+`BYDAutoAcDevice.getTemprature(int)` positions are named on the head unit's class:
+`AC_TEMPERATURE_MAIN=1`, `_DEPUTY=2`, `_REAR=3` (the per-zone setpoints) and `AC_TEMPERATURE_OUT=4`
+(the outside air). There is no cabin position, and the `AC_TEMP_INSIDE` feature (0x3d800030)
+answers -10011 even through `PermissionBypassContext`. Position 4 was once shown as the cabin
+temperature: it read 33 while the owner's thermometer in the cabin read 28 and the instrument's
+`getOutCarTemperature()` read 32. `GetState`'s climate block now carries `setpointC` (position 1)
+and `outsideTempC` (the instrument's outside temperature); proto field 3 `inside_temp_c` is
+reserved.
+
 ### ADAS field inventory (BladeWatch-2pnn.3)
 
 `BydFeatureIds` declares 29 `ADAS_*` constants, every one produced by `resolveOrFallback`,
@@ -464,11 +516,11 @@ History note: an earlier change integrated a native **Filament** 3D engine for t
 ## Source References
 
 - BYD manifest permissions: [AndroidManifest.xml:35](../app/src/main/AndroidManifest.xml#L35), [AndroidManifest.xml:120](../app/src/main/AndroidManifest.xml#L120), [AndroidManifest.xml:193](../app/src/main/AndroidManifest.xml#L193).
-- BYD SDK stub strategy and dependencies: [build.gradle.kts:413](../app/build.gradle.kts#L413), [build.gradle.kts:476](../app/build.gradle.kts#L476), [IAccModeManager.kt:5](../app/src/main/java/android/os/IAccModeManager.kt#L5).
+- BYD SDK stub strategy and dependencies: [build.gradle.kts:413](../app/build.gradle.kts#L413), [build.gradle.kts:476](../app/build.gradle.kts#L476), [BYDAutoManager.java:1](../app/src/main/java/android/hardware/BYDAutoManager.java#L1).
 - Local telemetry collector and reflection-based device access: [BydDataCollector.kt:20](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L20), [BydDataCollector.kt:247](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L247), [BydDataCollector.kt:3907](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L3907).
 - ACC, gear, and event plumbing: [BydFeatureIds.kt](../app/src/main/java/com/loabletech/bladewatch/byd/BydFeatureIds.kt) (replaced `BydConstants.java`, removed in `8e98aaf`), [GearMonitor.kt:132](../app/src/main/java/com/loabletech/bladewatch/monitor/GearMonitor.kt#L132), [CameraDaemon.kt:1905](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1905), [CameraDaemon.kt:2206](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L2206).
 - Door lock and surveillance gating: [CameraDaemon.kt:1764](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1764), [CameraDaemon.kt:1439](../app/src/main/java/com/loabletech/bladewatch/daemon/CameraDaemon.kt#L1439), [AccSentryDaemon.kt:1900](../app/src/main/java/com/loabletech/bladewatch/daemon/AccSentryDaemon.kt#L1900).
 - Vehicle control contract and routing: [vehicle.proto:32](../proto/bladewatch/v1/vehicle.proto#L32), [VehicleControlApiHandler.kt:43](../app/src/main/java/com/loabletech/bladewatch/server/VehicleControlApiHandler.kt#L43), [VehicleCommandRouter.kt:17](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.kt#L17), [VehicleCommandRouter.kt:315](../app/src/main/java/com/loabletech/bladewatch/byd/routing/VehicleCommandRouter.kt#L315).
 - Local SDK control primitives: [BydDataCollector.kt:3839](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L3839), [BydDataCollector.kt:4803](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L4803), [BydDataCollector.kt:5064](../app/src/main/java/com/loabletech/bladewatch/byd/BydDataCollector.kt#L5064).
 - GPS / location: [vehicle.proto:51](../proto/bladewatch/v1/vehicle.proto#L51), [GpsApiHandler.kt:18](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.kt#L18), [GpsApiHandler.kt:24](../app/src/main/java/com/loabletech/bladewatch/server/GpsApiHandler.kt#L24), [GpsMonitor.kt:23](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L23), [GpsMonitor.kt:84](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L84), [GpsMonitor.kt:253](../app/src/main/java/com/loabletech/bladewatch/monitor/GpsMonitor.kt#L253).
-- 3D vehicle hero (Three.js in a WebView — **not** Filament, see the Adreno 610 note in [build-and-operations.md](build-and-operations.md)): [hero.html:15](../app/src/main/assets/web/hero/hero.html#L15), [hero.html:20](../app/src/main/assets/web/hero/hero.html#L20), [flutter_ui/lib/screens/vehicle/vehicle_hero.dart](../flutter_ui/lib/screens/vehicle/vehicle_hero.dart).
+- 3D vehicle hero (Three.js in a WebView — **not** Filament, see the Adreno 610 note in [build-and-operations.md](build-and-operations.md)): [hero.html:15](../flutter_ui/assets/web/hero/hero.html#L15), [hero.html:20](../app/src/main/assets/web/hero/hero.html#L20), [flutter_ui/lib/screens/vehicle/vehicle_hero.dart](../flutter_ui/lib/screens/vehicle/vehicle_hero.dart).

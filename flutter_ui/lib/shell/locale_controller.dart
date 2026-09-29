@@ -46,7 +46,7 @@ abstract class LocaleStore {
 /// `bladewatch_config.json` into it, and the daemon can read it because shell
 /// is in `sdcard_rw`.
 ///
-/// [legacyPath] is still READ so a device whose web UI persisted a language
+/// [legacyPath] is still READ so a device whose older UI persisted a language
 /// keeps it — the web picker goes through the daemon, which runs as shell and
 /// so could always write the old location.
 ///

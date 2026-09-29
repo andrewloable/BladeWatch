@@ -17,6 +17,7 @@ import net.bladewatch.bladewatch_ui.auth.JwtMinter
 import net.bladewatch.bladewatch_ui.config.PublicConfigChannel
 import net.bladewatch.bladewatch_ui.config.SecretConfigChannel
 import net.bladewatch.bladewatch_ui.daemon.DaemonControl
+import net.bladewatch.bladewatch_ui.pairing.PairingControl
 import net.bladewatch.bladewatch_ui.ipc.IpcClient
 import net.bladewatch.bladewatch_ui.liveview.LiveViewTexturePlugin
 import net.bladewatch.bladewatch_ui.location.LocationServiceChannel
@@ -32,7 +33,7 @@ import java.io.File
  * `app/build.gradle.kts` for why (Android-framework-bound, not unit-testable
  * without Robolectric). Every actual behaviour lives in the plain, fully
  * unit-tested Kotlin classes under ipc/, auth/, daemon/, config/, update/;
- * this class only registers the "net.bladewatch.flutter/privileged"
+ * this class only registers the "net.bladewatch.incarapp/privileged"
  * MethodChannel (BladeWatch-ncbb.2) and dispatches each `"<group>.<method>"`
  * call to the right one, translating [IpcException]s into the platform
  * channel error codes `MethodChannelBridge` (flutter_ui/lib/platform/) maps
@@ -47,6 +48,7 @@ class MainActivity : FlutterActivity() {
     private val ipcClient = IpcClient()
     private val jwtMinter = JwtMinter(ipcClient)
     private val daemonControl = DaemonControl(ipcClient)
+    private val pairingControl = PairingControl(ipcClient)
     private val secretConfig = SecretConfigChannel(ipcClient)
     private val publicConfig = PublicConfigChannel(ipcClient)
 
@@ -69,7 +71,7 @@ class MainActivity : FlutterActivity() {
     private var pendingLocationPermissionResult: MethodChannel.Result? = null
 
     // BladeWatch-yz1e.3 (Settings → Appearance): themeMode/driveSide are pure
-    // per-installation UI preferences local to THIS APK (net.bladewatch.flutter),
+    // per-installation UI preferences local to THIS APK (net.bladewatch.incarapp),
     // not shared/secret state — plain SharedPreferences, no IPC, unlike every
     // other group above. Native's equivalent (PreferencesManager.kt) can't be
     // read directly even though the two APKs share a UID: SharedPreferences
@@ -154,8 +156,8 @@ class MainActivity : FlutterActivity() {
         // cannot catch this: there is no main-thread policy off-device.
         //
         // Serial (the default) is deliberate: it preserves the ordering the
-        // daemon's single-connection-per-command IPC expects, e.g. secret_put
-        // followed by auth_invalidate in JwtMinter.putDeviceSecret.
+        // daemon's single-connection-per-command IPC expects, so a write is
+        // always seen before any command that acts on it.
         //
         // The handful of methods that genuinely need the Activity thread hop back
         // explicitly with runOnUiThread -- see location.requestPermission and
@@ -163,7 +165,7 @@ class MainActivity : FlutterActivity() {
         val privilegedTaskQueue = flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "net.bladewatch.flutter/privileged",
+            "net.bladewatch.incarapp/privileged",
             StandardMethodCodec.INSTANCE,
             privilegedTaskQueue,
         ).setMethodCallHandler(::handleMethodCall)
@@ -179,7 +181,7 @@ class MainActivity : FlutterActivity() {
         val liveViewTaskQueue = flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "net.bladewatch.flutter/live_view_texture",
+            "net.bladewatch.incarapp/live_view_texture",
             StandardMethodCodec.INSTANCE,
             liveViewTaskQueue,
         ).setMethodCallHandler(::handleLiveViewMethodCall)
@@ -194,24 +196,26 @@ class MainActivity : FlutterActivity() {
                     jwtMinter.invalidate()
                     result.success(null)
                 }
-                "auth.getAccessCode" -> result.success(jwtMinter.getAccessCode())
-                "auth.regenerateAccessCode" -> result.success(jwtMinter.regenerateAccessCode())
-                "auth.setCustomAccessCode" -> {
-                    val args = requireArgs(call)
-                    result.success(jwtMinter.setCustomAccessCode(args.string("password")))
-                }
 
                 "daemon.start" -> result.success(jsonToMap(daemonControl.start()))
                 "daemon.stop" -> result.success(jsonToMap(daemonControl.stop()))
                 "daemon.status" -> result.success(jsonToMap(daemonControl.status()))
                 "daemon.processStatus" -> result.success(jsonToMap(daemonControl.processStatus()))
-                "daemon.tunnelStatus" -> result.success(jsonToMap(daemonControl.tunnelStatus()))
+                "daemon.pearStatus" -> result.success(jsonToMap(daemonControl.pearStatus()))
                 "daemon.setEnabled" -> {
                     val args = requireArgs(call)
                     result.success(
                         jsonToMap(daemonControl.setDaemonEnabled(args.string("type"), args.bool("enabled"))),
                     )
                 }
+
+                // BladeWatch-rdtj.7: the "Pair a device" flow. The payload is shown as a QR and
+                // never logged; it is single-use and expires in minutes.
+                "pairing.mint" -> result.success(jsonToMap(pairingControl.mint()))
+                "pairing.list" -> result.success(jsonToMap(pairingControl.list()))
+                "pairing.revoke" -> result.success(jsonToMap(pairingControl.revoke(requireArgs(call).string("id"))))
+                "pairing.setLanAccess" ->
+                    result.success(jsonToMap(pairingControl.setLanAccess(requireArgs(call).bool("enabled"))))
 
                 "config.get" -> {
                     val args = requireArgs(call)

@@ -87,21 +87,6 @@ object Enc {
 
 
     // ==================== SERVICES ====================
-    /** accmodemanager */
-    @JvmField
-    val SERVICE_ACCMODE: String = Safe.s("tr877WU3+MV4zFtCjanWUw==")
-
-    /** byd_datacached */
-    @JvmField
-    val SERVICE_BYD_DATACACHE: String = Safe.s("JQiIxMJxYlF8spk2fIi8Sg==")
-
-    /** bg_datacache */
-    @JvmField
-    val SERVICE_BG_DATACACHE: String = Safe.s("m84QJmAGTQpH+XP36MaDpA==")
-
-    /** android.os.IAccModeManager */
-    @JvmField
-    val INTERFACE_ACCMODE: String = Safe.s("8AsXgmArXEIVQTzlKJxcF6yCBHWM2MoAIE3hnqCQMWM=")
 
 
     // ==================== MISC ====================
