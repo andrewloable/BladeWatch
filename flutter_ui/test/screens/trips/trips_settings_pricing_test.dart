@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// The gap this covers: the head unit could set what electricity costs but not what petrol
 /// costs, so on a PHEV `litresUsed` was recorded while `fuelCost` stayed 0 and `tripCost`
-/// silently under-reported — unless the owner opened the web UI over the tunnel.
+/// silently under-reported — unless the owner set it from another client.
 ///
 /// These assert the CONTRACT rather than pixels: the model carries the values, the defaults
 /// mean "not configured", and a deliberate 0 survives as a real 0. Layout is verified on the

@@ -11,8 +11,7 @@
 /// generated `BatteryInfo` doc comment in lib/gen/bladewatch/v1/system.pb.dart
 /// already records: "which clients tolerate via jsonOptions.ignoreUnknownFields".
 ///
-/// The Angular SPA sets exactly that on its transport
-/// (web/src/app/core/connect/connect.provider.ts:36). This port initially
+/// The (since removed) web client set exactly that on its transport. This port initially
 /// omitted the Dart equivalent, so `mergeFromProto3Json` defaulted to
 /// `ignoreUnknownFields: false` and threw on the FIRST unknown field —
 /// failing the whole response, not just the field. On device that surfaced as

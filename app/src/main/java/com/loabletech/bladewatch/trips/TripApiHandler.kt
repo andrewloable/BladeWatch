@@ -308,7 +308,7 @@ class TripApiHandler(private val manager: TripAnalyticsManager) {
 
             // Connect/proto clients OMIT default scalars (enabled=false, electricityRate=0.0)
             // but set the proto presence companions hasEnabled/hasElectricityRate so a
-            // false/zero can still be saved. The legacy web UI sends the value keys directly,
+            // false/zero can still be saved. Older clients send the value keys directly,
             // with no presence flag.
             if (bodyJson.optBoolean("hasEnabled", false) || bodyJson.has("enabled")) {
                 manager.onConfigChanged(bodyJson.optBoolean("enabled", false))

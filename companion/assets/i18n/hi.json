@@ -134,28 +134,11 @@
     "timeout": "समयबद्ध अनुरोध",
     "server_error": "सर्वर त्रुटि"
   },
-  "confirm": {
-    "delete": "हटाने के लिए?",
-    "delete_irreversible": "यह नहीं किया जा सकता है।",
-    "are_you_sure": "क्या आप निश्चित हैं?"
-  },
   "toast": {
     "saved": "सहेजा गया",
     "applied": "लागू किया गया",
     "deleted": "हटाया गया",
     "copied": "क्लिपबोर्ड पर कॉपी किया गया"
-  },
-  "login": {
-    "subtitle": "पहुँचने के लिए अपने डिवाइस टोकन दर्ज करें",
-    "device_id": "डिवाइस आईडी",
-    "find_hint": "इसे अपने BladeWatch ऐप → डैशबोर्ड → एक्सेस कोड में खोजें",
-    "login_btn": "लॉगिन",
-    "privacy": "आपका डेटा आपके डिवाइस पर रहता है।",
-    "access_code": "एक्सेस कोड",
-    "access_code_placeholder": "एक्सेस कोड",
-    "form_hint": "इसे अपने BladeWatch ऐप → डैशबोर्ड → एक्सेस कोड में खोजें",
-    "login": "लॉगिन",
-    "footer": "आपका डेटा आपके डिवाइस पर रहता है।"
   },
   "notif": {
     "page_title": "सूचनाएँ",
@@ -1151,43 +1134,6 @@
     "playing": "चल रहा है…",
     "audio_test": "ऑडियो परीक्षण (3s)"
   },
-  "update": {
-    "check_for_updates": "अद्यतन की जाँच करें",
-    "checking": "अद्यतनों की जाँच...",
-    "check_failed": "अद्यतन जांच विफल: {error}",
-    "latest_version": "✅ आप नवीनतम संस्करण पर हैं ({version})",
-    "install": "स्थापित करें",
-    "install_anyway": "किसी भी तरह स्थापित करें",
-    "starting": "शुरू करने के लिए ...",
-    "install_rejected": "इंस्टॉलेशन अस्वीकारः {error}",
-    "install_failed_start": "स्थापना प्रारंभ करने में विफल",
-    "install_request_failed": "स्थापना अनुरोध विफल: {error}",
-    "install_failed": "स्थापना विफल: {error}",
-    "updating": "BladeWatch को अद्यतन करना",
-    "reconnecting": "पुनः कनेक्टिंग ...",
-    "headunit_installing": "हेड यूनिट अद्यतन स्थापित कर रहा है. यह पृष्ठ स्वचालित रूप से ताज़ा होगा जब नया संस्करण ऑनलाइन है.",
-    "phase_queued": "कतार  तैयारी...",
-    "phase_downloading": "APK डाउनलोड करना",
-    "phase_verifying": "डाउनलोड की जांच",
-    "phase_stopping": "सेवाएँ बंद की जा रही हैं (टनल ऑफ़लाइन हो जाएगा)",
-    "phase_installing": " हेड यूनिट को स्थापित करना फिर से शुरू करना",
-    "phase_error": "असफल",
-    "waiting_for_headunit": "मुख्य इकाई के लौटने की प्रतीक्षा कर रहे हैं...",
-    "attempt_of": "{total} का प्रयास {n} (~{remaining} शेष)",
-    "version_unchanged": "सेवा वापस ऑनलाइन है लेकिन संस्करण अपरिवर्तित है — इंस्टॉलेशन विफल हो सकता है।",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ {version} पर अद्यतन",
-    "reloading": "पृष्ठ को फिर से लोड करना ...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "आपका <strong>{type}</strong> URL स्थिर है और नहीं बदलेगा।",
-    "lan_hint": "स्थानीय नेटवर्क पहुँच (<code>{ips}</code>) ~{seconds}s सुरंग  इसे स्विच करने के लिए अब अगर आप कर सकते हैं की तुलना में तेजी से पुनर्प्राप्त करता है।",
-    "recommend_inapp_default": "BYD प्रत्येक स्थापना पर ऑटो-स्टार्ट श्वेतसूची को साफ करता है। कार में ऐप आपको सूचित करता है; वेब ऐप नहीं कर सकता है।",
-    "recommend_inapp_intro": "<strong>अनुशंसितः इसके बजाय कार में ऐप से अपडेट करें.</strong> {reason}",
-    "title_update_to": "BladeWatch को <span class=\"upd-newv\">{version}</span> में अपडेट करें?",
-    "currently_on": "वर्तमान में {version} पर",
-    "downtime_warning": "<strong>रिमोट एक्सेस ~{minutes} मिनट के लिए ऑफ़लाइन।</strong> इंस्टॉलेशन के बाद सेवाएँ पुनः आरंभ होती हैं और टनल फिर से जुड़ जाता है।",
-    "fallback_check_label": "अद्यतन की जाँच करें"
-  },
   "vehicle": {
     "car_locked": "कार लॉक",
     "car_unlocked": "कार अनलॉक",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Google Maps में खोलें",
     "no_gps_fix": "GPS स्थिति उपलब्ध नहीं"
   },
-  "roi": {
-    "editing": "सम्पादन",
-    "window_n": "खिड़की {n}",
-    "remove": "हटाएँ",
-    "from": "से",
-    "to": "करने के लिए",
-    "schedule_off": " सामान्य निगरानी को रद्द करें।",
-    "add_time_window": "एक समय खिड़की जोड़ें, फिर सहेजें।",
-    "fix_errors": "सहेजने से पहले उपरोक्त त्रुटियों को ठीक करें।",
-    "fix_errors_first": "पहले त्रुटियों को ठीक करें",
-    "next_day_paren": "(पहले दिन)",
-    "err_select_day": "कम से कम एक दिन चुनें",
-    "err_identical": "शुरुआत और अंत समान हैं",
-    "overnight": "रात भर: {start} → अगले दिन {end}",
-    "cam_front": "सामने की ओर",
-    "cam_right": "दाईं ओर",
-    "cam_rear": "पीछे की ओर",
-    "cam_left": "बायीं ओर",
-    "no_preview": "कोई पूर्वावलोकन नहीं",
-    "full_frame": "{cam}: पूर्ण फ्रेम",
-    "blocks_active": "{cam}: {active}/{total} ब्लॉक सक्रिय",
-    "zone_saved": "{cam} क्षेत्र सहेजा गया",
-    "roi_disabled": "{cam} आरओआई अक्षम",
-    "save_failed": "सहेजने में विफल",
-    "schedule_saved": "सहेजी गई अनुसूची",
-    "badge_on": "चालू",
-    "badge_off": "बंद"
-  },
   "safe_loc": {
     "enabled": "सुरक्षित स्थान सक्षम",
     "disabled": "सुरक्षित स्थान अक्षम",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ बंद",
     "you_are_here": " तुम यहाँ हो",
     "popup_radius": "<b>{name}</b><br>{meters}m त्रिज्या"
-  },
-  "liveview": {
-    "cameras": "कैमरे",
-    "location": "स्थान",
-    "live": "जीवित",
-    "enable_failed": "स्ट्रीमिंग सक्षम नहीं किया गया"
-  },
-  "map": {
-    "your_vehicle": "आपका वाहन",
-    "your_vehicle_sub": "BYD चैंप सेंटीरी",
-    "you_are_here": "तुम यहाँ हो"
-  },
-  "pip": {
-    "select_camera": "कैमरा चुनें",
-    "select_a_camera": "कैमरा चुनें",
-    "view_all": "सभी",
-    "view_front": "सामने की ओर",
-    "view_right": "दाईं ओर",
-    "view_rear": "पीछे की ओर",
-    "view_left": "बायीं ओर",
-    "title_resize": "आकार बदलें",
-    "title_minimize": "कम से कम करें",
-    "title_close": "बंद करें",
-    "title_left_camera": "बाएं कैमरा",
-    "title_front_camera": "फ्रंट कैमरा",
-    "title_all_cameras": "सभी कैमरे",
-    "title_rear_camera": "रियर कैमरा",
-    "title_right_camera": "सही कैमरा",
-    "title_toggle": "कैमरा दृश्य को टगल करें",
-    "default_camera": "कैमरा",
-    "connecting": "कनेक्ट हो रहा है…",
-    "connection_failed": "कनेक्शन विफल",
-    "decoder_not_loaded": "डिकोडर लोड नहीं किया गया",
-    "decoder_failed": "डिकोडर विफल रहा",
-    "close": "बंद करें",
-    "noDetectionEvents": "कोई पहचान घटना नहीं",
-    "previousClip": "पिछली क्लिप",
-    "prev": "‹ पिछला",
-    "nextClip": "अगली क्लिप",
-    "next": "अगला ›"
-  },
-  "stream": {
-    "front_camera": "फ्रंट कैमरा",
-    "hotspot_all": "सभी",
-    "hotspot_front": "सामने",
-    "hotspot_left": "बायाँ",
-    "hotspot_rear": "पीछे",
-    "hotspot_right": "दायाँ",
-    "idle_hint": "नीचे कार पर एक कैमरा टैप करें",
-    "mini_cameras": "कैमरे",
-    "quality_high": "ऊंचा (1.5 मीटर)",
-    "quality_low": "कम (600k)",
-    "quality_max": "अधिकतम (5M, 30 fps)",
-    "quality_medium": "मध्यम (1M)",
-    "quality_smooth": "चिकनी (3.5M, 25 fps)",
-    "quality_ultra_high": "अल्ट्रा उच्च (2.5M)",
-    "quality_ultra_low": "अल्ट्रा लो (400k)"
-  },
-  "auth": {
-    "code_placeholder": "xxxxxxxx"
-  },
-  "theme": {
-    "dark": "डार्क",
-    "light": "लाइट",
-    "auto": "ऑटो"
   },
   "about": {
     "page_title": "के बारे में — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "BYD वाहनों के लिए उन्नत निगरानी मोड और डैशकैम सिस्टम।",
     "privacy_note": "आपका डेटा आपके डिवाइस पर रहता है। कोई क्लाउड ज़रूरी नहीं।",
     "setup_subtitle": "बेहतरीन अनुभव के लिए तीन त्वरित चरण:"
-  },
-  "byd_cloud": {
-    "page_title": "BYD बादल",
-    "tab_account": "खाता",
-    "tab_status": "स्थिति",
-    "tab_advanced": "उन्नत",
-    "account_title": "BYD क्लाउड खाता",
-    "account_info_title": "कनेक्शन",
-    "region_supporting": "अपने BYD एप्लिकेशन पंजीकरण क्षेत्र से मेल खाएं. यदि आप अनिश्चित हैं तो पहले यूरोपीय संघ की कोशिश करें।",
-    "empty_status": "अपने VIN और अंतिम बादल धक्का यहाँ देखने के लिए खाता टैब पर कनेक्ट करें.",
-    "empty_advanced": "खाता टैब पर क्रेडेंशियल सहेजे जाने तक कोई उन्नत क्रिया उपलब्ध नहीं है।",
-    "danger_zone": "जोखिम क्षेत्र",
-    "clear_hint": "इस डिवाइस से सहेजे गए क्रेडेंशियल्स को हटा देता है. आपको फिर से क्लाउड कमांड का उपयोग करने के लिए अपने BYD ऐप लॉगिन + पिन दर्ज करने की आवश्यकता होगी।",
-    "recommend_title": "वैकल्पिक वाहन प्राधिकरण प्रोफ़ाइल का उपयोग करें",
-    "recommend_sub": "अनुशंसित  आपके मुख्य BYD खाते को अलग रखता है। सेटअप चरणों को देखने के लिए टैप करें।",
-    "recommend_step_1": "अपने फोन पर आधिकारिक BYD ऐप खोलें।",
-    "recommend_step_2": "वाहन प्राधिकरण पर जाएं।",
-    "recommend_step_3": "नई अनुमति पर टैप करें।",
-    "recommend_step_4": "एक माध्यमिक ईमेल दर्ज करें  यह आपके मुख्य खाते ईमेल से अलग होना चाहिए।",
-    "recommend_step_5": "इस प्रोफ़ाइल को सक्रिय रहने के लिए आप कितना समय चाहते हैं, उसके अनुरूप एक प्राधिकरण अवधि चुनें।",
-    "recommend_step_6": "BYD ऐप से लॉग आउट करें, फिर सत्यापन कोड का उपयोग करके माध्यमिक ईमेल के साथ साइन अप करें और पासवर्ड बनाएं।",
-    "recommend_step_7": "BYD ऐप में लॉक या अनलॉक करें  पर टैप करें यह आपको एक कंट्रोल पिन सेट करने के लिए कह देगा।",
-    "recommend_step_8": "BladeWatch में माध्यमिक ईमेल, पासवर्ड और नियंत्रण पिन दर्ज करें।"
   },
   "dashboard": {
     "trips": "यात्राएँ",
@@ -1729,10 +1559,6 @@
     "dismiss": "खारिज करें",
     "syncing": "सिंक हो रहा है…",
     "sync_database": "डेटाबेस सिंक करें"
-  },
-  "header": {
-    "copy": "कॉपी करें",
-    "languageAndSettings": "भाषा और सेटिंग्स"
   },
   "companion": {
     "looking": "आपकी कार खोजी जा रही है…",

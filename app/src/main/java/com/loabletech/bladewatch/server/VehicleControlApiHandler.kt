@@ -222,7 +222,7 @@ object VehicleControlApiHandler {
 
         // Tyres — per-corner pressure (kPa + PSI), temperature, and the three independent state
         // enums (pressure under/over, slow/fast leak, signal lost). Indexed [FL, FR, RL, RR]. The
-        // web UI's tyre callouts read this block directly; if any required source is missing the
+        // the tyre callouts read this block directly; if any required source is missing the
         // corner falls back to {available:false} so the UI shows a grey "no signal" state.
         val tyres = JSONObject()
         val anyTyreData = data.tyrePressure != null ||
@@ -387,7 +387,7 @@ object VehicleControlApiHandler {
             // Connect/proto clients send windowIndex (the same 0=all/1=LF.. scheme the handler
             // uses for area) and a direction string ("open"/"close"). windowIndex==0 ("all") is a
             // proto default scalar and omitted on the wire, so its absence correctly maps to area
-            // 0. The legacy web UI sends area + command (1=open, 2=close, 3=stop).
+            // 0. The older area + command form (1=open, 2=close, 3=stop) is still accepted.
             val area = if (req.has("windowIndex")) {
                 req.optInt("windowIndex", 0)
             } else {
@@ -501,7 +501,7 @@ object VehicleControlApiHandler {
      * an HTTP round trip — mirrors [parseLightsRequest]'s shape.
      *
      * Connect/proto clients send camelCase json-names and OMIT default scalars (false/0); the
-     * legacy web UI sends its own names and always sends booleans explicitly. Read the proto key
+     * older clients sent their own names and always sent booleans explicitly. Read the proto key
      * when present, else fall back to the legacy key — see the pre-existing cases below for the
      * established convention this follows.
      *

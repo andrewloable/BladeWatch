@@ -50,7 +50,7 @@ import kotlin.math.min
 import kotlin.math.roundToLong
 
 /**
- * HTTP server — serves the web UI and the WebSocket H.264 stream.
+ * HTTP server — Connect RPC, the companion's pairing, media (`/video`, `/thumb`, stills) and the WebSocket H.264 stream.
  *
  * Plain HTTP listens on 127.0.0.1:8080 ONLY, under every configuration: plaintext never leaves the
  * device (BladeWatch-rdtj.4). LAN access, when the owner opts in (`network.lanHttpEnabled`), is a
@@ -691,7 +691,7 @@ class HttpServer(private val port: Int) {
      * The daemon status object, for `SystemService.GetStatus` (BladeWatch-6mnq).
      *
      * This used to write itself into an OutputStream that the Connect layer captured back out; it
-     * returns the object now. There is no longer an HTTP /status route — the SPA and the Flutter
+     * returns the object now. There is no longer an HTTP /status route — the Flutter
      * UI both call the RPC.
      */
     @Throws(Exception::class)
@@ -700,7 +700,7 @@ class HttpServer(private val port: Int) {
         status.put("status", "ok")
         status.put("deviceId", CameraDaemon.getDeviceId())
 
-        // Vehicle-data readiness, surfaced explicitly so the web UI can render a "waiting for
+        // Vehicle-data readiness, surfaced explicitly so a client can render a "waiting for
         // vehicle…" state instead of silently leaving every field blank when the BYD binders
         // haven't bound yet (cold-boot race — HTTP comes up well before BydDataCollector finishes
         // ~15 binder lookups). On first hit, give the collector a short window to come online;
@@ -768,7 +768,7 @@ class HttpServer(private val port: Int) {
                 range.put("isCritical", rangeData.isCritical)
                 range.put("status", rangeData.getStatus())
                 // Only emit fuelPercent for PHEVs — BEVs leave fuelPercent NaN upstream
-                // (BydDataCollector gates on nominal capacity < 30 kWh), so the web UI's
+                // (BydDataCollector gates on nominal capacity < 30 kWh), so the clients'
                 // `if (fuelPct > 0)` guard hides the fuel card.
                 if (rangeData.hasFuelPercent()) {
                     range.put("fuelPercent", rangeData.fuelPercent)
@@ -777,7 +777,7 @@ class HttpServer(private val port: Int) {
             }
 
             // Distance unit preference — "km" or "mi". Derived from the user setting
-            // (TripConfig.distanceUnit), which overrides auto-detection. The web UI uses this to
+            // (TripConfig.distanceUnit), which overrides auto-detection. Clients use this to
             // convert km values for display and pick the right label.
             try {
                 val collector = BydDataCollector.getInstance()

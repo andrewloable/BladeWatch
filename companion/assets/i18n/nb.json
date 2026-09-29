@@ -134,28 +134,11 @@
     "timeout": "Oppdatert forespørsel",
     "server_error": "Serverfeil"
   },
-  "confirm": {
-    "delete": "Slette?",
-    "delete_irreversible": "Dette kan ikke gjøres tilbake.",
-    "are_you_sure": "Er du sikker på det?"
-  },
   "toast": {
     "saved": "Lagret",
     "applied": "Tatt i bruk",
     "deleted": "Slettet",
     "copied": "Kopiert til utklippstavlen"
-  },
-  "login": {
-    "subtitle": "Skriv inn enheten din token for å få tilgang",
-    "device_id": "Identifikasjonsnummer",
-    "find_hint": "Finn dette i BladeWatch-appen → Dashboard → Access Code",
-    "login_btn": "Logg inn",
-    "privacy": "Dataene dine blir på enheten din.",
-    "access_code": "Tilgangskode",
-    "access_code_placeholder": "Tilgangskode",
-    "form_hint": "Finn dette i BladeWatch-appen → Dashboard → Access Code",
-    "login": "Logg inn",
-    "footer": "Dataene dine blir på enheten din."
   },
   "notif": {
     "page_title": "Varsler",
@@ -1151,43 +1134,6 @@
     "playing": "Spiller…",
     "audio_test": "Lydtest (3 s)"
   },
-  "update": {
-    "check_for_updates": "Sjekk etter oppdateringer",
-    "checking": "Jeg sjekker etter oppdateringer...",
-    "check_failed": "Oppdateringskontroll mislyktes: {error}",
-    "latest_version": "✅ Du er på den nyeste versjonen ({version})",
-    "install": "Installere",
-    "install_anyway": "Installer uansett",
-    "starting": "Begynn med...",
-    "install_rejected": "Installering avvist: {error}",
-    "install_failed_start": "Installering mislyktes",
-    "install_request_failed": "Installationsforespørsel mislyktes: {error}",
-    "install_failed": "Installering mislyktes: {error}",
-    "updating": "Oppdatering av BladeWatch",
-    "reconnecting": "Å gjenkoble...",
-    "headunit_installing": "Hovedenheten installerer oppdateringen. Denne siden vil oppdateres automatisk når den nye versjonen er online.",
-    "phase_queued": "Lås  forbereder...",
-    "phase_downloading": "Nedlasting av APK",
-    "phase_verifying": "Verifisering av nedlasting",
-    "phase_stopping": "Stopper tjenester (tunnelen vil gå frakoblet)",
-    "phase_installing": "Installering av  hovedenhet gjenstarting",
-    "phase_error": "Ulykket",
-    "waiting_for_headunit": "Installerer  ventet på at hovedenheten kommer tilbake...",
-    "attempt_of": "Forsøk {n} av {total} (~{remaining}s gjenværende)",
-    "version_unchanged": "Tjenesten er tilbake online, men versjonen er uendret — installasjonen kan ha mislyktes.",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ Oppdatert til {version}",
-    "reloading": "Omlasting av siden...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "<strong>{type}</strong> URL er stabil og vil ikke endre seg.",
-    "lan_hint": "Lokal nettverkstilgang (<code>{ips}</code>) gjenoppretter ~{seconds}s raskere enn tunnelen  skifte til det nå hvis du kan.",
-    "recommend_inapp_default": "BYD renser automatisk start-hvitlisten på hver installasjon. In-car-appen spør deg; webapp kan ikke.",
-    "recommend_inapp_intro": "<strong>Rekommendert: oppdatering fra app i bilen i stedet.</strong> {reason}",
-    "title_update_to": "Oppdatere BladeWatch til <span class=\"upd-newv\">{version}</span>?",
-    "currently_on": "For øyeblikket på {version}",
-    "downtime_warning": "<strong>Fjerntilgang frakoblet i ~{minutes} min.</strong> Tjenestene startes på nytt og tunnelen kobles til igjen etter installasjonen.",
-    "fallback_check_label": "Sjekk etter oppdateringer"
-  },
   "vehicle": {
     "car_locked": "Bil låst",
     "car_unlocked": "Bil låst opp",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Åpne i Google Maps",
     "no_gps_fix": "Ingen GPS-posisjon"
   },
-  "roi": {
-    "editing": "REDIGERING",
-    "window_n": "Vindu {n}",
-    "remove": "Fjern",
-    "from": "Fra",
-    "to": "til",
-    "schedule_off": "Planlegg av  vanlig overvåking.",
-    "add_time_window": "Legg til et tidsvindu, så spar.",
-    "fix_errors": "Fix feil ovenfor før du sparer.",
-    "fix_errors_first": "Fix feil først",
-    "next_day_paren": "( neste dag)",
-    "err_select_day": "Velg minst en dag",
-    "err_identical": "Start og slutt er identiske.",
-    "overnight": "Over natten: {start} → neste dag {end}",
-    "cam_front": "Fremre side",
-    "cam_right": "Høyre side",
-    "cam_rear": "Baksiden",
-    "cam_left": "Venstre side",
-    "no_preview": "Ingen forhåndsvisning",
-    "full_frame": "{cam}: Full ramme",
-    "blocks_active": "{cam}: {active}/{total} blokker aktive",
-    "zone_saved": "{cam}-zone lagret",
-    "roi_disabled": "{cam} ROI inaktivert",
-    "save_failed": "Ikke reddet",
-    "schedule_saved": "Tidsplan lagret",
-    "badge_on": "PÅ",
-    "badge_off": "AV"
-  },
   "safe_loc": {
     "enabled": "Sikre plasseringer aktiveret",
     "disabled": "Sikre steder invalideret",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ Avsluttet",
     "you_are_here": " Du er her",
     "popup_radius": "<b>{name}</b><br>{meters}m radius"
-  },
-  "liveview": {
-    "cameras": "Kameraer",
-    "location": "Lokalisering",
-    "live": "Leve",
-    "enable_failed": "Ikke aktiveret streaming"
-  },
-  "map": {
-    "your_vehicle": "Køretøyet ditt",
-    "your_vehicle_sub": "BladeWatch Surveillance",
-    "you_are_here": "Du er her"
-  },
-  "pip": {
-    "select_camera": "Velg kamera",
-    "select_a_camera": "Velg et kamera",
-    "view_all": "Alle",
-    "view_front": "Fremre side",
-    "view_right": "Høyre side",
-    "view_rear": "Baksiden",
-    "view_left": "Venstre side",
-    "title_resize": "Gjør omstørrelse",
-    "title_minimize": "Minimer",
-    "title_close": "Lukk",
-    "title_left_camera": "Venstre kamera",
-    "title_front_camera": "Fremskamera",
-    "title_all_cameras": "Alle kameraer",
-    "title_rear_camera": "Bakkamera",
-    "title_right_camera": "Rett kamera",
-    "title_toggle": "Slå ut kameravisning",
-    "default_camera": "Kamera",
-    "connecting": "Kobler til…",
-    "connection_failed": "Forbindelse mislyktes",
-    "decoder_not_loaded": "Dekoder ikke lastet",
-    "decoder_failed": "Dekoder mislyktes",
-    "close": "Lukk",
-    "noDetectionEvents": "Ingen deteksjonshendelser",
-    "previousClip": "Forrige klipp",
-    "prev": "‹ Forrige",
-    "nextClip": "Neste klipp",
-    "next": "Neste ›"
-  },
-  "stream": {
-    "front_camera": "Fremskamera",
-    "hotspot_all": "Alle",
-    "hotspot_front": "Foran",
-    "hotspot_left": "Venstre",
-    "hotspot_rear": "Bak",
-    "hotspot_right": "Høyre",
-    "idle_hint": "Trykk på et kamera på bilen nedenfor",
-    "mini_cameras": "Kameraer",
-    "quality_high": "Høy (1,5 m)",
-    "quality_low": "Lått (600k)",
-    "quality_max": "Max (5M, 30 fps)",
-    "quality_medium": "Medium (1M)",
-    "quality_smooth": "Glatte (3,5 M, 25 fps)",
-    "quality_ultra_high": "Ultra høyt (2,5 m)",
-    "quality_ultra_low": "Ultra lavt (400k)"
-  },
-  "auth": {
-    "code_placeholder": "xxxxxxxx"
-  },
-  "theme": {
-    "dark": "Mørk",
-    "light": "Lys",
-    "auto": "Auto"
   },
   "about": {
     "page_title": "Om — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "Avansert vaktmodus og dashcam-system for BYD-kjøretøy.",
     "privacy_note": "Dataene dine blir på enheten din. Ingen sky kreves.",
     "setup_subtitle": "Tre raske steg for best mulig opplevelse:"
-  },
-  "byd_cloud": {
-    "page_title": "BYD Sky",
-    "tab_account": "Konto",
-    "tab_status": "Status",
-    "tab_advanced": "Utviklet",
-    "account_title": "BYD Cloud konto",
-    "account_info_title": "Forbindelse",
-    "region_supporting": "Møt din BYD app registreringsregion. Prøv EU først hvis du er usikker.",
-    "empty_status": "Koble på fanen Konto for å se VIN og siste sky trykk her.",
-    "empty_advanced": "Ingen avanserte handlinger er tilgjengelige før legitimasjoner er lagret på fanen Konto.",
-    "danger_zone": "Faresone",
-    "clear_hint": "Du må innføre din BYD app login + PIN for å bruke sky kommandoer igjen.",
-    "recommend_title": "Bruk en alternativ kjøretøytillatelse profil",
-    "recommend_sub": "Anbefalt  holder din viktigste BYD konto isolert. Trykk for å se innstillingstrinnene.",
-    "recommend_step_1": "Åpne den offisielle BYD-appen på telefonen din.",
-    "recommend_step_2": "Gå til kjøretøyetillatelse.",
-    "recommend_step_3": "Trykk på Ny bemyndigelse.",
-    "recommend_step_4": "Skriv inn en sekundær e-post  den må være forskjellig fra din hovedkonto e-post.",
-    "recommend_step_5": "Velg en godkjenningsperiode som passer til hvor lenge du vil at denne profilen skal være aktiv.",
-    "recommend_step_6": "Logg ut av BYD-appen, registrer deg deretter med den sekundære e-posten ved hjelp av verifikasjonskoden og opprett et passord.",
-    "recommend_step_7": "Trykk på låse eller låse opp i BYD-appen  det vil be deg om å sette en kontrollpinn.",
-    "recommend_step_8": "Skriv inn sekundær e-post, passord, og Control Pin her i BladeWatch."
   },
   "dashboard": {
     "trips": "Turer",
@@ -1729,10 +1559,6 @@
     "dismiss": "Avvis",
     "syncing": "Synkroniserer…",
     "sync_database": "Synkroniser database"
-  },
-  "header": {
-    "copy": "Kopier",
-    "languageAndSettings": "Språk og innstillinger"
   },
   "companion": {
     "looking": "Leter etter bilen din…",

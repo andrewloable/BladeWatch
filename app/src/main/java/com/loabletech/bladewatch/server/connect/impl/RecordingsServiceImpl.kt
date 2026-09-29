@@ -70,7 +70,7 @@ class RecordingsServiceImpl {
             )
         }
         // The handler emits an enriched `actors` array per recording; the proto RecordingEntry
-        // models detected_classes as repeated string (consumed by the Angular events page).
+        // models detected_classes as repeated string (consumed by the apps' events pages).
         // Derive detectedClasses from the distinct actor class names so the proto field populates.
         return json {
             val result = JSONObject(raw.body)
@@ -89,7 +89,7 @@ class RecordingsServiceImpl {
                     val actors = rec.optJSONArray("actors")
                     val hasEvents = actors != null && actors.length() > 0
                     if (!rec.has("hasEvents")) rec.put("hasEvents", hasEvents)
-                    // detected_classes: distinct actor class names (Angular events page).
+                    // detected_classes: distinct actor class names.
                     if (!rec.has("detectedClasses") && actors != null) {
                         val classes = LinkedHashSet<String>()
                         for (j in 0 until actors.length()) {
@@ -131,7 +131,7 @@ class RecordingsServiceImpl {
         val raw = json { RecordingsApiHandler.storageStats() }
         // The handler emits a FLAT object (normalCount/sentrySize/...); the proto GetStatsResponse
         // expects a nested `stats` (RecordingStats) with normalised names. Reshape into the nested
-        // shape (Kotlin reads stats.recordingsCount/etc; the Angular consumer reads stats.stats.*).
+        // shape (Kotlin reads stats.recordingsCount/etc; the clients read stats.stats.*).
         return json {
             val flat = JSONObject(raw.body)
             val stats = JSONObject()

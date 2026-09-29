@@ -25,22 +25,9 @@ object ConnectHandlerUtil {
     /** Parsed result of a captured REST handler response. */
     private class RawCapture(
         val bodyBytes: ByteArray,
-        /** Everything before the blank line. */
-        private val headersSection: String,
         /** Parsed from the HTTP status line. */
         val httpStatus: Int
-    ) {
-        /** Extract all Set-Cookie header values from the response headers. */
-        fun setCookies(): List<String> {
-            val cookies = ArrayList<String>()
-            for (line in headersSection.split("\r\n")) {
-                if (line.lowercase().startsWith("set-cookie:")) {
-                    cookies.add(line.substring("set-cookie:".length).trim())
-                }
-            }
-            return cookies
-        }
-    }
+    )
 
     @Throws(ConnectException::class)
     private fun captureRaw(invoker: HandlerInvoker): RawCapture {
@@ -57,11 +44,11 @@ object ConnectHandlerUtil {
                     val status = parseHttpStatus(headers)
                     val body = ByteArray(all.size - i - 4)
                     System.arraycopy(all, i + 4, body, 0, body.size)
-                    return RawCapture(body, headers, status)
+                    return RawCapture(body, status)
                 }
             }
             // No header separator — treat the entire output as the body
-            return RawCapture(all, "", 200)
+            return RawCapture(all, 200)
         } catch (e: ConnectException) {
             throw e
         } catch (e: Exception) {

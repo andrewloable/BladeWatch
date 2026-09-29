@@ -167,7 +167,7 @@ Core daemons:
 
 Optional daemons:
 
-- `PEAR_PEER` (the Tor tunnel, `TOR_TUNNEL`, was removed in v1.4.0.0 — BladeWatch-rdtj.12).
+- `PEAR_PEER`.
 
 Startup timing (measured from app launch / boot):
 
@@ -416,20 +416,12 @@ Responsibilities:
 
 The Tor onion service was the remote-access tunnel until v1.4.0.0, which removed it along with
 the `TOR_TUNNEL` daemon type, the `tunnelStatus` IPC command, the REMOTE loopback listener on
-8081 and the build-time `libtor.so` download (BladeWatch-rdtj.12). Two traces remain on
-purpose:
-
-- `LegacyTunnelCleanup`, on every app launch, runs `killall -9 bladewatch_tor` and drops the
-  stale `TOR_TUNNEL` key from the `daemons` config section (`DaemonHardReset` kills it too).
-  Every launch, not just the post-install sweep, because that sweep needs the package-replaced
-  broadcast BYD suppresses after an install: a v1.3.x tor that survives keeps forwarding its
-  onion port to a now-unbound 127.0.0.1:8081 that any app could take (BladeWatch-rdtj.23).
-  Use `killall`, never `pkill -9 -f`, by hand as well: toybox `pkill -f` matches the pattern
-  as a literal substring of every process's cmdline, including the ADB shell running your own
-  kill script, so it kills that shell mid-procedure.
-
-Neither touches `/data/local/tmp/tor`: its `hs/` directory still holds the old onion key, and
-deleting it is left to the owner.
+8081 and the build-time `libtor.so` download (BladeWatch-rdtj.12). Nothing on the car kills or
+cleans up after it any more: a car upgraded from v1.3.x that still has a running `bladewatch_tor`
+must have it stopped by hand, with `killall`, never `pkill -f` (toybox `pkill -f` matches the
+pattern as a literal substring of every cmdline, including the ADB shell running the command, and
+kills it mid-procedure). Its `/data/local/tmp/tor` directory holds the old onion key and can be
+deleted.
 
 ## Pear Peer Process
 

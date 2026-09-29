@@ -5,10 +5,8 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 /**
- * BladeWatch-y78o.1: a still-frame fallback so the remote Live view degrades to a periodically
- * refreshed still image in browsers with no usable H.264 decoder (Tor Browser on Linux was the
- * documented case -- see BladeWatch-nobf), instead of the dead-end "cannot play" banner. Since
- * BladeWatch-rdtj.11 it is also the companion's live view.
+ * BladeWatch-y78o.1: a periodically refreshed still image of the cameras. It began as a fallback
+ * for browsers with no usable H.264 decoder; it is now the companion's live view.
  *
  * The source is whatever [source] returns: since BladeWatch-rdtj.68, GpuStillCapture's shot of all
  * four cameras at 1280x960 or one camera at its native 1280x960, captured every 100ms (10fps,

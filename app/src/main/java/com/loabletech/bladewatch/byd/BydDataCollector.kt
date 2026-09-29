@@ -361,7 +361,7 @@ class BydDataCollector private constructor() {
 
     /**
      * Returns true if the vehicle's instrument cluster is configured for miles.
-     * Used by the /status API to tell the web UI which display unit to use.
+     * Used by the /status API to tell clients which display unit to use.
      */
     val isMilesMode: Boolean
         get() = distanceToKmFactorValue > 1.0

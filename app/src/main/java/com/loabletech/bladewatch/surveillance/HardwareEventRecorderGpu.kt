@@ -1969,7 +1969,7 @@ class HardwareEventRecorderGpu @JvmOverloads constructor(
                         // RecordingsApiHandler — CAM_PATTERN / EVENT_PATTERN /
                         // PROXIMITY_PATTERN, all `(?:_\d+)?` — accept the
                         // disambiguated filename. A dash made the segment
-                        // invisible to the web UI, calendar, and storage stats.
+                        // invisible to the events list, calendar, and storage stats.
                         candidate = dir + prefix + "_" + fresh + "_" + segmentNumber + ".mp4"
                     }
                     return candidate

@@ -134,28 +134,11 @@
     "timeout": "İsteğe son verildi",
     "server_error": "Sunucu hatası"
   },
-  "confirm": {
-    "delete": "Silmek mi?",
-    "delete_irreversible": "Bunu atlatamazsın.",
-    "are_you_sure": "- Emin misin? - Evet."
-  },
   "toast": {
     "saved": "Kaydedildi",
     "applied": "Uygulandı",
     "deleted": "Silinmiş",
     "copied": "Panoya kopyalandı"
-  },
-  "login": {
-    "subtitle": "Giriş için cihaz simgesini girin",
-    "device_id": "Cihaz Kimliği",
-    "find_hint": "BladeWatch uygulamasında bu bilgiyi bul → Çubuğu → Erişim Kodu",
-    "login_btn": "Giriş",
-    "privacy": "Veriler cihazınızda kalır.",
-    "access_code": "Erişim Kodu",
-    "access_code_placeholder": "Erişim Kodu",
-    "form_hint": "BladeWatch uygulamasında bu bilgiyi bul → Çubuğu → Erişim Kodu",
-    "login": "Giriş",
-    "footer": "Veriler cihazınızda kalır."
   },
   "notif": {
     "page_title": "Bildirimler",
@@ -1151,43 +1134,6 @@
     "playing": "Çalıyor…",
     "audio_test": "Ses Testi (3s)"
   },
-  "update": {
-    "check_for_updates": "Güncellemeleri kontrol edin",
-    "checking": "Güncellemeleri kontrol ediyorum...",
-    "check_failed": "Güncelleme kontrol başarısız oldu: {error}",
-    "latest_version": "✅ En son versiyonunuz ({version})",
-    "install": "Kurulum",
-    "install_anyway": "Her neyse yükle .",
-    "starting": "Başlıyorum.",
-    "install_rejected": "Kurulum reddedildi: {error}",
-    "install_failed_start": "Kurulum başlamadı",
-    "install_request_failed": "Kurulum talebi başarısız oldu: {error}",
-    "install_failed": "Kurulum başarısız oldu: {error}",
-    "updating": "BladeWatch'yi güncelleştirmek",
-    "reconnecting": "İletişim...",
-    "headunit_installing": "Ana birim güncellemeyi yüklüyor. Yeni sürüm çevrimiçi olduğunda bu sayfa otomatik olarak yenilenecek.",
-    "phase_queued": "Sırada  hazırlanıyor...",
-    "phase_downloading": "APK indir",
-    "phase_verifying": "İndirmeyi doğrulamak",
-    "phase_stopping": "Hizmetler durduruluyor (tünel çevrimdışı olacak)",
-    "phase_installing": " baş birimi yeniden başlatmak",
-    "phase_error": "Başarısız",
-    "waiting_for_headunit": "Baş birimin gelmesini bekliyorum.",
-    "attempt_of": "{total}'nin {n} deneme (~{remaining}'ler kalıyor)",
-    "version_unchanged": "Hizmet yeniden çevrimiçi oldu ancak sürüm değişmedi — kurulum başarısız olmuş olabilir.",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ {version}'e güncellenmiştir",
-    "reloading": "Sayfayı yeniden yüklemek...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "<strong>{type}</strong> URL istikrarlı ve değişmeyecek.",
-    "lan_hint": "Yerel ağ erişimi (<code>{ips}</code>) ~{seconds}'leri tünelden daha hızlı kurtarır  Eğer yapabilirseniz şimdi ona geçin.",
-    "recommend_inapp_default": "BYD, her yüklemede otomatik başlatma beyaz listesini temizler. Arac içindeki uygulama sizi uyarır; web uygulaması yapamaz.",
-    "recommend_inapp_intro": "<strong>Tavsiye edilir: yerine araçtaki uygulamadan güncelleme.</strong> {reason}",
-    "title_update_to": "BladeWatch'yi <span class=\"upd-newv\">{version}</span>'ye güncelleyecek misin?",
-    "currently_on": "Şu anda {version}'de.",
-    "downtime_warning": "<strong>Uzaktan erişim ~{minutes} dk. boyunca çevrimdışı olacak.</strong> Hizmetler yeniden başlatılır ve kurulumun ardından tünel yeniden bağlanır.",
-    "fallback_check_label": "Güncellemeleri kontrol edin"
-  },
   "vehicle": {
     "car_locked": "Araba kilitlendi .",
     "car_unlocked": "Araba kilitlenmedi .",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Google Haritalar'da aç",
     "no_gps_fix": "GPS konumu yok"
   },
-  "roi": {
-    "editing": "Düzenleme",
-    "window_n": "Pencere {n}",
-    "remove": "Kaldır",
-    "from": "Üzerinden",
-    "to": "İşe",
-    "schedule_off": " Normal gözetim programını bırakın.",
-    "add_time_window": "Bir zaman penceresi ekle, sonra Save.",
-    "fix_errors": "Kaydetmeden önce yukarıdaki hataları düzeltin.",
-    "fix_errors_first": "Önce hataları düzelt",
-    "next_day_paren": "(Bir sonraki gün)",
-    "err_select_day": "En az bir gün seçin",
-    "err_identical": "Başlangıç ve son aynı.",
-    "overnight": "Gece: {start} → Ertesi gün {end}",
-    "cam_front": "Ön tarafı",
-    "cam_right": "Sağ tarafta",
-    "cam_rear": "Arka taraf",
-    "cam_left": "Sol taraf",
-    "no_preview": "Ön görünüm yok .",
-    "full_frame": "{cam}: Tam çerçeve",
-    "blocks_active": "{cam}: {active}/{total} blokları aktif",
-    "zone_saved": "{cam} bölgesi kaydedildi",
-    "roi_disabled": "{cam} ROI etkinleştirildi",
-    "save_failed": "Kurtaramadım.",
-    "schedule_saved": "Kaydedilen program",
-    "badge_on": "AÇIK",
-    "badge_off": "KAPALI"
-  },
   "safe_loc": {
     "enabled": "Güvenli yerler etkinleştirildi",
     "disabled": "Güvenli yerler devre dışı bırakıldı",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ Kapatılmış",
     "you_are_here": "Sen buradasın.",
     "popup_radius": "<b>{name}</b><br>{meters}m radyosu"
-  },
-  "liveview": {
-    "cameras": "Kameralar",
-    "location": "Yerleşim",
-    "live": "Canlı",
-    "enable_failed": "Aktarmayı etkinleştiremedim"
-  },
-  "map": {
-    "your_vehicle": "Aracınız",
-    "your_vehicle_sub": "BladeWatch Surveillance",
-    "you_are_here": "Sen buradasın."
-  },
-  "pip": {
-    "select_camera": "Kamera Seçimleri",
-    "select_a_camera": "Bir kamera seçin",
-    "view_all": "Hepsi .",
-    "view_front": "Ön tarafı",
-    "view_right": "Sağ tarafta",
-    "view_rear": "Arka taraf",
-    "view_left": "Sol taraf",
-    "title_resize": "Yeniden boyutlandır",
-    "title_minimize": "En azını azaltmak",
-    "title_close": "Kapat",
-    "title_left_camera": "Sol Kamera",
-    "title_front_camera": "Ön Kamera",
-    "title_all_cameras": "Tüm Kameralar",
-    "title_rear_camera": "Arka Kamera",
-    "title_right_camera": "Sağ Kamera",
-    "title_toggle": "Kamera Görünümünü Değiştir",
-    "default_camera": "Kamera",
-    "connecting": "Bağlanıyor…",
-    "connection_failed": "Bağlantı bozuldu",
-    "decoder_not_loaded": "Dekodör yüklenmedi",
-    "decoder_failed": "Dekoder başarısız oldu",
-    "close": "Kapat",
-    "noDetectionEvents": "Algılama olayı yok",
-    "previousClip": "Önceki klip",
-    "prev": "‹ Önceki",
-    "nextClip": "Sonraki klip",
-    "next": "Sonraki ›"
-  },
-  "stream": {
-    "front_camera": "Ön Kamera",
-    "hotspot_all": "Hepsi",
-    "hotspot_front": "Ön",
-    "hotspot_left": "Sol",
-    "hotspot_rear": "Arka",
-    "hotspot_right": "Sağ",
-    "idle_hint": "Aşağıdaki arabanın kamerasına dokun .",
-    "mini_cameras": "Kameralar",
-    "quality_high": "Yüksek (1.5M)",
-    "quality_low": "Düşük (600k)",
-    "quality_max": "Maksimum (5M, 30 fps)",
-    "quality_medium": "Ortalama (1M)",
-    "quality_smooth": "Sımsıkı (3.5M, 25 fps)",
-    "quality_ultra_high": "Ultra Yüksek (2.5M)",
-    "quality_ultra_low": "Ultra Low (400k)"
-  },
-  "auth": {
-    "code_placeholder": "xxxxxxxx"
-  },
-  "theme": {
-    "dark": "Koyu",
-    "light": "Açık",
-    "auto": "Otomatik"
   },
   "about": {
     "page_title": "Hakkında — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "BYD araçları için gelişmiş gözetim modu ve dashcam sistemi.",
     "privacy_note": "Verileriniz cihazınızda kalır. Bulut gerekmez.",
     "setup_subtitle": "En iyi deneyim için üç hızlı adım:"
-  },
-  "byd_cloud": {
-    "page_title": "BYD Bulut",
-    "tab_account": "Hesap",
-    "tab_status": "Durum",
-    "tab_advanced": "Gelişmiş",
-    "account_title": "BYD Bulut Hesabı",
-    "account_info_title": "Bağlantı",
-    "region_supporting": "BYD uygulama kayıt bölgesini eşleştirin.",
-    "empty_status": "VIN ve son bulut sürüşünüzü burada görmek için Hesap sekmesine bağlanın.",
-    "empty_advanced": "İstihbarat bilgisi Hesap sekmesinde kaydedilene kadar ilerlemiş eylemler mevcut değildir.",
-    "danger_zone": "Tehlike bölgesinde",
-    "clear_hint": "Bulut komutlarını tekrar kullanmak için BYD uygulamasını yeniden girmelisiniz.",
-    "recommend_title": "Alternatif bir araç izin profili kullanın",
-    "recommend_sub": "Önerilen  BYD ana hesabınızı izole eder. Kurulum adımlarını görüntülemek için dokunun.",
-    "recommend_step_1": "Telefonunda resmi BYD uygulamasını aç.",
-    "recommend_step_2": "Araç İzinlendirme'ye git.",
-    "recommend_step_3": "Yeni yetki düğmesine tıklayın.",
-    "recommend_step_4": "İkincil bir e-posta girin  ana hesap e-postalarınızdan farklı olmalıdır.",
-    "recommend_step_5": "Profilin ne kadar süre aktif kalmasını istediğiniz için uygun bir yetki süresi seçin.",
-    "recommend_step_6": "BYD uygulamasından çıkın, sonra doğrulama kodunu kullanarak ikincil e-posta ile kaydolun ve bir şifre oluşturun.",
-    "recommend_step_7": "BYD uygulamasında Lock veya Unlock'u tıklayın  Bu size bir Control Pin ayarlamanızı isteyecektir.",
-    "recommend_step_8": "BladeWatch'de ikincici e-posta, şifreleri ve Kontrol Çubuğunu girin."
   },
   "dashboard": {
     "trips": "Yolculuklar",
@@ -1729,10 +1559,6 @@
     "dismiss": "Kapat",
     "syncing": "Eşitleniyor…",
     "sync_database": "Veritabanını eşitle"
-  },
-  "header": {
-    "copy": "Kopyala",
-    "languageAndSettings": "Dil ve ayarlar"
   },
   "companion": {
     "looking": "Aracınız aranıyor…",

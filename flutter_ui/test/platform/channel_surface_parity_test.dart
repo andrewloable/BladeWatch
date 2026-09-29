@@ -16,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// compile. This guard exists so the channel layer cannot repeat it.
 ///
 /// Unlike the RPC surface, this one is checked in BOTH directions. An RPC the
-/// Flutter app never calls is legitimate — the Angular SPA in `web/` is a second
+/// Flutter app never calls is legitimate — the companion is a second
 /// client of the same daemon. A channel method has exactly one caller, the Dart
 /// in this same APK, so an unreferenced handler is genuinely dead code.
 void main() {

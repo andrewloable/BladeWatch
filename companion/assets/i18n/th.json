@@ -134,28 +134,11 @@
     "timeout": "หมดเวลาเชื่อมต่อ",
     "server_error": "เซิร์ฟเวอร์ขัดข้อง"
   },
-  "confirm": {
-    "delete": "ต้องการลบไหม?",
-    "delete_irreversible": "ลบแล้วกู้คืนไม่ได้นะ",
-    "are_you_sure": "แน่ใจใช่ไหม?"
-  },
   "toast": {
     "saved": "บันทึกแล้ว",
     "applied": "ใช้แล้ว",
     "deleted": "ลบแล้ว",
     "copied": "คัดลอกไปยังคลิปบอร์ดแล้ว"
-  },
-  "login": {
-    "subtitle": "ใส่ Device ID เพื่อเข้าใช้งาน",
-    "device_id": "Device ID",
-    "find_hint": "ดู Device ID ได้ในแอป BladeWatch บนหน้าจอรถ → แดชบอร์ด → รหัสเข้าถึง",
-    "login_btn": "เข้าสู่ระบบ",
-    "privacy": "ข้อมูลจะถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น",
-    "access_code": "รหัสเข้าถึง",
-    "access_code_placeholder": "รหัสเข้าถึง",
-    "form_hint": "ดู Device ID ได้ในแอป BladeWatch บนหน้าจอรถ → แดชบอร์ด → รหัสเข้าถึง",
-    "login": "เข้าสู่ระบบ",
-    "footer": "ข้อมูลจะถูกเก็บไว้ในอุปกรณ์ของคุณเท่านั้น"
   },
   "notif": {
     "page_title": "แจ้งเตือน",
@@ -1151,43 +1134,6 @@
     "playing": "กำลังเล่น…",
     "audio_test": "ทดสอบเสียง (3 วิ)"
   },
-  "update": {
-    "check_for_updates": "เช็กอัปเดต",
-    "checking": "กำลังตรวจสอบอัปเดตใหม่ๆ...",
-    "check_failed": "เช็กอัปเดตไม่ผ่าน: {error}",
-    "latest_version": "✅ เป็นเวอร์ชันล่าสุดแล้ว ({version})",
-    "install": "ติดตั้ง",
-    "install_anyway": "ติดตั้งเลย",
-    "starting": "กำลังเริ่ม...",
-    "install_rejected": "เครื่องไม่ยอมให้ลงแอป: {error}",
-    "install_failed_start": "เริ่มติดตั้งไม่สำเร็จ",
-    "install_request_failed": "ส่งคำขอติดตั้งไม่ได้: {error}",
-    "install_failed": "ติดตั้งล้มเหลว: {error}",
-    "updating": "กำลังอัปเดต BladeWatch",
-    "reconnecting": "กำลังเชื่อมต่อใหม่...",
-    "headunit_installing": "กำลังลงแอปในหน้าจอรถ... หน้าเพจนี้จะรีเฟรชเองตอนแอปใหม่เปิดติดแล้ว",
-    "phase_queued": "เข้าคิว รอติดตั้ง...",
-    "phase_downloading": "กำลังโหลดไฟล์ APK...",
-    "phase_verifying": "ตรวจสอบไฟล์ดาวน์โหลด...",
-    "phase_stopping": "กำลังหยุดบริการ (tunnel จะออฟไลน์)",
-    "phase_installing": "กำลังติดตั้งลงจอรถ ระบบจะรีสตาร์ทตัวเอง",
-    "phase_error": "อัปเดตไม่สำเร็จ",
-    "waiting_for_headunit": "กำลังรอหน้าจอรถรีสตาร์ท...",
-    "attempt_of": "ลองครั้งที่ {n} จาก {total} (เหลืออีกประมาณ ~{remaining})",
-    "version_unchanged": "บริการกลับมาออนไลน์แล้ว แต่เวอร์ชันยังเดิม — อาจติดตั้งไม่สำเร็จ",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ อัปเดตเป็น {version} แล้ว!",
-    "reloading": "กำลังรีเฟรชหน้า...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "<strong>{type}</strong> URL ของคุณยังใช้ได้ปกติ ไม่เปลี่ยน",
-    "lan_hint": "เน็ตเวิร์กวง LAN (<code>{ips}</code>) จะกลับมาใช้ได้เร็วกว่า Tunnel ประมาณ ~{seconds} วินาที ถ้าต่อ Wi-Fi เดียวกันอยู่ให้สลับไปใช้ LAN ได้เลย",
-    "recommend_inapp_default": "จอ BYD มันชอบรีเซ็ตการตั้งค่า 'เริ่มแอปอัตโนมัติ' ทุกครั้งที่อัปเดต ถ้ากดอัปเดตจากจอรถมันจะเตือนให้ไปตั้งค่า แต่ถ้าอัปเดตผ่านเว็บมันเตือนให้ไม่ได้",
-    "recommend_inapp_intro": "<strong>แนะนำ: ไปกดอัปเดตในจอรถแทนดีกว่านะ</strong> {reason}",
-    "title_update_to": "จะอัปเดต BladeWatch เป็นเวอร์ชัน <span class=\"upd-newv\">{version}</span> ไหม?",
-    "currently_on": "เวอร์ชันที่ใช้อยู่: {version}",
-    "downtime_warning": "<strong>การเข้าถึงระยะไกลจะออฟไลน์ประมาณ ~{minutes} นาที</strong> บริการจะรีสตาร์ทและ tunnel จะเชื่อมต่อใหม่หลังติดตั้งเสร็จ",
-    "fallback_check_label": "เช็กอัปเดต"
-  },
   "vehicle": {
     "car_locked": "รถล็อกอยู่",
     "car_unlocked": "รถปลดล็อกแล้ว",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "เปิดใน Google Maps",
     "no_gps_fix": "ไม่มีตำแหน่ง GPS"
   },
-  "roi": {
-    "editing": "กำลังแก้ไข",
-    "window_n": "หน้าต่างที่ {n}",
-    "remove": "ลบออก",
-    "from": "จาก",
-    "to": "ถึง",
-    "schedule_off": "ปิดระบบตั้งเวลาเฝ้าระวังแล้ว",
-    "add_time_window": "เพิ่มช่วงเวลาเสร็จแล้วกด บันทึก",
-    "fix_errors": "แก้ Error แดงๆ ข้างบนก่อนค่อยกดเซฟนะ",
-    "fix_errors_first": "กรุณาแก้ข้อผิดพลาดก่อน",
-    "next_day_paren": "(ข้ามไปอีกวัน)",
-    "err_select_day": "ต้องเลือกอย่างน้อย 1 วัน",
-    "err_identical": "เวลาเริ่มกับเวลาจบดันเหมือนกันเป๊ะ",
-    "overnight": "ข้ามคืน: {start} → วันถัดไป {end}",
-    "cam_front": "กล้องหน้า",
-    "cam_right": "กล้องขวา",
-    "cam_rear": "กล้องหลัง",
-    "cam_left": "กล้องซ้าย",
-    "no_preview": "ไม่มีภาพตัวอย่าง",
-    "full_frame": "{cam}: ตรวจจับเต็มจอ (ไม่ตีกรอบ)",
-    "blocks_active": "{cam}: ตรวจจับได้ {active}/{total} บล็อก",
-    "zone_saved": "เซฟโซนของ {cam} แล้ว",
-    "roi_disabled": "ปิดตีกรอบโซนของ {cam} แล้ว",
-    "save_failed": "บันทึกไม่สำเร็จ",
-    "schedule_saved": "บันทึกเวลาเปิดปิดแล้ว",
-    "badge_on": "เปิด",
-    "badge_off": "ปิด"
-  },
   "safe_loc": {
     "enabled": "เปิดโซนปลอดภัยแล้ว",
     "disabled": "ปิดโซนปลอดภัยแล้ว",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ ปิด",
     "you_are_here": "📍 คุณอยู่ที่นี่",
     "popup_radius": "รัศมี <b>{name}</b><br>{meters} ม."
-  },
-  "liveview": {
-    "cameras": "กล้องรอบคัน",
-    "location": "ตำแหน่งรถ",
-    "live": "ภาพสด",
-    "enable_failed": "เปิดกล้องดูสดไม่ขึ้น"
-  },
-  "map": {
-    "your_vehicle": "รถของคุณ",
-    "your_vehicle_sub": "ระบบเฝ้าระวัง BYD",
-    "you_are_here": "คุณอยู่ที่นี่"
-  },
-  "pip": {
-    "select_camera": "เลือกกล้อง",
-    "select_a_camera": "เลือกกล้องสักตัว",
-    "view_all": "ดูทั้งหมด",
-    "view_front": "กล้องหน้า",
-    "view_right": "กล้องขวา",
-    "view_rear": "กล้องหลัง",
-    "view_left": "กล้องซ้าย",
-    "title_resize": "ย่อ/ขยาย",
-    "title_minimize": "พับเก็บ",
-    "title_close": "ปิด",
-    "title_left_camera": "กล้องซ้าย",
-    "title_front_camera": "กล้องหน้า",
-    "title_all_cameras": "กล้องทั้งหมด",
-    "title_rear_camera": "กล้องหลัง",
-    "title_right_camera": "กล้องขวา",
-    "title_toggle": "สลับมุมกล้อง",
-    "default_camera": "กล้อง",
-    "connecting": "กำลังเชื่อมต่อ...",
-    "connection_failed": "เชื่อมต่อกล้องไม่สำเร็จ",
-    "decoder_not_loaded": "ยังไม่ได้โหลด Decoder ถอดรหัสวิดีโอ",
-    "decoder_failed": "Decoder ถอดรหัสวิดีโอไม่สำเร็จ",
-    "close": "ปิด",
-    "noDetectionEvents": "ไม่มีเหตุการณ์ตรวจจับ",
-    "previousClip": "คลิปก่อนหน้า",
-    "prev": "‹ ก่อนหน้า",
-    "nextClip": "คลิปถัดไป",
-    "next": "ถัดไป ›"
-  },
-  "stream": {
-    "front_camera": "กล้องหน้า",
-    "hotspot_all": "ทั้งหมด",
-    "hotspot_front": "หน้า",
-    "hotspot_left": "ซ้าย",
-    "hotspot_rear": "หลัง",
-    "hotspot_right": "ขวา",
-    "idle_hint": "กดที่กล้องหน้ารถด้านล่างเลย",
-    "mini_cameras": "กล้องตัวเล็ก",
-    "quality_high": "ชัดสุด (1.5M)",
-    "quality_low": "ต่ำ (600k)",
-    "quality_max": "Max (5M, 30 fps)",
-    "quality_medium": "ปานกลาง (1M)",
-    "quality_smooth": "เรียบร้อย (3.5M, 25 fps)",
-    "quality_ultra_high": "อัลตราฮิต (2.5M)",
-    "quality_ultra_low": "ต่ำมาก (400k เน้นลื่น)"
-  },
-  "auth": {
-    "code_placeholder": "xxxxxxxxxx"
-  },
-  "theme": {
-    "dark": "มืด (Dark)",
-    "light": "สว่าง (Light)",
-    "auto": "ตามระบบ (Auto)"
   },
   "about": {
     "page_title": "เกี่ยวกับ - BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "ระบบเฝ้าระวังและกล้องหน้ารถขั้นสูงสำหรับรถ BYD",
     "privacy_note": "ข้อมูลของคุณอยู่ในอุปกรณ์เท่านั้น ไม่ต้องใช้คลาวด์",
     "setup_subtitle": "สามขั้นตอนง่ายๆ เพื่อใช้งานได้เต็มที่:"
-  },
-  "byd_cloud": {
-    "page_title": "BYD Cloud",
-    "tab_account": "บัญชี",
-    "tab_status": "สถานะ",
-    "tab_advanced": "ขั้นสูง",
-    "account_title": "บัญชี BYD Cloud",
-    "account_info_title": "การเชื่อมต่อ",
-    "region_supporting": "ต้องตรงกับภูมิภาคที่คุณสมัครแอป BYD ไว้ ถ้าไม่แน่ใจให้ลองยุโรป (EU) ดูก่อน",
-    "empty_status": "เชื่อมต่อบัญชีในหน้า 'บัญชี' ก่อน เพื่อดูเลขตัวถัง (VIN) และข้อมูลคลาวด์ล่าสุดที่นี่",
-    "empty_advanced": "ยังไม่มีการตั้งค่าขั้นสูงจนกว่าจะบันทึกข้อมูลเข้าสู่ระบบในหน้า 'บัญชี'",
-    "danger_zone": "โซนอันตราย",
-    "clear_hint": "ลบข้อมูลการเข้าสู่ระบบที่บันทึกไว้ในอุปกรณ์นี้ คุณจะต้องใส่รหัสผ่านแอป BYD และ PIN ควบคุมใหม่อีกครั้งเพื่อใช้งานคำสั่งผ่านคลาวด์",
-    "recommend_title": "ใช้โปรไฟล์ผู้รับมอบสิทธิ์รถยนต์สำรอง",
-    "recommend_sub": "แนะนำ — เพื่อแยกบัญชี BYD หลักออกต่างหาก แตะเพื่อดูขั้นตอนการตั้งค่า",
-    "recommend_step_1": "เปิดแอป BYD อย่างเป็นทางการบนโทรศัพท์ของคุณ",
-    "recommend_step_2": "ไปที่ 'การมอบสิทธิ์รถยนต์' (Vehicle Authorization)",
-    "recommend_step_3": "แตะ 'มอบสิทธิ์ใหม่' (New Authorization)",
-    "recommend_step_4": "ใส่อีเมลสำรอง — ต้องเป็นอีเมลที่ไม่ซ้ำกับบัญชีหลัก",
-    "recommend_step_5": "เลือกระยะเวลาการมอบสิทธิ์ตามที่คุณต้องการให้โปรไฟล์นี้ใช้งานได้",
-    "recommend_step_6": "ออกจากระบบแอป BYD จากนั้นสมัครสมาชิกด้วยอีเมลสำรองโดยใช้รหัสยืนยันและสร้างรหัสผ่านใหม่",
-    "recommend_step_7": "แตะ 'ล็อก' หรือ 'ปลดล็อก' ในแอป BYD — ระบบจะแจ้งให้คุณตั้งรหัส PIN ควบคุม",
-    "recommend_step_8": "นำอีเมลสำรอง รหัสผ่าน และรหัส PIN ควบคุม มาใส่ที่นี่ใน BladeWatch"
   },
   "dashboard": {
     "trips": "จำนวนเที่ยว",
@@ -1729,10 +1559,6 @@
     "dismiss": "ปิด",
     "syncing": "กำลังซิงค์…",
     "sync_database": "ซิงก์ฐานข้อมูล"
-  },
-  "header": {
-    "copy": "คัดลอก",
-    "languageAndSettings": "ภาษาและการตั้งค่า"
   },
   "companion": {
     "looking": "กำลังค้นหารถของคุณ…",

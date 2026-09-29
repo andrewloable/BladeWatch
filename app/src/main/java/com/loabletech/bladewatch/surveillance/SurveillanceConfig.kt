@@ -193,19 +193,6 @@ class SurveillanceConfig {
         set(value) { field = value.coerceIn(1, 60) }
 
     // ========================================================================
-    // Notification severity gating (item 8)
-    //
-    // Per-tier mute is enforced device-side by the companion
-    // against the new "surveillance.motion.{notice,alert,critical}" subcategories
-    // (see notifications-categories.json). These config fields exist purely so
-    // the legacy NotificationGate static helpers compile and so existing callers
-    // that read the values keep working. They are NOT persisted any more.
-    // ========================================================================
-    var isPushNotices = false
-    var isPushAlerts = true
-    var isPushCritical = true
-
-    // ========================================================================
     // UNIFIED SENSITIVITY (0-100%)
     // ========================================================================
     // Single slider that controls both density and alarm thresholds

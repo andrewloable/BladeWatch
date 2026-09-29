@@ -164,30 +164,6 @@ public class AuthManagerTest {
         Assert.assertEquals("Invalid signature", result.error);
     }
 
-    // --- Thumb token signature pinning ---
-
-    @Test
-    public void validThumbTokenIsAccepted() {
-        AuthManager.AuthState state = makeState("byd-test", "secret123", 0);
-        AuthManager.setTestState(state);
-        String filename = "event_2026_001.jpg";
-        String token = AuthManager.signThumbToken(filename, 3600);
-        Assert.assertNotNull(token);
-        Assert.assertTrue(AuthManager.validateThumbToken(filename, token));
-    }
-
-    @Test
-    public void tamperedThumbTokenSignatureIsRejected() {
-        AuthManager.AuthState state = makeState("byd-test", "secret123", 0);
-        AuthManager.setTestState(state);
-        String filename = "event_2026_001.jpg";
-        String token = AuthManager.signThumbToken(filename, 3600);
-        Assert.assertNotNull(token);
-        int lastDot = token.lastIndexOf('.');
-        String tampered = token.substring(0, lastDot + 1) + flipLastChar(token.substring(lastDot + 1));
-        Assert.assertFalse(AuthManager.validateThumbToken(filename, tampered));
-    }
-
     private String flipLastChar(String s) {
         if (s == null || s.isEmpty()) return s;
         char last = s.charAt(s.length() - 1);

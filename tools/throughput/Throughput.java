@@ -29,7 +29,7 @@ import javax.net.ssl.X509TrustManager;
 
 /**
  * The BladeWatch throughput harness (BladeWatch-rdtj.9, reused unchanged by .18/.19): one method
- * for every path, so loopback, LAN TLS, tor and Pear numbers compare. See
+ * for every path, so loopback, LAN TLS and Pear numbers compare. See
  * docs/throughput-harness.md for the exact procedure. No dependencies: it runs on a desktop JVM
  * (`java Throughput.java ...`) and, dexed, on the head unit under app_process.
  *
@@ -236,7 +236,7 @@ public class Throughput {
     /**
      * Downloads the first --bytes of the newest recording --count times, as a Range request, and
      * reports Mbit/s. A fixed size, not the whole file: recordings run to hundreds of MB, which
-     * tor would need half an hour for, and every path must move the same amount to compare.
+     * a slow link would need half an hour for, and every path must move the same amount to compare.
      */
     static void clip(Map<String, String> o) throws Exception {
         Target t = new Target(o);
@@ -365,7 +365,7 @@ public class Throughput {
 
     // ---------------------------------------------------------------- transport
 
-    /** Where to connect and how: plain HTTP, pinned TLS (https + --pin), optionally via SOCKS (tor). */
+    /** Where to connect and how: plain HTTP, pinned TLS (https + --pin), optionally via SOCKS. */
     static class Target {
         final String host;
         final int port;

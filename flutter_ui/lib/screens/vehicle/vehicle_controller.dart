@@ -348,7 +348,7 @@ class VehicleController extends ChangeNotifier with DisposedSafeNotifier {
 
   // No setMediaVolumePercent here: this screen offers a stepper, not a slider, so nothing
   // calls it. The daemon's POST /api/vehicle/media-volume still accepts {"action": "set",
-  // "percent": n} for the web UI — add the wrapper back when a slider needs it.
+  // "percent": n} for older clients — add the wrapper back when a slider needs it.
 
   Future<String?> stepVolumeUp() async {
     if (!_debounce('volume_step')) return null;

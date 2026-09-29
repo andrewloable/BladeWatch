@@ -134,28 +134,11 @@
     "timeout": "要求时间已到期",
     "server_error": "服务器错误"
   },
-  "confirm": {
-    "delete": "删除?",
-    "delete_irreversible": "这不可能被撤销.",
-    "are_you_sure": "你确定吗?"
-  },
   "toast": {
     "saved": "已保存",
     "applied": "已应用",
     "deleted": "删除",
     "copied": "已复制到剪贴板"
-  },
-  "login": {
-    "subtitle": "输入您的设备代码",
-    "device_id": "设备识别",
-    "find_hint": "在您的BladeWatch应用程序中查找这个 →仪表板 →访问代码",
-    "login_btn": "登录",
-    "privacy": "您的数据会留在您的设备上.",
-    "access_code": "访问代码",
-    "access_code_placeholder": "访问代码",
-    "form_hint": "在您的BladeWatch应用程序中查找这个 →仪表板 →访问代码",
-    "login": "登录",
-    "footer": "您的数据会留在您的设备上."
   },
   "notif": {
     "page_title": "通知",
@@ -1151,43 +1134,6 @@
     "playing": "播放中…",
     "audio_test": "音频测试 (3秒)"
   },
-  "update": {
-    "check_for_updates": "查看更新",
-    "checking": "检查是否有更新...",
-    "check_failed": "更新检查失败:{error}",
-    "latest_version": "✅你在最新版本 ({version})",
-    "install": "安装",
-    "install_anyway": "无论如何安装",
-    "starting": "开始了.",
-    "install_rejected": "拒绝安装:{error}",
-    "install_failed_start": "安装未启动",
-    "install_request_failed": "装机请求失败:{error}",
-    "install_failed": "安装失败:{error}",
-    "updating": "更新BladeWatch",
-    "reconnecting": "重新连接...",
-    "headunit_installing": "主机部正在安装更新.当新版本上线时,该页面将自动更新.",
-    "phase_queued": "排队准备...",
-    "phase_downloading": "下载APK",
-    "phase_verifying": "检查下载",
-    "phase_stopping": "正在停止服务（隧道即将离线）",
-    "phase_installing": "安装 头单元重新启动",
-    "phase_error": "失败",
-    "waiting_for_headunit": "安装等着主机回来...",
-    "attempt_of": "试图{n}的{total} (~{remaining}剩余)",
-    "version_unchanged": "后台服务已恢复在线，但版本未变——安装可能失败。",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ 更新至{version}",
-    "reloading": "重新加载页面...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "你的<strong>{type}</strong>URL是稳定的,不会改变.",
-    "lan_hint": "如果您可以,当地的网络访问 (<code>{ips}</code>) 恢复 ~{seconds}s比道更快.",
-    "recommend_inapp_default": "在每次安装时,BYD都会清除自动启动的白色列表.车内应用程序会提示你;WebApp不能.",
-    "recommend_inapp_intro": "建议:从车载应用程序更新.</strong> {reason}",
-    "title_update_to": "更新BladeWatch到<span class=\"upd-newv\">{version}</span>?",
-    "currently_on": "目前在{version}",
-    "downtime_warning": "<strong>远程访问将离线约 {minutes} 分钟。</strong>安装完成后，服务将重启并重新连接隧道。",
-    "fallback_check_label": "查看更新"
-  },
   "vehicle": {
     "car_locked": "汽车锁定",
     "car_unlocked": "开锁的汽车",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "在 Google 地图中打开",
     "no_gps_fix": "暂无 GPS 定位"
   },
-  "roi": {
-    "editing": "编辑",
-    "window_n": "窗户{n}",
-    "remove": "移除",
-    "from": "通过",
-    "to": "在",
-    "schedule_off": "正常监控时间.",
-    "add_time_window": "添加一个时间窗口,然后保存.",
-    "fix_errors": "在存储之前修复上述错误.",
-    "fix_errors_first": "首先修复错误",
-    "next_day_paren": "(第二天)",
-    "err_select_day": "选择至少一个天",
-    "err_identical": "开始和结束是相同的",
-    "overnight": "在晚上:{start} →第二天{end}",
-    "cam_front": "前侧",
-    "cam_right": "右侧",
-    "cam_rear": "后侧",
-    "cam_left": "左侧",
-    "no_preview": "没有预览",
-    "full_frame": "{cam}:全框架",
-    "blocks_active": "{cam}: {active}/{total} 区块活跃",
-    "zone_saved": "保存的{cam}区域",
-    "roi_disabled": "{cam} ROI被禁用",
-    "save_failed": "无法保存",
-    "schedule_saved": "节省的时间表",
-    "badge_on": "开",
-    "badge_off": "关"
-  },
   "safe_loc": {
     "enabled": "允许安全位置",
     "disabled": "安全位置被禁用",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ 关闭",
     "you_are_here": "你在这里",
     "popup_radius": "半径:<b>{name}</b><br>{meters}m"
-  },
-  "liveview": {
-    "cameras": "摄像头",
-    "location": "位置",
-    "live": "活着",
-    "enable_failed": "无法启用流媒体"
-  },
-  "map": {
-    "your_vehicle": "你的车辆",
-    "your_vehicle_sub": "BYD 战士哨兵",
-    "you_are_here": "你在这里."
-  },
-  "pip": {
-    "select_camera": "选择摄像头",
-    "select_a_camera": "选择相机",
-    "view_all": "所有的",
-    "view_front": "前侧",
-    "view_right": "右侧",
-    "view_rear": "后侧",
-    "view_left": "左侧",
-    "title_resize": "变大",
-    "title_minimize": "尽量减少",
-    "title_close": "关闭",
-    "title_left_camera": "左部摄像头",
-    "title_front_camera": "前面摄像头",
-    "title_all_cameras": "所有摄像头",
-    "title_rear_camera": "后部摄像头",
-    "title_right_camera": "右摄像头",
-    "title_toggle": "换摄像头视图",
-    "default_camera": "摄像头",
-    "connecting": "连接中…",
-    "connection_failed": "连接失败",
-    "decoder_not_loaded": "不加载的解码器",
-    "decoder_failed": "解码器失败",
-    "close": "关闭",
-    "noDetectionEvents": "无检测事件",
-    "previousClip": "上一片段",
-    "prev": "‹ 上一个",
-    "nextClip": "下一片段",
-    "next": "下一个 ›"
-  },
-  "stream": {
-    "front_camera": "前面摄像头",
-    "hotspot_all": "全部",
-    "hotspot_front": "前",
-    "hotspot_left": "左",
-    "hotspot_rear": "后",
-    "hotspot_right": "右",
-    "idle_hint": "按下面的车上的相机",
-    "mini_cameras": "摄像头",
-    "quality_high": "高1.5米",
-    "quality_low": "低 (600k)",
-    "quality_max": "极限 (5M,30fps)",
-    "quality_medium": "平均值 (1M)",
-    "quality_smooth": "流 (3.5M,25fps)",
-    "quality_ultra_high": "超高 (2.5M)",
-    "quality_ultra_low": "超低 (400k)"
-  },
-  "auth": {
-    "code_placeholder": "其他类型"
-  },
-  "theme": {
-    "dark": "深色",
-    "light": "浅色",
-    "auto": "自动"
   },
   "about": {
     "page_title": "关于 — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "为 BYD 车辆打造的高级哨兵模式与行车记录仪系统。",
     "privacy_note": "您的数据保留在设备上，无需云端。",
     "setup_subtitle": "三个快速步骤，获得最佳体验："
-  },
-  "byd_cloud": {
-    "page_title": "云",
-    "tab_account": "账户",
-    "tab_status": "状态",
-    "tab_advanced": "高级",
-    "account_title": "BYD 云账户",
-    "account_info_title": "连接",
-    "region_supporting": "如果您不确定,请先尝试欧盟.",
-    "empty_status": "连接到账号选项表,看到您的VIN和最后的云按在这里.",
-    "empty_advanced": "在账户表格中保存凭证之前,没有先进的操作可用.",
-    "danger_zone": "危险区",
-    "clear_hint": "您需要重新输入BYD应用程序登录 + PIN,以再次使用云命令.",
-    "recommend_title": "使用替代车辆授权配置文件",
-    "recommend_sub": "建议将您的BYD主要帐户隔离.",
-    "recommend_step_1": "在你的手机上打开官方的BYD应用程序.",
-    "recommend_step_2": "进入车辆授权.",
-    "recommend_step_3": "按新授权.",
-    "recommend_step_4": "输入次要电子邮件 它必须与您的主帐户电子邮件不同.",
-    "recommend_step_5": "选择一个符合您希望该配置文件保持活跃的授权期限.",
-    "recommend_step_6": "登录BYD应用程序,然后使用验证代码登录并创建密码.",
-    "recommend_step_7": "在 BYD 应用程序中按锁定或解锁,它将要求您设置控制针.",
-    "recommend_step_8": "在BladeWatch中输入二级电子邮件,密码和控制键."
   },
   "dashboard": {
     "trips": "行程数",
@@ -1729,10 +1559,6 @@
     "dismiss": "忽略",
     "syncing": "同步中…",
     "sync_database": "同步数据库"
-  },
-  "header": {
-    "copy": "复制",
-    "languageAndSettings": "语言与设置"
   },
   "companion": {
     "looking": "正在查找您的车辆…",

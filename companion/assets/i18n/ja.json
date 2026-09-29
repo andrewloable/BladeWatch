@@ -134,28 +134,11 @@
     "timeout": "締め切りの要求",
     "server_error": "サーバーエラー"
   },
-  "confirm": {
-    "delete": "削除する?",
-    "delete_irreversible": "これは取り消すことはできません.",
-    "are_you_sure": "- 本当ですか?"
-  },
   "toast": {
     "saved": "保存しました",
     "applied": "適用しました",
     "deleted": "削除された",
     "copied": "クリップボードにコピーしました"
-  },
-  "login": {
-    "subtitle": "デバイストークンを入力してアクセスする",
-    "device_id": "デバイス ID",
-    "find_hint": "BladeWatch アプリ → ダッシュボード → アクセスコードで検索してください",
-    "login_btn": "ログイン",
-    "privacy": "あなたのデータはデバイスに保存されます",
-    "access_code": "アクセスコード",
-    "access_code_placeholder": "アクセスコード",
-    "form_hint": "BladeWatch アプリ → ダッシュボード → アクセスコードで検索してください",
-    "login": "ログイン",
-    "footer": "あなたのデータはデバイスに保存されます"
   },
   "notif": {
     "page_title": "通知",
@@ -1151,43 +1134,6 @@
     "playing": "再生中…",
     "audio_test": "音声テスト（3秒）"
   },
-  "update": {
-    "check_for_updates": "更新をチェック",
-    "checking": "更新をチェックする",
-    "check_failed": "更新チェック失敗: {error}",
-    "latest_version": "✅ 最新バージョン ({version}) に載っています",
-    "install": "インストール",
-    "install_anyway": "とにかくインストール",
-    "starting": "始めよう",
-    "install_rejected": "設置拒否: {error}",
-    "install_failed_start": "インストール開始失敗",
-    "install_request_failed": "インストール要求が失敗: {error}",
-    "install_failed": "インストール失敗: {error}",
-    "updating": "BladeWatchを更新する",
-    "reconnecting": "再接続する...",
-    "headunit_installing": "ヘッドユニットは更新プログラムをインストールしています.このページは新しいバージョンがオンラインになると自動的に更新されます.",
-    "phase_queued": "排隊 準備...",
-    "phase_downloading": "APKをダウンロードする",
-    "phase_verifying": "ダウンロードを確認する",
-    "phase_stopping": "サービスを停止中（トンネルはオフラインになります）",
-    "phase_installing": "ヘッドユニットの設置 再起動",
-    "phase_error": "失敗した",
-    "waiting_for_headunit": "部署が戻ってくるのを待っています",
-    "attempt_of": "{total}の {n}試行 (~{remaining}が残っている)",
-    "version_unchanged": "サービスはオンラインに戻りましたが、バージョンは変更されていません。インストールが失敗した可能性があります。",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ {version} に更新されました",
-    "reloading": "ページをリロードする...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "あなたの<strong>{type}</strong>URLは安定しており,変化しません.",
-    "lan_hint": "地元のネットワークアクセス (<code>{ips}</code>) はトンネルよりも ~{seconds}s を早く回復します",
-    "recommend_inapp_default": "BYDは自動起動ホワイトリストを インストールするたびに削除します 車内アプリは提示します ウェブアプリではできません",
-    "recommend_inapp_intro": "<strong>推奨:代わりに車内アプリから更新する.</strong> {reason}",
-    "title_update_to": "BladeWatchを <span class=\"upd-newv\">{version}</span>に更新する?",
-    "currently_on": "現在 {version}",
-    "downtime_warning": "<strong>リモートアクセスが約{minutes}分間オフラインになります。</strong> インストール後、サービスが再起動してトンネルが再接続されます。",
-    "fallback_check_label": "更新をチェック"
-  },
   "vehicle": {
     "car_locked": "カーロック",
     "car_unlocked": "車のロック解除",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Googleマップで開く",
     "no_gps_fix": "GPS の測位ができていません"
   },
-  "roi": {
-    "editing": "編集",
-    "window_n": "窓 {n}",
-    "remove": "削除",
-    "from": "からの",
-    "to": "について",
-    "schedule_off": "普通の監視を中止する",
-    "add_time_window": "タイムウィンドウを追加して 保存します",
-    "fix_errors": "保存する前に上のエラーを修正します.",
-    "fix_errors_first": "まずエラーを修正する",
-    "next_day_paren": "(次の日)",
-    "err_select_day": "少なくとも1日を選択する",
-    "err_identical": "始まりと終わりは同じ",
-    "overnight": "夜間: {start} → 翌日 {end}",
-    "cam_front": "前面側",
-    "cam_right": "右側",
-    "cam_rear": "背面",
-    "cam_left": "左側",
-    "no_preview": "プレビューなし",
-    "full_frame": "{cam}: フルフレーム",
-    "blocks_active": "{cam}: {active}/{total} ブロックが有効",
-    "zone_saved": "{cam}ゾーン保存",
-    "roi_disabled": "{cam} ROIが無効",
-    "save_failed": "保存できなかった",
-    "schedule_saved": "保存されたスケジュール",
-    "badge_on": "オン",
-    "badge_off": "オフ"
-  },
   "safe_loc": {
     "enabled": "安全な場所が有効",
     "disabled": "安全な場所が無効",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ オフ",
     "you_are_here": " あなたはここにいます",
     "popup_radius": "<b>{name}</b><br>{meters}m半径"
-  },
-  "liveview": {
-    "cameras": "カメラ",
-    "location": "場所",
-    "live": "生きている",
-    "enable_failed": "ストリーミングを有効にすることができなかった"
-  },
-  "map": {
-    "your_vehicle": "あなたの車",
-    "your_vehicle_sub": "BYD シャン・センチリー",
-    "you_are_here": "ここにいる"
-  },
-  "pip": {
-    "select_camera": "カメラを選択する",
-    "select_a_camera": "カメラを選択する",
-    "view_all": "すべて",
-    "view_front": "前面側",
-    "view_right": "右側",
-    "view_rear": "背面",
-    "view_left": "左側",
-    "title_resize": "サイズ変更",
-    "title_minimize": "最小限に抑える",
-    "title_close": "閉じる",
-    "title_left_camera": "左カメラ",
-    "title_front_camera": "フロントカメラ",
-    "title_all_cameras": "すべてのカメラ",
-    "title_rear_camera": "後部カメラ",
-    "title_right_camera": "右カメラ",
-    "title_toggle": "カメラビューを切り替える",
-    "default_camera": "カメラ",
-    "connecting": "接続中…",
-    "connection_failed": "接続失敗",
-    "decoder_not_loaded": "解読器が読み込まれていない",
-    "decoder_failed": "解読器失敗",
-    "close": "閉じる",
-    "noDetectionEvents": "検出イベントなし",
-    "previousClip": "前のクリップ",
-    "prev": "‹ 前へ",
-    "nextClip": "次のクリップ",
-    "next": "次へ ›"
-  },
-  "stream": {
-    "front_camera": "フロントカメラ",
-    "hotspot_all": "すべて",
-    "hotspot_front": "前",
-    "hotspot_left": "左",
-    "hotspot_rear": "後",
-    "hotspot_right": "右",
-    "idle_hint": "下の車にカメラを押してください",
-    "mini_cameras": "カメラ",
-    "quality_high": "高さ (1.5M)",
-    "quality_low": "低値 (600k)",
-    "quality_max": "マックス (5M,30fps)",
-    "quality_medium": "平均 (1M)",
-    "quality_smooth": "滑らかな (3.5M,25fps)",
-    "quality_ultra_high": "超高 (2.5M)",
-    "quality_ultra_low": "超低 (400k)"
-  },
-  "auth": {
-    "code_placeholder": "第3話"
-  },
-  "theme": {
-    "dark": "ダーク",
-    "light": "ライト",
-    "auto": "自動"
   },
   "about": {
     "page_title": "このアプリについて — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "BYD車両のための高度な監視モードとドライブレコーダーシステム。",
     "privacy_note": "データはデバイス内に保存されます。クラウドは不要です。",
     "setup_subtitle": "最適な体験のための3つの簡単なステップ："
-  },
-  "byd_cloud": {
-    "page_title": "BYD クラウド",
-    "tab_account": "口座",
-    "tab_status": "状態",
-    "tab_advanced": "進歩した",
-    "account_title": "BYD クラウド アカウント",
-    "account_info_title": "接続",
-    "region_supporting": "BYDアプリの登録地域と一致します 確認できない場合は EU を試してください.",
-    "empty_status": "VINと最後のクラウドをここに押すためにアカウントタブに接続します",
-    "empty_advanced": "アカウントタブに認証が保存されるまで,進行的なアクションはありません.",
-    "danger_zone": "危険地帯",
-    "clear_hint": "BYD アプリのログイン + PIN を再入力してクラウドコマンドを使用します.",
-    "recommend_title": "代替車両許可プロフィールを使用する",
-    "recommend_sub": "推奨  は BYD の 主なアカウントを隔離します.設定手順を表示するにはタップします.",
-    "recommend_step_1": "BYDの公式アプリを携帯で開きます",
-    "recommend_step_2": "車両認証へ",
-    "recommend_step_3": "新しい許可をタップします.",
-    "recommend_step_4": "副次元のメールを入力します メールは主アカウントのメールとは異なる必要があります.",
-    "recommend_step_5": "このプロフィールがどれ位有効に維持されることを望むかに対応する許可期間を選択してください.",
-    "recommend_step_6": "BYDアプリからログアウトして 確認コードを使用して 副次元のメールでサインアップし パスワードを作成します",
-    "recommend_step_7": "BYD アプリのロックまたはロックをタップすると,コントロールピンを設定します.",
-    "recommend_step_8": "BladeWatchで次元のメール,パスワード,コントロールピンを入力します."
   },
   "dashboard": {
     "trips": "走行回数",
@@ -1729,10 +1559,6 @@
     "dismiss": "閉じる",
     "syncing": "同期中…",
     "sync_database": "データベースを同期"
-  },
-  "header": {
-    "copy": "コピー",
-    "languageAndSettings": "言語と設定"
   },
   "companion": {
     "looking": "車を探しています…",

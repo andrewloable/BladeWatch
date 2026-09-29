@@ -111,7 +111,7 @@ public class SettingsServiceClient(
 
   /**
    *  BladeWatch-qwqq: these four replace the last /api/settings/&#42; JSON calls any first-party
-   *  client still made over REST — the web SPA's status-overlay toggles and the Flutter
+   *  client still made over REST — the removed web app's status-overlay toggles and the Flutter
    *  recording screen's telemetry-field picker.
    */
   override suspend fun getStatusOverlay(request: GetStatusOverlayRequest, headers: Headers): ResponseMessage<GetStatusOverlayResponse> = client.unary(

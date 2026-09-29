@@ -102,9 +102,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# The tor binary older builds downloaded (tor removed in BladeWatch-rdtj.12). Still ignored so a
-# leftover copy in a working tree can never be committed.
-app/src/main/jniLibs/arm64-v8a/libtor.so
 
 # Bare Kit native libraries (BladeWatch-rdtj.2): downloaded and SHA-256-verified by the
 # fetchBareKit Gradle task, never committed.

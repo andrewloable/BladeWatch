@@ -84,9 +84,9 @@ class SystemServiceImpl(private val httpServer: HttpServer) {
 
     @Throws(ConnectException::class)
     private fun handleGetPerformance(req: String?, clientIdentity: String?): ConnectResponse =
-        // The REST handler returns the raw performance object; the proto + Angular consumer expect
+        // The REST handler returns the raw performance object; the proto expects
         // GetPerformanceResponse{success, performance_json:"<stringified raw>"}. Wrap on the
-        // Connect side only — the REST handler output is left untouched for the legacy web UI.
+        // Connect side only — the REST handler output is left untouched.
         json {
             JSONObject()
                 .put("success", true)

@@ -35,7 +35,7 @@ The server exposes two parallel API surfaces over the same port:
    |---|---|
    | `/auth/pair`, `/auth/companion` | the companion's pairing and login; public, plain JSON |
    | `/video/*` | player byte-range requests (Range, 206, ETag) |
-   | `/thumb/*` | `<img src>`, additionally auth'd by a signed `?t=` token |
+   | `/thumb/*` | `<img src>` |
    | `/api/stream/still` | a JPEG the live view consumes as an image URL |
 
    Everything else — every JSON endpoint that used to live under `/api/*`, and `/status` — is a
@@ -65,7 +65,7 @@ HMAC, so a limit adds nothing against guessing and only lets anyone who can reac
 companion out (every remote peer shares one `127.0.0.1` address).
 
 Every other route requires a `Authorization: Bearer` JWT (see `AuthMiddleware`); `/auth/pair` and
-`/auth/companion` are the only paths that bypass auth. `/thumb/*` additionally accepts a signed `?t=` thumbnail token. `/thumb/<clip>.mp4` answers a small JPEG: the clip's hero frame when one exists (scaled to a 480 px long edge and cached as `thumbs/hero_<name>.jpg` when larger -- some heroes are 2560x1920, BladeWatch-820b), else a generated 320x180 frame (202 while it is being made). `/thumb/<name>.jpg` returns that file as stored.
+`/auth/companion` are the only paths that bypass auth. `/thumb/<clip>.mp4` answers a small JPEG: the clip's hero frame when one exists (scaled to a 480 px long edge and cached as `thumbs/hero_<name>.jpg` when larger -- some heroes are 2560x1920, BladeWatch-820b), else a generated 320x180 frame (202 while it is being made). `/thumb/<name>.jpg` returns that file as stored.
 
 ## Connect / gRPC Layer
 

@@ -134,28 +134,11 @@
     "timeout": "요청 시기가 정해진",
     "server_error": "서버 오류"
   },
-  "confirm": {
-    "delete": "삭제?",
-    "delete_irreversible": "이것은 되돌릴 수 없습니다.",
-    "are_you_sure": "- 확실해?"
-  },
   "toast": {
     "saved": "저장했습니다",
     "applied": "적용했습니다",
     "deleted": "삭제",
     "copied": "클립보드에 복사했습니다"
-  },
-  "login": {
-    "subtitle": "액세스하기 위해 장치 토큰을 입력합니다",
-    "device_id": "장치 식별자",
-    "find_hint": "BladeWatch 앱 → 대시보드 → 액세스 코드에서 이것을 찾아보세요",
-    "login_btn": "로그인",
-    "privacy": "당신의 데이터는 장치에 남아 있습니다.",
-    "access_code": "액세스 코드",
-    "access_code_placeholder": "액세스 코드",
-    "form_hint": "BladeWatch 앱 → 대시보드 → 액세스 코드에서 이것을 찾아보세요",
-    "login": "로그인",
-    "footer": "당신의 데이터는 장치에 남아 있습니다."
   },
   "notif": {
     "page_title": "알림",
@@ -1151,43 +1134,6 @@
     "playing": "재생 중…",
     "audio_test": "오디오 테스트 (3초)"
   },
-  "update": {
-    "check_for_updates": "업데이트 확인",
-    "checking": "업데이트를 확인하고...",
-    "check_failed": "업데이트 확인 실패: {error}",
-    "latest_version": "✅ 최신 버전 ({version})",
-    "install": "설치",
-    "install_anyway": "어쨌든 설치",
-    "starting": "시작해...",
-    "install_rejected": "설치 거부: {error}",
-    "install_failed_start": "설치가 시작되지 않았습니다",
-    "install_request_failed": "설치 요청 실패: {error}",
-    "install_failed": "설치 실패: {error}",
-    "updating": "BladeWatch의 업데이트",
-    "reconnecting": "다시 연결...",
-    "headunit_installing": "헤드 유닛은 업데이트를 설치하고 있습니다. 이 페이지는 새로운 버전이 온라인에있을 때 자동으로 업데이트됩니다.",
-    "phase_queued": "줄을 서서 준비하고...",
-    "phase_downloading": "APK 다운로드",
-    "phase_verifying": "다운로드 확인",
-    "phase_stopping": "서비스 중지 중 (터널이 오프라인 상태가 됩니다)",
-    "phase_installing": " 헤드 유닛을 설치하여 다시 시작",
-    "phase_error": "실패",
-    "waiting_for_headunit": "을 설치하고, 주부대가 돌아오기를 기다리고 있습니다.",
-    "attempt_of": "{total}의 {n} 시도 (~{remaining}의 나머지)",
-    "version_unchanged": "서비스가 다시 온라인 상태가 되었지만 버전이 변경되지 않았습니다 — 설치에 실패했을 수 있습니다.",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ {version}로 업데이트",
-    "reloading": "페이지를 다시 로드하는 것...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "당신의 <strong>{type}</strong> URL는 안정적이고 변하지 않을 것입니다.",
-    "lan_hint": "로컬 네트워크 접속 (<code>{ips}</code>) 은 터널보다 더 빨리 ~{seconds}s를 복구합니다",
-    "recommend_inapp_default": "BYD는 모든 설치에 자동 시작 백지 목록을 삭제합니다. 차 안의 앱은 당신에게 요청합니다. 웹 앱은 할 수 없습니다.",
-    "recommend_inapp_intro": "<strong> 추천: 차 안의 앱에서 업데이트.</strong> {reason}",
-    "title_update_to": "BladeWatch를 <span class=\"upd-newv\">{version}</span>로 업데이트합니까?",
-    "currently_on": "현재 {version}",
-    "downtime_warning": "<strong>원격 접속이 약 {minutes}분간 오프라인 상태가 됩니다.</strong> 설치 후 서비스가 재시작되고 터널이 다시 연결됩니다.",
-    "fallback_check_label": "업데이트 확인"
-  },
   "vehicle": {
     "car_locked": "자동차가 잠겨있어요",
     "car_unlocked": "자동차가 잠금 해제",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Google 지도에서 열기",
     "no_gps_fix": "GPS 위치를 알 수 없습니다"
   },
-  "roi": {
-    "editing": "편집",
-    "window_n": "윈도우 {n}",
-    "remove": "제거",
-    "from": "이 부분에서",
-    "to": "에 대한",
-    "schedule_off": " 정상적인 감시를 중단할 예정입니다.",
-    "add_time_window": "시간 창을 추가하고 저장합니다.",
-    "fix_errors": "저장하기 전에 위의 오류를 수정하십시오.",
-    "fix_errors_first": "먼저 오류를 수정",
-    "next_day_paren": "(다음 날)",
-    "err_select_day": "적어도 하루를 선택하세요",
-    "err_identical": "시작과 끝은 동일합니다.",
-    "overnight": "밤: {start} → 다음 날 {end}",
-    "cam_front": "앞면",
-    "cam_right": "오른쪽에",
-    "cam_rear": "뒷면",
-    "cam_left": "좌측",
-    "no_preview": "미리보기 없습니다",
-    "full_frame": "{cam}: 전체 프레임",
-    "blocks_active": "{cam}: {active}/{total} 블록이 활성화",
-    "zone_saved": "{cam} 구역 저장",
-    "roi_disabled": "{cam} ROI가 비활성화",
-    "save_failed": "구하지 못했어요",
-    "schedule_saved": "저장된 스케줄",
-    "badge_on": "켜짐",
-    "badge_off": "꺼짐"
-  },
   "safe_loc": {
     "enabled": "안전한 장소가 가능",
     "disabled": "안전 장소가 비활성화",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ ",
     "you_are_here": " 당신은 여기 있습니다",
     "popup_radius": "지름: <b>{name}</b><br>{meters}m"
-  },
-  "liveview": {
-    "cameras": "카메라",
-    "location": "위치",
-    "live": "생생하게",
-    "enable_failed": "스트리밍을 활성화하지 못했습니다"
-  },
-  "map": {
-    "your_vehicle": "당신의 차량",
-    "your_vehicle_sub": "BYD 챔피언 경비",
-    "you_are_here": "넌 여기 있어"
-  },
-  "pip": {
-    "select_camera": "카메라를 선택",
-    "select_a_camera": "카메라를 선택",
-    "view_all": "모두들",
-    "view_front": "앞면",
-    "view_right": "오른쪽에",
-    "view_rear": "뒷면",
-    "view_left": "좌측",
-    "title_resize": "크기를 바꾸어",
-    "title_minimize": "최소화",
-    "title_close": "닫기",
-    "title_left_camera": "왼쪽 카메라",
-    "title_front_camera": "앞 카메라",
-    "title_all_cameras": "모든 카메라",
-    "title_rear_camera": "뒷 카메라",
-    "title_right_camera": "오른쪽 카메라",
-    "title_toggle": "카메라 뷰를 변경",
-    "default_camera": "카메라",
-    "connecting": "연결 중…",
-    "connection_failed": "연결 실패",
-    "decoder_not_loaded": "디코더가 충전되지 않은 상태",
-    "decoder_failed": "디코더 실패",
-    "close": "닫기",
-    "noDetectionEvents": "감지 이벤트 없음",
-    "previousClip": "이전 클립",
-    "prev": "‹ 이전",
-    "nextClip": "다음 클립",
-    "next": "다음 ›"
-  },
-  "stream": {
-    "front_camera": "앞 카메라",
-    "hotspot_all": "모두",
-    "hotspot_front": "앞",
-    "hotspot_left": "왼쪽",
-    "hotspot_rear": "뒤",
-    "hotspot_right": "오른쪽",
-    "idle_hint": "아래 차에 카메라를 눌러",
-    "mini_cameras": "카메라",
-    "quality_high": "높이 (1.5m)",
-    "quality_low": "낮은 (600k)",
-    "quality_max": "최대 (5M, 30fps)",
-    "quality_medium": "중간 (1M)",
-    "quality_smooth": "부드러운 (3.5M, 25fps)",
-    "quality_ultra_high": "초고 (2,5m)",
-    "quality_ultra_low": "초하 (400k)"
-  },
-  "auth": {
-    "code_placeholder": "xxxxxxxxx"
-  },
-  "theme": {
-    "dark": "다크",
-    "light": "라이트",
-    "auto": "자동"
   },
   "about": {
     "page_title": "정보 — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "BYD 차량을 위한 고급 감시 모드 및 대시캠 시스템.",
     "privacy_note": "데이터는 기기에 그대로 유지됩니다. 클라우드가 필요 없습니다.",
     "setup_subtitle": "최고의 경험을 위한 세 가지 빠른 단계:"
-  },
-  "byd_cloud": {
-    "page_title": "BYD 클라우드",
-    "tab_account": "회계",
-    "tab_status": "상태",
-    "tab_advanced": "고급",
-    "account_title": "BYD 클라우드 계정",
-    "account_info_title": "연결",
-    "region_supporting": "BYD 앱 등록 지역과 일치합니다. 확실하지 않은 경우 EU를 먼저 시도하십시오.",
-    "empty_status": "계정 탭에 연결하여 VIN 및 마지막 클라우드 누르기를 볼 수 있습니다.",
-    "empty_advanced": "계정 탭에서 자격증이 저장되기 전까지는 고급 작업이 없습니다.",
-    "danger_zone": "위험 구역",
-    "clear_hint": "이 장치에서 저장된 인증서를 제거합니다. 다시 클라우드 명령을 사용하기 위해 BYD 앱 로그인 + PIN를 다시 입력해야합니다.",
-    "recommend_title": "대체 차량 허가 프로파일을 사용",
-    "recommend_sub": "권장되는 은 BYD의 주요 계정을 격리시킵니다. 설정 단계를 보기 위해 누르십시오.",
-    "recommend_step_1": "BYD 공식 앱을 휴대폰으로 열세요.",
-    "recommend_step_2": "차량 승인을 받으세요.",
-    "recommend_step_3": "새로운 권한을 누르세요.",
-    "recommend_step_4": "2차 이메일 입력  그것은 주 계정 이메일과 다를 수 있습니다.",
-    "recommend_step_5": "이 프로파일이 얼마나 오래 활동하기를 원하는지에 맞는 허가 기간을 선택하십시오.",
-    "recommend_step_6": "BYD 앱에서 로그 아웃하고 검증 코드를 사용하여 제2 이메일로 로그 아웃하고 비밀번호를 생성하십시오.",
-    "recommend_step_7": "BYD 앱에서 잠금 또는 잠금 열기를 누르면 제어 핀을 설정하도록 요청합니다.",
-    "recommend_step_8": "BladeWatch에서 이차 이메일, 비밀번호, 제어 핀을 입력하세요."
   },
   "dashboard": {
     "trips": "주행 횟수",
@@ -1729,10 +1559,6 @@
     "dismiss": "닫기",
     "syncing": "동기화 중…",
     "sync_database": "데이터베이스 동기화"
-  },
-  "header": {
-    "copy": "복사",
-    "languageAndSettings": "언어 및 설정"
   },
   "companion": {
     "looking": "차량을 찾는 중…",

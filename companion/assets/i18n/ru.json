@@ -134,28 +134,11 @@
     "timeout": "Запрос с истечением срока",
     "server_error": "Ошибка сервера"
   },
-  "confirm": {
-    "delete": "Снять?",
-    "delete_irreversible": "Это невозможно отменить.",
-    "are_you_sure": "- Ты уверен? - Да."
-  },
   "toast": {
     "saved": "Сохранено",
     "applied": "Применено",
     "deleted": "Удаление",
     "copied": "Скопировано в буфер обмена"
-  },
-  "login": {
-    "subtitle": "Введите токен устройства для доступа",
-    "device_id": "Идентификатор устройства",
-    "find_hint": "Найдите это в своем приложении BladeWatch → Дашборд → Код доступа",
-    "login_btn": "Вход",
-    "privacy": "Ваши данные остаются на вашем устройстве.",
-    "access_code": "Код доступа",
-    "access_code_placeholder": "Код доступа",
-    "form_hint": "Найдите это в своем приложении BladeWatch → Дашборд → Код доступа",
-    "login": "Вход",
-    "footer": "Ваши данные остаются на вашем устройстве."
   },
   "notif": {
     "page_title": "Уведомления",
@@ -1151,43 +1134,6 @@
     "playing": "Воспроизведение…",
     "audio_test": "Тест звука (3 с)"
   },
-  "update": {
-    "check_for_updates": "Проверяйте обновления",
-    "checking": "Проверяю обновления...",
-    "check_failed": "Проверка обновления не удалась: {error}",
-    "latest_version": "✅ Вы на новейшей версии ({version})",
-    "install": "Установка",
-    "install_anyway": "В любом случае устанавливайте",
-    "starting": "Начнём...",
-    "install_rejected": "Установка отклонена: {error}",
-    "install_failed_start": "Не удалось запустить установку",
-    "install_request_failed": "Запрос на установку не сработал: {error}",
-    "install_failed": "Не удалось установить: {error}",
-    "updating": "Обновление BladeWatch",
-    "reconnecting": "Пересоединение...",
-    "headunit_installing": "Главное устройство устанавливает обновление. Эта страница автоматически обновляется, когда новая версия будет доступна.",
-    "phase_queued": "В очереди, готовимся...",
-    "phase_downloading": "Загрузка APK",
-    "phase_verifying": "Проверка загрузки",
-    "phase_stopping": "Остановка сервисов (туннель будет отключён)",
-    "phase_installing": "Установка  головного устройства перезагрузка",
-    "phase_error": "Не удалось",
-    "waiting_for_headunit": "Установка  ожидает возвращения главного подразделения...",
-    "attempt_of": "Попытка {n} из {total} (оставшиеся ~{remaining})",
-    "version_unchanged": "Сервис снова в сети, но версия не изменилась — возможно, установка не удалась.",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ Обновлено на {version}",
-    "reloading": "Перезагружаю страницу...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "Ваш <strong>{type}</strong> URL стабилен и не изменится.",
-    "lan_hint": "Доступ к локальной сети (<code>{ips}</code>) восстанавливается ~{seconds}s быстрее, чем туннель  переключаться на него сейчас, если вы можете.",
-    "recommend_inapp_default": "BYD очищает белый список автоматического запуска при каждой установке.",
-    "recommend_inapp_intro": "<strong>Рекомендуется: вместо этого обновление из приложения в автомобиле.</strong> {reason}",
-    "title_update_to": "Обновление BladeWatch на <span class=\"upd-newv\">{version}</span>?",
-    "currently_on": "В настоящее время на {version}",
-    "downtime_warning": "<strong>Удалённый доступ недоступен ~{minutes} мин.</strong> Сервисы перезапустятся, и туннель восстановит соединение после установки.",
-    "fallback_check_label": "Проверяйте обновления"
-  },
   "vehicle": {
     "car_locked": "Автомобиль заперт",
     "car_unlocked": "Автомобиль открыт",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Открыть в Google Maps",
     "no_gps_fix": "Нет данных GPS"
   },
-  "roi": {
-    "editing": "Редактирование",
-    "window_n": "Окно {n}",
-    "remove": "Удалить",
-    "from": "От:",
-    "to": "к",
-    "schedule_off": "Отменить обычное наблюдение.",
-    "add_time_window": "Добавьте окно времени, а затем сохранить.",
-    "fix_errors": "Устранить ошибки выше, прежде чем сохранить.",
-    "fix_errors_first": "Сначала исправить ошибки",
-    "next_day_paren": "(на следующий день)",
-    "err_select_day": "Выберите хотя бы один день",
-    "err_identical": "Начало и конец идентичны.",
-    "overnight": "За ночь: {start} → на следующий день {end}",
-    "cam_front": "Передняя сторона",
-    "cam_right": "Правая сторона",
-    "cam_rear": "Задняя сторона",
-    "cam_left": "Левая сторона",
-    "no_preview": "Нет предварительного просмотра",
-    "full_frame": "{cam}: полная рамка",
-    "blocks_active": "{cam}: активные блоки {active}/{total}",
-    "zone_saved": "Зона {cam} сохранена",
-    "roi_disabled": "{cam} ROI отключен",
-    "save_failed": "Не удалось сохранить",
-    "schedule_saved": "Сохранившийся график",
-    "badge_on": "ВКЛ",
-    "badge_off": "ВЫКЛ"
-  },
   "safe_loc": {
     "enabled": "Задействовано безопасное местоположение",
     "disabled": "Необеспеченные безопасные места",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ ОFF",
     "you_are_here": " Ты здесь",
     "popup_radius": "ЗЗ0XX{name}</b><br>{meters}m радиус"
-  },
-  "liveview": {
-    "cameras": "Камеры",
-    "location": "Местонахождение",
-    "live": "Жизнь",
-    "enable_failed": "Не удалось включить потоковую передачу"
-  },
-  "map": {
-    "your_vehicle": "Ваше транспортное средство",
-    "your_vehicle_sub": "BYD Шампионский сторожевой",
-    "you_are_here": "Ты здесь."
-  },
-  "pip": {
-    "select_camera": "Выберите камеру",
-    "select_a_camera": "Выберите камеру",
-    "view_all": "Все",
-    "view_front": "Передняя сторона",
-    "view_right": "Правая сторона",
-    "view_rear": "Задняя сторона",
-    "view_left": "Левая сторона",
-    "title_resize": "Перерасширить",
-    "title_minimize": "Минимизируйте",
-    "title_close": "Закрыть",
-    "title_left_camera": "Левый фотоаппарат",
-    "title_front_camera": "Передняя камера",
-    "title_all_cameras": "Все камеры",
-    "title_rear_camera": "Задней камеры",
-    "title_right_camera": "Правый фотоаппарат",
-    "title_toggle": "Проверка камеры",
-    "default_camera": "Камера",
-    "connecting": "Подключение…",
-    "connection_failed": "Сключение не удалось",
-    "decoder_not_loaded": "Декодер не загружен",
-    "decoder_failed": "Декодер не работает",
-    "close": "Закрыть",
-    "noDetectionEvents": "Нет событий обнаружения",
-    "previousClip": "Предыдущий клип",
-    "prev": "‹ Назад",
-    "nextClip": "Следующий клип",
-    "next": "Далее ›"
-  },
-  "stream": {
-    "front_camera": "Передняя камера",
-    "hotspot_all": "Все",
-    "hotspot_front": "Перед",
-    "hotspot_left": "Слева",
-    "hotspot_rear": "Сзади",
-    "hotspot_right": "Справа",
-    "idle_hint": "Нажмите на камеру на машине ниже",
-    "mini_cameras": "Камеры",
-    "quality_high": "Высокая (1,5 м)",
-    "quality_low": "Низкий (600k)",
-    "quality_max": "Макс (5 М, 30 кадров в секунду)",
-    "quality_medium": "Средний объем (1 М)",
-    "quality_smooth": "Плотный (3,5 М, 25 ф/с)",
-    "quality_ultra_high": "Ультравысокий (2,5 м)",
-    "quality_ultra_low": "Ультра низкий (400k)"
-  },
-  "auth": {
-    "code_placeholder": "xxxxxxxx"
-  },
-  "theme": {
-    "dark": "Тёмная",
-    "light": "Светлая",
-    "auto": "Авто"
   },
   "about": {
     "page_title": "О приложении — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "Продвинутый режим охраны и видеорегистратор для автомобилей BYD.",
     "privacy_note": "Ваши данные остаются на устройстве. Облако не требуется.",
     "setup_subtitle": "Три быстрых шага для наилучшего результата:"
-  },
-  "byd_cloud": {
-    "page_title": "ЗЗ0XX Облако",
-    "tab_account": "Счет",
-    "tab_status": "Статус",
-    "tab_advanced": "Продвинутые",
-    "account_title": "Счет в облаке BYD",
-    "account_info_title": "Соединение",
-    "region_supporting": "Сопоставьте свой регион регистрации приложения BYD. Попробуйте сначала ЕС, если не уверены.",
-    "empty_status": "Подключитесь к вкладке \"Общий\" чтобы увидеть ваш VIN и последний облачный нажимание здесь.",
-    "empty_advanced": "До сохранения учетных записей в вкладке \"Отчет\" никаких продвинутых действий не будет.",
-    "danger_zone": "Зона опасности",
-    "clear_hint": "Вы должны ввести вновь логин BYD приложения + PIN, чтобы снова использовать облачные команды.",
-    "recommend_title": "Используйте альтернативный профиль разрешения на транспортное средство",
-    "recommend_sub": "Рекомендуемая  сохраняет ваш главный аккаунт BYD изолированным. Нажмите, чтобы просмотреть шаги настройки.",
-    "recommend_step_1": "Откройте официальное приложение BYD на своем телефоне.",
-    "recommend_step_2": "Идите в \"Отпуск на транспортное средство\".",
-    "recommend_step_3": "Нажмите \"Новое разрешение\".",
-    "recommend_step_4": "Введите вторичный электронный адрес  он должен отличаться от электронной почты вашей основной учетной записи.",
-    "recommend_step_5": "Выберите период разрешения, который соответствует тому, как долго вы хотите, чтобы этот профиль оставался активным.",
-    "recommend_step_6": "Выйти из приложения BYD, затем зарегистрироваться с вторичным электронным письмом с помощью кода проверки и создать пароль.",
-    "recommend_step_7": "Нажмите \"Заключить\" или \"Открыть\" в приложении BYD  и вы будете задавать \"Пин управления\".",
-    "recommend_step_8": "Введите в BladeWatch вторичную электронную почту, пароль и PIN управления."
   },
   "dashboard": {
     "trips": "Поездки",
@@ -1729,10 +1559,6 @@
     "dismiss": "Закрыть",
     "syncing": "Синхронизация…",
     "sync_database": "Синхронизировать базу"
-  },
-  "header": {
-    "copy": "Копировать",
-    "languageAndSettings": "Язык и настройки"
   },
   "companion": {
     "looking": "Ищем ваш автомобиль…",

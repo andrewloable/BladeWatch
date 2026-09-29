@@ -78,18 +78,12 @@ object DaemonHardReset {
      * window for a half-killed watchdog to re-spawn between commands.
      *
      * Process names come from launcher constants: `byd_cam_daemon`, `sentry_daemon`,
-     * `acc_sentry_daemon`, `pear_daemon` -- plus `bladewatch_tor`, the onion service an older
-     * build may have left running. Tor itself was removed (BladeWatch-rdtj.12), but this sweep is
-     * what runs when the package is replaced, i.e. exactly when an upgraded car still has one.
+     * `acc_sentry_daemon`, and `pear_daemon`.
      *
-     * **The same goes for `/data/local/tmp/pear`** (BladeWatch-rdtj.3): pear_daemon's storage,
+     * **Nothing here may delete `/data/local/tmp/pear`** (BladeWatch-rdtj.3): pear_daemon's storage,
      * which holds the car's permanent Pear identity once a companion is paired. Only the lock file
      * `pear_daemon.lock` (matched by `*_daemon.lock`) may go; `rm -f` cannot remove a directory,
      * and no clause may ever be widened into one that can.
-     *
-     * **Nothing here may delete `/data/local/tmp/tor`** (an older build's onion identity). Removing
-     * it is an explicit owner decision (BladeWatch-rdtj.12), never a sweep's side effect; the
-     * `rm -f` clauses are deliberately narrow, and none may be widened into a glob over it.
      *
      * Two properties of this string are load-bearing and survive translation only by being left
      * exactly as they were:
@@ -148,5 +142,5 @@ object DaemonHardReset {
 
     @JvmStatic
     internal fun hardResetCommand(): String =
-        "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor pear_daemon 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done"
+        "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon pear_daemon 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done"
 }

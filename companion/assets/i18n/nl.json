@@ -134,28 +134,11 @@
     "timeout": "Verzoek uitgesteld",
     "server_error": "Serverfout"
   },
-  "confirm": {
-    "delete": "Verwijder?",
-    "delete_irreversible": "Dit kan niet ongedaan worden gemaakt.",
-    "are_you_sure": "Weet je het zeker? - Ja."
-  },
   "toast": {
     "saved": "Opgeslagen",
     "applied": "Toegepast",
     "deleted": "Verwijderd",
     "copied": "Gekopieerd naar klembord"
-  },
-  "login": {
-    "subtitle": "Voer uw apparaat-token in om toegang te krijgen",
-    "device_id": "Identificatie van het apparaat",
-    "find_hint": "Zoek dit in uw BladeWatch app → Dashboard → Accesscode",
-    "login_btn": "Inlog",
-    "privacy": "Je gegevens blijven op je apparaat.",
-    "access_code": "Toegangscode",
-    "access_code_placeholder": "Toegangscode",
-    "form_hint": "Zoek dit in uw BladeWatch app → Dashboard → Accesscode",
-    "login": "Inlog",
-    "footer": "Je gegevens blijven op je apparaat."
   },
   "notif": {
     "page_title": "Meldingen",
@@ -1151,43 +1134,6 @@
     "playing": "Afspelen…",
     "audio_test": "Audiotest (3s)"
   },
-  "update": {
-    "check_for_updates": "Controleer de updates",
-    "checking": "Ik kijk naar updates.",
-    "check_failed": "Update-controle mislukt: {error}",
-    "latest_version": "✅ Je bent op de nieuwste versie ({version})",
-    "install": "Installatie",
-    "install_anyway": "Installeer het toch",
-    "starting": "Begin met...",
-    "install_rejected": "Installatie geweigerd: {error}",
-    "install_failed_start": "Installatie niet gestart",
-    "install_request_failed": "Installatieverzoek mislukt: {error}",
-    "install_failed": "Installatie mislukt: {error}",
-    "updating": "Updatering van BladeWatch",
-    "reconnecting": "Herverbinding...",
-    "headunit_installing": "De hoofd-eenheid installeert de update. Deze pagina wordt automatisch bijgewerkt wanneer de nieuwe versie online is.",
-    "phase_queued": "Lijst  voorbereiden...",
-    "phase_downloading": "APK downloaden",
-    "phase_verifying": "Download verifiëren",
-    "phase_stopping": "Services stoppen (tunnel gaat offline)",
-    "phase_installing": "Installatie  hoofd-eenheid herstarten",
-    "phase_error": "Gefeliciteerd",
-    "waiting_for_headunit": "Installeer  wachten tot de hoofd eenheid terugkomt...",
-    "attempt_of": "Verslag {n} van {total} (~{remaining}'s overblijven)",
-    "version_unchanged": "Service is weer online maar de versie is ongewijzigd — de installatie is mogelijk mislukt.",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ Updated naar {version}",
-    "reloading": "De pagina opnieuw opladen...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "Je <strong>{type}</strong> URL is stabiel en zal niet veranderen.",
-    "lan_hint": "Lokaal netwerk toegang (<code>{ips}</code>) herstelt ~{seconds}s sneller dan de tunnel  schakelen naar het nu als je kunt.",
-    "recommend_inapp_default": "BYD verwijdert de auto-start-whitelist bij elke installatie. De in-car app vraagt je; de webapp kan niet.",
-    "recommend_inapp_intro": "<strong> Aanbevolen: update van de in-car app in plaats.</strong> {reason}",
-    "title_update_to": "BladeWatch bijwerken naar <span class=\"upd-newv\">{version}</span>?",
-    "currently_on": "Momenteel op {version}",
-    "downtime_warning": "<strong>Externe toegang offline voor ~{minutes} min.</strong> Services herstarten en de tunnel maakt na installatie opnieuw verbinding.",
-    "fallback_check_label": "Controleer de updates"
-  },
   "vehicle": {
     "car_locked": "Auto gesloten .",
     "car_unlocked": "Autos ontgrendeld",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Openen in Google Maps",
     "no_gps_fix": "Geen GPS-positie beschikbaar"
   },
-  "roi": {
-    "editing": "Wijziging",
-    "window_n": "Venster {n}",
-    "remove": "Verwijderen",
-    "from": "Uit",
-    "to": "aan",
-    "schedule_off": "Schedule van  normale bewaking.",
-    "add_time_window": "Voeg een tijdvenster toe, dan Save.",
-    "fix_errors": "Bepaal bovenstaande fouten voordat u het opslaat.",
-    "fix_errors_first": "Eerst fouten oplossen",
-    "next_day_paren": "(volgende dag)",
-    "err_select_day": "Selecteer ten minste één dag",
-    "err_identical": "Het begin en het einde zijn identiek.",
-    "overnight": "Overnachting: {start} → de volgende dag {end}",
-    "cam_front": "Voorzijde",
-    "cam_right": "Rechte kant",
-    "cam_rear": "Achterzijde",
-    "cam_left": "Links",
-    "no_preview": "Geen preview .",
-    "full_frame": "{cam}: Volle frame",
-    "blocks_active": "{cam}: {active}/{total} blokken actief",
-    "zone_saved": "{cam}-zone opgeslagen",
-    "roi_disabled": "{cam} ROI uitgeschakeld",
-    "save_failed": "Niet gespaard",
-    "schedule_saved": "Schedule opgeslagen",
-    "badge_on": "AAN",
-    "badge_off": "UIT"
-  },
   "safe_loc": {
     "enabled": "Beveiligde locaties geactiveerd",
     "disabled": "Beveiligde plaatsen uitgeschakeld",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ OFF",
     "you_are_here": " Je bent hier",
     "popup_radius": "<b>{name}</b><br>{meters}m"
-  },
-  "liveview": {
-    "cameras": "Camera's",
-    "location": "Locatie",
-    "live": "Leven",
-    "enable_failed": "Streaming niet geactiveerd"
-  },
-  "map": {
-    "your_vehicle": "Uw voertuig",
-    "your_vehicle_sub": "BladeWatch Surveillance",
-    "you_are_here": "Je bent hier."
-  },
-  "pip": {
-    "select_camera": "Selecteer Camera",
-    "select_a_camera": "Selecteer een camera",
-    "view_all": "Allemaal .",
-    "view_front": "Voorzijde",
-    "view_right": "Rechte kant",
-    "view_rear": "Achterzijde",
-    "view_left": "Links",
-    "title_resize": "Vergroot",
-    "title_minimize": "Minimiseer",
-    "title_close": "Sluiten",
-    "title_left_camera": "Linkscamera",
-    "title_front_camera": "Frontcamera",
-    "title_all_cameras": "Alle camera's",
-    "title_rear_camera": "Achtercamera",
-    "title_right_camera": "Rechte camera",
-    "title_toggle": "Verwijder het beeld van de camera",
-    "default_camera": "Camera .",
-    "connecting": "Verbinden…",
-    "connection_failed": "Verbinding mislukt",
-    "decoder_not_loaded": "Decoder niet geladen",
-    "decoder_failed": "Decoder mislukt",
-    "close": "Sluiten",
-    "noDetectionEvents": "Geen detectiegebeurtenissen",
-    "previousClip": "Vorige clip",
-    "prev": "‹ Vorige",
-    "nextClip": "Volgende clip",
-    "next": "Volgende ›"
-  },
-  "stream": {
-    "front_camera": "Frontcamera",
-    "hotspot_all": "Allemaal",
-    "hotspot_front": "Voor",
-    "hotspot_left": "Links",
-    "hotspot_rear": "Achter",
-    "hotspot_right": "Rechts",
-    "idle_hint": "Tik op de camera van de auto hieronder.",
-    "mini_cameras": "Camera's",
-    "quality_high": "Hoog (1,5 m)",
-    "quality_low": "Niveaus:",
-    "quality_max": "Max (5M, 30 fps)",
-    "quality_medium": "Medium (1M)",
-    "quality_smooth": "Glatte (3.5M, 25 fps)",
-    "quality_ultra_high": "Ultra hoog (2,5 m)",
-    "quality_ultra_low": "Ultra laag (400k)"
-  },
-  "auth": {
-    "code_placeholder": "- Ja. - Ja."
-  },
-  "theme": {
-    "dark": "Donker",
-    "light": "Licht",
-    "auto": "Auto"
   },
   "about": {
     "page_title": "Over — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "Geavanceerd bewakings- en dashcamsysteem voor BYD-voertuigen.",
     "privacy_note": "Je gegevens blijven op je apparaat. Geen cloud nodig.",
     "setup_subtitle": "Drie snelle stappen voor de beste ervaring:"
-  },
-  "byd_cloud": {
-    "page_title": "BYD Wolk",
-    "tab_account": "Rekening",
-    "tab_status": "Status",
-    "tab_advanced": "Geavanceerd",
-    "account_title": "BYD Cloud Account",
-    "account_info_title": "Verbinding",
-    "region_supporting": "Vergelijk je BYD app registratie regio. Probeer eerst EU als je niet zeker bent.",
-    "empty_status": "Verbind je op het tabblad Account om je VIN en laatste cloud hier te zien.",
-    "empty_advanced": "Er zijn geen geavanceerde acties beschikbaar totdat de credentials worden opgeslagen op het tabblad Account.",
-    "danger_zone": "Gevaarlijke zone",
-    "clear_hint": "Verwijder de opgeslagen credentials van dit apparaat. Je moet je BYD app login + PIN opnieuw invoeren om weer cloudcommando's te gebruiken.",
-    "recommend_title": "Gebruik een alternatief voertuigvergunningsprofiel",
-    "recommend_sub": "Aanbevolen  houdt uw belangrijkste BYD-account geïsoleerd.",
-    "recommend_step_1": "Open de officiële BYD app op je telefoon.",
-    "recommend_step_2": "Ga naar voertuigvergunning.",
-    "recommend_step_3": "Tik op Nieuwe toestemming.",
-    "recommend_step_4": "Voer een secundaire e-mail in  het moet anders zijn dan uw hoofdrekening e-mail.",
-    "recommend_step_5": "Kies een toelatingsperiode die past bij de duur van het gebruik van dit profiel.",
-    "recommend_step_6": "Log uit van de BYD app, registreer je dan met de secundaire e-mail met de verificatiecode en maak een wachtwoord.",
-    "recommend_step_7": "Tik op Lock of Unlock in de BYD app  dan wordt u gevraagd een Control Pin in te stellen.",
-    "recommend_step_8": "Voer de secundaire e-mail, wachtwoord en Control Pin hier in BladeWatch in."
   },
   "dashboard": {
     "trips": "Ritten",
@@ -1729,10 +1559,6 @@
     "dismiss": "Sluiten",
     "syncing": "Synchroniseren…",
     "sync_database": "Database synchroniseren"
-  },
-  "header": {
-    "copy": "Kopiëren",
-    "languageAndSettings": "Taal en instellingen"
   },
   "companion": {
     "looking": "Je auto zoeken…",

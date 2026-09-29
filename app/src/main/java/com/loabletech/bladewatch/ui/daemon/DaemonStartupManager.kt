@@ -119,11 +119,6 @@ class DaemonStartupManager(
         enableAccessibilityKeepAlive()
         logT("enableAccessibilityKeepAlive done")
 
-        // BladeWatch-fjb0: clear the previous tunnel's account residue, which an uninstall
-        // never removed because it lives under the shell UID's /data/local/tmp. Idempotent
-        // and best-effort — a no-op on any device that never ran the old build.
-        net.bladewatch.app.launcher.LegacyTunnelCleanup.run(context)
-
         // Wait 45 seconds for system to fully stabilize before starting any daemons
         handler.postDelayed({
             logT("startCoreDaemons firing (expected +45000ms)")

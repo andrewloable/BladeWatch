@@ -158,8 +158,7 @@ middleware runs, so they are always reachable; an unknown `/auth/*` path is a 40
 
 Protected requests require:
 
-- Bearer JWT (`Authorization: Bearer <jwt>`), or
-- signed thumbnail token for specific `/thumb/*?t=<jws>` access.
+- Bearer JWT (`Authorization: Bearer <jwt>`).
 
 There is no cookie session any more.
 
@@ -417,12 +416,11 @@ command, the REMOTE loopback listener on 8081, the build-time `libtor.so` downlo
 Dashboard's Connect card (onion QR, device ID, web access code). Saved onion URLs and QR codes
 stop working, and nothing migrates them: an owner pairs the companion instead.
 
-What stays, on purpose: `LegacyTunnelCleanup` kills a stale `bladewatch_tor` from a v1.3.x
-install on every app launch (with `killall`, never `pkill -f`, which matches its own shell) and
-drops the stale `TOR_TUNNEL` config key. A surviving tor would keep forwarding its onion port to
-a now-unbound 127.0.0.1:8081 that any app on the head unit could bind (BladeWatch-rdtj.23). Neither touches
-`/data/local/tmp/tor`, whose `hs/` still holds the old onion key; removing it is the owner's
-call.
+Nothing on the car cleans up after tor any more (the `LegacyTunnelCleanup` that killed a stale
+`bladewatch_tor` and dropped the `TOR_TUNNEL` config key was removed). A car upgraded from v1.3.x
+that still has a running tor would keep forwarding its onion port to a now-unbound 127.0.0.1:8081,
+so stop it by hand (`killall`, never `pkill -f`). `/data/local/tmp/tor` holds the old onion key and
+can be deleted.
 
 For comparison with the Pear numbers, tor measured on the head unit (2026-09-14): 62–75 KB/s,
 2.1–6.5 s warm request TTFB, ~82 s cold bootstrap, and the address opened only in Tor Browser

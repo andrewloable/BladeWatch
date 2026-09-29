@@ -1749,8 +1749,8 @@ class GpuSurveillancePipeline(
         private const val TAG = "GpuPipeline"
         private val logger = DaemonLogger.getInstance(TAG)
 
-        // One still a second, the owner's choice (BladeWatch-rdtj.61). It was 5 s, sized for Tor's
-        // ~101 KB/s; Pear carries 40-70 KB a second with room to spare even on mobile data.
+        // Ten stills a second (BladeWatch-rdtj.61, -hmk0); Pear carries it with room to spare even
+        // on mobile data.
         private const val STILL_FRAME_REFRESH_INTERVAL_MS = 100L
 
         private fun loadCameraConfigSection(): JSONObject? {

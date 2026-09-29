@@ -36,35 +36,9 @@ class DaemonHardResetCommandTest {
         Assert.assertEquals(
             "the Kotlin translation changed the sweep. Kotlin interpolates \$ in a string "
                 + "literal; every \$ in this command must be escaped.",
-            "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor pear_daemon 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done",
+            "echo 'disabled by hard reset' > /data/local/tmp/camera_daemon.disabled; for p in \$(ps -A -o PID,ARGS 2>/dev/null | grep -E 'start_[c]am_daemon|start_[a]cc_sentry' | awk '{print \$1}'); do kill -9 \$p 2>/dev/null; done; killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon pear_daemon 2>/dev/null; rm -f /data/local/tmp/*_daemon.lock 2>/dev/null; rm -f /data/local/tmp/*_daemon.disabled 2>/dev/null; rm -f /data/local/tmp/cam_watchdog.pid 2>/dev/null; rm -f /data/local/tmp/start_*.sh 2>/dev/null; echo done",
             DaemonHardReset.hardResetCommand()
         )
-    }
-
-    /** Tor was removed (BladeWatch-rdtj.12); an upgraded car can still have an older build's running. */
-    @Test
-    fun killsATorLeftRunningByAnOlderBuild() {
-        val cmd = DaemonHardReset.hardResetCommand()
-        Assert.assertTrue("hard reset must kill an older build's tor process: " + cmd,
-            cmd.contains("bladewatch_tor"))
-    }
-
-    @Test
-    fun neverRemovesTheHiddenServiceDirectory() {
-        val cmd = DaemonHardReset.hardResetCommand()
-        for (line in cmd.split(";")) {
-            val t = line.trim()
-            if (!t.startsWith("rm")) continue
-            Assert.assertFalse(
-                "hard reset must never delete the hidden-service directory — it holds an older "
-                    + "build's onion key, and removing it is the owner's decision, never a sweep's. "
-                    + "Offending clause: " + t,
-                t.contains("/data/local/tmp/tor/hs") || t.contains("/data/local/tmp/tor "))
-            // A bare glob over the tor directory would sweep hs/ up with everything else.
-            Assert.assertFalse(
-                "a glob over the tor directory would take hs/ with it: " + t,
-                t.contains("/data/local/tmp/tor/*") || t.contains("-rf /data/local/tmp/tor"))
-        }
     }
 
     @Test
@@ -72,7 +46,7 @@ class DaemonHardResetCommandTest {
         // BladeWatch-rdtj.3. Without this a "hard reset" leaves the Pear peer running.
         val cmd = DaemonHardReset.hardResetCommand()
         Assert.assertTrue("hard reset must kill pear_daemon, spelled in full: " + cmd,
-            cmd.contains("killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon bladewatch_tor pear_daemon "))
+            cmd.contains("killall -9 byd_cam_daemon sentry_daemon acc_sentry_daemon pear_daemon "))
     }
 
     @Test

@@ -304,7 +304,7 @@ It is gone from the Flutter UI, `surveillance.proto`, `SurveillanceApiHandler`,
 `NativeMotion.setQuadrantRoi`, and the C++ pipeline's per-block mask.
 
 It was removed because it had never been usable: no client existed on any platform. Native's
-`RoiDrawingView.kt` was written but wired to nothing, the Angular SPA never referenced the
+`RoiDrawingView.kt` was written but wired to nothing, the (since removed) Angular SPA never referenced the
 fields, and the one client ever built for it (BladeWatch-9b0f's Flutter editor) drew on a blank
 grey box with no camera backdrop and destroyed the zone on save.
 

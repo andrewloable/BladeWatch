@@ -617,8 +617,8 @@ the only thing keeping it private. Never remove it to "reset" state.
 
 The Tor onion service's files (`/data/local/tmp/bladewatch_tor`, `/data/local/tmp/tor/`,
 `/data/local/tmp/tor.log`) belong to v1.3.x. Nothing reads or writes them since v1.4.0.0
-(BladeWatch-rdtj.12) — a stale tor process is killed on launch — and nothing deletes them either: `tor/hs` still holds the old onion
-key, so removing it is left to the owner.
+(BladeWatch-rdtj.12), and nothing deletes them: `tor/hs` holds the old onion key, and they can be
+removed by hand.
 
 ## Auth Data Flow
 

@@ -5,7 +5,6 @@ import net.bladewatch.app.auth.AuthManager
 import net.bladewatch.app.daemon.CameraDaemon
 import java.io.OutputStream
 import java.net.SocketAddress
-import java.net.URLDecoder
 
 /**
  * Authentication middleware for HttpServer.
@@ -26,7 +25,7 @@ import java.net.URLDecoder
  * means anything (BladeWatch-rdtj.4).
  *
  * Loopback is not a trustworthy signal on its own. The Pear stream pump delivers remote traffic from
- * 127.0.0.1 (as the removed tor onion service did): at the socket level that is indistinguishable
+ * 127.0.0.1: at the socket level that is indistinguishable
  * from an app on the head unit. So trust is a property of the LISTENER, declared where it is created,
  * rather than something inferred from the peer address -- and anything not explicitly declared
  * local is [REMOTE]. A new listener, or a new caller of [AuthMiddleware.checkAuth], fails closed.
@@ -121,23 +120,6 @@ object AuthMiddleware {
             return true
         }
 
-        // Tier 0.5 — signed thumb token: /thumb/<file>?t=<jws> as a plain GET, for a fetch that
-        // cannot carry an Authorization header. Accept the request iff the token's `sub` claim
-        // matches the requested filename and it is not expired.
-        if (path.startsWith("/thumb/")) {
-            val split = splitPathAndQuery(path)
-            val token = queryParam(split[1], "t")
-            if (token != null) {
-                val filename = split[0].substring("/thumb/".length)
-                val decoded = urlDecode(filename)
-                if (AuthManager.validateThumbToken(decoded, token) ||
-                    AuthManager.validateThumbToken(filename, token)
-                ) {
-                    return true
-                }
-            }
-        }
-
         // Tier 1 — JWT validation (Authorization: Bearer). The primary path.
         var jwt: String? = null
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -160,14 +142,9 @@ object AuthMiddleware {
         // What keeps REMOTE traffic out of it is the listener, never the address (BladeWatch-rdtj.4):
         // every way in from outside -- the Pear pump on 8444, LAN TLS on 8443 -- is a REMOTE
         // listener, and 8080 is LOCAL_APPS only for a peer UID PeerCredentials trusts
-        // (effectiveTrust in HttpServer). BladeWatch-3lbz.2 once added a second condition here,
-        // "no tunnel process running", because the tor onion service connected to 127.0.0.1:8080
-        // as the shell UID, which that check trusts. Since BladeWatch-ur11 tor used its own REMOTE
-        // listener, and with tor removed (BladeWatch-rdtj.12) that process check could never be
-        // true again, so it was deleted rather than kept as protection that protects nothing. The
-        // rule that replaces it: nothing may relay remote traffic into 8080 -- RemoteLoopbackListenerTest
-        // pins the Pear pump to 8444, and AuthMiddlewareTest pins that a REMOTE request is refused
-        // with the bypass forced on.
+        // (effectiveTrust in HttpServer). The rule: nothing may relay remote traffic into 8080 --
+        // RemoteLoopbackListenerTest pins the Pear pump to 8444, and AuthMiddlewareTest pins that a
+        // REMOTE request is refused with the bypass forced on.
         if (trust == ListenerTrust.LOCAL_APPS && isLoopbackBypassAllowed() && !hasTunnelHeaders &&
             clientAddress != null
         ) {
@@ -241,30 +218,6 @@ object AuthMiddleware {
         log("Unauthorized: " + path + " - " + reason)
         HttpResponse.sendUnauthorized(out, "{\"error\":\"Unauthorized\",\"reason\":\"" + reason + "\"}")
         return false
-    }
-
-    private fun urlDecode(s: String): String = try {
-        URLDecoder.decode(s, "UTF-8")
-    } catch (e: Exception) {
-        log("urlDecode failed: " + e.message)
-        s
-    }
-
-    private fun splitPathAndQuery(path: String): Array<String> {
-        val q = path.indexOf('?')
-        return if (q < 0) arrayOf(path, "") else arrayOf(path.substring(0, q), path.substring(q + 1))
-    }
-
-    private fun queryParam(query: String?, name: String): String? {
-        if (query.isNullOrEmpty()) return null
-        for (pair in query.split("&")) {
-            val eq = pair.indexOf('=')
-            if (eq < 0) continue
-            if (name == pair.substring(0, eq)) {
-                return urlDecode(pair.substring(eq + 1))
-            }
-        }
-        return null
     }
 
     private fun log(message: String) {

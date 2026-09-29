@@ -477,67 +477,6 @@ object AuthManager {
     }
 
     /**
-     * Mint a single-purpose thumb token for a given filename. Compact HS256
-     * over the existing device secret with claims `sub=filename` and
-     * `exp=now+ttlSec`. The token can be carried as a `?t=`
-     * query param so browsers fetching the thumbnail (Web Push notification
-     * service worker, FCM image fetch, iOS WebKit notification body) don't
-     * need to send Authorization headers — useful when the URL ends up in
-     * the OS-level notification banner where headers are not configurable.
-     */
-    @JvmStatic
-    fun signThumbToken(filename: String?, ttlSec: Long): String? {
-        val state = getState()
-        if (state == null || filename == null) return null
-        return try {
-            val now = System.currentTimeMillis() / 1000
-            val headerJson = "{\"alg\":\"" + JWT_ALGORITHM + "\",\"typ\":\"THM\"}"
-            val payloadJson = "{\"sub\":\"" + escapeJson(filename) + "\"," +
-                "\"iat\":" + now + "," +
-                "\"exp\":" + (now + ttlSec) + "}"
-            val content = base64UrlEncode(headerJson.toByteArray(StandardCharsets.UTF_8)) +
-                "." + base64UrlEncode(payloadJson.toByteArray(StandardCharsets.UTF_8))
-            content + "." + hmacSha256(content, state.deviceSecret)
-        } catch (e: Exception) {
-            log("Thumb token sign error: " + e.message)
-            null
-        }
-    }
-
-    /**
-     * Validate a thumb token against an expected filename. Returns true iff
-     * signature matches the device secret, `typ=="THM"`,
-     * `sub==filename`, and `exp` is in the future.
-     */
-    @JvmStatic
-    fun validateThumbToken(filename: String?, token: String?): Boolean {
-        if (filename == null || token.isNullOrEmpty()) return false
-        val state = getState() ?: return false
-        val parts = token.split(".")
-        if (parts.size != 3) return false
-        return try {
-            val content = parts[0] + "." + parts[1]
-            val expectedSig = hmacSha256(content, state.deviceSecret)
-            if (!MessageDigest.isEqual(
-                    expectedSig.toByteArray(StandardCharsets.UTF_8),
-                    parts[2].toByteArray(StandardCharsets.UTF_8)
-                )
-            ) {
-                return false
-            }
-            val headerJson = String(base64UrlDecode(parts[0]), StandardCharsets.UTF_8)
-            if ("THM" != extractJsonString(headerJson, "typ")) return false
-            val payloadJson = String(base64UrlDecode(parts[1]), StandardCharsets.UTF_8)
-            if (filename != extractJsonString(payloadJson, "sub")) return false
-            val exp = extractJsonLong(payloadJson, "exp", 0)
-            System.currentTimeMillis() / 1000 <= exp
-        } catch (e: Exception) {
-            log("validateThumbToken failed: " + e.message)
-            false
-        }
-    }
-
-    /**
      * Invalidate cached auth state.
      * Called via IPC when app regenerates token.
      * Next JWT validation will reload from the unified config.

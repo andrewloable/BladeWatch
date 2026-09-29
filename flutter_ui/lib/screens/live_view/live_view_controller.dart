@@ -18,8 +18,7 @@ import '../../util/recording_state.dart';
 /// seam for networking. `WebSocket` delivers each logical message as one
 /// stream event, fragmentation already reassembled per RFC 6455 (confirmed
 /// by the same protocol already working against a standard browser
-/// WebSocket client for the Angular SPA's own live view — see
-/// `LiveViewController`'s doc comment), so [messages] needs no framing
+/// WebSocket client — see `LiveViewController`'s doc comment), so [messages] needs no framing
 /// logic of its own. [IoLiveSocket]/[connectIoLiveSocket] are covered by a
 /// real-server integration test (`io_live_socket_test.dart`), the same
 /// approach `raw_http_sender_test.dart` uses for its own thin real-I/O
@@ -67,8 +66,8 @@ Future<LiveSocket> connectIoLiveSocket(String url) async => IoLiveSocket(await W
 ///   reassembly) is **not** ported into Kotlin either, even though it
 ///   technically could be with enough new native networking code: `dart:io`'s
 ///   own `WebSocket` is RFC 6455 compliant and already proven against this
-///   exact server by the Angular SPA's standard browser WebSocket client
-///   (see `web/src/app/pages/live/` and `SotaPlayer.js`) — using it keeps
+///   exact server by a standard browser WebSocket client (the removed web app's live view)
+///   — using it keeps
 ///   the new native surface to exactly the one thing Dart genuinely cannot
 ///   do (MediaCodec), which is also the smallest surface this task's own
 ///   "a leaked MediaCodec is unrecoverable" warning could apply to.

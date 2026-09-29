@@ -676,8 +676,7 @@ class TcpCommandServer(private val port: Int) {
             // against a fixed allow-list before anything happens, and no part of it ever reaches a
             // shell.
             //
-            // Scope is PEAR_PEER only, on purpose (tor, the other optional daemon, was removed in
-            // BladeWatch-rdtj.12):
+            // Scope is PEAR_PEER only, on purpose:
             //
             //  - CAMERA_DAEMON hosts THIS server. Stopping it kills the socket answering the
             //    request, and the Flutter APK has no ADB, so nothing could start it again — a

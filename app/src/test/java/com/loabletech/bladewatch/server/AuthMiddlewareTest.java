@@ -57,11 +57,13 @@ public class AuthMiddlewareTest {
     }
 
     @Test
-    public void signedThumbPathStillAllowsTokenBasedAccess() throws Exception {
+    public void aThumbUrlWithAQueryTokenIsNotACredential() throws Exception {
+        // Signed thumbnail tokens went with Web Push (BladeWatch-rdtj.22): /thumb/ needs a JWT.
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         boolean allowed = AuthMiddleware.checkAuth(
-                "/thumb/event.jpg?t=invalid", null, out, null, false);
+                "/thumb/event.jpg?t=anything", null, out, null, false);
         Assert.assertFalse(allowed);
+        Assert.assertTrue(out.toString("UTF-8").contains("401 Unauthorized"));
     }
 
     @Test

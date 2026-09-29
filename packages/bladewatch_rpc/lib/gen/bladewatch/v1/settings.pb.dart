@@ -2080,7 +2080,7 @@ class SettingsServiceApi {
           'SetRecordingMode', request, SetRecordingModeResponse());
 
   /// BladeWatch-qwqq: these four replace the last /api/settings/* JSON calls any first-party
-  /// client still made over REST — the web SPA's status-overlay toggles and the Flutter
+  /// client still made over REST — the removed web app's status-overlay toggles and the Flutter
   /// recording screen's telemetry-field picker.
   $async.Future<GetStatusOverlayResponse> getStatusOverlay(
           $pb.ClientContext? ctx, GetStatusOverlayRequest request) =>

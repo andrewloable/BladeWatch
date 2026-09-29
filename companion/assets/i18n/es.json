@@ -134,28 +134,11 @@
     "timeout": "El plazo de la solicitud",
     "server_error": "Erro del servidor"
   },
-  "confirm": {
-    "delete": "¿Deletar?",
-    "delete_irreversible": "Esto no se puede deshacer.",
-    "are_you_sure": "¿Estás seguro de eso?"
-  },
   "toast": {
     "saved": "Guardado",
     "applied": "Aplicado",
     "deleted": "Deletado",
     "copied": "Copiado al portapapeles"
-  },
-  "login": {
-    "subtitle": "Ingrese el token del dispositivo para acceder",
-    "device_id": "Identificación del dispositivo",
-    "find_hint": "Encuentra esto en tu aplicación BladeWatch → Dashboard → Código de acceso",
-    "login_btn": "Ingreso",
-    "privacy": "Sus datos permanecen en su dispositivo.",
-    "access_code": "Código de acceso",
-    "access_code_placeholder": "Código de acceso",
-    "form_hint": "Encuentra esto en tu aplicación BladeWatch → Dashboard → Código de acceso",
-    "login": "Ingreso",
-    "footer": "Sus datos permanecen en su dispositivo."
   },
   "notif": {
     "page_title": "Notificaciones",
@@ -1151,43 +1134,6 @@
     "playing": "Reproduciendo…",
     "audio_test": "Prueba de audio (3 s)"
   },
-  "update": {
-    "check_for_updates": "Compruebe las actualizaciones",
-    "checking": "Verificando las actualizaciones...",
-    "check_failed": "Verificación de actualización falló: {error}",
-    "latest_version": "✅ Estás en la última versión ({version})",
-    "install": "Instalar",
-    "install_anyway": "Instalar de todos modos",
-    "starting": "Comenzando...",
-    "install_rejected": "Instalación rechazada: {error}",
-    "install_failed_start": "No se ha iniciado la instalación",
-    "install_request_failed": "No se ha logrado la solicitud de instalación: {error}",
-    "install_failed": "Fallo de instalación: {error}",
-    "updating": "Actualización de BladeWatch",
-    "reconnecting": "Reconectándonos...",
-    "headunit_installing": "La unidad principal está instalando la actualización. Esta página se actualizará automáticamente cuando la nueva versión esté en línea.",
-    "phase_queued": "En la cola preparándose...",
-    "phase_downloading": "Descargar APK",
-    "phase_verifying": "Verificación de la descarga",
-    "phase_stopping": "Deteniendo servicios (el túnel quedará sin conexión)",
-    "phase_installing": "Instalación  reinicio de la unidad de la cabeza",
-    "phase_error": "No se ha logrado",
-    "waiting_for_headunit": "Instalado esperando a que la unidad principal regrese...",
-    "attempt_of": "Intento {n} de {total} (~{remaining} restantes)",
-    "version_unchanged": "Servicio de vuelta en línea pero la versión no ha cambiado; es posible que la instalación haya fallado.",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ Actualizado a {version}",
-    "reloading": "Recargar la página...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "Su <strong>{type}</strong> URL es estable y no cambiará.",
-    "lan_hint": "El acceso a la red local (<code>{ips}</code>) recupera ~{seconds}s más rápido que el túnel  cambiar a él ahora si puedes.",
-    "recommend_inapp_default": "BYD limpia la lista blanca de arranque automático en cada instalación. La aplicación en el coche te pide; la webapp no puede.",
-    "recommend_inapp_intro": "<strong>Recomendado: actualización desde la aplicación en el coche en su lugar.</strong> {reason}",
-    "title_update_to": "¿Actualizar BladeWatch a <span class=\"upd-newv\">{version}</span>?",
-    "currently_on": "Actualmente en {version}",
-    "downtime_warning": "<strong>Acceso remoto sin conexión durante ~{minutes} min.</strong> Los servicios se reinician y el túnel se reconecta tras la instalación.",
-    "fallback_check_label": "Compruebe las actualizaciones"
-  },
   "vehicle": {
     "car_locked": "Auto cerrado",
     "car_unlocked": "Auto desbloqueado",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Abrir en Google Maps",
     "no_gps_fix": "No hay posición GPS"
   },
-  "roi": {
-    "editing": "EDITORÍA",
-    "window_n": "Ventana {n}",
-    "remove": "Quitar",
-    "from": "Desde",
-    "to": "a la",
-    "schedule_off": "Reprogramar la vigilancia normal.",
-    "add_time_window": "Añade una ventana de tiempo, y luego Salva.",
-    "fix_errors": "Corre los errores anteriores antes de guardar.",
-    "fix_errors_first": "Corrección de errores primero",
-    "next_day_paren": "(el día siguiente)",
-    "err_select_day": "Seleccione al menos un día",
-    "err_identical": "El comienzo y el final son idénticos.",
-    "overnight": "Durante la noche: {start} → al día siguiente {end}",
-    "cam_front": "El lado delantero",
-    "cam_right": "El lado derecho",
-    "cam_rear": "El lado trasero",
-    "cam_left": "El lado izquierdo",
-    "no_preview": "No hay vista previa",
-    "full_frame": "{cam}: Cuadro completo",
-    "blocks_active": "{cam}: Bloques {active}/{total} activos",
-    "zone_saved": "Zona {cam} guardada",
-    "roi_disabled": "{cam} ROI desactivado",
-    "save_failed": "No pudo salvar",
-    "schedule_saved": "Horario guardado",
-    "badge_on": "ENC.",
-    "badge_off": "APAG."
-  },
   "safe_loc": {
     "enabled": "Localizaciones seguras habilitadas",
     "disabled": "Localizaciones seguras desactivadas",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ Desactivado",
     "you_are_here": " Estás aquí",
     "popup_radius": "<b>{name}</b><br>{meters}m de radio"
-  },
-  "liveview": {
-    "cameras": "Las cámaras",
-    "location": "Localización",
-    "live": "En vivo",
-    "enable_failed": "No habilitado la transmisión"
-  },
-  "map": {
-    "your_vehicle": "Su vehículo",
-    "your_vehicle_sub": "BYD Campeón Sentinela",
-    "you_are_here": "Estás aquí."
-  },
-  "pip": {
-    "select_camera": "Seleccione la cámara",
-    "select_a_camera": "Seleccione una cámara",
-    "view_all": "Todo el mundo .",
-    "view_front": "El lado delantero",
-    "view_right": "El lado derecho",
-    "view_rear": "El lado trasero",
-    "view_left": "El lado izquierdo",
-    "title_resize": "Redimensionarse",
-    "title_minimize": "Minimizar",
-    "title_close": "Cerrar",
-    "title_left_camera": "La cámara izquierda",
-    "title_front_camera": "La cámara delantera",
-    "title_all_cameras": "Todas las cámaras",
-    "title_rear_camera": "La cámara trasera",
-    "title_right_camera": "La cámara derecha",
-    "title_toggle": "Cambiar la vista de la cámara",
-    "default_camera": "La cámara",
-    "connecting": "Conectando…",
-    "connection_failed": "Fallo de conexión",
-    "decoder_not_loaded": "El decodificador no está cargado",
-    "decoder_failed": "El decodificador falló",
-    "close": "Cerrar",
-    "noDetectionEvents": "No hay eventos de detección",
-    "previousClip": "Clip anterior",
-    "prev": "‹ Anterior",
-    "nextClip": "Clip siguiente",
-    "next": "Siguiente ›"
-  },
-  "stream": {
-    "front_camera": "La cámara delantera",
-    "hotspot_all": "Todos",
-    "hotspot_front": "Frente",
-    "hotspot_left": "Izquierda",
-    "hotspot_rear": "Atrás",
-    "hotspot_right": "Derecha",
-    "idle_hint": "Toque una cámara en el coche de abajo",
-    "mini_cameras": "Las cámaras",
-    "quality_high": "Alto (1.5 M)",
-    "quality_low": "Bajo (600k)",
-    "quality_max": "Máximo (5M, 30 fps)",
-    "quality_medium": "Medio (1M)",
-    "quality_smooth": "Listo (3,5 M, 25 fps)",
-    "quality_ultra_high": "Ultra Alto (2.5 M)",
-    "quality_ultra_low": "Ultra Bajo (400k)"
-  },
-  "auth": {
-    "code_placeholder": "¿Qué es esto?"
-  },
-  "theme": {
-    "dark": "Oscuro",
-    "light": "Claro",
-    "auto": "Auto"
   },
   "about": {
     "page_title": "Acerca de — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "Sistema avanzado de vigilancia y dashcam para vehículos BYD.",
     "privacy_note": "Tus datos permanecen en tu dispositivo. No requiere nube.",
     "setup_subtitle": "Tres pasos rápidos para obtener la mejor experiencia:"
-  },
-  "byd_cloud": {
-    "page_title": "BYD Nube",
-    "tab_account": "Cuenta",
-    "tab_status": "El estado",
-    "tab_advanced": "Avanzado",
-    "account_title": "Cuenta en la nube BYD",
-    "account_info_title": "Conexión",
-    "region_supporting": "Compare su región de registro de la aplicación BYD. Pruebe primero la UE si no está seguro.",
-    "empty_status": "Conecta en la pestaña Cuenta para ver tu VIN y último pulso en la nube aquí.",
-    "empty_advanced": "No hay acciones avanzadas disponibles hasta que las credenciales se guardan en la pestaña Cuenta.",
-    "danger_zone": "Zona de peligro",
-    "clear_hint": "Elimina las credenciales guardadas de este dispositivo. Tendrá que volver a ingresar su inicio de sesión de la aplicación BYD + PIN para usar los comandos de la nube de nuevo.",
-    "recommend_title": "Utilice un perfil de autorización de vehículos alternativos",
-    "recommend_sub": "Recomendado  mantiene su cuenta principal BYD aislada. Toque para ver los pasos de configuración.",
-    "recommend_step_1": "Abre la aplicación oficial BYD en tu teléfono.",
-    "recommend_step_2": "Ve a la autorización del vehículo.",
-    "recommend_step_3": "Toque la nueva autorización.",
-    "recommend_step_4": "Ingrese un correo electrónico secundario  debe ser diferente de su cuenta principal de correo electrónico.",
-    "recommend_step_5": "Seleccione un período de autorización que se adapte al tiempo que desea que este perfil permanezca activo.",
-    "recommend_step_6": "Salga de la aplicación BYD, luego se registre con el correo electrónico secundario usando el código de verificación y cree una contraseña.",
-    "recommend_step_7": "Pulse en bloquear o desbloquear en la aplicación BYD  que le pedirá que configure un pin de control.",
-    "recommend_step_8": "Ingrese el correo electrónico secundario, contraseña y pin de control aquí en BladeWatch."
   },
   "dashboard": {
     "trips": "Viajes",
@@ -1729,10 +1559,6 @@
     "dismiss": "Descartar",
     "syncing": "Sincronizando…",
     "sync_database": "Sincronizar base de datos"
-  },
-  "header": {
-    "copy": "Copiar",
-    "languageAndSettings": "Idioma y ajustes"
   },
   "companion": {
     "looking": "Buscando tu coche…",

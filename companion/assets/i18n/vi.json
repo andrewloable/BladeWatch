@@ -134,28 +134,11 @@
     "timeout": "Đơn xin được thời hạn",
     "server_error": "lỗi máy chủ"
   },
-  "confirm": {
-    "delete": "Xóa?",
-    "delete_irreversible": "Điều này không thể không được.",
-    "are_you_sure": "Anh có chắc không?"
-  },
   "toast": {
     "saved": "Đã lưu",
     "applied": "Đã áp dụng",
     "deleted": "Dỡ bỏ",
     "copied": "Đã sao chép vào bộ nhớ tạm"
-  },
-  "login": {
-    "subtitle": "Nhập token thiết bị của bạn để truy cập",
-    "device_id": "ID thiết bị",
-    "find_hint": "Tìm điều này trong ứng dụng BladeWatch của bạn → bảng điều khiển → Mã truy cập",
-    "login_btn": "Nhập vào",
-    "privacy": "Dữ liệu của bạn vẫn ở trên thiết bị của bạn.",
-    "access_code": "Mã truy cập",
-    "access_code_placeholder": "Mã truy cập",
-    "form_hint": "Tìm điều này trong ứng dụng BladeWatch của bạn → bảng điều khiển → Mã truy cập",
-    "login": "Nhập vào",
-    "footer": "Dữ liệu của bạn vẫn ở trên thiết bị của bạn."
   },
   "notif": {
     "page_title": "Thông báo",
@@ -1151,43 +1134,6 @@
     "playing": "Đang phát…",
     "audio_test": "Kiểm tra âm thanh (3s)"
   },
-  "update": {
-    "check_for_updates": "Kiểm tra các bản cập nhật",
-    "checking": "Xem xem có thông tin mới không...",
-    "check_failed": "Kiểm tra cập nhật thất bại: {error}",
-    "latest_version": "✅ Bạn đang trên phiên bản mới nhất ({version})",
-    "install": "Thiết lập",
-    "install_anyway": "Đưa ra dù sao",
-    "starting": "Bắt đầu...",
-    "install_rejected": "Lắp đặt bị từ chối: {error}",
-    "install_failed_start": "Thiết lập không khởi động",
-    "install_request_failed": "yêu cầu cài đặt thất bại: {error}",
-    "install_failed": "Thiết lập thất bại: {error}",
-    "updating": "Cập nhật BladeWatch",
-    "reconnecting": "Tái kết nối...",
-    "headunit_installing": "Đơn vị đầu đang cài đặt bản cập nhật. Trang này sẽ tự động được cập nhật khi phiên bản mới trực tuyến.",
-    "phase_queued": "Đường xếp  chuẩn bị...",
-    "phase_downloading": "Tải xuống APK",
-    "phase_verifying": "Kiểm tra tải xuống",
-    "phase_stopping": "Đang dừng các dịch vụ (đường hầm sẽ ngắt kết nối)",
-    "phase_installing": "Lắp đặt  đầu đơn vị khởi động lại",
-    "phase_error": "Thất bại",
-    "waiting_for_headunit": "Lắp đặt  chờ cho bộ trưởng quay lại...",
-    "attempt_of": "Cố gắng {n} của {total} (~{remaining} còn lại)",
-    "version_unchanged": "Dịch vụ đã hoạt động trở lại nhưng phiên bản không thay đổi — quá trình cài đặt có thể đã thất bại.",
-    "cannot_reach_headunit": "Could not reach head unit. On a tunnel? Use the local IP.",
-    "updated_to": "✅ Được cập nhật lên {version}",
-    "reloading": "Lại tải lại trang...",
-    "rotation_warning": "<strong>Your tunnel link will change.</strong> The new URL will be generated with the version number after the update.",
-    "tunnel_stable": "<strong>{type}</strong> URL của bạn ổn định và sẽ không thay đổi.",
-    "lan_hint": "Truy cập mạng địa phương (<code>{ips}</code>) phục hồi ~{seconds} nhanh hơn đường hầm  chuyển sang nó ngay bây giờ nếu bạn có thể.",
-    "recommend_inapp_default": "BYD xóa danh sách trắng khởi động tự động trên mỗi cài đặt. ứng dụng trong xe nhắc bạn; webapp không thể.",
-    "recommend_inapp_intro": "<strong>Nói: cập nhật từ ứng dụng trong xe thay vì.</strong> {reason}",
-    "title_update_to": "Cập nhật BladeWatch thành <span class=\"upd-newv\">{version}</span>?",
-    "currently_on": "Hiện tại trên {version}",
-    "downtime_warning": "<strong>Truy cập từ xa ngoại tuyến trong ~{minutes} phút.</strong> Các dịch vụ khởi động lại và đường hầm kết nối lại sau khi cài đặt.",
-    "fallback_check_label": "Kiểm tra các bản cập nhật"
-  },
   "vehicle": {
     "car_locked": "Chiếc xe bị khóa",
     "car_unlocked": "Xe mở khóa",
@@ -1288,34 +1234,6 @@
     "open_in_google_maps": "Mở trong Google Maps",
     "no_gps_fix": "Chưa có vị trí GPS"
   },
-  "roi": {
-    "editing": "ĐÔNG LƯC",
-    "window_n": "Chiếc cửa sổ {n}",
-    "remove": "Bỏ",
-    "from": "Từ",
-    "to": "đến",
-    "schedule_off": "Đặt lịch cho việc giám sát bình thường.",
-    "add_time_window": "Thêm một cửa sổ thời gian, sau đó Save.",
-    "fix_errors": "Xác định lỗi trên trước khi lưu.",
-    "fix_errors_first": "Xóa lỗi trước tiên",
-    "next_day_paren": "(ngày sau)",
-    "err_select_day": "Chọn ít nhất một ngày",
-    "err_identical": "Bắt đầu và kết thúc giống nhau.",
-    "overnight": "Đêm qua: {start} → ngày hôm sau {end}",
-    "cam_front": "Mặt trước",
-    "cam_right": "Bên phải",
-    "cam_rear": "Mặt sau",
-    "cam_left": "Bên trái",
-    "no_preview": "Không có bản xem trước",
-    "full_frame": "{cam}: Full frame",
-    "blocks_active": "{cam}: Các khối {active}/{total} hoạt động",
-    "zone_saved": "Khu vực {cam} được lưu",
-    "roi_disabled": "{cam} ROI bị vô hiệu hóa",
-    "save_failed": "Không cứu được",
-    "schedule_saved": "Chương trình được lưu",
-    "badge_on": "BẬT",
-    "badge_off": "TẮT"
-  },
   "safe_loc": {
     "enabled": "Các vị trí an toàn được cho phép",
     "disabled": "Các địa điểm an toàn bị vô hiệu hóa",
@@ -1335,71 +1253,6 @@
     "badge_off": "○ TỪ KHÓA",
     "you_are_here": " Anh ở đây",
     "popup_radius": "<b>{name}</b><br>{meters}m bán kính"
-  },
-  "liveview": {
-    "cameras": "Máy ảnh",
-    "location": "Vị trí",
-    "live": "Đời sống",
-    "enable_failed": "Không kích hoạt phát trực tuyến"
-  },
-  "map": {
-    "your_vehicle": "Chiếc xe của bạn",
-    "your_vehicle_sub": "BladeWatch Surveillance",
-    "you_are_here": "Anh ở đây rồi."
-  },
-  "pip": {
-    "select_camera": "Chọn Camera",
-    "select_a_camera": "Chọn máy ảnh",
-    "view_all": "Tất cả",
-    "view_front": "Mặt trước",
-    "view_right": "Bên phải",
-    "view_rear": "Mặt sau",
-    "view_left": "Bên trái",
-    "title_resize": "Tái kích thước",
-    "title_minimize": "Giảm thiểu",
-    "title_close": "Đóng",
-    "title_left_camera": "Máy quay bên trái",
-    "title_front_camera": "Hình ảnh phía trước",
-    "title_all_cameras": "Tất cả máy ảnh",
-    "title_rear_camera": "Máy quay phía sau",
-    "title_right_camera": "Máy ảnh bên phải",
-    "title_toggle": "Đổi xem máy ảnh",
-    "default_camera": "Máy ảnh",
-    "connecting": "Đang kết nối…",
-    "connection_failed": "Kết nối thất bại",
-    "decoder_not_loaded": "Máy giải mã không tải",
-    "decoder_failed": "Decoder thất bại",
-    "close": "Đóng",
-    "noDetectionEvents": "Không có sự kiện phát hiện",
-    "previousClip": "Video trước",
-    "prev": "‹ Trước",
-    "nextClip": "Video sau",
-    "next": "Sau ›"
-  },
-  "stream": {
-    "front_camera": "Hình ảnh phía trước",
-    "hotspot_all": "Tất cả",
-    "hotspot_front": "Trước",
-    "hotspot_left": "Trái",
-    "hotspot_rear": "Sau",
-    "hotspot_right": "Phải",
-    "idle_hint": "Nhấp vào máy ảnh trên xe dưới đây",
-    "mini_cameras": "Máy ảnh",
-    "quality_high": "Tốc độ cao (1,5m)",
-    "quality_low": "Mức thấp (600k)",
-    "quality_max": "Max (5M, 30 fps)",
-    "quality_medium": "Trung bình (1M)",
-    "quality_smooth": "Mơn (3,5M, 25 fps)",
-    "quality_ultra_high": "Ultra High (2.5M)",
-    "quality_ultra_low": "Ultra Low (400k)"
-  },
-  "auth": {
-    "code_placeholder": "xxxxxxxx"
-  },
-  "theme": {
-    "dark": "Tối",
-    "light": "Sáng",
-    "auto": "Tự động"
   },
   "about": {
     "page_title": "Giới thiệu — BladeWatch",
@@ -1436,29 +1289,6 @@
     "tagline": "Hệ thống giám sát và dashcam nâng cao cho xe BYD.",
     "privacy_note": "Dữ liệu của bạn luôn ở trên thiết bị. Không cần đám mây.",
     "setup_subtitle": "Ba bước nhanh để có trải nghiệm tốt nhất:"
-  },
-  "byd_cloud": {
-    "page_title": "BYD Cloud",
-    "tab_account": "Tài khoản",
-    "tab_status": "Tình trạng",
-    "tab_advanced": "Tiến bộ",
-    "account_title": "Tài khoản đám mây BYD",
-    "account_info_title": "Kết nối",
-    "region_supporting": "Thích vùng đăng ký ứng dụng BYD của bạn. Hãy thử EU trước nếu không chắc chắn.",
-    "empty_status": "Kết nối vào tab Tài khoản để xem VIN và đám mây cuối cùng của bạn nhấn ở đây.",
-    "empty_advanced": "Không có hành động tiên tiến cho đến khi các thông tin tín dụng được lưu trên tab Tài khoản.",
-    "danger_zone": "Khu vực nguy hiểm",
-    "clear_hint": "Xóa các thông tin tín dụng được lưu từ thiết bị này. Bạn sẽ cần phải nhập lại đăng nhập ứng dụng BYD + PIN của bạn để sử dụng các lệnh đám mây một lần nữa.",
-    "recommend_title": "Sử dụng hồ sơ cấp phép xe thay thế",
-    "recommend_sub": " khuyến cáo giữ cho tài khoản BYD chính của bạn bị cô lập. Nhấp để xem các bước cài đặt.",
-    "recommend_step_1": "Mở ứng dụng BYD chính thức trên điện thoại của bạn.",
-    "recommend_step_2": "Đi đến cấp phép xe.",
-    "recommend_step_3": "Nhấp vào New Authorization.",
-    "recommend_step_4": "Nhập một email thứ cấp  nó phải khác với email tài khoản chính của bạn.",
-    "recommend_step_5": "Chọn thời gian ủy quyền phù hợp với thời gian bạn muốn hồ sơ này hoạt động.",
-    "recommend_step_6": "Tham gia khỏi ứng dụng BYD, sau đó đăng ký với email thứ cấp bằng mã xác minh và tạo mật khẩu.",
-    "recommend_step_7": "Nhấn khóa hoặc mở khóa trong ứng dụng BYD sẽ yêu cầu bạn thiết lập Pin điều khiển.",
-    "recommend_step_8": "Nhập email thứ cấp, mật khẩu và Pin điều khiển ở đây trong BladeWatch."
   },
   "dashboard": {
     "trips": "Chuyến đi",
@@ -1729,10 +1559,6 @@
     "dismiss": "Bỏ qua",
     "syncing": "Đang đồng bộ…",
     "sync_database": "Đồng bộ cơ sở dữ liệu"
-  },
-  "header": {
-    "copy": "Sao chép",
-    "languageAndSettings": "Ngôn ngữ và cài đặt"
   },
   "companion": {
     "looking": "Đang tìm xe của bạn…",
