@@ -6,7 +6,9 @@ import '../../gen/l10n/app_localizations.dart';
 import 'vehicle_controller.dart';
 import 'vehicle_hero.dart';
 import 'vehicle_models.dart';
+import '../../theme/hud_theme.dart';
 import '../../widgets/bw_choice_chip.dart';
+import '../../widgets/hud_widgets.dart';
 
 /// Shows why a vehicle command failed.
 ///
@@ -21,11 +23,10 @@ import '../../widgets/bw_choice_chip.dart';
 /// had never been wired to anything.
 void showVehicleCommandError(BuildContext context, String message) {
   final l10n = AppLocalizations.of(context)!;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message.isEmpty ? l10n.vehicle_action_failed : message)),
-  );
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(message.isEmpty ? l10n.vehicle_action_failed : message)));
 }
-
 
 /// Ground truth: `VehicleController.kt` (root layout/status/appearance/
 /// polling), `VehiclePanels.kt` (Climate/Windows; seats removed, BladeWatch-7bx4), `TyreOverlay.kt`
@@ -83,7 +84,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
     final c = widget.controller;
 
     if (c.loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const HudLoading();
     }
 
     final hero = (widget.heroBuilder ?? (ctx, ctrl) => VehicleHero(controller: ctrl))(context, c);
@@ -110,34 +111,45 @@ class _VehicleScreenState extends State<VehicleScreen> {
     //
     // Two orientations, two arrangements, and in BOTH the hero and the controls are laid out
     // with real constraints rather than absolute offsets, so neither can eat the other.
-    return LayoutBuilder(
-      builder: (context, box) => box.maxWidth >= _wideLayoutMinWidth
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(flex: 55, child: heroPane),
-                Expanded(flex: 45, child: controls),
-              ],
-            )
-          : Column(
-              children: [
-                Expanded(child: heroPane),
-                // ConstrainedBox, NOT Flexible. Flexible here is a trap: it and the
-                // Expanded above are both flex children with flex 1, so RenderFlex splits
-                // the height 50/50 — the hero is capped at half the screen, the controls
-                // take only their content, and the slack becomes dead space at the bottom.
-                // Measured at 720x1280: hero 640, controls 200, 440px of nothing below it.
-                //
-                // A non-flex child is measured first and the single remaining flex child
-                // gets everything left, so the car takes all the room the controls do not.
-                // The bound is still needed: _ControlsPanel shrink-wraps around a Flexible
-                // scroll area, which cannot resolve against an unbounded height.
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: box.maxHeight * _portraitControlsMaxFraction),
-                  child: controls,
-                ),
-              ],
-            ),
+    // The HUD title bar sits over the two panes; the panes are laid out in what is left, with real constraints.
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: HudTitleBar(title: l10n.rail_vehicle.toUpperCase()),
+        ),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, box) => box.maxWidth >= _wideLayoutMinWidth
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(flex: 55, child: heroPane),
+                      Expanded(flex: 45, child: controls),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Expanded(child: heroPane),
+                      // ConstrainedBox, NOT Flexible. Flexible here is a trap: it and the
+                      // Expanded above are both flex children with flex 1, so RenderFlex splits
+                      // the height 50/50 — the hero is capped at half the screen, the controls
+                      // take only their content, and the slack becomes dead space at the bottom.
+                      // Measured at 720x1280: hero 640, controls 200, 440px of nothing below it.
+                      //
+                      // A non-flex child is measured first and the single remaining flex child
+                      // gets everything left, so the car takes all the room the controls do not.
+                      // The bound is still needed: _ControlsPanel shrink-wraps around a Flexible
+                      // scroll area, which cannot resolve against an unbounded height.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxHeight: box.maxHeight * _portraitControlsMaxFraction),
+                        child: controls,
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -209,9 +221,12 @@ class _HeroPane extends StatelessWidget {
   }
 
   Widget _corner(Alignment alignment, Widget card) => Align(
-        alignment: alignment,
-        child: Padding(padding: const EdgeInsets.all(12), child: SizedBox(width: 96, child: card)),
-      );
+    alignment: alignment,
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: SizedBox(width: 96, child: card),
+    ),
+  );
 }
 
 // ─────────────────────────── Status card ─────────────────────────────────
@@ -229,16 +244,23 @@ class _LockPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hud = BwHud.of(context);
+    // Real lock state in HUD colours: locked = the accent, unlocked = magenta (attention), unknown = the quiet grey.
     final (dotColor, lockLabel) = switch (controller.state.doors.overall) {
-      1 => (theme.colorScheme.primary, l10n.vehicle_locked),
-      2 => (theme.colorScheme.error, l10n.vehicle_unlocked),
-      _ => (Colors.grey, '\u2014'),
+      1 => (hud.accent, l10n.vehicle_locked),
+      2 => (hud.magenta, l10n.vehicle_unlocked),
+      _ => (hud.textSecondary.withValues(alpha: 0.5), '\u2014'),
     };
     return _GlassPill(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(key: const ValueKey('vehicle.status.lockDot'), width: 10, height: 10, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+          Container(
+            key: const ValueKey('vehicle.status.lockDot'),
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 7),
           Text(lockLabel, key: const ValueKey('vehicle.status.lockText')),
         ],
@@ -265,13 +287,11 @@ class _ChargeCard extends StatelessWidget {
     final known = battery.soc > 0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
-      child: Container(
-        width: double.infinity,
+      child: HudPanel(
+        color: BwHud.of(context).panel,
+        borderColor: BwHud.of(context).panelBorder,
+        radius: BwHud.radiusSmall,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(16),
-        ),
         child: Wrap(
           alignment: WrapAlignment.spaceEvenly,
           spacing: 20,
@@ -299,12 +319,16 @@ class _ChargeCard extends StatelessWidget {
   }
 
   Widget _stat(String value, String sub, Key valueKey, Key subKey) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(value, key: valueKey, style: theme.textTheme.titleMedium),
-          Text(sub, key: subKey, style: theme.textTheme.bodySmall),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(value, key: valueKey, style: theme.textTheme.titleMedium),
+      Text(
+        sub,
+        key: subKey,
+        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      ),
+    ],
+  );
 }
 
 class _GlassPill extends StatelessWidget {
@@ -313,14 +337,12 @@ class _GlassPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
+    final hud = BwHud.of(context);
+    return HudPanel(
+      color: hud.pageBackground.withValues(alpha: 0.85),
+      borderColor: hud.panelBorder,
+      radius: BwHud.radiusSmall,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
       child: child,
     );
   }
@@ -339,20 +361,22 @@ class _TyreCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tier = tyreTier(tyre);
+    final hud = BwHud.of(context);
+    // Real pressure state in HUD colours: no signal grey, alert magenta, warn/caution amber, normal cyan.
     final dotColor = switch (tier) {
-      TyreTier.muted => Colors.grey,
-      TyreTier.alert => theme.colorScheme.error,
-      TyreTier.warn => Colors.amber,
-      TyreTier.caution => Colors.amber,
-      TyreTier.normal => theme.colorScheme.primary,
+      TyreTier.muted => hud.textSecondary.withValues(alpha: 0.5),
+      TyreTier.alert => hud.magenta,
+      TyreTier.warn => hud.warning,
+      TyreTier.caution => hud.warning,
+      TyreTier.normal => hud.dot,
     };
     final stateText = switch (tier) {
       TyreTier.muted => l10n.vehicle_tyre_no_signal,
       TyreTier.alert => switch (tyre.airLeakState) {
-          >= 2 => l10n.vehicle_tyre_fast_leak,
-          1 => l10n.vehicle_tyre_slow_leak,
-          _ => l10n.vehicle_tyre_low,
-        },
+        >= 2 => l10n.vehicle_tyre_fast_leak,
+        1 => l10n.vehicle_tyre_slow_leak,
+        _ => l10n.vehicle_tyre_low,
+      },
       TyreTier.warn => l10n.vehicle_tyre_check_pressure,
       TyreTier.caution => (tyre.psi != null && tyre.psi! > 45) ? l10n.vehicle_tyre_high : l10n.vehicle_tyre_low,
       TyreTier.normal => l10n.vehicle_tyre_ok,
@@ -360,28 +384,32 @@ class _TyreCard extends StatelessWidget {
     return Container(
       key: ValueKey('vehicle.tyre.$label'),
       margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Container(width: 8, height: 8, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
-              const SizedBox(width: 4),
-              Text(label, style: theme.textTheme.labelSmall),
-            ],
-          ),
-          Text(tyre.psi != null ? '${tyre.psi!.toStringAsFixed(1)} PSI' : '—', style: theme.textTheme.titleSmall),
-          Text(tyre.kPa != null ? '${tyre.kPa} kPa' : '— kPa', style: theme.textTheme.labelSmall),
-          if (tyre.temperatureC != null) Text('${tyre.temperatureC}°C', style: theme.textTheme.labelSmall),
-          Text(stateText, style: theme.textTheme.labelSmall),
-        ],
+      child: HudPanel(
+        color: hud.pageBackground.withValues(alpha: 0.85),
+        borderColor: tier == TyreTier.alert ? hud.magenta : hud.panelBorder,
+        radius: BwHud.radiusSmall,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 4),
+                Text(label, style: theme.textTheme.labelSmall),
+              ],
+            ),
+            Text(tyre.psi != null ? '${tyre.psi!.toStringAsFixed(1)} PSI' : '—', style: theme.textTheme.titleSmall),
+            Text(tyre.kPa != null ? '${tyre.kPa} kPa' : '— kPa', style: theme.textTheme.labelSmall),
+            if (tyre.temperatureC != null) Text('${tyre.temperatureC}°C', style: theme.textTheme.labelSmall),
+            Text(stateText, style: theme.textTheme.labelSmall),
+          ],
+        ),
       ),
     );
   }
@@ -396,16 +424,20 @@ class _ControlsPanel extends StatelessWidget {
   final VehicleTab tab;
   final void Function(VehicleTab) onTabSelected;
 
-  const _ControlsPanel({required this.l10n, required this.theme, required this.controller, required this.tab, required this.onTabSelected});
+  const _ControlsPanel({
+    required this.l10n,
+    required this.theme,
+    required this.controller,
+    required this.tab,
+    required this.onTabSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final availableTabs = [
-      VehicleTab.climate,
-      VehicleTab.windows,
-    ];
+    final availableTabs = [VehicleTab.climate, VehicleTab.windows];
     final effectiveTab = availableTabs.contains(tab) ? tab : VehicleTab.climate;
 
+    final hud = BwHud.of(context);
     return Container(
       decoration: BoxDecoration(
         // BladeWatch-9c7d: OPAQUE, not alpha 0.92. This panel sits in a Stack over
@@ -415,8 +447,9 @@ class _ControlsPanel extends StatelessWidget {
         // which looks like a rendering fault rather than a design. The rounded top
         // corners already carry the bottom-sheet-over-content idea without the
         // bleed-through.
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: hud.panel,
+        border: Border.all(color: hud.panelBorder),
+        borderRadius: BorderRadius.circular(BwHud.radiusSmall),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -460,9 +493,9 @@ class _ControlsPanel extends StatelessWidget {
   }
 
   String _tabLabel(AppLocalizations l10n, VehicleTab t) => switch (t) {
-        VehicleTab.climate => l10n.vehicle_tab_climate,
-        VehicleTab.windows => l10n.vehicle_tab_windows,
-      };
+    VehicleTab.climate => l10n.vehicle_tab_climate,
+    VehicleTab.windows => l10n.vehicle_tab_windows,
+  };
 }
 
 // ─────────────────────────── Appearance bar ───────────────────────────────
@@ -498,7 +531,10 @@ class _AppearanceBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000),
                     shape: BoxShape.circle,
-                    border: Border.all(color: hex == controller.selectedColor ? theme.colorScheme.primary : Colors.transparent, width: 2),
+                    border: Border.all(
+                      color: hex == controller.selectedColor ? theme.colorScheme.primary : Colors.transparent,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -506,7 +542,11 @@ class _AppearanceBar extends StatelessWidget {
           GestureDetector(
             key: const ValueKey('vehicle.color.custom'),
             onTap: () => _showCustomColorPicker(context),
-            child: CircleAvatar(radius: 14, backgroundColor: theme.colorScheme.surfaceContainerHighest, child: const Text('+')),
+            child: CircleAvatar(
+              radius: 14,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              child: const Text('+'),
+            ),
           ),
           const Spacer(),
           // Flexible + ellipsis, not a bare Text. The swatches are fixed-width, so the model
@@ -522,7 +562,9 @@ class _AppearanceBar extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
-                style: theme.textTheme.labelMedium?.copyWith(color: canPickModel ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: canPickModel ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),
@@ -531,9 +573,8 @@ class _AppearanceBar extends StatelessWidget {
     );
   }
 
-
   void _showModelPicker(BuildContext context) {
-    showDialog<void>(
+    showHudDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.vehicle_appearance_model_title),
@@ -570,7 +611,7 @@ class _AppearanceBar extends StatelessWidget {
   void _showCustomColorPicker(BuildContext context) {
     final initial = _parseHex(controller.selectedColor);
     var r = initial.$1, g = initial.$2, b = initial.$3;
-    showDialog<void>(
+    showHudDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -578,19 +619,28 @@ class _AppearanceBar extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 40, height: 40, decoration: BoxDecoration(shape: BoxShape.circle, color: Color.fromARGB(255, r, g, b))),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: Color.fromARGB(255, r, g, b)),
+              ),
               _rgbSlider('R', r, (v) => setDialogState(() => r = v)),
               _rgbSlider('G', g, (v) => setDialogState(() => g = v)),
               _rgbSlider('B', b, (v) => setDialogState(() => b = v)),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(MaterialLocalizations.of(context).cancelButtonLabel)),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+            ),
             TextButton(
               key: const ValueKey('vehicle.color.custom.apply'),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                final hex = '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+                final hex =
+                    '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'
+                        .toUpperCase();
                 controller.selectColor(hex).then((error) {
                   if (context.mounted && error != null) showVehicleCommandError(context, error);
                 });
@@ -604,11 +654,13 @@ class _AppearanceBar extends StatelessWidget {
   }
 
   Widget _rgbSlider(String label, int value, ValueChanged<int> onChanged) => Row(
-        children: [
-          SizedBox(width: 16, child: Text(label)),
-          Expanded(child: Slider(value: value.toDouble(), min: 0, max: 255, onChanged: (v) => onChanged(v.round()))),
-        ],
-      );
+    children: [
+      SizedBox(width: 16, child: Text(label)),
+      Expanded(
+        child: Slider(value: value.toDouble(), min: 0, max: 255, onChanged: (v) => onChanged(v.round())),
+      ),
+    ],
+  );
 
   (int, int, int) _parseHex(String hex) {
     try {
@@ -660,30 +712,37 @@ class _ClimateTab extends StatelessWidget {
         ],
         _pair(
           twoUp,
-            FilledButton(
-              key: const ValueKey('vehicle.climate.ac'),
-              style: _toggle(c.acOn),
-              onPressed: () async {
-                final error = await c.toggleAc();
-                if (context.mounted && error != null) showVehicleCommandError(context, error);
-              },
-              child: Text(c.acOn ? l10n.vehicle_ac_on : l10n.vehicle_ac_off),
-            ),
-            FilledButton(
-              key: const ValueKey('vehicle.climate.maxCooling'),
-              style: _toggle(c.maxCooling, alert: true),
-              onPressed: () async {
-                final error = await c.toggleMaxCooling();
-                if (context.mounted && error != null) showVehicleCommandError(context, error);
-              },
-              child: Text(c.maxCooling ? l10n.vehicle_max_cooling_on : l10n.vehicle_max_cooling_off),
-            ),
+          FilledButton(
+            key: const ValueKey('vehicle.climate.ac'),
+            style: _toggle(c.acOn),
+            onPressed: () async {
+              final error = await c.toggleAc();
+              if (context.mounted && error != null) showVehicleCommandError(context, error);
+            },
+            child: Text(c.acOn ? l10n.vehicle_ac_on : l10n.vehicle_ac_off),
+          ),
+          FilledButton(
+            key: const ValueKey('vehicle.climate.maxCooling'),
+            style: _toggle(c.maxCooling, alert: true),
+            onPressed: () async {
+              final error = await c.toggleMaxCooling();
+              if (context.mounted && error != null) showVehicleCommandError(context, error);
+            },
+            child: Text(c.maxCooling ? l10n.vehicle_max_cooling_on : l10n.vehicle_max_cooling_off),
+          ),
         ),
         const SizedBox(height: 8),
         _pair(
           twoUp,
           _stepper(context, l10n.vehicle_temp_label, '${c.setpointC}°C', 'vehicle.climate.temp', c.decTemp, c.incTemp),
-          _stepper(context, l10n.vehicle_fan_speed_label, l10n.vehicle_fan_level(c.fanLevel), 'vehicle.climate.fan', c.decFan, c.incFan),
+          _stepper(
+            context,
+            l10n.vehicle_fan_speed_label,
+            l10n.vehicle_fan_level(c.fanLevel),
+            'vehicle.climate.fan',
+            c.decFan,
+            c.incFan,
+          ),
         ),
         const SizedBox(height: 8),
         FilledButton(
@@ -698,8 +757,14 @@ class _ClimateTab extends StatelessWidget {
         const SizedBox(height: 8),
         _pair(
           twoUp,
-          _stepper(context, l10n.vehicle_media_volume_label, '${c.mediaVolumePercent}%',
-              'vehicle.media.volume', c.stepVolumeDown, c.stepVolumeUp),
+          _stepper(
+            context,
+            l10n.vehicle_media_volume_label,
+            '${c.mediaVolumePercent}%',
+            'vehicle.media.volume',
+            c.stepVolumeDown,
+            c.stepVolumeUp,
+          ),
           FilledButton(
             key: const ValueKey('vehicle.media.mute'),
             style: _toggle(c.mediaMuted, alert: true),
@@ -713,29 +778,28 @@ class _ClimateTab extends StatelessWidget {
         const SizedBox(height: 8),
         _pair(
           twoUp,
-            FilledButton(
-              key: const ValueKey('vehicle.climate.frontDefrost'),
-              style: _toggle(c.frontDefrostOn),
-              onPressed: () async {
-                final error = await c.toggleFrontDefrost();
-                if (context.mounted && error != null) showVehicleCommandError(context, error);
-              },
-              child: Text(l10n.vehicle_front_defrost),
-            ),
-            FilledButton(
-              key: const ValueKey('vehicle.climate.rearDefrost'),
-              style: _toggle(c.rearDefrostOn),
-              onPressed: () async {
-                final error = await c.toggleRearDefrost();
-                if (context.mounted && error != null) showVehicleCommandError(context, error);
-              },
-              child: Text(l10n.vehicle_rear_defrost),
-            ),
+          FilledButton(
+            key: const ValueKey('vehicle.climate.frontDefrost'),
+            style: _toggle(c.frontDefrostOn),
+            onPressed: () async {
+              final error = await c.toggleFrontDefrost();
+              if (context.mounted && error != null) showVehicleCommandError(context, error);
+            },
+            child: Text(l10n.vehicle_front_defrost),
+          ),
+          FilledButton(
+            key: const ValueKey('vehicle.climate.rearDefrost'),
+            style: _toggle(c.rearDefrostOn),
+            onPressed: () async {
+              final error = await c.toggleRearDefrost();
+              if (context.mounted && error != null) showVehicleCommandError(context, error);
+            },
+            child: Text(l10n.vehicle_rear_defrost),
+          ),
         ),
       ],
     );
   }
-
 
   /// Climate stepper. The callbacks return an error message (null on success) so
   /// Two controls side by side when there is room, stacked when there is not.
@@ -746,7 +810,13 @@ class _ClimateTab extends StatelessWidget {
   /// tests pump (45% of it), where
   /// the temperature and fan steppers overflowed by 16px.
   Widget _pair(bool twoUp, Widget a, Widget b) => twoUp
-      ? Row(children: [Expanded(child: a), const SizedBox(width: 8), Expanded(child: b)])
+      ? Row(
+          children: [
+            Expanded(child: a),
+            const SizedBox(width: 8),
+            Expanded(child: b),
+          ],
+        )
       : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [a, const SizedBox(height: 8), b]);
 
   /// a refused command can be SHOWN — they used to be bare VoidCallbacks, which
@@ -758,33 +828,37 @@ class _ClimateTab extends StatelessWidget {
     String keyPrefix,
     Future<String?> Function() onMinus,
     Future<String?> Function() onPlus,
-  ) =>
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
-        child: Row(
-          children: [
-            Expanded(child: Text(label, style: theme.textTheme.bodySmall)),
-            IconButton(
-                key: ValueKey('$keyPrefix.minus'),
-                tooltip: l10n.cd_decrease,
-                icon: const Icon(Icons.remove_circle),
-                onPressed: () async {
-                  final error = await onMinus();
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                }),
-            Text(value),
-            IconButton(
-                key: ValueKey('$keyPrefix.plus'),
-                tooltip: l10n.cd_increase,
-                icon: const Icon(Icons.add_circle),
-                onPressed: () async {
-                  final error = await onPlus();
-                  if (context.mounted && error != null) showVehicleCommandError(context, error);
-                }),
-          ],
+  ) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: theme.colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+    ),
+    child: Row(
+      children: [
+        Expanded(child: Text(label, style: theme.textTheme.bodySmall)),
+        IconButton(
+          key: ValueKey('$keyPrefix.minus'),
+          tooltip: l10n.cd_decrease,
+          icon: const Icon(Icons.remove_circle),
+          onPressed: () async {
+            final error = await onMinus();
+            if (context.mounted && error != null) showVehicleCommandError(context, error);
+          },
         ),
-      );
+        Text(value),
+        IconButton(
+          key: ValueKey('$keyPrefix.plus'),
+          tooltip: l10n.cd_increase,
+          icon: const Icon(Icons.add_circle),
+          onPressed: () async {
+            final error = await onPlus();
+            if (context.mounted && error != null) showVehicleCommandError(context, error);
+          },
+        ),
+      ],
+    ),
+  );
 }
 
 // ─────────────────────────── Windows tab ──────────────────────────────────
@@ -801,7 +875,12 @@ class _WindowsTab extends StatelessWidget {
     final c = controller;
     final w = c.state.windows;
     final caps = c.state.capabilities.windows;
-    final isVented = [w.lf, w.rf, w.lr, w.rr].where((v) => v != -1).let((vals) => vals.isNotEmpty && vals.every((v) => v >= 1 && v <= 20));
+    final isVented = [
+      w.lf,
+      w.rf,
+      w.lr,
+      w.rr,
+    ].where((v) => v != -1).let((vals) => vals.isNotEmpty && vals.every((v) => v >= 1 && v <= 20));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -827,8 +906,12 @@ class _WindowsTab extends StatelessWidget {
           children: [
             _actionChip(context, l10n.vehicle_window_close, 'vehicle.window.closeAll', () => c.closeAllWindows()),
             const SizedBox(width: 6),
-            _actionChip(context, isVented ? l10n.vehicle_window_close_vent : l10n.vehicle_window_vent_12, 'vehicle.window.vent',
-                () => c.ventAllWindows(isVented ? 0 : 12)),
+            _actionChip(
+              context,
+              isVented ? l10n.vehicle_window_close_vent : l10n.vehicle_window_vent_12,
+              'vehicle.window.vent',
+              () => c.ventAllWindows(isVented ? 0 : 12),
+            ),
             const SizedBox(width: 6),
             _actionChip(context, l10n.vehicle_window_open_all, 'vehicle.window.openAll', () => c.openAllWindows()),
           ],
@@ -841,9 +924,7 @@ class _WindowsTab extends StatelessWidget {
         Text(
           l10n.vehicle_window_awake_note,
           key: const ValueKey('vehicle.window.awakeNote'),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         if (caps.sunroof || caps.sunshade) ...[
           const SizedBox(height: 8),
@@ -860,20 +941,23 @@ class _WindowsTab extends StatelessWidget {
   }
 
   Widget _actionChip(BuildContext context, String label, String key, Future<String?> Function() onTap) => ActionChip(
-        key: ValueKey(key),
-        label: Text(label),
-        onPressed: () async {
-          final error = await onTap();
-          if (context.mounted && error != null) showVehicleCommandError(context, error);
-        },
-      );
+    key: ValueKey(key),
+    label: Text(label),
+    onPressed: () async {
+      final error = await onTap();
+      if (context.mounted && error != null) showVehicleCommandError(context, error);
+    },
+  );
 
   Widget _windowCell(BuildContext context, String name, int area, int current) {
     final presets = presetsForArea(area);
     final snap = presetFor(current, presets);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

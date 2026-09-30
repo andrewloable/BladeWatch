@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../theme/hud_theme.dart';
 import '../../widgets/storage_limit.dart';
 import 'settings_recording_controller.dart';
 import 'settings_recording_models.dart';
 import '../../widgets/bw_choice_chip.dart';
+import '../../widgets/hud_widgets.dart';
 
 /// Ground truth: `RecordingSettingsController.kt` — Status/Capture/Quality/
 /// Storage tabs. Tab selection is pure UI state (which pane is visible),
@@ -56,7 +58,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
       children: [
         Expanded(
           child: c.loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const HudLoading()
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: switch (_tab) {
@@ -67,9 +69,15 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
                   },
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
+        // Ruled off the content, like the Trips tab bar.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainer,
+            border: Border(top: BorderSide(color: BwHud.of(context).cardDivider)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
             children: [
               for (final tab in RecordingSettingsTab.values)
                 Expanded(
@@ -84,6 +92,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
                   ),
                 ),
             ],
+          ),
           ),
         ),
       ],
@@ -102,7 +111,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
     final modeLabel = status != null ? _modeLabel(l10n, RecordingMode.fromValue(status.currentMode)) : l10n.dashboard_metric_value_pending;
     final todayCount = status != null ? '${status.normalTodayCount + status.proximityTodayCount}' : l10n.dashboard_metric_value_pending;
     return [
-      Text(l10n.settings_recording_status_title, style: theme.textTheme.titleMedium),
+      HudSectionLabel(l10n.settings_recording_status_title),
       const SizedBox(height: 12),
       ListTile(title: Text(l10n.settings_recording_status_current_state), trailing: Text(modeLabel)),
       ListTile(title: Text(l10n.settings_recording_status_today_count), trailing: Text(todayCount)),
@@ -124,7 +133,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
       };
 
   List<Widget> _captureTab(AppLocalizations l10n, ThemeData theme, RecordingSettingsController c) => [
-        Text(l10n.settings_recording_mode_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.settings_recording_mode_title),
         Text(l10n.settings_recording_mode_description, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 12),
         RadioGroup<RecordingMode>(
@@ -143,7 +152,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Text(l10n.settings_recording_limit_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.settings_recording_limit_title),
         Text(l10n.settings_recording_limit_description, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 8),
         Wrap(
@@ -159,7 +168,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        Text(l10n.settings_recording_priority_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.settings_recording_priority_title),
         Text(l10n.settings_recording_priority_description, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 12),
         RadioGroup<RecordingPriority>(
@@ -192,7 +201,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.settings_recording_overlay_fields_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.settings_recording_overlay_fields_title),
         Text(
           l10n.settings_recording_overlay_fields_description,
           style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -233,7 +242,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
       };
 
   List<Widget> _qualityTab(AppLocalizations l10n, ThemeData theme, RecordingSettingsController c) => [
-        Text(l10n.settings_recording_quality_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.settings_recording_quality_title),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -255,7 +264,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
     final storage = c.storageSettings;
     final sdAvailable = storage?.sdCardAvailable ?? false;
     return [
-      Text(l10n.settings_recording_storage_title, style: theme.textTheme.titleMedium),
+      HudSectionLabel(l10n.settings_recording_storage_title),
       const SizedBox(height: 12),
       Text(l10n.settings_recording_storage_location_label, style: theme.textTheme.labelMedium),
       const SizedBox(height: 4),
@@ -393,7 +402,7 @@ class _SettingsRecordingScreenState extends State<SettingsRecordingScreen> {
 
   Future<bool?> _confirmStorageLimitChange(AppLocalizations l10n, StorageLimitImpact impact) {
     final known = impact.status == StorageLimitImpactStatus.known;
-    return showDialog<bool>(
+    return showHudDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         key: const ValueKey('recording.storageConfirm.dialog'),
@@ -430,7 +439,7 @@ class _FormatDriveCard extends StatelessWidget {
     return Card(
       color: theme.colorScheme.surfaceContainer,
       elevation: 0,
-      shape: RoundedRectangleBorder(side: BorderSide(color: theme.colorScheme.error), borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(side: BorderSide(color: theme.colorScheme.error), borderRadius: BorderRadius.circular(BwHud.radiusSmall)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

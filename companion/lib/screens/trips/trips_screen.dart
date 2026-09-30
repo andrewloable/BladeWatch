@@ -2,6 +2,10 @@ import 'dart:convert';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
+import 'package:bladewatch_rpc/trips/currency_symbols.dart';
+import 'package:bladewatch_theme/dimens_tokens.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -10,6 +14,7 @@ import '../../car/car_page.dart';
 import '../../i18n.dart';
 import '../common/car_map.dart';
 import '../common/format.dart';
+import '../common/hud_style.dart';
 import '../common/loader.dart';
 
 /// Totals over the car's weekly rollups (GetSummary.rollup_json), as the in-car Trips page sums
@@ -75,7 +80,12 @@ class TripsScreen extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Column(children: [
-        TabBar(tabs: [Tab(text: tr('trips.tab_trips')), Tab(text: tr('trips.tab_stats')), Tab(text: tr('trips.tab_storage'))]),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: BwDimens.pagePaddingHorizontal),
+          child: ContentWidth(
+            child: TabBar(tabs: [Tab(text: tr('trips.tab_trips')), Tab(text: tr('trips.tab_stats')), Tab(text: tr('trips.tab_storage'))]),
+          ),
+        ),
         const Expanded(child: TabBarView(children: [_TripList(), _Stats(), TripSettingsForm()])),
       ]),
     );
@@ -100,58 +110,88 @@ class _TripListState extends State<_TripList> with LoadersState {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsets.all(12),
-        child: Wrap(spacing: 8, children: [
-          for (final d in const [7, 30, 90])
-            ChoiceChip(
-              key: ValueKey('trips.days.$d'),
-              label: Text(tr('trips.days', {'count': d})),
-              selected: _days == d,
-              onSelected: (_) {
-                setState(() => _days = d);
-                _list.load();
-              },
-            ),
-        ]),
-      ),
-      Expanded(
-        child: LoaderView(
-          loader: _list,
-          builder: (context, v) {
-            final sum = PeriodSummary.of(v.summary.summary);
-            return ListView(children: [
-              if (sum != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Section(title: tr('trips.period_summary'), children: [
-                    InfoRow(tr('trips.tab_trips'), '${sum.trips}'),
-                    InfoRow(tr('trips.distance'), Fmt.distance(sum.km)),
-                    InfoRow(tr('trips.hours'), Fmt.duration(sum.seconds)),
-                    InfoRow(tr('trips.kwh'), sum.kwh.toStringAsFixed(1)),
-                    InfoRow(tr('trips.efficiency'), '${sum.efficiency.toStringAsFixed(0)}%'),
-                  ]),
-                ),
-              if (v.trips.trips.isEmpty) Padding(padding: const EdgeInsets.all(32), child: Text(tr('trips.no_trips_recorded'), textAlign: TextAlign.center)),
-              for (final t in v.trips.trips)
-                ListTile(
-                  key: ValueKey('trip.${t.id}'),
-                  title: Text(Fmt.dateTime(t.startTime, tr.lang)),
-                  subtitle: Text('${Fmt.distance(t.distanceKm)} · ${Fmt.duration(t.durationSeconds)}'),
-                  trailing: t.overallScore > 0 ? CircleAvatar(child: Text('${t.overallScore}')) : null,
-                  onTap: () async {
-                    final deleted = await Navigator.of(context).push<bool>(MaterialPageRoute(
-                      builder: (_) => TrScope(tr: tr, child: SessionScope(session: context.session, child: TripDetailScreen(id: t.id))),
-                    ));
-                    if (deleted == true) await _list.load();
+    final hud = BwHud.of(context);
+    // The page gutter is outside ContentWidth, so rows are exactly the content width and line up with the title bar.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: BwDimens.pagePaddingHorizontal),
+      child: ContentWidth(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Wrap(spacing: 8, children: [
+              for (final d in const [7, 30, 90])
+                ChoiceChip(
+                  showCheckmark: false,
+                  key: ValueKey('trips.days.$d'),
+                  label: Text(tr('trips.days', {'count': d})),
+                  selected: _days == d,
+                  onSelected: (_) {
+                    setState(() => _days = d);
+                    _list.load();
                   },
                 ),
-            ]);
-          },
-        ),
+            ]),
+          ),
+          Expanded(
+            child: LoaderView(
+              loader: _list,
+              builder: (context, v) {
+                final sum = PeriodSummary.of(v.summary.summary);
+                return ListView(padding: const EdgeInsets.only(bottom: BwDimens.pagePaddingBottom), children: [
+                  if (sum != null)
+                    Section(title: tr('trips.period_summary'), children: [
+                      InfoRow(tr('trips.tab_trips'), '${sum.trips}'),
+                      InfoRow(tr('trips.distance'), Fmt.distance(sum.km)),
+                      InfoRow(tr('trips.hours'), Fmt.duration(sum.seconds)),
+                      InfoRow(tr('trips.kwh'), sum.kwh.toStringAsFixed(1)),
+                      InfoRow(tr('trips.efficiency'), '${sum.efficiency.toStringAsFixed(0)}%'),
+                    ]),
+                  if (v.trips.trips.isEmpty)
+                    Padding(padding: const EdgeInsets.all(32), child: HudEmptyState(icon: Icons.route, message: tr('trips.no_trips_recorded'))),
+                  for (final t in v.trips.trips)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: HudListRow(
+                        key: ValueKey('trip.${t.id}'),
+                        title: Fmt.dateTime(t.startTime, tr.lang),
+                        subtitle: '${Fmt.distance(t.distanceKm)} · ${Fmt.duration(t.durationSeconds)}',
+                        trailing: t.overallScore > 0 ? _ScoreBadge(t.overallScore, hud) : null,
+                        onTap: () async {
+                          final deleted = await Navigator.of(context).push<bool>(MaterialPageRoute(
+                            builder: (_) => TrScope(tr: tr, child: SessionScope(session: context.session, child: TripDetailScreen(id: t.id))),
+                          ));
+                          if (deleted == true) await _list.load();
+                        },
+                      ),
+                    ),
+                ]);
+              },
+            ),
+          ),
+        ]),
       ),
-    ]);
+    );
+  }
+}
+
+/// A trip's overall score, coloured by its real band as the in-car Trips does: 70 and up the accent, 40 and up amber,
+/// below that the attention magenta.
+class _ScoreBadge extends StatelessWidget {
+  const _ScoreBadge(this.score, this.hud);
+
+  final int score;
+  final BwHud hud;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = score >= 70 ? hud.accent : (score >= 40 ? hud.warning : hud.magenta);
+    return HudPanel(
+      color: hud.panel,
+      borderColor: color,
+      radius: BwHud.radiusSmall,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Text('$score', style: hudText(12, color, lineHeight: 16, weight: FontWeight.w700)),
+    );
   }
 }
 
@@ -181,7 +221,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
         content: Text(tr('trip.delete_confirm')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('common.cancel'))),
-          FilledButton(key: const ValueKey('trip.delete.confirm'), onPressed: () => Navigator.pop(context, true), child: Text(tr('common.delete'))),
+          FilledButton(
+            key: const ValueKey('trip.delete.confirm'),
+            style: destructiveStyle(context),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(tr('common.delete')),
+          ),
         ],
       ),
     );
@@ -194,11 +239,36 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
+    final hud = BwHud.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(tr('trips.trip_summary')), actions: [
-        IconButton(key: const ValueKey('trip.delete'), tooltip: tr('trips.delete'), icon: const Icon(Icons.delete_outline), onPressed: _delete),
-      ]),
-      body: LoaderView(
+      body: SafeArea(
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: HudTitleBar(
+              title: tr('trips.trip_summary').toUpperCase(),
+              onBack: () => Navigator.of(context).maybePop(),
+              backTooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              // Destructive: the attention colour.
+              trailing: IconButton(
+                key: const ValueKey('trip.delete'),
+                tooltip: tr('trips.delete'),
+                icon: const Icon(Icons.delete_outline),
+                color: hud.magenta,
+                onPressed: _delete,
+              ),
+            ),
+          ),
+          Expanded(child: _body(context)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _body(BuildContext context) {
+    final tr = context.tr;
+    final hud = BwHud.of(context);
+    return LoaderView(
         loader: _trip,
         builder: (context, v) {
           final d = v.trip.trip;
@@ -209,7 +279,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
               height: 280,
               child: route.length > 1
                   ? CarMap(center: route.first, route: route, markers: [route.first, route.last])
-                  : Center(child: Text(tr('trips.no_route_data'))),
+                  : HudPanel(color: hud.panel, borderColor: hud.panelBorder, child: Center(child: Text(tr('trips.no_route_data')))),
             ),
             const SizedBox(height: 12),
             Section(title: Fmt.dateTime(s.startTime, tr.lang), children: [
@@ -218,12 +288,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
               InfoRow(tr('trips.avg_speed'), '${s.avgSpeedKmh.toStringAsFixed(0)} km/h'),
               InfoRow(tr('trips.max_speed'), '${s.maxSpeedKmh} km/h'),
               InfoRow(tr('trips.soc'), '${s.socStart.toStringAsFixed(0)}% → ${s.socEnd.toStringAsFixed(0)}%'),
-              if (s.tripCost > 0) InfoRow(tr('trips.cost'), '${s.tripCost.toStringAsFixed(2)} ${s.currency}'),
+              if (s.tripCost > 0) InfoRow(tr('trips.cost'), CurrencySymbols.money(s.tripCost, s.currency)),
               // Which tank the money came out of (BladeWatch-rdtj.48): the two halves of the cost
               // above, on a trip that recorded the fuel counter.
               if (s.hasFuelData) ...[
-                InfoRow(tr('trips.fuel_cost'), '${s.fuelCost.toStringAsFixed(2)} ${s.currency}'),
-                InfoRow(tr('trips.electric_cost'), '${s.electricCost.toStringAsFixed(2)} ${s.currency}'),
+                InfoRow(tr('trips.fuel_cost'), CurrencySymbols.money(s.fuelCost, s.currency)),
+                InfoRow(tr('trips.electric_cost'), CurrencySymbols.money(s.electricCost, s.currency)),
                 InfoRow(tr('trips.fuel_used'), '${s.litresUsed.toStringAsFixed(2)} ${tr('trips.litres_short')}'),
               ],
               if (s.extTempC != 0) InfoRow(tr('trips.ext_temp'), '${s.extTempC} °C'),
@@ -240,7 +310,6 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
               ]),
           ]);
         },
-      ),
     );
   }
 }
@@ -307,7 +376,12 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
         storage: (await _client.getStorage(GetStorageRequest())).storage,
       ));
   final _rate = TextEditingController();
-  final _currency = TextEditingController();
+  // The currency is PICKED from CurrencySymbols, never typed (BladeWatch-gzbo). What the car stored is
+  // kept, so opening Settings and pressing Apply does not rewrite it: a config holding an ISO code
+  // (PHP) is shown as its symbol but only replaced when the owner picks one.
+  String _currency = CurrencySymbols.defaultSymbol;
+  String _storedCurrency = '';
+  bool _currencyPicked = false;
   final _limit = TextEditingController();
   // PHEV pricing (BladeWatch-rdtj.48): the price the fuel costs are worked out with, and the tank
   // the fuel range is predicted from. Shown as the web shows them: on a PHEV, or whenever a value
@@ -324,7 +398,6 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
   @override
   void dispose() {
     _rate.dispose();
-    _currency.dispose();
     _limit.dispose();
     _fuelPrice.dispose();
     _tank.dispose();
@@ -361,7 +434,7 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
       await _client.setConfig(SetConfigRequest(
         electricityRate: rate ?? 0,
         hasElectricityRate_4: rate != null,
-        currency: _currency.text.trim(),
+        currency: _currencyPicked || _storedCurrency.isEmpty ? _currency : _storedCurrency,
         distanceUnit: _unit,
         // Sent with presence, so 0 clears a value ("not configured") instead of reading as
         // "not sent" and leaving the old one in place.
@@ -384,7 +457,8 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
         if (!_filled) {
           _filled = true;
           _rate.text = v.config.electricityRate.toStringAsFixed(4);
-          _currency.text = v.config.currency;
+          _storedCurrency = v.config.currency;
+          _currency = CurrencySymbols.forStored(_storedCurrency) ?? (_storedCurrency.trim().isEmpty ? CurrencySymbols.defaultSymbol : _storedCurrency);
           _limit.text = '${v.storage.limitMb}';
           _fuelPrice.text = v.config.fuelPricePerL.toStringAsFixed(2);
           _tank.text = v.config.fuelTankCapacityL.toStringAsFixed(1);
@@ -403,18 +477,36 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
                 await _state.load();
               },
             ),
+            const SizedBox(height: 8),
             TextField(
               key: const ValueKey('trips.rate'),
               controller: _rate,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(labelText: tr('trips.electricity_rate')),
             ),
-            TextField(key: const ValueKey('trips.currency'), controller: _currency, decoration: InputDecoration(labelText: tr('trips.currency'))),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              key: const ValueKey('trips.currency'),
+              initialValue: _currency,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: tr('trips.currency')),
+              // The current value is always present exactly once: a legacy free-text value that is not in
+              // the list (Rs.) is prepended, or the dropdown would assert on the mismatch.
+              items: [
+                if (!CurrencySymbols.symbols.contains(_currency)) _currency,
+                ...CurrencySymbols.symbols,
+              ].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+              onChanged: (v) => setState(() {
+                _currency = v ?? _currency;
+                _currencyPicked = true;
+              }),
+            ),
             const SizedBox(height: 12),
             Text(tr('trip.settings.distance_unit'), style: Theme.of(context).textTheme.titleSmall),
             Wrap(spacing: 8, children: [
               for (final (unit, key) in [('km', 'trip.settings.unit_km'), ('mi', 'trip.settings.unit_miles')])
                 ChoiceChip(
+                  showCheckmark: false,
                   key: ValueKey('trips.unit.$unit'),
                   label: Text(tr(key)),
                   selected: _unit == unit,
@@ -423,12 +515,14 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
                 ),
             ]),
             if (_fuelShown) ...[
+              const SizedBox(height: 16),
               TextField(
                 key: const ValueKey('trips.fuel_price'),
                 controller: _fuelPrice,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(labelText: tr('trips.fuel_price'), helperText: tr('trips.fuel_price_sub'), helperMaxLines: 3),
               ),
+              const SizedBox(height: 16),
               TextField(
                 key: const ValueKey('trips.tank'),
                 controller: _tank,
@@ -442,6 +536,7 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
             Wrap(spacing: 8, children: [
               for (final (type, key) in [('INTERNAL', 'trips.internal'), ('SD_CARD', 'trips.sd_card')])
                 ChoiceChip(
+                  showCheckmark: false,
                   key: ValueKey('trips.storage.$type'),
                   label: Text(tr(key)),
                   selected: (v.storage.storageType.isEmpty ? 'INTERNAL' : v.storage.storageType) == type,
@@ -451,6 +546,7 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
             // Forced break before "trips", same pattern as BladeWatch-rdtj.72.3's Diagnostics fix --
             // confirmed at 2x text scale it wrapped with "trips" left alone on its own line.
             InfoRow(tr('trips.used'), '${v.storage.usedMb.toStringAsFixed(1)} MB ·\n${v.storage.tripsCount} ${tr('trips.trips_count')}'),
+            const SizedBox(height: 16),
             TextField(
               key: const ValueKey('trips.limit'),
               controller: _limit,

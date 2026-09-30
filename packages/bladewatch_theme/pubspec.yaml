@@ -12,3 +12,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+flutter:
+  # The HUD skin's typeface (docs/ui-ux-design-language.md, "HUD skin"): Space Mono, SIL OFL 1.1, bundled
+  # (no google_fonts: the head unit works offline). Latin, Latin-Extended and Vietnamese only; other
+  # scripts fall back to the platform font glyph by glyph. Apps see it as packages/bladewatch_theme/SpaceMono.
+  fonts:
+    - family: SpaceMono
+      fonts:
+        - asset: assets/fonts/SpaceMono-Regular.ttf
+        - asset: assets/fonts/SpaceMono-Bold.ttf
+          weight: 700
+  assets:
+    # The typeface's licence, shown next to the app's own under Settings > About > License.
+    - assets/fonts/OFL.txt

@@ -18,8 +18,11 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../fakes/fake_adb_connection.dart';
 import '../../fakes/fake_platform_channel.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import '../../fakes/hud_test_env.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 
 void main() {
+  hudTestEnvironment();
   late FakeRpcClient rpc;
   late FakePlatformChannel platform;
   late FakeAdbConnection adbConnection;
@@ -198,6 +201,29 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  // BladeWatch-2llu.4: Diagnostics is on the HUD skin, and its pushed sub-screens get the HUD title bar with a back arrow.
+  testWidgets('HUD: a title bar, upper-case accent section labels', (tester) async {
+    await pumpScreen(tester);
+    expect(find.byType(HudTitleBar), findsOneWidget);
+    expect(find.text('DIAGNOSTICS'), findsOneWidget);
+    expect(find.byType(HudSectionLabel), findsNWidgets(2), reason: 'health and tools');
+  });
+
+  testWidgets('HUD: a pushed sub-screen has the title bar with a working back arrow (no M3 app bar)', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.byKey(const ValueKey('diag.cardAdb')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdbConsoleScreen), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.byKey(const ValueKey('hud.back')), findsOneWidget);
+    expect(find.text('ADB CONSOLE'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('hud.back')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdbConsoleScreen), findsNothing);
+    expect(find.byKey(const ValueKey('diag.cardAdb')), findsOneWidget);
   });
 
   testWidgets('renders all 6 tool cards', (tester) async {

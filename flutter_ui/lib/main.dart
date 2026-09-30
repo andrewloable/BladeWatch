@@ -63,13 +63,13 @@ import 'shell/app_shell.dart';
 import 'shell/locale_controller.dart';
 import 'shell/route_stubs.dart';
 import 'shell/shell_controller.dart';
-import 'theme/bladewatch_theme.dart';
+import 'theme/hud_theme.dart';
 
 void main() {
   runApp(const BladeWatchApp());
 }
 
-/// App root: M3 light/dark theme (`BladeWatchTheme`) + the navigation shell
+/// App root: the HUD light/dark theme (`BwHud.themeData`) + the navigation shell
 /// (`AppShell`), behind the Startup screen — ground truth:
 /// `nav_graph.xml`'s `app:startDestination="@id/startupFragment"` with
 /// `app:popUpToInclusive="true"` on its only action (once past it, there is
@@ -309,8 +309,8 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
       listenable: Listenable.merge([_localeController, _appearanceController]),
       builder: (context, _) => MaterialApp(
         title: 'BladeWatch',
-        theme: BladeWatchTheme.light(),
-        darkTheme: BladeWatchTheme.dark(),
+        theme: BwHud.themeData(Brightness.light),
+        darkTheme: BwHud.themeData(Brightness.dark),
         themeMode: materialThemeMode(_appearanceController.themeMode),
         locale: _localeController.locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -381,7 +381,7 @@ class _BladeWatchAppState extends State<BladeWatchApp> {
                       jwtSource: _authChannel,
                       onOpenSettings: () => _shellController.selectRoute(BwRoutes.settings),
                     ),
-                    surveillanceScreen: SurveillanceSettingsScreen(controller: _surveillanceController),
+                    surveillanceScreen: SurveillanceSettingsScreen(controller: _surveillanceController, showTitleBar: true),
                     vehicleScreen: VehicleScreen(controller: _vehicleController),
                     liveViewScreen: LiveViewScreen(
                       controller: _liveViewController,

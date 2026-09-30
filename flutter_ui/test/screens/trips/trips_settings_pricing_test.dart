@@ -43,23 +43,6 @@ void main() {
     });
   });
 
-  group('currency catalogue', () {
-    setUp(Currency.resetCacheForTest);
-
-    /// The picker must never be empty. An empty menu leaves an owner unable to change their
-    /// currency at all, which is worse than a short fallback list they can still use.
-    test('codes are never empty even if the asset is unavailable', () async {
-      final codes = await Currency.codes();
-      expect(codes, isNotEmpty);
-      expect(codes, contains('USD'));
-    });
-
-    test('the default code is offered', () async {
-      final codes = await Currency.codes();
-      expect(codes, contains(Currency.defaultCode));
-    });
-  });
-
   group('cost rendering used by the trips list and detail screens', () {
     /// Both screens previously concatenated: `'${trip.currency} ${cost.toStringAsFixed(2)}'`.
     /// A currency with no minor unit is what separates a real formatter from that.

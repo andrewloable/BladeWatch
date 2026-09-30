@@ -1119,5 +1119,9 @@
   "dashboard_chip_auto_hold": "Auto Hold: {state}",
   "auto_hold_disabled": "ปิด",
   "auto_hold_enabled": "เปิด",
-  "auto_hold_active": "กำลังหยุดรถ"
+  "auto_hold_active": "กำลังหยุดรถ",
+  "dashboard_hud_overview": "สถานะ",
+  "dashboard_hud_telemetry": "เทเลเมทรี",
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
 }

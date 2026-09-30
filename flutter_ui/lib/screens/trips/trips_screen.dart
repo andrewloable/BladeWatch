@@ -7,7 +7,9 @@ import 'trip_detail_controller.dart';
 import 'trip_detail_screen.dart';
 import 'trips_controller.dart';
 import 'trips_models.dart';
+import '../../theme/hud_theme.dart';
 import '../../widgets/bw_choice_chip.dart';
+import '../../widgets/hud_widgets.dart';
 import 'package:bladewatch_ui/util/currency.dart';
 
 /// Ground truth: `TripsController.kt` (852 LOC) + `TripsFragment.kt`. Native
@@ -67,8 +69,13 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   Widget _buildList(BuildContext context, TripsController c) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: HudTitleBar(title: l10n.rail_trips.toUpperCase()),
+        ),
         Expanded(child: _body(context, c)),
         _TabBar(activeTab: c.activeTab, onSelect: c.selectTab),
       ],
@@ -77,19 +84,20 @@ class _TripsScreenState extends State<TripsScreen> {
 
   Widget _body(BuildContext context, TripsController c) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     switch (c.state) {
       case TripsLoading():
-        return Center(key: const ValueKey('trips.loading'), child: Text(l10n.webview_loading));
+        return HudLoading(key: const ValueKey('trips.loading'), label: l10n.webview_loading);
       case TripsError(:final message):
-        return Center(
-          key: const ValueKey('trips.error'),
-          child: Text(l10n.trips_load_error(message), style: TextStyle(color: theme.colorScheme.error)),
-        );
+        return HudErrorState(key: const ValueKey('trips.error'), message: l10n.trips_load_error(message));
       case TripsLoaded():
         return switch (c.activeTab) {
-          TripsTab.trips => _TripsTab(state: c.state as TripsLoaded, onSelectTrip: c.openDetail, onSelectFilter: c.selectFilter, activeFilter: c.activeFilter),
+          TripsTab.trips => _TripsTab(
+            state: c.state as TripsLoaded,
+            onSelectTrip: c.openDetail,
+            onSelectFilter: c.selectFilter,
+            activeFilter: c.activeFilter,
+          ),
           TripsTab.stats => _StatsTab(state: c.state as TripsLoaded),
         };
     }
@@ -110,8 +118,12 @@ class _TabBar extends StatelessWidget {
       (TripsTab.trips, l10n.trips_tab_trips, 'trips.tab.trips'),
       (TripsTab.stats, l10n.trips_tab_stats, 'trips.tab.stats'),
     ];
-    return ColoredBox(
-      color: theme.colorScheme.surfaceContainer,
+    final hud = BwHud.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        border: Border(top: BorderSide(color: hud.cardDivider)),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
@@ -175,7 +187,12 @@ class _TripsTab extends StatelessWidget {
   final ValueChanged<TripsDaysFilter> onSelectFilter;
   final TripsDaysFilter activeFilter;
 
-  const _TripsTab({required this.state, required this.onSelectTrip, required this.onSelectFilter, required this.activeFilter});
+  const _TripsTab({
+    required this.state,
+    required this.onSelectTrip,
+    required this.onSelectFilter,
+    required this.activeFilter,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +212,10 @@ class _TripsTab extends StatelessWidget {
         if (state.trips.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 32),
-            child: Center(key: const ValueKey('trips.empty'), child: Text(l10n.trips_empty_state, style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
+            child: Center(
+              key: const ValueKey('trips.empty'),
+              child: Text(l10n.trips_empty_state, style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+            ),
           )
         else
           for (final trip in state.trips) ...[
@@ -235,16 +255,34 @@ class _SummaryCard extends StatelessWidget {
           children: [
             Text(l10n.trips_period_summary_title, style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
-            Row(children: [
-              Expanded(child: Column(children: [_stat('${summary.tripCount}', l10n.trips_stat_trips), _stat(distDisplay, distanceUnit.toUpperCase())])),
-              Expanded(child: Column(children: [_stat(summary.formattedHours, l10n.trips_stat_hours), _stat('${summary.avgEfficiency.toStringAsFixed(0)}%', l10n.trips_stat_efficiency)])),
-              Expanded(
-                child: Column(children: [
-                  _stat(summary.totalEnergyKwh.toStringAsFixed(1), l10n.trips_stat_kwh),
-                  _stat((summary.avgEnergyPerKm * 100).toStringAsFixed(2), l10n.trips_stat_kwh_per_100km),
-                ]),
-              ),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      _stat('${summary.tripCount}', l10n.trips_stat_trips),
+                      _stat(distDisplay, distanceUnit.toUpperCase()),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _stat(summary.formattedHours, l10n.trips_stat_hours),
+                      _stat('${summary.avgEfficiency.toStringAsFixed(0)}%', l10n.trips_stat_efficiency),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _stat(summary.totalEnergyKwh.toStringAsFixed(1), l10n.trips_stat_kwh),
+                      _stat((summary.avgEnergyPerKm * 100).toStringAsFixed(2), l10n.trips_stat_kwh_per_100km),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
             _CostFigures(key: const ValueKey('trips.summaryCosts'), costs: costs, stat: _stat),
           ],
@@ -253,16 +291,20 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _stat(String value, String label) => Builder(builder: (context) {
-        final theme = Theme.of(context);
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(children: [
+  Widget _stat(String value, String label) => Builder(
+    builder: (context) {
+      final theme = Theme.of(context);
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          children: [
             Text(value, style: theme.textTheme.headlineSmall),
             Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ]),
-        );
-      });
+          ],
+        ),
+      );
+    },
+  );
 }
 
 /// A period's fuel, electric and total cost drawn with the caller's [stat] cell, or the line
@@ -307,16 +349,32 @@ class _TripRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                Expanded(child: Text(trip.formattedDate, style: theme.textTheme.bodyMedium)),
-                if (trip.overallScore > 0) Text(l10n.trips_score_label(trip.overallScore), style: TextStyle(color: theme.colorScheme.primary, fontSize: 12)),
-              ]),
+              Row(
+                children: [
+                  Expanded(child: Text(trip.formattedDate, style: theme.textTheme.bodyMedium)),
+                  if (trip.overallScore > 0)
+                    Text(
+                      l10n.trips_score_label(trip.overallScore),
+                      style: TextStyle(color: theme.colorScheme.primary, fontSize: 12),
+                    ),
+                ],
+              ),
               const SizedBox(height: 4),
-              Row(children: [
-                Expanded(child: Text('$dist  ·  ${trip.formattedDuration}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
-                if (trip.tripCost > 0 && trip.currency.isNotEmpty)
-                  Text(Currency.format(trip.tripCost, trip.currency), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '$dist  ·  ${trip.formattedDuration}',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                  if (trip.tripCost > 0 && trip.currency.isNotEmpty)
+                    Text(
+                      Currency.format(trip.tripCost, trip.currency),
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                ],
+              ),
             ],
           ),
         ),
@@ -347,12 +405,20 @@ class _StatsTab extends StatelessWidget {
           elevation: 0,
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(l10n.trips_driver_score_title, style: theme.textTheme.labelLarge),
-              const SizedBox(height: 8),
-              Center(child: Text('${dna?.scoreOutOf500 ?? 0} / 500', style: theme.textTheme.headlineMedium)),
-              Center(child: Text(l10n.trips_driver_score_overall(dna?.overall ?? 0), style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.trips_driver_score_title, style: theme.textTheme.labelLarge),
+                const SizedBox(height: 8),
+                Center(child: Text('${dna?.scoreOutOf500 ?? 0} / 500', style: theme.textTheme.headlineMedium)),
+                Center(
+                  child: Text(
+                    l10n.trips_driver_score_overall(dna?.overall ?? 0),
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -362,46 +428,59 @@ class _StatsTab extends StatelessWidget {
           elevation: 0,
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(l10n.trips_range_title, style: theme.textTheme.labelLarge),
-              const SizedBox(height: 8),
-              if (range != null && range.estimatedKm > 0) ...[
-                // BladeWatch: these two rendered raw kilometres regardless of the
-                // user's unit, on the same screen whose trip rows convert — so a
-                // miles user saw "13.0 mi" above and "85 km" here.
-                Center(
-                    child: Text(formatDistance(range.estimatedKm, distanceUnit, decimals: 0),
-                        style: theme.textTheme.headlineMedium)),
-                if (range.builtInKm > 0)
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.trips_range_title, style: theme.textTheme.labelLarge),
+                const SizedBox(height: 8),
+                if (range != null && range.estimatedKm > 0) ...[
+                  // BladeWatch: these two rendered raw kilometres regardless of the
+                  // user's unit, on the same screen whose trip rows convert — so a
+                  // miles user saw "13.0 mi" above and "85 km" here.
                   Center(
-                      child: Text(
-                          l10n.trips_range_byd_estimate(
-                              formatDistance(range.builtInKm, distanceUnit, decimals: 0)),
-                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
-              ] else
-                Center(child: Text(l10n.trips_range_no_data, style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
-              // PHEV fuel range, reported SEPARATELY and never summed into the electric
-              // figure above: the two are drawn from different tanks with different
-              // confidence, and one number would hide which is about to run out.
-              //
-              // Hidden entirely unless it could be computed. The daemon returns -1 when no
-              // tank capacity is configured, because BYD exposes no tank size and a guessed
-              // range on a dashboard is worse than a blank one — the driver acts on it.
-              if (range != null && range.fuelRangeKm > 0) ...[
-                const SizedBox(height: 12),
-                Center(
                     child: Text(
-                        l10n.trips_range_fuel(
-                            formatDistance(range.fuelRangeKm, distanceUnit, decimals: 0)),
-                        style: theme.textTheme.titleMedium)),
-                if (range.builtInFuelRangeKm > 0)
-                  Center(
+                      formatDistance(range.estimatedKm, distanceUnit, decimals: 0),
+                      style: theme.textTheme.headlineMedium,
+                    ),
+                  ),
+                  if (range.builtInKm > 0)
+                    Center(
                       child: Text(
-                          l10n.trips_range_byd_estimate(
-                              formatDistance(range.builtInFuelRangeKm, distanceUnit, decimals: 0)),
-                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
+                        l10n.trips_range_byd_estimate(formatDistance(range.builtInKm, distanceUnit, decimals: 0)),
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                ] else
+                  Center(
+                    child: Text(l10n.trips_range_no_data, style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                  ),
+                // PHEV fuel range, reported SEPARATELY and never summed into the electric
+                // figure above: the two are drawn from different tanks with different
+                // confidence, and one number would hide which is about to run out.
+                //
+                // Hidden entirely unless it could be computed. The daemon returns -1 when no
+                // tank capacity is configured, because BYD exposes no tank size and a guessed
+                // range on a dashboard is worse than a blank one — the driver acts on it.
+                if (range != null && range.fuelRangeKm > 0) ...[
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Text(
+                      l10n.trips_range_fuel(formatDistance(range.fuelRangeKm, distanceUnit, decimals: 0)),
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  if (range.builtInFuelRangeKm > 0)
+                    Center(
+                      child: Text(
+                        l10n.trips_range_byd_estimate(
+                          formatDistance(range.builtInFuelRangeKm, distanceUnit, decimals: 0),
+                        ),
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                ],
               ],
-            ]),
+            ),
           ),
         ),
         // BladeWatch-mgi9: what the active period cost, under Personalized Range.
@@ -412,17 +491,25 @@ class _StatsTab extends StatelessWidget {
           elevation: 0,
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(l10n.trips_detail_cost, style: theme.textTheme.labelLarge),
-              const SizedBox(height: 8),
-              _CostFigures(
-                costs: state.costs,
-                stat: (value, label) => Column(children: [
-                  Text(value, style: theme.textTheme.titleMedium),
-                  Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                ]),
-              ),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.trips_detail_cost, style: theme.textTheme.labelLarge),
+                const SizedBox(height: 8),
+                _CostFigures(
+                  costs: state.costs,
+                  stat: (value, label) => Column(
+                    children: [
+                      Text(value, style: theme.textTheme.titleMedium),
+                      Text(
+                        label,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         if (dna != null) ...[
@@ -433,15 +520,18 @@ class _StatsTab extends StatelessWidget {
             elevation: 0,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(l10n.trips_dna_title, style: theme.textTheme.labelLarge),
-                const SizedBox(height: 8),
-                _ScoreBar(label: l10n.trips_dna_anticipation, score: dna.anticipation),
-                _ScoreBar(label: l10n.trips_dna_smoothness, score: dna.smoothness),
-                _ScoreBar(label: l10n.trips_dna_speed_discipline, score: dna.speedDiscipline),
-                _ScoreBar(label: l10n.trips_dna_efficiency, score: dna.efficiency),
-                _ScoreBar(label: l10n.trips_dna_consistency, score: dna.consistency),
-              ]),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.trips_dna_title, style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  _ScoreBar(label: l10n.trips_dna_anticipation, score: dna.anticipation),
+                  _ScoreBar(label: l10n.trips_dna_smoothness, score: dna.smoothness),
+                  _ScoreBar(label: l10n.trips_dna_speed_discipline, score: dna.speedDiscipline),
+                  _ScoreBar(label: l10n.trips_dna_efficiency, score: dna.efficiency),
+                  _ScoreBar(label: l10n.trips_dna_consistency, score: dna.consistency),
+                ],
+              ),
             ),
           ),
         ],
@@ -462,18 +552,24 @@ class _ScoreBar extends StatelessWidget {
     final fraction = (score.clamp(0, 100)) / 100;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(children: [
-        SizedBox(width: 130, child: Text(label, style: theme.textTheme.bodyMedium)),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(value: fraction, minHeight: 8, backgroundColor: theme.colorScheme.surfaceContainerHighest, color: theme.colorScheme.primary),
+      child: Row(
+        children: [
+          SizedBox(width: 130, child: Text(label, style: theme.textTheme.bodyMedium)),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: fraction,
+                minHeight: 8,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                color: BwHud.of(context).accent,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(width: 6),
-        Text('$score', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-      ]),
+          const SizedBox(width: 6),
+          Text('$score', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+        ],
+      ),
     );
   }
 }
-

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BladeWatch BYD Cyberpunk Light HUD Dashboard</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              light: '#f4f6f9',
+              card: '#ffffff',
+              cardHover: '#f8fafc',
+              cyan: '#00b8d4',
+              magenta: '#d81b60',
+              teal: '#00838f',
+              accent: '#00b8d4',
+              darkText: '#0d0d16'
+            }
+          },
+          fontFamily: {
+            mono: ['"Space Mono"', '"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=JetBrains+Mono:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      font-family: 'Space Mono', monospace;
+      background-color: #f4f6f9;
+      color: #0d0d16;
+    }
+    .hud-border-cyan {
+      border: 1px solid rgba(0, 184, 212, 0.4);
+      box-shadow: 0 4px 20px rgba(0, 184, 212, 0.08), inset 0 0 10px rgba(0, 184, 212, 0.02);
+    }
+    .hud-border-magenta {
+      border: 1px solid rgba(216, 27, 96, 0.4);
+      box-shadow: 0 4px 20px rgba(216, 27, 96, 0.08), inset 0 0 10px rgba(216, 27, 96, 0.02);
+    }
+    .cyber-grid {
+      background-image: linear-gradient(to right, rgba(0, 184, 212, 0.05) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(0, 184, 212, 0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #eef2f6;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #00b8d444;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00b8d488;
+    }
+  </style>
+</head>
+<body class="bg-[#f4f6f9] text-[#0d0d16] font-mono select-none overflow-hidden h-screen w-screen flex flex-col cyber-grid">
+<!-- BEGIN: TopStatusBar -->
+<header class="h-12 bg-white/95 border-b border-cyan-500/30 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm" data-purpose="top-status-bar">
+<div class="flex items-center space-x-4">
+<div class="w-8 h-8 rounded bg-gradient-to-tr from-cyan-500 to-brand-magenta flex items-center justify-center shadow-md shadow-cyan-500/30">
+<i class="fa-solid fa-bolt text-white text-xs font-bold"></i>
+</div>
+<span class="text-lg font-bold tracking-widest text-cyan-600 uppercase">BladeWatch<span class="text-brand-magenta ml-1">//BYD</span></span>
+</div>
+<!-- Live Clock -->
+<div class="text-xl font-bold tracking-widest text-cyan-700 bg-cyan-50 px-3 py-0.5 rounded border border-cyan-500/30">
+      21:22 <span class="text-xs text-brand-magenta">SYS_ON</span>
+</div>
+<!-- System Icons -->
+<div class="flex items-center space-x-5 text-slate-600 text-lg">
+<button class="hover:text-cyan-600 transition-colors"><i class="fa-solid fa-location-dot"></i></button>
+<button class="hover:text-cyan-600 transition-colors"><i class="fa-brands fa-bluetooth-b"></i></button>
+<button class="hover:text-cyan-600 transition-colors"><i class="fa-solid fa-wifi"></i></button>
+<button class="hover:text-cyan-600 transition-colors relative">
+<i class="fa-solid fa-bell"></i>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-brand-magenta rounded-full shadow-[0_0_6px_#d81b60]"></span>
+</button>
+<button class="hover:text-cyan-600 transition-colors flex items-center space-x-2 pl-2">
+<div class="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-sm border border-cyan-500/50 text-cyan-600">
+<i class="fa-solid fa-user"></i>
+</div>
+</button>
+</div>
+</header>
+<!-- END: TopStatusBar -->
+<!-- BEGIN: MainLayout -->
+<div class="flex flex-1 overflow-hidden">
+<!-- BEGIN: LeftSidebar -->
+<nav class="w-24 bg-white border-r border-cyan-500/20 flex flex-col items-center py-4 space-y-4 shrink-0 z-10 shadow-sm" data-purpose="vertical-navigation">
+<!-- Dashboard Nav Item (Active) -->
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded bg-gradient-to-b from-cyan-50 to-white text-cyan-700 border border-cyan-400 shadow-sm group transition-all" href="#">
+<i class="fa-solid fa-globe text-xl mb-1 text-cyan-600"></i>
+<span class="text-[10px] font-bold tracking-tighter">DASHBOARD</span>
+</a>
+<!-- Other Nav Items -->
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 hover:border hover:border-cyan-500/30 transition-all" href="#">
+<i class="fa-solid fa-location-arrow text-lg mb-1"></i>
+<span class="text-[10px]">LOCATION</span>
+</a>
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 hover:border hover:border-cyan-500/30 transition-all" href="#">
+<i class="fa-solid fa-play text-lg mb-1"></i>
+<span class="text-[10px]">LIVE</span>
+</a>
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 hover:border hover:border-cyan-500/30 transition-all" href="#">
+<i class="fa-solid fa-video text-lg mb-1"></i>
+<span class="text-[10px]">RECORDS</span>
+</a>
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 hover:border hover:border-cyan-500/30 transition-all" href="#">
+<i class="fa-solid fa-car text-lg mb-1"></i>
+<span class="text-[10px]">VEHICLE</span>
+</a>
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 hover:border hover:border-cyan-500/30 transition-all" href="#">
+<i class="fa-solid fa-chart-line text-lg mb-1"></i>
+<span class="text-[10px]">TRIPS</span>
+</a>
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 hover:border hover:border-cyan-500/30 transition-all" href="#">
+<i class="fa-solid fa-stethoscope text-lg mb-1"></i>
+<span class="text-[10px]">DIAG</span>
+</a>
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 hover:border hover:border-cyan-500/30 transition-all mt-auto" href="#">
+<i class="fa-solid fa-gear text-lg mb-1"></i>
+<span class="text-[10px]">SETTINGS</span>
+</a>
+<a class="flex flex-col items-center justify-center w-20 h-16 rounded text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 hover:border hover:border-cyan-500/30 transition-all" href="#">
+<i class="fa-solid fa-circle-info text-lg mb-1"></i>
+<span class="text-[10px]">ABOUT</span>
+</a>
+</nav>
+<!-- END: LeftSidebar -->
+<!-- BEGIN: MainContentArea -->
+<main class="flex-1 bg-[#f4f6f9] p-6 flex flex-col justify-between overflow-y-auto relative" data-purpose="dashboard-main-content">
+<!-- Top Title Area -->
+<div class="flex items-center justify-between mb-4 border-b border-cyan-500/20 pb-2">
+<h1 class="text-xl font-bold tracking-wider text-cyan-700 flex items-center space-x-2">
+<span class="w-2 h-2 bg-brand-magenta inline-block animate-pulse"></span>
+<span>DASHBOARD // OVERVIEW</span>
+</h1>
+<div class="text-xs text-brand-magenta tracking-widest font-bold">SECURE_LINK: ACTIVE</div>
+</div>
+<!-- BEGIN: SummaryCard -->
+<div class="bg-white hud-border-cyan rounded-xl p-6 shadow-md relative overflow-hidden mb-5" data-purpose="this-week-summary-card">
+<!-- Background Glow Effect -->
+<div class="absolute -right-20 -top-20 w-60 h-60 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -left-20 -bottom-20 w-60 h-60 bg-brand-magenta/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-6 border-b border-slate-100 pb-3">
+<span class="text-xs font-bold tracking-widest text-cyan-700 uppercase flex items-center space-x-2">
+<i class="fa-solid fa-microchip text-brand-magenta"></i>
+<span>THIS WEEK TELEMETRY</span>
+</span>
+<button class="text-xs font-bold tracking-wider text-cyan-700 hover:text-cyan-800 transition-colors flex items-center space-x-1 border border-cyan-500/40 px-3 py-1 rounded bg-cyan-50">
+<span>View all trips</span>
+<i class="fa-solid fa-chevron-right text-xs"></i>
+</button>
+</div>
+<!-- Metrics Grid (3 Columns structure) -->
+<div class="grid grid-cols-3 gap-6">
+<!-- Column 1 -->
+<div class="space-y-4 border-r border-slate-100 pr-4">
+<div>
+<div class="text-3xl font-bold text-[#0d0d16] tracking-tight">9</div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">Trips</div>
+</div>
+<div>
+<div class="text-2xl font-bold text-[#0d0d16] tracking-tight">₱0.00</div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">Fuel Cost</div>
+</div>
+<div>
+<div class="text-2xl font-bold text-[#0d0d16] tracking-tight">58%</div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">Battery</div>
+</div>
+</div>
+<!-- Column 2 -->
+<div class="space-y-4 border-r border-slate-100 pr-4">
+<div>
+<div class="text-3xl font-bold text-[#0d0d16] tracking-tight">83.3 <span class="text-lg font-normal text-cyan-700">km</span></div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">Distance</div>
+</div>
+<div>
+<div class="text-2xl font-bold text-[#0d0d16] tracking-tight">₱128.47</div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">Electric Cost</div>
+</div>
+<div>
+<div class="text-2xl font-bold text-[#0d0d16] tracking-tight">52 <span class="text-lg font-normal text-cyan-700">km</span></div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">EV Range</div>
+</div>
+</div>
+<!-- Column 3 -->
+<div class="space-y-4 pl-2">
+<div>
+<div class="text-3xl font-bold text-brand-magenta tracking-tight">2h 32m</div>
+<div class="text-xs text-brand-magenta mt-0.5 tracking-wider font-bold">Drive Time</div>
+</div>
+<div>
+<div class="text-2xl font-bold text-[#0d0d16] tracking-tight">₱128.47</div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">Total Cost</div>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<div class="text-2xl font-bold text-[#0d0d16] tracking-tight">30%</div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">Fuel</div>
+</div>
+<div class="text-right">
+<div class="text-2xl font-bold text-[#0d0d16] tracking-tight">351 <span class="text-lg font-normal text-cyan-700">km</span></div>
+<div class="text-xs text-slate-500 mt-0.5 tracking-wider font-bold">Fuel Range</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- END: SummaryCard -->
+<!-- BEGIN: QuickActionToolbar -->
+<div class="flex items-center space-x-3 mb-5 overflow-x-auto pb-1" data-purpose="quick-action-toolbar">
+<button class="px-5 py-2.5 rounded bg-white hover:bg-slate-50 border border-cyan-500/40 text-xs font-bold tracking-wider text-cyan-700 transition-all shadow-sm flex items-center space-x-2 shrink-0">
+<span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+<span>RECORDING</span>
+</button>
+<button class="px-5 py-2.5 rounded bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold tracking-wider text-slate-700 transition-all shadow-sm shrink-0">
+          GEAR: P
+        </button>
+<button class="px-5 py-2.5 rounded bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold tracking-wider text-slate-700 transition-all shadow-sm shrink-0">
+          MODE: ECO/NORMAL
+        </button>
+<button class="px-5 py-2.5 rounded bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold tracking-wider text-slate-700 transition-all shadow-sm shrink-0">
+          AUTO HOLD: OFF
+        </button>
+<button class="px-5 py-2.5 rounded bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold tracking-wider text-slate-700 transition-all shadow-sm shrink-0">
+          EV
+        </button>
+<button class="px-5 py-2.5 rounded bg-white hover:bg-slate-50 border border-brand-magenta/50 text-xs font-bold tracking-wider text-brand-magenta transition-all shadow-sm flex items-center space-x-2 shrink-0">
+<i class="fa-solid fa-qrcode"></i>
+<span>PAIR DEVICE</span>
+</button>
+</div>
+<!-- END: QuickActionToolbar -->
+<!-- BEGIN: StatusCardsGrid -->
+<div class="grid grid-cols-5 gap-4" data-purpose="status-cards-grid">
+<!-- Card 1: Recordings -->
+<div class="bg-white hover:bg-slate-50 border border-cyan-500/30 rounded p-4 transition-all shadow-sm flex flex-col justify-between h-28 relative group">
+<div class="text-cyan-600">
+<i class="fa-solid fa-video text-lg"></i>
+</div>
+<div>
+<div class="text-xl font-bold text-[#0d0d16] tracking-tight flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_6px_#00b8d4]"></span>
+<span>116</span>
+</div>
+<div class="text-[10px] text-slate-500 mt-0.5 tracking-wider uppercase font-bold">Today's recordings</div>
+</div>
+</div>
+<!-- Card 2: Remote Access -->
+<div class="bg-white hover:bg-slate-50 border border-cyan-500/30 rounded p-4 transition-all shadow-sm flex flex-col justify-between h-28 relative">
+<div class="flex justify-between items-start text-cyan-600">
+<i class="fa-solid fa-network-wired text-lg"></i>
+<span class="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-[0_0_8px_#00b8d4]"></span>
+</div>
+<div>
+<div class="text-xl font-bold text-cyan-700 tracking-tight">ONLINE</div>
+<div class="text-[10px] text-slate-500 mt-0.5 tracking-wider uppercase font-bold">Remote access</div>
+</div>
+</div>
+<!-- Card 3: Background Services -->
+<div class="bg-white hover:bg-slate-50 border border-cyan-500/30 rounded p-4 transition-all shadow-sm flex flex-col justify-between h-28">
+<div class="text-cyan-600">
+<i class="fa-solid fa-microchip text-lg"></i>
+</div>
+<div>
+<div class="text-xl font-bold text-[#0d0d16] tracking-tight">4/4 RUN</div>
+<div class="text-[10px] text-slate-500 mt-0.5 tracking-wider uppercase font-bold">Background services</div>
+</div>
+</div>
+<!-- Card 4: Live Camera -->
+<div class="bg-white hover:bg-slate-50 border border-cyan-500/30 rounded p-4 transition-all shadow-sm flex flex-col justify-between h-28">
+<div class="text-brand-magenta">
+<i class="fa-solid fa-circle-play text-lg"></i>
+</div>
+<div>
+<div class="text-xl font-bold text-brand-magenta tracking-tight">LIVE</div>
+<div class="text-[10px] text-slate-500 mt-0.5 tracking-wider uppercase font-bold">Open camera view</div>
+</div>
+</div>
+<!-- Card 5: Vehicle Info -->
+<div class="bg-white hover:bg-slate-50 border border-cyan-500/30 rounded p-4 transition-all shadow-sm flex flex-col justify-between h-28">
+<div class="text-cyan-600">
+<i class="fa-solid fa-car-side text-lg"></i>
+</div>
+<div>
+<div class="text-xs font-bold text-[#0d0d16] tracking-tight truncate">BYD SEAL 5 DM-i</div>
+<div class="text-[10px] text-slate-500 mt-0.5 tracking-wider uppercase font-bold">Vehicle</div>
+</div>
+</div>
+</div>
+<!-- END: StatusCardsGrid -->
+</main>
+<!-- END: MainContentArea -->
+</div>
+<!-- END: MainLayout -->
+</body></html>

@@ -1119,5 +1119,9 @@
   "dashboard_chip_auto_hold": "오토 홀드: {state}",
   "auto_hold_disabled": "끔",
   "auto_hold_enabled": "켬",
-  "auto_hold_active": "유지 중"
+  "auto_hold_active": "유지 중",
+  "dashboard_hud_overview": "개요",
+  "dashboard_hud_telemetry": "텔레메트리",
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
 }

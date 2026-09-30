@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:bladewatch_theme/dimens_tokens.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_page.dart';
@@ -59,7 +61,7 @@ class LoaderView<T> extends StatelessWidget {
           final value = loader.value;
           if (value == null) {
             if (loader.error != null && !loader.loading) return LoadError(onRetry: loader.load);
-            return const Center(child: CircularProgressIndicator());
+            return const HudLoading();
           }
           return RefreshIndicator(onRefresh: loader.load, child: builder(context, value));
         },
@@ -131,7 +133,7 @@ class PageList extends StatelessWidget {
       );
 }
 
-/// A titled card section.
+/// A titled card section: the HUD theme's own card (4 dp, bordered), its title an upper-case accent section label.
 class Section extends StatelessWidget {
   const Section({super.key, required this.title, required this.children, this.trailing});
 
@@ -140,41 +142,62 @@ class Section extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.only(bottom: BwDimens.cardGapVertical),
-        child: Padding(
-          padding: const EdgeInsets.all(BwDimens.cardPaddingStandard),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            // The action drops under the title when both do not fit on one line (a large text
-            // size, a long translation) instead of overflowing (BladeWatch-rdtj.55).
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [Text(title, style: Theme.of(context).textTheme.titleMedium), ?trailing],
-            ),
-            const SizedBox(height: 8),
-            ...children,
-          ]),
-        ),
-      );
+  Widget build(BuildContext context) {
+    final hud = BwHud.of(context);
+    return Card(
+      margin: const EdgeInsets.only(bottom: BwDimens.cardGapVertical),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          // The action drops under the title when both do not fit on one line (a large text
+          // size, a long translation) instead of overflowing (BladeWatch-rdtj.55).
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(title.toUpperCase(), style: hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700, em: 0.1)),
+              ?trailing,
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ]),
+      ),
+    );
+  }
 }
 
-/// A label and its value on one line.
+/// A label and its value on one line; stacked (label over value) at a large text size, where Space Mono's width
+/// would otherwise break a word across lines.
 class InfoRow extends StatelessWidget {
-  const InfoRow(this.label, this.value, {super.key});
+  const InfoRow(this.label, this.value, {super.key, this.leading});
 
   final String label;
   final String value;
 
+  /// Shown before the label (a status dot: it must be real state, HUD rule 5).
+  final Widget? leading;
+
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(children: [
-          Expanded(child: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))),
-          const SizedBox(width: 12),
-          Flexible(child: Text(value, textAlign: TextAlign.end)),
-        ]),
-      );
+  Widget build(BuildContext context) {
+    final hud = BwHud.of(context);
+    final text = Text(label, style: hudText(12, hud.textSecondary, lineHeight: 16, weight: hud.labelWeight, em: 0.05));
+    final labelText = leading == null
+        ? text
+        : Row(mainAxisSize: MainAxisSize.min, children: [leading!, const SizedBox(width: 8), Flexible(child: text)]);
+    final valueStyle = hudText(14, hud.textPrimary, lineHeight: 20, weight: FontWeight.w700);
+    final stacked = MediaQuery.textScalerOf(context).scale(14) > 20;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: stacked
+          ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [labelText, Text(value, style: valueStyle)])
+          : Row(children: [
+              Expanded(child: labelText),
+              const SizedBox(width: 12),
+              Flexible(child: Text(value, textAlign: TextAlign.end, style: valueStyle)),
+            ]),
+    );
+  }
 }
 
 /// Shows [text] in a snackbar, replacing any still on screen: snackbars queue, so a refusal

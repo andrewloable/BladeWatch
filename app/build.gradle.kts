@@ -597,56 +597,6 @@ tasks.register<Exec>("generateConnectProtos") {
     commandLine("buf", "generate")
 }
 
-// Fail the build if the committed ISO 4217 currency catalog is malformed.
-//
-// The list is GENERATED from ICU by tools/gen-currencies.mjs and the RESULT is committed. This
-// check verifies the copy is structurally sane (valid JSON, sorted, not truncated); it
-// deliberately does NOT shell out to node, so it works on a machine with no node. Regenerating is
-// an explicit author action.
-tasks.register("validateCurrencyCatalog") {
-    description = "Validate the ISO 4217 catalog: valid, sorted, plausible"
-    group = "verification"
-    val flutterCatalog = rootProject.file("flutter_ui/assets/iso4217.json")
-    inputs.files(flutterCatalog)
-    doLast {
-        val problems = mutableListOf<String>()
-        val slurper = groovy.json.JsonSlurper()
-
-        val codes: List<String>? = if (!flutterCatalog.isFile) {
-            problems.add("${flutterCatalog.name}: missing at ${flutterCatalog.path}"); null
-        } else {
-            try {
-                @Suppress("UNCHECKED_CAST")
-                val parsed = slurper.parse(flutterCatalog) as Map<String, Any?>
-                @Suppress("UNCHECKED_CAST")
-                val c = parsed["codes"] as? List<String>
-                if (c == null) problems.add("${flutterCatalog.name}: no 'codes' array")
-                c
-            } catch (e: Exception) {
-                problems.add("${flutterCatalog.name}: not valid JSON (${e.message})"); null
-            }
-        }
-
-        if (codes != null) {
-            // A truncated list means someone ran the generator on a small-ICU node.
-            if (codes.size < 100) problems.add("only ${codes.size} codes — looks truncated")
-            if (codes != codes.sorted()) problems.add("codes are not sorted")
-            for (required in listOf("USD", "EUR", "GBP", "JPY", "PHP")) {
-                if (required !in codes) problems.add("missing common currency $required")
-            }
-        }
-
-        if (problems.isNotEmpty()) {
-            throw GradleException(
-                "ISO 4217 currency catalog validation FAILED:\n" +
-                    problems.joinToString("\n") { "    - $it" }
-            )
-        }
-    }
-}
-
-tasks.named("preBuild") { dependsOn("validateCurrencyCatalog") }
-
 // Fail the build if the Android string catalogs (res/values*/strings.xml, 624 keys
 // across 17 locales) are malformed, have an unescaped apostrophe (the Android-XML
 // equivalent of the smart-quote footgun that hit the old web i18n catalogs), or a

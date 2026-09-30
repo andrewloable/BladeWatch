@@ -9,6 +9,7 @@ import 'package:bladewatch_companion/screens/recordings/clips.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/notifications.pb.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +25,8 @@ void inbox(TestSession s, List<Map<String, dynamic>> entries) => s.rpc.stubJson(
     });
 
 void main() {
+  hudTestEnvironment();
+
   group('AlertsController', () {
     test('fetches on connect and on a timer while connected, newest first, mutes left out', () async {
       final s = TestSession(phase: TransportPhase.discovering);
@@ -79,7 +82,7 @@ void main() {
   });
 
   group('EventsScreen', () {
-    testWidgets('alerts: new ones in bold, severities, a clip link opens the player; seen once shown', (tester) async {
+    testWidgets('alerts: new ones marked, severities, a clip link opens the player; seen once shown', (tester) async {
       final s = TestSession();
       final store = testStore(car: testCar());
       inbox(s, [
@@ -93,7 +96,8 @@ void main() {
       await pumpScreen(tester, s, EventsScreen(alerts: alerts));
       await tester.pump();
       expect(find.text('alert 2'), findsOneWidget);
-      expect(tester.widget<Text>(find.text('alert 2')).style?.fontWeight, FontWeight.bold);
+      bool isNewRow(int id) => tester.widget<HudListRow>(find.byKey(ValueKey('alert.$id'))).selected;
+      expect(isNewRow(2), isTrue, reason: 'new ones are the accent-bordered rows');
       expect(find.byIcon(Icons.error), findsOneWidget);
       expect(find.byIcon(Icons.info_outline), findsOneWidget);
       expect(store.car!.inboxCursor, Int64(2), reason: 'opening the list counts as seeing it');
@@ -102,7 +106,7 @@ void main() {
       await alerts.refresh();
       await tester.pump();
       expect(store.car!.inboxCursor, Int64(3), reason: 'one that arrives while the list is open is seen too');
-      expect(tester.widget<Text>(find.text('alert 3')).style?.fontWeight, FontWeight.bold);
+      expect(isNewRow(3), isTrue);
 
       await tester.tap(find.text('alert 2'));
       await tester.pumpAndSettle();
@@ -122,7 +126,7 @@ void main() {
       });
       final alerts = AlertsController(session: s.session, store: testStore(car: testCar()));
       await pumpScreen(tester, s, EventsScreen(alerts: alerts));
-      expect(find.text(t('companion.alerts_empty')), findsOneWidget);
+      expect(find.text(t('companion.alerts_empty').toUpperCase()), findsOneWidget);
       await tester.tap(find.text(t('events.badge_sentry')).first);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('clip.sentry-1.mp4')), findsOneWidget);
@@ -131,7 +135,7 @@ void main() {
       s.rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': []});
       await tester.tap(find.text(t('events.badge_proximity')).first);
       await tester.pumpAndSettle();
-      expect(find.text(t('events.empty_none_title')), findsOneWidget);
+      expect(find.text(t('events.empty_none_title').toUpperCase()), findsOneWidget);
       await unmount(tester);
       alerts.dispose();
     });
@@ -164,7 +168,10 @@ void main() {
       expect(alerts.entries, isEmpty);
 
       await tester.tap(find.byKey(const ValueKey('alerts.test')));
-      await tester.pumpAndSettle();
+      // sendTest waits half a second for the car's bus; with animations off (the HUD test environment) nothing keeps
+      // pumpAndSettle going that long, so the time is advanced by hand.
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump();
       expect(find.text(t('companion.alerts_test_sent')), findsOneWidget);
       await unmount(tester);
       alerts.dispose();

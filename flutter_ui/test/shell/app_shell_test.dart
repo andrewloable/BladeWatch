@@ -4,14 +4,14 @@ import 'package:bladewatch_ui/shell/drive_side.dart';
 import 'package:bladewatch_ui/shell/nav_rail.dart';
 import 'package:bladewatch_ui/shell/route_stubs.dart';
 import 'package:bladewatch_ui/shell/shell_controller.dart';
-import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child, {Size size = const Size(1920, 1080)}) => MediaQuery(
       data: MediaQueryData(size: size),
       child: MaterialApp(
-        theme: BladeWatchTheme.light(),
+        theme: BwHud.themeData(Brightness.light),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: child,
@@ -31,35 +31,35 @@ void main() {
     final controller = ShellController(initialRoute: BwRoutes.dashboard);
     await tester.pumpWidget(_wrap(AppShell(controller: controller, onLanguageTap: () {})));
 
-    await tester.tap(find.text('Trips'));
+    await tester.tap(find.text('TRIPS'));
     await tester.pump();
 
     expect(controller.selectedRoute, BwRoutes.trips);
     expect(find.textContaining(BwRoutes.trips), findsWidgets);
   });
 
-  testWidgets('landscape (960x540dp): language button lives in the rail, not the toolbar', (tester) async {
+  testWidgets('landscape (960x540dp): language button lives at the top of the rail', (tester) async {
     final controller = ShellController();
     await tester.pumpWidget(_wrap(
       AppShell(controller: controller, onLanguageTap: () {}),
       size: const Size(1920, 1080),
     ));
 
-    expect(find.byIcon(Icons.language), findsOneWidget);
+    expect(find.byIcon(Icons.translate), findsOneWidget);
     final navRail = tester.widget<NavRail>(find.byType(NavRail));
     expect(navRail.showLanguageHeader, isTrue);
   });
 
-  testWidgets('portrait (540x960dp): language button lives in the toolbar, not the rail', (tester) async {
+  testWidgets('portrait (540x960dp): the language button is in the rail too, there is no toolbar', (tester) async {
     final controller = ShellController();
     await tester.pumpWidget(_wrap(
       AppShell(controller: controller, onLanguageTap: () {}),
       size: const Size(1080, 1920),
     ));
 
-    expect(find.byIcon(Icons.language), findsOneWidget);
-    final navRail = tester.widget<NavRail>(find.byType(NavRail));
-    expect(navRail.showLanguageHeader, isFalse);
+    expect(find.byIcon(Icons.translate), findsOneWidget);
+    expect(tester.widget<NavRail>(find.byType(NavRail)).showLanguageHeader, isTrue);
+    expect(find.byType(AppBar), findsNothing);
   });
 
   testWidgets('tapping the language button calls onLanguageTap exactly once', (tester) async {
@@ -67,7 +67,7 @@ void main() {
     final controller = ShellController();
     await tester.pumpWidget(_wrap(AppShell(controller: controller, onLanguageTap: () => taps++)));
 
-    await tester.tap(find.byIcon(Icons.language));
+    await tester.tap(find.byIcon(Icons.translate));
 
     expect(taps, 1);
   });
@@ -101,11 +101,12 @@ void main() {
     expect(tester.getTopLeft(find.byType(NavRail)).dx, greaterThan(tester.getTopLeft(find.byType(StubScreen)).dx));
   });
 
-  testWidgets('shows the accent stripe (primary-to-tertiary gradient bar)', (tester) async {
+  testWidgets('has no toolbar and no accent stripe: each screen draws its own title bar', (tester) async {
     final controller = ShellController();
     await tester.pumpWidget(_wrap(AppShell(controller: controller, onLanguageTap: () {})));
 
-    expect(find.byKey(const ValueKey('accentStripe')), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.byKey(const ValueKey('accentStripe')), findsNothing);
   });
 
   // BladeWatch-0kru: this used to assert the opposite — that the pill always
@@ -120,13 +121,6 @@ void main() {
 
     expect(find.text('Connecting…'), findsNothing);
     expect(find.byKey(const ValueKey('shell.statusPill.url')), findsNothing);
-  });
-
-  testWidgets('toolbar title reflects the currently selected rail destination', (tester) async {
-    final controller = ShellController(initialRoute: BwRoutes.vehicle);
-    await tester.pumpWidget(_wrap(AppShell(controller: controller, onLanguageTap: () {})));
-
-    expect(find.widgetWithText(AppBar, 'Vehicle'), findsOneWidget);
   });
 
   testWidgets('renders the provided dashboardScreen instead of the stub when the route is dashboard', (tester) async {
@@ -252,13 +246,113 @@ void main() {
     expect(find.byType(StubScreen), findsOneWidget);
   });
 
-  testWidgets('toolbar title falls back to the raw route name for a route with no rail entry', (tester) async {
-    // startup/surveillance/dialogs are reachable stubs but not rail
-    // destinations (see BwRoutes' doc comment) -- no RailDestination.label
-    // matches, so _currentTitle falls through to the route name itself.
-    final controller = ShellController(initialRoute: BwRoutes.startup);
-    await tester.pumpWidget(_wrap(AppShell(controller: controller, onLanguageTap: () {})));
+  // BladeWatch-8w4p / 2llu.6: every screen draws its own HUD title bar; there is no M3 toolbar or accent stripe.
+  group('HUD shell', () {
+    testWidgets('the Dashboard screen has no toolbar and no accent stripe', (tester) async {
+      final controller = ShellController(initialRoute: BwRoutes.dashboard);
+      await tester.pumpWidget(
+        _wrap(AppShell(controller: controller, onLanguageTap: () {}, dashboardScreen: const Text('DASHBOARD CONTENT'))),
+      );
 
-    expect(find.widgetWithText(AppBar, BwRoutes.startup), findsOneWidget);
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.byKey(const ValueKey('accentStripe')), findsNothing);
+      expect(find.text('DASHBOARD CONTENT'), findsOneWidget);
+    });
+
+    testWidgets('the Dashboard page background is the HUD one', (tester) async {
+      final controller = ShellController(initialRoute: BwRoutes.dashboard);
+      await tester.pumpWidget(
+        _wrap(AppShell(controller: controller, onLanguageTap: () {}, dashboardScreen: const Text('DASHBOARD CONTENT'))),
+      );
+
+      expect(tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor, BwHud.light.pageBackground);
+    });
+
+    testWidgets('portrait Dashboard: the language button moves from the toolbar to the rail', (tester) async {
+      var taps = 0;
+      final controller = ShellController(initialRoute: BwRoutes.dashboard);
+      await tester.pumpWidget(
+        _wrap(
+          AppShell(controller: controller, onLanguageTap: () => taps++, dashboardScreen: const Text('D')),
+          size: const Size(1080, 1920),
+        ),
+      );
+
+      expect(find.byIcon(Icons.translate), findsOneWidget);
+      expect(tester.widget<NavRail>(find.byType(NavRail)).showLanguageHeader, isTrue);
+      await tester.tap(find.byIcon(Icons.translate));
+      expect(taps, 1);
+    });
+
+    testWidgets('a route with no screen mounted (a stub) is on the HUD page background, with no toolbar', (tester) async {
+      final controller = ShellController(initialRoute: BwRoutes.startup);
+      await tester.pumpWidget(_wrap(AppShell(controller: controller, onLanguageTap: () {}, dashboardScreen: const Text('D'))));
+
+      expect(find.byType(StubScreen), findsOneWidget);
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.byKey(const ValueKey('accentStripe')), findsNothing);
+      expect(tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor, BwHud.light.pageBackground);
+    });
+
+    // BladeWatch-2llu.6: the HUD ThemeData is the app's own, so the stage and everything pushed on it read it.
+    testWidgets('the stage runs on the HUD ThemeData and a screen pushed onto it inherits it', (tester) async {
+      ThemeData? onStage;
+      ThemeData? pushed;
+      final controller = ShellController(initialRoute: BwRoutes.dashboard);
+      await tester.pumpWidget(_wrap(AppShell(
+        controller: controller,
+        onLanguageTap: () {},
+        dashboardScreen: Builder(
+          builder: (context) {
+            onStage = Theme.of(context);
+            return TextButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (c) {
+                  pushed = Theme.of(c);
+                  return const Text('PUSHED');
+                },
+              )),
+              child: const Text('go'),
+            );
+          },
+        ),
+      )));
+      expect(onStage!.extension<BwHud>(), same(BwHud.light));
+      expect(onStage!.colorScheme.primary, BwHud.light.accent);
+      await tester.tap(find.text('go'));
+      await tester.pumpAndSettle();
+      expect(find.text('PUSHED'), findsOneWidget);
+      expect(pushed!.extension<BwHud>(), same(BwHud.light));
+      expect(pushed!.colorScheme.primary, BwHud.light.accent);
+    });
+
+    testWidgets('every screen route: no toolbar, no accent stripe', (tester) async {
+      for (final (route, screen) in [(BwRoutes.liveView, 'LIVE SCREEN'), (BwRoutes.recordings, 'REC'), (BwRoutes.location, 'LOC'), (BwRoutes.vehicle, 'VEH'), (BwRoutes.trips, 'TRP'), (BwRoutes.diagnostics, 'DIA'), (BwRoutes.settings, 'SET'), (BwRoutes.settingsAbout, 'ABT'), (BwRoutes.surveillance, 'SRV')]) {
+        final controller = ShellController(initialRoute: route);
+        await tester.pumpWidget(_wrap(AppShell(
+          controller: controller,
+          onLanguageTap: () {},
+          liveViewScreen: const Text('LIVE SCREEN'),
+          recordingsScreen: const Text('REC'),
+          locationScreen: const Text('LOC'),
+          vehicleScreen: const Text('VEH'),
+          tripsScreen: const Text('TRP'),
+          diagnosticsScreen: const Text('DIA'),
+          settingsScreen: const Text('SET'),
+          settingsAboutScreen: const Text('ABT'),
+          surveillanceScreen: const Text('SRV'),
+        )));
+        expect(find.text(screen), findsOneWidget, reason: route);
+        expect(find.byType(AppBar), findsNothing, reason: route);
+        expect(find.byKey(const ValueKey('accentStripe')), findsNothing, reason: route);
+      }
+    });
+
+    testWidgets('the rail edge follows the drive side', (tester) async {
+      final controller = ShellController(initialRoute: BwRoutes.trips, initialDriveSide: DriveSide.right);
+      await tester.pumpWidget(_wrap(AppShell(controller: controller, onLanguageTap: () {})));
+
+      expect(tester.widget<NavRail>(find.byType(NavRail)).onRight, isTrue);
+    });
   });
 }

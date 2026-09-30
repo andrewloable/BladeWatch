@@ -3,6 +3,7 @@ import 'package:bladewatch_companion/car/car_session.dart';
 import 'package:bladewatch_companion/i18n.dart';
 import 'package:bladewatch_rpc/rpc/connect_error.dart';
 import 'package:bladewatch_rpc/rpc/rpc_transport.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,16 +24,16 @@ void main() {
 
   testWidgets('looking, then reconnecting after having connected -- distinct from unreachable', (tester) async {
     final s = await pumpPage(tester, TransportPhase.discovering);
-    expect(find.text(t('companion.looking')), findsOneWidget);
+    expect(find.text(t('companion.looking').toUpperCase()), findsOneWidget);
     expect(find.text('the screen'), findsNothing);
 
     await s.go(tester, TransportPhase.pear);
     expect(find.text('the screen'), findsOneWidget);
     await s.go(tester, TransportPhase.discovering);
-    expect(find.text(t('companion.reconnecting')), findsOneWidget);
+    expect(find.text(t('companion.reconnecting').toUpperCase()), findsOneWidget);
 
     await s.go(tester, TransportPhase.failed);
-    expect(find.text(t('companion.unreachable')), findsOneWidget);
+    expect(find.text(t('companion.unreachable').toUpperCase()), findsOneWidget);
     await tester.tap(find.text(t('common.retry')));
     expect(s.retries, 1);
   });
@@ -54,7 +55,7 @@ void main() {
     expect(find.text('the screen'), findsOneWidget);
     await expectLater(session.rpc.call('A', 'B', null, (j) => j), throwsA(anything));
     await tester.pump();
-    expect(find.text(t('companion.not_answering')), findsOneWidget);
+    expect(find.text(t('companion.not_answering').toUpperCase()), findsOneWidget);
     expect(find.text('the screen'), findsNothing);
 
     car.silent = false;
@@ -66,12 +67,47 @@ void main() {
     s.session.dispose();
   });
 
+  // HUD rule 5: the dot is the real state of the link. Amber while it clears by itself, magenta when it needs the owner.
+  testWidgets('the state dot: amber while looking or unanswered, magenta when unreachable or refused', (tester) async {
+    HudDotState dot(String key) => tester
+        .widget<HudStatusDot>(find.descendant(of: find.byKey(ValueKey(key)), matching: find.byType(HudStatusDot)))
+        .state;
+    final s = await pumpPage(tester, TransportPhase.discovering);
+    expect(dot('car.looking'), HudDotState.warning);
+    await s.go(tester, TransportPhase.failed);
+    expect(dot('car.unreachable'), HudDotState.bad);
+    s.session.markRefused();
+    await tester.pump();
+    expect(dot('car.refused'), HudDotState.bad);
+  });
+
+  testWidgets('reached but not answering: amber dot and a spinner', (tester) async {
+    final car = _Silent();
+    final session = CarSession(
+      rpc: car,
+      baseUrl: Uri.parse('http://x'),
+      jwt: () async => null,
+      initialPhase: TransportPhase.pear,
+      probeEvery: const Duration(seconds: 1),
+    );
+    await tester.pumpWidget(MaterialApp(
+      builder: (context, nav) => TrScope(tr: testTr, child: nav!),
+      home: SessionScope(session: session, child: const Scaffold(body: CarPage(child: Text('the screen')))),
+    ));
+    await expectLater(session.rpc.call('A', 'B', null, (j) => j), throwsA(anything));
+    await tester.pump();
+    expect(tester.widget<HudStatusDot>(find.descendant(of: find.byKey(const ValueKey('car.silent')), matching: find.byType(HudStatusDot))).state, HudDotState.warning);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    session.dispose();
+  });
+
   testWidgets('a car that removed this device offers pairing again, whatever the route', (tester) async {
     var paired = 0;
     final s = await pumpPage(tester, TransportPhase.lan, onPairAgain: () => paired++);
     s.session.markRefused();
     await tester.pump();
-    expect(find.text(t('companion.refused')), findsOneWidget);
+    expect(find.text(t('companion.refused').toUpperCase()), findsOneWidget);
     await tester.tap(find.text(t('companion.pair_again')));
     expect(paired, 1);
   });

@@ -14,6 +14,8 @@ import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import '../../shell/locale_controller.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 import '../../shell/shell_controller.dart';
 import '../trips/trips_controller.dart';
 import '../surveillance/surveillance_controller.dart';
@@ -199,20 +201,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final section = await deps.publicConfigChannel.getSection(_statusOverlaySection);
             // An empty map means the read failed; native's own fallback is
             // "both visible", which is what the controller defaults to anyway.
-            return (
-              cameraVisible: section['cameraVisible'] ?? true,
-              tripVisible: section['tripVisible'] ?? true,
-            );
+            return (cameraVisible: section['cameraVisible'] ?? true, tripVisible: section['tripVisible'] ?? true);
           },
           persist: (key, value) => deps.publicConfigChannel.putBoolean(_statusOverlaySection, key, value),
         );
         controller = c;
         content = SettingsOverlayScreen(controller: c);
       case _Section.daemons:
-        final c = SettingsDaemonsController(
-          daemonChannel: deps.daemonChannel,
-          setDaemonEnabled: deps.setDaemonEnabled,
-        );
+        final c = SettingsDaemonsController(daemonChannel: deps.daemonChannel, setDaemonEnabled: deps.setDaemonEnabled);
         controller = c;
         content = SettingsDaemonsScreen(controller: c);
       case _Section.privacy:
@@ -227,8 +223,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               debugLogsEnabled: section['debugLogsEnabled'] ?? false,
             );
           },
-          persistLogging: (key, value) =>
-              deps.publicConfigChannel.putBoolean(_developerOptionsSection, key, value),
+          persistLogging: (key, value) => deps.publicConfigChannel.putBoolean(_developerOptionsSection, key, value),
         );
         controller = c;
         content = SettingsPrivacyScreen(controller: c, systemService: deps.systemService);
@@ -241,14 +236,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _label(AppLocalizations l10n, _Section section) => switch (section) {
-        _Section.appearance => l10n.settings_section_appearance,
-        _Section.recording => l10n.settings_section_recording,
-        _Section.surveillance => l10n.settings_section_surveillance,
-        _Section.trips => l10n.settings_section_trips,
-        _Section.overlay => l10n.settings_section_overlay,
-        _Section.daemons => l10n.settings_section_daemons,
-        _Section.privacy => l10n.settings_section_privacy,
-      };
+    _Section.appearance => l10n.settings_section_appearance,
+    _Section.recording => l10n.settings_section_recording,
+    _Section.surveillance => l10n.settings_section_surveillance,
+    _Section.trips => l10n.settings_section_trips,
+    _Section.overlay => l10n.settings_section_overlay,
+    _Section.daemons => l10n.settings_section_daemons,
+    _Section.privacy => l10n.settings_section_privacy,
+  };
 
   /// Native marks Recording and Surveillance with `navigates = true` purely for
   /// the trailing chevron affordance (SettingsFragment.Section) — they read as
@@ -260,87 +255,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// absent on purpose: that pane opens with its own "On-device by default"
   /// heading in both UIs, so a generic header would duplicate it.
   String? _paneSubtitle(AppLocalizations l10n, _Section section) => switch (section) {
-        _Section.appearance => l10n.settings_appearance_subtitle,
-        _Section.recording => l10n.settings_section_recording_subtitle,
-        _Section.surveillance => l10n.settings_section_surveillance_subtitle,
-        _Section.trips => l10n.settings_section_trips_subtitle,
-        _Section.overlay => l10n.settings_overlay_subtitle,
-        _Section.daemons => l10n.settings_section_daemons_subtitle,
-        _Section.privacy => null,
-      };
+    _Section.appearance => l10n.settings_appearance_subtitle,
+    _Section.recording => l10n.settings_section_recording_subtitle,
+    _Section.surveillance => l10n.settings_section_surveillance_subtitle,
+    _Section.trips => l10n.settings_section_trips_subtitle,
+    _Section.overlay => l10n.settings_overlay_subtitle,
+    _Section.daemons => l10n.settings_section_daemons_subtitle,
+    _Section.privacy => null,
+  };
 
   IconData _icon(_Section section) => switch (section) {
-        _Section.appearance => Icons.dashboard,
-        _Section.recording => Icons.videocam,
-        _Section.surveillance => Icons.shield,
-        _Section.trips => Icons.route,
-        _Section.overlay => Icons.layers,
-        _Section.daemons => Icons.miscellaneous_services,
-        _Section.privacy => Icons.privacy_tip,
-      };
+    _Section.appearance => Icons.dashboard,
+    _Section.recording => Icons.videocam,
+    _Section.surveillance => Icons.shield,
+    _Section.trips => Icons.route,
+    _Section.overlay => Icons.layers,
+    _Section.daemons => Icons.miscellaneous_services,
+    _Section.privacy => Icons.privacy_tip,
+  };
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
+    final subtitle = _paneSubtitle(l10n, _section);
 
     return Row(
       children: [
+        // The sub-rail: one HUD row per section, the selected one in the accent border.
         SizedBox(
-          width: 220,
+          width: 264,
           child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 12, 24),
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text(
-                  l10n.settings_subrail_overline,
-                  style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
+                padding: const EdgeInsets.only(bottom: 12),
+                child: HudSectionLabel(l10n.settings_subrail_overline),
               ),
               for (final section in _Section.values)
-                ListTile(
-                  key: ValueKey('settings.section.${section.name}'),
-                  selected: section == _section,
-                  selectedTileColor: theme.colorScheme.secondaryContainer,
-                  leading: Icon(_icon(section)),
-                  title: Text(_label(l10n, section)),
-                  trailing: _navigates(section) ? const Icon(Icons.chevron_right) : null,
-                  onTap: () => _select(section),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: HudListRow(
+                    key: ValueKey('settings.section.${section.name}'),
+                    icon: _icon(section),
+                    title: _label(l10n, section),
+                    selected: section == _section,
+                    trailing: _navigates(section)
+                        ? Icon(Icons.chevron_right, size: 16, color: hud.textSecondary)
+                        : null,
+                    onTap: () => _select(section),
+                  ),
                 ),
             ],
           ),
         ),
-        const VerticalDivider(width: 1),
         Expanded(
           child: _content == null
               ? const SizedBox.shrink()
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Native opens every pane with its title and a one-line
-                    // description; the port rendered the content bare.
+                    // Native opens every pane with its title and a one-line description.
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _label(l10n, _section),
-                            key: const ValueKey('settings.pane.title'),
-                            style: theme.textTheme.headlineSmall,
-                          ),
-                          if (_paneSubtitle(l10n, _section) != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              _paneSubtitle(l10n, _section)!,
-                              key: const ValueKey('settings.pane.subtitle'),
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                            ),
-                          ],
-                        ],
+                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                      child: HudTitleBar(
+                        title: _label(l10n, _section).toUpperCase(),
+                        titleKey: const ValueKey('settings.pane.title'),
                       ),
                     ),
+                    if (subtitle != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: Text(
+                          subtitle,
+                          key: const ValueKey('settings.pane.subtitle'),
+                          style: hudText(12, hud.textSecondary, lineHeight: 16, em: 0.05),
+                        ),
+                      ),
                     Expanded(child: _content!),
                   ],
                 ),

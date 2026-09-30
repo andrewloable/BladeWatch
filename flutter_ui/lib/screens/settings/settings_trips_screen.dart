@@ -4,6 +4,7 @@ import 'package:bladewatch_ui/util/currency.dart';
 
 import '../../gen/l10n/app_localizations.dart';
 import '../../widgets/bw_choice_chip.dart';
+import '../../widgets/hud_widgets.dart';
 import '../trips/trips_controller.dart';
 import '../trips/trips_models.dart';
 
@@ -50,16 +51,12 @@ class _SettingsTripsScreenState extends State<SettingsTripsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     switch (widget.controller.state) {
       case TripsLoading():
-        return Center(key: const ValueKey('settings.trips.loading'), child: Text(l10n.webview_loading));
+        return HudLoading(key: const ValueKey('settings.trips.loading'), label: l10n.webview_loading);
       case TripsError(:final message):
-        return Center(
-          key: const ValueKey('settings.trips.error'),
-          child: Text(l10n.trips_load_error(message), style: TextStyle(color: theme.colorScheme.error)),
-        );
+        return HudErrorState(key: const ValueKey('settings.trips.error'), message: l10n.trips_load_error(message));
       case TripsLoaded():
         final loaded = widget.controller.state as TripsLoaded;
         return _TripsSettingsBody(
@@ -98,12 +95,14 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
   late final TextEditingController _fuelPriceController;
   late final TextEditingController _tankCapacityController;
   late String _currency;
+
+  /// What the car has stored, kept so that opening Settings and pressing Apply does not rewrite it:
+  /// a config holding an ISO code (`PHP`) is SHOWN as its symbol but only replaced when the owner
+  /// actually picks one (BladeWatch-gzbo).
+  late final String _storedCurrency;
+  bool _currencyPicked = false;
   late String _distanceUnit;
   late String _storageType;
-
-  /// Loaded once from the generated asset. Null until it arrives; the picker is disabled
-  /// until then rather than showing an empty list.
-  List<String>? _currencyCodes;
 
   @override
   void initState() {
@@ -111,7 +110,8 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
     final cfg = widget.state.config;
     final storage = widget.state.storage;
     _analyticsEnabled = cfg?.enabled ?? false;
-    _currency = (cfg?.currency.isNotEmpty ?? false) ? cfg!.currency : Currency.defaultCode;
+    _storedCurrency = cfg?.currency ?? '';
+    _currency = Currency.selectionFor(_storedCurrency);
     _rateController = TextEditingController(text: (cfg?.electricityRate ?? 0.0).toStringAsFixed(4));
     // Both default to 0 meaning NOT CONFIGURED, matching the daemon.
     _fuelPriceController =
@@ -120,9 +120,6 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
         TextEditingController(text: (cfg?.fuelTankCapacityL ?? 0.0).toStringAsFixed(1));
     _distanceUnit = cfg?.distanceUnit ?? 'km';
     _storageType = storage?.storageType ?? 'INTERNAL';
-    Currency.codes().then((codes) {
-      if (mounted) setState(() => _currencyCodes = codes);
-    });
   }
 
   @override
@@ -160,7 +157,7 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
       rate: rate,
       fuelPricePerL: fuelPrice,
       fuelTankCapacityL: tankCapacity,
-      currency: _currency,
+      currency: _currencyPicked || _storedCurrency.isEmpty ? _currency : _storedCurrency,
       distanceUnit: _distanceUnit,
       storageType: _storageType,
     );
@@ -188,7 +185,7 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.trips_storage_title, style: theme.textTheme.labelLarge),
+                HudSectionLabel(l10n.trips_storage_title),
                 const SizedBox(height: 12),
                 SwitchListTile(
                   key: const ValueKey('trips.storage.analytics'),
@@ -210,18 +207,15 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
                       initialValue: _currency,
                       isExpanded: true,
                       decoration: const InputDecoration(isDense: true),
-                      // Disabled until the generated catalogue loads, rather than briefly
-                      // offering an empty menu.
-                      // optionsFor guarantees the stored value is present exactly once.
-                      // Without that, a legacy value like "$" is absent from the ISO
-                      // catalogue and DropdownButtonFormField asserts on the mismatch,
+                      // optionsFor guarantees the selected value is present exactly once.
+                      // Without that, a legacy free-text value like "Rs." is absent from the
+                      // symbol list and DropdownButtonFormField asserts on the mismatch,
                       // crashing the settings sheet for the owners most needing it.
-                      items: Currency.optionsFor(_currency, _currencyCodes)
-                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                          .toList(),
-                      onChanged: _currencyCodes == null
-                          ? null
-                          : (v) => setState(() => _currency = v ?? _currency),
+                      items: Currency.optionsFor(_currency).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                      onChanged: (v) => setState(() {
+                        _currency = v ?? _currency;
+                        _currencyPicked = true;
+                      }),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -301,9 +295,9 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
                   const SizedBox(height: 8),
                   Text(
                     l10n.trips_storage_usage_line(storage.usedMb.toString(), storage.usedUnit, storage.limitMb.toString(), storage.tripsCount),
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
+                    style: theme.textTheme.bodySmall,
                   ),
-                  if (storage.storagePath.isNotEmpty) Text(storage.storagePath, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
+                  if (storage.storagePath.isNotEmpty) Text(storage.storagePath, style: theme.textTheme.bodySmall),
                 ],
                 const SizedBox(height: 12),
                 FilledButton(key: const ValueKey('trips.storage.apply'), onPressed: _apply, child: Text(l10n.trips_storage_apply)),
@@ -336,9 +330,9 @@ class _SyncCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.trips_sync_title, style: theme.textTheme.labelLarge),
+            HudSectionLabel(l10n.trips_sync_title),
             const SizedBox(height: 6),
-            Text(l10n.trips_sync_description, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+            Text(l10n.trips_sync_description, style: theme.textTheme.bodySmall),
             const SizedBox(height: 12),
             if (controller.syncResult != null) ...[
               Text(

@@ -6,6 +6,7 @@ import 'package:bladewatch_ui/screens/settings/settings_daemons_models.dart';
 import 'package:bladewatch_ui/screens/settings/settings_daemons_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
 import 'package:bladewatch_ui/theme/color_tokens.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -202,6 +203,24 @@ void main() {
     // "Starting" rather than "Waiting": the row must not look like the toggle failed.
     expect(find.descendant(of: find.byKey(const ValueKey('daemon.pearPeer')), matching: find.text('Starting')),
         findsOneWidget);
+  });
+
+
+  // The dot is real state (HUD rule 5): three different states, never one colour for "not running".
+  testWidgets('the status dot says up, starting or stopped', (tester) async {
+    channel.stub('daemon', 'processStatus', {
+      'daemons': {'CAMERA_DAEMON': true, 'SENTRY_DAEMON': false, 'ACC_SENTRY_DAEMON': false, 'PEAR_PEER': false},
+      'enabled': {'PEAR_PEER': true},
+    });
+    await pumpTall(tester, buildController());
+    await tester.pumpAndSettle();
+
+    HudDotState dot(String key) => tester
+        .widget<HudStatusDot>(find.descendant(of: find.byKey(ValueKey(key)), matching: find.byType(HudStatusDot)))
+        .state;
+    expect(dot('daemon.camera'), HudDotState.ok);
+    expect(dot('daemon.sentry'), HudDotState.idle);
+    expect(dot('daemon.pearPeer'), HudDotState.warning);
   });
 
   // The daemons the user cannot toggle have no intent to show, so they keep reporting

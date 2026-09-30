@@ -63,12 +63,14 @@ void main() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    await tester.pumpWidget(MaterialApp(
-      theme: ThemeData(brightness: brightness),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: SettingsTripsScreen(controller: controller)),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(brightness: brightness),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: SettingsTripsScreen(controller: controller)),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -78,34 +80,47 @@ void main() {
         // isPhev, so the fuel fields are on screen at all — their SEEDING is what this
         // asserts; whether they appear for a given drivetrain is covered separately below.
         config: {'enabled': true, 'electricityRate': 0.15, 'currency': 'USD', 'distanceUnit': 'km', 'isPhev': true},
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 10.0, 'usedUnit': 'MB', 'sdCardAvailable': false, 'tripsCount': 2, 'storagePath': '/x'},
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 10.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': false,
+          'tripsCount': 2,
+          'storagePath': '/x',
+        },
       );
       await pumpScreen(tester);
 
-
-      // BladeWatch-9uu6: currency is now PICKED from the ISO 4217 catalogue rather than
-      // typed, so this is a dropdown holding the loaded code.
+      // BladeWatch-9uu6/-gzbo: currency is PICKED, and from a list of SYMBOLS: a config holding the
+      // code USD shows the dollar sign.
       final currencyField = tester.widget<DropdownButtonFormField<String>>(
-          find.byKey(const ValueKey('trips.storage.currency')));
-      expect(currencyField.initialValue, 'USD');
+        find.byKey(const ValueKey('trips.storage.currency')),
+      );
+      expect(currencyField.initialValue, r'$');
       final sw = tester.widget<SwitchListTile>(find.byKey(const ValueKey('trips.storage.analytics')));
       expect(sw.value, isTrue);
 
       // PHEV pricing seeds from the loaded config too — persisting a value is only half of
       // "it persists" if the settings screen then shows the default instead.
-      final fuelPrice = tester.widget<TextField>(
-          find.byKey(const ValueKey('trips.storage.fuelPrice')));
-      expect(fuelPrice.controller!.text, '0.00',
-          reason: 'absent from this config, so it must read as not-configured');
-      final tank = tester.widget<TextField>(
-          find.byKey(const ValueKey('trips.storage.tankCapacity')));
+      final fuelPrice = tester.widget<TextField>(find.byKey(const ValueKey('trips.storage.fuelPrice')));
+      expect(fuelPrice.controller!.text, '0.00', reason: 'absent from this config, so it must read as not-configured');
+      final tank = tester.widget<TextField>(find.byKey(const ValueKey('trips.storage.tankCapacity')));
       expect(tank.controller!.text, '0.0');
     });
 
     testWidgets('toggling the analytics switch and re-selecting Internal storage update local state', (tester) async {
       stubAllLoads(
         config: {'enabled': false, 'electricityRate': 0.1, 'currency': 'USD', 'distanceUnit': 'km'},
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''},
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': true,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
       );
       await pumpScreen(tester);
 
@@ -121,7 +136,17 @@ void main() {
     });
 
     testWidgets('the SD Card option is disabled and labeled N/A when unavailable', (tester) async {
-      stubAllLoads(storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': false, 'tripsCount': 0, 'storagePath': ''});
+      stubAllLoads(
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': false,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
+      );
       await pumpScreen(tester);
 
       expect(find.text('SD Card (N/A)'), findsOneWidget);
@@ -130,7 +155,17 @@ void main() {
     });
 
     testWidgets('applying changes saves and shows a failure snackbar when it fails', (tester) async {
-      stubAllLoads(storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''});
+      stubAllLoads(
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': true,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
+      );
       await pumpScreen(tester);
       rpc.stubError('TripsService', 'SetConfig', const ConnectError('unavailable', 'no daemon'));
 
@@ -141,7 +176,17 @@ void main() {
     });
 
     testWidgets('applying changes succeeds and reloads', (tester) async {
-      stubAllLoads(storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''});
+      stubAllLoads(
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': true,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
+      );
       await pumpScreen(tester);
       rpc.stubJson('TripsService', 'SetConfig', {'success': true});
       rpc.stubJson('TripsService', 'SetStorage', {'success': true});
@@ -154,35 +199,109 @@ void main() {
       expect((setStorageCall.request as dynamic).storageType, 'SD_CARD');
     });
 
-    /// BladeWatch-9uu6: the owner's currency choice has to actually reach the daemon —
+    /// BladeWatch-9uu6/-gzbo: the owner's currency choice has to actually reach the daemon —
     /// that is the whole point of "the selection persists". Picking from the dropdown and
-    /// applying must send the chosen code, not the one the screen loaded with.
-    testWidgets('picking a currency sends the chosen code on apply', (tester) async {
+    /// applying must send the chosen SYMBOL, not what the screen loaded with.
+    Future<void> pumpWithCurrency(WidgetTester tester, String? currency) async {
       stubAllLoads(
-        config: {'enabled': true, 'electricityRate': 0.15, 'currency': 'USD', 'distanceUnit': 'km'},
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''},
+        config: {
+          'enabled': true,
+          'electricityRate': 0.15,
+          'currency': ?currency,
+          'distanceUnit': 'km',
+        },
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': true,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
       );
       await pumpScreen(tester);
       rpc.stubJson('TripsService', 'SetConfig', {'success': true});
       rpc.stubJson('TripsService', 'SetStorage', {'success': true});
+    }
 
-      // Choose a different currency. The callback is invoked directly rather than driving
-      // the menu route: the dropdown is deliberately disabled until the generated catalogue
-      // resolves, so a tap-based test would race that load. Asserting onChanged is non-null
-      // first is what proves the picker actually became usable.
-      final picker = tester.widget<DropdownButtonFormField<String>>(
-          find.byKey(const ValueKey('trips.storage.currency')));
-      expect(picker.onChanged, isNotNull,
-          reason: 'the picker must be enabled once the catalogue has loaded');
-      picker.onChanged!('PHP');
-      await tester.pumpAndSettle();
+    DropdownButtonFormField<String> picker(WidgetTester tester) =>
+        tester.widget<DropdownButtonFormField<String>>(find.byKey(const ValueKey('trips.storage.currency')));
 
+    // DropdownButtonFormField does not expose its items; the DropdownButton inside it does.
+    List<String> menu(WidgetTester tester) => tester
+        .widget<DropdownButton<String>>(
+          find.descendant(
+            of: find.byKey(const ValueKey('trips.storage.currency')),
+            matching: find.byType(DropdownButton<String>),
+          ),
+        )
+        .items!
+        .map((i) => i.value!)
+        .toList();
+
+    Future<String?> applyAndReadCurrency(WidgetTester tester) async {
       await tester.tap(find.byKey(const ValueKey('trips.storage.apply')));
       await tester.pumpAndSettle();
+      return (rpc.calls.lastWhere((c) => c.method == 'SetConfig').request as dynamic).currency as String?;
+    }
 
-      final setConfigCall = rpc.calls.lastWhere((c) => c.method == 'SetConfig');
-      expect((setConfigCall.request as dynamic).currency, 'PHP',
-          reason: 'the chosen code must be sent, not the one loaded at open');
+    testWidgets('picking a currency sends the chosen symbol on apply', (tester) async {
+      await pumpWithCurrency(tester, 'USD');
+      // The callback is invoked directly rather than driving the menu route.
+      expect(
+        picker(tester).onChanged,
+        isNotNull,
+        reason: 'the picker is usable at once: there is no catalogue to load',
+      );
+      picker(tester).onChanged!('\u20B1');
+      await tester.pumpAndSettle();
+
+      expect(await applyAndReadCurrency(tester), '\u20B1', reason: 'the chosen symbol, not the one loaded at open');
+    });
+
+    testWidgets('a car storing an ISO code shows its symbol and is NOT rewritten by a bare Apply', (tester) async {
+      await pumpWithCurrency(tester, 'PHP');
+      expect(picker(tester).initialValue, '\u20B1');
+
+      expect(
+        await applyAndReadCurrency(tester),
+        'PHP',
+        reason: 'opening Settings and pressing Apply must not change what history was priced in',
+      );
+    });
+
+    testWidgets('picking the symbol a stored code already maps to does replace it', (tester) async {
+      await pumpWithCurrency(tester, 'PHP');
+      picker(tester).onChanged!('\u20B1');
+      await tester.pumpAndSettle();
+      expect(await applyAndReadCurrency(tester), '\u20B1');
+    });
+
+    testWidgets('a legacy free-text value is offered once, first, and survives a bare Apply', (tester) async {
+      await pumpWithCurrency(tester, 'Rs.');
+      expect(picker(tester).initialValue, 'Rs.');
+      final items = menu(tester);
+      expect(items.where((v) => v == 'Rs.'), hasLength(1));
+      expect(items.first, 'Rs.');
+
+      expect(await applyAndReadCurrency(tester), 'Rs.');
+    });
+
+    testWidgets('a fresh car (nothing stored) selects the dollar sign and sends it', (tester) async {
+      await pumpWithCurrency(tester, null);
+      expect(picker(tester).initialValue, r'$');
+      expect(await applyAndReadCurrency(tester), r'$');
+    });
+
+    testWidgets('the menu offers symbols only: no ISO code, no duplicate', (tester) async {
+      await pumpWithCurrency(tester, 'USD');
+      final items = menu(tester);
+      expect(items, hasLength(80));
+      expect(items.toSet(), hasLength(items.length));
+      for (final v in items) {
+        expect(RegExp(r'^[A-Za-z]{3}$').hasMatch(v), isFalse, reason: '"$v" is code-shaped');
+      }
     });
 
     /// PHEV pricing typed on the head unit must reach the daemon too — it was web-only
@@ -191,16 +310,22 @@ void main() {
       stubAllLoads(
         // isPhev — the fuel fields only exist on a car that has a tank.
         config: {'enabled': true, 'electricityRate': 0.15, 'currency': 'USD', 'distanceUnit': 'km', 'isPhev': true},
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''},
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': true,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
       );
       await pumpScreen(tester);
       rpc.stubJson('TripsService', 'SetConfig', {'success': true});
       rpc.stubJson('TripsService', 'SetStorage', {'success': true});
 
-      await tester.enterText(
-          find.byKey(const ValueKey('trips.storage.fuelPrice')), '1.85');
-      await tester.enterText(
-          find.byKey(const ValueKey('trips.storage.tankCapacity')), '47.5');
+      await tester.enterText(find.byKey(const ValueKey('trips.storage.fuelPrice')), '1.85');
+      await tester.enterText(find.byKey(const ValueKey('trips.storage.tankCapacity')), '47.5');
       await tester.tap(find.byKey(const ValueKey('trips.storage.apply')));
       await tester.pumpAndSettle();
 
@@ -221,7 +346,15 @@ void main() {
     testWidgets('hides the fuel settings entirely on a BEV', (tester) async {
       stubAllLoads(
         config: {'enabled': true, 'electricityRate': 0.15, 'currency': 'USD', 'distanceUnit': 'km', 'isPhev': false},
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''},
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': true,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
       );
       await pumpScreen(tester);
 
@@ -235,7 +368,15 @@ void main() {
     testWidgets('shows the fuel settings on a PHEV', (tester) async {
       stubAllLoads(
         config: {'enabled': true, 'electricityRate': 0.15, 'currency': 'USD', 'distanceUnit': 'km', 'isPhev': true},
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''},
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': true,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
       );
       await pumpScreen(tester);
 
@@ -249,15 +390,26 @@ void main() {
     testWidgets('keeps a configured fuel price visible even when the probe says BEV', (tester) async {
       stubAllLoads(
         config: {
-          'enabled': true, 'electricityRate': 0.15, 'currency': 'USD', 'distanceUnit': 'km',
-          'isPhev': false, 'fuelPricePerL': 1.85,
+          'enabled': true,
+          'electricityRate': 0.15,
+          'currency': 'USD',
+          'distanceUnit': 'km',
+          'isPhev': false,
+          'fuelPricePerL': 1.85,
         },
-        storage: {'storageType': 'INTERNAL', 'limitMb': '500', 'usedMb': 0.0, 'usedUnit': 'MB', 'sdCardAvailable': true, 'tripsCount': 0, 'storagePath': ''},
+        storage: {
+          'storageType': 'INTERNAL',
+          'limitMb': '500',
+          'usedMb': 0.0,
+          'usedUnit': 'MB',
+          'sdCardAvailable': true,
+          'tripsCount': 0,
+          'storagePath': '',
+        },
       );
       await pumpScreen(tester);
 
-      final field = tester.widget<TextField>(
-          find.byKey(const ValueKey('trips.storage.fuelPrice')));
+      final field = tester.widget<TextField>(find.byKey(const ValueKey('trips.storage.fuelPrice')));
       expect(field.controller!.text, '1.85');
     });
 

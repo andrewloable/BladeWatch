@@ -2827,4 +2827,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get auto_hold_active => '保持中';
+
+  @override
+  String get dashboard_hud_overview => '概要';
+
+  @override
+  String get dashboard_hud_telemetry => 'テレメトリ';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }

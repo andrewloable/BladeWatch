@@ -8,6 +8,8 @@ import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_controller.dart';
 import 'package:bladewatch_ui/screens/dashboard/dashboard_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 import 'package:bladewatch_ui/util/currency.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -64,6 +66,12 @@ void main() {
 
   Widget wrap(DashboardController controller, {Locale? locale, ThemeData? theme, PairingChannel? pairing}) => MaterialApp(
         theme: theme ?? BladeWatchTheme.light(),
+        // The HUD title square and recording dot pulse forever (HudPulse); with animations on,
+        // pumpAndSettle never settles. HudPulse stands still under disableAnimations.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -178,9 +186,9 @@ void main() {
       });
       await pumpDashboard(tester, buildController());
       await tester.pumpAndSettle();
-      expect(chip('chip.gear', 'Gear D'), findsOneWidget);
-      expect(chip('chip.driveMode', 'Mode: –'), findsOneWidget);
-      expect(chip('chip.autoHold', 'Auto Hold: Holding'), findsOneWidget);
+      expect(chip('chip.gear', 'GEAR D'), findsOneWidget);
+      expect(chip('chip.driveMode', 'MODE: –'), findsOneWidget);
+      expect(chip('chip.autoHold', 'AUTO HOLD: HOLDING'), findsOneWidget);
       expect(chip('chip.energyMode', 'HEV'), findsOneWidget); // BladeWatch-os88
     });
 
@@ -188,8 +196,8 @@ void main() {
       stubHappyPath();
       await pumpDashboard(tester, buildController());
       await tester.pumpAndSettle();
-      expect(chip('chip.gear', 'Gear –'), findsOneWidget);
-      expect(chip('chip.autoHold', 'Auto Hold: –'), findsOneWidget);
+      expect(chip('chip.gear', 'GEAR –'), findsOneWidget);
+      expect(chip('chip.autoHold', 'AUTO HOLD: –'), findsOneWidget);
       // BladeWatch-os88: no EV / HEV to name is no chip at all, not a dash.
       expect(find.byKey(const ValueKey('chip.energyMode')), findsNothing);
     });
@@ -199,13 +207,13 @@ void main() {
       rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'gear': 'P', 'autoHold': 'ENABLED'}});
       await pumpDashboard(tester, buildController());
       await tester.pumpAndSettle();
-      expect(chip('chip.autoHold', 'Auto Hold: On'), findsOneWidget);
-      expect(chip('chip.gear', 'Gear P'), findsOneWidget);
+      expect(chip('chip.autoHold', 'AUTO HOLD: ON'), findsOneWidget);
+      expect(chip('chip.gear', 'GEAR P'), findsOneWidget);
 
       rpc.stubJson('SystemService', 'GetStatus', {'driveStatus': {'autoHold': 'DISABLED'}});
       await tester.pump(const Duration(seconds: 15));
       await tester.pumpAndSettle();
-      expect(chip('chip.autoHold', 'Auto Hold: Off'), findsOneWidget);
+      expect(chip('chip.autoHold', 'AUTO HOLD: OFF'), findsOneWidget);
     });
 
     // The owner switched EV/HEV and Auto Hold and the chips never moved: they waited on the
@@ -221,8 +229,8 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       await tester.pump();
       expect(chip('chip.energyMode', 'HEV'), findsOneWidget);
-      expect(chip('chip.autoHold', 'Auto Hold: Off'), findsOneWidget);
-      expect(chip('chip.gear', 'Gear D'), findsOneWidget);
+      expect(chip('chip.autoHold', 'AUTO HOLD: OFF'), findsOneWidget);
+      expect(chip('chip.gear', 'GEAR D'), findsOneWidget);
     });
 
     // The owner: charge and fuel live, trip summaries once a minute (2026-09-27).
@@ -260,7 +268,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       await tester.pump();
       expect(chip('chip.energyMode', 'EV'), findsOneWidget);
-      expect(chip('chip.gear', 'Gear P'), findsOneWidget);
+      expect(chip('chip.gear', 'GEAR P'), findsOneWidget);
     });
   });
 
@@ -313,7 +321,7 @@ void main() {
       });
       await pumpDashboard(tester, buildController());
       await tester.pumpAndSettle();
-      final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(Card));
+      final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel));
       double left(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dx;
       for (final column in [
         ['Trips', 'Battery', 'Fuel Cost'],
@@ -327,7 +335,7 @@ void main() {
       // and the header's label and button share one line.
       double top(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dy;
       expect(top('Battery'), greaterThan(top('Total Cost')), reason: 'charge and fuel after the week\'s costs');
-      final labelY = tester.getCenter(find.descendant(of: card, matching: find.text('THIS WEEK'))).dy;
+      final labelY = tester.getCenter(find.descendant(of: card, matching: find.text('THIS WEEK TELEMETRY'))).dy;
       final buttonY = tester.getCenter(find.byKey(const ValueKey('tripStats.viewAll'))).dy;
       expect((labelY - buttonY).abs(), lessThan(1), reason: 'label and button on one line');
     });
@@ -382,14 +390,18 @@ void main() {
     });
   });
 
-  testWidgets('recordings tile shows the live dot prefix while recording', (tester) async {
+  // The live string carries a "●" bullet; the HUD (BladeWatch-8w4p) draws it as a glowing dot, and only
+  // while the car is recording: the reference shows the dot unconditionally.
+  testWidgets('recordings tile shows the live dot while recording', (tester) async {
     stubHappyPath();
     final controller = buildController();
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('4'), findsWidgets);
-    expect(find.textContaining('●'), findsOneWidget);
+    final tile = find.byKey(const ValueKey('tile.recordings'));
+    expect(find.descendant(of: tile, matching: find.text('4')), findsOneWidget, reason: 'the count, without the bullet text');
+    expect(find.descendant(of: tile, matching: find.byKey(const ValueKey('tile.recordingDot'))), findsOneWidget);
+    expect(find.textContaining('●'), findsNothing);
   });
 
   testWidgets('recordings tile has no live dot when nothing is recording', (tester) async {
@@ -405,6 +417,8 @@ void main() {
     await pumpDashboard(tester, controller);
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const ValueKey('tile.recordingDot')), findsNothing);
+    expect(find.byKey(const ValueKey('chip.recordingDot')), findsNothing);
     expect(find.textContaining('●'), findsNothing);
   });
 
@@ -449,7 +463,7 @@ void main() {
 
     // Once: the Background services tile. The hero chip that repeated it was dropped (design
     // review 2026-09-27, BladeWatch-5l5o).
-    expect(find.text('0/0 Running'), findsOneWidget);
+    expect(find.text('0/0 RUNNING'), findsOneWidget);
     expect(find.text('2'), findsOneWidget); // trip stats tile still rendered fine
   });
 
@@ -477,7 +491,7 @@ void main() {
     await pumpDashboard(tester, buildController());
     await tester.pumpAndSettle();
 
-    expect(find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.text('Offline')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.text('OFFLINE')), findsOneWidget);
   });
 
   testWidgets('vehicle tile shows "Tap to set" with no nominal capacity', (tester) async {
@@ -546,41 +560,41 @@ void main() {
 
     testWidgets('reachable reads Online, with the status dot', (tester) async {
       await pumpWithPear(tester, {'running': true, 'reachable': true});
-      expect(inTile('Online'), findsOneWidget);
+      expect(inTile('ONLINE'), findsOneWidget);
       expect(dot, findsOneWidget);
     });
 
     testWidgets('running but unreachable reads Offline, no dot', (tester) async {
       await pumpWithPear(tester, {'running': true, 'reachable': false});
-      expect(inTile('Offline'), findsOneWidget);
+      expect(inTile('OFFLINE'), findsOneWidget);
       expect(dot, findsNothing);
     });
 
     testWidgets('unknown reachability reads Running, no dot', (tester) async {
       await pumpWithPear(tester, {'running': true, 'reachable': null});
-      expect(inTile('Running'), findsOneWidget);
+      expect(inTile('RUNNING'), findsOneWidget);
       expect(dot, findsNothing);
     });
 
     testWidgets('switched on but not up yet reads Starting', (tester) async {
       await pumpWithPear(tester, {'running': false, 'reachable': false});
-      expect(inTile('Starting'), findsOneWidget);
+      expect(inTile('STARTING'), findsOneWidget);
       expect(dot, findsNothing);
     });
 
     // BladeWatch-rdtj.21: on the head unit the tile said Online long after the car lost its network.
     testWidgets('the tile follows the car while the page stays open', (tester) async {
       await pumpWithPear(tester, {'running': true, 'reachable': true});
-      expect(inTile('Online'), findsOneWidget);
+      expect(inTile('ONLINE'), findsOneWidget);
 
       channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, 'running': true, 'reachable': false});
       await tester.pump(const Duration(seconds: 14));
       await tester.pumpAndSettle();
-      expect(inTile('Online'), findsOneWidget, reason: 'not yet: the page re-reads every 15 s');
+      expect(inTile('ONLINE'), findsOneWidget, reason: 'not yet: the page re-reads every 15 s');
 
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
-      expect(inTile('Offline'), findsOneWidget);
+      expect(inTile('OFFLINE'), findsOneWidget);
       expect(dot, findsNothing);
     });
   });
@@ -634,6 +648,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('vehicleDialog.model.seal')), findsOneWidget);
+      // BladeWatch-2llu.1: the dialog (root navigator) opts into the HUD theme and the single-choice chips follow it.
+      expect(Theme.of(tester.element(find.byType(AlertDialog))).extension<BwHud>(), same(BwHud.light));
     });
 
     testWidgets('no longer offers a capacity field or a reset action', (tester) async {
@@ -747,7 +763,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('今週'), findsOneWidget); // dashboard_trips_this_week
+    expect(find.textContaining('今週'), findsOneWidget); // dashboard_trips_this_week (+ the English HUD word)
   });
 
   // ── BladeWatch-ya6f: native layout parity ──────────────────────────────
@@ -771,16 +787,18 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('the hero card is filled with the primaryContainer role', (tester) async {
+    testWidgets('the hero is the HUD summary card: gradient fill, cyan-edged, 12 dp radius', (tester) async {
       stubHappyPath();
       await pumpHeadUnit(tester, buildController());
 
-      // It was rendered on the ordinary surface grey, leaving the screen with
-      // no focal point at all.
-      final heroCard = tester.widget<Card>(
-        find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(Card)).first,
+      // It was the filled primaryContainer role of the M3 look (BladeWatch-ya6f); the HUD skin
+      // (BladeWatch-8w4p) draws it as its own bordered panel.
+      final hero = tester.widget<HudPanel>(
+        find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel)).first,
       );
-      expect(heroCard.color, BladeWatchTheme.light().colorScheme.primaryContainer);
+      expect((hero.gradient! as LinearGradient).colors, BwHud.light.summaryGradient);
+      expect(hero.borderColor, BwHud.light.cardBorder);
+      expect(hero.radius, BwHud.radiusPanel);
     });
 
     testWidgets('the hero has no headline repeating its trip count and distance', (tester) async {
@@ -852,9 +870,410 @@ void main() {
       await pumpHeadUnit(tester, buildController());
 
       final hero = tester.getRect(
-        find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(Card)).first,
+        find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel)).first,
       );
       expect(hero.width, greaterThan(1920 * 0.8), reason: 'no empty column where the card used to be');
+    });
+  });
+
+  // ── BladeWatch-8w4p: the HUD skin ─────────────────────────────────────
+  group('HUD skin', () {
+    Future<void> pumpFull(WidgetTester tester, {ThemeData? theme, Map<String, Object?>? status, List<Map<String, Object?>>? trips}) async {
+      stubHappyPath();
+      if (status != null) rpc.stubJson('SystemService', 'GetStatus', status);
+      if (trips != null) rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': trips});
+      await pumpDashboard(tester, buildController(), theme: theme);
+      await tester.pumpAndSettle();
+    }
+
+    const phev = {
+      'recording': [1],
+      'soc': {'percent': 77},
+      'range': {'elecRangeKm': 81, 'fuelRangeKm': 351, 'fuelPercent': 30},
+      'distanceUnit': 'km',
+    };
+    final costed = [
+      {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780, 'tripCost': 150.0, 'fuelCost': 100.0, 'currency': 'PHP', 'hasFuelData': true},
+    ];
+
+    RichText richFor(WidgetTester tester, String plain) => tester.widget<RichText>(
+          find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText() == plain).first,
+        );
+    // Text.rich wraps the value span in one carrying the ambient style: the value's own span is its only child.
+    TextSpan spanOf(WidgetTester tester, String plain) => (richFor(tester, plain).text as TextSpan).children!.single as TextSpan;
+    TextStyle? valueStyle(WidgetTester tester, String plain) => spanOf(tester, plain).style;
+
+    group('title bar', () {
+      testWidgets('reads DASHBOARD // OVERVIEW, cyan with a glow in dark', (tester) async {
+        await pumpFull(tester, theme: BladeWatchTheme.dark());
+        final title = tester.widget<Text>(find.byKey(const ValueKey('dashboard.title')));
+        expect(title.data, 'DASHBOARD // OVERVIEW');
+        expect(title.style!.color, BwHud.dark.accent);
+        expect(title.style!.fontSize, 20);
+        expect(title.style!.fontWeight, FontWeight.w700);
+        expect(title.style!.fontFamily, BwHud.fontFamily);
+        expect(title.style!.shadows, [BwHud.dark.glowCyan]);
+      });
+
+      testWidgets('has no glow in light', (tester) async {
+        await pumpFull(tester);
+        final title = tester.widget<Text>(find.byKey(const ValueKey('dashboard.title')));
+        expect(title.style!.color, BwHud.light.accent);
+        expect(title.style!.shadows, isNull);
+      });
+
+      testWidgets('SECURE_LINK is OFFLINE with no remote access, and never claims ACTIVE', (tester) async {
+        await pumpFull(tester);
+        expect(find.byKey(const ValueKey('dashboard.secureLink')), findsOneWidget);
+        expect(find.text('SECURE_LINK: OFFLINE'), findsOneWidget);
+        expect(find.text('SECURE_LINK: ACTIVE'), findsNothing);
+      });
+
+      testWidgets('SECURE_LINK is OFFLINE while the peer runs but the car cannot be found', (tester) async {
+        channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, 'running': true, 'reachable': false});
+        await pumpFull(tester);
+        expect(find.text('SECURE_LINK: OFFLINE'), findsOneWidget);
+      });
+
+      testWidgets('SECURE_LINK is ACTIVE exactly when the Remote access tile says ONLINE', (tester) async {
+        channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, 'running': true, 'reachable': true});
+        await pumpFull(tester);
+        expect(find.text('SECURE_LINK: ACTIVE'), findsOneWidget);
+        expect(find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.text('ONLINE')), findsOneWidget);
+        final link = tester.widget<Text>(find.byKey(const ValueKey('dashboard.secureLink')));
+        expect(link.style!.color, BwHud.light.magenta);
+        expect(link.style!.fontSize, 12);
+      });
+
+      testWidgets('the title square is a pulsing 8 dp magenta block', (tester) async {
+        await pumpFull(tester);
+        final pulse = find.descendant(of: find.byType(HudPulse), matching: find.byType(Container));
+        expect(pulse, findsWidgets);
+        final square = tester.widget<Container>(pulse.first);
+        expect(square.color, BwHud.light.magenta);
+        expect(tester.getSize(pulse.first), const Size(8, 8));
+      });
+    });
+
+    group('summary card', () {
+      testWidgets('three columns of labels share left edges, on every row (PHEV)', (tester) async {
+        await pumpFull(tester, status: phev, trips: costed);
+        final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel)).first;
+        double left(String label) => tester.getTopLeft(find.descendant(of: card, matching: find.text(label))).dx;
+        expect({left('Trips'), left('Fuel Cost'), left('Battery')}, hasLength(1));
+        expect({left('Distance'), left('Electric Cost'), left('EV Range')}, hasLength(1));
+        expect({left('Drive Time'), left('Total Cost'), left('Fuel')}, hasLength(1));
+        expect(left('Distance'), greaterThan(left('Trips')));
+        expect(left('Drive Time'), greaterThan(left('Distance')));
+      });
+
+      testWidgets('Fuel and Fuel Range share the third column, Fuel Range right-aligned', (tester) async {
+        await pumpFull(tester, status: phev, trips: costed);
+        final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel)).first;
+        final cardRect = tester.getRect(card);
+        Rect rect(String label) => tester.getRect(find.descendant(of: card, matching: find.text(label)));
+        expect(rect('Fuel').left, lessThan(rect('Fuel Range').left));
+        expect(rect('Fuel').top, rect('Fuel Range').top, reason: 'side by side, one line');
+        // The content edge: 1 dp border + 24 dp padding.
+        expect(rect('Fuel Range').right, closeTo(cardRect.right - 25, 1));
+        expect(rect('Total Cost').left, rect('Fuel').left);
+      });
+
+      testWidgets('a BEV leaves the third column of the charge row empty', (tester) async {
+        await pumpFull(tester, status: {'soc': {'percent': 60}, 'range': {'elecRangeKm': 300}, 'distanceUnit': 'km'});
+        final energy = find.byKey(const ValueKey('tripStats.energy'));
+        expect(find.descendant(of: energy, matching: find.text('Battery')), findsOneWidget);
+        expect(find.descendant(of: energy, matching: find.text('EV Range')), findsOneWidget);
+        expect(find.descendant(of: energy, matching: find.text('Fuel')), findsNothing);
+        expect(find.descendant(of: energy, matching: find.text('Fuel Range')), findsNothing);
+      });
+
+      testWidgets('a distance draws its unit smaller, and the plain text is unchanged', (tester) async {
+        await pumpFull(tester, theme: BladeWatchTheme.dark());
+        final root = spanOf(tester, '12.2 km');
+        expect(root.toPlainText(), '12.2 km');
+        expect(root.children, hasLength(2));
+        expect((root.children![0] as TextSpan).text, '12.2 ');
+        final unit = root.children![1] as TextSpan;
+        expect(unit.text, 'km');
+        expect(unit.style!.fontSize, 18);
+        expect(unit.style!.fontWeight, FontWeight.w400);
+        expect(unit.style!.color, BwHud.dark.accentBright);
+        expect(root.style!.fontSize, 30);
+      });
+
+      testWidgets('a drive time is not split like a distance ("18m" has no unit span)', (tester) async {
+        await pumpFull(tester);
+        expect(spanOf(tester, '18m').children, isNull);
+        expect(spanOf(tester, '2').children, isNull);
+      });
+
+      testWidgets('dark: Trips and Distance glow cyan, Drive Time glows magenta and its label is magenta', (tester) async {
+        await pumpFull(tester, theme: BladeWatchTheme.dark(), status: phev, trips: costed);
+        expect(valueStyle(tester, '1')!.shadows, [BwHud.dark.glowCyan]);
+        expect(valueStyle(tester, '1')!.fontSize, 30);
+        expect(valueStyle(tester, '9.0 km')!.shadows, [BwHud.dark.glowCyan]);
+        expect(valueStyle(tester, '13m')!.shadows, [BwHud.dark.glowMagenta]);
+        expect(valueStyle(tester, '13m')!.color, BwHud.dark.driveTimeValue);
+        final driveLabel = tester.widget<Text>(find.text('Drive Time'));
+        expect(driveLabel.style!.color, BwHud.dark.magenta);
+        // Rows 2 and 3 are 24 dp and do not glow.
+        expect(valueStyle(tester, '77%')!.shadows, isNull);
+        expect(valueStyle(tester, '77%')!.fontSize, 24);
+        expect(valueStyle(tester, '77%')!.color, BwHud.dark.textPrimary);
+        // Labels are 12 dp, normal weight in dark.
+        final trips = tester.widget<Text>(find.text('Trips'));
+        expect(trips.style!.fontSize, 12);
+        expect(trips.style!.fontWeight, FontWeight.w400);
+        expect(trips.style!.color, BwHud.dark.statLabel);
+      });
+
+      testWidgets('light: nothing glows, labels are bold, Drive Time is magenta', (tester) async {
+        await pumpFull(tester, status: phev, trips: costed);
+        expect(valueStyle(tester, '1')!.shadows, isNull);
+        expect(valueStyle(tester, '13m')!.shadows, isNull);
+        expect(valueStyle(tester, '13m')!.color, BwHud.light.magenta);
+        expect(valueStyle(tester, '1')!.color, BwHud.light.textPrimary);
+        final trips = tester.widget<Text>(find.text('Trips'));
+        expect(trips.style!.fontWeight, FontWeight.w700);
+        expect(trips.style!.color, BwHud.light.statLabel);
+        expect(tester.widget<Text>(find.text('Drive Time')).style!.color, BwHud.light.magenta);
+      });
+
+      testWidgets('the header: microchip icon, THIS WEEK TELEMETRY, and a 48 dp View all target', (tester) async {
+        await pumpFull(tester);
+        expect(find.text('THIS WEEK TELEMETRY'), findsOneWidget);
+        final card = find.ancestor(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byType(HudPanel)).first;
+        final icon = tester.widget<Icon>(find.descendant(of: card, matching: find.byIcon(Icons.memory)));
+        expect(icon.size, 14);
+        expect(icon.color, BwHud.light.magenta);
+        expect(tester.getSize(find.byKey(const ValueKey('tripStats.viewAll'))).height, greaterThanOrEqualTo(48));
+        expect(find.descendant(of: find.byKey(const ValueKey('tripStats.viewAll')), matching: find.byIcon(Icons.chevron_right)), findsOneWidget);
+      });
+
+      testWidgets('with no rate the message replaces the cost row and the rows around it stay', (tester) async {
+        await pumpFull(tester, status: phev, trips: [
+          {'id': '1', 'distanceKm': 9.0, 'durationSeconds': 780},
+        ]);
+        expect(find.byKey(const ValueKey('tripStats.costs')), findsNothing);
+        expect(find.byKey(const ValueKey('tripStats.costs.message')), findsOneWidget);
+        expect(find.byKey(const ValueKey('tripStats.energy')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    });
+
+    group('chips', () {
+      testWidgets('the recording chip shows a pulsing dot only while recording', (tester) async {
+        await pumpFull(tester);
+        final chip = find.byKey(const ValueKey('chip.recording'));
+        expect(find.descendant(of: chip, matching: find.text('RECORDING')), findsOneWidget);
+        expect(find.descendant(of: chip, matching: find.byKey(const ValueKey('chip.recordingDot'))), findsOneWidget);
+        expect(find.descendant(of: chip, matching: find.byType(HudPulse)), findsOneWidget);
+      });
+
+      testWidgets('idle: the chip reads IDLE, with no dot', (tester) async {
+        stubHappyPath();
+        rpc.stubJson('SystemService', 'GetStatus', {'deviceId': 'byd-test', 'recording': []});
+        await pumpDashboard(tester, buildController());
+        await tester.pumpAndSettle();
+        final chip = find.byKey(const ValueKey('chip.recording'));
+        expect(find.descendant(of: chip, matching: find.text('IDLE')), findsOneWidget);
+        expect(find.descendant(of: chip, matching: find.byType(HudPulse)), findsNothing);
+      });
+
+      testWidgets('chips are 4 dp boxes with the chip border, 12 dp bold uppercase, and are not buttons', (tester) async {
+        await pumpFull(tester, theme: BladeWatchTheme.dark());
+        final gear = find.byKey(const ValueKey('chip.gear'));
+        final panel = tester.widget<HudPanel>(find.descendant(of: gear, matching: find.byType(HudPanel)));
+        expect(panel.color, BwHud.dark.panel);
+        expect(panel.borderColor, BwHud.dark.chipBorder);
+        expect(panel.radius, 4);
+        final text = tester.widget<Text>(find.descendant(of: gear, matching: find.byType(Text)));
+        expect(text.style!.fontSize, 12);
+        expect(text.style!.fontWeight, FontWeight.w700);
+        expect(text.style!.color, BwHud.dark.textSecondary);
+        expect(find.descendant(of: gear, matching: find.byType(InkWell)), findsNothing);
+        expect(find.descendant(of: gear, matching: find.byType(ButtonStyleButton)), findsNothing);
+        // The live recording chip has the brighter border and text.
+        final rec = tester.widget<HudPanel>(find.descendant(of: find.byKey(const ValueKey('chip.recording')), matching: find.byType(HudPanel)));
+        expect(rec.borderColor, BwHud.dark.panelBorderStrong);
+      });
+
+      testWidgets('Pair a device keeps its key and action, restyled magenta', (tester) async {
+        final pairing = FakePlatformChannel()
+          ..stub('pairing', 'mint', {'payload': 'qr-text', 'expiresAt': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch})
+          ..stub('pairing', 'list', {'companions': []});
+        stubHappyPath();
+        await pumpDashboard(tester, buildController(), pairing: PairingChannel(pairing));
+        await tester.pumpAndSettle();
+        final button = find.byKey(const ValueKey('dashboard.pair'));
+        expect(find.descendant(of: button, matching: find.text('PAIR A DEVICE')), findsOneWidget);
+        expect(find.descendant(of: button, matching: find.byIcon(Icons.qr_code_2)), findsOneWidget);
+        final style = tester.widget<FilledButton>(button).style!;
+        expect(style.foregroundColor!.resolve({}), BwHud.light.magenta);
+        expect(style.side!.resolve({})!.color, BwHud.light.magentaBorder);
+      });
+    });
+
+    group('tiles', () {
+      const keys = [
+        ValueKey('tile.recordings'),
+        ValueKey('tile.tunnel'),
+        ValueKey('tile.daemons'),
+        ValueKey('quickAction.live'),
+        ValueKey('tile.vehicle'),
+      ];
+
+      testWidgets('every tile is 112 dp tall with a 4 dp radius and the tile border', (tester) async {
+        await pumpFull(tester, theme: BladeWatchTheme.dark());
+        for (final k in keys) {
+          expect(tester.getSize(find.byKey(k)).height, 112, reason: '$k');
+          final panel = tester.widget<HudPanel>(find.descendant(of: find.byKey(k), matching: find.byType(HudPanel)).first);
+          expect(panel.borderColor, BwHud.dark.panelBorder);
+          expect(panel.radius, 4);
+          expect(panel.color, BwHud.dark.panel);
+        }
+      });
+
+      testWidgets('labels are 10 dp uppercase; values are 20 dp bold uppercase', (tester) async {
+        await pumpFull(tester, theme: BladeWatchTheme.dark());
+        final label = tester.widget<Text>(find.descendant(of: find.byKey(const ValueKey('tile.daemons')), matching: find.text('BACKGROUND SERVICES')));
+        expect(label.style!.fontSize, 10);
+        expect(label.style!.color, BwHud.dark.tileLabel);
+        final value = tester.widget<Text>(find.descendant(of: find.byKey(const ValueKey('tile.daemons')), matching: find.text('2/4 RUNNING')));
+        expect(value.style!.fontSize, 20);
+        expect(value.style!.fontWeight, FontWeight.w700);
+        expect(find.descendant(of: find.byKey(const ValueKey('tile.recordings')), matching: find.text("TODAY'S RECORDINGS")), findsOneWidget);
+      });
+
+      testWidgets('the vehicle model is 12 dp and keeps its own casing', (tester) async {
+        await pumpFull(tester);
+        final value = tester.widget<Text>(find.descendant(of: find.byKey(const ValueKey('tile.vehicle')), matching: find.text('BYD Seal')));
+        expect(value.style!.fontSize, 12);
+        expect(value.style!.fontWeight, FontWeight.w700);
+      });
+
+      testWidgets('dark: LIVE is white with a magenta glow over a magenta icon; ONLINE glows cyan', (tester) async {
+        channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, 'running': true, 'reachable': true});
+        await pumpFull(tester, theme: BladeWatchTheme.dark());
+        final live = find.byKey(const ValueKey('quickAction.live'));
+        final liveValue = tester.widget<Text>(find.descendant(of: live, matching: find.text('LIVE')));
+        expect(liveValue.style!.color, BwHud.dark.liveValue);
+        expect(liveValue.style!.shadows, [BwHud.dark.glowMagenta]);
+        expect(tester.widget<Icon>(find.descendant(of: live, matching: find.byType(Icon))).color, BwHud.dark.magenta);
+        final online = tester.widget<Text>(find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.text('ONLINE')));
+        expect(online.style!.shadows, [BwHud.dark.glowCyan]);
+      });
+
+      testWidgets('light: LIVE is magenta and ONLINE cyan-700, neither glowing', (tester) async {
+        channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, 'running': true, 'reachable': true});
+        await pumpFull(tester);
+        final liveValue = tester.widget<Text>(find.descendant(of: find.byKey(const ValueKey('quickAction.live')), matching: find.text('LIVE')));
+        expect(liveValue.style!.color, BwHud.light.magenta);
+        expect(liveValue.style!.shadows, isNull);
+        final online = tester.widget<Text>(find.descendant(of: find.byKey(const ValueKey('tile.tunnel')), matching: find.text('ONLINE')));
+        expect(online.style!.color, BwHud.light.onlineValue);
+        expect(online.style!.shadows, isNull);
+      });
+
+      testWidgets('the remote status dot glows and is 10 dp; absent when offline', (tester) async {
+        channel.stub('daemon', 'pearStatus', {'status': 'ok', 'enabled': true, 'running': true, 'reachable': true});
+        await pumpFull(tester, theme: BladeWatchTheme.dark());
+        final dot = find.byKey(const ValueKey('tile.statusDot'));
+        expect(tester.getSize(dot), const Size(10, 10));
+        final deco = tester.widget<Container>(dot).decoration! as BoxDecoration;
+        expect(deco.color, BwHud.dark.dot);
+        expect(deco.boxShadow!.single.color, BwHud.dark.dotGlow);
+      });
+    });
+
+    group('appearance switch', () {
+      testWidgets('dark to light restyles the open Dashboard and moves nothing', (tester) async {
+        stubHappyPath();
+        rpc.stubJson('SystemService', 'GetStatus', {...phev, 'deviceId': 'byd-test'});
+        rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': costed});
+        final controller = buildController();
+        await pumpDashboard(tester, controller, theme: BladeWatchTheme.dark());
+        await tester.pumpAndSettle();
+
+        final watched = [
+          find.byKey(const ValueKey('dashboard.title')),
+          find.byKey(const ValueKey('tripStats.energy')),
+          find.byKey(const ValueKey('chip.gear')),
+          find.byKey(const ValueKey('tile.recordings')),
+          find.byKey(const ValueKey('tile.vehicle')),
+        ];
+        final before = [for (final f in watched) tester.getRect(f)];
+        Color? scaffold() => tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor;
+        expect(scaffold(), BwHud.dark.pageBackground);
+        expect(valueStyle(tester, '13m')!.shadows, [BwHud.dark.glowMagenta]);
+
+        // The SAME controller and tree, only the theme changes (Settings > Appearance).
+        await tester.pumpWidget(wrap(controller, theme: BladeWatchTheme.light()));
+        await tester.pumpAndSettle();
+
+        expect(scaffold(), BwHud.light.pageBackground);
+        expect(valueStyle(tester, '13m')!.shadows, isNull);
+        expect(valueStyle(tester, '13m')!.color, BwHud.light.magenta);
+        expect([for (final f in watched) tester.getRect(f)], before, reason: 'no layout shift');
+        expect(tester.takeException(), isNull);
+      });
+    });
+
+    group('layout', () {
+      Future<void> pumpAt(WidgetTester tester, Size size) async {
+        stubHappyPath();
+        rpc.stubJson('SystemService', 'GetStatus', {...phev, 'deviceId': 'byd-test'});
+        rpc.stubJson('TripsService', 'ListTrips', {'success': true, 'trips': costed});
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        await tester.pumpWidget(wrap(buildController()));
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('head unit landscape (the page beside the 80 dp rail): no overflow, one row of five tiles', (tester) async {
+        await pumpAt(tester, const Size(1200, 604));
+        expect(tester.takeException(), isNull);
+        final tops = {for (final k in ['tile.recordings', 'tile.tunnel', 'tile.daemons', 'quickAction.live', 'tile.vehicle']) tester.getTopLeft(find.byKey(ValueKey(k))).dy};
+        expect(tops, hasLength(1));
+      });
+
+      testWidgets('blocks run title, card, chips, tiles down the page', (tester) async {
+        await pumpAt(tester, const Size(1200, 900));
+        final title = tester.getRect(find.byKey(const ValueKey('dashboard.title'))).top;
+        final card = tester.getRect(find.byKey(const ValueKey('tripStats.energy'))).top;
+        final chip = tester.getRect(find.byKey(const ValueKey('chip.gear'))).top;
+        final tile = tester.getRect(find.byKey(const ValueKey('tile.recordings'))).top;
+        expect(title, lessThan(card));
+        expect(card, lessThan(chip));
+        expect(chip, lessThan(tile));
+      });
+
+      testWidgets('a tall window spreads the blocks: the tiles sit at the bottom edge', (tester) async {
+        await pumpAt(tester, const Size(1200, 1100));
+        final tiles = tester.getRect(find.byKey(const ValueKey('tile.recordings')));
+        expect(tiles.bottom, closeTo(1100 - 24, 1), reason: 'the reference spreads with justify-between');
+      });
+
+      testWidgets('a short window scrolls instead of overflowing', (tester) async {
+        await pumpAt(tester, const Size(1200, 300));
+        expect(tester.takeException(), isNull);
+        expect(tester.state<ScrollableState>(find.byType(Scrollable).first).position.maxScrollExtent, greaterThan(0));
+      });
+
+      testWidgets('portrait 720x1280: no overflow, tiles wrap two to a row', (tester) async {
+        await pumpAt(tester, const Size(720, 1280));
+        expect(tester.takeException(), isNull);
+        final recordings = tester.getTopLeft(find.byKey(const ValueKey('tile.recordings')));
+        final tunnel = tester.getTopLeft(find.byKey(const ValueKey('tile.tunnel')));
+        final daemons = tester.getTopLeft(find.byKey(const ValueKey('tile.daemons')));
+        expect(tunnel.dy, recordings.dy, reason: 'two to a row');
+        expect(daemons.dy, greaterThan(recordings.dy));
+      });
     });
   });
 }

@@ -4,11 +4,13 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_page.dart';
 import '../../i18n.dart';
 import '../common/format.dart';
+import '../common/hud_style.dart';
 import '../common/loader.dart';
 
 /// The web diagnostics page's counterpart: network, storage, camera and battery health, and the
@@ -49,7 +51,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> with LoadersState
         content: Text(tr('companion.reset_soh_hint')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('common.cancel'))),
-          FilledButton(key: const ValueKey('diag.resetConfirm'), onPressed: () => Navigator.pop(context, true), child: Text(tr('diagnostics.reset_soh'))),
+          FilledButton(
+            key: const ValueKey('diag.resetConfirm'),
+            style: destructiveStyle(context),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(tr('diagnostics.reset_soh')),
+          ),
         ],
       ),
     );
@@ -75,7 +82,9 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> with LoadersState
             InfoRow(tr('companion.net_type'), n.type.isEmpty ? '—' : n.type),
             if (n.ssid.isNotEmpty) InfoRow('Wi-Fi', n.ssid),
             if (n.ip.isNotEmpty) InfoRow('IP', n.ip),
-            InfoRow(tr('companion.lan_access'), tr(n.lanHttpEnabled ? 'status.on' : 'status.off')),
+            // A dot is the state itself: on is cyan, off is a grey one, never a coloured claim.
+            InfoRow(tr('companion.lan_access'), tr(n.lanHttpEnabled ? 'status.on' : 'status.off'),
+                leading: HudStatusDot(n.lanHttpEnabled ? HudDotState.ok : HudDotState.idle)),
           ]),
           Section(title: tr('diagnostics.storage'), children: [
             // A forced break before the "/ total" half, not the greedy wrap InfoRow's own Text
@@ -83,11 +92,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> with LoadersState
             // (BladeWatch-rdtj.72.3). Both formatted strings already carry their own unit.
             InfoRow(tr('settings.internal_free'), '${st.internalFreeFormatted}\n/ ${st.internalTotalFormatted}'),
             if (st.sdCardAvailable) InfoRow(tr('settings.sd_card_free'), '${st.sdCardFreeFormatted}\n/ ${st.sdCardTotalFormatted}'),
-            if (st.sdCardMountFailed) InfoRow(tr('settings.sd_card'), st.sdCardMountError),
+            if (st.sdCardMountFailed) InfoRow(tr('settings.sd_card'), st.sdCardMountError, leading: const HudStatusDot(HudDotState.bad)),
             InfoRow(tr('settings.recordings'), Fmt.bytes((st.recordingsSizeBytes + st.surveillanceSizeBytes).toInt())),
           ]),
           Section(title: tr('diagnostics.camera'), children: [
-            InfoRow(tr('companion.pipeline'), tr(rec.pipelineRunning ? 'status.on' : 'status.off')),
+            InfoRow(tr('companion.pipeline'), tr(rec.pipelineRunning ? 'status.on' : 'status.off'),
+                leading: HudStatusDot(rec.pipelineRunning ? HudDotState.ok : HudDotState.idle)),
             InfoRow(tr('companion.cameras_available'), v.status.available.isEmpty ? '—' : v.status.available.join(', ')),
             const SizedBox(height: 8),
             Text(tr('diagnostics.camera_probe_desc')),

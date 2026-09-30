@@ -9,6 +9,7 @@ import '../../gen/l10n/app_localizations.dart';
 import 'settings_daemons_controller.dart';
 import '../../platform/daemon_channel.dart';
 import 'settings_daemons_models.dart';
+import '../../widgets/hud_widgets.dart';
 
 /// Ground truth: `DaemonsFragment.kt` + `DaemonAdapter.kt`, reduced to what
 /// `daemon.processStatus` can report — see the controller's doc comment for
@@ -132,14 +133,14 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
     final c = widget.controller;
 
     if (c.loading) {
-      return Center(child: Text(l10n.daemons_count_pending));
+      return HudLoading(label: l10n.daemons_count_pending);
     }
 
     final running = c.rows.where((r) => r.running).length;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(l10n.daemons_hero_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.daemons_hero_title),
         Text(l10n.daemons_count_fmt(running, c.rows.length), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 12),
         for (final row in c.rows)
@@ -157,21 +158,24 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
                 : row.pending
                     ? _warningColor(theme)
                     : theme.colorScheme.onSurfaceVariant;
-            final dotColor = row.running
-                ? _successColor(theme)
+            // Real state, three ways: up, starting (enabled, not up yet), stopped.
+            final dotState = row.running
+                ? HudDotState.ok
                 : row.pending
-                    ? _warningColor(theme)
-                    : theme.colorScheme.outlineVariant;
+                    ? HudDotState.warning
+                    : HudDotState.idle;
 
             return Card(
               key: ValueKey('daemon.${row.kind.name}'),
+              // The HUD Card has no margin of its own: space the rows by hand.
+              margin: const EdgeInsets.only(bottom: 8),
               color: theme.colorScheme.surfaceContainer,
               elevation: 0,
               child: ListTile(
                 leading: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.circle, size: 12, color: dotColor),
+                    HudStatusDot(dotState, size: 10),
                     const SizedBox(width: 12),
                     Icon(_daemonIcon(row.kind)),
                   ],
@@ -250,7 +254,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
       body = '${l10n.toast_log_not_found}\n$path';
     }
     if (!context.mounted) return;
-    await showDialog<void>(
+    await showHudDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         key: const ValueKey('daemon.logDialog'),
@@ -258,7 +262,7 @@ class _SettingsDaemonsScreenState extends State<SettingsDaemonsScreen> {
         content: SizedBox(
           width: 900,
           child: SingleChildScrollView(
-            child: SelectableText(body, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+            child: SelectableText(body, style: Theme.of(dialogContext).textTheme.bodySmall),
           ),
         ),
         actions: [

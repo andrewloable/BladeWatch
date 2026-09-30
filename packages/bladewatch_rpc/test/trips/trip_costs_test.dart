@@ -25,6 +25,26 @@ void main() {
       expect((c.mixedCurrencies, c.costed, c.total), (true, false, 0.0));
     });
 
+    // BladeWatch-gzbo: the picker stores a currency SYMBOL now; trips priced before hold the ISO code.
+    test('a code and the symbol it stands for are one currency', () {
+      final c = TripCosts.of([trip(cost: 10, currency: 'PHP'), trip(cost: 5, currency: '\u20B1')]);
+      expect((c.mixedCurrencies, c.costed, c.total), (false, true, 15.0));
+      expect(c.currency, 'PHP', reason: 'the first trip\'s own string, so an all-code week is unchanged');
+
+      final reversed = TripCosts.of([trip(cost: 5, currency: '\u20B1'), trip(cost: 10, currency: 'php')]);
+      expect((reversed.mixedCurrencies, reversed.total, reversed.currency), (false, 15.0, '\u20B1'));
+    });
+
+    test('different currencies stay mixed even when one is a symbol', () {
+      expect(TripCosts.of([trip(cost: 10, currency: 'PHP'), trip(cost: 5, currency: '\u20AC')]).mixedCurrencies, isTrue);
+      expect(TripCosts.of([trip(cost: 10, currency: 'PHP'), trip(cost: 5, currency: 'USD')]).mixedCurrencies, isTrue);
+    });
+
+    test('an unknown legacy value is its own currency', () {
+      expect(TripCosts.of([trip(cost: 10, currency: 'Rs.'), trip(cost: 5, currency: 'Rs.')]).mixedCurrencies, isFalse);
+      expect(TripCosts.of([trip(cost: 10, currency: 'Rs.'), trip(cost: 5, currency: 'Rs')]).mixedCurrencies, isTrue);
+    });
+
     test('nothing costed: no currency, and still knows about fuel', () {
       final c = TripCosts.of([trip(hasFuel: true), trip()]);
       expect((c.costed, c.currency, c.hasFuel), (false, '', true));

@@ -2100,5 +2100,13 @@
   "auto_hold_enabled": "On",
   "@auto_hold_enabled": {},
   "auto_hold_active": "Holding",
-  "@auto_hold_active": {}
+  "@auto_hold_active": {},
+  "dashboard_hud_overview": "Overview",
+  "@dashboard_hud_overview": {"description": "HUD dashboard title suffix, shown after the rail label as DASHBOARD // OVERVIEW (uppercased by the screen)."},
+  "dashboard_hud_telemetry": "Telemetry",
+  "@dashboard_hud_telemetry": {"description": "Appended to the summary card label, shown as THIS WEEK TELEMETRY (uppercased by the screen)."},
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "@dashboard_hud_link_active": {"description": "HUD dashboard title bar, shown only while remote access is online (already uppercase, not transformed)."},
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE",
+  "@dashboard_hud_link_offline": {"description": "HUD dashboard title bar, shown while remote access is off, starting or unreachable (already uppercase, not transformed)."}
 }

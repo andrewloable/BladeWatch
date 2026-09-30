@@ -5137,6 +5137,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Holding'**
   String get auto_hold_active;
+
+  /// HUD dashboard title suffix, shown after the rail label as DASHBOARD // OVERVIEW (uppercased by the screen).
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get dashboard_hud_overview;
+
+  /// Appended to the summary card label, shown as THIS WEEK TELEMETRY (uppercased by the screen).
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry'**
+  String get dashboard_hud_telemetry;
+
+  /// HUD dashboard title bar, shown only while remote access is online (already uppercase, not transformed).
+  ///
+  /// In en, this message translates to:
+  /// **'SECURE_LINK: ACTIVE'**
+  String get dashboard_hud_link_active;
+
+  /// HUD dashboard title bar, shown while remote access is off, starting or unreachable (already uppercase, not transformed).
+  ///
+  /// In en, this message translates to:
+  /// **'SECURE_LINK: OFFLINE'**
+  String get dashboard_hud_link_offline;
 }
 
 class _AppLocalizationsDelegate

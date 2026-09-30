@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
+import 'package:bladewatch_theme/dimens_tokens.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../car/car_page.dart';
 import '../../i18n.dart';
 import '../common/format.dart';
+import '../common/hud_style.dart';
 import '../common/loader.dart';
 import 'clip_pages.dart';
 
@@ -95,7 +99,12 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
         content: Text(tr('companion.delete_selected_confirm', {'count': names.length})),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('common.cancel'))),
-          FilledButton(key: const ValueKey('delete.confirm'), onPressed: () => Navigator.pop(context, true), child: Text(tr('common.delete'))),
+          FilledButton(
+            key: const ValueKey('delete.confirm'),
+            style: destructiveStyle(context),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(tr('common.delete')),
+          ),
         ],
       ),
     );
@@ -148,7 +157,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
           ],
         );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.zero,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         row(tr('companion.filter_who'), actors, _actors),
         row(tr('companion.filter_severity'), severities, _severities),
@@ -184,6 +193,7 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
       ),
       FilledButton.tonal(
         key: const ValueKey('rec.delete_picked'),
+        style: destructiveStyle(context),
         onPressed: picked.isEmpty ? null : _deletePicked,
         child: Text(tr('common.delete')),
       ),
@@ -216,7 +226,12 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
         content: Text(tr('events.confirm_delete_one', {'filename': clip.filename})),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('common.cancel'))),
-          FilledButton(key: const ValueKey('delete.confirm'), onPressed: () => Navigator.pop(context, true), child: Text(tr('common.delete'))),
+          FilledButton(
+            key: const ValueKey('delete.confirm'),
+            style: destructiveStyle(context),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(tr('common.delete')),
+          ),
         ],
       ),
     );
@@ -238,18 +253,21 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
     final next = _step(1);
     return Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
       ChoiceChip(
+        showCheckmark: false,
         key: const ValueKey('rec.day.today'),
         label: Text(tr('recording.today')),
         selected: day == _todayKey,
         onSelected: (_) => _filter(day: _todayKey),
       ),
       ChoiceChip(
+        showCheckmark: false,
         key: const ValueKey('rec.day.yesterday'),
         label: Text(tr('recording.yesterday')),
         selected: day == _yesterdayKey,
         onSelected: (_) => _filter(day: _yesterdayKey),
       ),
       ChoiceChip(
+        showCheckmark: false,
         key: const ValueKey('rec.day.all'),
         label: Text(tr('events.all')),
         selected: day == null,
@@ -279,7 +297,8 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
     final tr = context.tr;
     final labels = [tr('events.all'), tr('events.badge_normal'), tr('events.badge_sentry'), tr('events.badge_proximity')];
     // Rows as wide as the page's content, not the window (BladeWatch-rdtj.56).
-    return ContentWidth(child: Column(children: [
+    final hud = BwHud.of(context);
+    return Padding(padding: const EdgeInsets.symmetric(horizontal: BwDimens.pagePaddingHorizontal), child: ContentWidth(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       ListenableBuilder(
         listenable: _stats,
         builder: (context, _) {
@@ -287,20 +306,22 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
           return s == null
               ? const SizedBox.shrink()
               : Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     '${tr('events.video_count.other', {'count': s.totalCount})} · ${Fmt.bytes(s.totalSizeBytes.toInt())}',
                     key: const ValueKey('rec.stats'),
+                    style: hudText(12, hud.textSecondary, lineHeight: 16, em: 0.05),
                   ),
                 );
         },
       ),
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Wrap(spacing: 8, children: [
           for (var i = 0; i < RecordingsScreen.types.length; i++)
             ChoiceChip(
+              showCheckmark: false,
               key: ValueKey('rec.type.${RecordingsScreen.types[i]}'),
               label: Text(labels[i]),
               selected: _type == RecordingsScreen.types[i],
@@ -308,15 +329,9 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
             ),
         ]),
       ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: ListenableBuilder(listenable: _dates, builder: (context, _) => _days(context)),
-      ),
+      ListenableBuilder(listenable: _dates, builder: (context, _) => _days(context)),
       if (_type == 'sentry') _filters(context),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: ListenableBuilder(listenable: _pages, builder: (context, _) => _pages.clips.isEmpty && _picked == null ? const SizedBox.shrink() : _selectBar(context)),
-      ),
+      ListenableBuilder(listenable: _pages, builder: (context, _) => _pages.clips.isEmpty && _picked == null ? const SizedBox.shrink() : _selectBar(context)),
       Expanded(
         child: ClipPageList(
           pages: _pages,
@@ -325,6 +340,6 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
           onToggle: (name, on) => setState(() => on ? _picked!.add(name) : _picked!.remove(name)),
         ),
       ),
-    ]));
+    ])));
   }
 }

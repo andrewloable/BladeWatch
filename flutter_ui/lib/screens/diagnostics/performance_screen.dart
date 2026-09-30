@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../widgets/hud_widgets.dart';
 import 'performance_controller.dart';
 import 'performance_models.dart';
 
@@ -60,7 +61,7 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(),
+            const HudLoading(),
             const SizedBox(height: 16),
             Text(l10n.performance_connecting),
           ],
@@ -73,7 +74,7 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
       key: const ValueKey('perf.ready'),
       padding: const EdgeInsets.all(16),
       children: [
-        Text(l10n.performance_hero_title, style: theme.textTheme.titleLarge),
+        Text(l10n.performance_hero_title, style: theme.textTheme.titleMedium),
         const SizedBox(height: 12),
         if (snapshot.cpu != null) _cpuCard(theme, l10n, snapshot.cpu!),
         if (snapshot.memory != null) _memoryCard(theme, l10n, snapshot.memory!),
@@ -122,7 +123,7 @@ class _PerformanceScreenState extends State<PerformanceScreen> {
           ]),
           const SizedBox(height: 4),
           ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
               value: (percent / 100).clamp(0.0, 1.0),
               minHeight: 6,

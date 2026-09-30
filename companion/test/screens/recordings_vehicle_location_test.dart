@@ -8,6 +8,8 @@ import 'package:bladewatch_companion/screens/recordings/recordings_screen.dart';
 import 'package:bladewatch_companion/screens/vehicle/vehicle_screen.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +20,8 @@ Map<String, dynamic> clip(String name, {String type = 'RECORDING_TYPE_NORMAL'}) 
     {'filename': name, 'type': type, 'timestamp': '1700000000000', 'size': '2048', 'durationSeconds': '60'};
 
 void main() {
+  hudTestEnvironment();
+
   group('RecordingsScreen', () {
     testWidgets('lists every clip with totals, filters by type, deletes after confirming', (tester) async {
       final s = TestSession();
@@ -55,12 +59,32 @@ void main() {
       await unmount(tester);
     });
 
+    testWidgets('HUD: clips are rows, a ticked one is the accent row, delete is magenta, single choices have no check mark', (tester) async {
+      final s = TestSession();
+      s.rpc.stubJson('RecordingsService', 'GetStats', {'stats': {'totalCount': 2, 'totalSizeBytes': '4096'}});
+      s.rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': [clip('a.mp4'), clip('b.mp4')]});
+      await pumpScreen(tester, s, const RecordingsScreen());
+      HudListRow row(String name) => tester.widget<HudListRow>(find.byKey(ValueKey('clip.$name')));
+      expect(row('a.mp4').selected, isFalse);
+      expect(tester.widget<IconButton>(find.byKey(const ValueKey('clip.delete.a.mp4'))).color, BwHud.light.magenta);
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('rec.type.sentry'))).showCheckmark, isFalse);
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('rec.day.today'))).showCheckmark, isFalse);
+
+      await tester.tap(find.byKey(const ValueKey('rec.select')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('clip.a.mp4')));
+      await tester.pump();
+      expect(row('a.mp4').selected, isTrue, reason: 'a ticked clip is the accent-bordered row');
+      expect(row('b.mp4').selected, isFalse);
+      await unmount(tester);
+    });
+
     testWidgets('an empty library says so', (tester) async {
       final s = TestSession();
       s.rpc.stubError('RecordingsService', 'GetStats', const ConnectError('unavailable', 'x'));
       s.rpc.stubJson('RecordingsService', 'ListRecordings', {'recordings': []});
       await pumpScreen(tester, s, const RecordingsScreen());
-      expect(find.text(t('events.empty_none_title')), findsOneWidget);
+      expect(find.text(t('events.empty_none_title').toUpperCase()), findsOneWidget);
       await unmount(tester);
     });
   });
@@ -81,6 +105,14 @@ void main() {
       await pumpScreen(tester, s, ClipThumb('gone.mp4', fetch: (_, _) async => MediaResponse(404, Uint8List(0))));
       await tester.pump();
       expect(find.byIcon(Icons.videocam_off_outlined), findsOneWidget);
+    });
+
+    testWidgets('HUD: the player has a title bar with the way back, and the download is its action', (tester) async {
+      final s = TestSession();
+      await pumpScreen(tester, s, const ClipPlayerScreen(filename: 'event_20260927_111206.mp4', canPlay: false));
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.byKey(const ValueKey('player.title'))), findsOneWidget);
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.byKey(const ValueKey('player.save'))), findsOneWidget);
+      expect(find.byKey(const ValueKey('hud.back')), findsOneWidget);
     });
 
     testWidgets('the player says so where it cannot play, and saves the clip instead', (tester) async {
@@ -198,6 +230,17 @@ void main() {
       expect(find.byKey(const ValueKey('seat.driver-heat')), findsNothing, reason: 'seat control was removed');
 
       expect(s.rpc.calls.where((c) => c.method == 'IssueActionToken'), hasLength(1), reason: 'one token for its lifetime');
+      await unmount(tester);
+    });
+
+    testWidgets('HUD: a tyre dot is what the car reports (magenta on a leak), window presets have no check mark', (tester) async {
+      final s = TestSession();
+      state(s);
+      await pumpScreen(tester, s, const VehicleScreen(), size: const Size(420, 2400));
+      final dots = tester.widgetList<HudStatusDot>(find.byType(HudStatusDot)).map((d) => d.state).toList();
+      expect(dots, contains(HudDotState.bad), reason: 'the fixture has a tyre leak');
+      expect(dots, contains(HudDotState.ok), reason: 'and tyres that report none');
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('window.1.50'))).showCheckmark, isFalse);
       await unmount(tester);
     });
 
@@ -410,11 +453,23 @@ void main() {
       await unmount(tester);
     });
 
+    testWidgets('HUD: the map is in a 4 dp frame, the position is a row with the copy action', (tester) async {
+      final s = TestSession();
+      s.rpc.stubJson('VehicleService', 'GetGpsLocation', {
+        'locationJson': '{"lat":14.5,"lng":121.0}',
+        'googleMapsUrl': 'https://maps.example/x',
+      });
+      await pumpScreen(tester, s, const LocationScreen(), size: const Size(1200, 900));
+      expect(find.descendant(of: find.byType(CarMap), matching: find.byType(HudPanel)), findsOneWidget);
+      expect(find.descendant(of: find.byType(HudListRow), matching: find.byKey(const ValueKey('location.copy'))), findsOneWidget);
+      await unmount(tester);
+    });
+
     testWidgets('no fix says so', (tester) async {
       final s = TestSession();
       s.rpc.stubJson('VehicleService', 'GetGpsLocation', {'locationJson': ''});
       await pumpScreen(tester, s, const LocationScreen());
-      expect(find.text(t('vehicle.no_gps_fix')), findsOneWidget);
+      expect(find.text(t('vehicle.no_gps_fix').toUpperCase()), findsOneWidget);
       await unmount(tester);
     });
   });

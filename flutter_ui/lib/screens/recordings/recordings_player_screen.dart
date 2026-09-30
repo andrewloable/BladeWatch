@@ -5,6 +5,8 @@ import 'package:video_player/video_player.dart';
 
 import '../../gen/l10n/app_localizations.dart';
 import 'package:bladewatch_rpc/rpc/jwt_source.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 import 'recordings_media_urls.dart';
 import 'recordings_player_controller.dart';
 
@@ -163,7 +165,7 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
             child: Center(
               child: video != null && video.value.isInitialized
                   ? AspectRatio(aspectRatio: video.value.aspectRatio, child: VideoPlayer(video))
-                  : const CircularProgressIndicator(),
+                  : const HudLoading(),
             ),
           ),
           if (_overlayVisible) _buildTopBar(context, l10n, c),
@@ -174,12 +176,17 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
   }
 
   Widget _buildTopBar(BuildContext context, AppLocalizations l10n, RecordingsPlayerController c) {
+    final hud = BwHud.of(context);
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
       child: Container(
-        color: Colors.black54,
+        // A scrim over the picture: the HUD page colour at 80%, ruled like a title bar.
+        decoration: BoxDecoration(
+          color: hud.pageBackground.withValues(alpha: 0.8),
+          border: Border(bottom: BorderSide(color: hud.titleRule)),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: SafeArea(
           bottom: false,
@@ -187,18 +194,18 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
             children: [
               IconButton(
                 key: const ValueKey('recordings.player.back'),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back, color: hud.accent),
                 tooltip: l10n.cd_back,
                 onPressed: widget.onClose ?? () => Navigator.of(context).maybePop(),
               ),
               Expanded(
                 child: Text(
                   c.current.filename.isEmpty ? l10n.player_title_recording : c.current.filename,
-                  style: const TextStyle(color: Colors.white),
+                  style: hudText(14, hud.textPrimary, lineHeight: 20, weight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(c.current.formattedSize, style: const TextStyle(color: Colors.white70)),
+              Text(c.current.formattedSize, style: hudText(12, hud.textSecondary, lineHeight: 16)),
             ],
           ),
         ),
@@ -212,6 +219,7 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
     RecordingsPlayerController c,
     VideoPlayerController? video,
   ) {
+    final hud = BwHud.of(context);
     final position = video?.value.position ?? Duration.zero;
     final duration = (video?.value.duration ?? Duration.zero) > Duration.zero
         ? video!.value.duration
@@ -222,7 +230,10 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
       right: 0,
       bottom: 0,
       child: Container(
-        color: Colors.black54,
+        decoration: BoxDecoration(
+          color: hud.pageBackground.withValues(alpha: 0.8),
+          border: Border(top: BorderSide(color: hud.titleRule)),
+        ),
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         child: SafeArea(
           top: false,
@@ -231,7 +242,7 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
             children: [
               Row(
                 children: [
-                  Text(_fmt(position), style: const TextStyle(color: Colors.white)),
+                  Text(_fmt(position), style: hudText(12, hud.textPrimary, lineHeight: 16, weight: FontWeight.w700)),
                   Expanded(
                     child: _TimelineStrip(
                       key: const ValueKey('recordings.player.timeline'),
@@ -241,19 +252,21 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
                       onSeek: _seekTo,
                     ),
                   ),
-                  Text(duration > Duration.zero ? _fmt(duration) : l10n.player_time_zero,
-                      style: const TextStyle(color: Colors.white)),
+                  Text(
+                    duration > Duration.zero ? _fmt(duration) : l10n.player_time_zero,
+                    style: hudText(12, hud.textPrimary, lineHeight: 16, weight: FontWeight.w700),
+                  ),
                 ],
               ),
               if (c.legendCounts.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(_legendText(l10n, c.legendCounts), style: const TextStyle(color: Colors.white70)),
+                  child: Text(_legendText(l10n, c.legendCounts), style: hudText(12, hud.textSecondary, lineHeight: 16)),
                 )
               else if (c.current.hasEvents == false || c.spans.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(l10n.video_player_no_events, style: const TextStyle(color: Colors.white54)),
+                  child: Text(l10n.video_player_no_events, style: hudText(12, hud.tileLabel, lineHeight: 16)),
                 ),
               const SizedBox(height: 8),
               Row(
@@ -262,7 +275,7 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
                   if (c.hasPlaylist)
                     IconButton(
                       key: const ValueKey('recordings.player.prev'),
-                      icon: const Icon(Icons.skip_previous, color: Colors.white),
+                      icon: Icon(Icons.skip_previous, color: hud.accent),
                       tooltip: l10n.cd_player_prev,
                       onPressed: c.canPrev ? _goPrev : null,
                     ),
@@ -272,14 +285,14 @@ class _RecordingsPlayerScreenState extends State<RecordingsPlayerScreen> {
                     iconSize: 40,
                     icon: Icon(
                       (video?.value.isPlaying ?? false) ? Icons.pause_circle : Icons.play_circle,
-                      color: Colors.white,
+                      color: hud.accent,
                     ),
                     onPressed: _togglePlayPause,
                   ),
                   if (c.hasPlaylist)
                     IconButton(
                       key: const ValueKey('recordings.player.next'),
-                      icon: const Icon(Icons.skip_next, color: Colors.white),
+                      icon: Icon(Icons.skip_next, color: hud.accent),
                       tooltip: l10n.cd_player_next,
                       onPressed: c.canNext ? _goNext : null,
                     ),
@@ -331,7 +344,12 @@ class _TimelineStrip extends StatelessWidget {
       child: SizedBox(
         height: 24,
         child: CustomPaint(
-          painter: _TimelinePainter(spans: spans, durationMs: duration.inMilliseconds, playheadMs: position.inMilliseconds),
+          painter: _TimelinePainter(
+            spans: spans,
+            durationMs: duration.inMilliseconds,
+            playheadMs: position.inMilliseconds,
+            hud: BwHud.of(context),
+          ),
         ),
       ),
     );
@@ -349,15 +367,18 @@ class _TimelinePainter extends CustomPainter {
   final List<TimelineSpan> spans;
   final int durationMs;
   final int playheadMs;
+  final BwHud hud;
 
-  const _TimelinePainter({required this.spans, required this.durationMs, required this.playheadMs});
+  const _TimelinePainter({required this.spans, required this.durationMs, required this.playheadMs, required this.hud});
 
-  static const _colors = {
-    SpanColorKey.motion: Color(0x99888888),
-    SpanColorKey.person: Color(0xCCFF4444),
-    SpanColorKey.car: Color(0xCC4488FF),
-    SpanColorKey.bike: Color(0xCC44CC44),
-  };
+  /// The four span kinds in HUD tokens: motion is the quiet grey, a person is magenta (attention), a car is the
+  /// accent, a bike is the amber caution. Never the M3 default colours.
+  Color _colorFor(SpanColorKey key) => switch (key) {
+        SpanColorKey.motion => hud.textSecondary.withValues(alpha: 0.6),
+        SpanColorKey.person => hud.magenta.withValues(alpha: 0.8),
+        SpanColorKey.car => hud.accent.withValues(alpha: 0.8),
+        SpanColorKey.bike => hud.warning.withValues(alpha: 0.8),
+      };
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -368,17 +389,20 @@ class _TimelinePainter extends CustomPainter {
     for (final span in spans) {
       final left = (span.startMs / durationMs) * size.width;
       final right = ((span.endMs / durationMs) * size.width).clamp(left + 2, size.width);
-      final paint = Paint()..color = _colors[spanColorKey(span.type)]!;
+      final paint = Paint()..color = _colorFor(spanColorKey(span.type));
       canvas.drawRect(Rect.fromLTRB(left, barTop, right, barBottom), paint);
     }
 
     if (playheadMs >= 0 && playheadMs <= durationMs) {
       final x = (playheadMs / durationMs) * size.width;
-      canvas.drawRect(Rect.fromLTRB(x - 1.5, 0, x + 1.5, size.height), Paint()..color = Colors.white);
+      canvas.drawRect(Rect.fromLTRB(x - 1.5, 0, x + 1.5, size.height), Paint()..color = hud.textPrimary);
     }
   }
 
   @override
   bool shouldRepaint(covariant _TimelinePainter oldDelegate) =>
-      oldDelegate.spans != spans || oldDelegate.durationMs != durationMs || oldDelegate.playheadMs != playheadMs;
+      oldDelegate.spans != spans ||
+      oldDelegate.durationMs != durationMs ||
+      oldDelegate.playheadMs != playheadMs ||
+      oldDelegate.hud != hud;
 }

@@ -3,10 +3,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../theme/hud_theme.dart';
 import '../../widgets/storage_limit.dart';
 import 'surveillance_controller.dart';
 import 'surveillance_models.dart';
 import '../../widgets/bw_choice_chip.dart';
+import '../../widgets/hud_widgets.dart';
 import '../settings/settings_recording_models.dart' show StorageLimitImpact, StorageLimitImpactStatus;
 
 /// Ground truth: `SurveillanceSettingsController.kt` — General/Detection/
@@ -21,7 +23,11 @@ import '../settings/settings_recording_models.dart' show StorageLimitImpact, Sto
 class SurveillanceSettingsScreen extends StatefulWidget {
   final SurveillanceSettingsController controller;
 
-  const SurveillanceSettingsScreen({super.key, required this.controller});
+  /// Draws the page's own title bar: for the standalone route (`BwRoutes.surveillance`). Inside the
+  /// Settings hub the hub's pane title is the header, so it stays off.
+  final bool showTitleBar;
+
+  const SurveillanceSettingsScreen({super.key, required this.controller, this.showTitleBar = false});
 
   @override
   State<SurveillanceSettingsScreen> createState() => _SurveillanceSettingsScreenState();
@@ -58,9 +64,14 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
     // Trips screen's existing bottom tab row.
     return Column(
       children: [
+        if (widget.showTitleBar)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            child: HudTitleBar(title: l10n.settings_section_surveillance.toUpperCase()),
+          ),
         Expanded(
           child: c.loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const HudLoading()
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: switch (_tab) {
@@ -72,9 +83,15 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
                   },
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
+        // Ruled off the content, like the Trips tab bar.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainer,
+            border: Border(top: BorderSide(color: BwHud.of(context).cardDivider)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
             children: [
               for (final tab in SurveillanceSettingsTab.values)
                 Expanded(
@@ -89,6 +106,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
                   ),
                 ),
             ],
+          ),
           ),
         ),
       ],
@@ -108,7 +126,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
   List<Widget> _generalTab(AppLocalizations l10n, ThemeData theme, SurveillanceSettingsController c) {
     final status = c.status;
     return [
-      Text(l10n.surveillance_general_title, style: theme.textTheme.titleMedium),
+      HudSectionLabel(l10n.surveillance_general_title),
       const SizedBox(height: 12),
       SwitchListTile(
         key: const ValueKey('surveillance.enable'),
@@ -142,7 +160,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
   List<Widget> _detectionTab(AppLocalizations l10n, ThemeData theme, SurveillanceSettingsController c) => [
         ..._safeLocationsSection(l10n, theme, c),
         const SizedBox(height: 16),
-        Text(l10n.surveillance_detection_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.surveillance_detection_title),
         const SizedBox(height: 12),
         Text(l10n.surveillance_detection_preset_label, style: theme.textTheme.labelMedium),
         const SizedBox(height: 4),
@@ -206,10 +224,11 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
       };
 
   List<Widget> _safeLocationsSection(AppLocalizations l10n, ThemeData theme, SurveillanceSettingsController c) {
+    final hud = BwHud.of(context);
     final hasGpsFix = c.currentLat != 0 || c.currentLng != 0;
     final showMap = hasGpsFix || c.safeZones.isNotEmpty;
     return [
-      Text(l10n.surveillance_safe_locations_title, style: theme.textTheme.titleMedium),
+      HudSectionLabel(l10n.surveillance_safe_locations_title),
       Text(l10n.surveillance_safe_locations_subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       const SizedBox(height: 8),
       SwitchListTile(
@@ -231,8 +250,8 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
               TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'net.bladewatch.incarapp'),
               MarkerLayer(markers: [
                 for (final zone in c.safeZones)
-                  Marker(point: LatLng(zone.lat, zone.lng), child: const Icon(Icons.shield, color: Colors.teal)),
-                if (hasGpsFix) Marker(point: LatLng(c.currentLat, c.currentLng), child: const Icon(Icons.my_location, color: Colors.blue)),
+                  Marker(point: LatLng(zone.lat, zone.lng), child: Icon(Icons.shield, color: hud.accent)),
+                if (hasGpsFix) Marker(point: LatLng(c.currentLat, c.currentLng), child: Icon(Icons.my_location, color: hud.magenta)),
               ]),
             ],
           ),
@@ -268,7 +287,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
   // ─────────────────────────── RECORDING ────────────────────────────────
 
   List<Widget> _recordingTab(AppLocalizations l10n, ThemeData theme, SurveillanceSettingsController c) => [
-        Text(l10n.surveillance_recording_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.surveillance_recording_title),
         const SizedBox(height: 12),
         Text(l10n.surveillance_recording_pre_label(c.editPreRecord), style: theme.textTheme.labelMedium),
         const SizedBox(height: 4),
@@ -309,7 +328,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
     final storage = c.storageSettings;
     final sdAvailable = storage?.sdCardAvailable ?? false;
     return [
-      Text(l10n.surveillance_storage_title, style: theme.textTheme.titleMedium),
+      HudSectionLabel(l10n.surveillance_storage_title),
       const SizedBox(height: 12),
       Text(l10n.surveillance_storage_location_label, style: theme.textTheme.labelMedium),
       const SizedBox(height: 4),
@@ -374,7 +393,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
   // ─────────────────────────── ADVANCED ─────────────────────────────────
 
   List<Widget> _advancedTab(AppLocalizations l10n, ThemeData theme, SurveillanceSettingsController c) => [
-        Text(l10n.surveillance_advanced_camera_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.surveillance_advanced_camera_title),
         SwitchListTile(
           key: const ValueKey('surveillance.camera.front'),
           title: Text(l10n.surveillance_advanced_camera_front),
@@ -400,7 +419,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
           onChanged: c.setCameraLeft,
         ),
         const SizedBox(height: 16),
-        Text(l10n.surveillance_advanced_ai_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.surveillance_advanced_ai_title),
         SwitchListTile(
           key: const ValueKey('surveillance.ai.enabled'),
           title: Text(l10n.surveillance_advanced_ai_detection),
@@ -477,7 +496,7 @@ class _SurveillanceSettingsScreenState extends State<SurveillanceSettingsScreen>
 
   Future<bool?> _confirmStorageLimitChange(AppLocalizations l10n, StorageLimitImpact impact) {
     final known = impact.status == StorageLimitImpactStatus.known;
-    return showDialog<bool>(
+    return showHudDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         key: const ValueKey('surveillance.storageConfirm.dialog'),
@@ -514,7 +533,7 @@ class _FormatDriveCard extends StatelessWidget {
     return Card(
       color: theme.colorScheme.surfaceContainer,
       elevation: 0,
-      shape: RoundedRectangleBorder(side: BorderSide(color: theme.colorScheme.error), borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(side: BorderSide(color: theme.colorScheme.error), borderRadius: BorderRadius.circular(BwHud.radiusSmall)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

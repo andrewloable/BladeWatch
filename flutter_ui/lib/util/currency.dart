@@ -1,25 +1,18 @@
-import 'dart:convert';
-
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:bladewatch_rpc/trips/currency_symbols.dart';
 import 'package:intl/intl.dart';
 
-/// Currency display and the ISO 4217 code catalogue.
+/// Currency display, and the options of the currency picker.
 ///
 /// **No symbol table is shipped.** Symbols, their placement, the spacing around them and the
 /// number of decimal digits all vary by currency and by locale — JPY has no minor unit, many
 /// European locales put the symbol after the amount. `intl` already carries ICU's rules for
 /// all of it, so this delegates rather than reimplementing a subset badly.
 ///
-/// The catalogue is a generated asset (`tools/gen-currencies.mjs`), not a hand-typed list.
+/// The picker offers currency SYMBOLS (`$`, `€`, `₱`), not ISO codes (BladeWatch-gzbo): the list is
+/// [CurrencySymbols], shared with the companion. Trips priced BEFORE that hold an ISO code, which
+/// is still formatted through ICU below, so history does not change appearance.
 class Currency {
   Currency._();
-
-  /// Fallback when nothing is configured. Matches the daemon.
-  static const String defaultCode = 'USD';
-
-  static const String _assetPath = 'assets/iso4217.json';
-
-  static List<String>? _cachedCodes;
 
   /// Whether [value] has the shape of an ISO 4217 code: exactly three ASCII letters.
   ///
@@ -70,53 +63,29 @@ class Currency {
     }
   }
 
-  /// The ISO 4217 codes offered by the picker, loaded from the generated asset.
+  /// The options the picker must offer, given the currently selected [current] value.
   ///
-  /// Cached after the first load — the list is static for the life of the build.
+  /// **The current value is ALWAYS present exactly once.** `DropdownButtonFormField` asserts that
+  /// its value matches exactly one item, so a stored value missing from the list crashes the
+  /// settings sheet outright. That is not hypothetical: a config predating the picker can hold free
+  /// text like `Rs.`, which is not in the list, and the crash would land on precisely the owners
+  /// whose settings most need changing.
   ///
-  /// Falls back to a small set of common codes if the asset is missing or malformed. That is
-  /// deliberately not an empty list: an empty picker would leave an owner unable to change
-  /// their currency at all, which is worse than a short list they can still use.
-  static Future<List<String>> codes() async {
-    final cached = _cachedCodes;
-    if (cached != null) return cached;
-
-    try {
-      final raw = await rootBundle.loadString(_assetPath);
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      final list = (decoded['codes'] as List<dynamic>).cast<String>();
-      if (list.isEmpty) throw const FormatException('empty catalogue');
-      _cachedCodes = list;
-      return list;
-    } catch (_) {
-      const fallback = <String>[
-        'AUD', 'CAD', 'CHF', 'CNY', 'EUR', 'GBP', 'HKD', 'IDR', 'INR', 'JPY',
-        'KRW', 'MYR', 'NZD', 'PHP', 'SGD', 'THB', 'TWD', 'USD', 'VND', 'ZAR',
-      ];
-      _cachedCodes = fallback;
-      return fallback;
-    }
-  }
-
-  /// The options a picker must offer, given the currently-stored [current] value.
-  ///
-  /// **The current value is ALWAYS present exactly once.** `DropdownButtonFormField` asserts
-  /// that its value matches exactly one item, so a stored value missing from the catalogue
-  /// crashes the settings sheet outright. That is not hypothetical: a config predating the
-  /// picker holds a bare symbol like `$` or a label like `kr`, neither of which is an ISO
-  /// code, and the crash would land on precisely the owners whose settings most need changing.
-  ///
-  /// A legacy value is prepended rather than appended so it is visible without scrolling 162
-  /// entries, and it disappears from the list as soon as the owner picks a real code.
-  static List<String> optionsFor(String current, List<String>? catalogue) {
+  /// A value the list does not know is prepended, so it is visible without scrolling, and it
+  /// disappears from the menu as soon as the owner picks a symbol.
+  static List<String> optionsFor(String current) {
+    final symbols = CurrencySymbols.symbols;
     final trimmed = current.trim();
-    if (catalogue == null || catalogue.isEmpty) {
-      return trimmed.isEmpty ? const <String>[defaultCode] : <String>[trimmed];
-    }
-    if (trimmed.isEmpty || catalogue.contains(trimmed)) return catalogue;
-    return <String>[trimmed, ...catalogue];
+    if (trimmed.isEmpty || symbols.contains(trimmed)) return symbols;
+    return <String>[trimmed, ...symbols];
   }
 
-  /// Reset the cache. Test-only.
-  static void resetCacheForTest() => _cachedCodes = null;
+  /// What the picker shows selected for a currency [stored] on the car: the symbol when the value
+  /// is a listed symbol or an ISO code that maps to one (`PHP` shows the peso sign), the stored
+  /// text itself when it is something else (kept until replaced), the default when nothing is stored.
+  static String selectionFor(String stored) {
+    final trimmed = stored.trim();
+    if (trimmed.isEmpty) return CurrencySymbols.defaultSymbol;
+    return CurrencySymbols.forStored(trimmed) ?? trimmed;
+  }
 }

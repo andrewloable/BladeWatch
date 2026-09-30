@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'app.dart';
 import 'car/car_store.dart';
+import 'font_licence.dart';
 import 'i18n.dart';
 import 'screens/pairing/qr_scan_page.dart';
 import 'screens/recordings/video_capability.dart';
@@ -15,6 +16,7 @@ import 'screens/recordings/video_capability.dart';
 /// directly over the LAN when on the same network (epic BladeWatch-rdtj).
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerFontLicence();
   // BladeWatch-rdtj.73: started here, not when a clip is first opened, so the platform-channel
   // round-trip has finished long before anyone can tap a clip -- ClipPlayerScreen reads the
   // result synchronously and cannot itself wait on it (see video_capability.dart).

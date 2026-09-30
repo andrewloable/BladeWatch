@@ -469,6 +469,235 @@ These files live in `drawable/` but are **not** Material Symbols icons and must
   `TextAppearance.BladeWatch.*`; reference `?attr/color*` and `@dimen/*`.
 - Keep both light and dark complete for any new role.
 
+## HUD skin (in-car Flutter, and the companion)
+
+The in-car UI wears a "cyberpunk HUD" look (epics BladeWatch-8w4p and BladeWatch-2llu, v1.4.1.0): near-black
+panels in dark mode, white panels in light mode, cyan and magenta accents (with glow in dark), Space Mono,
+uppercase tracked labels, thin bordered cards. It is the app's only theme: `main.dart` installs
+`BwHud.themeData(...)` for both `theme` and `darkTheme`, every screen draws its own `HudTitleBar`, and the
+shell has no toolbar. The Material 3 tokens (`BladeWatchTheme`) survive as the base the HUD theme is built on, for
+the status overlay's Android XML parity, and for the companion until it converts.
+
+**It is additive.** The M3 colour tokens in `packages/bladewatch_theme` are parity-tested against the Android
+XML, so none of the HUD palette lives in them. The HUD has its own files in the same package (shared by the
+in-car app and the companion; `flutter_ui/lib/theme/hud_theme.dart` re-exports them). The palette is defined
+once in [hud_theme.dart](../packages/bladewatch_theme/lib/hud_theme.dart) as the `BwHud` theme extension
+(`BwHud.dark`, `BwHud.light`), installed in `main.dart` for both `theme` and `darkTheme` as part of
+`BwHud.themeData(...)`. Read it with `BwHud.of(context)`, which falls back to the const for the theme's
+brightness when the extension is absent (tests that pump a bare `BladeWatchTheme`). Widgets never
+hold a literal HUD colour and never branch on brightness: a difference between the modes is a token
+(for example `glowCyan` is null in light and `labelWeight` is bold in light). It is NOT part of the
+XML parity pipeline.
+
+**Reference.** The owner's design is in `docs/design/hud-reference/` (`dashboard-dark.html`,
+`dashboard-dark.png`, `dashboard-light.html`). Each token in `hud_theme.dart` names the Tailwind class
+it came from; `flutter_ui/test/theme/hud_theme_test.dart` pins every value, retyped, so a changed hex
+fails. Not built from the reference: its top status bar (clock, `SYS_ON`, theme toggle, connectivity
+icons: no backing features), `.scanlines` (never applied) and `.cyber-grid` (covered by the page's
+solid background).
+
+**Typeface.** Space Mono (SIL OFL 1.1), bundled by `packages/bladewatch_theme`
+(`assets/fonts/SpaceMono-{Regular,Bold}.ttf`, declared in that package's pubspec) and addressed as
+`BwHud.fontFamily` (`packages/bladewatch_theme/SpaceMono`) from either app. It is bundled, not fetched, because the head
+unit works offline. It covers Latin, Latin-Extended and Vietnamese only; other scripts (ja, ko, zh, th,
+hi, ru) fall back to the platform font glyph by glyph. Its licence is the package asset `assets/fonts/OFL.txt`, shown
+after the app's own licence under Settings > About > License. Only HUD subtrees use it; the app-wide
+text theme is unchanged.
+
+**Shared pieces** ([hud_widgets.dart](../packages/bladewatch_theme/lib/hud_widgets.dart)): `HudPanel` (bordered,
+rounded, optionally gradient and shadowed surface) and `HudPulse` (Tailwind's `animate-pulse`: opacity
+1, 0.5, 1 over 2 s). `HudPulse` stands still under `MediaQuery.disableAnimations`; a widget test that
+pumps one and calls `pumpAndSettle` must set that flag, or the loop never settles.
+
+### The HUD kit (BladeWatch-oxcx)
+
+Most screens are built from stock Material widgets, so the HUD is delivered mainly as a **`ThemeData`**:
+`BwHud.themeData(Brightness)` (cached) returns a complete theme for the mode, built on `BladeWatchTheme` so
+`BwStatusColors` survives (re-mapped: success = the cyan dot, warning = the new amber `BwHud.warning`, danger =
+magenta, info = accent). It is the app theme, so every route, dialog and sheet inherits it. `HudScope` applies
+it to a subtree that does not run under it (a test, or a companion screen before it installs the theme), and
+`showHudDialog` / `showHudSheet` are the same wrapper for a dialog or sheet (the sheet's own chrome belongs to the
+modal route, so the helper passes it explicitly); in the in-car app they are now redundant but harmless. What the
+theme cannot express is a small kit in
+`hud_widgets.dart`.
+
+| Piece | Spec |
+|---|---|
+| `ColorScheme` | primary = accent; primaryContainer/secondaryContainer = the soft accent fill (`viewAllFill` over `panel`); tertiary, error = magenta; errorContainer = magenta 15% over `panel`; surface = `pageBackground`; surfaceContainer/Low = `panel`; High/Highest = `panelPressed`; outline = `panelBorderStrong`, outlineVariant = `panelBorder` (both flattened over `panel`) |
+| Text | Space Mono. display 30/36 bold, headlineMedium 24/32, headlineSmall and titleLarge 20/28 bold, titleMedium 16/24 bold, titleSmall 14/20 bold, body 16/24, 14/20, 12/16, labelLarge 12/16 bold .05em, labelMedium/Small 12/16 and 10/15 in `labelWeight`. Stock buttons keep the string's own case (Flutter has no text-transform): a screen upper-cases a label itself where the design is upper-case (chips, section labels, rail, tiles) |
+| Card | `panel` fill, 4 dp radius, 1 dp `panelBorder`, no elevation, no margin. The 12 dp radius and gradient are `HudPanel` for a hero card |
+| Dialog / bottom sheet | `panel`, 12 dp radius, `cardBorder`; the title is 20 dp bold accent with the glow in dark |
+| Buttons | all 4 dp, 12 bold, 20x10 padding, min height 36 (the 48 dp touch target stays: Material pads it). Filled = accent text and border on the soft accent fill; outlined = `textSecondary` on `panel` with `chipBorder`; text = accent, no box; icon = `iconAccent`. Disabled = `panel`, 38% text |
+| Switch | on: accent thumb, soft accent track, accent outline; off: `textSecondary` thumb, `panel` track, `panelBorder` outline |
+| Checkbox / radio / slider / progress | accent when active; slider and progress tracks are `panelBorder` flattened |
+| Text field / dropdown / menus | filled `panel`, 4 dp, `panelBorder`; focus = accent; error = magenta; 12 bold label (accent when floating) |
+| Segmented / choice chip | selected: accent border on the soft accent fill; unselected: `panel` with `chipBorder`/`panelBorder` |
+| List tile | `iconAccent` icon, 14 bold title, 12 `textSecondary` subtitle, selected = accent on the soft fill |
+| Divider / tabs / tooltip / snackbar | `cardDivider` 1 dp; accent indicator on `cardDivider`; `panelPressed` box with `panelBorderStrong`; snackbar `panelPressed`, floating, `panelBorderStrong` |
+| `HudTitleBar` | the page title (pulsing 8 dp magenta square, 20 dp accent, rule; optional trailing status and back arrow) |
+| `HudSectionLabel` | 12 bold upper-case, .1em, accent; optional magenta icon and trailing |
+| `HudChip` | the status chip; `live` = strong border, bright text, pulsing dot |
+| `HudListRow` | a tappable 4 dp row, at least 48 dp tall; `selected` = accent border on the soft fill |
+| `HudStatusDot` | four states, never collapsed: ok (cyan, glow), warning (amber), bad (magenta), idle (grey); `pulse` only for live things |
+| `HudEmptyState` / `HudErrorState` / `HudLoading` | icon over an upper-case message; magenta for an error, with an optional retry; an accent spinner |
+
+Tests: `flutter_ui/test/theme/hud_theme_data_test.dart` (every component reads its token) and
+`flutter_ui/test/widgets/hud_kit_test.dart` (each kit widget, and a demo harness that renders one of every stock
+control in both modes).
+
+**Startup, dialogs and sheets (BladeWatch-2llu.1).** The startup screen: HUD page background, the brand lockup in
+the accent, the three daemon rows in the hero `HudPanel` with `HudStatusDot`s that are the REAL state (ready = cyan,
+waiting = grey: the check is binary process liveness, there is no "starting" to claim), upper-case header and status
+labels, the continue and progress widgets themed. Every `showDialog` is `showHudDialog` and the language picker is
+`showHudSheet` (redundant under the app-wide theme, kept as the kit's helpers). The setup guide's step badges are 4 dp boxes, not circles. `BwChoiceChip` is a
+thin `ChoiceChip` wrapper that leaves the look to the chip theme (accent border on the soft fill) and drops the check
+mark. The pairing QR keeps its white quiet zone in both modes (a QR must stay high-contrast). The brand lockup's
+wordmark follows the theme's headline (Space Mono), so it no longer matches the native launch drawable exactly; the
+handoff is a splash and the difference is accepted.
+
+**Navigation rail** ([nav_rail.dart](../flutter_ui/lib/shell/nav_rail.dart)). The rail is shared shell, so
+it wears the HUD skin on every screen. 80 dp wide (a 1 dp edge line inside it), items 4 dp from each
+side, 4 dp-radius boxes: inactive is bare (18 dp icon, 10 dp label, slate); active has the top-to-bottom
+gradient, a 1 dp accent border, a 20 dp icon and a bold `-0.5` tracked label, plus the cyan glow in dark.
+Labels are the app's localized strings, uppercased (`RECORDINGS`, `DIAGNOSTICS`; the reference's
+`RECORDS`/`DIAG` would be rewording), scaled down to fit rather than cut. The reference's 64 dp items with
+16 dp gaps do not fit nine items in the head unit's 604 dp, so landscape (`compact`) is 52 dp items with
+6 dp gaps (the globe/language button and nine items total about 570 dp; the 48 dp touch target holds);
+portrait keeps 64 and 12. There is no divider before About (the reference has none). The language
+button stays at the top of the rail: it is a real feature the reference has no slot for.
+
+**No toolbar.** The shell is the rail plus the stage: no `_Toolbar`, no accent stripe, page background
+`BwHud.pageBackground`, and the rail carries the language button in both orientations (it lived in the toolbar in
+Android's portrait layout). A route with no screen mounted (a stub) is a bare placeholder on the same page. A new
+screen draws its own `HudTitleBar` and needs nothing from the shell.
+
+**The other screens (BladeWatch-2llu.2 to .5).** Each one opens with a `HudTitleBar` (the localized rail label,
+upper-cased; a pushed sub-screen adds the back arrow), uses `HudSectionLabel` for its block headings, `HudLoading` /
+`HudErrorState` / `HudEmptyState` for those three states, and otherwise relies on the HUD `ThemeData`: the stock
+`Card` (4 dp, `panelBorder`, no margin: a screen that stacks cards spaces them itself), switches, sliders, dropdowns,
+text fields, `ListTile`s, chips, tabs and dialogs already read as HUD. Only what the theme cannot express is coded by
+hand. Buttons and choice chips keep the sentence case of their localized strings; only titles and section labels are
+upper-cased.
+- *Trips and Diagnostics*: the trip detail's end dot is magenta (the trip's end), its score bars are coloured by the
+  real score band (>= 70 accent, >= 40 amber, else magenta); the health-tile dots map connecting/probing to amber and
+  active to the accent, with unknown and offline kept distinct; the ADB console and Performance sub-screens have a HUD
+  title bar with a back arrow instead of the M3 app bar.
+- *Settings* ([settings_screen.dart](../flutter_ui/lib/screens/settings/settings_screen.dart)): the 264 dp sub-rail is
+  one `HudListRow` per section (accent border on the soft fill when selected, a chevron only on the two drill-downs),
+  and the pane opens with a `HudTitleBar` plus the section's one-line description. Group cards are the theme's `Card`;
+  the Appearance theme and drive-side options are 4 dp tiles (accent border on the soft accent fill when selected; the
+  theme preview swatches keep their literal light/dark previews, since they show what the theme looks like). The
+  Services rows use a `HudStatusDot` that is real state (up = cyan, starting = amber, stopped = grey; the Pear peer
+  row keeps its own coloured reachability lines), the destructive Reset block and the storage-format card use the
+  magenta and its border, the Surveillance safe-zone map markers are accent (zone) and magenta (the car), and the
+  Recording and Surveillance tab rows are ruled off the content like the Trips tab bar. The standalone Surveillance
+  route (`showTitleBar: true`) draws its own title bar; inside the hub the pane title is the header.
+
+**Dashboard** ([dashboard_screen.dart](../flutter_ui/lib/screens/dashboard/dashboard_screen.dart)). Four blocks
+down a 24 dp-padded page, spread apart (`justify-between`) when the window is taller than they are and
+scrolling when it is shorter: the natural height is about 590 dp, inside the head unit's 604 dp.
+- *Title bar*: an 8 dp magenta square in a `HudPulse`, `DASHBOARD // OVERVIEW` (the localized rail label plus
+  `dashboard_hud_overview`, uppercased) at 20 dp bold, tracking 0.05em, cyan with a glow in dark; on the right
+  `SECURE_LINK: ACTIVE` only while the Remote access tile is Online (`pear.enabled && running && reachable`),
+  otherwise `SECURE_LINK: OFFLINE`. The reference's label is unconditional; a link that is not up is never claimed.
+- *Summary card* (`HudPanel`, 12 dp radius, 24 padding, gradient left to right in dark, flat white in light): header
+  `THIS WEEK TELEMETRY` (`dashboard_trips_this_week` + `dashboard_hud_telemetry`) with a magenta microchip icon, and
+  the View all trips button (a 26 dp box; the 48 dp touch target is absorbed by trimming the card's top padding by 11
+  and the header's bottom padding by 11, so the layout matches the reference). Three columns of `1fr`, 24 gap, a 1 dp
+  rule after the first two, running through the stat rows. Row 1 values 30 dp (Trips and Distance glow cyan in dark; the
+  Drive Time value glows magenta and its label is magenta), rows 2 and 3 24 dp, labels 12 dp; a distance draws its unit
+  (after the last space) at 18 dp in the bright accent inside the SAME `Text.rich`, so the plain text stays `83.3 km`.
+  The charge row's third column holds Fuel and Fuel Range side by side, and is empty on a car with no tank. The corner
+  glows are radial gradients, not blurs.
+- *Chips*: 4 dp boxes, 20x10 padding, 12 dp bold uppercase; not tappable. The recording chip has a pulsing dot only while
+  recording. Pair a device is the same box in magenta (its label is the localized `pairing_title`, uppercased, so it
+  reads `PAIR A DEVICE`, not the reference's `PAIR DEVICE`).
+- *Tiles*: five across (16 gap) from 1100 dp of width, otherwise two to a row; 112 dp tall, 4 dp radius, 16 padding.
+  Values 20 dp bold (the vehicle model 12 dp, keeping its own casing: `DM-i`), labels 10 dp. Live is magenta (with a glow in
+  dark), Remote access glows cyan in dark and is cyan-700 in light. The recordings tile's dot and the remote tile's status
+  dot are real state, not decoration. The recordings string `● N` has its bullet replaced by the glowing dot.
+- *Light vs dark* is tokens only: no glow, flat card, bold labels, magenta Drive Time and LIVE, slate labels.
+- Tests: `flutter_ui/test/screens/dashboard/dashboard_screen_test.dart` ("HUD skin" group). Widget tests draw shadows without
+  blur (`debugDisableShadows`), so glows are checked as tokens, and on the device.
+
+### Companion (BladeWatch-0glp)
+
+The companion (phones and desktops, `companion/`) wears the same HUD. Its kit is the in-car one: the tokens,
+`BwHud.themeData`, `HudPanel`, `HudTitleBar` and the rest live in `packages/bladewatch_theme` (the in-car app
+re-exports them), and Space Mono is declared by that package, so a `TextStyle` with `BwHud.fontFamily`
+(`packages/bladewatch_theme/SpaceMono`) renders in both apps. `CompanionApp` installs
+`BwHud.themeData(Brightness.light / dark)` as `theme` and `darkTheme`, and its screen tests pump the same theme
+(`test/support.dart`). The typeface's SIL OFL notice is registered with Flutter's `LicenseRegistry`
+(`companion/lib/font_licence.dart`), so it is listed on Settings > About > Licenses next to the packages' own.
+
+**Shell (BladeWatch-0glp.2).** No app bar: `HomeShell` draws the screen's name as a `HudTitleBar` (upper-cased,
+lined up with the page below it and capped at the same 960 dp) over the page. Wide (>= 700 dp): a permanent 240 dp side
+panel on `railBackground` with the `BladeWatch` wordmark as a header that never scrolls and every place as a
+`HudNavItem` (`horizontal`, 48 dp, the in-car rail's active box: gradient, accent border, glow in dark). Phone: a bottom
+bar of four places and "More", each a vertical `HudNavItem`; every label shows, upper-case, scaled down to its fifth
+of the width (the old Material bar hard-wrapped a long one mid-word) and its text scale is capped at 1.3 so one item's
+label is never twice its neighbour's. The Events item carries the unseen-alert count as a badge. "More" is a
+`showHudSheet` of `HudListRow`s. `HudNavItem` is the kit's version of the in-car rail item, which now uses it too.
+
+The connection page (`CarPage`) is one `HudPanel` per state with a `HudStatusDot` that is the REAL state of the link:
+amber while it is still looking or the car is not answering (both clear by themselves), magenta when it needs the owner
+(unreachable, refused); a spinner while busy, a magenta icon otherwise. `LoadError` is the kit's `HudErrorState`. Pairing
+is a `HudTitleBar` (the pulsing magenta square is "pairing", HUD rule 4) over one hero panel holding the form; the QR
+scan page keeps the camera preview untouched inside an accent-bordered `HudPanel` frame, under a title bar with the way back.
+
+**Shared building blocks (BladeWatch-0glp.3).** `Section` is the HUD theme's own card (4 dp, bordered, 16 dp padding)
+under an upper-case accent title (the action drops below it when both do not fit); `InfoRow` is a 12 dp label over a
+14 dp bold value, and at a large text size (over about 1.4x) it stacks label over value instead of breaking a word;
+`LoaderView` shows `HudLoading`. Every screen built from these is on the HUD without edits.
+
+**Dashboard, Events, Alerts.** The Dashboard's chips are 4 dp boxes with a `HudStatusDot` that is real state: the
+route is cyan, the services amber when partial, the recording dot magenta and pulsing only while the car records
+(grey and still when idle), ACC and safe zone cyan when true. This week is a value-over-label row (Trips and Distance
+cyan, Drive time magenta, each scaled down before it wraps) followed by the costs and the car's charge and fuel rows.
+Events' alerts are `HudListRow`s (severity icon in the status colours, the play icon on a clip alert); a row that has
+arrived since the list was last seen is the accent-bordered one, and an empty inbox is a `HudEmptyState`. The alert
+settings are `Section`s with the theme's switches.
+
+**Live and Recordings (BladeWatch-0glp.4).** The picture is untouched (a black letterbox is the one literal colour on
+the page, as on the head unit) inside a 4 dp `panelBorder` frame (`HudPanel`); the GPS chip over it stays dark and
+translucent in both modes, with the HUD's 4 dp corners and border. Single choices (camera, type, day) are the chip theme's
+accent-border look with no check mark; the who/severity filters are multi-select, so their check mark stays. A clip is a
+`HudListRow` (thumbnail in a 4 dp frame, when, kind, length, size, what was seen): a ticked clip is the accent-bordered
+row, and delete is magenta (`destructiveStyle` for a button, the magenta icon for a row action). The player has a
+`HudTitleBar` with the way back (title = when it was taken, the download as its action), the video in a black frame, the
+progress bar in the accent on `panelBorder`, timecodes in Space Mono, and the detection strip in HUD colours (person
+magenta, vehicle cyan, bike amber, anything else grey). The page gutter (24 dp) sits outside `ContentWidth`, so list rows
+are exactly the content width and line up with the title bar.
+
+**Vehicle, Location, Trips (BladeWatch-0glp.5).** Vehicle is `Section`s with the theme's switches and buttons, window
+presets as single choices (no check mark), and a tyre row led by a `HudStatusDot` that is what the car reports (cyan when
+it reports no leak, magenta when it does); every window command still asks first. `CarMap` is the accent route and
+magenta markers in a 4 dp `panelBorder` frame (the night inversion of the tiles is unchanged); Location is that map with
+the recenter button over it and the position as a `HudListRow` with the copy action. Trips: the tabs and day filter sit
+on the page gutter, the period summary is a `Section`, each trip a `HudListRow` with a score badge in its real band
+(70 and up the accent, 40 and up amber, below that magenta, as in the car); the trip detail has a `HudTitleBar` with the
+way back and a magenta delete, its confirm is `destructiveStyle`, and the map is the framed `CarMap`. The settings form is
+the theme's fields, dropdown and switch in `Section`s, distance unit and storage place as single choices; the
+currency-symbol picker is unchanged.
+
+**Surveillance, Performance, Diagnostics, About, Settings (BladeWatch-0glp.6).** All `Section`s over the shared rows,
+so they were on the HUD already; what was restyled by hand: Surveillance's snapshots are 4 dp bordered frames and the
+zone delete is magenta; Diagnostics carries a `HudStatusDot` on the rows that are a state (LAN access and the camera
+pipeline cyan when on and a grey dot when off, the SD card that failed to mount magenta) and the SOH reset confirm is
+magenta; Settings' recording mode is a column of `HudListRow`s, the car's configured mode the accent-bordered one, the
+trip-costs entry is a row, the Trips costs form opens under a `HudTitleBar` with the way back, and every destructive
+confirm (unpair, cleanup, format the SD card, twice) is `destructiveStyle`. About lists the Space Mono OFL notice with the
+other licences (registered with Flutter's `LicenseRegistry`, see above). Single choices everywhere are the chip theme's
+accent-border look with no check mark; multi-select filters (the overlay fields, who/severity) keep theirs.
+
+**What is left.** Every companion screen is on the HUD, and it has been run on macOS with the real engine (a fake car, so
+nothing touched the real one): dark and light at desktop size, dark and light at phone size, 2.0x text on a phone,
+and ja, th and ru. Two things only that run showed were fixed: the map's attribution ran off a phone's edge, and
+stacked form fields touched. Still open: an Android phone (and iOS) run, a real car's data (video, the live
+picture), and the independent review, which is BladeWatch-0glp.7 and the device checklist. The desktop label/value
+rows still put the value at the card's half, and the type-chip row of Recordings still scrolls sideways on a
+phone; both are noted, neither breaks anything.
+
 ## Source References
 
 - Flutter theme (source of truth):

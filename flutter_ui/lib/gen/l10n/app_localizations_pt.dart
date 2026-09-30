@@ -2930,6 +2930,18 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get auto_hold_active => 'A segurar';
+
+  @override
+  String get dashboard_hud_overview => 'Visão geral';
+
+  @override
+  String get dashboard_hud_telemetry => 'Telemetria';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -5858,4 +5870,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get auto_hold_active => 'Segurando';
+
+  @override
+  String get dashboard_hud_overview => 'Visão geral';
+
+  @override
+  String get dashboard_hud_telemetry => 'Telemetria';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }

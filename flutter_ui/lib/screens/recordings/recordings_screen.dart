@@ -11,6 +11,8 @@ import 'thumbnail_image.dart';
 import 'recordings_models.dart';
 import 'recordings_player_controller.dart';
 import 'recordings_player_screen.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 
 /// Width at which Recordings uses native's master-detail arrangement: clip
 /// list on the left, persistent player pane on the right. Below this there is
@@ -108,26 +110,29 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
     final c = widget.controller;
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final split = constraints.maxWidth >= _masterDetailBreakpoint;
-            return Column(
-              children: [
-                _Header(controller: c, onOpenSettings: widget.onOpenSettings),
-                Expanded(
-                  child: split
-                      ? Row(
-                          children: [
-                            Expanded(flex: 11, child: _buildBody(context, c, split: true)),
-                            const VerticalDivider(width: 1),
-                            Expanded(flex: 9, child: _buildDetailPane(context)),
-                          ],
-                        )
-                      : _buildBody(context, c, split: false),
-                ),
-              ],
-            );
-          },
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final split = constraints.maxWidth >= _masterDetailBreakpoint;
+              return Column(
+                children: [
+                  _Header(controller: c, onOpenSettings: widget.onOpenSettings),
+                  Expanded(
+                    child: split
+                        ? Row(
+                            children: [
+                              Expanded(flex: 11, child: _buildBody(context, c, split: true)),
+                              const SizedBox(width: 16),
+                              Expanded(flex: 9, child: _buildDetailPane(context)),
+                            ],
+                          )
+                        : _buildBody(context, c, split: false),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -135,46 +140,60 @@ class _RecordingsScreenState extends State<RecordingsScreen> {
 
   Widget _buildDetailPane(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final paneController = _paneController;
 
+    final hud = BwHud.of(context);
     if (_selected == null || paneController == null) {
-      return Container(
+      return HudPanel(
         key: const ValueKey('recordings.detail.empty'),
-        color: theme.colorScheme.surfaceContainer,
-        alignment: Alignment.center,
+        color: hud.panel,
+        borderColor: hud.panelBorder,
+        radius: BwHud.radiusSmall,
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.play_circle_outline, size: 64, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text(l10n.recordings_preview_placeholder_title, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              l10n.recordings_preview_placeholder_body,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.play_circle_outline, size: 64, color: hud.textSecondary),
+              const SizedBox(height: 16),
+              Text(
+                l10n.recordings_preview_placeholder_title.toUpperCase(),
+                style: hudText(14, hud.textPrimary, lineHeight: 20, weight: FontWeight.w700, em: 0.05),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.recordings_preview_placeholder_body,
+                style: hudText(12, hud.textSecondary, lineHeight: 16),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return RecordingsPlayerScreen(
-      // Keyed by filename so selecting a different clip rebuilds the player
-      // rather than reusing the previous clip's video controller.
-      key: ValueKey('recordings.detail.${_selected!.filename}'),
-      controller: paneController,
-      jwtSource: widget.jwtSource,
-      onClose: _clearPane,
+    // The player keeps its black letterbox; the frame around it is the HUD's.
+    return HudPanel(
+      color: Colors.black,
+      borderColor: hud.panelBorder,
+      radius: BwHud.radiusSmall,
+      clipBehavior: Clip.antiAlias,
+      child: RecordingsPlayerScreen(
+        // Keyed by filename so selecting a different clip rebuilds the player
+        // rather than reusing the previous clip's video controller.
+        key: ValueKey('recordings.detail.${_selected!.filename}'),
+        controller: paneController,
+        jwtSource: widget.jwtSource,
+        onClose: _clearPane,
+      ),
     );
   }
 
   Widget _buildBody(BuildContext context, RecordingsController c, {required bool split}) {
     final l10n = AppLocalizations.of(context)!;
     if (c.failed) return _ErrorView(onRetry: () => c.load());
-    if (!c.loaded) return const Center(key: ValueKey('recordings.loading'), child: CircularProgressIndicator());
+    if (!c.loaded) return const HudLoading(key: ValueKey('recordings.loading'));
     if (c.clips.isEmpty) {
       return _EmptyView(
         key: const ValueKey('recordings.empty'),
@@ -219,16 +238,11 @@ class _ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Center(
+    return HudErrorState(
       key: const ValueKey('recordings.error'),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(l10n.recording_lib_no_recordings),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: onRetry, child: Text(l10n.action_retry)),
-        ],
-      ),
+      message: l10n.recording_lib_no_recordings,
+      retryLabel: l10n.action_retry,
+      onRetry: onRetry,
     );
   }
 }
@@ -238,10 +252,7 @@ class _EmptyView extends StatelessWidget {
   const _EmptyView({super.key, required this.text});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(child: Text(text, style: theme.textTheme.bodyLarge));
-  }
+  Widget build(BuildContext context) => HudEmptyState(icon: Icons.videocam_off_outlined, message: text);
 }
 
 String _formatBytes(int bytes) {
@@ -261,24 +272,24 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
     final c = controller;
     final stats = c.stats;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HudTitleBar(
+          title: l10n.recordings_title.toUpperCase(),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(child: Text(l10n.recordings_title, style: theme.textTheme.headlineSmall)),
               Text(
                 stats == null
                     ? l10n.recordings_summary_pending
                     : '${l10n.recording_lib_clip_count(stats.totalCount)} · ${_formatBytes(stats.totalBytes)}',
                 key: const ValueKey('recordings.stats'),
-                style: theme.textTheme.bodyMedium,
+                style: hudText(12, hud.statLabel, lineHeight: 16, weight: hud.labelWeight, em: 0.05),
               ),
               const SizedBox(width: 12),
               // A labelled button, not a bare gear: native names this control.
@@ -290,22 +301,22 @@ class _Header extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          // Wrap, not Row: several locales are much longer than English, and at some width the
-          // groups stop fitting on one line. Wrapping is the graceful worst case, not an overflow.
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              _TypeChips(controller: c),
-              _DayRow(controller: c),
-              if (c.type == 'sentry') _WhoSeverityChips(controller: c),
-              _SelectBar(controller: c),
-            ],
-          ),
-        ],
-      ),
+        ),
+        // Wrap, not Row: several locales are much longer than English, and at some width the
+        // groups stop fitting on one line. Wrapping is the graceful worst case, not an overflow.
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _TypeChips(controller: c),
+            _DayRow(controller: c),
+            if (c.type == 'sentry') _WhoSeverityChips(controller: c),
+            _SelectBar(controller: c),
+          ],
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }
@@ -323,15 +334,18 @@ class _TypeChips extends StatelessWidget {
       'sentry': l10n.recordings_segment_surveillance,
       'proximity': l10n.recording_lib_chip_type_proximity,
     };
-    return Wrap(spacing: 8, children: [
-      for (final t in RecordingsController.types)
-        ChoiceChip(
-          key: ValueKey('recordings.type.$t'),
-          label: Text(labels[t]!),
-          selected: controller.type == t,
-          onSelected: (_) => controller.setType(t),
-        ),
-    ]);
+    return Wrap(
+      spacing: 8,
+      children: [
+        for (final t in RecordingsController.types)
+          ChoiceChip(
+            key: ValueKey('recordings.type.$t'),
+            label: Text(labels[t]!),
+            selected: controller.type == t,
+            onSelected: (_) => controller.setType(t),
+          ),
+      ],
+    );
   }
 }
 
@@ -346,45 +360,52 @@ class _DayRow extends StatelessWidget {
     final day = c.day;
     final previous = c.step(-1);
     final next = c.step(1);
-    return Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-      ChoiceChip(
-        key: const ValueKey('recordings.day.today'),
-        label: Text(l10n.recording_lib_date_today),
-        selected: day == c.todayKey,
-        onSelected: (_) => c.setDay(c.todayKey),
-      ),
-      ChoiceChip(
-        key: const ValueKey('recordings.day.yesterday'),
-        label: Text(l10n.recording_lib_date_yesterday),
-        selected: day == c.yesterdayKey,
-        onSelected: (_) => c.setDay(c.yesterdayKey),
-      ),
-      ChoiceChip(
-        key: const ValueKey('recordings.day.all'),
-        label: Text(l10n.recording_lib_date_all_days),
-        selected: day == null,
-        onSelected: (_) => c.setDay(null),
-      ),
-      if (day != null)
-        Row(mainAxisSize: MainAxisSize.min, children: [
-          IconButton(
-            key: const ValueKey('recordings.day.previous'),
-            tooltip: l10n.cd_previous_day,
-            onPressed: previous == null ? null : () => c.setDay(previous),
-            icon: const Icon(Icons.chevron_left),
+    return Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        ChoiceChip(
+          key: const ValueKey('recordings.day.today'),
+          label: Text(l10n.recording_lib_date_today),
+          selected: day == c.todayKey,
+          onSelected: (_) => c.setDay(c.todayKey),
+        ),
+        ChoiceChip(
+          key: const ValueKey('recordings.day.yesterday'),
+          label: Text(l10n.recording_lib_date_yesterday),
+          selected: day == c.yesterdayKey,
+          onSelected: (_) => c.setDay(c.yesterdayKey),
+        ),
+        ChoiceChip(
+          key: const ValueKey('recordings.day.all'),
+          label: Text(l10n.recording_lib_date_all_days),
+          selected: day == null,
+          onSelected: (_) => c.setDay(null),
+        ),
+        if (day != null)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                key: const ValueKey('recordings.day.previous'),
+                tooltip: l10n.cd_previous_day,
+                onPressed: previous == null ? null : () => c.setDay(previous),
+                icon: const Icon(Icons.chevron_left),
+              ),
+              Text(
+                DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(DateTime.parse(day)),
+                key: const ValueKey('recordings.day.label'),
+              ),
+              IconButton(
+                key: const ValueKey('recordings.day.next'),
+                tooltip: l10n.cd_next_day,
+                onPressed: next == null ? null : () => c.setDay(next),
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
           ),
-          Text(
-            DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(DateTime.parse(day)),
-            key: const ValueKey('recordings.day.label'),
-          ),
-          IconButton(
-            key: const ValueKey('recordings.day.next'),
-            tooltip: l10n.cd_next_day,
-            onPressed: next == null ? null : () => c.setDay(next),
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ]),
-    ]);
+      ],
+    );
   }
 }
 
@@ -406,25 +427,31 @@ class _WhoSeverityChips extends StatelessWidget {
       'CRITICAL': l10n.recording_lib_chip_critical,
     };
     Widget chip(String v, bool selected, void Function(String) toggle) => FilterChip(
-          key: ValueKey('recordings.filter.$v'),
-          label: Text(names[v]!),
-          selected: selected,
-          onSelected: (_) => toggle(v),
-        );
-    final label = Theme.of(context).textTheme.labelMedium;
-    return Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-      Text(l10n.recording_lib_filter_section_what, style: label),
-      for (final v in RecordingsController.actorClasses) chip(v, c.actors.contains(v), c.toggleActor),
-      const SizedBox(width: 8),
-      Text(l10n.recording_lib_filter_section_severity, style: label),
-      for (final v in RecordingsController.severityLevels) chip(v, c.severities.contains(v), c.toggleSeverity),
-      if (c.actors.isNotEmpty || c.severities.isNotEmpty)
-        ActionChip(
-          key: const ValueKey('recordings.filter.reset'),
-          label: Text(l10n.recording_lib_filter_reset),
-          onPressed: c.resetWhoAndSeverity,
-        ),
-    ]);
+      key: ValueKey('recordings.filter.$v'),
+      label: Text(names[v]!),
+      selected: selected,
+      onSelected: (_) => toggle(v),
+    );
+    final hud = BwHud.of(context);
+    final label = hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700, em: 0.1);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(l10n.recording_lib_filter_section_what.toUpperCase(), style: label),
+        for (final v in RecordingsController.actorClasses) chip(v, c.actors.contains(v), c.toggleActor),
+        const SizedBox(width: 8),
+        Text(l10n.recording_lib_filter_section_severity.toUpperCase(), style: label),
+        for (final v in RecordingsController.severityLevels) chip(v, c.severities.contains(v), c.toggleSeverity),
+        if (c.actors.isNotEmpty || c.severities.isNotEmpty)
+          ActionChip(
+            key: const ValueKey('recordings.filter.reset'),
+            label: Text(l10n.recording_lib_filter_reset),
+            onPressed: c.resetWhoAndSeverity,
+          ),
+      ],
+    );
   }
 }
 
@@ -438,28 +465,40 @@ class _SelectBar extends StatelessWidget {
     final c = controller;
     if (!c.selectMode) {
       if (c.clips.isEmpty) return const SizedBox.shrink();
-      return TextButton(key: const ValueKey('recordings.select'), onPressed: c.enterSelectMode, child: Text(l10n.action_select));
+      return TextButton(
+        key: const ValueKey('recordings.select'),
+        onPressed: c.enterSelectMode,
+        child: Text(l10n.action_select),
+      );
     }
-    return Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-      Text(l10n.recording_lib_selected_count(c.selected.length), key: const ValueKey('recordings.select.count')),
-      TextButton(
-        key: const ValueKey('recordings.select.all'),
-        onPressed: c.toggleSelectAll,
-        child: Text(c.allSelected ? l10n.action_deselect_all : l10n.action_select_all),
-      ),
-      FilledButton.tonal(
-        key: const ValueKey('recordings.select.delete'),
-        onPressed: c.selected.isEmpty ? null : () => _confirmBatchDelete(context, c),
-        child: Text(l10n.action_delete),
-      ),
-      TextButton(key: const ValueKey('recordings.select.cancel'), onPressed: c.exitSelectMode, child: Text(l10n.action_cancel)),
-    ]);
+    return Wrap(
+      spacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(l10n.recording_lib_selected_count(c.selected.length), key: const ValueKey('recordings.select.count')),
+        TextButton(
+          key: const ValueKey('recordings.select.all'),
+          onPressed: c.toggleSelectAll,
+          child: Text(c.allSelected ? l10n.action_deselect_all : l10n.action_select_all),
+        ),
+        FilledButton.tonal(
+          key: const ValueKey('recordings.select.delete'),
+          onPressed: c.selected.isEmpty ? null : () => _confirmBatchDelete(context, c),
+          child: Text(l10n.action_delete),
+        ),
+        TextButton(
+          key: const ValueKey('recordings.select.cancel'),
+          onPressed: c.exitSelectMode,
+          child: Text(l10n.action_cancel),
+        ),
+      ],
+    );
   }
 
   Future<void> _confirmBatchDelete(BuildContext context, RecordingsController c) async {
     final l10n = AppLocalizations.of(context)!;
     final count = c.selected.length;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showHudDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.delete_recordings_title(count)),
@@ -495,7 +534,12 @@ class _ClipList extends StatelessWidget {
   /// the narrow layout, where there is no pane to be in sync with.
   final String? playingFilename;
 
-  const _ClipList({required this.controller, required this.jwt, required this.onTapItem, required this.playingFilename});
+  const _ClipList({
+    required this.controller,
+    required this.jwt,
+    required this.onTapItem,
+    required this.playingFilename,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -521,7 +565,11 @@ class _ClipList extends StatelessWidget {
         }
         if (c.pageFailed) {
           return Center(
-            child: TextButton(key: const ValueKey('recordings.more.retry'), onPressed: c.more, child: Text(l10n.action_retry)),
+            child: TextButton(
+              key: const ValueKey('recordings.more.retry'),
+              onPressed: c.more,
+              child: Text(l10n.action_retry),
+            ),
           );
         }
         // The end of the list came into view: ask for the next page after this frame.
@@ -529,7 +577,7 @@ class _ClipList extends StatelessWidget {
         return const Padding(
           key: ValueKey('recordings.more.loading'),
           padding: EdgeInsets.all(16),
-          child: Center(child: CircularProgressIndicator()),
+          child: SizedBox(height: 40, child: HudLoading()),
         );
       },
     );
@@ -547,12 +595,19 @@ class _ClipRow extends StatelessWidget {
   /// True when this clip is the one in the detail pane.
   final bool playing;
 
-  const _ClipRow({super.key, required this.controller, required this.item, required this.jwt, required this.onTap, this.playing = false});
+  const _ClipRow({
+    super.key,
+    required this.controller,
+    required this.item,
+    required this.jwt,
+    required this.onTap,
+    this.playing = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
     final c = controller;
     final jwt = this.jwt;
     final locale = Localizations.localeOf(context).toString();
@@ -562,56 +617,69 @@ class _ClipRow extends StatelessWidget {
       RecordingKind.normal => l10n.recording_lib_chip_type_normal,
     };
     final seen = item.detectedClasses.isEmpty ? '' : ' · ${item.detectedClasses.join(', ')}';
-    return ListTile(
-      selected: playing,
-      selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: 128,
-          height: 72,
-          child: ColoredBox(
-            color: theme.colorScheme.surfaceContainerHighest,
-            // Not Image.network: the daemon answers an uncached thumbnail with 202 +
-            // Retry-After while it generates one. See thumbnail_image.dart.
-            child: jwt == null ? null : ThumbnailImage(filename: item.filename, jwt: jwt),
+    // A 4 dp HUD row; the clip in the detail pane is the accent border on the soft fill.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: HudPanel(
+        color: playing ? Color.alphaBlend(hud.viewAllFill, hud.panel) : hud.panel,
+        borderColor: playing ? hud.accent : hud.panelBorder,
+        radius: BwHud.radiusSmall,
+        shadows: hud.tileShadow,
+        child: Material(
+          type: MaterialType.transparency,
+          child: ListTile(
+            selected: playing,
+            selectedTileColor: Colors.transparent,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+              child: SizedBox(
+                width: 128,
+                height: 72,
+                child: ColoredBox(
+                  color: hud.pageBackground,
+                  // Not Image.network: the daemon answers an uncached thumbnail with 202 +
+                  // Retry-After while it generates one. See thumbnail_image.dart.
+                  child: jwt == null ? null : ThumbnailImage(filename: item.filename, jwt: jwt),
+                ),
+              ),
+            ),
+            title: Text(
+              DateFormat.yMMMd(locale).add_jm().format(DateTime.fromMillisecondsSinceEpoch(item.timestampMs)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              '$type · ${item.formattedDuration} · ${item.formattedSize}$seen',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: c.selectMode
+                ? Checkbox(
+                    key: ValueKey('recordings.check.${item.filename}'),
+                    value: c.selected.contains(item.filename),
+                    onChanged: (_) => c.toggleSelected(item.filename),
+                  )
+                : IconButton(
+                    key: ValueKey('recordings.delete.${item.filename}'),
+                    tooltip: l10n.cd_delete,
+                    icon: Icon(Icons.delete_outline, color: hud.magenta),
+                    onPressed: () => _confirmDelete(context, c, item),
+                  ),
+            onTap: c.selectMode ? () => c.toggleSelected(item.filename) : onTap,
+            onLongPress: () {
+              if (!c.selectMode) c.enterSelectMode();
+              c.toggleSelected(item.filename);
+            },
           ),
         ),
       ),
-      title: Text(
-        DateFormat.yMMMd(locale).add_jm().format(DateTime.fromMillisecondsSinceEpoch(item.timestampMs)),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        '$type · ${item.formattedDuration} · ${item.formattedSize}$seen',
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: c.selectMode
-          ? Checkbox(
-              key: ValueKey('recordings.check.${item.filename}'),
-              value: c.selected.contains(item.filename),
-              onChanged: (_) => c.toggleSelected(item.filename),
-            )
-          : IconButton(
-              key: ValueKey('recordings.delete.${item.filename}'),
-              tooltip: l10n.cd_delete,
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => _confirmDelete(context, c, item),
-            ),
-      onTap: c.selectMode ? () => c.toggleSelected(item.filename) : onTap,
-      onLongPress: () {
-        if (!c.selectMode) c.enterSelectMode();
-        c.toggleSelected(item.filename);
-      },
     );
   }
 
   Future<void> _confirmDelete(BuildContext context, RecordingsController c, RecordingItem item) async {
     final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showHudDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.dialog_delete_recording_title),

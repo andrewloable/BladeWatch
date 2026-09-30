@@ -1120,5 +1120,9 @@
   "dashboard_chip_auto_hold": "Auto Hold: {state}",
   "auto_hold_disabled": "Aus",
   "auto_hold_enabled": "Ein",
-  "auto_hold_active": "Hält"
+  "auto_hold_active": "Hält",
+  "dashboard_hud_overview": "Status",
+  "dashboard_hud_telemetry": "Telemetrie",
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
 }

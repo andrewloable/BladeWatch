@@ -57,6 +57,10 @@ void main() {
 
   testWidgets('BladeWatchApp transitions from Startup to the shell once startup completes',
       (tester) async {
+    // The Dashboard's HUD pulse (HudPulse, BladeWatch-8w4p) loops forever, which pumpAndSettle below
+    // would wait on until it times out; it stands still when the platform asks for no animations.
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     final fakeChannel = FakePlatformChannel()
       ..stub('daemon', 'processStatus', {
         'status': 'ok',
@@ -144,7 +148,7 @@ void main() {
     // construction and the Builder-scoped context showModalBottomSheet needs
     // (a context above MaterialApp itself, which the outer build() context
     // is, cannot open one).
-    await tester.tap(find.byIcon(Icons.language));
+    await tester.tap(find.byIcon(Icons.translate));
     await tester.pumpAndSettle();
     expect(find.byType(LanguagePickerSheet), findsOneWidget);
     expect(tester.takeException(), isNull);

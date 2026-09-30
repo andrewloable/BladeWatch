@@ -6,6 +6,7 @@ import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/settings_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/storage_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,7 @@ import '../../car/car_page.dart';
 import '../../car/car_store.dart';
 import '../../i18n.dart';
 import '../common/format.dart';
+import '../common/hud_style.dart';
 import '../common/loader.dart';
 import '../trips/trips_screen.dart' show TripSettingsForm;
 
@@ -69,7 +71,21 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
         tr: tr,
         child: SessionScope(
           session: session,
-          child: Scaffold(appBar: AppBar(title: Text(tr('companion.trips_costs'))), body: const TripSettingsForm()),
+          child: Scaffold(
+            body: SafeArea(
+              child: Column(children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  child: HudTitleBar(
+                    title: tr('companion.trips_costs').toUpperCase(),
+                    onBack: () => Navigator.of(context).maybePop(),
+                    backTooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  ),
+                ),
+                const Expanded(child: TripSettingsForm()),
+              ]),
+            ),
+          ),
         ),
       ),
     ));
@@ -100,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
     await _data.load();
   }
 
-  Future<bool> _confirm(String title, String body, {String? yes}) async =>
+  Future<bool> _confirm(String title, String body, {String? yes, bool destructive = false}) async =>
       await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -108,7 +124,12 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
           content: Text(body),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('common.cancel'))),
-            FilledButton(key: const ValueKey('settings.confirm'), onPressed: () => Navigator.pop(context, true), child: Text(yes ?? context.tr('common.ok'))),
+            FilledButton(
+              key: const ValueKey('settings.confirm'),
+              style: destructive ? destructiveStyle(context) : null,
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(yes ?? context.tr('common.ok')),
+            ),
           ],
         ),
       ) ==
@@ -123,7 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
       return;
     }
     final detail = '${preview.totalDeletableCount} ${tr('settings.files')} · ${Fmt.bytes(preview.totalDeletableBytes.toInt())}';
-    if (!await _confirm(tr('companion.cleanup'), detail)) return;
+    if (!await _confirm(tr('companion.cleanup'), detail, destructive: true)) return;
     final r = await _storage.triggerCleanup(TriggerCleanupRequest());
     if (mounted) {
       say(ScaffoldMessenger.of(context), r.success ? tr('recording.cdr_freed', {'size': Fmt.bytes(r.bytesFreed.toInt()), 'files': r.filesDeleted}) : tr('recording.cdr_cleanup_failed'));
@@ -140,8 +161,8 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
     }
     final v = volumes.first;
     // Twice, on purpose: this erases a drive in a car the owner may be nowhere near.
-    if (!await _confirm(tr('settings.format_external_drive'), '${tr('settings.format_external_hint')}\n\n${v.mountPath.isEmpty ? v.volumeId : v.mountPath}')) return;
-    if (!mounted || !await _confirm(tr('settings.format_external_drive'), tr('settings.tap_again_erase'), yes: tr('settings.format_sd_usb'))) return;
+    if (!await _confirm(tr('settings.format_external_drive'), '${tr('settings.format_external_hint')}\n\n${v.mountPath.isEmpty ? v.volumeId : v.mountPath}', destructive: true)) return;
+    if (!mounted || !await _confirm(tr('settings.format_external_drive'), tr('settings.tap_again_erase'), yes: tr('settings.format_sd_usb'), destructive: true)) return;
     await _save(() async {
       final r = await _storage.formatVolume(FormatVolumeRequest(volumeId: v.volumeId));
       if (!r.success) throw StateError(r.error);
@@ -164,12 +185,12 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
         ],
         onChanged: (l) => widget.onLanguage(l == null || l.isEmpty ? null : l),
       ),
-      if (store.car != null) InfoRow(tr('dashboard.device_id'), store.car!.deviceId),
+      if (store.car != null) ...[const SizedBox(height: 8), InfoRow(tr('dashboard.device_id'), store.car!.deviceId)],
       const SizedBox(height: 8),
       OutlinedButton(
         key: const ValueKey('settings.unpair'),
         onPressed: () async {
-          if (await _confirm(tr('companion.unpair'), tr('companion.unpair_hint'))) await widget.onUnpair();
+          if (await _confirm(tr('companion.unpair'), tr('companion.unpair_hint'), destructive: true)) await widget.onUnpair();
         },
         child: Text(tr('companion.unpair')),
       ),
@@ -194,12 +215,16 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
           Section(title: tr('settings.recording_mode_acc'), children: [
             Text(tr('settings.recording_mode_hint')),
             for (final m in SettingsScreen.recordingModes)
-              ListTile(
-                key: ValueKey('settings.mode.$m'),
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(m == mode ? Icons.radio_button_checked : Icons.radio_button_unchecked),
-                title: Text(tr('companion.mode_${m.toLowerCase()}')),
-                onTap: m == mode ? null : () => _save(() => _settings.setRecordingMode(SetRecordingModeRequest(mode: m))),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                // The chosen mode is the accent-bordered row: its state is real (the car's configured mode).
+                child: HudListRow(
+                  key: ValueKey('settings.mode.$m'),
+                  leading: Icon(m == mode ? Icons.radio_button_checked : Icons.radio_button_unchecked, size: 20),
+                  title: tr('companion.mode_${m.toLowerCase()}'),
+                  selected: m == mode,
+                  onTap: m == mode ? null : () => _save(() => _settings.setRecordingMode(SetRecordingModeRequest(mode: m))),
+                ),
               ),
           ]),
           Section(title: tr('settings.recording_quality'), children: [
@@ -211,6 +236,7 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
               items: [for (final q in qualities) DropdownMenuItem(value: q, child: Text(q))],
               onChanged: (q) => _save(() => _settings.setQuality(SetQualityRequest(recordingQuality: q, codec: v.quality.codec))),
             ),
+            const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               isExpanded: true, // long names ellipsize at a large text size (BladeWatch-rdtj.55)
               key: const ValueKey('settings.codec'),
@@ -227,6 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
             Wrap(spacing: 8, children: [
               for (final m in SettingsScreen.segmentMinutes)
                 ChoiceChip(
+                  showCheckmark: false,
                   key: ValueKey('settings.segment.$m'),
                   label: Text(tr('companion.minutes', {'count': m})),
                   selected: v.quality.recordingSegmentMinutes == m,
@@ -246,6 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
             Wrap(spacing: 8, children: [
               for (final (place, key) in [('INTERNAL', 'companion.place_internal'), ('SD_CARD', 'companion.place_sd')])
                 ChoiceChip(
+                  showCheckmark: false,
                   key: ValueKey('settings.saveTo.$place'),
                   label: Text(tr(key)),
                   selected: st.recordingsStorageType == place,
@@ -263,12 +291,14 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
                 ),
             ]),
             if (!st.sdCardAvailable) Text(tr('recording.sd_card_not_detected'), style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 16),
             TextField(
               key: const ValueKey('settings.recLimit'),
               controller: _recLimit,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(labelText: '${tr('settings.recordings')} · ${tr('settings.mb_limit')}'),
             ),
+            const SizedBox(height: 16),
             TextField(
               key: const ValueKey('settings.survLimit'),
               controller: _survLimit,
@@ -299,13 +329,12 @@ class _SettingsScreenState extends State<SettingsScreen> with LoadersState {
           ]),
           // BladeWatch-rdtj.67: where the owner looks for costs and currency.
           Section(title: tr('companion.trips_costs'), children: [
-            ListTile(
+            HudListRow(
               key: const ValueKey('settings.trips'),
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.route_outlined),
-              title: Text(tr('trip.settings.elec_rate_label')),
-              subtitle: Text('${tr('trips.currency')} · ${tr('trip.settings.distance_unit')} · ${tr('trips.storage_location')}'),
-              trailing: const Icon(Icons.chevron_right),
+              icon: Icons.route_outlined,
+              title: tr('trip.settings.elec_rate_label'),
+              subtitle: '${tr('trips.currency')} · ${tr('trip.settings.distance_unit')} · ${tr('trips.storage_location')}',
+              trailing: const Icon(Icons.chevron_right, size: 16),
               onTap: _openTrips,
             ),
           ]),

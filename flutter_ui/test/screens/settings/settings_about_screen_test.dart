@@ -2,11 +2,16 @@ import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
 import 'package:bladewatch_ui/screens/settings/settings_about_controller.dart';
 import 'package:bladewatch_ui/screens/settings/settings_about_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../fakes/hud_test_env.dart';
+
 
 void main() {
+  hudTestEnvironment();
+
   late bool setupGuideShown;
 
   setUp(() {
@@ -37,6 +42,15 @@ void main() {
     ),
   );
 
+  testWidgets('HUD: the page header is the title bar with the one-line description under it', (tester) async {
+    await pumpTall(tester, wrap(buildController()));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HudTitleBar), findsOneWidget);
+    expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text('ABOUT BLADEWATCH')), findsOneWidget);
+    expect(find.byKey(const ValueKey('hud.back')), findsNothing);
+  });
+
   testWidgets('renders version and package once loaded', (tester) async {
     await pumpTall(tester, wrap(buildController()));
     await tester.pumpAndSettle();
@@ -53,6 +67,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('MIT License'), findsOneWidget);
+    // The bundled HUD typeface's SIL OFL notice travels with the licence (BladeWatch-8w4p.1).
+    expect(find.textContaining('SIL Open Font License'), findsOneWidget);
   });
 
   testWidgets('tapping the setup-guide row invokes the callback', (tester) async {

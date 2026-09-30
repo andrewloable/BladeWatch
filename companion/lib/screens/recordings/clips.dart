@@ -5,7 +5,8 @@ import 'dart:typed_data';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
-import 'package:bladewatch_theme/color_tokens.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -70,17 +71,18 @@ class _ClipThumbState extends State<ClipThumb> {
   @override
   Widget build(BuildContext context) {
     final bytes = _bytes;
+    final hud = BwHud.of(context);
     return SizedBox(
       width: 96,
       height: 54,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+      // A 4 dp bordered frame, like every HUD tile; the placeholder is the panel with a muted icon.
+      child: HudPanel(
+        color: hud.panel,
+        borderColor: hud.panelBorder,
+        clipBehavior: Clip.antiAlias,
         child: bytes != null
-            ? Image.memory(bytes, fit: BoxFit.cover)
-            : ColoredBox(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: Icon(_failed ? Icons.videocam_off_outlined : Icons.movie_outlined, size: 20),
-              ),
+            ? SizedBox.expand(child: Image.memory(bytes, fit: BoxFit.cover))
+            : Center(child: Icon(_failed ? Icons.videocam_off_outlined : Icons.movie_outlined, size: 20, color: hud.textSecondary)),
       ),
     );
   }
@@ -110,13 +112,16 @@ class ClipTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
+    final hud = BwHud.of(context);
     final c = clip;
     final seen = c.detectedClasses.isEmpty ? '' : ' · ${c.detectedClasses.join(', ')}';
-    return ListTile(
+    return HudListRow(
       key: ValueKey('clip.${c.filename}'),
       leading: ClipThumb(c.filename),
-      title: Text(Fmt.dateTime(c.timestampMs, tr.lang)),
-      subtitle: Text('${clipTypeLabel(tr, c.type)} · ${Fmt.duration(c.durationSeconds.toInt())} · ${Fmt.bytes(c.sizeBytes.toInt())}$seen'),
+      title: Fmt.dateTime(c.timestampMs, tr.lang),
+      subtitle: '${clipTypeLabel(tr, c.type)} · ${Fmt.duration(c.durationSeconds.toInt())} · ${Fmt.bytes(c.sizeBytes.toInt())}$seen',
+      // A ticked clip is the accent-bordered row: its state is real (it is in the picked set).
+      selected: selected ?? false,
       trailing: selected != null
           ? Checkbox(key: ValueKey('clip.check.${c.filename}'), value: selected, onChanged: (v) => onSelect?.call(v ?? false))
           : onDelete == null
@@ -124,6 +129,8 @@ class ClipTile extends StatelessWidget {
               : IconButton(
                   key: ValueKey('clip.delete.${c.filename}'),
                   tooltip: tr('common.delete'),
+                  // Destructive: magenta, the HUD's attention colour.
+                  color: hud.magenta,
                   icon: const Icon(Icons.delete_outline),
                   onPressed: onDelete,
                 ),
@@ -454,112 +461,147 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
+    final hud = BwHud.of(context);
     final video = _video;
     final ready = video != null && video.value.isInitialized;
     final when = clipTime(_filename, _entry);
     final entry = _entry;
+    const gutter = EdgeInsets.symmetric(horizontal: 24);
     return Scaffold(
-      // When it was taken and what kind of clip, like the list row; the file name, which is what
-      // this used to show, is kept small underneath (BladeWatch-rdtj.44).
-      appBar: AppBar(
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Text(
-            when == null ? _filename : Fmt.dateTime(Int64(when.millisecondsSinceEpoch), tr.lang),
-            key: const ValueKey('player.title'),
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            [if (entry != null) clipTypeLabel(tr, entry.type), if (when != null) _filename].join(' · '),
-            style: Theme.of(context).textTheme.bodySmall,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ]),
-        actions: [
-        IconButton(key: const ValueKey('player.save'), tooltip: tr('common.download'), icon: const Icon(Icons.download), onPressed: _save),
-      ]),
-      body: Column(children: [
-        Expanded(
-          child: Center(
-            child: ready
-                ? Stack(alignment: Alignment.center, children: [
-                    AspectRatio(aspectRatio: video.value.aspectRatio, child: VideoPlayer(video)),
-                    if (_stalled > 0) const CircularProgressIndicator(),
-                  ])
-                : !_canPlay || _failed
-                    ? Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(tr(_canPlay ? 'errors.load_failed' : 'companion.player_unsupported'), textAlign: TextAlign.center),
-                      )
-                    : const CircularProgressIndicator(),
-          ),
-        ),
-        if (ready)
-          ValueListenableBuilder(
-            valueListenable: video,
-            builder: (context, v, _) {
-              final total = v.duration > Duration.zero ? v.duration : Duration(milliseconds: _sidecarMs);
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(children: [
-                  Text(_clock(v.position), key: const ValueKey('player.position')),
-                  Expanded(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      _DetectionStrip(spans: _spans, totalMs: total.inMilliseconds),
-                      VideoProgressIndicator(video, allowScrubbing: true, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10)),
-                    ]),
-                  ),
-                  Text(_clock(total), key: const ValueKey('player.duration')),
-                ]),
-              );
-            },
-          ),
-        if (ready)
-          Text(
-            _counts.isEmpty ? tr('companion.no_detections') : _legend(tr),
-            key: const ValueKey('player.legend'),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        if (ready || widget.playlist.length > 1)
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            if (widget.playlist.length > 1)
-              IconButton(
-                key: const ValueKey('player.previous'),
-                tooltip: tr('companion.prev_clip'),
-                onPressed: _index > 0 ? () => _go(-1) : null,
-                icon: const Icon(Icons.skip_previous),
-              ),
-            if (ready)
-              ValueListenableBuilder(
-                valueListenable: video,
-                builder: (context, v, _) => IconButton(
-                  key: const ValueKey('player.play'),
-                  iconSize: 40,
-                  tooltip: tr(v.isPlaying ? 'companion.player_pause' : 'companion.player_play'),
-                  icon: Icon(v.isPlaying ? Icons.pause_circle : Icons.play_circle),
-                  onPressed: () => v.isPlaying ? video.pause() : video.play(),
-                ),
-              ),
-            if (widget.playlist.length > 1) ...[
-              IconButton(
-                key: const ValueKey('player.next'),
-                tooltip: tr('companion.next_clip'),
-                onPressed: _index >= 0 && _index < widget.playlist.length - 1 ? () => _go(1) : null,
-                icon: const Icon(Icons.skip_next),
-              ),
-              Text('${_index + 1} / ${widget.playlist.length}', key: const ValueKey('player.count')),
-            ],
-          ]),
-        if (ready && _stalled >= _slowAfter)
+      body: SafeArea(
+        child: Column(children: [
+          // When it was taken and what kind of clip, like the list row; the file name, which is what
+          // this used to show, is kept small underneath (BladeWatch-rdtj.44). The download is the title bar's action.
           Padding(
-            key: const ValueKey('player.slow'),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(children: [
-              Expanded(child: Text(tr('companion.player_slow'))),
-              TextButton.icon(onPressed: _save, icon: const Icon(Icons.download), label: Text(tr('common.download'))),
-            ]),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: HudTitleBar(
+              title: when == null ? _filename : Fmt.dateTime(Int64(when.millisecondsSinceEpoch), tr.lang),
+              titleKey: const ValueKey('player.title'),
+              onBack: () => Navigator.of(context).maybePop(),
+              backTooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              trailing: IconButton(
+                key: const ValueKey('player.save'),
+                tooltip: tr('common.download'),
+                icon: const Icon(Icons.download),
+                color: hud.accent,
+                onPressed: _save,
+              ),
+            ),
           ),
-        if (_saved != null) Padding(padding: const EdgeInsets.all(12), child: Text(_saved!, key: const ValueKey('player.saved'))),
-      ]),
+          Padding(
+            padding: gutter,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                [if (entry != null) clipTypeLabel(tr, entry.type), if (when != null) _filename].join(' · '),
+                style: hudText(12, hud.textSecondary, lineHeight: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: ready
+                  // The video surface itself is untouched: a black letterbox inside a 4 dp HUD frame.
+                  ? Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: HudPanel(
+                        color: Colors.black,
+                        borderColor: hud.panelBorder,
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(alignment: Alignment.center, children: [
+                          AspectRatio(aspectRatio: video.value.aspectRatio, child: VideoPlayer(video)),
+                          if (_stalled > 0) const CircularProgressIndicator(),
+                        ]),
+                      ),
+                    )
+                  : !_canPlay || _failed
+                      ? Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(tr(_canPlay ? 'errors.load_failed' : 'companion.player_unsupported'), textAlign: TextAlign.center),
+                        )
+                      : const HudLoading(),
+            ),
+          ),
+          if (ready)
+            ValueListenableBuilder(
+              valueListenable: video,
+              builder: (context, v, _) {
+                final total = v.duration > Duration.zero ? v.duration : Duration(milliseconds: _sidecarMs);
+                final clock = hudText(12, hud.textSecondary, lineHeight: 16);
+                return Padding(
+                  padding: gutter,
+                  child: Row(children: [
+                    Text(_clock(v.position), key: const ValueKey('player.position'), style: clock),
+                    Expanded(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        _DetectionStrip(spans: _spans, totalMs: total.inMilliseconds),
+                        VideoProgressIndicator(
+                          video,
+                          allowScrubbing: true,
+                          colors: VideoProgressColors(
+                            playedColor: hud.accent,
+                            bufferedColor: hud.accent.withValues(alpha: 0.3),
+                            backgroundColor: hud.panelBorder,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                        ),
+                      ]),
+                    ),
+                    Text(_clock(total), key: const ValueKey('player.duration'), style: clock),
+                  ]),
+                );
+              },
+            ),
+          if (ready)
+            Text(
+              _counts.isEmpty ? tr('companion.no_detections') : _legend(tr),
+              key: const ValueKey('player.legend'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          if (ready || widget.playlist.length > 1)
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              if (widget.playlist.length > 1)
+                IconButton(
+                  key: const ValueKey('player.previous'),
+                  tooltip: tr('companion.prev_clip'),
+                  onPressed: _index > 0 ? () => _go(-1) : null,
+                  icon: const Icon(Icons.skip_previous),
+                ),
+              if (ready)
+                ValueListenableBuilder(
+                  valueListenable: video,
+                  builder: (context, v, _) => IconButton(
+                    key: const ValueKey('player.play'),
+                    iconSize: 40,
+                    tooltip: tr(v.isPlaying ? 'companion.player_pause' : 'companion.player_play'),
+                    icon: Icon(v.isPlaying ? Icons.pause_circle : Icons.play_circle),
+                    onPressed: () => v.isPlaying ? video.pause() : video.play(),
+                  ),
+                ),
+              if (widget.playlist.length > 1) ...[
+                IconButton(
+                  key: const ValueKey('player.next'),
+                  tooltip: tr('companion.next_clip'),
+                  onPressed: _index >= 0 && _index < widget.playlist.length - 1 ? () => _go(1) : null,
+                  icon: const Icon(Icons.skip_next),
+                ),
+                Text('${_index + 1} / ${widget.playlist.length}', key: const ValueKey('player.count'), style: hudText(12, hud.textSecondary, lineHeight: 16)),
+              ],
+            ]),
+          if (ready && _stalled >= _slowAfter)
+            Padding(
+              key: const ValueKey('player.slow'),
+              padding: gutter,
+              child: Row(children: [
+                Expanded(child: Text(tr('companion.player_slow'))),
+                TextButton.icon(onPressed: _save, icon: const Icon(Icons.download), label: Text(tr('common.download'))),
+              ]),
+            ),
+          if (_saved != null)
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), child: Text(_saved!, key: const ValueKey('player.saved'))),
+        ]),
+      ),
     );
   }
 
@@ -577,8 +619,8 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
   }
 }
 
-/// The detection spans laid along the clip: person red, vehicle blue, bike green, anything else
-/// grey -- the web player's colours, taken from the theme's status colours.
+/// The detection spans laid along the clip: person magenta (attention), vehicle cyan, bike amber, anything else grey --
+/// the web player's classes, in the HUD's colours.
 class _DetectionStrip extends StatelessWidget {
   const _DetectionStrip({required this.spans, required this.totalMs});
 
@@ -588,12 +630,12 @@ class _DetectionStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (spans.isEmpty || totalMs <= 0) return const SizedBox(height: 6);
-    final colors = Theme.of(context).extension<BwStatusColors>()!;
+    final hud = BwHud.of(context);
     Color color(String type) => switch (type) {
-          'person' => colors.danger,
-          'car' || 'vehicle' => colors.info,
-          'bike' => colors.success,
-          _ => Theme.of(context).colorScheme.outline,
+          'person' => hud.magenta,
+          'car' || 'vehicle' => hud.accent,
+          'bike' => hud.warning,
+          _ => hud.textSecondary,
         };
     return LayoutBuilder(
       builder: (context, box) => SizedBox(

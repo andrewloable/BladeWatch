@@ -2806,6 +2806,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get auto_hold_active => '驻车中';
+
+  @override
+  String get dashboard_hud_overview => '概览';
+
+  @override
+  String get dashboard_hud_telemetry => '遥测';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -5610,6 +5622,18 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get auto_hold_active => '驻车中';
+
+  @override
+  String get dashboard_hud_overview => '概览';
+
+  @override
+  String get dashboard_hud_telemetry => '遥测';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -8415,4 +8439,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get auto_hold_active => '駐車中';
+
+  @override
+  String get dashboard_hud_overview => '概覽';
+
+  @override
+  String get dashboard_hud_telemetry => '遙測';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }

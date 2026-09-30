@@ -3,12 +3,13 @@ import 'dart:math' as math;
 import '../../platform/pairing_channel.dart';
 import '../pairing/pairing_dialog.dart';
 
-import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import '../../shell/route_stubs.dart' show BwRoutes;
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 import 'dashboard_controller.dart';
 import 'dashboard_models.dart';
 import '../trips/trip_costs_view.dart';
@@ -16,15 +17,22 @@ import '../trips/trips_models.dart' show formatDistance;
 import 'vehicle_dialog_controller.dart';
 import '../../widgets/bw_choice_chip.dart';
 
-/// Width at which the dashboard uses native's two-column arrangement (hero
-/// beside Scan-to-Connect) and a five-across metric row. The head unit is
-/// 1920 logical pixels wide; below this the screen stacks and wraps instead.
+/// Width at which the dashboard uses five tiles across. The head unit is 1920 logical pixels wide
+/// (1280 dp); below this the tiles wrap two to a row.
 const double _twoColumnBreakpoint = 1100;
 
+/// The reference's page padding (`p-6`), all round.
+const double _pagePadding = 24;
+
+/// BladeWatch-rdtj.17/.12: the Pear peer, remote access's only transport -- whether the car can be
+/// found right now, not merely whether a process runs. Off until a companion is paired. The Remote
+/// access tile and the title bar's secure-link label both read this, so they cannot disagree.
+bool _remoteOnline(DashboardController c) => c.pear.enabled && c.pear.running && c.pear.reachable == true;
+
 /// Ported from `app/src/main/java/com/loabletech/bladewatch/ui/fragment/DashboardFragment.kt`
-/// + `fragment_dashboard.xml`. Renders [DashboardController] state; forwards
-/// user intent (taps, dialog input) to it or to [onNavigate]. No business
-/// logic here — see the controller for behaviour.
+/// + `fragment_dashboard.xml`, then re-skinned to the HUD design (BladeWatch-8w4p; reference in
+/// `docs/design/hud-reference/`). Renders [DashboardController] state; forwards user intent (taps,
+/// dialog input) to it or to [onNavigate]. No business logic here — see the controller for behaviour.
 ///
 /// Route mapping for tap targets that native sends to `daemonsFragment`
 /// (background-services tile, remote-access tile): [BwRoutes] has no
@@ -94,59 +102,93 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
     final c = widget.controller;
 
-    final hero = _TripStatsCard(
-      state: c.tripStats,
-      energy: c.energy,
-      l10n: l10n,
-      theme: theme,
-      onViewAllTrips: () => widget.onNavigate(BwRoutes.trips),
-    );
-    final metrics = _MetricRow(
-      controller: c,
-      l10n: l10n,
-      theme: theme,
-      onRecordingsTap: () => widget.onNavigate(BwRoutes.recordings),
-      onDaemonsTap: () => widget.onNavigate(BwRoutes.diagnostics),
-      onVehicleTap: _openVehicleDialog,
-      onLiveTap: () => widget.onNavigate(BwRoutes.liveView),
-    );
+    // The four blocks are spread down the page (the reference's justify-between) when the window is
+    // taller than they are, and the page scrolls when it is shorter. The margins under the first
+    // three are the minimum gaps.
+    final blocks = <Widget>[
+      HudTitleBar(
+        title: '${l10n.rail_dashboard} // ${l10n.dashboard_hud_overview}'.toUpperCase(),
+        titleKey: const ValueKey('dashboard.title'),
+        // Only ever ACTIVE while the Remote access tile says Online: the design's label is unconditional, but a
+        // link that is not up must not be claimed.
+        trailing: Text(
+          _remoteOnline(c) ? l10n.dashboard_hud_link_active : l10n.dashboard_hud_link_offline,
+          key: const ValueKey('dashboard.secureLink'),
+          style: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700, em: 0.1),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        // The trip hero takes the full width: the connect card that sat beside it (tunnel QR, device id,
+        // access code) went with tor (BladeWatch-rdtj.12).
+        child: _TripStatsCard(
+          state: c.tripStats,
+          energy: c.energy,
+          l10n: l10n,
+          hud: hud,
+          onViewAllTrips: () => widget.onNavigate(BwRoutes.trips),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: _HeroChips(
+          controller: c,
+          l10n: l10n,
+          hud: hud,
+          // An explicit action, never a QR on the dashboard: a permanently visible pairing
+          // code would be a permanently visible way in (BladeWatch-rdtj.7).
+          trailing: widget.pairingChannel == null
+              ? null
+              : FilledButton.icon(
+                  key: const ValueKey('dashboard.pair'),
+                  onPressed: () => showPairingDialog(context, widget.pairingChannel!),
+                  icon: const Icon(Icons.qr_code_2, size: 14),
+                  label: Text(l10n.pairing_title.toUpperCase()),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: hud.panel,
+                    foregroundColor: hud.magenta,
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    minimumSize: const Size(0, 36),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    // `side` set on the style, not only on the shape: the HUD ThemeData's button theme has its own
+                    // side, and a ButtonStyle side wins over the shape's.
+                    side: BorderSide(color: hud.magentaBorder),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwHud.radiusSmall)),
+                    textStyle: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700, em: 0.05),
+                  ),
+                ),
+        ),
+      ),
+      _MetricRow(
+        controller: c,
+        l10n: l10n,
+        hud: hud,
+        onRecordingsTap: () => widget.onNavigate(BwRoutes.recordings),
+        onDaemonsTap: () => widget.onNavigate(BwRoutes.diagnostics),
+        onVehicleTap: _openVehicleDialog,
+        onLiveTap: () => widget.onNavigate(BwRoutes.liveView),
+      ),
+    ];
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: hud.pageBackground,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            BwDimens.pagePaddingHorizontal,
-            BwDimens.pagePaddingTop,
-            BwDimens.pagePaddingHorizontal,
-            BwDimens.pagePaddingBottom,
-          ),
-          children: [
-            // The trip hero takes the full width: the connect card that sat beside it (tunnel
-            // QR, device id, access code) went with tor (BladeWatch-rdtj.12).
-            hero,
-            const SizedBox(height: BwDimens.cardGapVertical),
-            _HeroChips(
-              controller: c,
-              l10n: l10n,
-              theme: theme,
-              // An explicit action, never a QR on the dashboard: a permanently visible pairing
-              // code would be a permanently visible way in (BladeWatch-rdtj.7).
-              trailing: widget.pairingChannel == null
-                  ? null
-                  : FilledButton.tonalIcon(
-                      key: const ValueKey('dashboard.pair'),
-                      onPressed: () => showPairingDialog(context, widget.pairingChannel!),
-                      icon: const Icon(Icons.qr_code_2),
-                      label: Text(l10n.pairing_title),
-                    ),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(_pagePadding),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: math.max(0, constraints.maxHeight - 2 * _pagePadding)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: blocks,
+              ),
             ),
-            const SizedBox(height: BwDimens.cardGapVertical),
-            metrics,
-          ],
+          ),
         ),
       ),
     );
@@ -154,7 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _openVehicleDialog() async {
     final dialogController = VehicleDialogController(systemService: widget.systemService);
-    await showDialog<void>(
+    await showHudDialog<void>(
       context: context,
       builder: (_) => _VehicleCapacityDialog(controller: dialogController),
     );
@@ -165,18 +207,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
+/// One stat of the hero: a value over its label. [hasUnit] marks a distance (`83.3 km`), whose unit
+/// is drawn smaller.
+class _Stat {
+  final String value;
+  final String label;
+  final bool hasUnit;
+  final Color? valueColor;
+  final Shadow? glow;
+  final Color? labelColor;
+
+  const _Stat(this.value, this.label, {this.hasUnit = false, this.valueColor, this.glow, this.labelColor});
+}
+
 class _TripStatsCard extends StatelessWidget {
   final TripStatsState state;
   final EnergyState energy;
   final AppLocalizations l10n;
-  final ThemeData theme;
+  final BwHud hud;
   final VoidCallback onViewAllTrips;
 
   const _TripStatsCard({
     required this.state,
     required this.energy,
     required this.l10n,
-    required this.theme,
+    required this.hud,
     required this.onViewAllTrips,
   });
 
@@ -193,163 +248,297 @@ class _TripStatsCard extends StatelessWidget {
         ? l10n.dashboard_trips_no_data
         : null;
     final pending = l10n.dashboard_metric_value_pending;
-    // The hero is the focal point of the screen, so it takes the filled
-    // primaryContainer role as native does. Everything inside it must therefore
-    // read against onPrimaryContainer, not onSurface.
-    final onHero = theme.colorScheme.onPrimaryContainer;
 
     final e = energy;
     String dist(double km) => e.available ? formatDistance(km, e.distanceUnit, decimals: 0) : pending;
+    bool known(String v) => v != pending;
+
+    // The week's figures: trips, distance and drive time. The first two glow cyan, the drive time magenta.
     final trips = [
-      (l10n.dashboard_trips_label_trips, state.available ? state.tripCount.toString() : pending),
-      (l10n.dashboard_trips_label_distance, state.available ? state.distanceLabel : pending),
-      (l10n.dashboard_trips_label_time, state.available ? state.driveTimeLabel : pending),
-    ];
-    // BladeWatch-4zr7: the car's charge and fuel now (current values, where the row above is the
-    // week's): battery and electric range, and fuel and fuel range on a car with a tank.
-    final charge = [
-      (l10n.dashboard_week_battery, e.available ? '${e.socPercent.round()}%' : pending),
-      (l10n.dashboard_week_elec_range, dist(e.elecRangeKm)),
-      if (e.hasFuel) ...[
-        (l10n.dashboard_week_fuel, '${e.fuelPercent.round()}%'),
-        (l10n.dashboard_week_fuel_range, dist(e.fuelRangeKm)),
-      ],
+      _Stat(
+        state.available ? state.tripCount.toString() : pending,
+        l10n.dashboard_trips_label_trips,
+        glow: hud.glowCyan,
+      ),
+      _Stat(
+        state.available ? state.distanceLabel : pending,
+        l10n.dashboard_trips_label_distance,
+        hasUnit: state.available,
+        glow: hud.glowCyan,
+      ),
+      _Stat(
+        state.available ? state.driveTimeLabel : pending,
+        l10n.dashboard_trips_label_time,
+        valueColor: hud.driveTimeValue,
+        glow: hud.glowMagenta,
+        labelColor: hud.magenta,
+      ),
     ];
     // BladeWatch-39d2: what the week cost, or the line that says why there are no figures.
     final costs = state.available && state.tripCount > 0 ? tripCostDisplay(state.costs, l10n) : null;
-    final costFigures = [for (final (value, label) in costs?.figures ?? const <(String, String)>[]) (label, value)];
-    // One grid for every row, as many columns as the widest row, so the columns line up. The owner
-    // saw them drift once the charge row brought a fourth tile under three.
-    final columns = [trips.length, charge.length, costFigures.length].reduce(math.max);
-    Widget row(List<(String, String)> stats, {Key? key}) =>
-        _StatRow(key: key, stats: stats, columns: columns, theme: theme, color: onHero);
+    final costFigures = [
+      for (final (value, label) in costs?.figures ?? const <(String, String)>[]) _Stat(value, label),
+    ];
+    // BladeWatch-4zr7: the car's charge and fuel now (current values, where the rows above are the
+    // week's): battery and electric range, and fuel and fuel range on a car with a tank.
+    final battery = _Stat(e.available ? '${e.socPercent.round()}%' : pending, l10n.dashboard_week_battery);
+    final evRange = _Stat(dist(e.elecRangeKm), l10n.dashboard_week_elec_range, hasUnit: known(dist(e.elecRangeKm)));
+    final fuel = _Stat('${e.fuelPercent.round()}%', l10n.dashboard_week_fuel);
+    final fuelRange = _Stat(dist(e.fuelRangeKm), l10n.dashboard_week_fuel_range, hasUnit: known(dist(e.fuelRangeKm)));
 
-    return Card(
-      color: theme.colorScheme.primaryContainer,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwDimens.cardRadiusHero)),
-      child: Padding(
-        // Half the top padding: the View all trips button's 48 px touch target already adds that
-        // space above the header, and the full value pushed the metric tiles below the fold on the
-        // head unit (design review 2026-09-27).
-        padding: const EdgeInsets.fromLTRB(
-          BwDimens.cardPaddingHero,
-          BwDimens.cardPaddingHero / 2,
-          BwDimens.cardPaddingHero,
-          BwDimens.cardPaddingHero,
+    final costMessage = costs?.message;
+    // The vertical rules run through the rows that are stat rows; a message row breaks them.
+    final rows = <Widget>[
+      _StatRow(
+        hud: hud,
+        gapBelow: costMessage == null,
+        cells: [for (final s in trips) _StatCell(stat: s, big: true, hud: hud)],
+      ),
+      if (costMessage != null) ...[
+        const SizedBox(height: 16),
+        Text(
+          costMessage,
+          key: const ValueKey('tripStats.costs.message'),
+          style: hudText(12, hud.statLabel, lineHeight: 16, weight: hud.labelWeight, em: 0.05),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        const SizedBox(height: 16),
+      ] else if (costs != null)
+        _StatRow(
+          key: const ValueKey('tripStats.costs'),
+          hud: hud,
+          gapBelow: true,
+          cells: [for (final s in costFigures) _StatCell(stat: s, hud: hud)],
+        ),
+      _StatRow(
+        key: const ValueKey('tripStats.energy'),
+        hud: hud,
+        gapBelow: false,
+        cells: [
+          _StatCell(stat: battery, hud: hud),
+          _StatCell(stat: evRange, hud: hud),
+          // The third column holds Fuel and Fuel Range side by side on a car with a tank, and is
+          // empty on one without (a BEV shows no fuel rather than 0).
+          if (e.hasFuel)
             Row(
-              // Centered: the button's 48 px touch target otherwise sat its text ~20 px below the
-              // label it pairs with (design review 2026-09-27).
-              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              // Scaled down rather than overflowing when the column is narrow (portrait, a long label).
               children: [
-                Expanded(
-                  child: Text(
-                    l10n.dashboard_trips_this_week.toUpperCase(),
-                    style: theme.textTheme.labelLarge?.copyWith(color: onHero),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: _StatCell(stat: fuel, hud: hud),
                   ),
                 ),
-                // Top-right, level with the label, as native has it.
-                TextButton(
-                  key: const ValueKey('tripStats.viewAll'),
-                  onPressed: onViewAllTrips,
-                  style: TextButton.styleFrom(foregroundColor: onHero),
-                  child: Text(l10n.dashboard_trips_view_all),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: _StatCell(stat: fuelRange, hud: hud, alignEnd: true),
+                  ),
                 ),
               ],
             ),
-            if (headline != null) ...[
-              Text(headline, style: theme.textTheme.headlineMedium?.copyWith(color: onHero)),
-              const SizedBox(height: 16),
-            ],
-            row(trips),
-            if (costs != null) ...[
-              const SizedBox(height: 16),
-              if (costs.message case final message?)
-                Text(
-                  message,
-                  key: const ValueKey('tripStats.costs.message'),
-                  style: theme.textTheme.bodySmall?.copyWith(color: onHero.withValues(alpha: 0.8)),
-                )
-              else
-                row(costFigures, key: const ValueKey('tripStats.costs')),
-            ],
-            // The week's figures stay together; the car's charge and fuel NOW come last, under a
-            // rule, instead of splitting the trips from their costs (design review 2026-09-27).
-            Divider(height: 20, thickness: 1, color: onHero.withValues(alpha: 0.3)),
-            row(charge, key: const ValueKey('tripStats.energy')),
-          ],
-        ),
+        ],
+      ),
+    ];
+
+    return HudPanel(
+      color: null,
+      gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: hud.summaryGradient),
+      borderColor: hud.cardBorder,
+      radius: BwHud.radiusPanel,
+      shadows: hud.cardShadow,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          // The two blurred corner blobs, as radial gradients (an ImageFilter blur would cost an
+          // offscreen layer per frame on the head unit's GPU).
+          Positioned(right: -80, top: -80, width: 240, height: 240, child: _CornerGlow(color: hud.cornerGlowCyan)),
+          Positioned(left: -80, bottom: -80, width: 240, height: 240, child: _CornerGlow(color: hud.cornerGlowMagenta)),
+          Padding(
+            // The reference's 24 top padding, less the 11 the View all button's 48 dp touch target adds
+            // above the header row: the row is 48 tall where the reference's button is 26.
+            padding: const EdgeInsets.fromLTRB(24, 13, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  // 12 in the reference, less the 11 the touch target adds below the button.
+                  padding: const EdgeInsets.only(bottom: 1),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: hud.cardDivider)),
+                  ),
+                  child: Row(
+                    // Centered: the button's 48 px touch target otherwise sat its text ~20 px below the
+                    // label it pairs with (design review 2026-09-27).
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(Icons.memory, size: 14, color: hud.magenta),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${l10n.dashboard_trips_this_week} ${l10n.dashboard_hud_telemetry}'.toUpperCase(),
+                          style: hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700, em: 0.1),
+                        ),
+                      ),
+                      // Top-right, level with the label, as native has it. The box is the reference's; the
+                      // touch target stays 48 dp (TextButton pads it).
+                      TextButton(
+                        key: const ValueKey('tripStats.viewAll'),
+                        onPressed: onViewAllTrips,
+                        style: TextButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.padded,
+                          foregroundColor: hud.accent,
+                          backgroundColor: hud.viewAllFill,
+                          minimumSize: Size.zero,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          side: BorderSide(color: hud.panelBorderStrong),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwHud.radiusSmall)),
+                          textStyle: hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700, em: 0.05),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(l10n.dashboard_trips_view_all),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.chevron_right, size: 14),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (headline != null) ...[
+                  Text(
+                    headline,
+                    style: hudText(24, hud.textPrimary, lineHeight: 32, weight: FontWeight.w700, em: -0.025),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                ...rows,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// One row of the hero's stats (label, value) on the card's shared grid of [columns], so every
-/// row's columns line up; a row with fewer stats leaves its last columns empty rather than
-/// stretching (BladeWatch-4zr7).
-class _StatRow extends StatelessWidget {
-  final List<(String, String)> stats;
-  final int columns;
-  final ThemeData theme;
+/// A soft coloured blob for a corner of the hero.
+class _CornerGlow extends StatelessWidget {
   final Color color;
 
-  const _StatRow({super.key, required this.stats, required this.columns, required this.theme, required this.color});
+  const _CornerGlow({required this.color});
 
   @override
-  Widget build(BuildContext context) => IntrinsicHeight(
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < columns; i++) ...[
-          // Every slot keeps its divider's width, so an empty column is exactly as wide as a full one;
-          // an empty column's divider is hidden, not recoloured (transparent at 30% alpha is grey).
-          if (i > 0) Opacity(opacity: i < stats.length ? 1 : 0, child: _StatDivider(color: color)),
-          Expanded(
-            child: i < stats.length
-                ? _Stat(label: stats[i].$1, value: stats[i].$2, theme: theme, color: color)
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ],
+  Widget build(BuildContext context) => IgnorePointer(
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
+      ),
     ),
   );
 }
 
-/// The vertical rule native draws between the three hero stats.
-class _StatDivider extends StatelessWidget {
-  final Color color;
+/// One row of the hero's stats on the card's three columns. The columns are `1fr` with a 24 gap; the
+/// first two carry a 1 px rule after 16 of padding, the last 8 of left padding. [gapBelow] carries the
+/// rules through the 16 dp before the next stat row so they read as one line, as the reference's
+/// column borders do. A row with fewer than three cells leaves its last columns empty.
+class _StatRow extends StatelessWidget {
+  final BwHud hud;
+  final List<Widget> cells;
+  final bool gapBelow;
 
-  const _StatDivider({required this.color});
+  const _StatRow({super.key, required this.hud, required this.cells, required this.gapBelow});
 
   @override
-  Widget build(BuildContext context) =>
-      Container(width: 1, margin: const EdgeInsets.symmetric(horizontal: 12), color: color.withValues(alpha: 0.3));
+  Widget build(BuildContext context) {
+    Widget cell(int i) => Padding(
+      padding: EdgeInsets.only(bottom: gapBelow ? 16 : 0),
+      child: Align(alignment: Alignment.topLeft, child: i < cells.length ? cells[i] : const SizedBox.shrink()),
+    );
+    Widget ruled(int i) => Expanded(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: cell(i)),
+          const SizedBox(width: 16),
+          Container(width: 1, color: hud.cardDivider),
+        ],
+      ),
+    );
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ruled(0),
+          const SizedBox(width: 24),
+          ruled(1),
+          const SizedBox(width: 24),
+          Expanded(
+            child: Padding(padding: const EdgeInsets.only(left: 8), child: cell(2)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _Stat extends StatelessWidget {
-  final String label;
-  final String value;
-  final ThemeData theme;
+/// A stat's value over its label. [big] is the week's first row (30 dp); the others are 24 dp.
+class _StatCell extends StatelessWidget {
+  final _Stat stat;
+  final BwHud hud;
+  final bool big;
+  final bool alignEnd;
 
-  /// Foreground role of whatever surface the stat sits on — the hero is a
-  /// filled primaryContainer, so onSurface would be unreadable there.
-  final Color color;
-
-  const _Stat({required this.label, required this.value, required this.theme, required this.color});
+  const _StatCell({required this.stat, required this.hud, this.big = false, this.alignEnd = false});
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Text(value, style: theme.textTheme.headlineSmall?.copyWith(color: color)),
-      Text(label, style: theme.textTheme.labelSmall?.copyWith(color: color.withValues(alpha: 0.8))),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final size = big ? 30.0 : 24.0;
+    final shadows = hudGlow(stat.glow);
+    final valueStyle = hudText(
+      size,
+      stat.valueColor ?? hud.textPrimary,
+      lineHeight: big ? 36 : 32,
+      weight: FontWeight.w700,
+      em: -0.025,
+      shadows: shadows,
+    );
+    // One Text.rich, so the plain text stays the formatted string ("83.3 km"): only the unit,
+    // after the last space, is smaller. Never applied to a duration ("2h 32m") or a cost.
+    final split = stat.hasUnit ? stat.value.lastIndexOf(' ') : -1;
+    final value = split <= 0
+        ? TextSpan(text: stat.value, style: valueStyle)
+        : TextSpan(
+            style: valueStyle,
+            children: [
+              TextSpan(text: stat.value.substring(0, split + 1)),
+              TextSpan(
+                text: stat.value.substring(split + 1),
+                // The rule's tracking is inherited as the parent's absolute value, not re-derived.
+                style: hudText(18, hud.accentBright, lineHeight: 28, em: -0.025 * size / 18, shadows: shadows),
+              ),
+            ],
+          );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text.rich(value, textAlign: alignEnd ? TextAlign.end : TextAlign.start),
+        const SizedBox(height: 2),
+        Text(
+          stat.label,
+          style: hudText(12, stat.labelColor ?? hud.statLabel, lineHeight: 16, weight: hud.labelWeight, em: 0.05),
+        ),
+      ],
+    );
+  }
 }
 
 /// Mirrors `refreshHeroChips()` — each chip repeats a metric-tile value at
@@ -357,33 +546,33 @@ class _Stat extends StatelessWidget {
 class _HeroChips extends StatelessWidget {
   final DashboardController controller;
   final AppLocalizations l10n;
-  final ThemeData theme;
+  final BwHud hud;
 
   /// Ends the row: the Pair a device action, which used to take a row of its own and push the
   /// tiles toward the fold (design review 2026-09-27).
   final Widget? trailing;
 
-  const _HeroChips({required this.controller, required this.l10n, required this.theme, this.trailing});
+  const _HeroChips({required this.controller, required this.l10n, required this.hud, this.trailing});
 
   @override
   Widget build(BuildContext context) {
+    final recording = controller.recordingsMetric.isRecording;
     // No "4/4 Running" chip: the Background services tile below says exactly that (design review
     // 2026-09-27, the owner's call).
     final chips = <Widget>[
-      Chip(
-        label: Text(
-          controller.recordingsMetric.isRecording
-              ? l10n.dashboard_chip_recording_active
-              : l10n.dashboard_chip_recording_idle,
-        ),
+      HudChip(
+        key: const ValueKey('chip.recording'),
+        label: recording ? l10n.dashboard_chip_recording_active : l10n.dashboard_chip_recording_idle,
+        live: recording,
+        dotKey: const ValueKey('chip.recordingDot'),
       ),
       // BladeWatch-7zp9: the car's state. A dash for anything the car could not (or has not been
       // measured to) name -- never a guessed P / NORMAL / off.
       ..._driveChips(controller.drive),
     ];
     return Wrap(
-      spacing: 8,
-      runSpacing: 4,
+      spacing: 12,
+      runSpacing: 12,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [...chips, ?trailing],
     );
@@ -392,30 +581,28 @@ class _HeroChips extends StatelessWidget {
   List<Widget> _driveChips(DriveInfo d) {
     String known(String v, String Function(String) show) => v == DriveInfo.unknown ? '–' : show(v);
     return [
-      Chip(key: const ValueKey('chip.gear'), label: Text(l10n.dashboard_chip_gear(known(d.gear, (g) => g)))),
-      Chip(
+      HudChip(key: const ValueKey('chip.gear'), label: l10n.dashboard_chip_gear(known(d.gear, (g) => g))),
+      HudChip(
         key: const ValueKey('chip.driveMode'),
-        label: Text(l10n.dashboard_chip_drive_mode(known(d.driveMode, (m) => m))),
+        label: l10n.dashboard_chip_drive_mode(known(d.driveMode, (m) => m)),
       ),
-      Chip(
+      HudChip(
         key: const ValueKey('chip.autoHold'),
-        label: Text(
-          l10n.dashboard_chip_auto_hold(
-            known(
-              d.autoHold,
-              (a) => switch (a) {
-                'ACTIVE' => l10n.auto_hold_active,
-                'ENABLED' => l10n.auto_hold_enabled,
-                'DISABLED' => l10n.auto_hold_disabled,
-                _ => '–',
-              },
-            ),
+        label: l10n.dashboard_chip_auto_hold(
+          known(
+            d.autoHold,
+            (a) => switch (a) {
+              'ACTIVE' => l10n.auto_hold_active,
+              'ENABLED' => l10n.auto_hold_enabled,
+              'DISABLED' => l10n.auto_hold_disabled,
+              _ => '–',
+            },
           ),
         ),
       ),
       // BladeWatch-os88: EV / HEV, as the car itself labels them in every language. Hidden, not a
       // dash, when unknown: a car with no HEV mode has nothing to show.
-      if (d.energyMode != DriveInfo.unknown) Chip(key: const ValueKey('chip.energyMode'), label: Text(d.energyMode)),
+      if (d.energyMode != DriveInfo.unknown) HudChip(key: const ValueKey('chip.energyMode'), label: d.energyMode),
     ];
   }
 }
@@ -429,7 +616,7 @@ class _HeroChips extends StatelessWidget {
 class _MetricRow extends StatelessWidget {
   final DashboardController controller;
   final AppLocalizations l10n;
-  final ThemeData theme;
+  final BwHud hud;
   final VoidCallback onRecordingsTap;
   final VoidCallback onDaemonsTap;
   final VoidCallback onVehicleTap;
@@ -438,7 +625,7 @@ class _MetricRow extends StatelessWidget {
   const _MetricRow({
     required this.controller,
     required this.l10n,
-    required this.theme,
+    required this.hud,
     required this.onRecordingsTap,
     required this.onDaemonsTap,
     required this.onVehicleTap,
@@ -451,11 +638,10 @@ class _MetricRow extends StatelessWidget {
     final recordingsValue = rec.loading
         ? l10n.dashboard_metric_value_pending
         : rec.isRecording
-        ? l10n.dashboard_recordings_value_live(rec.todayCount)
+        // The string carries a "●" bullet; the HUD draws it as the glowing dot instead.
+        ? l10n.dashboard_recordings_value_live(rec.todayCount).replaceFirst('●', '').trim()
         : rec.todayCount.toString();
 
-    // BladeWatch-rdtj.17/.12: the Pear peer, remote access's only transport -- whether the car can
-    // be found right now, not merely whether a process runs. Off until a companion is paired.
     final pear = controller.pear;
     final String remoteValue = !pear.enabled
         ? l10n.dashboard_tunnel_offline
@@ -466,7 +652,7 @@ class _MetricRow extends StatelessWidget {
             false => l10n.dashboard_tunnel_offline,
             null => l10n.surveillance_general_status_running,
           };
-    final remoteOnline = pear.enabled && pear.running && pear.reachable == true;
+    final remoteOnline = _remoteOnline(controller);
 
     final daemons = controller.daemonsSummary;
     final daemonsValue = l10n.dashboard_daemons_running(daemons.running, daemons.total);
@@ -487,18 +673,22 @@ class _MetricRow extends StatelessWidget {
     final tiles = <Widget>[
       _MetricTile(
         key: const ValueKey('tile.recordings'),
-        icon: Icons.videocam_outlined,
+        icon: Icons.videocam,
         title: l10n.dashboard_metric_recordings,
-        value: recordingsValue,
-        theme: theme,
+        value: recordingsValue.toUpperCase(),
+        hud: hud,
         onTap: onRecordingsTap,
+        // The reference shows this dot unconditionally; here it is the recording state.
+        leadingDot: rec.isRecording,
       ),
       _MetricTile(
         key: const ValueKey('tile.tunnel'),
-        icon: Icons.dashboard_outlined,
+        icon: Icons.lan,
         title: l10n.dashboard_metric_tunnel,
-        value: remoteValue,
-        theme: theme,
+        value: remoteValue.toUpperCase(),
+        hud: hud,
+        valueColor: hud.onlineValue,
+        valueGlow: hud.glowCyan,
         // Pear's details -- reachability, connected devices, its switch -- live on the Services screen.
         onTap: onDaemonsTap,
         // Native's remote-access card is the only one with a status dot.
@@ -506,28 +696,33 @@ class _MetricRow extends StatelessWidget {
       ),
       _MetricTile(
         key: const ValueKey('tile.daemons'),
-        icon: Icons.memory_outlined,
+        icon: Icons.memory,
         title: l10n.dashboard_metric_services,
-        value: daemonsValue,
-        theme: theme,
+        value: daemonsValue.toUpperCase(),
+        hud: hud,
         onTap: onDaemonsTap,
       ),
       _MetricTile(
         // Key preserved from the old standalone quick-action card so existing
         // tests and any muscle memory keep working.
         key: const ValueKey('quickAction.live'),
-        icon: Icons.play_circle_outline,
+        icon: Icons.play_circle,
+        iconColor: hud.magenta,
         title: l10n.dashboard_action_live_subtitle,
-        value: l10n.dashboard_action_live,
-        theme: theme,
+        value: l10n.dashboard_action_live.toUpperCase(),
+        hud: hud,
+        valueColor: hud.liveValue,
+        valueGlow: hud.glowMagenta,
         onTap: onLiveTap,
       ),
       _MetricTile(
         key: const ValueKey('tile.vehicle'),
-        icon: Icons.directions_car_outlined,
+        icon: Icons.directions_car,
         title: l10n.dashboard_metric_vehicle,
+        // Not uppercased: a model name has its own casing ("DM-i").
         value: vehicleValue,
-        theme: theme,
+        small: true,
+        hud: hud,
         onTap: onVehicleTap,
       ),
     ];
@@ -537,12 +732,13 @@ class _MetricRow extends StatelessWidget {
         // Five across only where they actually fit; below that, wrap rather
         // than squeeze each card into an unreadable sliver.
         if (constraints.maxWidth >= _twoColumnBreakpoint) {
-          return IntrinsicHeight(
+          return SizedBox(
+            height: _MetricTile.height,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var i = 0; i < tiles.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 12),
+                  if (i > 0) const SizedBox(width: 16),
                   Expanded(child: tiles[i]),
                 ],
               ],
@@ -550,86 +746,139 @@ class _MetricRow extends StatelessWidget {
           );
         }
         return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [for (final tile in tiles) SizedBox(width: (constraints.maxWidth - 12) / 2, child: tile)],
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            for (final tile in tiles)
+              SizedBox(width: (constraints.maxWidth - 16) / 2, height: _MetricTile.height, child: tile),
+          ],
         );
       },
     );
   }
 }
 
-/// Native's metric card: icon on top, the VALUE large beneath it, then the
-/// label. The port previously had label-then-value, which reads as a form field
-/// rather than a status readout.
+/// Native's metric card in the HUD skin: icon on top, the VALUE large beneath it, then the label.
 class _MetricTile extends StatelessWidget {
+  /// `h-28`.
+  static const double height = 112;
+
   final IconData icon;
+  final Color? iconColor;
   final String title;
   final String value;
-  final ThemeData theme;
+  final BwHud hud;
   final VoidCallback onTap;
   final bool showStatusDot;
+
+  /// A glowing dot before the value (the recordings tile while recording).
+  final bool leadingDot;
+
+  /// The vehicle model is 12 dp, not 20: it is a name, not a figure.
+  final bool small;
+  final Color? valueColor;
+  final Shadow? valueGlow;
 
   const _MetricTile({
     super.key,
     required this.icon,
     required this.title,
     required this.value,
-    required this.theme,
+    required this.hud,
     required this.onTap,
+    this.iconColor,
     this.showStatusDot = false,
+    this.leadingDot = false,
+    this.small = false,
+    this.valueColor,
+    this.valueGlow,
   });
 
   @override
-  Widget build(BuildContext context) => Card(
-    color: theme.colorScheme.surfaceContainer,
-    elevation: 0,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(BwDimens.cardRadiusStandard)),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(BwDimens.cardRadiusStandard),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(BwDimens.cardPaddingStandard),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Row(
+  Widget build(BuildContext context) {
+    Widget glowDot(double size, Key? key, double blur) => Container(
+      key: key,
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: hud.dot,
+        shape: BoxShape.circle,
+        boxShadow: [BoxShadow(color: hud.dotGlow, blurRadius: blur)],
+      ),
+    );
+    return HudPanel(
+      color: hud.panel,
+      borderColor: hud.panelBorder,
+      radius: BwHud.radiusSmall,
+      shadows: hud.tileShadow,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+          splashColor: hud.panelPressed,
+          highlightColor: hud.panelPressed,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, size: 22, color: theme.colorScheme.onSurfaceVariant),
-                const Spacer(),
-                if (showStatusDot)
-                  Container(
-                    key: const ValueKey('tile.statusDot'),
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(icon, size: 18, color: iconColor ?? hud.iconAccent),
+                    const Spacer(),
+                    if (showStatusDot) glowDot(10, const ValueKey('tile.statusDot'), 8),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Shrunk to fit, not cut: "BYD Seal 5 DM-i" lost its end to an ellipsis on the head
+                    // unit (design review 2026-09-27).
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (leadingDot) ...[
+                            glowDot(8, const ValueKey('tile.recordingDot'), 6),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            value,
+                            maxLines: 1,
+                            style: hudText(
+                              small ? 12 : 20,
+                              valueColor ?? hud.textPrimary,
+                              lineHeight: small ? 16 : 28,
+                              weight: FontWeight.w700,
+                              em: -0.025,
+                              shadows: hudGlow(valueGlow),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      title.toUpperCase(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: hudText(10, hud.tileLabel, lineHeight: 15, weight: hud.labelWeight, em: 0.05),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            // Shrunk to fit, not cut: "BYD Seal 5 DM-i" lost its end to an ellipsis on the head
-            // unit (design review 2026-09-27).
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                value,
-                style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
-                maxLines: 1,
-              ),
-            ),
-            Text(
-              title,
-              style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Ground truth: `showVehicleCapacityDialog()`. The model picker is a row of

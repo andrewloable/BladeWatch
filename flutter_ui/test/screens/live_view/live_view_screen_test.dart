@@ -17,11 +17,14 @@ import 'package:bladewatch_ui/screens/live_view/live_view_models.dart';
 import 'package:bladewatch_ui/screens/live_view/live_view_screen.dart';
 import 'package:bladewatch_ui/screens/location/location_controller.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_platform_channel.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import '../../fakes/hud_test_env.dart';
 
 class _FakeJwtSource implements JwtSource {
   String? next = 'fake.jwt.token';
@@ -52,6 +55,7 @@ class _FakeLiveSocket implements LiveSocket {
 }
 
 void main() {
+  hudTestEnvironment();
   late FakeRpcClient rpc;
   late FakePlatformChannel channel;
   late _FakeJwtSource jwt;
@@ -177,6 +181,73 @@ void main() {
     expect(controller.state.status.phase, LiveStreamPhase.live);
     expect(find.byKey(const ValueKey('liveView.banner')), findsNothing);
     expect(find.byType(Texture), findsOneWidget);
+  });
+
+  // BladeWatch-2llu.2: the Live View is on the HUD skin.
+  group('HUD skin', () {
+    testWidgets('has a HUD title bar, and the magenta LIVE badge only while the stream is really live', (tester) async {
+      stubHappyRpcPath();
+      final socket = _FakeLiveSocket();
+      final controller = buildController(connect: (url) async => socket);
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      expect(find.byType(HudTitleBar), findsOneWidget);
+      expect(find.text('LIVE'), findsOneWidget, reason: 'the title only: connecting, so no live badge to claim');
+      expect(find.byKey(const ValueKey('liveView.liveBadge')), findsNothing);
+
+      socket.emit(Uint8List.fromList([1]));
+      await tester.pumpAndSettle();
+      socket.emit(Uint8List.fromList([2]));
+      await tester.pumpAndSettle();
+      expect(controller.state.status.phase, LiveStreamPhase.live);
+      final badge = find.byKey(const ValueKey('liveView.liveBadge'));
+      expect(find.descendant(of: badge, matching: find.text('LIVE')), findsOneWidget);
+      expect(tester.widget<Text>(find.descendant(of: badge, matching: find.text('LIVE'))).style!.color, BwHud.light.magenta);
+      expect(find.descendant(of: badge, matching: find.byType(HudStatusDot)), findsOneWidget);
+    });
+
+    testWidgets('the video sits in a bordered black frame and the utility rail is a HUD panel', (tester) async {
+      stubHappyRpcPath();
+      final controller = buildController(connect: (url) async => _FakeLiveSocket());
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      final frame = tester.widget<HudPanel>(find.ancestor(of: find.byKey(const ValueKey('liveView.stage')), matching: find.byType(HudPanel)).first);
+      expect((frame.color, frame.borderColor, frame.radius), (Colors.black, BwHud.light.panelBorder, 4));
+      final rail = tester.widget<HudPanel>(find.descendant(of: find.byKey(const ValueKey('liveView.utilityRail')), matching: find.byType(HudPanel)).first);
+      expect((rail.color, rail.borderColor, rail.radius), (BwHud.light.panel, BwHud.light.panelBorder, 4));
+      expect(
+        tester.widget<ColoredBox>(find.descendant(of: find.byType(LiveViewScreen), matching: find.byType(ColoredBox)).first).color,
+        BwHud.light.pageBackground,
+      );
+    });
+
+    testWidgets('the chosen camera is the accent border on the soft fill; the others are plain rows', (tester) async {
+      stubHappyRpcPath();
+      final controller = buildController(connect: (url) async => _FakeLiveSocket());
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      final selected = controller.state.direction;
+      for (final d in LiveViewDirection.values) {
+        final row = tester.widget<HudListRow>(find.byKey(ValueKey('liveView.direction.${d.name}')));
+        expect(row.selected, d == selected, reason: d.name);
+      }
+      await tester.tap(find.byKey(const ValueKey('liveView.direction.rear')));
+      await tester.pumpAndSettle();
+      expect(tester.widget<HudListRow>(find.byKey(const ValueKey('liveView.direction.rear'))).selected, isTrue);
+      expect(tester.widget<HudListRow>(find.byKey(ValueKey('liveView.direction.${selected.name}'))).selected, isFalse);
+    });
+
+    testWidgets('the error banner is a magenta HUD panel with the retry button', (tester) async {
+      final controller = buildController(maxConnectAttempts: 1, connect: (url) async => throw const SocketException('refused'));
+      await pump(tester, controller);
+      await tester.pumpAndSettle();
+      final banner = tester.widget<HudPanel>(find.byKey(const ValueKey('liveView.banner')));
+      expect(banner.borderColor, BwHud.light.cardBorder);
+      expect(banner.radius, 4);
+      final text = tester.widget<Text>(find.textContaining('Camera unavailable'));
+      expect(text.style!.color, BwHud.light.magenta);
+      expect(find.byKey(const ValueKey('liveView.retry')), findsOneWidget);
+    });
   });
 
   testWidgets('shows the unavailable banner with a retry button when the connect budget is exhausted', (tester) async {
@@ -363,8 +434,10 @@ void main() {
       // close reason for why this alternative was chosen over "not in this change's diff".
       final bytes = File('lib/shell/nav_rail.dart').readAsBytesSync();
       // Re-pinned for BladeWatch-5l5o (2026-09-27), which changed the rail on purpose (the
-      // landscape rail had to fit the head unit). y78o.2's own proof stands in its close reason.
-      expect(bytes.length, 5933, reason: 'nav_rail.dart byte length changed — it must not be modified');
+      // landscape rail had to fit the head unit), again for BladeWatch-8w4p (the HUD skin, 2026-09-30), and for BladeWatch-0glp.2 (the rail item moved into the shared
+      // kit as HudNavItem so the companion uses it too, 2026-09-30).
+      // y78o.2's own proof stands in its close reason.
+      expect(bytes.length, 4710, reason: 'nav_rail.dart byte length changed — it must not be modified');
 
       var hash = 0x811c9dc5;
       for (final b in bytes) {
@@ -373,7 +446,7 @@ void main() {
       }
       expect(
         hash,
-        0x088ec996,
+        0x82532197,
         reason: 'nav_rail.dart content changed — BladeWatch-y78o.2 must not modify this file',
       );
     },

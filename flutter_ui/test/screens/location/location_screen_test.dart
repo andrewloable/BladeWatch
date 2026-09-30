@@ -9,8 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_platform_channel.dart';
+import '../../fakes/hud_test_env.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 
 void main() {
+  hudTestEnvironment();
   late FakePlatformChannel channel;
   late LocationController controller;
 
@@ -150,6 +154,37 @@ void main() {
     expect(find.text('37.77490, -122.41940'), findsOneWidget);
     expect(find.byKey(const ValueKey('location.map')), findsOneWidget);
     expect(find.byKey(const ValueKey('location.modeSelector')), findsOneWidget);
+  });
+
+  // BladeWatch-2llu.2/.3: the Location screen is on the HUD skin.
+  testWidgets('HUD: a title bar, the map in a bordered frame, the banner as a HUD panel', (tester) async {
+    stubListening();
+    stubFreshSample();
+    await tester.pumpWidget(wrap(LocationScreen(controller: controller)));
+    await settle(tester);
+    const hud = BwHud.light;
+
+    expect(find.byType(HudTitleBar), findsOneWidget);
+    expect(find.text('LOCATION'), findsOneWidget);
+    final frame = tester.widget<HudPanel>(find.ancestor(of: find.byKey(const ValueKey('location.map')), matching: find.byType(HudPanel)).first);
+    expect((frame.borderColor, frame.radius), (hud.panelBorder, 4));
+    final banner = tester.widget<HudPanel>(find.descendant(of: find.byKey(const ValueKey('location.banner')), matching: find.byType(HudPanel)));
+    expect((banner.borderColor, banner.radius), (hud.cardBorder, 4));
+    final title = tester.widget<Text>(find.text('Car location'));
+    expect((title.style!.fontSize, title.style!.color), (14, hud.accent));
+  });
+
+  testWidgets('HUD: the car marker is magenta with a white ring', (tester) async {
+    stubListening();
+    stubFreshSample();
+    await tester.pumpWidget(wrap(LocationScreen(controller: controller)));
+    await settle(tester);
+    final deco = tester
+        .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+        .map((d) => d.decoration)
+        .whereType<BoxDecoration>()
+        .firstWhere((d) => d.shape == BoxShape.circle && d.color == BwHud.light.magenta);
+    expect((deco.border! as Border).top.color, Colors.white);
   });
 
   testWidgets('a stale fix shows the stale banner but keeps the map', (tester) async {

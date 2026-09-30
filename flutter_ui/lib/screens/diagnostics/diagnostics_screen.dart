@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 import '../../platform/network_channel.dart';
 import 'adb_console_controller.dart';
 import 'adb_console_screen.dart';
@@ -66,9 +68,24 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   /// which never showed a bare unlabelled AppBar here.
   void _pushSubScreen(String title, Widget body) {
     Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => Scaffold(
-        appBar: AppBar(title: Text(title)),
-        body: body,
+      builder: (routeContext) => Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              // The HUD title bar with the back arrow replaces the M3 app bar (the rail stays visible: this is the
+              // stage navigator).
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                child: HudTitleBar(
+                  title: title.toUpperCase(),
+                  onBack: () => Navigator.of(routeContext).maybePop(),
+                  backTooltip: AppLocalizations.of(routeContext)!.cd_back,
+                ),
+              ),
+              Expanded(child: body),
+            ],
+          ),
+        ),
       ),
     ));
   }
@@ -96,9 +113,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     final c = widget.controller;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       children: [
-        Text(l10n.diagnostics_hero_title, style: theme.textTheme.headlineSmall),
+        HudTitleBar(title: l10n.rail_diagnostics.toUpperCase()),
+        Text(l10n.diagnostics_hero_title, style: theme.textTheme.titleMedium),
         const SizedBox(height: 4),
         Text(
           l10n.diagnostics_hero_subtitle,
@@ -148,10 +166,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     );
   }
 
-  Widget _sectionLabel(ThemeData theme, String text) => Text(
-        text.toUpperCase(),
-        style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, letterSpacing: 0.6),
-      );
+  Widget _sectionLabel(ThemeData theme, String text) => HudSectionLabel(text);
 
   Widget _healthCard(ThemeData theme, {String? key, VoidCallback? onTap, required Widget child}) {
     final card = Card(
@@ -174,7 +189,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     };
     final (tunnelLabel, tunnelColor) = switch (c.tunnelState) {
       TunnelState.online => (l10n.diagnostics_tunnel_state_online, theme.colorScheme.primary),
-      TunnelState.connecting => (l10n.diagnostics_tunnel_state_connecting, Colors.amber),
+      TunnelState.connecting => (l10n.diagnostics_tunnel_state_connecting, BwHud.of(context).warning),
       TunnelState.offline => (l10n.diagnostics_tunnel_state_offline, theme.colorScheme.outline),
     };
     return _healthCard(
@@ -238,7 +253,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   Widget _cameraHealthTile(BuildContext context, AppLocalizations l10n, ThemeData theme, DiagnosticsController c) {
     final (text, color) = switch (c.cameraStatus) {
       CameraTileStatus.offline => (l10n.diagnostics_camera_value_offline, theme.colorScheme.outline),
-      CameraTileStatus.probing => (l10n.diagnostics_camera_value_probing, Colors.amber),
+      CameraTileStatus.probing => (l10n.diagnostics_camera_value_probing, BwHud.of(context).warning),
       CameraTileStatus.active => (
           c.cameraManualOverride
               ? l10n.diagnostics_camera_value_camera_n_manual(c.cameraProbedId)
@@ -331,7 +346,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
 
   void _showCameraSelectionDialog(BuildContext context, AppLocalizations l10n, ThemeData theme) {
     final c = widget.controller;
-    showDialog<void>(
+    showHudDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
@@ -407,7 +422,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
 
 
   void _showBatteryHealthDialog(BuildContext context, AppLocalizations l10n, ThemeData theme) {
-    showDialog<void>(
+    showHudDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.battery_health_title),
@@ -451,7 +466,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
 
     final enabled = c.trafficMonitorEnabled;
     if (enabled == null) {
-      await showDialog<void>(
+      await showHudDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(l10n.dialog_traffic_cannot_check_title),
@@ -469,7 +484,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     final actionLabel = enabled ? l10n.dialog_disable : l10n.dialog_enable;
     final keepLabel = enabled ? l10n.dialog_keep_enabled : l10n.dialog_keep_disabled;
 
-    await showDialog<void>(
+    await showHudDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
@@ -483,7 +498,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               final ok = await c.setTrafficMonitorEnabled(!enabled);
               if (!context.mounted) return;
               if (ok) {
-                await showDialog<void>(
+                await showHudDialog<void>(
                   context: context,
                   builder: (rebootContext) => AlertDialog(
                     title: Text(l10n.dialog_traffic_status_title(enabled ? l10n.dialog_disable : l10n.dialog_enable)),

@@ -4,6 +4,8 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/notifications.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/recordings_service_client.dart';
 import 'package:bladewatch_theme/color_tokens.dart';
+import 'package:bladewatch_theme/dimens_tokens.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_page.dart';
@@ -28,7 +30,7 @@ class EventsScreen extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       // As wide as a page's content, not the window (BladeWatch-rdtj.56).
-      child: ContentWidth(child: Column(children: [
+      child: Padding(padding: const EdgeInsets.symmetric(horizontal: BwDimens.pagePaddingHorizontal), child: ContentWidth(child: Column(children: [
         // BladeWatch-rdtj.72.2, found on a real phone: TabBar splits its width equally across
         // the 3 tabs regardless of label length, and `Tab(text: ...)`'s label has no
         // overflow/maxLines control -- "Surveillance" (12 characters, the longest of these
@@ -48,7 +50,7 @@ class EventsScreen extends StatelessWidget {
             const _Clips(type: 'proximity', key: ValueKey('events.proximity')),
           ]),
         ),
-      ])),
+      ]))),
     );
   }
 }
@@ -100,31 +102,40 @@ class _AlertsState extends State<_Alerts> {
           onRefresh: widget.alerts.refresh,
           child: list.isEmpty
               ? ListView(children: [
-                  Padding(padding: const EdgeInsets.all(32), child: Text(tr('companion.alerts_empty'), textAlign: TextAlign.center)),
+                  Padding(padding: const EdgeInsets.all(32), child: HudEmptyState(icon: Icons.notifications_none, message: tr('companion.alerts_empty'))),
                 ])
-              : ListView(children: [
-                  for (final e in list)
-                    ListTile(
-                      key: ValueKey('alert.${e.id}'),
-                      leading: Icon(
-                        switch (e.severity) {
-                          NotificationSeverity.NOTIFICATION_SEVERITY_CRITICAL => Icons.error,
-                          NotificationSeverity.NOTIFICATION_SEVERITY_ALERT => Icons.warning_amber,
-                          _ => Icons.info_outline,
-                        },
-                        color: switch (e.severity) {
-                          NotificationSeverity.NOTIFICATION_SEVERITY_CRITICAL => colors.danger,
-                          NotificationSeverity.NOTIFICATION_SEVERITY_ALERT => colors.warning,
-                          _ => colors.info,
-                        },
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(0, 12, 0, BwDimens.pagePaddingBottom),
+                  children: [
+                    for (final e in list)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        // A row that arrived since the list was last seen is the accent-bordered one (its state is real:
+                        // it is in `_shownNew`); the rest are plain. The title is bold either way, as every HUD row's is.
+                        child: HudListRow(
+                          key: ValueKey('alert.${e.id}'),
+                          leading: Icon(
+                            switch (e.severity) {
+                              NotificationSeverity.NOTIFICATION_SEVERITY_CRITICAL => Icons.error,
+                              NotificationSeverity.NOTIFICATION_SEVERITY_ALERT => Icons.warning_amber,
+                              _ => Icons.info_outline,
+                            },
+                            size: 20,
+                            color: switch (e.severity) {
+                              NotificationSeverity.NOTIFICATION_SEVERITY_CRITICAL => colors.danger,
+                              NotificationSeverity.NOTIFICATION_SEVERITY_ALERT => colors.warning,
+                              _ => colors.info,
+                            },
+                          ),
+                          title: e.title,
+                          subtitle: '${e.body}${e.body.isEmpty ? '' : '\n'}${Fmt.dateTime(e.timestampMs, tr.lang)}',
+                          selected: _shownNew.contains(e.id.toInt()),
+                          trailing: clipOf(e) == null ? null : const Icon(Icons.play_circle_outline, size: 20),
+                          onTap: clipOf(e) == null ? null : () => openClip(context, clipOf(e)!),
+                        ),
                       ),
-                      title: Text(e.title, style: _shownNew.contains(e.id.toInt()) ? const TextStyle(fontWeight: FontWeight.bold) : null),
-                      subtitle: Text('${e.body}${e.body.isEmpty ? '' : '\n'}${Fmt.dateTime(e.timestampMs, tr.lang)}'),
-                      isThreeLine: e.body.isNotEmpty,
-                      trailing: clipOf(e) == null ? null : const Icon(Icons.play_circle_outline),
-                      onTap: clipOf(e) == null ? null : () => openClip(context, clipOf(e)!),
-                    ),
-                ]),
+                  ],
+                ),
         );
       },
     );

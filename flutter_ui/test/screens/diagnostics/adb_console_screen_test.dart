@@ -7,8 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_adb_connection.dart';
+import '../../fakes/hud_test_env.dart';
 
 void main() {
+  hudTestEnvironment();
   late FakeAdbConnection connection;
   late AdbConsoleController controller;
 

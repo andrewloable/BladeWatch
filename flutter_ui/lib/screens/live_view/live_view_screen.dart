@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 import '../location/location_controller.dart';
 import '../location/location_models.dart';
 import 'live_view_controller.dart';
@@ -69,7 +71,10 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
     await widget.locationController.start();
     await widget.locationController.poll();
     if (!mounted) return;
-    _locationTimer = Timer.periodic(LiveViewScreen.locationPollInterval, (_) => unawaited(widget.locationController.poll()));
+    _locationTimer = Timer.periodic(
+      LiveViewScreen.locationPollInterval,
+      (_) => unawaited(widget.locationController.poll()),
+    );
   }
 
   Timer? _locationTimer;
@@ -106,35 +111,74 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final hud = BwHud.of(context);
     final c = widget.controller;
     final textureId = c.textureId;
+    final live = c.state.status.phase == LiveStreamPhase.live;
 
-    return Container(
-      color: Colors.black,
-      child: Row(
-        children: [
-          Expanded(
-            child: Stack(
-              key: const ValueKey('liveView.stage'),
-              fit: StackFit.expand,
-              children: [
-                if (textureId != null) Texture(textureId: textureId),
-                _Banner(l10n: l10n, status: c.state.status, onRetry: c.retry),
-              ],
+    return ColoredBox(
+      color: hud.pageBackground,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            HudTitleBar(
+              title: l10n.rail_live.toUpperCase(),
+              // A magenta LIVE only while the stream really is live (rule 5): never a decorative indicator.
+              trailing: live
+                  ? Row(
+                      key: const ValueKey('liveView.liveBadge'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const HudStatusDot(HudDotState.bad, pulse: true),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.dashboard_action_live.toUpperCase(),
+                          style: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700, em: 0.1),
+                        ),
+                      ],
+                    )
+                  : null,
             ),
-          ),
-          _UtilityRail(
-            key: const ValueKey('liveView.utilityRail'),
-            l10n: l10n,
-            direction: c.state.direction,
-            onSelectDirection: c.selectDirection,
-            isRecording: c.state.isRecording,
-            markStatus: c.state.markStatus,
-            onMark: c.markRecording,
-            locationState: widget.locationController.effectiveState,
-            onOpenLocation: widget.onOpenLocation,
-          ),
-        ],
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    // The video sits in a bordered frame; the video surface itself is untouched. Black is the
+                    // letterbox of the picture, not a HUD colour.
+                    child: HudPanel(
+                      color: Colors.black,
+                      borderColor: hud.panelBorder,
+                      radius: BwHud.radiusSmall,
+                      shadows: hud.tileShadow,
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        key: const ValueKey('liveView.stage'),
+                        fit: StackFit.expand,
+                        children: [
+                          if (textureId != null) Texture(textureId: textureId),
+                          _Banner(l10n: l10n, status: c.state.status, onRetry: c.retry),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  _UtilityRail(
+                    key: const ValueKey('liveView.utilityRail'),
+                    l10n: l10n,
+                    direction: c.state.direction,
+                    onSelectDirection: c.selectDirection,
+                    isRecording: c.state.isRecording,
+                    markStatus: c.state.markStatus,
+                    onMark: c.markRecording,
+                    locationState: widget.locationController.effectiveState,
+                    onOpenLocation: widget.onOpenLocation,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -168,35 +212,32 @@ class _UtilityRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      // Same fixed dark tone the direction bar/mark button already used as an overlay —
-      // reused here as the rail's own background rather than introducing a new color.
-      color: const Color(0xFF101010),
-      child: SafeArea(
-        left: false,
-        top: false,
-        bottom: false,
-        child: SizedBox(
-          width: 168,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: _LocationPreview(l10n: l10n, state: locationState, onTap: onOpenLocation),
-              ),
-              const Divider(color: Color(0x33FFFFFF), height: 1, thickness: 1),
-              Expanded(
-                child: Center(
+    final hud = BwHud.of(context);
+    return SizedBox(
+      width: 168,
+      child: HudPanel(
+        color: hud.panel,
+        borderColor: hud.panelBorder,
+        radius: BwHud.radiusSmall,
+        shadows: hud.tileShadow,
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            _LocationPreview(l10n: l10n, state: locationState, onTap: onOpenLocation),
+            const SizedBox(height: 12),
+            Container(height: 1, color: hud.cardDivider),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
                   child: _DirectionBar(l10n: l10n, selected: direction, onSelect: onSelectDirection),
                 ),
               ),
-              if (isRecording)
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: _MarkButton(marking: markStatus == MarkStatus.marking, onTap: onMark),
-                ),
+            ),
+            if (isRecording) ...[
+              const SizedBox(height: 12),
+              _MarkButton(marking: markStatus == MarkStatus.marking, onTap: onMark),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -217,36 +258,41 @@ class _LocationPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hud = BwHud.of(context);
     final loc = locationOf(state);
     final title = _titleFor(l10n, state);
-    return Material(
-      color: const Color(0xFF1E1E1E),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        key: const ValueKey('liveView.locationPreview'),
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              const Icon(Icons.location_on_outlined, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(title, style: const TextStyle(color: Colors.white, fontSize: 12)),
-                    if (loc != null)
-                      Text(
-                        _formatLatLng(loc),
-                        style: const TextStyle(color: Color(0xFFA0A0A0), fontSize: 10),
-                      ),
-                  ],
+    return HudPanel(
+      color: hud.panel,
+      borderColor: hud.chipBorder,
+      radius: BwHud.radiusSmall,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: const ValueKey('liveView.locationPreview'),
+          borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(Icons.location_on_outlined, color: hud.iconAccent, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(title, style: hudText(12, hud.textPrimary, lineHeight: 16, weight: FontWeight.w700)),
+                      if (loc != null)
+                        Text(
+                          _formatLatLng(loc),
+                          style: hudText(10, hud.tileLabel, lineHeight: 15, weight: hud.labelWeight),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -254,16 +300,16 @@ class _LocationPreview extends StatelessWidget {
   }
 
   static String _titleFor(AppLocalizations l10n, LocationUiState state) => switch (state) {
-        LocationLoading() => l10n.location_loading_title,
-        LocationPermissionMissing() => l10n.location_permission_missing_title,
-        LocationPermissionDenied() => l10n.location_permission_denied_title,
-        LocationProviderDisabled() => l10n.location_provider_disabled_title,
-        LocationWaitingForFix() => l10n.location_waiting_for_fix_title,
-        LocationFresh() => l10n.location_car_location_title,
-        LocationStale() => l10n.location_stale_title,
-        LocationTileFailure() => l10n.location_tile_failure_title,
-        LocationError() => l10n.location_error_title,
-      };
+    LocationLoading() => l10n.location_loading_title,
+    LocationPermissionMissing() => l10n.location_permission_missing_title,
+    LocationPermissionDenied() => l10n.location_permission_denied_title,
+    LocationProviderDisabled() => l10n.location_provider_disabled_title,
+    LocationWaitingForFix() => l10n.location_waiting_for_fix_title,
+    LocationFresh() => l10n.location_car_location_title,
+    LocationStale() => l10n.location_stale_title,
+    LocationTileFailure() => l10n.location_tile_failure_title,
+    LocationError() => l10n.location_error_title,
+  };
 
   static String _formatLatLng(LocationCarGps location) =>
       '${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}';
@@ -286,17 +332,29 @@ class _Banner extends StatelessWidget {
       LiveStreamPhase.unavailable => (l10n.live_camera_unavailable_fmt(status.reason ?? ''), true),
     };
     if (text == null) return const SizedBox.shrink();
+    final hud = BwHud.of(context);
     return Center(
-      child: Container(
+      child: HudPanel(
         key: const ValueKey('liveView.banner'),
+        // Ground truth was a translucent black box (LiveViewController.kt's banner LinearLayout): the HUD
+        // keeps the translucency, now a bordered panel over the picture.
+        color: hud.pageBackground.withValues(alpha: 0.8),
+        borderColor: hud.cardBorder,
+        radius: BwHud.radiusSmall,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        // Ground truth: LiveViewController.kt's banner LinearLayout —
-        // Color.argb(0xCC, 0, 0, 0), no corner radius.
-        color: const Color(0xCC000000),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(text, style: const TextStyle(color: Colors.white, fontSize: 16), textAlign: TextAlign.center),
+            Text(
+              text,
+              style: hudText(
+                14,
+                status.phase == LiveStreamPhase.connecting ? hud.accent : hud.magenta,
+                lineHeight: 20,
+                weight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
             if (showRetry) ...[
               const SizedBox(height: 16),
               FilledButton(key: const ValueKey('liveView.retry'), onPressed: onRetry, child: Text(l10n.live_retry)),
@@ -315,56 +373,37 @@ class _DirectionBar extends StatelessWidget {
 
   const _DirectionBar({required this.l10n, required this.selected, required this.onSelect});
 
-  // Ground truth: LiveViewController.kt's buildView()/renderDirectionBar() —
-  // plain flat LinearLayouts (no corner radius) with literal ARGB colors,
-  // independent of BladeTheme (constructed there but never referenced), so
-  // this bar is ported with the same fixed, theme-invariant colors rather
-  // than pulling from BladeWatchTheme. BladeWatch-y78o.2 moved it from a
-  // horizontal bar overlaid on the video into the vertical utility rail —
-  // same colors, a Column instead of a Row.
-  static const _selectedBackground = Color(0xEDEFEFEF);
-  static const _selectedForeground = Color(0xFF151515);
-
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final direction in LiveViewDirection.values) _button(direction),
+        for (final direction in LiveViewDirection.values)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            // A row per camera; the chosen one is the accent border on the soft fill (rule 3), the same as a
+            // selected HudListRow.
+            child: HudListRow(
+              key: ValueKey('liveView.direction.${direction.name}'),
+              title: _label(direction),
+              selected: direction == selected,
+              onTap: () => onSelect(direction),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _button(LiveViewDirection direction) {
-    final isSelected = direction == selected;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: TextButton(
-        key: ValueKey('liveView.direction.${direction.name}'),
-        style: TextButton.styleFrom(
-          backgroundColor: isSelected ? _selectedBackground : Colors.transparent,
-          foregroundColor: isSelected ? _selectedForeground : Colors.white,
-          minimumSize: const Size(140, 40),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          shape: const RoundedRectangleBorder(),
-        ),
-        onPressed: () => onSelect(direction),
-        child: Text(_label(direction), style: const TextStyle(fontSize: 13)),
-      ),
-    );
-  }
-
   String _label(LiveViewDirection direction) => switch (direction) {
-        LiveViewDirection.mosaic => l10n.live_direction_all,
-        LiveViewDirection.front => l10n.live_direction_front,
-        LiveViewDirection.right => l10n.live_direction_right,
-        LiveViewDirection.rear => l10n.live_direction_rear,
-        LiveViewDirection.left => l10n.live_direction_left,
-      };
+    LiveViewDirection.mosaic => l10n.live_direction_all,
+    LiveViewDirection.front => l10n.live_direction_front,
+    LiveViewDirection.right => l10n.live_direction_right,
+    LiveViewDirection.rear => l10n.live_direction_rear,
+    LiveViewDirection.left => l10n.live_direction_left,
+  };
 }
 
-/// One-tap bookmark button (BladeWatch-nmao.4) -- no native ground truth, styled to
-/// match the banner/direction bar's fixed dark overlay rather than the app theme.
+/// One-tap bookmark button (BladeWatch-nmao.4): a 4 dp HUD box with the accent icon, a spinner while marking.
 class _MarkButton extends StatelessWidget {
   final bool marking;
   final VoidCallback onTap;
@@ -373,22 +412,26 @@ class _MarkButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xCC101010),
-      shape: const CircleBorder(),
-      child: InkWell(
-        key: const ValueKey('liveView.mark'),
-        customBorder: const CircleBorder(),
-        onTap: marking ? null : onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: marking
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : const Icon(Icons.bookmark_add_outlined, color: Colors.white),
+    final hud = BwHud.of(context);
+    return HudPanel(
+      color: Color.alphaBlend(hud.viewAllFill, hud.panel),
+      borderColor: hud.accent,
+      radius: BwHud.radiusSmall,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: const ValueKey('liveView.mark'),
+          borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+          onTap: marking ? null : onTap,
+          child: SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: Center(
+              child: marking
+                  ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: hud.accent))
+                  : Icon(Icons.bookmark_add_outlined, color: hud.accent),
+            ),
+          ),
         ),
       ),
     );
