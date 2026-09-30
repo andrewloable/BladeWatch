@@ -95,7 +95,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 
     return ListView(
       key: const ValueKey('tripDetail.loaded'),
-      padding: const EdgeInsets.all(12),
+      // The page gutter (24 dp), so the detail lines up with the title bars of the other pages.
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
       children: [
         Text(
           trip.formattedDateTitle,

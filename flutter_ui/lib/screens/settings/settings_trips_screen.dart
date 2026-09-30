@@ -175,7 +175,7 @@ class _TripsSettingsBodyState extends State<_TripsSettingsBody> {
     final sdAvailable = storage?.sdCardAvailable ?? false;
 
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       children: [
         Card(
           color: theme.colorScheme.surfaceContainer,

@@ -200,8 +200,9 @@ class _TripsTab extends StatelessWidget {
     final theme = Theme.of(context);
     final distUnit = state.config?.distanceUnit ?? 'km';
 
+    // The page gutter (24 dp), so the list lines up with the title bar above it.
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
       children: [
         _FilterRow(activeFilter: activeFilter, onSelect: onSelectFilter),
         const SizedBox(height: 8),
@@ -253,7 +254,7 @@ class _SummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.trips_period_summary_title, style: theme.textTheme.labelLarge),
+            HudSectionLabel(l10n.trips_period_summary_title),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -397,7 +398,7 @@ class _StatsTab extends StatelessWidget {
     final distanceUnit = state.config?.distanceUnit ?? 'km';
 
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
       children: [
         Card(
           key: const ValueKey('trips.driverScoreCard'),
@@ -408,7 +409,7 @@ class _StatsTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.trips_driver_score_title, style: theme.textTheme.labelLarge),
+                HudSectionLabel(l10n.trips_driver_score_title),
                 const SizedBox(height: 8),
                 Center(child: Text('${dna?.scoreOutOf500 ?? 0} / 500', style: theme.textTheme.headlineMedium)),
                 Center(
@@ -431,7 +432,7 @@ class _StatsTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.trips_range_title, style: theme.textTheme.labelLarge),
+                HudSectionLabel(l10n.trips_range_title),
                 const SizedBox(height: 8),
                 if (range != null && range.estimatedKm > 0) ...[
                   // BladeWatch: these two rendered raw kilometres regardless of the
@@ -494,7 +495,7 @@ class _StatsTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.trips_detail_cost, style: theme.textTheme.labelLarge),
+                HudSectionLabel(l10n.trips_detail_cost),
                 const SizedBox(height: 8),
                 _CostFigures(
                   costs: state.costs,
@@ -523,7 +524,7 @@ class _StatsTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.trips_dna_title, style: theme.textTheme.labelLarge),
+                  HudSectionLabel(l10n.trips_dna_title),
                   const SizedBox(height: 8),
                   _ScoreBar(label: l10n.trips_dna_anticipation, score: dna.anticipation),
                   _ScoreBar(label: l10n.trips_dna_smoothness, score: dna.smoothness),

@@ -119,34 +119,38 @@ class _VehicleScreenState extends State<VehicleScreen> {
           child: HudTitleBar(title: l10n.rail_vehicle.toUpperCase()),
         ),
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, box) => box.maxWidth >= _wideLayoutMinWidth
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(flex: 55, child: heroPane),
-                      Expanded(flex: 45, child: controls),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      Expanded(child: heroPane),
-                      // ConstrainedBox, NOT Flexible. Flexible here is a trap: it and the
-                      // Expanded above are both flex children with flex 1, so RenderFlex splits
-                      // the height 50/50 — the hero is capped at half the screen, the controls
-                      // take only their content, and the slack becomes dead space at the bottom.
-                      // Measured at 720x1280: hero 640, controls 200, 440px of nothing below it.
-                      //
-                      // A non-flex child is measured first and the single remaining flex child
-                      // gets everything left, so the car takes all the room the controls do not.
-                      // The bound is still needed: _ControlsPanel shrink-wraps around a Flexible
-                      // scroll area, which cannot resolve against an unbounded height.
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: box.maxHeight * _portraitControlsMaxFraction),
-                        child: controls,
-                      ),
-                    ],
-                  ),
+          // The page gutter (24 dp) around both panes, so they line up with the title bar above them.
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+            child: LayoutBuilder(
+              builder: (context, box) => box.maxWidth >= _wideLayoutMinWidth
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(flex: 55, child: heroPane),
+                        Expanded(flex: 45, child: controls),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        Expanded(child: heroPane),
+                        // ConstrainedBox, NOT Flexible. Flexible here is a trap: it and the
+                        // Expanded above are both flex children with flex 1, so RenderFlex splits
+                        // the height 50/50 — the hero is capped at half the screen, the controls
+                        // take only their content, and the slack becomes dead space at the bottom.
+                        // Measured at 720x1280: hero 640, controls 200, 440px of nothing below it.
+                        //
+                        // A non-flex child is measured first and the single remaining flex child
+                        // gets everything left, so the car takes all the room the controls do not.
+                        // The bound is still needed: _ControlsPanel shrink-wraps around a Flexible
+                        // scroll area, which cannot resolve against an unbounded height.
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxHeight: box.maxHeight * _portraitControlsMaxFraction),
+                          child: controls,
+                        ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ],
@@ -693,10 +697,14 @@ class _ClimateTab extends StatelessWidget {
   /// OWN text colour. FilledButton's default text colour is onPrimary whatever the fill, which left
   /// the off label dark on dark and unreadable on the head unit (owner report 2026-09-27).
   ButtonStyle _toggle(bool on, {bool alert = false}) {
+    // The HUD's look: on is the accent (or, for the alert one, the attention magenta) on its soft fill with its own
+    // border; off is a neutral panel with a quiet border. Each has its OWN text colour.
     final s = theme.colorScheme;
+    final tone = alert ? s.error : s.primary;
     return FilledButton.styleFrom(
-      backgroundColor: on ? (alert ? s.error : s.primary) : s.surfaceContainerHighest,
-      foregroundColor: on ? (alert ? s.onError : s.onPrimary) : s.onSurface,
+      backgroundColor: on ? (alert ? s.errorContainer : s.primaryContainer) : s.surfaceContainer,
+      foregroundColor: on ? tone : s.onSurfaceVariant,
+      side: BorderSide(color: on ? tone : s.outlineVariant),
     );
   }
 
@@ -840,7 +848,7 @@ class _ClimateTab extends StatelessWidget {
         IconButton(
           key: ValueKey('$keyPrefix.minus'),
           tooltip: l10n.cd_decrease,
-          icon: const Icon(Icons.remove_circle),
+          icon: const Icon(Icons.remove_circle_outline),
           onPressed: () async {
             final error = await onMinus();
             if (context.mounted && error != null) showVehicleCommandError(context, error);
@@ -850,7 +858,7 @@ class _ClimateTab extends StatelessWidget {
         IconButton(
           key: ValueKey('$keyPrefix.plus'),
           tooltip: l10n.cd_increase,
-          icon: const Icon(Icons.add_circle),
+          icon: const Icon(Icons.add_circle_outline),
           onPressed: () async {
             final error = await onPlus();
             if (context.mounted && error != null) showVehicleCommandError(context, error);

@@ -690,13 +690,16 @@ confirm (unpair, cleanup, format the SD card, twice) is `destructiveStyle`. Abou
 other licences (registered with Flutter's `LicenseRegistry`, see above). Single choices everywhere are the chip theme's
 accent-border look with no check mark; multi-select filters (the overlay fields, who/severity) keep theirs.
 
-**What is left.** Every companion screen is on the HUD, and it has been run on macOS with the real engine (a fake car, so
-nothing touched the real one): dark and light at desktop size, dark and light at phone size, 2.0x text on a phone,
-and ja, th and ru. Two things only that run showed were fixed: the map's attribution ran off a phone's edge, and
-stacked form fields touched. Still open: an Android phone (and iOS) run, a real car's data (video, the live
-picture), and the independent review, which is BladeWatch-0glp.7 and the device checklist. The desktop label/value
-rows still put the value at the card's half, and the type-chip row of Recordings still scrolls sideways on a
-phone; both are noted, neither breaks anything.
+**What is left.** Every companion screen is on the HUD, and it has been run on the real engine three ways, each with a
+fake car (so nothing touched the real one): macOS (dark and light, desktop and phone size, 2.0x text, ja, th, ru), a
+real Android 13 phone at 360 dp (all 13 pages dark and light, pairing, the QR scan page with the camera, the licences
+page with the Space Mono OFL entry, ja, th, hi, ru, tr), and, for the in-car app, the head unit itself. What those runs
+found was fixed: the map's attribution ran off a phone's edge, stacked form fields touched, Live and Location's title
+bar did not line up with their full-width frame, Recordings' type chips scrolled sideways (they wrap now), and on the
+head unit the Vehicle and Trips content ran off the 24 dp gutter and some controls were still solid Material fills.
+Still open: an iOS run, a real car's data on the companion (video, the live picture), Turkish capitalisation
+(Dart's `toUpperCase` is not locale-aware, so "Diğer" reads DIĞER, not DİĞER), and the independent review
+(BladeWatch-0glp.7). The desktop label/value rows still put the value at the card's half.
 
 ## Source References
 

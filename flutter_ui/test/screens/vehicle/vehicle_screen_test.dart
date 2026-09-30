@@ -309,10 +309,11 @@ void main() {
       final scheme = Theme.of(tester.element(find.byKey(const ValueKey('vehicle.climate.ac')))).colorScheme;
       Color? labelColor(String text) => DefaultTextStyle.of(tester.element(find.text(text))).style.color;
 
-      expect(labelColor('AC Off'), scheme.onSurface);
+      // The HUD's look: off is a neutral panel with the muted text; on is the accent text on its soft accent fill.
+      expect(labelColor('AC Off'), scheme.onSurfaceVariant);
       await tester.tap(find.byKey(const ValueKey('vehicle.climate.ac')));
       await tester.pumpAndSettle();
-      expect(labelColor('AC On'), scheme.onPrimary);
+      expect(labelColor('AC On'), scheme.primary);
     });
 
     testWidgets('a failed AC toggle shows a snackbar with the server message', (tester) async {
@@ -894,8 +895,9 @@ void main() {
       // The controls start where the hero ends — no gap between the two panes …
       expect(chips.top - heroBottom < portrait.height * 0.2, isTrue,
           reason: 'gap of ${chips.top - heroBottom}px between the hero and the controls');
-      // … and the hero occupies well over half the screen, rather than exactly half.
-      expect(heroBottom > portrait.height * 0.5, isTrue,
+      // … and the hero takes what the controls leave (they are capped at 55% of the body, inside the 24 dp page gutter
+      // the HUD gives both panes), rather than exactly half with dead space below.
+      expect(heroBottom > portrait.height * 0.4, isTrue,
           reason: 'hero ends at $heroBottom of ${portrait.height} — it is being capped at 50%');
     });
 

@@ -315,10 +315,10 @@ class _RecordingsScreenState extends State<RecordingsScreen> with LoadersState {
                 );
         },
       ),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      // A Wrap, not a sideways scroll: on a phone the fourth chip used to be cut off at the edge with nothing to say it scrolls.
+      Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Wrap(spacing: 8, children: [
+        child: Wrap(spacing: 8, runSpacing: 8, children: [
           for (var i = 0; i < RecordingsScreen.types.length; i++)
             ChoiceChip(
               showCheckmark: false,
