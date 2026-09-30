@@ -8,8 +8,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import '../../fakes/hud_test_env.dart';
 
 void main() {
+  hudTestEnvironment();
   late FakeRpcClient rpc;
   late TripDetailController controller;
   late bool closed;

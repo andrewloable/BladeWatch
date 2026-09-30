@@ -117,26 +117,26 @@ void main() {
   testWidgets('phone: four in the bar, the rest under More; the Events badge counts new alerts', (tester) async {
     await pumpApp(tester, MemoryStore(car: testCar(cursor: '5')));
     expect(opened.single.deviceId, 'dev-1');
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const ValueKey('nav.bar')), findsOneWidget);
     expect(find.byType(DashboardScreen), findsOneWidget);
     expect(find.text('1'), findsOneWidget, reason: 'one alert above the cursor');
 
-    await tester.tap(find.text(t('nav.more')));
+    await tester.tap(find.byKey(const ValueKey('nav.more')));
     await settle(tester);
     await tester.tap(find.byKey(const ValueKey('more.vehicle')));
     await settle(tester);
     expect(find.byType(VehicleScreen), findsOneWidget);
-    await tester.tap(find.text(t('nav.more')));
+    await tester.tap(find.byKey(const ValueKey('nav.more')));
     await settle(tester);
     await tester.tapAt(const Offset(10, 10)); // dismissed: stays where it was
     await settle(tester);
     expect(find.byType(VehicleScreen), findsOneWidget);
 
-    await tester.tap(find.text(t('nav.dashboard')));
+    await tester.tap(find.byKey(const ValueKey('nav.dashboard')));
     await settle(tester);
     expect(find.byType(DashboardScreen), findsOneWidget);
 
-    await tester.tap(find.text(t('nav.more')));
+    await tester.tap(find.byKey(const ValueKey('nav.more')));
     await settle(tester);
     await tester.tap(find.byKey(const ValueKey('more.settings')));
     await settle(tester);
@@ -144,15 +144,17 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  // BladeWatch: on a real Android phone, "Dashboard" and "Recordings" wrapped mid-word
-  // ("Dashboar"/"d") in the bar with all five labels shown -- NavigationDestination.label is a
-  // String with no maxLines/overflow control, so Flutter hard-wraps rather than clipping. The
-  // fixed test font would not reproduce this (docs: "a fixed-width placeholder font"), so this
-  // pins the fix at the property level instead of the unreliable rendered-size one above.
-  testWidgets('phone: only the selected bottom-bar label shows, so it never competes for width', (tester) async {
+  // BladeWatch: on a real Android phone, "Dashboard" and "Recordings" wrapped mid-word in the old Material bar
+  // (NavigationDestination.label is a String with no maxLines/overflow control). The HUD bar's labels are one
+  // line each, scaled down to their fifth of the width. The fixed test font would not reproduce the wrap
+  // (docs: "a fixed-width placeholder font"), so this pins the fix at the property level.
+  testWidgets('phone: every bottom-bar label is one line, scaled down rather than wrapped', (tester) async {
     await pumpApp(tester, MemoryStore(car: testCar()));
-    final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(bar.labelBehavior, NavigationDestinationLabelBehavior.onlyShowSelected);
+    for (final id in ['dashboard', 'live', 'events', 'recordings', 'more']) {
+      final label = find.descendant(of: find.byKey(ValueKey('nav.$id')), matching: find.text(t('nav.$id').toUpperCase()));
+      expect(tester.widget<Text>(label).maxLines, 1, reason: id);
+      expect(find.ancestor(of: label, matching: find.byType(FittedBox)), findsOneWidget, reason: id);
+    }
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -160,7 +162,7 @@ void main() {
     // BladeWatch-rdtj.51: 412x780 is the Android phone emulator's logical size, where the old
     // 9/16 cap showed seven of nine.
     await pumpApp(tester, MemoryStore(car: testCar()), size: const Size(412, 780));
-    await tester.tap(find.text(t('nav.more')));
+    await tester.tap(find.byKey(const ValueKey('nav.more')));
     await settle(tester);
     final screen = Offset.zero & const Size(412, 780);
     final rows = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('more.'));
@@ -175,7 +177,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
 
     await pumpApp(tester, MemoryStore(car: testCar()), size: const Size(600, 360));
-    await tester.tap(find.text(t('nav.more')));
+    await tester.tap(find.byKey(const ValueKey('nav.more')));
     await settle(tester);
     // It scrolls: 360 is too short for nine. scrollUntilVisible stops once the row is BUILT,
     // part of it can still be past the edge, so ensureVisible brings the whole row in.
@@ -207,7 +209,7 @@ void main() {
       ));
       await settle(tester);
       for (final key in ['nav.dashboard', 'nav.live', 'nav.events', 'nav.recordings', 'nav.more']) {
-        final label = find.descendant(of: find.byType(NavigationBar), matching: find.text(tr(key)));
+        final label = find.descendant(of: find.byKey(const ValueKey('nav.bar')), matching: find.text(tr(key).toUpperCase()));
         expect(label, findsOneWidget, reason: key);
         expect(tester.getSize(label).height, lessThan(24), reason: '${tr(key)} wraps');
       }
@@ -230,10 +232,10 @@ void main() {
     tester.view.padding = const FakeViewPadding(top: 24);
     addTearDown(tester.view.resetPadding);
     await pumpApp(tester, MemoryStore(car: testCar()), size: const Size(1280, 900));
-    expect(find.byType(NavigationDrawer), findsOneWidget);
+    expect(find.byKey(const ValueKey('nav.panel')), findsOneWidget);
     expect(tester.getRect(find.text('BladeWatch')).top, greaterThanOrEqualTo(24), reason: 'the drawer header clears the status bar');
-    expect(find.text(t('nav.diagnostics')), findsOneWidget);
-    await tester.tap(find.descendant(of: find.byType(NavigationDrawer), matching: find.text(t('nav.vehicle'))));
+    expect(find.text(t('nav.diagnostics').toUpperCase()), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byKey(const ValueKey('nav.panel')), matching: find.text(t('nav.vehicle').toUpperCase())));
     await settle(tester);
     expect(find.byType(VehicleScreen), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
@@ -242,8 +244,8 @@ void main() {
     // About, the list moves and the name stays whole below the status bar.
     await pumpApp(tester, MemoryStore(car: testCar()), size: const Size(1280, 700));
     final before = tester.getRect(find.text('BladeWatch'));
-    final about = find.descendant(of: find.byType(NavigationDrawer), matching: find.text(t('nav.about')));
-    await tester.scrollUntilVisible(about, 50, scrollable: find.descendant(of: find.byType(NavigationDrawer), matching: find.byType(Scrollable)));
+    final about = find.descendant(of: find.byKey(const ValueKey('nav.panel')), matching: find.text(t('nav.about').toUpperCase()));
+    await tester.scrollUntilVisible(about, 50, scrollable: find.descendant(of: find.byKey(const ValueKey('nav.panel')), matching: find.byType(Scrollable)));
     await tester.ensureVisible(about);
     await settle(tester);
     expect(tester.getRect(find.text('BladeWatch')), before, reason: 'the header does not scroll with the places');
@@ -294,7 +296,7 @@ void main() {
 
     s.session.markRefused();
     await tester.pump();
-    expect(find.text(t('companion.refused')), findsOneWidget);
+    expect(find.text(t('companion.refused').toUpperCase()), findsOneWidget);
     await tester.tap(find.text(t('companion.pair_again')));
     await realTime(tester, find.byType(PairingScreen));
     expect(find.byType(PairingScreen), findsOneWidget);

@@ -1,4 +1,5 @@
 import 'package:bladewatch_rpc/gen/bladewatch/v1/recordings.pb.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../i18n.dart';
@@ -123,24 +124,27 @@ class ClipPageList extends StatelessWidget {
           final tr = context.tr;
           if (!pages.loaded) {
             if (pages.error != null && !pages.loading) return LoadError(onRetry: pages.reset);
-            return const Center(child: CircularProgressIndicator());
+            return const HudLoading();
           }
           return RefreshIndicator(
             onRefresh: pages.reset,
             child: pages.clips.isEmpty
                 ? ListView(children: [
-                    Padding(padding: const EdgeInsets.all(32), child: Text(tr('events.empty_none_title'), textAlign: TextAlign.center)),
+                    Padding(padding: const EdgeInsets.all(32), child: HudEmptyState(icon: Icons.videocam_off_outlined, message: tr('events.empty_none_title'))),
                   ])
                 : ListView.builder(
+                    padding: const EdgeInsets.only(top: 4, bottom: 24),
                     itemCount: pages.clips.length + (pages.done ? 0 : 1),
                     itemBuilder: (context, i) {
                       if (i < pages.clips.length) {
                         final c = pages.clips[i];
                         final picking = selection;
-                        if (picking != null) {
-                          return ClipTile(clip: c, selected: picking.contains(c.filename), onSelect: (on) => onToggle?.call(c.filename, on));
-                        }
-                        return ClipTile(clip: c, onDelete: onDelete == null ? null : () => onDelete!(c), playlist: pages.clips);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: picking != null
+                              ? ClipTile(clip: c, selected: picking.contains(c.filename), onSelect: (on) => onToggle?.call(c.filename, on))
+                              : ClipTile(clip: c, onDelete: onDelete == null ? null : () => onDelete!(c), playlist: pages.clips),
+                        );
                       }
                       if (pages.pageFailed) {
                         return Center(

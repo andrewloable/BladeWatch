@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'package:bladewatch_theme/bladewatch_theme.dart';
+import 'package:bladewatch_theme/dimens_tokens.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import 'car/car_page.dart';
@@ -8,6 +10,7 @@ import 'car/car_session.dart';
 import 'car/car_store.dart';
 import 'i18n.dart';
 import 'screens/alerts/alerts_controller.dart';
+import 'screens/common/loader.dart' show ContentWidth;
 import 'screens/common/shell_nav.dart';
 import 'screens/destinations.dart';
 import 'screens/pairing/pairing_controller.dart';
@@ -138,15 +141,16 @@ class CompanionAppState extends State<CompanionApp> {
     return MaterialApp(
       title: 'BladeWatch',
       debugShowCheckedModeBanner: false,
-      theme: BladeWatchTheme.light(),
-      darkTheme: BladeWatchTheme.dark(),
+      theme: BwHud.themeData(Brightness.light),
+      darkTheme: BwHud.themeData(Brightness.dark),
       builder: (context, child) => tr == null ? child! : TrScope(tr: tr, child: child!),
       home: home,
     );
   }
 }
 
-/// The car's screens: a bottom bar with "More" on a phone, a permanent drawer when wide.
+/// The car's screens: a bottom bar with "More" on a phone, a permanent side panel when wide. There is no app bar:
+/// the screen's name is a [HudTitleBar] over it, and the navigation is the in-car rail's item ([HudNavItem]).
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.alerts, required this.store, required this.onLanguage, required this.onUnpair});
 
@@ -170,7 +174,13 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-    final all = destinations(alerts: widget.alerts, store: widget.store, onLanguage: widget.onLanguage, onUnpair: widget.onUnpair);
+    final hud = BwHud.of(context);
+    final all = destinations(
+      alerts: widget.alerts,
+      store: widget.store,
+      onLanguage: widget.onLanguage,
+      onUnpair: widget.onUnpair,
+    );
     final current = all[_index];
     final page = ShellNav(
       go: (id) {
@@ -179,38 +189,36 @@ class _HomeShellState extends State<HomeShell> {
       },
       child: CarPage(onPairAgain: widget.onUnpair, child: current.build(context)),
     );
-    final badge = ListenableBuilder(
-      listenable: widget.alerts,
-      builder: (context, _) => widget.alerts.unseen == 0
-          ? const Icon(Icons.notifications_outlined)
-          : Badge(label: Text('${widget.alerts.unseen}'), child: const Icon(Icons.notifications_outlined)),
-    );
-    Widget icon(Destination d) => d.id == 'events' ? badge : Icon(d.icon);
-
-    if (MediaQuery.sizeOf(context).width >= HomeShell.wideMinWidth) {
-      return Scaffold(
-        body: Row(children: [
-          // The name is the drawer's HEADER, not its first list row (BladeWatch-rdtj.52): as a
-          // row it scrolled with the places and was cut off at the top on the Android tablet,
-          // whose 800 dp height is short of the thirteen rows. The header sits below the
-          // drawer's own SafeArea and never scrolls.
-          NavigationDrawer(
-            selectedIndex: _index,
-            onDestinationSelected: _go,
-            header: Padding(
-              key: const ValueKey('drawer.header'),
-              padding: const EdgeInsets.fromLTRB(28, 16, 16, 10),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text('BladeWatch', style: Theme.of(context).textTheme.titleSmall),
-              ),
-            ),
-            children: [
-              for (final d in all) NavigationDrawerDestination(icon: icon(d), label: Text(tr(d.label))),
-            ],
+    final wide = MediaQuery.sizeOf(context).width >= HomeShell.wideMinWidth;
+    // The title bar lines up with the page below it (same padding, same width cap).
+    // Live and Location fill the stage (a picture and a map are better wide), so their title bar does too; every
+    // other page is capped at the content width and its title bar with it.
+    final fillsStage = current.id == 'live' || current.id == 'location';
+    final title = HudTitleBar(title: tr(current.label).toUpperCase());
+    final stage = Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            BwDimens.pagePaddingHorizontal,
+            BwDimens.pagePaddingTop,
+            BwDimens.pagePaddingHorizontal,
+            0,
           ),
-          Expanded(child: Scaffold(appBar: AppBar(title: Text(tr(current.label))), body: page)),
-        ]),
+          child: fillsStage ? title : ContentWidth(child: title),
+        ),
+        Expanded(child: page),
+      ],
+    );
+
+    if (wide) {
+      return Scaffold(
+        backgroundColor: hud.pageBackground,
+        body: Row(
+          children: [
+            _SidePanel(all: all, index: _index, onSelect: _go, alerts: widget.alerts),
+            Expanded(child: SafeArea(left: false, child: stage)),
+          ],
+        ),
       );
     }
 
@@ -218,65 +226,171 @@ class _HomeShellState extends State<HomeShell> {
     final primary = all.take(4).toList();
     final inMore = _index >= primary.length;
     return Scaffold(
-      appBar: AppBar(title: Text(tr(current.label))),
-      body: page,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: inMore ? primary.length : _index,
-        onDestinationSelected: (i) => i < primary.length ? _go(i) : _more(context, all, primary.length),
-        // Five items at a phone's width has no room for "Dashboard" or "Recordings" on one
-        // line -- NavigationDestination.label is a String with no maxLines/overflow control, so
-        // Flutter hard-wraps it mid-word ("Dashboar"/"d") rather than clipping (found 2026-09-28
-        // on a real Android phone). Two changes, together: onlyShowSelected removes 4 of the 5
-        // labels from the width contest entirely (an unselected icon alone is still unambiguous),
-        // but NavigationBar gives every destination an EQUAL Expanded share regardless of
-        // labelBehavior, so the one REMAINING label -- the selected item's own -- still has to
-        // fit in that same one-fifth column. labelTextStyle shrinks it enough to (10sp fits both
-        // "Dashboard" and "Recordings", the two English labels that wrapped at the M3 default).
-        // Colors match NavigationDestination's own documented default (onSurface selected,
-        // onSurfaceVariant not) so this changes only the size.
-        //
-        // ponytail: a fixed 10sp is tuned to English; a translated label longer than
-        // "Recordings" in another of the 17 languages could still wrap. Upgrade to per-language
-        // measurement (or an ellipsis, once NavigationDestination's label takes more than a
-        // String) if the UI/UX phone review finds one.
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          final scheme = Theme.of(context).colorScheme;
-          final selected = states.contains(WidgetState.selected);
-          return (Theme.of(context).textTheme.labelMedium ?? const TextStyle())
-              .copyWith(fontSize: 10, color: selected ? scheme.onSurface : scheme.onSurfaceVariant);
-        }),
-        destinations: [
-          for (final d in primary) NavigationDestination(icon: icon(d), label: tr(d.label)),
-          NavigationDestination(icon: const Icon(Icons.more_horiz), label: tr('nav.more')),
+      backgroundColor: hud.pageBackground,
+      body: SafeArea(bottom: false, child: stage),
+      bottomNavigationBar: _BottomBar(
+        key: const ValueKey('nav.bar'),
+        items: [
+          for (var i = 0; i < primary.length; i++)
+            (id: primary[i].id, icon: primary[i].icon, label: tr(primary[i].label), selected: i == _index),
+          (id: 'more', icon: Icons.more_horiz, label: tr('nav.more'), selected: inMore),
         ],
+        alerts: widget.alerts,
+        onSelect: (i) => i < primary.length ? _go(i) : _more(context, all, primary.length),
       ),
     );
   }
 
   Future<void> _more(BuildContext context, List<Destination> all, int from) async {
     final tr = context.tr;
-    final picked = await showModalBottomSheet<int>(
+    final picked = await showHudSheet<int>(
       context: context,
-      showDragHandle: true,
       // Sized to its nine rows (BladeWatch-rdtj.51). The default caps a sheet at 9/16 of the
       // screen, which hid two places on a real phone with nothing to say the list scrolls. It
       // still scrolls where even the whole screen is too short, and stays under the status bar.
       isScrollControlled: true,
-      useSafeArea: true,
       builder: (context) => SafeArea(
-        child: ListView(shrinkWrap: true, children: [
-          for (var i = from; i < all.length; i++)
-            ListTile(
-              key: ValueKey('more.${all[i].id}'),
-              leading: Icon(all[i].icon),
-              title: Text(tr(all[i].label)),
-              selected: i == _index,
-              onTap: () => Navigator.pop(context, i),
-            ),
-        ]),
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(16),
+          children: [
+            for (var i = from; i < all.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: HudListRow(
+                  key: ValueKey('more.${all[i].id}'),
+                  icon: all[i].icon,
+                  title: tr(all[i].label),
+                  selected: i == _index,
+                  onTap: () => Navigator.pop(context, i),
+                ),
+              ),
+          ],
+        ),
       ),
     );
     if (picked != null) _go(picked);
+  }
+}
+
+/// The wide layout's permanent side panel: the name on top (it never scrolls), then every place.
+class _SidePanel extends StatelessWidget {
+  const _SidePanel({required this.all, required this.index, required this.onSelect, required this.alerts});
+
+  final List<Destination> all;
+  final int index;
+  final ValueChanged<int> onSelect;
+  final AlertsController alerts;
+
+  @override
+  Widget build(BuildContext context) {
+    final hud = BwHud.of(context);
+    final tr = context.tr;
+    return Container(
+      key: const ValueKey('nav.panel'),
+      width: 240,
+      decoration: BoxDecoration(
+        color: hud.railBackground,
+        border: Border(right: BorderSide(color: hud.railBorder)),
+        boxShadow: hud.railShadow,
+      ),
+      child: SafeArea(
+        right: false,
+        child: Column(
+          children: [
+            // The name is the panel's HEADER, not its first list row (BladeWatch-rdtj.52): as a row it
+            // scrolled with the places and was cut off at the top on the Android tablet, whose 800 dp
+            // height is short of the thirteen rows. It sits below the SafeArea and never scrolls.
+            Padding(
+              key: const ValueKey('drawer.header'),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  'BladeWatch',
+                  style: hudText(
+                    14,
+                    hud.accent,
+                    lineHeight: 20,
+                    weight: FontWeight.w700,
+                    em: 0.1,
+                    shadows: hudGlow(hud.glowCyan),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListenableBuilder(
+                listenable: alerts,
+                builder: (context, _) => ListView(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  children: [
+                    for (var i = 0; i < all.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: HudNavItem(
+                          key: ValueKey('nav.${all[i].id}'),
+                          icon: all[i].icon,
+                          label: tr(all[i].label),
+                          selected: i == index,
+                          horizontal: true,
+                          badge: all[i].id == 'events' ? alerts.unseen : 0,
+                          onTap: () => onSelect(i),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The phone's bottom bar: the four first places and "More", each an in-car rail item. Every label shows, scaled down
+/// to fit its fifth of the width (the old Material bar hard-wrapped a long one mid-word, found on a real phone).
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({super.key, required this.items, required this.alerts, required this.onSelect});
+
+  final List<({String id, IconData icon, String label, bool selected})> items;
+  final AlertsController alerts;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final hud = BwHud.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: hud.railBackground,
+        border: Border(top: BorderSide(color: hud.railBorder)),
+        boxShadow: hud.railShadow,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: ListenableBuilder(
+            listenable: alerts,
+            builder: (context, _) => Row(
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  Expanded(
+                    child: HudNavItem(
+                      key: ValueKey('nav.${items[i].id}'),
+                      icon: items[i].icon,
+                      label: items[i].label,
+                      selected: items[i].selected,
+                      badge: items[i].id == 'events' ? alerts.unseen : 0,
+                      onTap: () => onSelect(i),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

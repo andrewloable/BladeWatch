@@ -1119,5 +1119,9 @@
   "dashboard_chip_auto_hold": "オートホールド: {state}",
   "auto_hold_disabled": "オフ",
   "auto_hold_enabled": "オン",
-  "auto_hold_active": "保持中"
+  "auto_hold_active": "保持中",
+  "dashboard_hud_overview": "概要",
+  "dashboard_hud_telemetry": "テレメトリ",
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
 }

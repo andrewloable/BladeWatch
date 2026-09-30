@@ -9,7 +9,8 @@ import 'package:bladewatch_companion/screens/pairing/qr_scan_page.dart';
 import 'package:bladewatch_companion/transport/car_auth.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:bladewatch_rpc/pairing/pairing_payload.dart';
-import 'package:bladewatch_theme/bladewatch_theme.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -26,6 +27,8 @@ String qr({DateTime? expires, String code = 'one-time'}) => PairingPayload(
     ).encode();
 
 void main() {
+  hudTestEnvironment();
+
   group('PairingController', () {
     late TestSession s;
     late List<PairedCar> opened;
@@ -129,7 +132,7 @@ void main() {
       final s = TestSession(phase: TransportPhase.lan);
       final c = PairingController(openSession: (car) async => s.session, redeem: (u, code, n) async => testCredential);
       await tester.pumpWidget(MaterialApp(
-        theme: BladeWatchTheme.dark(),
+        theme: BwHud.themeData(Brightness.dark),
         home: TrScope(tr: testTr, child: PairingScreen(controller: c, onPaired: (_) {}, detectName: detect)),
       ));
     }
@@ -164,7 +167,7 @@ void main() {
       final paired = <PairedCar>[];
       final c = PairingController(openSession: (car) async => s.session, redeem: (u, code, n) async => testCredential);
       await tester.pumpWidget(MaterialApp(
-        theme: BladeWatchTheme.dark(),
+        theme: BwHud.themeData(Brightness.dark),
         home: TrScope(tr: testTr, child: PairingScreen(controller: c, onPaired: paired.add, scan: scan, defaultName: 'Test phone')),
       ));
       return (c, paired);
@@ -185,6 +188,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(paired.single.deviceId, 'dev-1');
       expect(find.byKey(const ValueKey('pair.error')), findsNothing);
+    });
+
+    testWidgets('HUD: the title bar names the page, the form is one panel, a bad paste is magenta', (tester) async {
+      await pump(tester);
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text(t('companion.pair_title').toUpperCase())), findsOneWidget);
+      expect(find.byType(HudPanel), findsOneWidget);
+
+      await tester.enterText(find.byKey(const ValueKey('pair.code')), 'garbage');
+      await tester.tap(find.byKey(const ValueKey('pair.submit')));
+      await tester.pump();
+      expect(tester.widget<Text>(find.byKey(const ValueKey('pair.error'))).style!.color, BwHud.dark.magenta);
     });
 
     testWidgets('scanning fills in the code and pairs; a cancelled scan does nothing', (tester) async {
@@ -259,6 +273,16 @@ void main() {
     expect(results, ['first', null]);
   });
 
+  testWidgets('the scan page has the HUD back arrow and frames the camera', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: BwHud.themeData(Brightness.dark),
+      home: TrScope(tr: testTr, child: QrScanPage(scanner: (_) => const Text('camera'))),
+    ));
+    expect(find.byKey(const ValueKey('hud.back')), findsOneWidget);
+    expect(find.descendant(of: find.byType(HudPanel), matching: find.text('camera')), findsOneWidget);
+    expect(tester.widget<HudPanel>(find.byType(HudPanel)).borderColor, BwHud.dark.accent);
+  });
+
   testWidgets('scanPairingQr opens the scan page', (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: TrScope(
@@ -270,7 +294,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.byType(QrScanPage), findsOneWidget);
-    expect(find.text(t('companion.pair_scan')), findsOneWidget);
+    expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text(t('companion.pair_scan').toUpperCase())), findsOneWidget);
   });
 }
 

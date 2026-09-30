@@ -5,6 +5,8 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/stream.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/stream_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -153,12 +155,16 @@ class _LiveScreenState extends State<LiveScreen> {
     final title = fix == null
         ? tr('safe_loc.waiting_gps')
         : [tr('vehicle.gps_location'), if (fix.stale) tr('status.stale')].join(' · ');
+    // An overlay chip on the video: dark and translucent in both modes (it sits on the picture, not the page), with the
+    // HUD's 4 dp corners and border.
+    final hud = BwHud.of(context);
+    const radius = BorderRadius.all(Radius.circular(BwHud.radiusSmall));
     return Material(
       color: Colors.black.withValues(alpha: 0.6),
-      borderRadius: BorderRadius.circular(8),
+      shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: hud.panelBorderStrong)),
       child: InkWell(
         key: const ValueKey('live.gps'),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: radius,
         onTap: () => ShellNav.of(context)?.go('location'),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -170,7 +176,7 @@ class _LiveScreenState extends State<LiveScreen> {
                 Text(title, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 12)),
                 if (fix != null)
                   Text('${fix.at.latitude.toStringAsFixed(4)}, ${fix.at.longitude.toStringAsFixed(4)}',
-                      overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFA0A0A0), fontSize: 10)),
+                      overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 10)),
               ]),
             ),
           ]),
@@ -193,10 +199,11 @@ class _LiveScreenState extends State<LiveScreen> {
     final at = _frameAt;
     return Column(children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
         child: Wrap(spacing: 8, runSpacing: 4, alignment: WrapAlignment.center, children: [
           for (final (i, key) in [(null, 'events.all'), for (var q = 0; q < 4; q++) (q, _cameraKeys[q])])
             ChoiceChip(
+              showCheckmark: false,
               key: ValueKey('live.camera.${i ?? 'all'}'),
               label: Text(tr(key)),
               selected: _camera == i,
@@ -208,7 +215,14 @@ class _LiveScreenState extends State<LiveScreen> {
         ]),
       ),
       Expanded(
-        child: Stack(children: [
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+          // The picture is untouched (black letterbox); the frame around it is the HUD's 4 dp bordered panel.
+          child: HudPanel(
+            color: Colors.black,
+            borderColor: BwHud.of(context).panelBorder,
+            clipBehavior: Clip.antiAlias,
+            child: Stack(children: [
           Positioned.fill(
         child: Container(
           color: Colors.black,
@@ -244,10 +258,12 @@ class _LiveScreenState extends State<LiveScreen> {
           ),
           if (_gpsAsked)
             Positioned(top: 8, right: 8, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 280), child: _gpsChip(context))),
-        ]),
+            ]),
+          ),
+        ),
       ),
       Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         child: Text(
           [
             _camera == null ? tr('companion.live_note') : tr('companion.live_note_one', {'camera': tr(_cameraKeys[_camera!])}),

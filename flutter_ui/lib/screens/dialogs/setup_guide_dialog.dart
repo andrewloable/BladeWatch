@@ -4,6 +4,8 @@ import '../../gen/l10n/app_localizations.dart';
 import '../../shell/locale_controller.dart';
 import 'language_picker_sheet.dart';
 import 'setup_guide_controller.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 
 /// First-launch / post-update setup guide — ground truth:
 /// `SetupGuideDialog.java` + `dialog_setup_guide.xml` (BladeWatch-yz1e.11).
@@ -40,7 +42,7 @@ Future<void> showSetupGuideDialog(
   LocaleController localeController, {
   String? updatedToVersion,
 }) {
-  return showDialog<void>(
+  return showHudDialog<void>(
     context: context,
     builder: (dialogContext) => _SetupGuideDialogContent(
       controller: controller,
@@ -74,7 +76,11 @@ class _SetupGuideDialogContent extends StatelessWidget {
                 key: const ValueKey('setupGuide.versionBanner'),
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(color: theme.colorScheme.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+                  border: Border.all(color: BwHud.of(context).panelBorderStrong),
+                ),
                 child: Text(
                   l10n.setup_version_banner(updatedToVersion!),
                   style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onPrimaryContainer),
@@ -160,17 +166,28 @@ class _StepCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+        border: Border.all(color: BwHud.of(context).panelBorder),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Text(step, style: TextStyle(color: theme.colorScheme.onPrimaryContainer)),
+              // A 4 dp box, not a circle: the HUD has no round badges (rule 3).
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+                  border: Border.all(color: BwHud.of(context).accent),
+                ),
+                child: Text(step, style: hudText(12, BwHud.of(context).accent, lineHeight: 16, weight: FontWeight.w700)),
               ),
               const SizedBox(width: 14),
               Expanded(

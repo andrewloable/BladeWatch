@@ -4,6 +4,8 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/safe_locations.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/safe_locations_service_client.dart';
 import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_page.dart';
@@ -153,6 +155,7 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
                 Text(label),
                 for (final sec in options)
                   ChoiceChip(
+                    showCheckmark: false,
                     key: ValueKey('surv.$key.$sec'),
                     label: Text(tr('companion.seconds', {'count': sec})),
                     selected: value == sec,
@@ -194,10 +197,13 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
                   InkWell(
                     key: ValueKey('surv.snapshot.$q'),
                     onTap: () => _snapshot(q),
-                    child: ColoredBox(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    // A 4 dp bordered frame, like every HUD tile; the picture inside is untouched.
+                    child: HudPanel(
+                      color: BwHud.of(context).panel,
+                      borderColor: BwHud.of(context).panelBorder,
+                      clipBehavior: Clip.antiAlias,
                       child: _snapshots[q] != null
-                          ? Image.memory(_snapshots[q]!, fit: BoxFit.cover, gaplessPlayback: true)
+                          ? SizedBox.expand(child: Image.memory(_snapshots[q]!, fit: BoxFit.cover, gaplessPlayback: true))
                           : Center(child: Text('${cameras[q]}\n${tr('surveillance.tap_to_load')}', textAlign: TextAlign.center)),
                     ),
                   ),
@@ -224,6 +230,8 @@ class _SurveillanceScreenState extends State<SurveillanceScreen> with LoadersSta
                   key: ValueKey('zone.delete.${z.id}'),
                   tooltip: tr('surveillance.remove'),
                   icon: const Icon(Icons.delete_outline),
+                  // Destructive: the attention colour.
+                  color: BwHud.of(context).magenta,
                   onPressed: _busy ? null : () => _run(() => _zones.deleteZone(DeleteZoneRequest(id: z.id))),
                 ),
               ),

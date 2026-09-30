@@ -9,6 +9,8 @@ import '../../widgets/osm_tile_layer.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 import 'location_controller.dart';
 import 'location_models.dart';
 
@@ -85,26 +87,42 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
     final c = widget.controller;
     final state = c.effectiveState;
     final loc = locationOf(state);
     final banner = _bannerFor(l10n, state);
 
-    return Stack(
-      children: [
-        Visibility(
-          visible: banner.showMap,
-          maintainState: true,
-          child: _buildMap(loc),
+    return ColoredBox(
+      color: hud.pageBackground,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // The fix itself is in the banner over the map: the title bar does not repeat it.
+            HudTitleBar(title: l10n.rail_location.toUpperCase()),
+            Expanded(
+              // The map sits in a bordered HUD frame; the tiles themselves are not restyled.
+              child: HudPanel(
+                color: hud.panel,
+                borderColor: hud.panelBorder,
+                radius: BwHud.radiusSmall,
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  children: [
+                    Visibility(visible: banner.showMap, maintainState: true, child: _buildMap(loc)),
+                    if (!banner.showMap) ColoredBox(color: hud.pageBackground),
+                    _buildBanner(hud, banner),
+                    if (banner.showMap) Positioned(right: 16, top: 16, child: _buildModeSelector(l10n, c)),
+                    if (banner.showMap && !c.viewportState.followCar && c.viewportState.lastLocation != null)
+                      Positioned(right: 16, bottom: 16, child: _buildRecenterButton(l10n)),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        if (!banner.showMap) ColoredBox(color: theme.colorScheme.surface),
-        _buildBanner(theme, banner),
-        if (banner.showMap)
-          Positioned(right: 24, top: 24, child: _buildModeSelector(l10n, c)),
-        if (banner.showMap && !c.viewportState.followCar && c.viewportState.lastLocation != null)
-          Positioned(right: 24, bottom: 24, child: _buildRecenterButton(l10n)),
-      ],
+      ),
     );
   }
 
@@ -123,17 +141,19 @@ class _LocationScreenState extends State<LocationScreen> {
       children: [
         bwTileLayerFor(night: _useNightTiles),
         if (loc != null)
-          MarkerLayer(markers: [
-            Marker(
-              point: LatLng(loc.latitude, loc.longitude),
-              width: 44,
-              height: 44,
-              child: Transform.rotate(
-                angle: LocationMapReducer.markerRotation(loc.bearingDegrees) * math.pi / 180,
-                child: const _CarMarker(),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: LatLng(loc.latitude, loc.longitude),
+                width: 44,
+                height: 44,
+                child: Transform.rotate(
+                  angle: LocationMapReducer.markerRotation(loc.bearingDegrees) * math.pi / 180,
+                  child: const _CarMarker(),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         // SimpleAttributionWidget prepends its own "©", so the source text must NOT
         // repeat it — on device this rendered as "© © OpenStreetMap contributors"
         // (BladeWatch-imh6.2).
@@ -142,31 +162,37 @@ class _LocationScreenState extends State<LocationScreen> {
     );
   }
 
-  Widget _buildBanner(ThemeData theme, _BannerInfo banner) {
+  Widget _buildBanner(BwHud hud, _BannerInfo banner) {
     return Align(
       key: const ValueKey('location.banner'),
       alignment: banner.showMap ? Alignment.topLeft : Alignment.center,
       child: Padding(
-        padding: EdgeInsets.all(banner.compact ? 18.0 : 24.0),
+        padding: EdgeInsets.all(banner.compact ? 16.0 : 24.0),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 360),
-          child: Container(
+          child: HudPanel(
+            color: hud.pageBackground.withValues(alpha: 0.85),
+            borderColor: hud.cardBorder,
+            radius: BwHud.radiusSmall,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(12),
-            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(banner.title, style: theme.textTheme.titleMedium?.copyWith(color: Colors.white)),
+                Text(
+                  banner.title,
+                  style: hudText(
+                    14,
+                    hud.accent,
+                    lineHeight: 20,
+                    weight: FontWeight.w700,
+                    em: 0.05,
+                    shadows: hudGlow(hud.glowCyan),
+                  ),
+                ),
                 if (banner.subtitle != null) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    banner.subtitle!,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFFD0D0D0)),
-                  ),
+                  Text(banner.subtitle!, style: hudText(12, hud.textSecondary, lineHeight: 16)),
                 ],
                 if (banner.actionLabel != null) ...[
                   const SizedBox(height: 12),
@@ -186,7 +212,7 @@ class _LocationScreenState extends State<LocationScreen> {
 
   Widget _buildModeSelector(AppLocalizations l10n, LocationController c) {
     return SegmentedButton<LocationUiModePreference>(
-            showSelectedIcon: false,
+      showSelectedIcon: false,
       key: const ValueKey('location.modeSelector'),
       segments: [
         ButtonSegment(value: LocationUiModePreference.auto, label: Text(l10n.location_mode_auto)),
@@ -235,60 +261,59 @@ class _BannerInfo {
 /// (not `location_models.dart`) since it resolves ARB text, and this port's
 /// pure-Dart models must not import localized strings.
 _BannerInfo _bannerFor(AppLocalizations l10n, LocationUiState state) => switch (state) {
-      LocationLoading() => _BannerInfo(title: l10n.location_loading_title, showMap: false, compact: false),
-      LocationPermissionMissing() => _BannerInfo(
-          title: l10n.location_permission_missing_title,
-          actionLabel: l10n.location_action_grant,
-          showMap: false,
-          compact: false,
-        ),
-      LocationPermissionDenied() => _BannerInfo(
-          title: l10n.location_permission_denied_title,
-          actionLabel: l10n.location_action_retry,
-          showMap: false,
-          compact: false,
-        ),
-      LocationProviderDisabled() => _BannerInfo(
-          title: l10n.location_provider_disabled_title,
-          actionLabel: l10n.location_action_retry,
-          showMap: false,
-          compact: false,
-        ),
-      LocationWaitingForFix() =>
-        _BannerInfo(title: l10n.location_waiting_for_fix_title, showMap: false, compact: false),
-      LocationFresh(:final location) => _BannerInfo(
-          title: l10n.location_car_location_title,
-          subtitle: _formatLatLng(location),
-          showMap: true,
-          compact: true,
-        ),
-      LocationStale(:final location) => _BannerInfo(
-          title: l10n.location_stale_title,
-          subtitle: _formatLatLng(location),
-          showMap: true,
-          compact: true,
-        ),
-      LocationTileFailure(:final location) => _BannerInfo(
-          title: l10n.location_tile_failure_title,
-          subtitle: l10n.location_tile_failure_subtitle,
-          actionLabel: l10n.location_action_retry,
-          showMap: location != null,
-          compact: location != null,
-        ),
-      // reason is shown verbatim, not wrapped in an ARB template -- same
-      // reasoning as TripsController's SyncOutcome.error: it is raw
-      // diagnostic text from the platform channel (an exception message),
-      // not English prose this port composed, so passing it through as-is
-      // (with no fallback, matching native's `subtitle = state.reason`)
-      // does not violate the no-hardcoded-strings rule.
-      LocationError(:final location, :final reason) => _BannerInfo(
-          title: l10n.location_error_title,
-          subtitle: reason,
-          actionLabel: l10n.location_action_retry,
-          showMap: location != null,
-          compact: location != null,
-        ),
-    };
+  LocationLoading() => _BannerInfo(title: l10n.location_loading_title, showMap: false, compact: false),
+  LocationPermissionMissing() => _BannerInfo(
+    title: l10n.location_permission_missing_title,
+    actionLabel: l10n.location_action_grant,
+    showMap: false,
+    compact: false,
+  ),
+  LocationPermissionDenied() => _BannerInfo(
+    title: l10n.location_permission_denied_title,
+    actionLabel: l10n.location_action_retry,
+    showMap: false,
+    compact: false,
+  ),
+  LocationProviderDisabled() => _BannerInfo(
+    title: l10n.location_provider_disabled_title,
+    actionLabel: l10n.location_action_retry,
+    showMap: false,
+    compact: false,
+  ),
+  LocationWaitingForFix() => _BannerInfo(title: l10n.location_waiting_for_fix_title, showMap: false, compact: false),
+  LocationFresh(:final location) => _BannerInfo(
+    title: l10n.location_car_location_title,
+    subtitle: _formatLatLng(location),
+    showMap: true,
+    compact: true,
+  ),
+  LocationStale(:final location) => _BannerInfo(
+    title: l10n.location_stale_title,
+    subtitle: _formatLatLng(location),
+    showMap: true,
+    compact: true,
+  ),
+  LocationTileFailure(:final location) => _BannerInfo(
+    title: l10n.location_tile_failure_title,
+    subtitle: l10n.location_tile_failure_subtitle,
+    actionLabel: l10n.location_action_retry,
+    showMap: location != null,
+    compact: location != null,
+  ),
+  // reason is shown verbatim, not wrapped in an ARB template -- same
+  // reasoning as TripsController's SyncOutcome.error: it is raw
+  // diagnostic text from the platform channel (an exception message),
+  // not English prose this port composed, so passing it through as-is
+  // (with no fallback, matching native's `subtitle = state.reason`)
+  // does not violate the no-hardcoded-strings rule.
+  LocationError(:final location, :final reason) => _BannerInfo(
+    title: l10n.location_error_title,
+    subtitle: reason,
+    actionLabel: l10n.location_action_retry,
+    showMap: location != null,
+    compact: location != null,
+  ),
+};
 
 String _formatLatLng(LocationCarGps location) =>
     '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}';
@@ -298,13 +323,15 @@ class _CarMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
+    // The car is the magenta marker (rule 4: magenta = the thing you are watching); the white ring and shadow keep it
+    // readable over any map tile, light or night.
     return DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: theme.colorScheme.primary,
+        color: hud.magenta,
         border: Border.all(color: Colors.white, width: 3),
-        boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 6)],
+        boxShadow: [BoxShadow(color: hud.magenta.withValues(alpha: 0.6), blurRadius: 8)],
       ),
       child: const Icon(Icons.navigation, color: Colors.white, size: 22),
     );

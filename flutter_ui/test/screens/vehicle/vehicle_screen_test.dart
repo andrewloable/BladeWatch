@@ -8,8 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import '../../fakes/hud_test_env.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 
 void main() {
+  hudTestEnvironment();
   late FakeRpcClient rpc;
 
   VehicleController buildController() => VehicleController(vehicleService: VehicleServiceClient(rpc), systemService: SystemServiceClient(rpc));
@@ -91,6 +95,68 @@ void main() {
     await pump(tester, c);
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
+  // BladeWatch-2llu.3: the Vehicle screen is on the HUD skin. Only how it LOOKS changed; no control sends anything new.
+  group('HUD skin', () {
+    testWidgets('has a HUD title bar and shows the loading state as the HUD loader', (tester) async {
+      final c = buildController();
+      await pump(tester, c);
+      expect(find.byType(HudLoading), findsOneWidget);
+      stubState();
+      stubAppearance();
+      await tester.pumpAndSettle();
+      expect(find.byType(HudTitleBar), findsOneWidget);
+      expect(find.text('VEHICLE'), findsOneWidget);
+    });
+
+    testWidgets('tyre cards are 4 dp panels; the pressure dot is the real tier in HUD colours, alert gets a magenta border', (tester) async {
+      stubState(flTyre: const {'kPa': 250, 'psi': 36.3, 'temperatureC': 29});
+      stubAppearance();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      const hud = BwHud.light;
+      HudPanel card(String k) => tester.widget<HudPanel>(find.descendant(of: find.byKey(ValueKey('vehicle.tyre.$k')), matching: find.byType(HudPanel)));
+      Color dot(String k) => ((tester.widgetList<Container>(find.descendant(of: find.byKey(ValueKey('vehicle.tyre.$k')), matching: find.byType(Container))).firstWhere((c) => c.decoration is BoxDecoration && (c.decoration! as BoxDecoration).shape == BoxShape.circle)).decoration! as BoxDecoration).color!;
+      expect(card('FL').radius, 4);
+      expect(card('FL').borderColor, hud.panelBorder);
+      expect(dot('FL'), hud.dot, reason: 'a normal tyre is the cyan dot');
+      expect(dot('FR'), hud.textSecondary.withValues(alpha: 0.5), reason: 'no signal is the quiet grey, never a claim');
+    });
+
+    // One pump per test, like the rest of the file: a second controller pumped into the same tree reuses the State.
+    for (final (overall, expected, why) in [
+      (1, BwHud.light.accent, 'locked is the accent'),
+      (2, BwHud.light.magenta, 'unlocked is magenta (attention)'),
+      (0, BwHud.light.textSecondary.withValues(alpha: 0.5), 'unknown is the quiet grey, never a claim'),
+    ]) {
+      testWidgets('the lock dot is real state: $why', (tester) async {
+        stubState(doorsOverall: overall);
+        stubAppearance();
+        await pump(tester, buildController());
+        await tester.pumpAndSettle();
+        final dot = tester.widget<Container>(find.byKey(const ValueKey('vehicle.status.lockDot')));
+        expect((dot.decoration! as BoxDecoration).color, expected);
+      });
+    }
+
+    testWidgets('the charge card and the controls panel are 4 dp HUD panels', (tester) async {
+      stubState();
+      stubAppearance();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+      final charge = tester.widget<HudPanel>(find.ancestor(of: find.byKey(const ValueKey('vehicle.status.charge')), matching: find.byType(HudPanel)).first);
+      expect((charge.color, charge.borderColor, charge.radius), (BwHud.light.panel, BwHud.light.panelBorder, 4));
+      final tab = find.byKey(const ValueKey('vehicle.tab.climate'));
+      expect(tab, findsOneWidget);
+      final panel = tester
+          .widgetList<Container>(find.ancestor(of: tab, matching: find.byType(Container)))
+          .map((c) => c.decoration)
+          .whereType<BoxDecoration>()
+          .firstWhere((d) => d.color == BwHud.light.panel);
+      expect(panel.borderRadius, BorderRadius.circular(4));
+      expect((panel.border! as Border).top.color, BwHud.light.panelBorder);
+    });
   });
 
   group('status card', () {
@@ -243,10 +309,11 @@ void main() {
       final scheme = Theme.of(tester.element(find.byKey(const ValueKey('vehicle.climate.ac')))).colorScheme;
       Color? labelColor(String text) => DefaultTextStyle.of(tester.element(find.text(text))).style.color;
 
-      expect(labelColor('AC Off'), scheme.onSurface);
+      // The HUD's look: off is a neutral panel with the muted text; on is the accent text on its soft accent fill.
+      expect(labelColor('AC Off'), scheme.onSurfaceVariant);
       await tester.tap(find.byKey(const ValueKey('vehicle.climate.ac')));
       await tester.pumpAndSettle();
-      expect(labelColor('AC On'), scheme.onPrimary);
+      expect(labelColor('AC On'), scheme.primary);
     });
 
     testWidgets('a failed AC toggle shows a snackbar with the server message', (tester) async {
@@ -828,8 +895,9 @@ void main() {
       // The controls start where the hero ends — no gap between the two panes …
       expect(chips.top - heroBottom < portrait.height * 0.2, isTrue,
           reason: 'gap of ${chips.top - heroBottom}px between the hero and the controls');
-      // … and the hero occupies well over half the screen, rather than exactly half.
-      expect(heroBottom > portrait.height * 0.5, isTrue,
+      // … and the hero takes what the controls leave (they are capped at 55% of the body, inside the 24 dp page gutter
+      // the HUD gives both panes), rather than exactly half with dead space below.
+      expect(heroBottom > portrait.height * 0.4, isTrue,
           reason: 'hero ends at $heroBottom of ${portrait.height} — it is being capped at 50%');
     });
 

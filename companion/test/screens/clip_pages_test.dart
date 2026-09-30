@@ -33,6 +33,8 @@ class FakeLibrary {
 }
 
 void main() {
+  hudTestEnvironment();
+
   test('days are keyed as the car names them, yyyy-MM-dd: anything else filters to nothing', () {
     expect(RecordingsScreen.dayKey(DateTime(2026, 9, 7)), '2026-09-07');
   });
@@ -145,7 +147,7 @@ void main() {
       expect(find.text(t('common.retry')), findsOneWidget);
       await tester.tap(find.text(t('common.retry')));
       await tester.pumpAndSettle();
-      expect(find.text(t('events.empty_none_title')), findsOneWidget);
+      expect(find.text(t('events.empty_none_title').toUpperCase()), findsOneWidget);
       await unmount(tester);
     });
   });
@@ -352,7 +354,8 @@ void main() {
     testWidgets('a page uses the token gutters; the clip list stops at the content width', (tester) async {
       await pumpScreen(tester, TestSession(), const PageList(children: [Section(title: 'T', children: [Text('x', key: ValueKey('body'))])]));
       expect(tester.getTopLeft(find.byType(Card)).dx, BwDimens.pagePaddingHorizontal);
-      expect(tester.getTopLeft(find.byKey(const ValueKey('body'))).dx, BwDimens.pagePaddingHorizontal + BwDimens.cardPaddingStandard);
+      // The HUD card's padding is 16 (its tiles, HUD rule 3), not the Android token's 20.
+      expect(tester.getTopLeft(find.byKey(const ValueKey('body'))).dx, BwDimens.pagePaddingHorizontal + 16);
       await unmount(tester);
 
       final s = TestSession();

@@ -23,11 +23,14 @@ import 'package:bladewatch_ui/screens/trips/trips_controller.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_screen.dart';
 import 'package:bladewatch_ui/shell/shell_controller.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 import 'package:bladewatch_ui/shell/locale_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../fakes/fake_platform_channel.dart';
+import '../../fakes/hud_test_env.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
 class _MemLocaleStore implements LocaleStore {
@@ -50,6 +53,8 @@ class _FakeJwtSource implements JwtSource {
 }
 
 void main() {
+  hudTestEnvironment();
+
   late FakeRpcClient rpc;
   late FakePlatformChannel channel;
   late bool languageOpened;
@@ -253,7 +258,7 @@ void main() {
     expect(find.byKey(const ValueKey('settings.pane.title')), findsOneWidget);
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('settings.pane.title'))).data,
-      'Appearance',
+      'APPEARANCE',
     );
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('settings.pane.subtitle'))).data,
@@ -264,7 +269,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('settings.pane.title'))).data,
-      'Status overlay',
+      'STATUS OVERLAY',
     );
   });
 
@@ -325,5 +330,53 @@ void main() {
 
     expect(find.byKey(const ValueKey('settings.pane.title')), findsOneWidget);
     expect(find.byKey(const ValueKey('settings.pane.subtitle')), findsNothing);
+  });
+
+  group('HUD', () {
+    testWidgets('the sub-rail is HUD rows and the selected one carries the accent border', (tester) async {
+      await pump(tester);
+
+      expect(find.byType(HudListRow), findsNWidgets(7));
+      Color borderOf(String section) => tester
+          .widget<HudPanel>(find.descendant(of: find.byKey(ValueKey('settings.section.$section')), matching: find.byType(HudPanel)).first)
+          .borderColor;
+      expect(borderOf('appearance'), BwHud.light.accent);
+      expect(borderOf('recording'), BwHud.light.panelBorder);
+
+      await tester.tap(find.byKey(const ValueKey('settings.section.recording')));
+      await tester.pumpAndSettle();
+      expect(borderOf('appearance'), BwHud.light.panelBorder);
+      expect(borderOf('recording'), BwHud.light.accent);
+    });
+
+    testWidgets('the pane opens with the HUD title bar, upper-cased, and no back arrow', (tester) async {
+      await pump(tester);
+
+      expect(find.byType(HudTitleBar), findsOneWidget);
+      expect(find.byKey(const ValueKey('hud.back')), findsNothing);
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text('APPEARANCE')), findsOneWidget);
+    });
+
+    // Portrait: 720 dp wide window minus the 80 dp rail leaves a 640 dp stage; every section must lay out in it.
+    testWidgets('every section lays out at the portrait stage width (640 dp) without overflow', (tester) async {
+      tester.view.physicalSize = const Size(640, 1100);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(MaterialApp(
+        theme: BwHud.themeData(Brightness.dark),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: SettingsScreen(deps: buildDeps())),
+      ));
+      await tester.pumpAndSettle();
+      for (final section in const ['appearance', 'recording', 'surveillance', 'trips', 'overlay', 'daemons', 'privacy']) {
+        await tester.tap(find.byKey(ValueKey('settings.section.$section')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: section);
+      }
+    });
   });
 }

@@ -10,9 +10,19 @@ import 'package:bladewatch_companion/i18n.dart';
 import 'package:bladewatch_companion/transport/car_auth.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
-import 'package:bladewatch_theme/bladewatch_theme.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// A test file that pumps a HUD title bar (every screen has one) and calls `pumpAndSettle` calls this at the top of
+/// `main()`: the title bar's pulse (`HudPulse`) loops forever, and stands still when the platform asks for no animations.
+void hudTestEnvironment() {
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+  });
+  tearDown(() => binding.platformDispatcher.clearAccessibilityFeaturesTestValue());
+}
 
 /// English, from the real catalog: a test that finds `tr('x')` text proves the key exists.
 final Tr testTr = Tr.english(jsonDecode(File('assets/i18n/en.json').readAsStringSync()) as Map<String, Object?>);
@@ -73,7 +83,8 @@ Future<void> pumpScreen(WidgetTester tester, TestSession s, Widget child, {Size 
   // Strings above the Navigator (as CompanionApp does), so dialogs and pushed routes see them;
   // the session inside the page only, as HomeShell has it.
   await tester.pumpWidget(MaterialApp(
-    theme: BladeWatchTheme.light(),
+    // The HUD theme is the app's own (BladeWatch-0glp.1), so every screen test runs on it.
+    theme: BwHud.themeData(Brightness.light),
     builder: (context, nav) => TrScope(tr: testTr, child: nav!),
     home: SessionScope(session: s.session, child: Scaffold(body: child)),
   ));

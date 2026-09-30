@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_theme/dimens_tokens.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
@@ -52,12 +54,14 @@ class _LocationScreenState extends State<LocationScreen> with LoadersState {
         final fix = parseFix(r.locationJson);
         if (fix == null) {
           return ListView(children: [
-            Padding(padding: const EdgeInsets.all(32), child: Text(tr('vehicle.no_gps_fix'), textAlign: TextAlign.center)),
+            Padding(padding: const EdgeInsets.all(32), child: HudEmptyState(icon: Icons.location_off_outlined, message: tr('vehicle.no_gps_fix'))),
           ]);
         }
         return Column(children: [
           Expanded(
-            child: Stack(children: [
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(BwDimens.pagePaddingHorizontal, 0, BwDimens.pagePaddingHorizontal, 12),
+              child: Stack(children: [
               CarMap(key: ValueKey((fix.at, _recentred)), center: fix.at, markers: [fix.at]),
               PositionedDirectional(
                 top: 12,
@@ -70,14 +74,20 @@ class _LocationScreenState extends State<LocationScreen> with LoadersState {
                   child: const Icon(Icons.my_location),
                 ),
               ),
-            ]),
+              ]),
+            ),
           ),
-          ListTile(
-            title: Text('${fix.at.latitude.toStringAsFixed(5)}, ${fix.at.longitude.toStringAsFixed(5)}'),
-            subtitle: Text([
-              if (fix.stale) tr('status.stale'),
-              if (fix.accuracy != null) '± ${fix.accuracy!.toStringAsFixed(0)} m',
-            ].join(' · ')),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(BwDimens.pagePaddingHorizontal, 0, BwDimens.pagePaddingHorizontal, BwDimens.pagePaddingBottom),
+            child: HudListRow(
+            icon: Icons.place_outlined,
+            title: '${fix.at.latitude.toStringAsFixed(5)}, ${fix.at.longitude.toStringAsFixed(5)}',
+            subtitle: fix.stale || fix.accuracy != null
+                ? [
+                    if (fix.stale) tr('status.stale'),
+                    if (fix.accuracy != null) '± ${fix.accuracy!.toStringAsFixed(0)} m',
+                  ].join(' · ')
+                : null,
             trailing: r.googleMapsUrl.isEmpty
                 ? null
                 : IconButton(
@@ -92,6 +102,7 @@ class _LocationScreenState extends State<LocationScreen> with LoadersState {
                       }
                     },
                   ),
+            ),
           ),
         ]);
       },

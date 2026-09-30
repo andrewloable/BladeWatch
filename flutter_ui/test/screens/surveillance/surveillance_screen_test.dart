@@ -6,12 +6,17 @@ import 'package:bladewatch_rpc/rpc/services/surveillance_service_client.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_controller.dart';
 import 'package:bladewatch_ui/screens/surveillance/surveillance_screen.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 
+import '../../fakes/hud_test_env.dart';
+
 void main() {
+  hudTestEnvironment();
+
   late FakeRpcClient rpc;
 
   setUp(() {
@@ -120,6 +125,9 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const ValueKey('surveillance.enable')));
+      // The controller waits out a settle delay before it reloads. With animations off (the HUD test
+      // environment) the switch no longer keeps pumpAndSettle busy that long, so let the timer fire.
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
 
       expect(rpc.calls.any((c) => c.service == 'SurveillanceService' && c.method == 'Disable'), isTrue);
@@ -674,4 +682,33 @@ void main() {
     expect(tabBarY, greaterThan(contentY));
   });
 
+  group('HUD', () {
+    testWidgets('inside the Settings hub there is no title bar of its own', (tester) async {
+      stubHappyPath();
+      await pump(tester, buildController());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HudTitleBar), findsNothing);
+    });
+
+    testWidgets('the standalone route draws its own title bar', (tester) async {
+      stubHappyPath();
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(MaterialApp(
+        theme: BladeWatchTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: SurveillanceSettingsScreen(controller: buildController(), showTitleBar: true)),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HudTitleBar), findsOneWidget);
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text('SURVEILLANCE')), findsOneWidget);
+    });
+  });
 }

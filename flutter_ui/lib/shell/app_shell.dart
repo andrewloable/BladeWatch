@@ -1,22 +1,15 @@
-
 import 'package:flutter/material.dart';
 
-import '../gen/l10n/app_localizations.dart';
+import '../theme/hud_theme.dart';
 import 'nav_rail.dart';
-import 'rail_destination.dart';
 import 'route_stubs.dart';
 import 'shell_controller.dart';
 
 /// The Flutter counterpart of `activity_main_new.xml` /
-/// `layout-land/activity_main_new.xml`: navigation rail + toolbar (with the
-/// accent stripe and status pill) + content stage. Ported from BOTH Android
-/// layout variants rather than just the portrait default — they differ in
-/// more than orientation: landscape puts the language picker at the top of
-/// the rail (`layout-land/rail_header.xml`) and uses a compact 48dp toolbar
-/// with `TitleMedium`; portrait puts the language picker in the toolbar
-/// end-cluster and uses the default `?attr/actionBarSize` toolbar with
-/// `TitleLarge`. This widget picks between them by `MediaQuery` orientation,
-/// same signal Android's `-land` resource qualifier reacts to.
+/// `layout-land/activity_main_new.xml`: navigation rail + content stage. There is no toolbar: on the HUD
+/// skin (the app's only theme) every screen draws its own `HudTitleBar`, and the language button, which the
+/// Android portrait layout kept in the toolbar's end-cluster, lives at the top of the rail in both
+/// orientations. The rail is 80 dp wide, compact (52 dp items) in landscape.
 class AppShell extends StatelessWidget {
   final ShellController controller;
   final VoidCallback onLanguageTap;
@@ -96,18 +89,18 @@ class AppShell extends StatelessWidget {
   });
 
   Widget? _screenFor(String route) => switch (route) {
-        BwRoutes.dashboard => dashboardScreen,
-        BwRoutes.settings => settingsScreen,
-        BwRoutes.settingsAbout => settingsAboutScreen,
-        BwRoutes.diagnostics => diagnosticsScreen,
-        BwRoutes.trips => tripsScreen,
-        BwRoutes.location => locationScreen,
-        BwRoutes.recordings => recordingsScreen,
-        BwRoutes.surveillance => surveillanceScreen,
-        BwRoutes.vehicle => vehicleScreen,
-        BwRoutes.liveView => liveViewScreen,
-        _ => null,
-      };
+    BwRoutes.dashboard => dashboardScreen,
+    BwRoutes.settings => settingsScreen,
+    BwRoutes.settingsAbout => settingsAboutScreen,
+    BwRoutes.diagnostics => diagnosticsScreen,
+    BwRoutes.trips => tripsScreen,
+    BwRoutes.location => locationScreen,
+    BwRoutes.recordings => recordingsScreen,
+    BwRoutes.surveillance => surveillanceScreen,
+    BwRoutes.vehicle => vehicleScreen,
+    BwRoutes.liveView => liveViewScreen,
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -115,118 +108,42 @@ class AppShell extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-        final l10n = AppLocalizations.of(context)!;
 
         final rail = NavRail(
           selectedRoute: controller.selectedRoute,
           onSelect: controller.selectRoute,
-          showLanguageHeader: isLandscape,
-          onLanguageTap: isLandscape ? onLanguageTap : null,
+          showLanguageHeader: true,
+          onLanguageTap: onLanguageTap,
           compact: isLandscape,
+          onRight: controller.railOnRight,
         );
 
-        final stage = Column(
-          children: [
-            _Toolbar(
-              compact: isLandscape,
-              title: _currentTitle(l10n),
-              showLanguageButton: !isLandscape,
-              onLanguageTap: onLanguageTap,
-            ),
-            Container(
-              key: const ValueKey('accentStripe'),
-              height: 3,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.tertiary],
-                ),
-              ),
-            ),
-            Expanded(
-              // A Navigator scoped to the STAGE, not the whole window. Native
-              // keeps the nav rail visible when you open a sub-screen (ADB
-              // Console, Performance) and shows a back arrow in the toolbar;
-              // pushing on the root navigator covered the rail and left the
-              // user with no sense of place (BladeWatch-mrsc).
-              //
-              // Dialogs are unaffected: showDialog defaults to
-              // useRootNavigator: true, so they still cover the whole window
-              // rather than being trapped inside the stage.
-              child: Navigator(
-                // Keyed by route so switching rail destination rebuilds the
-                // stage navigator, discarding any sub-screen that was open.
-                // Without this, leaving Diagnostics while the ADB Console was
-                // pushed would keep showing the console under the new title.
-                key: ValueKey('stageNav.${controller.selectedRoute}'),
-                onGenerateRoute: (settings) => MaterialPageRoute<void>(
-                  settings: settings,
-                  builder: (_) =>
-                      _screenFor(controller.selectedRoute) ?? StubScreen(routeName: controller.selectedRoute),
-                ),
-              ),
-            ),
-          ],
+        // A Navigator scoped to the STAGE, not the whole window. Native keeps the nav rail visible when you
+        // open a sub-screen (ADB Console, Performance); pushing on the root navigator covered the rail and
+        // left the user with no sense of place (BladeWatch-mrsc).
+        //
+        // Dialogs are unaffected: showDialog defaults to useRootNavigator: true, so they still cover the
+        // whole window rather than being trapped inside the stage.
+        final stage = Navigator(
+          // Keyed by route so switching rail destination rebuilds the stage navigator, discarding any
+          // sub-screen that was open. Without this, leaving Diagnostics while the ADB Console was pushed
+          // would keep showing the console under the new destination.
+          key: ValueKey('stageNav.${controller.selectedRoute}'),
+          onGenerateRoute: (settings) => MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => _screenFor(controller.selectedRoute) ?? StubScreen(routeName: controller.selectedRoute),
+          ),
         );
 
         return Scaffold(
+          backgroundColor: BwHud.of(context).pageBackground,
           body: SafeArea(
             child: Row(
-              children: controller.railOnRight
-                  ? [Expanded(child: stage), rail]
-                  : [rail, Expanded(child: stage)],
+              children: controller.railOnRight ? [Expanded(child: stage), rail] : [rail, Expanded(child: stage)],
             ),
           ),
         );
       },
     );
   }
-
-  String _currentTitle(AppLocalizations l10n) {
-    for (final destination in railDestinations) {
-      if (destination.routeName == controller.selectedRoute) {
-        return destination.label(l10n);
-      }
-    }
-    return controller.selectedRoute;
-  }
 }
-
-/// `MaterialToolbar`, ported from both `activity_main_new.xml` variants (see class doc above for
-/// what differs). Its tunnel-URL status pill went with tor (BladeWatch-rdtj.12).
-class _Toolbar extends StatelessWidget implements PreferredSizeWidget {
-  final bool compact;
-  final String title;
-  final bool showLanguageButton;
-  final VoidCallback onLanguageTap;
-
-  const _Toolbar({
-    required this.compact,
-    required this.title,
-    required this.showLanguageButton,
-    required this.onLanguageTap,
-  });
-
-  @override
-  Size get preferredSize => Size.fromHeight(compact ? 48 : kToolbarHeight);
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
-
-    return AppBar(
-      toolbarHeight: preferredSize.height,
-      title: Text(title, style: compact ? theme.textTheme.titleMedium : theme.textTheme.titleLarge),
-      actions: [
-        if (showLanguageButton)
-          IconButton(
-            icon: const Icon(Icons.language),
-            tooltip: l10n.settings_language_label,
-            onPressed: onLanguageTap,
-          ),
-        const SizedBox(width: 4),
-      ],
-    );
-  }
-}
-

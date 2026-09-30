@@ -73,6 +73,8 @@ class _FakeVideo extends VideoPlayerPlatform {
 }
 
 void main() {
+  hudTestEnvironment();
+
   late _FakeVideo platform;
   late VideoPlayerPlatform original;
 

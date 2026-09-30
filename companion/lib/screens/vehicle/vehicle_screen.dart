@@ -1,5 +1,6 @@
 import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/vehicle_service_client.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_page.dart';
@@ -130,6 +131,7 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
             if (!s.hasClimate()) Text(tr('vehicle.climate_unavailable')),
             if (s.hasClimate()) ...[
               SwitchListTile(
+                contentPadding: EdgeInsets.zero,
                 key: const ValueKey('climate.ac'),
                 title: Text(tr('vehicle.air_conditioning')),
                 value: c.acOn,
@@ -138,6 +140,7 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
                     : (on) => _do('ac', (v) => v.setClimate(SetClimateRequest(action: on ? 'power_on' : 'power_off', setpointC: c.setpointC.roundToDouble()))),
               ),
               SwitchListTile(
+                contentPadding: EdgeInsets.zero,
                 key: const ValueKey('climate.max'),
                 title: Text(tr('vehicle.max_cooling')),
                 value: c.maxCooling,
@@ -169,6 +172,7 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
               Wrap(spacing: 6, runSpacing: 4, children: [
                 for (final p in windowPresets)
                   ChoiceChip(
+                    showCheckmark: false,
                     key: ValueKey('window.$idx.$p'),
                     label: Text('$p%'),
                     // Within 5 points counts as there: the car reports the glass a little off its target.
@@ -190,6 +194,7 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
                 Wrap(spacing: 6, runSpacing: 4, children: [
                   for (final p in sunPanelPresets)
                     ChoiceChip(
+                      showCheckmark: false,
                       key: ValueKey('window.$idx.$p'),
                       label: Text('$p%'),
                       selected: sunPanelPreset(pos) == p,
@@ -225,7 +230,12 @@ class _VehicleScreenState extends State<VehicleScreen> with LoadersState {
               // Diagnostics fix -- confirmed at 2x text scale it wrapped with "°C" left alone
               // on its own line.
               for (final (name, t) in [('FL', s.tyres.fl), ('FR', s.tyres.fr), ('RL', s.tyres.rl), ('RR', s.tyres.rr)])
-                InfoRow(name, '${t.psi.toStringAsFixed(1)} psi ·\n${t.tempC} °C${t.leakState > 0 ? ' · ${tr('vehicle.leak')}' : ''}'),
+                InfoRow(
+                  name,
+                  '${t.psi.toStringAsFixed(1)} psi ·\n${t.tempC} °C${t.leakState > 0 ? ' · ${tr('vehicle.leak')}' : ''}',
+                  // The tyre's own state, as the car reports it: cyan when it reports no leak, magenta when it does.
+                  leading: HudStatusDot(t.leakState > 0 ? HudDotState.bad : HudDotState.ok),
+                ),
             ]),
         ]);
       },
@@ -256,6 +266,7 @@ class _Stepper extends StatelessWidget {
   // translations (checked; none of the others is longer) on a narrow phone, not a residual bug.
   @override
   Widget build(BuildContext context) => ListTile(
+        contentPadding: EdgeInsets.zero,
         title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           IconButton(

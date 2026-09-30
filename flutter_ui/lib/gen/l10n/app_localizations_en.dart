@@ -2892,4 +2892,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get auto_hold_active => 'Holding';
+
+  @override
+  String get dashboard_hud_overview => 'Overview';
+
+  @override
+  String get dashboard_hud_telemetry => 'Telemetry';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }

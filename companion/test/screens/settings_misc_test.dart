@@ -9,6 +9,8 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -41,6 +43,8 @@ void stubStorage(TestSession s, {bool sd = true}) => s.rpc.stubJson('StorageServ
     });
 
 void main() {
+  hudTestEnvironment();
+
   group('SettingsScreen', () {
     late List<String?> languages;
     late int unpaired;
@@ -111,7 +115,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('settings.trips')));
       await tester.pumpAndSettle();
-      expect(find.descendant(of: find.byType(AppBar), matching: find.text(t('companion.trips_costs'))), findsOneWidget);
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text(t('companion.trips_costs').toUpperCase())), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('trips.unit.mi')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const ValueKey('trips.apply')));
@@ -165,6 +169,22 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('settings.confirm')));
       await tester.pumpAndSettle();
       expect(unpaired, 1);
+      await unmount(tester);
+    });
+
+    testWidgets('HUD: the configured mode is the accent row, unpair is a magenta confirm, single choices have no check mark', (tester) async {
+      await pump(tester);
+      bool chosen(String m) => tester.widget<HudListRow>(find.byKey(ValueKey('settings.mode.$m'))).selected;
+      expect(chosen('CONTINUOUS'), isTrue, reason: "the car's configured mode");
+      expect(chosen('NONE'), isFalse);
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('settings.segment.5'))).showCheckmark, isFalse);
+
+      await tester.tap(find.byKey(const ValueKey('settings.unpair')));
+      await tester.pumpAndSettle();
+      final confirm = tester.widget<FilledButton>(find.byKey(const ValueKey('settings.confirm')));
+      expect(confirm.style!.foregroundColor!.resolve({}), BwHud.light.magenta);
+      await tester.tap(find.text(t('common.cancel')));
+      await tester.pumpAndSettle();
       await unmount(tester);
     });
 
@@ -359,6 +379,24 @@ void main() {
   });
 
   group('DiagnosticsScreen', () {
+    testWidgets('HUD: the health dots are the state itself, and the SOH reset confirm is magenta', (tester) async {
+      final s = TestSession();
+      stubStatus(s);
+      stubStorage(s, sd: false);
+      s.rpc.stubJson('SystemService', 'GetSohStatus', {'displaySoh': 97.0});
+      await pumpScreen(tester, s, const DiagnosticsScreen(), size: const Size(1200, 2400));
+      final dots = tester.widgetList<HudStatusDot>(find.byType(HudStatusDot)).map((d) => d.state).toList();
+      // LAN access on and the pipeline running are cyan; the SD card that failed to mount is magenta.
+      expect(dots, [HudDotState.ok, HudDotState.bad, HudDotState.ok]);
+
+      await tester.ensureVisible(find.byKey(const ValueKey('diag.resetSoh')));
+      await tester.tap(find.byKey(const ValueKey('diag.resetSoh')));
+      await tester.pumpAndSettle();
+      final confirm = tester.widget<FilledButton>(find.byKey(const ValueKey('diag.resetConfirm')));
+      expect(confirm.style!.foregroundColor!.resolve({}), BwHud.light.magenta);
+      await unmount(tester);
+    });
+
     testWidgets('health, the camera probe, and a confirmed SOH reset', (tester) async {
       final s = TestSession();
       stubStatus(s);

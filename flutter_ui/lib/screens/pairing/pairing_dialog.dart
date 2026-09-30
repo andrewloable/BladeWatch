@@ -6,13 +6,14 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../gen/l10n/app_localizations.dart';
 import '../../platform/pairing_channel.dart';
 import 'pairing_controller.dart';
+import '../../widgets/hud_widgets.dart';
 
 /// Opens the in-car "Pair a device" dialog (BladeWatch-rdtj.7). The QR is minted when the dialog
 /// opens -- the explicit action the owner takes -- and is never shown on the dashboard itself.
 Future<void> showPairingDialog(BuildContext context, PairingChannel channel) async {
   final controller = PairingController(channel);
   unawaited(controller.start());
-  await showDialog<void>(context: context, builder: (_) => PairingDialog(controller: controller));
+  await showHudDialog<void>(context: context, builder: (_) => PairingDialog(controller: controller));
   controller.dispose();
 }
 
@@ -149,7 +150,7 @@ class _PairingDialogState extends State<PairingDialog> {
   }
 
   Future<void> _confirmRemove(BuildContext context, PairedDevice device, AppLocalizations l10n) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showHudDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.pairing_remove_confirm_title(device.name)),

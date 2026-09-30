@@ -2908,4 +2908,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get auto_hold_active => 'Đang giữ';
+
+  @override
+  String get dashboard_hud_overview => 'Tổng quan';
+
+  @override
+  String get dashboard_hud_telemetry => 'Đo từ xa';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }

@@ -5,12 +5,16 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import 'package:fixnum/fixnum.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support.dart';
 
 void main() {
+  hudTestEnvironment();
+
   group('trips', () {
     test('PeriodSummary sums the rollups and skips unreadable ones', () {
       expect(PeriodSummary.of([]), isNull);
@@ -66,11 +70,39 @@ void main() {
       s.rpc.stubJson('TripsService', 'SyncTrips', {'success': true, 'added': 2, 'removed': 1, 'total': 41});
     }
 
+    testWidgets('HUD: trips are rows with a score badge in its real band, the detail has a title bar and a magenta delete', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      s.rpc.stubJson('TripsService', 'ListTrips', {
+        'trips': [
+          {'id': '7', 'startTime': '1700000000000', 'distanceKm': 12.0, 'durationSeconds': 900, 'overallScore': 88},
+          {'id': '8', 'startTime': '1699990000000', 'distanceKm': 5.0, 'durationSeconds': 400, 'overallScore': 55},
+          {'id': '9', 'startTime': '1699980000000', 'distanceKm': 2.0, 'durationSeconds': 100, 'overallScore': 20},
+        ],
+      });
+      await pumpScreen(tester, s, const TripsScreen(), size: const Size(1200, 1600));
+      const hud = BwHud.light;
+      Color band(String id) => tester
+          .widget<HudPanel>(find.descendant(of: find.byKey(ValueKey('trip.$id')), matching: find.byType(HudPanel)).last)
+          .borderColor;
+      expect(band('7'), hud.accent);
+      expect(band('8'), hud.warning);
+      expect(band('9'), hud.magenta);
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('trips.days.7'))).showCheckmark, isFalse);
+
+      await tester.tap(find.byKey(const ValueKey('trip.7')));
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text(t('trips.trip_summary').toUpperCase())), findsOneWidget);
+      expect(tester.widget<IconButton>(find.byKey(const ValueKey('trip.delete'))).color, hud.magenta);
+      expect(find.byKey(const ValueKey('hud.back')), findsOneWidget);
+      await unmount(tester);
+    });
+
     testWidgets('the list with its period, a trip\'s route and scores, and delete', (tester) async {
       final s = TestSession();
       stubAll(s);
       await pumpScreen(tester, s, const TripsScreen(), size: const Size(1200, 1600));
-      expect(find.text(t('trips.period_summary')), findsOneWidget);
+      expect(find.text(t('trips.period_summary').toUpperCase()), findsOneWidget, reason: 'a section title is an upper-case label');
       expect(find.text('88'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('trips.days.30')));
@@ -79,7 +111,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('trip.7')));
       await tester.pumpAndSettle();
-      expect(find.text(t('trips.trip_summary')), findsOneWidget);
+      expect(find.text(t('trips.trip_summary').toUpperCase()), findsOneWidget);
       expect(find.text('1.50 PHP'), findsOneWidget);
       expect(find.text('+20 m'), findsOneWidget);
 
@@ -92,7 +124,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('trip.delete.confirm')));
       await tester.pumpAndSettle();
       expect((s.rpc.calls.lastWhere((c) => c.method == 'DeleteTrip').request as DeleteTripRequest).id.toInt(), 7);
-      expect(find.text(t('trips.period_summary')), findsOneWidget, reason: 'back on the list, reloaded');
+      expect(find.text(t('trips.period_summary').toUpperCase()), findsOneWidget, reason: 'back on the list, reloaded');
       await unmount(tester);
     });
 
@@ -108,7 +140,7 @@ void main() {
       s.rpc.stubJson('TripsService', 'GetSummary', {'summary': []});
       await unmount(tester);
       await pumpScreen(tester, s, const TripsScreen());
-      expect(find.text(t('trips.no_trips_recorded')), findsOneWidget);
+      expect(find.text(t('trips.no_trips_recorded').toUpperCase()), findsOneWidget);
       await unmount(tester);
     });
 
@@ -222,6 +254,91 @@ void main() {
       expect(find.text('+2 / -1 · 41'), findsOneWidget);
       await unmount(tester);
     });
+
+    // BladeWatch-gzbo: the currency is PICKED from a list of symbols (it used to be a typed text box), and
+    // what the car stored is only replaced when the owner actually picks.
+    group('currency picker', () {
+      Future<TestSession> pumpStorage(WidgetTester tester, String? currency) async {
+        final s = TestSession();
+        stubAll(s);
+        s.rpc.stubJson('TripsService', 'GetConfig', {
+          'config': {'enabled': true, 'electricityRate': 11.5, 'currency': ?currency},
+        });
+        await pumpScreen(tester, s, const TripsScreen(), size: const Size(1200, 1600));
+        await tester.tap(find.text(t('trips.tab_storage')));
+        await tester.pumpAndSettle();
+        return s;
+      }
+
+      DropdownButtonFormField<String> picker(WidgetTester tester) =>
+          tester.widget<DropdownButtonFormField<String>>(find.byKey(const ValueKey('trips.currency')));
+      List<String> menu(WidgetTester tester) => tester
+          .widget<DropdownButton<String>>(
+              find.descendant(of: find.byKey(const ValueKey('trips.currency')), matching: find.byType(DropdownButton<String>)))
+          .items!
+          .map((i) => i.value!)
+          .toList();
+      Future<String> apply(WidgetTester tester, TestSession s) async {
+        await tester.tap(find.byKey(const ValueKey('trips.apply')));
+        await tester.pumpAndSettle();
+        return (s.rpc.calls.lastWhere((c) => c.method == 'SetConfig').request as SetConfigRequest).currency;
+      }
+
+      testWidgets('is a dropdown of 80 symbols: no ISO code, no duplicate, no free text', (tester) async {
+        await pumpStorage(tester, 'PHP');
+        expect(find.byType(TextField).evaluate().where((e) => (e.widget as TextField).decoration?.labelText == t('trips.currency')), isEmpty);
+        final items = menu(tester);
+        expect(items, hasLength(80));
+        expect(items.toSet(), hasLength(80));
+        for (final v in items) {
+          expect(RegExp(r'^[A-Za-z]{3}$').hasMatch(v), isFalse, reason: '"$v" is code-shaped');
+        }
+        await unmount(tester);
+      });
+
+      testWidgets('a stored ISO code shows its symbol and a bare Apply leaves it alone', (tester) async {
+        final s = await pumpStorage(tester, 'PHP');
+        expect(picker(tester).initialValue, '\u20B1');
+        expect(await apply(tester, s), 'PHP');
+        await unmount(tester);
+      });
+
+      testWidgets('picking a symbol sends it', (tester) async {
+        final s = await pumpStorage(tester, 'PHP');
+        picker(tester).onChanged!('\u20AC');
+        await tester.pumpAndSettle();
+        expect(await apply(tester, s), '\u20AC');
+        await unmount(tester);
+      });
+
+      testWidgets('a legacy value is offered once, first, and survives; a fresh car defaults to the dollar', (tester) async {
+        final s = await pumpStorage(tester, 'Rs.');
+        expect(menu(tester).where((v) => v == 'Rs.'), hasLength(1));
+        expect(menu(tester).first, 'Rs.');
+        expect(await apply(tester, s), 'Rs.');
+        await unmount(tester);
+
+        final fresh = await pumpStorage(tester, null);
+        expect(picker(tester).initialValue, r'$');
+        expect(await apply(tester, fresh), r'$');
+        await unmount(tester);
+      });
+
+      testWidgets('a trip priced in a symbol reads symbol first; a code stays after the amount', (tester) async {
+        final s = TestSession();
+        stubAll(s);
+        s.rpc.stubJson('TripsService', 'GetTrip', {
+          'trip': {
+            'summary': {'id': '7', 'startTime': '1700000000000', 'distanceKm': 12.0, 'overallScore': 88, 'tripCost': 1.5, 'currency': '\u20B1'},
+          },
+        });
+        await pumpScreen(tester, s, const TripsScreen(), size: const Size(1200, 1600));
+        await tester.tap(find.byKey(const ValueKey('trip.7')));
+        await tester.pumpAndSettle();
+        expect(find.text('\u20B1 1.50'), findsOneWidget);
+        await unmount(tester);
+      });
+    });
   });
 
   group('SurveillanceScreen', () {
@@ -254,6 +371,16 @@ void main() {
       s.rpc.stubJson('SafeLocationsService', 'DeleteZone', {'success': true});
       s.rpc.stubJson('SurveillanceService', 'GetSnapshot', {'imageJpeg': base64Png});
     }
+
+    testWidgets('HUD: a snapshot is in a 4 dp frame, zone delete is magenta, event-seconds choices have no check mark', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      await pumpScreen(tester, s, const SurveillanceScreen(), size: const Size(1200, 3400));
+      expect(find.descendant(of: find.byKey(const ValueKey('surv.snapshot.0')), matching: find.byType(HudPanel)), findsOneWidget);
+      expect(tester.widget<IconButton>(find.byKey(const ValueKey('zone.delete.z1'))).color, BwHud.light.magenta);
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('surv.pre.5'))).showCheckmark, isFalse);
+      await unmount(tester);
+    });
 
     // BladeWatch-rdtj.50: the web's AI confidence and event seconds; untouched fields ride along.
     testWidgets('AI confidence and event seconds are saved; what was not touched is kept', (tester) async {

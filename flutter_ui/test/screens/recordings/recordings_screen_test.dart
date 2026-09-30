@@ -11,6 +11,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 import '../../fakes/fake_video_player_platform.dart';
+import '../../fakes/hud_test_env.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 
 class _FakeJwtSource implements JwtSource {
   @override
@@ -31,6 +34,7 @@ Map<String, dynamic> _entry(String filename, {String type = 'RECORDING_TYPE_NORM
 
 /// BladeWatch-rdtj.70: the library as the companion presents it, a page at a time.
 void main() {
+  hudTestEnvironment();
   late FakeRpcClient rpc;
   late RecordingsController controller;
   final now = DateTime(2026, 5, 23, 15, 0).millisecondsSinceEpoch;
@@ -95,6 +99,56 @@ void main() {
     expect(find.text('1042 clips · 113.1 GB'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('recordings.settings')));
     expect(settings, 1);
+  });
+
+  // BladeWatch-2llu.2: the library is on the HUD skin.
+  group('HUD skin', () {
+    testWidgets('the page has a HUD title bar with the totals; a row is a 4 dp HUD panel', (tester) async {
+      page([_entry('a.mp4', timestampMs: now)]);
+      await pumpScreen(tester);
+      expect(find.byType(HudTitleBar), findsOneWidget);
+      expect(find.text('RECORDINGS'), findsOneWidget);
+      final stats = tester.widget<Text>(find.byKey(const ValueKey('recordings.stats')));
+      expect((stats.style!.fontSize, stats.style!.color), (12, BwHud.light.statLabel));
+      final row = tester.widget<HudPanel>(find.descendant(of: find.byKey(const ValueKey('recordings.row.a.mp4')), matching: find.byType(HudPanel)).first);
+      expect((row.color, row.borderColor, row.radius), (BwHud.light.panel, BwHud.light.panelBorder, 4));
+      // The delete control is the magenta (attention) icon.
+      expect(tester.widget<Icon>(find.descendant(of: find.byKey(const ValueKey('recordings.delete.a.mp4')), matching: find.byType(Icon))).color, BwHud.light.magenta);
+    });
+
+    testWidgets('the clip in the detail pane is the accent border on the soft fill; the empty pane is a HUD panel', (tester) async {
+      page([_entry('a.mp4', timestampMs: now), _entry('b.mp4', timestampMs: now)]);
+      await pumpScreen(tester);
+      final empty = tester.widget<HudPanel>(find.byKey(const ValueKey('recordings.detail.empty')));
+      expect((empty.borderColor, empty.radius), (BwHud.light.panelBorder, 4));
+      expect(find.text('SELECT A RECORDING'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('recordings.row.a.mp4')));
+      await settle(tester);
+      HudPanel rowPanel(String f) => tester.widget<HudPanel>(find.descendant(of: find.byKey(ValueKey('recordings.row.$f')), matching: find.byType(HudPanel)).first);
+      expect((rowPanel('a.mp4').borderColor, rowPanel('a.mp4').color), (BwHud.light.accent, Color.alphaBlend(BwHud.light.viewAllFill, BwHud.light.panel)));
+      expect(rowPanel('b.mp4').borderColor, BwHud.light.panelBorder);
+    });
+
+    testWidgets('the sentry filters carry upper-case accent section labels', (tester) async {
+      page([_entry('a.mp4')]);
+      await pumpScreen(tester);
+      await tester.tap(find.byKey(const ValueKey('recordings.type.sentry')));
+      await settle(tester);
+      final what = tester.widget<Text>(find.text('WHAT'));
+      expect((what.style!.fontSize, what.style!.color, what.style!.fontWeight), (12, BwHud.light.accent, FontWeight.w700));
+      expect(find.text('SEVERITY'), findsOneWidget);
+    });
+
+    testWidgets('the error state is the HUD error state with a working retry', (tester) async {
+      rpc.stubError('RecordingsService', 'ListRecordings', const ConnectError('unavailable', 'down'));
+      await pumpScreen(tester);
+      expect(find.byType(HudErrorState), findsOneWidget);
+      page([_entry('a.mp4')]);
+      await tester.tap(find.text('Retry'));
+      await settle(tester);
+      expect(find.byKey(const ValueKey('recordings.row.a.mp4')), findsOneWidget);
+    });
   });
 
   testWidgets('the type chips ask the car, and sentry adds who and how bad', (tester) async {
@@ -242,10 +296,10 @@ void main() {
   testWidgets('empty states say what is empty; a failed first page offers a retry', (tester) async {
     page([]);
     await pumpScreen(tester);
-    expect(find.text('No recordings'), findsOneWidget);
+    expect(find.text('NO RECORDINGS'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('recordings.type.sentry')));
     await settle(tester);
-    expect(find.text('No sentry events'), findsOneWidget);
+    expect(find.text('NO SENTRY EVENTS'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('recordings.type.normal')));
     await settle(tester);
     expect(find.byKey(const ValueKey('recordings.empty')), findsOneWidget);

@@ -278,44 +278,45 @@ does not expose a tank size and one must not be guessed.
 
 #### Currency
 
-`currency` stores an **ISO 4217 code** ("USD", "PHP"). Both settings UIs pick it from a
-generated catalogue rather than accepting free text.
+`currency` stores a currency **symbol** (`$`, `€`, `₱`), chosen from a list, never typed and never
+an ISO 4217 code (BladeWatch-gzbo). The list is `CurrencySymbols`
+(`packages/bladewatch_rpc/lib/trips/currency_symbols.dart`, shared by the in-car app and the
+companion): 80 symbols, `$` first and the default, curated from the "Currency Symbol" column of
+<https://www.newbridgefx.com/currency-codes-symbols/>. The source data and the rules that produced
+the list are in `docs/design/currency-symbols.json`:
 
-**No symbol table is shipped.** Symbols, their placement, the spacing around them and the
-number of decimal digits vary by currency *and* by locale — JPY has no minor unit, many
-European locales put the symbol after the amount. Each platform formats from its own ICU
-data instead: `Intl.NumberFormat` on the web, `NumberFormat.simpleCurrency` (via `intl`) in
-the Flutter UI.
+- values that are not symbols were dropped, and so were 3-ASCII-letter values (`Lek`, `CHF`, ...):
+  they are indistinguishable from an ISO code, and the daemon upper-cases anything code-shaped;
+- duplicates were removed after NFKC normalisation, case folding and dropping a trailing dot
+  (`kr` / `kr.` / `Kr` are one entry; the rupee sign U+20A8 is compatibility-equivalent to `Rs`, so
+  only `Rs` stays), and a test pins that no two entries collide;
+- U+20B9 was added for INR (the source lists the obsolete U+20A8).
 
-**Legacy free text still works.** Configs predating the picker hold a bare symbol such as
-`$`, and trips already priced in one must not change appearance. Both renderers apply the
-same rule: a value shaped like an ISO code (exactly three letters) is formatted through ICU;
-anything else falls back to the original rendering — the stored string, a space, then the
-amount to two decimals. `TripConfig.setCurrency` mirrors that shape test, upper-casing
-code-shaped input so "php" and "PHP" cannot become two stored values, and storing anything
-else unchanged.
+**The daemon needed no change.** `TripConfig.setCurrency` already stores any value up to 8 characters
+without `<` or `>` unchanged and upper-cases only ISO-shaped input; `TripRecord.currency` and the
+trips table column are `VARCHAR(8)`; every symbol is at most 4 characters. It is not the authority
+on the list: the pickers constrain the choice.
 
-The daemon deliberately does **not** carry the 162-code list. Its job is to reject garbage,
-not to be the ISO authority: the picker constrains the choice, and "exactly three letters"
-is a complete structural rule with no table to keep in sync.
+**History keeps what it was priced in.** There is no currency conversion, by design: a trip is
+costed in the currency it was paid in, and `TripRecord.currency` is snapshotted at cost time.
+Trips priced before the picker hold an ISO code (`PHP`) and are still formatted through ICU
+(`NumberFormat.simpleCurrency` via `intl`), so they look exactly as before; a bare symbol renders
+as the symbol, a space, then the amount to two decimals (the in-car `Currency.format` legacy path;
+the companion's `CurrencySymbols.money`).
 
-**There is no currency conversion, by design.** A trip is costed in the currency it was paid
-in, and `TripRecord.currency` is snapshotted at cost time so history stays truthful. There is
-no exchange-rate source and none is wanted — converting historical costs at today's rate
-would misreport what the owner actually spent.
+**A code and its symbol are one currency.** `CurrencySymbols` carries, per symbol, the ISO codes the
+source associates with it, used ONLY to map a stored code to a symbol (never displayed; each code is
+under exactly one symbol). `TripCosts.of` compares currencies through that map, so a week that spans
+the switch (trips in `PHP`, later ones in the peso sign) is summed rather than reported as mixed
+currencies; `PHP` + `USD` still is. The `currency` it reports stays the first trip's own string.
 
-**The code list is generated, not hand-maintained.** `tools/gen-currencies.mjs` derives it
-from ICU via `Intl.supportedValuesOf('currency')` and writes
-`flutter_ui/assets/iso4217.json`. Regenerate with:
+**Opening Settings never rewrites the stored value.** A config holding a code is SHOWN as its
+symbol, but Apply only sends a currency when the owner picked one (or nothing was stored, which
+sends the default `$`). A stored value the list does not know (older free text such as `Rs.`) is
+offered once at the top of the menu and kept until replaced, so the dropdown never asserts.
 
-```bash
-node tools/gen-currencies.mjs
-```
-
-`validateCurrencyCatalog` (wired into `preBuild`, like `validateI18nCatalogs`) fails the
-build if the two copies drift, if the list is truncated, if it is unsorted, or if a common
-currency is missing. Shipped code never calls `Intl.supportedValuesOf` — it is ES2022 and
-the head unit's Android 10 WebView cannot be relied on to have it.
+The earlier ISO 4217 catalogue (`assets/iso4217.json`, `tools/gen-currencies.mjs`, the
+`validateCurrencyCatalog` build guard) was removed with the picker; nothing else used it.
 
 ### Trip database columns
 

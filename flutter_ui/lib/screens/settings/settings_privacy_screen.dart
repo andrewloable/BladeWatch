@@ -6,6 +6,8 @@ import 'package:bladewatch_rpc/gen/bladewatch/v1/system.pb.dart';
 import '../../gen/l10n/app_localizations.dart';
 import 'package:bladewatch_rpc/rpc/services/system_service_client.dart';
 import 'settings_privacy_controller.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 
 /// One reset category: its API id (must match the server exactly — ground
 /// truth: `MainActivity.kt`'s `resetCategoryMapping`), checkbox title,
@@ -67,17 +69,18 @@ class _SettingsPrivacyScreenState extends State<SettingsPrivacyScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final hud = BwHud.of(context);
     final c = widget.controller;
     final pending = l10n.dashboard_metric_value_pending;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(l10n.settings_privacy_stance_title, style: theme.textTheme.titleMedium),
+        HudSectionLabel(l10n.settings_privacy_stance_title),
         const SizedBox(height: 4),
         Text(l10n.settings_privacy_stance_body, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 24),
-        Text(l10n.settings_privacy_overline_storage, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        HudSectionLabel(l10n.settings_privacy_overline_storage),
         const SizedBox(height: 8),
         ListTile(
           title: Text(l10n.settings_privacy_storage_clips_label),
@@ -103,13 +106,20 @@ class _SettingsPrivacyScreenState extends State<SettingsPrivacyScreen> {
           onChanged: c.loading ? null : c.setDebugLogsEnabled,
         ),
         const SizedBox(height: 24),
-        Text(l10n.settings_privacy_overline_reset, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.error)),
+        // The destructive block's label is magenta (attention), not the accent.
+        Text(
+          l10n.settings_privacy_overline_reset.toUpperCase(),
+          style: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700, em: 0.1),
+        ),
         const SizedBox(height: 4),
         Text(l10n.settings_privacy_body, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 8),
         OutlinedButton(
           key: const ValueKey('privacy.resetData'),
-          style: OutlinedButton.styleFrom(foregroundColor: theme.colorScheme.error),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: theme.colorScheme.error,
+            side: BorderSide(color: hud.magentaBorder),
+          ),
           onPressed: () => _showResetDataDialog(context, l10n),
           child: Text(l10n.settings_reset_row_subtitle),
         ),
@@ -121,7 +131,7 @@ class _SettingsPrivacyScreenState extends State<SettingsPrivacyScreen> {
     final categories = _resetCategories(l10n);
     final selected = <String>{};
 
-    final toReset = await showDialog<List<_ResetCategory>>(
+    final toReset = await showHudDialog<List<_ResetCategory>>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
@@ -192,7 +202,7 @@ class _SettingsPrivacyScreenState extends State<SettingsPrivacyScreen> {
 
   Future<void> _confirmAndPerformReset(BuildContext context, AppLocalizations l10n, List<_ResetCategory> categories) async {
     final list = categories.map((c) => '• ${c.$4}').join('\n');
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showHudDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.warning_amber),
@@ -250,7 +260,7 @@ class _SettingsPrivacyScreenState extends State<SettingsPrivacyScreen> {
     }
 
     if (!context.mounted) return;
-    await showDialog<void>(
+    await showHudDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.check_circle_outline),

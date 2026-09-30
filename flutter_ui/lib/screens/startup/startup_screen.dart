@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../theme/hud_theme.dart';
 import '../../widgets/brand_lockup.dart';
+import '../../widgets/hud_widgets.dart';
 
 import '../../gen/l10n/app_localizations.dart';
 import 'startup_controller.dart';
@@ -50,14 +52,14 @@ class _StartupScreenState extends State<StartupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
+    final hud = BwHud.of(context);
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
         final c = widget.controller;
+        Widget rule() => Container(height: 1, color: hud.cardDivider);
         return Scaffold(
-          backgroundColor: theme.colorScheme.surface,
+          backgroundColor: hud.pageBackground,
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.only(top: 48),
@@ -68,15 +70,17 @@ class _StartupScreenState extends State<StartupScreen> {
                   // Flutter's first frame does not drop the branding. This
                   // screen is what the user actually stares at while the daemons
                   // come up, so it is where the brand needs to be.
-                  BrandLockup(iconSize: 88, color: theme.colorScheme.primary),
+                  BrandLockup(iconSize: 88, color: hud.accent),
                   const SizedBox(height: 4),
-                  Text(l10n.startup_subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(l10n.startup_subtitle, style: hudText(14, hud.textSecondary, lineHeight: 20)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24).copyWith(top: 32),
-                    child: Card(
-                      color: theme.colorScheme.surfaceContainer,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    child: HudPanel(
+                      gradient: LinearGradient(colors: hud.summaryGradient),
+                      borderColor: hud.cardBorder,
+                      radius: BwHud.radiusPanel,
+                      shadows: hud.cardShadow,
+                      clipBehavior: Clip.antiAlias,
                       child: Column(
                         children: [
                           Padding(
@@ -85,32 +89,32 @@ class _StartupScreenState extends State<StartupScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    _headerText(l10n, c.phase),
-                                    style: theme.textTheme.labelLarge?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
+                                    _headerText(l10n, c.phase).toUpperCase(),
+                                    style: hudText(12, hud.accent, lineHeight: 16, weight: FontWeight.w700, em: 0.1),
                                   ),
                                 ),
-                                Text('${_overallElapsed(c).inSeconds}s',
-                                    style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.outline)),
+                                Text(
+                                  '${_overallElapsed(c).inSeconds}s',
+                                  style: hudText(12, hud.statLabel, lineHeight: 16, weight: hud.labelWeight, em: 0.05),
+                                ),
                               ],
                             ),
                           ),
-                          Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                          rule(),
                           _DaemonRow(
                             name: l10n.startup_daemon_camera,
                             desc: l10n.startup_daemon_camera_desc,
                             state: c.rows[CoreDaemon.camera]!,
                             l10n: l10n,
                           ),
-                          Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                          rule(),
                           _DaemonRow(
                             name: l10n.startup_daemon_sentry,
                             desc: l10n.startup_daemon_sentry_desc,
                             state: c.rows[CoreDaemon.sentry]!,
                             l10n: l10n,
                           ),
-                          Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                          rule(),
                           _DaemonRow(
                             name: l10n.startup_daemon_parking,
                             desc: l10n.startup_daemon_parking_desc,
@@ -124,17 +128,16 @@ class _StartupScreenState extends State<StartupScreen> {
                   if (c.phase != StartupPhase.ready)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 32).copyWith(top: 24),
-                      child: LinearProgressIndicator(
-                        color: theme.colorScheme.primary,
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                      ),
+                      child: const LinearProgressIndicator(),
                     ),
                   if (c.showContinueButton || c.phase == StartupPhase.ready)
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
                       child: OutlinedButton(
                         onPressed: c.continueAnyway,
-                        child: Text(c.phase == StartupPhase.ready ? l10n.startup_continue : l10n.startup_continue_anyway),
+                        child: Text(
+                          c.phase == StartupPhase.ready ? l10n.startup_continue : l10n.startup_continue_anyway,
+                        ),
                       ),
                     ),
                 ],
@@ -147,11 +150,11 @@ class _StartupScreenState extends State<StartupScreen> {
   }
 
   String _headerText(AppLocalizations l10n, StartupPhase phase) => switch (phase) {
-        StartupPhase.preparing => l10n.startup_header_preparing,
-        StartupPhase.starting => l10n.startup_header_starting,
-        StartupPhase.verifying => l10n.startup_header_verifying,
-        StartupPhase.ready => l10n.startup_header_ready,
-      };
+    StartupPhase.preparing => l10n.startup_header_preparing,
+    StartupPhase.starting => l10n.startup_header_starting,
+    StartupPhase.verifying => l10n.startup_header_verifying,
+    StartupPhase.ready => l10n.startup_header_ready,
+  };
 
   Duration _overallElapsed(StartupController c) {
     final elapsedValues = c.rows.values.map((r) => r.elapsed);
@@ -169,36 +172,36 @@ class _DaemonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
     final ready = state.status == DaemonRowStatus.ready;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: ready ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
-            ),
+          // Real state only: ready is the cyan dot, waiting is the grey one (there is no "starting" to claim:
+          // the check is binary process liveness, see StartupController).
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: HudStatusDot(ready ? HudDotState.ok : HudDotState.idle),
           ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurface)),
-                Text(desc, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text(name, style: hudText(14, hud.textPrimary, lineHeight: 20, weight: FontWeight.w700)),
+                Text(desc, style: hudText(12, hud.textSecondary, lineHeight: 16)),
               ],
             ),
           ),
           Text(
-            ready ? l10n.startup_status_ready : l10n.startup_status_waiting,
-            style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.outline),
+            (ready ? l10n.startup_status_ready : l10n.startup_status_waiting).toUpperCase(),
+            style: hudText(10, hud.tileLabel, lineHeight: 15, weight: hud.labelWeight, em: 0.05),
           ),
           const SizedBox(width: 8),
-          Text('${state.elapsed.inSeconds}s', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.outline)),
+          Text(
+            '${state.elapsed.inSeconds}s',
+            style: hudText(10, hud.tileLabel, lineHeight: 15, weight: hud.labelWeight, em: 0.05),
+          ),
         ],
       ),
     );

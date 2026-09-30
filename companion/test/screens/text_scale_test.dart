@@ -2,6 +2,7 @@ import 'package:bladewatch_companion/app.dart';
 import 'package:bladewatch_companion/car/car_session.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:bladewatch_rpc/rpc/rpc_transport.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -118,20 +119,16 @@ void main() {
 
     Future<void> open(String key, String more) async {
       if (find.byKey(ValueKey('more.$key')).evaluate().isEmpty && more.isNotEmpty) {
-        await tester.tap(find.text(t('nav.more')));
+        await tester.tap(find.byKey(const ValueKey('nav.more')));
         await settle(tester);
         await tester.scrollUntilVisible(find.byKey(ValueKey('more.$key')), 50, scrollable: find.byType(Scrollable).last);
         await tester.ensureVisible(find.byKey(ValueKey('more.$key')));
         await tester.tap(find.byKey(ValueKey('more.$key')));
       } else {
-        // BladeWatch: labelBehavior is onlyShowSelected (found 2026-09-28: "Dashboard" and
-        // "Recordings" wrapped mid-word on a real phone with all 5 labels shown), so an
-        // unselected item's label is not on screen to tap by text. Its tooltip -- the label,
-        // by default -- still is.
-        await tester.tap(find.byTooltip(t('nav.$key')).last);
+        await tester.tap(find.byKey(ValueKey('nav.$key')));
       }
       await settle(tester);
-      expect(find.descendant(of: find.byType(AppBar), matching: find.text(t('nav.$key'))), findsOneWidget, reason: '$key is on screen');
+      expect(find.descendant(of: find.byType(HudTitleBar), matching: find.text(t('nav.$key').toUpperCase())), findsOneWidget, reason: '$key is on screen');
     }
 
     Future<void> dialog(Finder opener) async {

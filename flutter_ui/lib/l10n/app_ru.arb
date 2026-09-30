@@ -1119,5 +1119,9 @@
   "dashboard_chip_auto_hold": "Auto Hold: {state}",
   "auto_hold_disabled": "Выкл.",
   "auto_hold_enabled": "Вкл.",
-  "auto_hold_active": "Удерживает"
+  "auto_hold_active": "Удерживает",
+  "dashboard_hud_overview": "Обзор",
+  "dashboard_hud_telemetry": "Телеметрия",
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
 }

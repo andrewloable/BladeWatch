@@ -1,0 +1,560 @@
+{
+ "_note": "Curated currency SYMBOL list for the currency picker (BladeWatch task on the currency selection). Source: the Currency Symbol column of https://www.newbridgefx.com/currency-codes-symbols/ (251 rows, 94 distinct raw values), retrieved 2026-09-30. Order = the picker's order: the common symbols first ($ first, it is the default), then the rest in the source's order.",
+ "_rules": [
+  "Removed values that are not symbols: 'is', 'Franc', 'Mvdol', 'CFA Franc BEAC', 'Myanmar is K', '-'.",
+  "Removed 3-ASCII-letter values (Lek, CHF, Nfk, din, MTn): they are indistinguishable from an ISO 4217 code, and the daemon upper-cases anything code-shaped (TripConfig.setCurrency).",
+  "Removed duplicates, compared after NFKC normalisation, case folding and dropping a trailing '.': 'kr', 'kr.', 'Kr' -> 'kr'; 'P' and 'p.' -> 'P'; U+20A8 (rupee sign) and 'Rs' are compatibility-equivalent -> 'Rs'.",
+  "Added U+20B9 (Indian rupee sign) for INR: the source lists the obsolete U+20A8 for INR.",
+  "'codes' are the ISO 4217 codes the source associates with the symbol. They exist ONLY to map a currency already stored as a code (a config from before the symbol picker) to its symbol. They are never shown. Every code appears under exactly ONE symbol: XAF is under U+20A3 only (the source also lists it under FCFA, which therefore has no codes)."
+ ],
+ "symbols": [
+  {
+   "symbol": "$",
+   "codes": [
+    "ARS",
+    "AUD",
+    "BBD",
+    "BES",
+    "BMD",
+    "BND",
+    "BSD",
+    "BZD",
+    "CAD",
+    "CLP",
+    "COP",
+    "CVE",
+    "DOP",
+    "FJD",
+    "GYD",
+    "HKD",
+    "JMD",
+    "KYD",
+    "LRD",
+    "MXN",
+    "NAD",
+    "NZD",
+    "SBD",
+    "SGD",
+    "SRD",
+    "TTD",
+    "USD",
+    "UYU",
+    "WST",
+    "XCD",
+    "ZWL"
+   ]
+  },
+  {
+   "symbol": "€",
+   "codes": [
+    "EUR"
+   ]
+  },
+  {
+   "symbol": "£",
+   "codes": [
+    "EGP",
+    "FKP",
+    "GBP",
+    "GIP",
+    "SDG",
+    "SHP",
+    "SYP"
+   ]
+  },
+  {
+   "symbol": "¥",
+   "codes": [
+    "CNY",
+    "JPY"
+   ]
+  },
+  {
+   "symbol": "₹",
+   "codes": [
+    "INR"
+   ]
+  },
+  {
+   "symbol": "₱",
+   "codes": [
+    "CUP",
+    "PHP"
+   ]
+  },
+  {
+   "symbol": "₩",
+   "codes": [
+    "KPW",
+    "KRW"
+   ]
+  },
+  {
+   "symbol": "₽",
+   "codes": [
+    "RUB"
+   ]
+  },
+  {
+   "symbol": "฿",
+   "codes": [
+    "THB"
+   ]
+  },
+  {
+   "symbol": "₫",
+   "codes": [
+    "VND"
+   ]
+  },
+  {
+   "symbol": "₦",
+   "codes": [
+    "NGN"
+   ]
+  },
+  {
+   "symbol": "₪",
+   "codes": [
+    "ILS"
+   ]
+  },
+  {
+   "symbol": "R$",
+   "codes": [
+    "BRL"
+   ]
+  },
+  {
+   "symbol": "₴",
+   "codes": [
+    "UAH"
+   ]
+  },
+  {
+   "symbol": "zł",
+   "codes": [
+    "PLN"
+   ]
+  },
+  {
+   "symbol": "kr",
+   "codes": [
+    "DKK",
+    "ISK",
+    "NOK",
+    "SEK"
+   ]
+  },
+  {
+   "symbol": "Kč",
+   "codes": [
+    "CZK"
+   ]
+  },
+  {
+   "symbol": "Ft",
+   "codes": [
+    "HUF"
+   ]
+  },
+  {
+   "symbol": "؋",
+   "codes": [
+    "AFN"
+   ]
+  },
+  {
+   "symbol": "د.ج",
+   "codes": [
+    "DZD"
+   ]
+  },
+  {
+   "symbol": "Դ",
+   "codes": [
+    "AMD"
+   ]
+  },
+  {
+   "symbol": "ƒ",
+   "codes": [
+    "ANG",
+    "AWG"
+   ]
+  },
+  {
+   "symbol": "₼",
+   "codes": [
+    "AZN"
+   ]
+  },
+  {
+   "symbol": "ب.د",
+   "codes": [
+    "BHD"
+   ]
+  },
+  {
+   "symbol": "৳",
+   "codes": [
+    "BDT"
+   ]
+  },
+  {
+   "symbol": "Nu",
+   "codes": [
+    "BTN"
+   ]
+  },
+  {
+   "symbol": "Bs.",
+   "codes": [
+    "BOB",
+    "VEF"
+   ]
+  },
+  {
+   "symbol": "КМ",
+   "codes": [
+    "BAM"
+   ]
+  },
+  {
+   "symbol": "лв",
+   "codes": [
+    "BGN",
+    "KGS",
+    "UZS"
+   ]
+  },
+  {
+   "symbol": "₣",
+   "codes": [
+    "BIF",
+    "CDF",
+    "CHF",
+    "DJF",
+    "GNF",
+    "RWF",
+    "XAF",
+    "XPF"
+   ]
+  },
+  {
+   "symbol": "៛",
+   "codes": [
+    "KHR"
+   ]
+  },
+  {
+   "symbol": "FC",
+   "codes": [
+    "KMF"
+   ]
+  },
+  {
+   "symbol": "₡",
+   "codes": [
+    "CRC"
+   ]
+  },
+  {
+   "symbol": "Kn",
+   "codes": [
+    "HRK"
+   ]
+  },
+  {
+   "symbol": "FCFA",
+   "codes": []
+  },
+  {
+   "symbol": "Br",
+   "codes": [
+    "ETB"
+   ]
+  },
+  {
+   "symbol": "D",
+   "codes": [
+    "GMD"
+   ]
+  },
+  {
+   "symbol": "ლ",
+   "codes": [
+    "GEL"
+   ]
+  },
+  {
+   "symbol": "₵",
+   "codes": [
+    "GHS"
+   ]
+  },
+  {
+   "symbol": "Q",
+   "codes": [
+    "GTQ"
+   ]
+  },
+  {
+   "symbol": "G",
+   "codes": [
+    "HTG"
+   ]
+  },
+  {
+   "symbol": "L",
+   "codes": [
+    "HNL",
+    "LSL",
+    "MDL",
+    "RON",
+    "SZL"
+   ]
+  },
+  {
+   "symbol": "Rp",
+   "codes": [
+    "IDR"
+   ]
+  },
+  {
+   "symbol": "﷼",
+   "codes": [
+    "IRR",
+    "OMR",
+    "YER"
+   ]
+  },
+  {
+   "symbol": "ع.د",
+   "codes": [
+    "IQD"
+   ]
+  },
+  {
+   "symbol": "د.ا",
+   "codes": [
+    "JOD"
+   ]
+  },
+  {
+   "symbol": "〒",
+   "codes": [
+    "KZT"
+   ]
+  },
+  {
+   "symbol": "Sh",
+   "codes": [
+    "KES",
+    "SOS",
+    "TZS",
+    "UGX"
+   ]
+  },
+  {
+   "symbol": "د.ك",
+   "codes": [
+    "KWD"
+   ]
+  },
+  {
+   "symbol": "₭",
+   "codes": [
+    "LAK"
+   ]
+  },
+  {
+   "symbol": "ل.ل",
+   "codes": [
+    "LBP"
+   ]
+  },
+  {
+   "symbol": "R",
+   "codes": [
+    "ZAR"
+   ]
+  },
+  {
+   "symbol": "ل.د",
+   "codes": [
+    "LYD"
+   ]
+  },
+  {
+   "symbol": "MK",
+   "codes": [
+    "MGA",
+    "MWK"
+   ]
+  },
+  {
+   "symbol": "RM",
+   "codes": [
+    "MYR"
+   ]
+  },
+  {
+   "symbol": "ރ",
+   "codes": [
+    "MVR"
+   ]
+  },
+  {
+   "symbol": "UM",
+   "codes": [
+    "MRU"
+   ]
+  },
+  {
+   "symbol": "₮",
+   "codes": [
+    "MNT"
+   ]
+  },
+  {
+   "symbol": "د.م.",
+   "codes": [
+    "AED",
+    "MAD"
+   ]
+  },
+  {
+   "symbol": "C$",
+   "codes": [
+    "NIO"
+   ]
+  },
+  {
+   "symbol": "B/.",
+   "codes": [
+    "PAB"
+   ]
+  },
+  {
+   "symbol": "K",
+   "codes": [
+    "PGK"
+   ]
+  },
+  {
+   "symbol": "₲",
+   "codes": [
+    "PYG"
+   ]
+  },
+  {
+   "symbol": "S/.",
+   "codes": [
+    "PEN"
+   ]
+  },
+  {
+   "symbol": "ر.ق",
+   "codes": [
+    "QAR"
+   ]
+  },
+  {
+   "symbol": "ден",
+   "codes": [
+    "MKD"
+   ]
+  },
+  {
+   "symbol": "Db",
+   "codes": [
+    "STN"
+   ]
+  },
+  {
+   "symbol": "ر.س",
+   "codes": [
+    "SAR"
+   ]
+  },
+  {
+   "symbol": "Rs",
+   "codes": [
+    "LKR",
+    "MUR",
+    "NPR",
+    "PKR",
+    "SCR"
+   ]
+  },
+  {
+   "symbol": "Le",
+   "codes": [
+    "SLL"
+   ]
+  },
+  {
+   "symbol": "SS£",
+   "codes": [
+    "SSP"
+   ]
+  },
+  {
+   "symbol": "NT$",
+   "codes": [
+    "TWD"
+   ]
+  },
+  {
+   "symbol": "ЅМ",
+   "codes": [
+    "TJS"
+   ]
+  },
+  {
+   "symbol": "T$",
+   "codes": [
+    "TOP"
+   ]
+  },
+  {
+   "symbol": "د.ت",
+   "codes": [
+    "TND"
+   ]
+  },
+  {
+   "symbol": "TL",
+   "codes": [
+    "TRY"
+   ]
+  },
+  {
+   "symbol": "m",
+   "codes": [
+    "TMT"
+   ]
+  },
+  {
+   "symbol": "Vt",
+   "codes": [
+    "VUV"
+   ]
+  },
+  {
+   "symbol": "ZK",
+   "codes": [
+    "ZMW"
+   ]
+  },
+  {
+   "symbol": "P",
+   "codes": [
+    "BWP",
+    "BYN",
+    "MOP"
+   ]
+  }
+ ]
+}

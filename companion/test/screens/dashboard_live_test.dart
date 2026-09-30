@@ -9,6 +9,8 @@ import 'package:bladewatch_companion/screens/live/live_screen.dart';
 import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/vehicle.pb.dart';
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,6 +32,9 @@ void status(TestSession s, {bool recording = true, bool safe = true}) => s.rpc.s
     });
 
 void main() {
+  // The recording chip's dot pulses while it records, and the pulse loops forever.
+  hudTestEnvironment();
+
   group('DashboardScreen', () {
     testWidgets('route, recording, ACC, safe zone, battery and this week', (tester) async {
       final s = TestSession(phase: TransportPhase.pear);
@@ -42,10 +47,10 @@ void main() {
       });
       await pumpScreen(tester, s, const DashboardScreen());
       await tester.pump();
-      expect(find.text(t('companion.route_pear')), findsOneWidget);
-      expect(find.text(t('dashboard.recording')), findsOneWidget);
-      expect(find.text(t('dashboard.services_up')), findsOneWidget);
-      expect(find.text('Home'), findsOneWidget);
+      expect(find.text(t('companion.route_pear').toUpperCase()), findsOneWidget);
+      expect(find.text(t('dashboard.recording').toUpperCase()), findsOneWidget);
+      expect(find.text(t('dashboard.services_up').toUpperCase()), findsOneWidget);
+      expect(find.text('HOME'), findsOneWidget);
       expect(find.text('81%'), findsNWidgets(2), reason: 'SOC under Vehicle, and Battery under This week (BladeWatch-4zr7)');
       expect(find.text('199.5\u00A0mi'), findsOneWidget, reason: '321 km in the owner\'s miles');
       expect(find.text('12.6 V'), findsOneWidget);
@@ -53,6 +58,43 @@ void main() {
       expect(find.text('1h 0m'), findsOneWidget);
       expect((s.rpc.calls.firstWhere((c) => c.method == 'ListTrips').request as dynamic).days, 7);
       expect(find.text(t('trip.cost_hint')), findsOneWidget, reason: 'no rate set: say so, no zeros');
+      await unmount(tester);
+    });
+
+    testWidgets('HUD: the chip dots are real state, and only a recording pulses', (tester) async {
+      HudStatusDot dot(String key) =>
+          tester.widget<HudStatusDot>(find.descendant(of: find.byKey(ValueKey(key)), matching: find.byType(HudStatusDot)));
+      for (final recording in [true, false]) {
+        final s = TestSession(phase: TransportPhase.pear);
+        status(s, recording: recording);
+        s.rpc.stubJson('TripsService', 'ListTrips', {'trips': []});
+        await pumpScreen(tester, s, const DashboardScreen());
+        await tester.pump();
+        expect(dot('dash.recording').state, recording ? HudDotState.bad : HudDotState.idle, reason: 'recording=$recording');
+        expect(dot('dash.recording').pulse, recording);
+        expect(dot('dash.route').state, HudDotState.ok);
+        expect(dot('dash.route').pulse, isFalse);
+        await unmount(tester);
+      }
+    });
+
+    testWidgets('HUD: the week is a value over its label, the drive time magenta, each scaled down before it wraps', (tester) async {
+      final s = TestSession(phase: TransportPhase.pear);
+      status(s);
+      s.rpc.stubJson('TripsService', 'ListTrips', {
+        'trips': [
+          {'distanceKm': 10.0, 'durationSeconds': 600},
+          {'distanceKm': 6.0, 'durationSeconds': 3000},
+        ],
+      });
+      await pumpScreen(tester, s, const DashboardScreen());
+      await tester.pump();
+      const hud = BwHud.light;
+      final drive = tester.widget<Text>(find.text('1h 0m'));
+      expect(drive.style!.color, hud.driveTimeValue);
+      expect(tester.widget<Text>(find.text(t('dashboard.drive_time'))).style!.color, hud.magenta);
+      expect(tester.widget<Text>(find.text('2')).style!.color, hud.textPrimary);
+      expect(find.ancestor(of: find.text('1h 0m'), matching: find.byType(FittedBox)), findsOneWidget);
       await unmount(tester);
     });
 
@@ -138,14 +180,33 @@ void main() {
       await unmount(tester);
     });
 
+    // BladeWatch-gzbo: the picker stores a currency SYMBOL. A week that spans the switch (trips priced in
+    // the code, later ones in the symbol) is one currency, and a symbol reads before the amount.
+    testWidgets('a week priced in a code and then its symbol is summed, with the symbol first', (tester) async {
+      final s = TestSession(phase: TransportPhase.pear);
+      status(s);
+      s.rpc.stubJson('TripsService', 'ListTrips', {
+        'trips': [
+          {'tripCost': 100.0, 'currency': '\u20B1'},
+          {'tripCost': 30.0, 'currency': 'PHP'},
+        ],
+      });
+      await pumpScreen(tester, s, const DashboardScreen(), size: const Size(420, 1600));
+      await tester.pump();
+      expect(find.text(t('companion.costs_mixed_currency')), findsNothing);
+      // No fuel leg: the electric and the total row both read 130.00.
+      expect(find.text('\u20B1 130.00'), findsNWidgets(2), reason: 'the first trip\'s own string (the symbol), before the amount');
+      await unmount(tester);
+    });
+
     testWidgets('idle, not ready, LAN route, and a week that failed to load', (tester) async {
       final s = TestSession(phase: TransportPhase.lan);
       status(s, recording: false, safe: false);
       s.rpc.stubError('TripsService', 'ListTrips', const ConnectError('unavailable', 'x'));
       await pumpScreen(tester, s, const DashboardScreen());
-      expect(find.text(t('companion.route_lan')), findsOneWidget);
-      expect(find.text(t('dashboard.idle')), findsOneWidget);
-      expect(find.text(t('dashboard.services_partial')), findsOneWidget);
+      expect(find.text(t('companion.route_lan').toUpperCase()), findsOneWidget);
+      expect(find.text(t('dashboard.idle').toUpperCase()), findsOneWidget);
+      expect(find.text(t('dashboard.services_partial').toUpperCase()), findsOneWidget);
       expect(find.text('—'), findsNWidgets(3));
       await unmount(tester);
     });
@@ -366,12 +427,35 @@ void main() {
 
     // BladeWatch-rdtj.45: on a big window the still fills the black area, it does not sit at its
     // own pixel size in the middle.
+    testWidgets('HUD: the picture sits in a 4 dp bordered frame, the camera choices have no check mark, the GPS chip is dark with the HUD border', (tester) async {
+      final s = TestSession(phase: TransportPhase.lan);
+      await pumpScreen(
+        tester,
+        s,
+        LiveScreen(
+          fetch: (_, _) async => MediaResponse(200, testPng),
+          enable: (_) async {},
+          gps: (_) async => GetGpsLocationResponse(locationJson: '{"latitude":1.5,"longitude":2.5,"timestampMs":${DateTime.now().millisecondsSinceEpoch}}'),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      final frame = tester.widget<HudPanel>(find.ancestor(of: find.byKey(const ValueKey('live.frame')), matching: find.byType(HudPanel)).first);
+      expect((frame.color, frame.borderColor, frame.radius), (Colors.black, BwHud.light.panelBorder, BwHud.radiusSmall));
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('live.camera.all'))).showCheckmark, isFalse);
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('live.camera.0'))).showCheckmark, isFalse);
+      final gps = tester.widget<Material>(find.ancestor(of: find.byKey(const ValueKey('live.gps')), matching: find.byType(Material)).first);
+      expect((gps.shape! as RoundedRectangleBorder).side.color, BwHud.light.panelBorderStrong);
+      await unmount(tester);
+    });
+
     testWidgets('the still fills a desktop window', (tester) async {
       final s = TestSession(phase: TransportPhase.lan);
       await pumpScreen(tester, s, LiveScreen(fetch: (_, _) async => MediaResponse(200, testPng), enable: (_) async {}), size: const Size(1600, 1000));
       await tester.pump();
       final frame = tester.getSize(find.byKey(const ValueKey('live.frame')));
-      expect(frame.width, 1600, reason: 'a 1x1 still stretched to the area, as a 640x480 one is');
+      // The picture fills its HUD frame: the page gutter (24 each side) and the frame's 1 dp border are all that is left.
+      expect(frame.width, closeTo(1600 - 2 * 24 - 2, 0.5), reason: 'a 1x1 still stretched to the area, as a 640x480 one is');
       expect(frame.height, greaterThan(800));
       await unmount(tester);
     });

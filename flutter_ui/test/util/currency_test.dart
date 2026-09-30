@@ -1,3 +1,4 @@
+import 'package:bladewatch_rpc/trips/currency_symbols.dart';
 import 'package:bladewatch_ui/util/currency.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -72,46 +73,64 @@ void main() {
   });
 
   group('optionsFor — the picker must never assert', () {
-    const catalogue = ['EUR', 'GBP', 'JPY', 'PHP', 'USD'];
+    final symbols = CurrencySymbols.symbols;
 
-    test('a catalogue code is offered exactly once', () {
-      final opts = Currency.optionsFor('USD', catalogue);
-      expect(opts.where((c) => c == 'USD').length, 1,
+    test('a listed symbol is offered exactly once, and the list is untouched', () {
+      final opts = Currency.optionsFor(r'$');
+      expect(opts.where((c) => c == r'$').length, 1,
           reason: 'DropdownButtonFormField asserts on anything but exactly one match');
-      expect(opts, equals(catalogue), reason: 'no need to alter the list');
+      expect(opts, equals(symbols));
     });
 
-    /// THE crash this exists to prevent. A config predating the picker holds a bare symbol,
-    /// which is not an ISO code. Without this, the settings sheet asserts the moment the
-    /// catalogue loads — on precisely the owners whose settings most need changing.
-    test('a legacy value absent from the catalogue is still offered exactly once', () {
-      for (final legacy in [r'$', 'kr', 'Rp', '₹']) {
-        final opts = Currency.optionsFor(legacy, catalogue);
-        expect(opts.where((c) => c == legacy).length, 1,
-            reason: 'legacy value "$legacy" must appear exactly once, not zero times');
-        expect(opts.first, legacy,
-            reason: 'prepended so it is visible without scrolling 162 entries');
-        expect(opts.length, catalogue.length + 1);
+    /// THE crash this exists to prevent. A config predating the picker can hold free text that is
+    /// not in the symbol list; without this the settings sheet asserts on the mismatch, on precisely
+    /// the owners whose settings most need changing.
+    test('a legacy value absent from the list is still offered exactly once, first', () {
+      for (final legacy in ['Rs.', 'kr.', 'USD', 'PHP']) {
+        final opts = Currency.optionsFor(legacy);
+        expect(opts.where((c) => c == legacy).length, 1, reason: '"$legacy" must appear exactly once, not zero times');
+        expect(opts.first, legacy, reason: 'prepended so it is visible without scrolling ${symbols.length} entries');
+        expect(opts.length, symbols.length + 1);
       }
     });
 
-    test('every catalogue entry survives alongside a legacy value', () {
-      final opts = Currency.optionsFor(r'$', catalogue);
-      for (final c in catalogue) {
-        expect(opts, contains(c));
+    test('every symbol survives alongside a legacy value', () {
+      expect(Currency.optionsFor('Rs.').skip(1).toList(), symbols);
+    });
+
+    test('an empty current value offers the plain list, not a blank entry', () {
+      expect(Currency.optionsFor(''), equals(symbols));
+      expect(Currency.optionsFor('   '), equals(symbols));
+    });
+
+    test('no ISO code is offered (the owner wants symbols only)', () {
+      for (final option in Currency.optionsFor('')) {
+        expect(Currency.isIsoCodeShaped(option), isFalse, reason: '"$option" looks like a code');
       }
     });
+  });
 
-    test('a null or empty catalogue still offers the current value', () {
-      expect(Currency.optionsFor('USD', null), equals(['USD']));
-      expect(Currency.optionsFor(r'$', null), equals([r'$']));
-      expect(Currency.optionsFor('USD', const []), equals(['USD']));
+  group('selectionFor — what the picker shows for what the car stored', () {
+    test('a listed symbol is itself', () {
+      expect(Currency.selectionFor('\u20B1'), '\u20B1');
+      expect(Currency.selectionFor(' kr '), 'kr');
     });
 
-    test('an empty current value falls back rather than offering a blank entry', () {
-      expect(Currency.optionsFor('', null), equals([Currency.defaultCode]));
-      expect(Currency.optionsFor('', catalogue), equals(catalogue));
-      expect(Currency.optionsFor('   ', catalogue), equals(catalogue));
+    test('an ISO code shows the symbol it stands for', () {
+      expect(Currency.selectionFor('PHP'), '\u20B1');
+      expect(Currency.selectionFor('usd'), r'$');
+      expect(Currency.selectionFor('EUR'), '\u20AC');
+    });
+
+    test('unknown text is kept as is until replaced', () {
+      expect(Currency.selectionFor('Rs.'), 'Rs.');
+      expect(Currency.selectionFor('XYZ'), 'XYZ');
+    });
+
+    test('nothing stored selects the default, the dollar sign', () {
+      expect(Currency.selectionFor(''), r'$');
+      expect(Currency.selectionFor('  '), r'$');
+      expect(Currency.selectionFor(''), CurrencySymbols.defaultSymbol);
     });
   });
 

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../gen/l10n/app_localizations.dart';
 import '../../shell/drive_side.dart';
 import '../../shell/locale_controller.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 import '../dialogs/language_picker_sheet.dart' show kLocaleNativeNames;
 import 'settings_appearance_controller.dart';
 import 'settings_appearance_models.dart';
@@ -60,7 +62,7 @@ class _SettingsAppearanceScreenState extends State<SettingsAppearanceScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.settings_theme_label, style: theme.textTheme.titleMedium),
+              HudSectionLabel(l10n.settings_theme_label),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -112,7 +114,7 @@ class _SettingsAppearanceScreenState extends State<SettingsAppearanceScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.settings_drive_side_label, style: theme.textTheme.titleMedium),
+              HudSectionLabel(l10n.settings_drive_side_label),
               const SizedBox(height: 2),
               Text(
                 l10n.settings_drive_side_subtitle,
@@ -165,8 +167,6 @@ class _SettingsAppearanceScreenState extends State<SettingsAppearanceScreen> {
         ),
         const SizedBox(height: 16),
         Card(
-          color: theme.colorScheme.surfaceContainer,
-          elevation: 0,
           child: ListTile(
             key: const ValueKey('language.card'),
             // Native shows the globe, the CURRENT language and how many are
@@ -214,11 +214,9 @@ class _GroupCard extends StatelessWidget {
 
   const _GroupCard({required this.theme, required this.child});
 
+  // The Card's fill, border and radius come from the HUD theme's cardTheme.
   @override
   Widget build(BuildContext context) => Card(
-    color: theme.colorScheme.surfaceContainer,
-    elevation: 0,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     child: Padding(padding: const EdgeInsets.all(16), child: child),
   );
 }
@@ -253,26 +251,24 @@ class _ThemePreviewTile extends StatelessWidget {
     child: InkWell(
       key: tileKey,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(BwHud.radiusSmall),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
-            width: selected ? 2 : 1,
-          ),
+          color: selected ? theme.colorScheme.primaryContainer : null,
+          borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+          border: Border.all(color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant),
         ),
         child: Column(
           children: [
             Container(
               height: 64,
-              decoration: BoxDecoration(gradient: preview, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(gradient: preview, borderRadius: BorderRadius.circular(2)),
               alignment: Alignment.center,
               child: Container(
                 width: 32,
                 height: 5,
-                decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(3)),
+                decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 8),
@@ -310,15 +306,13 @@ class _OptionTile extends StatelessWidget {
     child: InkWell(
       key: tileKey,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(BwHud.radiusSmall),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
-            width: selected ? 2 : 1,
-          ),
+          color: selected ? theme.colorScheme.primaryContainer : null,
+          borderRadius: BorderRadius.circular(BwHud.radiusSmall),
+          border: Border.all(color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant),
         ),
         child: Column(
           children: [

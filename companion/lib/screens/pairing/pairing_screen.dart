@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:bladewatch_theme/dimens_tokens.dart';
+import 'package:bladewatch_theme/hud_theme.dart';
+import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_store.dart';
@@ -79,7 +81,7 @@ class _PairingScreenState extends State<PairingScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -94,53 +96,81 @@ class _PairingScreenState extends State<PairingScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(Icons.qr_code_2, size: 64, color: theme.colorScheme.primary),
-                      const SizedBox(height: 16),
-                      Text(tr('companion.pair_title'), style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
-                      const SizedBox(height: 8),
-                      Text(tr('companion.pair_hint'), textAlign: TextAlign.center),
+                      // The pulsing magenta square is "pairing / attention" (HUD rule 4); the QR mark is the trailing.
+                      HudTitleBar(
+                        title: tr('companion.pair_title').toUpperCase(),
+                        trailing: Icon(Icons.qr_code_2, size: 28, color: hud.accent),
+                      ),
+                      Text(tr('companion.pair_hint'), style: hudText(12, hud.textSecondary, lineHeight: 16)),
                       const SizedBox(height: 24),
-                      TextField(
-                        key: const ValueKey('pair.name'),
-                        controller: _name,
-                        enabled: !c.busy,
-                        decoration: InputDecoration(labelText: tr('companion.pair_device_name')),
-                      ),
-                      const SizedBox(height: 16),
-                      if (widget.scan != null) ...[
-                        FilledButton.icon(
-                          key: const ValueKey('pair.scan'),
-                          onPressed: c.busy ? null : _scan,
-                          icon: const Icon(Icons.qr_code_scanner),
-                          label: Text(tr('companion.pair_scan')),
+                      HudPanel(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: hud.summaryGradient,
                         ),
-                        const SizedBox(height: 16),
-                      ],
-                      TextField(
-                        key: const ValueKey('pair.code'),
-                        controller: _code,
-                        enabled: !c.busy,
-                        minLines: 1,
-                        maxLines: 3,
-                        decoration: InputDecoration(labelText: tr('companion.pair_paste')),
+                        borderColor: hud.cardBorder,
+                        radius: BwHud.radiusPanel,
+                        shadows: hud.cardShadow,
+                        padding: const EdgeInsets.all(BwDimens.cardPaddingHero),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextField(
+                              key: const ValueKey('pair.name'),
+                              controller: _name,
+                              enabled: !c.busy,
+                              decoration: InputDecoration(labelText: tr('companion.pair_device_name')),
+                            ),
+                            const SizedBox(height: 16),
+                            if (widget.scan != null) ...[
+                              FilledButton.icon(
+                                key: const ValueKey('pair.scan'),
+                                onPressed: c.busy ? null : _scan,
+                                icon: const Icon(Icons.qr_code_scanner),
+                                label: Text(tr('companion.pair_scan')),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            TextField(
+                              key: const ValueKey('pair.code'),
+                              controller: _code,
+                              enabled: !c.busy,
+                              minLines: 1,
+                              maxLines: 3,
+                              decoration: InputDecoration(labelText: tr('companion.pair_paste')),
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              key: const ValueKey('pair.submit'),
+                              onPressed: c.busy ? null : () => _submit(_code.text),
+                              child: Text(tr('companion.pair_button')),
+                            ),
+                            if (c.busy || c.error != null) const SizedBox(height: 16),
+                            if (c.busy)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                                  const SizedBox(width: 12),
+                                  Flexible(
+                                    child: Text(
+                                      tr(c.step == PairingStep.connecting ? 'companion.pair_finding' : 'companion.pair_redeeming'),
+                                      style: hudText(12, hud.textSecondary, lineHeight: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (c.error != null)
+                              Text(
+                                tr(c.error!),
+                                key: const ValueKey('pair.error'),
+                                style: hudText(12, hud.magenta, lineHeight: 16, weight: FontWeight.w700),
+                                textAlign: TextAlign.center,
+                              ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        key: const ValueKey('pair.submit'),
-                        onPressed: c.busy ? null : () => _submit(_code.text),
-                        child: Text(tr('companion.pair_button')),
-                      ),
-                      const SizedBox(height: 16),
-                      if (c.busy)
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                          const SizedBox(width: 12),
-                          Flexible(
-                            child: Text(tr(c.step == PairingStep.connecting ? 'companion.pair_finding' : 'companion.pair_redeeming')),
-                          ),
-                        ]),
-                      if (c.error != null)
-                        Text(tr(c.error!), key: const ValueKey('pair.error'), style: TextStyle(color: theme.colorScheme.error), textAlign: TextAlign.center),
                     ],
                   );
                 },

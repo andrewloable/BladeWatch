@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import '../../fakes/hud_test_env.dart';
 
 /// BladeWatch-3zno: the PHEV fuel range on the Trips range card.
 ///
@@ -19,6 +20,7 @@ import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
 /// because BYD local data exposes no tank size. Rendering that as "-1 km" — or inventing a
 /// capacity to avoid it — puts a wrong range on a dashboard the driver acts on.
 void main() {
+  hudTestEnvironment();
   late FakeRpcClient rpc;
   late FakeRpcClient longRpc;
   late TripsController controller;

@@ -2911,4 +2911,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get auto_hold_active => 'Tutuyor';
+
+  @override
+  String get dashboard_hud_overview => 'Genel Bakış';
+
+  @override
+  String get dashboard_hud_telemetry => 'Telemetri';
+
+  @override
+  String get dashboard_hud_link_active => 'SECURE_LINK: ACTIVE';
+
+  @override
+  String get dashboard_hud_link_offline => 'SECURE_LINK: OFFLINE';
 }

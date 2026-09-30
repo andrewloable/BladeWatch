@@ -2,6 +2,7 @@ import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
 import 'package:bladewatch_ui/screens/dialogs/language_picker_sheet.dart';
 import 'package:bladewatch_ui/shell/locale_controller.dart';
 import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -58,6 +59,17 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
   }
+
+  // BladeWatch-2llu.1: a sheet runs on the ROOT navigator, outside any screen's theme, so it opts into the HUD itself.
+  testWidgets('the sheet runs on the HUD theme: the title is upper-case accent, the current language is selected', (tester) async {
+    await pumpSheet(tester);
+    final theme = Theme.of(tester.element(find.byType(LanguagePickerSheet)));
+    expect(theme.extension<BwHud>(), same(BwHud.light));
+    final title = tester.widget<Text>(find.text(AppLocalizations.of(tester.element(find.byType(LanguagePickerSheet)))!.language_picker_title.toUpperCase()));
+    expect((title.style!.fontSize, title.style!.color), (20, BwHud.light.accent));
+    expect(tester.widget<ListTile>(find.byKey(const ValueKey('languagePicker.row.auto'))).selected, isTrue);
+    expect(tester.widget<ListTile>(find.byKey(const ValueKey('languagePicker.row.en'))).selected, isFalse);
+  });
 
   testWidgets('shows the Auto row plus all 17 supported languages', (tester) async {
     await pumpSheet(tester);

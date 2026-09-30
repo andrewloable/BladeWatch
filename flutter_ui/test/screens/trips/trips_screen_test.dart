@@ -9,8 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bladewatch_rpc/testing/fake_rpc_client.dart';
+import '../../fakes/hud_test_env.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 
 void main() {
+  hudTestEnvironment();
   late FakeRpcClient rpc;
   late FakeRpcClient longRpc;
   late TripsController controller;
@@ -81,6 +85,18 @@ void main() {
     await pumpScreen(tester);
 
     expect(find.byKey(const ValueKey('trips.error')), findsOneWidget);
+  });
+
+  // BladeWatch-2llu.4: the Trips screen is on the HUD skin.
+  testWidgets('HUD: a title bar, the HUD error state, and a tab bar ruled off the content', (tester) async {
+    rpc.stubError('TripsService', 'ListTrips', const ConnectError('unavailable', 'no daemon'));
+    await pumpScreen(tester);
+    expect(find.byType(HudTitleBar), findsOneWidget);
+    expect(find.text('TRIPS'), findsWidgets);
+    expect(find.descendant(of: find.byKey(const ValueKey('trips.error')), matching: find.byIcon(Icons.error_outline)), findsOneWidget);
+    expect(find.byType(HudErrorState), findsOneWidget);
+    final bar = tester.widget<DecoratedBox>(find.ancestor(of: find.byKey(const ValueKey('trips.tab.trips')), matching: find.byType(DecoratedBox)).first);
+    expect(((bar.decoration as BoxDecoration).border! as Border).top.color, BwHud.light.cardDivider);
   });
 
   testWidgets('shows the empty state when there are no trips', (tester) async {

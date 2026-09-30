@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
 import '../../shell/locale_controller.dart';
+import '../../theme/hud_theme.dart';
+import '../../widgets/hud_widgets.dart';
 
 /// Native-script display name for each supported tag — ground truth:
 /// `LanguagePickerDialog.NATIVE_NAMES`. Deliberately not an ARB catalog: a
@@ -34,7 +36,7 @@ const Map<String, String> kLocaleNativeNames = {
 /// language row) call this the same way native calls the same dialog from
 /// multiple places.
 Future<void> showLanguagePickerSheet(BuildContext context, LocaleController controller) {
-  return showModalBottomSheet<void>(
+  return showHudSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (context) => LanguagePickerSheet(controller: controller),
@@ -67,6 +69,7 @@ class LanguagePickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final hud = BwHud.of(context);
 
     return SafeArea(
       child: Padding(
@@ -75,7 +78,7 @@ class LanguagePickerSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
-            Container(width: 32, height: 4, decoration: BoxDecoration(color: theme.colorScheme.outline, borderRadius: BorderRadius.circular(2))),
+            Container(width: 32, height: 4, decoration: BoxDecoration(color: hud.panelBorderStrong, borderRadius: BorderRadius.circular(2))),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
               child: Row(
@@ -84,7 +87,10 @@ class LanguagePickerSheet extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l10n.language_picker_title, style: theme.textTheme.headlineSmall),
+                        Text(
+                          l10n.language_picker_title.toUpperCase(),
+                          style: hudText(20, hud.accent, lineHeight: 28, weight: FontWeight.w700, em: 0.05, shadows: hudGlow(hud.glowCyan)),
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           l10n.language_picker_subtitle_fmt(kSupportedLocaleTags.length),
@@ -156,19 +162,20 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final hud = BwHud.of(context);
     return ListTile(
       key: ValueKey('languagePicker.row.${tag ?? 'auto'}'),
+      selected: isCurrent,
       title: Text(title),
       subtitle: subtitle == null ? null : Text(subtitle!),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (tag != null) ...[
-            Text(tag!, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontFamily: 'monospace')),
+            Text(tag!, style: hudText(10, hud.tileLabel, lineHeight: 15, weight: hud.labelWeight, em: 0.05)),
             const SizedBox(width: 12),
           ],
-          Icon(Icons.check, color: isCurrent ? theme.colorScheme.primary : Colors.transparent, size: 20),
+          Icon(Icons.check, color: isCurrent ? hud.accent : Colors.transparent, size: 20),
         ],
       ),
       onTap: onTap,

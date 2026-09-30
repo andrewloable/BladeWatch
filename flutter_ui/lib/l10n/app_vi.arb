@@ -1119,5 +1119,9 @@
   "dashboard_chip_auto_hold": "Auto Hold: {state}",
   "auto_hold_disabled": "Tắt",
   "auto_hold_enabled": "Bật",
-  "auto_hold_active": "Đang giữ"
+  "auto_hold_active": "Đang giữ",
+  "dashboard_hud_overview": "Tổng quan",
+  "dashboard_hud_telemetry": "Đo từ xa",
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
 }

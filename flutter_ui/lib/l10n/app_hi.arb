@@ -1119,5 +1119,9 @@
   "dashboard_chip_auto_hold": "ऑटो होल्ड: {state}",
   "auto_hold_disabled": "बंद",
   "auto_hold_enabled": "चालू",
-  "auto_hold_active": "रोके हुए"
+  "auto_hold_active": "रोके हुए",
+  "dashboard_hud_overview": "अवलोकन",
+  "dashboard_hud_telemetry": "टेलीमेट्री",
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
 }

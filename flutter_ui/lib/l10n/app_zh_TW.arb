@@ -1119,5 +1119,9 @@
   "dashboard_chip_auto_hold": "自動駐車：{state}",
   "auto_hold_disabled": "關",
   "auto_hold_enabled": "開",
-  "auto_hold_active": "駐車中"
+  "auto_hold_active": "駐車中",
+  "dashboard_hud_overview": "概覽",
+  "dashboard_hud_telemetry": "遙測",
+  "dashboard_hud_link_active": "SECURE_LINK: ACTIVE",
+  "dashboard_hud_link_offline": "SECURE_LINK: OFFLINE"
 }

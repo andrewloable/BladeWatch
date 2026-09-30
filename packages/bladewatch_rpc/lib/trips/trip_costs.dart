@@ -1,4 +1,5 @@
 import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
+import 'package:bladewatch_rpc/trips/currency_symbols.dart';
 
 /// What a set of trips cost: fuel, electric and the total (BladeWatch-39d2, -mgi9, -c149). One
 /// definition, so the dashboard, the Trips Stats tab and the Period Summary can never disagree.
@@ -19,11 +20,15 @@ class TripCosts {
 
   factory TripCosts.of(Iterable<TripSummary> trips) {
     var fuel = 0.0, electric = 0.0, total = 0.0, hasFuel = false;
-    final currencies = <String>{};
+    // canonical currency -> the raw string of the first trip seen in it. A code and the symbol it stands
+    // for are ONE currency (BladeWatch-gzbo: the picker stores a symbol, older trips hold the code), so
+    // a week that spans the switch is summed, not called "mixed". The returned currency stays that first
+    // raw string, so an all-code week still formats through ICU exactly as before.
+    final currencies = <String, String>{};
     for (final t in trips) {
       hasFuel = hasFuel || t.hasFuelData;
       if (t.tripCost <= 0) continue; // no rate configured: nothing was costed
-      currencies.add(t.currency);
+      currencies.putIfAbsent(CurrencySymbols.forStored(t.currency) ?? t.currency, () => t.currency);
       fuel += t.fuelCost;
       total += t.tripCost;
       electric += t.tripCost > t.fuelCost ? t.tripCost - t.fuelCost : 0;
@@ -33,7 +38,7 @@ class TripCosts {
       fuel: fuel,
       electric: electric,
       total: total,
-      currency: currencies.isEmpty ? '' : currencies.single,
+      currency: currencies.isEmpty ? '' : currencies.values.single,
       hasFuel: hasFuel,
     );
   }

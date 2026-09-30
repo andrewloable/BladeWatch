@@ -280,7 +280,7 @@ make a real result indistinguishable from a BEV.
 
 These are settable in **both** UIs — the web settings and the in-car Trips screen — so a
 driver on the head unit can price a PHEV trip without reaching for a browser over the tunnel.
-The currency is chosen from the full ISO 4217 list in both.
+The currency is picked from a list of currency symbols (`$`, `€`, `₱`, no ISO codes) in both apps.
 
 **On a BEV the fuel settings are not shown at all.** `TripConfig` carries an `is_phev` flag —
 a live drivetrain read, not a stored setting — and both UIs hide the fuel price and tank

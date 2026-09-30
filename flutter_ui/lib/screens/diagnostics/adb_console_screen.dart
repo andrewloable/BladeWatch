@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../gen/l10n/app_localizations.dart';
+import '../../widgets/hud_widgets.dart';
 import 'adb_console_controller.dart';
 import 'adb_console_models.dart';
 
@@ -74,7 +75,7 @@ class _AdbConsoleScreenState extends State<AdbConsoleScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.adb_console_hero_title, style: theme.textTheme.headlineSmall),
+              Text(l10n.adb_console_hero_title, style: theme.textTheme.titleMedium),
               const SizedBox(height: 4),
               Text(
                 l10n.adb_console_hero_subtitle,
@@ -97,7 +98,7 @@ class _AdbConsoleScreenState extends State<AdbConsoleScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(),
+              const HudLoading(),
               const SizedBox(height: 16),
               Text(l10n.url_connecting),
             ],
@@ -173,8 +174,7 @@ class _AdbConsoleScreenState extends State<AdbConsoleScreen> {
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           color: theme.colorScheme.surfaceContainer,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
+                    child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,14 +258,14 @@ class _AdbConsoleScreenState extends State<AdbConsoleScreen> {
               // Outlined, as native has it, rather than a filled grey slab.
               color: theme.colorScheme.surface,
               border: Border.all(color: theme.colorScheme.outlineVariant),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(4),
             ),
             child: SingleChildScrollView(
               controller: _scrollController,
               child: Text(
                 c.output.isEmpty ? l10n.adb_output_ready : c.output,
                 key: const ValueKey('adb.output'),
-                style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                style: theme.textTheme.bodySmall,
               ),
             ),
           ),

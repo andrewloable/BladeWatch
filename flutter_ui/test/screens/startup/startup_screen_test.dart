@@ -2,7 +2,8 @@ import 'package:bladewatch_ui/gen/l10n/app_localizations.dart';
 import 'package:bladewatch_ui/platform/daemon_channel.dart';
 import 'package:bladewatch_ui/screens/startup/startup_controller.dart';
 import 'package:bladewatch_ui/screens/startup/startup_screen.dart';
-import 'package:bladewatch_ui/theme/bladewatch_theme.dart';
+import 'package:bladewatch_ui/theme/hud_theme.dart';
+import 'package:bladewatch_ui/widgets/hud_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,7 +37,7 @@ void main() {
   }
 
   Widget wrap(Widget child) => MaterialApp(
-        theme: BladeWatchTheme.light(),
+        theme: BwHud.themeData(Brightness.light),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: child,
@@ -52,8 +53,8 @@ void main() {
     expect(find.text('Camera'), findsOneWidget);
     expect(find.text('Sentry Mode'), findsOneWidget);
     expect(find.text('Parking Guard'), findsOneWidget);
-    expect(find.text('Waiting'), findsNWidgets(3));
-    expect(find.text('Getting things ready…'), findsOneWidget);
+    expect(find.text('WAITING'), findsNWidgets(3));
+    expect(find.text('GETTING THINGS READY…'), findsOneWidget);
 
     await tester.pumpWidget(Container());
   });
@@ -65,9 +66,9 @@ void main() {
     await tester.pumpWidget(wrap(StartupScreen(controller: controller, onReadyToNavigate: () {})));
     await tester.pump();
 
-    expect(find.text('Ready'), findsOneWidget);
-    expect(find.text('Waiting'), findsNWidgets(2));
-    expect(find.text('Starting up…'), findsOneWidget);
+    expect(find.text('READY'), findsOneWidget);
+    expect(find.text('WAITING'), findsNWidgets(2));
+    expect(find.text('STARTING UP…'), findsOneWidget);
 
     await tester.pumpWidget(Container());
   });
@@ -78,8 +79,38 @@ void main() {
     await tester.pumpWidget(wrap(StartupScreen(controller: controller, onReadyToNavigate: () {})));
     await tester.pump();
 
-    expect(find.text('Ready'), findsNWidgets(3));
-    expect(find.text('Almost ready…'), findsOneWidget);
+    expect(find.text('READY'), findsNWidgets(3));
+    expect(find.text('ALMOST READY…'), findsOneWidget);
+
+    await tester.pumpWidget(Container());
+  });
+
+  // BladeWatch-2llu.1: the startup screen is HUD. Its dots are real state: only a daemon that IS running is the
+  // cyan dot; a waiting one is the grey idle dot (the check is binary, there is no "starting" to claim).
+  testWidgets('HUD: rows carry a real-state dot, the panel is the hero panel, the page is the HUD background', (tester) async {
+    stubStatuses(camera: true);
+    final controller = buildController();
+    await tester.pumpWidget(wrap(StartupScreen(controller: controller, onReadyToNavigate: () {})));
+    await tester.pump();
+    const hud = BwHud.light;
+
+    final states = tester.widgetList<HudStatusDot>(find.byType(HudStatusDot)).map((d) => d.state).toList();
+    expect(states, [HudDotState.ok, HudDotState.idle, HudDotState.idle], reason: 'camera running, the others waiting');
+
+    final panel = tester.widget<HudPanel>(find.byType(HudPanel));
+    expect((panel.borderColor, panel.radius), (hud.cardBorder, BwHud.radiusPanel));
+    expect((panel.gradient! as LinearGradient).colors, hud.summaryGradient);
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor, hud.pageBackground);
+
+    final header = tester.widget<Text>(find.text('STARTING UP…'));
+    expect((header.style!.fontSize, header.style!.fontWeight, header.style!.color), (12, FontWeight.w700, hud.accent));
+    expect(header.style!.fontFamily, BwHud.fontFamily);
+    final name = tester.widget<Text>(find.text('Camera'));
+    expect((name.style!.fontSize, name.style!.color), (14, hud.textPrimary));
+
+    // The continue/progress widgets are stock ones: they read the HUD ThemeData the app installs.
+    final scope = Theme.of(tester.element(find.byType(LinearProgressIndicator)));
+    expect(scope.colorScheme.primary, hud.accent);
 
     await tester.pumpWidget(Container());
   });
@@ -90,7 +121,7 @@ void main() {
     await tester.pumpWidget(wrap(StartupScreen(controller: controller, onReadyToNavigate: () {})));
     await tester.pump();
 
-    expect(find.text("Everything's ready"), findsOneWidget);
+    expect(find.text("EVERYTHING'S READY"), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsNothing);
 
     await tester.pumpWidget(Container());
@@ -132,7 +163,7 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Getting things ready…'), findsOneWidget);
+    expect(find.text('GETTING THINGS READY…'), findsOneWidget);
     for (final leak in ['daemon not up', 'PlatformChannelError', 'ECONNREFUSED', '19876']) {
       expect(find.textContaining(leak), findsNothing, reason: 'leaked "$leak" to the driver');
     }
@@ -153,8 +184,8 @@ void main() {
   testWidgets('renders correctly in dark theme', (tester) async {
     final controller = buildController();
     await tester.pumpWidget(MaterialApp(
-      theme: BladeWatchTheme.light(),
-      darkTheme: BladeWatchTheme.dark(),
+      theme: BwHud.themeData(Brightness.light),
+      darkTheme: BwHud.themeData(Brightness.dark),
       themeMode: ThemeMode.dark,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -165,7 +196,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('BladeWatch'), findsOneWidget);
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor, BladeWatchTheme.dark().colorScheme.surface);
+    expect(scaffold.backgroundColor, BwHud.dark.pageBackground);
 
     await tester.pumpWidget(Container());
   });
@@ -174,7 +205,7 @@ void main() {
       (tester) async {
     final controller = buildController();
     await tester.pumpWidget(MaterialApp(
-      theme: BladeWatchTheme.light(),
+      theme: BwHud.themeData(Brightness.light),
       locale: const Locale('ja'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
