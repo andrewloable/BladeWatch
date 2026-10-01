@@ -1,5 +1,9 @@
+import 'dart:async';
+
+import 'package:bladewatch_companion/car/speed_test.dart';
 import 'package:bladewatch_companion/screens/about/about_screen.dart';
 import 'package:bladewatch_companion/screens/diagnostics/diagnostics_screen.dart';
+import 'package:bladewatch_companion/transport/transport_selector.dart';
 import 'package:bladewatch_companion/screens/performance/performance_screen.dart';
 import 'package:bladewatch_companion/i18n.dart';
 import 'package:bladewatch_companion/screens/settings/settings_screen.dart';
@@ -451,6 +455,130 @@ void main() {
       await pumpScreen(tester, s, const DiagnosticsScreen(), size: const Size(1200, 2400));
       expect(find.text('—'), findsWidgets);
       await unmount(tester);
+    });
+
+    // BladeWatch-j6ra.2: the speed test. The runner is injected: its own tests (test/car) own the
+    // sockets, so nothing here opens one.
+    group('speed test', () {
+      TestSession diagSession({TransportPhase phase = TransportPhase.lan}) {
+        final s = TestSession(phase: phase);
+        stubStatus(s);
+        stubStorage(s, sd: false);
+        s.rpc.stubJson('SystemService', 'GetSohStatus', {});
+        return s;
+      }
+
+      const lan = SpeedTestResult(pingMs: 42.4, bytes: 5000000, elapsed: Duration(seconds: 8), phase: TransportPhase.lan);
+      final run = find.byKey(const ValueKey('diag.speedtest.run'));
+
+      testWidgets('is idle until asked: a hint and a button, no numbers and no test started', (tester) async {
+        var started = 0;
+        final s = diagSession();
+        await pumpScreen(tester, s, DiagnosticsScreen(speedTest: (_) async {
+          started++;
+          return lan;
+        }), size: const Size(1200, 2400));
+
+        expect(find.text(t('companion.speedtest').toUpperCase()), findsOneWidget, reason: 'a Section upper-cases its title');
+        expect(find.text(t('companion.speedtest_hint')), findsOneWidget);
+        expect(find.descendant(of: run, matching: find.text(t('companion.speedtest_run'))), findsOneWidget);
+        expect(find.text(t('companion.speedtest_download')), findsNothing);
+        expect(started, 0, reason: 'a speed test moves tens of MB, possibly on mobile data: never automatic');
+        await unmount(tester);
+      });
+
+      testWidgets('runs on tap: busy and unrepeatable meanwhile, then latency, speed and the path', (tester) async {
+        final done = Completer<SpeedTestResult>();
+        var calls = 0;
+        final s = diagSession();
+        await pumpScreen(tester, s, DiagnosticsScreen(speedTest: (session) {
+          calls++;
+          expect(session, same(s.session));
+          return done.future;
+        }), size: const Size(1200, 2400));
+
+        await tester.ensureVisible(run);
+        await tester.tap(run);
+        await tester.pump();
+        expect(calls, 1);
+        expect(find.text(t('companion.speedtest_running')), findsOneWidget);
+        expect(tester.widget<OutlinedButton>(run).onPressed, isNull);
+
+        done.complete(lan);
+        await tester.pumpAndSettle();
+        expect(find.text(t('companion.speedtest_running')), findsNothing);
+        expect(find.text('42 ms'), findsOneWidget);
+        expect(find.text('5.0 Mbit/s'), findsOneWidget);
+        expect(find.text(t('companion.route_lan')), findsOneWidget);
+        expect(find.descendant(of: run, matching: find.text(t('companion.speedtest_again'))), findsOneWidget);
+        expect(tester.widget<OutlinedButton>(run).onPressed, isNotNull);
+        await unmount(tester);
+      });
+
+      testWidgets('names the internet path when the test went over Pear', (tester) async {
+        final s = diagSession(phase: TransportPhase.pear);
+        await pumpScreen(
+          tester,
+          s,
+          DiagnosticsScreen(speedTest: (_) async => const SpeedTestResult(pingMs: 180, bytes: 1000000, elapsed: Duration(seconds: 8), phase: TransportPhase.pear)),
+          size: const Size(1200, 2400),
+        );
+
+        await tester.ensureVisible(run);
+        await tester.tap(run);
+        await tester.pumpAndSettle();
+        expect(find.text(t('companion.route_pear')), findsOneWidget);
+        expect(find.text('180 ms'), findsOneWidget);
+        expect(find.text('1.0 Mbit/s'), findsOneWidget);
+        await unmount(tester);
+      });
+
+      testWidgets('a failed test says so, shows no stale numbers, and can be run again', (tester) async {
+        var fail = true;
+        final s = diagSession();
+        await pumpScreen(tester, s, DiagnosticsScreen(speedTest: (_) async => fail ? throw StateError('dropped') : lan), size: const Size(1200, 2400));
+
+        await tester.ensureVisible(run);
+        await tester.tap(run);
+        await tester.pumpAndSettle();
+        expect(find.text(t('companion.speedtest_failed')), findsOneWidget);
+        expect(find.text(t('companion.speedtest_download')), findsNothing);
+        expect(find.text(t('companion.speedtest_running')), findsNothing);
+        expect(tester.widget<OutlinedButton>(run).onPressed, isNotNull);
+
+        fail = false;
+        await tester.tap(run);
+        await tester.pumpAndSettle();
+        expect(find.text('5.0 Mbit/s'), findsOneWidget);
+        await unmount(tester);
+      });
+
+      testWidgets('a failure after a good run clears the old numbers', (tester) async {
+        var fail = false;
+        final s = diagSession();
+        await pumpScreen(tester, s, DiagnosticsScreen(speedTest: (_) async => fail ? throw StateError('dropped') : lan), size: const Size(1200, 2400));
+
+        await tester.ensureVisible(run);
+        await tester.tap(run);
+        await tester.pumpAndSettle();
+        expect(find.text('5.0 Mbit/s'), findsOneWidget);
+
+        fail = true;
+        await tester.tap(run);
+        await tester.pumpAndSettle();
+        expect(find.text('5.0 Mbit/s'), findsNothing);
+        expect(find.text(t('companion.speedtest_failed')), findsOneWidget);
+        await unmount(tester);
+      });
+
+      testWidgets('cannot be started while there is no route to the car', (tester) async {
+        final s = diagSession(phase: TransportPhase.discovering);
+        await pumpScreen(tester, s, DiagnosticsScreen(speedTest: (_) async => lan), size: const Size(1200, 2400));
+
+        await tester.ensureVisible(run);
+        expect(tester.widget<OutlinedButton>(run).onPressed, isNull);
+        await unmount(tester);
+      });
     });
   });
 

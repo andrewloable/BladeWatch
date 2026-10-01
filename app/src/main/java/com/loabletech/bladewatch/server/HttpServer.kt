@@ -684,6 +684,11 @@ class HttpServer(private val port: Int) {
             return StreamingApiHandler.handle(method, path, body, out)
         }
 
+        // The companion's Diagnostics speed test (BladeWatch-j6ra): a binary download, so not Connect.
+        if (path.startsWith("/speedtest/")) {
+            return SpeedTestApiHandler.handle(method, path, out)
+        }
+
         return false
     }
 

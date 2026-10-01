@@ -109,8 +109,30 @@ class CarSession extends ChangeNotifier {
   /// checks every [probeEvery] until the car answers again.
   bool get answering => _answering;
 
+  var _bulk = 0;
+
+  /// True while a transfer that fills the link is running ([duringBulkTransfer]).
+  bool get bulkTransfer => _bulk > 0;
+
+  /// Runs [body], a transfer that fills the link (the speed test), without the car being reported
+  /// silent meanwhile (BladeWatch-a7ev). The watch's question shares the link with the transfer,
+  /// so it queues behind it and times out; two misses and [answering] goes false, CarPage swaps the
+  /// screen for "Your car isn't answering", and the screen's state -- the result -- is gone. Bytes
+  /// arriving are proof the car is there. Nothing is asked and no silence is recorded until the
+  /// last overlapping transfer is over, and then the watch starts counting afresh.
+  Future<T> duringBulkTransfer<T>(Future<T> Function() body) async {
+    _bulk++;
+    try {
+      return await body();
+    } finally {
+      _bulk--;
+      _quietTicks = 0;
+    }
+  }
+
   void _heard(bool answered) {
     if (answered) _quietTicks = 0;
+    if (!answered && bulkTransfer) return; // a full link is not a silent car
     if (answered == _answering) return;
     _answering = answered;
     _probe?.cancel();
@@ -136,7 +158,7 @@ class CarSession extends ChangeNotifier {
   Future<void> _askQuietCar() async {
     // Not while the route is down (the selector says so) or the car is already known silent
     // (the [probeEvery] probe asks then).
-    if (_asking || !connected || !_answering) return;
+    if (_asking || !connected || !_answering || bulkTransfer) return;
     _asking = true;
     try {
       for (var miss = 0; miss < 2; miss++) {

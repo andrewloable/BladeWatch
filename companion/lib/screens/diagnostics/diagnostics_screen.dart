@@ -8,15 +8,22 @@ import 'package:bladewatch_theme/hud_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../car/car_page.dart';
+import '../../car/car_session.dart';
+import '../../car/speed_test.dart';
 import '../../i18n.dart';
+import '../../transport/transport_selector.dart';
 import '../common/format.dart';
 import '../common/hud_style.dart';
 import '../common/loader.dart';
 
 /// The web diagnostics page's counterpart: network, storage, camera and battery health, and the
-/// two tools behind them -- pinning the camera probe and resetting the learned State of Health.
+/// tools behind them -- the link speed test, pinning the camera probe and resetting the learned
+/// State of Health.
 class DiagnosticsScreen extends StatefulWidget {
-  const DiagnosticsScreen({super.key});
+  const DiagnosticsScreen({super.key, this.speedTest = runSpeedTest});
+
+  /// The speed test, injected so a widget test opens no socket (its own tests own those).
+  final Future<SpeedTestResult> Function(CarSession session) speedTest;
 
   @override
   State<DiagnosticsScreen> createState() => _DiagnosticsScreenState();
@@ -30,6 +37,27 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> with LoadersState
         storage: await _storage.getStorageSettings(GetStorageSettingsRequest()),
         soh: await _system.getSohStatus(GetSohStatusRequest()),
       ));
+
+  SpeedTestResult? _speed;
+  var _speedRunning = false;
+
+  /// Never automatic: it downloads tens of MB, which may be mobile data. A failed run shows no
+  /// numbers, not the last good ones.
+  Future<void> _runSpeedTest() async {
+    final session = context.session;
+    setState(() {
+      _speedRunning = true;
+      _speed = null;
+    });
+    SpeedTestResult? result;
+    await act(context, () async => result = await widget.speedTest(session), failed: context.tr('companion.speedtest_failed'));
+    if (mounted) {
+      setState(() {
+        _speed = result;
+        _speedRunning = false;
+      });
+    }
+  }
 
   Future<void> _probe(int? cameraId) async {
     final tr = context.tr;
@@ -85,6 +113,27 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> with LoadersState
             // A dot is the state itself: on is cyan, off is a grey one, never a coloured claim.
             InfoRow(tr('companion.lan_access'), tr(n.lanHttpEnabled ? 'status.on' : 'status.off'),
                 leading: HudStatusDot(n.lanHttpEnabled ? HudDotState.ok : HudDotState.idle)),
+          ]),
+          Section(title: tr('companion.speedtest'), children: [
+            Text(tr('companion.speedtest_hint')),
+            if (_speed case final r?) ...[
+              const SizedBox(height: 8),
+              InfoRow(tr('companion.speedtest_latency'), '${r.pingMs.round()} ms'),
+              InfoRow(tr('companion.speedtest_download'), '${r.mbps.toStringAsFixed(1)} Mbit/s'),
+              InfoRow(tr('companion.speedtest_path'), tr(r.phase == TransportPhase.lan ? 'companion.route_lan' : 'companion.route_pear')),
+            ],
+            if (_speedRunning) ...[
+              const SizedBox(height: 8),
+              Text(tr('companion.speedtest_running')),
+              const SizedBox(height: 8),
+              const LinearProgressIndicator(),
+            ],
+            const SizedBox(height: 8),
+            OutlinedButton(
+              key: const ValueKey('diag.speedtest.run'),
+              onPressed: _speedRunning || !context.session.connected ? null : _runSpeedTest,
+              child: Text(tr(_speed == null ? 'companion.speedtest_run' : 'companion.speedtest_again')),
+            ),
           ]),
           Section(title: tr('diagnostics.storage'), children: [
             // A forced break before the "/ total" half, not the greedy wrap InfoRow's own Text
