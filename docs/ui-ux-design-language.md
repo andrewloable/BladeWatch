@@ -475,8 +475,8 @@ The in-car UI wears a "cyberpunk HUD" look (epics BladeWatch-8w4p and BladeWatch
 panels in dark mode, white panels in light mode, cyan and magenta accents (with glow in dark), Space Mono,
 uppercase tracked labels, thin bordered cards. It is the app's only theme: `main.dart` installs
 `BwHud.themeData(...)` for both `theme` and `darkTheme`, every screen draws its own `HudTitleBar`, and the
-shell has no toolbar. The Material 3 tokens (`BladeWatchTheme`) survive as the base the HUD theme is built on, for
-the status overlay's Android XML parity, and for the companion until it converts.
+shell has no toolbar. The Material 3 tokens (`BladeWatchTheme`) survive as the base the HUD theme is built on, and
+for the status overlay's Android XML parity. The companion converted too (see "Companion" below).
 
 **It is additive.** The M3 colour tokens in `packages/bladewatch_theme` are parity-tested against the Android
 XML, so none of the HUD palette lives in them. The HUD has its own files in the same package (shared by the

@@ -109,8 +109,8 @@ app (below); a browser is not a client of the car any more, and the daemon serve
 ## In-Car UI (Flutter)
 
 The in-car UI ships as its own APK, `net.bladewatch.incarapp`, sharing a UID with
-the daemon host. It provides (Material 3 — see
-[UI/UX Design Language](ui-ux-design-language.md)):
+the daemon host. It provides (the cyberpunk HUD look, dark and light, since
+v1.4.1.0 — see [UI/UX Design Language](ui-ux-design-language.md)):
 
 - Navigation rail shell with 8 destinations — Dashboard, Live, Recordings,
   Vehicle, Trips, Location, Diagnostics, Settings — mirrored to the driver's side.

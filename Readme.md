@@ -8,7 +8,7 @@ Free, open-source dashcam and sentry mode app built specifically for BYD vehicle
 
 BladeWatch targets BYD DiLink v3 head units (`arm64-v8a`, Android 10+) and installs onto the car's head unit over ADB.
 
-**Contents:** [What's new](#whats-new-in-v1400) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
+**Contents:** [What's new](#whats-new-in-v1410) · [Install on the car](#quick-start-use-pre-built-apk) · [Install with an AI agent](#install-with-an-ai-agent) · [Features](#features) · [Remote access](#remote-access-pear) · [Install the companion app](#install-the-companion-app) · [Building from source](#building-from-source) · [Privacy](#privacy)
 
 On the car it runs as **two APKs that must both be installed**:
 
@@ -21,7 +21,36 @@ They share one Android UID, which is what lets the UI talk to the daemons over l
 
 A third app, the **companion** (`net.bladewatch.companionapp`), goes on your phone or computer, never on the car. It is optional, and it is how you reach the car remotely: see [Install the companion app](#install-the-companion-app).
 
-## What's new in v1.4.0.0
+## What's new in v1.4.1.0
+
+A redesign release: a new "cyberpunk HUD" look across the in-car UI and the companion app, in dark
+and light. What the apps do and how you pair, record and control the car are unchanged.
+
+- **A new look for the in-car UI, every screen.** Near-black panels with cyan and magenta accents
+  and a soft glow in dark mode; white panels and the same accents in light mode. Thin bordered
+  cards, uppercase tracked labels, and the Space Mono typeface. Cyan marks information, magenta
+  marks live or needs-attention states, and every status dot reflects real state. Settings >
+  Appearance still picks Auto, Light or Dark.
+- **The companion matches.** The same look on your phone and computer: a side panel on wide
+  windows, a bottom bar and a More sheet on phones, and every page (Dashboard, Live, Recordings,
+  Events, Vehicle, Location, Trips, Diagnostics, Surveillance, Settings, pairing) restyled.
+- **Costs show the currency symbol** you picked (`$`, `€`, `₱`), in both apps.
+- **Bundled font, offline.** Space Mono ships inside both apps, so nothing is fetched. It covers
+  Latin, Latin-Extended and Vietnamese; Japanese, Korean, Chinese, Thai, Hindi and Russian use the
+  platform font for their own glyphs. Its licence (SIL OFL 1.1) is under Settings > About >
+  License in the car and in Licenses in the companion.
+- **Fixes found while testing on real devices:** even page gutters on Vehicle and Trips, chips that
+  no longer scroll sideways on Recordings, the map attribution no longer overflows, and stacked form
+  fields no longer touch.
+
+Known, not fixed: the uppercase labels are not locale-aware in Turkish (a label such as "diğer"
+shows as DIĞER, not DİĞER).
+
+**Upgrading from v1.4.0.0:** the app IDs are unchanged, so both car APKs and the companion update
+in place. BYD resets its Auto-Start restriction on every install, so allow both BladeWatch entries
+again afterwards.
+
+### Coming from v1.3.x: what v1.4.0.0 changed
 
 - **Remote access is now the companion app, over Pear.** The Tor onion service is gone. A new
   companion app for your phone or computer (Android, macOS, Windows and Linux builds are on the
@@ -310,7 +339,7 @@ BladeWatch is a hybrid project built from these codebases:
 - **`flutter_ui/`** — the in-car UI (Flutter/Dart), built as `net.bladewatch.incarapp`.
 - **`app/`** — the service host (Android/Kotlin/Java + C++), built as `net.bladewatch.app`. Owns the daemons, the camera/GPU pipeline and the BYD integration.
 - **`companion/`** — the phone and desktop app (Flutter), built as `net.bladewatch.companionapp`. Never installed on the car.
-- **`packages/`** — the Dart packages both Flutter apps share (`bladewatch_rpc`, the API client and generated messages; `bladewatch_theme`).
+- **`packages/`** — the Dart packages both Flutter apps share (`bladewatch_rpc`, the API client and generated messages; `bladewatch_theme`, the HUD theme, widgets and Space Mono font).
 
 The in-car UI was native Android until it was rewritten in Flutter. The Angular web app that once served browsers was removed in v1.4.0.0; the companion replaces it.
 
