@@ -323,7 +323,8 @@ and the release build holds no keys. Build it yourself on a Mac with Xcode:
 2. In the companion, scan the code. On Android, iOS and macOS the app uses the camera. On
    Windows and Linux, read the QR with any other QR reader (your phone's camera app will do),
    copy its text, and paste it into the companion.
-3. The companion finds the car over Pear, from anywhere; the first time can take up to a minute.
+3. The companion finds the car over Pear, from anywhere except the network combinations under
+[Limits](#remote-access-pear); the first time can take up to a minute.
    To connect directly when you are on the car's Wi-Fi, turn on **Direct connection on this
    Wi-Fi** in the same dialog on the car.
 
