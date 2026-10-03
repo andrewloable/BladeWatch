@@ -376,7 +376,11 @@ Android and iOS (iOS 16+ gives only "iPhone") -- and the owner can edit it befor
 
 **The companion app (v1.4.0.0, BladeWatch-rdtj.11).** The phone and desktop app that
 replaced the web UI. It reaches the car directly on its Wi-Fi when both are on one network,
-otherwise over Pear. It has every page the web app had (the web app itself is gone):
+otherwise over Pear. Pear cannot connect a phone on mobile data to a car on its built-in SIM,
+because both then sit behind randomizing carrier NATs, which hole punching cannot cross, and
+BladeWatch runs no relay. Put the phone on
+Wi-Fi in that case (see "Known limitation: hard NATs" in `docs/networking-and-tunnels.md`).
+It has every page the web app had (the web app itself is gone):
 
 - Dashboard.
 - Live view.

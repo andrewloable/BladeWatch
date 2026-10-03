@@ -242,7 +242,9 @@ through the internet. It is off unless you turn it on.
 **Limits:** the car and the phone must be able to reach each other through their networks.
 Some mobile carriers put phones behind a NAT that peer-to-peer connections cannot cross; from
 such a network the companion may not reach the car until you switch to another connection.
-Over a mobile connection, live video is smoothest at Medium quality or lower.
+**If the car is online through its built-in SIM, the phone cannot reach it over mobile data**:
+both are then behind carrier NATs, and BladeWatch runs no relay to bridge them. Put the phone
+on Wi-Fi instead. Over a mobile connection, live video is smoothest at Medium quality or lower.
 
 ## Install the Companion App
 
