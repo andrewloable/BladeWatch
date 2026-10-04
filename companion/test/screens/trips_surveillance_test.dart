@@ -1,4 +1,5 @@
 import 'package:bladewatch_companion/screens/surveillance/surveillance_screen.dart';
+import 'package:bladewatch_companion/screens/common/stats.dart';
 import 'package:bladewatch_companion/screens/trips/trips_screen.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/safe_locations.pb.dart';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/surveillance.pb.dart';
@@ -112,7 +113,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('trip.7')));
       await tester.pumpAndSettle();
       expect(find.text(t('trips.trip_summary').toUpperCase()), findsOneWidget);
-      expect(find.text('1.50 PHP'), findsOneWidget);
+      expect(find.text('₱1.50'), findsOneWidget);
       expect(find.text('+20 m'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('trip.delete')));
@@ -144,14 +145,77 @@ void main() {
       await unmount(tester);
     });
 
+    // The owner, 2026-10-04: the companion shows what the in-car Trips page shows.
+    testWidgets('as the car: 7/14/30 days, kWh/100km, the period\'s costs, each trip\'s cost, the owner\'s unit', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      s.rpc.stubJson('TripsService', 'ListTrips', {
+        'trips': [
+          {'id': '7', 'startTime': '1700000000000', 'distanceKm': 16.09344, 'durationSeconds': 900, 'overallScore': 88,
+            'tripCost': 16.65, 'electricCost': 16.65, 'currency': 'PHP'},
+        ],
+      });
+      s.rpc.stubJson('TripsService', 'GetSummary', {
+        'summary': [{'rollupJson': '{"tripCount":1,"totalDistanceKm":16.09344,"totalDurationSeconds":900,"totalEnergyKwh":2.2,"avgEnergyPerKm":0.1352}'}],
+      });
+      s.rpc.stubJson('TripsService', 'GetConfig', {'config': {'distanceUnit': 'mi', 'electricityRate': 11.5, 'currency': 'PHP'}});
+      await pumpScreen(tester, s, const TripsScreen(), size: const Size(1200, 1600));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('trips.days.14')), findsOneWidget);
+      expect(find.byKey(const ValueKey('trips.days.90')), findsNothing);
+      for (final text in ['0h 15m', '2.2', '13.52', t('trips.kwh_per_100km'), '10.0\u00A0mi', t('companion.total_cost')]) {
+        expect(find.text(text), findsWidgets, reason: text);
+      }
+      expect(find.textContaining(' · ₱16.65'), findsOneWidget, reason: 'the trip row carries its cost');
+
+      // The 14-day period reaches the car, and the Stats cost card follows it.
+      await tester.tap(find.byKey(const ValueKey('trips.days.14')));
+      await tester.pumpAndSettle();
+      expect((s.rpc.calls.lastWhere((c) => c.method == 'ListTrips').request as ListTripsRequest).days, 14);
+      await tester.tap(find.text(t('trips.tab_stats')));
+      await tester.pumpAndSettle();
+      expect(find.text(t('trips.cost').toUpperCase()), findsOneWidget);
+      expect((s.rpc.calls.lastWhere((c) => c.method == 'ListTrips').request as ListTripsRequest).days, 14);
+      await unmount(tester);
+    });
+
+    testWidgets('a trip\'s detail, as the car: energy used, speeds in the owner\'s unit, scores as bars', (tester) async {
+      final s = TestSession();
+      stubAll(s);
+      s.rpc.stubJson('TripsService', 'GetConfig', {'config': {'distanceUnit': 'mi'}});
+      s.rpc.stubJson('TripsService', 'GetTrip', {
+        'trip': {
+          'summary': {'id': '7', 'startTime': '1700000000000', 'distanceKm': 16.09344, 'energyPerKm': 0.1352, 'avgSpeedKmh': 64.37376,
+            'maxSpeedKmh': 97, 'overallScore': 88},
+          'anticipationScore': 90,
+          'smoothnessScore': 30,
+        },
+      });
+      await pumpScreen(tester, s, TripDetailScreen(id: Int64(7)), size: const Size(1200, 1600));
+      await tester.pumpAndSettle();
+      expect(find.text('2.2\u00A0kWh'), findsOneWidget, reason: 'energy per km x distance');
+      expect(find.text('40\u00A0mph'), findsOneWidget);
+      expect(find.text('60\u00A0mph'), findsOneWidget);
+      final bars = tester.widget<ScoreBars>(find.byType(ScoreBars));
+      expect(bars.bars.map((b) => b.$2), [90, 30, 0, 0, 0]);
+      expect(bars.banded, isTrue, reason: 'coloured by band, as the in-car detail');
+      await unmount(tester);
+    });
+
     testWidgets('stats: learned range and driving DNA, or "not enough data"', (tester) async {
       final s = TestSession();
       stubAll(s);
       await pumpScreen(tester, s, const TripsScreen(), size: const Size(1200, 1600));
       await tester.tap(find.text(t('trips.tab_stats')));
       await tester.pumpAndSettle();
-      expect(find.text('310 km'), findsOneWidget);
-      expect(find.text('77'), findsOneWidget);
+      // As the in-car Stats tab: the range with BYD's figure, the fuel range apart from it, the
+      // driver score (the five DNA scores out of 500, the overall out of 100) and DNA as bars.
+      expect(find.text('310\u00A0km'), findsOneWidget);
+      expect(find.text('${t('trips.byd_estimate_value')} 300\u00A0km'), findsOneWidget);
+      expect(find.text('${t('trips.fuel_range')} 500\u00A0km'), findsOneWidget);
+      expect(find.text('60 / 500'), findsOneWidget);
+      expect(find.text('${t('trips.overall')}: 77 / 100'), findsOneWidget);
+      expect(tester.widget<ScoreBars>(find.byType(ScoreBars)).bars, hasLength(5));
 
       s.rpc.stubJson('TripsService', 'GetRange', {'message': 'Learning'});
       s.rpc.stubJson('TripsService', 'GetDna', {});
@@ -160,7 +224,8 @@ void main() {
       await tester.tap(find.text(t('trips.tab_stats')));
       await tester.pumpAndSettle();
       expect(find.text('Learning'), findsOneWidget);
-      expect(find.text(t('trips.no_dna_data')), findsOneWidget);
+      expect(find.text('0 / 500'), findsOneWidget, reason: 'no DNA yet: a zero score, as in the car');
+      expect(find.byType(ScoreBars), findsNothing, reason: 'and no DNA card');
       await unmount(tester);
     });
 
@@ -221,9 +286,9 @@ void main() {
         },
       });
       await pumpScreen(tester, s, TripDetailScreen(id: Int64(7)), size: const Size(1200, 1600));
-      expect(find.text('9.75 PHP'), findsOneWidget);
-      expect(find.text('7.25 PHP'), findsOneWidget);
-      expect(find.text('2.50 PHP'), findsOneWidget);
+      expect(find.text('₱9.75'), findsOneWidget);
+      expect(find.text('₱7.25'), findsOneWidget);
+      expect(find.text('₱2.50'), findsOneWidget);
       expect(find.text('31 °C'), findsOneWidget);
       await unmount(tester);
     });

@@ -1561,6 +1561,7 @@
     "sync_database": "Database synchroniseren"
   },
   "companion": {
+    "energy": "Energie",
     "looking": "Je auto zoeken…",
     "looking_hint": "Via internet kan dit tot een minuut duren. Op de wifi van de auto gaat het sneller.",
     "reconnecting": "Opnieuw verbinden met je auto…",
@@ -1637,6 +1638,15 @@
     "audio_test_sent": "Testgeluid speelt af in de auto",
     "net_type": "Verbinding",
     "lan_access": "Directe verbinding via deze wifi",
+    "speedtest": "Snelheidstest",
+    "speedtest_hint": "Meet de verbinding tussen dit apparaat en je auto: de vertraging en de downloadsnelheid vanaf de auto. Er worden ongeveer tien seconden lang gegevens van de auto gedownload, wat mobiele data kost als je niet op de wifi van de auto zit.",
+    "speedtest_run": "Snelheidstest starten",
+    "speedtest_again": "Opnieuw uitvoeren",
+    "speedtest_running": "De verbinding met je auto wordt getest…",
+    "speedtest_latency": "Vertraging",
+    "speedtest_download": "Downloadsnelheid",
+    "speedtest_path": "Gemeten via",
+    "speedtest_failed": "De snelheidstest is niet voltooid. Controleer de verbinding en probeer het opnieuw.",
     "pipeline": "Camerapijplijn",
     "cameras_available": "Gevonden camera's",
     "probe_saved": "Opgeslagen. Geldt bij de volgende herstart van de camera.",

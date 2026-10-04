@@ -242,7 +242,9 @@ through the internet. It is off unless you turn it on.
 **Limits:** the car and the phone must be able to reach each other through their networks.
 Some mobile carriers put phones behind a NAT that peer-to-peer connections cannot cross; from
 such a network the companion may not reach the car until you switch to another connection.
-Over a mobile connection, live video is smoothest at Medium quality or lower.
+**If the car is online through its built-in SIM, the phone cannot reach it over mobile data**:
+both are then behind carrier NATs, and BladeWatch runs no relay to bridge them. Put the phone
+on Wi-Fi instead. Over a mobile connection, live video is smoothest at Medium quality or lower.
 
 ## Install the Companion App
 
@@ -321,7 +323,8 @@ and the release build holds no keys. Build it yourself on a Mac with Xcode:
 2. In the companion, scan the code. On Android, iOS and macOS the app uses the camera. On
    Windows and Linux, read the QR with any other QR reader (your phone's camera app will do),
    copy its text, and paste it into the companion.
-3. The companion finds the car over Pear, from anywhere; the first time can take up to a minute.
+3. The companion finds the car over Pear, from anywhere except the network combinations under
+[Limits](#remote-access-pear); the first time can take up to a minute.
    To connect directly when you are on the car's Wi-Fi, turn on **Direct connection on this
    Wi-Fi** in the same dialog on the car.
 

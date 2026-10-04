@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bladewatch_rpc/gen/bladewatch/v1/trips.pb.dart';
 import 'package:bladewatch_rpc/rpc/services/trips_service_client.dart';
 import 'package:bladewatch_rpc/trips/currency_symbols.dart';
+import 'package:bladewatch_rpc/trips/trip_costs.dart';
 import 'package:bladewatch_theme/dimens_tokens.dart';
 import 'package:bladewatch_theme/hud_theme.dart';
 import 'package:bladewatch_theme/hud_widgets.dart';
@@ -16,11 +17,12 @@ import '../common/car_map.dart';
 import '../common/format.dart';
 import '../common/hud_style.dart';
 import '../common/loader.dart';
+import '../common/stats.dart';
 
 /// Totals over the car's weekly rollups (GetSummary.rollup_json), as the in-car Trips page sums
 /// them (flutter_ui trips_controller.dart _toSummary).
 class PeriodSummary {
-  const PeriodSummary(this.trips, this.km, this.seconds, this.kwh, this.efficiency);
+  const PeriodSummary(this.trips, this.km, this.seconds, this.kwh, this.efficiency, [this.kwhPerKm = 0]);
 
   final int trips;
   final double km;
@@ -28,9 +30,15 @@ class PeriodSummary {
   final double kwh;
   final double efficiency;
 
+  /// The rollups' avgEnergyPerKm, averaged as the in-car page does; x 100 is its kWh/100km.
+  final double kwhPerKm;
+
+  /// "1h 15m", and "0h 23m" under an hour, as the in-car period summary writes it.
+  String get hours => '${seconds ~/ 3600}h ${(seconds % 3600) ~/ 60}m';
+
   static PeriodSummary? of(List<WeeklyRollupEntry> entries) {
     var trips = 0, seconds = 0, n = 0;
-    var km = 0.0, kwh = 0.0, eff = 0.0;
+    var km = 0.0, kwh = 0.0, eff = 0.0, perKm = 0.0;
     num v(Map<String, dynamic> r, String k) => (r[k] as num?) ?? 0;
     for (final e in entries) {
       final Map<String, dynamic> r;
@@ -48,31 +56,56 @@ class PeriodSummary {
       // which reads 0 whenever a trip's integer SoC% did not visibly drop, and showed a week
       // of driving as "1%" (BladeWatch-rdtj.41).
       eff += v(r, 'avgEfficiencyScore');
+      perKm += v(r, 'avgEnergyPerKm');
     }
     // Divided by every entry, unreadable ones too, as the in-car page does, so both show the
     // same number for the same week.
-    return n == 0 ? null : PeriodSummary(trips, km, seconds, kwh, eff / entries.length);
+    return n == 0 ? null : PeriodSummary(trips, km, seconds, kwh, eff / entries.length, perKm / entries.length);
   }
 }
 
-/// GetRange.range_json: the learned range and the car's own, -1 meaning "cannot predict".
-({double estimated, double builtIn, double fuel})? parseRange(String json) {
+/// GetRange.range_json: the learned range and the car's own, for electricity and fuel, -1 meaning
+/// "cannot predict".
+({double estimated, double builtIn, double fuel, double builtInFuel})? parseRange(String json) {
   if (json.isEmpty) return null;
   try {
     final d = jsonDecode(json) as Map<String, dynamic>;
     final r = (d['range'] as Map<String, dynamic>?) ?? d;
     double n(String k) => ((r[k] as num?) ?? 0).toDouble().clamp(0, double.infinity);
-    final out = (estimated: n('predictedRangeKm'), builtIn: n('builtInRangeKm'), fuel: n('fuelRangeKm'));
+    final out = (
+      estimated: n('predictedRangeKm'),
+      builtIn: n('builtInRangeKm'),
+      fuel: n('fuelRangeKm'),
+      builtInFuel: n('builtInFuelRangeKm'),
+    );
     return out.estimated == 0 && out.builtIn == 0 && out.fuel == 0 ? null : out;
   } catch (_) {
     return null;
   }
 }
 
-/// The web trips page's counterpart: trips with period totals, each trip's route and scores,
-/// learned range and driving DNA, and trip storage settings.
-class TripsScreen extends StatelessWidget {
+/// The owner's distance unit from the trip config; km when it cannot be read.
+Future<String> distanceUnit(TripsServiceClient client) async {
+  try {
+    return (await client.getConfig(GetConfigRequest())).config.distanceUnit;
+  } catch (_) {
+    return 'km';
+  }
+}
+
+/// The in-car Trips page's counterpart, showing what it shows (the owner, 2026-10-04): the period
+/// summary with its costs, each trip with its cost, route and scores, then the driver score, learned
+/// range, the period's cost and driving DNA; and the trip settings, which the car keeps in Settings.
+/// One period (7, 14 or 30 days, the car's choices) drives the list and the Stats cost card alike.
+class TripsScreen extends StatefulWidget {
   const TripsScreen({super.key});
+
+  @override
+  State<TripsScreen> createState() => _TripsScreenState();
+}
+
+class _TripsScreenState extends State<TripsScreen> {
+  var _days = 7;
 
   @override
   Widget build(BuildContext context) {
@@ -86,14 +119,23 @@ class TripsScreen extends StatelessWidget {
             child: TabBar(tabs: [Tab(text: tr('trips.tab_trips')), Tab(text: tr('trips.tab_stats')), Tab(text: tr('trips.tab_storage'))]),
           ),
         ),
-        const Expanded(child: TabBarView(children: [_TripList(), _Stats(), TripSettingsForm()])),
+        Expanded(
+          child: TabBarView(children: [
+            _TripList(days: _days, onDays: (d) => setState(() => _days = d)),
+            _Stats(days: _days),
+            const TripSettingsForm(),
+          ]),
+        ),
       ]),
     );
   }
 }
 
 class _TripList extends StatefulWidget {
-  const _TripList();
+  const _TripList({required this.days, required this.onDays});
+
+  final int days;
+  final ValueChanged<int> onDays;
 
   @override
   State<_TripList> createState() => _TripListState();
@@ -101,16 +143,30 @@ class _TripList extends StatefulWidget {
 
 class _TripListState extends State<_TripList> with LoadersState {
   late final _client = TripsServiceClient(context.session.rpc);
-  var _days = 7;
-  late final _list = loader(() async => (
-        trips: await _client.listTrips(ListTripsRequest(days: _days, limit: 100)),
-        summary: await _client.getSummary(GetSummaryRequest(days: _days)),
-      ));
+  late final _list = loader(() async {
+    final days = widget.days;
+    final trips = await _client.listTrips(ListTripsRequest(days: days, limit: 100));
+    return (
+      trips: trips,
+      summary: await _client.getSummary(GetSummaryRequest(days: days)),
+      unit: await distanceUnit(_client),
+      // Costs are a sum over the whole period (BladeWatch-mgi9, -c149) and the list is its first
+      // page: page on only when that page came back full.
+      costs: TripCosts.of(trips.trips.length < 100 ? trips.trips : await listTripsInPeriod(_client.listTrips, days)),
+    );
+  });
+
+  @override
+  void didUpdateWidget(_TripList old) {
+    super.didUpdateWidget(old);
+    if (old.days != widget.days) _list.load();
+  }
 
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
     final hud = BwHud.of(context);
+    const plain = StatTone.plain;
     // The page gutter is outside ContentWidth, so rows are exactly the content width and line up with the title bar.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: BwDimens.pagePaddingHorizontal),
@@ -118,33 +174,48 @@ class _TripListState extends State<_TripList> with LoadersState {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Wrap(spacing: 8, children: [
-              for (final d in const [7, 30, 90])
-                ChoiceChip(
-                  showCheckmark: false,
-                  key: ValueKey('trips.days.$d'),
-                  label: Text(tr('trips.days', {'count': d})),
-                  selected: _days == d,
-                  onSelected: (_) {
-                    setState(() => _days = d);
-                    _list.load();
-                  },
-                ),
-            ]),
+            // One row that scrolls, as the car has it: wrapped, "30 Days" sat alone on a second line.
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                for (final d in const [7, 14, 30])
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 8),
+                    child: ChoiceChip(
+                      showCheckmark: false,
+                      key: ValueKey('trips.days.$d'),
+                      label: Text(tr('trips.days', {'count': d})),
+                      selected: widget.days == d,
+                      onSelected: (_) => widget.onDays(d),
+                    ),
+                  ),
+              ]),
+            ),
           ),
           Expanded(
             child: LoaderView(
               loader: _list,
               builder: (context, v) {
                 final sum = PeriodSummary.of(v.summary.summary);
+                final costRow = costCells(v.costs, tr);
                 return ListView(padding: const EdgeInsets.only(bottom: BwDimens.pagePaddingBottom), children: [
+                  // The in-car period summary: three columns of a value over its label, then the costs.
                   if (sum != null)
                     Section(title: tr('trips.period_summary'), children: [
-                      InfoRow(tr('trips.tab_trips'), '${sum.trips}'),
-                      InfoRow(tr('trips.distance'), Fmt.distance(sum.km)),
-                      InfoRow(tr('trips.hours'), Fmt.duration(sum.seconds)),
-                      InfoRow(tr('trips.kwh'), sum.kwh.toStringAsFixed(1)),
-                      InfoRow(tr('trips.efficiency'), '${sum.efficiency.toStringAsFixed(0)}%'),
+                      StatGrid(center: true, rows: [
+                        [
+                          ('${sum.trips}', tr('trips.tab_trips'), plain),
+                          (sum.hours, tr('trips.hours'), plain),
+                          (sum.kwh.toStringAsFixed(1), tr('trips.kwh'), plain),
+                        ],
+                        [
+                          (Fmt.distance(sum.km, unit: v.unit), tr('trips.distance'), plain),
+                          ('${sum.efficiency.toStringAsFixed(0)}%', tr('trips.efficiency'), plain),
+                          ((sum.kwhPerKm * 100).toStringAsFixed(2), tr('trips.kwh_per_100km'), plain),
+                        ],
+                        ?costRow,
+                      ]),
+                      if (costRow == null) CostMessage(costs: v.costs),
                     ]),
                   if (v.trips.trips.isEmpty)
                     Padding(padding: const EdgeInsets.all(32), child: HudEmptyState(icon: Icons.route, message: tr('trips.no_trips_recorded'))),
@@ -154,7 +225,11 @@ class _TripListState extends State<_TripList> with LoadersState {
                       child: HudListRow(
                         key: ValueKey('trip.${t.id}'),
                         title: Fmt.dateTime(t.startTime, tr.lang),
-                        subtitle: '${Fmt.distance(t.distanceKm)} · ${Fmt.duration(t.durationSeconds)}',
+                        subtitle: [
+                          Fmt.distance(t.distanceKm, unit: v.unit),
+                          Fmt.duration(t.durationSeconds),
+                          if (t.tripCost > 0 && t.currency.isNotEmpty) Fmt.money(t.tripCost, t.currency),
+                        ].join(' · '),
                         trailing: t.overallScore > 0 ? _ScoreBadge(t.overallScore, hud) : null,
                         onTap: () async {
                           final deleted = await Navigator.of(context).push<bool>(MaterialPageRoute(
@@ -210,6 +285,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
   late final _trip = loader(() async => (
         trip: await _client.getTrip(GetTripRequest(id: widget.id)),
         trace: await _client.getGpsTrace(GetGpsTraceRequest(tripId: widget.id)),
+        unit: await distanceUnit(_client),
       ));
 
   Future<void> _delete() async {
@@ -283,30 +359,36 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
             ),
             const SizedBox(height: 12),
             Section(title: Fmt.dateTime(s.startTime, tr.lang), children: [
-              InfoRow(tr('trips.distance'), Fmt.distance(s.distanceKm)),
+              InfoRow(tr('trips.distance'), Fmt.distance(s.distanceKm, unit: v.unit)),
               InfoRow(tr('trips.duration'), Fmt.duration(s.durationSeconds)),
-              InfoRow(tr('trips.avg_speed'), '${s.avgSpeedKmh.toStringAsFixed(0)} km/h'),
-              InfoRow(tr('trips.max_speed'), '${s.maxSpeedKmh} km/h'),
+              // Energy per km x distance, as the in-car detail works it out (the RPC carries no total).
+              if (s.energyPerKm * s.distanceKm > 0)
+                InfoRow(tr('companion.energy'), '${(s.energyPerKm * s.distanceKm).toStringAsFixed(1)}${Fmt.nbsp}kWh'),
+              InfoRow(tr('trips.avg_speed'), Fmt.speed(s.avgSpeedKmh, unit: v.unit)),
+              InfoRow(tr('trips.max_speed'), Fmt.speed(s.maxSpeedKmh.toDouble(), unit: v.unit)),
               InfoRow(tr('trips.soc'), '${s.socStart.toStringAsFixed(0)}% → ${s.socEnd.toStringAsFixed(0)}%'),
-              if (s.tripCost > 0) InfoRow(tr('trips.cost'), CurrencySymbols.money(s.tripCost, s.currency)),
+              if (s.tripCost > 0) InfoRow(tr('trips.cost'), Fmt.money(s.tripCost, s.currency)),
               // Which tank the money came out of (BladeWatch-rdtj.48): the two halves of the cost
               // above, on a trip that recorded the fuel counter.
               if (s.hasFuelData) ...[
-                InfoRow(tr('trips.fuel_cost'), CurrencySymbols.money(s.fuelCost, s.currency)),
-                InfoRow(tr('trips.electric_cost'), CurrencySymbols.money(s.electricCost, s.currency)),
-                InfoRow(tr('trips.fuel_used'), '${s.litresUsed.toStringAsFixed(2)} ${tr('trips.litres_short')}'),
+                InfoRow(tr('trips.fuel_cost'), Fmt.money(s.fuelCost, s.currency)),
+                InfoRow(tr('trips.electric_cost'), Fmt.money(s.electricCost, s.currency)),
+                InfoRow(tr('trips.fuel_used'), '${s.litresUsed.toStringAsFixed(1)} ${tr('trips.litres_short')}'),
               ],
               if (s.extTempC != 0) InfoRow(tr('trips.ext_temp'), '${s.extTempC} °C'),
               if (d.elevationGainM > 0) InfoRow(tr('trips.elev_gain'), '+${d.elevationGainM.toStringAsFixed(0)} m'),
             ]),
+            // The in-car detail's score bars, coloured by band; the overall score stays on top.
             if (s.overallScore > 0)
               Section(title: tr('trips.driving_scores'), children: [
                 InfoRow(tr('trips.overall'), '${s.overallScore}'),
-                InfoRow(tr('companion.score_anticipation'), '${d.anticipationScore}'),
-                InfoRow(tr('companion.score_smoothness'), '${d.smoothnessScore}'),
-                InfoRow(tr('companion.score_speed'), '${d.speedDisciplineScore}'),
-                InfoRow(tr('trips.efficiency'), '${d.efficiencyScore}'),
-                InfoRow(tr('companion.score_consistency'), '${d.consistencyScore}'),
+                ScoreBars(banded: true, bars: [
+                  (tr('companion.score_anticipation'), d.anticipationScore),
+                  (tr('companion.score_smoothness'), d.smoothnessScore),
+                  (tr('companion.score_speed'), d.speedDisciplineScore),
+                  (tr('trips.efficiency'), d.efficiencyScore),
+                  (tr('companion.score_consistency'), d.consistencyScore),
+                ]),
               ]),
           ]);
         },
@@ -315,7 +397,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> with LoadersState {
 }
 
 class _Stats extends StatefulWidget {
-  const _Stats();
+  const _Stats({required this.days});
+
+  /// The Trips tab's period, for the cost card (the in-car Stats tab follows its filter too).
+  final int days;
 
   @override
   State<_Stats> createState() => _StatsState();
@@ -325,35 +410,69 @@ class _StatsState extends State<_Stats> with LoadersState {
   late final _client = TripsServiceClient(context.session.rpc);
   late final _stats = loader(() async => (
         range: await _client.getRange(GetRangeRequest()),
+        // 30 days whatever the period, as the in-car page asks for it.
         dna: await _client.getDna(GetDnaRequest(days: 30)),
+        unit: await distanceUnit(_client),
+        costs: TripCosts.of(await listTripsInPeriod(_client.listTrips, widget.days)),
       ));
+
+  @override
+  void didUpdateWidget(_Stats old) {
+    super.didUpdateWidget(old);
+    if (old.days != widget.days) _stats.load();
+  }
 
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
+    final hud = BwHud.of(context);
+    final big = hudText(28, hud.textPrimary, lineHeight: 36, weight: FontWeight.w700);
+    final mid = hudText(18, hud.textPrimary, lineHeight: 24, weight: FontWeight.w700);
+    final note = hudText(14, hud.textSecondary, lineHeight: 20);
+    Widget centred(String text, TextStyle style) => Center(child: Text(text, textAlign: TextAlign.center, style: style));
     return LoaderView(
       loader: _stats,
       builder: (context, v) {
         final r = parseRange(v.range.rangeJson);
-        final dna = v.dna.dna;
+        final dna = v.dna.hasDna() ? v.dna.dna : null;
+        String dist(double km) => Fmt.distance(km, unit: v.unit, decimals: 0);
+        final bydEstimate = tr('trips.byd_estimate_value');
         return PageList(children: [
-          Section(title: tr('trips.personalized_range'), children: [
-            if (r == null) Text(v.range.message.isNotEmpty ? v.range.message : tr('trips.not_enough_data')),
-            if (r != null && r.estimated > 0) InfoRow(tr('trips.personalized_range'), '${r.estimated.toStringAsFixed(0)} km'),
-            if (r != null && r.builtIn > 0) InfoRow(tr('trips.byd_estimate'), '${r.builtIn.toStringAsFixed(0)} km'),
-            if (r != null && r.fuel > 0) InfoRow(tr('trips.fuel_range'), '${r.fuel.toStringAsFixed(0)} km'),
+          // The five DNA scores out of 500, and the overall one out of 100.
+          Section(title: tr('trips.driver_score'), children: [
+            centred(
+                '${dna == null ? 0 : dna.anticipation + dna.smoothness + dna.speedDiscipline + dna.efficiency + dna.consistency} / 500',
+                big),
+            centred('${tr('trips.overall')}: ${dna?.overall ?? 0} / 100', note),
           ]),
-          Section(title: tr('trips.driving_dna'), children: [
-            if (!v.dna.hasDna() || dna.overall == 0) Text(tr('trips.no_dna_data')),
-            if (v.dna.hasDna() && dna.overall > 0) ...[
-              InfoRow(tr('trips.overall'), '${dna.overall}'),
-              InfoRow(tr('companion.score_anticipation'), '${dna.anticipation}'),
-              InfoRow(tr('companion.score_smoothness'), '${dna.smoothness}'),
-              InfoRow(tr('companion.score_speed'), '${dna.speedDiscipline}'),
-              InfoRow(tr('trips.efficiency'), '${dna.efficiency}'),
-              InfoRow(tr('companion.score_consistency'), '${dna.consistency}'),
+          Section(title: tr('trips.personalized_range'), children: [
+            if (r == null || r.estimated <= 0)
+              centred(v.range.message.isNotEmpty ? v.range.message : tr('trips.not_enough_data'), note)
+            else ...[
+              centred(dist(r.estimated), big),
+              if (r.builtIn > 0) centred('$bydEstimate ${dist(r.builtIn)}', note),
+            ],
+            // A PHEV's fuel range, never added into the electric one: different tanks, different
+            // confidence. Absent unless the tank size is set (the car returns -1 without it).
+            if (r != null && r.fuel > 0) ...[
+              const SizedBox(height: 12),
+              centred('${tr('trips.fuel_range')} ${dist(r.fuel)}', mid),
+              if (r.builtInFuel > 0) centred('$bydEstimate ${dist(r.builtInFuel)}', note),
             ],
           ]),
+          Section(title: tr('trips.cost'), children: [
+            if (costCells(v.costs, tr) case final cells?) StatGrid(center: true, rows: [cells]) else CostMessage(costs: v.costs),
+          ]),
+          if (dna != null)
+            Section(title: tr('trips.driving_dna'), children: [
+              ScoreBars(bars: [
+                (tr('companion.score_anticipation'), dna.anticipation),
+                (tr('companion.score_smoothness'), dna.smoothness),
+                (tr('companion.score_speed'), dna.speedDiscipline),
+                (tr('trips.efficiency'), dna.efficiency),
+                (tr('companion.score_consistency'), dna.consistency),
+              ]),
+            ]),
         ]);
       },
     );
@@ -478,13 +597,7 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
               },
             ),
             const SizedBox(height: 8),
-            TextField(
-              key: const ValueKey('trips.rate'),
-              controller: _rate,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(labelText: tr('trips.electricity_rate')),
-            ),
-            const SizedBox(height: 16),
+            // Currency first: the rates below are in it, and their units say so (₱/kWh, ₱/L).
             DropdownButtonFormField<String>(
               key: const ValueKey('trips.currency'),
               initialValue: _currency,
@@ -501,6 +614,30 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
                 _currencyPicked = true;
               }),
             ),
+            const SizedBox(height: 16),
+            TextField(
+              key: const ValueKey('trips.rate'),
+              controller: _rate,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: tr('trips.electricity_rate'), suffixText: '$_currency/kWh'),
+            ),
+            if (_fuelShown) ...[
+              const SizedBox(height: 16),
+              TextField(
+                key: const ValueKey('trips.fuel_price'),
+                controller: _fuelPrice,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                    labelText: tr('trips.fuel_price'), suffixText: '$_currency/L', helperText: tr('trips.fuel_price_sub'), helperMaxLines: 3),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                key: const ValueKey('trips.tank'),
+                controller: _tank,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(labelText: tr('trips.tank_capacity'), helperText: tr('trips.tank_capacity_sub'), helperMaxLines: 3),
+              ),
+            ],
             const SizedBox(height: 12),
             Text(tr('trip.settings.distance_unit'), style: Theme.of(context).textTheme.titleSmall),
             Wrap(spacing: 8, children: [
@@ -514,22 +651,6 @@ class _TripSettingsFormState extends State<TripSettingsForm> with LoadersState {
                   onSelected: (_) => setState(() => _unit = unit),
                 ),
             ]),
-            if (_fuelShown) ...[
-              const SizedBox(height: 16),
-              TextField(
-                key: const ValueKey('trips.fuel_price'),
-                controller: _fuelPrice,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: tr('trips.fuel_price'), helperText: tr('trips.fuel_price_sub'), helperMaxLines: 3),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                key: const ValueKey('trips.tank'),
-                controller: _tank,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: tr('trips.tank_capacity'), helperText: tr('trips.tank_capacity_sub'), helperMaxLines: 3),
-              ),
-            ],
           ]),
           Section(title: tr('trips.trip_storage'), children: [
             Text(tr('trips.storage_location'), style: Theme.of(context).textTheme.titleSmall),

@@ -498,6 +498,21 @@ class HudLoading extends StatelessWidget {
   }
 }
 
+/// A nav label's text scale before any fitting: the system's, capped at 1.3x. Chrome, not content:
+/// a phone's largest text size would make one item's label twice its neighbours'.
+TextScaler navLabelBaseScaler(BuildContext context) => MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3);
+
+/// The style of a [HudNavItem] label; [selected] is bold and tracked tighter.
+TextStyle navLabelStyle({required Color color, required bool selected, bool horizontal = false}) => TextStyle(
+      fontFamily: BwHud.fontFamily,
+      fontSize: horizontal ? 12 : 10,
+      height: 1.2,
+      color: color,
+      fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+      // Tailwind tracking-tighter on the active label.
+      letterSpacing: horizontal ? 0.5 : (selected ? -0.5 : 0),
+    );
+
 /// A navigation item, the in-car rail's look: a 4 dp box, inactive bare (18 dp icon, slate label), active with the
 /// top-to-bottom gradient, a 1 dp accent border, a 20 dp icon, a bold label and (in dark) the glow. [label] is
 /// upper-cased here and scaled down (never cut or wrapped) if it is too long for the item.
@@ -523,7 +538,13 @@ class HudNavItem extends StatelessWidget {
     this.dense = false,
     this.horizontal = false,
     this.badge = 0,
+    this.labelScaler,
   });
+
+  /// The label's text scale when a bar sizes every item's label alike (the companion's bottom bar:
+  /// one long label shrank on its own beside full-size neighbours, 2026-10-04). Null keeps the
+  /// system's, clamped, with this label alone scaled down to fit.
+  final TextScaler? labelScaler;
 
   @override
   Widget build(BuildContext context) {
@@ -543,17 +564,8 @@ class HudNavItem extends StatelessWidget {
     final text = Text(
       label.toUpperCase(),
       maxLines: 1,
-      // Chrome, not content: a phone's largest text size would make one item's label twice its neighbours'.
-      textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3),
-      style: TextStyle(
-        fontFamily: BwHud.fontFamily,
-        fontSize: horizontal ? 12 : 10,
-        height: 1.2,
-        color: labelColor,
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-        // Tailwind tracking-tighter on the active label.
-        letterSpacing: horizontal ? 0.5 : (selected ? -0.5 : 0),
-      ),
+      textScaler: labelScaler ?? navLabelBaseScaler(context),
+      style: navLabelStyle(color: labelColor, selected: selected, horizontal: horizontal),
     );
 
     return Semantics(

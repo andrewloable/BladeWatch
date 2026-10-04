@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:bladewatch_companion/car/media.dart';
 import 'package:bladewatch_companion/screens/common/car_map.dart';
+import 'package:bladewatch_companion/screens/common/loader.dart';
 import 'package:bladewatch_companion/screens/location/location_screen.dart';
 import 'package:bladewatch_companion/screens/recordings/clips.dart';
 import 'package:bladewatch_companion/screens/recordings/recordings_screen.dart';
@@ -265,6 +266,26 @@ void main() {
       expect(find.text('86 km'), findsOneWidget);
       expect(find.text(t('companion.week_fuel_range')), findsOneWidget);
       expect(find.text('356 km'), findsOneWidget);
+      await unmount(tester);
+    });
+
+    testWidgets('charge and fuel say what is left once the pack and tank size are known', (tester) async {
+      final s = TestSession();
+      state(s);
+      await pumpScreen(tester, s, const VehicleScreen(), size: const Size(420, 2400));
+      String value(String key) => tester.widget<InfoRow>(find.widgetWithText(InfoRow, t(key))).value;
+      expect(value('vehicle.charge'), '70%', reason: 'no size: the percent alone');
+      expect(value('vehicle.fuel'), '40%');
+      await unmount(tester);
+
+      final p = TestSession();
+      state(p);
+      p.rpc.stubJson('SystemService', 'GetSohNominal', {'nominalKwh': 18.3, 'nominalSource': 'catalogue'});
+      p.rpc.stubJson('TripsService', 'GetConfig', {'success': true, 'config': {'fuelTankCapacityL': 48.0}});
+      await pumpScreen(tester, p, const VehicleScreen(), size: const Size(420, 2400));
+      await tester.pump();
+      expect(value('vehicle.charge'), '70%\u00A0/ 12.8\u00A0kWh');
+      expect(value('vehicle.fuel'), '40%\u00A0/ 19\u00A0L');
       await unmount(tester);
     });
 

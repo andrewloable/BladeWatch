@@ -1561,6 +1561,7 @@
     "sync_database": "Synchroniser la base"
   },
   "companion": {
+    "energy": "Énergie",
     "looking": "Recherche de votre voiture…",
     "looking_hint": "Par Internet, cela peut prendre jusqu'à une minute. Sur le Wi-Fi de la voiture, c'est plus rapide.",
     "reconnecting": "Reconnexion à votre voiture…",
@@ -1637,6 +1638,15 @@
     "audio_test_sent": "Son de test en cours dans la voiture",
     "net_type": "Connexion",
     "lan_access": "Connexion directe sur ce Wi-Fi",
+    "speedtest": "Test de débit",
+    "speedtest_hint": "Mesure la liaison entre cet appareil et votre voiture : le délai de réponse et le débit de téléchargement depuis la voiture. Le test télécharge des données depuis la voiture pendant une dizaine de secondes, ce qui consomme des données mobiles si vous n'êtes pas sur le Wi-Fi de la voiture.",
+    "speedtest_run": "Lancer le test de débit",
+    "speedtest_again": "Relancer",
+    "speedtest_running": "Test de la liaison avec votre voiture…",
+    "speedtest_latency": "Délai",
+    "speedtest_download": "Débit de téléchargement",
+    "speedtest_path": "Mesuré via",
+    "speedtest_failed": "Le test de débit n'a pas abouti. Vérifiez la connexion et réessayez.",
     "pipeline": "Chaîne des caméras",
     "cameras_available": "Caméras trouvées",
     "probe_saved": "Enregistré. S'applique au prochain redémarrage de la caméra.",

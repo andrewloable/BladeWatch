@@ -593,9 +593,11 @@ upper-cased.
   Recording and Surveillance tab rows are ruled off the content like the Trips tab bar. The standalone Surveillance
   route (`showTitleBar: true`) draws its own title bar; inside the hub the pane title is the header.
 
-**Dashboard** ([dashboard_screen.dart](../flutter_ui/lib/screens/dashboard/dashboard_screen.dart)). Four blocks
+**Dashboard** ([dashboard_screen.dart](../flutter_ui/lib/screens/dashboard/dashboard_screen.dart)). Five blocks
 down a 24 dp-padded page, spread apart (`justify-between`) when the window is taller than they are and
-scrolling when it is shorter: the natural height is about 590 dp, inside the head unit's 604 dp.
+scrolling when it is shorter. The natural height was about 590 dp, inside the head unit's 604 dp, until the
+VEHICLE card (2026-10-04) added about 100: on the head unit the tile row now starts at about 628 dp and is
+reached by scrolling (measured on the car).
 - *Title bar*: an 8 dp magenta square in a `HudPulse`, `DASHBOARD // OVERVIEW` (the localized rail label plus
   `dashboard_hud_overview`, uppercased) at 20 dp bold, tracking 0.05em, cyan with a glow in dark; on the right
   `SECURE_LINK: ACTIVE` only while the Remote access tile is Online (`pear.enabled && running && reachable`),
@@ -605,10 +607,13 @@ scrolling when it is shorter: the natural height is about 590 dp, inside the hea
   the View all trips button (a 26 dp box; the 48 dp touch target is absorbed by trimming the card's top padding by 11
   and the header's bottom padding by 11, so the layout matches the reference). Three columns of `1fr`, 24 gap, a 1 dp
   rule after the first two, running through the stat rows. Row 1 values 30 dp (Trips and Distance glow cyan in dark; the
-  Drive Time value glows magenta and its label is magenta), rows 2 and 3 24 dp, labels 12 dp; a distance draws its unit
+  Drive Time value glows magenta and its label is magenta), the cost row 24 dp, labels 12 dp; a distance draws its unit
   (after the last space) at 18 dp in the bright accent inside the SAME `Text.rich`, so the plain text stays `83.3 km`.
-  The charge row's third column holds Fuel and Fuel Range side by side, and is empty on a car with no tank. The corner
-  glows are radial gradients, not blurs.
+  The corner glows are radial gradients, not blurs.
+- *Vehicle card* (2026-10-04): the same panel (`_HeroPanel`, shared with the summary card), headed `VEHICLE`
+  (`dashboard_metric_vehicle`) with a magenta car icon and no button, so its paddings are the reference's 24 and 12
+  untrimmed. One 24 dp row on the summary card's three columns, so the columns line up down the page: Battery, EV
+  Range, and a third column holding Fuel and Fuel Range side by side, empty on a car with no tank.
 - *Chips*: 4 dp boxes, 20x10 padding, 12 dp bold uppercase; not tappable. The recording chip has a pulsing dot only while
   recording. Pair a device is the same box in magenta (its label is the localized `pairing_title`, uppercased, so it
   reads `PAIR A DEVICE`, not the reference's `PAIR DEVICE`).
@@ -634,9 +639,10 @@ re-exports them), and Space Mono is declared by that package, so a `TextStyle` w
 lined up with the page below it and capped at the same 960 dp) over the page. Wide (>= 700 dp): a permanent 240 dp side
 panel on `railBackground` with the `BladeWatch` wordmark as a header that never scrolls and every place as a
 `HudNavItem` (`horizontal`, 48 dp, the in-car rail's active box: gradient, accent border, glow in dark). Phone: a bottom
-bar of four places and "More", each a vertical `HudNavItem`; every label shows, upper-case, scaled down to its fifth
-of the width (the old Material bar hard-wrapped a long one mid-word) and its text scale is capped at 1.3 so one item's
-label is never twice its neighbour's. The Events item carries the unseen-alert count as a badge. "More" is a
+bar of four places and "More", each a vertical `HudNavItem`; every label shows, upper-case, at ONE size for the whole
+bar: the largest at which the longest label fits its fifth of the width (`labelScaler`, 2026-10-04: scaled one by one,
+RECORDINGS sat smaller than its neighbours; the old Material bar hard-wrapped a long one mid-word), and the text scale
+is capped at 1.3. The Events item carries the unseen-alert count as a badge. "More" is a
 `showHudSheet` of `HudListRow`s. `HudNavItem` is the kit's version of the in-car rail item, which now uses it too.
 
 The connection page (`CarPage`) is one `HudPanel` per state with a `HudStatusDot` that is the REAL state of the link:
@@ -650,10 +656,18 @@ under an upper-case accent title (the action drops below it when both do not fit
 14 dp bold value, and at a large text size (over about 1.4x) it stacks label over value instead of breaking a word;
 `LoaderView` shows `HudLoading`. Every screen built from these is on the HUD without edits.
 
+**Figures (`StatGrid`, `ScoreBars`, 2026-10-04 design review).** A group of figures is sized together, never one by
+one: every value in a grid takes the largest size at which the longest fits its column on one line, and every label
+one size too, wrapping between words before it shrinks (only a word too long for its column shrinks them). Columns
+are 16 dp apart. Score bars give label and bar half the row each, with all labels at one size. Shrinking each text on
+its own had put "₱0.00" beside a smaller "₱49.96", one tiny label among full-size ones, and clipped "Electric Cost".
+
 **Dashboard, Events, Alerts.** The Dashboard's chips are 4 dp boxes with a `HudStatusDot` that is real state: the
 route is cyan, the services amber when partial, the recording dot magenta and pulsing only while the car records
-(grey and still when idle), ACC and safe zone cyan when true. This week is a value-over-label row (Trips and Distance
-cyan, Drive time magenta, each scaled down before it wraps) followed by the costs and the car's charge and fuel rows.
+(grey and still when idle), ACC and safe zone cyan when true. Vehicle comes first: Battery and Range (Electric range
+on a car with a tank), then Fuel and Fuel range, as value-over-label rows two across without a glow, then Charging,
+health and 12 V as plain rows. This week follows: Trips and Distance cyan, Drive time magenta, then the costs as a
+plain value-over-label row, each value scaled down before it wraps (2026-10-04; there is no SOC or total Range row).
 Events' alerts are `HudListRow`s (severity icon in the status colours, the play icon on a clip alert); a row that has
 arrived since the list was last seen is the accent-bordered one, and an empty inbox is a `HudEmptyState`. The alert
 settings are `Section`s with the theme's switches.

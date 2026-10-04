@@ -1561,6 +1561,7 @@
     "sync_database": "Datenbank abgleichen"
   },
   "companion": {
+    "energy": "Energie",
     "looking": "Suche nach Ihrem Auto…",
     "looking_hint": "Über das Internet kann das bis zu einer Minute dauern. Im WLAN des Autos geht es schneller.",
     "reconnecting": "Verbindung zum Auto wird wiederhergestellt…",
@@ -1637,6 +1638,15 @@
     "audio_test_sent": "Testton wird im Auto abgespielt",
     "net_type": "Verbindung",
     "lan_access": "Direktverbindung über dieses WLAN",
+    "speedtest": "Geschwindigkeitstest",
+    "speedtest_hint": "Misst die Verbindung zwischen diesem Gerät und Ihrem Auto: die Verzögerung und die Download-Geschwindigkeit vom Auto. Dabei werden etwa zehn Sekunden lang Daten vom Auto geladen – das verbraucht mobile Daten, wenn Sie nicht im WLAN des Autos sind.",
+    "speedtest_run": "Geschwindigkeitstest starten",
+    "speedtest_again": "Erneut starten",
+    "speedtest_running": "Verbindung zu Ihrem Auto wird getestet …",
+    "speedtest_latency": "Verzögerung",
+    "speedtest_download": "Download-Geschwindigkeit",
+    "speedtest_path": "Gemessen über",
+    "speedtest_failed": "Der Geschwindigkeitstest wurde nicht abgeschlossen. Prüfen Sie die Verbindung und versuchen Sie es erneut.",
     "pipeline": "Kamera-Pipeline",
     "cameras_available": "Gefundene Kameras",
     "probe_saved": "Gespeichert. Gilt beim nächsten Kameraneustart.",

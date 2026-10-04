@@ -1561,6 +1561,7 @@
     "sync_database": "同步数据库"
   },
   "companion": {
+    "energy": "能耗",
     "looking": "正在查找您的车辆…",
     "looking_hint": "通过互联网可能需要一分钟。在车辆的 Wi-Fi 上会更快。",
     "reconnecting": "正在重新连接车辆…",
@@ -1637,6 +1638,15 @@
     "audio_test_sent": "正在车内播放测试音",
     "net_type": "连接",
     "lan_access": "通过此 Wi-Fi 直接连接",
+    "speedtest": "速度测试",
+    "speedtest_hint": "测量此设备与您的车辆之间的连接：延迟，以及从车辆下载的速度。测试会从车辆下载约十秒的数据，如果您未连接车辆的 Wi-Fi，将消耗移动数据。",
+    "speedtest_run": "运行速度测试",
+    "speedtest_again": "重新运行",
+    "speedtest_running": "正在测试与您车辆的连接…",
+    "speedtest_latency": "延迟",
+    "speedtest_download": "下载速度",
+    "speedtest_path": "测量路径",
+    "speedtest_failed": "速度测试未完成。请检查连接后重试。",
     "pipeline": "摄像头管线",
     "cameras_available": "发现的摄像头",
     "probe_saved": "已保存。将在摄像头下次重启时生效。",

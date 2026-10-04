@@ -1561,6 +1561,7 @@
     "sync_database": "同步資料庫"
   },
   "companion": {
+    "energy": "能耗",
     "looking": "正在尋找您的車輛…",
     "looking_hint": "透過網際網路可能需要一分鐘。在車輛的 Wi-Fi 上會更快。",
     "reconnecting": "正在重新連線車輛…",
@@ -1637,6 +1638,15 @@
     "audio_test_sent": "正在車內播放測試音",
     "net_type": "連線",
     "lan_access": "透過此 Wi-Fi 直接連線",
+    "speedtest": "速度測試",
+    "speedtest_hint": "測量此裝置與您的車輛之間的連線：延遲，以及從車輛下載的速度。測試會從車輛下載約十秒的資料，如果您未連線到車輛的 Wi-Fi，將會使用行動數據。",
+    "speedtest_run": "執行速度測試",
+    "speedtest_again": "重新執行",
+    "speedtest_running": "正在測試與您車輛的連線…",
+    "speedtest_latency": "延遲",
+    "speedtest_download": "下載速度",
+    "speedtest_path": "測量路徑",
+    "speedtest_failed": "速度測試未完成。請檢查連線後再試一次。",
     "pipeline": "攝影機管線",
     "cameras_available": "找到的攝影機",
     "probe_saved": "已儲存。將在攝影機下次重新啟動時生效。",

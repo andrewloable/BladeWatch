@@ -37,6 +37,7 @@ The server exposes two parallel API surfaces over the same port:
    | `/video/*` | player byte-range requests (Range, 206, ETag) |
    | `/thumb/*` | `<img src>` |
    | `/api/stream/still` | a JPEG the live view consumes as an image URL |
+   | `GET /speedtest/down?bytes=N` | the companion's Diagnostics speed test (BladeWatch-j6ra): `N` random bytes (clamped to 0..32 MiB; missing or invalid is 0, a ping), `Content-Length` exact, `Cache-Control: no-store`, behind the normal JWT. Binary, so base64-in-JSON would distort the measurement. Download only: the server buffers a request body before it checks auth, so an upload route would need streaming-body plumbing first. Deliberately not under `/api/` (`NoRestJsonRoutesTest`) |
 
    Everything else — every JSON endpoint that used to live under `/api/*`, and `/status` — is a
    ConnectRPC method. `AuthApiHandler` is the one handler that still has an HTTP entry point

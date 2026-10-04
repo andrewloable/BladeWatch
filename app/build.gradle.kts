@@ -324,8 +324,8 @@ android {
         // execution limits) that could break the existing daemons; not touched by this bump.
         minSdk = 29
         targetSdk = 25
-        versionCode = 14100
-        versionName = "1.4.1.0"
+        versionCode = 14101
+        versionName = "1.4.1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // Note: abiFilters removed - using splits.abi instead for size optimization

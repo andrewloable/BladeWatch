@@ -48,12 +48,16 @@ public class NoRestHandlerEntryPointsTest {
      *       and {@code /thumb/*} byte ranges to a player and an {@code <img src>}. That is why
      *       it cannot go in {@code INVERTED}: the file legitimately still names an
      *       {@code OutputStream} parameter.
+     *   <li>{@code SpeedTestApiHandler} — {@code GET /speedtest/down}, an incompressible binary
+     *       payload the companion times (BladeWatch-j6ra). Base64 inside Connect JSON would distort
+     *       the very number being measured.
      * </ul>
      */
     private static final List<String> BINARY_OR_BOOTSTRAP = Arrays.asList(
         "AuthApiHandler",
         "StreamingApiHandler",
-        "RecordingsApiHandler"
+        "RecordingsApiHandler",
+        "SpeedTestApiHandler"
     );
 
     /** Handlers already inverted. Add to this list as each one follows — never remove. */

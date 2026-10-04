@@ -1561,6 +1561,7 @@
     "sync_database": "Sincronizar banco de dados"
   },
   "companion": {
+    "energy": "Energia",
     "looking": "Procurando seu carro…",
     "looking_hint": "Pela internet isso pode levar até um minuto. No Wi-Fi do carro é mais rápido.",
     "reconnecting": "Reconectando ao seu carro…",
@@ -1637,6 +1638,15 @@
     "audio_test_sent": "Tocando um som de teste no carro",
     "net_type": "Conexão",
     "lan_access": "Conexão direta nesta rede Wi-Fi",
+    "speedtest": "Teste de velocidade",
+    "speedtest_hint": "Mede a conexão entre este dispositivo e seu carro: o atraso e a velocidade de download do carro. Ele baixa dados do carro por cerca de dez segundos, o que consome dados móveis se você não estiver no Wi-Fi do carro.",
+    "speedtest_run": "Executar teste de velocidade",
+    "speedtest_again": "Executar novamente",
+    "speedtest_running": "Testando a conexão com seu carro…",
+    "speedtest_latency": "Atraso",
+    "speedtest_download": "Velocidade de download",
+    "speedtest_path": "Medido por",
+    "speedtest_failed": "O teste de velocidade não foi concluído. Verifique a conexão e tente novamente.",
     "pipeline": "Pipeline das câmeras",
     "cameras_available": "Câmeras encontradas",
     "probe_saved": "Salvo. Vale a partir da próxima reinicialização da câmera.",

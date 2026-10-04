@@ -123,6 +123,61 @@ void main() {
       expect(car.asked, greaterThan(before + 1), reason: 'watching again');
       s.dispose();
     });
+
+    // BladeWatch-a7ev: the speed test fills the link, so the watch's own question queued behind it,
+    // timed out twice, and a healthy car was shown as silent -- CarPage then swapped the screen out,
+    // and the result with it.
+    testWidgets('a transfer that fills the link is not mistaken for a silent car', (tester) async {
+      final car = _Quiet()..silent = true;
+      final s = watched(car);
+      final done = Completer<void>();
+      final run = s.duringBulkTransfer(() => done.future);
+      expect(s.bulkTransfer, isTrue);
+      await tester.pump(const Duration(seconds: 10));
+      expect(s.answering, isTrue);
+      expect(car.asked, 0, reason: 'nothing is asked while the link is full');
+
+      done.complete();
+      await run;
+      expect(s.bulkTransfer, isFalse);
+      await tester.pump(const Duration(seconds: 8));
+      expect(s.answering, isFalse, reason: 'a dead car is still noticed once the transfer is over');
+      s.dispose();
+    });
+
+    testWidgets('an RPC that fails behind the transfer is not a silent car either, but only while it runs', (tester) async {
+      final car = _ScriptedCar()..answer = false; // status 0: no HTTP answer at all
+      final s = watched(car);
+      final done = Completer<void>();
+      final run = s.duringBulkTransfer(() => done.future);
+
+      await expectLater(s.rpc.call('StreamService', 'GetQuality', null, (j) => j), throwsA(isA<ConnectError>()));
+      expect(s.answering, isTrue);
+
+      done.complete();
+      await run;
+      await expectLater(s.rpc.call('StreamService', 'GetQuality', null, (j) => j), throwsA(isA<ConnectError>()));
+      expect(s.answering, isFalse);
+      s.dispose();
+    });
+
+    testWidgets('the hold ends when the body throws, and overlapping transfers hold until both are done', (tester) async {
+      final s = watched(_Quiet());
+      await expectLater(s.duringBulkTransfer<void>(() async => throw StateError('x')), throwsStateError);
+      expect(s.bulkTransfer, isFalse);
+
+      final a = Completer<void>();
+      final b = Completer<void>();
+      final ra = s.duringBulkTransfer(() => a.future);
+      final rb = s.duringBulkTransfer(() => b.future);
+      a.complete();
+      await ra;
+      expect(s.bulkTransfer, isTrue, reason: 'the second transfer is still running');
+      b.complete();
+      await rb;
+      expect(s.bulkTransfer, isFalse);
+      s.dispose();
+    });
   });
 
   // BladeWatch-rdtj.38: the car's own Wi-Fi address, learned when the route comes up.

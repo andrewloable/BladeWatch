@@ -9,6 +9,7 @@ import 'car/car_page.dart';
 import 'car/car_session.dart';
 import 'car/car_store.dart';
 import 'i18n.dart';
+import 'screens/common/stats.dart' show fitScaler;
 import 'screens/alerts/alerts_controller.dart';
 import 'screens/common/loader.dart' show ContentWidth;
 import 'screens/common/shell_nav.dart';
@@ -373,21 +374,34 @@ class _BottomBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: ListenableBuilder(
             listenable: alerts,
-            builder: (context, _) => Row(
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  Expanded(
-                    child: HudNavItem(
-                      key: ValueKey('nav.${items[i].id}'),
-                      icon: items[i].icon,
-                      label: items[i].label,
-                      selected: items[i].selected,
-                      badge: items[i].id == 'events' ? alerts.unseen : 0,
-                      onTap: () => onSelect(i),
+            builder: (context, _) => LayoutBuilder(builder: (context, constraints) {
+              // Every label one size, the largest at which the longest fits: on its own, RECORDINGS
+              // shrank below its neighbours (the owner, 2026-10-04). An item's label has its width
+              // less 4 + 2 dp of padding a side and the 1 dp border; bold is the wider weight.
+              final width = constraints.maxWidth / items.length - 2 * (4 + 2 + 1);
+              final labels = fitScaler(
+                context,
+                navLabelStyle(color: hud.navInactive, selected: true),
+                [for (final item in items) (item.label.toUpperCase(), width)],
+                base: navLabelBaseScaler(context),
+              );
+              return Row(
+                children: [
+                  for (var i = 0; i < items.length; i++)
+                    Expanded(
+                      child: HudNavItem(
+                        key: ValueKey('nav.${items[i].id}'),
+                        icon: items[i].icon,
+                        label: items[i].label,
+                        selected: items[i].selected,
+                        badge: items[i].id == 'events' ? alerts.unseen : 0,
+                        labelScaler: labels,
+                        onTap: () => onSelect(i),
+                      ),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              );
+            }),
           ),
         ),
       ),

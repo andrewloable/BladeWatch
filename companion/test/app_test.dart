@@ -155,6 +155,12 @@ void main() {
       expect(tester.widget<Text>(label).maxLines, 1, reason: id);
       expect(find.ancestor(of: label, matching: find.byType(FittedBox)), findsOneWidget, reason: id);
     }
+    // And all of them at one size: on its own, RECORDINGS shrank below its neighbours (the owner, 2026-10-04).
+    final scalers = {
+      for (final id in ['dashboard', 'live', 'events', 'recordings', 'more'])
+        tester.widget<Text>(find.descendant(of: find.byKey(ValueKey('nav.$id')), matching: find.text(t('nav.$id').toUpperCase()))).textScaler,
+    };
+    expect(scalers, hasLength(1));
     await tester.pumpWidget(const SizedBox());
   });
 

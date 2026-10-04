@@ -377,6 +377,20 @@ retrying by itself. The fix would be a relay for when hole punching fails (hyper
 `relayThrough`: a public blind relay, or an always-on peer the owner runs); the owner accepted
 the limitation for now, to be revisited if it bites in daily use.
 
+**Car on its built-in SIM: the phone must be on Wi-Fi (owner decision 2026-10-03, no relays).**
+A carrier's CGNAT puts the car behind a randomizing NAT too. When BOTH ends randomize, hyperdht
+does not even try to punch: it aborts with `HOLEPUNCH_DOUBLE_RANDOMIZED_NATS`
+(`hyperdht/lib/connect.js`), so a phone on mobile data never reaches a car on cellular. Observed
+2026-10-03 from iOS and Android companions on mobile data: no connection at all. With the car
+still on its SIM, a phone on home Wi-Fi connected. That home network is Starlink, CGNAT but
+consistent (`randomized=false`), so it was the probabilistic case above, not a guaranteed one.
+A relay is the only fix, and the owner declined one. A relay at home would not work anyway:
+there is no port forward behind Starlink's CGNAT, and hyperdht exchanges IPv4 addresses only
+(`addresses6: null` in `hyperdht/lib/server.js`), so Starlink's public IPv6 does not help.
+pear-end already bundles the relay client (`blind-relay`) and
+Hyperswarm already accepts `relayThrough`, so if this is ever revisited, the work is an
+always-on peer with a public IPv4 address and UDP open, plus a pear-end flag passing its key.
+
 ### The companion's side (`companion/lib/transport/`)
 
 The companion's UI talks plain HTTP to `LocalGateway`, a listener on the phone's own loopback,
